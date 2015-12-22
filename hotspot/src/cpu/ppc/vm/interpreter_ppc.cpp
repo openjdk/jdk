@@ -27,9 +27,9 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -416,7 +416,7 @@ address AbstractInterpreterGenerator::generate_result_handler_for(BasicType type
 
 // Abstract method entry.
 //
-address InterpreterGenerator::generate_abstract_entry(void) {
+address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   address entry = __ pc();
 
   //
@@ -474,7 +474,7 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 //    It contains a GC barrier which puts the reference into the satb buffer
 //    to indicate that someone holds a strong reference to the object the
 //    weak ref points to!
-address InterpreterGenerator::generate_Reference_get_entry(void) {
+address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Code: _aload_0, _getfield, _areturn
   // parameter size = 1
   //

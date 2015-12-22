@@ -27,9 +27,9 @@
 #include "asm/macroAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "oops/arrayOop.hpp"
@@ -58,8 +58,6 @@
 #endif
 
 #define __ _masm->
-
-#ifndef CC_INTERP
 
 //-----------------------------------------------------------------------------
 
@@ -304,7 +302,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
 //
 // rmethod: method
 //
-void InterpreterGenerator::generate_counter_incr(
+void TemplateInterpreterGenerator::generate_counter_incr(
         Label* overflow,
         Label* profile_method,
         Label* profile_method_continue) {
@@ -382,7 +380,7 @@ void InterpreterGenerator::generate_counter_incr(
   }
 }
 
-void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
+void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue) {
 
   // Asm interpreter on entry
   // On return (i.e. jump to entry_point) [ back to invocation of interpreter ]
@@ -401,7 +399,7 @@ void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
                               InterpreterRuntime::frequency_counter_overflow),
              c_rarg1);
 
-  __ b(*do_continue);
+  __ b(do_continue);
 }
 
 // See if we've got enough room on the stack for locals plus overhead.
@@ -418,7 +416,7 @@ void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
 //
 // Kills:
 //      r0
-void InterpreterGenerator::generate_stack_overflow_check(void) {
+void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // monitor entry size: see picture of stack set
   // (generate_method_entry) and frame_amd64.hpp
@@ -634,7 +632,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 //
 
 // Method entry for java.lang.ref.Reference.get.
-address InterpreterGenerator::generate_Reference_get_entry(void) {
+address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 #if INCLUDE_ALL_GCS
   // Code: _aload_0, _getfield, _areturn
   // parameter size = 1
@@ -712,7 +710,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
-address InterpreterGenerator::generate_CRC32_update_entry() {
+address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   if (UseCRC32Intrinsics) {
     address entry = __ pc();
 
@@ -766,7 +764,7 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
-address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32Intrinsics) {
     address entry = __ pc();
 
@@ -821,7 +819,12 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
   return NULL;
 }
 
-void InterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
+// Not supported
+address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+  return NULL;
+}
+
+void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
@@ -840,7 +843,7 @@ void InterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 // Interpreter stub for calling a native method. (asm interpreter)
 // This sets up a somewhat different looking stack for calling the
 // native method than the typical interpreter frame setup.
-address InterpreterGenerator::generate_native_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
@@ -1269,7 +1272,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   if (inc_counter) {
     // Handle overflow of counter and compile method
     __ bind(invocation_counter_overflow);
-    generate_counter_overflow(&continue_after_compile);
+    generate_counter_overflow(continue_after_compile);
   }
 
   return entry_point;
@@ -1278,7 +1281,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 // Generic interpreted method entry to (asm) interpreter
 //
-address InterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
@@ -1440,7 +1443,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
     }
     // Handle overflow of counter and compile method
     __ bind(invocation_counter_overflow);
-    generate_counter_overflow(&continue_after_compile);
+    generate_counter_overflow(continue_after_compile);
   }
 
   return entry_point;
@@ -1726,17 +1729,6 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
 }
 
 //-----------------------------------------------------------------------------
-// Generation of individual instructions
-
-// helpers for generate_and_dispatch
-
-
-InterpreterGenerator::InterpreterGenerator(StubQueue* code)
-  : TemplateInterpreterGenerator(code) {
-   generate_all(); // down here so it can be "virtual"
-}
-
-//-----------------------------------------------------------------------------
 
 // Non-product code
 #ifndef PRODUCT
@@ -1923,4 +1915,3 @@ extern "C" {
 
 #endif // BUILTIN_SIM
 #endif // !PRODUCT
-#endif // ! CC_INTERP
