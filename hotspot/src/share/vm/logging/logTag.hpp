@@ -44,6 +44,7 @@
   LOG_TAG(cset) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(ergo) \
+  LOG_TAG(exceptions) \
   LOG_TAG(exit) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \

@@ -400,6 +400,8 @@ static AliasedFlag const aliased_jvm_flags[] = {
 };
 
 static AliasedFlag const aliased_jvm_logging_flags[] = {
+  { "-XX:+TraceExceptions", "-Xlog:exceptions=info" },
+  { "-XX:-TraceExceptions", "-Xlog:exceptions=off" },
   { "-XX:+TraceMonitorInflation", "-Xlog:monitorinflation=debug" },
   { "-XX:-TraceMonitorInflation", "-Xlog:monitorinflation=off" },
   { NULL, NULL }

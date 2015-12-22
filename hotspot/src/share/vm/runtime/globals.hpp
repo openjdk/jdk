@@ -1448,9 +1448,6 @@ public:
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
                                                                             \
-  product(bool, TraceExceptions, false,                                     \
-          "Trace exceptions")                                               \
-                                                                            \
   develop(bool, TraceICs, false,                                            \
           "Trace inline cache changes")                                     \
                                                                             \
