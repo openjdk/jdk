@@ -25,9 +25,11 @@
 #include "precompiled.hpp"
 #include "gc/g1/concurrentG1Refine.hpp"
 #include "gc/g1/concurrentG1RefineThread.hpp"
+#include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
@@ -74,6 +76,14 @@ G1RemSet::~G1RemSet() {
     assert(_cset_rs_update_cl[i] == NULL, "it should be");
   }
   FREE_C_HEAP_ARRAY(G1ParPushHeapRSClosure*, _cset_rs_update_cl);
+}
+
+uint G1RemSet::num_par_rem_sets() {
+  return MAX2(DirtyCardQueueSet::num_par_ids() + ConcurrentG1Refine::thread_num(), ParallelGCThreads);
+}
+
+void G1RemSet::initialize(uint max_regions) {
+  G1FromCardCache::initialize(num_par_rem_sets(), max_regions);
 }
 
 ScanRSClosure::ScanRSClosure(G1ParPushHeapRSClosure* oc,
