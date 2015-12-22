@@ -87,7 +87,7 @@ public abstract class UIAction implements Action {
      * Cover method for <code>isEnabled(null)</code>.
      */
     public final boolean isEnabled() {
-        return isEnabled(null);
+        return accept(null);
     }
 
     /**
@@ -96,7 +96,8 @@ public abstract class UIAction implements Action {
      *
      * @param sender Widget enabled state is being asked for, may be null.
      */
-    public boolean isEnabled(Object sender) {
+    @Override
+    public boolean accept(Object sender) {
         return true;
     }
 

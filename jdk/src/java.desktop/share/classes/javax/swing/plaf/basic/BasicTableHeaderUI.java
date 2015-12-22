@@ -855,7 +855,8 @@ public class BasicTableHeaderUI extends TableHeaderUI {
             super(name);
         }
 
-        public boolean isEnabled(Object sender) {
+        @Override
+        public boolean accept(Object sender) {
             if (sender instanceof JTableHeader) {
                 JTableHeader th = (JTableHeader)sender;
                 TableColumnModel cm = th.getColumnModel();

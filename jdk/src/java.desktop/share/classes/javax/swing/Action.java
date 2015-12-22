@@ -356,23 +356,40 @@ public interface Action extends ActionListener {
     public void putValue(String key, Object value);
 
     /**
-     * Sets the enabled state of the <code>Action</code>.  When enabled,
+     * Sets the enabled state of the {@code Action}.  When enabled,
      * any component associated with this object is active and
-     * able to fire this object's <code>actionPerformed</code> method.
-     * If the value has changed, a <code>PropertyChangeEvent</code> is sent
+     * able to fire this object's {@code actionPerformed} method.
+     * If the value has changed, a {@code PropertyChangeEvent} is sent
      * to listeners.
      *
-     * @param  b true to enable this <code>Action</code>, false to disable it
+     * @param  b true to enable this {@code Action}, false to disable it
+     * @see #accept
      */
     public void setEnabled(boolean b);
     /**
-     * Returns the enabled state of the <code>Action</code>. When enabled,
+     * Returns the enabled state of the {@code Action}. When enabled,
      * any component associated with this object is active and
-     * able to fire this object's <code>actionPerformed</code> method.
+     * able to fire this object's {@code actionPerformed} method.
      *
-     * @return true if this <code>Action</code> is enabled
+     * @return true if this {@code Action} is enabled
+     * @see #accept
      */
     public boolean isEnabled();
+
+    /**
+     * Determines whether the action should be performed with the specified
+     * sender object. The {@code sender} can be {@code null}.
+     * The method must return false if the action is disabled.
+     * <p>
+     * @param sender the object to check, can be null
+     * @return {@code true} if the action should be performed with the sender
+     *         object, must be false if the action is disabled.
+     * @see isEnabled
+     * @see setEnabled
+     */
+    default boolean accept(Object sender) {
+        return isEnabled();
+    }
 
     /**
      * Adds a <code>PropertyChange</code> listener. Containers and attached

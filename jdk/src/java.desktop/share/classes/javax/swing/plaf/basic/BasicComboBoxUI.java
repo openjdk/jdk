@@ -1719,7 +1719,8 @@ public class BasicComboBoxUI extends ComboBoxUI {
             return comboBox.getSelectedIndex();
         }
 
-        public boolean isEnabled(Object c) {
+        @Override
+        public boolean accept(Object c) {
             if (getName() == HIDE) {
                 return (c != null && ((JComboBox)c).isPopupVisible());
             }

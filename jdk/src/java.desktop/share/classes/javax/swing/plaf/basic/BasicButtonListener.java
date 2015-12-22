@@ -319,13 +319,10 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
             }
         }
 
-        public boolean isEnabled(Object sender) {
-            if(sender != null && (sender instanceof AbstractButton) &&
-                      !((AbstractButton)sender).getModel().isEnabled()) {
-                return false;
-            } else {
-                return true;
-            }
+        @Override
+        public boolean accept(Object sender) {
+            return !((sender instanceof AbstractButton) &&
+                    !((AbstractButton)sender).getModel().isEnabled());
         }
     }
 }
