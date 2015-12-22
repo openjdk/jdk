@@ -32,10 +32,8 @@
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
-#include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
@@ -1595,24 +1593,6 @@ public:
   }
 };
 
-class G1ParScrubRemSetTask: public AbstractGangTask {
-protected:
-  G1RemSet* _g1rs;
-  BitMap* _region_bm;
-  BitMap* _card_bm;
-  HeapRegionClaimer _hrclaimer;
-
-public:
-  G1ParScrubRemSetTask(G1CollectedHeap* g1h, BitMap* region_bm, BitMap* card_bm, uint n_workers) :
-      AbstractGangTask("G1 ScrubRS"), _g1rs(g1h->g1_rem_set()), _region_bm(region_bm), _card_bm(card_bm), _hrclaimer(n_workers) {
-  }
-
-  void work(uint worker_id) {
-    _g1rs->scrub(_region_bm, _card_bm, worker_id, &_hrclaimer);
-  }
-
-};
-
 void ConcurrentMark::cleanup() {
   // world is stopped at this checkpoint
   assert(SafepointSynchronize::is_at_safepoint(),
@@ -1700,12 +1680,8 @@ void ConcurrentMark::cleanup() {
   // regions.
   if (G1ScrubRemSets) {
     double rs_scrub_start = os::elapsedTime();
-    G1ParScrubRemSetTask g1_par_scrub_rs_task(g1h, &_region_bm, &_card_bm, n_workers);
-    g1h->workers()->run_task(&g1_par_scrub_rs_task);
-
-    double rs_scrub_end = os::elapsedTime();
-    double this_rs_scrub_time = (rs_scrub_end - rs_scrub_start);
-    _total_rs_scrub_time += this_rs_scrub_time;
+    g1h->scrub_rem_set(&_region_bm, &_card_bm);
+    _total_rs_scrub_time += (os::elapsedTime() - rs_scrub_start);
   }
 
   // this will also free any regions totally full of garbage objects,

@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/g1RemSet.hpp"
 #include "memory/padded.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -32,11 +32,12 @@ int**  G1FromCardCache::_cache = NULL;
 uint   G1FromCardCache::_max_regions = 0;
 size_t G1FromCardCache::_static_mem_size = 0;
 
-void G1FromCardCache::initialize(uint n_par_rs, uint max_num_regions) {
+void G1FromCardCache::initialize(uint num_par_rem_sets, uint max_num_regions) {
+  guarantee(max_num_regions > 0, "Heap size must be valid");
   guarantee(_cache == NULL, "Should not call this multiple times");
 
   _max_regions = max_num_regions;
-  _cache = Padded2DArray<int, mtGC>::create_unfreeable(n_par_rs,
+  _cache = Padded2DArray<int, mtGC>::create_unfreeable(num_par_rem_sets,
                                                        _max_regions,
                                                        &_static_mem_size);
 
@@ -47,9 +48,10 @@ void G1FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
   guarantee((size_t)start_idx + new_num_regions <= max_uintx,
             "Trying to invalidate beyond maximum region, from %u size " SIZE_FORMAT,
             start_idx, new_num_regions);
-  for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
-    uint end_idx = (start_idx + (uint)new_num_regions);
-    assert(end_idx <= _max_regions, "Must be within max.");
+  uint end_idx = (start_idx + (uint)new_num_regions);
+  assert(end_idx <= _max_regions, "Must be within max.");
+
+  for (uint i = 0; i < G1RemSet::num_par_rem_sets(); i++) {
     for (uint j = start_idx; j < end_idx; j++) {
       set(i, j, InvalidCard);
     }
@@ -58,7 +60,7 @@ void G1FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
 
 #ifndef PRODUCT
 void G1FromCardCache::print(outputStream* out) {
-  for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
+  for (uint i = 0; i < G1RemSet::num_par_rem_sets(); i++) {
     for (uint j = 0; j < _max_regions; j++) {
       out->print_cr("_from_card_cache[%u][%u] = %d.",
                     i, j, at(i, j));
@@ -68,7 +70,7 @@ void G1FromCardCache::print(outputStream* out) {
 #endif
 
 void G1FromCardCache::clear(uint region_idx) {
-  uint num_par_remsets = HeapRegionRemSet::num_par_rem_sets();
+  uint num_par_remsets = G1RemSet::num_par_rem_sets();
   for (uint i = 0; i < num_par_remsets; i++) {
     set(i, region_idx, InvalidCard);
   }

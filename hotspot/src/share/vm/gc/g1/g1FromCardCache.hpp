@@ -65,7 +65,7 @@ class G1FromCardCache : public AllStatic {
     _cache[worker_id][region_idx] = val;
   }
 
-  static void initialize(uint n_par_rs, uint max_num_regions);
+  static void initialize(uint num_par_rem_sets, uint max_num_regions);
 
   static void invalidate(uint start_idx, size_t num_regions);
 
