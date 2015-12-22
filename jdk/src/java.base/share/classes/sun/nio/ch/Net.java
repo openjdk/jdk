@@ -32,7 +32,6 @@ import java.nio.channels.*;
 import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import sun.net.ExtendedOptionsImpl;
 
 
@@ -55,7 +54,7 @@ public class Net {
 
     // -- Miscellaneous utilities --
 
-    private static volatile boolean checkedIPv6 = false;
+    private static volatile boolean checkedIPv6;
     private static volatile boolean isIPv6Available;
 
     /**

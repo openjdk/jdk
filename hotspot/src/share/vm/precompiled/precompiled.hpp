@@ -203,7 +203,6 @@
 # include "runtime/stubRoutines.hpp"
 # include "runtime/synchronizer.hpp"
 # include "runtime/thread.hpp"
-# include "runtime/threadLocalStorage.hpp"
 # include "runtime/timer.hpp"
 # include "runtime/unhandledOops.hpp"
 # include "runtime/vframe.hpp"

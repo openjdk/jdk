@@ -54,12 +54,12 @@ import sun.util.logging.PlatformLogger;
  * @author jccollet
  */
 public class HttpCapture {
-    private File file = null;
+    private File file;
     private boolean incoming = true;
-    private BufferedWriter out = null;
-    private static boolean initialized = false;
-    private static volatile ArrayList<Pattern> patterns = null;
-    private static volatile ArrayList<String> capFiles = null;
+    private BufferedWriter out;
+    private static boolean initialized;
+    private static volatile ArrayList<Pattern> patterns;
+    private static volatile ArrayList<String> capFiles;
 
     private static synchronized void init() {
         initialized = true;
