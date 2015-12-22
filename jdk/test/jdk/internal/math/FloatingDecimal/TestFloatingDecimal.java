@@ -22,7 +22,7 @@
  */
 
 import java.util.Random;
-import sun.misc.FloatingDecimal;
+import jdk.internal.math.FloatingDecimal;
 
 /*
 OldFloatingDecimalForTest
@@ -40,26 +40,26 @@ public class OldFloatingDecimalForTest {
   public strictfp float floatValue();
 }
 
-sun.misc.FloatingDecimal
+jdk.internal.math.FloatingDecimal
 
-public class sun.misc.FloatingDecimal {
-  public sun.misc.FloatingDecimal();
+public class jdk.internal.math.FloatingDecimal {
+  public jdk.internal.math.FloatingDecimal();
   public static java.lang.String toJavaFormatString(double);
   public static java.lang.String toJavaFormatString(float);
   public static void appendTo(double, java.lang.Appendable);
   public static void appendTo(float, java.lang.Appendable);
   public static double parseDouble(java.lang.String) throws java.lang.NumberFormatException;
   public static float parseFloat(java.lang.String) throws java.lang.NumberFormatException;
-  public static sun.misc.FloatingDecimal$AbstractD2ABuffer getD2ABuffer(double);
+  public static jdk.internal.math.FloatingDecimal$AbstractD2ABuffer getD2ABuffer(double);
 }
 */
 
 /**
  * @test
  * @bug 7032154
- * @summary unit tests of sun.misc.FloatingDecimal
- * @modules java.base/sun.misc
- * @library ../../../java/lang/Math
+ * @summary unit tests of FloatingDecimal
+ * @modules java.base/jdk.internal.math
+ * @library /java/lang/Math
  * @build DoubleConsts FloatConsts
  * @run main TestFloatingDecimal
  * @author Brian Burkhalter

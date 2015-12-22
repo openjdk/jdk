@@ -21,7 +21,7 @@
  * questions.
  */
 
-//package sun.misc;
+//package jdk.internal.math;
 
 import java.util.regex.*;
 

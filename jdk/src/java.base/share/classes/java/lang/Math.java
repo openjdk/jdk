@@ -26,8 +26,8 @@
 package java.lang;
 
 import java.util.Random;
-import sun.misc.FloatConsts;
-import sun.misc.DoubleConsts;
+import jdk.internal.math.FloatConsts;
+import jdk.internal.math.DoubleConsts;
 import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
