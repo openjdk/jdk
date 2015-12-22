@@ -27,8 +27,8 @@
 #include "asm/assembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/cppInterpreter.hpp"
+#include "interpreter/cppInterpreterGenerator.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -788,21 +788,21 @@ BasicType CppInterpreter::result_type_of(Method* method) {
   return t;
 }
 
-address InterpreterGenerator::generate_empty_entry() {
+address CppInterpreterGenerator::generate_empty_entry() {
   if (!UseFastEmptyMethods)
     return NULL;
 
   return generate_entry((address) CppInterpreter::empty_entry);
 }
 
-address InterpreterGenerator::generate_accessor_entry() {
+address CppInterpreterGenerator::generate_accessor_entry() {
   if (!UseFastAccessorMethods)
     return NULL;
 
   return generate_entry((address) CppInterpreter::accessor_entry);
 }
 
-address InterpreterGenerator::generate_Reference_get_entry(void) {
+address CppInterpreterGenerator::generate_Reference_get_entry(void) {
 #if INCLUDE_ALL_GCS
   if (UseG1GC) {
     // We need to generate have a routine that generates code to:
@@ -822,19 +822,14 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   return NULL;
 }
 
-address InterpreterGenerator::generate_native_entry(bool synchronized) {
+address CppInterpreterGenerator::generate_native_entry(bool synchronized) {
   return generate_entry((address) CppInterpreter::native_entry);
 }
 
-address InterpreterGenerator::generate_normal_entry(bool synchronized) {
+address CppInterpreterGenerator::generate_normal_entry(bool synchronized) {
   return generate_entry((address) CppInterpreter::normal_entry);
 }
 
-
-InterpreterGenerator::InterpreterGenerator(StubQueue* code)
- : CppInterpreterGenerator(code) {
-   generate_all();
-}
 
 // Deoptimization helpers
 
@@ -980,31 +975,4 @@ int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
 bool CppInterpreter::contains(address pc) {
   return false; // make frame::print_value_on work
 }
-
-// Result handlers and convertors
-
-address CppInterpreterGenerator::generate_result_handler_for(
-    BasicType type) {
-  assembler()->advance(1);
-  return ShouldNotCallThisStub();
-}
-
-address CppInterpreterGenerator::generate_tosca_to_stack_converter(
-    BasicType type) {
-  assembler()->advance(1);
-  return ShouldNotCallThisStub();
-}
-
-address CppInterpreterGenerator::generate_stack_to_stack_converter(
-    BasicType type) {
-  assembler()->advance(1);
-  return ShouldNotCallThisStub();
-}
-
-address CppInterpreterGenerator::generate_stack_to_native_abi_converter(
-    BasicType type) {
-  assembler()->advance(1);
-  return ShouldNotCallThisStub();
-}
-
 #endif // CC_INTERP

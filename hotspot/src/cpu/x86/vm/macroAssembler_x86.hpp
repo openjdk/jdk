@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,16 +48,9 @@ class MacroAssembler: public Assembler {
   // This is the base routine called by the different versions of call_VM_leaf. The interpreter
   // may customize this version by overriding it for its purposes (e.g., to save/restore
   // additional registers when doing a VM call).
-#ifdef CC_INTERP
-  // c++ interpreter never wants to use interp_masm version of call_VM
-  #define VIRTUAL
-#else
-  #define VIRTUAL virtual
-#endif
-
 #define COMMA ,
 
-  VIRTUAL void call_VM_leaf_base(
+  virtual void call_VM_leaf_base(
     address entry_point,               // the entry point
     int     number_of_arguments        // the number of arguments to pop after the call
   );
@@ -70,7 +63,7 @@ class MacroAssembler: public Assembler {
   // returns the register which contains the thread upon return. If a thread register has been
   // specified, the return value will correspond to that register. If no last_java_sp is specified
   // (noreg) than rsp will be used instead.
-  VIRTUAL void call_VM_base(           // returns the register containing the thread upon return
+  virtual void call_VM_base(           // returns the register containing the thread upon return
     Register oop_result,               // where an oop-result ends up if any; use noreg otherwise
     Register java_thread,              // the thread if computed before     ; use noreg otherwise
     Register last_java_sp,             // to set up last_Java_frame in stubs; use noreg otherwise
@@ -1421,8 +1414,6 @@ public:
   // Inflate byte[] array to char[].
   void byte_array_inflate(Register src, Register dst, Register len,
                           XMMRegister tmp1, Register tmp2);
-
-#undef VIRTUAL
 
 };
 

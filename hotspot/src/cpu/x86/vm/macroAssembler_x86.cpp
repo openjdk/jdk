@@ -2525,11 +2525,9 @@ void MacroAssembler::call_VM_base(Register oop_result,
   // Only interpreter should have to clear fp
   reset_last_Java_frame(java_thread, true, false);
 
-#ifndef CC_INTERP
    // C++ interp handles this in the interpreter
   check_and_handle_popframe(java_thread);
   check_and_handle_earlyret(java_thread);
-#endif /* CC_INTERP */
 
   if (check_exceptions) {
     // check for pending exceptions (java_thread is set upon return)

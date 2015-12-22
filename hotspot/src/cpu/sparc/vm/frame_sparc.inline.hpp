@@ -91,75 +91,6 @@ inline int frame::pd_oop_map_offset_adjustment() const {
   return _sp_adjustment_by_callee * VMRegImpl::slots_per_word;
 }
 
-#ifdef CC_INTERP
-inline intptr_t** frame::interpreter_frame_locals_addr() const {
-  interpreterState istate = get_interpreterState();
-  return (intptr_t**) &istate->_locals;
-}
-
-inline intptr_t* frame::interpreter_frame_bcp_addr() const {
-  interpreterState istate = get_interpreterState();
-  return (intptr_t*) &istate->_bcp;
-}
-
-inline intptr_t* frame::interpreter_frame_mdp_addr() const {
-  interpreterState istate = get_interpreterState();
-  return (intptr_t*) &istate->_mdx;
-}
-
-inline jint frame::interpreter_frame_expression_stack_direction() { return -1; }
-
-// bottom(base) of the expression stack (highest address)
-inline intptr_t* frame::interpreter_frame_expression_stack() const {
-  return (intptr_t*)interpreter_frame_monitor_end() - 1;
-}
-
-// top of expression stack (lowest address)
-inline intptr_t* frame::interpreter_frame_tos_address() const {
-  interpreterState istate = get_interpreterState();
-  return istate->_stack + 1; // Is this off by one? QQQ
-}
-
-// monitor elements
-
-// in keeping with Intel side: end is lower in memory than begin;
-// and beginning element is oldest element
-// Also begin is one past last monitor.
-
-inline BasicObjectLock* frame::interpreter_frame_monitor_begin()       const  {
-  return get_interpreterState()->monitor_base();
-}
-
-inline BasicObjectLock* frame::interpreter_frame_monitor_end()         const  {
-  return (BasicObjectLock*) get_interpreterState()->stack_base();
-}
-
-
-inline int frame::interpreter_frame_monitor_size() {
-  return round_to(BasicObjectLock::size(), WordsPerLong);
-}
-
-inline Method** frame::interpreter_frame_method_addr() const {
-  interpreterState istate = get_interpreterState();
-  return &istate->_method;
-}
-
-
-// Constant pool cache
-
-// where LcpoolCache is saved:
-inline ConstantPoolCache** frame::interpreter_frame_cpoolcache_addr() const {
-  interpreterState istate = get_interpreterState();
-  return &istate->_constants; // should really use accessor
-  }
-
-inline ConstantPoolCache** frame::interpreter_frame_cache_addr() const {
-  interpreterState istate = get_interpreterState();
-  return &istate->_constants;
-}
-
-#else // !CC_INTERP
-
 inline intptr_t** frame::interpreter_frame_locals_addr() const {
   return (intptr_t**) sp_addr_at( Llocals->sp_offset_in_saved_window());
 }
@@ -246,7 +177,6 @@ inline ConstantPoolCache** frame::interpreter_frame_cache_addr() const {
 inline oop* frame::interpreter_frame_temp_oop_addr() const {
   return (oop *)(fp() + interpreter_frame_oop_temp_offset);
 }
-#endif // CC_INTERP
 
 
 inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {

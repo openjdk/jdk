@@ -2652,30 +2652,14 @@ void SharedRuntime::generate_deopt_blob() {
   Label loop;
   __ bind(loop);
   __ movptr(rbx, Address(rsi, 0));      // Load frame size
-#ifdef CC_INTERP
-  __ subptr(rbx, 4*wordSize);           // we'll push pc and ebp by hand and
-#ifdef ASSERT
-  __ push(0xDEADDEAD);                  // Make a recognizable pattern
-  __ push(0xDEADDEAD);
-#else /* ASSERT */
-  __ subptr(rsp, 2*wordSize);           // skip the "static long no_param"
-#endif /* ASSERT */
-#else /* CC_INTERP */
   __ subptr(rbx, 2*wordSize);           // we'll push pc and rbp, by hand
-#endif /* CC_INTERP */
   __ pushptr(Address(rcx, 0));          // save return address
   __ enter();                           // save old & set new rbp,
   __ subptr(rsp, rbx);                  // Prolog!
   __ movptr(rbx, sp_temp);              // sender's sp
-#ifdef CC_INTERP
-  __ movptr(Address(rbp,
-                  -(sizeof(BytecodeInterpreter)) + in_bytes(byte_offset_of(BytecodeInterpreter, _sender_sp))),
-          rbx); // Make it walkable
-#else /* CC_INTERP */
   // This value is corrected by layout_activation_impl
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
   __ movptr(Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize), rbx); // Make it walkable
-#endif /* CC_INTERP */
   __ movptr(sp_temp, rsp);              // pass to next frame
   __ addptr(rsi, wordSize);             // Bump array pointer (sizes)
   __ addptr(rcx, wordSize);             // Bump array pointer (pcs)
@@ -2894,30 +2878,14 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   Label loop;
   __ bind(loop);
   __ movptr(rbx, Address(rsi, 0));      // Load frame size
-#ifdef CC_INTERP
-  __ subptr(rbx, 4*wordSize);           // we'll push pc and ebp by hand and
-#ifdef ASSERT
-  __ push(0xDEADDEAD);                  // Make a recognizable pattern
-  __ push(0xDEADDEAD);                  // (parm to RecursiveInterpreter...)
-#else /* ASSERT */
-  __ subptr(rsp, 2*wordSize);           // skip the "static long no_param"
-#endif /* ASSERT */
-#else /* CC_INTERP */
   __ subptr(rbx, 2*wordSize);           // we'll push pc and rbp, by hand
-#endif /* CC_INTERP */
   __ pushptr(Address(rcx, 0));          // save return address
   __ enter();                           // save old & set new rbp,
   __ subptr(rsp, rbx);                  // Prolog!
   __ movptr(rbx, sp_temp);              // sender's sp
-#ifdef CC_INTERP
-  __ movptr(Address(rbp,
-                  -(sizeof(BytecodeInterpreter)) + in_bytes(byte_offset_of(BytecodeInterpreter, _sender_sp))),
-          rbx); // Make it walkable
-#else /* CC_INTERP */
   // This value is corrected by layout_activation_impl
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD );
   __ movptr(Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize), rbx); // Make it walkable
-#endif /* CC_INTERP */
   __ movptr(sp_temp, rsp);              // pass to next frame
   __ addptr(rsi, wordSize);             // Bump array pointer (sizes)
   __ addptr(rcx, wordSize);             // Bump array pointer (pcs)

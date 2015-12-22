@@ -401,9 +401,6 @@ static Thread* verify_thread_subroutine(Thread* gthread_value) {
 void MacroAssembler::verify_thread() {
   if (VerifyThread) {
     // NOTE: this chops off the heads of the 64-bit O registers.
-#ifdef CC_INTERP
-    save_frame(0);
-#else
     // make sure G2_thread contains the right value
     save_frame_and_mov(0, Lmethod, Lmethod);   // to avoid clobbering O0 (and propagate Lmethod for -Xprof)
     mov(G1, L1);                // avoid clobbering G1
@@ -411,7 +408,6 @@ void MacroAssembler::verify_thread() {
     mov(G3, L3);                // avoid clobbering G3
     mov(G4, L4);                // avoid clobbering G4
     mov(G5_method, L5);         // avoid clobbering G5_method
-#endif /* CC_INTERP */
 #if defined(COMPILER2) && !defined(_LP64)
     // Save & restore possible 64-bit Long arguments in G-regs
     srlx(G1,32,L0);
@@ -530,11 +526,7 @@ void MacroAssembler::reset_last_Java_frame(void) {
 
 #ifdef ASSERT
   // check that it WAS previously set
-#ifdef CC_INTERP
-    save_frame(0);
-#else
     save_frame_and_mov(0, Lmethod, Lmethod);     // Propagate Lmethod to helper frame for -Xprof
-#endif /* CC_INTERP */
     ld_ptr(sp_addr, L0);
     tst(L0);
     breakpoint_trap(Assembler::zero, Assembler::ptr_cc);
@@ -754,11 +746,7 @@ void MacroAssembler::set_vm_result(Register oop_result) {
 
 # ifdef ASSERT
     // Check that we are not overwriting any other oop.
-#ifdef CC_INTERP
-    save_frame(0);
-#else
     save_frame_and_mov(0, Lmethod, Lmethod);     // Propagate Lmethod for -Xprof
-#endif /* CC_INTERP */
     ld_ptr(vm_result_addr, L0);
     tst(L0);
     restore();
