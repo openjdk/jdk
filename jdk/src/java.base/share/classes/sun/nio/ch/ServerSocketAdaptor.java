@@ -45,7 +45,7 @@ public class ServerSocketAdaptor                        // package-private
     private final ServerSocketChannelImpl ssc;
 
     // Timeout "option" value for accepts
-    private volatile int timeout = 0;
+    private volatile int timeout;
 
     public static ServerSocket create(ServerSocketChannelImpl ssc) {
         try {

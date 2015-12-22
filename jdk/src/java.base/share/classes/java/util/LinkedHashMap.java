@@ -528,8 +528,12 @@ public class LinkedHashMap<K,V>
      * @return a set view of the keys contained in this map
      */
     public Set<K> keySet() {
-        Set<K> ks;
-        return (ks = keySet) == null ? (keySet = new LinkedKeySet()) : ks;
+        Set<K> ks = keySet;
+        if (ks == null) {
+            ks = new LinkedKeySet();
+            keySet = ks;
+        }
+        return ks;
     }
 
     final class LinkedKeySet extends AbstractSet<K> {
@@ -577,8 +581,12 @@ public class LinkedHashMap<K,V>
      * @return a view of the values contained in this map
      */
     public Collection<V> values() {
-        Collection<V> vs;
-        return (vs = values) == null ? (values = new LinkedValues()) : vs;
+        Collection<V> vs = values;
+        if (vs == null) {
+            vs = new LinkedValues();
+            values = vs;
+        }
+        return vs;
     }
 
     final class LinkedValues extends AbstractCollection<V> {

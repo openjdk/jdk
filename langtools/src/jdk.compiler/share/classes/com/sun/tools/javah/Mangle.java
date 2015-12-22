@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package com.sun.tools.javah;
 
 import javax.lang.model.element.ExecutableElement;

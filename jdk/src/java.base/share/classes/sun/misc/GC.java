@@ -82,7 +82,7 @@ public class GC {
      */
     public static native long maxObjectInspectionAge();
 
-    private static class Daemon extends ManagedLocalsThread {
+    private static class Daemon extends Thread {
 
         public void run() {
             for (;;) {
@@ -122,7 +122,7 @@ public class GC {
         }
 
         private Daemon(ThreadGroup tg) {
-            super(tg, "GC Daemon");
+            super(tg, null, "GC Daemon", 0L, false);
         }
 
         /* Create a new daemon thread in the root thread group */

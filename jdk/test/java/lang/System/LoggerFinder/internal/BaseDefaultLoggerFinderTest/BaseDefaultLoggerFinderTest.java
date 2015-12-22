@@ -44,17 +44,21 @@ import java.util.function.Supplier;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import jdk.internal.logger.DefaultLoggerFinder;
 import jdk.internal.logger.SimpleConsoleLogger;
 import sun.util.logging.PlatformLogger;
 
 /**
  * @test
- * @bug     8140364
+ * @bug     8140364 8145686
  * @summary JDK implementation specific unit test for the base DefaultLoggerFinder.
  *          Tests the behavior of DefaultLoggerFinder and SimpleConsoleLogger
  *          implementation.
@@ -65,6 +69,8 @@ import sun.util.logging.PlatformLogger;
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest NOSECURITY
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest NOPERMISSIONS
  * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHPERMISSIONS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHCUSTOMWRAPPERS
+ * @run  main/othervm -Xbootclasspath/a:boot -Djava.system.class.loader=CustomSystemClassLoader BaseDefaultLoggerFinderTest WITHREFLECTION
  * @author danielfuchs
  */
 public class BaseDefaultLoggerFinderTest {
@@ -172,7 +178,8 @@ public class BaseDefaultLoggerFinderTest {
 
     }
 
-    static enum TestCases {NOSECURITY, NOPERMISSIONS, WITHPERMISSIONS};
+    static enum TestCases {NOSECURITY, NOPERMISSIONS, WITHPERMISSIONS,
+                           WITHCUSTOMWRAPPERS, WITHREFLECTION};
 
     static void setSecurityManager() {
         if (System.getSecurityManager() == null) {
@@ -261,12 +268,173 @@ public class BaseDefaultLoggerFinderTest {
         return b.append(name).append("=").append(value).append('\n');
     }
 
+    static class CustomLoggerWrapper implements Logger {
+
+        Logger impl;
+        public CustomLoggerWrapper(Logger logger) {
+            this.impl = Objects.requireNonNull(logger);
+        }
+
+
+        @Override
+        public String getName() {
+            return impl.getName();
+        }
+
+        @Override
+        public boolean isLoggable(Level level) {
+            return impl.isLoggable(level);
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle rb, String string, Throwable thrwbl) {
+            impl.log(level, rb, string, thrwbl);
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle rb, String string, Object... os) {
+            impl.log(level, rb, string, os);
+        }
+
+        @Override
+        public void log(Level level, Object o) {
+            impl.log(level, o);
+        }
+
+        @Override
+        public void log(Level level, String string) {
+            impl.log(level, string);
+        }
+
+        @Override
+        public void log(Level level, Supplier<String> splr) {
+            impl.log(level, splr);
+        }
+
+        @Override
+        public void log(Level level, String string, Object... os) {
+           impl.log(level, string, os);
+        }
+
+        @Override
+        public void log(Level level, String string, Throwable thrwbl) {
+            impl.log(level, string, thrwbl);
+        }
+
+        @Override
+        public void log(Level level, Supplier<String> splr, Throwable thrwbl) {
+            Logger.super.log(level, splr, thrwbl);
+        }
+
+        @Override
+        public String toString() {
+            return super.toString() + "(impl=" + impl + ")";
+        }
+
+    }
+    /**
+     * The ReflectionLoggerWrapper additionally makes it possible to verify
+     * that code which use reflection to call System.Logger will be skipped
+     * when looking for the calling method.
+     */
+    static class ReflectionLoggerWrapper implements Logger {
+
+        Logger impl;
+        public ReflectionLoggerWrapper(Logger logger) {
+            this.impl = Objects.requireNonNull(logger);
+        }
+
+        private Object invoke(Method m, Object... params) {
+            try {
+                return m.invoke(impl, params);
+            } catch (IllegalAccessException | IllegalArgumentException
+                    | InvocationTargetException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        @Override
+        public String getName() {
+            return impl.getName();
+        }
+
+        @Override
+        public boolean isLoggable(Level level) {
+            return impl.isLoggable(level);
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle rb, String string, Throwable thrwbl) {
+            try {
+                invoke(System.Logger.class.getMethod(
+                        "log", Level.class, ResourceBundle.class, String.class, Throwable.class),
+                        level, rb, string, thrwbl);
+            } catch (NoSuchMethodException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle rb, String string, Object... os) {
+            try {
+                invoke(System.Logger.class.getMethod(
+                        "log", Level.class, ResourceBundle.class, String.class, Object[].class),
+                        level, rb, string, os);
+            } catch (NoSuchMethodException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        @Override
+        public void log(Level level, String string) {
+            try {
+                invoke(System.Logger.class.getMethod(
+                        "log", Level.class, String.class),
+                        level, string);
+            } catch (NoSuchMethodException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        @Override
+        public void log(Level level, String string, Object... os) {
+            try {
+                invoke(System.Logger.class.getMethod(
+                        "log", Level.class, String.class, Object[].class),
+                        level, string, os);
+            } catch (NoSuchMethodException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        @Override
+        public void log(Level level, String string, Throwable thrwbl) {
+            try {
+                invoke(System.Logger.class.getMethod(
+                        "log", Level.class, String.class, Throwable.class),
+                        level, string, thrwbl);
+            } catch (NoSuchMethodException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+
+        @Override
+        public String toString() {
+            return super.toString() + "(impl=" + impl + ")";
+        }
+
+    }
+
+
     public static void main(String[] args) {
         if (args.length == 0) {
             args = new String[] {
                 //"NOSECURITY",
                 "NOPERMISSIONS",
-                "WITHPERMISSIONS"
+                "WITHPERMISSIONS",
+                "WITHCUSTOMWRAPPERS",
+                "WITHREFLECTION"
             };
         }
         Locale.setDefault(Locale.ENGLISH);
@@ -355,6 +523,40 @@ public class BaseDefaultLoggerFinderTest {
                         allowControl.get().set(control);
                     }
                     break;
+                case WITHCUSTOMWRAPPERS:
+                    System.out.println("\n*** With Security Manager, with control permission and custom Wrapper\n");
+                    System.out.println(TestLoggerFinder.conf.get());
+                    setSecurityManager();
+                    final boolean previous = allowControl.get().get();
+                    try {
+                        allowControl.get().set(true);
+                        provider = getLoggerFinder(expectedClass);
+                        if (!provider.getClass().getName().equals("BaseDefaultLoggerFinderTest$BaseLoggerFinder")) {
+                            throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
+                        }
+                        test(provider, CustomLoggerWrapper::new, true);
+                    } finally {
+                        allowControl.get().set(previous);
+                    }
+                    break;
+                case WITHREFLECTION:
+                    System.out.println("\n*** With Security Manager,"
+                            + " with control permission,"
+                            + " using reflection while logging\n");
+                    System.out.println(TestLoggerFinder.conf.get());
+                    setSecurityManager();
+                    final boolean before = allowControl.get().get();
+                    try {
+                        allowControl.get().set(true);
+                        provider = getLoggerFinder(expectedClass);
+                        if (!provider.getClass().getName().equals("BaseDefaultLoggerFinderTest$BaseLoggerFinder")) {
+                            throw new RuntimeException("Unexpected provider: " + provider.getClass().getName());
+                        }
+                        test(provider, ReflectionLoggerWrapper::new, true);
+                    } finally {
+                        allowControl.get().set(before);
+                    }
+                    break;
                 default:
                     throw new RuntimeException("Unknown test case: " + testCase);
             }
@@ -363,17 +565,21 @@ public class BaseDefaultLoggerFinderTest {
     }
 
     public static void test(TestLoggerFinder provider, boolean hasRequiredPermissions) {
+        test(provider, Function.identity(), hasRequiredPermissions);
+    }
+
+    public static void test(TestLoggerFinder provider, Function<Logger, Logger> wrapper, boolean hasRequiredPermissions) {
 
         ResourceBundle loggerBundle = ResourceBundle.getBundle(MyLoggerBundle.class.getName());
         final Map<Logger, String> loggerDescMap = new HashMap<>();
 
-        System.Logger sysLogger = accessSystemLogger.getLogger("foo");
+        System.Logger sysLogger = wrapper.apply(accessSystemLogger.getLogger("foo"));
         loggerDescMap.put(sysLogger, "accessSystemLogger.getLogger(\"foo\")");
-        System.Logger localizedSysLogger = accessSystemLogger.getLogger("fox", loggerBundle);
+        System.Logger localizedSysLogger = wrapper.apply(accessSystemLogger.getLogger("fox", loggerBundle));
         loggerDescMap.put(localizedSysLogger, "accessSystemLogger.getLogger(\"fox\", loggerBundle)");
-        System.Logger appLogger = System.getLogger("bar");
+        System.Logger appLogger = wrapper.apply(System.getLogger("bar"));
         loggerDescMap.put(appLogger,"System.getLogger(\"bar\")");
-        System.Logger localizedAppLogger = System.getLogger("baz", loggerBundle);
+        System.Logger localizedAppLogger = wrapper.apply(System.getLogger("baz", loggerBundle));
         loggerDescMap.put(localizedAppLogger,"System.getLogger(\"baz\", loggerBundle)");
 
         testLogger(provider, loggerDescMap, "foo", null, sysLogger, accessSystemLogger.getClass());

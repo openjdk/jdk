@@ -50,6 +50,7 @@ class Verifier : AllStatic {
    * Otherwise, no exception is thrown and the return indicates the
    * error.
    */
+  static void log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name, TRAPS);
   static bool verify(instanceKlassHandle klass, Mode mode, bool should_verify_class, TRAPS);
 
   // Return false if the class is loaded by the bootstrap loader,

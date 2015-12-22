@@ -126,7 +126,11 @@ public class TestGCMKeyAndIvCheck extends UcryptoTest {
         }
 
         // Now try to encrypt again using a different parameter; should work
-        c.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(128, new byte[30]));
+        byte[] rdm_iv = new byte[30];
+        Random rdm = new Random();
+        rdm.nextBytes(rdm_iv);
+
+        c.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(128, rdm_iv));
         c.updateAAD(AAD);
         c.doFinal(PT);
         // subsequent encryption should fail unless re-init w/ different key+iv

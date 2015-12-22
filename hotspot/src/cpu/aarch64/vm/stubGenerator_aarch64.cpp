@@ -1973,7 +1973,7 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg4   - input length
   //
   // Output:
-  //   rax       - input length
+  //   x0        - input length
   //
   address generate_cipherBlockChaining_decryptAESCrypt() {
     assert(UseAES, "need AES instructions and misaligned SSE support");
@@ -2035,7 +2035,7 @@ class StubGenerator: public StubCodeGenerator {
       __ br(Assembler::EQ, L_rounds_52);
 
       __ aesd(v0, v17); __ aesimc(v0, v0);
-      __ aesd(v0, v17); __ aesimc(v0, v0);
+      __ aesd(v0, v18); __ aesimc(v0, v0);
     __ BIND(L_rounds_52);
       __ aesd(v0, v19); __ aesimc(v0, v0);
       __ aesd(v0, v20); __ aesimc(v0, v0);
