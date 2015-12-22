@@ -120,7 +120,8 @@ final class StringUTF16 {
     public static byte[] toBytes(char[] value, int off, int len) {
         byte[] val = newBytesFor(len);
         for (int i = 0; i < len; i++) {
-            putChar(val, i, value[off++]);
+            putChar(val, i, value[off]);
+            off++;
         }
         return val;
     }
@@ -145,11 +146,14 @@ final class StringUTF16 {
     @HotSpotIntrinsicCandidate
     private static int compress(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
-            int c = src[srcOff++];
-            if (c >>> 8 != 0) {
-                return 0;
+            char c = src[srcOff];
+            if (c > 0xFF) {
+                len = 0;
+                break;
             }
-            dst[dstOff++] = (byte)c;
+            dst[dstOff] = (byte)c;
+            srcOff++;
+            dstOff++;
         }
         return len;
     }
@@ -160,11 +164,14 @@ final class StringUTF16 {
         // We need a range check here because 'getChar' has no checks
         checkBoundsOffCount(srcOff, len, src.length);
         for (int i = 0; i < len; i++) {
-            int c = getChar(src, srcOff++);
-            if (c >>> 8 != 0) {
-                return 0;
+            char c = getChar(src, srcOff);
+            if (c > 0xFF) {
+                len = 0;
+                break;
             }
-            dst[dstOff++] = (byte)c;
+            dst[dstOff] = (byte)c;
+            srcOff++;
+            dstOff++;
         }
         return len;
     }
@@ -581,7 +588,7 @@ final class StringUTF16 {
             bits |= cp;
             putChar(result, i, cp);
         }
-        if (bits >>> 8 != 0) {
+        if (bits > 0xFF) {
             return new String(result, UTF16);
         } else {
             return newString(result, 0, len);
@@ -678,7 +685,7 @@ final class StringUTF16 {
             bits |= cp;
             putChar(result, i, cp);
         }
-        if (bits >>> 8 != 0) {
+        if (bits > 0xFF) {
             return new String(result, UTF16);
         } else {
             return newString(result, 0, len);

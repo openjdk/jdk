@@ -232,14 +232,12 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
             // disable the extra printing below.
             mark = NULL;
           }
-        } else if (frame_count != 0 && ObjectMonitor::Knob_Verbose) {
+        } else if (frame_count != 0) {
           // This is not the first frame so we either own this monitor
           // or we owned the monitor before and called wait(). Because
           // wait() could have been called on any monitor in a lower
           // numbered frame on the stack, we have to check all the
           // monitors on the list for this frame.
-          // Note: Only enable this new output line in verbose mode
-          // since existing tests are not ready for it.
           mark = monitor->owner()->mark();
           if (mark->has_monitor() &&
               ( // we have marked ourself as pending on this monitor

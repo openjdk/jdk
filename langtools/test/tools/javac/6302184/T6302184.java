@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /**
  * This is a test that uses ISO 8859 encoding.
  */

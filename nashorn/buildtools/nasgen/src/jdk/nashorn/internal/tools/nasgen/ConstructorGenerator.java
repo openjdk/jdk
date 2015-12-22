@@ -42,6 +42,8 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_I
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_INIT_DESC4;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETARITY;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETARITY_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETDOCUMENTATION;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETDOCUMENTATION_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETPROTOTYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETPROTOTYPE_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_TYPE;
@@ -158,6 +160,13 @@ public class ConstructorGenerator extends ClassGenerator {
                 mi.push(arity);
                 mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETARITY,
                         SCRIPTFUNCTION_SETARITY_DESC);
+            }
+            final String doc = constructor.getDocumentation();
+            if (doc != null) {
+                mi.loadThis();
+                mi.loadLiteral(doc);
+                mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETDOCUMENTATION,
+                        SCRIPTFUNCTION_SETDOCUMENTATION_DESC);
             }
         }
         mi.returnVoid();

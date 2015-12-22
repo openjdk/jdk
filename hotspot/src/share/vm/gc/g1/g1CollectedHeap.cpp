@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/g1/bufferingOopClosure.hpp"
@@ -112,18 +113,37 @@ public:
 
 class RedirtyLoggedCardTableEntryClosure : public CardTableEntryClosure {
  private:
-  size_t _num_processed;
+  size_t _num_dirtied;
+  G1CollectedHeap* _g1h;
+  G1SATBCardTableLoggingModRefBS* _g1_bs;
+
+  HeapRegion* region_for_card(jbyte* card_ptr) const {
+    return _g1h->heap_region_containing(_g1_bs->addr_for(card_ptr));
+  }
+
+  bool will_become_free(HeapRegion* hr) const {
+    // A region will be freed by free_collection_set if the region is in the
+    // collection set and has not had an evacuation failure.
+    return _g1h->is_in_cset(hr) && !hr->evacuation_failed();
+  }
 
  public:
-  RedirtyLoggedCardTableEntryClosure() : CardTableEntryClosure(), _num_processed(0) { }
+  RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h) : CardTableEntryClosure(),
+    _num_dirtied(0), _g1h(g1h), _g1_bs(g1h->g1_barrier_set()) { }
 
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    *card_ptr = CardTableModRefBS::dirty_card_val();
-    _num_processed++;
+    HeapRegion* hr = region_for_card(card_ptr);
+
+    // Should only dirty cards in regions that won't be freed.
+    if (!will_become_free(hr)) {
+      *card_ptr = CardTableModRefBS::dirty_card_val();
+      _num_dirtied++;
+    }
+
     return true;
   }
 
-  size_t num_processed() const { return _num_processed; }
+  size_t num_dirtied()   const { return _num_dirtied; }
 };
 
 
@@ -2268,15 +2288,21 @@ size_t G1CollectedHeap::recalculate_used() const {
   return blk.result();
 }
 
+bool  G1CollectedHeap::is_user_requested_concurrent_full_gc(GCCause::Cause cause) {
+  switch (cause) {
+    case GCCause::_java_lang_system_gc:                 return ExplicitGCInvokesConcurrent;
+    case GCCause::_dcmd_gc_run:                         return ExplicitGCInvokesConcurrent;
+    case GCCause::_update_allocation_context_stats_inc: return true;
+    case GCCause::_wb_conc_mark:                        return true;
+    default :                                           return false;
+  }
+}
+
 bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
   switch (cause) {
     case GCCause::_gc_locker:               return GCLockerInvokesConcurrent;
-    case GCCause::_java_lang_system_gc:     return ExplicitGCInvokesConcurrent;
-    case GCCause::_dcmd_gc_run:             return ExplicitGCInvokesConcurrent;
     case GCCause::_g1_humongous_allocation: return true;
-    case GCCause::_update_allocation_context_stats_inc: return true;
-    case GCCause::_wb_conc_mark:            return true;
-    default:                                return false;
+    default:                                return is_user_requested_concurrent_full_gc(cause);
   }
 }
 
@@ -3240,11 +3266,11 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
 
   // Print the per-region information.
   st->cr();
-  st->print_cr("Heap Regions: (E=young(eden), S=young(survivor), O=old, "
+  st->print_cr("Heap Regions: E=young(eden), S=young(survivor), O=old, "
                "HS=humongous(starts), HC=humongous(continues), "
                "CS=collection set, F=free, A=archive, TS=gc time stamp, "
-               "PTAMS=previous top-at-mark-start, "
-               "NTAMS=next top-at-mark-start)");
+               "AC=allocation context, "
+               "TAMS=top-at-mark-start (previous, next)");
   PrintRegionClosure blk(st);
   heap_region_iterate(&blk);
 }
@@ -4619,24 +4645,26 @@ void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive
 class G1RedirtyLoggedCardsTask : public AbstractGangTask {
  private:
   DirtyCardQueueSet* _queue;
+  G1CollectedHeap* _g1h;
  public:
-  G1RedirtyLoggedCardsTask(DirtyCardQueueSet* queue) : AbstractGangTask("Redirty Cards"), _queue(queue) { }
+  G1RedirtyLoggedCardsTask(DirtyCardQueueSet* queue, G1CollectedHeap* g1h) : AbstractGangTask("Redirty Cards"),
+    _queue(queue), _g1h(g1h) { }
 
   virtual void work(uint worker_id) {
-    G1GCPhaseTimes* phase_times = G1CollectedHeap::heap()->g1_policy()->phase_times();
+    G1GCPhaseTimes* phase_times = _g1h->g1_policy()->phase_times();
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::RedirtyCards, worker_id);
 
-    RedirtyLoggedCardTableEntryClosure cl;
+    RedirtyLoggedCardTableEntryClosure cl(_g1h);
     _queue->par_apply_closure_to_all_completed_buffers(&cl);
 
-    phase_times->record_thread_work_item(G1GCPhaseTimes::RedirtyCards, worker_id, cl.num_processed());
+    phase_times->record_thread_work_item(G1GCPhaseTimes::RedirtyCards, worker_id, cl.num_dirtied());
   }
 };
 
 void G1CollectedHeap::redirty_logged_cards() {
   double redirty_logged_cards_start = os::elapsedTime();
 
-  G1RedirtyLoggedCardsTask redirty_task(&dirty_card_queue_set());
+  G1RedirtyLoggedCardsTask redirty_task(&dirty_card_queue_set(), this);
   dirty_card_queue_set().reset_for_par_iteration();
   workers()->run_task(&redirty_task);
 
@@ -5471,36 +5499,36 @@ class G1CheckCSetFastTableClosure : public HeapRegionClosure {
         return true;
       }
       if (cset_state.is_in_cset()) {
-        gclog_or_tty->print_cr("\n## inconsistent cset state %d for humongous region %u", cset_state.value(), i);
+        gclog_or_tty->print_cr("\n## inconsistent cset state " CSETSTATE_FORMAT " for humongous region %u", cset_state.value(), i);
         _failures = true;
         return true;
       }
       if (hr->is_continues_humongous() && cset_state.is_humongous()) {
-        gclog_or_tty->print_cr("\n## inconsistent cset state %d for continues humongous region %u", cset_state.value(), i);
+        gclog_or_tty->print_cr("\n## inconsistent cset state " CSETSTATE_FORMAT " for continues humongous region %u", cset_state.value(), i);
         _failures = true;
         return true;
       }
     } else {
       if (cset_state.is_humongous()) {
-        gclog_or_tty->print_cr("\n## inconsistent cset state %d for non-humongous region %u", cset_state.value(), i);
+        gclog_or_tty->print_cr("\n## inconsistent cset state " CSETSTATE_FORMAT " for non-humongous region %u", cset_state.value(), i);
         _failures = true;
         return true;
       }
       if (hr->in_collection_set() != cset_state.is_in_cset()) {
-        gclog_or_tty->print_cr("\n## in CSet %d / cset state %d inconsistency for region %u",
+        gclog_or_tty->print_cr("\n## in CSet %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
                                hr->in_collection_set(), cset_state.value(), i);
         _failures = true;
         return true;
       }
       if (cset_state.is_in_cset()) {
         if (hr->is_young() != (cset_state.is_young())) {
-          gclog_or_tty->print_cr("\n## is_young %d / cset state %d inconsistency for region %u",
+          gclog_or_tty->print_cr("\n## is_young %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
                                  hr->is_young(), cset_state.value(), i);
           _failures = true;
           return true;
         }
         if (hr->is_old() != (cset_state.is_old())) {
-          gclog_or_tty->print_cr("\n## is_old %d / cset state %d inconsistency for region %u",
+          gclog_or_tty->print_cr("\n## is_old %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
                                  hr->is_old(), cset_state.value(), i);
           _failures = true;
           return true;

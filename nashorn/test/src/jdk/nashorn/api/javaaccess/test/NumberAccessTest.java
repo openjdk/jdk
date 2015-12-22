@@ -143,7 +143,7 @@ public class NumberAccessTest {
     @Test
     public void accessStaticFinalFieldLong() throws ScriptException {
         e.eval("var psf_long = SharedObject.publicStaticFinalLong;");
-        assertEquals(SharedObject.publicStaticFinalLong, e.get("psf_long"));
+        assertEquals(SharedObject.publicStaticFinalLong, ((Number) e.get("psf_long")).longValue());
         e.eval("SharedObject.publicStaticFinalLong = 120;");
         assertEquals(8333333333333L, SharedObject.publicStaticFinalLong);
     }

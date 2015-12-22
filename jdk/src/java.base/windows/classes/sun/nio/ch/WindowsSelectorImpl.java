@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import sun.misc.ManagedLocalsThread;
 
 /**
  * A multi-threaded implementation of Selector for Windows.
@@ -120,7 +119,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
 
     // Lock for interrupt triggering and clearing
     private final Object interruptLock = new Object();
-    private volatile boolean interruptTriggered = false;
+    private volatile boolean interruptTriggered;
 
     WindowsSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
@@ -404,13 +403,14 @@ final class WindowsSelectorImpl extends SelectorImpl {
     }
 
     // Represents a helper thread used for select.
-    private final class SelectThread extends ManagedLocalsThread {
+    private final class SelectThread extends Thread {
         private final int index; // index of this thread
         final SubSelector subSelector;
         private long lastRun = 0; // last run number
         private volatile boolean zombie;
         // Creates a new thread
         private SelectThread(int i) {
+            super(null, null, "SelectorHelper", 0, false);
             this.index = i;
             this.subSelector = new SubSelector(i);
             //make sure we wait for next round of poll

@@ -191,6 +191,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
+  clear_ratio_check_data();
 
   _phase_times = new G1GCPhaseTimes(_parallel_gc_threads);
 
@@ -291,7 +292,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   // for the first time during initialization.
   _reserve_regions = 0;
 
-  _collectionSetChooser = new CollectionSetChooser();
+  _cset_chooser = new CollectionSetChooser();
 }
 
 G1CollectorPolicy::~G1CollectorPolicy() {
@@ -854,7 +855,7 @@ void G1CollectorPolicy::record_full_collection_end() {
   _survivor_surv_rate_group->reset();
   update_young_list_max_and_target_length();
   update_rs_lengths_prediction();
-  _collectionSetChooser->clear();
+  cset_chooser()->clear();
 
   _bytes_allocated_in_old_since_last_gc = 0;
 
@@ -1082,6 +1083,14 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
         _recent_avg_pause_time_ratio = 1.0;
       }
     }
+
+    // Compute the ratio of just this last pause time to the entire time range stored
+    // in the vectors. Comparing this pause to the entire range, rather than only the
+    // most recent interval, has the effect of smoothing over a possible transient 'burst'
+    // of more frequent pauses that don't really reflect a change in heap occupancy.
+    // This reduces the likelihood of a needless heap expansion being triggered.
+    _last_pause_time_ratio =
+      (pause_time_ms * _recent_prev_end_times_for_all_gcs_sec->num()) / interval_ms;
   }
 
   bool new_in_marking_window = collector_state()->in_marking_window();
@@ -1237,7 +1246,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
                                phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS),
                                update_rs_time_goal_ms);
 
-  _collectionSetChooser->verify();
+  cset_chooser()->verify();
 }
 
 G1IHOPControl* G1CollectorPolicy::create_ihop_control() const {
@@ -1599,41 +1608,124 @@ void G1CollectorPolicy::update_recent_gc_times(double end_time_sec,
   _prev_collection_pause_end_ms = end_time_sec * 1000.0;
 }
 
-size_t G1CollectorPolicy::expansion_amount() const {
+void G1CollectorPolicy::clear_ratio_check_data() {
+  _ratio_over_threshold_count = 0;
+  _ratio_over_threshold_sum = 0.0;
+  _pauses_since_start = 0;
+}
+
+size_t G1CollectorPolicy::expansion_amount() {
   double recent_gc_overhead = recent_avg_pause_time_ratio() * 100.0;
+  double last_gc_overhead = _last_pause_time_ratio * 100.0;
   double threshold = _gc_overhead_perc;
-  if (recent_gc_overhead > threshold) {
-    // We will double the existing space, or take
-    // G1ExpandByPercentOfAvailable % of the available expansion
-    // space, whichever is smaller, bounded below by a minimum
-    // expansion (unless that's all that's left.)
-    const size_t min_expand_bytes = 1*M;
+  size_t expand_bytes = 0;
+
+  // If the heap is at less than half its maximum size, scale the threshold down,
+  // to a limit of 1. Thus the smaller the heap is, the more likely it is to expand,
+  // though the scaling code will likely keep the increase small.
+  if (_g1->capacity() <= _g1->max_capacity() / 2) {
+    threshold *= (double)_g1->capacity() / (double)(_g1->max_capacity() / 2);
+    threshold = MAX2(threshold, 1.0);
+  }
+
+  // If the last GC time ratio is over the threshold, increment the count of
+  // times it has been exceeded, and add this ratio to the sum of exceeded
+  // ratios.
+  if (last_gc_overhead > threshold) {
+    _ratio_over_threshold_count++;
+    _ratio_over_threshold_sum += last_gc_overhead;
+  }
+
+  // Check if we've had enough GC time ratio checks that were over the
+  // threshold to trigger an expansion. We'll also expand if we've
+  // reached the end of the history buffer and the average of all entries
+  // is still over the threshold. This indicates a smaller number of GCs were
+  // long enough to make the average exceed the threshold.
+  bool filled_history_buffer = _pauses_since_start == NumPrevPausesForHeuristics;
+  if ((_ratio_over_threshold_count == MinOverThresholdForGrowth) ||
+      (filled_history_buffer && (recent_gc_overhead > threshold))) {
+    size_t min_expand_bytes = HeapRegion::GrainBytes;
     size_t reserved_bytes = _g1->max_capacity();
     size_t committed_bytes = _g1->capacity();
     size_t uncommitted_bytes = reserved_bytes - committed_bytes;
-    size_t expand_bytes;
     size_t expand_bytes_via_pct =
       uncommitted_bytes * G1ExpandByPercentOfAvailable / 100;
-    expand_bytes = MIN2(expand_bytes_via_pct, committed_bytes);
-    expand_bytes = MAX2(expand_bytes, min_expand_bytes);
-    expand_bytes = MIN2(expand_bytes, uncommitted_bytes);
+    double scale_factor = 1.0;
+
+    // If the current size is less than 1/4 of the Initial heap size, expand
+    // by half of the delta between the current and Initial sizes. IE, grow
+    // back quickly.
+    //
+    // Otherwise, take the current size, or G1ExpandByPercentOfAvailable % of
+    // the available expansion space, whichever is smaller, as the base
+    // expansion size. Then possibly scale this size according to how much the
+    // threshold has (on average) been exceeded by. If the delta is small
+    // (less than the StartScaleDownAt value), scale the size down linearly, but
+    // not by less than MinScaleDownFactor. If the delta is large (greater than
+    // the StartScaleUpAt value), scale up, but adding no more than MaxScaleUpFactor
+    // times the base size. The scaling will be linear in the range from
+    // StartScaleUpAt to (StartScaleUpAt + ScaleUpRange). In other words,
+    // ScaleUpRange sets the rate of scaling up.
+    if (committed_bytes < InitialHeapSize / 4) {
+      expand_bytes = (InitialHeapSize - committed_bytes) / 2;
+    } else {
+      double const MinScaleDownFactor = 0.2;
+      double const MaxScaleUpFactor = 2;
+      double const StartScaleDownAt = _gc_overhead_perc;
+      double const StartScaleUpAt = _gc_overhead_perc * 1.5;
+      double const ScaleUpRange = _gc_overhead_perc * 2.0;
+
+      double ratio_delta;
+      if (filled_history_buffer) {
+        ratio_delta = recent_gc_overhead - threshold;
+      } else {
+        ratio_delta = (_ratio_over_threshold_sum/_ratio_over_threshold_count) - threshold;
+      }
+
+      expand_bytes = MIN2(expand_bytes_via_pct, committed_bytes);
+      if (ratio_delta < StartScaleDownAt) {
+        scale_factor = ratio_delta / StartScaleDownAt;
+        scale_factor = MAX2(scale_factor, MinScaleDownFactor);
+      } else if (ratio_delta > StartScaleUpAt) {
+        scale_factor = 1 + ((ratio_delta - StartScaleUpAt) / ScaleUpRange);
+        scale_factor = MIN2(scale_factor, MaxScaleUpFactor);
+      }
+    }
 
     ergo_verbose5(ErgoHeapSizing,
                   "attempt heap expansion",
                   ergo_format_reason("recent GC overhead higher than "
                                      "threshold after GC")
                   ergo_format_perc("recent GC overhead")
-                  ergo_format_perc("threshold")
+                  ergo_format_perc("current threshold")
                   ergo_format_byte("uncommitted")
-                  ergo_format_byte_perc("calculated expansion amount"),
+                  ergo_format_byte_perc("base expansion amount and scale"),
                   recent_gc_overhead, threshold,
                   uncommitted_bytes,
-                  expand_bytes_via_pct, (double) G1ExpandByPercentOfAvailable);
+                  expand_bytes, scale_factor * 100);
 
-    return expand_bytes;
+    expand_bytes = static_cast<size_t>(expand_bytes * scale_factor);
+
+    // Ensure the expansion size is at least the minimum growth amount
+    // and at most the remaining uncommitted byte size.
+    expand_bytes = MAX2(expand_bytes, min_expand_bytes);
+    expand_bytes = MIN2(expand_bytes, uncommitted_bytes);
+
+    clear_ratio_check_data();
   } else {
-    return 0;
+    // An expansion was not triggered. If we've started counting, increment
+    // the number of checks we've made in the current window.  If we've
+    // reached the end of the window without resizing, clear the counters to
+    // start again the next time we see a ratio above the threshold.
+    if (_ratio_over_threshold_count > 0) {
+      _pauses_since_start++;
+      if (_pauses_since_start > NumPrevPausesForHeuristics) {
+        clear_ratio_check_data();
+      }
+    }
   }
+
+  return expand_bytes;
 }
 
 void G1CollectorPolicy::print_tracing_info() const {
@@ -1710,6 +1802,11 @@ bool G1CollectorPolicy::force_initial_mark_if_outside_cycle(GCCause::Cause gc_ca
   }
 }
 
+void G1CollectorPolicy::initiate_conc_mark() {
+  collector_state()->set_during_initial_mark_pause(true);
+  collector_state()->set_initiate_conc_mark_if_possible(false);
+}
+
 void G1CollectorPolicy::decide_on_conc_mark_initiation() {
   // We are about to decide on whether this pause will be an
   // initial-mark pause.
@@ -1726,17 +1823,22 @@ void G1CollectorPolicy::decide_on_conc_mark_initiation() {
     // concurrent marking cycle. So we might initiate one.
 
     if (!about_to_start_mixed_phase() && collector_state()->gcs_are_young()) {
-      // Initiate a new initial mark only if there is no marking or reclamation going
-      // on.
-
-      collector_state()->set_during_initial_mark_pause(true);
-      // And we can now clear initiate_conc_mark_if_possible() as
-      // we've already acted on it.
-      collector_state()->set_initiate_conc_mark_if_possible(false);
-
+      // Initiate a new initial mark if there is no marking or reclamation going on.
+      initiate_conc_mark();
       ergo_verbose0(ErgoConcCycles,
-                  "initiate concurrent cycle",
-                  ergo_format_reason("concurrent cycle initiation requested"));
+                    "initiate concurrent cycle",
+                    ergo_format_reason("concurrent cycle initiation requested"));
+    } else if (_g1->is_user_requested_concurrent_full_gc(_g1->gc_cause())) {
+      // Initiate a user requested initial mark. An initial mark must be young only
+      // GC, so the collector state must be updated to reflect this.
+      collector_state()->set_gcs_are_young(true);
+      collector_state()->set_last_young_gc(false);
+
+      abort_time_to_mixed_tracking();
+      initiate_conc_mark();
+      ergo_verbose0(ErgoConcCycles,
+                    "initiate concurrent cycle",
+                    ergo_format_reason("user requested concurrent cycle"));
     } else {
       // The concurrent marking thread is still finishing up the
       // previous cycle. If we start one right now the two cycles
@@ -1807,18 +1909,18 @@ uint G1CollectorPolicy::calculate_parallel_work_chunk_size(uint n_workers, uint 
 }
 
 void G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
-  _collectionSetChooser->clear();
+  cset_chooser()->clear();
 
   WorkGang* workers = _g1->workers();
   uint n_workers = workers->active_workers();
 
   uint n_regions = _g1->num_regions();
   uint chunk_size = calculate_parallel_work_chunk_size(n_workers, n_regions);
-  _collectionSetChooser->prepare_for_par_region_addition(n_workers, n_regions, chunk_size);
-  ParKnownGarbageTask par_known_garbage_task(_collectionSetChooser, chunk_size, n_workers);
+  cset_chooser()->prepare_for_par_region_addition(n_workers, n_regions, chunk_size);
+  ParKnownGarbageTask par_known_garbage_task(cset_chooser(), chunk_size, n_workers);
   workers->run_task(&par_known_garbage_task);
 
-  _collectionSetChooser->sort_regions();
+  cset_chooser()->sort_regions();
 
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
@@ -2097,8 +2199,7 @@ void G1CollectorPolicy::abort_time_to_mixed_tracking() {
 
 bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
                                                 const char* false_action_str) const {
-  CollectionSetChooser* cset_chooser = _collectionSetChooser;
-  if (cset_chooser->is_empty()) {
+  if (cset_chooser()->is_empty()) {
     ergo_verbose0(ErgoMixedGCs,
                   false_action_str,
                   ergo_format_reason("candidate old regions not available"));
@@ -2106,7 +2207,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
   }
 
   // Is the amount of uncollected reclaimable space above G1HeapWastePercent?
-  size_t reclaimable_bytes = cset_chooser->remaining_reclaimable_bytes();
+  size_t reclaimable_bytes = cset_chooser()->remaining_reclaimable_bytes();
   double reclaimable_perc = reclaimable_bytes_perc(reclaimable_bytes);
   double threshold = (double) G1HeapWastePercent;
   if (reclaimable_perc <= threshold) {
@@ -2116,7 +2217,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
               ergo_format_region("candidate old regions")
               ergo_format_byte_perc("reclaimable")
               ergo_format_perc("threshold"),
-              cset_chooser->remaining_regions(),
+              cset_chooser()->remaining_regions(),
               reclaimable_bytes,
               reclaimable_perc, threshold);
     return false;
@@ -2128,7 +2229,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
                 ergo_format_region("candidate old regions")
                 ergo_format_byte_perc("reclaimable")
                 ergo_format_perc("threshold"),
-                cset_chooser->remaining_regions(),
+                cset_chooser()->remaining_regions(),
                 reclaimable_bytes,
                 reclaimable_perc, threshold);
   return true;
@@ -2145,7 +2246,7 @@ uint G1CollectorPolicy::calc_min_old_cset_length() const {
   // to the CSet chooser in the first place, not how many remain, so
   // that the result is the same during all mixed GCs that follow a cycle.
 
-  const size_t region_num = (size_t) _collectionSetChooser->length();
+  const size_t region_num = (size_t) cset_chooser()->length();
   const size_t gc_num = (size_t) MAX2(G1MixedGCCountTarget, (uintx) 1);
   size_t result = region_num / gc_num;
   // emulate ceiling
@@ -2254,15 +2355,14 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
 
 
   if (!collector_state()->gcs_are_young()) {
-    CollectionSetChooser* cset_chooser = _collectionSetChooser;
-    cset_chooser->verify();
+    cset_chooser()->verify();
     const uint min_old_cset_length = calc_min_old_cset_length();
     const uint max_old_cset_length = calc_max_old_cset_length();
 
     uint expensive_region_num = 0;
     bool check_time_remaining = adaptive_young_list_length();
 
-    HeapRegion* hr = cset_chooser->peek();
+    HeapRegion* hr = cset_chooser()->peek();
     while (hr != NULL) {
       if (old_cset_region_length() >= max_old_cset_length) {
         // Added maximum number of old regions to the CSet.
@@ -2278,7 +2378,7 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
 
       // Stop adding regions if the remaining reclaimable space is
       // not above G1HeapWastePercent.
-      size_t reclaimable_bytes = cset_chooser->remaining_reclaimable_bytes();
+      size_t reclaimable_bytes = cset_chooser()->remaining_reclaimable_bytes();
       double reclaimable_perc = reclaimable_bytes_perc(reclaimable_bytes);
       double threshold = (double) G1HeapWastePercent;
       if (reclaimable_perc <= threshold) {
@@ -2340,11 +2440,11 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
       // We will add this region to the CSet.
       time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
       predicted_old_time_ms += predicted_time_ms;
-      cset_chooser->pop(); // already have region via peek()
+      cset_chooser()->pop(); // already have region via peek()
       _g1->old_set_remove(hr);
       add_old_region_to_cset(hr);
 
-      hr = cset_chooser->peek();
+      hr = cset_chooser()->peek();
     }
     if (hr == NULL) {
       ergo_verbose0(ErgoCSetConstruction,
@@ -2369,7 +2469,7 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
                     time_remaining_ms);
     }
 
-    cset_chooser->verify();
+    cset_chooser()->verify();
   }
 
   stop_incremental_cset_building();

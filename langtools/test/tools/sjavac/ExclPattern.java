@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /*
  * @test
  * @bug 8037085

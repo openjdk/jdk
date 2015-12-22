@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,89 @@ void AbstractInterpreter::layout_activation(Method* method,
   }
   *interpreter_frame->interpreter_frame_cache_addr() =
     method->constants()->cache();
+}
+
+#ifndef _LP64
+int AbstractInterpreter::BasicType_as_index(BasicType type) {
+  int i = 0;
+  switch (type) {
+    case T_BOOLEAN: i = 0; break;
+    case T_CHAR   : i = 1; break;
+    case T_BYTE   : i = 2; break;
+    case T_SHORT  : i = 3; break;
+    case T_INT    : // fall through
+    case T_LONG   : // fall through
+    case T_VOID   : i = 4; break;
+    case T_FLOAT  : i = 5; break;  // have to treat float and double separately for SSE
+    case T_DOUBLE : i = 6; break;
+    case T_OBJECT : // fall through
+    case T_ARRAY  : i = 7; break;
+    default       : ShouldNotReachHere();
+  }
+  assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers, "index out of bounds");
+  return i;
+}
+#else
+int AbstractInterpreter::BasicType_as_index(BasicType type) {
+  int i = 0;
+  switch (type) {
+    case T_BOOLEAN: i = 0; break;
+    case T_CHAR   : i = 1; break;
+    case T_BYTE   : i = 2; break;
+    case T_SHORT  : i = 3; break;
+    case T_INT    : i = 4; break;
+    case T_LONG   : i = 5; break;
+    case T_VOID   : i = 6; break;
+    case T_FLOAT  : i = 7; break;
+    case T_DOUBLE : i = 8; break;
+    case T_OBJECT : i = 9; break;
+    case T_ARRAY  : i = 9; break;
+    default       : ShouldNotReachHere();
+  }
+  assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers,
+         "index out of bounds");
+  return i;
+}
+#endif // _LP64
+
+// These should never be compiled since the interpreter will prefer
+// the compiled version to the intrinsic version.
+bool AbstractInterpreter::can_be_compiled(methodHandle m) {
+  switch (method_kind(m)) {
+    case Interpreter::java_lang_math_sin     : // fall thru
+    case Interpreter::java_lang_math_cos     : // fall thru
+    case Interpreter::java_lang_math_tan     : // fall thru
+    case Interpreter::java_lang_math_abs     : // fall thru
+    case Interpreter::java_lang_math_log     : // fall thru
+    case Interpreter::java_lang_math_log10   : // fall thru
+    case Interpreter::java_lang_math_sqrt    : // fall thru
+    case Interpreter::java_lang_math_pow     : // fall thru
+    case Interpreter::java_lang_math_exp     :
+      return false;
+    default:
+      return true;
+  }
+}
+
+// How much stack a method activation needs in words.
+int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
+  const int entry_size = frame::interpreter_frame_monitor_size();
+
+  // total overhead size: entry_size + (saved rbp thru expr stack
+  // bottom).  be sure to change this if you add/subtract anything
+  // to/from the overhead area
+  const int overhead_size =
+    -(frame::interpreter_frame_initial_sp_offset) + entry_size;
+
+#ifndef _LP64
+  const int stub_code = 4;  // see generate_call_stub
+#else
+  const int stub_code = frame::entry_frame_after_call_words;
+#endif
+
+  const int method_stack = (method->max_locals() + method->max_stack()) *
+                           Interpreter::stackElementWords;
+  return (overhead_size + method_stack + stub_code);
 }
 
 #endif // CC_INTERP

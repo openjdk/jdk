@@ -191,7 +191,7 @@ class G1CollectorPolicy: public CollectorPolicy {
   void initialize_alignments();
   void initialize_flags();
 
-  CollectionSetChooser* _collectionSetChooser;
+  CollectionSetChooser* _cset_chooser;
 
   double _full_collection_start_sec;
 
@@ -200,6 +200,11 @@ class G1CollectorPolicy: public CollectorPolicy {
 
   TruncatedSeq* _concurrent_mark_remark_times_ms;
   TruncatedSeq* _concurrent_mark_cleanup_times_ms;
+
+  // Ratio check data for determining if heap growth is necessary.
+  uint _ratio_over_threshold_count;
+  double _ratio_over_threshold_sum;
+  uint _pauses_since_start;
 
   TraceYoungGenTimeData _trace_young_gen_time_data;
   TraceOldGenTimeData   _trace_old_gen_time_data;
@@ -224,7 +229,11 @@ class G1CollectorPolicy: public CollectorPolicy {
 
   enum PredictionConstants {
     TruncatedSeqLength = 10,
-    NumPrevPausesForHeuristics = 10
+    NumPrevPausesForHeuristics = 10,
+    // MinOverThresholdForGrowth must be less than NumPrevPausesForHeuristics,
+    // representing the minimum number of pause time ratios that exceed
+    // GCTimeRatio before a heap expansion will be triggered.
+    MinOverThresholdForGrowth = 4
   };
 
   TruncatedSeq* _alloc_rate_ms_seq;
@@ -405,6 +414,10 @@ protected:
   double non_young_other_time_ms() const;
   double constant_other_time_ms(double pause_time_ms) const;
 
+  CollectionSetChooser* cset_chooser() const {
+    return _cset_chooser;
+  }
+
 private:
   // Statistics kept per GC stoppage, pause or full.
   TruncatedSeq* _recent_prev_end_times_for_all_gcs_sec;
@@ -479,8 +492,10 @@ private:
 
   G1GCPhaseTimes* _phase_times;
 
-  // The ratio of gc time to elapsed time, computed over recent pauses.
+  // The ratio of gc time to elapsed time, computed over recent pauses,
+  // and the ratio for just the last pause.
   double _recent_avg_pause_time_ratio;
+  double _last_pause_time_ratio;
 
   double recent_avg_pause_time_ratio() const {
     return _recent_avg_pause_time_ratio;
@@ -725,6 +740,11 @@ private:
   // (should not be called directly).
   void add_region_to_incremental_cset_common(HeapRegion* hr);
 
+  // Set the state to start a concurrent marking cycle and clear
+  // _initiate_conc_mark_if_possible because it has now been
+  // acted on.
+  void initiate_conc_mark();
+
 public:
   // Add hr to the LHS of the incremental collection set.
   void add_region_to_incremental_cset_lhs(HeapRegion* hr);
@@ -752,7 +772,10 @@ public:
 
   // If an expansion would be appropriate, because recent GC overhead had
   // exceeded the desired limit, return an amount to expand by.
-  virtual size_t expansion_amount() const;
+  virtual size_t expansion_amount();
+
+  // Clear ratio tracking data used by expansion_amount().
+  void clear_ratio_check_data();
 
   // Print tracing information.
   void print_tracing_info() const;

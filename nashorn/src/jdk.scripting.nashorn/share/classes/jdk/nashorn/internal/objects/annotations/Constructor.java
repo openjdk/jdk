@@ -48,4 +48,9 @@ public @interface Constructor {
      *         arity.
      */
     public int arity() default -2;
+
+    /**
+     * @return the documentation string for this constructor.
+     */
+    public String documentation() default "";
 }
