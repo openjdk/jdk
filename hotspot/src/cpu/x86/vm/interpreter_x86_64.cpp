@@ -26,9 +26,9 @@
 #include "asm/macroAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -199,7 +199,7 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
 // Various method entries
 //
 
-address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
 
   // rbx,: Method*
   // rcx: scratrch
