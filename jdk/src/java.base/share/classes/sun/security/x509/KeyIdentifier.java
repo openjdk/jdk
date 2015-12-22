@@ -30,7 +30,7 @@ import java.security.PublicKey;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.util.*;
 
 /**
