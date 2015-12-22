@@ -27,8 +27,6 @@
 
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
-#include "memory/allocation.inline.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "utilities/hashtable.hpp"
@@ -117,13 +115,8 @@ public:
     return _required_bytes;
   }
 
-  void add(unsigned int hash, Symbol* symbol) {
-    add(hash, new Entry(hash, symbol));
-  }
-
-  void add(unsigned int hash, oop string) {
-    add(hash, new Entry(hash, string));
-  }
+  inline void add(unsigned int hash, Symbol* symbol);
+  inline void add(unsigned int hash, oop string);
 
 private:
   void add(unsigned int hash, Entry* entry);
@@ -219,27 +212,10 @@ private:
   juint* _buckets;
 
   inline Symbol* lookup_entry(CompactHashtable<Symbol*, char>* const t,
-                              juint* addr, const char* name, int len) {
-    Symbol* sym = (Symbol*)((void*)(_base_address + *addr));
-    if (sym->equals(name, len)) {
-      assert(sym->refcount() == -1, "must be shared");
-      return sym;
-    }
-
-    return NULL;
-  }
+                              juint* addr, const char* name, int len);
 
   inline oop lookup_entry(CompactHashtable<oop, char>* const t,
-                        juint* addr, const char* name, int len) {
-    narrowOop obj = (narrowOop)(*addr);
-    oop string = oopDesc::decode_heap_oop(obj);
-    if (java_lang_String::equals(string, (jchar*)name, len)) {
-      return string;
-    }
-
-    return NULL;
-  }
-
+                          juint* addr, const char* name, int len);
 public:
   CompactHashtable() {
     _entry_count = 0;
@@ -257,41 +233,7 @@ public:
   }
 
   // Lookup an entry from the compact table
-  inline T lookup(const N* name, unsigned int hash, int len) {
-    if (_entry_count > 0) {
-      assert(!DumpSharedSpaces, "run-time only");
-      int index = hash % _bucket_count;
-      juint bucket_info = _buckets[index];
-      juint bucket_offset = BUCKET_OFFSET(bucket_info);
-      int   bucket_type = BUCKET_TYPE(bucket_info);
-      juint* bucket = _buckets + bucket_offset;
-      juint* bucket_end = _buckets;
-
-      if (bucket_type == COMPACT_BUCKET_TYPE) {
-        // the compact bucket has one entry with entry offset only
-        T res = lookup_entry(this, &bucket[0], name, len);
-        if (res != NULL) {
-          return res;
-        }
-      } else {
-        // This is a regular bucket, which has more than one
-        // entries. Each entry is a pair of entry (hash, offset).
-        // Seek until the end of the bucket.
-        bucket_end += BUCKET_OFFSET(_buckets[index + 1]);
-        while (bucket < bucket_end) {
-          unsigned int h = (unsigned int)(bucket[0]);
-          if (h == hash) {
-            T res = lookup_entry(this, &bucket[1], name, len);
-            if (res != NULL) {
-              return res;
-            }
-          }
-          bucket += 2;
-        }
-      }
-    }
-    return NULL;
-  }
+  inline T lookup(const N* name, unsigned int hash, int len);
 
   // iterate over symbols
   void symbols_do(SymbolClosure *cl);

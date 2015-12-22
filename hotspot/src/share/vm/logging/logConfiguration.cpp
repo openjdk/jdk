@@ -39,6 +39,7 @@
 
 LogOutput** LogConfiguration::_outputs = NULL;
 size_t      LogConfiguration::_n_outputs = 0;
+bool        LogConfiguration::_post_initialized = false;
 
 void LogConfiguration::post_initialize() {
   assert(LogConfiguration_lock != NULL, "Lock must be initialized before post-initialization");
@@ -51,6 +52,8 @@ void LogConfiguration::post_initialize() {
     MutexLocker ml(LogConfiguration_lock);
     describe(log.trace_stream());
   }
+
+  _post_initialized = true;
 }
 
 void LogConfiguration::initialize(jlong vm_start_time) {
@@ -422,3 +425,12 @@ void LogConfiguration::print_command_line_help(FILE* out) {
               "\t Turn off all logging, including warnings and errors,\n"
               "\t and then enable messages tagged with 'rt' using 'trace' level to file 'rttrace.txt'.\n");
 }
+
+void LogConfiguration::rotate_all_outputs() {
+  for (size_t idx = 0; idx < _n_outputs; idx++) {
+    if (_outputs[idx]->is_rotatable()) {
+      _outputs[idx]->rotate(true);
+    }
+  }
+}
+

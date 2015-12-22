@@ -22,13 +22,12 @@
  */
 
 /* @test
- * @bug 8081678
+ * @bug 8081678 8131155
  * @summary Tests for stream returning methods
  * @library ../../util/stream/bootlib/java.base
  * @build java.util.stream.OpTestCase
  * @run testng/othervm NetworkInterfaceStreamTest
  * @run testng/othervm -Djava.net.preferIPv4Stack=true NetworkInterfaceStreamTest
- * @key intermittent
  */
 
 import org.testng.annotations.Test;
@@ -45,6 +44,8 @@ import java.util.stream.Stream;
 import java.util.stream.TestData;
 
 public class NetworkInterfaceStreamTest extends OpTestCase {
+
+    private final static boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
 
     @Test
     public void testNetworkInterfaces() throws SocketException {
@@ -74,7 +75,9 @@ public class NetworkInterfaceStreamTest extends OpTestCase {
     }
 
     private void getAllSubNetworkInterfaces(NetworkInterface ni, Collection<NetworkInterface> result) {
-        result.add(ni);
+        if (isIncluded(ni)) {
+            result.add(ni);
+        }
 
         for (NetworkInterface sni : Collections.list(ni.getSubInterfaces())) {
             getAllSubNetworkInterfaces(sni, result);
@@ -114,7 +117,9 @@ public class NetworkInterfaceStreamTest extends OpTestCase {
     public void testInetAddresses() throws SocketException {
         Supplier<Stream<InetAddress>> ss = () -> {
             try {
-                return NetworkInterface.networkInterfaces().flatMap(NetworkInterface::inetAddresses);
+                return NetworkInterface.networkInterfaces()
+                        .filter(ni -> isIncluded(ni))
+                        .flatMap(NetworkInterface::inetAddresses);
             }
             catch (SocketException e) {
                 throw new RuntimeException(e);
@@ -132,5 +137,21 @@ public class NetworkInterfaceStreamTest extends OpTestCase {
                 .exercise();
     }
 
+    /**
+     * Check if the input network interface should be included in the test. It is necessary to exclude
+     * "Teredo Tunneling Pseudo-Interface" whose configuration can be variable during a test run.
+     *
+     * @param ni a network interace
+     * @return false if it is a "Teredo Tunneling Pseudo-Interface", otherwise true.
+     */
+    private boolean isIncluded(NetworkInterface ni) {
+        if (!IS_WINDOWS) {
+            return true;
+        }
+
+        String dName = ni.getDisplayName();
+        return dName == null || !dName.contains("Teredo");
+    }
 
 }
+

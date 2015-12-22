@@ -25,13 +25,6 @@
 
 package sun.util.calendar;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.util.Properties;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -76,7 +69,7 @@ public abstract class CalendarSystem {
 
     /////////////////////// Calendar Factory Methods /////////////////////////
 
-    private static volatile boolean initialized = false;
+    private static volatile boolean initialized;
 
     // Map of calendar names and calendar class names
     private static ConcurrentMap<String, String> names;

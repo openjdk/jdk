@@ -72,7 +72,7 @@ public
 class ZipFile implements ZipConstants, Closeable {
 
     private final String name;     // zip file name
-    private volatile boolean closeRequested = false;
+    private volatile boolean closeRequested;
     private Source zsrc;
     private ZipCoder zc;
 
@@ -366,7 +366,7 @@ class ZipFile implements ZipConstants, Closeable {
     }
 
     private class ZipFileInflaterInputStream extends InflaterInputStream {
-        private volatile boolean closeRequested = false;
+        private volatile boolean closeRequested;
         private boolean eof = false;
         private final ZipFileInputStream zfin;
 
@@ -653,7 +653,7 @@ class ZipFile implements ZipConstants, Closeable {
      * (possibly compressed) zip file entry.
      */
    private class ZipFileInputStream extends InputStream {
-        private volatile boolean closeRequested = false;
+        private volatile boolean closeRequested;
         private   long pos;     // current position within entry data
         protected long rem;     // number of remaining bytes within entry
         protected long size;    // uncompressed size of this entry
@@ -833,7 +833,8 @@ class ZipFile implements ZipConstants, Closeable {
             byte[] cen = zsrc.cen;
             for (int i = 0; i < names.length; i++) {
                 int pos = zsrc.metanames.get(i);
-                names[i] = zc.toStringUTF8(cen, pos + CENHDR,  CENNAM(cen, pos));
+                names[i] = new String(cen, pos + CENHDR,  CENNAM(cen, pos),
+                                      StandardCharsets.UTF_8);
             }
             return names;
         }

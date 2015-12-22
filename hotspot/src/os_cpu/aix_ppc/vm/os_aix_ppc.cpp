@@ -28,6 +28,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
@@ -167,7 +168,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
 
   ucontext_t* uc = (ucontext_t*) ucVoid;
 
-  Thread* t = ThreadLocalStorage::get_thread_slow();   // slow & steady
+  Thread* t = Thread::current_or_null_safe();
 
   SignalHandlerMark shm(t);
 

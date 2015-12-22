@@ -24,8 +24,8 @@
  */
 package sun.java2d.marlin;
 
-import sun.misc.DoubleConsts;
-import sun.misc.FloatConsts;
+import jdk.internal.math.DoubleConsts;
+import jdk.internal.math.FloatConsts;
 
 /**
  * Faster Math ceil / floor routines derived from StrictMath

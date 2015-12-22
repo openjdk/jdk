@@ -33,7 +33,6 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.CharacterCodingException;
@@ -495,12 +494,12 @@ public final class URI
     private transient volatile String schemeSpecificPart;
     private transient volatile int hash;        // Zero ==> undefined
 
-    private transient volatile String decodedUserInfo = null;
-    private transient volatile String decodedAuthority = null;
-    private transient volatile String decodedPath = null;
-    private transient volatile String decodedQuery = null;
-    private transient volatile String decodedFragment = null;
-    private transient volatile String decodedSchemeSpecificPart = null;
+    private transient volatile String decodedUserInfo;
+    private transient volatile String decodedAuthority;
+    private transient volatile String decodedPath;
+    private transient volatile String decodedQuery;
+    private transient volatile String decodedFragment;
+    private transient volatile String decodedSchemeSpecificPart;
 
     /**
      * The string form of this URI.

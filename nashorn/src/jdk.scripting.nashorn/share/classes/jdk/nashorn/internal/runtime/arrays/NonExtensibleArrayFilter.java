@@ -51,14 +51,6 @@ final class NonExtensibleArrayFilter extends ArrayFilter {
     }
 
     @Override
-    public ArrayData set(final int index, final long value, final boolean strict) {
-        if (has(index)) {
-            return underlying.set(index, value, strict);
-        }
-        return extensionCheck(strict, index);
-    }
-
-    @Override
     public ArrayData set(final int index, final double value, final boolean strict) {
         if (has(index)) {
             return underlying.set(index, value, strict);

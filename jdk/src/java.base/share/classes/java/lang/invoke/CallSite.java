@@ -83,7 +83,6 @@ private static CallSite bootstrapDynamic(MethodHandles.Lookup caller, String nam
  */
 abstract
 public class CallSite {
-    static { MethodHandleImpl.initStatics(); }
 
     // The actual payload of this call site:
     /*package-private*/
