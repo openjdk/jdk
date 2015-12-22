@@ -33,7 +33,7 @@ import javax.crypto.BadPaddingException;
 
 import javax.net.ssl.*;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 
 /**

@@ -29,7 +29,6 @@ import java.security.PrivilegedAction;
 import java.security.AccessController;
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
-import sun.misc.ManagedLocalsThread;
 import sun.misc.VM;
 
 final class Finalizer extends FinalReference<Object> { /* Package-private; must be in
@@ -131,7 +130,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
                     for (ThreadGroup tgn = tg;
                          tgn != null;
                          tg = tgn, tgn = tg.getParent());
-                    Thread sft = new ManagedLocalsThread(tg, proc, "Secondary finalizer");
+                    Thread sft = new Thread(tg, proc, "Secondary finalizer", 0, false);
                     sft.start();
                     try {
                         sft.join();
@@ -190,10 +189,10 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
                 }}});
     }
 
-    private static class FinalizerThread extends ManagedLocalsThread {
+    private static class FinalizerThread extends Thread {
         private volatile boolean running;
         FinalizerThread(ThreadGroup g) {
-            super(g, "Finalizer");
+            super(g, null, "Finalizer", 0, false);
         }
         public void run() {
             // in case of recursive call to run()

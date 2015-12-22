@@ -203,7 +203,10 @@ class JarFile extends ZipFile {
         return man;
     }
 
-    private native String[] getMetaInfEntryNames();
+    private String[] getMetaInfEntryNames() {
+        return jdk.internal.misc.SharedSecrets.getJavaUtilZipFileAccess()
+                                              .getMetaInfEntryNames((ZipFile)this);
+    }
 
     /**
      * Returns the {@code JarEntry} for the given entry name or

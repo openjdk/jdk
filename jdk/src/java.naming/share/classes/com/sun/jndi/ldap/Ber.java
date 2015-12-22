@@ -29,7 +29,7 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 /**
   * Base class that defines common fields, constants, and debug method.

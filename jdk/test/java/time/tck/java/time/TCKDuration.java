@@ -2393,6 +2393,65 @@ public class TCKDuration extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
+    // dividedbyDur()
+    //-----------------------------------------------------------------------
+
+    @DataProvider(name="dividedByDur_provider")
+    Object[][] provider_dividedByDur() {
+        return new Object[][] {
+            {Duration.ofSeconds(0, 0), Duration.ofSeconds(1, 0), 0},
+            {Duration.ofSeconds(1, 0), Duration.ofSeconds(1, 0), 1},
+            {Duration.ofSeconds(6, 0), Duration.ofSeconds(3, 0), 2},
+            {Duration.ofSeconds(3, 0), Duration.ofSeconds(6, 0), 0},
+            {Duration.ofSeconds(7, 0), Duration.ofSeconds(3, 0), 2},
+
+            {Duration.ofSeconds(0, 333_333_333), Duration.ofSeconds(0, 333_333_333), 1},
+            {Duration.ofSeconds(0, 666_666_666), Duration.ofSeconds(0, 333_333_333), 2},
+            {Duration.ofSeconds(0, 333_333_333), Duration.ofSeconds(0, 666_666_666), 0},
+            {Duration.ofSeconds(0, 777_777_777), Duration.ofSeconds(0, 333_333_333), 2},
+
+            {Duration.ofSeconds(-7, 0), Duration.ofSeconds(3, 0), -2},
+            {Duration.ofSeconds(0, 7), Duration.ofSeconds(0, -3), -2},
+            {Duration.ofSeconds(0, -777_777_777), Duration.ofSeconds(0, 333_333_333), -2},
+
+            {Duration.ofSeconds(432000L, -777_777_777L), Duration.ofSeconds(14400L, 333_333_333L), 29},
+            {Duration.ofSeconds(-432000L, 777_777_777L), Duration.ofSeconds(14400L, 333_333_333L), -29},
+            {Duration.ofSeconds(-432000L, -777_777_777L), Duration.ofSeconds(14400L, 333_333_333L), -29},
+            {Duration.ofSeconds(-432000L, -777_777_777L), Duration.ofSeconds(14400L, -333_333_333L), -30},
+            {Duration.ofSeconds(432000L, -777_777_777L), Duration.ofSeconds(-14400L, 333_333_333L), -30},
+            {Duration.ofSeconds(432000L, -777_777_777L), Duration.ofSeconds(-14400L, -333_333_333L), -29},
+            {Duration.ofSeconds(-432000L, -777_777_777L), Duration.ofSeconds(-14400L, -333_333_333L), 29},
+
+            {Duration.ofSeconds(Long.MAX_VALUE, 0), Duration.ofSeconds(1, 0), Long.MAX_VALUE},
+            {Duration.ofSeconds(Long.MAX_VALUE, 0), Duration.ofSeconds(Long.MAX_VALUE, 0), 1},
+        };
+    }
+
+    @Test(dataProvider="dividedByDur_provider")
+    public void test_dividedByDur(Duration dividend, Duration divisor, long expected) {
+        assertEquals(dividend.dividedBy(divisor), expected);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void test_dividedByDur_zero() {
+       Duration t = Duration.ofSeconds(1, 0);
+       t.dividedBy(Duration.ZERO);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_dividedByDur_null() {
+       Duration t = Duration.ofSeconds(1, 0);
+       t.dividedBy(null);
+    }
+
+    @Test(expectedExceptions=ArithmeticException.class)
+    public void test_dividedByDur_overflow() {
+       Duration dur1 = Duration.ofSeconds(Long.MAX_VALUE, 0);
+       Duration dur2 = Duration.ofNanos(1);
+       dur1.dividedBy(dur2);
+    }
+
+    //-----------------------------------------------------------------------
     // negated()
     //-----------------------------------------------------------------------
     @Test
