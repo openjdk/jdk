@@ -27,7 +27,7 @@
 #define CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP
 
 #ifdef CC_INTERP
-#error "CC_INTERP no more supported. Removed in change 8145117."
+#error "CC_INTERP is no longer supported. Removed in change 8145117."
 #endif
 
 // Size of PPC Instructions

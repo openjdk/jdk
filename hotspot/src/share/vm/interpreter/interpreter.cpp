@@ -29,7 +29,6 @@
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
@@ -282,7 +281,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
   // Special intrinsic method?
   // Note: This test must come _after_ the test for native methods,
   //       otherwise we will run into problems with JDK 1.2, see also
-  //       InterpreterGenerator::generate_method_entry() for
+  //       TemplateInterpreterGenerator::generate_method_entry() for
   //       for details.
   switch (m->intrinsic_id()) {
     case vmIntrinsics::_dsin  : return java_lang_math_sin  ;
@@ -547,88 +546,4 @@ void AbstractInterpreterGenerator::initialize_method_handle_entries() {
     Interpreter::MethodKind kind = (Interpreter::MethodKind) i;
     Interpreter::_entry_table[kind] = Interpreter::_entry_table[Interpreter::abstract];
   }
-}
-
-// Generate method entries
-address InterpreterGenerator::generate_method_entry(
-                                        AbstractInterpreter::MethodKind kind) {
-  // determine code generation flags
-  bool native = false;
-  bool synchronized = false;
-  address entry_point = NULL;
-
-  switch (kind) {
-  case Interpreter::zerolocals             :                                          break;
-  case Interpreter::zerolocals_synchronized:                synchronized = true;      break;
-  case Interpreter::native                 : native = true;                           break;
-  case Interpreter::native_synchronized    : native = true; synchronized = true;      break;
-  case Interpreter::empty                  : entry_point = generate_empty_entry();    break;
-  case Interpreter::accessor               : entry_point = generate_accessor_entry(); break;
-  case Interpreter::abstract               : entry_point = generate_abstract_entry(); break;
-
-  case Interpreter::java_lang_math_sin     : // fall thru
-  case Interpreter::java_lang_math_cos     : // fall thru
-  case Interpreter::java_lang_math_tan     : // fall thru
-  case Interpreter::java_lang_math_abs     : // fall thru
-  case Interpreter::java_lang_math_log     : // fall thru
-  case Interpreter::java_lang_math_log10   : // fall thru
-  case Interpreter::java_lang_math_sqrt    : // fall thru
-  case Interpreter::java_lang_math_pow     : // fall thru
-  case Interpreter::java_lang_math_exp     : entry_point = generate_math_entry(kind);      break;
-  case Interpreter::java_lang_ref_reference_get
-                                           : entry_point = generate_Reference_get_entry(); break;
-#ifndef CC_INTERP
-  case Interpreter::java_util_zip_CRC32_update
-                                           : native = true; entry_point = generate_CRC32_update_entry();  break;
-  case Interpreter::java_util_zip_CRC32_updateBytes
-                                           : // fall thru
-  case Interpreter::java_util_zip_CRC32_updateByteBuffer
-                                           : native = true; entry_point = generate_CRC32_updateBytes_entry(kind); break;
-  case Interpreter::java_util_zip_CRC32C_updateBytes
-                                           : // fall thru
-  case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer
-                                           : entry_point = generate_CRC32C_updateBytes_entry(kind); break;
-#if defined(TARGET_ARCH_x86) && !defined(_LP64)
-  // On x86_32 platforms, a special entry is generated for the following four methods.
-  // On other platforms the normal entry is used to enter these methods.
-  case Interpreter::java_lang_Float_intBitsToFloat
-                                           : native = true; entry_point = generate_Float_intBitsToFloat_entry(); break;
-  case Interpreter::java_lang_Float_floatToRawIntBits
-                                           : native = true; entry_point = generate_Float_floatToRawIntBits_entry(); break;
-  case Interpreter::java_lang_Double_longBitsToDouble
-                                           : native = true; entry_point = generate_Double_longBitsToDouble_entry(); break;
-  case Interpreter::java_lang_Double_doubleToRawLongBits
-                                           : native = true; entry_point = generate_Double_doubleToRawLongBits_entry(); break;
-#else
-  case Interpreter::java_lang_Float_intBitsToFloat:
-  case Interpreter::java_lang_Float_floatToRawIntBits:
-  case Interpreter::java_lang_Double_longBitsToDouble:
-  case Interpreter::java_lang_Double_doubleToRawLongBits:
-    native = true;
-    break;
-#endif // defined(TARGET_ARCH_x86) && !defined(_LP64)
-#endif // CC_INTERP
-  default:
-    fatal("unexpected method kind: %d", kind);
-    break;
-  }
-
-  if (entry_point) {
-    return entry_point;
-  }
-
-  // We expect the normal and native entry points to be generated first so we can reuse them.
-  if (native) {
-    entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::native_synchronized : Interpreter::native);
-    if (entry_point == NULL) {
-      entry_point = generate_native_entry(synchronized);
-    }
-  } else {
-    entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::zerolocals_synchronized : Interpreter::zerolocals);
-    if (entry_point == NULL) {
-      entry_point = generate_normal_entry(synchronized);
-    }
-  }
-
-  return entry_point;
 }

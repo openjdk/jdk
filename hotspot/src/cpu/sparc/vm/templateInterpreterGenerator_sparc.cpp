@@ -26,9 +26,9 @@
 #include "asm/macroAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -47,7 +47,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-#ifndef CC_INTERP
 #ifndef FAST_DISPATCH
 #define FAST_DISPATCH 1
 #endif
@@ -56,7 +55,7 @@
 
 // Generation of Interpreter
 //
-// The InterpreterGenerator generates the interpreter into Interpreter::_code.
+// The TemplateInterpreterGenerator generates the interpreter into Interpreter::_code.
 
 
 #define __ _masm->
@@ -65,7 +64,7 @@
 //----------------------------------------------------------------------------------------------------
 
 
-void InterpreterGenerator::save_native_result(void) {
+void TemplateInterpreterGenerator::save_native_result(void) {
   // result potentially in O0/O1: save it across calls
   const Address& l_tmp = InterpreterMacroAssembler::l_tmp;
 
@@ -81,7 +80,7 @@ void InterpreterGenerator::save_native_result(void) {
 #endif
 }
 
-void InterpreterGenerator::restore_native_result(void) {
+void TemplateInterpreterGenerator::restore_native_result(void) {
   const Address& l_tmp = InterpreterMacroAssembler::l_tmp;
   const Address& d_tmp = InterpreterMacroAssembler::d_tmp;
 
@@ -293,7 +292,7 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 // Lmethod: method
 // ??: invocation counter
 //
-void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue) {
+void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue) {
   // Note: In tiered we increment either counters in MethodCounters* or in
   // MDO depending if we're profiling or not.
   const Register G3_method_counters = G3_scratch;
@@ -724,7 +723,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 }
 
 // Method entry for java.lang.ref.Reference.get.
-address InterpreterGenerator::generate_Reference_get_entry(void) {
+address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 #if INCLUDE_ALL_GCS
   // Code: _aload_0, _getfield, _areturn
   // parameter size = 1
@@ -807,7 +806,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
-address InterpreterGenerator::generate_CRC32_update_entry() {
+address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
 
   if (UseCRC32Intrinsics) {
     address entry = __ pc();
@@ -851,7 +850,7 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
-address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
 
   if (UseCRC32Intrinsics) {
     address entry = __ pc();
@@ -903,13 +902,22 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
   return NULL;
 }
 
+// Not supported
+address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+  return NULL;
+}
+
+// Not supported
+address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
+  return NULL;
+}
 //
 // Interpreter stub for calling a native method. (asm interpreter)
 // This sets up a somewhat different looking stack for calling the native method
 // than the typical interpreter frame setup.
 //
 
-address InterpreterGenerator::generate_native_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   address entry = __ pc();
 
   // the following temporary registers are used during frame creation
@@ -1336,7 +1344,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
 
 // Generic method entry to (asm) interpreter
-address InterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   address entry = __ pc();
 
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
@@ -1743,14 +1751,6 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t, address& b
 
 // --------------------------------------------------------------------------------
 
-
-InterpreterGenerator::InterpreterGenerator(StubQueue* code)
- : TemplateInterpreterGenerator(code) {
-   generate_all(); // down here so it can be "virtual"
-}
-
-// --------------------------------------------------------------------------------
-
 // Non-product code
 #ifndef PRODUCT
 address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
@@ -1829,4 +1829,3 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   __ breakpoint_trap(Assembler::equal, Assembler::icc);
 }
 #endif // not PRODUCT
-#endif // !CC_INTERP

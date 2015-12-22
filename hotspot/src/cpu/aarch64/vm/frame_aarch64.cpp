@@ -314,27 +314,6 @@ intptr_t* frame::entry_frame_argument_at(int offset) const {
 }
 
 // sender_sp
-#ifdef CC_INTERP
-intptr_t* frame::interpreter_frame_sender_sp() const {
-  assert(is_interpreted_frame(), "interpreted frame expected");
-  // QQQ why does this specialize method exist if frame::sender_sp() does same thing?
-  // seems odd and if we always know interpreted vs. non then sender_sp() is really
-  // doing too much work.
-  return get_interpreterState()->sender_sp();
-}
-
-// monitor elements
-
-BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
-  return get_interpreterState()->monitor_base();
-}
-
-BasicObjectLock* frame::interpreter_frame_monitor_end() const {
-  return (BasicObjectLock*) get_interpreterState()->stack_base();
-}
-
-#else // CC_INTERP
-
 intptr_t* frame::interpreter_frame_sender_sp() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
   return (intptr_t*) at(interpreter_frame_sender_sp_offset);
@@ -368,7 +347,6 @@ void frame::interpreter_frame_set_monitor_end(BasicObjectLock* value) {
 void frame::interpreter_frame_set_last_sp(intptr_t* sp) {
     *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = sp;
 }
-#endif // CC_INTERP
 
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
@@ -528,9 +506,6 @@ frame frame::sender(RegisterMap* map) const {
 }
 
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
-// QQQ
-#ifdef CC_INTERP
-#else
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
   if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
@@ -584,17 +559,10 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   if (locals > thread->stack_base() || locals < (address) fp()) return false;
 
   // We'd have to be pretty unlucky to be mislead at this point
-
-#endif // CC_INTERP
   return true;
 }
 
 BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result) {
-#ifdef CC_INTERP
-  // Needed for JVMTI. The result should always be in the
-  // interpreterState object
-  interpreterState istate = get_interpreterState();
-#endif // CC_INTERP
   assert(is_interpreted_frame(), "interpreted frame expected");
   Method* method = interpreter_frame_method();
   BasicType type = method->result_type();
@@ -620,11 +588,7 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     case T_ARRAY   : {
       oop obj;
       if (method->is_native()) {
-#ifdef CC_INTERP
-        obj = istate->_oop_temp;
-#else
         obj = cast_to_oop(at(interpreter_frame_oop_temp_offset));
-#endif // CC_INTERP
       } else {
         oop* obj_p = (oop*)tos_addr;
         obj = (obj_p == NULL) ? (oop)NULL : *obj_p;
