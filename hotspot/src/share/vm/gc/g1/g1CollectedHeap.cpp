@@ -5411,6 +5411,33 @@ bool G1CollectedHeap::check_cset_fast_test() {
 }
 #endif // PRODUCT
 
+class G1ParScrubRemSetTask: public AbstractGangTask {
+protected:
+  G1RemSet* _g1rs;
+  BitMap* _region_bm;
+  BitMap* _card_bm;
+  HeapRegionClaimer _hrclaimer;
+
+public:
+  G1ParScrubRemSetTask(G1RemSet* g1_rs, BitMap* region_bm, BitMap* card_bm, uint num_workers) :
+    AbstractGangTask("G1 ScrubRS"),
+    _g1rs(g1_rs),
+    _region_bm(region_bm),
+    _card_bm(card_bm),
+    _hrclaimer(num_workers) {
+  }
+
+  void work(uint worker_id) {
+    _g1rs->scrub(_region_bm, _card_bm, worker_id, &_hrclaimer);
+  }
+};
+
+void G1CollectedHeap::scrub_rem_set(BitMap* region_bm, BitMap* card_bm) {
+  uint num_workers = workers()->active_workers();
+  G1ParScrubRemSetTask g1_par_scrub_rs_task(g1_rem_set(), region_bm, card_bm, num_workers);
+  workers()->run_task(&g1_par_scrub_rs_task);
+}
+
 void G1CollectedHeap::cleanUpCardTable() {
   G1SATBCardTableModRefBS* ct_bs = g1_barrier_set();
   double start = os::elapsedTime();
