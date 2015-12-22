@@ -676,7 +676,8 @@ public class BasicTableUI extends TableUI
             }
         }
 
-        public boolean isEnabled(Object sender) {
+        @Override
+        public boolean accept(Object sender) {
             String key = getName();
 
             if (sender instanceof JTable &&

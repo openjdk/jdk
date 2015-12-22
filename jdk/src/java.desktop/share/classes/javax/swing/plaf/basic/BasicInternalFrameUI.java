@@ -200,7 +200,8 @@ public class BasicInternalFrameUI extends InternalFrameUI
                 }
             }
 
-            public boolean isEnabled(Object sender){
+            @Override
+            public boolean accept(Object sender){
                 if (sender instanceof JInternalFrame) {
                     JInternalFrame iFrame = (JInternalFrame)sender;
                     if (iFrame.getUI() instanceof BasicInternalFrameUI) {
