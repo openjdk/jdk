@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -147,6 +147,19 @@ AC_DEFUN_ONCE([BPERF_SETUP_BUILD_JOBS],
     JOBS=$with_jobs
   fi
   AC_SUBST(JOBS)
+])
+
+AC_DEFUN_ONCE([BPERF_SETUP_TEST_JOBS],
+[
+  # The number of test jobs will be chosen automatically if TEST_JOBS is 0
+  AC_ARG_WITH(test-jobs, [AS_HELP_STRING([--with-test-jobs],
+      [number of parallel tests jobs to run @<:@based on build jobs@:>@])])
+  if test "x$with_test_jobs" = x; then
+      TEST_JOBS=0
+  else
+      TEST_JOBS=$with_test_jobs
+  fi
+  AC_SUBST(TEST_JOBS)
 ])
 
 AC_DEFUN([BPERF_SETUP_CCACHE],

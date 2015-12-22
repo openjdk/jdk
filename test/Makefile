@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,18 +60,28 @@ all: jdk_all langtools_all jaxp_all
 # Bring in closed test targets if present
 -include $(TOPDIR)/closed/test/Makefile
 
+ifeq ($(TEST_JOBS), 0)
+  JDK_TEST_JOBS=$(JOBS)
+else
+  JDK_TEST_JOBS=$(TEST_JOBS)
+endif
 # Test targets
 langtools_% :
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(LANGTOOLS_DIR), JT_JAVA=$(PRODUCT_HOME) JTREG_HOME=$(JT_HOME) TEST="$(subst langtools_,,$@)" $(subst langtools_,,$@))
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(LANGTOOLS_DIR), CONCURRENCY=$(JDK_TEST_JOBS) JT_JAVA=$(PRODUCT_HOME) JTREG_HOME=$(JT_HOME) TEST="$(subst langtools_,,$@)" $(subst langtools_,,$@))
 
 jdk_% core_%s svc_%:
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), TEST="$@" $@)
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JDK_DIR), CONCURRENCY=$(JDK_TEST_JOBS) TEST="$@" $@)
 
 jaxp_%:
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JAXP_DIR), TEST="$@" $@)
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(JAXP_DIR), CONCURRENCY=$(JDK_TEST_JOBS) TEST="$@" $@)
 
+ifeq ($(TEST_JOBS), 0)
+  HOTSPOT_TEST_JOBS=1
+else
+  HOTSPOT_TEST_JOBS=$(TEST_JOBS)
+endif
 hotspot_%:
-	@$(NO_STOPPING)$(call SUBDIR_TEST, $(HOTSPOT_DIR), TEST="$@" $@)
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(HOTSPOT_DIR), CONCURRENCY=$(HOTSPOT_TEST_JOBS) TEST="$@" $@)
 
 #
 # jtreg_tests
