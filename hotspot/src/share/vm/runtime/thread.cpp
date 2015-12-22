@@ -38,6 +38,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
@@ -2062,10 +2063,7 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
       frame caller_fr = last_frame().sender(&map);
       assert(caller_fr.is_compiled_frame(), "what?");
       if (caller_fr.is_deoptimized_frame()) {
-        if (TraceExceptions) {
-          ResourceMark rm;
-          tty->print_cr("deferred async exception at compiled safepoint");
-        }
+        log_info(exceptions)("deferred async exception at compiled safepoint");
         return;
       }
     }
@@ -2091,14 +2089,15 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
       // We cannot call Exceptions::_throw(...) here because we cannot block
       set_pending_exception(_pending_async_exception, __FILE__, __LINE__);
 
-      if (TraceExceptions) {
+      if (log_is_enabled(Info, exceptions)) {
         ResourceMark rm;
-        tty->print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
-        if (has_last_Java_frame()) {
-          frame f = last_frame();
-          tty->print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
-        }
-        tty->print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
+        outputStream* logstream = LogHandle(exceptions)::info_stream();
+        logstream->print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
+          if (has_last_Java_frame()) {
+            frame f = last_frame();
+           logstream->print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
+          }
+        logstream->print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
       }
       _pending_async_exception = NULL;
       clear_has_async_exception();
@@ -2214,9 +2213,10 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
       // Set async. pending exception in thread.
       set_pending_async_exception(java_throwable);
 
-      if (TraceExceptions) {
-        ResourceMark rm;
-        tty->print_cr("Pending Async. exception installed of type: %s", _pending_async_exception->klass()->external_name());
+      if (log_is_enabled(Info, exceptions)) {
+         ResourceMark rm;
+        log_info(exceptions)("Pending Async. exception installed of type: %s",
+                             InstanceKlass::cast(_pending_async_exception->klass())->external_name());
       }
       // for AbortVMOnException flag
       Exceptions::debug_check_abort(_pending_async_exception->klass()->external_name());
