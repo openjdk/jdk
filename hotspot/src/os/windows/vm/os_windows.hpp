@@ -45,11 +45,8 @@ class win32 {
   static int    _processor_level;
   static julong _physical_memory;
   static size_t _default_stack_size;
-  static bool   _is_nt;
-  static bool   _is_windows_2003;
   static bool   _is_windows_server;
   static bool   _has_exit_bug;
-  static bool   _has_performance_count;
 
   static void print_windows_version(outputStream* st);
 
@@ -60,9 +57,7 @@ class win32 {
 
   // Processor info as provided by NT
   static int processor_type()  { return _processor_type;  }
-  // Processor level may not be accurate on non-NT systems
   static int processor_level() {
-    assert(is_nt(), "use vm_version instead");
     return _processor_level;
   }
   static julong available_memory();
@@ -85,14 +80,8 @@ class win32 {
   static          intx  _os_thread_limit;
   static volatile intx  _os_thread_count;
 
-  // Tells whether the platform is NT or Windown95
-  static bool is_nt() { return _is_nt; }
-
   // Tells whether this is a server version of Windows
   static bool is_windows_server() { return _is_windows_server; }
-
-  // Tells whether the platform is Windows 2003
-  static bool is_windows_2003() { return _is_windows_2003; }
 
   // Tells whether there can be the race bug during process exit on this platform
   static bool has_exit_bug() { return _has_exit_bug; }
@@ -186,71 +175,5 @@ class PlatformParker : public CHeapObj<mtInternal> {
     }
 
 } ;
-
-class WinSock2Dll: AllStatic {
-public:
-  static BOOL WSAStartup(WORD, LPWSADATA);
-  static struct hostent* gethostbyname(const char *name);
-  static BOOL WinSock2Available();
-};
-
-class Kernel32Dll: AllStatic {
-public:
-  static BOOL SwitchToThread();
-  static SIZE_T GetLargePageMinimum();
-
-  static BOOL SwitchToThreadAvailable();
-  static BOOL GetLargePageMinimumAvailable();
-
-  // Help tools
-  static BOOL HelpToolsAvailable();
-  static HANDLE CreateToolhelp32Snapshot(DWORD,DWORD);
-  static BOOL Module32First(HANDLE,LPMODULEENTRY32);
-  static BOOL Module32Next(HANDLE,LPMODULEENTRY32);
-
-  static void GetNativeSystemInfo(LPSYSTEM_INFO);
-
-  // NUMA calls
-  static BOOL NumaCallsAvailable();
-  static LPVOID VirtualAllocExNuma(HANDLE, LPVOID, SIZE_T, DWORD, DWORD, DWORD);
-  static BOOL GetNumaHighestNodeNumber(PULONG);
-  static BOOL GetNumaNodeProcessorMask(UCHAR, PULONGLONG);
-
-  // Stack walking
-  static USHORT RtlCaptureStackBackTrace(ULONG, ULONG, PVOID*, PULONG);
-
-private:
-  // GetLargePageMinimum available on Windows Vista/Windows Server 2003
-  // and later
-  // NUMA calls available Windows Vista/WS2008 and later
-
-  static SIZE_T (WINAPI *_GetLargePageMinimum)(void);
-  static LPVOID (WINAPI *_VirtualAllocExNuma) (HANDLE, LPVOID, SIZE_T, DWORD, DWORD, DWORD);
-  static BOOL (WINAPI *_GetNumaHighestNodeNumber) (PULONG);
-  static BOOL (WINAPI *_GetNumaNodeProcessorMask) (UCHAR, PULONGLONG);
-  static USHORT (WINAPI *_RtlCaptureStackBackTrace)(ULONG, ULONG, PVOID*, PULONG);
-  static BOOL initialized;
-
-  static void initialize();
-  static void initializeCommon();
-};
-
-class Advapi32Dll: AllStatic {
-public:
-  static BOOL AdjustTokenPrivileges(HANDLE, BOOL, PTOKEN_PRIVILEGES, DWORD, PTOKEN_PRIVILEGES, PDWORD);
-  static BOOL OpenProcessToken(HANDLE, DWORD, PHANDLE);
-  static BOOL LookupPrivilegeValue(LPCTSTR, LPCTSTR, PLUID);
-
-  static BOOL AdvapiAvailable();
-};
-
-class PSApiDll: AllStatic {
-public:
-  static BOOL EnumProcessModules(HANDLE, HMODULE *, DWORD, LPDWORD);
-  static DWORD GetModuleFileNameEx(HANDLE, HMODULE, LPTSTR, DWORD);
-  static BOOL GetModuleInformation(HANDLE, HMODULE, LPMODULEINFO, DWORD);
-
-  static BOOL PSApiAvailable();
-};
 
 #endif // OS_WINDOWS_VM_OS_WINDOWS_HPP

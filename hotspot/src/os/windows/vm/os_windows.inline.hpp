@@ -50,11 +50,10 @@ inline bool os::obsolete_option(const JavaVMOption *option) {
 }
 
 inline bool os::uses_stack_guard_pages() {
-  return os::win32::is_nt();
+  return true;
 }
 
 inline bool os::allocate_stack_guard_pages() {
-  assert(uses_stack_guard_pages(), "sanity check");
   return true;
 }
 
@@ -98,7 +97,7 @@ inline int os::close(int fd) {
 }
 
 inline bool os::supports_monotonic_clock() {
-  return win32::_has_performance_count;
+  return true;
 }
 
 inline void os::exit(int num) {
