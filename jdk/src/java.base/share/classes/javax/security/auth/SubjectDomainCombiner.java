@@ -233,10 +233,15 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
                 subjectPd = cachedPDs.getValue(pd);
 
                 if (subjectPd == null) {
-                    subjectPd = new ProtectionDomain(pd.getCodeSource(),
+                    if (pd.staticPermissionsOnly()) {
+                        // keep static ProtectionDomain objects static
+                        subjectPd = pd;
+                    } else {
+                        subjectPd = new ProtectionDomain(pd.getCodeSource(),
                                                 pd.getPermissions(),
                                                 pd.getClassLoader(),
                                                 principals);
+                    }
                     cachedPDs.putValue(pd, subjectPd);
                 } else {
                     allNew = false;
