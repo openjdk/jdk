@@ -26,7 +26,6 @@
  * @bug 8133885
  * @summary monitorinflation=debug should have logging from each of the statements in the code
  * @library /testlibrary
- * @ignore 8145587
  * @modules java.base/sun.misc
  *          java.management
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
@@ -40,7 +39,8 @@ public class MonitorInflationTest {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Inflating object");
-        output.shouldContain("Deflating object ");
+        output.shouldContain("type MonitorInflationTest$Waiter");
+        output.shouldContain("I've been waiting.");
         output.shouldHaveExitValue(0);
     }
 
@@ -52,19 +52,34 @@ public class MonitorInflationTest {
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:monitorinflation=debug", "-version");
+            "-Xlog:monitorinflation=debug", InnerClass.class.getName());
         analyzeOutputOn(pb);
 
         pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+TraceMonitorInflation", "-version");
+            "-XX:+TraceMonitorInflation", InnerClass.class.getName());
         analyzeOutputOn(pb);
 
         pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:monitorinflation=off", "-version");
+            "-Xlog:monitorinflation=off", InnerClass.class.getName());
         analyzeOutputOff(pb);
 
         pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:-TraceMonitorInflation", "-version");
+            "-XX:-TraceMonitorInflation", InnerClass.class.getName());
         analyzeOutputOff(pb);
+    }
+
+    public static class Waiter {
+        public static void foo() {
+            System.out.println("I've been waiting.");
+        }
+    }
+    public static class InnerClass {
+        public static void main(String[] args) throws Exception {
+            Waiter w = new Waiter();
+            synchronized (w) {
+                w.wait(100);
+                w.foo();
+            }
+        }
     }
 }
