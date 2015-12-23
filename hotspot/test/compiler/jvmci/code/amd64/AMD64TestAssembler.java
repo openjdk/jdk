@@ -34,8 +34,10 @@ import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.InfopointReason;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
+import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.VMConstant;
 
@@ -61,11 +63,11 @@ public class AMD64TestAssembler extends TestAssembler {
     }
 
     public Register emitIntArg0() {
-        return AMD64.rsi;
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(Type.JavaCall, JavaKind.Int)[0];
     }
 
     public Register emitIntArg1() {
-        return AMD64.rdx;
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(Type.JavaCall, JavaKind.Int)[1];
     }
 
     private void emitREX(boolean w, int r, int x, int b) {
