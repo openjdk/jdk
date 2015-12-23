@@ -5369,12 +5369,12 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
       }
     }
 
-    if (TraceClassResolution) {
+    if (log_is_enabled(Info, classresolve))  {
       ResourceMark rm;
       // print out the superclass.
       const char * from = ik->external_name();
       if (ik->java_super() != NULL) {
-        tty->print("RESOLVE %s %s (super)\n",
+        log_info(classresolve)("%s %s (super)",
                    from,
                    ik->java_super()->external_name());
       }
@@ -5385,7 +5385,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
         for (int i = 0; i < length; i++) {
           const Klass* const k = local_interfaces->at(i);
           const char * to = k->external_name();
-          tty->print("RESOLVE %s %s (interface)\n", from, to);
+          log_info(classresolve)("%s %s (interface)", from, to);
         }
       }
     }

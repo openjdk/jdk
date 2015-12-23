@@ -1496,9 +1496,6 @@ public:
   develop(bool, TraceClearedExceptions, false,                              \
           "Print when an exception is forcibly cleared")                    \
                                                                             \
-  product(bool, TraceClassResolution, false,                                \
-          "Trace all constant pool resolutions (for debugging)")            \
-                                                                            \
   product(bool, TraceBiasedLocking, false,                                  \
           "Trace biased locking in JVM")                                    \
                                                                             \
