@@ -32,8 +32,10 @@ import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.InfopointReason;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
+import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.VMConstant;
 import jdk.vm.ci.sparc.SPARC;
@@ -80,11 +82,11 @@ public class SPARCTestAssembler extends TestAssembler {
     }
 
     public Register emitIntArg0() {
-        return SPARC.i0;
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(Type.JavaCallee, JavaKind.Int)[0];
     }
 
     public Register emitIntArg1() {
-        return SPARC.i1;
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(Type.JavaCallee, JavaKind.Int)[1];
     }
 
     public Register emitLoadInt(int c) {
