@@ -306,10 +306,6 @@ void Thread::clear_thread_current() {
 void Thread::record_stack_base_and_size() {
   set_stack_base(os::current_stack_base());
   set_stack_size(os::current_stack_size());
-  if (is_Java_thread()) {
-    ((JavaThread*) this)->set_stack_overflow_limit();
-    ((JavaThread*) this)->set_reserved_stack_activation(stack_base());
-  }
   // CR 7190089: on Solaris, primordial thread's stack is adjusted
   // in initialize_thread(). Without the adjustment, stack size is
   // incorrect if stack is set to unlimited (ulimit -s unlimited).
@@ -318,6 +314,11 @@ void Thread::record_stack_base_and_size() {
   // set up any platform-specific state.
   os::initialize_thread(this);
 
+  // Set stack limits after thread is initialized.
+  if (is_Java_thread()) {
+    ((JavaThread*) this)->set_stack_overflow_limit();
+    ((JavaThread*) this)->set_reserved_stack_activation(stack_base());
+  }
 #if INCLUDE_NMT
   // record thread's native stack, stack grows downward
   MemTracker::record_thread_stack(stack_end(), stack_size());
