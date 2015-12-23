@@ -935,16 +935,15 @@ void JVMCIRuntime::save_options(SystemProperty* props) {
   }
 }
 
-void JVMCIRuntime::shutdown() {
+void JVMCIRuntime::shutdown(TRAPS) {
   if (_HotSpotJVMCIRuntime_instance != NULL) {
     _shutdown_called = true;
-    JavaThread* THREAD = JavaThread::current();
     HandleMark hm(THREAD);
-    Handle receiver = get_HotSpotJVMCIRuntime(CHECK_ABORT);
+    Handle receiver = get_HotSpotJVMCIRuntime(CHECK);
     JavaValue result(T_VOID);
     JavaCallArguments args;
     args.push_oop(receiver);
-    JavaCalls::call_special(&result, receiver->klass(), vmSymbols::shutdown_method_name(), vmSymbols::void_method_signature(), &args, CHECK_ABORT);
+    JavaCalls::call_special(&result, receiver->klass(), vmSymbols::shutdown_method_name(), vmSymbols::void_method_signature(), &args, CHECK);
   }
 }
 
@@ -960,32 +959,6 @@ bool JVMCIRuntime::treat_as_trivial(Method* method) {
     }
   }
   return false;
-}
-
-void JVMCIRuntime::call_printStackTrace(Handle exception, Thread* thread) {
-  assert(exception->is_a(SystemDictionary::Throwable_klass()), "Throwable instance expected");
-  JavaValue result(T_VOID);
-  JavaCalls::call_virtual(&result,
-                          exception,
-                          KlassHandle(thread,
-                          SystemDictionary::Throwable_klass()),
-                          vmSymbols::printStackTrace_name(),
-                          vmSymbols::void_method_signature(),
-                          thread);
-}
-
-void JVMCIRuntime::abort_on_pending_exception(Handle exception, const char* message, bool dump_core) {
-  Thread* THREAD = Thread::current();
-  CLEAR_PENDING_EXCEPTION;
-  tty->print_raw_cr(message);
-  call_printStackTrace(exception, THREAD);
-
-  // Give other aborting threads to also print their stack traces.
-  // This can be very useful when debugging class initialization
-  // failures.
-  os::sleep(THREAD, 200, false);
-
-  vm_abort(dump_core);
 }
 
 void JVMCIRuntime::parse_lines(char* path, ParseClosure* closure, bool warnStatFailure) {
