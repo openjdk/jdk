@@ -31,6 +31,7 @@ import jdk.test.lib.ProcessTools;
  *          /compiler/testlibrary /compiler/codegen/7184394
  * @modules java.base/sun.misc
  *          java.management
+ * @ignore 8146128
  * @build TestAESIntrinsicsOnSupportedConfig TestAESMain
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                  sun.hotspot.WhiteBox$WhiteBoxPermission
