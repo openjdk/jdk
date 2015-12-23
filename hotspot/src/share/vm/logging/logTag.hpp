@@ -37,6 +37,7 @@
   LOG_TAG(bot) \
   LOG_TAG(census) \
   LOG_TAG(classhisto) \
+  LOG_TAG(classresolve) \
   LOG_TAG(classinit) \
   LOG_TAG(comp) \
   LOG_TAG(compaction) \
