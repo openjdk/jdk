@@ -106,6 +106,18 @@ abstract class DSA extends SignatureSpi {
         this.p1363Format = p1363Format;
     }
 
+    private static void checkKey(DSAParams params, int digestLen, String mdAlgo)
+        throws InvalidKeyException {
+        // FIPS186-3 states in sec4.2 that a hash function which provides
+        // a lower security strength than the (L, N) pair ordinarily should
+        // not be used.
+        int valueN = params.getQ().bitLength();
+        if (valueN > digestLen) {
+            throw new InvalidKeyException("The security strength of " +
+                mdAlgo + " digest algorithm is not sufficient for this key size");
+        }
+    }
+
     /**
      * Initialize the DSA object with a DSA private key.
      *
@@ -128,6 +140,12 @@ abstract class DSA extends SignatureSpi {
         DSAParams params = priv.getParams();
         if (params == null) {
             throw new InvalidKeyException("DSA private key lacks parameters");
+        }
+
+        // check key size against hash output size for signing
+        // skip this check for verification to minimize impact on existing apps
+        if (md.getAlgorithm() != "NullDigest20") {
+            checkKey(params, md.getDigestLength()*8, md.getAlgorithm());
         }
 
         this.params = params;
@@ -160,7 +178,6 @@ abstract class DSA extends SignatureSpi {
         if (params == null) {
             throw new InvalidKeyException("DSA public key lacks parameters");
         }
-
         this.params = params;
         this.presetY = pub.getY();
         this.presetX = null;
@@ -406,20 +423,13 @@ abstract class DSA extends SignatureSpi {
         return t5.mod(q);
     }
 
-    // NOTE: This following impl is defined in FIPS 186-3 AppendixB.2.2.
-    // Original DSS algos such as SHA1withDSA and RawDSA uses a different
-    // algorithm defined in FIPS 186-1 Sec3.2, and thus need to override this.
+    // NOTE: This following impl is defined in FIPS 186-4 AppendixB.2.1.
     protected BigInteger generateK(BigInteger q) {
         SecureRandom random = getSigningRandom();
-        byte[] kValue = new byte[q.bitLength()/8];
+        byte[] kValue = new byte[(q.bitLength() + 7)/8 + 8];
 
-        while (true) {
-            random.nextBytes(kValue);
-            BigInteger k = new BigInteger(1, kValue).mod(q);
-            if (k.signum() > 0 && k.compareTo(q) < 0) {
-                return k;
-            }
-        }
+        random.nextBytes(kValue);
+        return new BigInteger(1, kValue).mod(q.subtract(BigInteger.ONE)).add(BigInteger.ONE);
     }
 
     // Use the application-specified SecureRandom Object if provided.
@@ -504,222 +514,10 @@ abstract class DSA extends SignatureSpi {
         }
     }
 
-    static class LegacyDSA extends DSA {
-        /* The random seed used to generate k */
-        private int[] kSeed;
-        /* The random seed used to generate k (specified by application) */
-        private byte[] kSeedAsByteArray;
-        /*
-         * The random seed used to generate k
-         * (prevent the same Kseed from being used twice in a row
-         */
-        private int[] kSeedLast;
-
-        public LegacyDSA(MessageDigest md) throws NoSuchAlgorithmException {
-            this(md, false);
-        }
-
-        private LegacyDSA(MessageDigest md, boolean p1363Format)
-                throws NoSuchAlgorithmException {
-            super(md, p1363Format);
-        }
-
-        @Deprecated
-        protected void engineSetParameter(String key, Object param) {
-            if (key.equals("KSEED")) {
-                if (param instanceof byte[]) {
-                    kSeed = byteArray2IntArray((byte[])param);
-                    kSeedAsByteArray = (byte[])param;
-                } else {
-                    debug("unrecognized param: " + key);
-                    throw new InvalidParameterException("kSeed not a byte array");
-                }
-            } else {
-                throw new InvalidParameterException("Unsupported parameter");
-            }
-        }
-
-        @Deprecated
-        protected Object engineGetParameter(String key) {
-           if (key.equals("KSEED")) {
-               return kSeedAsByteArray;
-           } else {
-               return null;
-           }
-        }
-
-        /*
-         * Please read bug report 4044247 for an alternative, faster,
-         * NON-FIPS approved method to generate K
-         */
-        @Override
-        protected BigInteger generateK(BigInteger q) {
-            BigInteger k = null;
-
-            // The application specified a kSeed for us to use.
-            // Note: we dis-allow usage of the same Kseed twice in a row
-            if (kSeed != null && !Arrays.equals(kSeed, kSeedLast)) {
-                k = generateKUsingKSeed(kSeed, q);
-                if (k.signum() > 0 && k.compareTo(q) < 0) {
-                    kSeedLast = kSeed.clone();
-                    return k;
-                }
-            }
-
-            // The application did not specify a Kseed for us to use.
-            // We'll generate a new Kseed by getting random bytes from
-            // a SecureRandom object.
-            SecureRandom random = getSigningRandom();
-
-            while (true) {
-                int[] seed = new int[5];
-
-                for (int i = 0; i < 5; i++) seed[i] = random.nextInt();
-
-                k = generateKUsingKSeed(seed, q);
-                if (k.signum() > 0 && k.compareTo(q) < 0) {
-                    kSeedLast = seed;
-                    return k;
-                }
-            }
-        }
-
-        /**
-         * Compute k for the DSA signature as defined in the original DSS,
-         * i.e. FIPS186.
-         *
-         * @param seed the seed for generating k. This seed should be
-         * secure. This is what is referred to as the KSEED in the DSA
-         * specification.
-         *
-         * @param g the g parameter from the DSA key pair.
-         */
-        private BigInteger generateKUsingKSeed(int[] seed, BigInteger q) {
-
-            // check out t in the spec.
-            int[] t = { 0xEFCDAB89, 0x98BADCFE, 0x10325476,
-                        0xC3D2E1F0, 0x67452301 };
-            //
-            int[] tmp = SHA_7(seed, t);
-            byte[] tmpBytes = new byte[tmp.length * 4];
-            for (int i = 0; i < tmp.length; i++) {
-                int k = tmp[i];
-                for (int j = 0; j < 4; j++) {
-                    tmpBytes[(i * 4) + j] = (byte) (k >>> (24 - (j * 8)));
-                }
-            }
-            BigInteger k = new BigInteger(1, tmpBytes).mod(q);
-            return k;
-        }
-
-        // Constants for each round
-        private static final int round1_kt = 0x5a827999;
-        private static final int round2_kt = 0x6ed9eba1;
-        private static final int round3_kt = 0x8f1bbcdc;
-        private static final int round4_kt = 0xca62c1d6;
-
-        /**
-         * Computes set 1 thru 7 of SHA-1 on m1. */
-        static int[] SHA_7(int[] m1, int[] h) {
-
-            int[] W = new int[80];
-            System.arraycopy(m1,0,W,0,m1.length);
-            int temp = 0;
-
-            for (int t = 16; t <= 79; t++){
-                temp = W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16];
-                W[t] = ((temp << 1) | (temp >>>(32 - 1)));
-            }
-
-            int a = h[0],b = h[1],c = h[2], d = h[3], e = h[4];
-            for (int i = 0; i < 20; i++) {
-                temp = ((a<<5) | (a>>>(32-5))) +
-                    ((b&c)|((~b)&d))+ e + W[i] + round1_kt;
-                e = d;
-                d = c;
-                c = ((b<<30) | (b>>>(32-30)));
-                b = a;
-                a = temp;
-            }
-
-            // Round 2
-            for (int i = 20; i < 40; i++) {
-                temp = ((a<<5) | (a>>>(32-5))) +
-                    (b ^ c ^ d) + e + W[i] + round2_kt;
-                e = d;
-                d = c;
-                c = ((b<<30) | (b>>>(32-30)));
-                b = a;
-                a = temp;
-            }
-
-            // Round 3
-            for (int i = 40; i < 60; i++) {
-                temp = ((a<<5) | (a>>>(32-5))) +
-                    ((b&c)|(b&d)|(c&d)) + e + W[i] + round3_kt;
-                e = d;
-                d = c;
-                c = ((b<<30) | (b>>>(32-30)));
-                b = a;
-                a = temp;
-            }
-
-            // Round 4
-            for (int i = 60; i < 80; i++) {
-                temp = ((a<<5) | (a>>>(32-5))) +
-                    (b ^ c ^ d) + e + W[i] + round4_kt;
-                e = d;
-                d = c;
-                c = ((b<<30) | (b>>>(32-30)));
-                b = a;
-                a = temp;
-            }
-            int[] md = new int[5];
-            md[0] = h[0] + a;
-            md[1] = h[1] + b;
-            md[2] = h[2] + c;
-            md[3] = h[3] + d;
-            md[4] = h[4] + e;
-            return md;
-        }
-
-        /*
-         * Utility routine for converting a byte array into an int array
-         */
-        private int[] byteArray2IntArray(byte[] byteArray) {
-
-            int j = 0;
-            byte[] newBA;
-            int mod = byteArray.length % 4;
-
-            // guarantee that the incoming byteArray is a multiple of 4
-            // (pad with 0's)
-            switch (mod) {
-            case 3:     newBA = new byte[byteArray.length + 1]; break;
-            case 2:     newBA = new byte[byteArray.length + 2]; break;
-            case 1:     newBA = new byte[byteArray.length + 3]; break;
-            default:    newBA = new byte[byteArray.length + 0]; break;
-            }
-            System.arraycopy(byteArray, 0, newBA, 0, byteArray.length);
-
-            // copy each set of 4 bytes in the byte array into an integer
-            int[] newSeed = new int[newBA.length / 4];
-            for (int i = 0; i < newBA.length; i += 4) {
-                newSeed[j] = newBA[i + 3] & 0xFF;
-                newSeed[j] |= (newBA[i + 2] << 8) & 0xFF00;
-                newSeed[j] |= (newBA[i + 1] << 16) & 0xFF0000;
-                newSeed[j] |= (newBA[i + 0] << 24) & 0xFF000000;
-                j++;
-            }
-
-            return newSeed;
-        }
-    }
-
     /**
      * Standard SHA1withDSA implementation.
      */
-    public static final class SHA1withDSA extends LegacyDSA {
+    public static final class SHA1withDSA extends DSA {
         public SHA1withDSA() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA-1"));
         }
@@ -728,7 +526,7 @@ abstract class DSA extends SignatureSpi {
     /**
      * SHA1withDSA implementation that uses the IEEE P1363 format.
      */
-    public static final class SHA1withDSAinP1363Format extends LegacyDSA {
+    public static final class SHA1withDSAinP1363Format extends DSA {
         public SHA1withDSAinP1363Format() throws NoSuchAlgorithmException {
             super(MessageDigest.getInstance("SHA-1"), true);
         }
@@ -741,7 +539,7 @@ abstract class DSA extends SignatureSpi {
      * not, a SignatureException is thrown when sign()/verify() is called
      * per JCA spec.
      */
-    static class Raw extends LegacyDSA {
+    static class Raw extends DSA {
         // Internal special-purpose MessageDigest impl for RawDSA
         // Only override whatever methods used
         // NOTE: no clone support

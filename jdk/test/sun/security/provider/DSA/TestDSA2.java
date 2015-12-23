@@ -60,8 +60,8 @@ public class TestDSA2 {
         boolean[] expectedToPass = { true, true, true, true,
                                      true, true, true, true };
         test(1024, expectedToPass);
-        boolean[] expectedToPass2 = { true, true, true, true,
-                                      true, true, true, true };
+        boolean[] expectedToPass2 = { true, false, true, true,
+                                      true, false, true, true };
         test(2048, expectedToPass2);
     }
 
