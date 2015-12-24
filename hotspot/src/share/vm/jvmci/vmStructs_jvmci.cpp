@@ -74,6 +74,8 @@
   static_field(CompilerToVM::Data,             cardtable_start_address,                jbyte*)                                       \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
+  static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
+                                                                                                                                     \
   nonstatic_field(Array<int>,                  _length,                                int)                                          \
   unchecked_nonstatic_field(Array<u1>,         _data,                                  sizeof(u1))                                   \
   unchecked_nonstatic_field(Array<u2>,         _data,                                  sizeof(u2))                                   \
@@ -586,11 +588,7 @@
 #ifdef TARGET_ARCH_x86
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
-  volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*) \
-  static_field(VM_Version,                  _cpuFeatures,  uint64_t)
-
-#define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c1_toplevel_type, declare_c2_type, declare_c2_toplevel_type) \
-  declare_toplevel_type(VM_Version)
+  volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
   LP64_ONLY(declare_constant(frame::arg_reg_save_area_bytes))       \
@@ -638,11 +636,7 @@
 #ifdef TARGET_ARCH_sparc
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
-  volatile_nonstatic_field(JavaFrameAnchor, _flags, int) \
-  static_field(VM_Version, _features, int)
-
-#define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c1_toplevel_type, declare_c2_type, declare_c2_toplevel_type) \
-  declare_toplevel_type(VM_Version)
+  volatile_nonstatic_field(JavaFrameAnchor, _flags, int)
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
   declare_constant(VM_Version::vis1_instructions_m)                       \

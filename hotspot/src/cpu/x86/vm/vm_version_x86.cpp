@@ -35,9 +35,7 @@
 int VM_Version::_cpu;
 int VM_Version::_model;
 int VM_Version::_stepping;
-uint64_t VM_Version::_cpuFeatures;
-const char*           VM_Version::_features_str = "";
-VM_Version::CpuidInfo VM_Version::_cpuid_info   = { 0, };
+VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
 
 // Address of instruction which causes SEGV
 address VM_Version::_cpuinfo_segv_addr = 0;
@@ -468,7 +466,7 @@ void VM_Version::get_processor_features() {
   _cpu = 4; // 486 by default
   _model = 0;
   _stepping = 0;
-  _cpuFeatures = 0;
+  _features = 0;
   _logical_processors_per_package = 1;
   // i486 internal cache is both I&D and has a 16-byte line size
   _L1_data_cache_line_size = 16;
@@ -483,7 +481,7 @@ void VM_Version::get_processor_features() {
   _stepping = cpu_stepping();
 
   if (cpu_family() > 4) { // it supports CPUID
-    _cpuFeatures = feature_flags();
+    _features = feature_flags();
     // Logical processors are only available on P4s and above,
     // and only if hyperthreading is available.
     _logical_processors_per_package = logical_processor_count();
@@ -522,24 +520,24 @@ void VM_Version::get_processor_features() {
 
   // If the OS doesn't support SSE, we can't use this feature even if the HW does
   if (!os::supports_sse())
-    _cpuFeatures &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);
+    _features &= ~(CPU_SSE|CPU_SSE2|CPU_SSE3|CPU_SSSE3|CPU_SSE4A|CPU_SSE4_1|CPU_SSE4_2);
 
   if (UseSSE < 4) {
-    _cpuFeatures &= ~CPU_SSE4_1;
-    _cpuFeatures &= ~CPU_SSE4_2;
+    _features &= ~CPU_SSE4_1;
+    _features &= ~CPU_SSE4_2;
   }
 
   if (UseSSE < 3) {
-    _cpuFeatures &= ~CPU_SSE3;
-    _cpuFeatures &= ~CPU_SSSE3;
-    _cpuFeatures &= ~CPU_SSE4A;
+    _features &= ~CPU_SSE3;
+    _features &= ~CPU_SSSE3;
+    _features &= ~CPU_SSE4A;
   }
 
   if (UseSSE < 2)
-    _cpuFeatures &= ~CPU_SSE2;
+    _features &= ~CPU_SSE2;
 
   if (UseSSE < 1)
-    _cpuFeatures &= ~CPU_SSE;
+    _features &= ~CPU_SSE;
 
   // first try initial setting and detect what we can support
   if (UseAVX > 0) {
@@ -557,25 +555,25 @@ void VM_Version::get_processor_features() {
   }
 
   if (UseAVX < 3) {
-    _cpuFeatures &= ~CPU_AVX512F;
-    _cpuFeatures &= ~CPU_AVX512DQ;
-    _cpuFeatures &= ~CPU_AVX512CD;
-    _cpuFeatures &= ~CPU_AVX512BW;
-    _cpuFeatures &= ~CPU_AVX512VL;
+    _features &= ~CPU_AVX512F;
+    _features &= ~CPU_AVX512DQ;
+    _features &= ~CPU_AVX512CD;
+    _features &= ~CPU_AVX512BW;
+    _features &= ~CPU_AVX512VL;
   }
 
   if (UseAVX < 2)
-    _cpuFeatures &= ~CPU_AVX2;
+    _features &= ~CPU_AVX2;
 
   if (UseAVX < 1)
-    _cpuFeatures &= ~CPU_AVX;
+    _features &= ~CPU_AVX;
 
   if (!UseAES && !FLAG_IS_DEFAULT(UseAES))
-    _cpuFeatures &= ~CPU_AES;
+    _features &= ~CPU_AES;
 
   if (logical_processors_per_package() == 1) {
     // HT processor could be installed on a system which doesn't support HT.
-    _cpuFeatures &= ~CPU_HT;
+    _features &= ~CPU_HT;
   }
 
   char buf[256];
@@ -611,7 +609,7 @@ void VM_Version::get_processor_features() {
                (supports_bmi2() ? ", bmi2" : ""),
                (supports_adx() ? ", adx" : ""),
                (supports_evex() ? ", evex" : ""));
-  _features_str = os::strdup(buf);
+  _features_string = os::strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what
   // the command line requires.  I.e., you cannot set UseSSE to 2 on

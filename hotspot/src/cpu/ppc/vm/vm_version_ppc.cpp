@@ -37,8 +37,6 @@
 
 # include <sys/sysinfo.h>
 
-int VM_Version::_features = VM_Version::unknown_m;
-const char* VM_Version::_features_str = "";
 bool VM_Version::_is_determine_features_test_running = false;
 
 
@@ -130,7 +128,7 @@ void VM_Version::initialize() {
                (has_tcheck()  ? " tcheck"  : "")
                // Make sure number of %s matches num_features!
               );
-  _features_str = os::strdup(buf);
+  _features_string = os::strdup(buf);
   if (Verbose) {
     print_features();
   }
@@ -323,7 +321,7 @@ bool VM_Version::use_biased_locking() {
 }
 
 void VM_Version::print_features() {
-  tty->print_cr("Version: %s L1_data_cache_line_size=%d", cpu_features(), L1_data_cache_line_size());
+  tty->print_cr("Version: %s L1_data_cache_line_size=%d", features_string(), L1_data_cache_line_size());
 }
 
 #ifdef COMPILER2
@@ -722,7 +720,7 @@ void VM_Version::config_dscr() {
   }
 }
 
-static int saved_features = 0;
+static uint64_t saved_features = 0;
 
 void VM_Version::allow_all() {
   saved_features = _features;

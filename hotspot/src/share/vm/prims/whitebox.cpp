@@ -1005,9 +1005,9 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
-  const char* cpu_features = VM_Version::cpu_features();
+  const char* features = VM_Version::features_string();
   ThreadToNativeFromVM ttn(thread);
-  jstring features_string = env->NewStringUTF(cpu_features);
+  jstring features_string = env->NewStringUTF(features);
 
   CHECK_JNI_EXCEPTION_(env, NULL);
 

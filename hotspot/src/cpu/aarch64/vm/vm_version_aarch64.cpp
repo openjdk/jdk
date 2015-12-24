@@ -67,8 +67,6 @@ int VM_Version::_model2;
 int VM_Version::_variant;
 int VM_Version::_revision;
 int VM_Version::_stepping;
-int VM_Version::_cpuFeatures;
-const char*           VM_Version::_features_str = "";
 
 static BufferBlob* stub_blob;
 static const int stub_size = 550;
@@ -129,7 +127,7 @@ void VM_Version::get_processor_features() {
 
   char buf[512];
 
-  _cpuFeatures = auxv;
+  _features = auxv;
 
   int cpu_lines = 0;
   if (FILE *f = fopen("/proc/cpuinfo", "r")) {
@@ -154,12 +152,12 @@ void VM_Version::get_processor_features() {
   }
 
   // Enable vendor specific features
-  if (_cpu == CPU_CAVIUM && _variant == 0) _cpuFeatures |= CPU_DMB_ATOMICS;
-  if (_cpu == CPU_ARM && (_model == 0xd03 || _model2 == 0xd03)) _cpuFeatures |= CPU_A53MAC;
+  if (_cpu == CPU_CAVIUM && _variant == 0) _features |= CPU_DMB_ATOMICS;
+  if (_cpu == CPU_ARM && (_model == 0xd03 || _model2 == 0xd03)) _features |= CPU_A53MAC;
   // If an olde style /proc/cpuinfo (cpu_lines == 1) then if _model is an A57 (0xd07)
   // we assume the worst and assume we could be on a big little system and have
   // undisclosed A53 cores which we could be swapped to at any stage
-  if (_cpu == CPU_ARM && cpu_lines == 1 && _model == 0xd07) _cpuFeatures |= CPU_A53MAC;
+  if (_cpu == CPU_ARM && cpu_lines == 1 && _model == 0xd07) _features |= CPU_A53MAC;
 
   sprintf(buf, "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
   if (_model2) sprintf(buf+strlen(buf), "(0x%03x)", _model2);
@@ -169,7 +167,7 @@ void VM_Version::get_processor_features() {
   if (auxv & HWCAP_SHA1)  strcat(buf, ", sha1");
   if (auxv & HWCAP_SHA2)  strcat(buf, ", sha256");
 
-  _features_str = os::strdup(buf);
+  _features_string = os::strdup(buf);
 
   if (FLAG_IS_DEFAULT(UseCRC32)) {
     UseCRC32 = (auxv & HWCAP_CRC32) != 0;
@@ -272,7 +270,7 @@ void VM_Version::get_processor_features() {
   }
 
   if (FLAG_IS_DEFAULT(UseBarriersForVolatile)) {
-    UseBarriersForVolatile = (_cpuFeatures & CPU_DMB_ATOMICS) != 0;
+    UseBarriersForVolatile = (_features & CPU_DMB_ATOMICS) != 0;
   }
 
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {

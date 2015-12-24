@@ -225,6 +225,19 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   __ restore_constant_pool_cache();
   __ get_method(rmethod);
 
+#if INCLUDE_JVMCI
+  // Check if we need to take lock at entry of synchronized method.
+  if (UseJVMCICompiler) {
+    Label L;
+    __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+    __ cbz(rscratch1, L);
+    // Clear flag.
+    __ strb(zr, Address(rthread, JavaThread::pending_monitorenter_offset()));
+    // Take lock.
+    lock_method();
+    __ bind(L);
+  }
+#endif
   // handle exceptions
   {
     Label L;
