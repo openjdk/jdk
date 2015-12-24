@@ -567,6 +567,9 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           const int name_index = cp->name_ref_index_at(index);
           const Symbol* const name = cp->symbol_at(name_index);
           const Symbol* const sig = cp->symbol_at(sig_index);
+          guarantee_property(sig->utf8_length() != 0,
+            "Illegal zero length constant pool entry at %d in class %s",
+            sig_index, CHECK);
           if (sig->byte_at(0) == JVM_SIGNATURE_FUNC) {
             verify_legal_method_signature(name, sig, CHECK);
           } else {
@@ -593,8 +596,9 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           verify_legal_field_name(name, CHECK);
           if (_need_verify && _major_version >= JAVA_7_VERSION) {
             // Signature is verified above, when iterating NameAndType_info.
-            // Need only to be sure it's the right type.
-            if (signature->byte_at(0) == JVM_SIGNATURE_FUNC) {
+            // Need only to be sure it's non-zero length and the right type.
+            if (signature->utf8_length() == 0 ||
+                signature->byte_at(0) == JVM_SIGNATURE_FUNC) {
               throwIllegalSignature(
                 "Field", name, signature, CHECK);
             }
@@ -605,8 +609,9 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           verify_legal_method_name(name, CHECK);
           if (_need_verify && _major_version >= JAVA_7_VERSION) {
             // Signature is verified above, when iterating NameAndType_info.
-            // Need only to be sure it's the right type.
-            if (signature->byte_at(0) != JVM_SIGNATURE_FUNC) {
+            // Need only to be sure it's non-zero length and the right type.
+            if (signature->utf8_length() == 0 ||
+                signature->byte_at(0) != JVM_SIGNATURE_FUNC) {
               throwIllegalSignature(
                 "Method", name, signature, CHECK);
             }
@@ -617,8 +622,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
             // 4509014: If a class method name begins with '<', it must be "<init>".
             assert(name != NULL, "method name in constant pool is null");
             const unsigned int name_len = name->utf8_length();
-            assert(name_len > 0, "bad method name");  // already verified as legal name
-            if (name->byte_at(0) == '<') {
+            if (name_len != 0 && name->byte_at(0) == '<') {
               if (name != vmSymbols::object_initializer_name()) {
                 classfile_parse_error(
                   "Bad method name at constant pool index %u in class file %s",
@@ -5369,12 +5373,12 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
       }
     }
 
-    if (TraceClassResolution) {
+    if (log_is_enabled(Info, classresolve))  {
       ResourceMark rm;
       // print out the superclass.
       const char * from = ik->external_name();
       if (ik->java_super() != NULL) {
-        tty->print("RESOLVE %s %s (super)\n",
+        log_info(classresolve)("%s %s (super)",
                    from,
                    ik->java_super()->external_name());
       }
@@ -5385,7 +5389,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
         for (int i = 0; i < length; i++) {
           const Klass* const k = local_interfaces->at(i);
           const char * to = k->external_name();
-          tty->print("RESOLVE %s %s (interface)\n", from, to);
+          log_info(classresolve)("%s %s (interface)", from, to);
         }
       }
     }

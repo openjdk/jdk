@@ -106,9 +106,9 @@ void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verif
   const char* resolve = resolve_class->external_name();
   // print in a single call to reduce interleaving between threads
   if (source_file != NULL) {
-    tty->print("RESOLVE %s %s %s (verification)\n", verify, resolve, source_file);
+    log_info(classresolve)("%s %s %s (verification)", verify, resolve, source_file);
   } else {
-    tty->print("RESOLVE %s %s (verification)\n", verify, resolve);
+    log_info(classresolve)("%s %s (verification)", verify, resolve);
   }
 }
 
@@ -206,7 +206,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
     ResourceMark rm(THREAD);
     instanceKlassHandle kls =
       SystemDictionary::resolve_or_fail(exception_name, true, CHECK_false);
-    if (TraceClassResolution) {
+    if (log_is_enabled(Info, classresolve)) {
       Verifier::trace_class_resolution(kls(), klass());
     }
 
@@ -1992,7 +1992,7 @@ Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
     name, Handle(THREAD, loader), Handle(THREAD, protection_domain),
     true, THREAD);
 
-  if (TraceClassResolution) {
+  if (log_is_enabled(Info, classresolve)) {
     instanceKlassHandle cur_class = current_class();
     Verifier::trace_class_resolution(kls, cur_class());
   }
