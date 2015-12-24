@@ -153,9 +153,9 @@ address StubRoutines::_vectorizedMismatch = NULL;
 
 address StubRoutines::_dexp = NULL;
 address StubRoutines::_dlog = NULL;
+address StubRoutines::_dpow = NULL;
 
 double (* StubRoutines::_intrinsic_log10 )(double) = NULL;
-double (* StubRoutines::_intrinsic_pow   )(double, double) = NULL;
 double (* StubRoutines::_intrinsic_sin   )(double) = NULL;
 double (* StubRoutines::_intrinsic_cos   )(double) = NULL;
 double (* StubRoutines::_intrinsic_tan   )(double) = NULL;

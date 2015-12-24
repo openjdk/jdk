@@ -772,6 +772,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case 0x55: // andnps
     case 0x56: // orps
     case 0x57: // xorps
+    case 0x58: // addpd
     case 0x59: // mulpd
     case 0x6E: // movd
     case 0x7E: // movd
@@ -3363,6 +3364,7 @@ void Assembler::pextrq(Register dst, XMMRegister src, int imm8) {
   emit_int8(imm8);
 }
 
+// The encoding for pextrw is SSE2 to support the LIBM implementation.
 void Assembler::pextrw(Register dst, XMMRegister src, int imm8) {
   assert(VM_Version::supports_sse2(), "");
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -4360,6 +4362,17 @@ void Assembler::addpd(XMMRegister dst, XMMRegister src) {
   emit_int8(0x58);
   emit_int8((unsigned char)(0xC0 | encode));
 }
+
+void Assembler::addpd(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionMark im(this);
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_64bit);
+  simd_prefix(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8(0x58);
+  emit_operand(dst, src);
+}
+
 
 void Assembler::addps(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));

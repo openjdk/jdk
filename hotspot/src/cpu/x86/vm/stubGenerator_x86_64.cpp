@@ -3025,21 +3025,6 @@ class StubGenerator: public StubCodeGenerator {
       __ addq(rsp, 8);
       __ ret(0);
     }
-    {
-      StubCodeMark mark(this, "StubRoutines", "pow");
-      StubRoutines::_intrinsic_pow = (double (*)(double,double)) __ pc();
-
-      __ subq(rsp, 8);
-      __ movdbl(Address(rsp, 0), xmm1);
-      __ fld_d(Address(rsp, 0));
-      __ movdbl(Address(rsp, 0), xmm0);
-      __ fld_d(Address(rsp, 0));
-      __ pow_with_fallback(0);
-      __ fstp_d(Address(rsp, 0));
-      __ movdbl(xmm0, Address(rsp, 0));
-      __ addq(rsp, 8);
-      __ ret(0);
-    }
   }
 
   // AES intrinsic stubs
@@ -4283,6 +4268,48 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
+  address generate_libmPow() {
+    address start = __ pc();
+
+    const XMMRegister x0 = xmm0;
+    const XMMRegister x1 = xmm1;
+    const XMMRegister x2 = xmm2;
+    const XMMRegister x3 = xmm3;
+
+    const XMMRegister x4 = xmm4;
+    const XMMRegister x5 = xmm5;
+    const XMMRegister x6 = xmm6;
+    const XMMRegister x7 = xmm7;
+
+    const Register tmp1 = r8;
+    const Register tmp2 = r9;
+    const Register tmp3 = r10;
+    const Register tmp4 = r11;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+#ifdef _WIN64
+    // save the xmm registers which must be preserved 6-7
+    __ subptr(rsp, 4 * wordSize);
+    __ movdqu(Address(rsp, 0), xmm6);
+    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
+#endif
+    __ fast_pow(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp1, tmp2, tmp3, tmp4);
+
+#ifdef _WIN64
+    // restore xmm regs belonging to calling function
+    __ movdqu(xmm6, Address(rsp, 0));
+    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
+    __ addptr(rsp, 4 * wordSize);
+#endif
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    return start;
+
+  }
 
 #undef __
 #define __ masm->
@@ -4478,6 +4505,7 @@ class StubGenerator: public StubCodeGenerator {
     if (VM_Version::supports_sse2()) {
       StubRoutines::_dexp = generate_libmExp();
       StubRoutines::_dlog = generate_libmLog();
+      StubRoutines::_dpow = generate_libmPow();
     }
   }
 
