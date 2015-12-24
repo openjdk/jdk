@@ -223,6 +223,10 @@
       <to>jdk.dev</to>
     </export>
     <export>
+      <name>jdk.internal.math</name>
+      <to>java.desktop</to>
+    </export>
+    <export>
       <name>jdk.internal.misc</name>
       <to>java.corba</to>
       <to>java.desktop</to>
