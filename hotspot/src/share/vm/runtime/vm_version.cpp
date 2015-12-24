@@ -31,6 +31,10 @@
 
 const char* Abstract_VM_Version::_s_vm_release = Abstract_VM_Version::vm_release();
 const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Version::internal_vm_info_string();
+
+uint64_t Abstract_VM_Version::_features = 0;
+const char* Abstract_VM_Version::_features_string = "";
+
 bool Abstract_VM_Version::_supports_cx8 = false;
 bool Abstract_VM_Version::_supports_atomic_getset4 = false;
 bool Abstract_VM_Version::_supports_atomic_getset8 = false;

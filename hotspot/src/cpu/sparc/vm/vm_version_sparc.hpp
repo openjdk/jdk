@@ -31,6 +31,7 @@
 class VM_Version: public Abstract_VM_Version {
   friend class VMStructs;
   friend class JVMCIVMStructs;
+
 protected:
   enum Feature_Flag {
     v8_instructions      = 0,
@@ -96,9 +97,6 @@ protected:
     niagara1_unique_m   = sun4v_m,
     niagara1_m          = generic_v9_m | niagara1_unique_m
   };
-
-  static int  _features;
-  static const char* _features_str;
 
   static unsigned int _L2_data_cache_line_size;
   static unsigned int L2_data_cache_line_size() { return _L2_data_cache_line_size; }
@@ -174,8 +172,6 @@ public:
 
   // On T4 and newer Sparc BIS to the beginning of cache line always zeros it.
   static bool has_block_zeroing()       { return has_blk_init() && is_T4(); }
-
-  static const char* cpu_features()     { return _features_str; }
 
   // default prefetch block size on sparc
   static intx prefetch_data_size()      { return L2_data_cache_line_size();  }
