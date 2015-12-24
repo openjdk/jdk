@@ -9864,24 +9864,6 @@ instruct log10D_reg(regD dst) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct powD_reg(regD dst, regD src0, regD src1, rax_RegI rax, rdx_RegI rdx, rcx_RegI rcx, rFlagsReg cr) %{
-  match(Set dst (PowD src0 src1));  // Raise src0 to the src1'th power
-  effect(KILL rax, KILL rdx, KILL rcx, KILL cr);
-  format %{ "fast_pow $src0 $src1 -> $dst  // KILL $rax, $rcx, $rdx" %}
-  ins_encode %{
-    __ subptr(rsp, 8);
-    __ movdbl(Address(rsp, 0), $src1$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-    __ movdbl(Address(rsp, 0), $src0$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-    __ fast_pow();
-    __ fstp_d(Address(rsp, 0));
-    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
-    __ addptr(rsp, 8);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 //----------Arithmetic Conversion Instructions---------------------------------
 
 instruct roundFloat_nop(regF dst)

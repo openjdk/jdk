@@ -491,20 +491,6 @@ public:
   virtual const Type *Value( PhaseTransform *phase ) const;
 };
 
-//------------------------------PowDNode---------------------------------------
-// Raise a double to a double power
-class PowDNode : public Node {
-public:
-  PowDNode(Compile* C, Node *c, Node *in1, Node *in2 ) : Node(c, in1, in2) {
-    init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
-  }
-  virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::DOUBLE; }
-  virtual uint ideal_reg() const { return Op_RegD; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
-};
-
 //-------------------------------ReverseBytesINode--------------------------------
 // reverse bytes of an integer
 class ReverseBytesINode : public Node {

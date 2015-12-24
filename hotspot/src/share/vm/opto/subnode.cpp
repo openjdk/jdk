@@ -1519,17 +1519,3 @@ const Type *Log10DNode::Value( PhaseTransform *phase ) const {
   return TypeD::make( StubRoutines::intrinsic_log10( d ) );
 }
 
-//=============================================================================
-//------------------------------Value------------------------------------------
-// Compute pow
-const Type *PowDNode::Value( PhaseTransform *phase ) const {
-  const Type *t1 = phase->type( in(1) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
-  const Type *t2 = phase->type( in(2) );
-  if( t2 == Type::TOP ) return Type::TOP;
-  if( t2->base() != Type::DoubleCon ) return Type::DOUBLE;
-  double d1 = t1->getd();
-  double d2 = t2->getd();
-  return TypeD::make( StubRoutines::intrinsic_pow( d1, d2 ) );
-}

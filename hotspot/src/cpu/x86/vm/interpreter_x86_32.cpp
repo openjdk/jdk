@@ -149,10 +149,15 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
         break;
     case Interpreter::java_lang_math_pow:
       __ fld_d(Address(rsp, 3*wordSize)); // second argument
-      __ pow_with_fallback(0);
-      // Store to stack to convert 80bit precision back to 64bits
-      __ push_fTOS();
-      __ pop_fTOS();
+      __ subptr(rsp, 4 * wordSize);
+      __ fstp_d(Address(rsp, 0));
+      __ fstp_d(Address(rsp, 2 * wordSize));
+      if (VM_Version::supports_sse2()) {
+        __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dpow())));
+      } else {
+        __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dpow)));
+      }
+      __ addptr(rsp, 4 * wordSize);
       break;
     case Interpreter::java_lang_math_exp:
       __ subptr(rsp, 2*wordSize);

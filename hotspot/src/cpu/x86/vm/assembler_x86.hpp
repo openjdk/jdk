@@ -1791,6 +1791,7 @@ private:
 
   // Add Packed Floating-Point Values
   void addpd(XMMRegister dst, XMMRegister src);
+  void addpd(XMMRegister dst, Address src);
   void addps(XMMRegister dst, XMMRegister src);
   void vaddpd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vaddps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);

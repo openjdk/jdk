@@ -9885,39 +9885,6 @@ instruct sqrtDPR_reg(regDPR dst, regDPR src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct powDPR_reg(regDPR X, regDPR1 Y, eAXRegI rax, eDXRegI rdx, eCXRegI rcx, eFlagsReg cr) %{
-  predicate (UseSSE<=1);
-  match(Set Y (PowD X Y));  // Raise X to the Yth power
-  effect(KILL rax, KILL rdx, KILL rcx, KILL cr);
-  format %{ "fast_pow $X $Y -> $Y  // KILL $rax, $rcx, $rdx" %}
-  ins_encode %{
-    __ subptr(rsp, 8);
-    __ fld_s($X$$reg - 1);
-    __ fast_pow();
-    __ addptr(rsp, 8);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct powD_reg(regD dst, regD src0, regD src1, eAXRegI rax, eDXRegI rdx, eCXRegI rcx, eFlagsReg cr) %{
-  predicate (UseSSE>=2);
-  match(Set dst (PowD src0 src1));  // Raise src0 to the src1'th power
-  effect(KILL rax, KILL rdx, KILL rcx, KILL cr);
-  format %{ "fast_pow $src0 $src1 -> $dst  // KILL $rax, $rcx, $rdx" %}
-  ins_encode %{
-    __ subptr(rsp, 8);
-    __ movdbl(Address(rsp, 0), $src1$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-    __ movdbl(Address(rsp, 0), $src0$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-    __ fast_pow();
-    __ fstp_d(Address(rsp, 0));
-    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
-    __ addptr(rsp, 8);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct log10DPR_reg(regDPR1 dst, regDPR1 src) %{
   predicate (UseSSE<=1);
   // The source Double operand on FPU stack
