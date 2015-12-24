@@ -279,6 +279,7 @@ hotspot_compiler_2 = \
   compiler/inlining/ \
   compiler/integerArithmetic/ \
   compiler/interpreter/ \
+  compiler/jvmci/ \
   -compiler/codegen/7184394 \
   -compiler/codecache/stress
   
