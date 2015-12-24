@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.BufferedReader;
@@ -32,6 +33,8 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Objects;
+
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.spi.SoundbankReader;
@@ -112,6 +115,7 @@ public final class JARSoundbankReader extends SoundbankReader {
 
     public Soundbank getSoundbank(InputStream stream)
             throws InvalidMidiDataException, IOException {
+        Objects.requireNonNull(stream);
         return null;
     }
 
