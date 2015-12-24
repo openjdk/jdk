@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @run junit jdk.vm.ci.options.test.TestOptionValue
  */
 

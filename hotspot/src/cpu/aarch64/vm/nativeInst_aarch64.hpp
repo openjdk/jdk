@@ -62,7 +62,6 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   inline bool is_jump_or_nop();
   inline bool is_cond_jump();
   bool is_safepoint_poll();
-  inline bool is_mov_literal64();
   bool is_movz();
   bool is_movk();
   bool is_sigill_zombie_not_entrant();
@@ -97,6 +96,14 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   static bool is_adrp_at(address instr);
   static bool is_ldr_literal_at(address instr);
   static bool is_ldrw_to_zr(address instr);
+
+  static bool is_call_at(address instr) {
+    const uint32_t insn = (*(uint32_t*)instr);
+    return (insn >> 26) == 0b100101;
+  }
+  bool is_call() {
+    return is_call_at(addr_at(0));
+  }
 
   static bool maybe_cpool_ref(address instr) {
     return is_adrp_at(instr) || is_ldr_literal_at(instr);
@@ -156,11 +163,6 @@ class NativeCall: public NativeInstruction {
   // Creation
   inline friend NativeCall* nativeCall_at(address address);
   inline friend NativeCall* nativeCall_before(address return_address);
-
-  static bool is_call_at(address instr) {
-    const uint32_t insn = (*(uint32_t*)instr);
-    return (insn >> 26) == 0b100101;
-  }
 
   static bool is_call_before(address return_address) {
     return is_call_at(return_address - NativeCall::return_address_offset);

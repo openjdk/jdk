@@ -40,14 +40,7 @@ define_pd_global(bool, ImplicitNullChecks,       true);  // Generate code for im
 define_pd_global(bool, TrapBasedNullChecks,  false);
 define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap NULLs past to check cast
 
-// See 4827828 for this change. There is no globals_core_i486.hpp. I can't
-// assign a different value for C2 without touching a number of files. Use
-// #ifdef to minimize the change as it's late in Mantis. -- FIXME.
-// c1 doesn't have this problem because the fix to 4858033 assures us
-// the the vep is aligned at CodeEntryAlignment whereas c2 only aligns
-// the uep and the vep doesn't get real alignment but just slops on by
-// only assured that the entry instruction meets the 5 byte size requirement.
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
 define_pd_global(intx, CodeEntryAlignment,       64);
 #else
 define_pd_global(intx, CodeEntryAlignment,       16);

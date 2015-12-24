@@ -169,6 +169,15 @@ suite = {
 
     # ------------- JVMCI:HotSpot -------------
 
+    "jdk.vm.ci.aarch64" : {
+      "subDir" : "src/jdk.vm.ci/share/classes",
+      "sourceDirs" : ["src"],
+      "dependencies" : ["jdk.vm.ci.code"],
+      "checkstyle" : "jdk.vm.ci.service",
+      "javaCompliance" : "1.8",
+      "workingSets" : "JVMCI,AArch64",
+    },
+
     "jdk.vm.ci.amd64" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
@@ -211,6 +220,21 @@ suite = {
       "checkstyle" : "jdk.vm.ci.service",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI,HotSpot",
+    },
+
+    "jdk.vm.ci.hotspot.aarch64" : {
+      "subDir" : "src/jdk.vm.ci/share/classes",
+      "sourceDirs" : ["src"],
+      "dependencies" : [
+        "jdk.vm.ci.aarch64",
+        "jdk.vm.ci.hotspot",
+      ],
+      "checkstyle" : "jdk.vm.ci.service",
+      "annotationProcessors" : [
+        "JVMCI_SERVICE_PROCESSOR",
+      ],
+      "javaCompliance" : "1.8",
+      "workingSets" : "JVMCI,HotSpot,AArch64",
     },
 
     "jdk.vm.ci.hotspot.amd64" : {
@@ -269,6 +293,7 @@ suite = {
         "jdk.vm.ci.inittimer",
         "jdk.vm.ci.runtime",
         "jdk.vm.ci.common",
+        "jdk.vm.ci.aarch64",
         "jdk.vm.ci.amd64",
         "jdk.vm.ci.sparc",
       ],
@@ -288,6 +313,7 @@ suite = {
     "JVMCI_HOTSPOT" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "dependencies" : [
+        "jdk.vm.ci.hotspot.aarch64",
         "jdk.vm.ci.hotspot.amd64",
         "jdk.vm.ci.hotspot.sparc",
       ],
@@ -345,9 +371,11 @@ suite = {
         "jdk.vm.ci.inittimer",
         "jdk.vm.ci.runtime",
         "jdk.vm.ci.common",
+        "jdk.vm.ci.aarch64",
         "jdk.vm.ci.amd64",
         "jdk.vm.ci.sparc",
         "jdk.vm.ci.hotspotvmconfig",
+        "jdk.vm.ci.hotspot.aarch64",
         "jdk.vm.ci.hotspot.amd64",
         "jdk.vm.ci.hotspot.sparc",
         "jdk.vm.ci.options.processor",
