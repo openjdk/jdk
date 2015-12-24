@@ -57,6 +57,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JVMCI_SERVICE, \
 
 PROC_SRC_SUBDIRS := \
     jdk.vm.ci.hotspot \
+    jdk.vm.ci.hotspot.aarch64 \
     jdk.vm.ci.hotspot.amd64 \
     jdk.vm.ci.hotspot.sparc \
     jdk.vm.ci.runtime \

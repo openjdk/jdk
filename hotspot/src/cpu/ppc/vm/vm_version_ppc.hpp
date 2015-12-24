@@ -64,8 +64,7 @@ protected:
     tcheck_m              = (1 << tcheck ),
     all_features_m        = -1
   };
-  static int  _features;
-  static const char* _features_str;
+
   static bool _is_determine_features_test_running;
 
   static void print_features();
@@ -95,8 +94,6 @@ public:
   static bool has_vcipher() { return (_features & vcipher_m) != 0; }
   static bool has_vpmsumb() { return (_features & vpmsumb_m) != 0; }
   static bool has_tcheck()  { return (_features & tcheck_m) != 0; }
-
-  static const char* cpu_features() { return _features_str; }
 
   // Assembler testing
   static void allow_all();

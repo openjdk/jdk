@@ -1310,6 +1310,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
      static_field(Abstract_VM_Version,         _s_vm_release,                                 const char*)                           \
      static_field(Abstract_VM_Version,         _s_internal_vm_info_string,                    const char*)                           \
+     static_field(Abstract_VM_Version,         _features,                                     uint64_t)                              \
+     static_field(Abstract_VM_Version,         _features_string,                              const char*)                           \
      static_field(Abstract_VM_Version,         _vm_major_version,                             int)                                   \
      static_field(Abstract_VM_Version,         _vm_minor_version,                             int)                                   \
      static_field(Abstract_VM_Version,         _vm_security_version,                          int)                                   \
