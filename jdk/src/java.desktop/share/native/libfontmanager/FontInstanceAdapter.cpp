@@ -67,12 +67,6 @@ FontInstanceAdapter::FontInstanceAdapter(JNIEnv *theEnv,
 };
 
 
-const void *FontInstanceAdapter::getFontTable(LETag tableTag) const
-{
-  size_t ignored = 0;
-  return getFontTable(tableTag, ignored);
-}
-
 static const LETag cacheMap[LAYOUTCACHE_ENTRIES] = {
   GPOS_TAG, GDEF_TAG, GSUB_TAG, MORT_TAG, MORX_TAG, KERN_TAG
 };
