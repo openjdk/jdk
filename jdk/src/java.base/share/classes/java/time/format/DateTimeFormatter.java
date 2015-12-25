@@ -80,6 +80,7 @@ import java.time.DateTimeException;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatterBuilder.CompositePrinterParser;
@@ -473,6 +474,17 @@ import java.util.Set;
  * day-of-week was valid for the date.
  * <li>If an {@linkplain #parsedExcessDays() excess number of days}
  * was parsed then it is added to the date if a date is available.
+ * <li> If a second-based field is present, but {@code LocalTime} was not parsed,
+ * then the resolver ensures that milli, micro and nano second values are
+ * available to meet the contract of {@link ChronoField}.
+ * These will be set to zero if missing.
+ * <li>If both date and time were parsed and either an offset or zone is present,
+ * the field {@link ChronoField#INSTANT_SECONDS} is created.
+ * If an offset was parsed then the offset will be combined with the
+ * {@code LocalDateTime} to form the instant, with any zone ignored.
+ * If a {@code ZoneId} was parsed without an offset then the zone will be
+ * combined with the {@code LocalDateTime} to form the instant using the rules
+ * of {@link ChronoLocalDateTime#atZone(ZoneId)}.
  * </ol>
  *
  * @implSpec
