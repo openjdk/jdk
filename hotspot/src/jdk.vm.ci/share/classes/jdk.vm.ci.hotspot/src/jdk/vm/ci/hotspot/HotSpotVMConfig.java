@@ -853,6 +853,7 @@ public class HotSpotVMConfig {
     @HotSpotVMFlag(name = "JVMCIUseFastLocking") @Stable public boolean useFastLocking;
     @HotSpotVMFlag(name = "ForceUnreachable") @Stable public boolean forceUnreachable;
     @HotSpotVMFlag(name = "CodeCacheSegmentSize") @Stable public int codeSegmentSize;
+    @HotSpotVMFlag(name = "FoldStableValues") @Stable public boolean foldStableValues;
 
     @HotSpotVMFlag(name = "UseTLAB") @Stable public boolean useTLAB;
     @HotSpotVMFlag(name = "UseBiasedLocking") @Stable public boolean useBiasedLocking;
@@ -1683,6 +1684,7 @@ public class HotSpotVMConfig {
     @HotSpotVMConstant(name = "ArrayData::array_len_off_set") @Stable public int arrayDataArrayLenOffset;
     @HotSpotVMConstant(name = "ArrayData::array_start_off_set") @Stable public int arrayDataArrayStartOffset;
     @HotSpotVMConstant(name = "MultiBranchData::per_case_cell_count") @Stable public int multiBranchDataPerCaseCellCount;
+
     // Checkstyle: resume
 
     private boolean check() {
