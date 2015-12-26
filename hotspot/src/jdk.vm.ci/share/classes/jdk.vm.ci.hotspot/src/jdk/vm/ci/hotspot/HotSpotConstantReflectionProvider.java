@@ -242,7 +242,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
      * {@link #readConstantFieldValue(JavaField, JavaConstant)}.
      */
     protected boolean isStaticFieldConstant(HotSpotResolvedJavaField staticField) {
-        if (staticField.isFinal() || staticField.isStable()) {
+        if (staticField.isFinal() || (staticField.isStable() && runtime.getConfig().foldStableValues)) {
             ResolvedJavaType holder = staticField.getDeclaringClass();
             if (holder.isInitialized() && !holder.getName().equals(SystemClassName)) {
                 return true;
@@ -312,7 +312,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
                             return value;
                         }
                     }
-                } else if (hotspotField.isStable()) {
+                } else if (hotspotField.isStable() && runtime.getConfig().foldStableValues) {
                     if (hotspotField.isInObject(object)) {
                         JavaConstant value = readFieldValue(field, receiver);
                         if (isStableInstanceFieldValueConstant(value, object.getClass())) {
@@ -337,8 +337,10 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         HotSpotResolvedJavaField hotspotField = (HotSpotResolvedJavaField) field;
         if (!hotspotField.isStable()) {
             return readNonStableFieldValue(field, receiver);
-        } else {
+        } else if (runtime.getConfig().foldStableValues) {
             return readStableFieldValue(field, receiver, hotspotField.isDefaultStable());
+        } else {
+            return null;
         }
     }
 
