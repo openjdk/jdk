@@ -858,6 +858,8 @@ public:
   // Result of Escape Analysis
   bool _is_scalar_replaceable;
   bool _is_non_escaping;
+  // True when MemBar for new is redundant with MemBar at initialzer exit
+  bool _is_allocation_MemBar_redundant;
 
   virtual uint size_of() const; // Size is bigger
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
@@ -923,6 +925,13 @@ public:
     InitializeNode* init = NULL;
     return _is_non_escaping || (((init = initialization()) != NULL) && init->does_not_escape());
   }
+
+  // If object doesn't escape in <.init> method and there is memory barrier
+  // inserted at exit of its <.init>, memory barrier for new is not necessary.
+  // Inovke this method when MemBar at exit of initializer and post-dominate
+  // allocation node.
+  void compute_MemBar_redundancy(ciMethod* initializer);
+  bool is_allocation_MemBar_redundant() { return _is_allocation_MemBar_redundant; }
 };
 
 //------------------------------AllocateArray---------------------------------
