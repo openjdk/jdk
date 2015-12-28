@@ -62,7 +62,7 @@ protected:
     vcipher_m             = (1 << vcipher),
     vpmsumb_m             = (1 << vpmsumb),
     tcheck_m              = (1 << tcheck ),
-    all_features_m        = -1
+    all_features_m        = (unsigned long)-1
   };
 
   static bool _is_determine_features_test_running;
