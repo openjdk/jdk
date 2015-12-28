@@ -32,7 +32,6 @@
  * @test
  * @bug 8049321
  * @summary Support SHA256WithDSA in JSSE
- * @modules java.base/sun.misc
  * @run main/othervm SignatureAlgorithms PKIX "SHA-224,SHA-256"
  *                   TLS_DHE_DSS_WITH_AES_128_CBC_SHA
  * @run main/othervm SignatureAlgorithms PKIX "SHA-1,SHA-224"
@@ -59,8 +58,6 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.*;
 import java.security.interfaces.*;
-import sun.misc.BASE64Decoder;
-
 
 public class SignatureAlgorithms {
 
@@ -374,7 +371,7 @@ public class SignatureAlgorithms {
 
                 // generate the private key.
                 PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
-                                new BASE64Decoder().decodeBuffer(keySpecStr));
+                                Base64.getMimeDecoder().decode(keySpecStr));
                 KeyFactory kf = KeyFactory.getInstance("DSA");
                 DSAPrivateKey priKey =
                         (DSAPrivateKey)kf.generatePrivate(priKeySpec);
