@@ -175,11 +175,9 @@ public class AArch64 extends Architecture {
     private final EnumSet<Flag> flags;
 
     public AArch64(EnumSet<CPUFeature> features, EnumSet<Flag> flags) {
-        super("aarch64", AArch64Kind.QWORD, ByteOrder.LITTLE_ENDIAN, /* unalignedMemoryAccess */true, allRegisters, /* implicitMemoryBarriers */0, /* nativeCallDisplacementOffset */0,
-                        /* returnAddressSize */0);
+        super("aarch64", AArch64Kind.QWORD, ByteOrder.LITTLE_ENDIAN, true, allRegisters, 0, 0, 0);
         this.features = features;
         this.flags = flags;
-        assert features.contains(CPUFeature.FP) : "minimum config for aarch64";
     }
 
     public EnumSet<CPUFeature> getFeatures() {
