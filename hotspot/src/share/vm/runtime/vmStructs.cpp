@@ -706,7 +706,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(SystemDictionary,            WK_KLASS(WeakReference_klass),                 InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(FinalReference_klass),                InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(PhantomReference_klass),              InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Cleaner_klass),                       InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(Finalizer_klass),                     InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   InstanceKlass*)                        \
