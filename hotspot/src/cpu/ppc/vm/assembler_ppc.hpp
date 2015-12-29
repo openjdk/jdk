@@ -1224,6 +1224,8 @@ class Assembler : public AbstractAssembler {
   inline void mullw_( Register d, Register a, Register b);
   inline void mulhw(  Register d, Register a, Register b);
   inline void mulhw_( Register d, Register a, Register b);
+  inline void mulhwu( Register d, Register a, Register b);
+  inline void mulhwu_(Register d, Register a, Register b);
   inline void mulhd(  Register d, Register a, Register b);
   inline void mulhd_( Register d, Register a, Register b);
   inline void mulhdu( Register d, Register a, Register b);

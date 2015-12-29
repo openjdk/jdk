@@ -263,7 +263,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
       __ cmpdi(CCR0, Rmdo, 0);
       __ beq(CCR0, no_mdo);
 
-      // Increment backedge counter in the MDO.
+      // Increment invocation counter in the MDO.
       const int mdo_ic_offs = in_bytes(MethodData::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
       __ lwz(Rscratch2, mdo_ic_offs, Rmdo);
       __ lwz(Rscratch1, in_bytes(MethodData::invoke_mask_offset()), Rmdo);
@@ -275,13 +275,13 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
     }
 
     // Increment counter in MethodCounters*.
-    const int mo_bc_offs = in_bytes(MethodCounters::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+    const int mo_ic_offs = in_bytes(MethodCounters::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
     __ bind(no_mdo);
     __ get_method_counters(R19_method, R3_counters, done);
-    __ lwz(Rscratch2, mo_bc_offs, R3_counters);
+    __ lwz(Rscratch2, mo_ic_offs, R3_counters);
     __ lwz(Rscratch1, in_bytes(MethodCounters::invoke_mask_offset()), R3_counters);
     __ addi(Rscratch2, Rscratch2, increment);
-    __ stw(Rscratch2, mo_bc_offs, R3_counters);
+    __ stw(Rscratch2, mo_ic_offs, R3_counters);
     __ and_(Rscratch1, Rscratch2, Rscratch1);
     __ beq(CCR0, *overflow);
 

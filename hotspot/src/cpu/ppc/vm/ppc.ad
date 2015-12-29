@@ -10897,16 +10897,16 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
 
 // inlined locking and unlocking
 
-instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
   match(Set crx (FastLock oop box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  effect(TEMP tmp1, TEMP tmp2);
   predicate(!Compile::current()->use_rtm());
 
-  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2, $tmp3" %}
+  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                 $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                 $tmp1$$Register, $tmp2$$Register, /*tmp3*/ R0,
                                  UseBiasedLocking && !UseOptoBiasInlining);
     // If locking was successfull, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
@@ -10925,7 +10925,7 @@ instruct cmpFastLock_tm(flagsReg crx, iRegPdst oop, rarg2RegP box, iRegPdst tmp1
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                 $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                  /*Biased Locking*/ false,
                                  _rtm_counters, _stack_rtm_counters,
                                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
@@ -10946,7 +10946,7 @@ instruct cmpFastUnlock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, 
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    UseBiasedLocking && !UseOptoBiasInlining,
                                    false);
     // If unlocking was successfull, crx should indicate 'EQ'.
@@ -10965,7 +10965,7 @@ instruct cmpFastUnlock_tm(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
+                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    /*Biased Locking*/ false, /*TM*/ true);
     // If unlocking was successfull, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to

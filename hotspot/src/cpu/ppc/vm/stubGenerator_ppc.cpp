@@ -2681,6 +2681,15 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
     }
 #endif
+
+    if (UseMontgomeryMultiplyIntrinsic) {
+      StubRoutines::_montgomeryMultiply
+        = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_multiply);
+    }
+    if (UseMontgomerySquareIntrinsic) {
+      StubRoutines::_montgomerySquare
+        = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
+    }
   }
 
  public:

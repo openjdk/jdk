@@ -49,4 +49,10 @@ void Compile::pd_compiler2_init() {
   if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
     FLAG_SET_ERGO(intx, ConditionalMoveLimit, 0);
   }
+
+  if (OptimizeFill) {
+    warning("OptimizeFill is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptimizeFill, false);
+  }
+
 }
