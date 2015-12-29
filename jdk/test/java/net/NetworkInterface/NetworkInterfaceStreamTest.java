@@ -85,13 +85,15 @@ public class NetworkInterfaceStreamTest extends OpTestCase {
     }
 
     private Stream<NetworkInterface> allNetworkInterfaces() throws SocketException {
-        return NetworkInterface.networkInterfaces().flatMap(this::allSubNetworkInterfaces);
+        return NetworkInterface.networkInterfaces()
+                .filter(ni -> isIncluded(ni))
+                .flatMap(this::allSubNetworkInterfaces);
     }
 
     private Stream<NetworkInterface> allSubNetworkInterfaces(NetworkInterface ni) {
         return Stream.concat(
                 Stream.of(ni),
-                ni.subInterfaces().flatMap(this::allSubNetworkInterfaces));
+                ni.subInterfaces().filter(sni -> isIncluded(sni)).flatMap(this::allSubNetworkInterfaces));
     }
 
     @Test
@@ -129,7 +131,9 @@ public class NetworkInterfaceStreamTest extends OpTestCase {
         Collection<NetworkInterface> nis = Collections.list(NetworkInterface.getNetworkInterfaces());
         Collection<InetAddress> expected = new ArrayList<>();
         for (NetworkInterface ni : nis) {
-            expected.addAll(Collections.list(ni.getInetAddresses()));
+            if (isIncluded(ni)) {
+                expected.addAll(Collections.list(ni.getInetAddresses()));
+            }
         }
         withData(TestData.Factory.ofSupplier("All inet addresses", ss))
                 .stream(s -> s)
