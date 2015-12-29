@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -579,7 +579,7 @@ NSUInteger JavaModifiersToNsKeyModifiers(jint javaModifiers, BOOL isExtMods)
 }
 
 
-jint GetJavaMouseModifiers(NSInteger button, NSUInteger modifierFlags)
+jint GetJavaMouseModifiers(NSUInteger modifierFlags)
 {
     // Mousing needs the key modifiers
     jint modifiers = NsKeyModifiersToJavaModifiers(modifierFlags, YES);
@@ -632,38 +632,18 @@ Java_java_awt_AWTEvent_nativeSetSource
 
 /*
  * Class:     sun_lwawt_macosx_NSEvent
- * Method:    nsToJavaMouseModifiers
+ * Method:    nsToJavaModifiers
  * Signature: (II)I
  */
 JNIEXPORT jint JNICALL
-Java_sun_lwawt_macosx_NSEvent_nsToJavaMouseModifiers
-(JNIEnv *env, jclass cls, jint buttonNumber, jint modifierFlags)
-{
-    jint jmodifiers = 0;
-
-JNF_COCOA_ENTER(env);
-
-    jmodifiers = GetJavaMouseModifiers(buttonNumber, modifierFlags);
-
-JNF_COCOA_EXIT(env);
-
-    return jmodifiers;
-}
-
-/*
- * Class:     sun_lwawt_macosx_NSEvent
- * Method:    nsToJavaKeyModifiers
- * Signature: (I)I
- */
-JNIEXPORT jint JNICALL
-Java_sun_lwawt_macosx_NSEvent_nsToJavaKeyModifiers
+Java_sun_lwawt_macosx_NSEvent_nsToJavaModifiers
 (JNIEnv *env, jclass cls, jint modifierFlags)
 {
     jint jmodifiers = 0;
 
 JNF_COCOA_ENTER(env);
 
-    jmodifiers = NsKeyModifiersToJavaModifiers(modifierFlags, YES);
+    jmodifiers = GetJavaMouseModifiers(modifierFlags);
 
 JNF_COCOA_EXIT(env);
 
