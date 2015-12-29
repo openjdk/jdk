@@ -66,7 +66,13 @@ address Relocation::pd_call_destination(address orig_addr) {
     }
   }
   if (orig_addr != NULL) {
-    return MacroAssembler::pd_call_destination(orig_addr);
+    address new_addr = MacroAssembler::pd_call_destination(orig_addr);
+    // If call is branch to self, don't try to relocate it, just leave it
+    // as branch to self. This happens during code generation if the code
+    // buffer expands. It will be relocated to the trampoline above once
+    // code generation is complete.
+    new_addr = (new_addr == orig_addr) ? addr() : new_addr;
+    return new_addr;
   }
   return MacroAssembler::pd_call_destination(addr());
 }
