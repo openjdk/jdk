@@ -1543,14 +1543,22 @@ private:
   // SSE 4.1 extract
   void pextrd(Register dst, XMMRegister src, int imm8);
   void pextrq(Register dst, XMMRegister src, int imm8);
+  void pextrd(Address dst, XMMRegister src, int imm8);
+  void pextrq(Address dst, XMMRegister src, int imm8);
+  void pextrb(Address dst, XMMRegister src, int imm8);
   // SSE 2 extract
   void pextrw(Register dst, XMMRegister src, int imm8);
+  void pextrw(Address dst, XMMRegister src, int imm8);
 
   // SSE 4.1 insert
   void pinsrd(XMMRegister dst, Register src, int imm8);
   void pinsrq(XMMRegister dst, Register src, int imm8);
+  void pinsrd(XMMRegister dst, Address src, int imm8);
+  void pinsrq(XMMRegister dst, Address src, int imm8);
+  void pinsrb(XMMRegister dst, Address src, int imm8);
   // SSE 2 insert
   void pinsrw(XMMRegister dst, Register src, int imm8);
+  void pinsrw(XMMRegister dst, Address src, int imm8);
 
   // SSE4.1 packed move
   void pmovzxbw(XMMRegister dst, XMMRegister src);
@@ -1761,6 +1769,8 @@ private:
   void xorl(Register dst, int32_t imm32);
   void xorl(Register dst, Address src);
   void xorl(Register dst, Register src);
+
+  void xorb(Register dst, Address src);
 
   void xorq(Register dst, Address src);
   void xorq(Register dst, Register src);

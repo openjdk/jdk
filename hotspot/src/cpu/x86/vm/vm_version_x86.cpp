@@ -648,6 +648,28 @@ void VM_Version::get_processor_features() {
         }
         FLAG_SET_DEFAULT(UseAESIntrinsics, false);
       }
+
+      // --AES-CTR begins--
+      if (!UseAESIntrinsics) {
+        if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+          warning("AES-CTR intrinsics require UseAESIntrinsics flag to be enabled. Intrinsics will be disabled.");
+          FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+        }
+      } else {
+        if(supports_sse4_1() && UseSSE >= 4) {
+          if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+            FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
+          }
+        } else {
+           // The AES-CTR intrinsic stubs require AES instruction support (of course)
+           // but also require sse4.1 mode or higher for instructions it use.
+          if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+             warning("X86 AES-CTR intrinsics require SSE4.1 instructions or higher. Intrinsics will be disabled.");
+           }
+           FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+        }
+      }
+      // --AES-CTR ends--
     }
   } else if (UseAES || UseAESIntrinsics) {
     if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
@@ -657,6 +679,10 @@ void VM_Version::get_processor_features() {
     if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
       warning("AES intrinsics are not available on this CPU");
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    }
+    if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+      warning("AES-CTR intrinsics are not available on this CPU");
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
   }
 
@@ -679,6 +705,16 @@ void VM_Version::get_processor_features() {
     if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics))
       warning("CRC32 Intrinsics requires CLMUL instructions (not available on this CPU)");
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
+  }
+
+  if (UseAESIntrinsics) {
+    if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+      UseAESCTRIntrinsics = true;
+    }
+  } else if (UseAESCTRIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseAESCTRIntrinsics))
+        warning("AES/CTR intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
   if (supports_sse4_2()) {

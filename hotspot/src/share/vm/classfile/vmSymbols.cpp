@@ -409,6 +409,7 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
+  case vmIntrinsics::_counterMode_AESCrypt:
     return 1;
   case vmIntrinsics::_digestBase_implCompressMB:
     return 3;
@@ -596,6 +597,9 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     if (!UseAESIntrinsics) return true;
+    break;
+  case vmIntrinsics::_counterMode_AESCrypt:
+    if (!UseAESCTRIntrinsics) return true;
     break;
   case vmIntrinsics::_sha_implCompress:
     if (!UseSHA1Intrinsics) return true;

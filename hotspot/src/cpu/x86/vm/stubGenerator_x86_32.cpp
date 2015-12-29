@@ -2142,6 +2142,17 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_counter_shuffle_mask() {
+    __ align(16);
+    StubCodeMark mark(this, "StubRoutines", "counter_shuffle_mask");
+    address start = __ pc();
+    __ emit_data(0x0c0d0e0f, relocInfo::none, 0);
+    __ emit_data(0x08090a0b, relocInfo::none, 0);
+    __ emit_data(0x04050607, relocInfo::none, 0);
+    __ emit_data(0x00010203, relocInfo::none, 0);
+    return start;
+  }
+
   // Utility routine for loading a 128-bit key word in little endian format
   // can optionally specify that the shuffle mask is already in an xmmregister
   void load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask=NULL) {
@@ -2165,6 +2176,31 @@ class StubGenerator: public StubCodeGenerator {
   void aes_dec_key(XMMRegister xmmdst, XMMRegister xmmtmp, Register key, int offset, XMMRegister xmm_shuf_mask=NULL) {
     load_key(xmmtmp, key, offset, xmm_shuf_mask);
     __ aesdec(xmmdst, xmmtmp);
+  }
+
+  // Utility routine for increase 128bit counter (iv in CTR mode)
+  //  XMM_128bit,  D3, D2, D1, D0
+  void inc_counter(Register reg, XMMRegister xmmdst, int inc_delta, Label& next_block) {
+    __ pextrd(reg, xmmdst, 0x0);
+    __ addl(reg, inc_delta);
+    __ pinsrd(xmmdst, reg, 0x0);
+    __ jcc(Assembler::carryClear, next_block); // jump if no carry
+
+    __ pextrd(reg, xmmdst, 0x01); // Carry-> D1
+    __ addl(reg, 0x01);
+    __ pinsrd(xmmdst, reg, 0x01);
+    __ jcc(Assembler::carryClear, next_block); // jump if no carry
+
+    __ pextrd(reg, xmmdst, 0x02); // Carry-> D2
+    __ addl(reg, 0x01);
+    __ pinsrd(xmmdst, reg, 0x02);
+    __ jcc(Assembler::carryClear, next_block); // jump if no carry
+
+    __ pextrd(reg, xmmdst, 0x03); // Carry -> D3
+    __ addl(reg, 0x01);
+    __ pinsrd(xmmdst, reg, 0x03);
+
+    __ BIND(next_block);          // next instruction
   }
 
 
@@ -2741,6 +2777,317 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
+
+
+  // CTR AES crypt.
+  // In 32-bit stub, parallelize 4 blocks at a time
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //   c_rarg3   - counter vector byte array address
+  //   c_rarg4   - input length
+  //
+  // Output:
+  //   rax       - input length
+  //
+  address generate_counterMode_AESCrypt_Parallel() {
+    assert(UseAES, "need AES instructions and misaligned SSE support");
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "counterMode_AESCrypt");
+    address start = __ pc();
+    const Register from        = rsi;      // source array address
+    const Register to          = rdx;      // destination array address
+    const Register key         = rcx;      // key array address
+    const Register counter     = rdi;      // counter byte array initialized from initvector array address
+
+    // and left with the results of the last encryption block
+    const Register len_reg     = rbx;
+    const Register pos         = rax;
+
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+    handleSOERegisters(true /*saving*/); // save rbx, rsi, rdi
+
+    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
+    // context for the registers used, where all instructions below are using 128-bit mode
+    // On EVEX without VL and BW, these instructions will all be AVX.
+    if (VM_Version::supports_avx512vlbw()) {
+      __ movl(rdx, 0xffff);
+      __ kmovdl(k1, rdx);
+    }
+
+    // load registers from incoming parameters
+    const Address  from_param(rbp, 8+0);
+    const Address  to_param  (rbp, 8+4);
+    const Address  key_param (rbp, 8+8);
+    const Address  rvec_param (rbp, 8+12);
+    const Address  len_param  (rbp, 8+16);
+    const Address  saved_counter_param(rbp, 8 + 20);
+    const Address  used_addr_param(rbp, 8 + 24);
+
+    __ movptr(from , from_param);
+    __ movptr(to   , to_param);
+    //__ movptr(key, key_param);
+    //__ movptr(counter, rvec_param);
+    __ movptr(len_reg , len_param);
+    //__ movptr(pos, 0);
+
+    // Use the partially used encrpyted counter from last invocation
+    Label L_exit_preLoop, L_preLoop_start;
+
+    // Use the registers 'counter' and 'key' here in this preloop
+    // to hold of last 2 params 'used' and 'saved_encCounter_start'
+    Register used = counter;
+    Register saved_encCounter_start = key;
+    Register used_addr = saved_encCounter_start;
+
+    __ movptr(used_addr, used_addr_param);
+    __ movptr(used, Address(used_addr, 0));
+    __ movptr(saved_encCounter_start, saved_counter_param);
+
+    __ BIND(L_preLoop_start);
+    __ cmpptr(used, 16);
+    __ jcc(Assembler::aboveEqual, L_exit_preLoop);
+    __ cmpptr(len_reg, 0);
+    __ jcc(Assembler::lessEqual, L_exit_preLoop);
+    __ movb(rax, Address(saved_encCounter_start, used));
+    __ xorb(rax, Address(from, 0));
+    __ movb(Address(to, 0), rax);
+    __ addptr(from, 1);
+    __ addptr(to, 1);
+    __ addptr(used, 1);
+    __ subptr(len_reg, 1);
+
+    __ jmp(L_preLoop_start);
+
+    __ BIND(L_exit_preLoop);
+    __ movptr(used_addr, used_addr_param);
+    __ movptr(used_addr, used_addr_param);
+    __ movl(Address(used_addr, 0), used);
+
+    // load the parameters 'key' and 'counter'
+    __ movptr(key, key_param);
+    __ movptr(counter, rvec_param);
+
+    // xmm register assignments for the loops below
+    const XMMRegister xmm_curr_counter      = xmm0;
+    const XMMRegister xmm_counter_shuf_mask = xmm1;  // need to be reloaded
+    const XMMRegister xmm_key_shuf_mask     = xmm2;  // need to be reloaded
+    const XMMRegister xmm_key               = xmm3;
+    const XMMRegister xmm_result0           = xmm4;
+    const XMMRegister xmm_result1           = xmm5;
+    const XMMRegister xmm_result2           = xmm6;
+    const XMMRegister xmm_result3           = xmm7;
+    const XMMRegister xmm_from0             = xmm1;   //reuse XMM register
+    const XMMRegister xmm_from1             = xmm2;
+    const XMMRegister xmm_from2             = xmm3;
+    const XMMRegister xmm_from3             = xmm4;
+
+    //for key_128, key_192, key_256
+    const int rounds[3] = {10, 12, 14};
+    Label L_singleBlockLoopTop[3];
+    Label L_multiBlock_loopTop[3];
+    Label L_key192_top, L_key256_top;
+    Label L_incCounter[3][4]; // 3: different key length,  4: 4 blocks at a time
+    Label L_incCounter_single[3]; //for single block, key128, key192, key256
+    Label L_processTail_insr[3], L_processTail_4_insr[3], L_processTail_2_insr[3], L_processTail_1_insr[3], L_processTail_exit_insr[3];
+    Label L_processTail_extr[3], L_processTail_4_extr[3], L_processTail_2_extr[3], L_processTail_1_extr[3], L_processTail_exit_extr[3];
+
+    Label L_exit;
+    const int PARALLEL_FACTOR = 4;  //because of the limited register number
+
+    // initialize counter with initial counter
+    __ movdqu(xmm_curr_counter, Address(counter, 0x00));
+    __ movdqu(xmm_counter_shuf_mask, ExternalAddress(StubRoutines::x86::counter_shuffle_mask_addr()));
+    __ pshufb(xmm_curr_counter, xmm_counter_shuf_mask); //counter is shuffled for increase
+
+    // key length could be only {11, 13, 15} * 4 = {44, 52, 60}
+    __ movdqu(xmm_key_shuf_mask, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
+    __ movl(rax, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ cmpl(rax, 52);
+    __ jcc(Assembler::equal, L_key192_top);
+    __ cmpl(rax, 60);
+    __ jcc(Assembler::equal, L_key256_top);
+
+    //key128 begins here
+    __ movptr(pos, 0); // init pos before L_multiBlock_loopTop
+
+#define CTR_DoFour(opc, src_reg)               \
+    __ opc(xmm_result0, src_reg);              \
+    __ opc(xmm_result1, src_reg);              \
+    __ opc(xmm_result2, src_reg);              \
+    __ opc(xmm_result3, src_reg);
+
+    // k == 0 :  generate code for key_128
+    // k == 1 :  generate code for key_192
+    // k == 2 :  generate code for key_256
+    for (int k = 0; k < 3; ++k) {
+      //multi blocks starts here
+      __ align(OptoLoopAlignment);
+      __ BIND(L_multiBlock_loopTop[k]);
+      __ cmpptr(len_reg, PARALLEL_FACTOR * AESBlockSize); // see if at least PARALLEL_FACTOR blocks left
+      __ jcc(Assembler::less, L_singleBlockLoopTop[k]);
+
+      __ movdqu(xmm_key_shuf_mask, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
+      __ movdqu(xmm_counter_shuf_mask, ExternalAddress(StubRoutines::x86::counter_shuffle_mask_addr()));
+
+      //load, then increase counters
+      CTR_DoFour(movdqa, xmm_curr_counter);
+      __ push(rbx);
+      inc_counter(rbx, xmm_result1, 0x01, L_incCounter[k][0]);
+      inc_counter(rbx, xmm_result2, 0x02, L_incCounter[k][1]);
+      inc_counter(rbx, xmm_result3, 0x03, L_incCounter[k][2]);
+      inc_counter(rbx, xmm_curr_counter, 0x04, L_incCounter[k][3]);
+      __ pop (rbx);
+
+      load_key(xmm_key, key, 0x00, xmm_key_shuf_mask); // load Round 0 key. interleaving for better performance
+
+      CTR_DoFour(pshufb, xmm_counter_shuf_mask); // after increased, shuffled counters back for PXOR
+      CTR_DoFour(pxor, xmm_key);   //PXOR with Round 0 key
+
+      for (int i = 1; i < rounds[k]; ++i) {
+        load_key(xmm_key, key, (0x10 * i), xmm_key_shuf_mask);
+        CTR_DoFour(aesenc, xmm_key);
+      }
+      load_key(xmm_key, key, (0x10 * rounds[k]), xmm_key_shuf_mask);
+      CTR_DoFour(aesenclast, xmm_key);
+
+      // get next PARALLEL_FACTOR blocks into xmm_from registers
+      __ movdqu(xmm_from0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
+      __ movdqu(xmm_from1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
+      __ movdqu(xmm_from2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
+
+      // PXOR with input text
+      __ pxor(xmm_result0, xmm_from0); //result0 is xmm4
+      __ pxor(xmm_result1, xmm_from1);
+      __ pxor(xmm_result2, xmm_from2);
+
+      // store PARALLEL_FACTOR results into the next 64 bytes of output
+      __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
+      __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
+      __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
+
+      // do it here after xmm_result0 is saved, because xmm_from3 reuse the same register of xmm_result0.
+      __ movdqu(xmm_from3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
+      __ pxor(xmm_result3, xmm_from3);
+      __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
+
+      __ addptr(pos, PARALLEL_FACTOR * AESBlockSize); // increase the length of crypt text
+      __ subptr(len_reg, PARALLEL_FACTOR * AESBlockSize); // decrease the remaining length
+      __ jmp(L_multiBlock_loopTop[k]);
+
+      // singleBlock starts here
+      __ align(OptoLoopAlignment);
+      __ BIND(L_singleBlockLoopTop[k]);
+      __ cmpptr(len_reg, 0);
+      __ jcc(Assembler::equal, L_exit);
+      __ movdqu(xmm_key_shuf_mask, ExternalAddress(StubRoutines::x86::key_shuffle_mask_addr()));
+      __ movdqu(xmm_counter_shuf_mask, ExternalAddress(StubRoutines::x86::counter_shuffle_mask_addr()));
+      __ movdqa(xmm_result0, xmm_curr_counter);
+      load_key(xmm_key, key, 0x00, xmm_key_shuf_mask);
+      __ push(rbx);//rbx is used for increasing counter
+      inc_counter(rbx, xmm_curr_counter, 0x01, L_incCounter_single[k]);
+      __ pop (rbx);
+      __ pshufb(xmm_result0, xmm_counter_shuf_mask);
+      __ pxor(xmm_result0, xmm_key);
+      for (int i = 1; i < rounds[k]; i++) {
+        load_key(xmm_key, key, (0x10 * i), xmm_key_shuf_mask);
+        __ aesenc(xmm_result0, xmm_key);
+      }
+      load_key(xmm_key, key, (0x10 * rounds[k]), xmm_key_shuf_mask);
+      __ aesenclast(xmm_result0, xmm_key);
+      __ cmpptr(len_reg, AESBlockSize);
+      __ jcc(Assembler::less, L_processTail_insr[k]);
+        __ movdqu(xmm_from0, Address(from, pos, Address::times_1, 0 * AESBlockSize));
+        __ pxor(xmm_result0, xmm_from0);
+        __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);
+        __ addptr(pos, AESBlockSize);
+        __ subptr(len_reg, AESBlockSize);
+        __ jmp(L_singleBlockLoopTop[k]);
+
+      __ BIND(L_processTail_insr[k]);
+        __ addptr(pos, len_reg);
+        __ testptr(len_reg, 8);
+        __ jcc(Assembler::zero, L_processTail_4_insr[k]);
+          __ subptr(pos,8);
+          __ pinsrd(xmm_from0, Address(from, pos), 0);
+          __ pinsrd(xmm_from0, Address(from, pos, Address::times_1, 4), 1);
+        __ BIND(L_processTail_4_insr[k]);
+        __ testptr(len_reg, 4);
+        __ jcc(Assembler::zero, L_processTail_2_insr[k]);
+          __ subptr(pos,4);
+          __ pslldq(xmm_from0, 4);
+          __ pinsrd(xmm_from0, Address(from, pos), 0);
+        __ BIND(L_processTail_2_insr[k]);
+        __ testptr(len_reg, 2);
+        __ jcc(Assembler::zero, L_processTail_1_insr[k]);
+          __ subptr(pos, 2);
+          __ pslldq(xmm_from0, 2);
+          __ pinsrw(xmm_from0, Address(from, pos), 0);
+        __ BIND(L_processTail_1_insr[k]);
+        __ testptr(len_reg, 1);
+        __ jcc(Assembler::zero, L_processTail_exit_insr[k]);
+          __ subptr(pos, 1);
+          __ pslldq(xmm_from0, 1);
+          __ pinsrb(xmm_from0, Address(from, pos), 0);
+        __ BIND(L_processTail_exit_insr[k]);
+
+        __ movptr(saved_encCounter_start, saved_counter_param);
+        __ movdqu(Address(saved_encCounter_start, 0), xmm_result0);
+        __ pxor(xmm_result0, xmm_from0);
+
+        __ testptr(len_reg, 8);
+        __ jcc(Assembler::zero, L_processTail_4_extr[k]);
+          __ pextrd(Address(to, pos), xmm_result0, 0);
+          __ pextrd(Address(to, pos, Address::times_1, 4), xmm_result0, 1);
+          __ psrldq(xmm_result0, 8);
+          __ addptr(pos, 8);
+        __ BIND(L_processTail_4_extr[k]);
+        __ testptr(len_reg, 4);
+        __ jcc(Assembler::zero, L_processTail_2_extr[k]);
+          __ pextrd(Address(to, pos), xmm_result0, 0);
+          __ psrldq(xmm_result0, 4);
+          __ addptr(pos, 4);
+        __ BIND(L_processTail_2_extr[k]);
+        __ testptr(len_reg, 2);
+        __ jcc(Assembler::zero, L_processTail_1_extr[k]);
+          __ pextrb(Address(to, pos), xmm_result0, 0);
+          __ pextrb(Address(to, pos, Address::times_1, 1), xmm_result0, 1);
+          __ psrldq(xmm_result0, 2);
+          __ addptr(pos, 2);
+        __ BIND(L_processTail_1_extr[k]);
+        __ testptr(len_reg, 1);
+        __ jcc(Assembler::zero, L_processTail_exit_extr[k]);
+          __ pextrb(Address(to, pos), xmm_result0, 0);
+
+        __ BIND(L_processTail_exit_extr[k]);
+        __ movptr(used_addr, used_addr_param);
+        __ movl(Address(used_addr, 0), len_reg);
+        __ jmp(L_exit);
+    }
+
+    __ BIND(L_exit);
+    __ movdqu(xmm_counter_shuf_mask, ExternalAddress(StubRoutines::x86::counter_shuffle_mask_addr()));
+    __ pshufb(xmm_curr_counter, xmm_counter_shuf_mask); //counter is shuffled back.
+    __ movdqu(Address(counter, 0), xmm_curr_counter); //save counter back
+    handleSOERegisters(false /*restoring*/);
+    __ movptr(rax, len_param); // return length
+    __ leave();                // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    __ BIND (L_key192_top);
+    __ movptr(pos, 0); // init pos before L_multiBlock_loopTop
+    __ jmp(L_multiBlock_loopTop[1]); //key192
+
+    __ BIND (L_key256_top);
+    __ movptr(pos, 0); // init pos before L_multiBlock_loopTop
+    __ jmp(L_multiBlock_loopTop[2]); //key192
+
+    return start;
+  }
+
 
   // byte swap x86 long
   address generate_ghash_long_swap_mask() {
@@ -3358,6 +3705,11 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
+    }
+
+    if (UseAESCTRIntrinsics) {
+      StubRoutines::x86::_counter_shuffle_mask_addr = generate_counter_shuffle_mask();
+      StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt_Parallel();
     }
 
     // Generate GHASH intrinsics code
