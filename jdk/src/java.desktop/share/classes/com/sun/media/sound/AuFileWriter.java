@@ -25,25 +25,23 @@
 
 package com.sun.media.sound;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.IOException;
-
 import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.SequenceInputStream;
 import java.util.Objects;
 
 import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
-
 
 /**
  * AU file writer.
@@ -52,8 +50,10 @@ import javax.sound.sampled.AudioSystem;
  */
 public final class AuFileWriter extends SunFileWriter {
 
-    //$$fb value for length field if length is not known
-    public static final int UNKNOWN_SIZE=-1;
+    /**
+     * Value for length field if length is not known.
+     */
+    private static final int UNKNOWN_SIZE = -1;
 
     /**
      * Constructs a new AuFileWriter object.
@@ -62,6 +62,7 @@ public final class AuFileWriter extends SunFileWriter {
         super(new AudioFileFormat.Type[]{AudioFileFormat.Type.AU});
     }
 
+    @Override
     public AudioFileFormat.Type[] getAudioFileTypes(AudioInputStream stream) {
 
         AudioFileFormat.Type[] filetypes = new AudioFileFormat.Type[types.length];
@@ -82,7 +83,7 @@ public final class AuFileWriter extends SunFileWriter {
         return new AudioFileFormat.Type[0];
     }
 
-
+    @Override
     public int write(AudioInputStream stream, AudioFileFormat.Type fileType, OutputStream out) throws IOException {
         Objects.requireNonNull(stream);
         Objects.requireNonNull(fileType);
@@ -96,13 +97,10 @@ public final class AuFileWriter extends SunFileWriter {
 
         // throws IllegalArgumentException if not supported
         AuFileFormat auFileFormat = (AuFileFormat)getAudioFileFormat(fileType, stream);
-
-        int bytesWritten = writeAuFile(stream, auFileFormat, out);
-        return bytesWritten;
+        return writeAuFile(stream, auFileFormat, out);
     }
 
-
-
+    @Override
     public int write(AudioInputStream stream, AudioFileFormat.Type fileType, File out) throws IOException {
         Objects.requireNonNull(stream);
         Objects.requireNonNull(fileType);
@@ -137,7 +135,6 @@ public final class AuFileWriter extends SunFileWriter {
         return bytesWritten;
     }
 
-
     // -------------------------------------------------------------
 
     /**
@@ -154,11 +151,7 @@ public final class AuFileWriter extends SunFileWriter {
         AudioFormat.Encoding streamEncoding = streamFormat.getEncoding();
 
 
-        float sampleRate;
         int sampleSizeInBits;
-        int channels;
-        int frameSize;
-        float frameRate;
         int fileSize;
 
         if( !types[0].equals(type) ) {
@@ -206,14 +199,12 @@ public final class AuFileWriter extends SunFileWriter {
         return fileFormat;
     }
 
-
-    private InputStream getFileStream(AuFileFormat auFileFormat, InputStream audioStream) throws IOException {
+    private InputStream getFileStream(AuFileFormat auFileFormat, AudioInputStream audioStream) throws IOException {
 
         // private method ... assumes auFileFormat is a supported file type
 
         AudioFormat format            = auFileFormat.getFormat();
 
-        int magic          = AuFileFormat.AU_SUN_MAGIC;
         int headerSize     = AuFileFormat.AU_HEADERSIZE;
         long dataSize       = auFileFormat.getFrameLength();
         //$$fb fix for Bug 4351296
@@ -225,9 +216,6 @@ public final class AuFileWriter extends SunFileWriter {
         int encoding_local = auFileFormat.getAuType();
         int sampleRate     = (int)format.getSampleRate();
         int channels       = format.getChannels();
-        //$$fb below is the fix for 4297100.
-        //boolean bigendian      = format.isBigEndian();
-        boolean bigendian      = true;                  // force bigendian
 
         byte header[] = null;
         ByteArrayInputStream headerStream = null;
@@ -243,54 +231,37 @@ public final class AuFileWriter extends SunFileWriter {
 
         codedAudioStream = audioStream;
 
-        if( audioStream instanceof AudioInputStream ) {
+        audioStreamFormat = audioStream.getFormat();
+        encoding = audioStreamFormat.getEncoding();
+
+        //$$ fb 2001-07-13: Bug 4391108
+        if( (AudioFormat.Encoding.PCM_UNSIGNED.equals(encoding)) ||
+            (AudioFormat.Encoding.PCM_SIGNED.equals(encoding)
+             && !audioStreamFormat.isBigEndian()) ) {
+            // We always write big endian au files, this is by far the standard
+            codedAudioStream = AudioSystem.getAudioInputStream( new AudioFormat (
+                                                                                 AudioFormat.Encoding.PCM_SIGNED,
+                                                                                 audioStreamFormat.getSampleRate(),
+                                                                                 audioStreamFormat.getSampleSizeInBits(),
+                                                                                 audioStreamFormat.getChannels(),
+                                                                                 audioStreamFormat.getFrameSize(),
+                                                                                 audioStreamFormat.getFrameRate(),
+                                                                                 true),
+                                                                                 audioStream );
 
 
-            audioStreamFormat = ((AudioInputStream)audioStream).getFormat();
-            encoding = audioStreamFormat.getEncoding();
-
-            //$$ fb 2001-07-13: Bug 4391108
-            if( (AudioFormat.Encoding.PCM_UNSIGNED.equals(encoding)) ||
-                (AudioFormat.Encoding.PCM_SIGNED.equals(encoding)
-                 && bigendian != audioStreamFormat.isBigEndian()) ) {
-
-                                // plug in the transcoder to convert to PCM_SIGNED, bigendian
-                                // NOTE: little endian AU is not common, so we're always converting
-                                //       to big endian unless the passed in audioFileFormat is little.
-                                // $$fb this NOTE is superseded. We always write big endian au files, this is by far the standard.
-                codedAudioStream = AudioSystem.getAudioInputStream( new AudioFormat (
-                                                                                     AudioFormat.Encoding.PCM_SIGNED,
-                                                                                     audioStreamFormat.getSampleRate(),
-                                                                                     audioStreamFormat.getSampleSizeInBits(),
-                                                                                     audioStreamFormat.getChannels(),
-                                                                                     audioStreamFormat.getFrameSize(),
-                                                                                     audioStreamFormat.getFrameRate(),
-                                                                                     bigendian),
-                                                                    (AudioInputStream)audioStream );
-
-
-            }
         }
 
         baos = new ByteArrayOutputStream();
         dos = new DataOutputStream(baos);
 
 
-        if (bigendian) {
-            dos.writeInt(AuFileFormat.AU_SUN_MAGIC);
-            dos.writeInt(headerSize);
-            dos.writeInt((int)dataSizeInBytes);
-            dos.writeInt(encoding_local);
-            dos.writeInt(sampleRate);
-            dos.writeInt(channels);
-        } else {
-            dos.writeInt(AuFileFormat.AU_SUN_INV_MAGIC);
-            dos.writeInt(big2little(headerSize));
-            dos.writeInt(big2little((int)dataSizeInBytes));
-            dos.writeInt(big2little(encoding_local));
-            dos.writeInt(big2little(sampleRate));
-            dos.writeInt(big2little(channels));
-        }
+        dos.writeInt(AuFileFormat.AU_SUN_MAGIC);
+        dos.writeInt(headerSize);
+        dos.writeInt((int)dataSizeInBytes);
+        dos.writeInt(encoding_local);
+        dos.writeInt(sampleRate);
+        dos.writeInt(channels);
 
         // Now create a new InputStream from headerStream and the InputStream
         // in audioStream
@@ -304,7 +275,7 @@ public final class AuFileWriter extends SunFileWriter {
         return auStream;
     }
 
-    private int writeAuFile(InputStream in, AuFileFormat auFileFormat, OutputStream out) throws IOException {
+    private int writeAuFile(AudioInputStream in, AuFileFormat auFileFormat, OutputStream out) throws IOException {
 
         int bytesRead = 0;
         int bytesWritten = 0;
@@ -332,6 +303,4 @@ public final class AuFileWriter extends SunFileWriter {
 
         return bytesWritten;
     }
-
-
 }
