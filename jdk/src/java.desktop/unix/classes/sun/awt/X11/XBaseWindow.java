@@ -691,7 +691,7 @@ public class XBaseWindow {
         XToolkit.awtLock();
         try {
             XAtom xa = XAtom.get(XAtom.XA_WM_CLASS);
-            xa.setProperty8(getWindow(), cl[0] + '\0' + cl[1]);
+            xa.setProperty8(getWindow(), cl[0] + '\0' + cl[1] + '\0');
         } finally {
             XToolkit.awtUnlock();
         }
