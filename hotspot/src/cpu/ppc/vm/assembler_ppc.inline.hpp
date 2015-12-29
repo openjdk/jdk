@@ -117,6 +117,8 @@ inline void Assembler::mullw(  Register d, Register a, Register b) { emit_int32(
 inline void Assembler::mullw_( Register d, Register a, Register b) { emit_int32(MULLW_OPCODE  | rt(d) | ra(a) | rb(b) | oe(0) | rc(1)); }
 inline void Assembler::mulhw(  Register d, Register a, Register b) { emit_int32(MULHW_OPCODE  | rt(d) | ra(a) | rb(b) | rc(0)); }
 inline void Assembler::mulhw_( Register d, Register a, Register b) { emit_int32(MULHW_OPCODE  | rt(d) | ra(a) | rb(b) | rc(1)); }
+inline void Assembler::mulhwu( Register d, Register a, Register b) { emit_int32(MULHWU_OPCODE | rt(d) | ra(a) | rb(b) | rc(0)); }
+inline void Assembler::mulhwu_(Register d, Register a, Register b) { emit_int32(MULHWU_OPCODE | rt(d) | ra(a) | rb(b) | rc(1)); }
 inline void Assembler::mulhd(  Register d, Register a, Register b) { emit_int32(MULHD_OPCODE  | rt(d) | ra(a) | rb(b) | rc(0)); }
 inline void Assembler::mulhd_( Register d, Register a, Register b) { emit_int32(MULHD_OPCODE  | rt(d) | ra(a) | rb(b) | rc(1)); }
 inline void Assembler::mulhdu( Register d, Register a, Register b) { emit_int32(MULHDU_OPCODE | rt(d) | ra(a) | rb(b) | rc(0)); }

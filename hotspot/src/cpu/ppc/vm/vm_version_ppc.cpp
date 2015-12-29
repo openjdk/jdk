@@ -225,11 +225,18 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;
   }
+  if (FLAG_IS_DEFAULT(UseMontgomeryMultiplyIntrinsic)) {
+    UseMontgomeryMultiplyIntrinsic = true;
+  }
+  if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
+    UseMontgomerySquareIntrinsic = true;
+  }
 
   if (UseVectorizedMismatchIntrinsic) {
     warning("UseVectorizedMismatchIntrinsic specified, but not available on this CPU.");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
+
 
   // Adjust RTM (Restricted Transactional Memory) flags.
   if (UseRTMLocking) {
