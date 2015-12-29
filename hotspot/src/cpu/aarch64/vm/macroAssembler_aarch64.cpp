@@ -678,7 +678,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer *cbuf) {
 
   if (cbuf) cbuf->set_insts_mark();
   relocate(entry.rspec());
-  if (Assembler::reachable_from_branch_at(pc(), entry.target())) {
+  if (!far_branches()) {
     bl(entry.target());
   } else {
     bl(pc());
