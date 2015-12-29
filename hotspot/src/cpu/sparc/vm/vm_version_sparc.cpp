@@ -260,6 +260,11 @@ void VM_Version::initialize() {
     }
   }
 
+  if (UseAESCTRIntrinsics) {
+    warning("AES/CTR intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+  }
+
   // GHASH/GCM intrinsics
   if (has_vis3() && (UseVIS > 2)) {
     if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {

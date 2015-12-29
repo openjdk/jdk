@@ -836,6 +836,9 @@ public:
   product(bool, UseAESIntrinsics, false,                                    \
           "Use intrinsics for AES versions of crypto")                      \
                                                                             \
+  product(bool, UseAESCTRIntrinsics, false,                                 \
+          "Use intrinsics for the paralleled version of AES/CTR crypto")    \
+                                                                            \
   product(bool, UseSHA1Intrinsics, false,                                   \
           "Use intrinsics for SHA-1 crypto hash function. "                 \
           "Requires that UseSHA is enabled.")                               \
