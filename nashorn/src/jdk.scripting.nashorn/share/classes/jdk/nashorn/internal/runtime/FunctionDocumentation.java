@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,29 @@
  * questions.
  */
 
-package jdk.nashorn.internal.objects.annotations;
+package jdk.nashorn.internal.runtime;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 /**
- * Specifies a specific method to be the JavaScript "constructor" function.
+ * Utility class to fetch documentation for built-in functions, constructors.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Constructor {
-    /**
-     * @return the name of the constructor function. If empty, the name is
-     *         inferred.
-     */
-    public String name() default "";
+final class FunctionDocumentation {
+    private FunctionDocumentation() {}
 
-    /**
-     * @return the arity of the function. By default computed from the method
-     *         signature. Note that -1 means varargs. So, -2 is used as invalid
-     *         arity.
-     */
-    public int arity() default -2;
+    private static final String DOCS_RESOURCE = "jdk.nashorn.internal.runtime.resources.Functions";
+
+    private static final ResourceBundle FUNC_DOCS;
+    static {
+        FUNC_DOCS = ResourceBundle.getBundle(DOCS_RESOURCE, Locale.getDefault());
+    }
+
+    static String getDoc(final String docKey) {
+        try {
+            return FUNC_DOCS.getString(docKey);
+        } catch (final RuntimeException ignored) {
+            return null;
+        }
+    }
 }

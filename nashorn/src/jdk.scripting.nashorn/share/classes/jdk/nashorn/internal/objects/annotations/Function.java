@@ -60,9 +60,4 @@ public @interface Function {
      * @return where this function lives.
      */
     public Where where() default Where.PROTOTYPE;
-
-    /**
-     * @return return the documentation string for this function.
-     */
-    public String documentation() default "";
 }

@@ -206,7 +206,6 @@ public class ScriptClassInfoCollector extends ClassVisitor {
                         // These could be "null" if values are not supplied,
                         // in which case we have to use the default values.
                         private String  name;
-                        private String  documentation;
                         private Integer attributes;
                         private Integer arity;
                         private Where   where;
@@ -222,13 +221,6 @@ public class ScriptClassInfoCollector extends ClassVisitor {
                                 if (name.isEmpty()) {
                                     name = null;
                                 }
-                                break;
-                            case "documentation":
-                                this.documentation = (String)annotationValue;
-                                if (documentation.isEmpty()) {
-                                    documentation = null;
-                                }
-
                                 break;
                             case "attributes":
                                 this.attributes = (Integer)annotationValue;
@@ -279,7 +271,6 @@ public class ScriptClassInfoCollector extends ClassVisitor {
                                 memInfo.setName(name == null ? methodName : name);
                             }
 
-                            memInfo.setDocumentation(documentation);
                             memInfo.setAttributes(attributes == null ? MemberInfo.DEFAULT_ATTRIBUTES : attributes);
 
                             memInfo.setArity((arity == null)? MemberInfo.DEFAULT_ARITY : arity);
