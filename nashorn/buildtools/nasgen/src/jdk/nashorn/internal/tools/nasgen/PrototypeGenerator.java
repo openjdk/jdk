@@ -142,7 +142,7 @@ public class PrototypeGenerator extends ClassGenerator {
                 continue;
             }
             mi.loadThis();
-            newFunction(mi, scriptClassInfo.getJavaName(), memInfo, scriptClassInfo.findSpecializations(memInfo.getJavaName()));
+            newFunction(mi, scriptClassInfo.getName(), scriptClassInfo.getJavaName(), memInfo, scriptClassInfo.findSpecializations(memInfo.getJavaName()));
             mi.putField(className, memInfo.getJavaName(), OBJECT_DESC);
         }
     }
