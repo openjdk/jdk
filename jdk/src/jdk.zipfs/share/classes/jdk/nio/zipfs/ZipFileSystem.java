@@ -155,6 +155,10 @@ class ZipFileSystem extends FileSystem {
             throw new ReadOnlyFileSystemException();
     }
 
+    void setReadOnly() {
+        this.readOnly = true;
+    }
+
     @Override
     public Iterable<Path> getRootDirectories() {
         ArrayList<Path> pathArr = new ArrayList<>();
@@ -320,7 +324,7 @@ class ZipFileSystem extends FileSystem {
         beginRead();
         try {
             ensureOpen();
-            e = getEntry0(path);
+            e = getEntry(path);
             if (e == null) {
                 IndexNode inode = getInode(path);
                 if (inode == null)
@@ -342,7 +346,7 @@ class ZipFileSystem extends FileSystem {
         beginWrite();
         try {
             ensureOpen();
-            Entry e = getEntry0(path);    // ensureOpen checked
+            Entry e = getEntry(path);    // ensureOpen checked
             if (e == null)
                 throw new NoSuchFileException(getString(path));
             if (e.type == Entry.CEN)
@@ -445,7 +449,7 @@ class ZipFileSystem extends FileSystem {
         beginWrite();
         try {
             ensureOpen();
-            Entry eSrc = getEntry0(src);  // ensureOpen checked
+            Entry eSrc = getEntry(src);  // ensureOpen checked
             if (eSrc == null)
                 throw new NoSuchFileException(getString(src));
             if (eSrc.isDir()) {    // spec says to create dst dir
@@ -460,7 +464,7 @@ class ZipFileSystem extends FileSystem {
                 else if (opt == COPY_ATTRIBUTES)
                     hasCopyAttrs = true;
             }
-            Entry eDst = getEntry0(dst);
+            Entry eDst = getEntry(dst);
             if (eDst != null) {
                 if (!hasReplace)
                     throw new FileAlreadyExistsException(getString(dst));
@@ -521,7 +525,7 @@ class ZipFileSystem extends FileSystem {
         beginRead();                 // only need a readlock, the "update()" will
         try {                        // try to obtain a writelock when the os is
             ensureOpen();            // being closed.
-            Entry e = getEntry0(path);
+            Entry e = getEntry(path);
             if (e != null) {
                 if (e.isDir() || hasCreateNew)
                     throw new FileAlreadyExistsException(getString(path));
@@ -550,7 +554,7 @@ class ZipFileSystem extends FileSystem {
         beginRead();
         try {
             ensureOpen();
-            Entry e = getEntry0(path);
+            Entry e = getEntry(path);
             if (e == null)
                 throw new NoSuchFileException(getString(path));
             if (e.isDir())
@@ -592,7 +596,7 @@ class ZipFileSystem extends FileSystem {
                     newOutputStream(path, options.toArray(new OpenOption[0])));
                 long leftover = 0;
                 if (options.contains(StandardOpenOption.APPEND)) {
-                    Entry e = getEntry0(path);
+                    Entry e = getEntry(path);
                     if (e != null && e.size >= 0)
                         leftover = e.size;
                 }
@@ -644,7 +648,7 @@ class ZipFileSystem extends FileSystem {
             beginRead();
             try {
                 ensureOpen();
-                Entry e = getEntry0(path);
+                Entry e = getEntry(path);
                 if (e == null || e.isDir())
                     throw new NoSuchFileException(getString(path));
                 final ReadableByteChannel rbc =
@@ -714,7 +718,7 @@ class ZipFileSystem extends FileSystem {
         beginRead();
         try {
             ensureOpen();
-            Entry e = getEntry0(path);
+            Entry e = getEntry(path);
             if (forWrite) {
                 checkWritable();
                 if (e == null) {
@@ -855,7 +859,7 @@ class ZipFileSystem extends FileSystem {
     private Path getTempPathForEntry(byte[] path) throws IOException {
         Path tmpPath = createTempFileInSameDirectoryAs(zfpath);
         if (path != null) {
-            Entry e = getEntry0(path);
+            Entry e = getEntry(path);
             if (e != null) {
                 try (InputStream is = newInputStream(path)) {
                     Files.copy(is, tmpPath, REPLACE_EXISTING);
@@ -939,7 +943,7 @@ class ZipFileSystem extends FileSystem {
 
     private long getDataPos(Entry e) throws IOException {
         if (e.locoff == -1) {
-            Entry e2 = getEntry0(e.name);
+            Entry e2 = getEntry(e.name);
             if (e2 == null)
                 throw new ZipException("invalid loc for entry <" + e.name + ">");
             e.locoff = e2.locoff;
@@ -1325,7 +1329,7 @@ class ZipFileSystem extends FileSystem {
         //System.out.printf("->sync(%s) done!%n", toString());
     }
 
-    private IndexNode getInode(byte[] path) {
+    IndexNode getInode(byte[] path) {
         if (path == null)
             throw new NullPointerException("path");
         IndexNode key = IndexNode.keyOf(path);
@@ -1340,7 +1344,7 @@ class ZipFileSystem extends FileSystem {
         return inode;
     }
 
-    private Entry getEntry0(byte[] path) throws IOException {
+    Entry getEntry(byte[] path) throws IOException {
         IndexNode inode = getInode(path);
         if (inode instanceof Entry)
             return (Entry)inode;
@@ -2096,7 +2100,7 @@ class ZipFileSystem extends FileSystem {
             pos += (LOCHDR + nlen + elen);
             if ((flag & FLAG_DATADESCR) != 0) {
                 // Data Descriptor
-                Entry e = zipfs.getEntry0(name);  // get the size/csize from cen
+                Entry e = zipfs.getEntry(name);  // get the size/csize from cen
                 if (e == null)
                     throw new ZipException("loc: name not found in cen");
                 size = e.size;
