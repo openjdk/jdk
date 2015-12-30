@@ -299,6 +299,7 @@
       <to>jdk.security.jgss</to>
       <to>jdk.snmp</to>
       <to>jdk.vm.ci</to>
+      <to>jdk.zipfs</to>
       <to>java.instrument</to>
     </export>
     <export>
