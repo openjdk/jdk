@@ -190,7 +190,7 @@ class Eval {
 
     private List<SnippetEvent> processVariables(String userSource, List<? extends Tree> units, String compileSource, ParseTask pt) {
         List<SnippetEvent> allEvents = new ArrayList<>();
-        TreeDissector dis = new TreeDissector(pt);
+        TreeDissector dis = TreeDissector.createByFirstClass(pt);
         for (Tree unitTree : units) {
             VariableTree vt = (VariableTree) unitTree;
             String name = vt.getName().toString();
@@ -295,7 +295,7 @@ class Eval {
         TreeDependencyScanner tds = new TreeDependencyScanner();
         tds.scan(unitTree);
 
-        TreeDissector dis = new TreeDissector(pt);
+        TreeDissector dis = TreeDissector.createByFirstClass(pt);
 
         ClassTree klassTree = (ClassTree) unitTree;
         String name = klassTree.getSimpleName().toString();
@@ -354,7 +354,7 @@ class Eval {
         tds.scan(unitTree);
 
         MethodTree mt = (MethodTree) unitTree;
-        TreeDissector dis = new TreeDissector(pt);
+        TreeDissector dis = TreeDissector.createByFirstClass(pt);
         DiagList modDiag = modifierDiagnostics(mt.getModifiers(), dis, true);
         if (modDiag.hasErrors()) {
             return compileFailResult(modDiag, userSource);
@@ -418,8 +418,8 @@ class Eval {
     private ExpressionInfo typeOfExpression(String expression) {
         Wrap guts = Wrap.methodReturnWrap(expression);
         TaskFactory.AnalyzeTask at = trialCompile(guts);
-        if (!at.hasErrors() && at.cuTree() != null) {
-            return new TreeDissector(at)
+        if (!at.hasErrors() && at.firstCuTree() != null) {
+            return TreeDissector.createByFirstClass(at)
                     .typeOfReturnStatement(at.messages(), state.maps::fullClassNameAndPackageToClass);
         }
         return null;
@@ -513,13 +513,17 @@ class Eval {
             ins.stream().forEach(u -> u.initialize(ins));
             AnalyzeTask at = state.taskFactory.new AnalyzeTask(ins);
             ins.stream().forEach(u -> u.setDiagnostics(at));
+
             // corral any Snippets that need it
-            if (ins.stream().filter(u -> u.corralIfNeeded(ins)).count() > 0) {
+            AnalyzeTask cat;
+            if (ins.stream().anyMatch(u -> u.corralIfNeeded(ins))) {
                 // if any were corralled, re-analyze everything
-                AnalyzeTask cat = state.taskFactory.new AnalyzeTask(ins);
+                cat = state.taskFactory.new AnalyzeTask(ins);
                 ins.stream().forEach(u -> u.setCorralledDiagnostics(cat));
+            } else {
+                cat = at;
             }
-            ins.stream().forEach(u -> u.setStatus());
+            ins.stream().forEach(u -> u.setStatus(cat));
             // compile and load the legit snippets
             boolean success;
             while (true) {
