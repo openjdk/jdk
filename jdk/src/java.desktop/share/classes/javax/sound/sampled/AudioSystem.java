@@ -25,6 +25,7 @@
 
 package javax.sound.sampled;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -919,28 +920,17 @@ public class AudioSystem {
      * @see InputStream#markSupported
      * @see InputStream#mark
      */
-    public static AudioFileFormat getAudioFileFormat(InputStream stream)
+    public static AudioFileFormat getAudioFileFormat(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
         Objects.requireNonNull(stream);
 
-        List<AudioFileReader> providers = getAudioFileReaders();
-        AudioFileFormat format = null;
-
-        for(int i = 0; i < providers.size(); i++ ) {
-            AudioFileReader reader = providers.get(i);
+        for (final AudioFileReader reader : getAudioFileReaders()) {
             try {
-                format = reader.getAudioFileFormat( stream ); // throws IOException
-                break;
-            } catch (UnsupportedAudioFileException e) {
-                continue;
+                return reader.getAudioFileFormat(stream);
+            } catch (final UnsupportedAudioFileException ignored) {
             }
         }
-
-        if( format==null ) {
-            throw new UnsupportedAudioFileException("file is not a supported file type");
-        } else {
-            return format;
-        }
+        throw new UnsupportedAudioFileException("Stream of unsupported format");
     }
 
     /**
@@ -956,28 +946,17 @@ public class AudioSystem {
      * @throws IOException if an input/output exception occurs
      * @throws NullPointerException if {@code url} is {@code null}
      */
-    public static AudioFileFormat getAudioFileFormat(URL url)
+    public static AudioFileFormat getAudioFileFormat(final URL url)
             throws UnsupportedAudioFileException, IOException {
         Objects.requireNonNull(url);
 
-        List<AudioFileReader> providers = getAudioFileReaders();
-        AudioFileFormat format = null;
-
-        for(int i = 0; i < providers.size(); i++ ) {
-            AudioFileReader reader = providers.get(i);
+        for (final AudioFileReader reader : getAudioFileReaders()) {
             try {
-                format = reader.getAudioFileFormat( url ); // throws IOException
-                break;
-            } catch (UnsupportedAudioFileException e) {
-                continue;
+                return reader.getAudioFileFormat(url);
+            } catch (final UnsupportedAudioFileException ignored) {
             }
         }
-
-        if( format==null ) {
-            throw new UnsupportedAudioFileException("file is not a supported file type");
-        } else {
-            return format;
-        }
+        throw new UnsupportedAudioFileException("URL of unsupported format");
     }
 
     /**
@@ -993,28 +972,17 @@ public class AudioSystem {
      * @throws IOException if an I/O exception occurs
      * @throws NullPointerException if {@code file} is {@code null}
      */
-    public static AudioFileFormat getAudioFileFormat(File file)
+    public static AudioFileFormat getAudioFileFormat(final File file)
             throws UnsupportedAudioFileException, IOException {
         Objects.requireNonNull(file);
 
-        List<AudioFileReader> providers = getAudioFileReaders();
-        AudioFileFormat format = null;
-
-        for(int i = 0; i < providers.size(); i++ ) {
-            AudioFileReader reader = providers.get(i);
+        for (final AudioFileReader reader : getAudioFileReaders()) {
             try {
-                format = reader.getAudioFileFormat( file ); // throws IOException
-                break;
-            } catch (UnsupportedAudioFileException e) {
-                continue;
+                return reader.getAudioFileFormat(file);
+            } catch (final UnsupportedAudioFileException ignored) {
             }
         }
-
-        if( format==null ) {
-            throw new UnsupportedAudioFileException("file is not a supported file type");
-        } else {
-            return format;
-        }
+        throw new UnsupportedAudioFileException("File of unsupported format");
     }
 
     /**
@@ -1038,28 +1006,17 @@ public class AudioSystem {
      * @see InputStream#markSupported
      * @see InputStream#mark
      */
-    public static AudioInputStream getAudioInputStream(InputStream stream)
+    public static AudioInputStream getAudioInputStream(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
         Objects.requireNonNull(stream);
 
-        List<AudioFileReader> providers = getAudioFileReaders();
-        AudioInputStream audioStream = null;
-
-        for(int i = 0; i < providers.size(); i++ ) {
-            AudioFileReader reader = providers.get(i);
+        for (final AudioFileReader reader : getAudioFileReaders()) {
             try {
-                audioStream = reader.getAudioInputStream( stream ); // throws IOException
-                break;
-            } catch (UnsupportedAudioFileException e) {
-                continue;
+                return reader.getAudioInputStream(stream);
+            } catch (final UnsupportedAudioFileException ignored) {
             }
         }
-
-        if( audioStream==null ) {
-            throw new UnsupportedAudioFileException("could not get audio input stream from input stream");
-        } else {
-            return audioStream;
-        }
+        throw new UnsupportedAudioFileException("Stream of unsupported format");
     }
 
     /**
@@ -1075,28 +1032,17 @@ public class AudioSystem {
      * @throws IOException if an I/O exception occurs
      * @throws NullPointerException if {@code url} is {@code null}
      */
-    public static AudioInputStream getAudioInputStream(URL url)
+    public static AudioInputStream getAudioInputStream(final URL url)
             throws UnsupportedAudioFileException, IOException {
         Objects.requireNonNull(url);
 
-        List<AudioFileReader> providers = getAudioFileReaders();
-        AudioInputStream audioStream = null;
-
-        for(int i = 0; i < providers.size(); i++ ) {
-            AudioFileReader reader = providers.get(i);
+        for (final AudioFileReader reader : getAudioFileReaders()) {
             try {
-                audioStream = reader.getAudioInputStream( url ); // throws IOException
-                break;
-            } catch (UnsupportedAudioFileException e) {
-                continue;
+                return reader.getAudioInputStream(url);
+            } catch (final UnsupportedAudioFileException ignored) {
             }
         }
-
-        if( audioStream==null ) {
-            throw new UnsupportedAudioFileException("could not get audio input stream from input URL");
-        } else {
-            return audioStream;
-        }
+        throw new UnsupportedAudioFileException("URL of unsupported format");
     }
 
     /**
@@ -1112,28 +1058,17 @@ public class AudioSystem {
      * @throws IOException if an I/O exception occurs
      * @throws NullPointerException if {@code file} is {@code null}
      */
-    public static AudioInputStream getAudioInputStream(File file)
+    public static AudioInputStream getAudioInputStream(final File file)
             throws UnsupportedAudioFileException, IOException {
         Objects.requireNonNull(file);
 
-        List<AudioFileReader> providers = getAudioFileReaders();
-        AudioInputStream audioStream = null;
-
-        for(int i = 0; i < providers.size(); i++ ) {
-            AudioFileReader reader = providers.get(i);
+        for (final AudioFileReader reader : getAudioFileReaders()) {
             try {
-                audioStream = reader.getAudioInputStream( file ); // throws IOException
-                break;
-            } catch (UnsupportedAudioFileException e) {
-                continue;
+                return reader.getAudioInputStream(file);
+            } catch (final UnsupportedAudioFileException ignored) {
             }
         }
-
-        if( audioStream==null ) {
-            throw new UnsupportedAudioFileException("could not get audio input stream from input file");
-        } else {
-            return audioStream;
-        }
+        throw new UnsupportedAudioFileException("File of unsupported format");
     }
 
     /**
