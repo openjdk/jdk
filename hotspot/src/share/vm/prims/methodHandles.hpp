@@ -31,6 +31,12 @@
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
 
+#ifdef TARGET_ARCH_zero
+# include "entry_zero.hpp"
+#endif
+
+
+
 class MacroAssembler;
 class Label;
 

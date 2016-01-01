@@ -126,8 +126,8 @@ inline bool JavaThread::stack_guard_zone_unused() {
   return _stack_guard_state == stack_guard_unused;
 }
 
-inline bool JavaThread::stack_yellow_zone_disabled() {
-  return _stack_guard_state == stack_guard_yellow_disabled;
+inline bool JavaThread::stack_yellow_reserved_zone_disabled() {
+  return _stack_guard_state == stack_guard_yellow_reserved_disabled;
 }
 
 inline bool JavaThread::stack_reserved_zone_disabled() {
@@ -138,9 +138,9 @@ inline size_t JavaThread::stack_available(address cur_sp) {
   // This code assumes java stacks grow down
   address low_addr; // Limit on the address for deepest stack depth
   if (_stack_guard_state == stack_guard_unused) {
-    low_addr =  stack_base() - stack_size();
+    low_addr = stack_end();
   } else {
-    low_addr = stack_yellow_zone_base();
+    low_addr = stack_reserved_zone_base();
   }
   return cur_sp > low_addr ? cur_sp - low_addr : 0;
 }

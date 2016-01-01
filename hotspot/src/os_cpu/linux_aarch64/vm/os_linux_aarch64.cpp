@@ -330,11 +330,10 @@ JVM_handle_linux_signal(int sig,
       address addr = (address) info->si_addr;
 
       // check if fault address is within thread stack
-      if (addr < thread->stack_base() &&
-          addr >= thread->stack_base() - thread->stack_size()) {
+      if (thread->on_local_stack(addr)) {
         // stack overflow
-        if (thread->in_stack_yellow_zone(addr)) {
-          thread->disable_stack_yellow_zone();
+        if (thread->in_stack_yellow_reserved_zone(addr)) {
+          thread->disable_stack_yellow_reserved_zone();
           if (thread->thread_state() == _thread_in_Java) {
             // Throw a stack overflow exception.  Guard pages will be reenabled
             // while unwinding the stack.

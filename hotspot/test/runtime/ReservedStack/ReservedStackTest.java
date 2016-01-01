@@ -23,6 +23,8 @@
 
 /*
  * @test ReservedStackTest
+ * @library /testlibrary
+ * @build jdk.test.lib.*
  * @run main/othervm -XX:-Inline -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
  */
 
@@ -107,12 +109,9 @@
  */
 
 import java.util.concurrent.locks.ReentrantLock;
+import jdk.test.lib.Platform;
 
 public class ReservedStackTest {
-
-    private static boolean isWindows() {
-        return System.getProperty("os.name").toLowerCase().startsWith("win");
-    }
 
     static class ReentrantLockTest {
 
@@ -194,11 +193,22 @@ public class ReservedStackTest {
             System.out.println("Framework got StackOverflowError at frame = " + counter);
             System.out.println("Test started execution at frame = " + (counter - deframe));
             String result = test.getResult();
-            System.out.println(result);
-            // The feature is not fully implemented on Windows platforms,
+            // The feature is not fully implemented on all platforms,
             // corruptions are still possible
-            if (!isWindows() && !result.contains("PASSED")) {
-                System.exit(-1);
+            boolean supportedPlatform = Platform.isSolaris() || Platform.isOSX()
+                || (Platform.isLinux() && (Platform.isX86() || Platform.isX64()));
+            if (supportedPlatform && !result.contains("PASSED")) {
+                System.out.println(result);
+                throw new Error(result);
+            } else {
+                // Either the test passed or this platform is not supported.
+                // On not supported platforms, we only expect the VM to
+                // not crash during the test. This is especially important
+                // on Windows where the detection of SOE in annotated
+                // sections is implemented but the reserved zone mechanism
+                // to avoid the corruption cannot be implemented yet
+                // because of JDK-8067946
+                System.out.println("PASSED");
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,7 +35,6 @@
 
 
 class InterpreterMacroAssembler: public MacroAssembler {
-#ifndef CC_INTERP
  protected:
 
  protected:
@@ -59,7 +58,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // base routine for all dispatches
   void dispatch_base(TosState state, address* table, bool verifyoop = true);
-#endif // CC_INTERP
 
  public:
   InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code) {}
@@ -67,15 +65,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_earlyret_value(TosState state);
 
   void jump_to_entry(address entry);
-
-#ifdef CC_INTERP
-  void save_bcp()                                          { /*  not needed in c++ interpreter and harmless */ }
-  void restore_bcp()                                       { /*  not needed in c++ interpreter and harmless */ }
-
-  // Helpers for runtime call arguments/results
-  void get_method(Register reg);
-
-#else
 
   // Interpreter-specific registers
   void save_bcp() {
@@ -202,7 +191,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                          bool throw_monitor_exception = true,
                          bool install_monitor_exception = true,
                          bool notify_jvmdi = true);
-#endif // CC_INTERP
 
   // FIXME: Give us a valid frame at a null check.
   virtual void null_check(Register reg, int offset = -1) {
@@ -219,8 +207,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Object locking
   void lock_object  (Register lock_reg);
   void unlock_object(Register lock_reg);
-
-#ifndef CC_INTERP
 
   // Interpreter profiling operations
   void set_method_data_pointer_for_bcp();
@@ -279,8 +265,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void verify_oop(Register reg, TosState state = atos);
   // only if +VerifyFPU  && (state == ftos || state == dtos)
   void verify_FPU(int stack_depth, TosState state = ftos);
-
-#endif // !CC_INTERP
 
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 

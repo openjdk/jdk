@@ -27,6 +27,7 @@
 
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
+import sun.hotspot.WhiteBox;
 
 import jdk.test.lib.*;
 import java.lang.management.ManagementFactory;
@@ -34,61 +35,34 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 class VerifySummaryOutput {
-    // 4M size, both are directly allocated into the old gen
-    static Object[] largeObject1 = new Object[1024 * 1024];
-    static Object[] largeObject2 = new Object[1024 * 1024];
-
-    static int[] temp;
-
     public static void main(String[] args) {
-        // create some cross-references between these objects
-        for (int i = 0; i < largeObject1.length; i++) {
-            largeObject1[i] = largeObject2;
-        }
-
-        for (int i = 0; i < largeObject2.length; i++) {
-            largeObject2[i] = largeObject1;
-        }
-
         int numGCs = Integer.parseInt(args[0]);
 
-        if (numGCs > 0) {
-            // try to force a minor collection: the young gen is 4M, the
-            // amount of data allocated below is roughly that (4*1024*1024 +
-            // some header data)
-            for (int i = 0; i < 1024 ; i++) {
-                temp = new int[1024];
-            }
-        }
-
+        // Perform the requested amount of GCs.
+        WhiteBox wb = WhiteBox.getWhiteBox();
         for (int i = 0; i < numGCs - 1; i++) {
-            System.gc();
+            wb.youngGC();
+        }
+        if (numGCs > 0) {
+          wb.fullGC();
         }
     }
 }
 
 public class TestRemsetLoggingTools {
 
-    // the VM is currently run using G1GC, i.e. trying to test G1 functionality.
-    public static boolean testingG1GC() {
-        HotSpotDiagnosticMXBean diagnostic =
-            ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
-
-        VMOption option = diagnostic.getVMOption("UseG1GC");
-        if (option.getValue().equals("false")) {
-          System.out.println("Skipping this test. It is only a G1 test.");
-          return false;
-        }
-        return true;
-    }
-
     public static String runTest(String[] additionalArgs, int numGCs) throws Exception {
         ArrayList<String> finalargs = new ArrayList<String>();
         String[] defaultArgs = new String[] {
+            "-Xbootclasspath/a:.",
+            "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
+            "-cp", System.getProperty("java.class.path"),
             "-XX:+UseG1GC",
             "-Xmn4m",
+            "-Xint", // -Xint makes the test run faster
             "-Xms20m",
             "-Xmx20m",
+            "-XX:ParallelGCThreads=1",
             "-XX:InitiatingHeapOccupancyPercent=100", // we don't want the additional GCs due to initial marking
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:G1HeapRegionSize=1M",

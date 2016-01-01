@@ -143,5 +143,5 @@ void G1ParScanThreadState::steal_and_trim_queue(RefToScanQueueSet *task_queues) 
   }
 }
 
-#endif /* SHARE_VM_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP */
+#endif // SHARE_VM_GC_G1_G1PARSCANTHREADSTATE_INLINE_HPP
 

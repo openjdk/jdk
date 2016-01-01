@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2015 SAP AG. All rights reserved.
+ * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -954,15 +954,10 @@ static address gen_c2i_adapter(MacroAssembler *masm,
 
   // Jump to the interpreter just as if interpreter was doing it.
 
-#ifdef CC_INTERP
-  const Register tos = R17_tos;
-#else
-  const Register tos = R15_esp;
   __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
-#endif
 
   // load TOS
-  __ addi(tos, R1_SP, st_off);
+  __ addi(R15_esp, R1_SP, st_off);
 
   // Frame_manager expects initial_caller_sp (= SP without resize by c2i) in R21_tmp1.
   assert(sender_SP == R21_sender_SP, "passing initial caller's SP in wrong register");
@@ -996,12 +991,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // save code can segv when fxsave instructions find improperly
   // aligned stack pointer.
 
-#ifdef CC_INTERP
-  const Register ld_ptr = R17_tos;
-#else
   const Register ld_ptr = R15_esp;
-#endif
-
   const Register value_regs[] = { R22_tmp2, R23_tmp3, R24_tmp4, R25_tmp5, R26_tmp6 };
   const int num_value_regs = sizeof(value_regs) / sizeof(Register);
   int value_regs_index = 0;
@@ -2398,7 +2388,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   Label no_reguard;
   __ lwz(r_temp_1, thread_(stack_guard_state));
-  __ cmpwi(CCR0, r_temp_1, JavaThread::stack_guard_yellow_disabled);
+  __ cmpwi(CCR0, r_temp_1, JavaThread::stack_guard_yellow_reserved_disabled);
   __ bne(CCR0, no_reguard);
 
   save_native_result(masm, ret_type, workspace_slot_offset);
@@ -2593,15 +2583,11 @@ static void push_skeleton_frame(MacroAssembler* masm, bool deopt,
   __ ld(frame_size_reg, 0, frame_sizes_reg);
   __ std(pc_reg, _abi(lr), R1_SP);
   __ push_frame(frame_size_reg, R0/*tmp*/);
-#ifdef CC_INTERP
-  __ std(R1_SP, _parent_ijava_frame_abi(initial_caller_sp), R1_SP);
-#else
 #ifdef ASSERT
   __ load_const_optimized(pc_reg, 0x5afe);
   __ std(pc_reg, _ijava_state_neg(ijava_reserved), R1_SP);
 #endif
   __ std(R1_SP, _ijava_state_neg(sender_sp), R1_SP);
-#endif // CC_INTERP
   __ addi(number_of_frames_reg, number_of_frames_reg, -1);
   __ addi(frame_sizes_reg, frame_sizes_reg, wordSize);
   __ addi(pcs_reg, pcs_reg, wordSize);
@@ -2673,15 +2659,11 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
   __ std(R12_scratch2, _abi(lr), R1_SP);
 
   // Initialize initial_caller_sp.
-#ifdef CC_INTERP
-  __ std(frame_size_reg/*old_sp*/, _parent_ijava_frame_abi(initial_caller_sp), R1_SP);
-#else
 #ifdef ASSERT
  __ load_const_optimized(pc_reg, 0x5afe);
  __ std(pc_reg, _ijava_state_neg(ijava_reserved), R1_SP);
 #endif
  __ std(frame_size_reg, _ijava_state_neg(sender_sp), R1_SP);
-#endif // CC_INTERP
 
 #ifdef ASSERT
   // Make sure that there is at least one entry in the array.
@@ -2708,9 +2690,6 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
   // Store it in the top interpreter frame.
   __ std(R0, _abi(lr), R1_SP);
   // Initialize frame_manager_lr of interpreter top frame.
-#ifdef CC_INTERP
-  __ std(R0, _top_ijava_frame_abi(frame_manager_lr), R1_SP);
-#endif
 }
 #endif
 
@@ -2899,16 +2878,8 @@ void SharedRuntime::generate_deopt_blob() {
   // optional c2i, caller of deoptee, ...).
 
   // Initialize R14_state.
-#ifdef CC_INTERP
-  __ ld(R14_state, 0, R1_SP);
-  __ addi(R14_state, R14_state, -frame::interpreter_frame_cinterpreterstate_size_in_bytes());
-  // Also inititialize R15_prev_state.
-  __ restore_prev_state();
-#else
   __ restore_interpreter_state(R11_scratch1);
   __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
-#endif // CC_INTERP
-
 
   // Return to the interpreter entry point.
   __ blr();
@@ -3034,16 +3005,8 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // stack: (top interpreter frame, ..., optional interpreter frame,
   // optional c2i, caller of deoptee, ...).
 
-#ifdef CC_INTERP
-  // Initialize R14_state, ...
-  __ ld(R11_scratch1, 0, R1_SP);
-  __ addi(R14_state, R11_scratch1, -frame::interpreter_frame_cinterpreterstate_size_in_bytes());
-  // also initialize R15_prev_state.
-  __ restore_prev_state();
-#else
   __ restore_interpreter_state(R11_scratch1);
   __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
-#endif // CC_INTERP
 
   // Return to the interpreter entry point.
   __ blr();

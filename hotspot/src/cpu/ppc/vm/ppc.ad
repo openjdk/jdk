@@ -1308,7 +1308,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     // insert the code of generate_stack_overflow_check(), see
     // assembler.cpp for some illuminative comments.
     const int page_size = os::vm_page_size();
-    int bang_end = StackShadowPages * page_size;
+    int bang_end = JavaThread::stack_shadow_zone_size();
 
     // This is how far the previous frame's stack banging extended.
     const int bang_end_safe = bang_end;
