@@ -353,6 +353,9 @@ protected:
   // time of remark.
   volatile bool           _concurrent_marking_in_progress;
 
+  // Keep track of whether we have started concurrent phase or not.
+  bool                    _concurrent_phase_started;
+
   // All of these times are in ms
   NumberSeq _init_times;
   NumberSeq _remark_times;
@@ -515,6 +518,9 @@ public:
   void clear_concurrent_marking_in_progress() {
     _concurrent_marking_in_progress = false;
   }
+
+  void register_concurrent_phase_start(const char* title);
+  void register_concurrent_phase_end();
 
   void update_accum_task_vtime(int i, double vtime) {
     _accum_task_vtime[i] += vtime;

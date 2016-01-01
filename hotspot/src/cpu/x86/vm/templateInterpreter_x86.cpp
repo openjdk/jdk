@@ -27,7 +27,16 @@
 #include "interpreter/interpreter.hpp"
 #include "runtime/frame.inline.hpp"
 
-#ifndef CC_INTERP
+// Size of interpreter code.  Increase if too small.  Interpreter will
+// fail with a guarantee ("not enough space for interpreter generation");
+// if too small.
+// Run with +PrintInterpreter to get the VM to print out the size.
+// Max size with JVMTI
+#ifdef AMD64
+int TemplateInterpreter::InterpreterCodeSize = 256 * 1024;
+#else
+int TemplateInterpreter::InterpreterCodeSize = 224 * 1024;
+#endif // AMD64
 
 // asm based interpreter deoptimization helpers
 int AbstractInterpreter::size_activation(int max_stack,
@@ -38,7 +47,7 @@ int AbstractInterpreter::size_activation(int max_stack,
                                          int callee_locals,
                                          bool is_top_frame) {
   // Note: This calculation must exactly parallel the frame setup
-  // in InterpreterGenerator::generate_fixed_frame.
+  // in TemplateInterpreterGenerator::generate_fixed_frame.
 
   // fixed size of an interpreter frame:
   int overhead = frame::sender_sp_offset -
@@ -198,5 +207,3 @@ int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
                            Interpreter::stackElementWords;
   return (overhead_size + method_stack + stub_code);
 }
-
-#endif // CC_INTERP

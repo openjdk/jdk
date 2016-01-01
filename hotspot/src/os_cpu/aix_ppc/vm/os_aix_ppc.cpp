@@ -238,8 +238,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
   if (thread != NULL) {
 
     // Handle ALL stack overflow variations here
-    if (sig == SIGSEGV && (addr < thread->stack_base() &&
-                           addr >= thread->stack_base() - thread->stack_size())) {
+    if (sig == SIGSEGV && thread->on_local_stack(addr)) {
       // stack overflow
       //
       // If we are in a yellow zone and we are inside java, we disable the yellow zone and
@@ -247,8 +246,8 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
       // If we are in native code or VM C code, we report-and-die. The original coding tried
       // to continue with yellow zone disabled, but that doesn't buy us much and prevents
       // hs_err_pid files.
-      if (thread->in_stack_yellow_zone(addr)) {
-        thread->disable_stack_yellow_zone();
+      if (thread->in_stack_yellow_reserved_zone(addr)) {
+        thread->disable_stack_yellow_reserved_zone();
         if (thread->thread_state() == _thread_in_Java) {
           // Throw a stack overflow exception.
           // Guard pages will be reenabled while unwinding the stack.

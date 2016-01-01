@@ -1059,8 +1059,8 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // touch it again.  (It was touched as (tmp-pagesize) but then tmp
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
-  // the way down to and including i=StackShadowPages.
-  for (int i = 1; i < StackShadowPages; i++) {
+  // the way down including all pages in the shadow zone.
+  for (int i = 1; i < ((int)JavaThread::stack_shadow_zone_size() / os::vm_page_size()); i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
     movptr(Address(tmp, (-i*os::vm_page_size())), size );
@@ -2525,11 +2525,9 @@ void MacroAssembler::call_VM_base(Register oop_result,
   // Only interpreter should have to clear fp
   reset_last_Java_frame(java_thread, true, false);
 
-#ifndef CC_INTERP
    // C++ interp handles this in the interpreter
   check_and_handle_popframe(java_thread);
   check_and_handle_earlyret(java_thread);
-#endif /* CC_INTERP */
 
   if (check_exceptions) {
     // check for pending exceptions (java_thread is set upon return)
