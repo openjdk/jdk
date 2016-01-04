@@ -33,23 +33,50 @@
 #include "logging/logTagSet.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 LogOutput** LogConfiguration::_outputs = NULL;
 size_t      LogConfiguration::_n_outputs = 0;
 bool        LogConfiguration::_post_initialized = false;
 
+// Stack object to take the lock for configuring the logging.
+// Should only be held during the critical parts of the configuration
+// (when calling configure_output or reading/modifying the outputs array).
+// Thread must never block when holding this lock.
+class ConfigurationLock : public StackObj {
+ private:
+  // Semaphore used as lock
+  static Semaphore _semaphore;
+  debug_only(static intx _locking_thread_id;)
+ public:
+  ConfigurationLock() {
+    _semaphore.wait();
+    debug_only(_locking_thread_id = os::current_thread_id());
+  }
+  ~ConfigurationLock() {
+    debug_only(_locking_thread_id = -1);
+    _semaphore.signal();
+  }
+  debug_only(static bool current_thread_has_lock();)
+};
+
+Semaphore ConfigurationLock::_semaphore(1);
+#ifdef ASSERT
+intx ConfigurationLock::_locking_thread_id = -1;
+bool ConfigurationLock::current_thread_has_lock() {
+  return _locking_thread_id == os::current_thread_id();
+}
+#endif
+
 void LogConfiguration::post_initialize() {
-  assert(LogConfiguration_lock != NULL, "Lock must be initialized before post-initialization");
   LogDiagnosticCommand::registerCommand();
   LogHandle(logging) log;
   log.info("Log configuration fully initialized.");
   log_develop_info(logging)("Develop logging is available.");
   if (log.is_trace()) {
     ResourceMark rm;
-    MutexLocker ml(LogConfiguration_lock);
     describe(log.trace_stream());
   }
 
@@ -129,6 +156,7 @@ void LogConfiguration::delete_output(size_t idx) {
 }
 
 void LogConfiguration::configure_output(size_t idx, const LogTagLevelExpression& tag_level_expression, const LogDecorators& decorators) {
+  assert(ConfigurationLock::current_thread_has_lock(), "Must hold configuration lock to call this function.");
   assert(idx < _n_outputs, "Invalid index, idx = " SIZE_FORMAT " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs);
   LogOutput* output = _outputs[idx];
 
@@ -208,17 +236,13 @@ void LogConfiguration::disable_output(size_t idx) {
 }
 
 void LogConfiguration::disable_logging() {
-  assert(LogConfiguration_lock == NULL || LogConfiguration_lock->owned_by_self(),
-         "LogConfiguration lock must be held when calling this function");
+  ConfigurationLock cl;
   for (size_t i = 0; i < _n_outputs; i++) {
     disable_output(i);
   }
 }
 
 void LogConfiguration::configure_stdout(LogLevelType level, bool exact_match, ...) {
-  assert(LogConfiguration_lock == NULL || LogConfiguration_lock->owned_by_self(),
-         "LogConfiguration lock must be held when calling this function");
-
   size_t i;
   va_list ap;
   LogTagLevelExpression expr;
@@ -242,6 +266,7 @@ void LogConfiguration::configure_stdout(LogLevelType level, bool exact_match, ..
   expr.new_combination();
 
   // Apply configuration to stdout (output #0), with the same decorators as before.
+  ConfigurationLock cl;
   configure_output(0, expr, LogOutput::Stdout->decorators());
 }
 
@@ -289,12 +314,21 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
                                            const char* decoratorstr,
                                            const char* output_options,
                                            outputStream* errstream) {
-  assert(LogConfiguration_lock == NULL || LogConfiguration_lock->owned_by_self(),
-         "LogConfiguration lock must be held when calling this function");
   if (outputstr == NULL || strlen(outputstr) == 0) {
     outputstr = "stdout";
   }
 
+  LogTagLevelExpression expr;
+  if (!expr.parse(what, errstream)) {
+    return false;
+  }
+
+  LogDecorators decorators;
+  if (!decorators.parse(decoratorstr, errstream)) {
+    return false;
+  }
+
+  ConfigurationLock cl;
   size_t idx;
   if (outputstr[0] == '#') {
     int ret = sscanf(outputstr+1, SIZE_FORMAT, &idx);
@@ -321,25 +355,11 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       errstream->print_cr("Output options for existing outputs are ignored.");
     }
   }
-
-  LogTagLevelExpression expr;
-  if (!expr.parse(what, errstream)) {
-    return false;
-  }
-
-  LogDecorators decorators;
-  if (!decorators.parse(decoratorstr, errstream)) {
-    return false;
-  }
-
   configure_output(idx, expr, decorators);
   return true;
 }
 
 void LogConfiguration::describe(outputStream* out) {
-  assert(LogConfiguration_lock == NULL || LogConfiguration_lock->owned_by_self(),
-         "LogConfiguration lock must be held when calling this function");
-
   out->print("Available log levels:");
   for (size_t i = 0; i < LogLevel::Count; i++) {
     out->print("%s %s", (i == 0 ? "" : ","), LogLevel::name(static_cast<LogLevelType>(i)));
@@ -359,6 +379,7 @@ void LogConfiguration::describe(outputStream* out) {
   }
   out->cr();
 
+  ConfigurationLock cl;
   out->print_cr("Log output configuration:");
   for (size_t i = 0; i < _n_outputs; i++) {
     out->print("#" SIZE_FORMAT ": %s %s ", i, _outputs[i]->name(), _outputs[i]->config_string());
