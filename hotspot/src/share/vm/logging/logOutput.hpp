@@ -75,17 +75,15 @@ class LogOutput : public CHeapObj<mtLogging> {
 
   virtual ~LogOutput();
 
+  // If the output can be rotated, trigger a forced rotation, otherwise do nothing.
+  // Log outputs with rotation capabilities should override this.
+  virtual void force_rotate() {
+    // Do nothing by default.
+  }
+
   virtual const char* name() const = 0;
   virtual bool initialize(const char* options) = 0;
   virtual int write(const LogDecorations &decorations, const char* msg) = 0;
-
-  virtual bool is_rotatable() {
-    return false;
-  }
-
-  virtual void rotate(bool force) {
-    // Do nothing by default.
-  }
 };
 
 #endif // SHARE_VM_LOGGING_LOGOUTPUT_HPP
