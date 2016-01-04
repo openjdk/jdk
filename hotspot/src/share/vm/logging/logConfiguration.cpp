@@ -110,7 +110,7 @@ size_t LogConfiguration::find_output(const char* name) {
   return SIZE_MAX;
 }
 
-LogOutput* LogConfiguration::new_output(char* name, const char* options) {
+LogOutput* LogConfiguration::new_output(char* name, const char* options, outputStream* errstream) {
   const char* type;
   char* equals_pos = strchr(name, '=');
   if (equals_pos == NULL) {
@@ -121,16 +121,34 @@ LogOutput* LogConfiguration::new_output(char* name, const char* options) {
     name = equals_pos + 1;
   }
 
+  // Check if name is quoted, and if so, strip the quotes
+  char* quote = strchr(name, '"');
+  if (quote != NULL) {
+    char* end_quote = strchr(name + 1, '"');
+    if (end_quote == NULL) {
+      errstream->print_cr("Output name has opening quote but is missing a terminating quote.");
+      return NULL;
+    } else if (quote != name || end_quote[1] != '\0') {
+      errstream->print_cr("Output name can not be partially quoted."
+                          " Either surround the whole name with quotation marks,"
+                          " or do not use quotation marks at all.");
+      return NULL;
+    }
+    name++;
+    *end_quote = '\0';
+  }
+
   LogOutput* output;
   if (strcmp(type, "file") == 0) {
     output = new LogFileOutput(name);
   } else {
-    // unsupported log output type
+    errstream->print_cr("Unsupported log output type.");
     return NULL;
   }
 
   bool success = output->initialize(options);
   if (!success) {
+    errstream->print_cr("Initialization of output '%s' using options '%s' failed.", name, options);
     delete output;
     return NULL;
   }
@@ -274,32 +292,40 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   char* copy = os::strdup_check_oom(opts, mtLogging);
 
   // Split the option string to its colon separated components.
-  char* what = NULL;
-  char* output_str = NULL;
-  char* decorators_str = NULL;
-  char* output_options = NULL;
+  char* str = copy;
+  char* substrings[4] = {0};
+  for (int i = 0 ; i < 4; i++) {
+    substrings[i] = str;
 
-  what = copy;
-  char* colon = strchr(what, ':');
-  if (colon != NULL) {
-    *colon = '\0';
-    output_str = colon + 1;
-    colon = strchr(output_str, ':');
-    if (colon != NULL) {
-      *colon = '\0';
-      decorators_str = colon + 1;
-      colon = strchr(decorators_str, ':');
-      if (colon != NULL) {
-        *colon = '\0';
-        output_options = colon + 1;
+    // Find the next colon or quote
+    char* next = strpbrk(str, ":\"");
+    while (next != NULL && *next == '"') {
+      char* end_quote = strchr(next + 1, '"');
+      if (end_quote == NULL) {
+        log_error(logging)("Missing terminating quote in -Xlog option '%s'", str);
+        os::free(copy);
+        return false;
       }
+      // Keep searching after the quoted substring
+      next = strpbrk(end_quote + 1, ":\"");
+    }
+
+    if (next != NULL) {
+      *next = '\0';
+      str = next + 1;
+    } else {
+      break;
     }
   }
 
-  // Parse each argument
+  // Parse and apply the separated configuration options
+  char* what = substrings[0];
+  char* output = substrings[1];
+  char* decorators = substrings[2];
+  char* output_options = substrings[3];
   char errbuf[512];
   stringStream ss(errbuf, sizeof(errbuf));
-  bool success = parse_log_arguments(output_str, what, decorators_str, output_options, &ss);
+  bool success = parse_log_arguments(output, what, decorators, output_options, &ss);
   if (!success) {
     errbuf[strlen(errbuf) - 1] = '\0'; // Strip trailing newline.
     log_error(logging)("%s", errbuf);
@@ -340,14 +366,9 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
     idx = find_output(outputstr);
     if (idx == SIZE_MAX) {
       char* tmp = os::strdup_check_oom(outputstr, mtLogging);
-      LogOutput* output = new_output(tmp, output_options);
+      LogOutput* output = new_output(tmp, output_options, errstream);
       os::free(tmp);
       if (output == NULL) {
-        errstream->print("Unable to add output '%s'", outputstr);
-        if (output_options != NULL && strlen(output_options) > 0) {
-          errstream->print(" with options '%s'", output_options);
-        }
-        errstream->cr();
         return false;
       }
       idx = add_output(output);
