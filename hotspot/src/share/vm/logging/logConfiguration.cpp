@@ -39,7 +39,6 @@
 
 LogOutput** LogConfiguration::_outputs = NULL;
 size_t      LogConfiguration::_n_outputs = 0;
-bool        LogConfiguration::_post_initialized = false;
 
 // Stack object to take the lock for configuring the logging.
 // Should only be held during the critical parts of the configuration
@@ -79,8 +78,6 @@ void LogConfiguration::post_initialize() {
     ResourceMark rm;
     describe(log.trace_stream());
   }
-
-  _post_initialized = true;
 }
 
 void LogConfiguration::initialize(jlong vm_start_time) {
@@ -469,10 +466,9 @@ void LogConfiguration::print_command_line_help(FILE* out) {
 }
 
 void LogConfiguration::rotate_all_outputs() {
-  for (size_t idx = 0; idx < _n_outputs; idx++) {
-    if (_outputs[idx]->is_rotatable()) {
-      _outputs[idx]->rotate(true);
-    }
+  // Start from index 2 since neither stdout nor stderr can be rotated.
+  for (size_t idx = 2; idx < _n_outputs; idx++) {
+    _outputs[idx]->force_rotate();
   }
 }
 

@@ -40,7 +40,6 @@ class LogConfiguration : public AllStatic {
  private:
   static LogOutput**  _outputs;
   static size_t       _n_outputs;
-  static bool         _post_initialized;
 
   // Create a new output. Returns NULL if failed.
   static LogOutput* new_output(char* name, const char* options, outputStream* errstream);
@@ -95,10 +94,6 @@ class LogConfiguration : public AllStatic {
 
   // Prints usage help for command line log configuration.
   static void print_command_line_help(FILE* out);
-
-  static bool is_post_initialized() {
-    return _post_initialized;
-  }
 
   // Rotates all LogOutput
   static void rotate_all_outputs();
