@@ -174,7 +174,7 @@ public class JMXInterfaceBindingTest {
         InetAddress[] addrs = getAddressesForLocalHost();
         if (addrs.length < 2) {
             System.out.println("Ignoring manual test since no more than one IPs are configured for 'localhost'");
-            System.exit(0);
+            return;
         }
         JMXInterfaceBindingTest test = new JMXInterfaceBindingTest();
         test.run(addrs);
