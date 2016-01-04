@@ -36,6 +36,9 @@ class LogTagSet;
 // Keeps track of the latest configuration string,
 // and its selected decorators.
 class LogOutput : public CHeapObj<mtLogging> {
+  // Make LogConfiguration a friend to allow it to modify the configuration string.
+  friend class LogConfiguration;
+
  private:
   static const size_t InitialConfigBufferSize = 256;
   char* _config_string;
@@ -43,6 +46,13 @@ class LogOutput : public CHeapObj<mtLogging> {
 
  protected:
   LogDecorators _decorators;
+
+  // Clears any previous config description in preparation of reconfiguration.
+  void clear_config_string();
+  // Adds the tagset on the given level to the config description (e.g. "tag1+tag2=level").
+  void add_to_config_string(const LogTagSet* ts, LogLevelType level);
+  // Replaces the current config description with the given string.
+  void set_config_string(const char* string);
 
  public:
   static LogOutput* const Stdout;
@@ -64,13 +74,6 @@ class LogOutput : public CHeapObj<mtLogging> {
   }
 
   virtual ~LogOutput();
-
-  // Clears any previous config description in preparation of reconfiguration.
-  void clear_config_string();
-  // Adds the tagset on the given level to the config description (e.g. "tag1+tag2=level").
-  void add_to_config_string(const LogTagSet* ts, LogLevelType level);
-  // Replaces the current config description with the given string.
-  void set_config_string(const char* string);
 
   virtual const char* name() const = 0;
   virtual bool initialize(const char* options) = 0;
