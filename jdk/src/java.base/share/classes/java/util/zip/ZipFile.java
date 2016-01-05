@@ -1251,7 +1251,7 @@ class ZipFile implements ZipConstants, Closeable {
                     idx = getEntryNext(idx);
                 }
                 /* If not addSlash, or slash is already there, we are done */
-                if (!addSlash  || name[name.length - 1] == '/') {
+                if (!addSlash  || name.length == 0 || name[name.length - 1] == '/') {
                      return -1;
                 }
                 /* Add slash and try once more */

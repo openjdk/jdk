@@ -47,10 +47,10 @@ import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeJava;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
-import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.tools.Shell;
 
@@ -59,6 +59,8 @@ import jdk.nashorn.tools.Shell;
  */
 public final class Main extends Shell {
     private Main() {}
+
+    private static final String DOC_PROPERTY_NAME = "__doc__";
 
     static final boolean DEBUG = Boolean.getBoolean("nashorn.jjs.debug");
     static final boolean HEADLESS = GraphicsEnvironment.isHeadless();
@@ -132,12 +134,17 @@ public final class Main extends Shell {
                                 final String pkgName = ((NativeJavaPackage)res).getName();
                                 final String url = pkgName.replace('.', '/') + "/package-summary.html";
                                 openBrowserForJavadoc(url);
-                            } else if (res instanceof ScriptFunction) {
-                                return ((ScriptFunction)res).getDocumentation();
+                            } else if (res instanceof ScriptObject) {
+                                final ScriptObject sobj = (ScriptObject)res;
+                                if (sobj.has(DOC_PROPERTY_NAME)) {
+                                    return toString(sobj.get(DOC_PROPERTY_NAME), global);
+                                } else if (sobj instanceof ScriptFunction) {
+                                    return ((ScriptFunction)sobj).getDocumentation();
+                                }
                             }
 
                             // FIXME: better than toString for other cases?
-                            return JSType.toString(res);
+                            return toString(res, global);
                         }
                      } catch (Exception ignored) {
                      }
@@ -253,7 +260,7 @@ public final class Main extends Shell {
         try {
             final Object res = context.eval(global, source, global, "<shell>");
             if (res != UNDEFINED) {
-                err.println(JSType.toString(res));
+                err.println(toString(res, global));
             }
         } catch (final Exception e) {
             err.println(e);

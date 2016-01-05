@@ -1385,7 +1385,7 @@ public final class Duration
      * <p>
      * The format of the returned string will be {@code PTnHnMnS}, where n is
      * the relevant hours, minutes or seconds part of the duration.
-     * Any fractional seconds are placed after a decimal point i the seconds section.
+     * Any fractional seconds are placed after a decimal point in the seconds section.
      * If a section has a zero value, it is omitted.
      * The hours, minutes and seconds will all have the same sign.
      * <p>
@@ -1406,9 +1406,13 @@ public final class Duration
         if (this == ZERO) {
             return "PT0S";
         }
-        long hours = seconds / SECONDS_PER_HOUR;
-        int minutes = (int) ((seconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
-        int secs = (int) (seconds % SECONDS_PER_MINUTE);
+        long effectiveTotalSecs = seconds;
+        if (seconds < 0 && nanos > 0) {
+            effectiveTotalSecs++;
+        }
+        long hours = effectiveTotalSecs / SECONDS_PER_HOUR;
+        int minutes = (int) ((effectiveTotalSecs % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
+        int secs = (int) (effectiveTotalSecs % SECONDS_PER_MINUTE);
         StringBuilder buf = new StringBuilder(24);
         buf.append("PT");
         if (hours != 0) {
@@ -1420,18 +1424,18 @@ public final class Duration
         if (secs == 0 && nanos == 0 && buf.length() > 2) {
             return buf.toString();
         }
-        if (secs < 0 && nanos > 0) {
-            if (secs == -1) {
+        if (seconds < 0 && nanos > 0) {
+            if (secs == 0) {
                 buf.append("-0");
             } else {
-                buf.append(secs + 1);
+                buf.append(secs);
             }
         } else {
             buf.append(secs);
         }
         if (nanos > 0) {
             int pos = buf.length();
-            if (secs < 0) {
+            if (seconds < 0) {
                 buf.append(2 * NANOS_PER_SECOND - nanos);
             } else {
                 buf.append(nanos + NANOS_PER_SECOND);

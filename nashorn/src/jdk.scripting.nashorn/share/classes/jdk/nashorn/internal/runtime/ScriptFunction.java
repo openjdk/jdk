@@ -655,12 +655,21 @@ public class ScriptFunction extends ScriptObject {
     }
 
     /**
-     * Set the documentation for this function
+     * Get the documentation key for this function
      *
-     * @param doc documentation String for this function
+     * @return the documentation key
      */
-    public final void setDocumentation(final String doc) {
-        data.setDocumentation(doc);
+    public final String getDocumentationKey() {
+        return data.getDocumentationKey();
+    }
+
+    /**
+     * Set the documentation key for this function
+     *
+     * @param docKey documentation key String for this function
+     */
+    public final void setDocumentationKey(final String docKey) {
+        data.setDocumentationKey(docKey);
     }
 
     /**
