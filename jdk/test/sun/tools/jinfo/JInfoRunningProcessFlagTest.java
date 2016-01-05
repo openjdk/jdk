@@ -60,30 +60,30 @@ public class JInfoRunningProcessFlagTest {
     }
 
     private static void testFlagPlus() throws Exception {
-        OutputAnalyzer output = JInfoHelper.jinfo("-flag", "+PrintGC");
+        OutputAnalyzer output = JInfoHelper.jinfo("-flag", "+HeapDumpOnOutOfMemoryError");
         output.shouldHaveExitValue(0);
-        output = JInfoHelper.jinfo("-flag", "PrintGC");
+        output = JInfoHelper.jinfo("-flag", "HeapDumpOnOutOfMemoryError");
         output.shouldHaveExitValue(0);
-        output.shouldContain("+PrintGC");
-        verifyIsEnabled("PrintGC");
+        output.shouldContain("+HeapDumpOnOutOfMemoryError");
+        verifyIsEnabled("HeapDumpOnOutOfMemoryError");
     }
 
     private static void testFlagMinus() throws Exception {
-        OutputAnalyzer output = JInfoHelper.jinfo("-flag", "-PrintGC");
+        OutputAnalyzer output = JInfoHelper.jinfo("-flag", "-HeapDumpOnOutOfMemoryError");
         output.shouldHaveExitValue(0);
-        output = JInfoHelper.jinfo("-flag", "PrintGC");
+        output = JInfoHelper.jinfo("-flag", "HeapDumpOnOutOfMemoryError");
         output.shouldHaveExitValue(0);
-        output.shouldContain("-PrintGC");
-        verifyIsDisabled("PrintGC");
+        output.shouldContain("-HeapDumpOnOutOfMemoryError");
+        verifyIsDisabled("HeapDumpOnOutOfMemoryError");
     }
 
     private static void testFlagEqual() throws Exception {
-        OutputAnalyzer output = JInfoHelper.jinfo("-flag", "PrintGC=1");
+        OutputAnalyzer output = JInfoHelper.jinfo("-flag", "HeapDumpOnOutOfMemoryError=1");
         output.shouldHaveExitValue(0);
-        output = JInfoHelper.jinfo("-flag", "PrintGC");
+        output = JInfoHelper.jinfo("-flag", "HeapDumpOnOutOfMemoryError");
         output.shouldHaveExitValue(0);
-        output.shouldContain("+PrintGC");
-        verifyIsEnabled("PrintGC");
+        output.shouldContain("+HeapDumpOnOutOfMemoryError");
+        verifyIsEnabled("HeapDumpOnOutOfMemoryError");
     }
 
     private static void testInvalidFlag() throws Exception {
