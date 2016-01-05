@@ -311,10 +311,7 @@ class VM_UnlinkSymbols: public VM_Operation {
 };
 
 class VM_Verify: public VM_Operation {
- private:
-  bool _silent;
  public:
-  VM_Verify(bool silent = VerifySilently) : _silent(silent) {}
   VMOp_Type type() const { return VMOp_Verify; }
   void doit();
 };
@@ -416,17 +413,6 @@ class VM_Exit: public VM_Operation {
   }
   VMOp_Type type() const { return VMOp_Exit; }
   void doit();
-};
-
-
-class VM_RotateGCLog: public VM_Operation {
- private:
-  outputStream* _out;
-
- public:
-  VM_RotateGCLog(outputStream* st) : _out(st) {}
-  VMOp_Type type() const { return VMOp_RotateGCLog; }
-  void doit() { gclog_or_tty->rotate_log(true, _out); }
 };
 
 class VM_PrintCompileQueue: public VM_Operation {

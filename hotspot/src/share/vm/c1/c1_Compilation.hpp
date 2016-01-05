@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ class Compilation: public StackObj {
   bool               _has_unsafe_access;
   bool               _would_profile;
   bool               _has_method_handle_invokes;  // True if this method has MethodHandle invokes.
+  bool               _has_reserved_stack_access;
   const char*        _bailout_msg;
   ExceptionInfoList* _exception_info_list;
   ExceptionHandlerTable _exception_handler_table;
@@ -170,6 +171,9 @@ class Compilation: public StackObj {
   // JSR 292
   bool     has_method_handle_invokes() const { return _has_method_handle_invokes;     }
   void set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
+
+  bool     has_reserved_stack_access() const { return _has_reserved_stack_access; }
+  void set_has_reserved_stack_access(bool z) { _has_reserved_stack_access = z; }
 
   DebugInformationRecorder* debug_info_recorder() const; // = _env->debug_info();
   Dependencies* dependency_recorder() const; // = _env->dependencies()

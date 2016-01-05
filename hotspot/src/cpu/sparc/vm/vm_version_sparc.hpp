@@ -127,6 +127,8 @@ public:
   // Initialization
   static void initialize();
 
+  static void init_before_ergo()        { _features = determine_features(); }
+
   // Instruction support
   static bool has_v8()                  { return (_features & v8_instructions_m) != 0; }
   static bool has_v9()                  { return (_features & v9_instructions_m) != 0; }

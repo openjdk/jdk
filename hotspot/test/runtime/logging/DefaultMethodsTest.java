@@ -26,6 +26,7 @@
  * @bug 8139564
  * @summary defaultmethods=debug should have logging from each of the statements in the code
  * @library /testlibrary
+ * @ignore 8146435
  * @modules java.base/sun.misc
  *          java.management
  * @run driver DefaultMethodsTest

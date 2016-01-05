@@ -229,17 +229,17 @@ public class VM {
 
      public String getValue() {
         if (isBool()) {
-           return new Boolean(getBool()).toString();
+           return Boolean.toString(getBool());
         } else if (isInt()) {
-           return new Long(getInt()).toString();
+           return Long.toString(getInt());
         } else if (isUInt()) {
-           return new Long(getUInt()).toString();
+           return Long.toString(getUInt());
         } else if (isIntx()) {
-           return new Long(getIntx()).toString();
+           return Long.toString(getIntx());
         } else if (isUIntx()) {
-           return new Long(getUIntx()).toString();
+           return Long.toString(getUIntx());
         } else if (isSizet()) {
-            return new Long(getSizet()).toString();
+            return Long.toString(getSizet());
         } else {
            return null;
         }
