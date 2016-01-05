@@ -3344,12 +3344,6 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
   const char* fileSep = os::file_separator();
   sprintf(path, "%s%slib%sendorsed", Arguments::get_java_home(), fileSep, fileSep);
 
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    JVMCIRuntime::save_options(_system_properties);
-  }
-#endif // INCLUDE_JVMCI
-
   if (CheckEndorsedAndExtDirs) {
     int nonEmptyDirs = 0;
     // check endorsed directory

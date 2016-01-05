@@ -71,8 +71,6 @@ class JVMCIRuntime: public AllStatic {
   static bool _HotSpotJVMCIRuntime_initialized;
   static bool _well_known_classes_initialized;
   static const char* _compiler;
-  static int _options_count;
-  static SystemProperty** _options;
 
   static int _trivial_prefixes_count;
   static char** _trivial_prefixes;
@@ -98,20 +96,6 @@ class JVMCIRuntime: public AllStatic {
    * when JVMCI is initialized.
    */
   static void save_compiler(const char* compiler);
-
-  /**
-   * Saves the value of the system properties starting with "jvmci.option." for processing
-   * when JVMCI is initialized.
-   *
-   * @param props the head of the system property list
-   */
-  static void save_options(SystemProperty* props);
-
-  /**
-   * If either the PrintFlags or ShowFlags JVMCI option is present,
-   * then JVMCI is initialized to show the help message.
-   */
-  static void maybe_print_flags(TRAPS);
 
   static bool is_HotSpotJVMCIRuntime_initialized() { return _HotSpotJVMCIRuntime_initialized; }
 
