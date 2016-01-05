@@ -91,4 +91,14 @@ class Util {
     static <T> Stream<T> stream(Iterable<T> iterable) {
         return StreamSupport.stream(iterable.spliterator(), false);
     }
+
+    static class Pair<T, U> {
+        final T first;
+        final U second;
+
+        Pair(T first, U second) {
+            this.first = first;
+            this.second = second;
+        }
+    }
 }

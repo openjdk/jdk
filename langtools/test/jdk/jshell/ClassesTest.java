@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8145239
  * @summary Tests for EvaluationState.classes
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ClassesTest
@@ -171,6 +172,27 @@ public class ClassesTest extends KullaTesting {
                 DiagCheck.DIAG_ERROR,
                 DiagCheck.DIAG_ERROR,
                 added(REJECTED));
+        assertActiveKeys();
+    }
+
+    public void classesRedeclaration3() {
+        Snippet a = classKey(assertEval("class A { }"));
+        assertClasses(clazz(KullaTesting.ClassType.CLASS, "A"));
+        assertActiveKeys();
+
+        Snippet test1 = methodKey(assertEval("A test() { return null; }"));
+        Snippet test2 = methodKey(assertEval("void test(A a) { }"));
+        Snippet test3 = methodKey(assertEval("void test(int n) {A a;}"));
+        assertActiveKeys();
+
+        assertEval("interface A { }",
+                ste(MAIN_SNIPPET, VALID, VALID, true, null),
+                ste(test1, VALID, VALID, true, MAIN_SNIPPET),
+                ste(test2, VALID, VALID, true, MAIN_SNIPPET),
+                ste(test3, VALID, VALID, false, MAIN_SNIPPET),
+                ste(a, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
+        assertClasses(clazz(KullaTesting.ClassType.INTERFACE, "A"));
+        assertMethods(method("()A", "test"), method("(A)void", "test"), method("(int)void", "test"));
         assertActiveKeys();
     }
 
