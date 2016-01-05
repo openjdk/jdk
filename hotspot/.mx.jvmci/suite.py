@@ -109,7 +109,6 @@ suite = {
         "jdk.vm.ci.code",
       ],
       "checkstyle" : "jdk.vm.ci.service",
-      "annotationProcessors" : ["JVMCI_OPTIONS_PROCESSOR"],
       "javaCompliance" : "1.8",
       "workingSets" : "API,JVMCI",
     },
@@ -130,38 +129,6 @@ suite = {
     "jdk.vm.ci.inittimer" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
-      "checkstyle" : "jdk.vm.ci.service",
-      "javaCompliance" : "1.8",
-      "workingSets" : "JVMCI",
-    },
-
-    "jdk.vm.ci.options" : {
-      "subDir" : "src/jdk.vm.ci/share/classes",
-      "sourceDirs" : ["src"],
-      "checkstyle" : "jdk.vm.ci.service",
-      "dependencies" : ["jdk.vm.ci.inittimer"],
-      "javaCompliance" : "1.8",
-      "workingSets" : "JVMCI",
-    },
-
-    "jdk.vm.ci.options.processor" : {
-      "subDir" : "src/jdk.vm.ci/share/classes",
-      "sourceDirs" : ["src"],
-      "dependencies" : [
-        "jdk.vm.ci.options",
-      ],
-      "checkstyle" : "jdk.vm.ci.service",
-      "javaCompliance" : "1.8",
-      "workingSets" : "JVMCI,Codegen",
-    },
-
-    "jdk.vm.ci.options.test" : {
-      "subDir" : "test/compiler/jvmci",
-      "sourceDirs" : ["src"],
-      "dependencies" : [
-        "jdk.vm.ci.options",
-        "mx:JUNIT",
-      ],
       "checkstyle" : "jdk.vm.ci.service",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI",
@@ -200,14 +167,11 @@ suite = {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : [
-        "jdk.vm.ci.options",
         "jdk.vm.ci.hotspotvmconfig",
         "jdk.vm.ci.common",
+        "jdk.vm.ci.inittimer",
         "jdk.vm.ci.runtime",
         "jdk.vm.ci.service",
-      ],
-      "annotationProcessors" : [
-        "JVMCI_OPTIONS_PROCESSOR",
       ],
       "checkstyle" : "jdk.vm.ci.service",
       "javaCompliance" : "1.8",
@@ -282,11 +246,6 @@ suite = {
       "dependencies" : ["jdk.vm.ci.service"],
     },
 
-    "JVMCI_OPTIONS" : {
-      "subDir" : "src/jdk.vm.ci/share/classes",
-      "dependencies" : ["jdk.vm.ci.options"],
-    },
-
     "JVMCI_API" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "dependencies" : [
@@ -298,7 +257,6 @@ suite = {
         "jdk.vm.ci.sparc",
       ],
       "distDependencies" : [
-        "JVMCI_OPTIONS",
         "JVMCI_SERVICE",
       ],
     },
@@ -327,7 +285,6 @@ suite = {
     "JVMCI_TEST" : {
       "subDir" : "test/compiler/jvmci",
       "dependencies" : [
-        "jdk.vm.ci.options.test",
         "jdk.vm.ci.runtime.test",
       ],
       "distDependencies" : [
@@ -336,13 +293,6 @@ suite = {
       "exclude" : ["mx:JUNIT"],
     },
 
-    "JVMCI_OPTIONS_PROCESSOR" : {
-      "subDir" : "src/jdk.vm.ci/share/classes",
-      "dependencies" : ["jdk.vm.ci.options.processor"],
-      "distDependencies" : [
-        "JVMCI_OPTIONS",
-      ],
-    },
 
     "JVMCI_SERVICE_PROCESSOR" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
@@ -358,15 +308,12 @@ suite = {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "overlaps" : [
         "JVMCI_API",
-        "JVMCI_OPTIONS",
         "JVMCI_SERVICE",
         "JVMCI_HOTSPOT",
         "JVMCI_HOTSPOTVMCONFIG",
         "JVMCI_SERVICE_PROCESSOR",
-        "JVMCI_OPTIONS_PROCESSOR"
       ],
       "dependencies" : [
-        "jdk.vm.ci.options",
         "jdk.vm.ci.service",
         "jdk.vm.ci.inittimer",
         "jdk.vm.ci.runtime",
@@ -378,7 +325,6 @@ suite = {
         "jdk.vm.ci.hotspot.aarch64",
         "jdk.vm.ci.hotspot.amd64",
         "jdk.vm.ci.hotspot.sparc",
-        "jdk.vm.ci.options.processor",
         "jdk.vm.ci.service.processor"
       ],
     },

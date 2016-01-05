@@ -50,14 +50,9 @@ jobject JVMCIRuntime::_HotSpotJVMCIRuntime_instance = NULL;
 bool JVMCIRuntime::_HotSpotJVMCIRuntime_initialized = false;
 bool JVMCIRuntime::_well_known_classes_initialized = false;
 const char* JVMCIRuntime::_compiler = NULL;
-int JVMCIRuntime::_options_count = 0;
-SystemProperty** JVMCIRuntime::_options = NULL;
 int JVMCIRuntime::_trivial_prefixes_count = 0;
 char** JVMCIRuntime::_trivial_prefixes = NULL;
 bool JVMCIRuntime::_shutdown_called = false;
-
-static const char* OPTION_PREFIX = "jvmci.option.";
-static const size_t OPTION_PREFIX_LEN = strlen(OPTION_PREFIX);
 
 BasicType JVMCIRuntime::kindToBasicType(Handle kind, TRAPS) {
   if (kind.is_null()) {
@@ -631,16 +626,6 @@ Handle JVMCIRuntime::callStatic(const char* className, const char* methodName, c
   return Handle((oop)result.get_jobject());
 }
 
-static bool jvmci_options_file_exists() {
-  const char* home = Arguments::get_java_home();
-  size_t path_len = strlen(home) + strlen("/lib/jvmci.options") + 1;
-  char path[JVM_MAXPATHLEN];
-  char sep = os::file_separator()[0];
-  jio_snprintf(path, JVM_MAXPATHLEN, "%s%clib%cjvmci.options", home, sep, sep);
-  struct stat st;
-  return os::stat(path, &st) == 0;
-}
-
 void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
   if (JNIHandles::resolve(_HotSpotJVMCIRuntime_instance) == NULL) {
 #ifdef ASSERT
@@ -651,30 +636,6 @@ void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
     assert(klass->is_being_initialized() && klass->is_reentrant_initialization(THREAD),
            "HotSpotJVMCIRuntime initialization should only be triggered through JVMCI initialization");
 #endif
-
-    bool parseOptionsFile = jvmci_options_file_exists();
-    if (_options != NULL || parseOptionsFile) {
-      JavaCallArguments args;
-      objArrayOop options;
-      if (_options != NULL) {
-        options = oopFactory::new_objArray(SystemDictionary::String_klass(), _options_count * 2, CHECK);
-        for (int i = 0; i < _options_count; i++) {
-          SystemProperty* prop = _options[i];
-          oop name = java_lang_String::create_oop_from_str(prop->key() + OPTION_PREFIX_LEN, CHECK);
-          const char* prop_value = prop->value() != NULL ? prop->value() : "";
-          oop value = java_lang_String::create_oop_from_str(prop_value, CHECK);
-          options->obj_at_put(i * 2, name);
-          options->obj_at_put((i * 2) + 1, value);
-        }
-      } else {
-        options = NULL;
-      }
-      args.push_oop(options);
-      args.push_int(parseOptionsFile);
-      callStatic("jdk/vm/ci/options/OptionsParser",
-                 "parseOptionsFromVM",
-                 "([Ljava/lang/String;Z)Ljava/lang/Boolean;", &args, CHECK);
-    }
 
     if (_compiler != NULL) {
       JavaCallArguments args;
@@ -891,48 +852,6 @@ void JVMCIRuntime::save_compiler(const char* compiler) {
   assert(compiler != NULL, "npe");
   assert(_compiler == NULL, "cannot reassign JVMCI compiler");
   _compiler = compiler;
-}
-
-void JVMCIRuntime::maybe_print_flags(TRAPS) {
-  if (_options != NULL) {
-    for (int i = 0; i < _options_count; i++) {
-      SystemProperty* p = _options[i];
-      const char* name = p->key() + OPTION_PREFIX_LEN;
-      if (strcmp(name, "PrintFlags") == 0 || strcmp(name, "ShowFlags") == 0) {
-        JVMCIRuntime::initialize_well_known_classes(CHECK);
-        HandleMark hm;
-        ResourceMark rm;
-        JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK);
-        return;
-      }
-    }
-  }
-}
-
-void JVMCIRuntime::save_options(SystemProperty* props) {
-  int count = 0;
-  SystemProperty* first = NULL;
-  for (SystemProperty* p = props; p != NULL; p = p->next()) {
-    if (strncmp(p->key(), OPTION_PREFIX, OPTION_PREFIX_LEN) == 0) {
-      if (first == NULL) {
-        first = p;
-      }
-      count++;
-    }
-  }
-  if (count != 0) {
-    _options_count = count;
-    _options = NEW_C_HEAP_ARRAY(SystemProperty*, count, mtCompiler);
-    _options[0] = first;
-    SystemProperty** insert_pos = _options + 1;
-    for (SystemProperty* p = first->next(); p != NULL; p = p->next()) {
-      if (strncmp(p->key(), OPTION_PREFIX, OPTION_PREFIX_LEN) == 0) {
-        *insert_pos = p;
-        insert_pos++;
-      }
-    }
-    assert (insert_pos - _options == count, "must be");
-  }
 }
 
 void JVMCIRuntime::shutdown(TRAPS) {

@@ -35,21 +35,16 @@ import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ModifiersProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.options.Option;
-import jdk.vm.ci.options.OptionType;
-import jdk.vm.ci.options.OptionValue;
 
 /**
  * Represents a field in a HotSpot type.
  */
 class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotProxified {
 
-    static class Options {
-        //@formatter:off
-        @Option(help = "Mark well-known stable fields as such.", type = OptionType.Debug)
-        public static final OptionValue<Boolean> ImplicitStableValues = new OptionValue<>(true);
-        //@formatter:on
-    }
+    /**
+     * Mark well-known stable fields as such.
+     */
+    private static final boolean ImplicitStableValues = HotSpotJVMCIRuntime.getBooleanProperty("ImplicitStableValues", true);
 
     private final HotSpotResolvedObjectTypeImpl holder;
     private final String name;
@@ -203,7 +198,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotP
             return true;
         }
         assert getAnnotation(Stable.class) == null;
-        if (Options.ImplicitStableValues.getValue() && isImplicitStableField()) {
+        if (ImplicitStableValues && isImplicitStableField()) {
             return true;
         }
         return false;

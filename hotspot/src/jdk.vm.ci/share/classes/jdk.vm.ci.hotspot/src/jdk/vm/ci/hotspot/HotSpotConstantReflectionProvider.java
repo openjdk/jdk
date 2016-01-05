@@ -30,28 +30,22 @@ import java.lang.reflect.Array;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.JavaField;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MemoryAccessProvider;
 import jdk.vm.ci.meta.MethodHandleAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.options.Option;
-import jdk.vm.ci.options.OptionType;
-import jdk.vm.ci.options.OptionValue;
-import jdk.vm.ci.options.StableOptionValue;
 
 /**
  * HotSpot implementation of {@link ConstantReflectionProvider}.
  */
 public class HotSpotConstantReflectionProvider implements ConstantReflectionProvider, HotSpotProxified {
 
-    static class Options {
-        //@formatter:off
-        @Option(help = "Constant fold final fields with default values.", type = OptionType.Debug)
-        public static final OptionValue<Boolean> TrustFinalDefaultFields = new OptionValue<>(true);
-        //@formatter:on
-    }
+    /**
+     * Determines whether to treat {@code final} fields with default values as constant.
+     */
+    private static final boolean TrustFinalDefaultFields = HotSpotJVMCIRuntime.getBooleanProperty("TrustFinalDefaultFields", true);
 
     protected final HotSpotJVMCIRuntimeProvider runtime;
     protected final HotSpotMethodHandleAccessProvider methodHandleAccess;
@@ -239,7 +233,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
 
     /**
      * Determines if a static field is constant for the purpose of
-     * {@link #readConstantFieldValue(JavaField, JavaConstant)}.
+     * {@link #readConstantFieldValue(ResolvedJavaField, JavaConstant)}.
      */
     protected boolean isStaticFieldConstant(HotSpotResolvedJavaField staticField) {
         if (staticField.isFinal() || (staticField.isStable() && runtime.getConfig().foldStableValues)) {
@@ -255,14 +249,14 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
      * Determines if a value read from a {@code final} instance field is considered constant. The
      * implementation in {@link HotSpotConstantReflectionProvider} returns true if {@code value} is
      * not the {@link JavaConstant#isDefaultForKind default value} for its kind or if
-     * {@link Options#TrustFinalDefaultFields} is true.
+     * {@link #TrustFinalDefaultFields} is true.
      *
      * @param value a value read from a {@code final} instance field
      * @param receiverClass the {@link Object#getClass() class} of object from which the
      *            {@code value} was read
      */
     protected boolean isFinalInstanceFieldValueConstant(JavaConstant value, Class<?> receiverClass) {
-        return !value.isDefaultForKind() || Options.TrustFinalDefaultFields.getValue();
+        return !value.isDefaultForKind() || TrustFinalDefaultFields;
     }
 
     /**
@@ -278,13 +272,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         return !value.isDefaultForKind();
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * The {@code value} field in {@link OptionValue} is considered constant if the type of
-     * {@code receiver} is (assignable to) {@link StableOptionValue}.
-     */
-    public JavaConstant readConstantFieldValue(JavaField field, JavaConstant receiver) {
+    public JavaConstant readConstantFieldValue(ResolvedJavaField field, JavaConstant receiver) {
         HotSpotResolvedJavaField hotspotField = (HotSpotResolvedJavaField) field;
 
         if (hotspotField.isStatic()) {
@@ -319,21 +307,13 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
                             return value;
                         }
                     }
-                } else {
-                    Class<?> clazz = object.getClass();
-                    if (StableOptionValue.class.isAssignableFrom(clazz)) {
-                        if (hotspotField.isInObject(object) && hotspotField.getName().equals("value")) {
-                            StableOptionValue<?> option = (StableOptionValue<?>) object;
-                            return HotSpotObjectConstantImpl.forObject(option.getValue());
-                        }
-                    }
                 }
             }
         }
         return null;
     }
 
-    public JavaConstant readFieldValue(JavaField field, JavaConstant receiver) {
+    public JavaConstant readFieldValue(ResolvedJavaField field, JavaConstant receiver) {
         HotSpotResolvedJavaField hotspotField = (HotSpotResolvedJavaField) field;
         if (!hotspotField.isStable()) {
             return readNonStableFieldValue(field, receiver);
@@ -344,7 +324,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         }
     }
 
-    private JavaConstant readNonStableFieldValue(JavaField field, JavaConstant receiver) {
+    private JavaConstant readNonStableFieldValue(ResolvedJavaField field, JavaConstant receiver) {
         HotSpotResolvedJavaField hotspotField = (HotSpotResolvedJavaField) field;
         if (hotspotField.isStatic()) {
             HotSpotResolvedJavaType holder = (HotSpotResolvedJavaType) hotspotField.getDeclaringClass();
@@ -359,7 +339,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         return null;
     }
 
-    public JavaConstant readStableFieldValue(JavaField field, JavaConstant receiver, boolean isDefaultStable) {
+    public JavaConstant readStableFieldValue(ResolvedJavaField field, JavaConstant receiver, boolean isDefaultStable) {
         JavaConstant fieldValue = readNonStableFieldValue(field, receiver);
         if (fieldValue.isNonNull()) {
             JavaType declaredType = field.getType();

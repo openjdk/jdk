@@ -36,15 +36,6 @@ SRC_DIR := $(HOTSPOT_TOPDIR)/src/jdk.vm.ci/share/classes
 ################################################################################
 # Compile the annotation processor
 
-$(eval $(call SetupJavaCompilation, BUILD_JVMCI_OPTIONS, \
-    SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(SRC_DIR)/jdk.vm.ci.options/src \
-        $(SRC_DIR)/jdk.vm.ci.options.processor/src \
-        $(SRC_DIR)/jdk.vm.ci.inittimer/src, \
-    BIN := $(BUILDTOOLS_OUTPUTDIR)/jvmci_options, \
-    JAR := $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.ci.options.jar, \
-))
-
 $(eval $(call SetupJavaCompilation, BUILD_JVMCI_SERVICE, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(SRC_DIR)/jdk.vm.ci.service/src \
@@ -70,11 +61,10 @@ PROC_SRCS := $(filter %.java, $(call CacheFind, $(PROC_SRC_DIRS)))
 ALL_SRC_DIRS := $(wildcard $(SRC_DIR)/*/src)
 SOURCEPATH := $(call PathList, $(ALL_SRC_DIRS))
 PROCESSOR_PATH := $(call PathList, \
-    $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.ci.options.jar \
     $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.ci.service.jar)
 
 $(GENSRC_DIR)/_gensrc_proc_done: $(PROC_SRCS) \
-    $(BUILD_JVMCI_OPTIONS) $(BUILD_JVMCI_SERVICE)
+    $(BUILD_JVMCI_SERVICE)
 	$(MKDIR) -p $(@D)
 	$(eval $(call ListPathsSafely,PROC_SRCS,$(@D)/_gensrc_proc_files))
 	$(JAVA_SMALL) $(NEW_JAVAC) \
@@ -89,15 +79,6 @@ $(GENSRC_DIR)/_gensrc_proc_done: $(PROC_SRCS) \
 	$(TOUCH) $@
 
 TARGETS += $(GENSRC_DIR)/_gensrc_proc_done
-
-################################################################################
-
-$(GENSRC_DIR)/META-INF/services/jdk.vm.ci.options.OptionDescriptors: \
-    $(GENSRC_DIR)/_gensrc_proc_done
-	$(MKDIR) -p $(@D)
-	$(FIND) $(GENSRC_DIR) -name '*_OptionDescriptors.java' | $(SED) 's:.*/jdk\.vm\.ci/\(.*\)\.java:\1:' | $(TR) '/' '.' > $@
-
-TARGETS += $(GENSRC_DIR)/META-INF/services/jdk.vm.ci.options.OptionDescriptors
 
 ################################################################################
 
