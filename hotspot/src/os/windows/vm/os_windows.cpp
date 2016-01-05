@@ -3318,6 +3318,35 @@ bool os::remove_stack_guard_pages(char* addr, size_t size) {
   return os::uncommit_memory(addr, size);
 }
 
+static bool protect_pages_individually(char* addr, size_t bytes, unsigned int p, DWORD *old_status) {
+  uint count = 0;
+  bool ret = false;
+  size_t bytes_remaining = bytes;
+  char * next_protect_addr = addr;
+
+  // Use VirtualQuery() to get the chunk size.
+  while (bytes_remaining) {
+    MEMORY_BASIC_INFORMATION alloc_info;
+    if (VirtualQuery(next_protect_addr, &alloc_info, sizeof(alloc_info)) == 0) {
+      return false;
+    }
+
+    size_t bytes_to_protect = MIN2(bytes_remaining, (size_t)alloc_info.RegionSize);
+    // We used different API at allocate_pages_individually() based on UseNUMAInterleaving,
+    // but we don't distinguish here as both cases are protected by same API.
+    ret = VirtualProtect(next_protect_addr, bytes_to_protect, p, old_status) != 0;
+    warning("Failed protecting pages individually for chunk #%u", count);
+    if (!ret) {
+      return false;
+    }
+
+    bytes_remaining -= bytes_to_protect;
+    next_protect_addr += bytes_to_protect;
+    count++;
+  }
+  return ret;
+}
+
 // Set protections specified
 bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
                         bool is_committed) {
@@ -3345,7 +3374,25 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
   // Pages in the region become guard pages. Any attempt to access a guard page
   // causes the system to raise a STATUS_GUARD_PAGE exception and turn off
   // the guard page status. Guard pages thus act as a one-time access alarm.
-  return VirtualProtect(addr, bytes, p, &old_status) != 0;
+  bool ret;
+  if (UseNUMAInterleaving) {
+    // If UseNUMAInterleaving is enabled, the pages may have been allocated a chunk at a time,
+    // so we must protect the chunks individually.
+    ret = protect_pages_individually(addr, bytes, p, &old_status);
+  } else {
+    ret = VirtualProtect(addr, bytes, p, &old_status) != 0;
+  }
+#ifdef ASSERT
+  if (!ret) {
+    int err = os::get_last_error();
+    char buf[256];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("INFO: os::protect_memory(" PTR_FORMAT ", " SIZE_FORMAT
+          ") failed; error='%s' (DOS error/errno=%d)", addr, bytes,
+          buf_len != 0 ? buf : "<no_error_string>", err);
+  }
+#endif
+  return ret;
 }
 
 bool os::guard_memory(char* addr, size_t bytes) {
