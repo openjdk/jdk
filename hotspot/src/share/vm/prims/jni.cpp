@@ -3917,7 +3917,6 @@ void execute_internal_vm_tests() {
     run_unit_test(QuickSort::test_quick_sort());
     run_unit_test(GuardedMemory::test_guarded_memory());
     run_unit_test(AltHashing::test_alt_hash());
-    run_unit_test(test_loggc_filename());
     run_unit_test(TestNewSize_test());
     run_unit_test(TestOldSize_test());
     run_unit_test(TestKlass_test());

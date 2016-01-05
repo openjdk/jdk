@@ -271,7 +271,7 @@ public:
   void print_summary_on(outputStream* out) {
     RegionTypeCounter* counters[] = { &_young, &_humonguous, &_free, &_old, NULL };
 
-    out->print_cr("\n Current rem set statistics");
+    out->print_cr(" Current rem set statistics");
     out->print_cr("  Total per region rem sets sizes = " SIZE_FORMAT "K."
                   " Max = " SIZE_FORMAT "K.",
                   round_to_K(total_rs_mem_sz()), round_to_K(max_rs_mem_sz()));
@@ -323,7 +323,7 @@ public:
 };
 
 void G1RemSetSummary::print_on(outputStream* out) {
-  out->print_cr("\n Recent concurrent refinement statistics");
+  out->print_cr(" Recent concurrent refinement statistics");
   out->print_cr("  Processed " SIZE_FORMAT " cards",
                 num_concurrent_refined_cards());
   out->print_cr("  Of " SIZE_FORMAT " completed buffers:", num_processed_buf_total());

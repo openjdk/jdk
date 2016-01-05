@@ -946,6 +946,7 @@ public:
     _method_HotSpotIntrinsicCandidate,
     _jdk_internal_vm_annotation_Contended,
     _field_Stable,
+    _jdk_internal_vm_annotation_ReservedStackAccess,
     _annotation_LIMIT
   };
   const Location _location;
@@ -2016,6 +2017,11 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       }
       return _jdk_internal_vm_annotation_Contended;
     }
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_ReservedStackAccess_signature): {
+      if (_location != _in_method)  break;  // only allow for methods
+      if (RestrictReservedStack && !privileged) break; // honor privileges
+      return _jdk_internal_vm_annotation_ReservedStackAccess;
+    }
     default: {
       break;
     }
@@ -2051,6 +2057,8 @@ void MethodAnnotationCollector::apply_to(methodHandle m) {
     m->set_hidden(true);
   if (has_annotation(_method_HotSpotIntrinsicCandidate) && !m->is_synthetic())
     m->set_intrinsic_candidate(true);
+  if (has_annotation(_jdk_internal_vm_annotation_ReservedStackAccess))
+    m->set_has_reserved_stack_access(true);
 }
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {

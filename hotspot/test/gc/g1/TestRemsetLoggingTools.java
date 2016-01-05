@@ -22,7 +22,7 @@
  */
 
 /*
- * Common helpers for TestSummarizeRSetStats* tests
+ * Common helpers for TestRemsetLogging* tests
  */
 
 import com.sun.management.HotSpotDiagnosticMXBean;
@@ -67,7 +67,7 @@ class VerifySummaryOutput {
     }
 }
 
-public class TestSummarizeRSetStatsTools {
+public class TestRemsetLoggingTools {
 
     // the VM is currently run using G1GC, i.e. trying to test G1 functionality.
     public static boolean testingG1GC() {
@@ -90,7 +90,6 @@ public class TestSummarizeRSetStatsTools {
             "-Xms20m",
             "-Xmx20m",
             "-XX:InitiatingHeapOccupancyPercent=100", // we don't want the additional GCs due to initial marking
-            "-XX:+PrintGC",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:G1HeapRegionSize=1M",
         };

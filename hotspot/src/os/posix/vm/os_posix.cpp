@@ -736,12 +736,12 @@ bool os::Posix::is_valid_signal(int sig) {
 }
 
 // Returns:
-// "invalid (<num>)" for an invalid signal number
+// NULL for an invalid signal number
 // "SIG<num>" for a valid but unknown signal number
 // signal name otherwise.
 const char* os::exception_name(int sig, char* buf, size_t size) {
   if (!os::Posix::is_valid_signal(sig)) {
-    jio_snprintf(buf, size, "invalid (%d)", sig);
+    return NULL;
   }
   const char* const name = os::Posix::get_signal_name(sig, buf, size);
   if (strcmp(name, "UNKNOWN") == 0) {
@@ -1031,7 +1031,7 @@ int os::Posix::unblock_thread_signal_mask(const sigset_t *set) {
   return pthread_sigmask(SIG_UNBLOCK, set, NULL);
 }
 
-address os::Posix::ucontext_get_pc(ucontext_t* ctx) {
+address os::Posix::ucontext_get_pc(const ucontext_t* ctx) {
 #ifdef TARGET_OS_FAMILY_linux
    return Linux::ucontext_get_pc(ctx);
 #elif defined(TARGET_OS_FAMILY_solaris)

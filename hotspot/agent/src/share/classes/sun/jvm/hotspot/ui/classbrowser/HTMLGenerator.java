@@ -1921,6 +1921,15 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             buf.link(genPCHref(addressToLong(pc)), pc.toString());
          }
 
+         if (!method.isStatic() && !method.isNative()) {
+            OopHandle oopHandle = vf.getLocals().oopHandleAt(0);
+
+            if (oopHandle != null) {
+               buf.append(", oop = ");
+               buf.append(oopHandle.toString());
+            }
+         }
+
          if (vf.isCompiledFrame()) {
             buf.append(" (Compiled");
          }
