@@ -25,6 +25,10 @@
 
 WIN_VERIFY_LIB := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libverify/verify.lib
 
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, jdk, lib/CoreLibraries.gmk))
+
+
 ##########################################################################################
 # libfdlibm is statically linked with libjava below and not delivered into the
 # product on its own.
@@ -119,6 +123,9 @@ LIBJAVA_CFLAGS := $(addprefix -I, $(LIBJAVA_SRC_DIRS)) \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
     -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"'
 
+# Make it possible to override this variable
+LIBJAVA_MAPFILE ?= $(JDK_TOPDIR)/make/mapfiles/libjava/mapfile-vers
+
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   BUILD_LIBJAVA_java_props_md.c_CFLAGS := -x objective-c
   BUILD_LIBJAVA_java_props_macosx.c_CFLAGS := -x objective-c
@@ -146,7 +153,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     System.c_CFLAGS := $(VERSION_CFLAGS), \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjava/mapfile-vers, \
+    MAPFILE := $(LIBJAVA_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/, \
