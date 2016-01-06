@@ -36,7 +36,7 @@ import java.math.BigInteger;
 import java.text.DateFormatSymbols;
 import java.util.*;
 
-import sun.misc.DoubleConsts;
+import jdk.internal.math.DoubleConsts;
 
 
 import static java.util.Calendar.*;
@@ -1081,6 +1081,10 @@ public class BasicDouble extends Basic {
         test("%,3.0f", "100,000,000", 100000000.00);
         test("%,3.0f", "10,000,000",  10000000.00);
         test("%,3.0f", "100,000,000", 100000000.00);
+
+
+
+
 
 
 

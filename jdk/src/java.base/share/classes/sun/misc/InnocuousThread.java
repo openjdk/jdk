@@ -35,8 +35,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A thread that has no permissions, is not a member of any user-defined
  * ThreadGroup and supports the ability to erase ThreadLocals.
  */
-public final class InnocuousThread extends ManagedLocalsThread {
+public final class InnocuousThread extends Thread {
     private static final jdk.internal.misc.Unsafe UNSAFE;
+    private static final long THREAD_LOCALS;
+    private static final long INHERITABLE_THREAD_LOCALS;
     private static final ThreadGroup INNOCUOUSTHREADGROUP;
     private static final AccessControlContext ACC;
     private static final long INHERITEDACCESSCONTROLCONTEXT;
@@ -54,7 +56,7 @@ public final class InnocuousThread extends ManagedLocalsThread {
     }
 
     public InnocuousThread(ThreadGroup group, Runnable target, String name) {
-        super(group, target, name);
+        super(group, target, name, 0L, false);
         UNSAFE.putOrderedObject(this, INHERITEDACCESSCONTROLCONTEXT, ACC);
         UNSAFE.putOrderedObject(this, CONTEXTCLASSLOADER, ClassLoader.getSystemClassLoader());
     }
@@ -71,6 +73,14 @@ public final class InnocuousThread extends ManagedLocalsThread {
             super.setContextClassLoader(null);
         else
             throw new SecurityException("setContextClassLoader");
+    }
+
+    /**
+     * Drops all thread locals (and inherited thread locals).
+     */
+    public final void eraseThreadLocals() {
+        UNSAFE.putObject(this, THREAD_LOCALS, null);
+        UNSAFE.putObject(this, INHERITABLE_THREAD_LOCALS, null);
     }
 
     // ensure run method is run only once
@@ -96,6 +106,10 @@ public final class InnocuousThread extends ManagedLocalsThread {
             Class<?> tk = Thread.class;
             Class<?> gk = ThreadGroup.class;
 
+            THREAD_LOCALS = UNSAFE.objectFieldOffset
+                    (tk.getDeclaredField("threadLocals"));
+            INHERITABLE_THREAD_LOCALS = UNSAFE.objectFieldOffset
+                    (tk.getDeclaredField("inheritableThreadLocals"));
             INHERITEDACCESSCONTROLCONTEXT = UNSAFE.objectFieldOffset
                 (tk.getDeclaredField("inheritedAccessControlContext"));
             CONTEXTCLASSLOADER = UNSAFE.objectFieldOffset

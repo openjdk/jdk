@@ -107,7 +107,7 @@ public abstract class LocaleProviderAdapter {
      * Default fallback adapter type, which should return something meaningful in any case.
      * This is either CLDR or FALLBACK.
      */
-    static volatile LocaleProviderAdapter.Type defaultLocaleProviderAdapter = null;
+    static volatile LocaleProviderAdapter.Type defaultLocaleProviderAdapter;
 
     /**
      * Adapter lookup cache.

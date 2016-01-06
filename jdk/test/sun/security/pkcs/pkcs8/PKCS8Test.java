@@ -43,7 +43,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.util.Arrays;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.provider.DSAPrivateKey;
 import sun.security.util.DerOutputStream;

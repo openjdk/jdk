@@ -23,19 +23,16 @@
 # questions.
 #
 
+###############################################################################
+# Check which variant of the JDK that we want to build.
+# Currently we have:
+#    normal:   standard edition
+# but the custom make system may add other variants
+#
+# Effectively the JDK variant gives a name to a specific set of
+# modules to compile into the JDK.
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VARIANT],
 [
-  ###############################################################################
-  #
-  # Check which variant of the JDK that we want to build.
-  # Currently we have:
-  #    normal:   standard edition
-  # but the custom make system may add other variants
-  #
-  # Effectively the JDK variant gives a name to a specific set of
-  # modules to compile into the JDK. In the future, these modules
-  # might even be Jigsaw modules.
-  #
   AC_MSG_CHECKING([which variant of the JDK to build])
   AC_ARG_WITH([jdk-variant], [AS_HELP_STRING([--with-jdk-variant],
       [JDK variant to build (normal) @<:@normal@:>@])])
@@ -51,138 +48,14 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VARIANT],
   AC_MSG_RESULT([$JDK_VARIANT])
 ])
 
-AC_DEFUN_ONCE([JDKOPT_SETUP_JVM_INTERPRETER],
-[
 ###############################################################################
-#
-# Check which interpreter of the JVM we want to build.
-# Currently we have:
-#    template: Template interpreter (the default)
-#    cpp     : C++ interpreter
-AC_MSG_CHECKING([which interpreter of the JVM to build])
-AC_ARG_WITH([jvm-interpreter], [AS_HELP_STRING([--with-jvm-interpreter],
-	[JVM interpreter to build (template, cpp) @<:@template@:>@])])
-
-if test "x$with_jvm_interpreter" = x; then
-     with_jvm_interpreter="template"
-fi
-
-JVM_INTERPRETER="$with_jvm_interpreter"
-
-if test "x$JVM_INTERPRETER" != xtemplate && test "x$JVM_INTERPRETER" != xcpp; then
-   AC_MSG_ERROR([The available JVM interpreters are: template, cpp])
-fi
-
-AC_SUBST(JVM_INTERPRETER)
-
-AC_MSG_RESULT([$with_jvm_interpreter])
-])
-
-AC_DEFUN_ONCE([JDKOPT_SETUP_JVM_VARIANTS],
-[
-
-  ###############################################################################
-  #
-  # Check which variants of the JVM that we want to build.
-  # Currently we have:
-  #    server: normal interpreter and a tiered C1/C2 compiler
-  #    client: normal interpreter and C1 (no C2 compiler) (only 32-bit platforms)
-  #    minimal1: reduced form of client with optional VM services and features stripped out
-  #    kernel: kernel footprint JVM that passes the TCK without major performance problems,
-  #             ie normal interpreter and C1, only the serial GC, kernel jvmti etc
-  #    zero: no machine code interpreter, no compiler
-  #    zeroshark: zero interpreter and shark/llvm compiler backend
-#    core: interpreter only, no compiler (only works on some platforms)
-  AC_MSG_CHECKING([which variants of the JVM to build])
-  AC_ARG_WITH([jvm-variants], [AS_HELP_STRING([--with-jvm-variants],
-	[JVM variants (separated by commas) to build (server, client, minimal1, kernel, zero, zeroshark, core) @<:@server@:>@])])
-
-  if test "x$with_jvm_variants" = x; then
-    with_jvm_variants="server"
-  fi
-
-  JVM_VARIANTS=",$with_jvm_variants,"
-  TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//'  -e 's/minimal1,//' -e 's/kernel,//' -e 's/zero,//' -e 's/zeroshark,//' -e 's/core,//'`
-
-  if test "x$TEST_VARIANTS" != "x,"; then
-     AC_MSG_ERROR([The available JVM variants are: server, client, minimal1, kernel, zero, zeroshark, core])
-  fi
-  AC_MSG_RESULT([$with_jvm_variants])
-
-  JVM_VARIANT_SERVER=`$ECHO "$JVM_VARIANTS" | $SED -e '/,server,/!s/.*/false/g' -e '/,server,/s/.*/true/g'`
-  JVM_VARIANT_CLIENT=`$ECHO "$JVM_VARIANTS" | $SED -e '/,client,/!s/.*/false/g' -e '/,client,/s/.*/true/g'`
-  JVM_VARIANT_MINIMAL1=`$ECHO "$JVM_VARIANTS" | $SED -e '/,minimal1,/!s/.*/false/g' -e '/,minimal1,/s/.*/true/g'`
-  JVM_VARIANT_KERNEL=`$ECHO "$JVM_VARIANTS" | $SED -e '/,kernel,/!s/.*/false/g' -e '/,kernel,/s/.*/true/g'`
-  JVM_VARIANT_ZERO=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zero,/!s/.*/false/g' -e '/,zero,/s/.*/true/g'`
-  JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zeroshark,/!s/.*/false/g' -e '/,zeroshark,/s/.*/true/g'`
-  JVM_VARIANT_CORE=`$ECHO "$JVM_VARIANTS" | $SED -e '/,core,/!s/.*/false/g' -e '/,core,/s/.*/true/g'`
-
-  if test "x$JVM_VARIANT_CLIENT" = xtrue; then
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-      AC_MSG_ERROR([You cannot build a client JVM for a 64-bit machine.])
-    fi
-  fi
-  if test "x$JVM_VARIANT_KERNEL" = xtrue; then
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-      AC_MSG_ERROR([You cannot build a kernel JVM for a 64-bit machine.])
-    fi
-  fi
-  if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-      AC_MSG_ERROR([You cannot build a minimal JVM for a 64-bit machine.])
-    fi
-  fi
-
-  # Replace the commas with AND for use in the build directory name.
-  ANDED_JVM_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/^,//' -e 's/,$//' -e 's/,/AND/g'`
-  COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/minimal1,/1/' -e 's/kernel,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/' -e 's/core,/1/'`
-  if test "x$COUNT_VARIANTS" != "x,1"; then
-    BUILDING_MULTIPLE_JVM_VARIANTS=yes
-  else
-    BUILDING_MULTIPLE_JVM_VARIANTS=no
-  fi
-
-  AC_SUBST(JVM_VARIANTS)
-  AC_SUBST(JVM_VARIANT_SERVER)
-  AC_SUBST(JVM_VARIANT_CLIENT)
-  AC_SUBST(JVM_VARIANT_MINIMAL1)
-  AC_SUBST(JVM_VARIANT_KERNEL)
-  AC_SUBST(JVM_VARIANT_ZERO)
-  AC_SUBST(JVM_VARIANT_ZEROSHARK)
-  AC_SUBST(JVM_VARIANT_CORE)
-
-  INCLUDE_SA=true
-  if test "x$JVM_VARIANT_ZERO" = xtrue ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$OPENJDK_TARGET_OS" = xaix ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
-    INCLUDE_SA=false
-  fi
-  AC_SUBST(INCLUDE_SA)
-
-  if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    MACOSX_UNIVERSAL="true"
-  fi
-
-  AC_SUBST(MACOSX_UNIVERSAL)
-])
-
+# Set the debug level
+#    release: no debug information, all optimizations, no asserts.
+#    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
+#    fastdebug: debug information (-g), all optimizations, all asserts
+#    slowdebug: debug information (-g), no optimizations, all asserts
 AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
 [
-  ###############################################################################
-  #
-  # Set the debug level
-  #    release: no debug information, all optimizations, no asserts.
-  #    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
-  #    fastdebug: debug information (-g), all optimizations, all asserts
-  #    slowdebug: debug information (-g), no optimizations, all asserts
-  #
   DEBUG_LEVEL="release"
   AC_MSG_CHECKING([which debug level to use])
   AC_ARG_ENABLE([debug], [AS_HELP_STRING([--enable-debug],
@@ -208,117 +81,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
       test "x$DEBUG_LEVEL" != xslowdebug; then
     AC_MSG_ERROR([Allowed debug levels are: release, fastdebug and slowdebug])
   fi
-
-
-  ###############################################################################
-  #
-  # Setup legacy vars/targets and new vars to deal with different debug levels.
-  #
-
-  case $DEBUG_LEVEL in
-    release )
-      VARIANT="OPT"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="false"
-      BUILD_VARIANT_RELEASE=""
-      HOTSPOT_DEBUG_LEVEL="product"
-      HOTSPOT_EXPORT="product"
-      ;;
-    fastdebug )
-      VARIANT="DBG"
-      FASTDEBUG="true"
-      DEBUG_CLASSFILES="true"
-      BUILD_VARIANT_RELEASE="-fastdebug"
-      HOTSPOT_DEBUG_LEVEL="fastdebug"
-      HOTSPOT_EXPORT="fastdebug"
-      ;;
-    slowdebug )
-      VARIANT="DBG"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="true"
-      BUILD_VARIANT_RELEASE="-debug"
-      HOTSPOT_DEBUG_LEVEL="debug"
-      HOTSPOT_EXPORT="debug"
-      ;;
-    optimized )
-      VARIANT="OPT"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="false"
-      BUILD_VARIANT_RELEASE="-optimized"
-      HOTSPOT_DEBUG_LEVEL="optimized"
-      HOTSPOT_EXPORT="optimized"
-      ;;
-  esac
-
-  # The debug level 'optimized' is a little special because it is currently only
-  # applicable to the HotSpot build where it means to build a completely
-  # optimized version of the VM without any debugging code (like for the
-  # 'release' debug level which is called 'product' in the HotSpot build) but
-  # with the exception that it can contain additional code which is otherwise
-  # protected by '#ifndef PRODUCT' macros. These 'optimized' builds are used to
-  # test new and/or experimental features which are not intended for customer
-  # shipment. Because these new features need to be tested and benchmarked in
-  # real world scenarios, we want to build the containing JDK at the 'release'
-  # debug level.
-  if test "x$DEBUG_LEVEL" = xoptimized; then
-    DEBUG_LEVEL="release"
-  fi
-
-  #####
-  # Generate the legacy makefile targets for hotspot.
-  # The hotspot api for selecting the build artifacts, really, needs to be improved.
-  # JDK-7195896 will fix this on the hotspot side by using the JVM_VARIANT_* variables to
-  # determine what needs to be built. All we will need to set here is all_product, all_fastdebug etc
-  # But until then ...
-  HOTSPOT_TARGET=""
-
-  if test "x$JVM_VARIANT_SERVER" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL} "
-  fi
-
-  if test "x$JVM_VARIANT_CLIENT" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}1 "
-  fi
-
-  if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}minimal1 "
-  fi
-
-  if test "x$JVM_VARIANT_KERNEL" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}kernel "
-  fi
-
-  if test "x$JVM_VARIANT_ZERO" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}zero "
-  fi
-
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}shark "
-  fi
-
-  if test "x$JVM_VARIANT_CORE" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}core "
-  fi
-
-  HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_EXPORT"
-
-  # On Macosx universal binaries are produced, but they only contain
-  # 64 bit intel. This invalidates control of which jvms are built
-  # from configure, but only server is valid anyway. Fix this
-  # when hotspot makefiles are rewritten.
-  if test "x$MACOSX_UNIVERSAL" = xtrue; then
-    HOTSPOT_TARGET=universal_${HOTSPOT_EXPORT}
-  fi
-
-  #####
-
-  AC_SUBST(DEBUG_LEVEL)
-  AC_SUBST(VARIANT)
-  AC_SUBST(FASTDEBUG)
-  AC_SUBST(DEBUG_CLASSFILES)
-  AC_SUBST(BUILD_VARIANT_RELEASE)
 ])
-
 
 ###############################################################################
 #
@@ -367,12 +130,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_OPEN_OR_CUSTOM],
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 [
-
-  ###############################################################################
-  #
   # Should we build a JDK/JVM with headful support (ie a graphical ui)?
   # We always build headless support.
-  #
   AC_MSG_CHECKING([headful support])
   AC_ARG_ENABLE([headful], [AS_HELP_STRING([--disable-headful],
       [disable building headful support (graphical UI support) @<:@enabled@:>@])],
@@ -398,21 +157,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   AC_SUBST(SUPPORT_HEADFUL)
   AC_SUBST(BUILD_HEADLESS)
 
-  # Control wether Hotspot runs Queens test after build.
-  AC_ARG_ENABLE([hotspot-test-in-build], [AS_HELP_STRING([--enable-hotspot-test-in-build],
-      [run the Queens test after Hotspot build @<:@disabled@:>@])],,
-      [enable_hotspot_test_in_build=no])
-  if test "x$enable_hotspot_test_in_build" = "xyes"; then
-    TEST_IN_BUILD=true
-  else
-    TEST_IN_BUILD=false
-  fi
-  AC_SUBST(TEST_IN_BUILD)
-
-  ###############################################################################
-  #
   # Choose cacerts source file
-  #
   AC_ARG_WITH(cacerts-file, [AS_HELP_STRING([--with-cacerts-file],
       [specify alternative cacerts file])])
   if test "x$with_cacerts_file" != x; then
@@ -420,10 +165,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
   AC_SUBST(CACERTS_FILE)
 
-  ###############################################################################
-  #
   # Enable or disable unlimited crypto
-  #
   AC_ARG_ENABLE(unlimited-crypto, [AS_HELP_STRING([--enable-unlimited-crypto],
       [Enable unlimited crypto policy @<:@disabled@:>@])],,
       [enable_unlimited_crypto=no])
@@ -434,10 +176,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   fi
   AC_SUBST(UNLIMITED_CRYPTO)
 
-  ###############################################################################
-  #
   # Compress jars
-  #
   COMPRESS_JARS=false
 
   AC_SUBST(COMPRESS_JARS)
@@ -453,19 +192,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
     COPYRIGHT_YEAR=`date +'%Y'`
   fi
   AC_SUBST(COPYRIGHT_YEAR)
-])
-
-AC_DEFUN_ONCE([JDKOPT_SETUP_BUILD_TWEAKS],
-[
-  HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
-  AC_SUBST(HOTSPOT_MAKE_ARGS)
-
-  # The name of the Service Agent jar.
-  SALIB_NAME="${LIBRARY_PREFIX}saproc${SHARED_LIBRARY_SUFFIX}"
-  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    SALIB_NAME="${LIBRARY_PREFIX}sawindbg${SHARED_LIBRARY_SUFFIX}"
-  fi
-  AC_SUBST(SALIB_NAME)
 ])
 
 ###############################################################################
@@ -487,7 +213,6 @@ AC_DEFUN_ONCE([JDKOPT_DETECT_INTREE_EC],
   AC_SUBST(ENABLE_INTREE_EC)
 ])
 
-
 AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 [
   #
@@ -498,8 +223,21 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   AC_ARG_WITH([native-debug-symbols],
       [AS_HELP_STRING([--with-native-debug-symbols],
       [set the native debug symbol configuration (none, internal, external, zipped) @<:@zipped@:>@])],
-      [],
-      [with_native_debug_symbols="zipped"])
+      [
+        if test "x$OPENJDK_TARGET_OS" = xaix; then
+          if test "x$withval" = xexternal || test "x$withval" = xzipped; then
+            AC_MSG_ERROR([AIX only supports the parameters 'none' and 'internal' for --with-native-debug-symbols])
+          fi
+        fi
+      ],
+      [
+        if test "x$OPENJDK_TARGET_OS" = xaix; then
+          # AIX doesn't support 'zipped' so use 'internal' as default
+          with_native_debug_symbols="internal"
+        else
+          with_native_debug_symbols="zipped"
+        fi
+      ])
   NATIVE_DEBUG_SYMBOLS=$with_native_debug_symbols
   AC_MSG_RESULT([$NATIVE_DEBUG_SYMBOLS])
 
@@ -632,5 +370,3 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_BUILD],
 
   AC_SUBST(STATIC_BUILD)
 ])
-
-

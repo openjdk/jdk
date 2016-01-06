@@ -25,13 +25,10 @@
 
 package sun.nio.ch;
 
-import java.lang.ref.SoftReference;
 import java.lang.reflect.*;
-import java.io.IOException;
 import java.io.FileDescriptor;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
-import java.nio.channels.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -295,7 +292,7 @@ public class Util {
         return pageSize;
     }
 
-    private static volatile Constructor<?> directByteBufferConstructor = null;
+    private static volatile Constructor<?> directByteBufferConstructor;
 
     private static void initDBBConstructor() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
@@ -340,7 +337,7 @@ public class Util {
         return dbb;
     }
 
-    private static volatile Constructor<?> directByteBufferRConstructor = null;
+    private static volatile Constructor<?> directByteBufferRConstructor;
 
     private static void initDBBRConstructor() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
@@ -388,7 +385,7 @@ public class Util {
 
     // -- Bug compatibility --
 
-    private static volatile String bugLevel = null;
+    private static volatile String bugLevel;
 
     static boolean atBugLevel(String bl) {              // package-private
         if (bugLevel == null) {

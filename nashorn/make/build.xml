@@ -48,12 +48,12 @@
     <condition property="git.executable" value="/usr/local/bin/git" else="git">
       <available file="/usr/local/bin/git"/>
     </condition>
-    <!-- check if testng.jar is avaiable, and download it if it isn't -->
+    <!-- check if testng.jar is available, and download it if it isn't -->
     <available property="testng.already.present" file="${file.reference.testng.jar}"/>
     <antcall target="get-testng"/>
     <available property="testng.available" file="${file.reference.testng.jar}"/>
 
-    <!-- check if asmtools-6.0.jar is avaiable, and download it if it isn't -->
+    <!-- check if asmtools-6.0.jar is available, and download it if it isn't -->
     <!--
     <available property="asmtools.already.present" file="${file.reference.asmtools.jar}"/>
     <antcall target="get-asmtools"/>
@@ -83,6 +83,12 @@
 
     <condition property="jfr.options" value="${run.test.jvmargs.jfr}" else="">
       <istrue value="${jfr}"/>
+    </condition>
+
+    <condition property="test-sys-prop-no-security.os.not.windows">
+      <not>
+        <os family="windows"/>
+      </not>
     </condition>
   </target>
 
@@ -402,6 +408,13 @@ grant codeBase "file:/${basedir}/test/script/maptests/*" {
 };
 
 grant codeBase "file:/${basedir}/test/script/basic/*" {
+    permission java.io.FilePermission "${basedir}/test/script/-", "read";
+    permission java.io.FilePermission "$${user.dir}", "read";
+    permission java.util.PropertyPermission "user.dir", "read";
+    permission java.util.PropertyPermission "nashorn.test.*", "read";
+};
+
+grant codeBase "file:/${basedir}/test/script/basic/apply_to_call/*" {
     permission java.io.FilePermission "${basedir}/test/script/-", "read";
     permission java.io.FilePermission "$${user.dir}", "read";
     permission java.util.PropertyPermission "user.dir", "read";

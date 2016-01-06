@@ -30,6 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
+ * @build T
  * @run main/othervm T6435291
  */
 

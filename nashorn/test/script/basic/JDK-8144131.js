@@ -30,12 +30,9 @@
 
 var doubleArray = [97912312397.234, -182374983434.56];
 var doubleArrayResults = [-871935411, -1986357002];
-var longArray = [0x7fffffff8c102ebc, -0x7fffffffe9dfec18];
-var longArrayResults = [-1945096192, 371201024];
 
-// Make sure arrays use double and long array data
+// Make sure array uses double array data
 Assert.assertEquals(doubleArray[0].getClass(), java.lang.Double.class);
-Assert.assertEquals(longArray[0].getClass(), java.lang.Long.class);
 
 function testBinaryOp(array, index, expected) {
     Assert.assertEquals(array[index] & 0xffffffff, expected);
@@ -43,8 +40,5 @@ function testBinaryOp(array, index, expected) {
 
 for (var i = 0; i < doubleArray.length; i++) {
     testBinaryOp(doubleArray, i, doubleArrayResults[i]);
-}
-for (var i = 0; i < longArray.length; i++) {
-    testBinaryOp(longArray, i, longArrayResults[i]);
 }
 

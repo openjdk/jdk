@@ -140,10 +140,6 @@ final public class AccessBridge {
         // initialize AccessibleRole map
         initAccessibleRoleMap();
 
-        // determine which version of the JDK is running
-        String version = getJavaVersionProperty();
-        debugString("JDK version = "+version);
-
         // initialize the methods that map HWNDs and Java top-level
         // windows
         initHWNDcalls();
@@ -215,9 +211,7 @@ final public class AccessBridge {
         } catch (Exception e) {}
 
     /*
-      Build the extendedVirtualNameSearchRoles array list.  I chose this method
-      because some of the Accessible Roles that need to be added to it are not
-      available in all versions of the J2SE that we want to support.
+      Build the extendedVirtualNameSearchRoles array list.
     */
     extendedVirtualNameSearchRoles.add (AccessibleRole.COMBO_BOX);
     try {
@@ -5919,7 +5913,7 @@ final public class AccessBridge {
      */
     AccessibleRole.UNKNOWN,
 
-    // These roles are only available in JDK 1.4
+    // These roles are available since JDK 1.4
 
     /**
      * A STATUS_BAR is an simple component that can contain

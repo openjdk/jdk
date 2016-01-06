@@ -48,8 +48,6 @@ import sun.awt.AWTPermissions;
 @jdk.Exported
 public class AWTEventMonitor {
 
-    static private boolean runningOnJDK1_4 = false;
-
     /**
      * The current component with keyboard focus.
      *
@@ -638,15 +636,9 @@ public class AWTEventMonitor {
          * @see AWTEventMonitor
          */
         public AWTEventsListener() {
-            String version = System.getProperty("java.version");
-            if (version != null) {
-                runningOnJDK1_4 = (version.compareTo("1.4") >= 0);
-            }
             initializeIntrospection();
             installListeners();
-            if (runningOnJDK1_4) {
-                MenuSelectionManager.defaultManager().addChangeListener(this);
-            }
+            MenuSelectionManager.defaultManager().addChangeListener(this);
             EventQueueMonitor.addTopLevelWindowListener(this);
         }
 
@@ -848,15 +840,7 @@ public class AWTEventMonitor {
             case EventID.FOCUS:
                 c.removeFocusListener(this);
                 c.addFocusListener(this);
-
-                if (runningOnJDK1_4) {
-                    processFocusGained();
-
-                } else {        // not runningOnJDK1_4
-                    if ((c != componentWithFocus_private) && c.hasFocus()) {
-                        componentWithFocus_private = c;
-                    }
-                }
+                processFocusGained();
                 break;
 
             case EventID.ITEM:
