@@ -207,12 +207,10 @@ class Thread implements Runnable {
     /* For generating thread ID */
     private static long threadSeqNumber;
 
-    /* Java thread status for tools,
-     * initialized to indicate thread 'not yet started'
+    /*
+     * Java thread status for tools, default indicates thread 'not yet started'
      */
-
-    private volatile int threadStatus = 0;
-
+    private volatile int threadStatus;
 
     private static synchronized long nextThreadID() {
         return ++threadSeqNumber;
@@ -344,11 +342,11 @@ class Thread implements Runnable {
 
     /**
      * Initializes a Thread with the current AccessControlContext.
-     * @see #init(ThreadGroup,Runnable,String,long,AccessControlContext)
+     * @see #init(ThreadGroup,Runnable,String,long,AccessControlContext,boolean)
      */
     private void init(ThreadGroup g, Runnable target, String name,
                       long stackSize) {
-        init(g, target, name, stackSize, null);
+        init(g, target, name, stackSize, null, true);
     }
 
     /**
@@ -361,9 +359,12 @@ class Thread implements Runnable {
      *        zero to indicate that this parameter is to be ignored.
      * @param acc the AccessControlContext to inherit, or
      *            AccessController.getContext() if null
+     * @param inheritThreadLocals if {@code true}, inherit initial values for
+     *            inheritable thread-locals from the constructing thread
      */
     private void init(ThreadGroup g, Runnable target, String name,
-                      long stackSize, AccessControlContext acc) {
+                      long stackSize, AccessControlContext acc,
+                      boolean inheritThreadLocals) {
         if (name == null) {
             throw new NullPointerException("name cannot be null");
         }
@@ -414,7 +415,7 @@ class Thread implements Runnable {
                 acc != null ? acc : AccessController.getContext();
         this.target = target;
         setPriority(priority);
-        if (parent.inheritableThreadLocals != null)
+        if (inheritThreadLocals && parent.inheritableThreadLocals != null)
             this.inheritableThreadLocals =
                 ThreadLocal.createInheritedMap(parent.inheritableThreadLocals);
         /* Stash the specified stack size in case the VM cares */
@@ -468,7 +469,7 @@ class Thread implements Runnable {
      * This is not a public constructor.
      */
     Thread(Runnable target, AccessControlContext acc) {
-        init(null, target, "Thread-" + nextThreadNum(), 0, acc);
+        init(null, target, "Thread-" + nextThreadNum(), 0, acc, true);
     }
 
     /**
@@ -675,6 +676,62 @@ class Thread implements Runnable {
     public Thread(ThreadGroup group, Runnable target, String name,
                   long stackSize) {
         init(group, target, name, stackSize);
+    }
+
+    /**
+     * Allocates a new {@code Thread} object so that it has {@code target}
+     * as its run object, has the specified {@code name} as its name,
+     * belongs to the thread group referred to by {@code group}, has
+     * the specified {@code stackSize}, and inherits initial values for
+     * {@linkplain InheritableThreadLocal inheritable thread-local} variables
+     * if {@code inheritThreadLocals} is {@code true}.
+     *
+     * <p> This constructor is identical to {@link
+     * #Thread(ThreadGroup,Runnable,String,long)} with the added ability to
+     * suppress, or not, the inheriting of initial values for inheritable
+     * thread-local variables from the constructing thread. This allows for
+     * finer grain control over inheritable thread-locals. Care must be taken
+     * when passing a value of {@code false} for {@code inheritThreadLocals},
+     * as it may lead to unexpected behavior if the new thread executes code
+     * that expects a specific thread-local value to be inherited.
+     *
+     * <p> Specifying a value of {@code true} for the {@code inheritThreadLocals}
+     * parameter will cause this constructor to behave exactly like the
+     * {@code Thread(ThreadGroup, Runnable, String, long)} constructor.
+     *
+     * @param  group
+     *         the thread group. If {@code null} and there is a security
+     *         manager, the group is determined by {@linkplain
+     *         SecurityManager#getThreadGroup SecurityManager.getThreadGroup()}.
+     *         If there is not a security manager or {@code
+     *         SecurityManager.getThreadGroup()} returns {@code null}, the group
+     *         is set to the current thread's thread group.
+     *
+     * @param  target
+     *         the object whose {@code run} method is invoked when this thread
+     *         is started. If {@code null}, this thread's run method is invoked.
+     *
+     * @param  name
+     *         the name of the new thread
+     *
+     * @param  stackSize
+     *         the desired stack size for the new thread, or zero to indicate
+     *         that this parameter is to be ignored
+     *
+     * @param  inheritThreadLocals
+     *         if {@code true}, inherit initial values for inheritable
+     *         thread-locals from the constructing thread, otherwise no initial
+     *         values are inherited
+     *
+     * @throws  SecurityException
+     *          if the current thread cannot create a thread in the specified
+     *          thread group
+     *
+     * @since 9
+     */
+    public Thread(ThreadGroup group, Runnable target, String name,
+                  long stackSize, boolean inheritThreadLocals) {
+        init(group, target, name, stackSize, null, inheritThreadLocals);
     }
 
     /**

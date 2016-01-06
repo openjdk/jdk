@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1230,6 +1230,28 @@ public final class OffsetTime
         long nod = time.toNanoOfDay();
         long offsetNanos = offset.getTotalSeconds() * NANOS_PER_SECOND;
         return nod - offsetNanos;
+    }
+
+    /**
+     * Converts this {@code OffsetTime} to the number of seconds since the epoch
+     * of 1970-01-01T00:00:00Z.
+     * <p>
+     * This combines this offset time with the specified date to calculate the
+     * epoch-second value, which is the number of elapsed seconds from
+     * 1970-01-01T00:00:00Z.
+     * Instants on the time-line after the epoch are positive, earlier
+     * are negative.
+     *
+     * @param date the localdate, not null
+     * @return the number of seconds since the epoch of 1970-01-01T00:00:00Z, may be negative
+     * @since 9
+     */
+    public long toEpochSecond(LocalDate date) {
+        Objects.requireNonNull(date, "date");
+        long epochDay = date.toEpochDay();
+        long secs = epochDay * 86400 + time.toSecondOfDay();
+        secs -= offset.getTotalSeconds();
+        return secs;
     }
 
     //-----------------------------------------------------------------------

@@ -25,6 +25,12 @@
 
 include NativeCompilation.gmk
 
+# SetupNativeCompilation now supports debug symbols on macosx for hotspot.
+# Disable it here for the jdk binaries until we decide to enable them.
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  ENABLE_DEBUG_SYMBOLS := false
+endif
+
 # Prepare the find cache.
 $(eval $(call FillCacheFind, $(JDK_TOPDIR)/src/java.base/share/native/launcher))
 
@@ -180,15 +186,12 @@ define SetupBuildLauncherBody
       CFLAGS_linux := -fPIC, \
       CFLAGS_solaris := -KPIC -DHAVE_GETHRTIME, \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
-      LDFLAGS := $(LDFLAGS_JDKEXE) \
+      LDFLAGS := $$(LDFLAGS_JDKEXE) \
           $$(ORIGIN_ARG) \
           $$($1_LDFLAGS), \
       LDFLAGS_linux := \
-          $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)) \
           -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)/jli, \
-      LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_NAME,$1), \
       LDFLAGS_solaris := $$($1_LDFLAGS_solaris) \
-          $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)) \
           -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)/jli, \
       MAPFILE := $$($1_MAPFILE), \
       LIBS := $(JDKEXE_LIBS) $$($1_LIBS), \

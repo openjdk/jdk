@@ -65,7 +65,10 @@ public class TestCICOWithGCMAndAAD extends UcryptoTest {
         byte[] aad2 = aad.clone();
         aad2[50]++;
 
-        GCMParameterSpec spec = new GCMParameterSpec(128, new byte[16]);
+        byte[] iv = new byte[16];
+        rdm.nextBytes(iv);
+
+        GCMParameterSpec spec = new GCMParameterSpec(128, iv);
         Cipher encCipher = Cipher.getInstance("AES/GCM/NoPadding", p);
         encCipher.init(Cipher.ENCRYPT_MODE, key, spec);
         encCipher.updateAAD(aad);

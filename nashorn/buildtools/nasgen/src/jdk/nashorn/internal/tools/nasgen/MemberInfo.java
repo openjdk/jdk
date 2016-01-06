@@ -544,4 +544,25 @@ public final class MemberInfo implements Cloneable {
     void setArity(final int arity) {
         this.arity = arity;
     }
+
+    String getDocumentationKey(final String objName) {
+        if (kind == Kind.FUNCTION) {
+            StringBuilder buf = new StringBuilder(objName);
+            switch (where) {
+                case CONSTRUCTOR:
+                    break;
+                case PROTOTYPE:
+                    buf.append(".prototype");
+                    break;
+                case INSTANCE:
+                    buf.append(".this");
+                    break;
+            }
+            buf.append('.');
+            buf.append(name);
+            return buf.toString();
+        }
+
+        return null;
+    }
 }

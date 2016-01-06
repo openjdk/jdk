@@ -38,8 +38,9 @@ import com.sun.jdi.*;
 import com.sun.jdi.connect.*;
 
 import java.util.*;
-import java.util.regex.*;
+import java.util.Map.Entry;
 import java.io.*;
+
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 
 /**
@@ -83,239 +84,35 @@ class JDIConnection {
         return null;
     }
 
-    private Map <String, com.sun.jdi.connect.Connector.Argument> parseConnectorArgs(Connector connector, String argString) {
-        Map<String, com.sun.jdi.connect.Connector.Argument> arguments = connector.defaultArguments();
+    private Map <String, Connector.Argument> mergeConnectorArgs(Connector connector, Map<String, String> argumentName2Value) {
+        Map<String, Connector.Argument> arguments = connector.defaultArguments();
 
-        /*
-         * We are parsing strings of the form:
-         *    name1=value1,[name2=value2,...]
-         * However, the value1...valuen substrings may contain
-         * embedded comma(s), so make provision for quoting inside
-         * the value substrings. (Bug ID 4285874)
-         */
-        String regexPattern =
-            "(quote=[^,]+,)|" +           // special case for quote=.,
-            "(\\w+=)" +                   // name=
-            "(((\"[^\"]*\")|" +           //   ( "l , ue"
-            "('[^']*')|" +                //     'l , ue'
-            "([^,'\"]+))+,)";             //     v a l u e )+ ,
-        Pattern p = Pattern.compile(regexPattern);
-        Matcher m = p.matcher(argString);
-        while (m.find()) {
-            int startPosition = m.start();
-            int endPosition = m.end();
-            if (startPosition > 0) {
-                /*
-                 * It is an error if parsing skips over any part of argString.
-                 */
-                throw new IllegalArgumentException("Illegal connector argument" +
-                                          argString);
-            }
-
-            String token = argString.substring(startPosition, endPosition);
-            int index = token.indexOf('=');
-            String name = token.substring(0, index);
-            String value = token.substring(index + 1,
-                                           token.length() - 1); // Remove comma delimiter
-
-            /*
-             * for values enclosed in quotes (single and/or double quotes)
-             * strip off enclosing quote chars
-             * needed for quote enclosed delimited substrings
-             */
-            if (name.equals("options")) {
-                StringBuilder sb = new StringBuilder();
-                for (String s : splitStringAtNonEnclosedWhiteSpace(value)) {
-                    while (isEnclosed(s, "\"") || isEnclosed(s, "'")) {
-                        s = s.substring(1, s.length() - 1);
-                    }
-                    sb.append(s);
-                    sb.append(" ");
-                }
-                value = sb.toString();
-            }
-
+        for (Entry<String, String> argumentEntry : argumentName2Value.entrySet()) {
+            String name = argumentEntry.getKey();
+            String value = argumentEntry.getValue();
             Connector.Argument argument = arguments.get(name);
+
             if (argument == null) {
                 throw new IllegalArgumentException("Argument is not defined for connector:" +
                                           name + " -- " + connector.name());
             }
-            argument.setValue(value);
 
-            argString = argString.substring(endPosition); // Remove what was just parsed...
-            m = p.matcher(argString);                     //    and parse again on what is left.
+            argument.setValue(value);
         }
-        if ((! argString.equals(",")) && (argString.length() > 0)) {
-            /*
-             * It is an error if any part of argString is left over,
-             * unless it was empty to begin with.
-             */
-            throw new IllegalArgumentException("Illegal connector argument" + argString);
-        }
+
         return arguments;
     }
 
-    private static boolean isEnclosed(String value, String enclosingChar) {
-        if (value.indexOf(enclosingChar) == 0) {
-            int lastIndex = value.lastIndexOf(enclosingChar);
-            if (lastIndex > 0 && lastIndex  == value.length() - 1) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static List<String> splitStringAtNonEnclosedWhiteSpace(String value) throws IllegalArgumentException {
-        List<String> al = new ArrayList<>();
-        char[] arr;
-        int startPosition = 0;
-        int endPosition;
-        final char SPACE = ' ';
-        final char DOUBLEQ = '"';
-        final char SINGLEQ = '\'';
-
-        /*
-         * An "open" or "active" enclosing state is where
-         * the first valid start quote qualifier is found,
-         * and there is a search in progress for the
-         * relevant end matching quote
-         *
-         * enclosingTargetChar set to SPACE
-         * is used to signal a non open enclosing state
-         */
-        char enclosingTargetChar = SPACE;
-
-        if (value == null) {
-            throw new IllegalArgumentException("value string is null");
-        }
-
-        // split parameter string into individual chars
-        arr = value.toCharArray();
-
-        for (int i = 0; i < arr.length; i++) {
-            switch (arr[i]) {
-                case SPACE: {
-                    // do nothing for spaces
-                    // unless last in array
-                    if (isLastChar(arr, i)) {
-                        endPosition = i;
-                        // break for substring creation
-                        break;
-                    }
-                    continue;
-                }
-                case DOUBLEQ:
-                case SINGLEQ: {
-                    if (enclosingTargetChar == arr[i]) {
-                        // potential match to close open enclosing
-                        if (isNextCharWhitespace(arr, i)) {
-                            // if peek next is whitespace
-                            // then enclosing is a valid substring
-                            endPosition = i;
-                            // reset enclosing target char
-                            enclosingTargetChar = SPACE;
-                            // break for substring creation
-                            break;
-                        }
-                    }
-                    if (enclosingTargetChar == SPACE) {
-                        // no open enclosing state
-                        // handle as normal char
-                        if (isPreviousCharWhitespace(arr, i)) {
-                            startPosition = i;
-                            // peek forward for end candidates
-                            if (value.indexOf(arr[i], i + 1) >= 0) {
-                                // set open enclosing state by
-                                // setting up the target char
-                                enclosingTargetChar = arr[i];
-                            } else {
-                                // no more target chars left to match
-                                // end enclosing, handle as normal char
-                                if (isNextCharWhitespace(arr, i)) {
-                                    endPosition = i;
-                                    // break for substring creation
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    continue;
-                }
-                default: {
-                    // normal non-space, non-" and non-' chars
-                    if (enclosingTargetChar == SPACE) {
-                        // no open enclosing state
-                        if (isPreviousCharWhitespace(arr, i)) {
-                            // start of space delim substring
-                            startPosition = i;
-                        }
-                        if (isNextCharWhitespace(arr, i)) {
-                            // end of space delim substring
-                            endPosition = i;
-                            // break for substring creation
-                            break;
-                        }
-                    }
-                    continue;
-                }
-            }
-
-            // break's end up here
-            if (startPosition > endPosition) {
-                throw new IllegalArgumentException("Illegal option values");
-            }
-
-            // extract substring and add to List<String>
-            al.add(value.substring(startPosition, ++endPosition));
-
-            // set new start position
-            i = startPosition = endPosition;
-
-        } // for loop
-
-        return al;
-    }
-
-    static private boolean isPreviousCharWhitespace(char[] arr, int curr_pos) {
-        return isCharWhitespace(arr, curr_pos - 1);
-    }
-
-    static private boolean isNextCharWhitespace(char[] arr, int curr_pos) {
-        return isCharWhitespace(arr, curr_pos + 1);
-    }
-
-    static private boolean isCharWhitespace(char[] arr, int pos) {
-        if (pos < 0 || pos >= arr.length) {
-            // outside arraybounds is considered an implicit space
-            return true;
-        }
-        return (arr[pos] == ' ');
-    }
-
-    static private boolean isLastChar(char[] arr, int pos) {
-        return (pos + 1 == arr.length);
-    }
-
-    JDIConnection(JDIEnv env, String connectSpec, int traceFlags, JShell proc) {
+    JDIConnection(JDIEnv env, String connectorName, Map<String, String> argumentName2Value, int traceFlags, JShell proc) {
         this.env = env;
         this.proc = proc;
-        String nameString;
-        String argString;
-        int index = connectSpec.indexOf(':');
-        if (index == -1) {
-            nameString = connectSpec;
-            argString = "";
-        } else {
-            nameString = connectSpec.substring(0, index);
-            argString = connectSpec.substring(index + 1);
-        }
+        this.connector = findConnector(connectorName);
 
-        connector = findConnector(nameString);
         if (connector == null) {
-            throw new IllegalArgumentException("No connector named: " + nameString);
+            throw new IllegalArgumentException("No connector named: " + connectorName);
         }
 
-        connectorArgs = parseConnectorArgs(connector, argString);
+        connectorArgs = mergeConnectorArgs(connector, argumentName2Value);
         this.traceFlags = traceFlags;
     }
 

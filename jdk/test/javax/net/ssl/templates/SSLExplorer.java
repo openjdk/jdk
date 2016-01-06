@@ -29,8 +29,6 @@ import java.io.IOException;
 import javax.net.ssl.*;
 import java.util.*;
 
-import sun.misc.HexDumpEncoder;
-
 /**
  * Instances of this class acts as an explorer of the network data of an
  * SSL/TLS connection.

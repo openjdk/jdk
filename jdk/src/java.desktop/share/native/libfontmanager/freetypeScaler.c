@@ -258,7 +258,7 @@ Java_sun_font_FreetypeFontScaler_initNativeScaler(
                                               scalerInfo->fontData,
                                               scalerInfo->fontDataLength);
             if (bBuffer != NULL) {
-                (*env)->CallObjectMethod(env, font2D,
+                (*env)->CallVoidMethod(env, font2D,
                                    sunFontIDs.readFileMID, bBuffer);
 
                 error = FT_New_Memory_Face(scalerInfo->library,
