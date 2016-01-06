@@ -354,6 +354,14 @@ protected:
   void compute_space_boundaries(uintx minimum_eden_size,
                                 bool clear_space,
                                 bool mangle_space);
+
+  // Return adjusted new size for NewSizeThreadIncrease.
+  // If any overflow happens, revert to previous new size.
+  size_t adjust_for_thread_increase(size_t new_size_candidate,
+                                    size_t new_size_before,
+                                    size_t alignment) const;
+
+
   // Scavenge support
   void swap_spaces();
 };
