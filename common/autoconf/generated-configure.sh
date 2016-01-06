@@ -4801,7 +4801,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1450343758
+DATE_WHEN_GENERATED=1450400041
 
 ###############################################################################
 #
@@ -46949,7 +46949,7 @@ $as_echo "$supports" >&6; }
       C_O_FLAG_HI="-O3 -qstrict"
       C_O_FLAG_NORM="-O2"
       C_O_FLAG_DEBUG="-qnoopt"
-      C_O_FLAG_NONE="-qnoop"
+      C_O_FLAG_NONE="-qnoopt"
     elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
       C_O_FLAG_HIGHEST="-O2"
       C_O_FLAG_HI="-O1"
