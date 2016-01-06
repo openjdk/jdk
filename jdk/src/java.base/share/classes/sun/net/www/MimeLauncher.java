@@ -27,9 +27,8 @@ package sun.net.www;
 import java.net.URL;
 import java.io.*;
 import java.util.StringTokenizer;
-import sun.misc.ManagedLocalsThread;
 
-class MimeLauncher extends ManagedLocalsThread {
+class MimeLauncher extends Thread {
     java.net.URLConnection uc;
     MimeEntry m;
     String genericTempFileTemplate;
@@ -38,7 +37,7 @@ class MimeLauncher extends ManagedLocalsThread {
 
     MimeLauncher (MimeEntry M, java.net.URLConnection uc,
                   InputStream is, String tempFileTemplate, String threadName) throws ApplicationLaunchException {
-        super(threadName);
+        super(null, null, threadName, 0, false);
         m = M;
         this.uc = uc;
         this.is = is;

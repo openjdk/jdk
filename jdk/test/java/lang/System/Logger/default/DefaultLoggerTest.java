@@ -43,13 +43,16 @@ import java.util.function.Supplier;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.function.Function;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.stream.Stream;
 
 /**
  * @test
- * @bug     8140364
+ * @bug     8140364 8145686
  * @summary Tests default loggers returned by System.getLogger, and in
  *          particular the implementation of the the System.Logger method
  *          performed by the default binding.
@@ -59,6 +62,8 @@ import java.util.stream.Stream;
  * @run main/othervm -Xbootclasspath/a:boot DefaultLoggerTest NOSECURITY
  * @run main/othervm -Xbootclasspath/a:boot DefaultLoggerTest NOPERMISSIONS
  * @run main/othervm -Xbootclasspath/a:boot DefaultLoggerTest WITHPERMISSIONS
+ * @run main/othervm -Xbootclasspath/a:boot DefaultLoggerTest WITHCUSTOMWRAPPERS
+ * @run main/othervm -Xbootclasspath/a:boot DefaultLoggerTest WITHREFLECTION
  * @author danielfuchs
  */
 public class DefaultLoggerTest {
@@ -232,7 +237,8 @@ public class DefaultLoggerTest {
 
     static final AccessSystemLogger accessSystemLogger = new AccessSystemLogger();
 
-    static enum TestCases {NOSECURITY, NOPERMISSIONS, WITHPERMISSIONS};
+    static enum TestCases {NOSECURITY, NOPERMISSIONS, WITHPERMISSIONS,
+            WITHCUSTOMWRAPPERS, WITHREFLECTION};
 
     static void setSecurityManager() {
         if (System.getSecurityManager() == null) {
@@ -240,12 +246,179 @@ public class DefaultLoggerTest {
             System.setSecurityManager(new SecurityManager());
         }
     }
+
+    /**
+     * The CustomLoggerWrapper makes it possible to verify that classes
+     * which implements System.Logger will be skipped when looking for
+     * the calling method.
+     */
+    static class CustomLoggerWrapper implements Logger {
+
+        Logger impl;
+        public CustomLoggerWrapper(Logger logger) {
+            this.impl = Objects.requireNonNull(logger);
+        }
+
+
+        @Override
+        public String getName() {
+            return impl.getName();
+        }
+
+        @Override
+        public boolean isLoggable(Level level) {
+            return impl.isLoggable(level);
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle rb, String string, Throwable thrwbl) {
+            impl.log(level, rb, string, thrwbl);
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle rb, String string, Object... os) {
+            impl.log(level, rb, string, os);
+        }
+
+        @Override
+        public void log(Level level, Object o) {
+            impl.log(level, o);
+        }
+
+        @Override
+        public void log(Level level, String string) {
+            impl.log(level, string);
+        }
+
+        @Override
+        public void log(Level level, Supplier<String> splr) {
+            impl.log(level, splr);
+        }
+
+        @Override
+        public void log(Level level, String string, Object... os) {
+           impl.log(level, string, os);
+        }
+
+        @Override
+        public void log(Level level, String string, Throwable thrwbl) {
+            impl.log(level, string, thrwbl);
+        }
+
+        @Override
+        public void log(Level level, Supplier<String> splr, Throwable thrwbl) {
+            Logger.super.log(level, splr, thrwbl);
+        }
+
+        @Override
+        public String toString() {
+            return super.toString() + "(impl=" + impl + ")";
+        }
+
+    }
+
+    /**
+     * The ReflectionLoggerWrapper additionally makes it possible to verify
+     * that code which use reflection to call System.Logger will be skipped
+     * when looking for the calling method.
+     */
+    static class ReflectionLoggerWrapper implements Logger {
+
+        Logger impl;
+        public ReflectionLoggerWrapper(Logger logger) {
+            this.impl = Objects.requireNonNull(logger);
+        }
+
+        private Object invoke(Method m, Object... params) {
+            try {
+                return m.invoke(impl, params);
+            } catch (IllegalAccessException | IllegalArgumentException
+                    | InvocationTargetException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        @Override
+        public String getName() {
+            return impl.getName();
+        }
+
+        @Override
+        public boolean isLoggable(Level level) {
+            return impl.isLoggable(level);
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle rb, String string, Throwable thrwbl) {
+            try {
+                invoke(System.Logger.class.getMethod(
+                        "log", Level.class, ResourceBundle.class, String.class, Throwable.class),
+                        level, rb, string, thrwbl);
+            } catch (NoSuchMethodException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle rb, String string, Object... os) {
+            try {
+                invoke(System.Logger.class.getMethod(
+                        "log", Level.class, ResourceBundle.class, String.class, Object[].class),
+                        level, rb, string, os);
+            } catch (NoSuchMethodException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        @Override
+        public void log(Level level, String string) {
+            try {
+                invoke(System.Logger.class.getMethod(
+                        "log", Level.class, String.class),
+                        level, string);
+            } catch (NoSuchMethodException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        @Override
+        public void log(Level level, String string, Object... os) {
+            try {
+                invoke(System.Logger.class.getMethod(
+                        "log", Level.class, String.class, Object[].class),
+                        level, string, os);
+            } catch (NoSuchMethodException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        @Override
+        public void log(Level level, String string, Throwable thrwbl) {
+            try {
+                invoke(System.Logger.class.getMethod(
+                        "log", Level.class, String.class, Throwable.class),
+                        level, string, thrwbl);
+            } catch (NoSuchMethodException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+
+        @Override
+        public String toString() {
+            return super.toString() + "(impl=" + impl + ")";
+        }
+
+    }
+
     public static void main(String[] args) {
         if (args.length == 0)
             args = new String[] {
                 "NOSECURITY",
                 "NOPERMISSIONS",
-                "WITHPERMISSIONS"
+                "WITHPERMISSIONS",
+                "WITHCUSTOMWRAPPERS",
+                "WITHREFLECTION"
             };
 
         // 1. Obtain destination loggers directly from the LoggerFinder
@@ -276,6 +449,31 @@ public class DefaultLoggerTest {
                         allowControl.get().set(control);
                     }
                     break;
+                case WITHCUSTOMWRAPPERS:
+                    System.out.println("\n*** With Security Manager, with control permission, using custom Wrappers\n");
+                    setSecurityManager();
+                    final boolean previous = allowControl.get().get();
+                    try {
+                        allowControl.get().set(true);
+                        test(CustomLoggerWrapper::new, true);
+                    } finally {
+                        allowControl.get().set(previous);
+                    }
+                    break;
+                case WITHREFLECTION:
+                    System.out.println("\n*** With Security Manager,"
+                            + " with control permission,"
+                            + " using reflection while logging\n");
+                    setSecurityManager();
+                    final boolean before = allowControl.get().get();
+                    try {
+                        allowControl.get().set(true);
+                        test(ReflectionLoggerWrapper::new, true);
+                    } finally {
+                        allowControl.get().set(before);
+                    }
+                    break;
+
                 default:
                     throw new RuntimeException("Unknown test case: " + testCase);
             }
@@ -284,6 +482,10 @@ public class DefaultLoggerTest {
     }
 
     public static void test(boolean hasRequiredPermissions) {
+        test(Function.identity(), hasRequiredPermissions);
+    }
+
+    public static void test(Function<Logger, Logger> wrapper, boolean hasRequiredPermissions) {
 
         ResourceBundle loggerBundle = ResourceBundle.getBundle(MyLoggerBundle.class.getName());
         final Map<Logger, String> loggerDescMap = new HashMap<>();
@@ -294,7 +496,7 @@ public class DefaultLoggerTest {
         //   - and AccessSystemLogger.getLogger("foo")
         Logger sysLogger1 = null;
         try {
-            sysLogger1 = accessSystemLogger.getLogger("foo");
+            sysLogger1 = wrapper.apply(accessSystemLogger.getLogger("foo"));
             loggerDescMap.put(sysLogger1, "AccessSystemLogger.getLogger(\"foo\")");
         } catch (AccessControlException acx) {
             if (hasRequiredPermissions) {
@@ -306,7 +508,7 @@ public class DefaultLoggerTest {
             throw new RuntimeException("unexpected exception: " + acx, acx);
         }
 
-        Logger appLogger1 = System.getLogger("foo");
+        Logger appLogger1 = wrapper.apply(System.getLogger("foo"));
         loggerDescMap.put(appLogger1, "System.getLogger(\"foo\");");
 
         if (appLogger1 == sysLogger1) {
@@ -316,13 +518,13 @@ public class DefaultLoggerTest {
         // 2. Test loggers returned by:
         //   - System.getLogger(\"foo\", loggerBundle)
         //   - and AccessSystemLogger.getLogger(\"foo\", loggerBundle)
-        Logger appLogger2 =
-                System.getLogger("foo", loggerBundle);
+        Logger appLogger2 = wrapper.apply(
+                System.getLogger("foo", loggerBundle));
         loggerDescMap.put(appLogger2, "System.getLogger(\"foo\", loggerBundle)");
 
         Logger sysLogger2 = null;
         try {
-            sysLogger2 = accessSystemLogger.getLogger("foo", loggerBundle);
+            sysLogger2 = wrapper.apply(accessSystemLogger.getLogger("foo", loggerBundle));
             loggerDescMap.put(sysLogger2, "AccessSystemLogger.getLogger(\"foo\", loggerBundle)");
         } catch (AccessControlException acx) {
             if (hasRequiredPermissions) {

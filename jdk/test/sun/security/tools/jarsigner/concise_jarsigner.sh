@@ -69,8 +69,8 @@ YEAR=`date +%Y`
 # First part: output format
 # ==========================================================
 
-$KT -genkeypair -alias a1 -dname CN=a1 -validity 365
-$KT -genkeypair -alias a2 -dname CN=a2 -validity 365
+$KT -genkeypair -alias a1 -dname CN=a1 -validity 366
+$KT -genkeypair -alias a2 -dname CN=a2 -validity 366
 
 # a.jar includes 8 unsigned, 2 signed by a1 and a2, 2 signed by a3
 $JAR cvf a.jar A1.class A2.class

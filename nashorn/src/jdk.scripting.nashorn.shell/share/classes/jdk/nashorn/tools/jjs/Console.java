@@ -25,6 +25,7 @@
 
 package jdk.nashorn.tools.jjs;
 
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,21 +35,24 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 import jdk.internal.jline.NoInterruptUnixTerminal;
 import jdk.internal.jline.Terminal;
 import jdk.internal.jline.TerminalFactory;
 import jdk.internal.jline.TerminalFactory.Flavor;
 import jdk.internal.jline.WindowsTerminal;
 import jdk.internal.jline.console.ConsoleReader;
+import jdk.internal.jline.console.KeyMap;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.history.FileHistory;
 
 class Console implements AutoCloseable {
+    private static final String DOCUMENTATION_SHORTCUT = "\033\133\132"; //Shift-TAB
     private final ConsoleReader in;
     private final FileHistory history;
 
     Console(final InputStream cmdin, final PrintStream cmdout, final File historyFile,
-            final Completer completer) throws IOException {
+            final Completer completer, final Function<String, String> docHelper) throws IOException {
         TerminalFactory.registerFlavor(Flavor.WINDOWS, isCygwin()? JJSUnixTerminal::new : JJSWindowsTerminal::new);
         TerminalFactory.registerFlavor(Flavor.UNIX, JJSUnixTerminal::new);
         in = new ConsoleReader(cmdin, cmdout);
@@ -58,6 +62,7 @@ class Console implements AutoCloseable {
         in.setHistory(history = new FileHistory(historyFile));
         in.addCompleter(completer);
         Runtime.getRuntime().addShutdownHook(new Thread((Runnable)this::saveHistory));
+        bind(DOCUMENTATION_SHORTCUT, (ActionListener)evt -> showDocumentation(docHelper));
     }
 
     String readLine(final String prompt) throws IOException {
@@ -137,5 +142,35 @@ class Console implements AutoCloseable {
 
     private static boolean isCygwin() {
         return System.getenv("SHELL") != null;
+    }
+
+    private void bind(String shortcut, Object action) {
+        KeyMap km = in.getKeys();
+        for (int i = 0; i < shortcut.length(); i++) {
+            final Object value = km.getBound(Character.toString(shortcut.charAt(i)));
+            if (value instanceof KeyMap) {
+                km = (KeyMap) value;
+            } else {
+                km.bind(shortcut.substring(i), action);
+            }
+        }
+    }
+
+    private void showDocumentation(final Function<String, String> docHelper) {
+        final String buffer = in.getCursorBuffer().buffer.toString();
+        final int cursor = in.getCursorBuffer().cursor;
+        final String doc = docHelper.apply(buffer.substring(0, cursor));
+        try {
+            if (doc != null) {
+                in.println();
+                in.println(doc);
+                in.redrawLine();
+                in.flush();
+            } else {
+                in.beep();
+            }
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }

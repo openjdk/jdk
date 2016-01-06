@@ -27,7 +27,6 @@ package sun.net;
 import java.io.*;
 import java.net.Socket;
 import java.net.ServerSocket;
-import sun.misc.ManagedLocalsThread;
 
 /**
  * This is the base class for network servers.  To define a new type
@@ -73,7 +72,7 @@ public class NetworkServer implements Runnable, Cloneable {
                     NetworkServer n = (NetworkServer)clone();
                     n.serverSocket = null;
                     n.clientSocket = ns;
-                    new ManagedLocalsThread(n).start();
+                    new Thread(null, n, "NetworkServer", 0, false).start();
                 } catch(Exception e) {
                     System.out.print("Server failure\n");
                     e.printStackTrace();
@@ -108,7 +107,7 @@ public class NetworkServer implements Runnable, Cloneable {
         for each new connection. */
     public final void startServer(int port) throws IOException {
         serverSocket = new ServerSocket(port, 50);
-        serverInstance = new ManagedLocalsThread(this);
+        serverInstance = new Thread(null, this, "NetworkServer", 0, false);
         serverInstance.start();
     }
 

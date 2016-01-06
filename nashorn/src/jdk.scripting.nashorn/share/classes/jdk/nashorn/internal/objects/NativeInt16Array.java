@@ -134,16 +134,6 @@ public final class NativeInt16Array extends ArrayBufferView {
         }
 
         @Override
-        public long getLong(final int index) {
-            return getInt(index);
-        }
-
-        @Override
-        public long getLongOptimistic(final int index, final int programPoint) {
-            return getElem(index);
-        }
-
-        @Override
         public double getDouble(final int index) {
             return getInt(index);
         }
@@ -167,11 +157,6 @@ public final class NativeInt16Array extends ArrayBufferView {
         public ArrayData set(final int index, final int value, final boolean strict) {
             setElem(index, value);
             return this;
-        }
-
-        @Override
-        public ArrayData set(final int index, final long value, final boolean strict) {
-            return set(index, (int)value, strict);
         }
 
         @Override

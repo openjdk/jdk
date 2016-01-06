@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 public interface I {
     /**
      * @throws java.lang.NullPointerException Test 1 fails

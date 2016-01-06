@@ -25,6 +25,9 @@
 
 package jdk.nashorn.tools.jjs;
 
+import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+
+import java.awt.Desktop;
 import java.awt.GraphicsEnvironment;
 import java.io.BufferedReader;
 import java.io.File;
@@ -33,15 +36,21 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.URI;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import jdk.internal.jline.console.completer.Completer;
 import jdk.internal.jline.console.UserInterruptException;
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.objects.NativeJava;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.NativeJavaPackage;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
+import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.tools.Shell;
 
@@ -50,6 +59,8 @@ import jdk.nashorn.tools.Shell;
  */
 public final class Main extends Shell {
     private Main() {}
+
+    private static final String DOC_PROPERTY_NAME = "__doc__";
 
     static final boolean DEBUG = Boolean.getBoolean("nashorn.jjs.debug");
     static final boolean HEADLESS = GraphicsEnvironment.isHeadless();
@@ -109,7 +120,37 @@ public final class Main extends Shell {
         final PropertiesHelper propsHelper = new PropertiesHelper(env._classpath);
         final NashornCompleter completer = new NashornCompleter(context, global, this, propsHelper);
 
-        try (final Console in = new Console(System.in, System.out, HIST_FILE, completer)) {
+        try (final Console in = new Console(System.in, System.out, HIST_FILE, completer,
+                str -> {
+                    try {
+                        final Object res = context.eval(global, str, global, "<shell>");
+                        if (res != null && res != UNDEFINED) {
+                            // Special case Java types: show the javadoc for the class.
+                            if (NativeJava.isType(UNDEFINED, res)) {
+                                final String typeName = NativeJava.typeName(UNDEFINED, res).toString();
+                                final String url = typeName.replace('.', '/').replace('$', '.') + ".html";
+                                openBrowserForJavadoc(url);
+                            } else if (res instanceof NativeJavaPackage) {
+                                final String pkgName = ((NativeJavaPackage)res).getName();
+                                final String url = pkgName.replace('.', '/') + "/package-summary.html";
+                                openBrowserForJavadoc(url);
+                            } else if (res instanceof ScriptObject) {
+                                final ScriptObject sobj = (ScriptObject)res;
+                                if (sobj.has(DOC_PROPERTY_NAME)) {
+                                    return toString(sobj.get(DOC_PROPERTY_NAME), global);
+                                } else if (sobj instanceof ScriptFunction) {
+                                    return ((ScriptFunction)sobj).getDocumentation();
+                                }
+                            }
+
+                            // FIXME: better than toString for other cases?
+                            return toString(res, global);
+                        }
+                     } catch (Exception ignored) {
+                     }
+                     return null;
+                })) {
+
             if (globalChanged) {
                 Context.setGlobal(global);
             }
@@ -164,7 +205,7 @@ public final class Main extends Shell {
 
                 try {
                     final Object res = context.eval(global, source, global, "<shell>");
-                    if (res != ScriptRuntime.UNDEFINED) {
+                    if (res != UNDEFINED) {
                         err.println(toString(res, global));
                     }
                 } catch (final Exception exp) {
@@ -218,14 +259,25 @@ public final class Main extends Shell {
             final PrintWriter err, final boolean doe) {
         try {
             final Object res = context.eval(global, source, global, "<shell>");
-            if (res != ScriptRuntime.UNDEFINED) {
-                err.println(JSType.toString(res));
+            if (res != UNDEFINED) {
+                err.println(toString(res, global));
             }
         } catch (final Exception e) {
             err.println(e);
             if (doe) {
                 e.printStackTrace(err);
             }
+        }
+    }
+
+    // FIXME: needs to be changed to use javase 9 docs later
+    private static String JAVADOC_BASE = "http://download.java.net/jdk9/docs/api/";
+
+    private static void openBrowserForJavadoc(String relativeUrl) {
+        try {
+            final URI uri = new URI(JAVADOC_BASE + relativeUrl);
+            Desktop.getDesktop().browse(uri);
+        } catch (Exception ignored) {
         }
     }
 }

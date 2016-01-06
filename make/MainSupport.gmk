@@ -35,7 +35,8 @@ define RunTests
 	($(CD) $(SRC_ROOT)/test && $(MAKE) $(MAKE_ARGS) -j1 -k MAKEFLAGS= \
 	    JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_IMAGE_DIR) \
 	    TEST_IMAGE_DIR=$(TEST_IMAGE_DIR) \
-	    ALT_OUTPUTDIR=$(OUTPUT_ROOT) CONCURRENCY=$(JOBS) $1) || true
+	    ALT_OUTPUTDIR=$(OUTPUT_ROOT) TEST_JOBS=$(TEST_JOBS) \
+	    JOBS=$(JOBS) $1) || true
 endef
 
 # Cleans the dir given as $1

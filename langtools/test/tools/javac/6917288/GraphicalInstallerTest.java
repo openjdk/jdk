@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /* @test
  * @bug 6917288
  * @summary Unnamed nested class is not generated

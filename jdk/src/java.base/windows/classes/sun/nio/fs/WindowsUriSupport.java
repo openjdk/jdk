@@ -123,16 +123,16 @@ class WindowsUriSupport {
         String scheme = uri.getScheme();
         if ((scheme == null) || !scheme.equalsIgnoreCase("file"))
             throw new IllegalArgumentException("URI scheme is not \"file\"");
-        if (uri.getFragment() != null)
+        if (uri.getRawFragment() != null)
             throw new IllegalArgumentException("URI has a fragment component");
-        if (uri.getQuery() != null)
+        if (uri.getRawQuery() != null)
             throw new IllegalArgumentException("URI has a query component");
         String path = uri.getPath();
         if (path.equals(""))
             throw new IllegalArgumentException("URI path component is empty");
 
         // UNC
-        String auth = uri.getAuthority();
+        String auth = uri.getRawAuthority();
         if (auth != null && !auth.equals("")) {
             String host = uri.getHost();
             if (host == null)
