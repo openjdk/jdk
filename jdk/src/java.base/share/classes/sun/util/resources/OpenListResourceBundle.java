@@ -164,6 +164,6 @@ public abstract class OpenListResourceBundle extends ResourceBundle {
         return new HashSet<>();
     }
 
-    private volatile Map<String, Object> lookup = null;
+    private volatile Map<String, Object> lookup;
     private volatile Set<String> keyset;
 }

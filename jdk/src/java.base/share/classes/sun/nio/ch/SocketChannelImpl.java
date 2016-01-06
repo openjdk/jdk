@@ -56,8 +56,8 @@ class SocketChannelImpl
     private final int fdVal;
 
     // IDs of native threads doing reads and writes, for signalling
-    private volatile long readerThread = 0;
-    private volatile long writerThread = 0;
+    private volatile long readerThread;
+    private volatile long writerThread;
 
     // Lock held by current reading or connecting thread
     private final Object readLock = new Object();

@@ -118,7 +118,7 @@ class NTLM {
     public void debug(byte[] bytes) {
         if (DEBUG) {
             try {
-                new sun.misc.HexDumpEncoder().encodeBuffer(bytes, System.out);
+                new sun.security.util.HexDumpEncoder().encodeBuffer(bytes, System.out);
             } catch (IOException ioe) {
                 // Impossible
             }

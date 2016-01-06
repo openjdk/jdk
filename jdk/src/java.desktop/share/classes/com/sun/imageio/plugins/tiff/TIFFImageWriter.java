@@ -205,6 +205,10 @@ public class TIFFImageWriter extends ImageWriter {
     // Next available space.
     private long nextSpace = 0L;
 
+    private long prevStreamPosition;
+    private long prevHeaderPosition;
+    private long prevNextSpace;
+
     // Whether a sequence is being written.
     private boolean isWritingSequence = false;
     private boolean isInsertingEmpty = false;
@@ -2300,7 +2304,14 @@ public class TIFFImageWriter extends ImageWriter {
     public void write(IIOMetadata sm,
                       IIOImage iioimage,
                       ImageWriteParam p) throws IOException {
+        if (stream == null) {
+            throw new IllegalStateException("output == null!");
+        }
+        markPositions();
         write(sm, iioimage, p, true, true);
+        if (abortRequested()) {
+            resetPositions();
+        }
     }
 
     private void writeHeader() throws IOException {
@@ -2333,7 +2344,7 @@ public class TIFFImageWriter extends ImageWriter {
             throw new IllegalStateException("output == null!");
         }
         if (iioimage == null) {
-            throw new NullPointerException("image == null!");
+            throw new IllegalArgumentException("image == null!");
         }
         if(iioimage.hasRaster() && !canWriteRasters()) {
             throw new UnsupportedOperationException
@@ -2767,7 +2778,7 @@ public class TIFFImageWriter extends ImageWriter {
             throw new IllegalStateException("Output not set!");
         }
         if (image == null) {
-            throw new NullPointerException("image == null!");
+            throw new IllegalArgumentException("image == null!");
         }
 
         // Locate the position of the old IFD (ifd) and the location
@@ -2779,8 +2790,15 @@ public class TIFFImageWriter extends ImageWriter {
         // imageIndex is < -1 or is too big thereby satisfying the spec.
         locateIFD(imageIndex, ifdpos, ifd);
 
+        markPositions();
+
         // Seek to the position containing the pointer to the old IFD.
         stream.seek(ifdpos[0]);
+
+        // Save the previous pointer value in case of abort.
+        stream.mark();
+        long prevPointerValue = stream.readUnsignedInt();
+        stream.reset();
 
         // Update next space pointer in anticipation of next write.
         if(ifdpos[0] + 4 > nextSpace) {
@@ -2805,6 +2823,12 @@ public class TIFFImageWriter extends ImageWriter {
         // Update the new IFD to point to the old IFD.
         stream.writeInt((int)ifd[0]);
         // Don't need to update nextSpace here as already done in write().
+
+        if (abortRequested()) {
+            stream.seek(ifdpos[0]);
+            stream.writeInt((int)prevPointerValue);
+            resetPositions();
+        }
     }
 
     // ----- BEGIN insert/writeEmpty methods -----
@@ -2834,7 +2858,7 @@ public class TIFFImageWriter extends ImageWriter {
         }
 
         if(imageType == null) {
-            throw new NullPointerException("imageType == null!");
+            throw new IllegalArgumentException("imageType == null!");
         }
 
         if(width < 1 || height < 1) {
@@ -2891,6 +2915,10 @@ public class TIFFImageWriter extends ImageWriter {
                                   IIOMetadata imageMetadata,
                                   List<? extends BufferedImage> thumbnails,
                                   ImageWriteParam param) throws IOException {
+        if (stream == null) {
+            throw new IllegalStateException("output == null!");
+        }
+
         checkParamsEmpty(imageType, width, height, thumbnails);
 
         this.isWritingEmpty = true;
@@ -2901,8 +2929,12 @@ public class TIFFImageWriter extends ImageWriter {
                            0, 0, emptySM.getWidth(), emptySM.getHeight(),
                            emptySM, imageType.getColorModel());
 
+        markPositions();
         write(streamMetadata, new IIOImage(emptyImage, null, imageMetadata),
               param, true, false);
+        if (abortRequested()) {
+            resetPositions();
+        }
     }
 
     public void endInsertEmpty() throws IOException {
@@ -3015,7 +3047,7 @@ public class TIFFImageWriter extends ImageWriter {
                 throw new IllegalStateException("Output not set!");
             }
             if (region == null) {
-                throw new NullPointerException("region == null!");
+                throw new IllegalArgumentException("region == null!");
             }
             if (region.getWidth() < 1) {
                 throw new IllegalArgumentException("region.getWidth() < 1!");
@@ -3200,7 +3232,7 @@ public class TIFFImageWriter extends ImageWriter {
             }
 
             if (image == null) {
-                throw new NullPointerException("image == null!");
+                throw new IllegalArgumentException("image == null!");
             }
 
             if (!inReplacePixelsNest) {
@@ -3558,6 +3590,20 @@ public class TIFFImageWriter extends ImageWriter {
     }
 
     // ----- END replacePixels methods -----
+
+    // Save stream positions for use when aborted.
+    private void markPositions() throws IOException {
+        prevStreamPosition = stream.getStreamPosition();
+        prevHeaderPosition = headerPosition;
+        prevNextSpace = nextSpace;
+    }
+
+    // Reset to positions saved by markPositions().
+    private void resetPositions() throws IOException {
+        stream.seek(prevStreamPosition);
+        headerPosition = prevHeaderPosition;
+        nextSpace = prevNextSpace;
+    }
 
     public void reset() {
         super.reset();

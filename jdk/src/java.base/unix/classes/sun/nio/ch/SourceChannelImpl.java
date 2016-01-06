@@ -47,7 +47,7 @@ class SourceChannelImpl
     int fdVal;
 
     // ID of native thread doing read, for signalling
-    private volatile long thread = 0;
+    private volatile long thread;
 
     // Lock held by current reading thread
     private final Object lock = new Object();

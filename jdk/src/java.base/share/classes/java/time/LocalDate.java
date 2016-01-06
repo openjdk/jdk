@@ -147,6 +147,10 @@ public final class LocalDate
      * This could be used by an application as a "far future" date.
      */
     public static final LocalDate MAX = LocalDate.of(Year.MAX_VALUE, 12, 31);
+    /**
+     * The epoch year {@code LocalDate}, '1970-01-01'.
+     */
+    public static final LocalDate EPOCH = LocalDate.of(1970, 1, 1);
 
     /**
      * Serialization version.
@@ -1862,6 +1866,29 @@ public final class LocalDate
             }
         }
         return total - DAYS_0000_TO_1970;
+    }
+
+    /**
+     * Converts this {@code LocalDate} to the number of seconds since the epoch
+     * of 1970-01-01T00:00:00Z.
+     * <p>
+     * This combines this local date with the specified time and
+     * offset to calculate the epoch-second value, which is the
+     * number of elapsed seconds from 1970-01-01T00:00:00Z.
+     * Instants on the time-line after the epoch are positive, earlier
+     * are negative.
+     *
+     * @param time the local time, not null
+     * @param offset the zone offset, not null
+     * @return the number of seconds since the epoch of 1970-01-01T00:00:00Z, may be negative
+     * @since 9
+     */
+    public long toEpochSecond(LocalTime time, ZoneOffset offset) {
+        Objects.requireNonNull(time, "time");
+        Objects.requireNonNull(offset, "offset");
+        long secs = toEpochDay() * SECONDS_PER_DAY + time.toSecondOfDay();
+        secs -= offset.getTotalSeconds();
+        return secs;
     }
 
     //-----------------------------------------------------------------------

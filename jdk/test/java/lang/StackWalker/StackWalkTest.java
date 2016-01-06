@@ -236,6 +236,8 @@ public class StackWalkTest {
         if (didWalk) {
             throw new IllegalStateException("StackWalkTest already used");
         }
+        // Test may run into StackOverflow when running in -Xcomp mode on deep stack
+        assert stackDepth <= 1000;
         assert markAt <= stackDepth : "markAt(" + markAt + ") > stackDepth("
                 + stackDepth + ")";
         System.out.print("runTest(" + swOptions
@@ -297,15 +299,15 @@ public class StackWalkTest {
             // Long stack, default maxDepth
             StackWalkTest swt;
             swt = new StackWalkTest();
-            swt.runTest(StackWalkTest.class, "main", 2000, 10);
+            swt.runTest(StackWalkTest.class, "main", 1000, 10);
 
             // Long stack, matching maxDepth
             swt = new StackWalkTest(2000);
-            swt.runTest(StackWalkTest.class, "main", 2000, 10);
+            swt.runTest(StackWalkTest.class, "main", 1000, 10);
 
             // Long stack, maximum maxDepth
             swt = new StackWalkTest(Integer.MAX_VALUE);
-            swt.runTest(StackWalkTest.class, "main", 2000, 10);
+            swt.runTest(StackWalkTest.class, "main", 1000, 10);
 
             //
             // Single batch
@@ -349,7 +351,7 @@ public class StackWalkTest {
             swt.runTest(StackWalkTest.class, "main", 80, 40);
 
             swt = new StackWalkTest(EnumSet.of(RETAIN_CLASS_REFERENCE), 50);
-            swt.runTest(StackWalkTest.class, "main", 2000, 1048);
+            swt.runTest(StackWalkTest.class, "main", 1000, 524);
         }
     }
 }

@@ -29,11 +29,7 @@
 package java.nio.channels.spi;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import jdk.internal.misc.SharedSecrets;
 import sun.nio.ch.Interruptible;
 
@@ -90,7 +86,7 @@ public abstract class AbstractInterruptibleChannel
 {
 
     private final Object closeLock = new Object();
-    private volatile boolean open = true;
+    private volatile boolean closed;
 
     /**
      * Initializes a new instance of this class.
@@ -110,9 +106,9 @@ public abstract class AbstractInterruptibleChannel
      */
     public final void close() throws IOException {
         synchronized (closeLock) {
-            if (!open)
+            if (closed)
                 return;
-            open = false;
+            closed = true;
             implCloseChannel();
         }
     }
@@ -136,7 +132,7 @@ public abstract class AbstractInterruptibleChannel
     protected abstract void implCloseChannel() throws IOException;
 
     public final boolean isOpen() {
-        return open;
+        return !closed;
     }
 
 
@@ -158,9 +154,9 @@ public abstract class AbstractInterruptibleChannel
             interruptor = new Interruptible() {
                     public void interrupt(Thread target) {
                         synchronized (closeLock) {
-                            if (!open)
+                            if (closed)
                                 return;
-                            open = false;
+                            closed = true;
                             interrupted = target;
                             try {
                                 AbstractInterruptibleChannel.this.implCloseChannel();
@@ -202,7 +198,7 @@ public abstract class AbstractInterruptibleChannel
             this.interrupted = null;
             throw new ClosedByInterruptException();
         }
-        if (!completed && !open)
+        if (!completed && closed)
             throw new AsynchronousCloseException();
     }
 

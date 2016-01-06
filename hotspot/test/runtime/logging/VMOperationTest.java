@@ -26,21 +26,41 @@
  * @bug 8143157
  * @summary vmoperation=debug should have logging output
  * @library /testlibrary
- * @compile VMOperationTestMain.java
  * @modules java.base/sun.misc
  *          java.management
- * @run main VMOperationTest
+ * @run driver VMOperationTest
  */
 
 import jdk.test.lib.*;
+import java.lang.ref.WeakReference;
 
 public class VMOperationTest {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:vmoperation=debug", "-Xmx64m", "-Xms64m", "VMOperationTestMain");
+            "-Xlog:vmoperation=debug", "-Xmx64m", "-Xms64m",
+            InternalClass.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("VM_Operation (");
         output.shouldHaveExitValue(0);
+    }
+
+    public static class InternalClass {
+        public static byte[] garbage;
+        public static volatile WeakReference<Object> weakref;
+
+        public static void createweakref() {
+            Object o = new Object();
+            weakref = new WeakReference<>(o);
+        }
+
+        // Loop until a GC runs.
+        public static void main(String[] args) throws Exception {
+            createweakref();
+            while (weakref.get() != null) {
+                garbage = new byte[8192];
+                System.gc();
+            }
+        }
     }
 }
 

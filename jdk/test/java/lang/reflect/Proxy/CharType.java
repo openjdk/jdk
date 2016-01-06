@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4346224
- * @summary Test against a typo in sun.misc.ProxyGenerator:
+ * @summary Test against a typo in ProxyGenerator:
  *          "java/lang/Character" should be used instead of
  *          "java/lang/Char".
  */

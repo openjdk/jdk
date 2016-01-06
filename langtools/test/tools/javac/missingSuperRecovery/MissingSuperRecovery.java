@@ -4,7 +4,7 @@
  * @summary Check for proper error recovery when superclass of extended
  * class is no longer available during a subsequent compilation.
  * @author maddox
- *
+ * @build impl
  * @compile/fail/ref=MissingSuperRecovery.out -XDdiags=%b:%l:%_%m MissingSuperRecovery.java
  */
 

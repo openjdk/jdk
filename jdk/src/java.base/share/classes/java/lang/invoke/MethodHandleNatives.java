@@ -87,9 +87,6 @@ class MethodHandleNatives {
     private static native void registerNatives();
     static {
         registerNatives();
-
-        // The JVM calls MethodHandleNatives.<clinit>.  Cascade the <clinit> calls as needed:
-        MethodHandleImpl.initStatics();
     }
 
     /**

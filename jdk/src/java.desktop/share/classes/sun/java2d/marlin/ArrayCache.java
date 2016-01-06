@@ -166,17 +166,30 @@ public final class ArrayCache implements MarlinConst {
      * @return new array size
      */
     public static int getNewSize(final int curSize, final int needSize) {
+        // check if needSize is negative or integer overflow:
+        if (needSize < 0) {
+            // hard overflow failure - we can't even accommodate
+            // new items without overflowing
+            throw new ArrayIndexOutOfBoundsException(
+                          "array exceeds maximum capacity !");
+        }
+        assert curSize >= 0;
         final int initial = (curSize & MASK_CLR_1);
         int size;
         if (initial > THRESHOLD_ARRAY_SIZE) {
             size = initial + (initial >> 1); // x(3/2)
         } else {
-            size = (initial) << 1; // x2
+            size = (initial << 1); // x2
         }
         // ensure the new size is >= needed size:
         if (size < needSize) {
-            // align to 4096:
+            // align to 4096 (may overflow):
             size = ((needSize >> 12) + 1) << 12;
+        }
+        // check integer overflow:
+        if (size < 0) {
+            // resize to maximum capacity:
+            size = Integer.MAX_VALUE;
         }
         return size;
     }
@@ -188,26 +201,29 @@ public final class ArrayCache implements MarlinConst {
      * @return new array size
      */
     public static long getNewLargeSize(final long curSize, final long needSize) {
+        // check if needSize is negative or integer overflow:
+        if ((needSize >> 31L) != 0L) {
+            // hard overflow failure - we can't even accommodate
+            // new items without overflowing
+            throw new ArrayIndexOutOfBoundsException(
+                          "array exceeds maximum capacity !");
+        }
+        assert curSize >= 0L;
         long size;
         if (curSize > THRESHOLD_HUGE_ARRAY_SIZE) {
             size = curSize + (curSize >> 2L); // x(5/4)
         } else  if (curSize > THRESHOLD_LARGE_ARRAY_SIZE) {
             size = curSize + (curSize >> 1L); // x(3/2)
         } else {
-            size = curSize << 1L; // x2
+            size = (curSize << 1L); // x2
         }
         // ensure the new size is >= needed size:
         if (size < needSize) {
             // align to 4096:
-            size = ((needSize >> 12) + 1) << 12;
+            size = ((needSize >> 12L) + 1L) << 12L;
         }
-        if (size >= Integer.MAX_VALUE) {
-            if (curSize >= Integer.MAX_VALUE) {
-                // hard overflow failure - we can't even accommodate
-                // new items without overflowing
-                throw new ArrayIndexOutOfBoundsException(
-                              "array exceeds maximum capacity !");
-            }
+        // check integer overflow:
+        if (size > Integer.MAX_VALUE) {
             // resize to maximum capacity:
             size = Integer.MAX_VALUE;
         }

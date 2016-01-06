@@ -380,10 +380,11 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      */
     public Set<K> keySet() {
         Set<K> ks = keySet;
-        if (ks != null)
-            return ks;
-        else
-            return keySet = new KeySet();
+        if (ks == null) {
+            ks = new KeySet();
+            keySet = ks;
+        }
+        return ks;
     }
 
     private class KeySet extends AbstractSet<K> {
@@ -418,10 +419,11 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      */
     public Collection<V> values() {
         Collection<V> vs = values;
-        if (vs != null)
-            return vs;
-        else
-            return values = new Values();
+        if (vs == null) {
+            vs = new Values();
+            values = vs;
+        }
+        return vs;
     }
 
     private class Values extends AbstractCollection<V> {
