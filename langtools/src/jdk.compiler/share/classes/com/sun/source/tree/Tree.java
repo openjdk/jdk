@@ -212,7 +212,7 @@ public interface Tree {
 
         /**
          * Used for instances of {@link PackageTree}.
-         * @since 1.9
+         * @since 9
          */
         PACKAGE(PackageTree.class),
 

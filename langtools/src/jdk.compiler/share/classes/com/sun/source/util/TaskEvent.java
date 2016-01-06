@@ -74,7 +74,7 @@ public final class TaskEvent
          * This event is not sent when using {@link JavacTask#parse()},
          * {@link JavacTask#analyze()} or {@link JavacTask#generate()}.
          *
-         * @since 1.9
+         * @since 9
          */
         COMPILATION,
     }
