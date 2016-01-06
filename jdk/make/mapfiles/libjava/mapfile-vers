@@ -216,6 +216,7 @@ SUNWprivate_1.1 {
 		Java_java_lang_SecurityManager_getClassContext;
 		Java_java_lang_Shutdown_halt0;
 		Java_java_lang_String_intern;
+		Java_java_lang_StringCoding_err;
 		Java_java_lang_StringUTF16_isBigEndian;
 		Java_java_lang_System_identityHashCode;
 		Java_java_lang_System_initProperties;
@@ -243,8 +244,6 @@ SUNWprivate_1.1 {
 		Java_java_util_TimeZone_getSystemTimeZoneID;
 		Java_java_util_TimeZone_getSystemGMTOffsetID;
 		Java_java_util_concurrent_atomic_AtomicLong_VMSupportsCS8;
-		Java_sun_misc_MessageUtils_toStderr;
-		Java_sun_misc_MessageUtils_toStdout;
 		Java_sun_misc_NativeSignalHandler_handle0;
 		Java_sun_misc_Signal_findSignal;
 		Java_sun_misc_Signal_handle0;
