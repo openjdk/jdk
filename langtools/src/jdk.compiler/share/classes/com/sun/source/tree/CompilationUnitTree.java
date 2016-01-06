@@ -59,7 +59,7 @@ public interface CompilationUnitTree extends Tree {
      * Returns the package tree associated with this compilation unit,
      * or {@code null} if there is no package declaration.
      * @return the package tree
-     * @since 1.9
+     * @since 9
      */
     PackageTree getPackage();
 

@@ -73,7 +73,7 @@ public abstract class DocTrees extends Trees {
      * Returns {@code null} if none has been specified.
      * @return the break iterator
      *
-     * @since 1.9
+     * @since 9
      */
     public abstract BreakIterator getBreakIterator();
 
@@ -91,7 +91,7 @@ public abstract class DocTrees extends Trees {
      * @param e an element whose documentation is required
      * @return the doc comment tree
      *
-     * @since 1.9
+     * @since 9
      */
     public abstract DocCommentTree getDocCommentTree(Element e);
 
@@ -105,7 +105,7 @@ public abstract class DocTrees extends Trees {
      * @param fileObject the content container
      * @return the doc comment tree
      *
-     * @since 1.9
+     * @since 9
      */
     public abstract DocCommentTree getDocCommentTree(FileObject fileObject);
 
@@ -122,7 +122,7 @@ public abstract class DocTrees extends Trees {
      * @return the doc comment tree
      * @throws java.io.IOException if an exception occurs
      *
-     * @since 1.9
+     * @since 9
      */
     public abstract DocCommentTree getDocCommentTree(Element e, String relativePath) throws IOException;
 
@@ -141,7 +141,7 @@ public abstract class DocTrees extends Trees {
      * @param list the DocTree list to interrogate
      * @return the first sentence
      *
-     * @since 1.9
+     * @since 9
      */
     public abstract List<DocTree> getFirstSentence(List<? extends DocTree> list);
 
@@ -173,7 +173,7 @@ public abstract class DocTrees extends Trees {
      * @param breakiterator a break iterator or {@code null} to specify the default
      *                      sentence breaker
      *
-     * @since 1.9
+     * @since 9
      */
     public abstract void setBreakIterator(BreakIterator breakiterator);
 }
