@@ -151,7 +151,7 @@ public:
   void copy_table(char** top, char* end);
 
   // Bucket handling
-  int hash_to_index(unsigned int full_hash) {
+  int hash_to_index(unsigned int full_hash) const {
     int h = full_hash % _table_size;
     assert(h >= 0 && h < _table_size, "Illegal hash value");
     return h;
@@ -173,8 +173,8 @@ private:
 protected:
 
 #ifdef ASSERT
-  int               _lookup_count;
-  int               _lookup_length;
+  mutable int       _lookup_count;
+  mutable int       _lookup_length;
   void verify_lookup_length(double load);
 #endif
 
@@ -184,7 +184,7 @@ protected:
   int entry_size() const { return _entry_size; }
 
   // The following method is MT-safe and may be used with caution.
-  BasicHashtableEntry<F>* bucket(int i);
+  BasicHashtableEntry<F>* bucket(int i) const;
 
   // The following method is not MT-safe and must be done under lock.
   BasicHashtableEntry<F>** bucket_addr(int i) { return _buckets[i].entry_addr(); }
@@ -263,7 +263,7 @@ protected:
   HashtableEntry<T, F>* new_entry(unsigned int hashValue, T obj);
 
   // The following method is MT-safe and may be used with caution.
-  HashtableEntry<T, F>* bucket(int i) {
+  HashtableEntry<T, F>* bucket(int i) const {
     return (HashtableEntry<T, F>*)BasicHashtable<F>::bucket(i);
   }
 
@@ -329,7 +329,7 @@ protected:
     : Hashtable<T, F>(table_size, entry_size, t, number_of_entries) {}
 
 public:
-  unsigned int compute_hash(Symbol* name, ClassLoaderData* loader_data) {
+  unsigned int compute_hash(const Symbol* name, const ClassLoaderData* loader_data) const {
     unsigned int name_hash = name->identity_hash();
     // loader is null with CDS
     assert(loader_data != NULL || UseSharedSpaces || DumpSharedSpaces,

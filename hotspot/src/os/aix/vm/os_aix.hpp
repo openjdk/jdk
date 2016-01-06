@@ -34,9 +34,6 @@ static bool zero_page_read_protected() { return false; }
 class Aix {
   friend class os;
 
-  // Length of strings included in the libperfstat structures.
-#define IDENTIFIER_LENGTH 64
-
   static bool libjsig_is_loaded;        // libjsig that interposes sigaction(),
                                         // __sigaction(), signal() is loaded
   static struct sigaction *(*get_signal_action)(int);
@@ -45,13 +42,15 @@ class Aix {
 
   static void check_signal_handler(int sig);
 
- protected:
+ private:
 
   static julong _physical_memory;
   static pthread_t _main_thread;
   static Mutex* _createThread_lock;
   static int _page_size;
-  static int _logical_cpus;
+
+  // Page size of newly created pthreads.
+  static int _stack_page_size;
 
   // -1 = uninitialized, 0 = AIX, 1 = OS/400 (PASE)
   static int _on_pase;
@@ -63,6 +62,9 @@ class Aix {
   //  for OS/400 e.g. 0x0504 for OS/400 V5R4
   static int _os_version;
 
+  // 4 Byte kernel version: Version, Release, Tech Level, Service Pack.
+  static unsigned int _os_kernel_version;
+
   // -1 = uninitialized,
   //  0 - SPEC1170 not requested (XPG_SUS_ENV is OFF or not set)
   //  1 - SPEC1170 requested (XPG_SUS_ENV is ON)
@@ -72,35 +74,6 @@ class Aix {
   //  0 - EXTSHM=OFF or not set
   //  1 - EXTSHM=ON
   static int _extshm;
-
-  // page sizes on AIX.
-  //
-  //  AIX supports four different page sizes - 4K, 64K, 16MB, 16GB. The latter two
-  //  (16M "large" resp. 16G "huge" pages) require special setup and are normally
-  //  not available.
-  //
-  //  AIX supports multiple page sizes per process, for:
-  //  - Stack (of the primordial thread, so not relevant for us)
-  //  - Data - data, bss, heap, for us also pthread stacks
-  //  - Text - text code
-  //  - shared memory
-  //
-  //  Default page sizes can be set via linker options (-bdatapsize, -bstacksize, ...)
-  //  and via environment variable LDR_CNTRL (DATAPSIZE, STACKPSIZE, ...)
-  //
-  //  For shared memory, page size can be set dynamically via shmctl(). Different shared memory
-  //  regions can have different page sizes.
-  //
-  //  More information can be found at AIBM info center:
-  //   http://publib.boulder.ibm.com/infocenter/aix/v6r1/index.jsp?topic=/com.ibm.aix.prftungd/doc/prftungd/multiple_page_size_app_support.htm
-  //
-  // -----
-  //  We want to support 4K and 64K and, if the machine is set up correctly, 16MB pages.
-  //
-
-  // page size of the stack of newly created pthreads
-  // (should be LDR_CNTRL DATAPSIZE because stack is allocated on heap by pthread lib)
-  static int _stack_page_size;
 
   static julong available_memory();
   static julong physical_memory() { return _physical_memory; }
@@ -125,9 +98,6 @@ class Aix {
  public:
   static void init_thread_fpu_state();
   static pthread_t main_thread(void)                                { return _main_thread; }
-  // returns kernel thread id (similar to LWP id on Solaris), which can be
-  // used to access /proc
-  static pid_t gettid();
   static void set_createThread_lock(Mutex* lk)                      { _createThread_lock = lk; }
   static Mutex* createThread_lock(void)                             { return _createThread_lock; }
   static void hotspot_sigmask(Thread* thread);
@@ -215,6 +185,14 @@ class Aix {
     return _os_version;
   }
 
+  // Get 4 byte AIX kernel version number:
+  // highest 2 bytes: Version, Release
+  // if available: lowest 2 bytes: Tech Level, Service Pack.
+  static unsigned int os_kernel_version() {
+    if (_os_kernel_version) return _os_kernel_version;
+    return os_version() << 16;
+  }
+
   // Convenience method: returns true if running on PASE V5R4 or older.
   static bool on_pase_V5R4_or_older() {
     return on_pase() && os_version() <= 0x0504;
@@ -257,27 +235,12 @@ class Aix {
 
   };
 
-  // Result struct for get_cpuinfo().
-  struct cpuinfo_t {
-    char description[IDENTIFIER_LENGTH];  // processor description (type/official name)
-    u_longlong_t processorHZ;             // processor speed in Hz
-    int ncpus;                            // number of active logical processors
-    double loadavg[3];                    // (1<<SBITS) times the average number of runnables processes during the last 1, 5 and 15 minutes.
-                                          // To calculate the load average, divide the numbers by (1<<SBITS). SBITS is defined in <sys/proc.h>.
-    char version[20];                     // processor version from _system_configuration (sys/systemcfg.h)
-  };
-
   // Functions to retrieve memory information on AIX, PASE.
   // (on AIX, using libperfstat, on PASE with libo4.so).
   // Returns true if ok, false if error.
   static bool get_meminfo(meminfo_t* pmi);
 
-  // Function to retrieve cpu information on AIX
-  // (on AIX, using libperfstat)
-  // Returns true if ok, false if error.
-  static bool get_cpuinfo(cpuinfo_t* pci);
-
-}; // os::Aix class
+};
 
 
 class PlatformEvent : public CHeapObj<mtInternal> {

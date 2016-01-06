@@ -23,28 +23,33 @@
 
 /*
  * @test
- * @bug 4101492 4444213
+ * @bug 4101492 4444213 4906983
  * @summary The java.net.URL constructor allows port < 0 and port > 65535
  */
 
 import java.net.*;
 
 public class TestPort {
-    public static void main(String[] args) {
-        URL url = null;
+    public static void main(String[] args) throws MalformedURLException {
+        // URLs are able to have port bigger than TCP-Port 65535 and
+        // to have no port (-1) at all.:
+        URL url = new URL("http","server",Integer.MAX_VALUE,"/path");
+        url = new URL("http://server:"+Integer.MAX_VALUE+"/path");
+        url = new URL("http://server/path");
+        url = new URL("http","server",-1,"/path");
+
         try {
             url = new URL("ftp", "java.sun.com", -20, "/pub/");
-        } catch (MalformedURLException e) {
-            url = null;
-        }
-        if (url != null)
             throw new RuntimeException("MalformedURLException not thrown!");
+        } catch (MalformedURLException e) {
+            // Everything fine. MalformedURLException expected
+        }
+
         try {
             url = new URL("ftp://java.sun.com:-20/pub/");
-        } catch (MalformedURLException e) {
-            url = null;
-        }
-        if (url != null)
             throw new RuntimeException("MalformedURLException not thrown!");
+        } catch (MalformedURLException e) {
+            // Everything fine. MalformedURLException expected
+        }
     }
 }

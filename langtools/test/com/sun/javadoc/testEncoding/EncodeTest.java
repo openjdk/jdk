@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /**
  * Testing en\u00e7\u00f4ded string.
  * In the encoded comment string, Unicode U+00E7 is "Latin small letter C with cedilla"

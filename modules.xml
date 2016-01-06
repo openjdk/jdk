@@ -223,6 +223,10 @@
       <to>jdk.dev</to>
     </export>
     <export>
+      <name>jdk.internal.math</name>
+      <to>java.desktop</to>
+    </export>
+    <export>
       <name>jdk.internal.misc</name>
       <to>java.corba</to>
       <to>java.desktop</to>
@@ -295,6 +299,7 @@
       <to>jdk.security.jgss</to>
       <to>jdk.snmp</to>
       <to>jdk.vm.ci</to>
+      <to>jdk.zipfs</to>
       <to>java.instrument</to>
     </export>
     <export>
@@ -428,6 +433,7 @@
       <to>java.naming</to>
       <to>java.rmi</to>
       <to>java.security.jgss</to>
+      <to>java.security.sasl</to>
       <to>java.smartcardio</to>
       <to>jdk.crypto.ec</to>
       <to>jdk.crypto.mscapi</to>
@@ -437,6 +443,7 @@
       <to>jdk.jartool</to>
       <to>jdk.policytool</to>
       <to>jdk.security.auth</to>
+      <to>jdk.security.jgss</to>
     </export>
     <export>
       <name>sun.security.x509</name>

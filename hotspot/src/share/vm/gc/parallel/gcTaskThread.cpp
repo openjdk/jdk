@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -96,7 +95,6 @@ void GCTaskThread::print_task_time_stamps() {
 void GCTaskThread::run() {
   // Set up the thread for stack overflow support
   this->record_stack_base_and_size();
-  this->initialize_thread_local_storage();
   this->initialize_named_thread();
   // Bind yourself to your processor.
   if (processor_id() != GCTaskManager::sentinel_worker()) {

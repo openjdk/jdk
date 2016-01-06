@@ -31,31 +31,44 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
-import sun.java2d.pipe.RenderingEngine;
 
 /**
- * Simple crash rendering test using huge GeneralPaths with marlin renderer
- *
- * run it with large heap (2g):
- * java -Dsun.java2d.renderer=sun.java2d.marlin.MarlinRenderingEngine marlin.CrashTest
- *
- * @author bourgesl
- */
+ * @test
+ * @summary Simple crash rendering test using huge GeneralPaths with the Marlin renderer
+ * @run main/othervm -mx512m CrashTest
+ * @ignore tests that take a long time and consumes 5Gb memory
+ * @run main/othervm -ms4g -mx4g CrashTest -slow
+*/
 public class CrashTest {
 
     static final boolean SAVE_IMAGE = false;
     static boolean USE_ROUND_CAPS_AND_JOINS = true;
 
     public static void main(String[] args) {
+        boolean runSlowTests = (args.length != 0 && "-slow".equals(args[0]));
+
+        // First display which renderer is tested:
+        System.setProperty("sun.java2d.renderer.verbose", "true");
+
         // try insane image sizes:
 
         // subpixel coords may overflow:
-//        testHugeImage((Integer.MAX_VALUE >> 3) + 1, 6);
+        // check MAX_VALUE / (8 * 2); overflow may happen due to orientation flag
+        // But as it is impossible to allocate an image larger than 2Gb (byte) then
+        // it is also impossible to have rowAAChunk larger than 2Gb !
+
+        // Disabled test as it consumes 4GB heap + offheap (2Gb) ie > 6Gb !
+        if (runSlowTests) {
+            testHugeImage((Integer.MAX_VALUE >> 4) - 100, 16);
+        }
+
         // larger than 23 bits: (RLE)
         testHugeImage(8388608 + 1, 10);
 
-        test(0.1f, false, 0);
-        test(0.1f, true, 7f);
+        if (runSlowTests) {
+            test(0.1f, false, 0);
+            test(0.1f, true, 7f);
+        }
 
         // Exceed 2Gb OffHeap buffer for edges:
         try {
@@ -67,26 +80,21 @@ public class CrashTest {
             if (th instanceof ArrayIndexOutOfBoundsException) {
                 System.out.println("ArrayIndexOutOfBoundsException expected.");
             } else {
-                System.out.println("Exception occured:");
-                th.printStackTrace();
+                throw new RuntimeException("Unexpected exception", th);
             }
         }
-
     }
 
     private static void test(final float lineStroke,
                              final boolean useDashes,
                              final float dashMinLen)
-    throws ArrayIndexOutOfBoundsException
+        throws ArrayIndexOutOfBoundsException
     {
         System.out.println("---\n" + "test: "
             + "lineStroke=" + lineStroke
             + ", useDashes=" + useDashes
             +", dashMinLen=" + dashMinLen
         );
-
-        final String renderer = RenderingEngine.getInstance().getClass().getSimpleName();
-        System.out.println("Testing renderer = " + renderer);
 
         final BasicStroke stroke = createStroke(lineStroke, useDashes, dashMinLen);
 
@@ -135,7 +143,7 @@ public class CrashTest {
 
             if (SAVE_IMAGE) {
                 try {
-                    final File file = new File("CrashTest-" + renderer + "-dash-" + useDashes + ".bmp");
+                    final File file = new File("CrashTest-dash-" + useDashes + ".bmp");
 
                     System.out.println("Writing file: " + file.getAbsolutePath());
                     ImageIO.write(image, "BMP", file);
@@ -150,15 +158,10 @@ public class CrashTest {
     }
 
     private static void testHugeImage(final int width, final int height)
-    throws ArrayIndexOutOfBoundsException
+        throws ArrayIndexOutOfBoundsException
     {
         System.out.println("---\n" + "testHugeImage: "
-            + "width=" + width
-            + ", height=" + height
-        );
-
-        final String renderer = RenderingEngine.getInstance().getClass().getSimpleName();
-        System.out.println("Testing renderer = " + renderer);
+            + "width=" + width + ", height=" + height);
 
         final BasicStroke stroke = createStroke(2.5f, false, 0);
 
@@ -195,8 +198,8 @@ public class CrashTest {
 
             if (SAVE_IMAGE) {
                 try {
-                    final File file = new File("CrashTest-" + renderer +
-                                               "-huge-" + width + "x" +height + ".bmp");
+                    final File file = new File("CrashTest-huge-"
+                        + width + "x" +height + ".bmp");
 
                     System.out.println("Writing file: " + file.getAbsolutePath());
                     ImageIO.write(image, "BMP", file);

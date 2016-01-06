@@ -420,11 +420,11 @@ public class File
         String scheme = uri.getScheme();
         if ((scheme == null) || !scheme.equalsIgnoreCase("file"))
             throw new IllegalArgumentException("URI scheme is not \"file\"");
-        if (uri.getAuthority() != null)
+        if (uri.getRawAuthority() != null)
             throw new IllegalArgumentException("URI has an authority component");
-        if (uri.getFragment() != null)
+        if (uri.getRawFragment() != null)
             throw new IllegalArgumentException("URI has a fragment component");
-        if (uri.getQuery() != null)
+        if (uri.getRawQuery() != null)
             throw new IllegalArgumentException("URI has a query component");
         String p = uri.getPath();
         if (p.equals(""))

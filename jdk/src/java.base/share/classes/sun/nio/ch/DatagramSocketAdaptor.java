@@ -46,7 +46,7 @@ public class DatagramSocketAdaptor
     private final DatagramChannelImpl dc;
 
     // Timeout "option" value for receives
-    private volatile int timeout = 0;
+    private volatile int timeout;
 
     // ## super will create a useless impl
     private DatagramSocketAdaptor(DatagramChannelImpl dc) throws IOException {

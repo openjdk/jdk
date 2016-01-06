@@ -36,7 +36,7 @@
  *      6919624 6998391 7019267 7020960 7025837 7020583 7036905 7066203 7101495
  *      7003124 7085757 7028073 7171028 7189611 8000983 7195759 8004489 8006509
  *      7114053 7074882 7040556 8008577 8013836 8021121 6192407 6931564 8027695
- *      8017142 8037343 8055222 8042126 8074791 8075173 8080774 8129361
+ *      8017142 8037343 8055222 8042126 8074791 8075173 8080774 8129361 8134916
  * @summary Verify locale data
  * @run main LocaleDataTest
  * @run main LocaleDataTest -cldr
@@ -149,6 +149,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
 import java.util.MissingResourceException;
+import sun.util.resources.LocaleData;
 
 public class LocaleDataTest
 {
@@ -312,9 +313,7 @@ public class LocaleDataTest
             } else {
                 locale = new Locale(language, country, variant);
             }
-            ResourceBundle bundle = ResourceBundle.getBundle(fullName,
-                                                             locale,
-                                                             JRELocaleResourceBundleControl.INSTANCE);
+            ResourceBundle bundle = LocaleData.getBundle(fullName, locale);
             resource = bundle.getObject(resTag);
         }
         catch (MissingResourceException e) {
@@ -367,51 +366,6 @@ public class LocaleDataTest
                 out.println(key + "=" + expectedValue);
         }
         return true;
-    }
-
-    private static class JRELocaleResourceBundleControl extends ResourceBundle.Control {
-        static final JRELocaleResourceBundleControl INSTANCE = new JRELocaleResourceBundleControl();
-
-        private JRELocaleResourceBundleControl() {
-        }
-
-        @Override
-        public Locale getFallbackLocale(String baseName, Locale locale) {
-            if (baseName == null || locale == null) {
-                throw new NullPointerException();
-            }
-            return null;
-        }
-
-        /**
-         * Changes baseName to its per-language/country package name and
-         * calls the super class implementation. For example,
-         * if the baseName is "sun.text.resources.FormatData" and locale is ja_JP,
-         * the baseName is changed to "sun.text.resources.ja.JP.FormatData". If
-         * baseName contains "cldr", such as "sun.text.resources.cldr.FormatData",
-         * the name is changed to "sun.text.resources.cldr.ja.JP.FormatData".
-         */
-        @Override
-        public String toBundleName(String baseName, Locale locale) {
-            String newBaseName = baseName;
-            String lang = locale.getLanguage();
-            String ctry = locale.getCountry();
-            if (lang.length() > 0) {
-                if (baseName.startsWith(UTIL_RESOURCES_PACKAGE + cldrSuffix)
-                    || baseName.startsWith(TEXT_RESOURCES_PACKAGE + cldrSuffix)) {
-                    // Assume the lengths are the same.
-                    if (UTIL_RESOURCES_PACKAGE.length()
-                        != TEXT_RESOURCES_PACKAGE.length()) {
-                        throw new InternalError("The resources package names have different lengths.");
-                    }
-                    int index = (TEXT_RESOURCES_PACKAGE + cldrSuffix).length();
-                    ctry = (ctry.length() == 2) ? ("." + ctry) : "";
-                    newBaseName = baseName.substring(0, index + 1) + lang + ctry
-                                      + baseName.substring(index);
-                }
-            }
-            return super.toBundleName(newBaseName, locale);
-        }
     }
 }
 
