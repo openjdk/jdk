@@ -49,10 +49,11 @@ inline void ZeroStack::overflow_check(int required_words, TRAPS) {
 // value can be negative.
 inline int ZeroStack::abi_stack_available(Thread *thread) const {
   guarantee(Thread::current() == thread, "should run in the same thread");
-  int stack_used = thread->stack_base() - (address) &stack_used
-    + (StackYellowPages+StackRedPages+StackShadowPages) * os::vm_page_size();
-  int stack_free = thread->stack_size() - stack_used;
-  return stack_free;
+  assert(thread->stack_size() -
+         (thread->stack_base() - (address) &stack_used +
+          JavaThread::stack_guard_zone_size() + JavaThread::stack_shadow_zone_size()) ==
+         (address)&stack_used - thread->stack_overflow_limit(), "sanity");
+  return (address)&stack_used - stack_overflow_limit();
 }
 
 #endif // CPU_ZERO_VM_STACK_ZERO_INLINE_HPP

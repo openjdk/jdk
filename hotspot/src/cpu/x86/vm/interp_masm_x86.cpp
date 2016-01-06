@@ -45,7 +45,6 @@ void InterpreterMacroAssembler::jump_to_entry(address entry) {
   jump(RuntimeAddress(entry));
 }
 
-#ifndef CC_INTERP
 void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& mdo_addr) {
   Label update, next, none;
 
@@ -246,16 +245,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     bind(profile_continue);
   }
 }
-#endif
 
-#ifdef CC_INTERP
-void InterpreterMacroAssembler::get_method(Register reg) {
-  movptr(reg, Address(rbp, -(sizeof(BytecodeInterpreter) + 2 * wordSize)));
-  movptr(reg, Address(reg, byte_offset_of(BytecodeInterpreter, _method)));
-}
-#endif // CC_INTERP
-
-#ifndef CC_INTERP
 void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
                                                   int number_of_arguments) {
   // interpreter specific
@@ -1046,7 +1036,6 @@ void InterpreterMacroAssembler::remove_activation(
   pop(ret_addr);                     // get return address
   mov(rsp, rbx);                     // set sp to sender sp
 }
-#endif // !CC_INTERP
 
 void InterpreterMacroAssembler::get_method_counters(Register method,
                                                     Register mcs, Label& skip) {
@@ -1227,7 +1216,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     restore_bcp();
   }
 }
-#ifndef CC_INTERP
+
 void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
                                                          Label& zero_continue) {
   assert(ProfileInterpreter, "must be profiling interpreter");
@@ -1886,7 +1875,6 @@ void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
   andl(scratch, mask);
   jcc(cond, *where);
 }
-#endif // CC_INTERP
 
 void InterpreterMacroAssembler::notify_method_entry() {
   // Whenever JVMTI is interp_only_mode, method entry/exit events are sent to
@@ -1938,9 +1926,8 @@ void InterpreterMacroAssembler::notify_method_exit(
     // is changed then the interpreter_frame_result implementation will
     // need to be updated too.
 
-    // For c++ interpreter the result is always stored at a known location in the frame
-    // template interpreter will leave it on the top of the stack.
-    NOT_CC_INTERP(push(state);)
+    // template interpreter will leave the result on the top of the stack.
+    push(state);
     NOT_LP64(get_thread(rthread);)
     movl(rdx, Address(rthread, JavaThread::interp_only_mode_offset()));
     testl(rdx, rdx);
@@ -1948,16 +1935,16 @@ void InterpreterMacroAssembler::notify_method_exit(
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
     bind(L);
-    NOT_CC_INTERP(pop(state));
+    pop(state);
   }
 
   {
     SkipIfEqual skip(this, &DTraceMethodProbes, false);
-    NOT_CC_INTERP(push(state));
+    push(state);
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
                  rthread, rarg);
-    NOT_CC_INTERP(pop(state));
+    pop(state);
   }
 }

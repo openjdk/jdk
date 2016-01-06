@@ -23,13 +23,14 @@
 
 /*
  * @test TestRemsetLoggingThreads
- * @bug 8025441
- * @summary Ensure that various values of worker threads/concurrent
- * refinement threads do not crash the VM.
+ * @requires vm.gc=="G1" | vm.gc=="null"
+ * @bug 8025441 8145534
  * @key gc
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management/sun.management
+ * @summary Ensure that various values of worker threads/concurrent
+ * refinement threads do not crash the VM.
  */
 
 import java.util.regex.Matcher;
@@ -65,9 +66,6 @@ public class TestRemsetLoggingThreads {
   }
 
   public static void main(String[] args) throws Exception {
-    if (!TestRemsetLoggingTools.testingG1GC()) {
-      return;
-    }
     // different valid combinations of number of refinement and gc worker threads
     runTest(1, 1);
     runTest(1, 5);

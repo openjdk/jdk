@@ -31,6 +31,12 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
+// Size of interpreter code.  Increase if too small.  Interpreter will
+// fail with a guarantee ("not enough space for interpreter generation");
+// if too small.
+// Run with +PrintInterpreter to get the VM to print out the size.
+// Max size with JVMTI
+int TemplateInterpreter::InterpreterCodeSize = 230*K;
 
 int AbstractInterpreter::BasicType_as_index(BasicType type) {
   int i = 0;
@@ -79,7 +85,7 @@ int AbstractInterpreter::size_activation(int max_stack,
                                          int callee_locals,
                                          bool is_top_frame) {
   // Note: This calculation must exactly parallel the frame setup
-  // in InterpreterGenerator::generate_fixed_frame.
+  // in TemplateInterpreterGenerator::generate_fixed_frame.
   assert(Interpreter::stackElementWords == 1, "sanity");
   const int max_alignment_space = StackAlignmentInBytes / Interpreter::stackElementSize;
   const int abi_scratch = is_top_frame ? (frame::abi_reg_args_size / Interpreter::stackElementSize) :

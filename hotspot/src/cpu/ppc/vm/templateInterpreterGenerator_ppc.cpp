@@ -24,13 +24,12 @@
  */
 
 #include "precompiled.hpp"
-#ifndef CC_INTERP
 #include "asm/macroAssembler.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -1246,7 +1245,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
-address InterpreterGenerator::generate_CRC32_update_entry() {
+address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   if (UseCRC32Intrinsics) {
     address start = __ pc();  // Remember stub start address (is rtn value).
     Label slow_path;
@@ -1306,7 +1305,7 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateBytes(     int crc, byte[] b,  int off, int len)
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long* buf, int off, int len)
  */
-address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32Intrinsics) {
     address start = __ pc();  // Remember stub start address (is rtn value).
     Label slow_path;
@@ -1389,6 +1388,11 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
     return start;
   }
 
+  return NULL;
+}
+
+// Not supported
+address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   return NULL;
 }
 
@@ -1644,16 +1648,6 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
 }
 
 //-----------------------------------------------------------------------------
-// Generation of individual instructions
-
-// helpers for generate_and_dispatch
-
-InterpreterGenerator::InterpreterGenerator(StubQueue* code)
-  : TemplateInterpreterGenerator(code) {
-  generate_all(); // Down here so it can be "virtual".
-}
-
-//-----------------------------------------------------------------------------
 
 // Non-product code
 #ifndef PRODUCT
@@ -1799,4 +1793,3 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 }
 
 #endif // !PRODUCT
-#endif // !CC_INTERP

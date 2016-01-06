@@ -25,10 +25,10 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
-#include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
-#include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -48,8 +48,6 @@
 #include "utilities/macros.hpp"
 
 #define __ _masm->
-
-#ifndef CC_INTERP
 
 // Global Register Names
 static const Register rbcp     = LP64_ONLY(r13) NOT_LP64(rsi);
@@ -361,7 +359,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
 // rbx: method
 // rcx: invocation counter
 //
-void InterpreterGenerator::generate_counter_incr(
+void TemplateInterpreterGenerator::generate_counter_incr(
         Label* overflow,
         Label* profile_method,
         Label* profile_method_continue) {
@@ -436,7 +434,7 @@ void InterpreterGenerator::generate_counter_incr(
   }
 }
 
-void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
+void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue) {
 
   // Asm interpreter on entry
   // r14/rdi - locals
@@ -466,7 +464,7 @@ void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
   __ movptr(rbx, Address(rbp, method_offset));   // restore Method*
   // Preserve invariant that r13/r14 contain bcp/locals of sender frame
   // and jump to the interpreted entry.
-  __ jmp(*do_continue, relocInfo::none);
+  __ jmp(do_continue, relocInfo::none);
 }
 
 // See if we've got enough room on the stack for locals plus overhead.
@@ -483,7 +481,7 @@ void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
 //
 // Kills:
 //      rax
-void InterpreterGenerator::generate_stack_overflow_check(void) {
+void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // monitor entry size: see picture of stack in frame_x86.hpp
   const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
@@ -540,12 +538,12 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   __ addptr(rax, stack_base);
   __ subptr(rax, stack_size);
 
-  // Use the maximum number of pages we might bang.
-  const int max_pages = StackShadowPages > (StackRedPages+StackYellowPages+StackReservedPages) ? StackShadowPages :
-                        (StackRedPages+StackYellowPages+StackReservedPages);
+  // Use the bigger size for banging.
+  const int max_bang_size = (int)MAX2(JavaThread::stack_shadow_zone_size(),
+                                      JavaThread::stack_guard_zone_size());
 
   // add in the red and yellow zone sizes
-  __ addptr(rax, max_pages * page_size);
+  __ addptr(rax, max_bang_size);
 
   // check against the current stack bottom
   __ cmpptr(rsp, rax);
@@ -687,7 +685,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 // End of helpers
 
 // Method entry for java.lang.ref.Reference.get.
-address InterpreterGenerator::generate_Reference_get_entry(void) {
+address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 #if INCLUDE_ALL_GCS
   // Code: _aload_0, _getfield, _areturn
   // parameter size = 1
@@ -783,7 +781,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 // Interpreter stub for calling a native method. (asm interpreter)
 // This sets up a somewhat different looking stack for calling the
 // native method than the typical interpreter frame setup.
-address InterpreterGenerator::generate_native_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
@@ -1187,7 +1185,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_reguard;
     __ cmpl(Address(thread, JavaThread::stack_guard_state_offset()),
-            JavaThread::stack_guard_yellow_disabled);
+            JavaThread::stack_guard_yellow_reserved_disabled);
     __ jcc(Assembler::notEqual, no_reguard);
 
     __ pusha(); // XXX only save smashed registers
@@ -1300,7 +1298,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   if (inc_counter) {
     // Handle overflow of counter and compile method
     __ bind(invocation_counter_overflow);
-    generate_counter_overflow(&continue_after_compile);
+    generate_counter_overflow(continue_after_compile);
   }
 
   return entry_point;
@@ -1309,7 +1307,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 // Generic interpreted method entry to (asm) interpreter
 //
-address InterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
@@ -1471,7 +1469,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
     }
     // Handle overflow of counter and compile method
     __ bind(invocation_counter_overflow);
-    generate_counter_overflow(&continue_after_compile);
+    generate_counter_overflow(continue_after_compile);
   }
 
   return entry_point;
@@ -1767,18 +1765,6 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
   generate_and_dispatch(t);
 }
 
-
-//-----------------------------------------------------------------------------
-// Generation of individual instructions
-
-// helpers for generate_and_dispatch
-
-
-InterpreterGenerator::InterpreterGenerator(StubQueue* code)
-  : TemplateInterpreterGenerator(code) {
-   generate_all(); // down here so it can be "virtual"
-}
-
 //-----------------------------------------------------------------------------
 
 // Non-product code
@@ -1871,4 +1857,3 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   __ bind(L);
 }
 #endif // !PRODUCT
-#endif // ! CC_INTERP

@@ -43,6 +43,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -548,11 +549,14 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
 
     // debugging support
     // tracing
-    if (TraceExceptions) {
-      ttyLocker ttyl;
+    if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm;
-      tty->print_cr("Exception <%s> (" INTPTR_FORMAT ") thrown in compiled method <%s> at PC " INTPTR_FORMAT " for thread " INTPTR_FORMAT "",
-                    exception->print_value_string(), p2i((address)exception()), nm->method()->print_value_string(), p2i(pc), p2i(thread));
+      log_info(exceptions)("Exception <%s> (" INTPTR_FORMAT
+                           ") thrown in compiled method <%s> at PC " INTPTR_FORMAT
+                           " for thread " INTPTR_FORMAT,
+                           exception->print_value_string(),
+                           p2i((address)exception()),
+                           nm->method()->print_value_string(), p2i(pc), p2i(thread));
     }
     // for AbortVMOnException flag
     Exceptions::debug_check_abort(exception);
@@ -583,11 +587,11 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   // Set flag if return address is a method handle call site.
   thread->set_is_method_handle_return(nm->is_method_handle_return(pc));
 
-  if (TraceExceptions) {
-    ttyLocker ttyl;
+  if (log_is_enabled(Info, exceptions)) {
     ResourceMark rm;
-    tty->print_cr("Thread " PTR_FORMAT " continuing at PC " PTR_FORMAT " for exception thrown at PC " PTR_FORMAT,
-                  p2i(thread), p2i(continuation), p2i(pc));
+    log_info(exceptions)("Thread " PTR_FORMAT " continuing at PC " PTR_FORMAT
+                         " for exception thrown at PC " PTR_FORMAT,
+                         p2i(thread), p2i(continuation), p2i(pc));
   }
 
   return continuation;
