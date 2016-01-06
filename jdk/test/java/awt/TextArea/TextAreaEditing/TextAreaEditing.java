@@ -23,16 +23,23 @@
 
 /*
  @test
- @bug 8040322
+ @bug 8040322 8060137
+ @library ../../regtesthelpers
+ @build Util
  @summary Test TextArea APIs replaceRange, insert, append & setText
  @run main TextAreaEditing
  */
 
 import java.awt.Frame;
+import java.awt.Robot;
 import java.awt.TextArea;
+import java.awt.AWTException;
+import java.awt.event.KeyEvent;
+import test.java.awt.regtesthelpers.Util;
 
 public class TextAreaEditing {
 
+    final static Robot robot = Util.createRobot();
     private int testFailCount;
     private boolean isTestFail;
     private StringBuilder testFailMessage;
@@ -61,6 +68,7 @@ public class TextAreaEditing {
         textArea.testReplaceRange();
         textArea.testInsert();
         textArea.testAppend();
+        textArea.testSetText();
         textArea.checkFailures();
         textArea.dispose();
     }
@@ -117,6 +125,24 @@ public class TextAreaEditing {
         checkTest("SetTextAppend");
         textArea.setText("");
         checkTest("");
+    }
+
+    private void testSetText() {
+        textArea.setText(null);
+        textArea.requestFocus();
+        Util.clickOnComp(textArea, robot);
+        Util.waitForIdle(robot);
+        robot.keyPress(KeyEvent.VK_A);
+        robot.delay(5);
+        robot.keyRelease(KeyEvent.VK_A);
+        Util.waitForIdle(robot);
+        textArea.setText(null);
+        checkTest("");
+        textArea.setText("CaseSensitive");
+        checkTest("CaseSensitive");
+        textArea.setText("caseSensitive");
+        checkTest("caseSensitive");
+
     }
 
     private void checkTest(String str) {

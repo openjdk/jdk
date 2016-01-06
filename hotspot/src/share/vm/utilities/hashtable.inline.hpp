@@ -72,7 +72,7 @@ template <MEMFLAGS F> inline void BasicHashtable<F>::initialize(int table_size, 
 
 
 // The following method is MT-safe and may be used with caution.
-template <MEMFLAGS F> inline BasicHashtableEntry<F>* BasicHashtable<F>::bucket(int i) {
+template <MEMFLAGS F> inline BasicHashtableEntry<F>* BasicHashtable<F>::bucket(int i) const {
   return _buckets[i].get_entry();
 }
 

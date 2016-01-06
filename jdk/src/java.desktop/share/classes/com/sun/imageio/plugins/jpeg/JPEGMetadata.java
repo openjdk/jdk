@@ -874,13 +874,13 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
             return chroma;
         }
 
-        boolean idsAreJFIF = true;
+        boolean idsAreJFIF = false;
 
-        for (int i = 0; i < sof.componentSpecs.length; i++) {
-            int id = sof.componentSpecs[i].componentId;
-            if ((id < 1) || (id >= sof.componentSpecs.length)) {
-                idsAreJFIF = false;
-            }
+        int cid0 = sof.componentSpecs[0].componentId;
+        int cid1 = sof.componentSpecs[1].componentId;
+        int cid2 = sof.componentSpecs[2].componentId;
+        if ((cid0 == 1) && (cid1 == 2) && (cid2 == 3)) {
+            idsAreJFIF = true;
         }
 
         if (idsAreJFIF) {

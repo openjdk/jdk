@@ -43,52 +43,42 @@ import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
  */
 public final class OptimisticReturnFilters {
     private static final MethodHandle[] ENSURE_INT;
-    private static final MethodHandle[] ENSURE_LONG;
     private static final MethodHandle[] ENSURE_NUMBER;
 
+    // These extend the type index constants in JSType
+    private static final int VOID_TYPE_INDEX;
     private static final int BOOLEAN_TYPE_INDEX;
     private static final int CHAR_TYPE_INDEX;
+    private static final int LONG_TYPE_INDEX;
     private static final int FLOAT_TYPE_INDEX;
-    private static final int VOID_TYPE_INDEX;
 
     static {
         final MethodHandle INT_DOUBLE = findOwnMH("ensureInt", int.class, double.class, int.class);
         ENSURE_INT = new MethodHandle[] {
                 null,
-                findOwnMH("ensureInt", int.class, long.class, int.class),
                 INT_DOUBLE,
                 findOwnMH("ensureInt", int.class, Object.class, int.class),
                 findOwnMH("ensureInt", int.class, int.class),
                 findOwnMH("ensureInt", int.class, boolean.class, int.class),
                 findOwnMH("ensureInt", int.class, char.class, int.class),
+                findOwnMH("ensureInt", int.class, long.class, int.class),
                 INT_DOUBLE.asType(INT_DOUBLE.type().changeParameterType(0, float.class)),
         };
 
-        VOID_TYPE_INDEX = ENSURE_INT.length - 4;
-        BOOLEAN_TYPE_INDEX = ENSURE_INT.length - 3;
-        CHAR_TYPE_INDEX = ENSURE_INT.length - 2;
+        VOID_TYPE_INDEX = ENSURE_INT.length - 5;
+        BOOLEAN_TYPE_INDEX = ENSURE_INT.length - 4;
+        CHAR_TYPE_INDEX = ENSURE_INT.length - 3;
+        LONG_TYPE_INDEX = ENSURE_INT.length - 2;
         FLOAT_TYPE_INDEX = ENSURE_INT.length - 1;
 
-        final MethodHandle LONG_DOUBLE = findOwnMH("ensureLong", long.class, double.class, int.class);
-        ENSURE_LONG = new MethodHandle[] {
-                null,
-                null,
-                LONG_DOUBLE,
-                findOwnMH("ensureLong", long.class, Object.class, int.class),
-                ENSURE_INT[VOID_TYPE_INDEX].asType(ENSURE_INT[VOID_TYPE_INDEX].type().changeReturnType(long.class)),
-                ENSURE_INT[BOOLEAN_TYPE_INDEX].asType(ENSURE_INT[BOOLEAN_TYPE_INDEX].type().changeReturnType(long.class)),
-                ENSURE_INT[CHAR_TYPE_INDEX].asType(ENSURE_INT[CHAR_TYPE_INDEX].type().changeReturnType(long.class)),
-                LONG_DOUBLE.asType(LONG_DOUBLE.type().changeParameterType(0, float.class)),
-            };
-
         ENSURE_NUMBER = new MethodHandle[] {
-                null,
                 null,
                 null,
                 findOwnMH("ensureNumber", double.class, Object.class, int.class),
                 ENSURE_INT[VOID_TYPE_INDEX].asType(ENSURE_INT[VOID_TYPE_INDEX].type().changeReturnType(double.class)),
                 ENSURE_INT[BOOLEAN_TYPE_INDEX].asType(ENSURE_INT[BOOLEAN_TYPE_INDEX].type().changeReturnType(double.class)),
                 ENSURE_INT[CHAR_TYPE_INDEX].asType(ENSURE_INT[CHAR_TYPE_INDEX].type().changeReturnType(double.class)),
+                findOwnMH("ensureNumber", double.class, long.class, int.class),
                 null
         };
     }
@@ -136,8 +126,6 @@ public final class OptimisticReturnFilters {
         final int provableTypeIndex = getProvableTypeIndex(provable);
         if (actual == int.class) {
             guard = ENSURE_INT[provableTypeIndex];
-        } else if (actual == long.class) {
-            guard = ENSURE_LONG[provableTypeIndex];
         } else if (actual == double.class) {
             guard = ENSURE_NUMBER[provableTypeIndex];
         } else {
@@ -167,6 +155,8 @@ public final class OptimisticReturnFilters {
             return 0; // never needs a guard, as it's assignable to int
         } else if(provable == char.class) {
             return CHAR_TYPE_INDEX;
+        } else if(provable == long.class) {
+            return LONG_TYPE_INDEX;
         } else if(provable == float.class) {
             return FLOAT_TYPE_INDEX;
         }
@@ -179,7 +169,7 @@ public final class OptimisticReturnFilters {
         if (JSType.isRepresentableAsInt(arg)) {
             return (int)arg;
         }
-        throw new UnwarrantedOptimismException(arg, programPoint);
+        throw UnwarrantedOptimismException.createNarrowest(arg, programPoint);
     }
 
     @SuppressWarnings("unused")
@@ -187,7 +177,7 @@ public final class OptimisticReturnFilters {
         if (JSType.isStrictlyRepresentableAsInt(arg)) {
             return (int)arg;
         }
-        throw new UnwarrantedOptimismException(arg, programPoint);
+        throw new UnwarrantedOptimismException(arg, programPoint, Type.NUMBER);
     }
 
     /**
@@ -210,7 +200,7 @@ public final class OptimisticReturnFilters {
                 return (int)d;
             }
         }
-        throw new UnwarrantedOptimismException(arg, programPoint);
+        throw UnwarrantedOptimismException.createNarrowest(arg, programPoint);
     }
 
     private static boolean isPrimitiveNumberWrapper(final Object obj) {
@@ -238,51 +228,30 @@ public final class OptimisticReturnFilters {
         throw new UnwarrantedOptimismException(ScriptRuntime.UNDEFINED, programPoint, Type.OBJECT);
     }
 
-    private static long ensureLong(final double arg, final int programPoint) {
-        if (JSType.isStrictlyRepresentableAsLong(arg)) {
-            return (long)arg;
+
+    @SuppressWarnings("unused")
+    private static double ensureNumber(final long arg, final int programPoint) {
+        if (JSType.isRepresentableAsDouble(arg)) {
+            return (double) arg;
         }
-        throw new UnwarrantedOptimismException(arg, programPoint);
+        throw new UnwarrantedOptimismException(arg, programPoint, Type.OBJECT);
     }
 
     /**
-     * Returns the argument value as a long. If the argument is not a wrapper for a primitive numeric type
-     * with a value that can be exactly represented as a long, throw an {@link UnwarrantedOptimismException}.
-     * This method is only public so that generated script code can use it. See {code CodeGenerator.ENSURE_LONG}.
-     * @param arg the original argument.
-     * @param programPoint the program point used in the exception
-     * @return the value of the argument as a long.
-     * @throws UnwarrantedOptimismException if the argument is not a wrapper for a primitive numeric type with
-     * a value that can be exactly represented as a long
-     */
-    public static long ensureLong(final Object arg, final int programPoint) {
-        if (arg != null) {
-            final Class<?> c = arg.getClass();
-            if (c == Long.class) {
-                // Must check for Long separately, as Long.doubleValue() isn't precise.
-                return ((Long)arg);
-            } else if (c == Integer.class || c == Double.class || c == Float.class || c == Short.class ||
-                    c == Byte.class) {
-                return ensureLong(((Number)arg).doubleValue(), programPoint);
-            }
-        }
-        throw new UnwarrantedOptimismException(arg, programPoint);
-    }
-
-    /**
-     * Returns the argument value as a double. If the argument is not a a wrapper for a primitive numeric type
-     * throw an {@link UnwarrantedOptimismException}.This method is only public so that generated script code
-     * can use it. See {code CodeGenerator.ENSURE_NUMBER}.
+     * Returns the argument value as a double. If the argument is not a wrapper for a primitive numeric type
+     * that can be represented as double throw an {@link UnwarrantedOptimismException}.
+     * This method is only public so that generated script code can use it. See {code CodeGenerator.ENSURE_NUMBER}.
      * @param arg the original argument.
      * @param programPoint the program point used in the exception
      * @return the value of the argument as a double.
      * @throws UnwarrantedOptimismException if the argument is not a wrapper for a primitive numeric type.
      */
     public static double ensureNumber(final Object arg, final int programPoint) {
-        if (isPrimitiveNumberWrapper(arg)) {
-            return ((Number)arg).doubleValue();
+        if (isPrimitiveNumberWrapper(arg)
+                && (arg.getClass() != Long.class || JSType.isRepresentableAsDouble((Long) arg))) {
+            return ((Number) arg).doubleValue();
         }
-        throw new UnwarrantedOptimismException(arg, programPoint);
+        throw new UnwarrantedOptimismException(arg, programPoint, Type.OBJECT);
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

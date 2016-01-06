@@ -320,7 +320,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _class_loader_data,                            ClassLoaderData*)                      \
   nonstatic_field(InstanceKlass,               _source_file_name_index,                       u2)                                    \
-  nonstatic_field(InstanceKlass,               _source_debug_extension,                       char*)                                 \
+  nonstatic_field(InstanceKlass,               _source_debug_extension,                       const char*)                           \
   nonstatic_field(InstanceKlass,               _inner_classes,                                Array<jushort>*)                       \
   nonstatic_field(InstanceKlass,               _nonstatic_field_size,                         int)                                   \
   nonstatic_field(InstanceKlass,               _static_field_size,                            int)                                   \

@@ -29,6 +29,8 @@
 #include "oops/instanceKlass.hpp"
 #include "utilities/macros.hpp"
 
+class ClassFileParser;
+
 // An InstanceRefKlass is a specialized InstanceKlass for Java
 // classes that are subclasses of java/lang/ref/Reference.
 //
@@ -48,11 +50,8 @@
 
 class InstanceRefKlass: public InstanceKlass {
   friend class InstanceKlass;
-
-  // Constructor
-  InstanceRefKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags, bool is_anonymous)
-    : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size,
-                    InstanceKlass::_misc_kind_reference, rt, access_flags, is_anonymous) {}
+ private:
+  InstanceRefKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_misc_kind_reference) {}
 
  public:
   InstanceRefKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }

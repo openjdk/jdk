@@ -42,6 +42,8 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_I
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_INIT_DESC4;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETARITY;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETARITY_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETDOCUMENTATIONKEY;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETDOCUMENTATIONKEY_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETPROTOTYPE;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETPROTOTYPE_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_TYPE;
@@ -159,6 +161,11 @@ public class ConstructorGenerator extends ClassGenerator {
                 mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETARITY,
                         SCRIPTFUNCTION_SETARITY_DESC);
             }
+
+            mi.loadThis();
+            mi.loadLiteral(scriptClassInfo.getName());
+            mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETDOCUMENTATIONKEY,
+                        SCRIPTFUNCTION_SETDOCUMENTATIONKEY_DESC);
         }
         mi.returnVoid();
         mi.computeMaxs();
@@ -199,7 +206,7 @@ public class ConstructorGenerator extends ClassGenerator {
                 continue;
             }
             mi.loadThis();
-            newFunction(mi, scriptClassInfo.getJavaName(), memInfo, scriptClassInfo.findSpecializations(memInfo.getJavaName()));
+            newFunction(mi, scriptClassInfo.getName(), scriptClassInfo.getJavaName(), memInfo, scriptClassInfo.findSpecializations(memInfo.getJavaName()));
             mi.putField(className, memInfo.getJavaName(), OBJECT_DESC);
         }
     }

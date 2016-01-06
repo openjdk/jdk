@@ -118,6 +118,8 @@ public interface StringConstants {
     static final String SCRIPTFUNCTION_TYPE = TYPE_SCRIPTFUNCTION.getInternalName();
     static final String SCRIPTFUNCTION_SETARITY = "setArity";
     static final String SCRIPTFUNCTION_SETARITY_DESC = Type.getMethodDescriptor(Type.VOID_TYPE, Type.INT_TYPE);
+    static final String SCRIPTFUNCTION_SETDOCUMENTATIONKEY = "setDocumentationKey";
+    static final String SCRIPTFUNCTION_SETDOCUMENTATIONKEY_DESC = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_STRING);
     static final String SCRIPTFUNCTION_SETPROTOTYPE = "setPrototype";
     static final String SCRIPTFUNCTION_SETPROTOTYPE_DESC = Type.getMethodDescriptor(Type.VOID_TYPE, TYPE_OBJECT);
     static final String SCRIPTFUNCTION_CREATEBUILTIN = "createBuiltin";

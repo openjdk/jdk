@@ -321,6 +321,25 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
             BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(FREETYPE_BASE_DIR)
             LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])
           fi
+          if test "x$FOUND_FREETYPE" != xyes; then
+            FREETYPE_BASE_DIR="$HOME/freetype"
+            BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(FREETYPE_BASE_DIR)
+            if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+              LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib64], [well-known location])
+            else
+              LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib32], [well-known location])
+            fi
+            if test "x$FOUND_FREETYPE" != xyes && test -d $FREETYPE_BASE_DIR \
+                && test -s "$FREETYPE_BASE_DIR/builds/windows/vc2010/freetype.vcxproj" && test "x$MSBUILD" != x; then
+              # Source is available, as a last resort try to build freetype in default location
+              LIB_BUILD_FREETYPE($FREETYPE_BASE_DIR)
+              if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+                LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib64], [well-known location])
+              else
+                LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib32], [well-known location])
+              fi
+            fi
+          fi
         else
           FREETYPE_BASE_DIR="$SYSROOT/usr"
           LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])

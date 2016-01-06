@@ -41,7 +41,11 @@ public final class OutputAnalyzer {
    *
    * @param process Process to analyze
    * @throws IOException If an I/O error occurs.
+   *
+   * @deprecated This class is deprecated. Use the one from
+   *             {@code <root>/test/lib/share/classes/jdk/test/lib/process}
    */
+  @Deprecated
   public OutputAnalyzer(Process process) throws IOException {
     OutputBuffer output = ProcessTools.getOutput(process);
     exitValue = process.exitValue();

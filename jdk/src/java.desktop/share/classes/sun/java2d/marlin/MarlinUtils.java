@@ -27,12 +27,12 @@ package sun.java2d.marlin;
 
 
 public final class MarlinUtils {
-    // TODO: use sun.util.logging.PlatformLogger once in JDK9
-    private static final java.util.logging.Logger log;
+    // Marlin logger
+    private static final sun.util.logging.PlatformLogger log;
 
     static {
         if (MarlinConst.useLogger) {
-            log = java.util.logging.Logger.getLogger("sun.java2d.marlin");
+            log = sun.util.logging.PlatformLogger.getLogger("sun.java2d.marlin");
         } else {
             log = null;
         }
@@ -53,25 +53,11 @@ public final class MarlinUtils {
 
     public static void logException(final String msg, final Throwable th) {
         if (MarlinConst.useLogger) {
-//            log.warning(msg, th);
-            log.log(java.util.logging.Level.WARNING, msg, th);
+            log.warning(msg, th);
         } else if (MarlinConst.enableLogs) {
             System.out.print("WARNING: ");
             System.out.println(msg);
             th.printStackTrace(System.err);
-        }
-    }
-
-    // Returns the caller's class and method's name; best effort
-    // if cannot infer, return the logger's name.
-    static String getCallerInfo(String className) {
-        String sourceClassName = null;
-        String sourceMethodName = null;
-
-        if (sourceClassName != null) {
-            return sourceClassName + " " + sourceMethodName;
-        } else {
-            return "unknown";
         }
     }
 }

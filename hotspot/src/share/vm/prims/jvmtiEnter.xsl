@@ -494,7 +494,7 @@ static jvmtiError JNICALL
   }</xsl:text>  
 
       <xsl:text>  
-  Thread* this_thread = (Thread*)ThreadLocalStorage::thread(); </xsl:text>
+  Thread* this_thread = Thread::current_or_null(); </xsl:text>
 
       <xsl:apply-templates select="." mode="transition"/>
     </xsl:when>
@@ -528,7 +528,7 @@ static jvmtiError JNICALL
     </xsl:if>
     <xsl:text>    return JVMTI_ERROR_WRONG_PHASE;
   }
-  Thread* this_thread = (Thread*)ThreadLocalStorage::thread(); </xsl:text>
+  Thread* this_thread = Thread::current_or_null(); </xsl:text>
       <xsl:apply-templates select="." mode="transition"/>
       </xsl:if>
     </xsl:otherwise>
@@ -558,7 +558,7 @@ static jvmtiError JNICALL
       <xsl:choose>
         <xsl:when test="count(@callbacksafe)=0 or not(contains(@callbacksafe,'safe'))">
           <xsl:text>  if (Threads::number_of_threads() != 0) {
-    Thread* this_thread = (Thread*)ThreadLocalStorage::thread();</xsl:text>
+    Thread* this_thread = Thread::current_or_null();</xsl:text>
         </xsl:when>
         <xsl:otherwise>
 
@@ -567,7 +567,7 @@ static jvmtiError JNICALL
   if (Threads::number_of_threads() == 0) {
     transition = false;
   } else {
-    this_thread = (Thread*)ThreadLocalStorage::thread();
+    this_thread = Thread::current_or_null();
     transition = ((this_thread != NULL) &amp;&amp; !this_thread->is_VM_thread() &amp;&amp; !this_thread->is_ConcurrentGC_thread());
   }
   if (transition) {</xsl:text>

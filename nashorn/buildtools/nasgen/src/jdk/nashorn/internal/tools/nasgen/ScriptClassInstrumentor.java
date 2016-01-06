@@ -170,7 +170,7 @@ public class ScriptClassInstrumentor extends ClassVisitor {
 
                             if (memInfo.isInstanceFunction()) {
                                 super.visitVarInsn(ALOAD, 0);
-                                ClassGenerator.newFunction(delegateMV, scriptClassInfo.getJavaName(), memInfo, scriptClassInfo.findSpecializations(memInfo.getJavaName()));
+                                ClassGenerator.newFunction(delegateMV, scriptClassInfo.getName(), scriptClassInfo.getJavaName(), memInfo, scriptClassInfo.findSpecializations(memInfo.getJavaName()));
                                 super.visitFieldInsn(PUTFIELD, scriptClassInfo.getJavaName(),
                                     memInfo.getJavaName(), OBJECT_DESC);
                             }

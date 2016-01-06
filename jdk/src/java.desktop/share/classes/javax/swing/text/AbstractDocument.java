@@ -36,6 +36,7 @@ import javax.swing.tree.TreeNode;
 
 import sun.font.BidiUtils;
 import sun.swing.SwingUtilities2;
+import sun.swing.text.UndoableEditLockSupport;
 
 /**
  * An implementation of the document interface to serve as a
@@ -275,6 +276,11 @@ public abstract class AbstractDocument implements Document, Serializable {
      * @see EventListenerList
      */
     protected void fireUndoableEditUpdate(UndoableEditEvent e) {
+        if (e.getEdit() instanceof DefaultDocumentEvent) {
+            e = new UndoableEditEvent(e.getSource(),
+                    new DefaultDocumentEventUndoableWrapper(
+                            (DefaultDocumentEvent)e.getEdit()));
+        }
         // Guaranteed to return a non-null array
         Object[] listeners = listenerList.getListenerList();
         // Process the listeners last to first, notifying
@@ -2950,6 +2956,88 @@ public abstract class AbstractDocument implements Document, Serializable {
         private Hashtable<Element, ElementChange> changeLookup;
         private DocumentEvent.EventType type;
 
+    }
+
+    static class DefaultDocumentEventUndoableWrapper implements
+            UndoableEdit, UndoableEditLockSupport
+    {
+        final DefaultDocumentEvent dde;
+        public DefaultDocumentEventUndoableWrapper(DefaultDocumentEvent dde) {
+            this.dde = dde;
+        }
+
+        @Override
+        public void undo() throws CannotUndoException {
+            dde.undo();
+        }
+
+        @Override
+        public boolean canUndo() {
+            return dde.canUndo();
+        }
+
+        @Override
+        public void redo() throws CannotRedoException {
+            dde.redo();
+        }
+
+        @Override
+        public boolean canRedo() {
+            return dde.canRedo();
+        }
+
+        @Override
+        public void die() {
+            dde.die();
+        }
+
+        @Override
+        public boolean addEdit(UndoableEdit anEdit) {
+            return dde.addEdit(anEdit);
+        }
+
+        @Override
+        public boolean replaceEdit(UndoableEdit anEdit) {
+            return dde.replaceEdit(anEdit);
+        }
+
+        @Override
+        public boolean isSignificant() {
+            return dde.isSignificant();
+        }
+
+        @Override
+        public String getPresentationName() {
+            return dde.getPresentationName();
+        }
+
+        @Override
+        public String getUndoPresentationName() {
+            return dde.getUndoPresentationName();
+        }
+
+        @Override
+        public String getRedoPresentationName() {
+            return dde.getRedoPresentationName();
+        }
+
+        /**
+         * {@inheritDoc}
+         * @since 1.9
+         */
+        @Override
+        public void lockEdit() {
+            ((AbstractDocument)dde.getDocument()).writeLock();
+        }
+
+        /**
+         * {@inheritDoc}
+         * @since 1.9
+         */
+        @Override
+        public void unlockEdit() {
+            ((AbstractDocument)dde.getDocument()).writeUnlock();
+        }
     }
 
     /**

@@ -5,6 +5,7 @@ grant {
   permission java.util.PropertyPermission "resultsDir", "read";
   permission java.util.PropertyPermission "user.home", "read";
   permission java.util.PropertyPermission "os.name", "read";
+  permission java.util.PropertyPermission "os.version", "read";
   permission java.awt.AWTPermission "accessEventQueue";
   permission java.lang.RuntimePermission "setIO";
   permission java.lang.RuntimePermission "accessDeclaredMembers";
@@ -17,5 +18,6 @@ grant {
   permission java.util.PropertyPermission "java.class.path", "read";
   permission java.awt.AWTPermission "readDisplayPixels";
   permission java.awt.AWTPermission "watchMousePointer";
+
 };
 
