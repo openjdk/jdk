@@ -49,7 +49,10 @@ public final class UnwarrantedOptimismException extends RuntimeException {
     private final Type   returnType;
 
     /**
-     * Constructor
+     * Constructor without explicit return type. The return type is determined statically from the class of
+     * the return value, and only canonical internal number representations are recognized. Use
+     * {@link #createNarrowest} if you want to handle float and long values as numbers instead of objects.
+     *
      * @param returnValue actual return value from the too narrow operation
      * @param programPoint program point where unwarranted optimism was detected
      */
@@ -58,7 +61,7 @@ public final class UnwarrantedOptimismException extends RuntimeException {
     }
 
     /**
-     * Check if a program point is valid
+     * Check if a program point is valid.
      * @param programPoint the program point
      * @return true if valid
      */
@@ -70,8 +73,6 @@ public final class UnwarrantedOptimismException extends RuntimeException {
     private static Type getReturnType(final Object v) {
         if (v instanceof Double) {
             return Type.NUMBER;
-        } else if (v instanceof Long) {
-            return Type.LONG;
         }
         assert !(v instanceof Integer) : v + " is an int"; // Can't have an unwarranted optimism exception with int
         return Type.OBJECT;
@@ -94,6 +95,22 @@ public final class UnwarrantedOptimismException extends RuntimeException {
         this.returnValue  = returnValue;
         this.programPoint = programPoint;
         this.returnType   = returnType;
+    }
+
+    /**
+     * Create an {@code UnwarrantedOptimismException} with the given return value and program point, narrowing
+     * the type to {@code number} if the value is a float or a long that can be represented as double.
+     *
+     * @param returnValue the return value
+     * @param programPoint the program point
+     * @return the exception
+     */
+    public static UnwarrantedOptimismException createNarrowest(final Object returnValue, final int programPoint) {
+        if (returnValue instanceof Float
+                || (returnValue instanceof Long && JSType.isRepresentableAsDouble((Long) returnValue))) {
+            return new UnwarrantedOptimismException(((Number) returnValue).doubleValue(), programPoint, Type.NUMBER);
+        }
+        return new UnwarrantedOptimismException(returnValue, programPoint);
     }
 
     /**

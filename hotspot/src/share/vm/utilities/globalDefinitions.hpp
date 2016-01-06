@@ -949,7 +949,6 @@ inline bool is_compile(int comp_level) {
 // (in order to reduce interface dependencies & reduce
 // number of unnecessary compilations after changes)
 
-class symbolTable;
 class ClassFileStream;
 
 class Event;

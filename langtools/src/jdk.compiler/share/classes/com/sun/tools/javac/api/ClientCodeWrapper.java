@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package com.sun.tools.javac.api;
 
 import java.io.File;

@@ -663,7 +663,9 @@ class UnixFileSystemView extends FileSystemView {
         if(newFolder.exists()) {
             throw new IOException("Directory already exists:" + newFolder.getAbsolutePath());
         } else {
-            newFolder.mkdirs();
+            if(!newFolder.mkdirs()) {
+                throw new IOException(newFolder.getAbsolutePath());
+            }
         }
 
         return newFolder;
@@ -773,7 +775,9 @@ class WindowsFileSystemView extends FileSystemView {
         if(newFolder.exists()) {
             throw new IOException("Directory already exists:" + newFolder.getAbsolutePath());
         } else {
-            newFolder.mkdirs();
+            if(!newFolder.mkdirs()) {
+                throw new IOException(newFolder.getAbsolutePath());
+            }
         }
 
         return newFolder;
@@ -842,9 +846,10 @@ class GenericFileSystemView extends FileSystemView {
         if(newFolder.exists()) {
             throw new IOException("Directory already exists:" + newFolder.getAbsolutePath());
         } else {
-            newFolder.mkdirs();
+            if(!newFolder.mkdirs()) {
+                throw new IOException(newFolder.getAbsolutePath());
+            }
         }
-
         return newFolder;
     }
 

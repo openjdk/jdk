@@ -115,31 +115,23 @@ public class TypeAnnotations {
      * called from MemberEnter.
      */
     public void organizeTypeAnnotationsSignatures(final Env<AttrContext> env, final JCClassDecl tree) {
-        annotate.afterTypes(new Runnable() {
-            @Override
-            public void run() {
-                JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
-
-                try {
-                    new TypeAnnotationPositions(true).scan(tree);
-                } finally {
-                    log.useSource(oldSource);
-                }
+        annotate.afterTypes(() -> {
+            JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
+            try {
+                new TypeAnnotationPositions(true).scan(tree);
+            } finally {
+                log.useSource(oldSource);
             }
         });
     }
 
     public void validateTypeAnnotationsSignatures(final Env<AttrContext> env, final JCClassDecl tree) {
-        annotate.validate(new Runnable() { //validate annotations
-            @Override
-            public void run() {
-                JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
-
-                try {
-                    attr.validateTypeAnnotations(tree, true);
-                } finally {
-                    log.useSource(oldSource);
-                }
+        annotate.validate(() -> { //validate annotations
+            JavaFileObject oldSource = log.useSource(env.toplevel.sourcefile);
+            try {
+                attr.validateTypeAnnotations(tree, true);
+            } finally {
+                log.useSource(oldSource);
             }
         });
     }

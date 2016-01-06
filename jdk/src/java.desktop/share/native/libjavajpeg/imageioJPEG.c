@@ -1610,6 +1610,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
     int ret;
     int h_samp0, h_samp1, h_samp2;
     int v_samp0, v_samp1, v_samp2;
+    int cid0, cid1, cid2;
     jboolean retval = JNI_FALSE;
     imageIODataPtr data = (imageIODataPtr)jlong_to_ptr(ptr);
     j_decompress_ptr cinfo;
@@ -1711,17 +1712,15 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
                 }
             } else if (!cinfo->saw_JFIF_marker && !IS_EXIF(cinfo)) {
                 /*
-                 * IJG assumes all unidentified 3-channels are YCbCr.
-                 * We assume that only if the second two channels are
-                 * subsampled (either horizontally or vertically).  If not,
-                 * we assume RGB.
-                 *
-                 * 4776576: Some digital cameras output YCbCr JPEG images
-                 * that do not contain a JFIF APP0 marker but are only
-                 * vertically subsampled (no horizontal subsampling).
-                 * We should only assume this is RGB data if the subsampling
-                 * factors for the second two channels are the same as the
-                 * first (check both horizontal and vertical factors).
+                 * In the absence of certain markers, IJG has interpreted
+                 * component id's of [1,2,3] as meaning YCbCr.We follow that
+                 * interpretation, which is additionally described in the Image
+                 * I/O JPEG metadata spec.If that condition is not met here the
+                 * next step will be to examine the subsampling factors, if
+                 * there is any difference in subsampling factors we also assume
+                 * YCbCr, only if both horizontal and vertical subsampling
+                 * is same we assume JPEG color space as RGB.
+                 * This is also described in the Image I/O JPEG metadata spec.
                  */
                 h_samp0 = cinfo->comp_info[0].h_samp_factor;
                 h_samp1 = cinfo->comp_info[1].h_samp_factor;
@@ -1731,8 +1730,13 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImageHeader
                 v_samp1 = cinfo->comp_info[1].v_samp_factor;
                 v_samp2 = cinfo->comp_info[2].v_samp_factor;
 
-                if ((h_samp1 == h_samp0) && (h_samp2 == h_samp0) &&
-                    (v_samp1 == v_samp0) && (v_samp2 == v_samp0))
+                cid0 = cinfo->comp_info[0].component_id;
+                cid1 = cinfo->comp_info[1].component_id;
+                cid2 = cinfo->comp_info[2].component_id;
+
+                if ((!(cid0 == 1 && cid1 == 2 && cid2 == 3)) &&
+                    ((h_samp1 == h_samp0) && (h_samp2 == h_samp0) &&
+                    (v_samp1 == v_samp0) && (v_samp2 == v_samp0)))
                 {
                     cinfo->jpeg_color_space = JCS_RGB;
                     /* output is already RGB, so it stays the same */

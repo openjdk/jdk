@@ -132,7 +132,7 @@ public final class System {
 
     /* The security manager for the system.
      */
-    private static volatile SecurityManager security = null;
+    private static volatile SecurityManager security;
 
     /**
      * Reassigns the "standard" input stream.
@@ -206,7 +206,7 @@ public final class System {
         setErr0(err);
     }
 
-    private static volatile Console cons = null;
+    private static volatile Console cons;
     /**
      * Returns the unique {@link java.io.Console Console} object associated
      * with the current Java virtual machine, if any.
@@ -216,12 +216,13 @@ public final class System {
      * @since   1.6
      */
      public static Console console() {
-         if (cons == null) {
+         Console c = cons;
+         if (c == null) {
              synchronized (System.class) {
-                 cons = SharedSecrets.getJavaIOAccess().console();
+                 cons = c = SharedSecrets.getJavaIOAccess().console();
              }
          }
-         return cons;
+         return c;
      }
 
     /**

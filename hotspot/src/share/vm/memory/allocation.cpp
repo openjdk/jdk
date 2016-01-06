@@ -790,7 +790,7 @@ void Arena::free_malloced_objects(Chunk* chunk, char* hwm, char* max, char* hwm2
 
 ReallocMark::ReallocMark() {
 #ifdef ASSERT
-  Thread *thread = ThreadLocalStorage::get_thread_slow();
+  Thread *thread = Thread::current();
   _nesting = thread->resource_area()->nesting();
 #endif
 }

@@ -63,6 +63,8 @@ class ElfSymbolTable: public CHeapObj<mtInternal> {
   Elf_Shdr            m_shdr;
 
   NullDecoder::decoder_status  m_status;
+
+  bool compare(const Elf_Sym* sym, address addr, int* stringtableIndex, int* posIndex, int* offset, ElfFuncDescTable* funcDescTable);
 };
 
 #endif // !_WINDOWS and !__APPLE__

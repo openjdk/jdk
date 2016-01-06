@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 class TestClassAndInterfaceBridgeIdentical02 {
 
     interface A<X extends Object> { void m(X x); }

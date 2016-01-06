@@ -683,7 +683,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     WARNINGS_AS_ERRORS_gcc := false, \
     WARNINGS_AS_ERRORS_solstudio := false, \
     MAPFILE := $(BUILD_LIBFONTMANAGER_MAPFILE), \
-    LDFLAGS := $(subst -Xlinker -z -Xlinker defs,,$(LDFLAGS_JDKLIB)) $(LDFLAGS_CXX_JDK) \
+    LDFLAGS := $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB)) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_macosx := -undefined dynamic_lookup, \
@@ -799,7 +799,7 @@ else # OPENJDK_TARGET_OS not windows
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
-      LDFLAGS_macosx := -Xlinker -rpath -Xlinker @loader_path, \
+      LDFLAGS_macosx := -Wl$(COMMA)-rpath$(COMMA)@loader_path, \
       LIBS_unix := $(JAWT_LIBS) $(JDKLIB_LIBS), \
       LIBS_solaris := $(X_LIBS) -lXrender, \
       LIBS_macosx := -framework Cocoa, \
@@ -1034,7 +1034,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop,  \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
-          -Xlinker -rpath -Xlinker @loader_path \
+          -Wl$(COMMA)-rpath$(COMMA)@loader_path \
           -L$(INSTALL_LIBRARIES_HERE), \
       LIBS := -lawt -losxapp -lawt_lwawt \
           -framework Cocoa \

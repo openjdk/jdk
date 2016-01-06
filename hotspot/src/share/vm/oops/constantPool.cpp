@@ -60,25 +60,33 @@ ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, T
   return new (loader_data, size, false, MetaspaceObj::ConstantPoolType, THREAD) ConstantPool(tags);
 }
 
-ConstantPool::ConstantPool(Array<u1>* tags) {
-  set_length(tags->length());
-  set_tags(NULL);
-  set_cache(NULL);
-  set_reference_map(NULL);
-  set_resolved_references(NULL);
-  set_operands(NULL);
-  set_pool_holder(NULL);
-  set_flags(0);
+#ifdef ASSERT
 
-  // only set to non-zero if constant pool is merged by RedefineClasses
-  set_version(0);
-
-  // initialize tag array
-  int length = tags->length();
-  for (int index = 0; index < length; index++) {
-    tags->at_put(index, JVM_CONSTANT_Invalid);
+// MetaspaceObj allocation invariant is calloc equivalent memory
+// simple verification of this here (JVM_CONSTANT_Invalid == 0 )
+static bool tag_array_is_zero_initialized(Array<u1>* tags) {
+  assert(tags != NULL, "invariant");
+  const int length = tags->length();
+  for (int index = 0; index < length; ++index) {
+    if (JVM_CONSTANT_Invalid != tags->at(index)) {
+      return false;
+    }
   }
-  set_tags(tags);
+  return true;
+}
+
+#endif
+
+ConstantPool::ConstantPool(Array<u1>* tags) :
+  _tags(tags),
+  _length(tags->length()) {
+
+    assert(_tags != NULL, "invariant");
+    assert(tags->length() == _length, "invariant");
+    assert(tag_array_is_zero_initialized(tags), "invariant");
+    assert(0 == _flags, "invariant");
+    assert(0 == version(), "invariant");
+    assert(NULL == _pool_holder, "invariant");
 }
 
 void ConstantPool::deallocate_contents(ClassLoaderData* loader_data) {
@@ -466,7 +474,7 @@ Klass* ConstantPool::klass_ref_at(int which, TRAPS) {
 }
 
 
-Symbol* ConstantPool::klass_name_at(int which) {
+Symbol* ConstantPool::klass_name_at(int which) const {
   assert(tag_at(which).is_unresolved_klass() || tag_at(which).is_klass(),
          "Corrupted constant pool");
   // A resolved constantPool entry will contain a Klass*, otherwise a Symbol*.
@@ -497,7 +505,7 @@ char* ConstantPool::string_at_noresolve(int which) {
   return unresolved_string_at(which)->as_C_string();
 }
 
-BasicType ConstantPool::basic_type_for_signature_at(int which) {
+BasicType ConstantPool::basic_type_for_signature_at(int which) const {
   return FieldType::basic_type(symbol_at(which));
 }
 

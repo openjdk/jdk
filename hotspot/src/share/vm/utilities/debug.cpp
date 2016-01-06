@@ -215,7 +215,7 @@ void report_vm_error(const char* file, int line, const char* error_msg, const ch
   if (Debugging || error_is_suppressed(file, line)) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  VMError::report_and_die(ThreadLocalStorage::get_thread_slow(), file, line, error_msg, detail_fmt, detail_args);
+  VMError::report_and_die(Thread::current_or_null(), file, line, error_msg, detail_fmt, detail_args);
   va_end(detail_args);
 }
 
@@ -224,7 +224,7 @@ void report_fatal(const char* file, int line, const char* detail_fmt, ...)
   if (Debugging || error_is_suppressed(file, line)) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  VMError::report_and_die(ThreadLocalStorage::get_thread_slow(), file, line, "fatal error", detail_fmt, detail_args);
+  VMError::report_and_die(Thread::current_or_null(), file, line, "fatal error", detail_fmt, detail_args);
   va_end(detail_args);
 }
 
@@ -233,7 +233,7 @@ void report_vm_out_of_memory(const char* file, int line, size_t size,
   if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  VMError::report_and_die(ThreadLocalStorage::get_thread_slow(), file, line, size, vm_err_type, detail_fmt, detail_args);
+  VMError::report_and_die(Thread::current_or_null(), file, line, size, vm_err_type, detail_fmt, detail_args);
   va_end(detail_args);
 
   // The UseOSErrorReporting option in report_and_die() may allow a return
@@ -304,6 +304,16 @@ void report_java_out_of_memory(const char* message) {
 
     if (OnOutOfMemoryError && OnOutOfMemoryError[0]) {
       VMError::report_java_out_of_memory(message);
+    }
+
+    if (CrashOnOutOfMemoryError) {
+      tty->print_cr("Aborting due to java.lang.OutOfMemoryError: %s", message);
+      fatal("OutOfMemory encountered: %s", message);
+    }
+
+    if (ExitOnOutOfMemoryError) {
+      tty->print_cr("Terminating due to java.lang.OutOfMemoryError: %s", message);
+      os::exit(3);
     }
   }
 }
@@ -536,7 +546,7 @@ extern "C" void findpc(intptr_t x);
 #endif // !PRODUCT
 
 extern "C" void ps() { // print stack
-  if (Thread::current() == NULL) return;
+  if (Thread::current_or_null() == NULL) return;
   Command c("ps");
 
 
@@ -615,7 +625,7 @@ extern "C" void safepoints() {
 #endif // !PRODUCT
 
 extern "C" void pss() { // print all stacks
-  if (Thread::current() == NULL) return;
+  if (Thread::current_or_null() == NULL) return;
   Command c("pss");
   Threads::print(true, PRODUCT_ONLY(false) NOT_PRODUCT(true));
 }
@@ -772,7 +782,7 @@ void print_native_stack(outputStream* st, frame fr, Thread* t, char* buf, int bu
 extern "C" void pns(void* sp, void* fp, void* pc) { // print native stack
   Command c("pns");
   static char buf[O_BUFLEN];
-  Thread* t = ThreadLocalStorage::get_thread_slow();
+  Thread* t = Thread::current_or_null();
   // Call generic frame constructor (certain arguments may be ignored)
   frame fr(sp, fp, pc);
   print_native_stack(tty, fr, t, buf, sizeof(buf));
