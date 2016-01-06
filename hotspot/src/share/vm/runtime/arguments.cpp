@@ -399,6 +399,16 @@ static AliasedFlag const aliased_jvm_flags[] = {
   { NULL, NULL}
 };
 
+static AliasedFlag const aliased_jvm_logging_flags[] = {
+  { "-XX:+TraceClassResolution", "-Xlog:classresolve=info"},
+  { "-XX:-TraceClassResolution", "-Xlog:classresolve=off"},
+  { "-XX:+TraceExceptions", "-Xlog:exceptions=info" },
+  { "-XX:-TraceExceptions", "-Xlog:exceptions=off" },
+  { "-XX:+TraceMonitorInflation", "-Xlog:monitorinflation=debug" },
+  { "-XX:-TraceMonitorInflation", "-Xlog:monitorinflation=off" },
+  { NULL, NULL }
+};
+
 // Return true if "v" is less than "other", where "other" may be "undefined".
 static bool version_less_than(JDK_Version v, JDK_Version other) {
   assert(!v.is_undefined(), "must be defined");
@@ -927,6 +937,20 @@ const char* Arguments::handle_aliases_and_deprecation(const char* arg, bool warn
   }
   ShouldNotReachHere();
   return NULL;
+}
+
+// lookup_logging_aliases
+// Called from parse_each_vm_init_arg(). Should be called on -XX options before specific cases are checked.
+// If arg matches any aliased_jvm_logging_flags entry, look up the real name and copy it into buffer.
+bool Arguments::lookup_logging_aliases(const char* arg, char* buffer) {
+  for (size_t i = 0; aliased_jvm_logging_flags[i].alias_name != NULL; i++) {
+    const AliasedFlag& flag_status = aliased_jvm_logging_flags[i];
+    if (strcmp(flag_status.alias_name, arg) == 0) {
+      strcpy(buffer, flag_status.real_name);
+      return true;
+    }
+  }
+  return false;
 }
 
 bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
@@ -2605,7 +2629,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
   for (int index = 0; index < args->nOptions; index++) {
     bool is_absolute_path = false;  // for -agentpath vs -agentlib
 
-    const JavaVMOption* option = args->options + index;
+    JavaVMOption* option = args->options + index;
 
     if (!match_option(option, "-Djava.class.path", &tail) &&
         !match_option(option, "-Dsun.java.command", &tail) &&
@@ -2617,6 +2641,16 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         // omitted from jvm_args string as each have their own PerfData
         // string constant object.
         build_jvm_args(option->optionString);
+    }
+
+    // char buffer to store looked up logging option.
+    char aliased_logging_option[256];
+
+    // Catch -XX options which are aliased to Unified logging commands.
+    if (match_option(option, "-XX:", &tail)) {
+      if (lookup_logging_aliases(option->optionString, aliased_logging_option)) {
+        option->optionString = aliased_logging_option;
+      }
     }
 
     // -verbose:[class/gc/jni]
@@ -4167,7 +4201,7 @@ jint Arguments::apply_ergo() {
     UseBiasedLocking = false;
   }
 
-#ifdef ZERO
+#ifdef CC_INTERP
   // Clear flags not supported on zero.
   FLAG_SET_DEFAULT(ProfileInterpreter, false);
   FLAG_SET_DEFAULT(UseBiasedLocking, false);

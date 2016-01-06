@@ -46,9 +46,9 @@ define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap NULLs pas
 #define DEFAULT_STACK_SHADOW_PAGES (6 DEBUG_ONLY(+2))
 #define DEFAULT_STACK_RESERVED_PAGES (0)
 
-#define MIN_STACK_YELLOW_PAGES (1)
+#define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES
 #define MIN_STACK_RED_PAGES DEFAULT_STACK_RED_PAGES
-#define MIN_STACK_SHADOW_PAGES (1)
+#define MIN_STACK_SHADOW_PAGES (3 DEBUG_ONLY(+1))
 #define MIN_STACK_RESERVED_PAGES (0)
 
 define_pd_global(intx, StackYellowPages,      DEFAULT_STACK_YELLOW_PAGES);

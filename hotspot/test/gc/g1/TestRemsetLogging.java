@@ -23,11 +23,14 @@
 
 /*
  * @test TestRemsetLogging.java
- * @bug 8013895 8129977
- * @library /testlibrary
+ * @requires vm.gc=="G1" | vm.gc =="null"
+ * @bug 8013895 8129977 8145534
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management/sun.management
  * @build TestRemsetLoggingTools TestRemsetLogging
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @summary Verify output of -Xlog:gc+remset*=trace
  * @run main TestRemsetLogging
  *
@@ -38,10 +41,6 @@ public class TestRemsetLogging {
 
     public static void main(String[] args) throws Exception {
         String result;
-
-        if (!TestRemsetLoggingTools.testingG1GC()) {
-            return;
-        }
 
         // no remembered set summary output
         result = TestRemsetLoggingTools.runTest(null, 0);

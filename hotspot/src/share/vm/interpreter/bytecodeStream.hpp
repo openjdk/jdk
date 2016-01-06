@@ -86,7 +86,7 @@ class BaseBytecodeStream: StackObj {
   bool is_raw() const { return _is_raw; }
 
   // Stream attributes
-  methodHandle    method() const                 { return _method; }
+  const methodHandle& method() const             { return _method; }
 
   int             bci() const                    { return _bci; }
   int             next_bci() const               { return _next_bci; }

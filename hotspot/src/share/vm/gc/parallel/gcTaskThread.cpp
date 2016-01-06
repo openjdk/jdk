@@ -152,11 +152,15 @@ void GCTaskThread::run() {
         if (log_is_enabled(Debug, gc, task, time)) {
           timer.update();
 
-          GCTaskTimeStamp* time_stamp = time_stamp_at(_time_stamp_index++);
+          GCTaskTimeStamp* time_stamp = time_stamp_at(_time_stamp_index);
 
           time_stamp->set_name(name);
           time_stamp->set_entry_time(entry_time);
           time_stamp->set_exit_time(timer.ticks());
+
+          // Update the index after we have set up the entry correctly since
+          // GCTaskThread::print_task_time_stamps() may read this value concurrently.
+          _time_stamp_index++;
         }
       } else {
         // idle tasks complete outside the normal accounting

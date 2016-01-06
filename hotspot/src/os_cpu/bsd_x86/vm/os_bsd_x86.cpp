@@ -518,10 +518,9 @@ JVM_handle_bsd_signal(int sig,
       address addr = (address) info->si_addr;
 
       // check if fault address is within thread stack
-      if (addr < thread->stack_base() &&
-          addr >= thread->stack_base() - thread->stack_size()) {
+      if (thread->on_local_stack(addr)) {
         // stack overflow
-        if (thread->in_stack_yellow_zone(addr)) {
+        if (thread->in_stack_yellow_reserved_zone(addr)) {
           if (thread->thread_state() == _thread_in_Java) {
             if (thread->in_stack_reserved_zone(addr)) {
               frame fr;
@@ -542,11 +541,11 @@ JVM_handle_bsd_signal(int sig,
             }
             // Throw a stack overflow exception.  Guard pages will be reenabled
             // while unwinding the stack.
-            thread->disable_stack_yellow_zone();
+            thread->disable_stack_yellow_reserved_zone();
             stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
           } else {
             // Thread was in the vm or native code.  Return and try to finish.
-            thread->disable_stack_yellow_zone();
+            thread->disable_stack_yellow_reserved_zone();
             return 1;
           }
         } else if (thread->in_stack_red_zone(addr)) {

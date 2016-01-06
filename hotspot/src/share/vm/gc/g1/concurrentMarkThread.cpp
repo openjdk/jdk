@@ -90,6 +90,20 @@ void ConcurrentMarkThread::delay_to_keep_mmu(G1CollectorPolicy* g1_policy, bool 
     os::sleep(this, sleep_time_ms, false);
   }
 }
+
+class GCConcPhaseTimer : StackObj {
+  ConcurrentMark* _cm;
+
+ public:
+  GCConcPhaseTimer(ConcurrentMark* cm, const char* title) : _cm(cm) {
+    _cm->register_concurrent_phase_start(title);
+  }
+
+  ~GCConcPhaseTimer() {
+    _cm->register_concurrent_phase_end();
+  }
+};
+
 void ConcurrentMarkThread::run() {
   initialize_in_thread();
   wait_for_universe_init();
@@ -127,6 +141,7 @@ void ConcurrentMarkThread::run_service() {
       // correctness issue.
 
       if (!cm()->has_aborted()) {
+        GCConcPhaseTimer(_cm, "Concurrent Root Region Scanning");
         _cm->scanRootRegions();
       }
 
@@ -140,6 +155,7 @@ void ConcurrentMarkThread::run_service() {
       do {
         iter++;
         if (!cm()->has_aborted()) {
+          GCConcPhaseTimer(_cm, "Concurrent Mark");
           _cm->markFromRoots();
         }
 
@@ -194,6 +210,7 @@ void ConcurrentMarkThread::run_service() {
         // reclaimed by cleanup.
 
         GCTraceConcTime(Info, gc) tt("Concurrent Cleanup");
+        GCConcPhaseTimer(_cm, "Concurrent Cleanup");
 
         // Now do the concurrent cleanup operation.
         _cm->completeCleanup();
@@ -250,6 +267,7 @@ void ConcurrentMarkThread::run_service() {
       // We may have aborted just before the remark. Do not bother clearing the
       // bitmap then, as it has been done during mark abort.
       if (!cm()->has_aborted()) {
+        GCConcPhaseTimer(_cm, "Concurrent Bitmap Clearing");
         _cm->clearNextBitmap();
       } else {
         assert(!G1VerifyBitmaps || _cm->nextMarkBitmapIsClear(), "Next mark bitmap must be clear");

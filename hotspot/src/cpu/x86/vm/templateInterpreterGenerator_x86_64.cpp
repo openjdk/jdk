@@ -24,19 +24,18 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/arguments.hpp"
 
 #define __ _masm->
-
-#ifndef CC_INTERP
 
 /**
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
-address InterpreterGenerator::generate_CRC32_update_entry() {
+address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   if (UseCRC32Intrinsics) {
     address entry = __ pc();
 
@@ -88,7 +87,7 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
-address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32Intrinsics) {
     address entry = __ pc();
 
@@ -149,7 +148,7 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
 *   int java.util.zip.CRC32C.updateBytes(int crc, byte[] b, int off, int end)
 *   int java.util.zip.CRC32C.updateByteBuffer(int crc, long address, int off, int end)
 */
-address InterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32CIntrinsics) {
     address entry = __ pc();
     // Load parameters
@@ -194,4 +193,3 @@ address InterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpre
 
   return NULL;
 }
-#endif // ! CC_INTERP

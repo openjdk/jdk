@@ -39,15 +39,21 @@ template <class E> class GrowableArray;
 class PhaseVisitor {
  public:
   virtual void visit(GCPhase* phase) = 0;
-  virtual void visit(PausePhase* phase) { visit((GCPhase*)phase); }
-  virtual void visit(ConcurrentPhase* phase) { visit((GCPhase*)phase); }
 };
 
 class GCPhase {
+ public:
+  enum PhaseType {
+    PausePhaseType      = 0,
+    ConcurrentPhaseType = 1
+  };
+
+ private:
   const char* _name;
   int _level;
   Ticks _start;
   Ticks _end;
+  PhaseType _type;
 
  public:
   void set_name(const char* name) { _name = name; }
@@ -62,17 +68,9 @@ class GCPhase {
   const Ticks end() const { return _end; }
   void set_end(const Ticks& time) { _end = time; }
 
-  virtual void accept(PhaseVisitor* visitor) = 0;
-};
+  PhaseType type() const { return _type; }
+  void set_type(PhaseType type) { _type = type; }
 
-class PausePhase : public GCPhase {
- public:
-  void accept(PhaseVisitor* visitor) {
-    visitor->visit(this);
-  }
-};
-
-class ConcurrentPhase : public GCPhase {
   void accept(PhaseVisitor* visitor) {
     visitor->visit(this);
   }
@@ -80,7 +78,7 @@ class ConcurrentPhase : public GCPhase {
 
 class PhasesStack {
  public:
-  // FIXME: Temporary set to 5 (used to be 4), since Reference processing needs it.
+  // Set to 5, since Reference processing needs it.
   static const int PHASE_LEVELS = 5;
 
  private:
@@ -99,8 +97,7 @@ class PhasesStack {
 class TimePartitions {
   static const int INITIAL_CAPACITY = 10;
 
-  // Currently we only support pause phases.
-  GrowableArray<PausePhase>* _phases;
+  GrowableArray<GCPhase>* _phases;
   PhasesStack _active_phases;
 
   Tickspan _sum_of_pauses;
@@ -111,8 +108,8 @@ class TimePartitions {
   ~TimePartitions();
   void clear();
 
-  void report_gc_phase_start(const char* name, const Ticks& time);
-  void report_gc_phase_end(const Ticks& time);
+  void report_gc_phase_start(const char* name, const Ticks& time, GCPhase::PhaseType type=GCPhase::PausePhaseType);
+  void report_gc_phase_end(const Ticks& time, GCPhase::PhaseType type=GCPhase::PausePhaseType);
 
   int num_phases() const;
   GCPhase* phase_at(int index) const;
@@ -121,6 +118,7 @@ class TimePartitions {
   const Tickspan longest_pause() const { return _longest_pause; }
 
   bool has_active_phases();
+
  private:
   void update_statistics(GCPhase* phase);
 };
@@ -162,9 +160,18 @@ class STWGCTimer : public GCTimer {
 };
 
 class ConcurrentGCTimer : public GCTimer {
+  // ConcurrentGCTimer can't be used if there is an overlap between a pause phase and a concurrent phase.
+  // _is_concurrent_phase_active is used to find above case.
+  bool _is_concurrent_phase_active;
+
  public:
+  ConcurrentGCTimer(): GCTimer(), _is_concurrent_phase_active(false) {};
+
   void register_gc_pause_start(const char* name);
   void register_gc_pause_end();
+
+  void register_gc_concurrent_start(const char* name, const Ticks& time = Ticks::now());
+  void register_gc_concurrent_end(const Ticks& time = Ticks::now());
 };
 
 class TimePartitionPhasesIterator {

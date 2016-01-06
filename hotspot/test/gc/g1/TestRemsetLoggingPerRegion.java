@@ -23,28 +23,22 @@
 
 /*
  * @test TestRemsetLoggingPerRegion.java
- * @bug 8014078 8129977
- * @library /testlibrary
+ * @requires vm.gc=="G1" | vm.gc =="null"
+ * @bug 8014078 8129977 8145534
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management/sun.management
  * @build TestRemsetLoggingTools TestRemsetLoggingPerRegion
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @summary Verify output of -Xlog:gc+remset*=trace in regards to per-region type output
  * @run main TestRemsetLoggingPerRegion
  */
-
-import jdk.test.lib.*;
-import java.lang.Thread;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class TestRemsetLoggingPerRegion {
 
     public static void main(String[] args) throws Exception {
         String result;
-
-        if (!TestRemsetLoggingTools.testingG1GC()) {
-            return;
-        }
 
         // single remembered set summary output at the end
         result = TestRemsetLoggingTools.runTest(new String[] { "-Xlog:gc+remset*=trace" }, 0);
