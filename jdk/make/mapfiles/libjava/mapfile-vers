@@ -274,12 +274,12 @@ SUNWprivate_1.1 {
 		Java_sun_reflect_Reflection_getClassAccessFlags;
                 Java_sun_misc_Version_getJdkVersionInfo;
                 Java_sun_misc_Version_getJvmVersionInfo;
-		Java_sun_misc_VM_latestUserDefinedLoader;
-                Java_sun_misc_VM_getuid;
-                Java_sun_misc_VM_geteuid;
-                Java_sun_misc_VM_getgid;
-                Java_sun_misc_VM_getegid;
-                Java_sun_misc_VM_initialize;
+		Java_jdk_internal_misc_VM_latestUserDefinedLoader;
+                Java_jdk_internal_misc_VM_getuid;
+                Java_jdk_internal_misc_VM_geteuid;
+                Java_jdk_internal_misc_VM_getgid;
+                Java_jdk_internal_misc_VM_getegid;
+                Java_jdk_internal_misc_VM_initialize;
 		Java_sun_misc_VMSupport_initAgentProperties;
 		Java_sun_misc_VMSupport_getVMTemporaryDirectory;
 
