@@ -629,6 +629,13 @@ final class Renderer implements PathConsumer2D, MarlinConst {
         }
 
         if (edgeMinY != Float.POSITIVE_INFINITY) {
+            // if context is maked as DIRTY:
+            if (rdrCtx.dirty) {
+                // may happen if an exception if thrown in the pipeline processing:
+                // clear completely buckets arrays:
+                buckets_minY = 0;
+                buckets_maxY = boundsMaxY - boundsMinY;
+            }
             // clear used part
             if (edgeBuckets == edgeBuckets_initial) {
                 // fill only used part

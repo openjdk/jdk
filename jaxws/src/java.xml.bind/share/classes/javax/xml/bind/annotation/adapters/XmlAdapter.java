@@ -31,10 +31,10 @@ package javax.xml.bind.annotation.adapters;
  * <p> <b> Usage: </b> </p>
  *
  * <p>
- * Some Java types do not map naturally to a XML representation, for
+ * Some Java types do not map naturally to an XML representation, for
  * example {@code HashMap} or other non JavaBean classes. Conversely,
- * a XML repsentation may map to a Java type but an application may
- * choose to accesss the XML representation using another Java
+ * an XML representation may map to a Java type but an application may
+ * choose to access the XML representation using another Java
  * type. For example, the schema to Java binding rules bind
  * xs:DateTime by default to XmlGregorianCalendar. But an application
  * may desire to bind xs:DateTime to a custom type,

@@ -33,7 +33,7 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import javax.security.auth.x500.X500Principal;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.x509.*;
 import sun.security.util.*;
 

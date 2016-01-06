@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /**
  * Utility and test program to check javac's internal TreeScanner class.
  * The program can be run standalone, or as a jtreg test.  For info on

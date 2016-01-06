@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /*
  * This file is not a regular test, but is processed by ./TreePosTest.java,
  * which verifies the position info in the javac tree.

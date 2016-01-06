@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -594,15 +594,16 @@ final class Parsed implements TemporalAccessor {
 
     private void resolveInstant() {
         // add instant seconds if we have date, time and zone
+        // Offset (if present) will be given priority over the zone.
         if (date != null && time != null) {
-            if (zone != null) {
-                long instant = date.atTime(time).atZone(zone).getLong(ChronoField.INSTANT_SECONDS);
+            Long offsetSecs = fieldValues.get(OFFSET_SECONDS);
+            if (offsetSecs != null) {
+                ZoneOffset offset = ZoneOffset.ofTotalSeconds(offsetSecs.intValue());
+                long instant = date.atTime(time).atZone(offset).toEpochSecond();
                 fieldValues.put(INSTANT_SECONDS, instant);
             } else {
-                Long offsetSecs = fieldValues.get(OFFSET_SECONDS);
-                if (offsetSecs != null) {
-                    ZoneOffset offset = ZoneOffset.ofTotalSeconds(offsetSecs.intValue());
-                    long instant = date.atTime(time).atZone(offset).getLong(ChronoField.INSTANT_SECONDS);
+                if (zone != null) {
+                    long instant = date.atTime(time).atZone(zone).toEpochSecond();
                     fieldValues.put(INSTANT_SECONDS, instant);
                 }
             }

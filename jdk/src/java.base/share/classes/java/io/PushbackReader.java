@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,13 +241,16 @@ public class PushbackReader extends FilterReader {
      * Closes the stream and releases any system resources associated with
      * it. Once the stream has been closed, further read(),
      * unread(), ready(), or skip() invocations will throw an IOException.
-     * Closing a previously closed stream has no effect.
+     * Closing a previously closed stream has no effect. This method will block
+     * while there is another thread blocking on the reader.
      *
      * @exception  IOException  If an I/O error occurs
      */
     public void close() throws IOException {
-        super.close();
-        buf = null;
+        synchronized (lock) {
+            super.close();
+            buf = null;
+        }
     }
 
     /**

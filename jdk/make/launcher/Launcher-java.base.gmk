@@ -127,8 +127,7 @@ ifneq ($(BUILD_JEXEC_SRC), )
           $(BUILD_JEXEC_INC), \
       CFLAGS_linux := -fPIC, \
       CFLAGS_solaris := -KPIC, \
-      LDFLAGS := $(LDFLAGS_JDKEXE) \
-          $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)$(SHARED_LIBRARY_SUFFIX)), \
+      LDFLAGS := $(LDFLAGS_JDKEXE), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jexec_obj, \
       OUTPUT_DIR := $(BUILD_JEXEC_DST_DIR), \
       DEBUG_SYMBOLS := true, \

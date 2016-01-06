@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ public abstract class SoundbankReader {
      * @throws InvalidMidiDataException if the URL does not point to valid MIDI
      *         soundbank data recognized by this soundbank reader
      * @throws IOException if an I/O error occurs
+     * @throws NullPointerException if {@code url} is {@code null}
      */
     public abstract Soundbank getSoundbank(URL url)
             throws InvalidMidiDataException, IOException;
@@ -64,6 +65,7 @@ public abstract class SoundbankReader {
      * @throws InvalidMidiDataException if the stream does not point to valid
      *         MIDI soundbank data recognized by this soundbank reader
      * @throws IOException if an I/O error occurs
+     * @throws NullPointerException if {@code stream} is {@code null}
      */
     public abstract Soundbank getSoundbank(InputStream stream)
             throws InvalidMidiDataException, IOException;
@@ -76,6 +78,7 @@ public abstract class SoundbankReader {
      * @throws InvalidMidiDataException if the file does not point to valid MIDI
      *         soundbank data recognized by this soundbank reader
      * @throws IOException if an I/O error occurs
+     * @throws NullPointerException if {@code file} is {@code null}
      */
     public abstract Soundbank getSoundbank(File file)
             throws InvalidMidiDataException, IOException;

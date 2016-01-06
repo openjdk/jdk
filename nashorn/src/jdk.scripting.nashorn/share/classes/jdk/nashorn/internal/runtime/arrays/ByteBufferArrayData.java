@@ -122,12 +122,6 @@ final class ByteBufferArrayData extends ArrayData {
     }
 
     @Override
-    public ArrayData set(final int index, final long value, final boolean strict) {
-        buf.put(index, (byte)value);
-        return this;
-    }
-
-    @Override
     public ArrayData set(final int index, final double value, final boolean strict) {
         buf.put(index, (byte)value);
         return this;
@@ -135,11 +129,6 @@ final class ByteBufferArrayData extends ArrayData {
 
     @Override
     public int getInt(final int index) {
-        return 0x0ff & buf.get(index);
-    }
-
-    @Override
-    public long getLong(final int index) {
         return 0x0ff & buf.get(index);
     }
 

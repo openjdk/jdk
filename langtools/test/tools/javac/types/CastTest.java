@@ -35,8 +35,6 @@
  */
 
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.code.Symbol.*;
 import java.lang.reflect.Array;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -65,7 +63,7 @@ public class CastTest extends TypeHarness {
     /*C*/       { F   , F    , F  , F   , F    , F     , F   , F   , T, F , T, T, F     , F      , F    , F     , F      , F       , F     , F     , F  , F   , F  , F },
     /*+C*/      { F   , F    , F  , F   , F    , F     , F   , F   , F, T , F, T, F     , F      , F    , F     , F      , F       , F     , F     , F  , F   , F  , F },
     /*I*/       { F   , F    , F  , F   , F    , F     , F   , F   , T, F , T, T, F     , F      , F    , F     , F      , F       , F     , F     , F  , F   , F  , F },
-    /*T*/       { F   , F    , F  , F   , F    , F     , F   , F   , T, T , T, T, T     , T      , T    , T     , T      , T       , T     , T     , T  , T   , T  , T },
+    /*T*/       { T   , T    , T  , T   , T    , T     , T   , T   , T, T , T, T, T     , T      , T    , T     , T      , T       , T     , T     , T  , T   , T  , T },
     /*byte[]*/  { F   , F    , F  , F   , F    , F     , F   , F   , F, F , F, T, T     , F      , F    , F     , F      , F       , F     , F     , F  , F   , F  , F },
     /*short[]*/ { F   , F    , F  , F   , F    , F     , F   , F   , F, F , F, T, F     , T      , F    , F     , F      , F       , F     , F     , F  , F   , F  , F },
     /*int[]*/   { F   , F    , F  , F   , F    , F     , F   , F   , F, F , F, T, F     , F      , T    , F     , F      , F       , F     , F     , F  , F   , F  , F },

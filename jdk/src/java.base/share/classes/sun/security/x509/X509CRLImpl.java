@@ -49,7 +49,7 @@ import javax.security.auth.x500.X500Principal;
 
 import sun.security.provider.X509Factory;
 import sun.security.util.*;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 /**
  * <p>
@@ -1290,7 +1290,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
             implements Comparable<X509IssuerSerial> {
         final X500Principal issuer;
         final BigInteger serial;
-        volatile int hashcode = 0;
+        volatile int hashcode;
 
         /**
          * Create an X509IssuerSerial.
@@ -1358,13 +1358,16 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
          * @return the hash code value
          */
         public int hashCode() {
-            if (hashcode == 0) {
-                int result = 17;
-                result = 37*result + issuer.hashCode();
-                result = 37*result + serial.hashCode();
-                hashcode = result;
+            int h = hashcode;
+            if (h == 0) {
+                h = 17;
+                h = 37*h + issuer.hashCode();
+                h = 37*h + serial.hashCode();
+                if (h != 0) {
+                    hashcode = h;
+                }
             }
-            return hashcode;
+            return h;
         }
 
         @Override

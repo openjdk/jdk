@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package propertiesparser.parser;
 
 import java.util.regex.Pattern;
