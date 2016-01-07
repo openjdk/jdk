@@ -44,6 +44,8 @@
 #include "opto/runtime.hpp"
 #endif
 
+#include <alloca.h>
+
 #define __ masm->
 
 #ifdef PRODUCT
@@ -62,7 +64,7 @@ class RegisterSaver {
   // Support different return pc locations.
   enum ReturnPCLocation {
     return_pc_is_lr,
-    return_pc_is_r4,
+    return_pc_is_pre_saved,
     return_pc_is_thread_saved_exception_pc
   };
 
@@ -241,16 +243,17 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   __ mfcr(R31);
   __ std(R31, _abi(cr), R1_SP);
   switch (return_pc_location) {
-    case return_pc_is_lr:    __ mflr(R31);           break;
-    case return_pc_is_r4:    __ mr(R31, R4);     break;
-    case return_pc_is_thread_saved_exception_pc:
-                             __ ld(R31, thread_(saved_exception_pc)); break;
+    case return_pc_is_lr: __ mflr(R31); break;
+    case return_pc_is_pre_saved: assert(return_pc_adjustment == 0, "unsupported"); break;
+    case return_pc_is_thread_saved_exception_pc: __ ld(R31, thread_(saved_exception_pc)); break;
     default: ShouldNotReachHere();
   }
-  if (return_pc_adjustment != 0) {
-    __ addi(R31, R31, return_pc_adjustment);
+  if (return_pc_location != return_pc_is_pre_saved) {
+    if (return_pc_adjustment != 0) {
+      __ addi(R31, R31, return_pc_adjustment);
+    }
+    __ std(R31, _abi(lr), R1_SP);
   }
-  __ std(R31, _abi(lr), R1_SP);
 
   // push a new frame
   __ push_frame(frame_size_in_bytes, R31);
@@ -646,7 +649,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
   return round_to(stk, 2);
 }
 
-#ifdef COMPILER2
+#if defined(COMPILER1) || defined(COMPILER2)
 // Calling convention for calling C code.
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
@@ -2566,7 +2569,7 @@ uint SharedRuntime::out_preserve_stack_slots() {
 #endif
 }
 
-#ifdef COMPILER2
+#if defined(COMPILER1) || defined(COMPILER2)
 // Frame generation for deopt and uncommon trap blobs.
 static void push_skeleton_frame(MacroAssembler* masm, bool deopt,
                                 /* Read */
@@ -2713,7 +2716,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   const address start = __ pc();
 
-#ifdef COMPILER2
+#if defined(COMPILER1) || defined(COMPILER2)
   // --------------------------------------------------------------------------
   // Prolog for non exception case!
 
@@ -2762,27 +2765,42 @@ void SharedRuntime::generate_deopt_blob() {
 
   BLOCK_COMMENT("Prolog for exception case");
 
-  // The RegisterSaves doesn't need to adjust the return pc for this situation.
-  const int return_pc_adjustment_exception = 0;
-
-  // Push the "unpack frame".
-  // Save everything in sight.
-  assert(R4 == R4_ARG2, "exception pc must be in r4");
-  RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
-                                                             &first_frame_size_in_bytes,
-                                                             /*generate_oop_map=*/ false,
-                                                             return_pc_adjustment_exception,
-                                                             RegisterSaver::return_pc_is_r4);
-
-  // Deopt during an exception. Save exec mode for unpack_frames.
-  __ li(exec_mode_reg, Deoptimization::Unpack_exception);
-
   // Store exception oop and pc in thread (location known to GC).
   // This is needed since the call to "fetch_unroll_info()" may safepoint.
   __ std(R3_ARG1, in_bytes(JavaThread::exception_oop_offset()), R16_thread);
   __ std(R4_ARG2, in_bytes(JavaThread::exception_pc_offset()),  R16_thread);
+  __ std(R4_ARG2, _abi(lr), R1_SP);
+
+  // Vanilla deoptimization with an exception pending in exception_oop.
+  int exception_in_tls_offset = __ pc() - start;
+
+  // Push the "unpack frame".
+  // Save everything in sight.
+  RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
+                                                             &first_frame_size_in_bytes,
+                                                             /*generate_oop_map=*/ false,
+                                                             /*return_pc_adjustment_exception=*/ 0,
+                                                             RegisterSaver::return_pc_is_pre_saved);
+
+  // Deopt during an exception. Save exec mode for unpack_frames.
+  __ li(exec_mode_reg, Deoptimization::Unpack_exception);
 
   // fall through
+
+  int reexecute_offset = 0;
+#ifdef COMPILER1
+  __ b(exec_mode_initialized);
+
+  // Reexecute entry, similar to c2 uncommon trap
+  reexecute_offset = __ pc() - start;
+
+  RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
+                                                             &first_frame_size_in_bytes,
+                                                             /*generate_oop_map=*/ false,
+                                                             /*return_pc_adjustment_reexecute=*/ 0,
+                                                             RegisterSaver::return_pc_is_pre_saved);
+  __ li(exec_mode_reg, Deoptimization::Unpack_reexecute);
+#endif
 
   // --------------------------------------------------------------------------
   __ BIND(exec_mode_initialized);
@@ -2889,7 +2907,9 @@ void SharedRuntime::generate_deopt_blob() {
   int exception_offset = __ pc() - start;
 #endif // COMPILER2
 
-  _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, 0, first_frame_size_in_bytes / wordSize);
+  _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset,
+                                           reexecute_offset, first_frame_size_in_bytes / wordSize);
+  _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
 }
 
 #ifdef COMPILER2
@@ -3195,4 +3215,246 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   // frame_size_words or bytes??
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_bytes/wordSize,
                                        oop_maps, true);
+}
+
+
+//------------------------------Montgomery multiplication------------------------
+//
+
+// Subtract 0:b from carry:a. Return carry.
+static unsigned long
+sub(unsigned long a[], unsigned long b[], unsigned long carry, long len) {
+  long i = 0;
+  unsigned long tmp, tmp2;
+  __asm__ __volatile__ (
+    "subfc  %[tmp], %[tmp], %[tmp]   \n" // pre-set CA
+    "mtctr  %[len]                   \n"
+    "0:                              \n"
+    "ldx    %[tmp], %[i], %[a]       \n"
+    "ldx    %[tmp2], %[i], %[b]      \n"
+    "subfe  %[tmp], %[tmp2], %[tmp]  \n" // subtract extended
+    "stdx   %[tmp], %[i], %[a]       \n"
+    "addi   %[i], %[i], 8            \n"
+    "bdnz   0b                       \n"
+    "addme  %[tmp], %[carry]         \n" // carry + CA - 1
+    : [i]"+b"(i), [tmp]"=&r"(tmp), [tmp2]"=&r"(tmp2)
+    : [a]"r"(a), [b]"r"(b), [carry]"r"(carry), [len]"r"(len)
+    : "ctr", "xer", "memory"
+  );
+  return tmp;
+}
+
+// Multiply (unsigned) Long A by Long B, accumulating the double-
+// length result into the accumulator formed of T0, T1, and T2.
+inline void MACC(unsigned long A, unsigned long B, unsigned long &T0, unsigned long &T1, unsigned long &T2) {
+  unsigned long hi, lo;
+  __asm__ __volatile__ (
+    "mulld  %[lo], %[A], %[B]    \n"
+    "mulhdu %[hi], %[A], %[B]    \n"
+    "addc   %[T0], %[T0], %[lo]  \n"
+    "adde   %[T1], %[T1], %[hi]  \n"
+    "addze  %[T2], %[T2]         \n"
+    : [hi]"=&r"(hi), [lo]"=&r"(lo), [T0]"+r"(T0), [T1]"+r"(T1), [T2]"+r"(T2)
+    : [A]"r"(A), [B]"r"(B)
+    : "xer"
+  );
+}
+
+// As above, but add twice the double-length result into the
+// accumulator.
+inline void MACC2(unsigned long A, unsigned long B, unsigned long &T0, unsigned long &T1, unsigned long &T2) {
+  unsigned long hi, lo;
+  __asm__ __volatile__ (
+    "mulld  %[lo], %[A], %[B]    \n"
+    "mulhdu %[hi], %[A], %[B]    \n"
+    "addc   %[T0], %[T0], %[lo]  \n"
+    "adde   %[T1], %[T1], %[hi]  \n"
+    "addze  %[T2], %[T2]         \n"
+    "addc   %[T0], %[T0], %[lo]  \n"
+    "adde   %[T1], %[T1], %[hi]  \n"
+    "addze  %[T2], %[T2]         \n"
+    : [hi]"=&r"(hi), [lo]"=&r"(lo), [T0]"+r"(T0), [T1]"+r"(T1), [T2]"+r"(T2)
+    : [A]"r"(A), [B]"r"(B)
+    : "xer"
+  );
+}
+
+// Fast Montgomery multiplication. The derivation of the algorithm is
+// in "A Cryptographic Library for the Motorola DSP56000,
+// Dusse and Kaliski, Proc. EUROCRYPT 90, pp. 230-237".
+static void
+montgomery_multiply(unsigned long a[], unsigned long b[], unsigned long n[],
+                    unsigned long m[], unsigned long inv, int len) {
+  unsigned long t0 = 0, t1 = 0, t2 = 0; // Triple-precision accumulator
+  int i;
+
+  assert(inv * n[0] == -1UL, "broken inverse in Montgomery multiply");
+
+  for (i = 0; i < len; i++) {
+    int j;
+    for (j = 0; j < i; j++) {
+      MACC(a[j], b[i-j], t0, t1, t2);
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    MACC(a[i], b[0], t0, t1, t2);
+    m[i] = t0 * inv;
+    MACC(m[i], n[0], t0, t1, t2);
+
+    assert(t0 == 0, "broken Montgomery multiply");
+
+    t0 = t1; t1 = t2; t2 = 0;
+  }
+
+  for (i = len; i < 2*len; i++) {
+    int j;
+    for (j = i-len+1; j < len; j++) {
+      MACC(a[j], b[i-j], t0, t1, t2);
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    m[i-len] = t0;
+    t0 = t1; t1 = t2; t2 = 0;
+  }
+
+  while (t0) {
+    t0 = sub(m, n, t0, len);
+  }
+}
+
+// Fast Montgomery squaring. This uses asymptotically 25% fewer
+// multiplies so it should be up to 25% faster than Montgomery
+// multiplication. However, its loop control is more complex and it
+// may actually run slower on some machines.
+static void
+montgomery_square(unsigned long a[], unsigned long n[],
+                  unsigned long m[], unsigned long inv, int len) {
+  unsigned long t0 = 0, t1 = 0, t2 = 0; // Triple-precision accumulator
+  int i;
+
+  assert(inv * n[0] == -1UL, "broken inverse in Montgomery multiply");
+
+  for (i = 0; i < len; i++) {
+    int j;
+    int end = (i+1)/2;
+    for (j = 0; j < end; j++) {
+      MACC2(a[j], a[i-j], t0, t1, t2);
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    if ((i & 1) == 0) {
+      MACC(a[j], a[j], t0, t1, t2);
+    }
+    for (; j < i; j++) {
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    m[i] = t0 * inv;
+    MACC(m[i], n[0], t0, t1, t2);
+
+    assert(t0 == 0, "broken Montgomery square");
+
+    t0 = t1; t1 = t2; t2 = 0;
+  }
+
+  for (i = len; i < 2*len; i++) {
+    int start = i-len+1;
+    int end = start + (len - start)/2;
+    int j;
+    for (j = start; j < end; j++) {
+      MACC2(a[j], a[i-j], t0, t1, t2);
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    if ((i & 1) == 0) {
+      MACC(a[j], a[j], t0, t1, t2);
+    }
+    for (; j < len; j++) {
+      MACC(m[j], n[i-j], t0, t1, t2);
+    }
+    m[i-len] = t0;
+    t0 = t1; t1 = t2; t2 = 0;
+  }
+
+  while (t0) {
+    t0 = sub(m, n, t0, len);
+  }
+}
+
+// The threshold at which squaring is advantageous was determined
+// experimentally on an i7-3930K (Ivy Bridge) CPU @ 3.5GHz.
+// Doesn't seem to be relevant for Power8 so we use the same value.
+#define MONTGOMERY_SQUARING_THRESHOLD 64
+
+// Copy len longwords from s to d, word-swapping as we go. The
+// destination array is reversed.
+static void reverse_words(unsigned long *s, unsigned long *d, int len) {
+  d += len;
+  while(len-- > 0) {
+    d--;
+    unsigned long s_val = *s;
+    // Swap words in a longword on little endian machines.
+#ifdef VM_LITTLE_ENDIAN
+     s_val = (s_val << 32) | (s_val >> 32);
+#endif
+    *d = s_val;
+    s++;
+  }
+}
+
+void SharedRuntime::montgomery_multiply(jint *a_ints, jint *b_ints, jint *n_ints,
+                                        jint len, jlong inv,
+                                        jint *m_ints) {
+  assert(len % 2 == 0, "array length in montgomery_multiply must be even");
+  int longwords = len/2;
+  assert(longwords > 0, "unsupported");
+
+  // Make very sure we don't use so much space that the stack might
+  // overflow. 512 jints corresponds to an 16384-bit integer and
+  // will use here a total of 8k bytes of stack space.
+  int total_allocation = longwords * sizeof (unsigned long) * 4;
+  guarantee(total_allocation <= 8192, "must be");
+  unsigned long *scratch = (unsigned long *)alloca(total_allocation);
+
+  // Local scratch arrays
+  unsigned long
+    *a = scratch + 0 * longwords,
+    *b = scratch + 1 * longwords,
+    *n = scratch + 2 * longwords,
+    *m = scratch + 3 * longwords;
+
+  reverse_words((unsigned long *)a_ints, a, longwords);
+  reverse_words((unsigned long *)b_ints, b, longwords);
+  reverse_words((unsigned long *)n_ints, n, longwords);
+
+  ::montgomery_multiply(a, b, n, m, (unsigned long)inv, longwords);
+
+  reverse_words(m, (unsigned long *)m_ints, longwords);
+}
+
+void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
+                                      jint len, jlong inv,
+                                      jint *m_ints) {
+  assert(len % 2 == 0, "array length in montgomery_square must be even");
+  int longwords = len/2;
+  assert(longwords > 0, "unsupported");
+
+  // Make very sure we don't use so much space that the stack might
+  // overflow. 512 jints corresponds to an 16384-bit integer and
+  // will use here a total of 6k bytes of stack space.
+  int total_allocation = longwords * sizeof (unsigned long) * 3;
+  guarantee(total_allocation <= 8192, "must be");
+  unsigned long *scratch = (unsigned long *)alloca(total_allocation);
+
+  // Local scratch arrays
+  unsigned long
+    *a = scratch + 0 * longwords,
+    *n = scratch + 1 * longwords,
+    *m = scratch + 2 * longwords;
+
+  reverse_words((unsigned long *)a_ints, a, longwords);
+  reverse_words((unsigned long *)n_ints, n, longwords);
+
+  if (len >= MONTGOMERY_SQUARING_THRESHOLD) {
+    ::montgomery_square(a, n, m, (unsigned long)inv, longwords);
+  } else {
+    ::montgomery_multiply(a, a, n, m, (unsigned long)inv, longwords);
+  }
+
+  reverse_words(m, (unsigned long *)m_ints, longwords);
 }

@@ -240,6 +240,7 @@ class java_lang_String : AllStatic {
 
 class java_lang_Class : AllStatic {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 
  private:
   // The fake offsets are added by the class loader when java.lang.Class is loaded
@@ -551,9 +552,8 @@ class java_lang_Throwable: AllStatic {
   static oop  get_stack_trace_element(oop throwable, int index, TRAPS);
   static int  get_stack_trace_depth(oop throwable, TRAPS);
   // Printing
-  static void print(oop throwable, outputStream* st);
   static void print(Handle throwable, outputStream* st);
-  static void print_stack_trace(oop throwable, outputStream* st);
+  static void print_stack_trace(Handle throwable, outputStream* st);
   // Debugging
   friend class JavaClasses;
 };

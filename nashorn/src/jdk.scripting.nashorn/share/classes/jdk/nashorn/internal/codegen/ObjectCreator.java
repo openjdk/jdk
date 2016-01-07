@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 
 import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
@@ -156,15 +157,15 @@ public abstract class ObjectCreator<T> implements CodeGenerator.SplitLiteralCrea
 
     MethodEmitter loadTuple(final MethodEmitter method, final MapTuple<T> tuple, final boolean pack) {
         loadValue(tuple.value, tuple.type);
-        if (pack && codegen.useDualFields() && tuple.isPrimitive()) {
-            method.pack();
-        } else {
+        if (!codegen.useDualFields() || !tuple.isPrimitive()) {
             method.convert(Type.OBJECT);
+        } else if (pack) {
+            method.pack();
         }
         return method;
     }
 
-    MethodEmitter loadTuple(final MethodEmitter method, final MapTuple<T> tuple) {
-        return loadTuple(method, tuple, true);
+    MethodEmitter loadIndex(final MethodEmitter method, final long index) {
+        return JSType.isRepresentableAsInt(index) ? method.load((int) index) : method.load((double) index);
     }
 }

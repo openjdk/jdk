@@ -3661,13 +3661,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     if (jvmciCompiler != NULL) {
       JVMCIRuntime::save_compiler(jvmciCompiler);
     }
-    JVMCIRuntime::maybe_print_flags(CHECK_JNI_ERR);
   }
 #endif // INCLUDE_JVMCI
 
   // initialize compiler(s)
 #if defined(COMPILER1) || defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
-  CompileBroker::compilation_init();
+  CompileBroker::compilation_init(CHECK_JNI_ERR);
 #endif
 
   // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.

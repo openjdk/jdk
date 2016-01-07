@@ -66,7 +66,9 @@ public class SystemTrayIconHelper {
                 for (int x = (int) (screenSize.getWidth()-width); x > 0; x--) {
                     for (int y = (int) (screenSize.getHeight()-height); y > (screenSize.getHeight()-50); y--) {
                         if (imagesEquals(((BufferedImage)icon.getImage()).getSubimage(0, 0, width, height), screen.getSubimage(x, y, width, height))) {
-                            return new Point(x+5, y+5);
+                            Point point = new Point(x + 5, y + 5);
+                            System.out.println("Icon location " + point);
+                            return point;
                         }
                     }
                 }
@@ -91,6 +93,7 @@ public class SystemTrayIconHelper {
                 point2d = (Point2D)m_getLocation.invoke(peer, new Object[]{model});
                 Point po = new Point((int)(point2d.getX()), (int)(point2d.getY()));
                 po.translate(10, -5);
+                System.out.println("Icon location " + po);
                 return po;
             }catch(Exception e) {
                 e.printStackTrace();
@@ -101,12 +104,15 @@ public class SystemTrayIconHelper {
                 // sun.awt.X11.XTrayIconPeer
                 Field f_peer = getField(java.awt.TrayIcon.class, "peer");
 
+                SystemTrayIconHelper.openTrayIfNeeded(robot);
+
                 Object peer = f_peer.get(icon);
                 Method m_getLOS = peer.getClass().getDeclaredMethod(
                         "getLocationOnScreen", new Class[]{});
                 m_getLOS.setAccessible(true);
                 Point point = (Point)m_getLOS.invoke(peer, new Object[]{});
                 point.translate(5, 5);
+                System.out.println("Icon location " + point);
                 return point;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -168,5 +174,39 @@ public class SystemTrayIconHelper {
             return true;
         }
         return false;
+    }
+
+    public static boolean openTrayIfNeeded(Robot robot) {
+        String sysv = System.getProperty("os.version");
+        System.out.println("System version is " + sysv);
+        //Additional step to raise the system try in Gnome 3 in OEL 7
+        if(isOel7()) {
+            System.out.println("OEL 7 detected");
+            GraphicsConfiguration gc = GraphicsEnvironment.
+                    getLocalGraphicsEnvironment().getDefaultScreenDevice().
+                    getDefaultConfiguration();
+            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+            if(insets.bottom > 0) {
+                Dimension screenSize = Toolkit.getDefaultToolkit()
+                        .getScreenSize();
+                robot.mouseMove(screenSize.width - insets.bottom / 2,
+                        screenSize.height - insets.bottom / 2);
+                robot.delay(50);
+                robot.mousePress(InputEvent.BUTTON1_MASK);
+                robot.delay(50);
+                robot.mouseRelease(InputEvent.BUTTON1_MASK);
+                robot.waitForIdle();
+                robot.delay(1000);
+                System.out.println("Tray is opened");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isOel7() {
+        return System.getProperty("os.name").toLowerCase()
+                .contains("linux") && System.getProperty("os.version")
+                .toLowerCase().contains("el7");
     }
 }

@@ -62,7 +62,7 @@ public class TestJpsSanity {
         OutputAnalyzer output = JpsHelper.jps(invalidHostName);
         Asserts.assertNotEquals(output.getExitValue(), 0, "Exit code shouldn't be 0");
         Asserts.assertFalse(output.getStderr().isEmpty(), "Error output should not be empty");
-        output.shouldContain("Unknown host: " + invalidHostName);
+        output.shouldMatch(".*(RMI Registry not available at|Unknown host\\:) " + invalidHostName + ".*");
     }
 
 }

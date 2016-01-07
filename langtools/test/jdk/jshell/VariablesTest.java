@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8144903
  * @summary Tests for EvaluationState.variables
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng VariablesTest
@@ -181,6 +182,16 @@ public class VariablesTest extends KullaTesting {
                 variable("Object", "$1"),
                 variable("String", "$2"),
                 variable("String", "$3"));
+        assertActiveKeys();
+    }
+
+    public void variablesTemporaryArrayOfCapturedType() {
+        assertEval("class Test<T> { T[][] get() { return null; } }", added(VALID));
+        assertEval("Test<? extends String> test() { return new Test<>(); }", added(VALID));
+        assertEval("test().get()", added(VALID));
+        assertVariables(variable("String[][]", "$1"));
+        assertEval("\"\".getClass().getEnumConstants()", added(VALID));
+        assertVariables(variable("String[][]", "$1"), variable("String[]", "$2"));
         assertActiveKeys();
     }
 

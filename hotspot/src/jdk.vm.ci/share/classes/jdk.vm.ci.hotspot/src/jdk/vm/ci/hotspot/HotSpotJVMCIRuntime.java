@@ -49,6 +49,7 @@ import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.service.Services;
+import sun.misc.VM;
 
 //JaCoCo Exclude
 
@@ -81,6 +82,22 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
     public static HotSpotJVMCIRuntime runtime() {
         JVMCI.initialize();
         return DelayedInit.instance;
+    }
+
+    /**
+     * Gets a boolean value based on a system property {@linkplain VM#getSavedProperty(String)
+     * saved} at system initialization time. The property name is prefixed with "{@code jvmci.}".
+     *
+     * @param name the name of the system property to derive a boolean value from using
+     *            {@link Boolean#parseBoolean(String)}
+     * @param def the value to return if there is no system property corresponding to {@code name}
+     */
+    public static boolean getBooleanProperty(String name, boolean def) {
+        String value = VM.getSavedProperty("jvmci." + name);
+        if (value == null) {
+            return def;
+        }
+        return Boolean.parseBoolean(value);
     }
 
     public static HotSpotJVMCIBackendFactory findFactory(String architecture) {

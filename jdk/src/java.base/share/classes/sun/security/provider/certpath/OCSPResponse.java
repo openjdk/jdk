@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.action.GetIntegerAction;
 import sun.security.x509.*;
 import sun.security.util.*;

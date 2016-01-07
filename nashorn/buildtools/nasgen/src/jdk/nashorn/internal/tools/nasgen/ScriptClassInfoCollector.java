@@ -270,6 +270,7 @@ public class ScriptClassInfoCollector extends ClassVisitor {
                             } else {
                                 memInfo.setName(name == null ? methodName : name);
                             }
+
                             memInfo.setAttributes(attributes == null ? MemberInfo.DEFAULT_ATTRIBUTES : attributes);
 
                             memInfo.setArity((arity == null)? MemberInfo.DEFAULT_ARITY : arity);

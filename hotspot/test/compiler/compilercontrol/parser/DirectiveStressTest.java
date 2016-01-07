@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 public class DirectiveStressTest {
     private static final int AMOUNT = Integer.getInteger(
             "compiler.compilercontrol.parser.DirectiveStressTest.amount",
-            Short.MAX_VALUE * 2 + 2);
+            999);
     private static final List<MethodDescriptor> DESCRIPTORS
             = new PoolHelper().getAllMethods().stream()
                     .map(pair -> AbstractTestBase.getValidMethodDescriptor(

@@ -102,6 +102,7 @@ class MallocTracker;
 
 class os: AllStatic {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
   friend class MallocTracker;
  public:
   enum { page_sizes_max = 9 }; // Size of _page_sizes array (8 plus a sentinel)

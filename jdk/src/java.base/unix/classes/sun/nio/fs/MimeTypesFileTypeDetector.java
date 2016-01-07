@@ -52,7 +52,7 @@ class MimeTypesFileTypeDetector extends AbstractFileTypeDetector {
     private Map<String,String> mimeTypeMap;
 
     // set to true when file loaded
-    private volatile boolean loaded = false;
+    private volatile boolean loaded;
 
     public MimeTypesFileTypeDetector(Path filePath) {
         mimeTypesFile = filePath;

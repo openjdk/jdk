@@ -46,7 +46,7 @@ public final class BaseLocale {
     private final String region;
     private final String variant;
 
-    private volatile int hash = 0;
+    private volatile int hash;
 
     // This method must be called only when creating the Locale.* constants.
     private BaseLocale(String language, String region) {
@@ -147,7 +147,9 @@ public final class BaseLocale {
             h = 31 * h + script.hashCode();
             h = 31 * h + region.hashCode();
             h = 31 * h + variant.hashCode();
-            hash = h;
+            if (h != 0) {
+                hash = h;
+            }
         }
         return h;
     }

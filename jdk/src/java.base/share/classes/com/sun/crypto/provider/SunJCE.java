@@ -93,7 +93,7 @@ public final class SunJCE extends Provider {
 
     // Instance of this provider, so we don't have to call the provider list
     // to find ourselves or run the risk of not being in the list.
-    private static volatile SunJCE instance = null;
+    private static volatile SunJCE instance;
 
     // lazy initialize SecureRandom to avoid potential recursion if Sun
     // provider has not been installed yet

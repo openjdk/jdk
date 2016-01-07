@@ -979,18 +979,22 @@ void nmethod::print_nmethod(bool printmethod) {
       oop_maps()->print();
     }
   }
-  if (PrintDebugInfo || CompilerOracle::has_option_string(_method, "PrintDebugInfo")) {
+  if (printmethod || PrintDebugInfo || CompilerOracle::has_option_string(_method, "PrintDebugInfo")) {
     print_scopes();
   }
-  if (PrintRelocations || CompilerOracle::has_option_string(_method, "PrintRelocations")) {
+  if (printmethod || PrintRelocations || CompilerOracle::has_option_string(_method, "PrintRelocations")) {
     print_relocations();
   }
-  if (PrintDependencies || CompilerOracle::has_option_string(_method, "PrintDependencies")) {
+  if (printmethod || PrintDependencies || CompilerOracle::has_option_string(_method, "PrintDependencies")) {
     print_dependencies();
   }
-  if (PrintExceptionHandlers) {
+  if (printmethod || PrintExceptionHandlers) {
     print_handler_table();
     print_nul_chk_table();
+  }
+  if (printmethod) {
+    print_recorded_oops();
+    print_recorded_metadata();
   }
   if (xtty != NULL) {
     xtty->tail("print_nmethod");
@@ -1345,6 +1349,9 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
 
   _state = unloaded;
 
+  // Log the unloading.
+  log_state_change();
+
 #if INCLUDE_JVMCI
   // The method can only be unloaded after the pointer to the installed code
   // Java wrapper is no longer alive. Here we need to clear out this weak
@@ -1352,10 +1359,11 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   // after the method is unregistered since the original value may be still
   // tracked by the rset.
   maybe_invalidate_installed_code();
+  // Clear these out after the nmethod has been unregistered and any
+  // updates to the InstalledCode instance have been performed.
+  _jvmci_installed_code = NULL;
+  _speculation_log = NULL;
 #endif
-
-  // Log the unloading.
-  log_state_change();
 
   // The Method* is gone at this point
   assert(_method == NULL, "Tautology");
@@ -1467,6 +1475,9 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     // Log the transition once
     log_state_change();
 
+    // Invalidate while holding the patching lock
+    JVMCI_ONLY(maybe_invalidate_installed_code());
+
     // Remove nmethod from method.
     // We need to check if both the _code and _from_compiled_code_entry_point
     // refer to this nmethod because there is a race in setting these two fields
@@ -1493,6 +1504,10 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       if (nmethod_needs_unregister) {
         Universe::heap()->unregister_nmethod(this);
+#ifdef JVMCI
+        _jvmci_installed_code = NULL;
+        _speculation_log = NULL;
+#endif
       }
       flush_dependencies(NULL);
     }
@@ -1515,8 +1530,6 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   } else {
     assert(state == not_entrant, "other cases may need to be handled differently");
   }
-
-  JVMCI_ONLY(maybe_invalidate_installed_code());
 
   if (TraceCreateZombies) {
     ResourceMark m;
@@ -2320,11 +2333,22 @@ bool nmethod::detect_scavenge_root_oops() {
 void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) {
 #ifndef SHARK
   if (method() != NULL && !method()->is_native()) {
-    SimpleScopeDesc ssd(this, fr.pc());
+    address pc = fr.pc();
+    SimpleScopeDesc ssd(this, pc);
     Bytecode_invoke call(ssd.method(), ssd.bci());
     bool has_receiver = call.has_receiver();
     bool has_appendix = call.has_appendix();
     Symbol* signature = call.signature();
+
+    // The method attached by JIT-compilers should be used, if present.
+    // Bytecode can be inaccurate in such case.
+    Method* callee = attached_method_before_pc(pc);
+    if (callee != NULL) {
+      has_receiver = !(callee->access_flags().is_static());
+      has_appendix = false;
+      signature = callee->signature();
+    }
+
     fr.oops_compiled_arguments_do(signature, has_receiver, has_appendix, reg_map, f);
   }
 #endif // !SHARK
@@ -3014,6 +3038,34 @@ void nmethod::print_pcs() {
   }
 }
 
+void nmethod::print_recorded_oops() {
+  tty->print_cr("Recorded oops:");
+  for (int i = 0; i < oops_count(); i++) {
+    oop o = oop_at(i);
+    tty->print("#%3d: " INTPTR_FORMAT " ", i, p2i(o));
+    if (o == (oop)Universe::non_oop_word()) {
+      tty->print("non-oop word");
+    } else {
+      o->print_value();
+    }
+    tty->cr();
+  }
+}
+
+void nmethod::print_recorded_metadata() {
+  tty->print_cr("Recorded metadata:");
+  for (int i = 0; i < metadata_count(); i++) {
+    Metadata* m = metadata_at(i);
+    tty->print("#%3d: " INTPTR_FORMAT " ", i, p2i(m));
+    if (m == (Metadata*)Universe::non_oop_word()) {
+      tty->print("non-metadata word");
+    } else {
+      m->print_value_on_maybe_null(tty);
+    }
+    tty->cr();
+  }
+}
+
 #endif // PRODUCT
 
 const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
@@ -3065,9 +3117,39 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
           }
           return st.as_string();
         }
-        case relocInfo::virtual_call_type:     return "virtual_call";
-        case relocInfo::opt_virtual_call_type: return "optimized virtual_call";
-        case relocInfo::static_call_type:      return "static_call";
+        case relocInfo::virtual_call_type: {
+          stringStream st;
+          st.print_raw("virtual_call");
+          virtual_call_Relocation* r = iter.virtual_call_reloc();
+          Method* m = r->method_value();
+          if (m != NULL) {
+            assert(m->is_method(), "");
+            m->print_short_name(&st);
+          }
+          return st.as_string();
+        }
+        case relocInfo::opt_virtual_call_type: {
+          stringStream st;
+          st.print_raw("optimized virtual_call");
+          opt_virtual_call_Relocation* r = iter.opt_virtual_call_reloc();
+          Method* m = r->method_value();
+          if (m != NULL) {
+            assert(m->is_method(), "");
+            m->print_short_name(&st);
+          }
+          return st.as_string();
+        }
+        case relocInfo::static_call_type: {
+          stringStream st;
+          st.print_raw("static_call");
+          static_call_Relocation* r = iter.static_call_reloc();
+          Method* m = r->method_value();
+          if (m != NULL) {
+            assert(m->is_method(), "");
+            m->print_short_name(&st);
+          }
+          return st.as_string();
+        }
         case relocInfo::static_stub_type:      return "static_stub";
         case relocInfo::external_word_type:    return "external_word";
         case relocInfo::internal_word_type:    return "internal_word";
@@ -3361,26 +3443,80 @@ void nmethod::print_statistics() {
 
 #if INCLUDE_JVMCI
 void nmethod::clear_jvmci_installed_code() {
-  // This must be done carefully to maintain nmethod remembered sets properly
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  bs->write_ref_nmethod_pre(&_jvmci_installed_code, this);
-  _jvmci_installed_code = NULL;
-  bs->write_ref_nmethod_post(&_jvmci_installed_code, this);
+  // write_ref_method_pre/post can only be safely called at a
+  // safepoint or while holding the CodeCache_lock
+  assert(CodeCache_lock->is_locked() ||
+         SafepointSynchronize::is_at_safepoint(), "should be performed under a lock for consistency");
+  if (_jvmci_installed_code != NULL) {
+    // This must be done carefully to maintain nmethod remembered sets properly
+    BarrierSet* bs = Universe::heap()->barrier_set();
+    bs->write_ref_nmethod_pre(&_jvmci_installed_code, this);
+    _jvmci_installed_code = NULL;
+    bs->write_ref_nmethod_post(&_jvmci_installed_code, this);
+  }
 }
 
 void nmethod::maybe_invalidate_installed_code() {
-  if (_jvmci_installed_code != NULL) {
-     if (!is_alive()) {
-       // Break the link between nmethod and InstalledCode such that the nmethod
-       // can subsequently be flushed safely.  The link must be maintained while
-       // the method could have live activations since invalidateInstalledCode
-       // might want to invalidate all existing activations.
-       InstalledCode::set_address(_jvmci_installed_code, 0);
-       InstalledCode::set_entryPoint(_jvmci_installed_code, 0);
-       clear_jvmci_installed_code();
-     } else if (is_not_entrant()) {
-       InstalledCode::set_entryPoint(_jvmci_installed_code, 0);
-     }
+  assert(Patching_lock->is_locked() ||
+         SafepointSynchronize::is_at_safepoint(), "should be performed under a lock for consistency");
+  oop installed_code = jvmci_installed_code();
+  if (installed_code != NULL) {
+    nmethod* nm = (nmethod*)InstalledCode::address(installed_code);
+    if (nm == NULL || nm != this) {
+      // The link has been broken or the InstalledCode instance is
+      // associated with another nmethod so do nothing.
+      return;
+    }
+    if (!is_alive()) {
+      // Break the link between nmethod and InstalledCode such that the nmethod
+      // can subsequently be flushed safely.  The link must be maintained while
+      // the method could have live activations since invalidateInstalledCode
+      // might want to invalidate all existing activations.
+      InstalledCode::set_address(installed_code, 0);
+      InstalledCode::set_entryPoint(installed_code, 0);
+    } else if (is_not_entrant()) {
+      // Remove the entry point so any invocation will fail but keep
+      // the address link around that so that existing activations can
+      // be invalidated.
+      InstalledCode::set_entryPoint(installed_code, 0);
+    }
+  }
+}
+
+void nmethod::invalidate_installed_code(Handle installedCode, TRAPS) {
+  if (installedCode() == NULL) {
+    THROW(vmSymbols::java_lang_NullPointerException());
+  }
+  jlong nativeMethod = InstalledCode::address(installedCode);
+  nmethod* nm = (nmethod*)nativeMethod;
+  if (nm == NULL) {
+    // Nothing to do
+    return;
+  }
+
+  nmethodLocker nml(nm);
+#ifdef ASSERT
+  {
+    MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+    // This relationship can only be checked safely under a lock
+    assert(nm == NULL || !nm->is_alive() || nm->jvmci_installed_code() == installedCode(), "sanity check");
+  }
+#endif
+
+  if (nm->is_alive()) {
+    // The nmethod state machinery maintains the link between the
+    // HotSpotInstalledCode and nmethod* so as long as the nmethod appears to be
+    // alive assume there is work to do and deoptimize the nmethod.
+    nm->mark_for_deoptimization();
+    VM_Deoptimize op;
+    VMThread::execute(&op);
+  }
+
+  MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+  // Check that it's still associated with the same nmethod and break
+  // the link if it is.
+  if (InstalledCode::address(installedCode) == nativeMethod) {
+    InstalledCode::set_address(installedCode, 0);
   }
 }
 
@@ -3405,3 +3541,27 @@ char* nmethod::jvmci_installed_code_name(char* buf, size_t buflen) {
   return buf;
 }
 #endif
+
+Method* nmethod::attached_method(address call_instr) {
+  assert(code_contains(call_instr), "not part of the nmethod");
+  RelocIterator iter(this, call_instr, call_instr + 1);
+  while (iter.next()) {
+    if (iter.addr() == call_instr) {
+      switch(iter.type()) {
+        case relocInfo::static_call_type:      return iter.static_call_reloc()->method_value();
+        case relocInfo::opt_virtual_call_type: return iter.opt_virtual_call_reloc()->method_value();
+        case relocInfo::virtual_call_type:     return iter.virtual_call_reloc()->method_value();
+      }
+    }
+  }
+  return NULL; // not found
+}
+
+Method* nmethod::attached_method_before_pc(address pc) {
+  if (NativeCall::is_call_before(pc)) {
+    NativeCall* ncall = nativeCall_before(pc);
+    return attached_method(ncall->instruction_address());
+  }
+  return NULL; // not a call
+}
+

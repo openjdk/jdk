@@ -25,7 +25,7 @@
 
 package java.lang;
 
-import sun.misc.FloatingDecimal;
+import jdk.internal.math.FloatingDecimal;
 import java.util.Arrays;
 import java.util.Spliterator;
 import java.util.stream.IntStream;

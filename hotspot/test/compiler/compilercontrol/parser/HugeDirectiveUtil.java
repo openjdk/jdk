@@ -117,6 +117,7 @@ public final class HugeDirectiveUtil {
         try {
             output = ProcessTools.executeTestJvm(
                     "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:CompilerDirectivesLimit=1000",
                     "-XX:CompilerDirectivesFile=" + fileName,
                     "-version");
         } catch (Throwable thr) {

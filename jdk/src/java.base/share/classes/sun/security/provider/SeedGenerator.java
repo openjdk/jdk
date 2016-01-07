@@ -75,7 +75,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
-import sun.misc.ManagedLocalsThread;
 import sun.security.util.Debug;
 
 abstract class SeedGenerator {
@@ -305,9 +304,11 @@ abstract class SeedGenerator {
                             }
                             finalsg[0] = new ThreadGroup
                                 (group, "SeedGenerator ThreadGroup");
-                            Thread newT = new ManagedLocalsThread(finalsg[0],
+                            Thread newT = new Thread(finalsg[0],
                                 ThreadedSeedGenerator.this,
-                                "SeedGenerator Thread");
+                                "SeedGenerator Thread",
+                                0,
+                                false);
                             newT.setPriority(Thread.MIN_PRIORITY);
                             newT.setDaemon(true);
                             return newT;
@@ -342,8 +343,8 @@ abstract class SeedGenerator {
                         // Start some noisy threads
                         try {
                             BogusThread bt = new BogusThread();
-                            Thread t = new ManagedLocalsThread
-                                (seedGroup, bt, "SeedGenerator Thread");
+                            Thread t = new Thread
+                                (seedGroup, bt, "SeedGenerator Thread", 0, false);
                             t.start();
                         } catch (Exception e) {
                             throw new InternalError("internal error: " +

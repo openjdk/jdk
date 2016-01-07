@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -950,7 +950,7 @@ public final class Pattern
      * Boolean indicating this Pattern is compiled; this is necessary in order
      * to lazily compile deserialized Patterns.
      */
-    private transient volatile boolean compiled = false;
+    private transient volatile boolean compiled;
 
     /**
      * The normalized pattern string.
@@ -1332,7 +1332,6 @@ public final class Pattern
         localCount = 0;
 
         // if length > 0, the Pattern is lazily compiled
-        compiled = false;
         if (pattern.length() == 0) {
             root = new Start(lastAccept);
             matchRoot = lastAccept;
@@ -1377,7 +1376,6 @@ public final class Pattern
      * equivalences of the characters.
      */
     private void normalize() {
-        boolean inCharClass = false;
         int lastCodePoint = -1;
 
         // Convert pattern into normalized form
@@ -1551,7 +1549,6 @@ public final class Pattern
         // offset maintains the index in code units.
 loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             len = countChars(input, offset, 1);
-            boolean skip = false;
             for(int y=x-1; y>=0; y--) {
                 if (combClass[y] == combClass[x]) {
                     continue loop;
@@ -1566,8 +1563,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 temp[index++] = prefix + sre;
         }
         String[] result = new String[index];
-        for (int x=0; x<index; x++)
-            result[x] = temp[x];
+        System.arraycopy(temp, 0, result, 0, index);
         return result;
     }
 
@@ -1742,9 +1738,11 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
     }
 
     Map<String, Integer> namedGroups() {
-        if (namedGroups == null)
-            namedGroups = new HashMap<>(2);
-        return namedGroups;
+        Map<String, Integer> groups = namedGroups;
+        if (groups == null) {
+            namedGroups = groups = new HashMap<>(2);
+        }
+        return groups;
     }
 
     /**
@@ -5814,7 +5812,7 @@ NEXT:       while (i <= last) {
      */
     public Stream<String> splitAsStream(final CharSequence input) {
         class MatcherIterator implements Iterator<String> {
-            private final Matcher matcher;
+            private Matcher matcher;
             // The start position of the next sub-sequence of input
             // when current == input.length there are no more elements
             private int current;
@@ -5822,14 +5820,6 @@ NEXT:       while (i <= last) {
             private String nextElement;
             // > 0 if there are N next empty elements
             private int emptyElementCount;
-
-            MatcherIterator() {
-                this.matcher = matcher(input);
-                // If the input is an empty string then the result can only be a
-                // stream of the input.  Induce that by setting the empty
-                // element count to 1
-                this.emptyElementCount = input.length() == 0 ? 1 : 0;
-            }
 
             public String next() {
                 if (!hasNext())
@@ -5846,6 +5836,13 @@ NEXT:       while (i <= last) {
             }
 
             public boolean hasNext() {
+                if (matcher == null) {
+                    matcher = matcher(input);
+                    // If the input is an empty string then the result can only be a
+                    // stream of the input.  Induce that by setting the empty
+                    // element count to 1
+                    emptyElementCount = input.length() == 0 ? 1 : 0;
+                }
                 if (nextElement != null || emptyElementCount > 0)
                     return true;
 

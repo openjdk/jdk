@@ -89,7 +89,7 @@ private:
  * This class handles the conversion from a InstalledCode to a CodeBlob or an nmethod.
  */
 class CodeInstaller : public StackObj {
-  friend class VMStructs;
+  friend class JVMCIVMStructs;
 private:
   enum MarkId {
     VERIFIED_ENTRY             = 1,

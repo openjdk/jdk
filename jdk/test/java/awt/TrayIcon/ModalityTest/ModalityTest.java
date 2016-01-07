@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.awt.image.BufferedImage;
  */
 public class ModalityTest {
 
+    private static boolean isOEL7;
     TrayIcon icon;
     ExtendedRobot robot;
     Dialog d;
@@ -80,7 +81,7 @@ public class ModalityTest {
                         "\"Always show all icons and notifications on the taskbar\" true " +
                         "to avoid this problem. Or change behavior only for Java SE tray " +
                         "icon and rerun test.");
-
+            isOEL7 = SystemTrayIconHelper.isOel7();
             new ModalityTest().doTest();
         }
     }
@@ -225,6 +226,12 @@ public class ModalityTest {
         Point iconPosition = SystemTrayIconHelper.getTrayIconLocation(icon);
         if (iconPosition == null)
             throw new RuntimeException("Unable to find the icon location!");
+        if (isOEL7) {
+            // close tray
+            robot.mouseMove(100,100);
+            robot.click(InputEvent.BUTTON1_MASK);
+            robot.waitForIdle(2000);
+        }
 
         if (! d.isVisible())
             throw new RuntimeException("FAIL: The modal dialog is not yet visible");
@@ -232,27 +239,35 @@ public class ModalityTest {
         robot.mouseMove(iconPosition.x, iconPosition.y);
         robot.waitForIdle(2000);
 
-        SystemTrayIconHelper.doubleClick(robot);
+        if(!isOEL7) {
+            SystemTrayIconHelper.doubleClick(robot);
 
-        if (! actionPerformed) {
-            synchronized (actionLock) {
-                try {
-                    actionLock.wait(3000);
-                } catch (Exception e) {
+            if (!actionPerformed) {
+                synchronized (actionLock) {
+                    try {
+                        actionLock.wait(3000);
+                    } catch (Exception e) {
+                    }
                 }
             }
+            if (!actionPerformed)
+                throw new RuntimeException("FAIL: ActionEvent not triggered when TrayIcon is double clicked");
         }
-        if (! actionPerformed)
-            throw new RuntimeException("FAIL: ActionEvent not triggered when TrayIcon is double clicked");
 
         for (int i = 0; i < buttonTypes.length; i++) {
             mousePressed = false;
-            robot.mousePress(buttonTypes[i]);
+            if(isOEL7) {
+                SystemTrayIconHelper.openTrayIfNeeded(robot);
+                robot.mouseMove(iconPosition.x, iconPosition.y);
+                robot.click(buttonTypes[i]);
+            } else {
+                robot.mousePress(buttonTypes[i]);
+            }
 
             if (! mousePressed) {
                 synchronized (pressLock) {
                     try {
-                        pressLock.wait(3000);
+                        pressLock.wait(6000);
                     } catch (Exception e) {
                     }
                 }
@@ -264,12 +279,18 @@ public class ModalityTest {
 
             mouseReleased = false;
             mouseClicked = false;
-            robot.mouseRelease(buttonTypes[i]);
+            if(isOEL7) {
+                SystemTrayIconHelper.openTrayIfNeeded(robot);
+                robot.mouseMove(iconPosition.x, iconPosition.y);
+                robot.click(buttonTypes[i]);
+            } else {
+                robot.mouseRelease(buttonTypes[i]);
+            }
 
             if (! mouseReleased) {
                 synchronized (releaseLock) {
                     try {
-                        releaseLock.wait(3000);
+                        releaseLock.wait(6000);
                     } catch (Exception e) {
                     }
                 }
@@ -281,7 +302,7 @@ public class ModalityTest {
             if (! mouseClicked) {
                 synchronized (clickLock) {
                     try {
-                        clickLock.wait(3000);
+                        clickLock.wait(6000);
                     } catch (Exception e) {
                     }
                 }
@@ -290,13 +311,14 @@ public class ModalityTest {
                 throw new RuntimeException("FAIL: mouseClicked not triggered when " +
                         buttonNames[i] + " pressed & released");
         }
+        if (!isOEL7) {
+            mouseMoved = false;
+            robot.mouseMove(iconPosition.x, iconPosition.y);
+            robot.glide(iconPosition.x + 100, iconPosition.y);
 
-        mouseMoved = false;
-        robot.mouseMove(iconPosition.x, iconPosition.y);
-        robot.glide(iconPosition.x + 100, iconPosition.y);
-
-        if (! mouseMoved)
-            if (! SystemTrayIconHelper.skip(0) )
-                throw new RuntimeException("FAIL: mouseMoved not triggered even when mouse moved over the icon");
+            if (!mouseMoved)
+                if (!SystemTrayIconHelper.skip(0))
+                    throw new RuntimeException("FAIL: mouseMoved not triggered even when mouse moved over the icon");
+        }
     }
 }
