@@ -939,6 +939,7 @@ class Method : public Metadata {
   void print_on(outputStream* st) const;
 #endif
   void print_value_on(outputStream* st) const;
+  void print_linkage_flags(outputStream* st) PRODUCT_RETURN;
 
   const char* internal_name() const { return "{method}"; }
 

@@ -295,9 +295,5 @@ class LinkResolver: AllStatic {
   static void resolve_invoke(CallInfo& result, Handle recv,
                              const constantPoolHandle& pool, int index,
                              Bytecodes::Code byte, TRAPS);
- private:
-  static void trace_method_resolution(const char* prefix, KlassHandle klass,
-                                      KlassHandle resolved_klass,
-                                      const methodHandle& method) PRODUCT_RETURN;
 };
 #endif // SHARE_VM_INTERPRETER_LINKRESOLVER_HPP

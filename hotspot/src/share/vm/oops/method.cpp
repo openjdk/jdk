@@ -2207,6 +2207,15 @@ void Method::print_on(outputStream* st) const {
   }
 }
 
+void Method::print_linkage_flags(outputStream* st) {
+  access_flags().print_on(st);
+  if (is_default_method()) {
+    st->print("default ");
+  }
+  if (is_overpass()) {
+    st->print("overpass ");
+  }
+}
 #endif //PRODUCT
 
 void Method::print_value_on(outputStream* st) const {
