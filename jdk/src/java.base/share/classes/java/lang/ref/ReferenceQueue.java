@@ -26,6 +26,7 @@
 package java.lang.ref;
 
 import java.util.function.Consumer;
+import jdk.internal.misc.VM;
 
 /**
  * Reference queues, to which registered reference objects are appended by the
@@ -73,7 +74,7 @@ public class ReferenceQueue<T> {
             // Volatiles ensure ordering.
             r.queue = ENQUEUED;
             if (r instanceof FinalReference) {
-                sun.misc.VM.addFinalRefCount(1);
+                VM.addFinalRefCount(1);
             }
             lock.notifyAll();
             return true;
@@ -93,7 +94,7 @@ public class ReferenceQueue<T> {
             r.next = r;
             queueLength--;
             if (r instanceof FinalReference) {
-                sun.misc.VM.addFinalRefCount(-1);
+                VM.addFinalRefCount(-1);
             }
             return r;
         }
