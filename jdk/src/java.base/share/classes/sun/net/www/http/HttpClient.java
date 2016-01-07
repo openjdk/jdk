@@ -98,7 +98,7 @@ public class HttpClient extends NetworkClient {
     // from previous releases.
     private static boolean retryPostProp = true;
 
-    volatile boolean keepingAlive = false;     /* this is a keep-alive connection */
+    volatile boolean keepingAlive;    /* this is a keep-alive connection */
     int keepAliveConnections = -1;    /* number of keep-alives left */
 
     /**Idle timeout value, in milliseconds. Zero means infinity,

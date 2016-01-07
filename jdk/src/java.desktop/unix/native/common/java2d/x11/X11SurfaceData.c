@@ -438,6 +438,15 @@ jboolean XShared_initSurface(JNIEnv *env, X11SDOps *xsdo, jint depth, jint width
         xsdo->drawable = drawable;
         xsdo->isPixmap = JNI_FALSE;
     } else {
+        /*
+         * width , height must be nonzero otherwise XCreatePixmap
+         * generates BadValue in error_handler
+         */
+        if (width <= 0 || height <= 0) {
+            JNU_ThrowOutOfMemoryError(env,
+                                  "Can't create offscreen surface");
+            return JNI_FALSE;
+        }
         xsdo->isPixmap = JNI_TRUE;
         /* REMIND: workaround for bug 4420220 on pgx32 boards:
            don't use DGA with pixmaps unless USE_DGA_PIXMAPS is set.

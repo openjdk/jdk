@@ -43,6 +43,7 @@ class LogDiagnosticCommand : public DCmdWithParser {
   DCmdArgument<char *> _decorators;
   DCmdArgument<bool> _disable;
   DCmdArgument<bool> _list;
+  DCmdArgument<bool> _rotate;
 
  public:
   LogDiagnosticCommand(outputStream* output, bool heap_allocated);
@@ -55,7 +56,7 @@ class LogDiagnosticCommand : public DCmdWithParser {
   }
 
   static const char* description() {
-    return "Lists, enables, disables or changes a log output configuration.";
+    return "Lists current log configuration, enables/disables/configures a log output, or rotates all logs.";
   }
 
   // Used by SecurityManager. This DCMD requires ManagementPermission = control.

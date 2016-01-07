@@ -41,7 +41,7 @@ public:
       _file_name = file_name;
     }
 
-    bool check(ClassFileStream* stream, const int classpath_index) {
+    bool check(const ClassFileStream* stream, const int classpath_index) {
       return true;
     }
 
@@ -50,7 +50,8 @@ public:
     }
 
     instanceKlassHandle record_result(const int classpath_index,
-                                      ClassPathEntry* e, instanceKlassHandle result, TRAPS) {
+                                      const ClassPathEntry* e,
+                                      instanceKlassHandle result, TRAPS) {
       if (ClassLoader::add_package(_file_name, classpath_index, THREAD)) {
         if (DumpSharedSpaces) {
           result->set_shared_classpath_index(classpath_index);

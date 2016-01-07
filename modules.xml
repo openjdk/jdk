@@ -223,6 +223,10 @@
       <to>jdk.dev</to>
     </export>
     <export>
+      <name>jdk.internal.math</name>
+      <to>java.desktop</to>
+    </export>
+    <export>
       <name>jdk.internal.misc</name>
       <to>java.corba</to>
       <to>java.desktop</to>
@@ -295,6 +299,7 @@
       <to>jdk.security.jgss</to>
       <to>jdk.snmp</to>
       <to>jdk.vm.ci</to>
+      <to>jdk.zipfs</to>
       <to>java.instrument</to>
     </export>
     <export>

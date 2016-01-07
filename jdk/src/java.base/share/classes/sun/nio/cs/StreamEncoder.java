@@ -38,10 +38,10 @@ public class StreamEncoder extends Writer
 
     private static final int DEFAULT_BYTE_BUFFER_SIZE = 8192;
 
-    private volatile boolean isOpen = true;
+    private volatile boolean closed;
 
     private void ensureOpen() throws IOException {
-        if (!isOpen)
+        if (closed)
             throw new IOException("Stream closed");
     }
 
@@ -156,15 +156,15 @@ public class StreamEncoder extends Writer
 
     public void close() throws IOException {
         synchronized (lock) {
-            if (!isOpen)
+            if (closed)
                 return;
             implClose();
-            isOpen = false;
+            closed = true;
         }
     }
 
     private boolean isOpen() {
-        return isOpen;
+        return !closed;
     }
 
 

@@ -30,7 +30,7 @@ import java.util.Arrays;
 import javax.crypto.SecretKey;
 import javax.security.auth.Destroyable;
 import javax.security.auth.DestroyFailedException;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.krb5.Asn1Exception;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.EncryptionKey;

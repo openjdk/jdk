@@ -27,9 +27,6 @@ package sun.misc;
 
 import static java.lang.Thread.State.*;
 import java.util.Properties;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 public class VM {
 
@@ -274,9 +271,6 @@ public class VM {
         // used by java.lang.Integer.IntegerCache
         props.remove("java.lang.Integer.IntegerCache.high");
 
-        // used by java.util.zip.ZipFile
-        props.remove("sun.zip.disableMemoryMapping");
-
         // used by sun.launcher.LauncherHelper
         props.remove("sun.java.launcher.diag");
     }
@@ -291,10 +285,10 @@ public class VM {
     }
 
     /* Current count of objects pending for finalization */
-    private static volatile int finalRefCount = 0;
+    private static volatile int finalRefCount;
 
     /* Peak count of objects pending for finalization */
-    private static volatile int peakFinalRefCount = 0;
+    private static volatile int peakFinalRefCount;
 
     /*
      * Gets the number of objects pending for finalization.

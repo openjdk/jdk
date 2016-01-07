@@ -30,6 +30,7 @@
  */
 
 import sun.security.jgss.GSSUtil;
+import sun.security.util.HexDumpEncoder;
 
 // The basic krb5 test skeleton you can copy from
 public class MSOID2 {
@@ -69,7 +70,7 @@ public class MSOID2 {
                     nt[pos] = (byte)newLen;
                 }
                 t = nt;
-                new sun.misc.HexDumpEncoder().encodeBuffer(t, System.out);
+                new HexDumpEncoder().encodeBuffer(t, System.out);
             }
             if (t != null || !s.x().isEstablished()) t = s.take(t);
             if (c.x().isEstablished() && s.x().isEstablished()) break;

@@ -2518,7 +2518,7 @@ public final class Class<T> implements java.io.Serializable,
 
     // Incremented by the VM on each call to JVM TI RedefineClasses()
     // that redefines this class or a superclass.
-    private transient volatile int classRedefinedCount = 0;
+    private transient volatile int classRedefinedCount;
 
     // Lazily create and cache ReflectionData
     private ReflectionData<T> reflectionData() {
@@ -3331,7 +3331,8 @@ public final class Class<T> implements java.io.Serializable,
      * uncloned, cached, and shared by all callers.
      */
     T[] getEnumConstantsShared() {
-        if (enumConstants == null) {
+        T[] constants = enumConstants;
+        if (constants == null) {
             if (!isEnum()) return null;
             try {
                 final Method values = getMethod("values");
@@ -3344,16 +3345,16 @@ public final class Class<T> implements java.io.Serializable,
                         });
                 @SuppressWarnings("unchecked")
                 T[] temporaryConstants = (T[])values.invoke(null);
-                enumConstants = temporaryConstants;
+                enumConstants = constants = temporaryConstants;
             }
             // These can happen when users concoct enum-like classes
             // that don't comply with the enum spec.
             catch (InvocationTargetException | NoSuchMethodException |
                    IllegalAccessException ex) { return null; }
         }
-        return enumConstants;
+        return constants;
     }
-    private transient volatile T[] enumConstants = null;
+    private transient volatile T[] enumConstants;
 
     /**
      * Returns a map from simple name to enum constant.  This package-private
@@ -3363,19 +3364,21 @@ public final class Class<T> implements java.io.Serializable,
      * created lazily on first use.  Typically it won't ever get created.
      */
     Map<String, T> enumConstantDirectory() {
-        if (enumConstantDirectory == null) {
+        Map<String, T> directory = enumConstantDirectory;
+        if (directory == null) {
             T[] universe = getEnumConstantsShared();
             if (universe == null)
                 throw new IllegalArgumentException(
                     getName() + " is not an enum type");
-            Map<String, T> m = new HashMap<>(2 * universe.length);
-            for (T constant : universe)
-                m.put(((Enum<?>)constant).name(), constant);
-            enumConstantDirectory = m;
+            directory = new HashMap<>(2 * universe.length);
+            for (T constant : universe) {
+                directory.put(((Enum<?>)constant).name(), constant);
+            }
+            enumConstantDirectory = directory;
         }
-        return enumConstantDirectory;
+        return directory;
     }
-    private transient volatile Map<String, T> enumConstantDirectory = null;
+    private transient volatile Map<String, T> enumConstantDirectory;
 
     /**
      * Casts an object to the class or interface represented

@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package com.sun.tools.classfile;
 
 import java.io.IOException;

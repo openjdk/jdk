@@ -32,7 +32,7 @@
 import java.util.Arrays;
 import sun.security.util.DerOutputStream;
 import sun.security.x509.*;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 public class NullX500Name {
 

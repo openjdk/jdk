@@ -175,6 +175,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
     movptr(rsp, Address(rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
     // NULL last_sp until next java call
     movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+    NOT_LP64(empty_FPU_stack());
   }
 
   // Helpers for swap and dup
