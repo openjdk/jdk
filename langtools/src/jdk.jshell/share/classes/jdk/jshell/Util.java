@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -90,5 +90,15 @@ class Util {
 
     static <T> Stream<T> stream(Iterable<T> iterable) {
         return StreamSupport.stream(iterable.spliterator(), false);
+    }
+
+    static class Pair<T, U> {
+        final T first;
+        final U second;
+
+        Pair(T first, U second) {
+            this.first = first;
+            this.second = second;
+        }
     }
 }

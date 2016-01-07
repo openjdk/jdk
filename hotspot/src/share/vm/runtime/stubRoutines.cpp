@@ -127,6 +127,7 @@ address StubRoutines::_aescrypt_encryptBlock               = NULL;
 address StubRoutines::_aescrypt_decryptBlock               = NULL;
 address StubRoutines::_cipherBlockChaining_encryptAESCrypt = NULL;
 address StubRoutines::_cipherBlockChaining_decryptAESCrypt = NULL;
+address StubRoutines::_counterMode_AESCrypt                = NULL;
 address StubRoutines::_ghash_processBlocks                 = NULL;
 
 address StubRoutines::_sha1_implCompress     = NULL;
@@ -149,11 +150,13 @@ address StubRoutines::_mulAdd = NULL;
 address StubRoutines::_montgomeryMultiply = NULL;
 address StubRoutines::_montgomerySquare = NULL;
 
+address StubRoutines::_vectorizedMismatch = NULL;
+
 address StubRoutines::_dexp = NULL;
 address StubRoutines::_dlog = NULL;
+address StubRoutines::_dpow = NULL;
 
 double (* StubRoutines::_intrinsic_log10 )(double) = NULL;
-double (* StubRoutines::_intrinsic_pow   )(double, double) = NULL;
 double (* StubRoutines::_intrinsic_sin   )(double) = NULL;
 double (* StubRoutines::_intrinsic_cos   )(double) = NULL;
 double (* StubRoutines::_intrinsic_tan   )(double) = NULL;

@@ -61,7 +61,7 @@ public class MethodHandles {
     private MethodHandles() { }  // do not instantiate
 
     private static final MemberName.Factory IMPL_NAMES = MemberName.getFactory();
-    static { MethodHandleImpl.initStatics(); }
+
     // See IMPL_LOOKUP below.
 
     //// Method handle creation from ordinary methods.

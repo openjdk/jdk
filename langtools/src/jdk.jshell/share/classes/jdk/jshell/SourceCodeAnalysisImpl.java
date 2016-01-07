@@ -239,7 +239,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private List<Suggestion> computeSuggestions(OuterWrap code, int cursor, int[] anchor) {
         AnalyzeTask at = proc.taskFactory.new AnalyzeTask(code);
         SourcePositions sp = at.trees().getSourcePositions();
-        CompilationUnitTree topLevel = at.cuTree();
+        CompilationUnitTree topLevel = at.firstCuTree();
         List<Suggestion> result = new ArrayList<>();
         TreePath tp = pathFor(topLevel, sp, code.snippetIndexToWrapIndex(cursor));
         if (tp != null) {
@@ -976,7 +976,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         OuterWrap codeWrap = wrapInClass(Wrap.methodWrap(code));
         AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap);
         SourcePositions sp = at.trees().getSourcePositions();
-        CompilationUnitTree topLevel = at.cuTree();
+        CompilationUnitTree topLevel = at.firstCuTree();
         TreePath tp = pathFor(topLevel, sp, codeWrap.snippetIndexToWrapIndex(cursor));
 
         if (tp == null)

@@ -53,7 +53,7 @@ public class ReferenceQueue<T> {
 
     private static class Lock { };
     private Lock lock = new Lock();
-    private volatile Reference<? extends T> head = null;
+    private volatile Reference<? extends T> head;
     private long queueLength = 0;
 
     boolean enqueue(Reference<? extends T> r) { /* Called only by Reference class */

@@ -3055,13 +3055,16 @@ void LIRGenerator::do_IfOp(IfOp* x) {
   __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg, as_BasicType(x->x()->type()));
 }
 
-void LIRGenerator::do_RuntimeCall(address routine, int expected_arguments, Intrinsic* x) {
-    assert(x->number_of_arguments() == expected_arguments, "wrong type");
-    LIR_Opr reg = result_register_for(x->type());
-    __ call_runtime_leaf(routine, getThreadTemp(),
-                         reg, new LIR_OprList());
-    LIR_Opr result = rlock_result(x);
-    __ move(reg, result);
+void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
+  assert(x->number_of_arguments() == 0, "wrong type");
+  // Enforce computation of _reserved_argument_area_size which is required on some platforms.
+  BasicTypeList signature;
+  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  LIR_Opr reg = result_register_for(x->type());
+  __ call_runtime_leaf(routine, getThreadTemp(),
+                       reg, new LIR_OprList());
+  LIR_Opr result = rlock_result(x);
+  __ move(reg, result);
 }
 
 #ifdef TRACE_HAVE_INTRINSICS
@@ -3115,16 +3118,16 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_threadID: do_ThreadIDIntrinsic(x); break;
   case vmIntrinsics::_classID: do_ClassIDIntrinsic(x); break;
   case vmIntrinsics::_counterTime:
-    do_RuntimeCall(CAST_FROM_FN_PTR(address, TRACE_TIME_METHOD), 0, x);
+    do_RuntimeCall(CAST_FROM_FN_PTR(address, TRACE_TIME_METHOD), x);
     break;
 #endif
 
   case vmIntrinsics::_currentTimeMillis:
-    do_RuntimeCall(CAST_FROM_FN_PTR(address, os::javaTimeMillis), 0, x);
+    do_RuntimeCall(CAST_FROM_FN_PTR(address, os::javaTimeMillis), x);
     break;
 
   case vmIntrinsics::_nanoTime:
-    do_RuntimeCall(CAST_FROM_FN_PTR(address, os::javaTimeNanos), 0, x);
+    do_RuntimeCall(CAST_FROM_FN_PTR(address, os::javaTimeNanos), x);
     break;
 
   case vmIntrinsics::_Object_init:    do_RegisterFinalizer(x); break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,10 @@ public class TrayIconMouseTest {
         } else {
             if (System.getProperty("os.name").toLowerCase().startsWith("mac")) {
                 isMacOS = true;
+            } else if (SystemTrayIconHelper.isOel7()) {
+                System.out.println("OEL 7 doesn't support double click in " +
+                        "systray. Skipped");
+                return;
             }
             new TrayIconMouseTest().doTest();
         }
@@ -108,7 +112,7 @@ public class TrayIconMouseTest {
         for (int i = 0; i < buttonTypes.length; i++) {
             actionPerformed = false;
             robot.click(buttonTypes[i]);
-            robot.waitForIdle(2000);
+            robot.waitForIdle(6000);
 
             if (isMacOS && actionPerformed && i == 2) {
 
@@ -155,7 +159,7 @@ public class TrayIconMouseTest {
                     if (! actionPerformed) {
                         synchronized (actionLock) {
                             try {
-                                actionLock.wait(3000);
+                                actionLock.wait(6000);
                             } catch (Exception e) {
                             }
                         }

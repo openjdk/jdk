@@ -225,7 +225,7 @@ final class Unit {
         return false;
     }
 
-    void setStatus() {
+    void setStatus(AnalyzeTask at) {
         if (!compilationDiagnostics.hasErrors()) {
             status = VALID;
         } else if (isRecoverable()) {
@@ -237,7 +237,7 @@ final class Unit {
         } else {
             status = REJECTED;
         }
-        checkForOverwrite();
+        checkForOverwrite(at);
 
         state.debug(DBG_GEN, "setStatus() %s - status: %s\n",
                 si, status);
@@ -361,17 +361,18 @@ final class Unit {
                 si, status, unresolved);
     }
 
-    private void checkForOverwrite() {
+    private void checkForOverwrite(AnalyzeTask at) {
         secondaryEvents = new ArrayList<>();
         if (replaceOldEvent != null) secondaryEvents.add(replaceOldEvent);
 
         // Defined methods can overwrite methods of other (equivalent) snippets
         if (si.kind() == Kind.METHOD && status.isDefined) {
-            String oqpt = ((MethodSnippet) si).qualifiedParameterTypes();
-            String nqpt = computeQualifiedParameterTypes(si);
+            MethodSnippet msi = (MethodSnippet)si;
+            String oqpt = msi.qualifiedParameterTypes();
+            String nqpt = computeQualifiedParameterTypes(at, msi);
             if (!nqpt.equals(oqpt)) {
-                ((MethodSnippet) si).setQualifiedParamaterTypes(nqpt);
-                Status overwrittenStatus = overwriteMatchingMethod(si);
+                msi.setQualifiedParamaterTypes(nqpt);
+                Status overwrittenStatus = overwriteMatchingMethod(msi);
                 if (overwrittenStatus != null) {
                     prevStatus = overwrittenStatus;
                     signatureChanged = true;
@@ -383,19 +384,19 @@ final class Unit {
     // Check if there is a method whose user-declared parameter types are
     // different (and thus has a different snippet) but whose compiled parameter
     // types are the same. if so, consider it an overwrite replacement.
-    private Status overwriteMatchingMethod(Snippet si) {
-        String qpt = ((MethodSnippet) si).qualifiedParameterTypes();
+    private Status overwriteMatchingMethod(MethodSnippet msi) {
+        String qpt = msi.qualifiedParameterTypes();
 
         // Look through all methods for a method of the same name, with the
         // same computed qualified parameter types
         Status overwrittenStatus = null;
         for (MethodSnippet sn : state.methods()) {
-            if (sn != null && sn != si && sn.status().isActive && sn.name().equals(si.name())) {
+            if (sn != null && sn != msi && sn.status().isActive && sn.name().equals(msi.name())) {
                 if (qpt.equals(sn.qualifiedParameterTypes())) {
                     overwrittenStatus = sn.status();
                     SnippetEvent se = new SnippetEvent(
                             sn, overwrittenStatus, OVERWRITTEN,
-                            false, si, null, null);
+                            false, msi, null, null);
                     sn.setOverwritten();
                     secondaryEvents.add(se);
                     state.debug(DBG_EVNT,
@@ -408,20 +409,16 @@ final class Unit {
         return overwrittenStatus;
     }
 
-    private String computeQualifiedParameterTypes(Snippet si) {
-        MethodSnippet msi = (MethodSnippet) si;
-        String qpt;
-        AnalyzeTask at = state.taskFactory.new AnalyzeTask(msi.outerWrap());
-        String rawSig = new TreeDissector(at).typeOfMethod();
+    private String computeQualifiedParameterTypes(AnalyzeTask at, MethodSnippet msi) {
+        String rawSig = TreeDissector.createBySnippet(at, msi).typeOfMethod();
         String signature = expunge(rawSig);
         int paren = signature.lastIndexOf(')');
-        if (paren < 0) {
-            // Uncompilable snippet, punt with user parameter types
-            qpt = msi.parameterTypes();
-        } else {
-            qpt = signature.substring(0, paren + 1);
-        }
-        return qpt;
+
+        // Extract the parameter type string from the method signature,
+        // if method did not compile use the user-supplied parameter types
+        return paren >= 0
+                ? signature.substring(0, paren + 1)
+                : msi.parameterTypes();
     }
 
     SnippetEvent event(String value, Exception exception) {

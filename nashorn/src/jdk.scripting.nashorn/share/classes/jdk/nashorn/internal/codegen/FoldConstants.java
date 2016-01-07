@@ -307,9 +307,7 @@ final class FoldConstants extends SimpleNodeVisitor implements Loggable {
             final Type widest = Type.widest(lhs.getType(), rhs.getType());
 
             boolean isInteger = widest.isInteger();
-            boolean isLong    = widest.isLong();
-
-            double value;
+            final double value;
 
             switch (parent.tokenType()) {
             case DIV:
@@ -336,7 +334,8 @@ final class FoldConstants extends SimpleNodeVisitor implements Loggable {
                 value = lhs.getNumber() - rhs.getNumber();
                 break;
             case SHR:
-                return LiteralNode.newInstance(token, finish, JSType.toUint32(lhs.getInt32() >>> rhs.getInt32()));
+                final long result = JSType.toUint32(lhs.getInt32() >>> rhs.getInt32());
+                return LiteralNode.newInstance(token, finish, JSType.isRepresentableAsInt(result) ? (int) result : (double) result);
             case SAR:
                 return LiteralNode.newInstance(token, finish, lhs.getInt32() >> rhs.getInt32());
             case SHL:
@@ -368,12 +367,9 @@ final class FoldConstants extends SimpleNodeVisitor implements Loggable {
             }
 
             isInteger &= JSType.isStrictlyRepresentableAsInt(value);
-            isLong    &= JSType.isStrictlyRepresentableAsLong(value);
 
             if (isInteger) {
                 return LiteralNode.newInstance(token, finish, (int)value);
-            } else if (isLong) {
-                return LiteralNode.newInstance(token, finish, (long)value);
             }
 
             return LiteralNode.newInstance(token, finish, value);

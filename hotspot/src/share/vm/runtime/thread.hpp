@@ -101,6 +101,7 @@ class WorkerThread;
 
 class Thread: public ThreadShadow {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
  private:
 
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
@@ -783,6 +784,7 @@ typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class JavaThread: public Thread {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
   friend class WhiteBox;
  private:
   JavaThread*    _next;                          // The next thread in the Threads list

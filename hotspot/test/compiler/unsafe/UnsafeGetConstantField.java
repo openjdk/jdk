@@ -40,10 +40,16 @@
  */
 package java.lang.invoke;
 
-import jdk.internal.org.objectweb.asm.*;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
+import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.Stable;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.FieldVisitor;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.internal.org.objectweb.asm.Type;
+import jdk.test.lib.Asserts;
+
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 public class UnsafeGetConstantField {

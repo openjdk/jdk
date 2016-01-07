@@ -357,7 +357,7 @@ class DurationImpl
      *      The length of the duration in milliseconds.
      */
     protected DurationImpl(final long durationInMilliSeconds) {
-
+        boolean is0x8000000000000000L = false;
         long l = durationInMilliSeconds;
 
         if (l > 0) {
@@ -368,6 +368,7 @@ class DurationImpl
             if (l == 0x8000000000000000L) {
                 // negating 0x8000000000000000L causes an overflow
                 l++;
+                is0x8000000000000000L = true;
             }
             l *= -1;
         }
@@ -406,7 +407,8 @@ class DurationImpl
 
         // seconds & milliseconds
         int2long = (gregorianCalendar.get(Calendar.SECOND) * 1000)
-                    + gregorianCalendar.get(Calendar.MILLISECOND);
+                    + gregorianCalendar.get(Calendar.MILLISECOND)
+                    + (is0x8000000000000000L ? 1 : 0);
         this.seconds = BigDecimal.valueOf(int2long, 3);
     }
 

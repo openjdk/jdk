@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.media.sound;
 
+import java.util.Objects;
+
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.spi.MidiDeviceProvider;
 
@@ -42,6 +44,7 @@ public final class RealTimeSequencerProvider extends MidiDeviceProvider {
 
     @Override
     public MidiDevice getDevice(final MidiDevice.Info info) {
+        Objects.requireNonNull(info);
         if (RealTimeSequencer.info.equals(info)) {
             return new RealTimeSequencer();
         }

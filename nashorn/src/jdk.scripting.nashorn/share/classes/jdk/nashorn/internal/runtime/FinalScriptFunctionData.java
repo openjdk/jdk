@@ -36,6 +36,9 @@ import java.util.List;
  */
 final class FinalScriptFunctionData extends ScriptFunctionData {
 
+    // documentation key for this function, may be null
+    private String docKey;
+
     private static final long serialVersionUID = -930632846167768864L;
 
     /**
@@ -73,6 +76,23 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
+    String getDocumentationKey() {
+        return docKey;
+    }
+
+    @Override
+    void setDocumentationKey(final String docKey) {
+        this.docKey = docKey;
+    }
+
+    @Override
+    String getDocumentation() {
+        String doc = docKey != null?
+            FunctionDocumentation.getDoc(docKey) : null;
+        return doc != null? doc : super.getDocumentation();
+    }
+
+    @Override
     protected boolean needsCallee() {
         final boolean needsCallee = code.getFirst().needsCallee();
         assert allNeedCallee(needsCallee);
@@ -89,11 +109,16 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden) {
+    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden, boolean linkLogicOkay) {
         assert isValidCallSite(callSiteType) : callSiteType;
 
         CompiledFunction best = null;
         for (final CompiledFunction candidate: code) {
+            if (!linkLogicOkay && candidate.hasLinkLogic()) {
+                // Skip! Version with no link logic is desired, but this one has link logic!
+                continue;
+            }
+
             if (!forbidden.contains(candidate) && candidate.betterThanFinal(best, callSiteType)) {
                 best = candidate;
             }

@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /** This is class C3, and no package for me please */
 public class C3 {}
 

@@ -228,18 +228,19 @@ static Block* find_deepest_input(Node* n, const PhaseCFG* cfg) {
 // Find the earliest Block any instruction can be placed in.  Some instructions
 // are pinned into Blocks.  Unpinned instructions can appear in last block in
 // which all their inputs occur.
-bool PhaseCFG::schedule_early(VectorSet &visited, Node_List &roots) {
+bool PhaseCFG::schedule_early(VectorSet &visited, Node_Stack &roots) {
   // Allocate stack with enough space to avoid frequent realloc
-  Node_Stack nstack(roots.Size() + 8);
+  Node_Stack nstack(roots.size() + 8);
   // _root will be processed among C->top() inputs
-  roots.push(C->top());
+  roots.push(C->top(), 0);
   visited.set(C->top()->_idx);
 
   while (roots.size() != 0) {
     // Use local variables nstack_top_n & nstack_top_i to cache values
     // on stack's top.
-    Node* parent_node = roots.pop();
+    Node* parent_node = roots.node();
     uint  input_index = 0;
+    roots.pop();
 
     while (true) {
       if (input_index == 0) {
@@ -286,7 +287,7 @@ bool PhaseCFG::schedule_early(VectorSet &visited, Node_List &roots) {
           break;
         } else if (!is_visited) {
           // Visit this guy later, using worklist
-          roots.push(in);
+          roots.push(in, 0);
         }
       }
 
@@ -791,23 +792,23 @@ private:
 
 public:
   // Constructor for the iterator
-  Node_Backward_Iterator(Node *root, VectorSet &visited, Node_List &stack, PhaseCFG &cfg);
+  Node_Backward_Iterator(Node *root, VectorSet &visited, Node_Stack &stack, PhaseCFG &cfg);
 
   // Postincrement operator to iterate over the nodes
   Node *next();
 
 private:
   VectorSet   &_visited;
-  Node_List   &_stack;
+  Node_Stack  &_stack;
   PhaseCFG &_cfg;
 };
 
 // Constructor for the Node_Backward_Iterator
-Node_Backward_Iterator::Node_Backward_Iterator( Node *root, VectorSet &visited, Node_List &stack, PhaseCFG &cfg)
+Node_Backward_Iterator::Node_Backward_Iterator( Node *root, VectorSet &visited, Node_Stack &stack, PhaseCFG &cfg)
   : _visited(visited), _stack(stack), _cfg(cfg) {
   // The stack should contain exactly the root
   stack.clear();
-  stack.push(root);
+  stack.push(root, root->outcnt());
 
   // Clear the visited bits
   visited.Clear();
@@ -820,12 +821,14 @@ Node *Node_Backward_Iterator::next() {
   if ( !_stack.size() )
     return NULL;
 
-  // '_stack' is emulating a real _stack.  The 'visit-all-users' loop has been
-  // made stateless, so I do not need to record the index 'i' on my _stack.
-  // Instead I visit all users each time, scanning for unvisited users.
   // I visit unvisited not-anti-dependence users first, then anti-dependent
-  // children next.
-  Node *self = _stack.pop();
+  // children next. I iterate backwards to support removal of nodes.
+  // The stack holds states consisting of 3 values:
+  // current Def node, flag which indicates 1st/2nd pass, index of current out edge
+  Node *self = (Node*)(((uintptr_t)_stack.node()) & ~1);
+  bool iterate_anti_dep = (((uintptr_t)_stack.node()) & 1);
+  uint idx = MIN2(_stack.index(), self->outcnt()); // Support removal of nodes.
+  _stack.pop();
 
   // I cycle here when I am entering a deeper level of recursion.
   // The key variable 'self' was set prior to jumping here.
@@ -841,9 +844,9 @@ Node *Node_Backward_Iterator::next() {
     Node *unvisited = NULL;  // Unvisited anti-dependent Node, if any
 
     // Scan for unvisited nodes
-    for (DUIterator_Fast imax, i = self->fast_outs(imax); i < imax; i++) {
+    while (idx > 0) {
       // For all uses, schedule late
-      Node* n = self->fast_out(i); // Use
+      Node* n = self->raw_out(--idx); // Use
 
       // Skip already visited children
       if ( _visited.test(n->_idx) )
@@ -863,19 +866,31 @@ Node *Node_Backward_Iterator::next() {
       unvisited = n;      // Found unvisited
 
       // Check for possible-anti-dependent
-      if( !n->needs_anti_dependence_check() )
-        break;            // Not visited, not anti-dep; schedule it NOW
+      // 1st pass: No such nodes, 2nd pass: Only such nodes.
+      if (n->needs_anti_dependence_check() == iterate_anti_dep) {
+        unvisited = n;      // Found unvisited
+        break;
+      }
     }
 
     // Did I find an unvisited not-anti-dependent Node?
-    if ( !unvisited )
+    if (!unvisited) {
+      if (!iterate_anti_dep) {
+        // 2nd pass: Iterate over nodes which needs_anti_dependence_check.
+        iterate_anti_dep = true;
+        idx = self->outcnt();
+        continue;
+      }
       break;                  // All done with children; post-visit 'self'
+    }
 
     // Visit the unvisited Node.  Contains the obvious push to
     // indicate I'm entering a deeper level of recursion.  I push the
     // old state onto the _stack and set a new state and loop (recurse).
-    _stack.push(self);
+    _stack.push((Node*)((uintptr_t)self | (uintptr_t)iterate_anti_dep), idx);
     self = unvisited;
+    iterate_anti_dep = false;
+    idx = self->outcnt();
   } // End recursion loop
 
   return self;
@@ -883,7 +898,7 @@ Node *Node_Backward_Iterator::next() {
 
 //------------------------------ComputeLatenciesBackwards----------------------
 // Compute the latency of all the instructions.
-void PhaseCFG::compute_latencies_backwards(VectorSet &visited, Node_List &stack) {
+void PhaseCFG::compute_latencies_backwards(VectorSet &visited, Node_Stack &stack) {
 #ifndef PRODUCT
   if (trace_opto_pipelining())
     tty->print("\n#---- ComputeLatenciesBackwards ----\n");
@@ -1157,7 +1172,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
 // dominator tree of all USES of a value.  Pick the block with the least
 // loop nesting depth that is lowest in the dominator tree.
 extern const char must_clone[];
-void PhaseCFG::schedule_late(VectorSet &visited, Node_List &stack) {
+void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
 #ifndef PRODUCT
   if (trace_opto_pipelining())
     tty->print("\n#---- schedule_late ----\n");
@@ -1313,9 +1328,7 @@ void PhaseCFG::global_code_motion() {
   // instructions are pinned into Blocks.  Unpinned instructions can
   // appear in last block in which all their inputs occur.
   visited.Clear();
-  Node_List stack(arena);
-  // Pre-grow the list
-  stack.map((C->live_nodes() >> 1) + 16, NULL);
+  Node_Stack stack(arena, (C->live_nodes() >> 2) + 16); // pre-grow
   if (!schedule_early(visited, stack)) {
     // Bailout without retry
     C->record_method_not_compilable("early schedule failed");

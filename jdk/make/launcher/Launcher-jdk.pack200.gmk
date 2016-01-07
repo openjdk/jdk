@@ -89,7 +89,6 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
     MAPFILE := $(UNPACK_MAPFILE),\
     LDFLAGS := $(UNPACKEXE_ZIPOBJS) \
         $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
-        $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX)) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(UNPACKEXE_LIBS) $(LIBCXX), \
     LIBS_solaris :=  -lc, \

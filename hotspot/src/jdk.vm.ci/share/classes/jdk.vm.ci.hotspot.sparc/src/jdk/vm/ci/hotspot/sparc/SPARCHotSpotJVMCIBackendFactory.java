@@ -60,73 +60,73 @@ public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
 
     protected EnumSet<CPUFeature> computeFeatures(HotSpotVMConfig config) {
         EnumSet<CPUFeature> features = EnumSet.noneOf(CPUFeature.class);
-        if ((config.sparcFeatures & config.vis1Instructions) != 0) {
+        if ((config.vmVersionFeatures & config.sparcVis1Instructions) != 0) {
             features.add(CPUFeature.VIS1);
         }
-        if ((config.sparcFeatures & config.vis2Instructions) != 0) {
+        if ((config.vmVersionFeatures & config.sparcVis2Instructions) != 0) {
             features.add(CPUFeature.VIS2);
         }
-        if ((config.sparcFeatures & config.vis3Instructions) != 0) {
+        if ((config.vmVersionFeatures & config.sparcVis3Instructions) != 0) {
             features.add(CPUFeature.VIS3);
         }
-        if ((config.sparcFeatures & config.cbcondInstructions) != 0) {
+        if ((config.vmVersionFeatures & config.sparcCbcondInstructions) != 0) {
             features.add(CPUFeature.CBCOND);
         }
-        if ((config.sparcFeatures & config.v8Instructions) != 0) {
+        if ((config.vmVersionFeatures & config.sparcV8Instructions) != 0) {
             features.add(CPUFeature.V8);
         }
-        if ((config.sparcFeatures & config.hardwareMul32) != 0) {
+        if ((config.vmVersionFeatures & config.sparcHardwareMul32) != 0) {
             features.add(CPUFeature.HARDWARE_MUL32);
         }
-        if ((config.sparcFeatures & config.hardwareDiv32) != 0) {
+        if ((config.vmVersionFeatures & config.sparcHardwareDiv32) != 0) {
             features.add(CPUFeature.HARDWARE_DIV32);
         }
-        if ((config.sparcFeatures & config.hardwareFsmuld) != 0) {
+        if ((config.vmVersionFeatures & config.sparcHardwareFsmuld) != 0) {
             features.add(CPUFeature.HARDWARE_FSMULD);
         }
-        if ((config.sparcFeatures & config.hardwarePopc) != 0) {
+        if ((config.vmVersionFeatures & config.sparcHardwarePopc) != 0) {
             features.add(CPUFeature.HARDWARE_POPC);
         }
-        if ((config.sparcFeatures & config.v9Instructions) != 0) {
+        if ((config.vmVersionFeatures & config.sparcV9Instructions) != 0) {
             features.add(CPUFeature.V9);
         }
-        if ((config.sparcFeatures & config.sun4v) != 0) {
+        if ((config.vmVersionFeatures & config.sparcSun4v) != 0) {
             features.add(CPUFeature.SUN4V);
         }
-        if ((config.sparcFeatures & config.blkInitInstructions) != 0) {
+        if ((config.vmVersionFeatures & config.sparcBlkInitInstructions) != 0) {
             features.add(CPUFeature.BLK_INIT_INSTRUCTIONS);
         }
-        if ((config.sparcFeatures & config.fmafInstructions) != 0) {
+        if ((config.vmVersionFeatures & config.sparcFmafInstructions) != 0) {
             features.add(CPUFeature.FMAF);
         }
-        if ((config.sparcFeatures & config.fmauInstructions) != 0) {
+        if ((config.vmVersionFeatures & config.sparcFmauInstructions) != 0) {
             features.add(CPUFeature.FMAU);
         }
-        if ((config.sparcFeatures & config.sparc64Family) != 0) {
+        if ((config.vmVersionFeatures & config.sparcSparc64Family) != 0) {
             features.add(CPUFeature.SPARC64_FAMILY);
         }
-        if ((config.sparcFeatures & config.mFamily) != 0) {
+        if ((config.vmVersionFeatures & config.sparcMFamily) != 0) {
             features.add(CPUFeature.M_FAMILY);
         }
-        if ((config.sparcFeatures & config.tFamily) != 0) {
+        if ((config.vmVersionFeatures & config.sparcTFamily) != 0) {
             features.add(CPUFeature.T_FAMILY);
         }
-        if ((config.sparcFeatures & config.t1Model) != 0) {
+        if ((config.vmVersionFeatures & config.sparcT1Model) != 0) {
             features.add(CPUFeature.T1_MODEL);
         }
-        if ((config.sparcFeatures & config.sparc5Instructions) != 0) {
+        if ((config.vmVersionFeatures & config.sparcSparc5Instructions) != 0) {
             features.add(CPUFeature.SPARC5);
         }
-        if ((config.sparcFeatures & config.aesInstructions) != 0) {
+        if ((config.vmVersionFeatures & config.sparcAesInstructions) != 0) {
             features.add(CPUFeature.SPARC64_FAMILY);
         }
-        if ((config.sparcFeatures & config.sha1Instruction) != 0) {
+        if ((config.vmVersionFeatures & config.sparcSha1Instruction) != 0) {
             features.add(CPUFeature.SHA1);
         }
-        if ((config.sparcFeatures & config.sha256Instruction) != 0) {
+        if ((config.vmVersionFeatures & config.sparcSha256Instruction) != 0) {
             features.add(CPUFeature.SHA256);
         }
-        if ((config.sparcFeatures & config.sha512Instruction) != 0) {
+        if ((config.vmVersionFeatures & config.sparcSha512Instruction) != 0) {
             features.add(CPUFeature.SHA512);
         }
         return features;

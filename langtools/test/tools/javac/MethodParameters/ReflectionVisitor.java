@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,6 +161,17 @@ public class ReflectionVisitor extends Tester.Visitor {
                     }
                     if (isFinal)
                         expect = "final this\\$[0-9]+";
+                }
+            }
+
+            if (p.isSynthetic() && !p.isImplicit() && !allowSynthetic) {
+                //patch treatment for local captures
+                if (isAnon || ((isLocal || isAnon) & !isStatic)) {
+                    expect = "val\\$.*";
+                    allowSynthetic = true;
+                    if (isFinal) {
+                        expect = "final val\\$.*";
+                    }
                 }
             }
 
