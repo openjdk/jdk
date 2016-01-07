@@ -2802,8 +2802,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register to          = rdx;      // destination array address
     const Register key         = rcx;      // key array address
     const Register counter     = rdi;      // counter byte array initialized from initvector array address
-
-    // and left with the results of the last encryption block
+                                           // and updated with the incremented counter in the end
     const Register len_reg     = rbx;
     const Register pos         = rax;
 
@@ -2829,10 +2828,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ movptr(from , from_param);
     __ movptr(to   , to_param);
-    //__ movptr(key, key_param);
-    //__ movptr(counter, rvec_param);
     __ movptr(len_reg , len_param);
-    //__ movptr(pos, 0);
 
     // Use the partially used encrpyted counter from last invocation
     Label L_exit_preLoop, L_preLoop_start;
@@ -3007,8 +3003,8 @@ class StubGenerator: public StubCodeGenerator {
         __ subptr(len_reg, AESBlockSize);
         __ jmp(L_singleBlockLoopTop[k]);
 
-      __ BIND(L_processTail_insr[k]);
-        __ addptr(pos, len_reg);
+      __ BIND(L_processTail_insr[k]);                                               // Process the tail part of the input array
+        __ addptr(pos, len_reg);                                                    // 1. Insert bytes from src array into xmm_from0 register
         __ testptr(len_reg, 8);
         __ jcc(Assembler::zero, L_processTail_4_insr[k]);
           __ subptr(pos,8);
@@ -3035,11 +3031,11 @@ class StubGenerator: public StubCodeGenerator {
         __ BIND(L_processTail_exit_insr[k]);
 
         __ movptr(saved_encCounter_start, saved_counter_param);
-        __ movdqu(Address(saved_encCounter_start, 0), xmm_result0);
-        __ pxor(xmm_result0, xmm_from0);
+        __ movdqu(Address(saved_encCounter_start, 0), xmm_result0);               // 2. Perform pxor of the encrypted counter and plaintext Bytes.
+        __ pxor(xmm_result0, xmm_from0);                                          //    Also the encrypted counter is saved for next invocation.
 
         __ testptr(len_reg, 8);
-        __ jcc(Assembler::zero, L_processTail_4_extr[k]);
+        __ jcc(Assembler::zero, L_processTail_4_extr[k]);                        // 3. Extract bytes from xmm_result0 into the dest. array
           __ pextrd(Address(to, pos), xmm_result0, 0);
           __ pextrd(Address(to, pos, Address::times_1, 4), xmm_result0, 1);
           __ psrldq(xmm_result0, 8);
