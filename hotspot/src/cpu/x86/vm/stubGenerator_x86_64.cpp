@@ -3752,7 +3752,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register to = c_rarg1; // destination array address
     const Register key = c_rarg2; // key array address
     const Register counter = c_rarg3; // counter byte array initialized from counter array address
-    // and left with the results of the last encryption block
+                                      // and updated with the incremented counter in the end
 #ifndef _WIN64
     const Register len_reg = c_rarg4;
     const Register saved_encCounter_start = c_rarg5;
@@ -3967,8 +3967,8 @@ class StubGenerator: public StubCodeGenerator {
         __ addptr(pos, AESBlockSize);
         __ subptr(len_reg, AESBlockSize);
         __ jmp(L_singleBlockLoopTop[k]);
-      __ BIND(L_processTail_insr[k]);
-        __ addptr(pos, len_reg);
+      __ BIND(L_processTail_insr[k]);                               // Process the tail part of the input array
+        __ addptr(pos, len_reg);                                    // 1. Insert bytes from src array into xmm_from0 register
         __ testptr(len_reg, 8);
         __ jcc(Assembler::zero, L_processTail_4_insr[k]);
           __ subptr(pos,8);
@@ -3993,11 +3993,11 @@ class StubGenerator: public StubCodeGenerator {
           __ pinsrb(xmm_from0, Address(from, pos), 0);
         __ BIND(L_processTail_exit_insr[k]);
 
-        __ movdqu(Address(saved_encCounter_start, 0), xmm_result0);
-        __ pxor(xmm_result0, xmm_from0);
+        __ movdqu(Address(saved_encCounter_start, 0), xmm_result0);  // 2. Perform pxor of the encrypted counter and plaintext Bytes.
+        __ pxor(xmm_result0, xmm_from0);                             //    Also the encrypted counter is saved for next invocation.
 
         __ testptr(len_reg, 8);
-        __ jcc(Assembler::zero, L_processTail_4_extr[k]);
+        __ jcc(Assembler::zero, L_processTail_4_extr[k]);            // 3. Extract bytes from xmm_result0 into the dest. array
           __ pextrq(Address(to, pos), xmm_result0, 0);
           __ psrldq(xmm_result0, 8);
           __ addptr(pos, 8);
