@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,9 +48,5 @@
   static BasicType result_type_of_handle(oop method_handle);
   static intptr_t* calculate_unwind_sp(ZeroStack* stack, oop method_handle);
   static void throw_exception(JavaThread* thread, Symbol* name,char *msg=NULL);
-
- private:
-  // Fast result type determination
-  static BasicType result_type_of(Method* method);
 
 #endif // CPU_ZERO_VM_CPPINTERPRETER_ZERO_HPP
