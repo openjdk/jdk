@@ -9,6 +9,6 @@
  * @compile/fail/ref=WarnImport.out -XDrawDiagnostics  -Werror -Xlint:none WarnImport.java
  */
 
-import sun.misc.VM;
+import sun.security.x509.X509CertInfo;
 
 public class WarnImport {}
