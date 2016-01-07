@@ -154,7 +154,7 @@ private:
   uint _expansion_regions;
 
   // The block offset table for the G1 heap.
-  G1BlockOffsetSharedArray* _bot_shared;
+  G1BlockOffsetTable* _bot;
 
   // Tears down the region sets / lists so that they are empty and the
   // regions on the heap do not belong to a region set / list. The
@@ -1008,7 +1008,7 @@ public:
   void iterate_dirty_card_closure(CardTableEntryClosure* cl, uint worker_i);
 
   // The shared block offset table array.
-  G1BlockOffsetSharedArray* bot_shared() const { return _bot_shared; }
+  G1BlockOffsetTable* bot() const { return _bot; }
 
   // Reference Processing accessors
 

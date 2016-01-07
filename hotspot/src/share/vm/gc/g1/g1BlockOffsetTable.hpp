@@ -30,118 +30,24 @@
 #include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// The CollectedHeap type requires subtypes to implement a method
-// "block_start".  For some subtypes, notably generational
-// systems using card-table-based write barriers, the efficiency of this
-// operation may be important.  Implementations of the "BlockOffsetArray"
-// class may be useful in providing such efficient implementations.
-//
-// While generally mirroring the structure of the BOT for GenCollectedHeap,
-// the following types are tailored more towards G1's uses; these should,
-// however, be merged back into a common BOT to avoid code duplication
-// and reduce maintenance overhead.
-//
-//    G1BlockOffsetTable (abstract)
-//    -- G1BlockOffsetArray                (uses G1BlockOffsetSharedArray)
-//       -- G1BlockOffsetArrayContigSpace
-//
-// A main impediment to the consolidation of this code might be the
-// effect of making some of the block_start*() calls non-const as
-// below. Whether that might adversely affect performance optimizations
-// that compilers might normally perform in the case of non-G1
-// collectors needs to be carefully investigated prior to any such
-// consolidation.
-
 // Forward declarations
-class G1BlockOffsetSharedArray;
-class G1OffsetTableContigSpace;
-
-class G1BlockOffsetTable VALUE_OBJ_CLASS_SPEC {
-  friend class VMStructs;
-protected:
-  // These members describe the region covered by the table.
-
-  // The space this table is covering.
-  HeapWord* _bottom;    // == reserved.start
-  HeapWord* _end;       // End of currently allocated region.
-
-public:
-  // Initialize the table to cover the given space.
-  // The contents of the initial table are undefined.
-  G1BlockOffsetTable(HeapWord* bottom, HeapWord* end) :
-    _bottom(bottom), _end(end)
-    {
-      assert(_bottom <= _end, "arguments out of order");
-    }
-
-  // Note that the committed size of the covered space may have changed,
-  // so the table size might also wish to change.
-  virtual void resize(size_t new_word_size) = 0;
-
-  virtual void set_bottom(HeapWord* new_bottom) {
-    assert(new_bottom <= _end,
-           "new_bottom (" PTR_FORMAT ") > _end (" PTR_FORMAT ")",
-           p2i(new_bottom), p2i(_end));
-    _bottom = new_bottom;
-    resize(pointer_delta(_end, _bottom));
-  }
-
-  // Requires "addr" to be contained by a block, and returns the address of
-  // the start of that block.  (May have side effects, namely updating of
-  // shared array entries that "point" too far backwards.  This can occur,
-  // for example, when LAB allocation is used in a space covered by the
-  // table.)
-  virtual HeapWord* block_start_unsafe(const void* addr) = 0;
-  // Same as above, but does not have any of the possible side effects
-  // discussed above.
-  virtual HeapWord* block_start_unsafe_const(const void* addr) const = 0;
-
-  // Returns the address of the start of the block containing "addr", or
-  // else "null" if it is covered by no block.  (May have side effects,
-  // namely updating of shared array entries that "point" too far
-  // backwards.  This can occur, for example, when lab allocation is used
-  // in a space covered by the table.)
-  inline HeapWord* block_start(const void* addr);
-  // Same as above, but does not have any of the possible side effects
-  // discussed above.
-  inline HeapWord* block_start_const(const void* addr) const;
-};
-
-class G1BlockOffsetSharedArrayMappingChangedListener : public G1MappingChangedListener {
- public:
-  virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
-    // Nothing to do. The BOT is hard-wired to be part of the HeapRegion, and we cannot
-    // retrieve it here since this would cause firing of several asserts. The code
-    // executed after commit of a region already needs to do some re-initialization of
-    // the HeapRegion, so we combine that.
-  }
-};
+class G1BlockOffsetTable;
+class G1ContiguousSpace;
 
 // This implementation of "G1BlockOffsetTable" divides the covered region
 // into "N"-word subregions (where "N" = 2^"LogN".  An array with an entry
 // for each such subregion indicates how far back one must go to find the
 // start of the chunk that includes the first word of the subregion.
 //
-// Each BlockOffsetArray is owned by a Space.  However, the actual array
-// may be shared by several BlockOffsetArrays; this is useful
-// when a single resizable area (such as a generation) is divided up into
-// several spaces in which contiguous allocation takes place,
-// such as, for example, in G1 or in the train generation.)
+// Each G1BlockOffsetTablePart is owned by a G1ContiguousSpace.
 
-// Here is the shared array type.
-
-class G1BlockOffsetSharedArray: public CHeapObj<mtGC> {
-  friend class G1BlockOffsetArray;
-  friend class G1BlockOffsetArrayContigSpace;
+class G1BlockOffsetTable: public CHeapObj<mtGC> {
+  friend class G1BlockOffsetTablePart;
   friend class VMStructs;
 
 private:
-  G1BlockOffsetSharedArrayMappingChangedListener _listener;
-  // The reserved region covered by the shared array.
+  // The reserved region covered by the table.
   MemRegion _reserved;
-
-  // End of the current committed region.
-  HeapWord* _end;
 
   // Array for keeping offsets for retrieving object start fast given an
   // address.
@@ -192,13 +98,9 @@ public:
     N_words = 1 << LogN_words
   };
 
-  // Initialize the table to cover from "base" to (at least)
-  // "base + init_word_size".  In the future, the table may be expanded
-  // (see "resize" below) up to the size of "_reserved" (which must be at
-  // least "init_word_size".) The contents of the initial table are
-  // undefined; it is the responsibility of the constituent
-  // G1BlockOffsetTable(s) to initialize cards.
-  G1BlockOffsetSharedArray(MemRegion heap, G1RegionToSpaceMapper* storage);
+  // Initialize the Block Offset Table to cover the memory region passed
+  // in the heap parameter.
+  G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* storage);
 
   // Return the appropriate index into "_offset_array" for "p".
   inline size_t index_for(const void* p) const;
@@ -213,29 +115,24 @@ public:
   }
 };
 
-// And here is the G1BlockOffsetTable subtype that uses the array.
-
-class G1BlockOffsetArray: public G1BlockOffsetTable {
-  friend class G1BlockOffsetSharedArray;
-  friend class G1BlockOffsetArrayContigSpace;
+class G1BlockOffsetTablePart VALUE_OBJ_CLASS_SPEC {
+  friend class G1BlockOffsetTable;
   friend class VMStructs;
 private:
   enum SomePrivateConstants {
-    N_words = G1BlockOffsetSharedArray::N_words,
-    LogN    = G1BlockOffsetSharedArray::LogN
+    N_words = G1BlockOffsetTable::N_words,
+    LogN    = G1BlockOffsetTable::LogN
   };
 
-  // This is the array, which can be shared by several BlockOffsetArray's
-  // servicing different
-  G1BlockOffsetSharedArray* _array;
+  // allocation boundary at which offset array must be updated
+  HeapWord* _next_offset_threshold;
+  size_t    _next_offset_index;      // index corresponding to that boundary
+
+  // This is the global BlockOffsetTable.
+  G1BlockOffsetTable* _bot;
 
   // The space that owns this subregion.
-  G1OffsetTableContigSpace* _gsp;
-
-  // The portion [_unallocated_block, _sp.end()) of the space that
-  // is a single block known not to contain any objects.
-  // NOTE: See BlockOffsetArrayUseUnallocatedBlock flag.
-  HeapWord* _unallocated_block;
+  G1ContiguousSpace* _space;
 
   // Sets the entries
   // corresponding to the cards starting at "start" and ending at "end"
@@ -246,9 +143,12 @@ private:
   // that is closed: [start_index, end_index]
   void set_remainder_to_point_to_start_incl(size_t start, size_t end);
 
-protected:
-
-  G1OffsetTableContigSpace* gsp() const { return _gsp; }
+  // Zero out the entry for _bottom (offset will be zero). Does not check for availability of the
+  // memory first.
+  void zero_bottom_entry_raw();
+  // Variant of initialize_threshold that does not check for availability of the
+  // memory first.
+  HeapWord* initialize_threshold_raw();
 
   inline size_t block_size(const HeapWord* p) const;
 
@@ -263,9 +163,8 @@ protected:
   // next block (or the end of the space.)  Return the address of the
   // beginning of the block that contains "addr".  Does so without side
   // effects (see, e.g., spec of  block_start.)
-  inline HeapWord*
-  forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
-                                         const void* addr) const;
+  inline HeapWord* forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
+                                                          const void* addr) const;
 
   // "q" is a block boundary that is <= "addr"; return the address of the
   // beginning of the block that contains "addr".  May have side effects
@@ -288,60 +187,26 @@ protected:
   // starting at "*threshold_", and for any other indices crossed by the
   // block.  Updates "*threshold_" and "*index_" to correspond to the first
   // index after the block end.
-  void alloc_block_work2(HeapWord** threshold_, size_t* index_,
-                         HeapWord* blk_start, HeapWord* blk_end);
-
-public:
-  // The space may not have it's bottom and top set yet, which is why the
-  // region is passed as a parameter. The elements of the array are
-  // initialized to zero.
-  G1BlockOffsetArray(G1BlockOffsetSharedArray* array, MemRegion mr);
-
-  // Note: this ought to be part of the constructor, but that would require
-  // "this" to be passed as a parameter to a member constructor for
-  // the containing concrete subtype of Space.
-  // This would be legal C++, but MS VC++ doesn't allow it.
-  void set_space(G1OffsetTableContigSpace* sp);
-
-  // Resets the covered region to one with the same _bottom as before but
-  // the "new_word_size".
-  void resize(size_t new_word_size);
-
-  virtual HeapWord* block_start_unsafe(const void* addr);
-  virtual HeapWord* block_start_unsafe_const(const void* addr) const;
+  void alloc_block_work(HeapWord** threshold_, size_t* index_,
+                        HeapWord* blk_start, HeapWord* blk_end);
 
   void check_all_cards(size_t left_card, size_t right_card) const;
 
+public:
+  //  The elements of the array are initialized to zero.
+  G1BlockOffsetTablePart(G1BlockOffsetTable* array, G1ContiguousSpace* gsp);
+
   void verify() const;
 
-  virtual void print_on(outputStream* out) PRODUCT_RETURN;
-};
-
-// A subtype of BlockOffsetArray that takes advantage of the fact
-// that its underlying space is a ContiguousSpace, so that its "active"
-// region can be more efficiently tracked (than for a non-contiguous space).
-class G1BlockOffsetArrayContigSpace: public G1BlockOffsetArray {
-  friend class VMStructs;
-
-  // allocation boundary at which offset array must be updated
-  HeapWord* _next_offset_threshold;
-  size_t    _next_offset_index;      // index corresponding to that boundary
-
-  // Work function to be called when allocation start crosses the next
-  // threshold in the contig space.
-  void alloc_block_work1(HeapWord* blk_start, HeapWord* blk_end) {
-    alloc_block_work2(&_next_offset_threshold, &_next_offset_index,
-                      blk_start, blk_end);
-  }
-
-  // Zero out the entry for _bottom (offset will be zero). Does not check for availability of the
-  // memory first.
-  void zero_bottom_entry_raw();
-  // Variant of initialize_threshold that does not check for availability of the
-  // memory first.
-  HeapWord* initialize_threshold_raw();
- public:
-  G1BlockOffsetArrayContigSpace(G1BlockOffsetSharedArray* array, MemRegion mr);
+  // Returns the address of the start of the block containing "addr", or
+  // else "null" if it is covered by no block.  (May have side effects,
+  // namely updating of shared array entries that "point" too far
+  // backwards.  This can occur, for example, when lab allocation is used
+  // in a space covered by the table.)
+  inline HeapWord* block_start(const void* addr);
+  // Same as above, but does not have any of the possible side effects
+  // discussed above.
+  inline HeapWord* block_start_const(const void* addr) const;
 
   // Initialize the threshold to reflect the first boundary after the
   // bottom of the covered region.
@@ -362,19 +227,16 @@ class G1BlockOffsetArrayContigSpace: public G1BlockOffsetArray {
   // never exceeds the "_next_offset_threshold".
   void alloc_block(HeapWord* blk_start, HeapWord* blk_end) {
     if (blk_end > _next_offset_threshold) {
-      alloc_block_work1(blk_start, blk_end);
+      alloc_block_work(&_next_offset_threshold, &_next_offset_index, blk_start, blk_end);
     }
   }
   void alloc_block(HeapWord* blk, size_t size) {
     alloc_block(blk, blk+size);
   }
 
-  HeapWord* block_start_unsafe(const void* addr);
-  HeapWord* block_start_unsafe_const(const void* addr) const;
-
   void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);
 
-  virtual void print_on(outputStream* out) PRODUCT_RETURN;
+  void print_on(outputStream* out) PRODUCT_RETURN;
 };
 
 #endif // SHARE_VM_GC_G1_G1BLOCKOFFSETTABLE_HPP

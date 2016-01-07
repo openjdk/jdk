@@ -97,7 +97,7 @@ ScanRSClosure::ScanRSClosure(G1ParPushHeapRSClosure* oc,
   _worker_i(worker_i),
   _try_claimed(false) {
   _g1h = G1CollectedHeap::heap();
-  _bot_shared = _g1h->bot_shared();
+  _bot = _g1h->bot();
   _ct_bs = _g1h->g1_barrier_set();
   _block_size = MAX2<size_t>(G1RSetScanBlockSize, 1);
 }
@@ -109,7 +109,7 @@ void ScanRSClosure::scanCard(size_t index, HeapRegion *r) {
 
   // Set the "from" region in the closure.
   _oc->set_region(r);
-  MemRegion card_region(_bot_shared->address_for_index(index), G1BlockOffsetSharedArray::N_words);
+  MemRegion card_region(_bot->address_for_index(index), G1BlockOffsetTable::N_words);
   MemRegion pre_gc_allocated(r->bottom(), r->scan_top());
   MemRegion mr = pre_gc_allocated.intersection(card_region);
   if (!mr.is_empty() && !_ct_bs->is_card_claimed(index)) {
@@ -153,7 +153,7 @@ bool ScanRSClosure::doHeapRegion(HeapRegion* r) {
       jump_to_card = hrrs->iter_claimed_next(_block_size);
     }
     if (current_card < jump_to_card) continue;
-    HeapWord* card_start = _g1h->bot_shared()->address_for_index(card_index);
+    HeapWord* card_start = _g1h->bot()->address_for_index(card_index);
 
     HeapRegion* card_region = _g1h->heap_region_containing(card_start);
     _cards++;
