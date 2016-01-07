@@ -417,14 +417,12 @@ final class SignatureAndHashAlgorithm {
             supports(HashAlgorithm.SHA1,        SignatureAlgorithm.ECDSA,
                     "SHA1withECDSA",        --p);
 
-            if (Security.getProvider("SunMSCAPI") == null) {
             supports(HashAlgorithm.SHA224,      SignatureAlgorithm.DSA,
                     "SHA224withDSA",        --p);
             supports(HashAlgorithm.SHA224,      SignatureAlgorithm.RSA,
                     "SHA224withRSA",        --p);
             supports(HashAlgorithm.SHA224,      SignatureAlgorithm.ECDSA,
                     "SHA224withECDSA",      --p);
-            }
 
             supports(HashAlgorithm.SHA256,      SignatureAlgorithm.DSA,
                     "SHA256withDSA",        --p);
