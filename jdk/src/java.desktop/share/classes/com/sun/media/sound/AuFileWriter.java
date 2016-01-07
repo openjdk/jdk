@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,9 @@ public final class AuFileWriter extends SunFileWriter {
      * Throws IllegalArgumentException if not supported.
      */
     private AudioFileFormat getAudioFileFormat(AudioFileFormat.Type type, AudioInputStream stream) {
+        if (!isFileTypeSupported(type, stream)) {
+            throw new IllegalArgumentException("File type " + type + " not supported.");
+        }
 
         AudioFormat format = null;
         AuFileFormat fileFormat = null;
@@ -153,10 +156,6 @@ public final class AuFileWriter extends SunFileWriter {
 
         int sampleSizeInBits;
         int fileSize;
-
-        if( !types[0].equals(type) ) {
-            throw new IllegalArgumentException("File type " + type + " not supported.");
-        }
 
         if( (AudioFormat.Encoding.ALAW.equals(streamEncoding)) ||
             (AudioFormat.Encoding.ULAW.equals(streamEncoding)) ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,22 @@
 
 package com.sun.media.sound;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.IOException;
-
 import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.SequenceInputStream;
 import java.util.Objects;
 
 import javax.sound.sampled.AudioFileFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 
 //$$fb this class is buggy. Should be replaced in future.
@@ -85,6 +84,7 @@ public final class WaveFileWriter extends SunFileWriter {
     // METHODS TO IMPLEMENT AudioFileWriter
 
 
+    @Override
     public AudioFileFormat.Type[] getAudioFileTypes(AudioInputStream stream) {
 
         AudioFileFormat.Type[] filetypes = new AudioFileFormat.Type[types.length];
@@ -106,6 +106,7 @@ public final class WaveFileWriter extends SunFileWriter {
     }
 
 
+    @Override
     public int write(AudioInputStream stream, AudioFileFormat.Type fileType, OutputStream out) throws IOException {
         Objects.requireNonNull(stream);
         Objects.requireNonNull(fileType);
@@ -130,6 +131,7 @@ public final class WaveFileWriter extends SunFileWriter {
     }
 
 
+    @Override
     public int write(AudioInputStream stream, AudioFileFormat.Type fileType, File out) throws IOException {
         Objects.requireNonNull(stream);
         Objects.requireNonNull(fileType);
@@ -173,6 +175,9 @@ public final class WaveFileWriter extends SunFileWriter {
      * Throws IllegalArgumentException if not supported.
      */
     private AudioFileFormat getAudioFileFormat(AudioFileFormat.Type type, AudioInputStream stream) {
+        if (!isFileTypeSupported(type, stream)) {
+            throw new IllegalArgumentException("File type " + type + " not supported.");
+        }
         AudioFormat format = null;
         WaveFileFormat fileFormat = null;
         AudioFormat.Encoding encoding = AudioFormat.Encoding.PCM_SIGNED;
@@ -187,9 +192,6 @@ public final class WaveFileWriter extends SunFileWriter {
         float frameRate;
         int fileSize;
 
-        if (!types[0].equals(type)) {
-            throw new IllegalArgumentException("File type " + type + " not supported.");
-        }
         int waveType = WaveFileFormat.WAVE_FORMAT_PCM;
 
         if( AudioFormat.Encoding.ALAW.equals(streamEncoding) ||
