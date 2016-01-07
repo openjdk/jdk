@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package com.sun.tools.javac.parser;
 
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;

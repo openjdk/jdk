@@ -124,9 +124,6 @@ public class ToolBox {
     /** The stream used for logging output. */
     public PrintStream out = System.err;
 
-    JavaCompiler compiler;
-    StandardJavaFileManager standardJavaFileManager;
-
     /**
      * Checks if the host OS is some version of Windows.
      * @return true if the host OS is some version of Windows
@@ -868,14 +865,17 @@ public class ToolBox {
      */
     public class JavacTask extends AbstractTask<JavacTask> {
         private boolean includeStandardOptions;
-        private String classpath;
-        private String sourcepath;
-        private String outdir;
+        private List<Path> classpath;
+        private List<Path> sourcepath;
+        private Path outdir;
         private List<String> options;
         private List<String> classes;
         private List<String> files;
         private List<JavaFileObject> fileObjects;
         private JavaFileManager fileManager;
+
+        private JavaCompiler compiler;
+        private StandardJavaFileManager internalFileManager;
 
         /**
          * Creates a task to execute {@code javac} using API mode.
@@ -898,7 +898,20 @@ public class ToolBox {
          * @return this task object
          */
         public JavacTask classpath(String classpath) {
-            this.classpath = classpath;
+            this.classpath = Stream.of(classpath.split(File.pathSeparator))
+                    .filter(s -> !s.isEmpty())
+                    .map(s -> Paths.get(s))
+                    .collect(Collectors.toList());
+            return this;
+        }
+
+        /**
+         * Sets the classpath.
+         * @param classpath the classpath
+         * @return this task object
+         */
+        public JavacTask classpath(Path... classpath) {
+            this.classpath = Arrays.asList(classpath);
             return this;
         }
 
@@ -908,7 +921,20 @@ public class ToolBox {
          * @return this task object
          */
         public JavacTask sourcepath(String sourcepath) {
-            this.sourcepath = sourcepath;
+            this.sourcepath = Stream.of(sourcepath.split(File.pathSeparator))
+                    .filter(s -> !s.isEmpty())
+                    .map(s -> Paths.get(s))
+                    .collect(Collectors.toList());
+            return this;
+        }
+
+        /**
+         * Sets the sourcepath.
+         * @param classpath the sourcepath
+         * @return this task object
+         */
+        public JavacTask sourcepath(Path... sourcepath) {
+            this.sourcepath = Arrays.asList(sourcepath);
             return this;
         }
 
@@ -918,6 +944,16 @@ public class ToolBox {
          * @return this task object
          */
         public JavacTask outdir(String outdir) {
+            this.outdir = Paths.get(outdir);
+            return this;
+        }
+
+        /**
+         * Sets the output directory.
+         * @param outdir the output directory
+         * @return this task object
+         */
+        public JavacTask outdir(Path outdir) {
             this.outdir = outdir;
             return this;
         }
@@ -1039,38 +1075,43 @@ public class ToolBox {
         }
 
         private int runAPI(PrintWriter pw) throws IOException {
-//            if (compiler == null) {
-                // TODO: allow this to be set externally
-//                compiler = ToolProvider.getSystemJavaCompiler();
-                compiler = JavacTool.create();
-//            }
+            try {
+//                if (compiler == null) {
+                    // TODO: allow this to be set externally
+//                    compiler = ToolProvider.getSystemJavaCompiler();
+                    compiler = JavacTool.create();
+//                }
 
-            if (fileManager == null)
-                fileManager = compiler.getStandardFileManager(null, null, null);
-            if (outdir != null)
-                setLocation(StandardLocation.CLASS_OUTPUT, toFiles(outdir));
-            if (classpath != null)
-                setLocation(StandardLocation.CLASS_PATH, toFiles(classpath));
-            if (sourcepath != null)
-                setLocation(StandardLocation.SOURCE_PATH, toFiles(sourcepath));
-            List<String> allOpts = new ArrayList<>();
-            if (options != null)
-                allOpts.addAll(options);
+                if (fileManager == null)
+                    fileManager = internalFileManager = compiler.getStandardFileManager(null, null, null);
+                if (outdir != null)
+                    setLocationFromPaths(StandardLocation.CLASS_OUTPUT, Collections.singletonList(outdir));
+                if (classpath != null)
+                    setLocationFromPaths(StandardLocation.CLASS_PATH, classpath);
+                if (sourcepath != null)
+                    setLocationFromPaths(StandardLocation.SOURCE_PATH, sourcepath);
+                List<String> allOpts = new ArrayList<>();
+                if (options != null)
+                    allOpts.addAll(options);
 
-            Iterable<? extends JavaFileObject> allFiles = joinFiles(files, fileObjects);
-            JavaCompiler.CompilationTask task = compiler.getTask(pw,
-                    fileManager,
-                    null,  // diagnostic listener; should optionally collect diags
-                    allOpts,
-                    classes,
-                    allFiles);
-            return ((JavacTaskImpl) task).doCall().exitCode;
+                Iterable<? extends JavaFileObject> allFiles = joinFiles(files, fileObjects);
+                JavaCompiler.CompilationTask task = compiler.getTask(pw,
+                        fileManager,
+                        null,  // diagnostic listener; should optionally collect diags
+                        allOpts,
+                        classes,
+                        allFiles);
+                return ((JavacTaskImpl) task).doCall().exitCode;
+            } finally {
+                if (internalFileManager != null)
+                    internalFileManager.close();
+            }
         }
 
-        private void setLocation(StandardLocation location, List<File> files) throws IOException {
+        private void setLocationFromPaths(StandardLocation location, List<Path> files) throws IOException {
             if (!(fileManager instanceof StandardJavaFileManager))
                 throw new IllegalStateException("not a StandardJavaFileManager");
-            ((StandardJavaFileManager) fileManager).setLocation(location, files);
+            ((StandardJavaFileManager) fileManager).setLocationFromPaths(location, files);
         }
 
         private int runCommand(PrintWriter pw) {
@@ -1105,15 +1146,15 @@ public class ToolBox {
                 args.addAll(options);
             if (outdir != null) {
                 args.add("-d");
-                args.add(outdir);
+                args.add(outdir.toString());
             }
             if (classpath != null) {
                 args.add("-classpath");
-                args.add(classpath);
+                args.add(toSearchPath(classpath));
             }
             if (sourcepath != null) {
                 args.add("-sourcepath");
-                args.add(sourcepath);
+                args.add(toSearchPath(sourcepath));
             }
             if (classes != null)
                 args.addAll(classes);
@@ -1123,23 +1164,20 @@ public class ToolBox {
             return args;
         }
 
-        private List<File> toFiles(String path) {
-            List<File> result = new ArrayList<>();
-            for (String s : path.split(File.pathSeparator)) {
-                if (!s.isEmpty())
-                    result.add(new File(s));
-            }
-            return result;
+        private String toSearchPath(List<Path> files) {
+            return files.stream()
+                .map(Path::toString)
+                .collect(Collectors.joining(File.pathSeparator));
         }
 
         private Iterable<? extends JavaFileObject> joinFiles(
                 List<String> files, List<JavaFileObject> fileObjects) {
             if (files == null)
                 return fileObjects;
-            if (standardJavaFileManager == null)
-                standardJavaFileManager = compiler.getStandardFileManager(null, null, null);
+            if (internalFileManager == null)
+                internalFileManager = compiler.getStandardFileManager(null, null, null);
             Iterable<? extends JavaFileObject> filesAsFileObjects =
-                    standardJavaFileManager.getJavaFileObjectsFromStrings(files);
+                    internalFileManager.getJavaFileObjectsFromStrings(files);
             if (fileObjects == null)
                 return filesAsFileObjects;
             List<JavaFileObject> combinedList = new ArrayList<>();
@@ -1364,6 +1402,15 @@ public class ToolBox {
         }
 
         /**
+         * Creates a JarTask for use with a given jar file.
+         * @param path the file
+         */
+        public JarTask(Path path) {
+            this();
+            jar = path;
+        }
+
+        /**
          * Sets a manifest for the jar file.
          * @param manifest the manifest
          * @return this task object
@@ -1413,6 +1460,16 @@ public class ToolBox {
          */
         public JarTask baseDir(String baseDir) {
             this.baseDir = Paths.get(baseDir);
+            return this;
+        }
+
+        /**
+         * Sets the base directory for files to be written into the jar file.
+         * @param baseDir the base directory
+         * @return this task object
+         */
+        public JarTask baseDir(Path baseDir) {
+            this.baseDir = baseDir;
             return this;
         }
 

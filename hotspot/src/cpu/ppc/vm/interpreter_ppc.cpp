@@ -39,7 +39,6 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -60,26 +59,6 @@
 #endif
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
-
-int AbstractInterpreter::BasicType_as_index(BasicType type) {
-  int i = 0;
-  switch (type) {
-    case T_BOOLEAN: i = 0; break;
-    case T_CHAR   : i = 1; break;
-    case T_BYTE   : i = 2; break;
-    case T_SHORT  : i = 3; break;
-    case T_INT    : i = 4; break;
-    case T_LONG   : i = 5; break;
-    case T_VOID   : i = 6; break;
-    case T_FLOAT  : i = 7; break;
-    case T_DOUBLE : i = 8; break;
-    case T_OBJECT : i = 9; break;
-    case T_ARRAY  : i = 9; break;
-    default       : ShouldNotReachHere();
-  }
-  assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers, "index out of bounds");
-  return i;
-}
 
 address AbstractInterpreterGenerator::generate_slow_signature_handler() {
   // Slow_signature handler that respects the PPC C calling conventions.
@@ -578,19 +557,4 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   }
 
   return NULL;
-}
-
-void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_array) {
-  // This code is sort of the equivalent of C2IAdapter::setup_stack_frame back in
-  // the days we had adapter frames. When we deoptimize a situation where a
-  // compiled caller calls a compiled caller will have registers it expects
-  // to survive the call to the callee. If we deoptimize the callee the only
-  // way we can restore these registers is to have the oldest interpreter
-  // frame that we create restore these values. That is what this routine
-  // will accomplish.
-
-  // At the moment we have modified c2 to not have any callee save registers
-  // so this problem does not exist and this routine is just a place holder.
-
-  assert(f->is_interpreted_frame(), "must be interpreted");
 }

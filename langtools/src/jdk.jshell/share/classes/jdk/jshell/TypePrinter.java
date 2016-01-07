@@ -41,15 +41,15 @@ import java.util.function.BinaryOperator;
  * Print types in source form.
  */
 class TypePrinter extends Printer {
+    private static final String OBJECT = "Object";
 
     private final JavacMessages messages;
     private final BinaryOperator<String> fullClassNameAndPackageToClass;
-    private final Type typeToPrint;
+    private boolean useWildCard = false;
 
     TypePrinter(JavacMessages messages, BinaryOperator<String> fullClassNameAndPackageToClass, Type typeToPrint) {
         this.messages = messages;
         this.fullClassNameAndPackageToClass = fullClassNameAndPackageToClass;
-        this.typeToPrint = typeToPrint;
     }
 
     @Override
@@ -64,19 +64,38 @@ class TypePrinter extends Printer {
 
     @Override
     public String visitCapturedType(Type.CapturedType t, Locale locale) {
-        if (t == typeToPrint) {
-            return visit(t.getUpperBound(), locale);
-        } else {
-            return visit(t.wildcard, locale);
+        return visit(t.wildcard, locale);
+    }
+
+    @Override
+    public String visitWildcardType(Type.WildcardType wt, Locale locale) {
+        if (useWildCard) { // at TypeArgument(ex: List<? extends T>)
+            return super.visitWildcardType(wt, locale);
+        } else { // at TopLevelType(ex: ? extends List<T>, ? extends Number[][])
+            Type extendsBound = wt.getExtendsBound();
+            return extendsBound == null
+                    ? OBJECT
+                    : visit(extendsBound, locale);
         }
     }
 
     @Override
     public String visitType(Type t, Locale locale) {
         String s = (t.tsym == null || t.tsym.name == null)
-                ? "Object" // none
+                ? OBJECT // none
                 : t.tsym.name.toString();
         return s;
+    }
+
+    @Override
+    public String visitClassType(ClassType ct, Locale locale) {
+        boolean prevUseWildCard = useWildCard;
+        try {
+            useWildCard = true;
+            return super.visitClassType(ct, locale);
+        } finally {
+            useWildCard = prevUseWildCard;
+        }
     }
 
     /**
@@ -101,7 +120,7 @@ class TypePrinter extends Printer {
             }
             return s.toString();
             ***/
-            return "Object";
+            return OBJECT;
         } else if (sym.name.length() == 0) {
             // Anonymous
             String s;

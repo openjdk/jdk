@@ -75,7 +75,7 @@ final class FloatArrayCache implements MarlinConst {
     void putDirtyArray(final float[] array, final int length) {
         if (length != arraySize) {
             if (doChecks) {
-                System.out.println("ArrayCache: bad length = " + length);
+                MarlinUtils.logInfo("ArrayCache: bad length = " + length);
             }
             return;
         }
@@ -99,7 +99,7 @@ final class FloatArrayCache implements MarlinConst {
     {
         if (length != arraySize) {
             if (doChecks) {
-                System.out.println("ArrayCache: bad length = " + length);
+                MarlinUtils.logInfo("ArrayCache: bad length = " + length);
             }
             return;
         }

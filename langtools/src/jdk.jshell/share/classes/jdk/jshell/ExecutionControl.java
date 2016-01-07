@@ -33,6 +33,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import com.sun.jdi.*;
 import java.io.EOFException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import jdk.jshell.ClassTracker.ClassInfo;
@@ -247,17 +248,18 @@ class ExecutionControl {
         //MessageOutput.textResources = ResourceBundle.getBundle("impl.TTYResources",
         //        Locale.getDefault());
 
-        String connect = "com.sun.jdi.CommandLineLaunch:";
-        String cmdLine = "jdk.internal.jshell.remote.RemoteAgent";
+        String connectorName = "com.sun.jdi.CommandLineLaunch";
         String classPath = System.getProperty("java.class.path");
         String bootclassPath = System.getProperty("sun.boot.class.path");
-        String javaArgs = "-classpath " + classPath + " -Xbootclasspath:" + bootclassPath;
+        String javaArgs = "-classpath \"" + classPath + "\" -Xbootclasspath:\"" + bootclassPath + "\"";
+        Map<String, String> argumentName2Value = new HashMap<>();
+        argumentName2Value.put("main", "jdk.internal.jshell.remote.RemoteAgent " + port);
+        argumentName2Value.put("options", javaArgs);
 
-        String connectSpec = connect + "main=" + cmdLine + " " + port + ",options=" + javaArgs + ",";
         boolean launchImmediately = true;
         int traceFlags = 0;// VirtualMachine.TRACE_SENDS | VirtualMachine.TRACE_EVENTS;
 
-        env.init(connectSpec, launchImmediately, traceFlags);
+        env.init(connectorName, argumentName2Value, launchImmediately, traceFlags);
 
         if (env.connection().isOpen() && env.vm().canBeModified()) {
             /*

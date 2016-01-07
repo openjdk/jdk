@@ -43,8 +43,8 @@
 #define __ _masm->
 
 // Global Register Names
-Register rbcp     = LP64_ONLY(r13) NOT_LP64(rsi);
-Register rlocals  = LP64_ONLY(r14) NOT_LP64(rdi);
+static const Register rbcp     = LP64_ONLY(r13) NOT_LP64(rsi);
+static const Register rlocals  = LP64_ONLY(r14) NOT_LP64(rdi);
 
 // Platform-dependent initialization
 void TemplateTable::pd_initialize() {
