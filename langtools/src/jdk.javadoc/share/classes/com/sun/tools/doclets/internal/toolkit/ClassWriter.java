@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package com.sun.tools.doclets.internal.toolkit;
 
 import java.io.*;

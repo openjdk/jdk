@@ -43,7 +43,10 @@
  * implementing memory-sensitive caches, weak references are for
  * implementing canonicalizing mappings that do not prevent their keys
  * (or values) from being reclaimed, and phantom references are for
- * scheduling post-mortem cleanup actions.
+ * scheduling pre-mortem cleanup actions in a more flexible way than
+ * is possible with the Java finalization mechanism.
+ * Post-mortem cleanup actions can be registered and managed by a
+ * {@link java.lang.ref.Cleaner}.
  *
  * <p> Each reference-object type is implemented by a subclass of the
  * abstract base {@link java.lang.ref.Reference} class.

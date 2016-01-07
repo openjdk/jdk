@@ -36,7 +36,7 @@ extern "C" {
   address _flush_reg_windows();   // in .s file.
   // Flush registers to stack. In case of error we will need to stack walk.
   address bootstrap_flush_windows(void) {
-    Thread* thread = ThreadLocalStorage::get_thread_slow();
+    Thread* thread = Thread::current_or_null();
     // Very early in process there is no thread.
     if (thread != NULL) {
       guarantee(thread->is_Java_thread(), "Not a Java thread.");

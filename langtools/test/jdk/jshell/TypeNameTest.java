@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @summary null test
+ * @bug 8144903
+ * @summary Tests for determining the type from the expression
  * @build KullaTesting TestingInputStream
  * @run testng TypeNameTest
  */
@@ -34,7 +35,6 @@ import org.testng.annotations.Test;
 
 import static jdk.jshell.Snippet.Status.VALID;
 import static org.testng.Assert.assertEquals;
-import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 
 @Test
 public class TypeNameTest extends KullaTesting {
@@ -62,6 +62,11 @@ public class TypeNameTest extends KullaTesting {
         assertEquals(sn.typeName(), "Class<? extends String>");
     }
 
+    public void testArrayTypeOfCapturedTypeName() {
+        VarSnippet sn = (VarSnippet) varKey(assertEval("\"\".getClass().getEnumConstants();"));
+        assertEquals(sn.typeName(), "String[]");
+    }
+
     public void testJavaLang() {
         VarSnippet sn = (VarSnippet) varKey(assertEval("\"\";"));
         assertEquals(sn.typeName(), "String");
@@ -83,14 +88,16 @@ public class TypeNameTest extends KullaTesting {
         VarSnippet sn3 = (VarSnippet) varKey(assertEval("list3.iterator().next()"));
         assertEquals(sn3.typeName(), "Object");
         assertEval("class Test1<X extends CharSequence> { public X get() { return null; } }");
-        Snippet x = varKey(assertEval("Test1<?> x = new Test1<>();"));
-        VarSnippet sn4 = (VarSnippet) varKey(assertEval("x.get()"));
-        assertEquals(sn4.typeName(), "CharSequence");
-        assertEval("class Foo<X extends Number & CharSequence> { public X get() { return null; } }");
-        assertEval("Foo<?> x = new Foo<>();",
-                ste(MAIN_SNIPPET, VALID, VALID, true, null),
-                ste(x, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
-        VarSnippet sn5 = (VarSnippet) varKey(assertEval("x.get()"));
+        Snippet x = varKey(assertEval("Test1<?> test1 = new Test1<>();"));
+        VarSnippet sn4 = (VarSnippet) varKey(assertEval("test1.get()"));
+        assertEquals(sn4.typeName(), "Object");
+        assertEval("class Test2<X extends Number & CharSequence> { public X get() { return null; } }");
+        assertEval("Test2<?> test2 = new Test2<>();");
+        VarSnippet sn5 = (VarSnippet) varKey(assertEval("test2.get()"));
         assertEquals(sn5.typeName(), "Object");
+        assertEval("class Test3<T> { T[][] get() { return null; } }", added(VALID));
+        assertEval("Test3<? extends String> test3 = new Test3<>();");
+        VarSnippet sn6 = (VarSnippet) varKey(assertEval("test3.get()"));
+        assertEquals(sn6.typeName(), "String[][]");
     }
 }

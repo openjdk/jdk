@@ -134,6 +134,7 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
     private static final ZoneId ZONE_GAZA = ZoneId.of("Asia/Gaza");
     private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
     private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
+    private static final ZoneOffset OFFSET_MTWO = ZoneOffset.ofHours(-2);
     private static final LocalDate DATE = LocalDate.of(2008, 12, 3);
     private OffsetTime TEST_11_30_59_500_PONE;
 
@@ -1146,6 +1147,29 @@ public class TCKOffsetTime extends AbstractDateTimeTest {
     @Test(expectedExceptions=NullPointerException.class)
     public void test_format_formatter_null() {
         OffsetTime.of(11, 30, 0, 0, OFFSET_PONE).format(null);
+    }
+
+    //-----------------------------------------------------------------------
+    // toEpochSecond()
+    //-----------------------------------------------------------------------
+    @DataProvider(name="epochSecond")
+    Object[][] provider_toEpochSecond() {
+        return new Object[][] {
+        {OffsetTime.of(0, 0, 0, 0, OFFSET_PTWO).toEpochSecond(LocalDate.of(1970, 1, 1)), -7200L},
+        {OffsetTime.of(11, 30, 0, 0, OFFSET_MTWO).toEpochSecond(LocalDate.of(1995, 9, 27)), 812208600L},
+        {OffsetTime.of(0, 0, 0, 0, OFFSET_PONE).toEpochSecond(LocalDate.of(1970, 1, 1)),
+                Instant.ofEpochSecond(-3600).getEpochSecond()},
+        {OffsetTime.of(11, 30, 0, 0, OFFSET_PTWO).toEpochSecond(LocalDate.of(1965, 12, 31)),
+                Instant.ofEpochSecond(-126282600L).getEpochSecond()},
+        {OffsetTime.of(11, 30, 0, 0, OFFSET_MTWO).toEpochSecond(LocalDate.of(1970, 1, 1)),
+                OffsetDateTime.of(LocalDate.of(1970, 1, 1), LocalTime.of(11, 30), OFFSET_MTWO)
+                              .toEpochSecond()},
+        };
+    }
+
+    @Test(dataProvider="epochSecond")
+    public void test_toEpochSecond(long actual, long expected) {
+        assertEquals(actual, expected);
     }
 
     //-----------------------------------------------------------------------

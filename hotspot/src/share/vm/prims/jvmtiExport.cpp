@@ -374,7 +374,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
   }
 
   if (JvmtiEnv::get_phase() == JVMTI_PHASE_LIVE) {
-    JavaThread* current_thread = (JavaThread*) ThreadLocalStorage::thread();
+    JavaThread* current_thread = JavaThread::current();
     // transition code: native to VM
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiEnv*, JvmtiExport::get_jvmti_interface, current_thread)
@@ -1901,7 +1901,7 @@ void JvmtiExport::post_dynamic_code_generated_while_holding_locks(const char* na
 
 // Collect all the vm internally allocated objects which are visible to java world
 void JvmtiExport::record_vm_internal_object_allocation(oop obj) {
-  Thread* thread = ThreadLocalStorage::thread();
+  Thread* thread = Thread::current_or_null();
   if (thread != NULL && thread->is_Java_thread())  {
     // Can not take safepoint here.
     No_Safepoint_Verifier no_sfpt;
@@ -2436,7 +2436,7 @@ NoJvmtiVMObjectAllocMark::NoJvmtiVMObjectAllocMark() : _collector(NULL) {
   if (!JvmtiExport::should_post_vm_object_alloc()) {
     return;
   }
-  Thread* thread = ThreadLocalStorage::thread();
+  Thread* thread = Thread::current_or_null();
   if (thread != NULL && thread->is_Java_thread())  {
     JavaThread* current_thread = (JavaThread*)thread;
     JvmtiThreadState *state = current_thread->jvmti_thread_state();

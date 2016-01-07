@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package jdk.internal.jshell.remote;
 
 import java.util.regex.Pattern;

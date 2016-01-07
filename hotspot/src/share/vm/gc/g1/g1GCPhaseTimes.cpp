@@ -141,6 +141,7 @@ void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
   assert(active_gc_threads <= _max_gc_threads, "The number of active threads must be <= the max number of threads");
   _active_gc_threads = active_gc_threads;
   _cur_expand_heap_time_ms = 0.0;
+  _external_accounted_time_ms = 0.0;
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
     _gc_par_phases[i]->reset();
@@ -185,9 +186,12 @@ void G1GCPhaseTimes::print_stats(int level, const char* str, double value, uint 
 }
 
 double G1GCPhaseTimes::accounted_time_ms() {
+    // First subtract any externally accounted time
+    double misc_time_ms = _external_accounted_time_ms;
+
     // Subtract the root region scanning wait time. It's initialized to
     // zero at the start of the pause.
-    double misc_time_ms = _root_region_scan_wait_time_ms;
+    misc_time_ms += _root_region_scan_wait_time_ms;
 
     misc_time_ms += _cur_collection_par_time_ms;
 

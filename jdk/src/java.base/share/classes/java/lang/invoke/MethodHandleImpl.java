@@ -32,8 +32,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
@@ -64,11 +64,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
 
     /// Factory methods to create method handles:
-
-    static void initStatics() {
-        // Trigger selected static initializations.
-        MemberName.Factory.INSTANCE.getClass();
-    }
 
     static MethodHandle makeArrayElementAccessor(Class<?> arrayClass, boolean isSetter) {
         if (arrayClass == Object[].class)
@@ -700,33 +695,43 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     MethodHandle makeBlockInliningWrapper(MethodHandle target) {
         LambdaForm lform;
         if (DONT_INLINE_THRESHOLD > 0) {
-            lform = PRODUCE_BLOCK_INLINING_FORM.apply(target);
+            lform = Makers.PRODUCE_BLOCK_INLINING_FORM.apply(target);
         } else {
-            lform = PRODUCE_REINVOKER_FORM.apply(target);
+            lform = Makers.PRODUCE_REINVOKER_FORM.apply(target);
         }
         return new CountingWrapper(target, lform,
-                PRODUCE_BLOCK_INLINING_FORM, PRODUCE_REINVOKER_FORM,
+                Makers.PRODUCE_BLOCK_INLINING_FORM, Makers.PRODUCE_REINVOKER_FORM,
                                    DONT_INLINE_THRESHOLD);
     }
 
-    /** Constructs reinvoker lambda form which block inlining during JIT-compilation for a particular method handle */
-    private static final Function<MethodHandle, LambdaForm> PRODUCE_BLOCK_INLINING_FORM = new Function<MethodHandle, LambdaForm>() {
-        @Override
-        public LambdaForm apply(MethodHandle target) {
-            return DelegatingMethodHandle.makeReinvokerForm(target,
-                               MethodTypeForm.LF_DELEGATE_BLOCK_INLINING, CountingWrapper.class, "reinvoker.dontInline", false,
-                               DelegatingMethodHandle.NF_getTarget, CountingWrapper.NF_maybeStopCounting);
-        }
-    };
+    private final static class Makers {
+        /** Constructs reinvoker lambda form which block inlining during JIT-compilation for a particular method handle */
+        static final Function<MethodHandle, LambdaForm> PRODUCE_BLOCK_INLINING_FORM = new Function<MethodHandle, LambdaForm>() {
+            @Override
+            public LambdaForm apply(MethodHandle target) {
+                return DelegatingMethodHandle.makeReinvokerForm(target,
+                                   MethodTypeForm.LF_DELEGATE_BLOCK_INLINING, CountingWrapper.class, "reinvoker.dontInline", false,
+                                   DelegatingMethodHandle.NF_getTarget, CountingWrapper.NF_maybeStopCounting);
+            }
+        };
 
-    /** Constructs simple reinvoker lambda form for a particular method handle */
-    private static final Function<MethodHandle, LambdaForm> PRODUCE_REINVOKER_FORM = new Function<MethodHandle, LambdaForm>() {
-        @Override
-        public LambdaForm apply(MethodHandle target) {
-            return DelegatingMethodHandle.makeReinvokerForm(target,
-                    MethodTypeForm.LF_DELEGATE, DelegatingMethodHandle.class, DelegatingMethodHandle.NF_getTarget);
-        }
-    };
+        /** Constructs simple reinvoker lambda form for a particular method handle */
+        static final Function<MethodHandle, LambdaForm> PRODUCE_REINVOKER_FORM = new Function<MethodHandle, LambdaForm>() {
+            @Override
+            public LambdaForm apply(MethodHandle target) {
+                return DelegatingMethodHandle.makeReinvokerForm(target,
+                        MethodTypeForm.LF_DELEGATE, DelegatingMethodHandle.class, DelegatingMethodHandle.NF_getTarget);
+            }
+        };
+
+        /** Maker of type-polymorphic varargs */
+        static final ClassValue<MethodHandle[]> TYPED_COLLECTORS = new ClassValue<MethodHandle[]>() {
+            @Override
+            protected MethodHandle[] computeValue(Class<?> type) {
+                return new MethodHandle[MAX_JVM_ARITY + 1];
+            }
+        };
+    }
 
     /**
      * Counting method handle. It has 2 states: counting and non-counting.
@@ -1483,7 +1488,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
 
     private static final int LEFT_ARGS = FILL_ARRAYS_COUNT - 1;
-    private static final @Stable MethodHandle[] FILL_ARRAY_TO_RIGHT = new MethodHandle[MAX_ARITY+1];
+    private static final @Stable MethodHandle[] FILL_ARRAY_TO_RIGHT = new MethodHandle[MAX_ARITY + 1];
     /** fill_array_to_right(N).invoke(a, argL..arg[N-1])
      *  fills a[L]..a[N-1] with corresponding arguments,
      *  and then returns a.  The value L is a global constant (LEFT_ARGS).
@@ -1527,15 +1532,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             return MethodHandles.collectArguments(rightFill, 0, midFill);
     }
 
-    // Type-polymorphic version of varargs maker.
-    private static final ClassValue<MethodHandle[]> TYPED_COLLECTORS
-        = new ClassValue<MethodHandle[]>() {
-            @Override
-            protected MethodHandle[] computeValue(Class<?> type) {
-                return new MethodHandle[256];
-            }
-    };
-
     static final int MAX_JVM_ARITY = 255;  // limit imposed by the JVM
 
     /** Return a method handle that takes the indicated number of
@@ -1557,7 +1553,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         if (elemType == Object.class)
             return varargsArray(nargs);
         // other cases:  primitive arrays, subtypes of Object[]
-        MethodHandle cache[] = TYPED_COLLECTORS.get(elemType);
+        MethodHandle cache[] = Makers.TYPED_COLLECTORS.get(elemType);
         MethodHandle mh = nargs < cache.length ? cache[nargs] : null;
         if (mh != null)  return mh;
         if (nargs == 0) {

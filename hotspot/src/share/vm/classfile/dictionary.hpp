@@ -54,7 +54,7 @@ private:
                              Symbol* name, ClassLoaderData* loader_data);
 
 protected:
-  DictionaryEntry* bucket(int i) {
+  DictionaryEntry* bucket(int i) const {
     return (DictionaryEntry*)Hashtable<Klass*, mtClass>::bucket(i);
   }
 
@@ -323,7 +323,7 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
     }
   }
 
-  bool equals(Symbol* class_name, ClassLoaderData* loader_data) const {
+  bool equals(const Symbol* class_name, ClassLoaderData* loader_data) const {
     Klass* klass = (Klass*)literal();
     return (klass->name() == class_name && _loader_data == loader_data);
   }
