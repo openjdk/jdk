@@ -36,7 +36,7 @@
 
 class BitMap;
 class CardTableModRefBS;
-class G1BlockOffsetSharedArray;
+class G1BlockOffsetTable;
 class ConcurrentG1Refine;
 class CodeBlobClosure;
 class G1CollectedHeap;
@@ -171,7 +171,7 @@ class ScanRSClosure : public HeapRegionClosure {
   G1ParPushHeapRSClosure* _oc;
   CodeBlobClosure* _code_root_cl;
 
-  G1BlockOffsetSharedArray* _bot_shared;
+  G1BlockOffsetTable* _bot;
   G1SATBCardTableModRefBS *_ct_bs;
 
   double _strong_code_root_scan_time_sec;

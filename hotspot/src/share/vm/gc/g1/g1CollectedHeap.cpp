@@ -1745,7 +1745,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _is_alive_closure_stw(this),
   _ref_processor_cm(NULL),
   _ref_processor_stw(NULL),
-  _bot_shared(NULL),
+  _bot(NULL),
   _cg1r(NULL),
   _g1mm(NULL),
   _refine_cte_cl(NULL),
@@ -1906,8 +1906,8 @@ jint G1CollectedHeap::initialize() {
   // Create storage for the BOT, card table, card counts table (hot card cache) and the bitmaps.
   G1RegionToSpaceMapper* bot_storage =
     create_aux_memory_mapper("Block offset table",
-                             G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize),
-                             G1BlockOffsetSharedArray::heap_map_factor());
+                             G1BlockOffsetTable::compute_size(g1_rs.size() / HeapWordSize),
+                             G1BlockOffsetTable::heap_map_factor());
 
   ReservedSpace cardtable_rs(G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize));
   G1RegionToSpaceMapper* cardtable_storage =
@@ -1945,7 +1945,7 @@ jint G1CollectedHeap::initialize() {
 
   FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
-  _bot_shared = new G1BlockOffsetSharedArray(reserved_region(), bot_storage);
+  _bot = new G1BlockOffsetTable(reserved_region(), bot_storage);
 
   {
     HeapWord* start = _hrm.reserved().start();
