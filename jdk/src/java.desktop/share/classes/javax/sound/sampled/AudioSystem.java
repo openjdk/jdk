@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1187,32 +1187,24 @@ public class AudioSystem {
      * @see #isFileTypeSupported
      * @see #getAudioFileTypes
      */
-    public static int write(AudioInputStream stream, AudioFileFormat.Type fileType,
-                            OutputStream out) throws IOException {
+    public static int write(final AudioInputStream stream,
+                            final AudioFileFormat.Type fileType,
+                            final OutputStream out) throws IOException {
         Objects.requireNonNull(stream);
         Objects.requireNonNull(fileType);
         Objects.requireNonNull(out);
 
-        List<AudioFileWriter> providers = getAudioFileWriters();
-        int bytesWritten = 0;
-        boolean flag = false;
-
-        for(int i=0; i < providers.size(); i++) {
-            AudioFileWriter writer = providers.get(i);
+        for (final AudioFileWriter writer : getAudioFileWriters()) {
             try {
-                bytesWritten = writer.write( stream, fileType, out ); // throws IOException
-                flag = true;
-                break;
-            } catch (IllegalArgumentException e) {
-                // thrown if this provider cannot write the sequence, try the next
-                continue;
+                return writer.write(stream, fileType, out);
+            } catch (final IllegalArgumentException ignored) {
+                // thrown if this provider cannot write the stream, try next
             }
         }
-        if(!flag) {
-            throw new IllegalArgumentException("could not write audio file: file type not supported: " + fileType);
-        } else {
-            return bytesWritten;
-        }
+        // "File type " + type + " not supported."
+        throw new IllegalArgumentException(
+                "could not write audio file: file type not supported: "
+                        + fileType);
     }
 
     /**
@@ -1232,32 +1224,23 @@ public class AudioSystem {
      * @see #isFileTypeSupported
      * @see #getAudioFileTypes
      */
-    public static int write(AudioInputStream stream, AudioFileFormat.Type fileType,
-                            File out) throws IOException {
+    public static int write(final AudioInputStream stream,
+                            final AudioFileFormat.Type fileType,
+                            final File out) throws IOException {
         Objects.requireNonNull(stream);
         Objects.requireNonNull(fileType);
         Objects.requireNonNull(out);
 
-        List<AudioFileWriter> providers = getAudioFileWriters();
-        int bytesWritten = 0;
-        boolean flag = false;
-
-        for(int i=0; i < providers.size(); i++) {
-            AudioFileWriter writer = providers.get(i);
+        for (final AudioFileWriter writer : getAudioFileWriters()) {
             try {
-                bytesWritten = writer.write( stream, fileType, out ); // throws IOException
-                flag = true;
-                break;
-            } catch (IllegalArgumentException e) {
-                // thrown if this provider cannot write the sequence, try the next
-                continue;
+                return writer.write(stream, fileType, out);
+            } catch (final IllegalArgumentException ignored) {
+                // thrown if this provider cannot write the stream, try next
             }
         }
-        if (!flag) {
-            throw new IllegalArgumentException("could not write audio file: file type not supported: " + fileType);
-        } else {
-            return bytesWritten;
-        }
+        throw new IllegalArgumentException(
+                "could not write audio file: file type not supported: "
+                        + fileType);
     }
 
     // METHODS FOR INTERNAL IMPLEMENTATION USE
