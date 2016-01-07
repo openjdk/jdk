@@ -78,19 +78,22 @@ GCTaskTimeStamp* GCTaskThread::time_stamp_at(uint index) {
 
 void GCTaskThread::print_task_time_stamps() {
   assert(log_is_enabled(Debug, gc, task, time), "Sanity");
-  assert(_time_stamps != NULL, "Sanity");
 
-  log_debug(gc, task, time)("GC-Thread %u entries: %d", id(), _time_stamp_index);
-  for(uint i=0; i<_time_stamp_index; i++) {
-    GCTaskTimeStamp* time_stamp = time_stamp_at(i);
-    log_debug(gc, task, time)("\t[ %s " JLONG_FORMAT " " JLONG_FORMAT " ]",
-                              time_stamp->name(),
-                              time_stamp->entry_time(),
-                              time_stamp->exit_time());
+  // Since _time_stamps is now lazily allocated we need to check that it
+  // has in fact been allocated when calling this function.
+  if (_time_stamps != NULL) {
+    log_debug(gc, task, time)("GC-Thread %u entries: %d", id(), _time_stamp_index);
+    for(uint i=0; i<_time_stamp_index; i++) {
+      GCTaskTimeStamp* time_stamp = time_stamp_at(i);
+      log_debug(gc, task, time)("\t[ %s " JLONG_FORMAT " " JLONG_FORMAT " ]",
+                                time_stamp->name(),
+                                time_stamp->entry_time(),
+                                time_stamp->exit_time());
+    }
+
+    // Reset after dumping the data
+    _time_stamp_index = 0;
   }
-
-  // Reset after dumping the data
-  _time_stamp_index = 0;
 }
 
 // GC workers get tasks from the GCTaskManager and execute
