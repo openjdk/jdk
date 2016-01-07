@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -78,7 +79,7 @@ class InferenceContext {
     /** list of inference vars in this context */
     List<Type> inferencevars;
 
-    Map<FreeTypeListener, List<Type>> freeTypeListeners = new HashMap<>();
+    Map<FreeTypeListener, List<Type>> freeTypeListeners = new LinkedHashMap<>();
 
     Types types;
     Infer infer;
@@ -263,7 +264,7 @@ class InferenceContext {
     void notifyChange(List<Type> inferredVars) {
         InferenceException thrownEx = null;
         for (Map.Entry<FreeTypeListener, List<Type>> entry :
-                new HashMap<>(freeTypeListeners).entrySet()) {
+                new LinkedHashMap<>(freeTypeListeners).entrySet()) {
             if (!Type.containsAny(entry.getValue(), inferencevars.diff(inferredVars))) {
                 try {
                     entry.getKey().typesInferred(this);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public class TrayIconPopupTest {
         robot.mousePress(InputEvent.BUTTON3_MASK);
         robot.delay(50);
         robot.mouseRelease(InputEvent.BUTTON3_MASK);
-        robot.delay(1000);
+        robot.delay(6000);
 
         robot.mouseMove(window.getLocation().x + 10, window.getLocation().y + 10);
         robot.mousePress(InputEvent.BUTTON3_MASK);

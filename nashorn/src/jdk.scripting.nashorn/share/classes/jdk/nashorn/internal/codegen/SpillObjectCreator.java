@@ -109,8 +109,6 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
                         //avoid blowing up the array if we can
                         if (constantValue instanceof Integer) {
                             arrayData = arrayData.set(index, ((Integer)constantValue).intValue(), false);
-                        } else if (constantValue instanceof Long) {
-                            arrayData = arrayData.set(index, ((Long)constantValue).longValue(), false);
                         } else if (constantValue instanceof Double) {
                             arrayData = arrayData.set(index, ((Double)constantValue).doubleValue(), false);
                         } else {
@@ -169,13 +167,13 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
                 final int index = ArrayIndex.getArrayIndex(tuple.key);
                 assert ArrayIndex.isValidArrayIndex(index);
                 method.dup();
-                method.load(ArrayIndex.toLongIndex(index));
-                loadTuple(method, tuple);
+                loadIndex(method, ArrayIndex.toLongIndex(index));
+                loadTuple(method, tuple, false);
                 method.dynamicSetIndex(callSiteFlags);
             } else {
                 assert property.getKey() instanceof String; // symbol keys not yet supported in object literals
                 method.dup();
-                loadTuple(method, tuple);
+                loadTuple(method, tuple, false);
                 method.dynamicSet((String) property.getKey(), codegen.getCallSiteFlags(), false);
             }
         }

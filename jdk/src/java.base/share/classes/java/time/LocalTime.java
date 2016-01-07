@@ -1490,6 +1490,30 @@ public final class LocalTime
         return total;
     }
 
+    /**
+     * Converts this {@code LocalTime} to the number of seconds since the epoch
+     * of 1970-01-01T00:00:00Z.
+     * <p>
+     * This combines this local time with the specified date and
+     * offset to calculate the epoch-second value, which is the
+     * number of elapsed seconds from 1970-01-01T00:00:00Z.
+     * Instants on the time-line after the epoch are positive, earlier
+     * are negative.
+     *
+     * @param date the local date, not null
+     * @param offset the zone offset, not null
+     * @return the number of seconds since the epoch of 1970-01-01T00:00:00Z, may be negative
+     * @since 9
+     */
+    public long toEpochSecond(LocalDate date, ZoneOffset offset) {
+        Objects.requireNonNull(date, "date");
+        Objects.requireNonNull(offset, "offset");
+        long epochDay = date.toEpochDay();
+        long secs = epochDay * 86400 + toSecondOfDay();
+        secs -= offset.getTotalSeconds();
+        return secs;
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Compares this time to another time.

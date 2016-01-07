@@ -314,7 +314,7 @@
           classpath="${run.test.classpath}"
           fork="true"
           dir=".">
-      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs.octane} -Xms${run.test.xms} -Xmx${run.test.xmx}"/>
       <!-- pass on all properties prefixed with 'nashorn' to the runtime -->
       <syspropertyset>
@@ -387,7 +387,7 @@
           classpath="${run.test.classpath}"
           fork="true"
           dir=".">
-      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
       <arg value="-timezone=PST"/>
       <arg value="--class-cache-size=50"/>

@@ -82,12 +82,17 @@ class ArrayKlass: public Klass {
   Klass* find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const;
 
   // Lookup operations
-  Method* uncached_lookup_method(Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode) const;
+  Method* uncached_lookup_method(const Symbol* name,
+                                 const Symbol* signature,
+                                 OverpassLookupMode overpass_mode) const;
 
-  // Casting from Klass*
   static ArrayKlass* cast(Klass* k) {
+    return const_cast<ArrayKlass*>(cast(const_cast<const Klass*>(k)));
+  }
+
+  static const ArrayKlass* cast(const Klass* k) {
     assert(k->is_array_klass(), "cast to ArrayKlass");
-    return static_cast<ArrayKlass*>(k);
+    return static_cast<const ArrayKlass*>(k);
   }
 
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots);

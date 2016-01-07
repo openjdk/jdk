@@ -29,7 +29,7 @@ import java.security.*;
 import java.util.*;
 import javax.crypto.*;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 /*
  * Confirm interoperability of RSA public keys between SunMSCAPI and SunJCE
