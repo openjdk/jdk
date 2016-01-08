@@ -58,8 +58,6 @@ public class Serialization {
                 Option.D.arg, "dest",
                 Option.I.arg, "pkg/*",
                 Option.X.arg, "pkg/pkg/*",
-                Option.IF.arg, "root/pkg/MyClass1.java",
-                Option.XF.arg, "root/pkg/MyClass2.java",
                 Option.SRC.arg, "root",
                 Option.SOURCEPATH.arg, "sourcepath",
                 Option.CLASSPATH.arg, "classpath",
@@ -87,8 +85,6 @@ public class Serialization {
         assertEquals(sl1.getPath(), sl2.getPath());
         assertEquals(sl1.getIncludes(), sl2.getIncludes());
         assertEquals(sl1.getExcludes(), sl2.getExcludes());
-        assertEquals(sl1.getIncludedFiles(), sl2.getIncludedFiles());
-        assertEquals(sl1.getExcludedFiles(), sl2.getExcludedFiles());
 
         assertEquals(options1.getClassSearchPath(), options2.getClassSearchPath());
         assertEquals(options1.getSourceSearchPaths(), options2.getSourceSearchPaths());
