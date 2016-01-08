@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2015 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2016 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3437,9 +3437,9 @@ static void reverse_words(unsigned long *s, unsigned long *d, int len) {
 void SharedRuntime::montgomery_multiply(jint *a_ints, jint *b_ints, jint *n_ints,
                                         jint len, jlong inv,
                                         jint *m_ints) {
+  len = len & 0x7fffFFFF; // C2 does not respect int to long conversion for stub calls.
   assert(len % 2 == 0, "array length in montgomery_multiply must be even");
   int longwords = len/2;
-  assert(longwords > 0, "unsupported");
 
   // Make very sure we don't use so much space that the stack might
   // overflow. 512 jints corresponds to an 16384-bit integer and
@@ -3467,9 +3467,9 @@ void SharedRuntime::montgomery_multiply(jint *a_ints, jint *b_ints, jint *n_ints
 void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
                                       jint len, jlong inv,
                                       jint *m_ints) {
+  len = len & 0x7fffFFFF; // C2 does not respect int to long conversion for stub calls.
   assert(len % 2 == 0, "array length in montgomery_square must be even");
   int longwords = len/2;
-  assert(longwords > 0, "unsupported");
 
   // Make very sure we don't use so much space that the stack might
   // overflow. 512 jints corresponds to an 16384-bit integer and
