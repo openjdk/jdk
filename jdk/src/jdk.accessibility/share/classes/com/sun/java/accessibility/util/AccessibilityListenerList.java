@@ -37,7 +37,6 @@ import javax.accessibility.*;
  *
  */
 
-@jdk.Exported
 public class AccessibilityListenerList {
     /* A null array to be shared by all empty listener lists */
     private final static Object[] NULL_ARRAY = new Object[0];

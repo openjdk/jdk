@@ -43,7 +43,6 @@ import javax.accessibility.*;
  * @see EventQueueMonitor#removeTopLevelWindowListener
  *
  */
-@jdk.Exported
 public interface TopLevelWindowListener extends EventListener {
 
     /**

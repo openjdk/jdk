@@ -61,7 +61,6 @@ import java.util.*;
  * as a header line containing the key but no associated value.
  * @since 1.6
  */
-@jdk.Exported
 public class Headers implements Map<String,List<String>> {
 
         HashMap<String,List<String>> map;

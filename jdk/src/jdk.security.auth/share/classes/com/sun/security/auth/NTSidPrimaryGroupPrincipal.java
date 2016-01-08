@@ -39,7 +39,6 @@ package com.sun.security.auth;
  * @see java.security.Principal
  * @see javax.security.auth.Subject
  */
-@jdk.Exported
 public class NTSidPrimaryGroupPrincipal extends NTSid {
 
     private static final long serialVersionUID = 8011978367305190527L;

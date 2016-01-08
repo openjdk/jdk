@@ -41,7 +41,6 @@ import java.util.List;
  * @author James McIlree
  * @since  1.3
  */
-@jdk.Exported
 public interface ClassType extends ReferenceType {
     /**
      * Gets the superclass of this class.
