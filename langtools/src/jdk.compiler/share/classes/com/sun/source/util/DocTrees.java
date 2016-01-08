@@ -43,7 +43,6 @@ import com.sun.source.doctree.DocTree;
  *
  * @since 1.8
  */
-@jdk.Exported
 public abstract class DocTrees extends Trees {
     /**
      * Returns a DocTrees object for a given CompilationTask.
