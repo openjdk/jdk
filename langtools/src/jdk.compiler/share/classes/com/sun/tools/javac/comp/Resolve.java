@@ -1219,18 +1219,21 @@ public class Resolve {
                             result &= true;
                         } else if (ret_t.hasTag(VOID)) {
                             result &= false;
-                        } else if (unrelatedFunctionalInterfaces(ret_t, ret_s)) {
-                            for (JCExpression expr : lambdaResults(tree)) {
-                                result &= functionalInterfaceMostSpecific(ret_t, ret_s, expr);
-                            }
-                        } else if (ret_t.isPrimitive() != ret_s.isPrimitive()) {
-                            for (JCExpression expr : lambdaResults(tree)) {
-                                boolean retValIsPrimitive = expr.isStandalone() && expr.type.isPrimitive();
-                                result &= (retValIsPrimitive == ret_t.isPrimitive()) &&
-                                          (retValIsPrimitive != ret_s.isPrimitive());
-                            }
                         } else {
-                            result &= compatibleBySubtyping(ret_t, ret_s);
+                            List<JCExpression> lambdaResults = lambdaResults(tree);
+                            if (!lambdaResults.isEmpty() && unrelatedFunctionalInterfaces(ret_t, ret_s)) {
+                                for (JCExpression expr : lambdaResults) {
+                                    result &= functionalInterfaceMostSpecific(ret_t, ret_s, expr);
+                                }
+                            } else if (!lambdaResults.isEmpty() && ret_t.isPrimitive() != ret_s.isPrimitive()) {
+                                for (JCExpression expr : lambdaResults) {
+                                    boolean retValIsPrimitive = expr.isStandalone() && expr.type.isPrimitive();
+                                    result &= (retValIsPrimitive == ret_t.isPrimitive()) &&
+                                            (retValIsPrimitive != ret_s.isPrimitive());
+                                }
+                            } else {
+                                result &= compatibleBySubtyping(ret_t, ret_s);
+                            }
                         }
                     }
                 }
