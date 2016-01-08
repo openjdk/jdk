@@ -52,7 +52,6 @@ import com.sun.security.auth.SolarisNumericGroupPrincipal;
  *             UnixLoginModule.
  *
  */
-@jdk.Exported(false)
 @Deprecated
 public class SolarisLoginModule implements LoginModule {
 

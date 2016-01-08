@@ -49,7 +49,6 @@ import sun.security.x509.X500Name;
  *             class.
  * @see javax.security.auth.x500.X500Principal
 */
-@jdk.Exported(false)
 @Deprecated
 public class X500Principal implements Principal, java.io.Serializable {
 
