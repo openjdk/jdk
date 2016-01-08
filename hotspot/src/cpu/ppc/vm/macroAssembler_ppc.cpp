@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2015 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2016 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3656,9 +3656,9 @@ int MacroAssembler::crc32_table_columns(Register table, Register tc0, Register t
   assert_different_registers(table, tc0, tc1, tc2);
   assert(table == tc3, "must be!");
 
-  if (ix0 != 0) addi(tc0, table, ix0);
-  if (ix1 != 0) addi(tc1, table, ix1);
-  if (ix2 != 0) addi(tc2, table, ix2);
+  addi(tc0, table, ix0);
+  addi(tc1, table, ix1);
+  addi(tc2, table, ix2);
   if (ix3 != 0) addi(tc3, table, ix3);
 
   return ix3;
@@ -3724,14 +3724,14 @@ void MacroAssembler::update_byteLoop_crc32(Register crc, Register buf, Register 
   const int mainLoop_alignment = loopAlignment ? 32 : 4; // (InputForNewCode > 4 ? InputForNewCode : 32) : 4;
 
   // Process all bytes in a single-byte loop.
-  cmpdi(CCR0, len, 0);                           // Anything to do?
-  mtctr(len);
+  clrldi_(len, len, 32);                         // Enforce 32 bit. Anything to do?
   beq(CCR0, L_done);
 
   if (invertCRC) {
     nand(crc, crc, crc);                         // ~c
   }
 
+  mtctr(len);
   align(mainLoop_alignment);
   BIND(L_mainLoop);
     lbz(data, 0, buf);                           // Byte from buffer, zero-extended.
@@ -3947,7 +3947,7 @@ void MacroAssembler::kernel_crc32_1word(Register crc, Register buf, Register len
 #else
   Register crc_rv = tmp;                         // Load_reverse needs separate registers to work on.
                                                  // Occupies tmp, but frees up crc.
-  load_reverse_32(crc_rv, crc);                  // evert byte order because we are dealing with big-endian data.
+  load_reverse_32(crc_rv, crc);                  // Revert byte order because we are dealing with big-endian data.
   tmp = crc;
 #endif
 
