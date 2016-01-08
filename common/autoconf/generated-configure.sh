@@ -4801,7 +4801,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1450277321
+DATE_WHEN_GENERATED=1452242585
 
 ###############################################################################
 #
@@ -45930,6 +45930,29 @@ $as_echo "$tool_specified" >&6; }
   else
     COMPILER_TARGET_BITS_FLAG="-m"
     COMPILER_COMMAND_FILE_FLAG="@"
+
+    # The solstudio linker does not support @-files.
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      COMPILER_COMMAND_FILE_FLAG=
+    fi
+
+    # Check if @file is supported by gcc
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if @file is supported by gcc" >&5
+$as_echo_n "checking if @file is supported by gcc... " >&6; }
+      # Extra emtpy "" to prevent ECHO from interpreting '--version' as argument
+      $ECHO "" "--version" > command.file
+      if $CXX @command.file 2>&5 >&5; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        COMPILER_COMMAND_FILE_FLAG="@"
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        COMPILER_COMMAND_FILE_FLAG=
+      fi
+      rm -rf command.file
+    fi
   fi
 
 
