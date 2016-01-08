@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,7 +375,7 @@ size_t DefNewGeneration::adjust_for_thread_increase(size_t new_size_candidate,
 
     // 1. Check an overflow at 'threads_count * NewSizeThreadIncrease'.
     threads_count = Threads::number_of_non_daemon_threads();
-    if (NewSizeThreadIncrease <= max_uintx / threads_count) {
+    if (threads_count > 0 && NewSizeThreadIncrease <= max_uintx / threads_count) {
       thread_increase_size = threads_count * NewSizeThreadIncrease;
 
       // 2. Check an overflow at 'new_size_candidate + thread_increase_size'.
