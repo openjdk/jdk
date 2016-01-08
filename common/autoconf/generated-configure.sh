@@ -4308,7 +4308,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4801,7 +4801,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1452242585
+DATE_WHEN_GENERATED=1452247834
 
 ###############################################################################
 #
@@ -51765,12 +51765,28 @@ $as_echo "$as_me: WARNING: cups not used, so --with-cups[-*] is ignored" >&2;}
     fi
 
     if test "x${with_cups}" != x; then
-      CUPS_CFLAGS="-I${with_cups}/include"
-      CUPS_FOUND=yes
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cups headers" >&5
+$as_echo_n "checking for cups headers... " >&6; }
+      if test -s "${with_cups}/include/cups/cups.h"; then
+        CUPS_CFLAGS="-I${with_cups}/include"
+        CUPS_FOUND=yes
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CUPS_FOUND" >&5
+$as_echo "$CUPS_FOUND" >&6; }
+      else
+        as_fn_error $? "Can't find 'include/cups/cups.h' under ${with_cups} given with the --with-cups option." "$LINENO" 5
+      fi
     fi
     if test "x${with_cups_include}" != x; then
-      CUPS_CFLAGS="-I${with_cups_include}"
-      CUPS_FOUND=yes
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cups headers" >&5
+$as_echo_n "checking for cups headers... " >&6; }
+      if test -s "${with_cups_include}/cups/cups.h"; then
+        CUPS_CFLAGS="-I${with_cups_include}"
+        CUPS_FOUND=yes
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CUPS_FOUND" >&5
+$as_echo "$CUPS_FOUND" >&6; }
+      else
+        as_fn_error $? "Can't find 'cups/cups.h' under ${with_cups_include} given with the --with-cups-include option." "$LINENO" 5
+      fi
     fi
     if test "x$CUPS_FOUND" = xno; then
       # Are the cups headers installed in the default /usr/include location?
