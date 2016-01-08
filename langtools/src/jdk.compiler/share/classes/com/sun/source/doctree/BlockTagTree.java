@@ -31,7 +31,6 @@ package com.sun.source.doctree;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface BlockTagTree extends DocTree {
     /**
      * Returns the name of the tag.

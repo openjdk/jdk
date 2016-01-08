@@ -34,7 +34,6 @@ package com.sun.source.doctree;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface LiteralTree extends InlineTagTree {
     /**
      * Returns the body of the {@code @code} or {@code @literal} tag.

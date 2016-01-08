@@ -43,7 +43,6 @@ import javax.lang.model.element.Name;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface BreakTree extends StatementTree {
     /**
      * Returns the label for this {@code break} statement.

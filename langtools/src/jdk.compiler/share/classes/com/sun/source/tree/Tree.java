@@ -39,13 +39,11 @@ package com.sun.source.tree;
  *
  * @since 1.6
  */
-@jdk.Exported
 public interface Tree {
 
     /**
      * Enumerates all kinds of trees.
      */
-    @jdk.Exported
     public enum Kind {
         /**
          * Used for instances of {@link AnnotatedTypeTree}

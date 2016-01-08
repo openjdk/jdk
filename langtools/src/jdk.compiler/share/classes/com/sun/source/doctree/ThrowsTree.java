@@ -38,7 +38,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface ThrowsTree extends BlockTagTree {
     /**
      * Returns a name of the exception being documented.

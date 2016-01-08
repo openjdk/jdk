@@ -36,7 +36,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface DocCommentTree extends DocTree {
     /**
      * Returns the first sentence of a documentation comment.

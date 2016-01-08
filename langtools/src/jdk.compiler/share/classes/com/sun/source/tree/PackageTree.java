@@ -35,7 +35,6 @@ import java.util.List;
  * @author Paul Govereau
  * @since 9
  */
-@jdk.Exported
 public interface PackageTree extends Tree {
     /**
      * Returns the annotations associated with this package declaration.
