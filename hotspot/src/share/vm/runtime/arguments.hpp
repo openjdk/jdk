@@ -379,12 +379,15 @@ class Arguments : AllStatic {
   static jint parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args);
   static jint parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args);
   static jint insert_vm_options_file(const JavaVMInitArgs* args,
-                                     char** vm_options_file,
+                                     const char* vm_options_file,
                                      const int vm_options_file_pos,
                                      ScopedVMInitArgs* vm_options_file_args,
                                      ScopedVMInitArgs* args_out);
+  static bool args_contains_vm_options_file_arg(const JavaVMInitArgs* args);
+  static jint expand_vm_options_as_needed(const JavaVMInitArgs* args_in,
+                                          ScopedVMInitArgs* mod_args,
+                                          JavaVMInitArgs** args_out);
   static jint match_special_option_and_act(const JavaVMInitArgs* args,
-                                           char** vm_options_file,
                                            ScopedVMInitArgs* args_out);
 
   static jint parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
