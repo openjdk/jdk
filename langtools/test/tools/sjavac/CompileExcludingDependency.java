@@ -55,9 +55,9 @@ public class CompileExcludingDependency extends SJavacTester {
         tb.writeFile(GENSRC.resolve("beta/B.java"),
                      "package beta; public class B { }");
 
-        compile("-x", "beta",
+        compile("-x", "beta/*",
                 "-src", GENSRC.toString(),
-                "-x", "alfa/omega",
+                "-x", "alfa/omega/*",
                 "-sourcepath", GENSRC.toString(),
                 "-d", BIN.toString(),
                 "--state-dir=" + BIN,

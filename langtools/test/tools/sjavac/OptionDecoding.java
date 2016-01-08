@@ -61,7 +61,6 @@ public class OptionDecoding {
     public static void main(String[] args) throws IOException {
         testPaths();
         testDupPaths();
-        testSourceLocations();
         testSimpleOptions();
         testServerConf();
         testSearchPaths();
@@ -110,78 +109,6 @@ public class OptionDecoding {
         }
     }
 
-    // Test source locations and -x, -i, -xf, -if filters
-    static void testSourceLocations() throws IOException {
-        Path a1 = Paths.get("root/pkg1/ClassA1.java");
-        Path a2 = Paths.get("root/pkg1/ClassA2.java");
-        Path b1 = Paths.get("root/pkg1/pkg2/ClassB1.java");
-        Path b2 = Paths.get("root/pkg1/pkg2/ClassB2.java");
-        Path c1 = Paths.get("root/pkg3/ClassC1.java");
-        Path c2 = Paths.get("root/pkg3/ClassC2.java");
-
-        for (Path p : Arrays.asList(a1, a2, b1, b2, c1, c2)) {
-            Files.createDirectories(p.getParent());
-            Files.createFile(p);
-        }
-
-        // Test -if
-        {
-            Options options = Options.parseArgs("-if", "root/pkg1/ClassA1.java", "root");
-
-            Map<String, Source> foundFiles = new HashMap<>();
-            SjavacImpl.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
-                    new HashMap<String, Module>(), new Module("", ""), false, true);
-
-            checkFilesFound(foundFiles.keySet(), a1);
-        }
-
-        // Test -i
-        System.out.println("--------------------------- CHECKING -i ----------------");
-        {
-            Options options = Options.parseArgs("-i", "pkg1/*", "root");
-
-            Map<String, Source> foundFiles = new HashMap<>();
-            SjavacImpl.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
-                    new HashMap<String, Module>(), new Module("", ""), false, true);
-
-            checkFilesFound(foundFiles.keySet(), a1, a2, b1, b2);
-        }
-        System.out.println("--------------------------------------------------------");
-
-        // Test -xf
-        {
-            Options options = Options.parseArgs("-xf", "root/pkg1/ClassA1.java", "root");
-
-            Map<String, Source> foundFiles = new HashMap<>();
-            SjavacImpl.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
-                    new HashMap<String, Module>(), new Module("", ""), false, true);
-
-            checkFilesFound(foundFiles.keySet(), a2, b1, b2, c1, c2);
-        }
-
-        // Test -x
-        {
-            Options options = Options.parseArgs("-i", "pkg1/*", "root");
-
-            Map<String, Source> foundFiles = new HashMap<>();
-            SjavacImpl.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
-                    new HashMap<String, Module>(), new Module("", ""), false, true);
-
-            checkFilesFound(foundFiles.keySet(), a1, a2, b1, b2);
-        }
-
-        // Test -x and -i
-        {
-            Options options = Options.parseArgs("-i", "pkg1/*", "-x", "pkg1/pkg2/*", "root");
-
-            Map<String, Source> foundFiles = new HashMap<>();
-            SjavacImpl.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
-                    new HashMap<String, Module>(), new Module("", ""), false, true);
-
-            checkFilesFound(foundFiles.keySet(), a1, a2);
-        }
-    }
-
     // Test basic options
     static void testSimpleOptions() {
         Options options = Options.parseArgs("-j", "17", "--log=debug");
@@ -216,8 +143,8 @@ public class OptionDecoding {
         List<String> i, x, iF, xF;
         i = x = iF = xF = new ArrayList<>();
 
-        SourceLocation dir1 = new SourceLocation(Paths.get("dir1"), i, x, iF, xF);
-        SourceLocation dir2 = new SourceLocation(Paths.get("dir2"), i, x, iF, xF);
+        SourceLocation dir1 = new SourceLocation(Paths.get("dir1"), i, x);
+        SourceLocation dir2 = new SourceLocation(Paths.get("dir2"), i, x);
         String dir1_PS_dir2 = "dir1" + File.pathSeparator + "dir2";
 
         Options options = Options.parseArgs("-sourcepath", dir1_PS_dir2);
