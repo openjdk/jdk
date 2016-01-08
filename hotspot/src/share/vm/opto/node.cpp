@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -796,8 +796,9 @@ void Node::del_req( uint idx ) {
   // First remove corresponding def-use edge
   Node *n = in(idx);
   if (n != NULL) n->del_out((Node *)this);
-  _in[idx] = in(--_cnt);  // Compact the array
-  _in[_cnt] = NULL;       // NULL out emptied slot
+  _in[idx] = in(--_cnt); // Compact the array
+  // Avoid spec violation: Gap in prec edges.
+  close_prec_gap_at(_cnt);
   Compile::current()->record_modified_node(this);
 }
 
@@ -810,10 +811,11 @@ void Node::del_req_ordered( uint idx ) {
   // First remove corresponding def-use edge
   Node *n = in(idx);
   if (n != NULL) n->del_out((Node *)this);
-  if (idx < _cnt - 1) { // Not last edge ?
-    Copy::conjoint_words_to_lower((HeapWord*)&_in[idx+1], (HeapWord*)&_in[idx], ((_cnt-idx-1)*sizeof(Node*)));
+  if (idx < --_cnt) {    // Not last edge ?
+    Copy::conjoint_words_to_lower((HeapWord*)&_in[idx+1], (HeapWord*)&_in[idx], ((_cnt-idx)*sizeof(Node*)));
   }
-  _in[--_cnt] = NULL;   // NULL out emptied slot
+  // Avoid spec violation: Gap in prec edges.
+  close_prec_gap_at(_cnt);
   Compile::current()->record_modified_node(this);
 }
 
@@ -845,10 +847,12 @@ int Node::replace_edge(Node* old, Node* neww) {
   uint nrep = 0;
   for (uint i = 0; i < len(); i++) {
     if (in(i) == old) {
-      if (i < req())
+      if (i < req()) {
         set_req(i, neww);
-      else
+      } else {
+        assert(find_prec_edge(neww) == -1, "spec violation: duplicated prec edge (node %d -> %d)", _idx, neww->_idx);
         set_prec(i, neww);
+      }
       nrep++;
     }
   }
@@ -982,24 +986,27 @@ void Node::add_prec( Node *n ) {
 
   // Find a precedence edge to move
   uint i = _cnt;
-  while( in(i) != NULL ) i++;
+  while( in(i) != NULL ) {
+    if (in(i) == n) return; // Avoid spec violation: duplicated prec edge.
+    i++;
+  }
   _in[i] = n;                                // Stuff prec edge over NULL
   if ( n != NULL) n->add_out((Node *)this);  // Add mirror edge
+
+#ifdef ASSERT
+  while ((++i)<_max) { assert(_in[i] == NULL, "spec violation: Gap in prec edges (node %d)", _idx); }
+#endif
 }
 
 //------------------------------rm_prec----------------------------------------
 // Remove a precedence input.  Precedence inputs are unordered, with
 // duplicates removed and NULLs packed down at the end.
 void Node::rm_prec( uint j ) {
-
-  // Find end of precedence list to pack NULLs
-  uint i;
-  for( i=j; i<_max; i++ )
-    if( !_in[i] )               // Find the NULL at end of prec edge list
-      break;
-  if (_in[j] != NULL) _in[j]->del_out((Node *)this);
-  _in[j] = _in[--i];            // Move last element over removed guy
-  _in[i] = NULL;                // NULL out last element
+  assert(j < _max, "oob: i=%d, _max=%d", j, _max);
+  assert(j >= _cnt, "not a precedence edge");
+  if (_in[j] == NULL) return;   // Avoid spec violation: Gap in prec edges.
+  _in[j]->del_out((Node *)this);
+  close_prec_gap_at(j);
 }
 
 //------------------------------size_of----------------------------------------
