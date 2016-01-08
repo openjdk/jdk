@@ -3794,6 +3794,15 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 ################################################################################
 #
+# Runs icecc-create-env once and prints the error if it fails
+#
+# $1: arguments to icecc-create-env
+# $2: log file
+#
+
+
+################################################################################
+#
 # Optionally enable distributed compilation of native code using icecc/icecream
 #
 
@@ -4801,7 +4810,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1452247834
+DATE_WHEN_GENERATED=1452261921
 
 ###############################################################################
 #
@@ -59582,11 +59591,23 @@ $as_echo "$tool_specified" >&6; }
     # be sent to the other hosts in the icecream cluster.
     icecc_create_env_log="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/icecc_create_env.log"
     ${MKDIR} -p ${CONFIGURESUPPORT_OUTPUTDIR}/icecc
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icecc build environment for target compiler" >&5
-$as_echo_n "checking for icecc build environment for target compiler... " >&6; }
+    # Older versions of icecc does not have the --gcc parameter
+    if ${ICECC_CREATE_ENV} | $GREP -q -e --gcc; then
+      icecc_gcc_arg="--gcc"
+    fi
     if test "x${TOOLCHAIN_TYPE}" = "xgcc"; then
-      cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-          && ${ICECC_CREATE_ENV} --gcc ${CC} ${CXX} > ${icecc_create_env_log}
+
+  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} ${icecc_gcc_arg} ${CC} ${CXX} > \
+          ${icecc_create_env_log} 2>&1
+  if test "$?" != "0"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
+$as_echo "$as_me: icecc-create-env output:" >&6;}
+    cat \
+          ${icecc_create_env_log}
+    as_fn_error $? "Failed to create icecc compiler environment" "$LINENO" 5
+  fi
+
     elif test "x$TOOLCHAIN_TYPE" = "xclang"; then
       # For clang, the icecc compilerwrapper is needed. It usually resides next
       # to icecc-create-env.
@@ -59794,8 +59815,16 @@ $as_echo "$tool_specified" >&6; }
   fi
 
 
-      cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-          && ${ICECC_CREATE_ENV} --clang ${CC} ${ICECC_WRAPPER} > ${icecc_create_env_log}
+
+  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} --clang ${CC} ${ICECC_WRAPPER} > ${icecc_create_env_log} 2>&1
+  if test "$?" != "0"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
+$as_echo "$as_me: icecc-create-env output:" >&6;}
+    cat ${icecc_create_env_log}
+    as_fn_error $? "Failed to create icecc compiler environment" "$LINENO" 5
+  fi
+
     else
       as_fn_error $? "Can only create icecc compiler packages for toolchain types gcc and clang" "$LINENO" 5
     fi
@@ -59804,26 +59833,53 @@ $as_echo "$tool_specified" >&6; }
     # to find it.
     ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log}`"
     ICECC_ENV_BUNDLE="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/${ICECC_ENV_BUNDLE_BASENAME}"
+    if test ! -f ${ICECC_ENV_BUNDLE}; then
+      as_fn_error $? "icecc-create-env did not produce an environment ${ICECC_ENV_BUNDLE}" "$LINENO" 5
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icecc build environment for target compiler" >&5
+$as_echo_n "checking for icecc build environment for target compiler... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${ICECC_ENV_BUNDLE}" >&5
 $as_echo "${ICECC_ENV_BUNDLE}" >&6; }
     ICECC="ICECC_VERSION=${ICECC_ENV_BUNDLE} ICECC_CC=${CC} ICECC_CXX=${CXX} ${ICECC_CMD}"
 
     if test "x${COMPILE_TYPE}" = "xcross"; then
       # If cross compiling, create a separate env package for the build compiler
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icecc build environment for build compiler" >&5
-$as_echo_n "checking for icecc build environment for build compiler... " >&6; }
       # Assume "gcc" or "cc" is gcc and "clang" is clang. Otherwise bail.
+      icecc_create_env_log_build="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/icecc_create_env_build.log"
       if test "x${BUILD_CC##*/}" = "xgcc" ||  test "x${BUILD_CC##*/}" = "xcc"; then
-        cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-            && ${ICECC_CREATE_ENV} --gcc ${BUILD_CC} ${BUILD_CXX} > ${icecc_create_env_log}
+
+  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} ${icecc_gcc_arg} ${BUILD_CC} ${BUILD_CXX} > \
+            ${icecc_create_env_log_build} 2>&1
+  if test "$?" != "0"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
+$as_echo "$as_me: icecc-create-env output:" >&6;}
+    cat \
+            ${icecc_create_env_log_build}
+    as_fn_error $? "Failed to create icecc compiler environment" "$LINENO" 5
+  fi
+
       elif test "x${BUILD_CC##*/}" = "xclang"; then
-        cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-            && ${ICECC_CREATE_ENV} --clang ${BUILD_CC} ${ICECC_WRAPPER} > ${icecc_create_env_log}
+
+  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} --clang ${BUILD_CC} ${ICECC_WRAPPER} > ${icecc_create_env_log_build} 2>&1
+  if test "$?" != "0"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
+$as_echo "$as_me: icecc-create-env output:" >&6;}
+    cat ${icecc_create_env_log_build}
+    as_fn_error $? "Failed to create icecc compiler environment" "$LINENO" 5
+  fi
+
       else
         as_fn_error $? "Cannot create icecc compiler package for ${BUILD_CC}" "$LINENO" 5
       fi
-      ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log}`"
+      ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log_build}`"
       ICECC_ENV_BUNDLE="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/${ICECC_ENV_BUNDLE_BASENAME}"
+      if test ! -f ${ICECC_ENV_BUNDLE}; then
+        as_fn_error $? "icecc-create-env did not produce an environment ${ICECC_ENV_BUNDLE}" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icecc build environment for build compiler" >&5
+$as_echo_n "checking for icecc build environment for build compiler... " >&6; }
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${ICECC_ENV_BUNDLE}" >&5
 $as_echo "${ICECC_ENV_BUNDLE}" >&6; }
       BUILD_ICECC="ICECC_VERSION=${ICECC_ENV_BUNDLE} ICECC_CC=${BUILD_CC} \
