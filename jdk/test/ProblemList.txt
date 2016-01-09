@@ -384,6 +384,13 @@ java/util/BitSet/BitSetStreamTest.java generic-all
 
 ############################################################################
 
+# core_tools
+
+# 8146712
+jdk/internal/jimage/JImageReadTest.java  generic-all
+
+############################################################################
+
 # svc_tools
 
 # 8031482
