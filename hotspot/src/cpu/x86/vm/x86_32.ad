@@ -9791,48 +9791,6 @@ instruct modD_reg(regD dst, regD src0, regD src1, eAXRegI rax, eFlagsReg cr) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct sinDPR_reg(regDPR1 dst, regDPR1 src) %{
-  predicate (UseSSE<=1);
-  match(Set dst (SinD src));
-  ins_cost(1800);
-  format %{ "DSIN   $dst" %}
-  opcode(0xD9, 0xFE);
-  ins_encode( OpcP, OpcS );
-  ins_pipe( pipe_slow );
-%}
-
-instruct sinD_reg(regD dst, eFlagsReg cr) %{
-  predicate (UseSSE>=2);
-  match(Set dst (SinD dst));
-  effect(KILL cr); // Push_{Src|Result}D() uses "{SUB|ADD} ESP,8"
-  ins_cost(1800);
-  format %{ "DSIN   $dst" %}
-  opcode(0xD9, 0xFE);
-  ins_encode( Push_SrcD(dst), OpcP, OpcS, Push_ResultD(dst) );
-  ins_pipe( pipe_slow );
-%}
-
-instruct cosDPR_reg(regDPR1 dst, regDPR1 src) %{
-  predicate (UseSSE<=1);
-  match(Set dst (CosD src));
-  ins_cost(1800);
-  format %{ "DCOS   $dst" %}
-  opcode(0xD9, 0xFF);
-  ins_encode( OpcP, OpcS );
-  ins_pipe( pipe_slow );
-%}
-
-instruct cosD_reg(regD dst, eFlagsReg cr) %{
-  predicate (UseSSE>=2);
-  match(Set dst (CosD dst));
-  effect(KILL cr); // Push_{Src|Result}D() uses "{SUB|ADD} ESP,8"
-  ins_cost(1800);
-  format %{ "DCOS   $dst" %}
-  opcode(0xD9, 0xFF);
-  ins_encode( Push_SrcD(dst), OpcP, OpcS, Push_ResultD(dst) );
-  ins_pipe( pipe_slow );
-%}
-
 instruct tanDPR_reg(regDPR1 dst, regDPR1 src) %{
   predicate (UseSSE<=1);
   match(Set dst(TanD src));

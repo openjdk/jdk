@@ -116,10 +116,24 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
   __ fld_d(Address(rsp, 1*wordSize));
   switch (kind) {
     case Interpreter::java_lang_math_sin :
-        __ trigfunc('s');
+        __ subptr(rsp, 2 * wordSize);
+        __ fstp_d(Address(rsp, 0));
+        if (VM_Version::supports_sse2() && StubRoutines::dsin() != NULL) {
+          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dsin())));
+        } else {
+          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dsin)));
+        }
+        __ addptr(rsp, 2 * wordSize);
         break;
     case Interpreter::java_lang_math_cos :
-        __ trigfunc('c');
+        __ subptr(rsp, 2 * wordSize);
+        __ fstp_d(Address(rsp, 0));
+        if (VM_Version::supports_sse2() && StubRoutines::dcos() != NULL) {
+          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dcos())));
+        } else {
+          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dcos)));
+        }
+        __ addptr(rsp, 2 * wordSize);
         break;
     case Interpreter::java_lang_math_tan :
         __ trigfunc('t');
@@ -135,8 +149,7 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
         __ fstp_d(Address(rsp, 0));
         if (VM_Version::supports_sse2()) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog())));
-        }
-        else {
+        } else {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dlog)));
         }
         __ addptr(rsp, 2 * wordSize);

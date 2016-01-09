@@ -2103,22 +2103,6 @@ class StubGenerator: public StubCodeGenerator {
       __ ret(0);
     }
     {
-      StubCodeMark mark(this, "StubRoutines", "sin");
-      StubRoutines::_intrinsic_sin = (double (*)(double))  __ pc();
-
-      __ fld_d(Address(rsp, 4));
-      __ trigfunc('s');
-      __ ret(0);
-    }
-    {
-      StubCodeMark mark(this, "StubRoutines", "cos");
-      StubRoutines::_intrinsic_cos = (double (*)(double)) __ pc();
-
-      __ fld_d(Address(rsp, 4));
-      __ trigfunc('c');
-      __ ret(0);
-    }
-    {
       StubCodeMark mark(this, "StubRoutines", "tan");
       StubRoutines::_intrinsic_tan = (double (*)(double)) __ pc();
 
@@ -3441,6 +3425,76 @@ class StubGenerator: public StubCodeGenerator {
 
  }
 
+ address generate_libm_reduce_pi04l() {
+   address start = __ pc();
+
+   BLOCK_COMMENT("Entry:");
+   __ libm_reduce_pi04l(rax, rcx, rdx, rbx, rsi, rdi, rbp, rsp);
+
+   return start;
+
+ }
+
+ address generate_libm_sin_cos_huge() {
+   address start = __ pc();
+
+   const XMMRegister x0 = xmm0;
+   const XMMRegister x1 = xmm1;
+
+   BLOCK_COMMENT("Entry:");
+   __ libm_sincos_huge(x0, x1, rax, rcx, rdx, rbx, rsi, rdi, rbp, rsp);
+
+   return start;
+
+ }
+
+ address generate_libmSin() {
+   address start = __ pc();
+
+   const XMMRegister x0 = xmm0;
+   const XMMRegister x1 = xmm1;
+   const XMMRegister x2 = xmm2;
+   const XMMRegister x3 = xmm3;
+
+   const XMMRegister x4 = xmm4;
+   const XMMRegister x5 = xmm5;
+   const XMMRegister x6 = xmm6;
+   const XMMRegister x7 = xmm7;
+
+   BLOCK_COMMENT("Entry:");
+   __ enter(); // required for proper stackwalking of RuntimeStub frame
+   __ fast_sin(x0, x1, x2, x3, x4, x5, x6, x7, rax, rbx, rdx);
+   __ leave(); // required for proper stackwalking of RuntimeStub frame
+   __ ret(0);
+
+   return start;
+
+ }
+
+ address generate_libmCos() {
+   address start = __ pc();
+
+   const XMMRegister x0 = xmm0;
+   const XMMRegister x1 = xmm1;
+   const XMMRegister x2 = xmm2;
+   const XMMRegister x3 = xmm3;
+
+   const XMMRegister x4 = xmm4;
+   const XMMRegister x5 = xmm5;
+   const XMMRegister x6 = xmm6;
+   const XMMRegister x7 = xmm7;
+
+   const Register tmp = rbx;
+
+   BLOCK_COMMENT("Entry:");
+   __ enter(); // required for proper stackwalking of RuntimeStub frame
+   __ fast_cos(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+   __ leave(); // required for proper stackwalking of RuntimeStub frame
+   __ ret(0);
+
+   return start;
+
+ }
 
   // Safefetch stubs.
   void generate_safefetch(const char* name, int size, address* entry,
@@ -3669,6 +3723,16 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_dexp = generate_libmExp();
       StubRoutines::_dlog = generate_libmLog();
       StubRoutines::_dpow = generate_libmPow();
+      if (UseLibmSinIntrinsic || UseLibmCosIntrinsic) {
+        StubRoutines::_dlibm_reduce_pi04l = generate_libm_reduce_pi04l();
+        StubRoutines::_dlibm_sin_cos_huge = generate_libm_sin_cos_huge();
+      }
+      if (UseLibmSinIntrinsic) {
+        StubRoutines::_dsin = generate_libmSin();
+      }
+      if (UseLibmCosIntrinsic) {
+        StubRoutines::_dcos = generate_libmCos();
+      }
     }
   }
 
