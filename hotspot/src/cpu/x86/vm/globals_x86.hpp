@@ -188,5 +188,11 @@ define_pd_global(bool, PreserveFramePointer, false);
           "Use BMI1 instructions")                                          \
                                                                             \
   product(bool, UseBMI2Instructions, false,                                 \
-          "Use BMI2 instructions")
+          "Use BMI2 instructions")                                          \
+                                                                            \
+  diagnostic(bool, UseLibmSinIntrinsic, true,                               \
+          "Use Libm Sin Intrinsic")                                         \
+                                                                            \
+  diagnostic(bool, UseLibmCosIntrinsic, true,                               \
+          "Use Libm Cos Intrinsic")
 #endif // CPU_X86_VM_GLOBALS_X86_HPP

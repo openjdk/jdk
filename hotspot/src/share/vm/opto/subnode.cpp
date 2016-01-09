@@ -1477,28 +1477,6 @@ const Type *SqrtDNode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-// Compute cos
-const Type *CosDNode::Value( PhaseTransform *phase ) const {
-  const Type *t1 = phase->type( in(1) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
-  double d = t1->getd();
-  return TypeD::make( StubRoutines::intrinsic_cos( d ) );
-}
-
-//=============================================================================
-//------------------------------Value------------------------------------------
-// Compute sin
-const Type *SinDNode::Value( PhaseTransform *phase ) const {
-  const Type *t1 = phase->type( in(1) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
-  double d = t1->getd();
-  return TypeD::make( StubRoutines::intrinsic_sin( d ) );
-}
-
-//=============================================================================
-//------------------------------Value------------------------------------------
 // Compute tan
 const Type *TanDNode::Value( PhaseTransform *phase ) const {
   const Type *t1 = phase->type( in(1) );

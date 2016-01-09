@@ -259,6 +259,12 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
     __ movdbl(xmm1, Address(rsp, wordSize));
     __ movdbl(xmm0, Address(rsp, 3 * wordSize));
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dpow())));
+  } else if (kind == Interpreter::java_lang_math_sin && StubRoutines::dsin() != NULL) {
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dsin())));
+  } else if (kind == Interpreter::java_lang_math_cos && StubRoutines::dcos() != NULL) {
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dcos())));
   } else {
     __ fld_d(Address(rsp, wordSize));
     switch (kind) {

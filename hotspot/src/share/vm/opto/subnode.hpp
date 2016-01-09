@@ -408,35 +408,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------CosDNode---------------------------------------
-// Cosinus of a double
-class CosDNode : public Node {
-public:
-  CosDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
-    init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
-  }
-  virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::DOUBLE; }
-  virtual uint ideal_reg() const { return Op_RegD; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
-};
-
-//------------------------------CosDNode---------------------------------------
-// Sinus of a double
-class SinDNode : public Node {
-public:
-  SinDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
-    init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
-  }
-  virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::DOUBLE; }
-  virtual uint ideal_reg() const { return Op_RegD; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
-};
-
-
 //------------------------------TanDNode---------------------------------------
 // tangens of a double
 class TanDNode : public Node {

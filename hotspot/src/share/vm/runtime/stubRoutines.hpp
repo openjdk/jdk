@@ -214,6 +214,10 @@ class StubRoutines: AllStatic {
   static address _dexp;
   static address _dlog;
   static address _dpow;
+  static address _dsin;
+  static address _dcos;
+  static address _dlibm_sin_cos_huge;
+  static address _dlibm_reduce_pi04l;
 
   // These are versions of the java.lang.Math methods which perform
   // the same operations as the intrinsic version.  They are used for
@@ -388,6 +392,10 @@ class StubRoutines: AllStatic {
   static address dexp()                { return _dexp; }
   static address dlog()                { return _dlog; }
   static address dpow()                { return _dpow; }
+  static address dsin()                { return _dsin; }
+  static address dcos()                { return _dcos; }
+  static address dlibm_reduce_pi04l()  { return _dlibm_reduce_pi04l; }
+  static address dlibm_sin_cos_huge()  { return _dlibm_sin_cos_huge; }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 
