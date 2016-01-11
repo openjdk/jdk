@@ -190,47 +190,19 @@ void DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
 
 bool DirtyCardQueueSet::mut_process_buffer(void** buf) {
   guarantee(_free_ids != NULL, "must be");
-  // Used to determine if we had already claimed a par_id
-  // before entering this method.
-  bool already_claimed = false;
 
-  // We grab the current JavaThread.
-  JavaThread* thread = JavaThread::current();
+  // claim a par id
+  uint worker_i = _free_ids->claim_par_id();
 
-  // We get the the number of any par_id that this thread
-  // might have already claimed.
-  uint worker_i = thread->get_claimed_par_id();
-
-  // If worker_i is not UINT_MAX then the thread has already claimed
-  // a par_id. We make note of it using the already_claimed value
-  if (worker_i != UINT_MAX) {
-    already_claimed = true;
-  } else {
-
-    // Otherwise we need to claim a par id
-    worker_i = _free_ids->claim_par_id();
-
-    // And store the par_id value in the thread
-    thread->set_claimed_par_id(worker_i);
+  bool b = DirtyCardQueue::apply_closure_to_buffer(_mut_process_closure, buf, 0,
+                                                   _sz, true, worker_i);
+  if (b) {
+    Atomic::inc(&_processed_buffers_mut);
   }
 
-  bool b = false;
-  if (worker_i != UINT_MAX) {
-    b = DirtyCardQueue::apply_closure_to_buffer(_mut_process_closure, buf, 0,
-                                                _sz, true, worker_i);
-    if (b) Atomic::inc(&_processed_buffers_mut);
+  // release the id
+  _free_ids->release_par_id(worker_i);
 
-    // If we had not claimed an id before entering the method
-    // then we must release the id.
-    if (!already_claimed) {
-
-      // we release the id
-      _free_ids->release_par_id(worker_i);
-
-      // and set the claimed_id in the thread to UINT_MAX
-      thread->set_claimed_par_id(UINT_MAX);
-    }
-  }
   return b;
 }
 
