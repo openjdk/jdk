@@ -903,23 +903,25 @@ const Type *PhiNode::Value( PhaseTransform *phase ) const {
     return Type::TOP;
 
   // Check for trip-counted loop.  If so, be smarter.
-  CountedLoopNode *l = r->is_CountedLoop() ? r->as_CountedLoop() : NULL;
-  if( l && l->can_be_counted_loop(phase) &&
-      ((const Node*)l->phi() == this) ) { // Trip counted loop!
+  CountedLoopNode* l = r->is_CountedLoop() ? r->as_CountedLoop() : NULL;
+  if (l && l->can_be_counted_loop(phase) &&
+      ((const Node*)l->phi() == this)) { // Trip counted loop!
     // protect against init_trip() or limit() returning NULL
     const Node *init   = l->init_trip();
     const Node *limit  = l->limit();
-    if( init != NULL && limit != NULL && l->stride_is_con() ) {
-      const TypeInt *lo = init ->bottom_type()->isa_int();
-      const TypeInt *hi = limit->bottom_type()->isa_int();
-      if( lo && hi ) {            // Dying loops might have TOP here
-        int stride = l->stride_con();
-        if( stride < 0 ) {          // Down-counter loop
-          const TypeInt *tmp = lo; lo = hi; hi = tmp;
-          stride = -stride;
+    const Node* stride = l->stride();
+    if (init != NULL && limit != NULL && stride != NULL) {
+      const TypeInt* lo = phase->type(init)->isa_int();
+      const TypeInt* hi = phase->type(limit)->isa_int();
+      const TypeInt* stride_t = phase->type(stride)->isa_int();
+      if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
+        assert(stride_t->_hi >= stride_t->_lo, "bad stride type");
+        if (stride_t->_hi < 0) {          // Down-counter loop
+          swap(lo, hi);
+          return TypeInt::make(MIN2(lo->_lo, hi->_lo) , hi->_hi, 3);
+        } else if (stride_t->_lo >= 0) {
+          return TypeInt::make(lo->_lo, MAX2(lo->_hi, hi->_hi), 3);
         }
-        if( lo->_hi < hi->_lo )     // Reversed endpoints are well defined :-(
-          return TypeInt::make(lo->_lo,hi->_hi,3);
       }
     }
   }

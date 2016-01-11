@@ -1079,6 +1079,7 @@ static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
       __ vmovdqu(xmm0, Address(rsp, src_offset));
       __ vmovdqu(Address(rsp, dst_offset), xmm0);
       __ vmovdqu(xmm0, Address(rsp, -32));
+      break;
     case Op_VecZ:
       __ evmovdqul(Address(rsp, -64), xmm0, 2);
       __ evmovdqul(xmm0, Address(rsp, src_offset), 2);

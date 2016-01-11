@@ -815,6 +815,11 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
 
   C->print_method(PHASE_AFTER_CLOOPS, 3);
 
+  // Capture bounds of the loop in the induction variable Phi before
+  // subsequent transformation (iteration splitting) obscures the
+  // bounds
+  l->phi()->as_Phi()->set_type(l->phi()->Value(&_igvn));
+
   return true;
 }
 
@@ -3483,7 +3488,7 @@ void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, N
 // Second pass finds latest legal placement, and ideal loop placement.
 void PhaseIdealLoop::build_loop_late_post( Node *n ) {
 
-  if (n->req() == 2 && n->Opcode() == Op_ConvI2L && !C->major_progress() && !_verify_only) {
+  if (n->req() == 2 && (n->Opcode() == Op_ConvI2L || n->Opcode() == Op_CastII) && !C->major_progress() && !_verify_only) {
     _igvn._worklist.push(n);  // Maybe we'll normalize it, if no more loops.
   }
 
