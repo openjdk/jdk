@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2320,12 +2320,13 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(BarrierSet::G1SATBCT)                                  \
   declare_constant(BarrierSet::G1SATBCTLogging)                           \
                                                                           \
-  declare_constant(BlockOffsetSharedArray::LogN)                          \
-  declare_constant(BlockOffsetSharedArray::LogN_words)                    \
-  declare_constant(BlockOffsetSharedArray::N_bytes)                       \
-  declare_constant(BlockOffsetSharedArray::N_words)                       \
-                                                                          \
-  declare_constant(BlockOffsetArray::N_words)                             \
+  declare_constant(BOTConstants::LogN)                                    \
+  declare_constant(BOTConstants::LogN_words)                              \
+  declare_constant(BOTConstants::N_bytes)                                 \
+  declare_constant(BOTConstants::N_words)                                 \
+  declare_constant(BOTConstants::LogBase)                                 \
+  declare_constant(BOTConstants::Base)                                    \
+  declare_constant(BOTConstants::N_powers)                                \
                                                                           \
   declare_constant(CardTableModRefBS::clean_card)                         \
   declare_constant(CardTableModRefBS::last_card)                          \

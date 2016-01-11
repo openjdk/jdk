@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ void G1BlockOffsetTable::set_offset_array(size_t left, size_t right, u_char offs
 
 // Variant of index_for that does not check the index for validity.
 inline size_t G1BlockOffsetTable::index_for_raw(const void* p) const {
-  return pointer_delta((char*)p, _reserved.start(), sizeof(char)) >> LogN;
+  return pointer_delta((char*)p, _reserved.start(), sizeof(char)) >> BOTConstants::LogN;
 }
 
 inline size_t G1BlockOffsetTable::index_for(const void* p) const {
@@ -117,15 +117,15 @@ inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr,
   HeapWord* q = _bot->address_for_index(index);
 
   uint offset = _bot->offset_array(index);  // Extend u_char to uint.
-  while (offset >= N_words) {
+  while (offset >= BOTConstants::N_words) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.
-    size_t n_cards_back = BlockOffsetArray::entry_to_cards_back(offset);
-    q -= (N_words * n_cards_back);
+    size_t n_cards_back = BOTConstants::entry_to_cards_back(offset);
+    q -= (BOTConstants::N_words * n_cards_back);
     index -= n_cards_back;
     offset = _bot->offset_array(index);
   }
-  assert(offset < N_words, "offset too large");
+  assert(offset < BOTConstants::N_words, "offset too large");
   q -= offset;
   return q;
 }

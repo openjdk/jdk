@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_G1_G1BLOCKOFFSETTABLE_HPP
 
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
+#include "gc/shared/blockOffsetTable.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -54,9 +55,9 @@ private:
   u_char* _offset_array;          // byte array keeping backwards offsets
 
   void check_offset(size_t offset, const char* msg) const {
-    assert(offset <= N_words,
+    assert(offset <= BOTConstants::N_words,
            "%s - offset: " SIZE_FORMAT ", N_words: %u",
-           msg, offset, (uint)N_words);
+           msg, offset, BOTConstants::N_words);
   }
 
   // Bounds checking accessors:
@@ -82,21 +83,14 @@ public:
   // Return the number of slots needed for an offset array
   // that covers mem_region_words words.
   static size_t compute_size(size_t mem_region_words) {
-    size_t number_of_slots = (mem_region_words / N_words);
+    size_t number_of_slots = (mem_region_words / BOTConstants::N_words);
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
   // Returns how many bytes of the heap a single byte of the BOT corresponds to.
   static size_t heap_map_factor() {
-    return N_bytes;
+    return BOTConstants::N_bytes;
   }
-
-  enum SomePublicConstants {
-    LogN = 9,
-    LogN_words = LogN - LogHeapWordSize,
-    N_bytes = 1 << LogN,
-    N_words = 1 << LogN_words
-  };
 
   // Initialize the Block Offset Table to cover the memory region passed
   // in the heap parameter.
@@ -111,7 +105,7 @@ public:
   inline HeapWord* address_for_index(size_t index) const;
   // Variant of address_for_index that does not check the index for validity.
   inline HeapWord* address_for_index_raw(size_t index) const {
-    return _reserved.start() + (index << LogN_words);
+    return _reserved.start() + (index << BOTConstants::LogN_words);
   }
 };
 
@@ -119,11 +113,6 @@ class G1BlockOffsetTablePart VALUE_OBJ_CLASS_SPEC {
   friend class G1BlockOffsetTable;
   friend class VMStructs;
 private:
-  enum SomePrivateConstants {
-    N_words = G1BlockOffsetTable::N_words,
-    LogN    = G1BlockOffsetTable::LogN
-  };
-
   // allocation boundary at which offset array must be updated
   HeapWord* _next_offset_threshold;
   size_t    _next_offset_index;      // index corresponding to that boundary
