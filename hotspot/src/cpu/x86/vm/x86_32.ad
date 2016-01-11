@@ -1009,6 +1009,7 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
       __ vmovdqu(xmm0, Address(rsp, src_offset));
       __ vmovdqu(Address(rsp, dst_offset), xmm0);
       __ vmovdqu(xmm0, Address(rsp, -32));
+      break;
     case Op_VecZ:
       __ evmovdqul(Address(rsp, -64), xmm0, 2);
       __ evmovdqul(xmm0, Address(rsp, src_offset), 2);
@@ -1049,6 +1050,7 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
                 "vmovdqu [rsp + #%d], xmm0\n\t"
                 "vmovdqu xmm0, [rsp - #32]",
                 src_offset, dst_offset);
+      break;
     case Op_VecZ:
       st->print("vmovdqu [rsp - #64], xmm0\t# 512-bit mem-mem spill\n\t"
                 "vmovdqu xmm0, [rsp + #%d]\n\t"
