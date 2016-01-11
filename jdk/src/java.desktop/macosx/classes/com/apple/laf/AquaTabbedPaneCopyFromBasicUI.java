@@ -235,9 +235,9 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     /**
-     * Invoked by <code>installUI</code> to create
+     * Invoked by {@code installUI} to create
      * a layout manager object to manage
-     * the <code>JTabbedPane</code>.
+     * the {@code JTabbedPane}.
      *
      * @return a layout manager object
      *
@@ -536,7 +536,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
     /**
      * Sets the tab the mouse is over by location. This is a cover method
-     * for <code>setRolloverTab(tabForCoordinate(x, y, false))</code>.
+     * for {@code setRolloverTab(tabForCoordinate(x, y, false))}.
      */
     private void setRolloverTab(final int x, final int y) {
         // NOTE:
@@ -547,8 +547,8 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     /**
-     * Sets the tab the mouse is currently over to <code>index</code>.
-     * <code>index</code> will be -1 if the mouse is no longer over any
+     * Sets the tab the mouse is currently over to {@code index}.
+     * {@code index} will be -1 if the mouse is no longer over any
      * tab. No checking is done to ensure the passed in index identifies a
      * valid tab.
      *
@@ -676,7 +676,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
     /**
      * Returns the amount the baseline is offset by.  This is typically
-     * the same as <code>getTabLabelShiftY</code>.
+     * the same as {@code getTabLabelShiftY}.
      *
      * @return amount to offset the baseline by
      * @since 1.6
@@ -765,10 +765,10 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     /**
      * Paints the tabs in the tab area.
      * Invoked by paint().
-     * The graphics parameter must be a valid <code>Graphics</code>
+     * The graphics parameter must be a valid {@code Graphics}
      * object.  Tab placement may be either:
-     * <code>JTabbedPane.TOP</code>, <code>JTabbedPane.BOTTOM</code>,
-     * <code>JTabbedPane.LEFT</code>, or <code>JTabbedPane.RIGHT</code>.
+     * {@code JTabbedPane.TOP}, {@code JTabbedPane.BOTTOM},
+     * {@code JTabbedPane.LEFT}, or {@code JTabbedPane.RIGHT}.
      * The selected index must be a valid tabbed pane tab index (0 to
      * tab count - 1, inclusive) or -1 if no tab is currently selected.
      * The handling of invalid parameters is unspecified.
@@ -1406,7 +1406,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
      * designated Rectangle object (rather than instantiating and returning
      * a new Rectangle each time). The tab index parameter must be a valid
      * tabbed pane tab index (0 to tab count - 1, inclusive).  The destination
-     * rectangle parameter must be a valid <code>Rectangle</code> instance.
+     * rectangle parameter must be a valid {@code Rectangle} instance.
      * The handling of invalid parameters is unspecified.
      *
      * @param tabIndex the index of the tab
@@ -3717,7 +3717,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
     /**
      * An ActionMap that populates its contents as necessary. The
-     * contents are populated by invoking the <code>loadActionMap</code>
+     * contents are populated by invoking the {@code loadActionMap}
      * method on the passed in Object.
      *
      * @version 1.6, 11/17/05
@@ -3726,14 +3726,14 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class LazyActionMap extends ActionMapUIResource {
         /**
-         * Object to invoke <code>loadActionMap</code> on. This may be
+         * Object to invoke {@code loadActionMap} on. This may be
          * a Class object.
          */
         private transient Object _loader;
 
         /**
          * Installs an ActionMap that will be populated by invoking the
-         * <code>loadActionMap</code> method on the specified Class
+         * {@code loadActionMap} method on the specified Class
          * when necessary.
          * <p>
          * This should be used if the ActionMap can be shared.
@@ -3755,7 +3755,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
         /**
          * Returns an ActionMap that will be populated by invoking the
-         * <code>loadActionMap</code> method on the specified Class
+         * {@code loadActionMap} method on the specified Class
          * when necessary.
          * <p>
          * This should be used if the ActionMap can be shared.

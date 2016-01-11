@@ -431,7 +431,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
     /*
      * A convenience method which returns the default service
-     * for 2D <code>PrinterJob</code>s.
+     * for 2D {@code PrinterJob}s.
      * May return null if there is no suitable default (although there
      * may still be 2D services available).
      * @return default 2D print service, or null.
@@ -495,9 +495,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /**
      * Associate this PrinterJob with a new PrintService.
      *
-     * Throws <code>PrinterException</code> if the specified service
-     * cannot support the <code>Pageable</code> and
-     * <code>Printable</code> interfaces necessary to support 2D printing.
+     * Throws {@code PrinterException} if the specified service
+     * cannot support the {@code Pageable} and
+     * {@code Printable} interfaces necessary to support 2D printing.
      * @param service print service which supports 2D printing.
      *
      * @throws PrinterException if the specified service does not support
@@ -694,17 +694,17 @@ public abstract class RasterPrinterJob extends PrinterJob {
    /**
      * Display a dialog to the user allowing the modification of a
      * PageFormat instance.
-     * The <code>page</code> argument is used to initialize controls
+     * The {@code page} argument is used to initialize controls
      * in the page setup dialog.
      * If the user cancels the dialog, then the method returns the
-     * original <code>page</code> object unmodified.
+     * original {@code page} object unmodified.
      * If the user okays the dialog then the method returns a new
      * PageFormat object with the indicated changes.
-     * In either case the original <code>page</code> object will
+     * In either case the original {@code page} object will
      * not be modified.
      * @param     page    the default PageFormat presented to the user
      *                    for modification
-     * @return    the original <code>page</code> object if the dialog
+     * @return    the original {@code page} object if the dialog
      *            is cancelled, or a new PageFormat object containing
      *            the format indicated by the user if the dialog is
      *            acknowledged
@@ -2350,14 +2350,14 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
     /**
      * Examine the metrics captured by the
-     * <code>PeekGraphics</code> instance and
+     * {@code PeekGraphics} instance and
      * if capable of directly converting this
      * print job to the printer's control language
      * or the native OS's graphics primitives, then
-     * return a <code>PathGraphics</code> to perform
+     * return a {@code PathGraphics} to perform
      * that conversion. If there is not an object
      * capable of the conversion then return
-     * <code>null</code>. Returning <code>null</code>
+     * {@code null}. Returning {@code null}
      * causes the print job to be rasterized.
      */
     protected Graphics2D createPathGraphics(PeekGraphics graphics,
@@ -2372,11 +2372,11 @@ public abstract class RasterPrinterJob extends PrinterJob {
     /**
      * Create and return an object that will
      * gather and hold metrics about the print
-     * job. This method is passed a <code>Graphics2D</code>
+     * job. This method is passed a {@code Graphics2D}
      * object that can be used as a proxy for the
      * object gathering the print job matrics. The
      * method is also supplied with the instance
-     * controlling the print job, <code>printerJob</code>.
+     * controlling the print job, {@code printerJob}.
      */
     protected PeekGraphics createPeekGraphics(Graphics2D graphics,
                                               PrinterJob printerJob) {

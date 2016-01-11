@@ -51,14 +51,14 @@ import javax.imageio.stream.ImageInputStream;
  * class must be subclassed by classes that read in images in the
  * context of the Java Image I/O framework.
  *
- * <p> <code>ImageReader</code> objects are normally instantiated by
+ * <p> {@code ImageReader} objects are normally instantiated by
  * the service provider interface (SPI) class for the specific format.
  * Service provider classes (e.g., instances of
- * <code>ImageReaderSpi</code>) are registered with the
- * <code>IIORegistry</code>, which uses them for format recognition
+ * {@code ImageReaderSpi}) are registered with the
+ * {@code IIORegistry}, which uses them for format recognition
  * and presentation of available format readers and writers.
  *
- * <p> When an input source is set (using the <code>setInput</code>
+ * <p> When an input source is set (using the {@code setInput}
  * method), it may be marked as "seek forward only".  This setting
  * means that images contained within the input source will only be
  * read in order, possibly allowing the reader to avoid caching
@@ -73,24 +73,24 @@ import javax.imageio.stream.ImageInputStream;
 public abstract class ImageReader {
 
     /**
-     * The <code>ImageReaderSpi</code> that instantiated this object,
-     * or <code>null</code> if its identity is not known or none
-     * exists.  By default it is initialized to <code>null</code>.
+     * The {@code ImageReaderSpi} that instantiated this object,
+     * or {@code null} if its identity is not known or none
+     * exists.  By default it is initialized to {@code null}.
      */
     protected ImageReaderSpi originatingProvider;
 
     /**
-     * The <code>ImageInputStream</code> or other
-     * <code>Object</code> by <code>setInput</code> and retrieved
-     * by <code>getInput</code>.  By default it is initialized to
-     * <code>null</code>.
+     * The {@code ImageInputStream} or other
+     * {@code Object} by {@code setInput} and retrieved
+     * by {@code getInput}.  By default it is initialized to
+     * {@code null}.
      */
     protected Object input = null;
 
     /**
-     * <code>true</code> if the current input source has been marked
-     * as allowing only forward seeking by <code>setInput</code>.  By
-     * default, the value is <code>false</code>.
+     * {@code true} if the current input source has been marked
+     * as allowing only forward seeking by {@code setInput}.  By
+     * default, the value is {@code false}.
      *
      * @see #minIndex
      * @see #setInput
@@ -98,9 +98,9 @@ public abstract class ImageReader {
     protected boolean seekForwardOnly = false;
 
     /**
-     * <code>true</code> if the current input source has been marked
-     * as allowing metadata to be ignored by <code>setInput</code>.
-     * By default, the value is <code>false</code>.
+     * {@code true} if the current input source has been marked
+     * as allowing metadata to be ignored by {@code setInput}.
+     * By default, the value is {@code false}.
      *
      * @see #setInput
      */
@@ -108,8 +108,8 @@ public abstract class ImageReader {
 
     /**
      * The smallest valid index for reading, initially 0.  When
-     * <code>seekForwardOnly</code> is <code>true</code>, various methods
-     * may throw an <code>IndexOutOfBoundsException</code> on an
+     * {@code seekForwardOnly} is {@code true}, various methods
+     * may throw an {@code IndexOutOfBoundsException} on an
      * attempt to access data associate with an image having a lower
      * index.
      *
@@ -119,79 +119,79 @@ public abstract class ImageReader {
     protected int minIndex = 0;
 
     /**
-     * An array of <code>Locale</code>s which may be used to localize
-     * warning messages, or <code>null</code> if localization is not
+     * An array of {@code Locale}s which may be used to localize
+     * warning messages, or {@code null} if localization is not
      * supported.
      */
     protected Locale[] availableLocales = null;
 
     /**
-     * The current <code>Locale</code> to be used for localization, or
-     * <code>null</code> if none has been set.
+     * The current {@code Locale} to be used for localization, or
+     * {@code null} if none has been set.
      */
     protected Locale locale = null;
 
     /**
-     * A <code>List</code> of currently registered
-     * <code>IIOReadWarningListener</code>s, initialized by default to
-     * <code>null</code>, which is synonymous with an empty
-     * <code>List</code>.
+     * A {@code List} of currently registered
+     * {@code IIOReadWarningListener}s, initialized by default to
+     * {@code null}, which is synonymous with an empty
+     * {@code List}.
      */
     protected List<IIOReadWarningListener> warningListeners = null;
 
     /**
-     * A <code>List</code> of the <code>Locale</code>s associated with
-     * each currently registered <code>IIOReadWarningListener</code>,
-     * initialized by default to <code>null</code>, which is
-     * synonymous with an empty <code>List</code>.
+     * A {@code List} of the {@code Locale}s associated with
+     * each currently registered {@code IIOReadWarningListener},
+     * initialized by default to {@code null}, which is
+     * synonymous with an empty {@code List}.
      */
     protected List<Locale> warningLocales = null;
 
     /**
-     * A <code>List</code> of currently registered
-     * <code>IIOReadProgressListener</code>s, initialized by default
-     * to <code>null</code>, which is synonymous with an empty
-     * <code>List</code>.
+     * A {@code List} of currently registered
+     * {@code IIOReadProgressListener}s, initialized by default
+     * to {@code null}, which is synonymous with an empty
+     * {@code List}.
      */
     protected List<IIOReadProgressListener> progressListeners = null;
 
     /**
-     * A <code>List</code> of currently registered
-     * <code>IIOReadUpdateListener</code>s, initialized by default to
-     * <code>null</code>, which is synonymous with an empty
-     * <code>List</code>.
+     * A {@code List} of currently registered
+     * {@code IIOReadUpdateListener}s, initialized by default to
+     * {@code null}, which is synonymous with an empty
+     * {@code List}.
      */
     protected List<IIOReadUpdateListener> updateListeners = null;
 
     /**
-     * If <code>true</code>, the current read operation should be
+     * If {@code true}, the current read operation should be
      * aborted.
      */
     private boolean abortFlag = false;
 
     /**
-     * Constructs an <code>ImageReader</code> and sets its
-     * <code>originatingProvider</code> field to the supplied value.
+     * Constructs an {@code ImageReader} and sets its
+     * {@code originatingProvider} field to the supplied value.
      *
      * <p> Subclasses that make use of extensions should provide a
-     * constructor with signature <code>(ImageReaderSpi,
-     * Object)</code> in order to retrieve the extension object.  If
+     * constructor with signature {@code (ImageReaderSpi,Object)}
+     * in order to retrieve the extension object.  If
      * the extension object is unsuitable, an
-     * <code>IllegalArgumentException</code> should be thrown.
+     * {@code IllegalArgumentException} should be thrown.
      *
-     * @param originatingProvider the <code>ImageReaderSpi</code> that is
-     * invoking this constructor, or <code>null</code>.
+     * @param originatingProvider the {@code ImageReaderSpi} that is
+     * invoking this constructor, or {@code null}.
      */
     protected ImageReader(ImageReaderSpi originatingProvider) {
         this.originatingProvider = originatingProvider;
     }
 
     /**
-     * Returns a <code>String</code> identifying the format of the
+     * Returns a {@code String} identifying the format of the
      * input source.
      *
      * <p> The default implementation returns
-     * <code>originatingProvider.getFormatNames()[0]</code>.
+     * {@code originatingProvider.getFormatNames()[0]}.
      * Implementations that may not have an originating service
      * provider, or which desire a different naming policy should
      * override this method.
@@ -199,17 +199,17 @@ public abstract class ImageReader {
      * @exception IOException if an error occurs reading the
      * information from the input source.
      *
-     * @return the format name, as a <code>String</code>.
+     * @return the format name, as a {@code String}.
      */
     public String getFormatName() throws IOException {
         return originatingProvider.getFormatNames()[0];
     }
 
     /**
-     * Returns the <code>ImageReaderSpi</code> that was passed in on
-     * the constructor.  Note that this value may be <code>null</code>.
+     * Returns the {@code ImageReaderSpi} that was passed in on
+     * the constructor.  Note that this value may be {@code null}.
      *
-     * @return an <code>ImageReaderSpi</code>, or <code>null</code>.
+     * @return an {@code ImageReaderSpi}, or {@code null}.
      *
      * @see ImageReaderSpi
      */
@@ -219,32 +219,32 @@ public abstract class ImageReader {
 
     /**
      * Sets the input source to use to the given
-     * <code>ImageInputStream</code> or other <code>Object</code>.
+     * {@code ImageInputStream} or other {@code Object}.
      * The input source must be set before any of the query or read
-     * methods are used.  If <code>input</code> is <code>null</code>,
+     * methods are used.  If {@code input} is {@code null},
      * any currently set input source will be removed.  In any case,
-     * the value of <code>minIndex</code> will be initialized to 0.
+     * the value of {@code minIndex} will be initialized to 0.
      *
-     * <p> The <code>seekForwardOnly</code> parameter controls whether
-     * the value returned by <code>getMinIndex</code> will be
+     * <p> The {@code seekForwardOnly} parameter controls whether
+     * the value returned by {@code getMinIndex} will be
      * increased as each image (or thumbnail, or image metadata) is
-     * read.  If <code>seekForwardOnly</code> is true, then a call to
-     * <code>read(index)</code> will throw an
-     * <code>IndexOutOfBoundsException</code> if {@code index < this.minIndex};
+     * read.  If {@code seekForwardOnly} is true, then a call to
+     * {@code read(index)} will throw an
+     * {@code IndexOutOfBoundsException} if {@code index < this.minIndex};
      * otherwise, the value of
-     * <code>minIndex</code> will be set to <code>index</code>.  If
-     * <code>seekForwardOnly</code> is <code>false</code>, the value of
-     * <code>minIndex</code> will remain 0 regardless of any read
+     * {@code minIndex} will be set to {@code index}.  If
+     * {@code seekForwardOnly} is {@code false}, the value of
+     * {@code minIndex} will remain 0 regardless of any read
      * operations.
      *
-     * <p> The <code>ignoreMetadata</code> parameter, if set to
-     * <code>true</code>, allows the reader to disregard any metadata
+     * <p> The {@code ignoreMetadata} parameter, if set to
+     * {@code true}, allows the reader to disregard any metadata
      * encountered during the read.  Subsequent calls to the
-     * <code>getStreamMetadata</code> and
-     * <code>getImageMetadata</code> methods may return
-     * <code>null</code>, and an <code>IIOImage</code> returned from
-     * <code>readAll</code> may return <code>null</code> from their
-     * <code>getMetadata</code> method.  Setting this parameter may
+     * {@code getStreamMetadata} and
+     * {@code getImageMetadata} methods may return
+     * {@code null}, and an {@code IIOImage} returned from
+     * {@code readAll} may return {@code null} from their
+     * {@code getMetadata} method.  Setting this parameter may
      * allow the reader to work more efficiently.  The reader may
      * choose to disregard this setting and return metadata normally.
      *
@@ -252,34 +252,34 @@ public abstract class ImageReader {
      * information based on the previous stream, such as header
      * information or partially decoded image data.
      *
-     * <p> Use of a general <code>Object</code> other than an
-     * <code>ImageInputStream</code> is intended for readers that
+     * <p> Use of a general {@code Object} other than an
+     * {@code ImageInputStream} is intended for readers that
      * interact directly with a capture device or imaging protocol.
      * The set of legal classes is advertised by the reader's service
-     * provider's <code>getInputTypes</code> method; most readers
+     * provider's {@code getInputTypes} method; most readers
      * will return a single-element array containing only
-     * <code>ImageInputStream.class</code> to indicate that they
-     * accept only an <code>ImageInputStream</code>.
+     * {@code ImageInputStream.class} to indicate that they
+     * accept only an {@code ImageInputStream}.
      *
-     * <p> The default implementation checks the <code>input</code>
+     * <p> The default implementation checks the {@code input}
      * argument against the list returned by
-     * <code>originatingProvider.getInputTypes()</code> and fails
+     * {@code originatingProvider.getInputTypes()} and fails
      * if the argument is not an instance of one of the classes
      * in the list.  If the originating provider is set to
-     * <code>null</code>, the input is accepted only if it is an
-     * <code>ImageInputStream</code>.
+     * {@code null}, the input is accepted only if it is an
+     * {@code ImageInputStream}.
      *
-     * @param input the <code>ImageInputStream</code> or other
-     * <code>Object</code> to use for future decoding.
-     * @param seekForwardOnly if <code>true</code>, images and metadata
+     * @param input the {@code ImageInputStream} or other
+     * {@code Object} to use for future decoding.
+     * @param seekForwardOnly if {@code true}, images and metadata
      * may only be read in ascending order from this input source.
-     * @param ignoreMetadata if <code>true</code>, metadata
+     * @param ignoreMetadata if {@code true}, metadata
      * may be ignored during reads.
      *
-     * @exception IllegalArgumentException if <code>input</code> is
+     * @exception IllegalArgumentException if {@code input} is
      * not an instance of one of the classes returned by the
-     * originating service provider's <code>getInputTypes</code>
-     * method, or is not an <code>ImageInputStream</code>.
+     * originating service provider's {@code getInputTypes}
+     * method, or is not an {@code ImageInputStream}.
      *
      * @see ImageInputStream
      * @see #getInput
@@ -317,36 +317,36 @@ public abstract class ImageReader {
 
     /**
      * Sets the input source to use to the given
-     * <code>ImageInputStream</code> or other <code>Object</code>.
+     * {@code ImageInputStream} or other {@code Object}.
      * The input source must be set before any of the query or read
-     * methods are used.  If <code>input</code> is <code>null</code>,
+     * methods are used.  If {@code input} is {@code null},
      * any currently set input source will be removed.  In any case,
-     * the value of <code>minIndex</code> will be initialized to 0.
+     * the value of {@code minIndex} will be initialized to 0.
      *
-     * <p> The <code>seekForwardOnly</code> parameter controls whether
-     * the value returned by <code>getMinIndex</code> will be
+     * <p> The {@code seekForwardOnly} parameter controls whether
+     * the value returned by {@code getMinIndex} will be
      * increased as each image (or thumbnail, or image metadata) is
-     * read.  If <code>seekForwardOnly</code> is true, then a call to
-     * <code>read(index)</code> will throw an
-     * <code>IndexOutOfBoundsException</code> if {@code index < this.minIndex};
+     * read.  If {@code seekForwardOnly} is true, then a call to
+     * {@code read(index)} will throw an
+     * {@code IndexOutOfBoundsException} if {@code index < this.minIndex};
      * otherwise, the value of
-     * <code>minIndex</code> will be set to <code>index</code>.  If
-     * <code>seekForwardOnly</code> is <code>false</code>, the value of
-     * <code>minIndex</code> will remain 0 regardless of any read
+     * {@code minIndex} will be set to {@code index}.  If
+     * {@code seekForwardOnly} is {@code false}, the value of
+     * {@code minIndex} will remain 0 regardless of any read
      * operations.
      *
-     * <p> This method is equivalent to <code>setInput(input,
-     * seekForwardOnly, false)</code>.
+     * <p> This method is equivalent to
+     * {@code setInput(input, seekForwardOnly, false)}.
      *
-     * @param input the <code>ImageInputStream</code> or other
-     * <code>Object</code> to use for future decoding.
-     * @param seekForwardOnly if <code>true</code>, images and metadata
+     * @param input the {@code ImageInputStream} or other
+     * {@code Object} to use for future decoding.
+     * @param seekForwardOnly if {@code true}, images and metadata
      * may only be read in ascending order from this input source.
      *
-     * @exception IllegalArgumentException if <code>input</code> is
+     * @exception IllegalArgumentException if {@code input} is
      * not an instance of one of the classes returned by the
-     * originating service provider's <code>getInputTypes</code>
-     * method, or is not an <code>ImageInputStream</code>.
+     * originating service provider's {@code getInputTypes}
+     * method, or is not an {@code ImageInputStream}.
      *
      * @see #getInput
      */
@@ -357,22 +357,22 @@ public abstract class ImageReader {
 
     /**
      * Sets the input source to use to the given
-     * <code>ImageInputStream</code> or other <code>Object</code>.
+     * {@code ImageInputStream} or other {@code Object}.
      * The input source must be set before any of the query or read
-     * methods are used.  If <code>input</code> is <code>null</code>,
+     * methods are used.  If {@code input} is {@code null},
      * any currently set input source will be removed.  In any case,
-     * the value of <code>minIndex</code> will be initialized to 0.
+     * the value of {@code minIndex} will be initialized to 0.
      *
-     * <p> This method is equivalent to <code>setInput(input, false,
-     * false)</code>.
+     * <p> This method is equivalent to
+     * {@code setInput(input, false, false)}.
      *
-     * @param input the <code>ImageInputStream</code> or other
-     * <code>Object</code> to use for future decoding.
+     * @param input the {@code ImageInputStream} or other
+     * {@code Object} to use for future decoding.
      *
-     * @exception IllegalArgumentException if <code>input</code> is
+     * @exception IllegalArgumentException if {@code input} is
      * not an instance of one of the classes returned by the
-     * originating service provider's <code>getInputTypes</code>
-     * method, or is not an <code>ImageInputStream</code>.
+     * originating service provider's {@code getInputTypes}
+     * method, or is not an {@code ImageInputStream}.
      *
      * @see #getInput
      */
@@ -381,12 +381,12 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns the <code>ImageInputStream</code> or other
-     * <code>Object</code> previously set as the input source.  If the
-     * input source has not been set, <code>null</code> is returned.
+     * Returns the {@code ImageInputStream} or other
+     * {@code Object} previously set as the input source.  If the
+     * input source has not been set, {@code null} is returned.
      *
-     * @return the <code>Object</code> that will be used for future
-     * decoding, or <code>null</code>.
+     * @return the {@code Object} that will be used for future
+     * decoding, or {@code null}.
      *
      * @see ImageInputStream
      * @see #setInput
@@ -396,12 +396,12 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns <code>true</code> if the current input source has been
-     * marked as seek forward only by passing <code>true</code> as the
-     * <code>seekForwardOnly</code> argument to the
-     * <code>setInput</code> method.
+     * Returns {@code true} if the current input source has been
+     * marked as seek forward only by passing {@code true} as the
+     * {@code seekForwardOnly} argument to the
+     * {@code setInput} method.
      *
-     * @return <code>true</code> if the input source is seek forward
+     * @return {@code true} if the input source is seek forward
      * only.
      *
      * @see #setInput
@@ -411,12 +411,12 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns <code>true</code> if the current input source has been
+     * Returns {@code true} if the current input source has been
      * marked as allowing metadata to be ignored by passing
-     * <code>true</code> as the <code>ignoreMetadata</code> argument
-     * to the <code>setInput</code> method.
+     * {@code true} as the {@code ignoreMetadata} argument
+     * to the {@code setInput} method.
      *
-     * @return <code>true</code> if the metadata may be ignored.
+     * @return {@code true} if the metadata may be ignored.
      *
      * @see #setInput
      */
@@ -426,8 +426,8 @@ public abstract class ImageReader {
 
     /**
      * Returns the lowest valid index for reading an image, thumbnail,
-     * or image metadata.  If <code>seekForwardOnly()</code> is
-     * <code>false</code>, this value will typically remain 0,
+     * or image metadata.  If {@code seekForwardOnly()} is
+     * {@code false}, this value will typically remain 0,
      * indicating that random access is possible.  Otherwise, it will
      * contain the value of the most recently accessed index, and
      * increase in a monotonic fashion.
@@ -441,17 +441,17 @@ public abstract class ImageReader {
     // Localization
 
     /**
-     * Returns an array of <code>Locale</code>s that may be used to
+     * Returns an array of {@code Locale}s that may be used to
      * localize warning listeners and compression settings.  A return
-     * value of <code>null</code> indicates that localization is not
+     * value of {@code null} indicates that localization is not
      * supported.
      *
      * <p> The default implementation returns a clone of the
-     * <code>availableLocales</code> instance variable if it is
-     * non-<code>null</code>, or else returns <code>null</code>.
+     * {@code availableLocales} instance variable if it is
+     * non-{@code null}, or else returns {@code null}.
      *
-     * @return an array of <code>Locale</code>s that may be used as
-     * arguments to <code>setLocale</code>, or <code>null</code>.
+     * @return an array of {@code Locale}s that may be used as
+     * arguments to {@code setLocale}, or {@code null}.
      */
     public Locale[] getAvailableLocales() {
         if (availableLocales == null) {
@@ -462,17 +462,17 @@ public abstract class ImageReader {
     }
 
     /**
-     * Sets the current <code>Locale</code> of this
-     * <code>ImageReader</code> to the given value.  A value of
-     * <code>null</code> removes any previous setting, and indicates
+     * Sets the current {@code Locale} of this
+     * {@code ImageReader} to the given value.  A value of
+     * {@code null} removes any previous setting, and indicates
      * that the reader should localize as it sees fit.
      *
-     * @param locale the desired <code>Locale</code>, or
-     * <code>null</code>.
+     * @param locale the desired {@code Locale}, or
+     * {@code null}.
      *
-     * @exception IllegalArgumentException if <code>locale</code> is
-     * non-<code>null</code> but is not one of the values returned by
-     * <code>getAvailableLocales</code>.
+     * @exception IllegalArgumentException if {@code locale} is
+     * non-{@code null} but is not one of the values returned by
+     * {@code getAvailableLocales}.
      *
      * @see #getLocale
      */
@@ -496,10 +496,10 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns the currently set <code>Locale</code>, or
-     * <code>null</code> if none has been set.
+     * Returns the currently set {@code Locale}, or
+     * {@code null} if none has been set.
      *
-     * @return the current <code>Locale</code>, or <code>null</code>.
+     * @return the current {@code Locale}, or {@code null}.
      *
      * @see #setLocale
      */
@@ -518,29 +518,29 @@ public abstract class ImageReader {
      * determining the number of images will require the entire stream
      * to be scanned and may require memory for buffering.  If images
      * are to be processed in order, it may be more efficient to
-     * simply call <code>read</code> with increasing indices until an
-     * <code>IndexOutOfBoundsException</code> is thrown to indicate
+     * simply call {@code read} with increasing indices until an
+     * {@code IndexOutOfBoundsException} is thrown to indicate
      * that no more images are available.  The
-     * <code>allowSearch</code> parameter may be set to
-     * <code>false</code> to indicate that an exhaustive search is not
-     * desired; the return value will be <code>-1</code> to indicate
+     * {@code allowSearch} parameter may be set to
+     * {@code false} to indicate that an exhaustive search is not
+     * desired; the return value will be {@code -1} to indicate
      * that a search is necessary.  If the input has been specified
-     * with <code>seekForwardOnly</code> set to <code>true</code>,
-     * this method throws an <code>IllegalStateException</code> if
-     * <code>allowSearch</code> is set to <code>true</code>.
+     * with {@code seekForwardOnly} set to {@code true},
+     * this method throws an {@code IllegalStateException} if
+     * {@code allowSearch} is set to {@code true}.
      *
-     * @param allowSearch if <code>true</code>, the true number of
+     * @param allowSearch if {@code true}, the true number of
      * images will be returned even if a search is required.  If
-     * <code>false</code>, the reader may return <code>-1</code>
+     * {@code false}, the reader may return {@code -1}
      * without performing the search.
      *
-     * @return the number of images, as an <code>int</code>, or
-     * <code>-1</code> if <code>allowSearch</code> is
-     * <code>false</code> and a search would be required.
+     * @return the number of images, as an {@code int}, or
+     * {@code -1} if {@code allowSearch} is
+     * {@code false} and a search would be required.
      *
      * @exception IllegalStateException if the input source has not been set,
-     * or if the input has been specified with <code>seekForwardOnly</code>
-     * set to <code>true</code>.
+     * or if the input has been specified with {@code seekForwardOnly}
+     * set to {@code true}.
      * @exception IOException if an error occurs reading the
      * information from the input source.
      *
@@ -557,7 +557,7 @@ public abstract class ImageReader {
      *
      * @param imageIndex the index of the image to be queried.
      *
-     * @return the width of the image, as an <code>int</code>.
+     * @return the width of the image, as an {@code int}.
      *
      * @exception IllegalStateException if the input source has not been set.
      * @exception IndexOutOfBoundsException if the supplied index is
@@ -576,7 +576,7 @@ public abstract class ImageReader {
      *
      * @param imageIndex the index of the image to be queried.
      *
-     * @return the height of the image, as an <code>int</code>.
+     * @return the height of the image, as an {@code int}.
      *
      * @exception IllegalStateException if the input source has not been set.
      * @exception IndexOutOfBoundsException if the supplied index is
@@ -587,34 +587,34 @@ public abstract class ImageReader {
     public abstract int getHeight(int imageIndex) throws IOException;
 
     /**
-     * Returns <code>true</code> if the storage format of the given
+     * Returns {@code true} if the storage format of the given
      * image places no inherent impediment on random access to pixels.
      * For most compressed formats, such as JPEG, this method should
-     * return <code>false</code>, as a large section of the image in
+     * return {@code false}, as a large section of the image in
      * addition to the region of interest may need to be decoded.
      *
      * <p> This is merely a hint for programs that wish to be
      * efficient; all readers must be able to read arbitrary regions
-     * as specified in an <code>ImageReadParam</code>.
+     * as specified in an {@code ImageReadParam}.
      *
-     * <p> Note that formats that return <code>false</code> from
+     * <p> Note that formats that return {@code false} from
      * this method may nonetheless allow tiling (<i>e.g.</i> Restart
      * Markers in JPEG), and random access will likely be reasonably
      * efficient on tiles.  See {@link #isImageTiled isImageTiled}.
      *
      * <p> A reader for which all images are guaranteed to support
      * easy random access, or are guaranteed not to support easy
-     * random access, may return <code>true</code> or
-     * <code>false</code> respectively without accessing any image
+     * random access, may return {@code true} or
+     * {@code false} respectively without accessing any image
      * data.  In such cases, it is not necessary to throw an exception
      * even if no input source has been set or the image index is out
      * of bounds.
      *
-     * <p> The default implementation returns <code>false</code>.
+     * <p> The default implementation returns {@code false}.
      *
      * @param imageIndex the index of the image to be queried.
      *
-     * @return <code>true</code> if reading a region of interest of
+     * @return {@code true} if reading a region of interest of
      * the given image is likely to be efficient.
      *
      * @exception IllegalStateException if an input source is required
@@ -630,18 +630,18 @@ public abstract class ImageReader {
 
     /**
      * Returns the aspect ratio of the given image (that is, its width
-     * divided by its height) as a <code>float</code>.  For images
+     * divided by its height) as a {@code float}.  For images
      * that are inherently resizable, this method provides a way to
      * determine the appropriate width given a desired height, or vice
      * versa.  For non-resizable images, the true width and height
      * are used.
      *
      * <p> The default implementation simply returns
-     * <code>(float)getWidth(imageIndex)/getHeight(imageIndex)</code>.
+     * {@code (float)getWidth(imageIndex)/getHeight(imageIndex)}.
      *
      * @param imageIndex the index of the image to be queried.
      *
-     * @return a <code>float</code> indicating the aspect ratio of the
+     * @return a {@code float} indicating the aspect ratio of the
      * given image.
      *
      * @exception IllegalStateException if the input source has not been set.
@@ -654,21 +654,21 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns an <code>ImageTypeSpecifier</code> indicating the
-     * <code>SampleModel</code> and <code>ColorModel</code> which most
+     * Returns an {@code ImageTypeSpecifier} indicating the
+     * {@code SampleModel} and {@code ColorModel} which most
      * closely represents the "raw" internal format of the image.  For
      * example, for a JPEG image the raw type might have a YCbCr color
      * space even though the image would conventionally be transformed
      * into an RGB color space prior to display.  The returned value
      * should also be included in the list of values returned by
-     * <code>getImageTypes</code>.
+     * {@code getImageTypes}.
      *
      * <p> The default implementation simply returns the first entry
-     * from the list provided by <code>getImageType</code>.
+     * from the list provided by {@code getImageType}.
      *
      * @param imageIndex the index of the image to be queried.
      *
-     * @return an <code>ImageTypeSpecifier</code>.
+     * @return an {@code ImageTypeSpecifier}.
      *
      * @exception IllegalStateException if the input source has not been set.
      * @exception IndexOutOfBoundsException if the supplied index is
@@ -682,9 +682,9 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns an <code>Iterator</code> containing possible image
+     * Returns an {@code Iterator} containing possible image
      * types to which the given image may be decoded, in the form of
-     * <code>ImageTypeSpecifiers</code>s.  At least one legal image
+     * {@code ImageTypeSpecifiers}s.  At least one legal image
      * type will be returned.
      *
      * <p> The first element of the iterator should be the most
@@ -694,10 +694,10 @@ public abstract class ImageReader {
      * internally in a YCbCr color space.
      *
      * @param imageIndex the index of the image to be
-     * <code>retrieved</code>.
+     * {@code retrieved}.
      *
-     * @return an <code>Iterator</code> containing at least one
-     * <code>ImageTypeSpecifier</code> representing suggested image
+     * @return an {@code Iterator} containing at least one
+     * {@code ImageTypeSpecifier} representing suggested image
      * types for decoding the current given image.
      *
      * @exception IllegalStateException if the input source has not been set.
@@ -713,18 +713,18 @@ public abstract class ImageReader {
         getImageTypes(int imageIndex) throws IOException;
 
     /**
-     * Returns a default <code>ImageReadParam</code> object
+     * Returns a default {@code ImageReadParam} object
      * appropriate for this format.  All subclasses should define a
      * set of default values for all parameters and return them with
      * this call.  This method may be called before the input source
      * is set.
      *
      * <p> The default implementation constructs and returns a new
-     * <code>ImageReadParam</code> object that does not allow source
-     * scaling (<i>i.e.</i>, it returns <code>new
-     * ImageReadParam()</code>.
+     * {@code ImageReadParam} object that does not allow source
+     * scaling (<i>i.e.</i>, it returns
+     * {@code new ImageReadParam()}.
      *
-     * @return an <code>ImageReadParam</code> object which may be used
+     * @return an {@code ImageReadParam} object which may be used
      * to control the decoding process using a set of default settings.
      */
     public ImageReadParam getDefaultReadParam() {
@@ -732,35 +732,35 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns an <code>IIOMetadata</code> object representing the
+     * Returns an {@code IIOMetadata} object representing the
      * metadata associated with the input source as a whole (i.e., not
-     * associated with any particular image), or <code>null</code> if
+     * associated with any particular image), or {@code null} if
      * the reader does not support reading metadata, is set to ignore
      * metadata, or if no metadata is available.
      *
-     * @return an <code>IIOMetadata</code> object, or <code>null</code>.
+     * @return an {@code IIOMetadata} object, or {@code null}.
      *
      * @exception IOException if an error occurs during reading.
      */
     public abstract IIOMetadata getStreamMetadata() throws IOException;
 
     /**
-     * Returns an <code>IIOMetadata</code> object representing the
+     * Returns an {@code IIOMetadata} object representing the
      * metadata associated with the input source as a whole (i.e.,
      * not associated with any particular image).  If no such data
-     * exists, <code>null</code> is returned.
+     * exists, {@code null} is returned.
      *
      * <p> The resulting metadata object is only responsible for
      * returning documents in the format named by
-     * <code>formatName</code>.  Within any documents that are
+     * {@code formatName}.  Within any documents that are
      * returned, only nodes whose names are members of
-     * <code>nodeNames</code> are required to be returned.  In this
+     * {@code nodeNames} are required to be returned.  In this
      * way, the amount of metadata processing done by the reader may
      * be kept to a minimum, based on what information is actually
      * needed.
      *
-     * <p> If <code>formatName</code> is not the name of a supported
-     * metadata format, <code>null</code> is returned.
+     * <p> If {@code formatName} is not the name of a supported
+     * metadata format, {@code null} is returned.
      *
      * <p> In all cases, it is legal to return a more capable metadata
      * object than strictly necessary.  The format name and node names
@@ -768,21 +768,21 @@ public abstract class ImageReader {
      * workload.
      *
      * <p> The default implementation simply returns the result of
-     * calling <code>getStreamMetadata()</code>, after checking that
+     * calling {@code getStreamMetadata()}, after checking that
      * the format name is supported.  If it is not,
-     * <code>null</code> is returned.
+     * {@code null} is returned.
      *
      * @param formatName a metadata format name that may be used to retrieve
-     * a document from the returned <code>IIOMetadata</code> object.
-     * @param nodeNames a <code>Set</code> containing the names of
+     * a document from the returned {@code IIOMetadata} object.
+     * @param nodeNames a {@code Set} containing the names of
      * nodes that may be contained in a retrieved document.
      *
-     * @return an <code>IIOMetadata</code> object, or <code>null</code>.
+     * @return an {@code IIOMetadata} object, or {@code null}.
      *
-     * @exception IllegalArgumentException if <code>formatName</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>nodeNames</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code formatName}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code nodeNames}
+     * is {@code null}.
      * @exception IOException if an error occurs during reading.
      */
     public IIOMetadata getStreamMetadata(String formatName,
@@ -829,16 +829,16 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns an <code>IIOMetadata</code> object containing metadata
-     * associated with the given image, or <code>null</code> if the
+     * Returns an {@code IIOMetadata} object containing metadata
+     * associated with the given image, or {@code null} if the
      * reader does not support reading metadata, is set to ignore
      * metadata, or if no metadata is available.
      *
      * @param imageIndex the index of the image whose metadata is to
      * be retrieved.
      *
-     * @return an <code>IIOMetadata</code> object, or
-     * <code>null</code>.
+     * @return an {@code IIOMetadata} object, or
+     * {@code null}.
      *
      * @exception IllegalStateException if the input source has not been
      * set.
@@ -850,22 +850,22 @@ public abstract class ImageReader {
         throws IOException;
 
     /**
-     * Returns an <code>IIOMetadata</code> object representing the
-     * metadata associated with the given image, or <code>null</code>
+     * Returns an {@code IIOMetadata} object representing the
+     * metadata associated with the given image, or {@code null}
      * if the reader does not support reading metadata or none
      * is available.
      *
      * <p> The resulting metadata object is only responsible for
      * returning documents in the format named by
-     * <code>formatName</code>.  Within any documents that are
+     * {@code formatName}.  Within any documents that are
      * returned, only nodes whose names are members of
-     * <code>nodeNames</code> are required to be returned.  In this
+     * {@code nodeNames} are required to be returned.  In this
      * way, the amount of metadata processing done by the reader may
      * be kept to a minimum, based on what information is actually
      * needed.
      *
-     * <p> If <code>formatName</code> is not the name of a supported
-     * metadata format, <code>null</code> may be returned.
+     * <p> If {@code formatName} is not the name of a supported
+     * metadata format, {@code null} may be returned.
      *
      * <p> In all cases, it is legal to return a more capable metadata
      * object than strictly necessary.  The format name and node names
@@ -873,27 +873,27 @@ public abstract class ImageReader {
      * workload.
      *
      * <p> The default implementation simply returns the result of
-     * calling <code>getImageMetadata(imageIndex)</code>, after
+     * calling {@code getImageMetadata(imageIndex)}, after
      * checking that the format name is supported.  If it is not,
-     * <code>null</code> is returned.
+     * {@code null} is returned.
      *
      * @param imageIndex the index of the image whose metadata is to
      * be retrieved.
      * @param formatName a metadata format name that may be used to retrieve
-     * a document from the returned <code>IIOMetadata</code> object.
-     * @param nodeNames a <code>Set</code> containing the names of
+     * a document from the returned {@code IIOMetadata} object.
+     * @param nodeNames a {@code Set} containing the names of
      * nodes that may be contained in a retrieved document.
      *
-     * @return an <code>IIOMetadata</code> object, or <code>null</code>.
+     * @return an {@code IIOMetadata} object, or {@code null}.
      *
      * @exception IllegalStateException if the input source has not been
      * set.
      * @exception IndexOutOfBoundsException if the supplied index is
      * out of bounds.
-     * @exception IllegalArgumentException if <code>formatName</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>nodeNames</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code formatName}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code nodeNames}
+     * is {@code null}.
      * @exception IOException if an error occurs during reading.
      */
     public IIOMetadata getImageMetadata(int imageIndex,
@@ -904,30 +904,30 @@ public abstract class ImageReader {
     }
 
     /**
-     * Reads the image indexed by <code>imageIndex</code> and returns
-     * it as a complete <code>BufferedImage</code>, using a default
-     * <code>ImageReadParam</code>.  This is a convenience method
-     * that calls <code>read(imageIndex, null)</code>.
+     * Reads the image indexed by {@code imageIndex} and returns
+     * it as a complete {@code BufferedImage}, using a default
+     * {@code ImageReadParam}.  This is a convenience method
+     * that calls {@code read(imageIndex, null)}.
      *
      * <p> The image returned will be formatted according to the first
-     * <code>ImageTypeSpecifier</code> returned from
-     * <code>getImageTypes</code>.
+     * {@code ImageTypeSpecifier} returned from
+     * {@code getImageTypes}.
      *
-     * <p> Any registered <code>IIOReadProgressListener</code> objects
-     * will be notified by calling their <code>imageStarted</code>
-     * method, followed by calls to their <code>imageProgress</code>
+     * <p> Any registered {@code IIOReadProgressListener} objects
+     * will be notified by calling their {@code imageStarted}
+     * method, followed by calls to their {@code imageProgress}
      * method as the read progresses.  Finally their
-     * <code>imageComplete</code> method will be called.
-     * <code>IIOReadUpdateListener</code> objects may be updated at
+     * {@code imageComplete} method will be called.
+     * {@code IIOReadUpdateListener} objects may be updated at
      * other times during the read as pixels are decoded.  Finally,
-     * <code>IIOReadWarningListener</code> objects will receive
+     * {@code IIOReadWarningListener} objects will receive
      * notification of any non-fatal warnings that occur during
      * decoding.
      *
      * @param imageIndex the index of the image to be retrieved.
      *
      * @return the desired portion of the image as a
-     * <code>BufferedImage</code>.
+     * {@code BufferedImage}.
      *
      * @exception IllegalStateException if the input source has not been
      * set.
@@ -940,46 +940,46 @@ public abstract class ImageReader {
     }
 
     /**
-     * Reads the image indexed by <code>imageIndex</code> and returns
-     * it as a complete <code>BufferedImage</code>, using a supplied
-     * <code>ImageReadParam</code>.
+     * Reads the image indexed by {@code imageIndex} and returns
+     * it as a complete {@code BufferedImage}, using a supplied
+     * {@code ImageReadParam}.
      *
-     * <p> The actual <code>BufferedImage</code> returned will be
+     * <p> The actual {@code BufferedImage} returned will be
      * chosen using the algorithm defined by the
-     * <code>getDestination</code> method.
+     * {@code getDestination} method.
      *
-     * <p> Any registered <code>IIOReadProgressListener</code> objects
-     * will be notified by calling their <code>imageStarted</code>
-     * method, followed by calls to their <code>imageProgress</code>
+     * <p> Any registered {@code IIOReadProgressListener} objects
+     * will be notified by calling their {@code imageStarted}
+     * method, followed by calls to their {@code imageProgress}
      * method as the read progresses.  Finally their
-     * <code>imageComplete</code> method will be called.
-     * <code>IIOReadUpdateListener</code> objects may be updated at
+     * {@code imageComplete} method will be called.
+     * {@code IIOReadUpdateListener} objects may be updated at
      * other times during the read as pixels are decoded.  Finally,
-     * <code>IIOReadWarningListener</code> objects will receive
+     * {@code IIOReadWarningListener} objects will receive
      * notification of any non-fatal warnings that occur during
      * decoding.
      *
      * <p> The set of source bands to be read and destination bands to
-     * be written is determined by calling <code>getSourceBands</code>
-     * and <code>getDestinationBands</code> on the supplied
-     * <code>ImageReadParam</code>.  If the lengths of the arrays
+     * be written is determined by calling {@code getSourceBands}
+     * and {@code getDestinationBands} on the supplied
+     * {@code ImageReadParam}.  If the lengths of the arrays
      * returned by these methods differ, the set of source bands
      * contains an index larger that the largest available source
      * index, or the set of destination bands contains an index larger
      * than the largest legal destination index, an
-     * <code>IllegalArgumentException</code> is thrown.
+     * {@code IllegalArgumentException} is thrown.
      *
-     * <p> If the supplied <code>ImageReadParam</code> contains
+     * <p> If the supplied {@code ImageReadParam} contains
      * optional setting values not supported by this reader (<i>e.g.</i>
      * source render size or any format-specific settings), they will
      * be ignored.
      *
      * @param imageIndex the index of the image to be retrieved.
-     * @param param an <code>ImageReadParam</code> used to control
-     * the reading process, or <code>null</code>.
+     * @param param an {@code ImageReadParam} used to control
+     * the reading process, or {@code null}.
      *
      * @return the desired portion of the image as a
-     * <code>BufferedImage</code>.
+     * {@code BufferedImage}.
      *
      * @exception IllegalStateException if the input source has not been
      * set.
@@ -987,8 +987,8 @@ public abstract class ImageReader {
      * out of bounds.
      * @exception IllegalArgumentException if the set of source and
      * destination bands specified by
-     * <code>param.getSourceBands</code> and
-     * <code>param.getDestinationBands</code> differ in length or
+     * {@code param.getSourceBands} and
+     * {@code param.getDestinationBands} differ in length or
      * include indices that are out of bounds.
      * @exception IllegalArgumentException if the resulting image would
      * have a width or height less than 1.
@@ -998,49 +998,49 @@ public abstract class ImageReader {
         throws IOException;
 
     /**
-     * Reads the image indexed by <code>imageIndex</code> and returns
-     * an <code>IIOImage</code> containing the image, thumbnails, and
+     * Reads the image indexed by {@code imageIndex} and returns
+     * an {@code IIOImage} containing the image, thumbnails, and
      * associated image metadata, using a supplied
-     * <code>ImageReadParam</code>.
+     * {@code ImageReadParam}.
      *
-     * <p> The actual <code>BufferedImage</code> referenced by the
-     * returned <code>IIOImage</code> will be chosen using the
-     * algorithm defined by the <code>getDestination</code> method.
+     * <p> The actual {@code BufferedImage} referenced by the
+     * returned {@code IIOImage} will be chosen using the
+     * algorithm defined by the {@code getDestination} method.
      *
-     * <p> Any registered <code>IIOReadProgressListener</code> objects
-     * will be notified by calling their <code>imageStarted</code>
-     * method, followed by calls to their <code>imageProgress</code>
+     * <p> Any registered {@code IIOReadProgressListener} objects
+     * will be notified by calling their {@code imageStarted}
+     * method, followed by calls to their {@code imageProgress}
      * method as the read progresses.  Finally their
-     * <code>imageComplete</code> method will be called.
-     * <code>IIOReadUpdateListener</code> objects may be updated at
+     * {@code imageComplete} method will be called.
+     * {@code IIOReadUpdateListener} objects may be updated at
      * other times during the read as pixels are decoded.  Finally,
-     * <code>IIOReadWarningListener</code> objects will receive
+     * {@code IIOReadWarningListener} objects will receive
      * notification of any non-fatal warnings that occur during
      * decoding.
      *
      * <p> The set of source bands to be read and destination bands to
-     * be written is determined by calling <code>getSourceBands</code>
-     * and <code>getDestinationBands</code> on the supplied
-     * <code>ImageReadParam</code>.  If the lengths of the arrays
+     * be written is determined by calling {@code getSourceBands}
+     * and {@code getDestinationBands} on the supplied
+     * {@code ImageReadParam}.  If the lengths of the arrays
      * returned by these methods differ, the set of source bands
      * contains an index larger that the largest available source
      * index, or the set of destination bands contains an index larger
      * than the largest legal destination index, an
-     * <code>IllegalArgumentException</code> is thrown.
+     * {@code IllegalArgumentException} is thrown.
      *
      * <p> Thumbnails will be returned in their entirety regardless of
      * the region settings.
      *
-     * <p> If the supplied <code>ImageReadParam</code> contains
+     * <p> If the supplied {@code ImageReadParam} contains
      * optional setting values not supported by this reader (<i>e.g.</i>
      * source render size or any format-specific settings), those
      * values will be ignored.
      *
      * @param imageIndex the index of the image to be retrieved.
-     * @param param an <code>ImageReadParam</code> used to control
-     * the reading process, or <code>null</code>.
+     * @param param an {@code ImageReadParam} used to control
+     * the reading process, or {@code null}.
      *
-     * @return an <code>IIOImage</code> containing the desired portion
+     * @return an {@code IIOImage} containing the desired portion
      * of the image, a set of thumbnails, and associated image
      * metadata.
      *
@@ -1050,8 +1050,8 @@ public abstract class ImageReader {
      * out of bounds.
      * @exception IllegalArgumentException if the set of source and
      * destination bands specified by
-     * <code>param.getSourceBands</code> and
-     * <code>param.getDestinationBands</code> differ in length or
+     * {@code param.getSourceBands} and
+     * {@code param.getDestinationBands} differ in length or
      * include indices that are out of bounds.
      * @exception IllegalArgumentException if the resulting image
      * would have a width or height less than 1.
@@ -1079,71 +1079,71 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns an <code>Iterator</code> containing all the images,
+     * Returns an {@code Iterator} containing all the images,
      * thumbnails, and metadata, starting at the index given by
-     * <code>getMinIndex</code>, from the input source in the form of
-     * <code>IIOImage</code> objects.  An <code>Iterator</code>
-     * containing <code>ImageReadParam</code> objects is supplied; one
+     * {@code getMinIndex}, from the input source in the form of
+     * {@code IIOImage} objects.  An {@code Iterator}
+     * containing {@code ImageReadParam} objects is supplied; one
      * element is consumed for each image read from the input source
      * until no more images are available.  If the read param
-     * <code>Iterator</code> runs out of elements, but there are still
+     * {@code Iterator} runs out of elements, but there are still
      * more images available from the input source, default read
      * params are used for the remaining images.
      *
-     * <p> If <code>params</code> is <code>null</code>, a default read
+     * <p> If {@code params} is {@code null}, a default read
      * param will be used for all images.
      *
-     * <p> The actual <code>BufferedImage</code> referenced by the
-     * returned <code>IIOImage</code> will be chosen using the
-     * algorithm defined by the <code>getDestination</code> method.
+     * <p> The actual {@code BufferedImage} referenced by the
+     * returned {@code IIOImage} will be chosen using the
+     * algorithm defined by the {@code getDestination} method.
      *
-     * <p> Any registered <code>IIOReadProgressListener</code> objects
-     * will be notified by calling their <code>sequenceStarted</code>
+     * <p> Any registered {@code IIOReadProgressListener} objects
+     * will be notified by calling their {@code sequenceStarted}
      * method once.  Then, for each image decoded, there will be a
-     * call to <code>imageStarted</code>, followed by calls to
-     * <code>imageProgress</code> as the read progresses, and finally
-     * to <code>imageComplete</code>.  The
-     * <code>sequenceComplete</code> method will be called after the
+     * call to {@code imageStarted}, followed by calls to
+     * {@code imageProgress} as the read progresses, and finally
+     * to {@code imageComplete}.  The
+     * {@code sequenceComplete} method will be called after the
      * last image has been decoded.
-     * <code>IIOReadUpdateListener</code> objects may be updated at
+     * {@code IIOReadUpdateListener} objects may be updated at
      * other times during the read as pixels are decoded.  Finally,
-     * <code>IIOReadWarningListener</code> objects will receive
+     * {@code IIOReadWarningListener} objects will receive
      * notification of any non-fatal warnings that occur during
      * decoding.
      *
      * <p> The set of source bands to be read and destination bands to
-     * be written is determined by calling <code>getSourceBands</code>
-     * and <code>getDestinationBands</code> on the supplied
-     * <code>ImageReadParam</code>.  If the lengths of the arrays
+     * be written is determined by calling {@code getSourceBands}
+     * and {@code getDestinationBands} on the supplied
+     * {@code ImageReadParam}.  If the lengths of the arrays
      * returned by these methods differ, the set of source bands
      * contains an index larger that the largest available source
      * index, or the set of destination bands contains an index larger
      * than the largest legal destination index, an
-     * <code>IllegalArgumentException</code> is thrown.
+     * {@code IllegalArgumentException} is thrown.
      *
      * <p> Thumbnails will be returned in their entirety regardless of the
      * region settings.
      *
-     * <p> If any of the supplied <code>ImageReadParam</code>s contain
+     * <p> If any of the supplied {@code ImageReadParam}s contain
      * optional setting values not supported by this reader (<i>e.g.</i>
      * source render size or any format-specific settings), they will
      * be ignored.
      *
-     * @param params an <code>Iterator</code> containing
-     * <code>ImageReadParam</code> objects.
+     * @param params an {@code Iterator} containing
+     * {@code ImageReadParam} objects.
      *
-     * @return an <code>Iterator</code> representing the
-     * contents of the input source as <code>IIOImage</code>s.
+     * @return an {@code Iterator} representing the
+     * contents of the input source as {@code IIOImage}s.
      *
      * @exception IllegalStateException if the input source has not been
      * set.
      * @exception IllegalArgumentException if any
-     * non-<code>null</code> element of <code>params</code> is not an
-     * <code>ImageReadParam</code>.
+     * non-{@code null} element of {@code params} is not an
+     * {@code ImageReadParam}.
      * @exception IllegalArgumentException if the set of source and
      * destination bands specified by
-     * <code>param.getSourceBands</code> and
-     * <code>param.getDestinationBands</code> differ in length or
+     * {@code param.getSourceBands} and
+     * {@code param.getDestinationBands} differ in length or
      * include indices that are out of bounds.
      * @exception IllegalArgumentException if a resulting image would
      * have a width or height less than 1.
@@ -1210,16 +1210,16 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns <code>true</code> if this plug-in supports reading
+     * Returns {@code true} if this plug-in supports reading
      * just a {@link java.awt.image.Raster Raster} of pixel data.
-     * If this method returns <code>false</code>, calls to
+     * If this method returns {@code false}, calls to
      * {@link #readRaster readRaster} or {@link #readTileRaster readTileRaster}
-     * will throw an <code>UnsupportedOperationException</code>.
+     * will throw an {@code UnsupportedOperationException}.
      *
-     * <p> The default implementation returns <code>false</code>.
+     * <p> The default implementation returns {@code false}.
      *
-     * @return <code>true</code> if this plug-in supports reading raw
-     * <code>Raster</code>s.
+     * @return {@code true} if this plug-in supports reading raw
+     * {@code Raster}s.
      *
      * @see #readRaster
      * @see #readTileRaster
@@ -1229,14 +1229,14 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns a new <code>Raster</code> object containing the raw pixel data
+     * Returns a new {@code Raster} object containing the raw pixel data
      * from the image stream, without any color conversion applied.  The
      * application must determine how to interpret the pixel data by other
      * means.  Any destination or image-type parameters in the supplied
-     * <code>ImageReadParam</code> object are ignored, but all other
+     * {@code ImageReadParam} object are ignored, but all other
      * parameters are used exactly as in the {@link #read read}
      * method, except that any destination offset is used as a logical rather
-     * than a physical offset.  The size of the returned <code>Raster</code>
+     * than a physical offset.  The size of the returned {@code Raster}
      * will always be that of the source region clipped to the actual image.
      * Logical offsets in the stream itself are ignored.
      *
@@ -1245,31 +1245,31 @@ public abstract class ImageReader {
      * associated colorspace, such as remote sensing or medical imaging data,
      * to provide access to raw pixel data.
      *
-     * <p> Any registered <code>readUpdateListener</code>s are ignored, as
-     * there is no <code>BufferedImage</code>, but all other listeners are
+     * <p> Any registered {@code readUpdateListener}s are ignored, as
+     * there is no {@code BufferedImage}, but all other listeners are
      * called exactly as they are for the {@link #read read} method.
      *
      * <p> If {@link #canReadRaster canReadRaster()} returns
-     * <code>false</code>, this method throws an
-     * <code>UnsupportedOperationException</code>.
+     * {@code false}, this method throws an
+     * {@code UnsupportedOperationException}.
      *
-     * <p> If the supplied <code>ImageReadParam</code> contains
+     * <p> If the supplied {@code ImageReadParam} contains
      * optional setting values not supported by this reader (<i>e.g.</i>
      * source render size or any format-specific settings), they will
      * be ignored.
      *
      * <p> The default implementation throws an
-     * <code>UnsupportedOperationException</code>.
+     * {@code UnsupportedOperationException}.
      *
      * @param imageIndex the index of the image to be read.
-     * @param param an <code>ImageReadParam</code> used to control
-     * the reading process, or <code>null</code>.
+     * @param param an {@code ImageReadParam} used to control
+     * the reading process, or {@code null}.
      *
      * @return the desired portion of the image as a
-     * <code>Raster</code>.
+     * {@code Raster}.
      *
      * @exception UnsupportedOperationException if this plug-in does not
-     * support reading raw <code>Raster</code>s.
+     * support reading raw {@code Raster}s.
      * @exception IllegalStateException if the input source has not been
      * set.
      * @exception IndexOutOfBoundsException if the supplied index is
@@ -1286,7 +1286,7 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns <code>true</code> if the image is organized into
+     * Returns {@code true} if the image is organized into
      * <i>tiles</i>, that is, equal-sized non-overlapping rectangles.
      *
      * <p> A reader plug-in may choose whether or not to expose tiling
@@ -1296,20 +1296,20 @@ public abstract class ImageReader {
      * advantage (in speed or space) to accessing individual tiles.
      * Regardless of whether the reader advertises tiling, it must be
      * capable of reading an arbitrary rectangular region specified in
-     * an <code>ImageReadParam</code>.
+     * an {@code ImageReadParam}.
      *
      * <p> A reader for which all images are guaranteed to be tiled,
-     * or are guaranteed not to be tiled, may return <code>true</code>
-     * or <code>false</code> respectively without accessing any image
+     * or are guaranteed not to be tiled, may return {@code true}
+     * or {@code false} respectively without accessing any image
      * data.  In such cases, it is not necessary to throw an exception
      * even if no input source has been set or the image index is out
      * of bounds.
      *
-     * <p> The default implementation just returns <code>false</code>.
+     * <p> The default implementation just returns {@code false}.
      *
      * @param imageIndex the index of the image to be queried.
      *
-     * @return <code>true</code> if the image is tiled.
+     * @return {@code true} if the image is tiled.
      *
      * @exception IllegalStateException if an input source is required
      * to determine the return value, but none has been set.
@@ -1326,7 +1326,7 @@ public abstract class ImageReader {
      * Returns the width of a tile in the given image.
      *
      * <p> The default implementation simply returns
-     * <code>getWidth(imageIndex)</code>, which is correct for
+     * {@code getWidth(imageIndex)}, which is correct for
      * non-tiled images.  Readers that support tiling should override
      * this method.
      *
@@ -1347,7 +1347,7 @@ public abstract class ImageReader {
      * Returns the height of a tile in the given image.
      *
      * <p> The default implementation simply returns
-     * <code>getHeight(imageIndex)</code>, which is correct for
+     * {@code getHeight(imageIndex)}, which is correct for
      * non-tiled images.  Readers that support tiling should override
      * this method.
      *
@@ -1425,28 +1425,28 @@ public abstract class ImageReader {
     }
 
     /**
-     * Reads the tile indicated by the <code>tileX</code> and
-     * <code>tileY</code> arguments, returning it as a
-     * <code>BufferedImage</code>.  If the arguments are out of range,
-     * an <code>IllegalArgumentException</code> is thrown.  If the
+     * Reads the tile indicated by the {@code tileX} and
+     * {@code tileY} arguments, returning it as a
+     * {@code BufferedImage}.  If the arguments are out of range,
+     * an {@code IllegalArgumentException} is thrown.  If the
      * image is not tiled, the values 0, 0 will return the entire
      * image; any other values will cause an
-     * <code>IllegalArgumentException</code> to be thrown.
+     * {@code IllegalArgumentException} to be thrown.
      *
      * <p> This method is merely a convenience equivalent to calling
-     * <code>read(int, ImageReadParam)</code> with a read param
+     * {@code read(int, ImageReadParam)} with a read param
      * specifying a source region having offsets of
-     * <code>tileX*getTileWidth(imageIndex)</code>,
-     * <code>tileY*getTileHeight(imageIndex)</code> and width and
-     * height of <code>getTileWidth(imageIndex)</code>,
-     * <code>getTileHeight(imageIndex)</code>; and subsampling
+     * {@code tileX*getTileWidth(imageIndex)},
+     * {@code tileY*getTileHeight(imageIndex)} and width and
+     * height of {@code getTileWidth(imageIndex)},
+     * {@code getTileHeight(imageIndex)}; and subsampling
      * factors of 1 and offsets of 0.  To subsample a tile, call
-     * <code>read</code> with a read param specifying this region
+     * {@code read} with a read param specifying this region
      * and different subsampling parameters.
      *
      * <p> The default implementation returns the entire image if
-     * <code>tileX</code> and <code>tileY</code> are 0, or throws
-     * an <code>IllegalArgumentException</code> otherwise.
+     * {@code tileX} and {@code tileY} are 0, or throws
+     * an {@code IllegalArgumentException} otherwise.
      *
      * @param imageIndex the index of the image to be retrieved.
      * @param tileX the column index (starting with 0) of the tile
@@ -1454,11 +1454,11 @@ public abstract class ImageReader {
      * @param tileY the row index (starting with 0) of the tile
      * to be retrieved.
      *
-     * @return the tile as a <code>BufferedImage</code>.
+     * @return the tile as a {@code BufferedImage}.
      *
      * @exception IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if <code>imageIndex</code>
+     * @exception IndexOutOfBoundsException if {@code imageIndex}
      * is out of bounds.
      * @exception IllegalArgumentException if the tile indices are
      * out of bounds.
@@ -1473,20 +1473,20 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns a new <code>Raster</code> object containing the raw
+     * Returns a new {@code Raster} object containing the raw
      * pixel data from the tile, without any color conversion applied.
      * The application must determine how to interpret the pixel data by other
      * means.
      *
      * <p> If {@link #canReadRaster canReadRaster()} returns
-     * <code>false</code>, this method throws an
-     * <code>UnsupportedOperationException</code>.
+     * {@code false}, this method throws an
+     * {@code UnsupportedOperationException}.
      *
      * <p> The default implementation checks if reading
-     * <code>Raster</code>s is supported, and if so calls {@link
+     * {@code Raster}s is supported, and if so calls {@link
      * #readRaster readRaster(imageIndex, null)} if
-     * <code>tileX</code> and <code>tileY</code> are 0, or throws an
-     * <code>IllegalArgumentException</code> otherwise.
+     * {@code tileX} and {@code tileY} are 0, or throws an
+     * {@code IllegalArgumentException} otherwise.
      *
      * @param imageIndex the index of the image to be retrieved.
      * @param tileX the column index (starting with 0) of the tile
@@ -1494,15 +1494,15 @@ public abstract class ImageReader {
      * @param tileY the row index (starting with 0) of the tile
      * to be retrieved.
      *
-     * @return the tile as a <code>Raster</code>.
+     * @return the tile as a {@code Raster}.
      *
      * @exception UnsupportedOperationException if this plug-in does not
-     * support reading raw <code>Raster</code>s.
+     * support reading raw {@code Raster}s.
      * @exception IllegalArgumentException if the tile indices are
      * out of bounds.
      * @exception IllegalStateException if the input source has not been
      * set.
-     * @exception IndexOutOfBoundsException if <code>imageIndex</code>
+     * @exception IndexOutOfBoundsException if {@code imageIndex}
      * is out of bounds.
      * @exception IOException if an error occurs during reading.
      *
@@ -1525,22 +1525,22 @@ public abstract class ImageReader {
     // RenderedImages
 
     /**
-     * Returns a <code>RenderedImage</code> object that contains the
-     * contents of the image indexed by <code>imageIndex</code>.  By
+     * Returns a {@code RenderedImage} object that contains the
+     * contents of the image indexed by {@code imageIndex}.  By
      * default, the returned image is simply the
-     * <code>BufferedImage</code> returned by <code>read(imageIndex,
-     * param)</code>.
+     * {@code BufferedImage} returned by
+     * {@code read(imageIndex, param)}.
      *
      * <p> The semantics of this method may differ from those of the
-     * other <code>read</code> methods in several ways.  First, any
+     * other {@code read} methods in several ways.  First, any
      * destination image and/or image type set in the
-     * <code>ImageReadParam</code> may be ignored.  Second, the usual
+     * {@code ImageReadParam} may be ignored.  Second, the usual
      * listener calls are not guaranteed to be made, or to be
      * meaningful if they are.  This is because the returned image may
      * not be fully populated with pixel data at the time it is
      * returned, or indeed at any time.
      *
-     * <p> If the supplied <code>ImageReadParam</code> contains
+     * <p> If the supplied {@code ImageReadParam} contains
      * optional setting values not supported by this reader (<i>e.g.</i>
      * source render size or any format-specific settings), they will
      * be ignored.
@@ -1549,10 +1549,10 @@ public abstract class ImageReader {
      * {@link #read read(imageIndex, param)}.
      *
      * @param imageIndex the index of the image to be retrieved.
-     * @param param an <code>ImageReadParam</code> used to control
-     * the reading process, or <code>null</code>.
+     * @param param an {@code ImageReadParam} used to control
+     * the reading process, or {@code null}.
      *
-     * @return a <code>RenderedImage</code> object providing a view of
+     * @return a {@code RenderedImage} object providing a view of
      * the image.
      *
      * @exception IllegalStateException if the input source has not been
@@ -1561,8 +1561,8 @@ public abstract class ImageReader {
      * out of bounds.
      * @exception IllegalArgumentException if the set of source and
      * destination bands specified by
-     * <code>param.getSourceBands</code> and
-     * <code>param.getDestinationBands</code> differ in length or
+     * {@code param.getSourceBands} and
+     * {@code param.getDestinationBands} differ in length or
      * include indices that are out of bounds.
      * @exception IllegalArgumentException if the resulting image
      * would have a width or height less than 1.
@@ -1577,45 +1577,45 @@ public abstract class ImageReader {
     // Thumbnails
 
     /**
-     * Returns <code>true</code> if the image format understood by
+     * Returns {@code true} if the image format understood by
      * this reader supports thumbnail preview images associated with
-     * it.  The default implementation returns <code>false</code>.
+     * it.  The default implementation returns {@code false}.
      *
-     * <p> If this method returns <code>false</code>,
-     * <code>hasThumbnails</code> and <code>getNumThumbnails</code>
-     * will return <code>false</code> and <code>0</code>,
-     * respectively, and <code>readThumbnail</code> will throw an
-     * <code>UnsupportedOperationException</code>, regardless of their
+     * <p> If this method returns {@code false},
+     * {@code hasThumbnails} and {@code getNumThumbnails}
+     * will return {@code false} and {@code 0},
+     * respectively, and {@code readThumbnail} will throw an
+     * {@code UnsupportedOperationException}, regardless of their
      * arguments.
      *
      * <p> A reader that does not support thumbnails need not
      * implement any of the thumbnail-related methods.
      *
-     * @return <code>true</code> if thumbnails are supported.
+     * @return {@code true} if thumbnails are supported.
      */
     public boolean readerSupportsThumbnails() {
         return false;
     }
 
     /**
-     * Returns <code>true</code> if the given image has thumbnail
+     * Returns {@code true} if the given image has thumbnail
      * preview images associated with it.  If the format does not
-     * support thumbnails (<code>readerSupportsThumbnails</code>
-     * returns <code>false</code>), <code>false</code> will be
+     * support thumbnails ({@code readerSupportsThumbnails}
+     * returns {@code false}), {@code false} will be
      * returned regardless of whether an input source has been set or
-     * whether <code>imageIndex</code> is in bounds.
+     * whether {@code imageIndex} is in bounds.
      *
-     * <p> The default implementation returns <code>true</code> if
-     * <code>getNumThumbnails</code> returns a value greater than 0.
+     * <p> The default implementation returns {@code true} if
+     * {@code getNumThumbnails} returns a value greater than 0.
      *
      * @param imageIndex the index of the image being queried.
      *
-     * @return <code>true</code> if the given image has thumbnails.
+     * @return {@code true} if the given image has thumbnails.
      *
      * @exception IllegalStateException if the reader supports
      * thumbnails but the input source has not been set.
      * @exception IndexOutOfBoundsException if the reader supports
-     * thumbnails but <code>imageIndex</code> is out of bounds.
+     * thumbnails but {@code imageIndex} is out of bounds.
      * @exception IOException if an error occurs during reading.
      */
     public boolean hasThumbnails(int imageIndex) throws IOException {
@@ -1625,10 +1625,10 @@ public abstract class ImageReader {
     /**
      * Returns the number of thumbnail preview images associated with
      * the given image.  If the format does not support thumbnails,
-     * (<code>readerSupportsThumbnails</code> returns
-     * <code>false</code>), <code>0</code> will be returned regardless
+     * ({@code readerSupportsThumbnails} returns
+     * {@code false}), {@code 0} will be returned regardless
      * of whether an input source has been set or whether
-     * <code>imageIndex</code> is in bounds.
+     * {@code imageIndex} is in bounds.
      *
      * <p> The default implementation returns 0 without checking its
      * argument.
@@ -1641,7 +1641,7 @@ public abstract class ImageReader {
      * @exception IllegalStateException if the reader supports
      * thumbnails but the input source has not been set.
      * @exception IndexOutOfBoundsException if the reader supports
-     * thumbnails but <code>imageIndex</code> is out of bounds.
+     * thumbnails but {@code imageIndex} is out of bounds.
      * @exception IOException if an error occurs during reading.
      */
     public int getNumThumbnails(int imageIndex)
@@ -1651,24 +1651,24 @@ public abstract class ImageReader {
 
     /**
      * Returns the width of the thumbnail preview image indexed by
-     * <code>thumbnailIndex</code>, associated with the image indexed
-     * by <code>ImageIndex</code>.
+     * {@code thumbnailIndex}, associated with the image indexed
+     * by {@code ImageIndex}.
      *
      * <p> If the reader does not support thumbnails,
-     * (<code>readerSupportsThumbnails</code> returns
-     * <code>false</code>), an <code>UnsupportedOperationException</code>
+     * ({@code readerSupportsThumbnails} returns
+     * {@code false}), an {@code UnsupportedOperationException}
      * will be thrown.
      *
      * <p> The default implementation simply returns
-     * <code>readThumbnail(imageindex,
-     * thumbnailIndex).getWidth()</code>.  Subclasses should therefore
+     * {@code readThumbnail(imageindex, thumbnailIndex).getWidth()}.
+     * Subclasses should therefore
      * override this method if possible in order to avoid forcing the
      * thumbnail to be read.
      *
      * @param imageIndex the index of the image to be retrieved.
      * @param thumbnailIndex the index of the thumbnail to be retrieved.
      *
-     * @return the width of the desired thumbnail as an <code>int</code>.
+     * @return the width of the desired thumbnail as an {@code int}.
      *
      * @exception UnsupportedOperationException if thumbnails are not
      * supported.
@@ -1684,24 +1684,24 @@ public abstract class ImageReader {
 
     /**
      * Returns the height of the thumbnail preview image indexed by
-     * <code>thumbnailIndex</code>, associated with the image indexed
-     * by <code>ImageIndex</code>.
+     * {@code thumbnailIndex}, associated with the image indexed
+     * by {@code ImageIndex}.
      *
      * <p> If the reader does not support thumbnails,
-     * (<code>readerSupportsThumbnails</code> returns
-     * <code>false</code>), an <code>UnsupportedOperationException</code>
+     * ({@code readerSupportsThumbnails} returns
+     * {@code false}), an {@code UnsupportedOperationException}
      * will be thrown.
      *
      * <p> The default implementation simply returns
-     * <code>readThumbnail(imageindex,
-     * thumbnailIndex).getHeight()</code>.  Subclasses should
-     * therefore override this method if possible in order to avoid
+     * {@code readThumbnail(imageindex, thumbnailIndex).getHeight()}.
+     * Subclasses should therefore override
+     * this method if possible in order to avoid
      * forcing the thumbnail to be read.
      *
      * @param imageIndex the index of the image to be retrieved.
      * @param thumbnailIndex the index of the thumbnail to be retrieved.
      *
-     * @return the height of the desired thumbnail as an <code>int</code>.
+     * @return the height of the desired thumbnail as an {@code int}.
      *
      * @exception UnsupportedOperationException if thumbnails are not
      * supported.
@@ -1717,27 +1717,27 @@ public abstract class ImageReader {
 
     /**
      * Returns the thumbnail preview image indexed by
-     * <code>thumbnailIndex</code>, associated with the image indexed
-     * by <code>ImageIndex</code> as a <code>BufferedImage</code>.
+     * {@code thumbnailIndex}, associated with the image indexed
+     * by {@code ImageIndex} as a {@code BufferedImage}.
      *
-     * <p> Any registered <code>IIOReadProgressListener</code> objects
+     * <p> Any registered {@code IIOReadProgressListener} objects
      * will be notified by calling their
-     * <code>thumbnailStarted</code>, <code>thumbnailProgress</code>,
-     * and <code>thumbnailComplete</code> methods.
+     * {@code thumbnailStarted}, {@code thumbnailProgress},
+     * and {@code thumbnailComplete} methods.
      *
      * <p> If the reader does not support thumbnails,
-     * (<code>readerSupportsThumbnails</code> returns
-     * <code>false</code>), an <code>UnsupportedOperationException</code>
+     * ({@code readerSupportsThumbnails} returns
+     * {@code false}), an {@code UnsupportedOperationException}
      * will be thrown regardless of whether an input source has been
      * set or whether the indices are in bounds.
      *
      * <p> The default implementation throws an
-     * <code>UnsupportedOperationException</code>.
+     * {@code UnsupportedOperationException}.
      *
      * @param imageIndex the index of the image to be retrieved.
      * @param thumbnailIndex the index of the thumbnail to be retrieved.
      *
-     * @return the desired thumbnail as a <code>BufferedImage</code>.
+     * @return the desired thumbnail as a {@code BufferedImage}.
      *
      * @exception UnsupportedOperationException if thumbnails are not
      * supported.
@@ -1758,20 +1758,20 @@ public abstract class ImageReader {
      * Requests that any current read operation be aborted.  The
      * contents of the image following the abort will be undefined.
      *
-     * <p> Readers should call <code>clearAbortRequest</code> at the
+     * <p> Readers should call {@code clearAbortRequest} at the
      * beginning of each read operation, and poll the value of
-     * <code>abortRequested</code> regularly during the read.
+     * {@code abortRequested} regularly during the read.
      */
     public synchronized void abort() {
         this.abortFlag = true;
     }
 
     /**
-     * Returns <code>true</code> if a request to abort the current
+     * Returns {@code true} if a request to abort the current
      * read operation has been made since the reader was instantiated or
-     * <code>clearAbortRequest</code> was called.
+     * {@code clearAbortRequest} was called.
      *
-     * @return <code>true</code> if the current read operation should
+     * @return {@code true} if the current read operation should
      * be aborted.
      *
      * @see #abort
@@ -1783,8 +1783,8 @@ public abstract class ImageReader {
 
     /**
      * Clears any previous abort request.  After this method has been
-     * called, <code>abortRequested</code> will return
-     * <code>false</code>.
+     * called, {@code abortRequested} will return
+     * {@code false}.
      *
      * @see #abort
      * @see #abortRequested
@@ -1820,15 +1820,15 @@ public abstract class ImageReader {
     }
 
     /**
-     * Adds an <code>IIOReadWarningListener</code> to the list of
-     * registered warning listeners.  If <code>listener</code> is
-     * <code>null</code>, no exception will be thrown and no action
+     * Adds an {@code IIOReadWarningListener} to the list of
+     * registered warning listeners.  If {@code listener} is
+     * {@code null}, no exception will be thrown and no action
      * will be taken.  Messages sent to the given listener will be
      * localized, if possible, to match the current
-     * <code>Locale</code>.  If no <code>Locale</code> has been set,
+     * {@code Locale}.  If no {@code Locale} has been set,
      * warning messages may be localized as the reader sees fit.
      *
-     * @param listener an <code>IIOReadWarningListener</code> to be registered.
+     * @param listener an {@code IIOReadWarningListener} to be registered.
      *
      * @see #removeIIOReadWarningListener
      */
@@ -1841,9 +1841,9 @@ public abstract class ImageReader {
     }
 
     /**
-     * Removes an <code>IIOReadWarningListener</code> from the list of
+     * Removes an {@code IIOReadWarningListener} from the list of
      * registered error listeners.  If the listener was not previously
-     * registered, or if <code>listener</code> is <code>null</code>,
+     * registered, or if {@code listener} is {@code null},
      * no exception will be thrown and no action will be taken.
      *
      * @param listener an IIOReadWarningListener to be unregistered.
@@ -1867,11 +1867,11 @@ public abstract class ImageReader {
 
     /**
      * Removes all currently registered
-     * <code>IIOReadWarningListener</code> objects.
+     * {@code IIOReadWarningListener} objects.
      *
      * <p> The default implementation sets the
-     * <code>warningListeners</code> and <code>warningLocales</code>
-     * instance variables to <code>null</code>.
+     * {@code warningListeners} and {@code warningLocales}
+     * instance variables to {@code null}.
      */
     public void removeAllIIOReadWarningListeners() {
         warningListeners = null;
@@ -1879,9 +1879,9 @@ public abstract class ImageReader {
     }
 
     /**
-     * Adds an <code>IIOReadProgressListener</code> to the list of
-     * registered progress listeners.  If <code>listener</code> is
-     * <code>null</code>, no exception will be thrown and no action
+     * Adds an {@code IIOReadProgressListener} to the list of
+     * registered progress listeners.  If {@code listener} is
+     * {@code null}, no exception will be thrown and no action
      * will be taken.
      *
      * @param listener an IIOReadProgressListener to be registered.
@@ -1896,10 +1896,10 @@ public abstract class ImageReader {
     }
 
     /**
-     * Removes an <code>IIOReadProgressListener</code> from the list
+     * Removes an {@code IIOReadProgressListener} from the list
      * of registered progress listeners.  If the listener was not
-     * previously registered, or if <code>listener</code> is
-     * <code>null</code>, no exception will be thrown and no action
+     * previously registered, or if {@code listener} is
+     * {@code null}, no exception will be thrown and no action
      * will be taken.
      *
      * @param listener an IIOReadProgressListener to be unregistered.
@@ -1916,20 +1916,20 @@ public abstract class ImageReader {
 
     /**
      * Removes all currently registered
-     * <code>IIOReadProgressListener</code> objects.
+     * {@code IIOReadProgressListener} objects.
      *
      * <p> The default implementation sets the
-     * <code>progressListeners</code> instance variable to
-     * <code>null</code>.
+     * {@code progressListeners} instance variable to
+     * {@code null}.
      */
     public void removeAllIIOReadProgressListeners() {
         progressListeners = null;
     }
 
     /**
-     * Adds an <code>IIOReadUpdateListener</code> to the list of
-     * registered update listeners.  If <code>listener</code> is
-     * <code>null</code>, no exception will be thrown and no action
+     * Adds an {@code IIOReadUpdateListener} to the list of
+     * registered update listeners.  If {@code listener} is
+     * {@code null}, no exception will be thrown and no action
      * will be taken.  The listener will receive notification of pixel
      * updates as images and thumbnails are decoded, including the
      * starts and ends of progressive passes.
@@ -1949,7 +1949,7 @@ public abstract class ImageReader {
      * <p> The final results of decoding will be the same whether or
      * not intermediate updates are performed.  Thus if only the final
      * image is desired it may be preferable not to register any
-     * <code>IIOReadUpdateListener</code>s.  In general, progressive
+     * {@code IIOReadUpdateListener}s.  In general, progressive
      * updating is most effective when fetching images over a network
      * connection that is very slow compared to local CPU processing;
      * over a fast connection, progressive updates may actually slow
@@ -1968,10 +1968,10 @@ public abstract class ImageReader {
     }
 
     /**
-     * Removes an <code>IIOReadUpdateListener</code> from the list of
+     * Removes an {@code IIOReadUpdateListener} from the list of
      * registered update listeners.  If the listener was not
-     * previously registered, or if <code>listener</code> is
-     * <code>null</code>, no exception will be thrown and no action
+     * previously registered, or if {@code listener} is
+     * {@code null}, no exception will be thrown and no action
      * will be taken.
      *
      * @param listener an IIOReadUpdateListener to be unregistered.
@@ -1987,11 +1987,11 @@ public abstract class ImageReader {
 
     /**
      * Removes all currently registered
-     * <code>IIOReadUpdateListener</code> objects.
+     * {@code IIOReadUpdateListener} objects.
      *
      * <p> The default implementation sets the
-     * <code>updateListeners</code> instance variable to
-     * <code>null</code>.
+     * {@code updateListeners} instance variable to
+     * {@code null}.
      */
     public void removeAllIIOReadUpdateListeners() {
         updateListeners = null;
@@ -1999,8 +1999,8 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the start of an sequence of image reads to all
-     * registered <code>IIOReadProgressListener</code>s by calling
-     * their <code>sequenceStarted</code> method.  Subclasses may use
+     * registered {@code IIOReadProgressListener}s by calling
+     * their {@code sequenceStarted} method.  Subclasses may use
      * this method as a convenience.
      *
      * @param minIndex the lowest index being read.
@@ -2019,8 +2019,8 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the completion of an sequence of image reads to all
-     * registered <code>IIOReadProgressListener</code>s by calling
-     * their <code>sequenceComplete</code> method.  Subclasses may use
+     * registered {@code IIOReadProgressListener}s by calling
+     * their {@code sequenceComplete} method.  Subclasses may use
      * this method as a convenience.
      */
     protected void processSequenceComplete() {
@@ -2037,8 +2037,8 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the start of an image read to all registered
-     * <code>IIOReadProgressListener</code>s by calling their
-     * <code>imageStarted</code> method.  Subclasses may use this
+     * {@code IIOReadProgressListener}s by calling their
+     * {@code imageStarted} method.  Subclasses may use this
      * method as a convenience.
      *
      * @param imageIndex the index of the image about to be read.
@@ -2057,12 +2057,12 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the current percentage of image completion to all
-     * registered <code>IIOReadProgressListener</code>s by calling
-     * their <code>imageProgress</code> method.  Subclasses may use
+     * registered {@code IIOReadProgressListener}s by calling
+     * their {@code imageProgress} method.  Subclasses may use
      * this method as a convenience.
      *
      * @param percentageDone the current percentage of completion,
-     * as a <code>float</code>.
+     * as a {@code float}.
      */
     protected void processImageProgress(float percentageDone) {
         if (progressListeners == null) {
@@ -2078,8 +2078,8 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the completion of an image read to all registered
-     * <code>IIOReadProgressListener</code>s by calling their
-     * <code>imageComplete</code> method.  Subclasses may use this
+     * {@code IIOReadProgressListener}s by calling their
+     * {@code imageComplete} method.  Subclasses may use this
      * method as a convenience.
      */
     protected void processImageComplete() {
@@ -2096,8 +2096,8 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the start of a thumbnail read to all registered
-     * <code>IIOReadProgressListener</code>s by calling their
-     * <code>thumbnailStarted</code> method.  Subclasses may use this
+     * {@code IIOReadProgressListener}s by calling their
+     * {@code thumbnailStarted} method.  Subclasses may use this
      * method as a convenience.
      *
      * @param imageIndex the index of the image associated with the
@@ -2119,12 +2119,12 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the current percentage of thumbnail completion to
-     * all registered <code>IIOReadProgressListener</code>s by calling
-     * their <code>thumbnailProgress</code> method.  Subclasses may
+     * all registered {@code IIOReadProgressListener}s by calling
+     * their {@code thumbnailProgress} method.  Subclasses may
      * use this method as a convenience.
      *
      * @param percentageDone the current percentage of completion,
-     * as a <code>float</code>.
+     * as a {@code float}.
      */
     protected void processThumbnailProgress(float percentageDone) {
         if (progressListeners == null) {
@@ -2140,8 +2140,8 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the completion of a thumbnail read to all registered
-     * <code>IIOReadProgressListener</code>s by calling their
-     * <code>thumbnailComplete</code> method.  Subclasses may use this
+     * {@code IIOReadProgressListener}s by calling their
+     * {@code thumbnailComplete} method.  Subclasses may use this
      * method as a convenience.
      */
     protected void processThumbnailComplete() {
@@ -2158,8 +2158,8 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts that the read has been aborted to all registered
-     * <code>IIOReadProgressListener</code>s by calling their
-     * <code>readAborted</code> method.  Subclasses may use this
+     * {@code IIOReadProgressListener}s by calling their
+     * {@code readAborted} method.  Subclasses may use this
      * method as a convenience.
      */
     protected void processReadAborted() {
@@ -2176,11 +2176,11 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the beginning of a progressive pass to all
-     * registered <code>IIOReadUpdateListener</code>s by calling their
-     * <code>passStarted</code> method.  Subclasses may use this
+     * registered {@code IIOReadUpdateListener}s by calling their
+     * {@code passStarted} method.  Subclasses may use this
      * method as a convenience.
      *
-     * @param theImage the <code>BufferedImage</code> being updated.
+     * @param theImage the {@code BufferedImage} being updated.
      * @param pass the index of the current pass, starting with 0.
      * @param minPass the index of the first pass that will be decoded.
      * @param maxPass the index of the last pass that will be decoded.
@@ -2190,7 +2190,7 @@ public abstract class ImageReader {
      * in the pass.
      * @param periodX the horizontal separation between pixels.
      * @param periodY the vertical separation between pixels.
-     * @param bands an array of <code>int</code>s indicating the
+     * @param bands an array of {@code int}s indicating the
      * set of affected bands of the destination.
      */
     protected void processPassStarted(BufferedImage theImage,
@@ -2217,22 +2217,22 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the update of a set of samples to all registered
-     * <code>IIOReadUpdateListener</code>s by calling their
-     * <code>imageUpdate</code> method.  Subclasses may use this
+     * {@code IIOReadUpdateListener}s by calling their
+     * {@code imageUpdate} method.  Subclasses may use this
      * method as a convenience.
      *
-     * @param theImage the <code>BufferedImage</code> being updated.
+     * @param theImage the {@code BufferedImage} being updated.
      * @param minX the X coordinate of the upper-left pixel included
      * in the pass.
      * @param minY the X coordinate of the upper-left pixel included
      * in the pass.
      * @param width the total width of the area being updated, including
-     * pixels being skipped if <code>periodX &gt; 1</code>.
+     * pixels being skipped if {@code periodX > 1}.
      * @param height the total height of the area being updated,
-     * including pixels being skipped if <code>periodY &gt; 1</code>.
+     * including pixels being skipped if {@code periodY > 1}.
      * @param periodX the horizontal separation between pixels.
      * @param periodY the vertical separation between pixels.
-     * @param bands an array of <code>int</code>s indicating the
+     * @param bands an array of {@code int}s indicating the
      * set of affected bands of the destination.
      */
     protected void processImageUpdate(BufferedImage theImage,
@@ -2258,11 +2258,11 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the end of a progressive pass to all
-     * registered <code>IIOReadUpdateListener</code>s by calling their
-     * <code>passComplete</code> method.  Subclasses may use this
+     * registered {@code IIOReadUpdateListener}s by calling their
+     * {@code passComplete} method.  Subclasses may use this
      * method as a convenience.
      *
-     * @param theImage the <code>BufferedImage</code> being updated.
+     * @param theImage the {@code BufferedImage} being updated.
      */
     protected void processPassComplete(BufferedImage theImage) {
         if (updateListeners == null) {
@@ -2278,11 +2278,11 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the beginning of a thumbnail progressive pass to all
-     * registered <code>IIOReadUpdateListener</code>s by calling their
-     * <code>thumbnailPassStarted</code> method.  Subclasses may use this
+     * registered {@code IIOReadUpdateListener}s by calling their
+     * {@code thumbnailPassStarted} method.  Subclasses may use this
      * method as a convenience.
      *
-     * @param theThumbnail the <code>BufferedImage</code> thumbnail
+     * @param theThumbnail the {@code BufferedImage} thumbnail
      * being updated.
      * @param pass the index of the current pass, starting with 0.
      * @param minPass the index of the first pass that will be decoded.
@@ -2293,7 +2293,7 @@ public abstract class ImageReader {
      * in the pass.
      * @param periodX the horizontal separation between pixels.
      * @param periodY the vertical separation between pixels.
-     * @param bands an array of <code>int</code>s indicating the
+     * @param bands an array of {@code int}s indicating the
      * set of affected bands of the destination.
      */
     protected void processThumbnailPassStarted(BufferedImage theThumbnail,
@@ -2320,23 +2320,23 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the update of a set of samples in a thumbnail image
-     * to all registered <code>IIOReadUpdateListener</code>s by
-     * calling their <code>thumbnailUpdate</code> method.  Subclasses may
+     * to all registered {@code IIOReadUpdateListener}s by
+     * calling their {@code thumbnailUpdate} method.  Subclasses may
      * use this method as a convenience.
      *
-     * @param theThumbnail the <code>BufferedImage</code> thumbnail
+     * @param theThumbnail the {@code BufferedImage} thumbnail
      * being updated.
      * @param minX the X coordinate of the upper-left pixel included
      * in the pass.
      * @param minY the X coordinate of the upper-left pixel included
      * in the pass.
      * @param width the total width of the area being updated, including
-     * pixels being skipped if <code>periodX &gt; 1</code>.
+     * pixels being skipped if {@code periodX > 1}.
      * @param height the total height of the area being updated,
-     * including pixels being skipped if <code>periodY &gt; 1</code>.
+     * including pixels being skipped if {@code periodY > 1}.
      * @param periodX the horizontal separation between pixels.
      * @param periodY the vertical separation between pixels.
-     * @param bands an array of <code>int</code>s indicating the
+     * @param bands an array of {@code int}s indicating the
      * set of affected bands of the destination.
      */
     protected void processThumbnailUpdate(BufferedImage theThumbnail,
@@ -2362,11 +2362,11 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts the end of a thumbnail progressive pass to all
-     * registered <code>IIOReadUpdateListener</code>s by calling their
-     * <code>thumbnailPassComplete</code> method.  Subclasses may use this
+     * registered {@code IIOReadUpdateListener}s by calling their
+     * {@code thumbnailPassComplete} method.  Subclasses may use this
      * method as a convenience.
      *
-     * @param theThumbnail the <code>BufferedImage</code> thumbnail
+     * @param theThumbnail the {@code BufferedImage} thumbnail
      * being updated.
      */
     protected void processThumbnailPassComplete(BufferedImage theThumbnail) {
@@ -2383,14 +2383,14 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts a warning message to all registered
-     * <code>IIOReadWarningListener</code>s by calling their
-     * <code>warningOccurred</code> method.  Subclasses may use this
+     * {@code IIOReadWarningListener}s by calling their
+     * {@code warningOccurred} method.  Subclasses may use this
      * method as a convenience.
      *
      * @param warning the warning message to send.
      *
-     * @exception IllegalArgumentException if <code>warning</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code warning}
+     * is {@code null}.
      */
     protected void processWarningOccurred(String warning) {
         if (warningListeners == null) {
@@ -2410,28 +2410,28 @@ public abstract class ImageReader {
 
     /**
      * Broadcasts a localized warning message to all registered
-     * <code>IIOReadWarningListener</code>s by calling their
-     * <code>warningOccurred</code> method with a string taken
-     * from a <code>ResourceBundle</code>.  Subclasses may use this
+     * {@code IIOReadWarningListener}s by calling their
+     * {@code warningOccurred} method with a string taken
+     * from a {@code ResourceBundle}.  Subclasses may use this
      * method as a convenience.
      *
      * @param baseName the base name of a set of
-     * <code>ResourceBundle</code>s containing localized warning
+     * {@code ResourceBundle}s containing localized warning
      * messages.
      * @param keyword the keyword used to index the warning message
-     * within the set of <code>ResourceBundle</code>s.
+     * within the set of {@code ResourceBundle}s.
      *
-     * @exception IllegalArgumentException if <code>baseName</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>keyword</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code baseName}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code keyword}
+     * is {@code null}.
      * @exception IllegalArgumentException if no appropriate
-     * <code>ResourceBundle</code> may be located.
+     * {@code ResourceBundle} may be located.
      * @exception IllegalArgumentException if the named resource is
-     * not found in the located <code>ResourceBundle</code>.
+     * not found in the located {@code ResourceBundle}.
      * @exception IllegalArgumentException if the object retrieved
-     * from the <code>ResourceBundle</code> is not a
-     * <code>String</code>.
+     * from the {@code ResourceBundle} is not a
+     * {@code String}.
      */
     protected void processWarningOccurred(String baseName,
                                           String keyword) {
@@ -2496,14 +2496,15 @@ public abstract class ImageReader {
     // State management
 
     /**
-     * Restores the <code>ImageReader</code> to its initial state.
+     * Restores the {@code ImageReader} to its initial state.
      *
-     * <p> The default implementation calls <code>setInput(null,
-     * false)</code>, <code>setLocale(null)</code>,
-     * <code>removeAllIIOReadUpdateListeners()</code>,
-     * <code>removeAllIIOReadWarningListeners()</code>,
-     * <code>removeAllIIOReadProgressListeners()</code>, and
-     * <code>clearAbortRequest</code>.
+     * <p> The default implementation calls
+     * {@code setInput(null, false)},
+     * {@code setLocale(null)},
+     * {@code removeAllIIOReadUpdateListeners()},
+     * {@code removeAllIIOReadWarningListeners()},
+     * {@code removeAllIIOReadProgressListeners()}, and
+     * {@code clearAbortRequest}.
      */
     public void reset() {
         setInput(null, false, false);
@@ -2517,11 +2518,11 @@ public abstract class ImageReader {
     /**
      * Allows any resources held by this object to be released.  The
      * result of calling any other method (other than
-     * <code>finalize</code>) subsequent to a call to this method
+     * {@code finalize}) subsequent to a call to this method
      * is undefined.
      *
      * <p>It is important for applications to call this method when they
-     * know they will no longer be using this <code>ImageReader</code>.
+     * know they will no longer be using this {@code ImageReader}.
      * Otherwise, the reader may continue to hold on to resources
      * indefinitely.
      *
@@ -2538,18 +2539,18 @@ public abstract class ImageReader {
      * A utility method that may be used by readers to compute the
      * region of the source image that should be read, taking into
      * account any source region and subsampling offset settings in
-     * the supplied <code>ImageReadParam</code>.  The actual
+     * the supplied {@code ImageReadParam}.  The actual
      * subsampling factors, destination size, and destination offset
      * are <em>not</em> taken into consideration, thus further
      * clipping must take place.  The {@link #computeRegions computeRegions}
      * method performs all necessary clipping.
      *
-     * @param param the <code>ImageReadParam</code> being used, or
-     * <code>null</code>.
+     * @param param the {@code ImageReadParam} being used, or
+     * {@code null}.
      * @param srcWidth the width of the source image.
      * @param srcHeight the height of the source image.
      *
-     * @return the source region as a <code>Rectangle</code>.
+     * @return the source region as a {@code Rectangle}.
      */
     protected static Rectangle getSourceRegion(ImageReadParam param,
                                                int srcWidth,
@@ -2576,9 +2577,9 @@ public abstract class ImageReader {
      * Computes the source region of interest and the destination
      * region of interest, taking the width and height of the source
      * image, an optional destination image, and an optional
-     * <code>ImageReadParam</code> into account.  The source region
+     * {@code ImageReadParam} into account.  The source region
      * begins with the entire source image.  Then that is clipped to
-     * the source region specified in the <code>ImageReadParam</code>,
+     * the source region specified in the {@code ImageReadParam},
      * if one is specified.
      *
      * <p> If either of the destination offsets are negative, the
@@ -2590,29 +2591,29 @@ public abstract class ImageReader {
      *
      * <p> Similarly, the destination region begins with the source
      * image, is translated to the destination offset given in the
-     * <code>ImageReadParam</code> if there is one, and finally is
+     * {@code ImageReadParam} if there is one, and finally is
      * clipped to the destination image, if there is one.
      *
      * <p> If either the source or destination regions end up having a
-     * width or height of 0, an <code>IllegalArgumentException</code>
+     * width or height of 0, an {@code IllegalArgumentException}
      * is thrown.
      *
      * <p> The {@link #getSourceRegion getSourceRegion>}
      * method may be used if only source clipping is desired.
      *
-     * @param param an <code>ImageReadParam</code>, or <code>null</code>.
+     * @param param an {@code ImageReadParam}, or {@code null}.
      * @param srcWidth the width of the source image.
      * @param srcHeight the height of the source image.
-     * @param image a <code>BufferedImage</code> that will be the
-     * destination image, or <code>null</code>.
-     * @param srcRegion a <code>Rectangle</code> that will be filled with
+     * @param image a {@code BufferedImage} that will be the
+     * destination image, or {@code null}.
+     * @param srcRegion a {@code Rectangle} that will be filled with
      * the source region of interest.
-     * @param destRegion a <code>Rectangle</code> that will be filled with
+     * @param destRegion a {@code Rectangle} that will be filled with
      * the destination region of interest.
-     * @exception IllegalArgumentException if <code>srcRegion</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>dstRegion</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code srcRegion}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code dstRegion}
+     * is {@code null}.
      * @exception IllegalArgumentException if the resulting source or
      * destination region is empty.
      */
@@ -2706,18 +2707,18 @@ public abstract class ImageReader {
     /**
      * A utility method that may be used by readers to test the
      * validity of the source and destination band settings of an
-     * <code>ImageReadParam</code>.  This method may be called as soon
+     * {@code ImageReadParam}.  This method may be called as soon
      * as the reader knows both the number of bands of the source
      * image as it exists in the input stream, and the number of bands
      * of the destination image that being written.
      *
      * <p> The method retrieves the source and destination band
-     * setting arrays from param using the <code>getSourceBands</code>
-     * and <code>getDestinationBands</code>methods (or considers them
-     * to be <code>null</code> if <code>param</code> is
-     * <code>null</code>).  If the source band setting array is
-     * <code>null</code>, it is considered to be equal to the array
-     * <code>{ 0, 1, ..., numSrcBands - 1 }</code>, and similarly for
+     * setting arrays from param using the {@code getSourceBands}
+     * and {@code getDestinationBands} methods (or considers them
+     * to be {@code null} if {@code param} is
+     * {@code null}).  If the source band setting array is
+     * {@code null}, it is considered to be equal to the array
+     * {@code { 0, 1, ..., numSrcBands - 1 }}, and similarly for
      * the destination band setting array.
      *
      * <p> The method then tests that both arrays are equal in length,
@@ -2725,17 +2726,17 @@ public abstract class ImageReader {
      * available band index.
      *
      * <p> Any failure results in an
-     * <code>IllegalArgumentException</code> being thrown; success
+     * {@code IllegalArgumentException} being thrown; success
      * results in the method returning silently.
      *
-     * @param param the <code>ImageReadParam</code> being used to read
+     * @param param the {@code ImageReadParam} being used to read
      * the image.
      * @param numSrcBands the number of bands of the image as it exists
      * int the input source.
      * @param numDstBands the number of bands in the destination image
      * being written.
      *
-     * @exception IllegalArgumentException if <code>param</code>
+     * @exception IllegalArgumentException if {@code param}
      * contains an invalid specification of a source and/or
      * destination band subset.
      */
@@ -2777,52 +2778,52 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns the <code>BufferedImage</code> to which decoded pixel
+     * Returns the {@code BufferedImage} to which decoded pixel
      * data should be written.  The image is determined by inspecting
-     * the supplied <code>ImageReadParam</code> if it is
-     * non-<code>null</code>; if its <code>getDestination</code>
-     * method returns a non-<code>null</code> value, that image is
+     * the supplied {@code ImageReadParam} if it is
+     * non-{@code null}; if its {@code getDestination}
+     * method returns a non-{@code null} value, that image is
      * simply returned.  Otherwise,
-     * <code>param.getDestinationType</code> method is called to
+     * {@code param.getDestinationType} method is called to
      * determine if a particular image type has been specified.  If
-     * so, the returned <code>ImageTypeSpecifier</code> is used after
+     * so, the returned {@code ImageTypeSpecifier} is used after
      * checking that it is equal to one of those included in
-     * <code>imageTypes</code>.
+     * {@code imageTypes}.
      *
-     * <p> If <code>param</code> is <code>null</code> or the above
+     * <p> If {@code param} is {@code null} or the above
      * steps have not yielded an image or an
-     * <code>ImageTypeSpecifier</code>, the first value obtained from
-     * the <code>imageTypes</code> parameter is used.  Typically, the
-     * caller will set <code>imageTypes</code> to the value of
-     * <code>getImageTypes(imageIndex)</code>.
+     * {@code ImageTypeSpecifier}, the first value obtained from
+     * the {@code imageTypes} parameter is used.  Typically, the
+     * caller will set {@code imageTypes} to the value of
+     * {@code getImageTypes(imageIndex)}.
      *
      * <p> Next, the dimensions of the image are determined by a call
-     * to <code>computeRegions</code>.  The actual width and height of
-     * the image being decoded are passed in as the <code>width</code>
-     * and <code>height</code> parameters.
+     * to {@code computeRegions}.  The actual width and height of
+     * the image being decoded are passed in as the {@code width}
+     * and {@code height} parameters.
      *
-     * @param param an <code>ImageReadParam</code> to be used to get
-     * the destination image or image type, or <code>null</code>.
-     * @param imageTypes an <code>Iterator</code> of
-     * <code>ImageTypeSpecifier</code>s indicating the legal image
+     * @param param an {@code ImageReadParam} to be used to get
+     * the destination image or image type, or {@code null}.
+     * @param imageTypes an {@code Iterator} of
+     * {@code ImageTypeSpecifier}s indicating the legal image
      * types, with the default first.
      * @param width the true width of the image or tile being decoded.
      * @param height the true width of the image or tile being decoded.
      *
-     * @return the <code>BufferedImage</code> to which decoded pixel
+     * @return the {@code BufferedImage} to which decoded pixel
      * data should be written.
      *
-     * @exception IIOException if the <code>ImageTypeSpecifier</code>
-     * specified by <code>param</code> does not match any of the legal
-     * ones from <code>imageTypes</code>.
-     * @exception IllegalArgumentException if <code>imageTypes</code>
-     * is <code>null</code> or empty, or if an object not of type
-     * <code>ImageTypeSpecifier</code> is retrieved from it.
+     * @exception IIOException if the {@code ImageTypeSpecifier}
+     * specified by {@code param} does not match any of the legal
+     * ones from {@code imageTypes}.
+     * @exception IllegalArgumentException if {@code imageTypes}
+     * is {@code null} or empty, or if an object not of type
+     * {@code ImageTypeSpecifier} is retrieved from it.
      * @exception IllegalArgumentException if the resulting image would
      * have a width or height less than 1.
      * @exception IllegalArgumentException if the product of
-     * <code>width</code> and <code>height</code> is greater than
-     * <code>Integer.MAX_VALUE</code>.
+     * {@code width} and {@code height} is greater than
+     * {@code Integer.MAX_VALUE}.
      */
     protected static BufferedImage
         getDestination(ImageReadParam param,

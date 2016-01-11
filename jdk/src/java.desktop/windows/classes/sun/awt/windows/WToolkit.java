@@ -597,7 +597,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
     }
 
     /**
-     * Returns <code>true</code> if this frame state is supported.
+     * Returns {@code true} if this frame state is supported.
      */
     @Override
     public boolean isFrameStateSupported(int state) {

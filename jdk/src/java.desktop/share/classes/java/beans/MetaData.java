@@ -60,7 +60,7 @@ import sun.swing.PrintColorUIResource;
 import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 
 /*
- * Like the <code>Intropector</code>, the <code>MetaData</code> class
+ * Like the {@code Intropector}, the {@code MetaData} class
  * contains <em>meta</em> objects that describe the way
  * classes should express their state in terms of their
  * own public APIs.
@@ -85,7 +85,7 @@ static final class NullPersistenceDelegate extends PersistenceDelegate {
 }
 
 /**
- * The persistence delegate for <CODE>enum</CODE> classes.
+ * The persistence delegate for {@code enum} classes.
  *
  * @author Sergey A. Malenkov
  */
@@ -262,10 +262,10 @@ static final class java_lang_reflect_Method_PersistenceDelegate extends Persiste
 // Dates
 
 /**
- * The persistence delegate for <CODE>java.util.Date</CODE> classes.
+ * The persistence delegate for {@code java.util.Date} classes.
  * Do not extend DefaultPersistenceDelegate to improve performance and
- * to avoid problems with <CODE>java.sql.Date</CODE>,
- * <CODE>java.sql.Time</CODE> and <CODE>java.sql.Timestamp</CODE>.
+ * to avoid problems with {@code java.sql.Date},
+ * {@code java.sql.Time} and {@code java.sql.Timestamp}.
  *
  * @author Sergey A. Malenkov
  */
@@ -287,7 +287,7 @@ static class java_util_Date_PersistenceDelegate extends PersistenceDelegate {
 }
 
 /**
- * The persistence delegate for <CODE>java.sql.Timestamp</CODE> classes.
+ * The persistence delegate for {@code java.sql.Timestamp} classes.
  * It supports nanoseconds.
  *
  * @author Sergey A. Malenkov
@@ -571,7 +571,7 @@ private abstract static class java_util_Collections extends PersistenceDelegate 
 }
 
 /**
- * The persistence delegate for <CODE>java.util.EnumMap</CODE> classes.
+ * The persistence delegate for {@code java.util.EnumMap} classes.
  *
  * @author Sergey A. Malenkov
  */
@@ -590,7 +590,7 @@ static final class java_util_EnumMap_PersistenceDelegate extends PersistenceDele
 }
 
 /**
- * The persistence delegate for <CODE>java.util.EnumSet</CODE> classes.
+ * The persistence delegate for {@code java.util.EnumSet} classes.
  *
  * @author Sergey A. Malenkov
  */

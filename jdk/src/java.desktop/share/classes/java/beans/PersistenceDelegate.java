@@ -30,9 +30,9 @@ package java.beans;
  * in terms of the methods in the class's public API. Instead
  * of associating the responsibility of persistence with
  * the class itself as is done, for example, by the
- * <code>readObject</code> and <code>writeObject</code>
- * methods used by the <code>ObjectOutputStream</code>, streams like
- * the <code>XMLEncoder</code> which
+ * {@code readObject} and {@code writeObject}
+ * methods used by the {@code ObjectOutputStream}, streams like
+ * the {@code XMLEncoder} which
  * use this delegation model can have their behavior controlled
  * independently of the classes themselves. Normally, the class
  * is the best place to put such information and conventions
@@ -51,16 +51,16 @@ package java.beans;
  * <p>
  * In addition to using a delegation model, this persistence
  * scheme differs from traditional serialization schemes
- * in requiring an analog of the <code>writeObject</code>
- * method without a corresponding <code>readObject</code>
- * method. The <code>writeObject</code> analog encodes each
+ * in requiring an analog of the {@code writeObject}
+ * method without a corresponding {@code readObject}
+ * method. The {@code writeObject} analog encodes each
  * instance in terms of its public API and there is no need to
- * define a <code>readObject</code> analog
+ * define a {@code readObject} analog
  * since the procedure for reading the serialized form
  * is defined by the semantics of method invocation as laid
  * out in the Java Language Specification.
- * Breaking the dependency between <code>writeObject</code>
- * and <code>readObject</code> implementations, which may
+ * Breaking the dependency between {@code writeObject}
+ * and {@code readObject} implementations, which may
  * change from version to version, is the key factor
  * in making the archives produced by this technique immune
  * to changes in the private implementations of the classes
@@ -88,19 +88,19 @@ package java.beans;
 public abstract class PersistenceDelegate {
 
     /**
-     * The <code>writeObject</code> is a single entry point to the persistence
-     * and is used by a <code>Encoder</code> in the traditional
+     * The {@code writeObject} is a single entry point to the persistence
+     * and is used by a {@code Encoder} in the traditional
      * mode of delegation. Although this method is not final,
      * it should not need to be subclassed under normal circumstances.
      * <p>
      * This implementation first checks to see if the stream
      * has already encountered this object. Next the
-     * <code>mutatesTo</code> method is called to see if
+     * {@code mutatesTo} method is called to see if
      * that candidate returned from the stream can
-     * be mutated into an accurate copy of <code>oldInstance</code>.
-     * If it can, the <code>initialize</code> method is called to
+     * be mutated into an accurate copy of {@code oldInstance}.
+     * If it can, the {@code initialize} method is called to
      * perform the initialization. If not, the candidate is removed
-     * from the stream, and the <code>instantiate</code> method
+     * from the stream, and the {@code instantiate} method
      * is called to create a new candidate for this object.
      *
      * @param oldInstance The instance that will be created by this expression.
@@ -120,23 +120,23 @@ public abstract class PersistenceDelegate {
     }
 
     /**
-     * Returns true if an <em>equivalent</em> copy of <code>oldInstance</code> may be
-     * created by applying a series of statements to <code>newInstance</code>.
+     * Returns true if an <em>equivalent</em> copy of {@code oldInstance} may be
+     * created by applying a series of statements to {@code newInstance}.
      * In the specification of this method, we mean by equivalent that the modified instance
-     * is indistinguishable from <code>oldInstance</code> in the behavior
+     * is indistinguishable from {@code oldInstance} in the behavior
      * of the relevant methods in its public API. [Note: we use the
      * phrase <em>relevant</em> methods rather than <em>all</em> methods
-     * here only because, to be strictly correct, methods like <code>hashCode</code>
-     * and <code>toString</code> prevent most classes from producing truly
+     * here only because, to be strictly correct, methods like {@code hashCode}
+     * and {@code toString} prevent most classes from producing truly
      * indistinguishable copies of their instances].
      * <p>
-     * The default behavior returns <code>true</code>
+     * The default behavior returns {@code true}
      * if the classes of the two instances are the same.
      *
      * @param oldInstance The instance to be copied.
      * @param newInstance The instance that is to be modified.
-     * @return True if an equivalent copy of <code>newInstance</code> may be
-     *         created by applying a series of mutations to <code>oldInstance</code>.
+     * @return True if an equivalent copy of {@code newInstance} may be
+     *         created by applying a series of mutations to {@code oldInstance}.
      */
     protected boolean mutatesTo(Object oldInstance, Object newInstance) {
         return (newInstance != null && oldInstance != null &&
@@ -144,22 +144,22 @@ public abstract class PersistenceDelegate {
     }
 
     /**
-     * Returns an expression whose value is <code>oldInstance</code>.
+     * Returns an expression whose value is {@code oldInstance}.
      * This method is used to characterize the constructor
      * or factory method that should be used to create the given object.
-     * For example, the <code>instantiate</code> method of the persistence
-     * delegate for the <code>Field</code> class could be defined as follows:
+     * For example, the {@code instantiate} method of the persistence
+     * delegate for the {@code Field} class could be defined as follows:
      * <pre>
      * Field f = (Field)oldInstance;
      * return new Expression(f, f.getDeclaringClass(), "getField", new Object[]{f.getName()});
      * </pre>
      * Note that we declare the value of the returned expression so that
-     * the value of the expression (as returned by <code>getValue</code>)
-     * will be identical to <code>oldInstance</code>.
+     * the value of the expression (as returned by {@code getValue})
+     * will be identical to {@code oldInstance}.
      *
      * @param oldInstance The instance that will be created by this expression.
      * @param out The stream to which this expression will be written.
-     * @return An expression whose value is <code>oldInstance</code>.
+     * @return An expression whose value is {@code oldInstance}.
      *
      * @throws NullPointerException if {@code out} is {@code null}
      *                              and this value is used in the method
@@ -167,24 +167,24 @@ public abstract class PersistenceDelegate {
     protected abstract Expression instantiate(Object oldInstance, Encoder out);
 
     /**
-     * Produce a series of statements with side effects on <code>newInstance</code>
-     * so that the new instance becomes <em>equivalent</em> to <code>oldInstance</code>.
+     * Produce a series of statements with side effects on {@code newInstance}
+     * so that the new instance becomes <em>equivalent</em> to {@code oldInstance}.
      * In the specification of this method, we mean by equivalent that, after the method
      * returns, the modified instance is indistinguishable from
-     * <code>newInstance</code> in the behavior of all methods in its
+     * {@code newInstance} in the behavior of all methods in its
      * public API.
      * <p>
      * The implementation typically achieves this goal by producing a series of
-     * "what happened" statements involving the <code>oldInstance</code>
+     * "what happened" statements involving the {@code oldInstance}
      * and its publicly available state. These statements are sent
-     * to the output stream using its <code>writeExpression</code>
+     * to the output stream using its {@code writeExpression}
      * method which returns an expression involving elements in
      * a cloned environment simulating the state of an input stream during
      * reading. Each statement returned will have had all instances
      * the old environment replaced with objects which exist in the new
      * one. In particular, references to the target of these statements,
-     * which start out as references to <code>oldInstance</code> are returned
-     * as references to the <code>newInstance</code> instead.
+     * which start out as references to {@code oldInstance} are returned
+     * as references to the {@code newInstance} instead.
      * Executing these statements effects an incremental
      * alignment of the state of the two objects as a series of
      * modifications to the objects in the new environment.
@@ -195,7 +195,7 @@ public abstract class PersistenceDelegate {
      * by the output stream and will form the actual output when
      * the stream is flushed.
      * <p>
-     * The default implementation, calls the <code>initialize</code>
+     * The default implementation, calls the {@code initialize}
      * method of the type's superclass.
      *
      * @param type the type of the instances

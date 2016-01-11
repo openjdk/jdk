@@ -406,7 +406,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     /**
      * Returns whether there is last remembered cursor position.  The
      * position is remembered from X mouse events on our peers.  The
-     * position is stored in <code>p</code>.
+     * position is stored in {@code p}.
      * @return true, if there is remembered last cursor position,
      * false otherwise
      */
@@ -1679,11 +1679,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     /**
      * Callback from the native side indicating some, or all, of the
      * desktop properties have changed and need to be reloaded.
-     * <code>data</code> is the byte array directly from the x server and
+     * {@code data} is the byte array directly from the x server and
      * may be in little endian format.
      * <p>
      * NB: This could be called from any thread if triggered by
-     * <code>loadXSettings</code>.  It is called from the System EDT
+     * {@code loadXSettings}.  It is called from the System EDT
      * if triggered by an XSETTINGS change.
      */
     void parseXSettings(int screen_XXX_ignored,Map<String, Object> updatedSettings) {
@@ -1940,16 +1940,16 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     static native void wakeup_poll();
 
     /**
-     * Registers a Runnable which <code>run()</code> method will be called
+     * Registers a Runnable which {@code run()} method will be called
      * once on the toolkit thread when a specified interval of time elapses.
      *
-     * @param task a Runnable which <code>run</code> method will be called
-     *        on the toolkit thread when <code>interval</code> milliseconds
+     * @param task a Runnable which {@code run} method will be called
+     *        on the toolkit thread when {@code interval} milliseconds
      *        elapse
      * @param interval an interal in milliseconds
      *
-     * @throws NullPointerException if <code>task</code> is <code>null</code>
-     * @throws IllegalArgumentException if <code>interval</code> is not positive
+     * @throws NullPointerException if {@code task} is {@code null}
+     * @throws IllegalArgumentException if {@code interval} is not positive
      */
     static void schedule(Runnable task, long interval) {
         if (task == null) {

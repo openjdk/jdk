@@ -32,19 +32,19 @@ import java.io.*;
  * attributes. These attributes in turn are dependent on HFS and HFS+ file systems. As such, it is important to recognize
  * their limitation when writing code that must function well across multiple platforms.<p>
  *
- * In addition to file name suffixes, Mac OS X can use Finder attributes like file <code>type</code> and <code>creator</code> codes to
- * identify and handle files. These codes are unique 4-byte identifiers. The file <code>type</code> is a string that describes the
- * contents of a file. For example, the file type <code>APPL</code> identifies the file as an application and therefore
- * executable. A file type of <code>TEXT</code>  means that the file contains raw text. Any application that can read raw
- * text can open a file of type <code>TEXT</code>. Applications that use proprietary file types might assign their files a proprietary
- * file <code>type</code> code.
+ * In addition to file name suffixes, Mac OS X can use Finder attributes like file {@code type} and {@code creator} codes to
+ * identify and handle files. These codes are unique 4-byte identifiers. The file {@code type} is a string that describes the
+ * contents of a file. For example, the file type {@code APPL} identifies the file as an application and therefore
+ * executable. A file type of {@code TEXT}  means that the file contains raw text. Any application that can read raw
+ * text can open a file of type {@code TEXT}. Applications that use proprietary file types might assign their files a proprietary
+ * file {@code type} code.
  * <p>
- * To identify the application that can handle a document, the Finder can look at the <code>creator</code>. For example, if a user
- * double-clicks on a document with the <code>ttxt</code> <code>creator</code>, it opens up in Text Edit, the application registered
- * with the <code>ttxt</code> <code>creator</code> code. Note that the <code>creator</code>
+ * To identify the application that can handle a document, the Finder can look at the {@code creator}. For example, if a user
+ * double-clicks on a document with the {@code ttxt creator}, it opens up in Text Edit, the application registered
+ * with the {@code ttxt creator} code. Note that the {@code creator}
  * code can be set to any application, not necessarily the application that created it. For example, if you
- * use an editor to create an HTML document, you might want to assign a browser's <code>creator</code> code for the file rather than
- * the HTML editor's <code>creator</code> code. Double-clicking on the document then opens the appropriate browser rather than the
+ * use an editor to create an HTML document, you might want to assign a browser's {@code creator} code for the file rather than
+ * the HTML editor's {@code creator} code. Double-clicking on the document then opens the appropriate browser rather than the
  *HTML editor.
  *<p>
  * If you plan to publicly distribute your application, you must register its creator and any proprietary file types with the Apple
@@ -126,7 +126,7 @@ public class FileManager {
     }
 
     /**
-         * Sets the file <code>type</code> and <code>creator</code> codes for a file or folder.
+         * Sets the file {@code type} and {@code creator} codes for a file or folder.
          *
          * @since 1.4
          */
@@ -140,7 +140,7 @@ public class FileManager {
         private static native void _setFileTypeAndCreator(String filename, int type, int creator) throws IOException;
 
     /**
-         * Sets the file <code>type</code> code for a file or folder.
+         * Sets the file {@code type} code for a file or folder.
          *
          * @since 1.4
          */
@@ -154,7 +154,7 @@ public class FileManager {
     private static native void _setFileType(String filename, int type) throws IOException;
 
     /**
-         * Sets the file <code>creator</code> code for a file or folder.
+         * Sets the file {@code creator} code for a file or folder.
          *
          * @since 1.4
          */
@@ -168,7 +168,7 @@ public class FileManager {
     private static native void _setFileCreator(String filename, int creator) throws IOException;
 
     /**
-         * Obtains the file <code>type</code> code for a file or folder.
+         * Obtains the file {@code type} code for a file or folder.
          *
          * @since 1.4
          */
@@ -182,7 +182,7 @@ public class FileManager {
     private static native int _getFileType(String filename) throws IOException;
 
     /**
-         * Obtains the file <code>creator</code> code for a file or folder.
+         * Obtains the file {@code creator} code for a file or folder.
          *
          * @since 1.4
          */
@@ -200,11 +200,11 @@ public class FileManager {
          * Locates a folder of a particular type. Mac OS X recognizes certain specific folders that have distinct purposes.
          * For example, the user's desktop or temporary folder. These folders have corresponding codes. Given one of these codes,
          * this method returns the path to that particular folder. Certain folders of a given type may appear in more than
-         * one domain. For example, although there is only one <code>root</code> folder, there are multiple <code>pref</code>
-         * folders. If this method is called to find the <code>pref</code> folder, it will return the first one it finds,
-         * the user's preferences folder in <code>~/Library/Preferences</code>. To explicitly locate a folder in a certain
-         * domain use <code>findFolder(short domain, int folderType)</code> or <code>findFolder(short domain, int folderType,
-         * boolean createIfNeeded)</code>.
+         * one domain. For example, although there is only one {@code root} folder, there are multiple {@code pref}
+         * folders. If this method is called to find the {@code pref} folder, it will return the first one it finds,
+         * the user's preferences folder in {@code ~/Library/Preferences}. To explicitly locate a folder in a certain
+         * domain use {@code findFolder(short domain, int folderType)} or
+         * {@code findFolder(short domain, int folderType, boolean createIfNeeded)}.
          *
          * @return the path to the folder searched for
          *
@@ -215,8 +215,8 @@ public class FileManager {
         }
 
     /**
-         * Locates a folder of a particular type, within a given domain. Similar to <code>findFolder(int folderType)</code>
-         * except that the domain to look in can be specified. Valid values for <code>domain</code>include:
+         * Locates a folder of a particular type, within a given domain. Similar to {@code findFolder(int folderType)}
+         * except that the domain to look in can be specified. Valid values for {@code domain} include:
          * <dl>
          * <dt>user</dt>
          * <dd>The User domain contains resources specific to the user who is currently logged in</dd>
@@ -239,12 +239,12 @@ public class FileManager {
 
     /**
          * Locates a folder of a particular type within a given domain and optionally creating the folder if it does
-         * not exist. The behavior is similar to <code>findFolder(int folderType)</code> and
-         * <code>findFolder(short domain, int folderType)</code> except that it can create the folder if it does not already exist.
+         * not exist. The behavior is similar to {@code findFolder(int folderType)} and
+         * {@code findFolder(short domain, int folderType)} except that it can create the folder if it does not already exist.
          *
          * @param createIfNeeded
-         *            set to <code>true</code>, by setting to <code>false</code> the behavior will be the
-         *            same as <code>findFolder(short domain, int folderType, boolean createIfNeeded)</code>
+         *            set to {@code true}, by setting to {@code false} the behavior will be the
+         *            same as {@code findFolder(short domain, int folderType, boolean createIfNeeded)}
          * @return the path to the folder searched for
          *
          * @since 1.4
@@ -263,9 +263,9 @@ public class FileManager {
 
 
     /**
-         * Opens the path specified by a URL in the appropriate application for that URL. HTTP URL's (<code>http://</code>)
-         * open in the default browser as set in the Internet pane of System Preferences. File (<code>file://</code>) and
-         * FTP URL's (<code>ftp://</code>) open in the Finder. Note that opening an FTP URL will prompt the user for where
+         * Opens the path specified by a URL in the appropriate application for that URL. HTTP URL's ({@code http://})
+         * open in the default browser as set in the Internet pane of System Preferences. File ({@code file://}) and
+         * FTP URL's ({@code ftp://}) open in the Finder. Note that opening an FTP URL will prompt the user for where
          * they want to save the downloaded file(s).
          *
          * @param url

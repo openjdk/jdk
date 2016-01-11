@@ -115,7 +115,7 @@ public abstract class RenderQueue {
     /**
      * Attempts to lock the queue.  If successful, this method returns true,
      * indicating that the caller is responsible for calling
-     * <code>unlock</code>; otherwise this method returns false.
+     * {@code unlock}; otherwise this method returns false.
      */
     public final boolean tryLock() {
         return SunToolkit.awtTryLock();
