@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ void ScanRSClosure::scanCard(size_t index, HeapRegion *r) {
 
   // Set the "from" region in the closure.
   _oc->set_region(r);
-  MemRegion card_region(_bot->address_for_index(index), G1BlockOffsetTable::N_words);
+  MemRegion card_region(_bot->address_for_index(index), BOTConstants::N_words);
   MemRegion pre_gc_allocated(r->bottom(), r->scan_top());
   MemRegion mr = pre_gc_allocated.intersection(card_region);
   if (!mr.is_empty() && !_ct_bs->is_card_claimed(index)) {
