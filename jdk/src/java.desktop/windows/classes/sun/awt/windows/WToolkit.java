@@ -558,6 +558,16 @@ public final class WToolkit extends SunToolkit implements Runnable {
         return WKeyboardFocusManagerPeer.getInstance();
     }
 
+    private static WMouseInfoPeer wPeer = null;
+
+    @Override
+    public synchronized MouseInfoPeer getMouseInfoPeer() {
+        if (wPeer == null) {
+            wPeer = new WMouseInfoPeer();
+        }
+        return wPeer;
+    }
+
     private native void setDynamicLayoutNative(boolean b);
 
     @Override

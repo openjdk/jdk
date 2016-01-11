@@ -1159,17 +1159,6 @@ public abstract class SunToolkit extends Toolkit
         return getStartupLocale();
     }
 
-    private static DefaultMouseInfoPeer mPeer = null;
-
-    @Override
-    public synchronized MouseInfoPeer getMouseInfoPeer() {
-        if (mPeer == null) {
-            mPeer = new DefaultMouseInfoPeer();
-        }
-        return mPeer;
-    }
-
-
     /**
      * Returns whether default toolkit needs the support of the xembed
      * from embedding host(if any).
