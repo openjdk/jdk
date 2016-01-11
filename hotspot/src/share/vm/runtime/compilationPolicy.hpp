@@ -58,6 +58,8 @@ public:
   static void set_policy(CompilationPolicy* policy) { _policy = policy; }
   static CompilationPolicy* policy()                { return _policy; }
 
+  static CompileTask* select_task_helper(CompileQueue* compile_queue);
+
   // Profiling
   elapsedTimer* accumulated_time() { return &_accumulated_time; }
   void print_time() PRODUCT_RETURN;
