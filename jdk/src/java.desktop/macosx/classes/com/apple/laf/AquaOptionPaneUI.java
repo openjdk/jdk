@@ -47,7 +47,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
 
     /**
      * Creates and returns a Container containin the buttons. The buttons
-     * are created by calling <code>getButtons</code>.
+     * are created by calling {@code getButtons}.
      */
     protected Container createButtonArea() {
         final Container bottom = super.createButtonArea();

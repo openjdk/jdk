@@ -28,7 +28,7 @@ package java.awt.geom;
 import java.io.Serializable;
 
 /**
- * The <code>Ellipse2D</code> class describes an ellipse that is defined
+ * The {@code Ellipse2D} class describes an ellipse that is defined
  * by a framing rectangle.
  * <p>
  * This class is only the abstract superclass for all objects which
@@ -42,8 +42,8 @@ import java.io.Serializable;
 public abstract class Ellipse2D extends RectangularShape {
 
     /**
-     * The <code>Float</code> class defines an ellipse specified
-     * in <code>float</code> precision.
+     * The {@code Float} class defines an ellipse specified
+     * in {@code float} precision.
      * @since 1.2
      */
     public static class Float extends Ellipse2D implements Serializable {
@@ -64,21 +64,21 @@ public abstract class Ellipse2D extends RectangularShape {
         public float y;
 
         /**
-         * The overall width of this <code>Ellipse2D</code>.
+         * The overall width of this {@code Ellipse2D}.
          * @since 1.2
          * @serial
          */
         public float width;
 
         /**
-         * The overall height of this <code>Ellipse2D</code>.
+         * The overall height of this {@code Ellipse2D}.
          * @since 1.2
          * @serial
          */
         public float height;
 
         /**
-         * Constructs a new <code>Ellipse2D</code>, initialized to
+         * Constructs a new {@code Ellipse2D}, initialized to
          * location (0,&nbsp;0) and size (0,&nbsp;0).
          * @since 1.2
          */
@@ -86,7 +86,7 @@ public abstract class Ellipse2D extends RectangularShape {
         }
 
         /**
-         * Constructs and initializes an <code>Ellipse2D</code> from the
+         * Constructs and initializes an {@code Ellipse2D} from the
          * specified coordinates.
          *
          * @param x the X coordinate of the upper-left corner
@@ -143,7 +143,7 @@ public abstract class Ellipse2D extends RectangularShape {
 
         /**
          * Sets the location and size of the framing rectangle of this
-         * <code>Shape</code> to the specified rectangular values.
+         * {@code Shape} to the specified rectangular values.
          *
          * @param x the X coordinate of the upper-left corner of the
          *              specified rectangular shape
@@ -186,8 +186,8 @@ public abstract class Ellipse2D extends RectangularShape {
     }
 
     /**
-     * The <code>Double</code> class defines an ellipse specified
-     * in <code>double</code> precision.
+     * The {@code Double} class defines an ellipse specified
+     * in {@code double} precision.
      * @since 1.2
      */
     public static class Double extends Ellipse2D implements Serializable {
@@ -208,21 +208,21 @@ public abstract class Ellipse2D extends RectangularShape {
         public double y;
 
         /**
-         * The overall width of this <code>Ellipse2D</code>.
+         * The overall width of this {@code Ellipse2D}.
          * @since 1.2
          * @serial
          */
         public double width;
 
         /**
-         * The overall height of the <code>Ellipse2D</code>.
+         * The overall height of the {@code Ellipse2D}.
          * @since 1.2
          * @serial
          */
         public double height;
 
         /**
-         * Constructs a new <code>Ellipse2D</code>, initialized to
+         * Constructs a new {@code Ellipse2D}, initialized to
          * location (0,&nbsp;0) and size (0,&nbsp;0).
          * @since 1.2
          */
@@ -230,7 +230,7 @@ public abstract class Ellipse2D extends RectangularShape {
         }
 
         /**
-         * Constructs and initializes an <code>Ellipse2D</code> from the
+         * Constructs and initializes an {@code Ellipse2D} from the
          * specified coordinates.
          *
          * @param x the X coordinate of the upper-left corner
@@ -404,17 +404,17 @@ public abstract class Ellipse2D extends RectangularShape {
 
     /**
      * Returns an iteration object that defines the boundary of this
-     * <code>Ellipse2D</code>.
+     * {@code Ellipse2D}.
      * The iterator for this class is multi-threaded safe, which means
-     * that this <code>Ellipse2D</code> class guarantees that
-     * modifications to the geometry of this <code>Ellipse2D</code>
+     * that this {@code Ellipse2D} class guarantees that
+     * modifications to the geometry of this {@code Ellipse2D}
      * object do not affect any iterations of that geometry that
      * are already in process.
-     * @param at an optional <code>AffineTransform</code> to be applied to
+     * @param at an optional {@code AffineTransform} to be applied to
      * the coordinates as they are returned in the iteration, or
-     * <code>null</code> if untransformed coordinates are desired
-     * @return    the <code>PathIterator</code> object that returns the
-     *          geometry of the outline of this <code>Ellipse2D</code>,
+     * {@code null} if untransformed coordinates are desired
+     * @return    the {@code PathIterator} object that returns the
+     *          geometry of the outline of this {@code Ellipse2D},
      *          one segment at a time.
      * @since 1.2
      */
@@ -423,8 +423,8 @@ public abstract class Ellipse2D extends RectangularShape {
     }
 
     /**
-     * Returns the hashcode for this <code>Ellipse2D</code>.
-     * @return the hashcode for this <code>Ellipse2D</code>.
+     * Returns the hashcode for this {@code Ellipse2D}.
+     * @return the hashcode for this {@code Ellipse2D}.
      * @since 1.6
      */
     public int hashCode() {
@@ -436,16 +436,16 @@ public abstract class Ellipse2D extends RectangularShape {
     }
 
     /**
-     * Determines whether or not the specified <code>Object</code> is
-     * equal to this <code>Ellipse2D</code>.  The specified
-     * <code>Object</code> is equal to this <code>Ellipse2D</code>
-     * if it is an instance of <code>Ellipse2D</code> and if its
-     * location and size are the same as this <code>Ellipse2D</code>.
-     * @param obj  an <code>Object</code> to be compared with this
-     *             <code>Ellipse2D</code>.
-     * @return  <code>true</code> if <code>obj</code> is an instance
-     *          of <code>Ellipse2D</code> and has the same values;
-     *          <code>false</code> otherwise.
+     * Determines whether or not the specified {@code Object} is
+     * equal to this {@code Ellipse2D}.  The specified
+     * {@code Object} is equal to this {@code Ellipse2D}
+     * if it is an instance of {@code Ellipse2D} and if its
+     * location and size are the same as this {@code Ellipse2D}.
+     * @param obj  an {@code Object} to be compared with this
+     *             {@code Ellipse2D}.
+     * @return  {@code true} if {@code obj} is an instance
+     *          of {@code Ellipse2D} and has the same values;
+     *          {@code false} otherwise.
      * @since 1.6
      */
     public boolean equals(Object obj) {

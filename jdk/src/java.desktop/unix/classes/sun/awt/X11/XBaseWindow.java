@@ -170,7 +170,7 @@ public class XBaseWindow {
     }
 
     /**
-     * Creates window using parameters <code>params</code>
+     * Creates window using parameters {@code params}
      * If params contain flag DELAYED doesn't do anything.
      * Note: Descendants can call this method to create the window
      * at the time different to instance construction.
@@ -316,7 +316,7 @@ public class XBaseWindow {
     }
 
     /**
-     * Creates window with parameters specified by <code>params</code>
+     * Creates window with parameters specified by {@code params}
      * @see #init
      */
     private final void create(XCreateWindowParams params) {

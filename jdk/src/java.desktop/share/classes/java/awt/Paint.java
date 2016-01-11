@@ -30,16 +30,16 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 
 /**
- * This <code>Paint</code> interface defines how color patterns
+ * This {@code Paint} interface defines how color patterns
  * can be generated for {@link Graphics2D} operations.  A class
- * implementing the <code>Paint</code> interface is added to the
- * <code>Graphics2D</code> context in order to define the color
- * pattern used by the <code>draw</code> and <code>fill</code> methods.
+ * implementing the {@code Paint} interface is added to the
+ * {@code Graphics2D} context in order to define the color
+ * pattern used by the {@code draw} and {@code fill} methods.
  * <p>
- * Instances of classes implementing <code>Paint</code> must be
- * read-only because the <code>Graphics2D</code> does not clone
+ * Instances of classes implementing {@code Paint} must be
+ * read-only because the {@code Graphics2D} does not clone
  * these objects when they are set as an attribute with the
- * <code>setPaint</code> method or when the <code>Graphics2D</code>
+ * {@code setPaint} method or when the {@code Graphics2D}
  * object is itself cloned.
  * @see PaintContext
  * @see Color
@@ -74,22 +74,22 @@ public interface Paint extends Transparency {
      *                     of the graphics primitive being rendered.
      *                     Implementations of the {@code Paint} interface
      *                     are allowed to throw {@code NullPointerException}
-     *                     for a {@code null} {@code deviceBounds}.
+     *                     for a {@code null deviceBounds}.
      * @param userBounds the user space bounding box
      *                   of the graphics primitive being rendered.
      *                     Implementations of the {@code Paint} interface
      *                     are allowed to throw {@code NullPointerException}
-     *                     for a {@code null} {@code userBounds}.
+     *                     for a {@code null userBounds}.
      * @param xform the {@link AffineTransform} from user
      *              space into device space.
      *                     Implementations of the {@code Paint} interface
      *                     are allowed to throw {@code NullPointerException}
-     *                     for a {@code null} {@code xform}.
+     *                     for a {@code null xform}.
      * @param hints the set of hints that the context object can use to
      *              choose between rendering alternatives.
      *                     Implementations of the {@code Paint} interface
      *                     are allowed to throw {@code NullPointerException}
-     *                     for a {@code null} {@code hints}.
+     *                     for a {@code null hints}.
      * @return the {@code PaintContext} for
      *         generating color patterns.
      * @see PaintContext

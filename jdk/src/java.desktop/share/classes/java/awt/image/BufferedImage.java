@@ -45,21 +45,21 @@ import sun.awt.image.ShortComponentRaster;
 
 /**
  *
- * The <code>BufferedImage</code> subclass describes an {@link
+ * The {@code BufferedImage} subclass describes an {@link
  * java.awt.Image Image} with an accessible buffer of image data.
- * A <code>BufferedImage</code> is comprised of a {@link ColorModel} and a
+ * A {@code BufferedImage} is comprised of a {@link ColorModel} and a
  * {@link Raster} of image data.
  * The number and types of bands in the {@link SampleModel} of the
- * <code>Raster</code> must match the number and types required by the
- * <code>ColorModel</code> to represent its color and alpha components.
- * All <code>BufferedImage</code> objects have an upper left corner
- * coordinate of (0,&nbsp;0).  Any <code>Raster</code> used to construct a
- * <code>BufferedImage</code> must therefore have minX=0 and minY=0.
+ * {@code Raster} must match the number and types required by the
+ * {@code ColorModel} to represent its color and alpha components.
+ * All {@code BufferedImage} objects have an upper left corner
+ * coordinate of (0,&nbsp;0).  Any {@code Raster} used to construct a
+ * {@code BufferedImage} must therefore have minX=0 and minY=0.
  *
  * <p>
  * This class relies on the data fetching and setting methods
- * of <code>Raster</code>,
- * and on the color characterization methods of <code>ColorModel</code>.
+ * of {@code Raster},
+ * and on the color characterization methods of {@code ColorModel}.
  *
  * @see ColorModel
  * @see Raster
@@ -100,10 +100,10 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Represents an image with 8-bit RGBA color components packed into
-     * integer pixels.  The image has a <code>DirectColorModel</code>
+     * integer pixels.  The image has a {@code DirectColorModel}
      * with alpha. The color data in this image is considered not to be
      * premultiplied with alpha.  When this type is used as the
-     * <code>imageType</code> argument to a <code>BufferedImage</code>
+     * {@code imageType} argument to a {@code BufferedImage}
      * constructor, the created image is consistent with images
      * created in the JDK1.1 and earlier releases.
      */
@@ -111,7 +111,7 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Represents an image with 8-bit RGBA color components packed into
-     * integer pixels.  The image has a <code>DirectColorModel</code>
+     * integer pixels.  The image has a {@code DirectColorModel}
      * with alpha.  The color data in this image is considered to be
      * premultiplied with alpha.
      */
@@ -135,7 +135,7 @@ public class BufferedImage extends java.awt.Image
      * Represents an image with 8-bit RGB color components, corresponding
      * to a Windows-style BGR color model) with the colors Blue, Green,
      * and Red stored in 3 bytes.  There is no alpha.  The image has a
-     * <code>ComponentColorModel</code>.
+     * {@code ComponentColorModel}.
      * When data with non-opaque alpha is stored
      * in an image of this type,
      * the color data must be adjusted to a non-premultiplied form
@@ -148,7 +148,7 @@ public class BufferedImage extends java.awt.Image
     /**
      * Represents an image with 8-bit RGBA color components with the colors
      * Blue, Green, and Red stored in 3 bytes and 1 byte of alpha.  The
-     * image has a <code>ComponentColorModel</code> with alpha.  The
+     * image has a {@code ComponentColorModel} with alpha.  The
      * color data in this image is considered not to be premultiplied with
      * alpha.  The byte data is interleaved in a single
      * byte array in the order A, B, G, R
@@ -159,7 +159,7 @@ public class BufferedImage extends java.awt.Image
     /**
      * Represents an image with 8-bit RGBA color components with the colors
      * Blue, Green, and Red stored in 3 bytes and 1 byte of alpha.  The
-     * image has a <code>ComponentColorModel</code> with alpha. The color
+     * image has a {@code ComponentColorModel} with alpha. The color
      * data in this image is considered to be premultiplied with alpha.
      * The byte data is interleaved in a single byte array in the order
      * A, B, G, R from lower to higher byte addresses within each pixel.
@@ -169,7 +169,7 @@ public class BufferedImage extends java.awt.Image
     /**
      * Represents an image with 5-6-5 RGB color components (5-bits red,
      * 6-bits green, 5-bits blue) with no alpha.  This image has
-     * a <code>DirectColorModel</code>.
+     * a {@code DirectColorModel}.
      * When data with non-opaque alpha is stored
      * in an image of this type,
      * the color data must be adjusted to a non-premultiplied form
@@ -182,7 +182,7 @@ public class BufferedImage extends java.awt.Image
     /**
      * Represents an image with 5-5-5 RGB color components (5-bits red,
      * 5-bits green, 5-bits blue) with no alpha.  This image has
-     * a <code>DirectColorModel</code>.
+     * a {@code DirectColorModel}.
      * When data with non-opaque alpha is stored
      * in an image of this type,
      * the color data must be adjusted to a non-premultiplied form
@@ -194,7 +194,7 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Represents a unsigned byte grayscale image, non-indexed.  This
-     * image has a <code>ComponentColorModel</code> with a CS_GRAY
+     * image has a {@code ComponentColorModel} with a CS_GRAY
      * {@link ColorSpace}.
      * When data with non-opaque alpha is stored
      * in an image of this type,
@@ -207,8 +207,8 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Represents an unsigned short grayscale image, non-indexed).  This
-     * image has a <code>ComponentColorModel</code> with a CS_GRAY
-     * <code>ColorSpace</code>.
+     * image has a {@code ComponentColorModel} with a CS_GRAY
+     * {@code ColorSpace}.
      * When data with non-opaque alpha is stored
      * in an image of this type,
      * the color data must be adjusted to a non-premultiplied form
@@ -221,48 +221,48 @@ public class BufferedImage extends java.awt.Image
     /**
      * Represents an opaque byte-packed 1, 2, or 4 bit image.  The
      * image has an {@link IndexColorModel} without alpha.  When this
-     * type is used as the <code>imageType</code> argument to the
-     * <code>BufferedImage</code> constructor that takes an
-     * <code>imageType</code> argument but no <code>ColorModel</code>
+     * type is used as the {@code imageType} argument to the
+     * {@code BufferedImage} constructor that takes an
+     * {@code imageType} argument but no {@code ColorModel}
      * argument, a 1-bit image is created with an
-     * <code>IndexColorModel</code> with two colors in the default
-     * sRGB <code>ColorSpace</code>: {0,&nbsp;0,&nbsp;0} and
+     * {@code IndexColorModel} with two colors in the default
+     * sRGB {@code ColorSpace}: {0,&nbsp;0,&nbsp;0} and
      * {255,&nbsp;255,&nbsp;255}.
      *
      * <p> Images with 2 or 4 bits per pixel may be constructed via
-     * the <code>BufferedImage</code> constructor that takes a
-     * <code>ColorModel</code> argument by supplying a
-     * <code>ColorModel</code> with an appropriate map size.
+     * the {@code BufferedImage} constructor that takes a
+     * {@code ColorModel} argument by supplying a
+     * {@code ColorModel} with an appropriate map size.
      *
      * <p> Images with 8 bits per pixel should use the image types
-     * <code>TYPE_BYTE_INDEXED</code> or <code>TYPE_BYTE_GRAY</code>
-     * depending on their <code>ColorModel</code>.
+     * {@code TYPE_BYTE_INDEXED} or {@code TYPE_BYTE_GRAY}
+     * depending on their {@code ColorModel}.
 
      * <p> When color data is stored in an image of this type,
      * the closest color in the colormap is determined
-     * by the <code>IndexColorModel</code> and the resulting index is stored.
+     * by the {@code IndexColorModel} and the resulting index is stored.
      * Approximation and loss of alpha or color components
      * can result, depending on the colors in the
-     * <code>IndexColorModel</code> colormap.
+     * {@code IndexColorModel} colormap.
      */
     public static final int TYPE_BYTE_BINARY = 12;
 
     /**
      * Represents an indexed byte image.  When this type is used as the
-     * <code>imageType</code> argument to the <code>BufferedImage</code>
-     * constructor that takes an <code>imageType</code> argument
-     * but no <code>ColorModel</code> argument, an
-     * <code>IndexColorModel</code> is created with
+     * {@code imageType} argument to the {@code BufferedImage}
+     * constructor that takes an {@code imageType} argument
+     * but no {@code ColorModel} argument, an
+     * {@code IndexColorModel} is created with
      * a 256-color 6/6/6 color cube palette with the rest of the colors
      * from 216-255 populated by grayscale values in the
      * default sRGB ColorSpace.
      *
      * <p> When color data is stored in an image of this type,
      * the closest color in the colormap is determined
-     * by the <code>IndexColorModel</code> and the resulting index is stored.
+     * by the {@code IndexColorModel} and the resulting index is stored.
      * Approximation and loss of alpha or color components
      * can result, depending on the colors in the
-     * <code>IndexColorModel</code> colormap.
+     * {@code IndexColorModel} colormap.
      */
     public static final int TYPE_BYTE_INDEXED = 13;
 
@@ -288,8 +288,8 @@ public class BufferedImage extends java.awt.Image
     }
 
     /**
-     * Constructs a <code>BufferedImage</code> of one of the predefined
-     * image types.  The <code>ColorSpace</code> for the image is the
+     * Constructs a {@code BufferedImage} of one of the predefined
+     * image types.  The {@code ColorSpace} for the image is the
      * default sRGB space.
      * @param width     width of the created image
      * @param height    height of the created image
@@ -506,7 +506,7 @@ public class BufferedImage extends java.awt.Image
     }
 
     /**
-     * Constructs a <code>BufferedImage</code> of one of the predefined
+     * Constructs a {@code BufferedImage} of one of the predefined
      * image types:
      * TYPE_BYTE_BINARY or TYPE_BYTE_INDEXED.
      *
@@ -521,7 +521,7 @@ public class BufferedImage extends java.awt.Image
      * @param width     width of the created image
      * @param height    height of the created image
      * @param imageType type of the created image
-     * @param cm        <code>IndexColorModel</code> of the created image
+     * @param cm        {@code IndexColorModel} of the created image
      * @throws IllegalArgumentException   if the imageType is not
      * TYPE_BYTE_BINARY or TYPE_BYTE_INDEXED or if the imageType is
      * TYPE_BYTE_BINARY and the color map has more than 16 entries.
@@ -576,31 +576,31 @@ public class BufferedImage extends java.awt.Image
     }
 
     /**
-     * Constructs a new <code>BufferedImage</code> with a specified
-     * <code>ColorModel</code> and <code>Raster</code>.  If the number and
-     * types of bands in the <code>SampleModel</code> of the
-     * <code>Raster</code> do not match the number and types required by
-     * the <code>ColorModel</code> to represent its color and alpha
+     * Constructs a new {@code BufferedImage} with a specified
+     * {@code ColorModel} and {@code Raster}.  If the number and
+     * types of bands in the {@code SampleModel} of the
+     * {@code Raster} do not match the number and types required by
+     * the {@code ColorModel} to represent its color and alpha
      * components, a {@link RasterFormatException} is thrown.  This
-     * method can multiply or divide the color <code>Raster</code> data by
-     * alpha to match the <code>alphaPremultiplied</code> state
-     * in the <code>ColorModel</code>.  Properties for this
-     * <code>BufferedImage</code> can be established by passing
-     * in a {@link Hashtable} of <code>String</code>/<code>Object</code>
+     * method can multiply or divide the color {@code Raster} data by
+     * alpha to match the {@code alphaPremultiplied} state
+     * in the {@code ColorModel}.  Properties for this
+     * {@code BufferedImage} can be established by passing
+     * in a {@link Hashtable} of {@code String}/{@code Object}
      * pairs.
-     * @param cm <code>ColorModel</code> for the new image
-     * @param raster     <code>Raster</code> for the image data
-     * @param isRasterPremultiplied   if <code>true</code>, the data in
+     * @param cm {@code ColorModel} for the new image
+     * @param raster     {@code Raster} for the image data
+     * @param isRasterPremultiplied   if {@code true}, the data in
      *                  the raster has been premultiplied with alpha.
-     * @param properties <code>Hashtable</code> of
-     *                  <code>String</code>/<code>Object</code> pairs.
+     * @param properties {@code Hashtable} of
+     *                  {@code String}/{@code Object} pairs.
      * @exception RasterFormatException if the number and
-     * types of bands in the <code>SampleModel</code> of the
-     * <code>Raster</code> do not match the number and types required by
-     * the <code>ColorModel</code> to represent its color and alpha
+     * types of bands in the {@code SampleModel} of the
+     * {@code Raster} do not match the number and types required by
+     * the {@code ColorModel} to represent its color and alpha
      * components.
      * @exception IllegalArgumentException if
-     *          <code>raster</code> is incompatible with <code>cm</code>
+     *          {@code raster} is incompatible with {@code cm}
      * @see ColorModel
      * @see Raster
      * @see WritableRaster
@@ -824,7 +824,7 @@ public class BufferedImage extends java.awt.Image
     /**
      * Returns the image type.  If it is not one of the known types,
      * TYPE_CUSTOM is returned.
-     * @return the image type of this <code>BufferedImage</code>.
+     * @return the image type of this {@code BufferedImage}.
      * @see #TYPE_INT_RGB
      * @see #TYPE_INT_ARGB
      * @see #TYPE_INT_ARGB_PRE
@@ -845,9 +845,9 @@ public class BufferedImage extends java.awt.Image
     }
 
     /**
-     * Returns the <code>ColorModel</code>.
-     * @return the <code>ColorModel</code> of this
-     *  <code>BufferedImage</code>.
+     * Returns the {@code ColorModel}.
+     * @return the {@code ColorModel} of this
+     *  {@code BufferedImage}.
      */
     public ColorModel getColorModel() {
         return colorModel;
@@ -855,8 +855,8 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Returns the {@link WritableRaster}.
-     * @return the <code>WritableRaster</code> of this
-     *  <code>BufferedImage</code>.
+     * @return the {@code WritableRaster} of this
+     *  {@code BufferedImage}.
      */
     public WritableRaster getRaster() {
         return raster;
@@ -864,25 +864,25 @@ public class BufferedImage extends java.awt.Image
 
 
     /**
-     * Returns a <code>WritableRaster</code> representing the alpha
-     * channel for <code>BufferedImage</code> objects
-     * with <code>ColorModel</code> objects that support a separate
-     * spatial alpha channel, such as <code>ComponentColorModel</code> and
-     * <code>DirectColorModel</code>.  Returns <code>null</code> if there
-     * is no alpha channel associated with the <code>ColorModel</code> in
+     * Returns a {@code WritableRaster} representing the alpha
+     * channel for {@code BufferedImage} objects
+     * with {@code ColorModel} objects that support a separate
+     * spatial alpha channel, such as {@code ComponentColorModel} and
+     * {@code DirectColorModel}.  Returns {@code null} if there
+     * is no alpha channel associated with the {@code ColorModel} in
      * this image.  This method assumes that for all
-     * <code>ColorModel</code> objects other than
-     * <code>IndexColorModel</code>, if the <code>ColorModel</code>
+     * {@code ColorModel} objects other than
+     * {@code IndexColorModel}, if the {@code ColorModel}
      * supports alpha, there is a separate alpha channel
      * which is stored as the last band of image data.
-     * If the image uses an <code>IndexColorModel</code> that
+     * If the image uses an {@code IndexColorModel} that
      * has alpha in the lookup table, this method returns
-     * <code>null</code> since there is no spatially discrete alpha
+     * {@code null} since there is no spatially discrete alpha
      * channel.  This method creates a new
-     * <code>WritableRaster</code>, but shares the data array.
-     * @return a <code>WritableRaster</code> or <code>null</code> if this
-     *          <code>BufferedImage</code> has no alpha channel associated
-     *          with its <code>ColorModel</code>.
+     * {@code WritableRaster}, but shares the data array.
+     * @return a {@code WritableRaster} or {@code null} if this
+     *          {@code BufferedImage} has no alpha channel associated
+     *          with its {@code ColorModel}.
      */
     public WritableRaster getAlphaRaster() {
         return colorModel.getAlphaRaster(raster);
@@ -892,13 +892,13 @@ public class BufferedImage extends java.awt.Image
      * Returns an integer pixel in the default RGB color model
      * (TYPE_INT_ARGB) and default sRGB colorspace.  Color
      * conversion takes place if this default model does not match
-     * the image <code>ColorModel</code>.  There are only 8-bits of
+     * the image {@code ColorModel}.  There are only 8-bits of
      * precision for each color component in the returned data when using
      * this method.
      *
      * <p>
      *
-     * An <code>ArrayOutOfBoundsException</code> may be thrown
+     * An {@code ArrayOutOfBoundsException} may be thrown
      * if the coordinates are not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -922,7 +922,7 @@ public class BufferedImage extends java.awt.Image
      * (TYPE_INT_ARGB) and default sRGB color space,
      * from a portion of the image data.  Color conversion takes
      * place if the default model does not match the image
-     * <code>ColorModel</code>.  There are only 8-bits of precision for
+     * {@code ColorModel}.  There are only 8-bits of precision for
      * each color component in the returned data when
      * using this method.  With a specified coordinate (x,&nbsp;y) in the
      * image, the ARGB pixel can be accessed in this way:
@@ -932,7 +932,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An <code>ArrayOutOfBoundsException</code> may be thrown
+     * An {@code ArrayOutOfBoundsException} may be thrown
      * if the region is not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -940,10 +940,10 @@ public class BufferedImage extends java.awt.Image
      * @param startY      the starting Y coordinate
      * @param w           width of region
      * @param h           height of region
-     * @param rgbArray    if not <code>null</code>, the rgb pixels are
+     * @param rgbArray    if not {@code null}, the rgb pixels are
      *          written here
-     * @param offset      offset into the <code>rgbArray</code>
-     * @param scansize    scanline stride for the <code>rgbArray</code>
+     * @param offset      offset into the {@code rgbArray}
+     * @param scansize    scanline stride for the {@code rgbArray}
      * @return            array of RGB pixels.
      * @see #setRGB(int, int, int)
      * @see #setRGB(int, int, int, int, int[], int, int)
@@ -994,15 +994,15 @@ public class BufferedImage extends java.awt.Image
 
 
     /**
-     * Sets a pixel in this <code>BufferedImage</code> to the specified
+     * Sets a pixel in this {@code BufferedImage} to the specified
      * RGB value. The pixel is assumed to be in the default RGB color
      * model, TYPE_INT_ARGB, and default sRGB color space.  For images
-     * with an <code>IndexColorModel</code>, the index with the nearest
+     * with an {@code IndexColorModel}, the index with the nearest
      * color is chosen.
      *
      * <p>
      *
-     * An <code>ArrayOutOfBoundsException</code> may be thrown
+     * An {@code ArrayOutOfBoundsException} may be thrown
      * if the coordinates are not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1021,7 +1021,7 @@ public class BufferedImage extends java.awt.Image
      * (TYPE_INT_ARGB) and default sRGB color space,
      * into a portion of the image data.  Color conversion takes place
      * if the default model does not match the image
-     * <code>ColorModel</code>.  There are only 8-bits of precision for
+     * {@code ColorModel}.  There are only 8-bits of precision for
      * each color component in the returned data when
      * using this method.  With a specified coordinate (x,&nbsp;y) in the
      * this image, the ARGB pixel can be accessed in this way:
@@ -1032,7 +1032,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An <code>ArrayOutOfBoundsException</code> may be thrown
+     * An {@code ArrayOutOfBoundsException} may be thrown
      * if the region is not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1041,8 +1041,8 @@ public class BufferedImage extends java.awt.Image
      * @param w           width of the region
      * @param h           height of the region
      * @param rgbArray    the rgb pixels
-     * @param offset      offset into the <code>rgbArray</code>
-     * @param scansize    scanline stride for the <code>rgbArray</code>
+     * @param offset      offset into the {@code rgbArray}
+     * @param scansize    scanline stride for the {@code rgbArray}
      * @see #getRGB(int, int)
      * @see #getRGB(int, int, int, int, int[], int, int)
      */
@@ -1063,34 +1063,34 @@ public class BufferedImage extends java.awt.Image
 
 
     /**
-     * Returns the width of the <code>BufferedImage</code>.
-     * @return the width of this <code>BufferedImage</code>
+     * Returns the width of the {@code BufferedImage}.
+     * @return the width of this {@code BufferedImage}
      */
     public int getWidth() {
         return raster.getWidth();
     }
 
     /**
-     * Returns the height of the <code>BufferedImage</code>.
-     * @return the height of this <code>BufferedImage</code>
+     * Returns the height of the {@code BufferedImage}.
+     * @return the height of this {@code BufferedImage}
      */
     public int getHeight() {
         return raster.getHeight();
     }
 
     /**
-     * Returns the width of the <code>BufferedImage</code>.
+     * Returns the width of the {@code BufferedImage}.
      * @param observer ignored
-     * @return the width of this <code>BufferedImage</code>
+     * @return the width of this {@code BufferedImage}
      */
     public int getWidth(ImageObserver observer) {
         return raster.getWidth();
     }
 
     /**
-     * Returns the height of the <code>BufferedImage</code>.
+     * Returns the height of the {@code BufferedImage}.
      * @param observer ignored
-     * @return the height of this <code>BufferedImage</code>
+     * @return the height of this {@code BufferedImage}
      */
     public int getHeight(ImageObserver observer) {
         return raster.getHeight();
@@ -1117,17 +1117,17 @@ public class BufferedImage extends java.awt.Image
      * Returns a property of the image by name.  Individual property names
      * are defined by the various image formats.  If a property is not
      * defined for a particular image, this method returns the
-     * <code>UndefinedProperty</code> field.  If the properties
+     * {@code UndefinedProperty} field.  If the properties
      * for this image are not yet known, then this method returns
-     * <code>null</code> and the <code>ImageObserver</code> object is
+     * {@code null} and the {@code ImageObserver} object is
      * notified later.  The property name "comment" should be used to
      * store an optional comment that can be presented to the user as a
      * description of the image, its source, or its author.
      * @param name the property name
-     * @param observer the <code>ImageObserver</code> that receives
+     * @param observer the {@code ImageObserver} that receives
      *  notification regarding image information
      * @return an {@link Object} that is the property referred to by the
-     *          specified <code>name</code> or <code>null</code> if the
+     *          specified {@code name} or {@code null} if the
      *          properties of this image are not yet known.
      * @throws NullPointerException if the property name is null.
      * @see ImageObserver
@@ -1140,8 +1140,8 @@ public class BufferedImage extends java.awt.Image
     /**
      * Returns a property of the image by name.
      * @param name the property name
-     * @return an <code>Object</code> that is the property referred to by
-     *          the specified <code>name</code>.
+     * @return an {@code Object} that is the property referred to by
+     *          the specified {@code name}.
      * @throws NullPointerException if the property name is null.
      */
     public Object getProperty(String name) {
@@ -1162,8 +1162,8 @@ public class BufferedImage extends java.awt.Image
      * This method returns a {@link Graphics2D}, but is here
      * for backwards compatibility.  {@link #createGraphics() createGraphics} is more
      * convenient, since it is declared to return a
-     * <code>Graphics2D</code>.
-     * @return a <code>Graphics2D</code>, which can be used to draw into
+     * {@code Graphics2D}.
+     * @return a {@code Graphics2D}, which can be used to draw into
      *          this image.
      */
     public java.awt.Graphics getGraphics() {
@@ -1171,9 +1171,9 @@ public class BufferedImage extends java.awt.Image
     }
 
     /**
-     * Creates a <code>Graphics2D</code>, which can be used to draw into
-     * this <code>BufferedImage</code>.
-     * @return a <code>Graphics2D</code>, used for drawing into this
+     * Creates a {@code Graphics2D}, which can be used to draw into
+     * this {@code BufferedImage}.
+     * @return a {@code Graphics2D}, used for drawing into this
      *          image.
      */
     public Graphics2D createGraphics() {
@@ -1184,7 +1184,7 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Returns a subimage defined by a specified rectangular region.
-     * The returned <code>BufferedImage</code> shares the same
+     * The returned {@code BufferedImage} shares the same
      * data array as the original image.
      * @param x the X coordinate of the upper-left corner of the
      *          specified rectangular region
@@ -1192,10 +1192,10 @@ public class BufferedImage extends java.awt.Image
      *          specified rectangular region
      * @param w the width of the specified rectangular region
      * @param h the height of the specified rectangular region
-     * @return a <code>BufferedImage</code> that is the subimage of this
-     *          <code>BufferedImage</code>.
+     * @return a {@code BufferedImage} that is the subimage of this
+     *          {@code BufferedImage}.
      * @exception RasterFormatException if the specified
-     * area is not contained within this <code>BufferedImage</code>.
+     * area is not contained within this {@code BufferedImage}.
      */
     public BufferedImage getSubimage (int x, int y, int w, int h) {
         return new BufferedImage (colorModel,
@@ -1207,9 +1207,9 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Returns whether or not the alpha has been premultiplied.  It
-     * returns <code>false</code> if there is no alpha.
-     * @return <code>true</code> if the alpha has been premultiplied;
-     *          <code>false</code> otherwise.
+     * returns {@code false} if there is no alpha.
+     * @return {@code true} if the alpha has been premultiplied;
+     *          {@code false} otherwise.
      */
     public boolean isAlphaPremultiplied() {
         return colorModel.isAlphaPremultiplied();
@@ -1217,11 +1217,11 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Forces the data to match the state specified in the
-     * <code>isAlphaPremultiplied</code> variable.  It may multiply or
+     * {@code isAlphaPremultiplied} variable.  It may multiply or
      * divide the color raster data by alpha, or do nothing if the data is
      * in the correct state.
-     * @param isAlphaPremultiplied <code>true</code> if the alpha has been
-     *          premultiplied; <code>false</code> otherwise.
+     * @param isAlphaPremultiplied {@code true} if the alpha has been
+     *          premultiplied; {@code false} otherwise.
      */
     public void coerceData (boolean isAlphaPremultiplied) {
         if (colorModel.hasAlpha() &&
@@ -1232,10 +1232,10 @@ public class BufferedImage extends java.awt.Image
     }
 
     /**
-     * Returns a <code>String</code> representation of this
-     * <code>BufferedImage</code> object and its values.
-     * @return a <code>String</code> representing this
-     *          <code>BufferedImage</code>.
+     * Returns a {@code String} representation of this
+     * {@code BufferedImage} object and its values.
+     * @return a {@code String} representing this
+     *          {@code BufferedImage}.
      */
     public String toString() {
         return "BufferedImage@"+Integer.toHexString(hashCode())
@@ -1246,16 +1246,16 @@ public class BufferedImage extends java.awt.Image
     /**
      * Returns a {@link Vector} of {@link RenderedImage} objects that are
      * the immediate sources, not the sources of these immediate sources,
-     * of image data for this <code>BufferedImage</code>.  This
-     * method returns <code>null</code> if the <code>BufferedImage</code>
+     * of image data for this {@code BufferedImage}.  This
+     * method returns {@code null} if the {@code BufferedImage}
      * has no information about its immediate sources.  It returns an
-     * empty <code>Vector</code> if the <code>BufferedImage</code> has no
+     * empty {@code Vector} if the {@code BufferedImage} has no
      * immediate sources.
-     * @return a <code>Vector</code> containing immediate sources of
-     *          this <code>BufferedImage</code> object's image date, or
-     *          <code>null</code> if this <code>BufferedImage</code> has
+     * @return a {@code Vector} containing immediate sources of
+     *          this {@code BufferedImage} object's image date, or
+     *          {@code null} if this {@code BufferedImage} has
      *          no information about its immediate sources, or an empty
-     *          <code>Vector</code> if this <code>BufferedImage</code>
+     *          {@code Vector} if this {@code BufferedImage}
      *          has no immediate sources.
      */
     public Vector<RenderedImage> getSources() {
@@ -1265,10 +1265,10 @@ public class BufferedImage extends java.awt.Image
     /**
      * Returns an array of names recognized by
      * {@link #getProperty(String) getProperty(String)}
-     * or <code>null</code>, if no property names are recognized.
-     * @return a <code>String</code> array containing all of the property
-     *          names that <code>getProperty(String)</code> recognizes;
-     *          or <code>null</code> if no property names are recognized.
+     * or {@code null}, if no property names are recognized.
+     * @return a {@code String} array containing all of the property
+     *          names that {@code getProperty(String)} recognizes;
+     *          or {@code null} if no property names are recognized.
      */
     public String[] getPropertyNames() {
         if (properties == null || properties.isEmpty()) {
@@ -1280,9 +1280,9 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Returns the minimum x coordinate of this
-     * <code>BufferedImage</code>.  This is always zero.
+     * {@code BufferedImage}.  This is always zero.
      * @return the minimum x coordinate of this
-     *          <code>BufferedImage</code>.
+     *          {@code BufferedImage}.
      */
     public int getMinX() {
         return raster.getMinX();
@@ -1290,19 +1290,19 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Returns the minimum y coordinate of this
-     * <code>BufferedImage</code>.  This is always zero.
+     * {@code BufferedImage}.  This is always zero.
      * @return the minimum y coordinate of this
-     *          <code>BufferedImage</code>.
+     *          {@code BufferedImage}.
      */
     public int getMinY() {
         return raster.getMinY();
     }
 
     /**
-     * Returns the <code>SampleModel</code> associated with this
-     * <code>BufferedImage</code>.
-     * @return the <code>SampleModel</code> of this
-     *          <code>BufferedImage</code>.
+     * Returns the {@code SampleModel} associated with this
+     * {@code BufferedImage}.
+     * @return the {@code SampleModel} of this
+     *          {@code BufferedImage}.
      */
     public SampleModel getSampleModel() {
         return raster.getSampleModel();
@@ -1381,17 +1381,17 @@ public class BufferedImage extends java.awt.Image
     }
 
     /**
-     * Returns tile (<code>tileX</code>,&nbsp;<code>tileY</code>).  Note
-     * that <code>tileX</code> and <code>tileY</code> are indices
-     * into the tile array, not pixel locations.  The <code>Raster</code>
+     * Returns tile ({@code tileX},&nbsp;{@code tileY}).  Note
+     * that {@code tileX} and {@code tileY} are indices
+     * into the tile array, not pixel locations.  The {@code Raster}
      * that is returned is live, which means that it is updated if the
      * image is changed.
      * @param tileX the x index of the requested tile in the tile array
      * @param tileY the y index of the requested tile in the tile array
-     * @return a <code>Raster</code> that is the tile defined by the
-     *          arguments <code>tileX</code> and <code>tileY</code>.
+     * @return a {@code Raster} that is the tile defined by the
+     *          arguments {@code tileX} and {@code tileY}.
      * @exception ArrayIndexOutOfBoundsException if both
-     *          <code>tileX</code> and <code>tileY</code> are not
+     *          {@code tileX} and {@code tileY} are not
      *          equal to 0
      */
     public Raster getTile(int tileX, int tileY) {
@@ -1403,10 +1403,10 @@ public class BufferedImage extends java.awt.Image
     }
 
     /**
-     * Returns the image as one large tile.  The <code>Raster</code>
+     * Returns the image as one large tile.  The {@code Raster}
      * returned is a copy of the image data is not updated if the
      * image is changed.
-     * @return a <code>Raster</code> that is a copy of the image data.
+     * @return a {@code Raster} that is a copy of the image data.
      * @see #setData(Raster)
      */
     public Raster getData() {
@@ -1434,13 +1434,13 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Computes and returns an arbitrary region of the
-     * <code>BufferedImage</code>.  The <code>Raster</code> returned is a
+     * {@code BufferedImage}.  The {@code Raster} returned is a
      * copy of the image data and is not updated if the image is
      * changed.
-     * @param rect the region of the <code>BufferedImage</code> to be
+     * @param rect the region of the {@code BufferedImage} to be
      * returned.
-     * @return a <code>Raster</code> that is a copy of the image data of
-     *          the specified region of the <code>BufferedImage</code>
+     * @return a {@code Raster} that is a copy of the image data of
+     *          the specified region of the {@code BufferedImage}
      * @see #setData(Raster)
      */
     public Raster getData(Rectangle rect) {
@@ -1465,18 +1465,18 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Computes an arbitrary rectangular region of the
-     * <code>BufferedImage</code> and copies it into a specified
-     * <code>WritableRaster</code>.  The region to be computed is
+     * {@code BufferedImage} and copies it into a specified
+     * {@code WritableRaster}.  The region to be computed is
      * determined from the bounds of the specified
-     * <code>WritableRaster</code>.  The specified
-     * <code>WritableRaster</code> must have a
-     * <code>SampleModel</code> that is compatible with this image.  If
-     * <code>outRaster</code> is <code>null</code>,
-     * an appropriate <code>WritableRaster</code> is created.
-     * @param outRaster a <code>WritableRaster</code> to hold the returned
-     *          part of the image, or <code>null</code>
+     * {@code WritableRaster}.  The specified
+     * {@code WritableRaster} must have a
+     * {@code SampleModel} that is compatible with this image.  If
+     * {@code outRaster} is {@code null},
+     * an appropriate {@code WritableRaster} is created.
+     * @param outRaster a {@code WritableRaster} to hold the returned
+     *          part of the image, or {@code null}
      * @return a reference to the supplied or created
-     *          <code>WritableRaster</code>.
+     *          {@code WritableRaster}.
      */
     public WritableRaster copyData(WritableRaster outRaster) {
         if (outRaster == null) {
@@ -1499,11 +1499,11 @@ public class BufferedImage extends java.awt.Image
 
   /**
      * Sets a rectangular region of the image to the contents of the
-     * specified <code>Raster</code> <code>r</code>, which is
+     * specified {@code Raster r}, which is
      * assumed to be in the same coordinate space as the
-     * <code>BufferedImage</code>. The operation is clipped to the bounds
-     * of the <code>BufferedImage</code>.
-     * @param r the specified <code>Raster</code>
+     * {@code BufferedImage}. The operation is clipped to the bounds
+     * of the {@code BufferedImage}.
+     * @param r the specified {@code Raster}
      * @see #getData
      * @see #getData(Rectangle)
     */
@@ -1548,7 +1548,7 @@ public class BufferedImage extends java.awt.Image
    * Removes a tile observer.  If the observer was not registered,
    * nothing happens.  If the observer was registered for multiple
    * notifications, it is now registered for one fewer notification.
-   * @param to the specified <code>TileObserver</code>.
+   * @param to the specified {@code TileObserver}.
    */
     public void removeTileObserver (TileObserver to) {
     }
@@ -1557,11 +1557,11 @@ public class BufferedImage extends java.awt.Image
      * Returns whether or not a tile is currently checked out for writing.
      * @param tileX the x index of the tile.
      * @param tileY the y index of the tile.
-     * @return <code>true</code> if the tile specified by the specified
-     *          indices is checked out for writing; <code>false</code>
+     * @return {@code true} if the tile specified by the specified
+     *          indices is checked out for writing; {@code false}
      *          otherwise.
      * @exception ArrayIndexOutOfBoundsException if both
-     *          <code>tileX</code> and <code>tileY</code> are not equal
+     *          {@code tileX} and {@code tileY} are not equal
      *          to 0
      */
     public boolean isTileWritable (int tileX, int tileY) {
@@ -1573,10 +1573,10 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Returns an array of {@link Point} objects indicating which tiles
-     * are checked out for writing.  Returns <code>null</code> if none are
+     * are checked out for writing.  Returns {@code null} if none are
      * checked out.
-     * @return a <code>Point</code> array that indicates the tiles that
-     *          are checked out for writing, or <code>null</code> if no
+     * @return a {@code Point} array that indicates the tiles that
+     *          are checked out for writing, or {@code null} if no
      *          tiles are checked out for writing.
      */
     public Point[] getWritableTileIndices() {
@@ -1592,8 +1592,8 @@ public class BufferedImage extends java.awt.Image
      * <pre>
      * (getWritableTileIndices() != null).
      * </pre>
-     * @return <code>true</code> if any tile is checked out for writing;
-     *          <code>false</code> otherwise.
+     * @return {@code true} if any tile is checked out for writing;
+     *          {@code false} otherwise.
      */
     public boolean hasTileWriters () {
         return true;
@@ -1601,11 +1601,11 @@ public class BufferedImage extends java.awt.Image
 
   /**
    * Checks out a tile for writing.  All registered
-   * <code>TileObservers</code> are notified when a tile goes from having
+   * {@code TileObservers} are notified when a tile goes from having
    * no writers to having one writer.
    * @param tileX the x index of the tile
    * @param tileY the y index of the tile
-   * @return a <code>WritableRaster</code> that is the tile, indicated by
+   * @return a {@code WritableRaster} that is the tile, indicated by
    *            the specified indices, to be checked out for writing.
    */
     public WritableRaster getWritableTile (int tileX, int tileY) {
@@ -1617,7 +1617,7 @@ public class BufferedImage extends java.awt.Image
    * continues to write to the tile, the results are undefined.
    * Calls to this method should only appear in matching pairs
    * with calls to {@link #getWritableTile(int, int) getWritableTile(int, int)}.  Any other leads
-   * to undefined results.  All registered <code>TileObservers</code>
+   * to undefined results.  All registered {@code TileObservers}
    * are notified when a tile goes from having one writer to having no
    * writers.
    * @param tileX the x index of the tile
@@ -1629,7 +1629,7 @@ public class BufferedImage extends java.awt.Image
     /**
      * Returns the transparency.  Returns either OPAQUE, BITMASK,
      * or TRANSLUCENT.
-     * @return the transparency of this <code>BufferedImage</code>.
+     * @return the transparency of this {@code BufferedImage}.
      * @see Transparency#OPAQUE
      * @see Transparency#BITMASK
      * @see Transparency#TRANSLUCENT

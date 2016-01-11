@@ -118,7 +118,7 @@ import javax.print.attribute.PrintJobAttribute;
  * </UL>
  * </UL>
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value.
- * The category name returned by <CODE>getName()</CODE> gives the IPP
+ * The category name returned by {@code getName()} gives the IPP
  * attribute name.
  *
  * @author  Alan Kaminsky
@@ -135,7 +135,7 @@ public final class NumberUp extends IntegerSyntax
      * @param  value  Integer value.
      *
      * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if <CODE>value</CODE> is less than 1.
+     *   (Unchecked exception) Thrown if {@code value} is less than 1.
      */
     public NumberUp(int value) {
         super (value, 1, Integer.MAX_VALUE);
@@ -146,17 +146,17 @@ public final class NumberUp extends IntegerSyntax
      * object. To be equivalent, all of the following conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class NumberUp.
+     * {@code object} is an instance of class NumberUp.
      * <LI>
-     * This number up attribute's value and <CODE>object</CODE>'s value are
+     * This number up attribute's value and {@code object}'s value are
      * equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this number up
+     * @return  True if {@code object} is equivalent to this number up
      *          attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -180,7 +180,7 @@ public final class NumberUp extends IntegerSyntax
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class NumberUp, the category name is <CODE>"number-up"</CODE>.
+     * For class NumberUp, the category name is {@code "number-up"}.
      *
      * @return  Attribute category name.
      */

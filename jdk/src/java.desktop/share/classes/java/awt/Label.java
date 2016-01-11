@@ -30,7 +30,7 @@ import java.io.ObjectInputStream;
 import javax.accessibility.*;
 
 /**
- * A <code>Label</code> object is a component for placing text in a
+ * A {@code Label} object is a component for placing text in a
  * container. A label displays a single line of read-only text.
  * The text can be changed by the application, but a user cannot edit it
  * directly.
@@ -107,7 +107,7 @@ public class Label extends Component implements Accessible {
 
     /**
      * Constructs an empty label.
-     * The text of the label is the empty string <code>""</code>.
+     * The text of the label is the empty string {@code ""}.
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -120,7 +120,7 @@ public class Label extends Component implements Accessible {
      * Constructs a new label with the specified string of text,
      * left justified.
      * @param text the string that the label presents.
-     *        A <code>null</code> value
+     *        A {@code null} value
      *        will be accepted without causing a NullPointerException
      *        to be thrown.
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
@@ -134,10 +134,10 @@ public class Label extends Component implements Accessible {
     /**
      * Constructs a new label that presents the specified string of
      * text with the specified alignment.
-     * Possible values for <code>alignment</code> are <code>Label.LEFT</code>,
-     * <code>Label.RIGHT</code>, and <code>Label.CENTER</code>.
+     * Possible values for {@code alignment} are {@code Label.LEFT},
+     * {@code Label.RIGHT}, and {@code Label.CENTER}.
      * @param text the string that the label presents.
-     *        A <code>null</code> value
+     *        A {@code null} value
      *        will be accepted without causing a NullPointerException
      *        to be thrown.
      * @param     alignment   the alignment value.
@@ -154,8 +154,8 @@ public class Label extends Component implements Accessible {
     /**
      * Read a label from an object input stream.
      * @exception HeadlessException if
-     * <code>GraphicsEnvironment.isHeadless()</code> returns
-     * <code>true</code>
+     * {@code GraphicsEnvironment.isHeadless()} returns
+     * {@code true}
      * @serial
      * @since 1.4
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -168,7 +168,7 @@ public class Label extends Component implements Accessible {
 
     /**
      * Construct a name for this component.  Called by getName() when the
-     * name is <code>null</code>.
+     * name is {@code null}.
      */
     String constructComponentName() {
         synchronized (Label.class) {
@@ -191,8 +191,8 @@ public class Label extends Component implements Accessible {
 
     /**
      * Gets the current alignment of this label. Possible values are
-     * <code>Label.LEFT</code>, <code>Label.RIGHT</code>, and
-     * <code>Label.CENTER</code>.
+     * {@code Label.LEFT}, {@code Label.RIGHT}, and
+     * {@code Label.CENTER}.
      * @return the alignment of this label
      * @see java.awt.Label#setAlignment
      */
@@ -202,11 +202,11 @@ public class Label extends Component implements Accessible {
 
     /**
      * Sets the alignment for this label to the specified alignment.
-     * Possible values are <code>Label.LEFT</code>,
-     * <code>Label.RIGHT</code>, and <code>Label.CENTER</code>.
+     * Possible values are {@code Label.LEFT},
+     * {@code Label.RIGHT}, and {@code Label.CENTER}.
      * @param      alignment    the alignment to be set.
      * @exception  IllegalArgumentException if an improper value for
-     *                          <code>alignment</code> is given.
+     *                          {@code alignment} is given.
      * @see        java.awt.Label#getAlignment
      */
     public synchronized void setAlignment(int alignment) {
@@ -226,8 +226,8 @@ public class Label extends Component implements Accessible {
 
     /**
      * Gets the text of this label.
-     * @return     the text of this label, or <code>null</code> if
-     *             the text has been set to <code>null</code>.
+     * @return     the text of this label, or {@code null} if
+     *             the text has been set to {@code null}.
      * @see        java.awt.Label#setText
      */
     public String getText() {
@@ -237,9 +237,9 @@ public class Label extends Component implements Accessible {
     /**
      * Sets the text for this label to the specified text.
      * @param      text the text that this label displays. If
-     *             <code>text</code> is <code>null</code>, it is
+     *             {@code text} is {@code null}, it is
      *             treated for display purposes like an empty
-     *             string <code>""</code>.
+     *             string {@code ""}.
      * @see        java.awt.Label#getText
      */
     public void setText(String text) {
@@ -263,11 +263,11 @@ public class Label extends Component implements Accessible {
     }
 
     /**
-     * Returns a string representing the state of this <code>Label</code>.
+     * Returns a string representing the state of this {@code Label}.
      * This method is intended to be used only for debugging purposes, and the
      * content and format of the returned string may vary between
      * implementations. The returned string may be empty but may not be
-     * <code>null</code>.
+     * {@code null}.
      *
      * @return     the parameter string of this label
      */
@@ -311,7 +311,7 @@ public class Label extends Component implements Accessible {
 
     /**
      * This class implements accessibility support for the
-     * <code>Label</code> class.  It provides an implementation of the
+     * {@code Label} class.  It provides an implementation of the
      * Java Accessibility API appropriate to label user-interface elements.
      * @since 1.3
      */

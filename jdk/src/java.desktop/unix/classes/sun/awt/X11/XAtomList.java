@@ -41,7 +41,7 @@ class XAtomList {
 
     /**
      * Creates instance of XAtomList and initializes it with
-     * the contents pointer by <code>data</code>.
+     * the contents pointer by {@code data}.
      * Uses default display to initialize atoms.
      */
     public XAtomList(long data, int count) {
@@ -90,7 +90,7 @@ class XAtomList {
     }
 
     /**
-     * Returns true if this list contains the atom <code>atom</code>
+     * Returns true if this list contains the atom {@code atom}
      */
     public boolean contains(XAtom atom) {
         return atoms.contains(atom);
@@ -119,8 +119,8 @@ class XAtomList {
     }
 
     /**
-     * Returns a subset of a list which is intersection of this set and set build by mapping <code>mask</code> in
-     * <code>mapping</code>.
+     * Returns a subset of a list which is intersection of this set and set build by mapping {@code mask} in
+     * {@code mapping}.
      */
     public XAtomList subset(int mask, Map<Integer, XAtom> mapping) {
         XAtomList res = new XAtomList();

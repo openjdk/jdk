@@ -32,7 +32,7 @@ import java.awt.geom.Rectangle2D;
 import java.text.CharacterIterator;
 
 /**
- * The <code>FontMetrics</code> class defines a font metrics object, which
+ * The {@code FontMetrics} class defines a font metrics object, which
  * encapsulates information about the rendering of a particular font on a
  * particular screen.
  * <p>
@@ -76,11 +76,11 @@ import java.text.CharacterIterator;
  * maximum ascent of any character in the array. The descent is the
  * maximum descent of any character in the array. The advance width
  * is the sum of the advance widths of each of the characters in the
- * character array.  The advance of a <code>String</code> is the
- * distance along the baseline of the <code>String</code>.  This
+ * character array.  The advance of a {@code String} is the
+ * distance along the baseline of the {@code String}.  This
  * distance is the width that should be used for centering or
- * right-aligning the <code>String</code>.
- * <p>Note that the advance of a <code>String</code> is not necessarily
+ * right-aligning the {@code String}.
+ * <p>Note that the advance of a {@code String} is not necessarily
  * the sum of the advances of its characters measured in isolation
  * because the width of a character can vary depending on its context.
  * For example, in Arabic text, the shape of a character can change
@@ -125,10 +125,10 @@ public abstract class FontMetrics implements java.io.Serializable {
     private static final long serialVersionUID = 1681126225205050147L;
 
     /**
-     * Creates a new <code>FontMetrics</code> object for finding out
-     * height and width information about the specified <code>Font</code>
-     * and specific character glyphs in that <code>Font</code>.
-     * @param     font the <code>Font</code>
+     * Creates a new {@code FontMetrics} object for finding out
+     * height and width information about the specified {@code Font}
+     * and specific character glyphs in that {@code Font}.
+     * @param     font the {@code Font}
      * @see       java.awt.Font
      */
     protected FontMetrics(Font font) {
@@ -136,25 +136,25 @@ public abstract class FontMetrics implements java.io.Serializable {
     }
 
     /**
-     * Gets the <code>Font</code> described by this
-     * <code>FontMetrics</code> object.
-     * @return    the <code>Font</code> described by this
-     * <code>FontMetrics</code> object.
+     * Gets the {@code Font} described by this
+     * {@code FontMetrics} object.
+     * @return    the {@code Font} described by this
+     * {@code FontMetrics} object.
      */
     public Font getFont() {
         return font;
     }
 
     /**
-     * Gets the <code>FontRenderContext</code> used by this
-     * <code>FontMetrics</code> object to measure text.
+     * Gets the {@code FontRenderContext} used by this
+     * {@code FontMetrics} object to measure text.
      * <p>
-     * Note that methods in this class which take a <code>Graphics</code>
-     * parameter measure text using the <code>FontRenderContext</code>
-     * of that <code>Graphics</code> object, and not this
-     * <code>FontRenderContext</code>
-     * @return    the <code>FontRenderContext</code> used by this
-     * <code>FontMetrics</code> object.
+     * Note that methods in this class which take a {@code Graphics}
+     * parameter measure text using the {@code FontRenderContext}
+     * of that {@code Graphics} object, and not this
+     * {@code FontRenderContext}
+     * @return    the {@code FontRenderContext} used by this
+     * {@code FontMetrics} object.
      * @since 1.6
      */
     public FontRenderContext getFontRenderContext() {
@@ -163,12 +163,12 @@ public abstract class FontMetrics implements java.io.Serializable {
 
     /**
      * Determines the <em>standard leading</em> of the
-     * <code>Font</code> described by this <code>FontMetrics</code>
+     * {@code Font} described by this {@code FontMetrics}
      * object.  The standard leading, or
      * interline spacing, is the logical amount of space to be reserved
      * between the descent of one line of text and the ascent of the next
      * line. The height metric is calculated to include this extra space.
-     * @return    the standard leading of the <code>Font</code>.
+     * @return    the standard leading of the {@code Font}.
      * @see   #getHeight()
      * @see   #getAscent()
      * @see   #getDescent()
@@ -178,12 +178,12 @@ public abstract class FontMetrics implements java.io.Serializable {
     }
 
     /**
-     * Determines the <em>font ascent</em> of the <code>Font</code>
-     * described by this <code>FontMetrics</code> object. The font ascent
+     * Determines the <em>font ascent</em> of the {@code Font}
+     * described by this {@code FontMetrics} object. The font ascent
      * is the distance from the font's baseline to the top of most
-     * alphanumeric characters. Some characters in the <code>Font</code>
+     * alphanumeric characters. Some characters in the {@code Font}
      * might extend above the font ascent line.
-     * @return     the font ascent of the <code>Font</code>.
+     * @return     the font ascent of the {@code Font}.
      * @see        #getMaxAscent()
      */
     public int getAscent() {
@@ -191,14 +191,14 @@ public abstract class FontMetrics implements java.io.Serializable {
     }
 
     /**
-     * Determines the <em>font descent</em> of the <code>Font</code>
+     * Determines the <em>font descent</em> of the {@code Font}
      * described by this
-     * <code>FontMetrics</code> object. The font descent is the distance
+     * {@code FontMetrics} object. The font descent is the distance
      * from the font's baseline to the bottom of most alphanumeric
      * characters with descenders. Some characters in the
-     * <code>Font</code> might extend
+     * {@code Font} might extend
      * below the font descent line.
-     * @return     the font descent of the <code>Font</code>.
+     * @return     the font descent of the {@code Font}.
      * @see        #getMaxDescent()
      */
     public int getDescent() {
@@ -223,11 +223,11 @@ public abstract class FontMetrics implements java.io.Serializable {
     }
 
     /**
-     * Determines the maximum ascent of the <code>Font</code>
-     * described by this <code>FontMetrics</code> object.  No character
+     * Determines the maximum ascent of the {@code Font}
+     * described by this {@code FontMetrics} object.  No character
      * extends further above the font's baseline than this height.
      * @return    the maximum ascent of any character in the
-     * <code>Font</code>.
+     * {@code Font}.
      * @see       #getAscent()
      */
     public int getMaxAscent() {
@@ -235,11 +235,11 @@ public abstract class FontMetrics implements java.io.Serializable {
     }
 
     /**
-     * Determines the maximum descent of the <code>Font</code>
-     * described by this <code>FontMetrics</code> object.  No character
+     * Determines the maximum descent of the {@code Font}
+     * described by this {@code FontMetrics} object.  No character
      * extends further below the font's baseline than this height.
      * @return    the maximum descent of any character in the
-     * <code>Font</code>.
+     * {@code Font}.
      * @see       #getDescent()
      */
     public int getMaxDescent() {
@@ -249,10 +249,10 @@ public abstract class FontMetrics implements java.io.Serializable {
     /**
      * For backward compatibility only.
      * @return    the maximum descent of any character in the
-     * <code>Font</code>.
+     * {@code Font}.
      * @see #getMaxDescent()
      * @deprecated As of JDK version 1.1.1,
-     * replaced by <code>getMaxDescent()</code>.
+     * replaced by {@code getMaxDescent()}.
      */
     @Deprecated
     public int getMaxDecent() {
@@ -261,12 +261,12 @@ public abstract class FontMetrics implements java.io.Serializable {
 
     /**
      * Gets the maximum advance width of any character in this
-     * <code>Font</code>.  The advance is the
+     * {@code Font}.  The advance is the
      * distance from the leftmost point to the rightmost point on the
-     * string's baseline.  The advance of a <code>String</code> is
+     * string's baseline.  The advance of a {@code String} is
      * not necessarily the sum of the advances of its characters.
      * @return    the maximum advance width of any character
-     *            in the <code>Font</code>, or <code>-1</code> if the
+     *            in the {@code Font}, or {@code -1} if the
      *            maximum advance width is not known.
      */
     public int getMaxAdvance() {
@@ -275,10 +275,10 @@ public abstract class FontMetrics implements java.io.Serializable {
 
     /**
      * Returns the advance width of the specified character in this
-     * <code>Font</code>.  The advance is the
+     * {@code Font}.  The advance is the
      * distance from the leftmost point to the rightmost point on the
      * character's baseline.  Note that the advance of a
-     * <code>String</code> is not necessarily the sum of the advances
+     * {@code String} is not necessarily the sum of the advances
      * of its characters.
      *
      * <p>This method doesn't validate the specified character to be a
@@ -289,8 +289,8 @@ public abstract class FontMetrics implements java.io.Serializable {
      *
      * @param codePoint the character (Unicode code point) to be measured
      * @return    the advance width of the specified character
-     *            in the <code>Font</code> described by this
-     *            <code>FontMetrics</code> object.
+     *            in the {@code Font} described by this
+     *            {@code FontMetrics} object.
      * @see   #charsWidth(char[], int, int)
      * @see   #stringWidth(String)
      */
@@ -310,10 +310,10 @@ public abstract class FontMetrics implements java.io.Serializable {
 
     /**
      * Returns the advance width of the specified character in this
-     * <code>Font</code>.  The advance is the
+     * {@code Font}.  The advance is the
      * distance from the leftmost point to the rightmost point on the
      * character's baseline.  Note that the advance of a
-     * <code>String</code> is not necessarily the sum of the advances
+     * {@code String} is not necessarily the sum of the advances
      * of its characters.
      *
      * <p><b>Note:</b> This method cannot handle <a
@@ -323,8 +323,8 @@ public abstract class FontMetrics implements java.io.Serializable {
      *
      * @param ch the character to be measured
      * @return     the advance width of the specified character
-     *                  in the <code>Font</code> described by this
-     *                  <code>FontMetrics</code> object.
+     *                  in the {@code Font} described by this
+     *                  {@code FontMetrics} object.
      * @see        #charsWidth(char[], int, int)
      * @see        #stringWidth(String)
      */
@@ -338,16 +338,16 @@ public abstract class FontMetrics implements java.io.Serializable {
 
     /**
      * Returns the total advance width for showing the specified
-     * <code>String</code> in this <code>Font</code>.  The advance
+     * {@code String} in this {@code Font}.  The advance
      * is the distance from the leftmost point to the rightmost point
      * on the string's baseline.
      * <p>
-     * Note that the advance of a <code>String</code> is
+     * Note that the advance of a {@code String} is
      * not necessarily the sum of the advances of its characters.
-     * @param str the <code>String</code> to be measured
-     * @return    the advance width of the specified <code>String</code>
-     *                  in the <code>Font</code> described by this
-     *                  <code>FontMetrics</code>.
+     * @param str the {@code String} to be measured
+     * @return    the advance width of the specified {@code String}
+     *                  in the {@code Font} described by this
+     *                  {@code FontMetrics}.
      * @throws NullPointerException if str is null.
      * @see       #bytesWidth(byte[], int, int)
      * @see       #charsWidth(char[], int, int)
@@ -362,22 +362,22 @@ public abstract class FontMetrics implements java.io.Serializable {
 
     /**
      * Returns the total advance width for showing the specified array
-     * of characters in this <code>Font</code>.  The advance is the
+     * of characters in this {@code Font}.  The advance is the
      * distance from the leftmost point to the rightmost point on the
-     * string's baseline.  The advance of a <code>String</code>
+     * string's baseline.  The advance of a {@code String}
      * is not necessarily the sum of the advances of its characters.
-     * This is equivalent to measuring a <code>String</code> of the
+     * This is equivalent to measuring a {@code String} of the
      * characters in the specified range.
      * @param data the array of characters to be measured
      * @param off the start offset of the characters in the array
      * @param len the number of characters to be measured from the array
      * @return    the advance width of the subarray of the specified
-     *               <code>char</code> array in the font described by
-     *               this <code>FontMetrics</code> object.
-     * @throws    NullPointerException if <code>data</code> is null.
-     * @throws    IndexOutOfBoundsException if the <code>off</code>
-     *            and <code>len</code> arguments index characters outside
-     *            the bounds of the <code>data</code> array.
+     *               {@code char} array in the font described by
+     *               this {@code FontMetrics} object.
+     * @throws    NullPointerException if {@code data} is null.
+     * @throws    IndexOutOfBoundsException if the {@code off}
+     *            and {@code len} arguments index characters outside
+     *            the bounds of the {@code data} array.
      * @see       #charWidth(int)
      * @see       #charWidth(char)
      * @see       #bytesWidth(byte[], int, int)
@@ -389,23 +389,23 @@ public abstract class FontMetrics implements java.io.Serializable {
 
     /**
      * Returns the total advance width for showing the specified array
-     * of bytes in this <code>Font</code>.  The advance is the
+     * of bytes in this {@code Font}.  The advance is the
      * distance from the leftmost point to the rightmost point on the
-     * string's baseline.  The advance of a <code>String</code>
+     * string's baseline.  The advance of a {@code String}
      * is not necessarily the sum of the advances of its characters.
-     * This is equivalent to measuring a <code>String</code> of the
+     * This is equivalent to measuring a {@code String} of the
      * characters in the specified range.
      * @param data the array of bytes to be measured
      * @param off the start offset of the bytes in the array
      * @param len the number of bytes to be measured from the array
      * @return    the advance width of the subarray of the specified
-     *               <code>byte</code> array in the <code>Font</code>
+     *               {@code byte} array in the {@code Font}
      *                  described by
-     *               this <code>FontMetrics</code> object.
-     * @throws    NullPointerException if <code>data</code> is null.
-     * @throws    IndexOutOfBoundsException if the <code>off</code>
-     *            and <code>len</code> arguments index bytes outside
-     *            the bounds of the <code>data</code> array.
+     *               this {@code FontMetrics} object.
+     * @throws    NullPointerException if {@code data} is null.
+     * @throws    IndexOutOfBoundsException if the {@code off}
+     *            and {@code len} arguments index bytes outside
+     *            the bounds of the {@code data} array.
      * @see       #charsWidth(char[], int, int)
      * @see       #stringWidth(String)
      */
@@ -416,14 +416,14 @@ public abstract class FontMetrics implements java.io.Serializable {
 
     /**
      * Gets the advance widths of the first 256 characters in the
-     * <code>Font</code>.  The advance is the
+     * {@code Font}.  The advance is the
      * distance from the leftmost point to the rightmost point on the
      * character's baseline.  Note that the advance of a
-     * <code>String</code> is not necessarily the sum of the advances
+     * {@code String} is not necessarily the sum of the advances
      * of its characters.
      * @return    an array storing the advance widths of the
-     *                 characters in the <code>Font</code>
-     *                 described by this <code>FontMetrics</code> object.
+     *                 characters in the {@code Font}
+     *                 described by this {@code FontMetrics} object.
      */
     public int[] getWidths() {
         int widths[] = new int[256];
@@ -434,15 +434,15 @@ public abstract class FontMetrics implements java.io.Serializable {
     }
 
     /**
-     * Checks to see if the <code>Font</code> has uniform line metrics.  A
+     * Checks to see if the {@code Font} has uniform line metrics.  A
      * composite font may consist of several different fonts to cover
      * various character sets.  In such cases, the
-     * <code>FontLineMetrics</code> objects are not uniform.
+     * {@code FontLineMetrics} objects are not uniform.
      * Different fonts may have a different ascent, descent, metrics and
      * so on.  This information is sometimes necessary for line
      * measuring and line breaking.
-     * @return <code>true</code> if the font has uniform line metrics;
-     * <code>false</code> otherwise.
+     * @return {@code true} if the font has uniform line metrics;
+     * {@code false} otherwise.
      * @see java.awt.Font#hasUniformLineMetrics()
      */
     public boolean hasUniformLineMetrics() {
@@ -451,11 +451,11 @@ public abstract class FontMetrics implements java.io.Serializable {
 
     /**
      * Returns the {@link LineMetrics} object for the specified
-     * <code>String</code> in the specified {@link Graphics} context.
-     * @param str the specified <code>String</code>
-     * @param context the specified <code>Graphics</code> context
-     * @return a <code>LineMetrics</code> object created with the
-     * specified <code>String</code> and <code>Graphics</code> context.
+     * {@code String} in the specified {@link Graphics} context.
+     * @param str the specified {@code String}
+     * @param context the specified {@code Graphics} context
+     * @return a {@code LineMetrics} object created with the
+     * specified {@code String} and {@code Graphics} context.
      * @see java.awt.Font#getLineMetrics(String, FontRenderContext)
      */
     public LineMetrics getLineMetrics( String str, Graphics context) {
@@ -464,13 +464,13 @@ public abstract class FontMetrics implements java.io.Serializable {
 
     /**
      * Returns the {@link LineMetrics} object for the specified
-     * <code>String</code> in the specified {@link Graphics} context.
-     * @param str the specified <code>String</code>
-     * @param beginIndex the initial offset of <code>str</code>
-     * @param limit the end offset of <code>str</code>
-     * @param context the specified <code>Graphics</code> context
-     * @return a <code>LineMetrics</code> object created with the
-     * specified <code>String</code> and <code>Graphics</code> context.
+     * {@code String} in the specified {@link Graphics} context.
+     * @param str the specified {@code String}
+     * @param beginIndex the initial offset of {@code str}
+     * @param limit the end offset of {@code str}
+     * @param context the specified {@code Graphics} context
+     * @return a {@code LineMetrics} object created with the
+     * specified {@code String} and {@code Graphics} context.
      * @see java.awt.Font#getLineMetrics(String, int, int, FontRenderContext)
      */
     public LineMetrics getLineMetrics( String str,
@@ -483,11 +483,11 @@ public abstract class FontMetrics implements java.io.Serializable {
      * Returns the {@link LineMetrics} object for the specified
      * character array in the specified {@link Graphics} context.
      * @param chars the specified character array
-     * @param beginIndex the initial offset of <code>chars</code>
-     * @param limit the end offset of <code>chars</code>
-     * @param context the specified <code>Graphics</code> context
-     * @return a <code>LineMetrics</code> object created with the
-     * specified character array and <code>Graphics</code> context.
+     * @param beginIndex the initial offset of {@code chars}
+     * @param limit the end offset of {@code chars}
+     * @param context the specified {@code Graphics} context
+     * @return a {@code LineMetrics} object created with the
+     * specified character array and {@code Graphics} context.
      * @see java.awt.Font#getLineMetrics(char[], int, int, FontRenderContext)
      */
     public LineMetrics getLineMetrics(char [] chars,
@@ -501,11 +501,11 @@ public abstract class FontMetrics implements java.io.Serializable {
      * Returns the {@link LineMetrics} object for the specified
      * {@link CharacterIterator} in the specified {@link Graphics}
      * context.
-     * @param ci the specified <code>CharacterIterator</code>
-     * @param beginIndex the initial offset in <code>ci</code>
-     * @param limit the end index of <code>ci</code>
-     * @param context the specified <code>Graphics</code> context
-     * @return a <code>LineMetrics</code> object created with the
+     * @param ci the specified {@code CharacterIterator}
+     * @param beginIndex the initial offset in {@code ci}
+     * @param limit the end index of {@code ci}
+     * @param context the specified {@code Graphics} context
+     * @return a {@code LineMetrics} object created with the
      * specified arguments.
      * @see java.awt.Font#getLineMetrics(CharacterIterator, int, int, FontRenderContext)
      */
@@ -516,16 +516,16 @@ public abstract class FontMetrics implements java.io.Serializable {
     }
 
     /**
-     * Returns the bounds of the specified <code>String</code> in the
-     * specified <code>Graphics</code> context.  The bounds is used
-     * to layout the <code>String</code>.
+     * Returns the bounds of the specified {@code String} in the
+     * specified {@code Graphics} context.  The bounds is used
+     * to layout the {@code String}.
      * <p>Note: The returned bounds is in baseline-relative coordinates
      * (see {@link java.awt.FontMetrics class notes}).
-     * @param str the specified <code>String</code>
-     * @param context the specified <code>Graphics</code> context
+     * @param str the specified {@code String}
+     * @param context the specified {@code Graphics} context
      * @return a {@link Rectangle2D} that is the bounding box of the
-     * specified <code>String</code> in the specified
-     * <code>Graphics</code> context.
+     * specified {@code String} in the specified
+     * {@code Graphics} context.
      * @see java.awt.Font#getStringBounds(String, FontRenderContext)
      */
     public Rectangle2D getStringBounds( String str, Graphics context) {
@@ -533,18 +533,18 @@ public abstract class FontMetrics implements java.io.Serializable {
     }
 
     /**
-     * Returns the bounds of the specified <code>String</code> in the
-     * specified <code>Graphics</code> context.  The bounds is used
-     * to layout the <code>String</code>.
+     * Returns the bounds of the specified {@code String} in the
+     * specified {@code Graphics} context.  The bounds is used
+     * to layout the {@code String}.
      * <p>Note: The returned bounds is in baseline-relative coordinates
      * (see {@link java.awt.FontMetrics class notes}).
-     * @param str the specified <code>String</code>
-     * @param beginIndex the offset of the beginning of <code>str</code>
-     * @param limit the end offset of <code>str</code>
-     * @param context the specified <code>Graphics</code> context
-     * @return a <code>Rectangle2D</code> that is the bounding box of the
-     * specified <code>String</code> in the specified
-     * <code>Graphics</code> context.
+     * @param str the specified {@code String}
+     * @param beginIndex the offset of the beginning of {@code str}
+     * @param limit the end offset of {@code str}
+     * @param context the specified {@code Graphics} context
+     * @return a {@code Rectangle2D} that is the bounding box of the
+     * specified {@code String} in the specified
+     * {@code Graphics} context.
      * @see java.awt.Font#getStringBounds(String, int, int, FontRenderContext)
      */
     public Rectangle2D getStringBounds( String str,
@@ -556,20 +556,20 @@ public abstract class FontMetrics implements java.io.Serializable {
 
    /**
      * Returns the bounds of the specified array of characters
-     * in the specified <code>Graphics</code> context.
-     * The bounds is used to layout the <code>String</code>
+     * in the specified {@code Graphics} context.
+     * The bounds is used to layout the {@code String}
      * created with the specified array of characters,
-     * <code>beginIndex</code> and <code>limit</code>.
+     * {@code beginIndex} and {@code limit}.
      * <p>Note: The returned bounds is in baseline-relative coordinates
      * (see {@link java.awt.FontMetrics class notes}).
      * @param chars an array of characters
      * @param beginIndex the initial offset of the array of
      * characters
      * @param limit the end offset of the array of characters
-     * @param context the specified <code>Graphics</code> context
-     * @return a <code>Rectangle2D</code> that is the bounding box of the
+     * @param context the specified {@code Graphics} context
+     * @return a {@code Rectangle2D} that is the bounding box of the
      * specified character array in the specified
-     * <code>Graphics</code> context.
+     * {@code Graphics} context.
      * @see java.awt.Font#getStringBounds(char[], int, int, FontRenderContext)
      */
     public Rectangle2D getStringBounds( char [] chars,
@@ -581,17 +581,17 @@ public abstract class FontMetrics implements java.io.Serializable {
 
    /**
      * Returns the bounds of the characters indexed in the specified
-     * <code>CharacterIterator</code> in the
-     * specified <code>Graphics</code> context.
+     * {@code CharacterIterator} in the
+     * specified {@code Graphics} context.
      * <p>Note: The returned bounds is in baseline-relative coordinates
      * (see {@link java.awt.FontMetrics class notes}).
-     * @param ci the specified <code>CharacterIterator</code>
-     * @param beginIndex the initial offset in <code>ci</code>
-     * @param limit the end index of <code>ci</code>
-     * @param context the specified <code>Graphics</code> context
-     * @return a <code>Rectangle2D</code> that is the bounding box of the
-     * characters indexed in the specified <code>CharacterIterator</code>
-     * in the specified <code>Graphics</code> context.
+     * @param ci the specified {@code CharacterIterator}
+     * @param beginIndex the initial offset in {@code ci}
+     * @param limit the end index of {@code ci}
+     * @param context the specified {@code Graphics} context
+     * @return a {@code Rectangle2D} that is the bounding box of the
+     * characters indexed in the specified {@code CharacterIterator}
+     * in the specified {@code Graphics} context.
      * @see java.awt.Font#getStringBounds(CharacterIterator, int, int, FontRenderContext)
      */
     public Rectangle2D getStringBounds(CharacterIterator ci,
@@ -603,9 +603,9 @@ public abstract class FontMetrics implements java.io.Serializable {
 
     /**
      * Returns the bounds for the character with the maximum bounds
-     * in the specified <code>Graphics</code> context.
-     * @param context the specified <code>Graphics</code> context
-     * @return a <code>Rectangle2D</code> that is the
+     * in the specified {@code Graphics} context.
+     * @param context the specified {@code Graphics} context
+     * @return a {@code Rectangle2D} that is the
      * bounding box for the character with the maximum bounds.
      * @see java.awt.Font#getMaxCharBounds(FontRenderContext)
      */
@@ -622,10 +622,10 @@ public abstract class FontMetrics implements java.io.Serializable {
 
 
     /**
-     * Returns a representation of this <code>FontMetrics</code>
-     * object's values as a <code>String</code>.
-     * @return    a <code>String</code> representation of this
-     * <code>FontMetrics</code> object.
+     * Returns a representation of this {@code FontMetrics}
+     * object's values as a {@code String}.
+     * @return    a {@code String} representation of this
+     * {@code FontMetrics} object.
      */
     public String toString() {
         return getClass().getName() +

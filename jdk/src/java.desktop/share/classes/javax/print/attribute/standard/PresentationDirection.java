@@ -42,8 +42,8 @@ import javax.print.attribute.PrintRequestAttribute;
  * attribute; it is an attribute in the Production Printing Extension
  * (<a href="ftp://ftp.pwg.org/pub/pwg/standards/pwg5100.3.pdf">PDF</a>)
  * of IPP 1.1.  The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author  Phil Race.
@@ -174,7 +174,7 @@ public final class PresentationDirection extends EnumSyntax
      * instance.
      * <P>
      * For class PresentationDirection
-     * the category name is <CODE>"presentation-direction"</CODE>.
+     * the category name is {@code "presentation-direction"}.
      *
      * @return  Attribute category name.
      */

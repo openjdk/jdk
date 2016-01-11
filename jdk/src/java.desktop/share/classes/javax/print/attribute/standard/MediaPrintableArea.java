@@ -54,7 +54,7 @@ import javax.print.attribute.PrintRequestAttribute;
  * The hardware's minimum margins is not just a property of the printer,
  * but may be a function of the media size, orientation, media type, and
  * any specified finishings.
- * <code>PrintService</code> provides the method to query the supported
+ * {@code PrintService} provides the method to query the supported
  * values of an attribute in a suitable context :
  * See  {@link javax.print.PrintService#getSupportedAttributeValues(Class,DocFlavor, AttributeSet) PrintService.getSupportedAttributeValues()}
  * <p>
@@ -236,16 +236,16 @@ public final class MediaPrintableArea
      * To be equivalent, all of the following conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class MediaPrintableArea.
+     * {@code object} is an instance of class MediaPrintableArea.
      * <LI>
      * The origin and dimensions are the same.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this media margins
+     * @return  True if {@code object} is equivalent to this media margins
      *          attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -278,7 +278,7 @@ public final class MediaPrintableArea
      * instance.
      * <P>
      * For class MediaPrintableArea,
-     * the category name is <CODE>"media-printable-area"</CODE>.
+     * the category name is {@code "media-printable-area"}.
      * <p>This is not an IPP V1.1 attribute.
      *
      * @return  Attribute category name.
@@ -295,7 +295,7 @@ public final class MediaPrintableArea
      *     Unit conversion factor, e.g. {@link #INCH INCH} or
      *     {@link #MM MM}.
      * @param  unitsName
-     *     Units name string, e.g. <CODE>"in"</CODE> or <CODE>"mm"</CODE>. If
+     *     Units name string, e.g. {@code "in"} or {@code "mm"}. If
      *     null, no units name is appended to the result.
      *
      * @return  String version of this two-dimensional size attribute.

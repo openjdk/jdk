@@ -490,8 +490,8 @@ public class PropertyDescriptor extends FeatureDescriptor {
 
 
     /**
-     * Compares this <code>PropertyDescriptor</code> against the specified object.
-     * Returns true if the objects are the same. Two <code>PropertyDescriptor</code>s
+     * Compares this {@code PropertyDescriptor} against the specified object.
+     * Returns true if the objects are the same. Two {@code PropertyDescriptor}s
      * are the same if the read, write, property types, property editor and
      * flags  are equivalent.
      *

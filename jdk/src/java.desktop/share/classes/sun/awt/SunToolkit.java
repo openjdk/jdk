@@ -339,9 +339,9 @@ public abstract class SunToolkit extends Toolkit
      /**
       * Sets the synchronous status of focus requests on lightweight
       * components in the specified window to the specified value.
-      * If the boolean parameter is <code>true</code> then the focus
+      * If the boolean parameter is {@code true} then the focus
       * requests on lightweight components will be performed
-      * synchronously, if it is <code>false</code>, then asynchronously.
+      * synchronously, if it is {@code false}, then asynchronously.
       * By default, all windows have their lightweight request status
       * set to asynchronous.
       * <p>
@@ -521,7 +521,7 @@ public abstract class SunToolkit extends Toolkit
     /*
      * Execute a chunk of code on the Java event handler thread. The
      * method takes into account provided AppContext and sets
-     * <code>SunToolkit.getDefaultToolkit()</code> as a target of the
+     * {@code SunToolkit.getDefaultToolkit()} as a target of the
      * event. See 6451487 for detailes.
      * Does not wait for the execution to occur before returning to
      * the caller.
@@ -1162,7 +1162,7 @@ public abstract class SunToolkit extends Toolkit
     /**
      * Returns whether default toolkit needs the support of the xembed
      * from embedding host(if any).
-     * @return <code>true</code>, if XEmbed is needed, <code>false</code> otherwise
+     * @return {@code true}, if XEmbed is needed, {@code false} otherwise
      */
     public static boolean needsXEmbed() {
         String noxembed = AccessController.
@@ -1185,7 +1185,7 @@ public abstract class SunToolkit extends Toolkit
     /**
      * Returns whether this toolkit needs the support of the xembed
      * from embedding host(if any).
-     * @return <code>true</code>, if XEmbed is needed, <code>false</code> otherwise
+     * @return {@code true}, if XEmbed is needed, {@code false} otherwise
      */
     protected boolean needsXEmbedImpl() {
         return false;
@@ -1204,8 +1204,8 @@ public abstract class SunToolkit extends Toolkit
 
     /**
      * Returns whether the modal exclusion API is supported by the current toolkit.
-     * When it isn't supported, calling <code>setModalExcluded</code> has no
-     * effect, and <code>isModalExcluded</code> returns false for all windows.
+     * When it isn't supported, calling {@code setModalExcluded} has no
+     * effect, and {@code isModalExcluded} returns false for all windows.
      *
      * @return true if modal exclusion is supported by the toolkit, false otherwise
      *
@@ -1238,7 +1238,7 @@ public abstract class SunToolkit extends Toolkit
      * events, focus transfer and z-order will continue to work for the
      * window, it's owned windows and child components, even in the
      * presence of a modal dialog.
-     * For details on which <code>Window</code>s are normally blocked
+     * For details on which {@code Window}s are normally blocked
      * by modal dialog, see {@link java.awt.Dialog}.
      * Invoking this method when the modal exclusion API is not supported by
      * the current toolkit has no effect.
@@ -1427,23 +1427,23 @@ public abstract class SunToolkit extends Toolkit
      *
      * <p> This method allows to write tests without explicit timeouts
      * or wait for some event.  Example:
-     * <code>
+     * <pre>{@code
      * Frame f = ...;
      * f.setVisible(true);
      * ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
-     * </code>
+     * }</pre>
      *
-     * <p> After realSync, <code>f</code> will be completely visible
+     * <p> After realSync, {@code f} will be completely visible
      * on the screen, its getLocationOnScreen will be returning the
      * right result and it will be the focus owner.
      *
      * <p> Another example:
-     * <code>
+     * <pre>{@code
      * b.requestFocus();
      * ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
-     * </code>
+     * }</pre>
      *
-     * <p> After realSync, <code>b</code> will be focus owner.
+     * <p> After realSync, {@code b} will be focus owner.
      *
      * <p> Notice that realSync isn't guaranteed to work if recurring
      * actions occur, such as if during processing of some event
@@ -1518,8 +1518,8 @@ public abstract class SunToolkit extends Toolkit
      * sync of the native queue.  The method should wait until native
      * requests are processed, all native events are processed and
      * corresponding Java events are generated.  Should return
-     * <code>true</code> if some events were processed,
-     * <code>false</code> otherwise.
+     * {@code true} if some events were processed,
+     * {@code false} otherwise.
      */
     protected abstract boolean syncNativeQueue(final long timeout);
 
@@ -1536,8 +1536,8 @@ public abstract class SunToolkit extends Toolkit
      * Waits for the Java event queue to empty.  Ensures that all
      * events are processed (including paint events), and that if
      * recursive events were generated, they are also processed.
-     * Should return <code>true</code> if more processing is
-     * necessary, <code>false</code> otherwise.
+     * Should return {@code true} if more processing is
+     * necessary, {@code false} otherwise.
      */
     @SuppressWarnings("serial")
     protected final boolean waitForIdle(final long timeout) {
@@ -1802,7 +1802,7 @@ public abstract class SunToolkit extends Toolkit
     }
 
     /**
-     * Returns the <code>Window</code> ancestor of the component <code>comp</code>.
+     * Returns the {@code Window} ancestor of the component {@code comp}.
      * @return Window ancestor of the component or component by itself if it is Window;
      *         null, if component is not a part of window hierarchy
      */

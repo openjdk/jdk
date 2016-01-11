@@ -83,13 +83,13 @@ public final class CPrinterJob extends RasterPrinterJob {
      * to these native print services.
      * To present the cross platform print dialog for all services,
      * including native ones instead use
-     * <code>printDialog(PrintRequestAttributeSet)</code>.
+     * {@code printDialog(PrintRequestAttributeSet)}.
      * <p>
      * PrinterJob implementations which can use PrintService's will update
      * the PrintService for this PrinterJob to reflect the new service
      * selected by the user.
-     * @return <code>true</code> if the user does not cancel the dialog;
-     * <code>false</code> otherwise.
+     * @return {@code true} if the user does not cancel the dialog;
+     * {@code false} otherwise.
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
@@ -117,19 +117,19 @@ public final class CPrinterJob extends RasterPrinterJob {
 
     /**
      * Displays a dialog that allows modification of a
-     * <code>PageFormat</code> instance.
-     * The <code>page</code> argument is used to initialize controls
+     * {@code PageFormat} instance.
+     * The {@code page} argument is used to initialize controls
      * in the page setup dialog.
      * If the user cancels the dialog then this method returns the
-     * original <code>page</code> object unmodified.
+     * original {@code page} object unmodified.
      * If the user okays the dialog then this method returns a new
-     * <code>PageFormat</code> object with the indicated changes.
-     * In either case, the original <code>page</code> object is
+     * {@code PageFormat} object with the indicated changes.
+     * In either case, the original {@code page} object is
      * not modified.
-     * @param page the default <code>PageFormat</code> presented to the
+     * @param page the default {@code PageFormat} presented to the
      *            user for modification
-     * @return    the original <code>page</code> object if the dialog
-     *            is cancelled; a new <code>PageFormat</code> object
+     * @return    the original {@code page} object if the dialog
+     *            is cancelled; a new {@code PageFormat} object
      *          containing the format indicated by the user if the
      *          dialog is acknowledged.
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
@@ -157,11 +157,11 @@ public final class CPrinterJob extends RasterPrinterJob {
     }
 
     /**
-     * Clones the <code>PageFormat</code> argument and alters the
+     * Clones the {@code PageFormat} argument and alters the
      * clone to describe a default page size and orientation.
-     * @param page the <code>PageFormat</code> to be cloned and altered
-     * @return clone of <code>page</code>, altered to describe a default
-     *                      <code>PageFormat</code>.
+     * @param page the {@code PageFormat} to be cloned and altered
+     * @return clone of {@code page}, altered to describe a default
+     *                      {@code PageFormat}.
      */
     @Override
     public PageFormat defaultPage(PageFormat page) {

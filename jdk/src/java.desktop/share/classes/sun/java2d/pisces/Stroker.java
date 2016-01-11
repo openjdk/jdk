@@ -99,16 +99,16 @@ final class Stroker implements PathConsumer2D {
     private final PolyStack reverse = new PolyStack();
 
     /**
-     * Constructs a <code>Stroker</code>.
+     * Constructs a {@code Stroker}.
      *
-     * @param pc2d an output <code>PathConsumer2D</code>.
+     * @param pc2d an output {@code PathConsumer2D}.
      * @param lineWidth the desired line width in pixels
      * @param capStyle the desired end cap style, one of
-     * <code>CAP_BUTT</code>, <code>CAP_ROUND</code> or
-     * <code>CAP_SQUARE</code>.
+     * {@code CAP_BUTT}, {@code CAP_ROUND} or
+     * {@code CAP_SQUARE}.
      * @param joinStyle the desired line join style, one of
-     * <code>JOIN_MITER</code>, <code>JOIN_ROUND</code> or
-     * <code>JOIN_BEVEL</code>.
+     * {@code JOIN_MITER}, {@code JOIN_ROUND} or
+     * {@code JOIN_BEVEL}.
      * @param miterLimit the desired miter limit
      */
     public Stroker(PathConsumer2D pc2d,

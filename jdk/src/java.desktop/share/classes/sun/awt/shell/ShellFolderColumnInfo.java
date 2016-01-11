@@ -40,8 +40,8 @@ public class ShellFolderColumnInfo {
     private SortOrder sortOrder;
     private Comparator<?> comparator;
     /**
-     * <code>false</code> (default) if the {@link #comparator} expects folders as arguments,
-     * and <code>true</code> if folder's column values. The first option is used default for comparison
+     * {@code false} (default) if the {@link #comparator} expects folders as arguments,
+     * and {@code true} if folder's column values. The first option is used default for comparison
      * on Windows and also for separating files from directories when sorting using
      * ShellFolderManager's inner comparator.
      */

@@ -422,7 +422,7 @@ png_set_alpha_mode(png_structrp png_ptr, int mode, double output_gamma)
 /* Dither file to 8-bit.  Supply a palette, the current number
  * of elements in the palette, the maximum number of elements
  * allowed, and a histogram if possible.  If the current number
- * of colors is greater then the maximum number, the palette will be
+ * of colors is greater than the maximum number, the palette will be
  * modified to fit in the maximum number.  "full_quantize" indicates
  * whether we need a quantizing cube set up for RGB images, or if we
  * simply are reducing the number of colors in a paletted image.

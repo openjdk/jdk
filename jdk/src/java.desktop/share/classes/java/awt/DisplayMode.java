@@ -28,8 +28,8 @@ package java.awt;
 import java.lang.annotation.Native;
 
 /**
- * The <code>DisplayMode</code> class encapsulates the bit depth, height,
- * width, and refresh rate of a <code>GraphicsDevice</code>. The ability to
+ * The {@code DisplayMode} class encapsulates the bit depth, height,
+ * width, and refresh rate of a {@code GraphicsDevice}. The ability to
  * change graphics device's display mode is platform- and
  * configuration-dependent and may not always be available
  * (see {@link GraphicsDevice#isDisplayChangeSupported}).
@@ -57,10 +57,10 @@ public final class DisplayMode {
      * @param width the width of the display, in pixels
      * @param height the height of the display, in pixels
      * @param bitDepth the bit depth of the display, in bits per
-     *        pixel.  This can be <code>BIT_DEPTH_MULTI</code> if multiple
+     *        pixel.  This can be {@code BIT_DEPTH_MULTI} if multiple
      *        bit depths are available.
      * @param refreshRate the refresh rate of the display, in hertz.
-     *        This can be <code>REFRESH_RATE_UNKNOWN</code> if the
+     *        This can be {@code REFRESH_RATE_UNKNOWN} if the
      *        information is not available.
      * @see #BIT_DEPTH_MULTI
      * @see #REFRESH_RATE_UNKNOWN
@@ -96,7 +96,7 @@ public final class DisplayMode {
 
     /**
      * Returns the bit depth of the display, in bits per pixel.  This may be
-     * <code>BIT_DEPTH_MULTI</code> if multiple bit depths are supported in
+     * {@code BIT_DEPTH_MULTI} if multiple bit depths are supported in
      * this display mode.
      *
      * @return the bit depth of the display, in bits per pixel.
@@ -114,7 +114,7 @@ public final class DisplayMode {
 
     /**
      * Returns the refresh rate of the display, in hertz.  This may be
-     * <code>REFRESH_RATE_UNKNOWN</code> if the information is not available.
+     * {@code REFRESH_RATE_UNKNOWN} if the information is not available.
      *
      * @return the refresh rate of the display, in hertz.
      * @see #REFRESH_RATE_UNKNOWN

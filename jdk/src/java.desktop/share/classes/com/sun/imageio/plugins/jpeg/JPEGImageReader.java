@@ -544,7 +544,7 @@ public class JPEGImageReader extends ImageReader {
     }
 
     /**
-     * Returns <code>true</code> if there is an image beyond
+     * Returns {@code true} if there is an image beyond
      * the current stream position.  Does not disturb the
      * stream position.
      */
@@ -614,13 +614,13 @@ public class JPEGImageReader extends ImageReader {
 
     /**
      * Read in the header information starting from the current
-     * stream position, returning <code>true</code> if the
+     * stream position, returning {@code true} if the
      * header was a tables-only image.  After this call, the
      * native IJG decompression struct will contain the image
      * information required by most query calls below
      * (e.g. getWidth, getHeight, etc.), if the header was not
      * a tables-only image.
-     * If reset is <code>true</code>, the state of the IJG
+     * If reset is {@code true}, the state of the IJG
      * object is reset so that it can read a header again.
      * This happens automatically if the header was a tables-only
      * image.
@@ -867,7 +867,7 @@ public class JPEGImageReader extends ImageReader {
      * Checks the implied color conversion between the stream and
      * the target image, altering the IJG output color space if necessary.
      * If a java color conversion is required, then this sets up
-     * <code>convert</code>.
+     * {@code convert}.
      * If bands are being rearranged at all (either source or destination
      * bands are specified in the param), then the default color
      * conversions are assumed to be correct.
@@ -1394,7 +1394,7 @@ public class JPEGImageReader extends ImageReader {
     }
 
     /**
-     * Returns <code>true</code> if the read was aborted.
+     * Returns {@code true} if the read was aborted.
      */
     private native boolean readImage(long structPointer,
                                      byte [] buffer,
