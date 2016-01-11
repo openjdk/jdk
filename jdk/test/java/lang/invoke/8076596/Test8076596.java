@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,27 @@
  */
 
 /* @test
- * @bug 8139885
- * @run main/othervm/policy=findclass.security.policy/secure=java.lang.SecurityManager -ea -esa test.java.lang.invoke.FindClassSecurityManager
+ * @bug 8076596
+ * @run main/othervm/policy=Test8076596.security.policy/secure=Test8076596 -ea -esa Test8076596
  */
 
-package test.java.lang.invoke;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
-import java.lang.invoke.MethodHandles;
+public class Test8076596 extends SecurityManager {
+    public Test8076596() {
+        // 1. Using lambda
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> null);
+        // 2. Using inner class
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                return null;
+            }
+        });
+    }
 
-public class FindClassSecurityManager {
-    public static void main(String[] args) throws Throwable {
-        assert null != System.getSecurityManager();
-        Class<?> thisClass = FindClassSecurityManager.class;
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
-        Class<?> lookedUp = lookup.findClass(thisClass.getName());
-        assert thisClass == lookedUp;
-        Class<?> accessed = lookup.accessClass(thisClass);
-        assert thisClass == accessed;
+    public static void main(String[] args) {
+        // empty
     }
 }
