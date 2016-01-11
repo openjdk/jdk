@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3390,13 +3390,16 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
 
+  // Initialize library-based TLS
+  ThreadLocalStorage::init();
+
   // Initialize the output stream module
   ostream_init();
 
   // Process java launcher properties.
   Arguments::process_sun_java_launcher_properties(args);
 
-  // Initialize the os module before using TLS
+  // Initialize the os module
   os::init();
 
   // Record VM creation timing statistics
@@ -3450,9 +3453,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   jint adjust_after_os_result = Arguments::adjust_after_os();
   if (adjust_after_os_result != JNI_OK) return adjust_after_os_result;
-
-  // Initialize library-based TLS
-  ThreadLocalStorage::init();
 
   // Initialize output stream logging
   ostream_init_log();
