@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -90,8 +91,10 @@ import java.util.MissingResourceException;
 import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Spliterators;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import static java.util.stream.Collectors.toList;
+import static jdk.jshell.Snippet.SubKind.VAR_VALUE_SUBKIND;
 
 /**
  * Command line REPL tool for Java using the JShell API.
@@ -102,6 +105,7 @@ public class JShellTool {
     private static final Pattern LINEBREAK = Pattern.compile("\\R");
     private static final Pattern HISTORY_ALL_START_FILENAME = Pattern.compile(
             "((?<cmd>(all|history|start))(\\z|\\p{javaWhitespace}+))?(?<filename>.*)");
+    private static final String RECORD_SEPARATOR = "\u241E";
 
     final InputStream cmdin;
     final PrintStream cmdout;
@@ -150,9 +154,14 @@ public class JShellTool {
     private String cmdlineStartup = null;
     private String editor = null;
 
-    static final Preferences PREFS = Preferences.userRoot().node("tool/REPL");
+    // Commands and snippets which should be replayed
+    private List<String> replayableHistory;
+    private List<String> replayableHistoryPrevious;
+
+    static final Preferences PREFS = Preferences.userRoot().node("tool/JShell");
 
     static final String STARTUP_KEY = "STARTUP";
+    static final String REPLAY_RESTORE_KEY = "REPLAY_RESTORE";
 
     static final String DEFAULT_STARTUP =
             "\n" +
@@ -165,11 +174,14 @@ public class JShellTool {
             "import java.util.regex.*;\n" +
             "void printf(String format, Object... args) { System.out.printf(format, args); }\n";
 
-    // Tool id (tid) mapping
+    // Tool id (tid) mapping: the three name spaces
     NameSpace mainNamespace;
     NameSpace startNamespace;
     NameSpace errorNamespace;
+
+    // Tool id (tid) mapping: the current name spaces
     NameSpace currentNameSpace;
+
     Map<Snippet,SnippetInfo> mapSnippet;
 
     void debug(String format, Object... args) {
@@ -251,6 +263,12 @@ public class JShellTool {
 
     private void start(IOContext in, List<String> loadList) {
         resetState(); // Initialize
+
+        // Read replay history from last jshell session into previous history
+        String prevReplay = PREFS.get(REPLAY_RESTORE_KEY, null);
+        if (prevReplay != null) {
+            replayableHistoryPrevious = Arrays.asList(prevReplay.split(RECORD_SEPARATOR));
+        }
 
         for (String loadFile : loadList) {
             cmdOpen(loadFile);
@@ -370,6 +388,10 @@ public class JShellTool {
         mapSnippet = new LinkedHashMap<>();
         currentNameSpace = startNamespace;
 
+        // Reset the replayable history, saving the old for restore
+        replayableHistoryPrevious = replayableHistory;
+        replayableHistory = new ArrayList<>();
+
         state = JShell.builder()
                 .in(userin)
                 .out(userout)
@@ -382,7 +404,8 @@ public class JShellTool {
         analysis = state.sourceCodeAnalysis();
         shutdownSubscription = state.onShutdown((JShell deadState) -> {
             if (deadState == state) {
-                hard("State engine terminated.  See /history");
+                hard("State engine terminated.");
+                hard("Restore definitions with: /reload restore");
                 live = false;
             }
         });
@@ -391,7 +414,6 @@ public class JShellTool {
         if (cmdlineClasspath != null) {
             state.addToClasspath(cmdlineClasspath);
         }
-
 
         String start;
         if (cmdlineStartup == null) {
@@ -431,7 +453,7 @@ public class JShellTool {
             String incomplete = "";
             while (live) {
                 String prompt;
-                if (in.interactiveOutput() && displayPrompt) {
+                if (displayPrompt) {
                     prompt = testPrompt
                                     ? incomplete.isEmpty()
                                             ? "\u0005" //ENQ
@@ -480,6 +502,12 @@ public class JShellTool {
         }
     }
 
+    private void addToReplayHistory(String s) {
+        if (currentNameSpace == mainNamespace) {
+            replayableHistory.add(s);
+        }
+    }
+
     private String processSourceCatchingReset(String src) {
         try {
             input.beforeUserCode();
@@ -516,7 +544,12 @@ public class JShellTool {
                 fluff("Type /help for help.");
             }
         } else if (candidates.length == 1) {
-            candidates[0].run.accept(arg);
+            Command command = candidates[0];
+
+            // If comand was successful and is of a replayable kind, add it the replayable history
+            if (command.run.apply(arg) && command.kind == CommandKind.REPLAY) {
+                addToReplayHistory((command.command + " " + arg).trim());
+            }
         } else {
             hard("Command: %s is ambiguous: %s", cmd, Arrays.stream(candidates).map(c -> c.command).collect(Collectors.joining(", ")));
             fluff("Type /help for help.");
@@ -546,15 +579,15 @@ public class JShellTool {
         public final String command;
         public final String params;
         public final String description;
-        public final Consumer<String> run;
+        public final Function<String,Boolean> run;
         public final CompletionProvider completions;
         public final CommandKind kind;
 
-        public Command(String command, String params, String description, Consumer<String> run, CompletionProvider completions) {
+        public Command(String command, String params, String description, Function<String,Boolean> run, CompletionProvider completions) {
             this(command, params, description, run, completions, CommandKind.NORMAL);
         }
 
-        public Command(String command, String params, String description, Consumer<String> run, CompletionProvider completions, CommandKind kind) {
+        public Command(String command, String params, String description, Function<String,Boolean> run, CompletionProvider completions, CommandKind kind) {
             this.command = command;
             this.params = params;
             this.description = description;
@@ -571,6 +604,7 @@ public class JShellTool {
 
     enum CommandKind {
         NORMAL,
+        REPLAY,
         HIDDEN,
         HELP_ONLY;
     }
@@ -602,6 +636,7 @@ public class JShellTool {
 
     private static final CompletionProvider EMPTY_COMPLETION_PROVIDER = new FixedCompletionProvider();
     private static final CompletionProvider KEYWORD_COMPLETION_PROVIDER = new FixedCompletionProvider("all ", "start ", "history ");
+    private static final CompletionProvider RELOAD_OPTIONS_COMPLETION_PROVIDER = new FixedCompletionProvider("restore", "quiet");
     private static final CompletionProvider FILE_COMPLETION_PROVIDER = fileCompletions(p -> true);
     private final Map<String, Command> commands = new LinkedHashMap<>();
     private void registerCommand(Command cmd) {
@@ -674,6 +709,16 @@ public class JShellTool {
         };
     }
 
+    private static CompletionProvider reloadCompletion() {
+        return (code, cursor, anchor) -> {
+            List<Suggestion> result = new ArrayList<>();
+            int pastSpace = code.indexOf(' ') + 1; // zero if no space
+            result.addAll(RELOAD_OPTIONS_COMPLETION_PROVIDER.completionSuggestions(code.substring(pastSpace), cursor - pastSpace, anchor));
+            anchor[0] += pastSpace;
+            return result;
+        };
+    }
+
     // Table of commands -- with command forms, argument kinds, help message, implementation, ...
 
     {
@@ -688,7 +733,8 @@ public class JShellTool {
                                     editCompletion()));
         registerCommand(new Command("/drop", "<name or id>", "delete a source entry referenced by name or id",
                                     arg -> cmdDrop(arg),
-                                    editCompletion()));
+                                    editCompletion(),
+                                    CommandKind.REPLAY));
         registerCommand(new Command("/save", "[all|history|start] <file>", "save: <none> - current source;\n" +
                                                                            "      all - source including overwritten, failed, and start-up code;\n" +
                                                                            "      history - editing history;\n" +
@@ -716,6 +762,9 @@ public class JShellTool {
         registerCommand(new Command("/reset", null, "reset everything in the REPL",
                                     arg -> cmdReset(),
                                     EMPTY_COMPLETION_PROVIDER));
+        registerCommand(new Command("/reload", "[restore] [quiet]", "reset and replay relevant history -- current or previous (restore)",
+                                    arg -> cmdReload(arg),
+                                    reloadCompletion()));
         registerCommand(new Command("/feedback", "<level>", "feedback information: off, concise, normal, verbose, default, or ?",
                                     arg -> cmdFeedback(arg),
                                     new FixedCompletionProvider("off", "concise", "normal", "verbose", "default", "?")));
@@ -724,7 +773,8 @@ public class JShellTool {
                                     EMPTY_COMPLETION_PROVIDER));
         registerCommand(new Command("/classpath", "<path>", "add a path to the classpath",
                                     arg -> cmdClasspath(arg),
-                                    classPathCompletion()));
+                                    classPathCompletion(),
+                                    CommandKind.REPLAY));
         registerCommand(new Command("/history", null, "history of what you have typed",
                                     arg -> cmdHistory(),
                                     EMPTY_COMPLETION_PROVIDER));
@@ -801,25 +851,29 @@ public class JShellTool {
 
     // --- Command implementations ---
 
-    void cmdSetEditor(String arg) {
+    boolean cmdSetEditor(String arg) {
         if (arg.isEmpty()) {
             hard("/seteditor requires a path argument");
+            return false;
         } else {
             editor = arg;
             fluff("Editor set to: %s", arg);
+            return true;
         }
     }
 
-    void cmdClasspath(String arg) {
+    boolean cmdClasspath(String arg) {
         if (arg.isEmpty()) {
             hard("/classpath requires a path argument");
+            return false;
         } else {
             state.addToClasspath(toPathResolvingUserHome(arg).toString());
             fluff("Path %s added to classpath", arg);
+            return true;
         }
     }
 
-    void cmdDebug(String arg) {
+    boolean cmdDebug(String arg) {
         if (arg.isEmpty()) {
             debug = !debug;
             InternalDebugControl.setDebugFlags(state, debug ? InternalDebugControl.DBG_GEN : 0);
@@ -860,20 +914,26 @@ public class JShellTool {
                     default:
                         hard("Unknown debugging option: %c", ch);
                         fluff("Use: 0 r g f c d");
-                        break;
+                        return false;
                 }
             }
             InternalDebugControl.setDebugFlags(state, flags);
         }
+        return true;
     }
 
-    private void cmdExit() {
+    private boolean cmdExit() {
         regenerateOnDeath = false;
         live = false;
+        if (!replayableHistory.isEmpty()) {
+            PREFS.put(REPLAY_RESTORE_KEY, replayableHistory.stream().reduce(
+                    (a, b) -> a + RECORD_SEPARATOR + b).get());
+        }
         fluff("Goodbye\n");
+        return true;
     }
 
-    private void cmdFeedback(String arg) {
+    private boolean cmdFeedback(String arg) {
         switch (arg) {
             case "":
             case "d":
@@ -905,12 +965,13 @@ public class JShellTool {
                 hard("  default");
                 hard("You may also use just the first letter, for example: /f c");
                 hard("In interactive mode 'default' is the same as 'normal', from a file it is the same as 'off'");
-                return;
+                return false;
         }
         fluff("Feedback mode: %s", feedback.name().toLowerCase());
+        return true;
     }
 
-    void cmdHelp() {
+    boolean cmdHelp() {
         int synopsisLen = 0;
         Map<String, String> synopsis2Description = new LinkedHashMap<>();
         for (Command cmd : new LinkedHashSet<>(commands.values())) {
@@ -936,14 +997,16 @@ public class JShellTool {
         cmdout.println("Supported shortcuts include:");
         cmdout.println("<tab>       -- show possible completions for the current text");
         cmdout.println("Shift-<tab> -- for current method or constructor invocation, show a synopsis of the method/constructor");
+        return true;
     }
 
-    private void cmdHistory() {
+    private boolean cmdHistory() {
         cmdout.println();
         for (String s : input.currentSessionHistory()) {
             // No number prefix, confusing with snippet ids
             cmdout.printf("%s\n", s);
         }
+        return true;
     }
 
     /**
@@ -1010,23 +1073,23 @@ public class JShellTool {
         }
     }
 
-    private void cmdDrop(String arg) {
+    private boolean cmdDrop(String arg) {
         if (arg.isEmpty()) {
             hard("In the /drop argument, please specify an import, variable, method, or class to drop.");
             hard("Specify by id or name. Use /list to see ids. Use /reset to reset all state.");
-            return;
+            return false;
         }
         Stream<Snippet> stream = argToSnippets(arg, false);
         if (stream == null) {
             hard("No definition or id named %s found.  See /classes, /methods, /vars, or /list", arg);
-            return;
+            return false;
         }
         List<Snippet> snippets = stream
                 .filter(sn -> state.status(sn).isActive && sn instanceof PersistentSnippet)
                 .collect(toList());
         if (snippets.isEmpty()) {
             hard("The argument did not specify an active import, variable, method, or class to drop.");
-            return;
+            return false;
         }
         if (snippets.size() > 1) {
             hard("The argument references more than one import, variable, method, or class.");
@@ -1034,17 +1097,18 @@ public class JShellTool {
             for (Snippet sn : snippets) {
                 cmdout.printf("%4s : %s\n", sn.id(), sn.source().replace("\n", "\n       "));
             }
-            return;
+            return false;
         }
         PersistentSnippet psn = (PersistentSnippet) snippets.get(0);
         state.drop(psn).forEach(this::handleEvent);
+        return true;
     }
 
-    private void cmdEdit(String arg) {
+    private boolean cmdEdit(String arg) {
         Stream<Snippet> stream = argToSnippets(arg, true);
         if (stream == null) {
             hard("No definition or id named %s found.  See /classes, /methods, /vars, or /list", arg);
-            return;
+            return false;
         }
         Set<String> srcSet = new LinkedHashSet<>();
         stream.forEachOrdered(sn -> {
@@ -1078,6 +1142,7 @@ public class JShellTool {
         } else {
             ExternalEditor.edit(editor, errorHandler, src, saveHandler, input);
         }
+        return true;
     }
     //where
     // receives editor requests to save
@@ -1135,10 +1200,9 @@ public class JShellTool {
         }
     }
 
-    private void cmdList(String arg) {
+    private boolean cmdList(String arg) {
         if (arg.equals("history")) {
-            cmdHistory();
-            return;
+            return cmdHistory();
         }
         Stream<Snippet> stream = argToSnippets(arg, true);
         if (stream == null) {
@@ -1148,7 +1212,7 @@ public class JShellTool {
             } else {
                 hard("No definition or id named %s found.  There are no active definitions.", arg);
             }
-            return;
+            return false;
         }
 
         // prevent double newline on empty list
@@ -1160,38 +1224,72 @@ public class JShellTool {
             }
             cmdout.printf("%4s : %s\n", sn.id(), sn.source().replace("\n", "\n       "));
         });
+        return true;
     }
 
-    private void cmdOpen(String filename) {
+    private boolean cmdOpen(String filename) {
         if (filename.isEmpty()) {
             hard("The /open command requires a filename argument.");
+            return false;
         } else {
             try {
                 run(new FileScannerIOContext(toPathResolvingUserHome(filename).toString()));
             } catch (FileNotFoundException e) {
                 hard("File '%s' is not found: %s", filename, e.getMessage());
+                return false;
             } catch (Exception e) {
                 hard("Exception while reading file: %s", e);
+                return false;
             }
         }
+        return true;
     }
 
-    private void cmdPrompt() {
+    private boolean cmdPrompt() {
         displayPrompt = !displayPrompt;
         fluff("Prompt will %sdisplay. Use /prompt to toggle.", displayPrompt ? "" : "NOT ");
         concise("Prompt: %s", displayPrompt ? "on" : "off");
+        return true;
     }
 
-    private void cmdReset() {
+    private boolean cmdReset() {
         live = false;
         fluff("Resetting state.");
+        return true;
     }
 
-    private void cmdSave(String arg_filename) {
+    private boolean cmdReload(String arg) {
+        Iterable<String> history = replayableHistory;
+        boolean echo = true;
+        if (arg.length() > 0) {
+            if ("restore".startsWith(arg)) {
+                if (replayableHistoryPrevious == null) {
+                    hard("No previous history to restore\n", arg);
+                    return false;
+                }
+                history = replayableHistoryPrevious;
+            } else if ("quiet".startsWith(arg)) {
+                echo = false;
+            } else {
+                hard("Invalid argument to reload command: %s\nUse 'restore', 'quiet', or no argument\n", arg);
+                return false;
+            }
+        }
+        fluff("Restarting and restoring %s.",
+                history == replayableHistoryPrevious
+                        ? "from previous state"
+                        : "state");
+        resetState();
+        run(new ReloadIOContext(history,
+                echo? cmdout : null));
+        return true;
+    }
+
+    private boolean cmdSave(String arg_filename) {
         Matcher mat = HISTORY_ALL_START_FILENAME.matcher(arg_filename);
         if (!mat.find()) {
             hard("Malformed argument to the /save command: %s", arg_filename);
-            return;
+            return false;
         }
         boolean useHistory = false;
         String saveAll = "";
@@ -1211,7 +1309,7 @@ public class JShellTool {
         String filename = mat.group("filename");
         if (filename == null ||filename.isEmpty()) {
             hard("The /save command requires a filename argument.");
-            return;
+            return false;
         }
         try (BufferedWriter writer = Files.newBufferedWriter(toPathResolvingUserHome(filename),
                 Charset.defaultCharset(),
@@ -1234,12 +1332,15 @@ public class JShellTool {
             }
         } catch (FileNotFoundException e) {
             hard("File '%s' for save is not accessible: %s", filename, e.getMessage());
+            return false;
         } catch (Exception e) {
             hard("Exception while saving: %s", e);
+            return false;
         }
+        return true;
     }
 
-    private void cmdSetStart(String filename) {
+    private boolean cmdSetStart(String filename) {
         if (filename.isEmpty()) {
             hard("The /setstart command requires a filename argument.");
         } else {
@@ -1249,30 +1350,36 @@ public class JShellTool {
                 PREFS.put(STARTUP_KEY, init);
             } catch (AccessDeniedException e) {
                 hard("File '%s' for /setstart is not accessible.", filename);
+                return false;
             } catch (NoSuchFileException e) {
                 hard("File '%s' for /setstart is not found.", filename);
+                return false;
             } catch (Exception e) {
                 hard("Exception while reading start set file: %s", e);
+                return false;
             }
         }
+        return true;
     }
 
-    private void cmdVars() {
+    private boolean cmdVars() {
         for (VarSnippet vk : state.variables()) {
             String val = state.status(vk) == Status.VALID
                     ? state.varValue(vk)
                     : "(not-active)";
             hard("  %s %s = %s", vk.typeName(), vk.name(), val);
         }
+        return true;
     }
 
-    private void cmdMethods() {
+    private boolean cmdMethods() {
         for (MethodSnippet mk : state.methods()) {
             hard("  %s %s", mk.name(), mk.signature());
         }
+        return true;
     }
 
-    private void cmdClasses() {
+    private boolean cmdClasses() {
         for (TypeDeclSnippet ck : state.types()) {
             String kind;
             switch (ck.subKind()) {
@@ -1295,15 +1402,17 @@ public class JShellTool {
             }
             hard("  %s %s", kind, ck.name());
         }
+        return true;
     }
 
-    private void cmdImports() {
+    private boolean cmdImports() {
         state.imports().forEach(ik -> {
             hard("  import %s%s", ik.isStatic() ? "static " : "", ik.fullname());
         });
+        return true;
     }
 
-    private void cmdUseHistoryEntry(int index) {
+    private boolean cmdUseHistoryEntry(int index) {
         List<Snippet> keys = state.snippets();
         if (index < 0)
             index += keys.size();
@@ -1313,7 +1422,9 @@ public class JShellTool {
             rerunSnippet(keys.get(index));
         } else {
             hard("Cannot find snippet %d", index + 1);
+            return false;
         }
+        return true;
     }
 
     private boolean rerunHistoryEntryById(String id) {
@@ -1425,10 +1536,24 @@ public class JShellTool {
     private boolean processCompleteSource(String source) throws IllegalStateException {
         debug("Compiling: %s", source);
         boolean failed = false;
+        boolean isActive = false;
         List<SnippetEvent> events = state.eval(source);
         for (SnippetEvent e : events) {
+            // Report the event, recording failure
             failed |= handleEvent(e);
+
+            // If any main snippet is active, this should be replayable
+            // also ignore var value queries
+            isActive |= e.causeSnippet() == null &&
+                    e.status().isActive &&
+                    e.snippet().subKind() != VAR_VALUE_SUBKIND;
         }
+        // If this is an active snippet and it didn't cause the backend to die,
+        // add it to the replayable history
+        if (isActive && live) {
+            addToReplayHistory(source);
+        }
+
         return failed;
     }
 
@@ -1784,41 +1909,16 @@ public class JShellTool {
     }
 }
 
-class ScannerIOContext extends IOContext {
-
-    private final Scanner scannerIn;
-    private final PrintStream pStream;
-
-    public ScannerIOContext(Scanner scannerIn, PrintStream pStream) {
-        this.scannerIn = scannerIn;
-        this.pStream = pStream;
-    }
-
-    @Override
-    public String readLine(String prompt, String prefix) {
-        if (pStream != null && prompt != null) {
-            pStream.print(prompt);
-        }
-        if (scannerIn.hasNextLine()) {
-            return scannerIn.nextLine();
-        } else {
-            return null;
-        }
-    }
+abstract class NonInteractiveIOContext extends IOContext {
 
     @Override
     public boolean interactiveOutput() {
-        return true;
+        return false;
     }
 
     @Override
     public Iterable<String> currentSessionHistory() {
         return Collections.emptyList();
-    }
-
-    @Override
-    public void close() {
-        scannerIn.close();
     }
 
     @Override
@@ -1847,19 +1947,62 @@ class ScannerIOContext extends IOContext {
     }
 }
 
-class FileScannerIOContext extends ScannerIOContext {
+class ScannerIOContext extends NonInteractiveIOContext {
+    private final Scanner scannerIn;
 
-    public FileScannerIOContext(String fn) throws FileNotFoundException {
-        this(new FileReader(fn));
-    }
-
-    public FileScannerIOContext(Reader rdr) throws FileNotFoundException {
-        super(new Scanner(rdr), null);
+    ScannerIOContext(Scanner scannerIn) {
+        this.scannerIn = scannerIn;
     }
 
     @Override
-    public boolean interactiveOutput() {
-        return false;
+    public String readLine(String prompt, String prefix) {
+        if (scannerIn.hasNextLine()) {
+            return scannerIn.nextLine();
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void close() {
+        scannerIn.close();
     }
 }
 
+class FileScannerIOContext extends ScannerIOContext {
+
+    FileScannerIOContext(String fn) throws FileNotFoundException {
+        this(new FileReader(fn));
+    }
+
+    FileScannerIOContext(Reader rdr) throws FileNotFoundException {
+        super(new Scanner(rdr));
+    }
+}
+
+class ReloadIOContext extends NonInteractiveIOContext {
+    private final Iterator<String> it;
+    private final PrintStream echoStream;
+
+    ReloadIOContext(Iterable<String> history, PrintStream echoStream) {
+        this.it = history.iterator();
+        this.echoStream = echoStream;
+    }
+
+    @Override
+    public String readLine(String prompt, String prefix) {
+        String s = it.hasNext()
+                ? it.next()
+                : null;
+        if (echoStream != null && s != null) {
+            String p = "-: ";
+            String p2 = "\n   ";
+            echoStream.printf("%s%s\n", p, s.replace("\n", p2));
+        }
+        return s;
+    }
+
+    @Override
+    public void close() {
+    }
+}
