@@ -660,7 +660,8 @@ initializeEncoding(JNIEnv *env)
             */
                     if ((strcmp(encname, "8859_1") == 0) ||
                         (strcmp(encname, "ISO8859-1") == 0) ||
-                        (strcmp(encname, "ISO8859_1") == 0))
+                        (strcmp(encname, "ISO8859_1") == 0) ||
+                        (strcmp(encname, "ISO-8859-1") == 0))
                         fastEncoding = FAST_8859_1;
                     else if (strcmp(encname, "ISO646-US") == 0)
                         fastEncoding = FAST_646_US;
