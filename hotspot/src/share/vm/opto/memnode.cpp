@@ -3850,7 +3850,7 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
   bool do_zeroing = true;       // we might give up if inits are very sparse
   int  big_init_gaps = 0;       // how many large gaps have we seen?
 
-  if (ZeroTLAB)  do_zeroing = false;
+  if (UseTLAB && ZeroTLAB)  do_zeroing = false;
   if (!ReduceFieldZeroing && !ReduceBulkZeroing)  do_zeroing = false;
 
   for (uint i = InitializeNode::RawStores, limit = req(); i < limit; i++) {
@@ -3951,7 +3951,7 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
   remove_extra_zeroes();        // clear out all the zmems left over
   add_req(inits);
 
-  if (!ZeroTLAB) {
+  if (!(UseTLAB && ZeroTLAB)) {
     // If anything remains to be zeroed, zero it all now.
     zeroes_done = align_size_down(zeroes_done, BytesPerInt);
     // if it is the last unused 4 bytes of an instance, forget about it
