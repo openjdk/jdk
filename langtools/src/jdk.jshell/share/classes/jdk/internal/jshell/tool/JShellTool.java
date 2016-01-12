@@ -1468,7 +1468,7 @@ public class JShellTool {
                 }
             }
 
-            for (String line : diag.getMessage(null).split("\\r?\\n")) {
+            for (String line : diag.getMessage(null).split("\\r?\\n")) { // TODO: Internationalize
                 if (!line.trim().startsWith("location:")) {
                     hard("%s%s", padding, line);
                 }
