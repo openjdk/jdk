@@ -242,7 +242,7 @@ public final class UlawCodec extends SunCodec {
     }
 
 
-    class UlawCodecStream extends AudioInputStream {
+    private final class UlawCodecStream extends AudioInputStream {
 
         private static final int tempBufferSize = 64;
         private byte tempBuffer [] = null;
@@ -414,6 +414,12 @@ public final class UlawCodec extends SunCodec {
                 return (i - off);
             }
         }
-    } // end class UlawCodecStream
 
+        @Override
+        public long skip(final long n) throws IOException {
+            // Implementation of this method assumes that we support
+            // encoding/decoding from/to 8/16 bits only
+            return encode ? super.skip(n * 2) / 2 : super.skip(n / 2) * 2;
+        }
+    } // end class UlawCodecStream
 } // end class ULAW
