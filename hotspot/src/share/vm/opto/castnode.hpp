@@ -68,6 +68,7 @@ class CastIINode: public ConstraintCastNode {
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------CastPPNode-------------------------------------

@@ -215,6 +215,68 @@ const Type *CastIINode::Value(PhaseTransform *phase) const {
   return res;
 }
 
+Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  Node* progress = ConstraintCastNode::Ideal(phase, can_reshape);
+  if (progress != NULL) {
+    return progress;
+  }
+
+  // transform:
+  // (CastII (AddI x const)) -> (AddI (CastII x) const)
+  // So the AddI has a chance to be optimized out
+  if (in(1)->Opcode() == Op_AddI) {
+    Node* in2 = in(1)->in(2);
+    const TypeInt* in2_t = phase->type(in2)->isa_int();
+    if (in2_t != NULL && in2_t->singleton()) {
+      int in2_const = in2_t->_lo;
+      const TypeInt* current_type = _type->is_int();
+      jlong new_lo_long = ((jlong)current_type->_lo) - in2_const;
+      jlong new_hi_long = ((jlong)current_type->_hi) - in2_const;
+      int new_lo = (int)new_lo_long;
+      int new_hi = (int)new_hi_long;
+      if (((jlong)new_lo) == new_lo_long && ((jlong)new_hi) == new_hi_long) {
+        Node* in1 = in(1)->in(1);
+        CastIINode* new_cast = (CastIINode*)clone();
+        AddINode* new_add = (AddINode*)in(1)->clone();
+        new_cast->set_type(TypeInt::make(new_lo, new_hi, current_type->_widen));
+        new_cast->set_req(1, in1);
+        new_add->set_req(1, phase->transform(new_cast));
+        return new_add;
+      }
+    }
+  }
+  // Similar to ConvI2LNode::Ideal() for the same reasons
+  if (can_reshape && !phase->C->major_progress()) {
+    const TypeInt* this_type = this->type()->is_int();
+    const TypeInt* in_type = phase->type(in(1))->isa_int();
+    if (in_type != NULL && this_type != NULL &&
+        (in_type->_lo != this_type->_lo ||
+         in_type->_hi != this_type->_hi)) {
+      int lo1 = this_type->_lo;
+      int hi1 = this_type->_hi;
+      int w1  = this_type->_widen;
+
+      if (lo1 >= 0) {
+        // Keep a range assertion of >=0.
+        lo1 = 0;        hi1 = max_jint;
+      } else if (hi1 < 0) {
+        // Keep a range assertion of <0.
+        lo1 = min_jint; hi1 = -1;
+      } else {
+        lo1 = min_jint; hi1 = max_jint;
+      }
+      const TypeInt* wtype = TypeInt::make(MAX2(in_type->_lo, lo1),
+                                           MIN2(in_type->_hi, hi1),
+                                           MAX2((int)in_type->_widen, w1));
+      if (wtype != type()) {
+        set_type(wtype);
+        return this;
+      }
+    }
+  }
+  return NULL;
+}
+
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If input is already higher or equal to cast type, then this is an identity.
