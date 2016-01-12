@@ -83,7 +83,7 @@ final class CatalogTestUtils {
      * Creates CatalogResolver with a set of catalogs.
      */
     static CatalogResolver catalogResolver(String... catalogName) {
-        return catalogResolver(null, catalogName);
+        return catalogResolver(CatalogFeatures.defaults(), catalogName);
     }
 
     /*
@@ -91,15 +91,16 @@ final class CatalogTestUtils {
      */
     static CatalogResolver catalogResolver(CatalogFeatures features,
             String... catalogName) {
-        return CatalogManager.catalogResolver(features,
-                getCatalogPaths(catalogName));
+        return (catalogName == null) ?
+                CatalogManager.catalogResolver(features) :
+                CatalogManager.catalogResolver(features, getCatalogPaths(catalogName));
     }
 
     /*
      * Creates catalogUriResolver with a set of catalogs.
      */
     static CatalogUriResolver catalogUriResolver(String... catalogName) {
-        return catalogUriResolver(null, catalogName);
+        return catalogUriResolver(CatalogFeatures.defaults(), catalogName);
     }
 
     /*
@@ -107,8 +108,9 @@ final class CatalogTestUtils {
      */
     static CatalogUriResolver catalogUriResolver(
             CatalogFeatures features, String... catalogName) {
-        return CatalogManager.catalogUriResolver(features,
-                getCatalogPaths(catalogName));
+        return (catalogName == null) ?
+                CatalogManager.catalogUriResolver(features) :
+                CatalogManager.catalogUriResolver(features, getCatalogPaths(catalogName));
     }
 
     // Gets the paths of the specified catalogs.

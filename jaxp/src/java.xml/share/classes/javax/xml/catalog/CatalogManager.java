@@ -38,33 +38,38 @@ public final class CatalogManager {
     }
 
     /**
-     * Creates a Catalog object using the specified feature settings and path to
-     * a catalog file. If the features is null, the default features will be used.
-     * If the path is empty, System property {@code javax.xml.catalog.files} will
-     * be read to locate the initial list of catalog files.
+     * Creates a {@code Catalog} object using the specified feature settings and
+     * path to one or more catalog files.
      * <p>
-     * If more than one catalog files are specified through the path argument or
+     * If {@code paths} is empty, system property {@code javax.xml.catalog.files}
+     * will be read to locate the initial list of catalog files.
+     * <p>
+     * If more than one catalog files are specified through the paths argument or
      * {@code javax.xml.catalog.files} property, the first entry is considered
      * the main catalog, while others are treated as alternative catalogs after
      * those referenced by the {@code nextCatalog} elements in the main catalog.
+     * <p>
+     * As specified in
+     * <a href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html#s.res.fail">
+     * XML Catalogs, OASIS Standard V1.1</a>, invalid path entries will be ignored.
+     * No error will be reported. In case all entries are invalid, the resolver
+     * will return as no mapping is found.
      *
      * @param features the catalog features
-     * @param path path(s) to one or more catalogs.
+     * @param paths path(s) to one or more catalogs.
      *
-     * @return a catalog instance
-     * @throws CatalogException If no catalog can be found whether through the
-     * specified path or the System property {@code javax.xml.catalog.files}, or
-     * an error occurs while parsing the catalog
+     * @return an instance of a {@code Catalog}
+     * @throws CatalogException If an error occurs while parsing the catalog
      */
-    public static Catalog catalog(CatalogFeatures features, String... path) {
-        return new CatalogImpl(features, path);
+    public static Catalog catalog(CatalogFeatures features, String... paths) {
+        return new CatalogImpl(features, paths);
     }
 
     /**
-     * Creates an instance of a CatalogResolver using the specified catalog.
+     * Creates an instance of a {@code CatalogResolver} using the specified catalog.
      *
      * @param catalog the catalog instance
-     * @return an instance of a CatalogResolver
+     * @return an instance of a {@code CatalogResolver}
      */
     public static CatalogResolver catalogResolver(Catalog catalog) {
         if (catalog == null) CatalogMessages.reportNPEOnNull("catalog", null);
@@ -72,10 +77,10 @@ public final class CatalogManager {
     }
 
     /**
-     * Creates an instance of a CatalogUriResolver using the specified catalog.
+     * Creates an instance of a {@code CatalogUriResolver} using the specified catalog.
      *
      * @param catalog the catalog instance
-     * @return an instance of a CatalogResolver
+     * @return an instance of a {@code CatalogResolver}
      */
     public static CatalogUriResolver catalogUriResolver(Catalog catalog) {
         if (catalog == null) CatalogMessages.reportNPEOnNull("catalog", null);
@@ -83,50 +88,60 @@ public final class CatalogManager {
     }
 
     /**
-     * Creates an instance of a CatalogResolver using the specified feature settings
-     * and path to a catalog file. If the features is null, the default features will
-     * be used. If the path is empty, System property {@code javax.xml.catalog.files}
+     * Creates an instance of a {@code CatalogResolver} using the specified feature
+     * settings and path to one or more catalog files.
+     * <p>
+     * If {@code paths} is empty, system property {@code javax.xml.catalog.files}
      * will be read to locate the initial list of catalog files.
      * <p>
-     * If more than one catalog files are specified through the path argument or
+     * If more than one catalog files are specified through the paths argument or
      * {@code javax.xml.catalog.files} property, the first entry is considered
      * the main catalog, while others are treated as alternative catalogs after
      * those referenced by the {@code nextCatalog} elements in the main catalog.
+     * <p>
+     * As specified in
+     * <a href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html#s.res.fail">
+     * XML Catalogs, OASIS Standard V1.1</a>, invalid path entries will be ignored.
+     * No error will be reported. In case all entries are invalid, the resolver
+     * will return as no mapping is found.
      *
      * @param features the catalog features
-     * @param path the path(s) to one or more catalogs
+     * @param paths the path(s) to one or more catalogs
      *
-     * @return an instance of a CatalogResolver
-     * @throws CatalogException If no catalog can be found whether through the
-     * specified path or the System property {@code javax.xml.catalog.files}, or
-     * an error occurs while parsing the catalog
+     * @return an instance of a {@code CatalogResolver}
+     * @throws CatalogException If an error occurs while parsing the catalog
      */
-    public static CatalogResolver catalogResolver(CatalogFeatures features, String... path) {
-        Catalog catalog = catalog(features, path);
+    public static CatalogResolver catalogResolver(CatalogFeatures features, String... paths) {
+        Catalog catalog = catalog(features, paths);
         return new CatalogResolverImpl(catalog);
     }
 
     /**
-     * Creates an instance of a CatalogUriResolver using the specified feature settings
-     * and path to a catalog file. If the features is null, the default features will
-     * be used. If the path is empty, System property {@code javax.xml.catalog.files}
+     * Creates an instance of a {@code CatalogUriResolver} using the specified
+     * feature settings and path to one or more catalog files.
+     * <p>
+     * If {@code paths} is empty, system property {@code javax.xml.catalog.files}
      * will be read to locate the initial list of catalog files.
      * <p>
-     * If more than one catalog files are specified through the path argument or
+     * If more than one catalog files are specified through the paths argument or
      * {@code javax.xml.catalog.files} property, the first entry is considered
      * the main catalog, while others are treated as alternative catalogs after
      * those referenced by the {@code nextCatalog} elements in the main catalog.
+     * <p>
+     * As specified in
+     * <a href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html#s.res.fail">
+     * XML Catalogs, OASIS Standard V1.1</a>, invalid path entries will be ignored.
+     * No error will be reported. In case all entries are invalid, the resolver
+     * will return as no mapping is found.
      *
      * @param features the catalog features
-     * @param path the path(s) to one or more catalogs
+     * @param paths the path(s) to one or more catalogs
      *
-     * @return an instance of a CatalogResolver
-     * @throws CatalogException If no catalog can be found whether through the
-     * specified path or the System property {@code javax.xml.catalog.files}, or
-     * an error occurs while parsing the catalog
+     * @return an instance of a {@code CatalogUriResolver}
+     * @throws CatalogException If an error occurs while parsing the catalog
      */
-    public static CatalogUriResolver catalogUriResolver(CatalogFeatures features, String... path) {
-        Catalog catalog = catalog(features, path);
+    public static CatalogUriResolver catalogUriResolver(CatalogFeatures features, String... paths) {
+        Catalog catalog = catalog(features, paths);
         return new CatalogUriResolverImpl(catalog);
     }
 }
