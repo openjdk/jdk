@@ -41,7 +41,6 @@ import java.util.List;
  * @author Mahmood Ali
  * @since 1.8
  */
-@jdk.Exported
 public interface AnnotatedTypeTree extends ExpressionTree {
     /**
      * Returns the annotations associated with this type expression.

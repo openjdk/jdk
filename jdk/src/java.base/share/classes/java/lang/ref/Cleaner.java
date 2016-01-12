@@ -28,7 +28,7 @@ package java.lang.ref;
 import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 
-import jdk.internal.misc.CleanerImpl;
+import jdk.internal.ref.CleanerImpl;
 
 /**
  * {@code Cleaner} manages a set of object references and corresponding cleaning actions.

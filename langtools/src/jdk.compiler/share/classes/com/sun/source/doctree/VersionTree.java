@@ -36,7 +36,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface VersionTree extends BlockTagTree {
     /**
      * Returns the body of the tag.
