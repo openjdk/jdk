@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2780,14 +2780,14 @@ run:
       MORE_STACK(1);
       pc = METHOD->code_base() + continuation_bci;
       if (log_is_enabled(Info, exceptions)) {
-        ResourceMark rm;
-        log_info(exceptions)("Exception <%s> (" INTPTR_FORMAT ")\n"
-                             " thrown in interpreter method <%s>\n"
-                             " at bci %d, continuing at %d for thread " INTPTR_FORMAT,
-                             except_oop->print_value_string(), p2i(except_oop()),
-                             METHOD->print_value_string(),
-                             (int)(istate->bcp() - METHOD->code_base()),
-                             (int)continuation_bci, p2i(THREAD));
+        ResourceMark rm(thread);
+        stringStream tempst;
+        tempst.print("interpreter method <%s>\n"
+                     " at bci %d, continuing at %d for thread " INTPTR_FORMAT,
+                     METHOD->print_value_string(),
+                     (int)(istate->bcp() - METHOD->code_base()),
+                     (int)continuation_bci, p2i(THREAD));
+        Exceptions::log_exception(except_oop, tempst);
       }
       // for AbortVMOnException flag
       Exceptions::debug_check_abort(except_oop);
@@ -2798,13 +2798,13 @@ run:
     }
     if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm;
-      log_info(exceptions)("Exception <%s> (" INTPTR_FORMAT ")\n"
-                           " thrown in interpreter method <%s>\n"
-                           " at bci %d, unwinding for thread " INTPTR_FORMAT,
-                           except_oop->print_value_string(), p2i(except_oop()),
-                           METHOD->print_value_string(),
-                           (int)(istate->bcp() - METHOD->code_base()),
-                           p2i(THREAD));
+      stringStream tempst;
+      tempst.print("interpreter method <%s>\n"
+             " at bci %d, unwinding for thread " INTPTR_FORMAT,
+             METHOD->print_value_string(),
+             (int)(istate->bcp() - METHOD->code_base()),
+             p2i(THREAD));
+      Exceptions::log_exception(except_oop, tempst);
     }
     // for AbortVMOnException flag
     Exceptions::debug_check_abort(except_oop);
