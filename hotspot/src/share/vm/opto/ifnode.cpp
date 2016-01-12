@@ -45,7 +45,7 @@ extern int explicit_null_checks_elided;
 //=============================================================================
 //------------------------------Value------------------------------------------
 // Return a tuple for whichever arm of the IF is reachable
-const Type *IfNode::Value( PhaseTransform *phase ) const {
+const Type* IfNode::Value(PhaseGVN* phase) const {
   if( !in(0) ) return Type::TOP;
   if( phase->type(in(0)) == Type::TOP )
     return Type::TOP;
@@ -1527,7 +1527,7 @@ Node* IfNode::search_identical(int dist) {
 
 //------------------------------Identity---------------------------------------
 // If the test is constant & we match, then we are the input Control
-Node *IfProjNode::Identity(PhaseTransform *phase) {
+Node* IfProjNode::Identity(PhaseGVN* phase) {
   // Can only optimize if cannot go the other way
   const TypeTuple *t = phase->type(in(0))->is_tuple();
   if (t == TypeTuple::IFNEITHER ||

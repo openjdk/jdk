@@ -34,7 +34,7 @@
 
 //=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.
-Node *ConstraintCastNode::Identity(PhaseTransform *phase) {
+Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
   Node* dom = dominating_cast(phase);
   if (dom != NULL) {
     assert(_carry_dependency, "only for casts that carry a dependency");
@@ -48,7 +48,7 @@ Node *ConstraintCastNode::Identity(PhaseTransform *phase) {
 
 //------------------------------Value------------------------------------------
 // Take 'join' of input and cast-up type
-const Type *ConstraintCastNode::Value(PhaseTransform *phase) const {
+const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
   const Type* ft = phase->type(in(1))->filter_speculative(_type);
 
@@ -149,7 +149,7 @@ void ConstraintCastNode::dump_spec(outputStream *st) const {
 }
 #endif
 
-const Type *CastIINode::Value(PhaseTransform *phase) const {
+const Type* CastIINode::Value(PhaseGVN* phase) const {
   const Type *res = ConstraintCastNode::Value(phase);
 
   // Try to improve the type of the CastII if we recognize a CmpI/If
@@ -280,7 +280,7 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If input is already higher or equal to cast type, then this is an identity.
-Node *CheckCastPPNode::Identity( PhaseTransform *phase ) {
+Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
   Node* dom = dominating_cast(phase);
   if (dom != NULL) {
     assert(_carry_dependency, "only for casts that carry a dependency");
@@ -296,7 +296,7 @@ Node *CheckCastPPNode::Identity( PhaseTransform *phase ) {
 
 //------------------------------Value------------------------------------------
 // Take 'join' of input and cast-up type, unless working with an Interface
-const Type *CheckCastPPNode::Value( PhaseTransform *phase ) const {
+const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
   if( in(0) && phase->type(in(0)) == Type::TOP ) return Type::TOP;
 
   const Type *inn = phase->type(in(1));
@@ -379,7 +379,7 @@ const Type *CheckCastPPNode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-const Type *CastX2PNode::Value( PhaseTransform *phase ) const {
+const Type* CastX2PNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
   if (t->base() == Type_X && t->singleton()) {
@@ -443,14 +443,14 @@ Node *CastX2PNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Identity---------------------------------------
-Node *CastX2PNode::Identity( PhaseTransform *phase ) {
+Node* CastX2PNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_CastP2X)  return in(1)->in(1);
   return this;
 }
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-const Type *CastP2XNode::Value( PhaseTransform *phase ) const {
+const Type* CastP2XNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
   if (t->base() == Type::RawPtr && t->singleton()) {
@@ -465,7 +465,7 @@ Node *CastP2XNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Identity---------------------------------------
-Node *CastP2XNode::Identity( PhaseTransform *phase ) {
+Node* CastP2XNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_CastX2P)  return in(1)->in(1);
   return this;
 }
