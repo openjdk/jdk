@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  * @bug 4366807
  * @summary Need new APIs to get/set session timeout and session cache size.
  * @run main/othervm SessionCacheSizeTests
+ * @key intermittent
  */
 
 import java.io.*;
@@ -108,28 +109,34 @@ public class SessionCacheSizeTests {
 
     void doServerSide(int serverPort, int serverConns) throws Exception {
 
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
-        sslServerSocket.setSoTimeout(45000); // timeout to accept a connection
-        serverPorts[createdPorts++] = sslServerSocket.getLocalPort();
+        try (SSLServerSocket sslServerSocket =
+                (SSLServerSocket) sslssf.createServerSocket(serverPort)) {
 
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        if (createdPorts == serverPorts.length) {
-            serverReady = true;
-        }
-        int read = 0;
-        int nConnections = 0;
-        /*
-         * Divide the max connections among the available server ports.
-         * The use of more than one server port ensures creation of more
-         * than one session.
-         */
-        SSLSession sessions [] = new SSLSession [serverConns];
-        SSLSessionContext sessCtx = sslctx.getServerSessionContext();
+            // timeout to accept a connection
+            sslServerSocket.setSoTimeout(45000);
 
-        try {
+            // make sure createdPorts++ is atomic
+            synchronized(serverPorts) {
+                serverPorts[createdPorts++] = sslServerSocket.getLocalPort();
+
+                /*
+                 * Signal Client, we're ready for his connect.
+                 */
+                if (createdPorts == serverPorts.length) {
+                    serverReady = true;
+                }
+            }
+            int read = 0;
+            int nConnections = 0;
+
+            /*
+             * Divide the max connections among the available server ports.
+             * The use of more than one server port ensures creation of more
+             * than one session.
+             */
+            SSLSession sessions [] = new SSLSession [serverConns];
+            SSLSessionContext sessCtx = sslctx.getServerSessionContext();
+
             while (nConnections < serverConns) {
                 try (SSLSocket sslSocket =
                         (SSLSocket)sslServerSocket.accept()) {
@@ -143,8 +150,6 @@ public class SessionCacheSizeTests {
                     nConnections++;
                 }
             }
-        } finally {
-            sslServerSocket.close();
         }
     }
 
@@ -270,8 +275,8 @@ public class SessionCacheSizeTests {
      * Using four ports (one per each connection), we are able to create
      * alteast four sessions.
      */
-    volatile int serverPorts[] = new int[]{0, 0, 0, 0};
-    volatile int createdPorts = 0;
+    int serverPorts[] = new int[]{0, 0, 0, 0};  // MAX_ACTIVE_CONNECTIONS: 4
+    int createdPorts = 0;
     static SSLServerSocketFactory sslssf;
     static SSLSocketFactory sslsf;
     static SSLContext sslctx;

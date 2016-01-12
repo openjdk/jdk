@@ -33,9 +33,8 @@ import java.util.List;
  * @jls sections 7.3, and 7.4
  *
  * @author Paul Govereau
- * @since 1.9
+ * @since 9
  */
-@jdk.Exported
 public interface PackageTree extends Tree {
     /**
      * Returns the annotations associated with this package declaration.

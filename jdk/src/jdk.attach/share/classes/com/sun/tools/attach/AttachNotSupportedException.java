@@ -36,7 +36,6 @@ import com.sun.tools.attach.spi.AttachProvider;         // for javadoc
  * AttachProvider.attachVirtualMachine} if the provider attempts to
  * attach to a Java virtual machine with which it not comptatible.
  */
-@jdk.Exported
 public class AttachNotSupportedException extends Exception {
 
     /** use serialVersionUID for interoperability */

@@ -36,7 +36,6 @@ import java.util.zip.ZipFile;
  * @author Vincent Ryan
  * @deprecated This class has been deprecated.
  */
-@jdk.Exported
 @Deprecated
 public interface ContentSignerParameters {
 

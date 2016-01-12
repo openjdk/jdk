@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,24 @@ AC_DEFUN_ONCE([LIB_SETUP_CUPS],
     fi
 
     if test "x${with_cups}" != x; then
-      CUPS_CFLAGS="-I${with_cups}/include"
-      CUPS_FOUND=yes
+      AC_MSG_CHECKING([for cups headers])
+      if test -s "${with_cups}/include/cups/cups.h"; then
+        CUPS_CFLAGS="-I${with_cups}/include"
+        CUPS_FOUND=yes
+        AC_MSG_RESULT([$CUPS_FOUND])
+      else
+        AC_MSG_ERROR([Can't find 'include/cups/cups.h' under ${with_cups} given with the --with-cups option.])
+      fi
     fi
     if test "x${with_cups_include}" != x; then
-      CUPS_CFLAGS="-I${with_cups_include}"
-      CUPS_FOUND=yes
+      AC_MSG_CHECKING([for cups headers])
+      if test -s "${with_cups_include}/cups/cups.h"; then
+        CUPS_CFLAGS="-I${with_cups_include}"
+        CUPS_FOUND=yes
+        AC_MSG_RESULT([$CUPS_FOUND])
+      else
+        AC_MSG_ERROR([Can't find 'cups/cups.h' under ${with_cups_include} given with the --with-cups-include option.])
+      fi
     fi
     if test "x$CUPS_FOUND" = xno; then
       # Are the cups headers installed in the default /usr/include location?

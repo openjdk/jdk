@@ -30,7 +30,6 @@ package com.sun.source.doctree;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface TextTree extends DocTree {
     /**
      * Returns the text.

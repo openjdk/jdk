@@ -38,5 +38,4 @@
  *
  * @since 1.8u40
  */
-@jdk.Exported
 package jdk.nashorn.api.scripting;

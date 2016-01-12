@@ -36,7 +36,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface DocCommentTree extends DocTree {
     /**
      * Returns the first sentence of a documentation comment.
@@ -49,7 +48,7 @@ public interface DocCommentTree extends DocTree {
      * before any block tags, including the first sentence.
      * @return body of a documentation comment first sentence inclusive
      *
-     * @since 1.9
+     * @since 9
      */
     default List<? extends DocTree> getFullBody() {
         ArrayList<DocTree> bodyList = new ArrayList<>();

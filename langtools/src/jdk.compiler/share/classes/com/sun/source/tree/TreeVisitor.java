@@ -56,7 +56,6 @@ package com.sun.source.tree;
  *
  * @since 1.6
  */
-@jdk.Exported
 public interface TreeVisitor<R,P> {
     /**
      * Visits an AnnotatedTypeTree node.

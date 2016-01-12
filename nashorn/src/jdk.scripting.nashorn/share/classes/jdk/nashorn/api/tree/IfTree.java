@@ -41,7 +41,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface IfTree extends StatementTree {
     /**
      * Returns the condition expression of this 'if' statement.

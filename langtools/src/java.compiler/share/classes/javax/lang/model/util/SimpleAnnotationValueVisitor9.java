@@ -64,7 +64,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleAnnotationValueVisitor6
  * @see SimpleAnnotationValueVisitor7
  * @see SimpleAnnotationValueVisitor8
- * @since 1.9
+ * @since 9
  */
 @SupportedSourceVersion(RELEASE_9)
 public class SimpleAnnotationValueVisitor9<R, P> extends SimpleAnnotationValueVisitor8<R, P> {
