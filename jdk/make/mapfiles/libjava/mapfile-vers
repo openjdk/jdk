@@ -251,6 +251,7 @@ SUNWprivate_1.1 {
 		Java_sun_misc_Signal_raise0;
               Java_sun_reflect_ConstantPool_getClassAt0;
               Java_sun_reflect_ConstantPool_getClassAtIfLoaded0;
+              Java_sun_reflect_ConstantPool_getClassRefIndexAt0;
               Java_sun_reflect_ConstantPool_getDoubleAt0;
               Java_sun_reflect_ConstantPool_getFieldAt0;
               Java_sun_reflect_ConstantPool_getFieldAtIfLoaded0;
@@ -260,8 +261,11 @@ SUNWprivate_1.1 {
               Java_sun_reflect_ConstantPool_getMemberRefInfoAt0;
               Java_sun_reflect_ConstantPool_getMethodAt0;
               Java_sun_reflect_ConstantPool_getMethodAtIfLoaded0;
+              Java_sun_reflect_ConstantPool_getNameAndTypeRefIndexAt0;
+              Java_sun_reflect_ConstantPool_getNameAndTypeRefInfoAt0;
               Java_sun_reflect_ConstantPool_getSize0;
               Java_sun_reflect_ConstantPool_getStringAt0;
+              Java_sun_reflect_ConstantPool_getTagAt0;
               Java_sun_reflect_ConstantPool_getUTF8At0;
 		Java_java_io_Console_istty;
 		Java_java_io_Console_encoding;
