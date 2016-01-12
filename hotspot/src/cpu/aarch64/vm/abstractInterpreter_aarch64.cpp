@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +24,69 @@
  */
 
 #include "precompiled.hpp"
-#include "ci/ciMethod.hpp"
 #include "interpreter/interpreter.hpp"
+#include "oops/constMethod.hpp"
+#include "oops/method.hpp"
 #include "runtime/frame.inline.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
-// Size of interpreter code.  Increase if too small.  Interpreter will
-// fail with a guarantee ("not enough space for interpreter generation");
-// if too small.
-// Run with +PrintInterpreter to get the VM to print out the size.
-// Max size with JVMTI
-#ifdef AMD64
-int TemplateInterpreter::InterpreterCodeSize = 256 * 1024;
-#else
-int TemplateInterpreter::InterpreterCodeSize = 224 * 1024;
-#endif // AMD64
+
+int AbstractInterpreter::BasicType_as_index(BasicType type) {
+  int i = 0;
+  switch (type) {
+    case T_BOOLEAN: i = 0; break;
+    case T_CHAR   : i = 1; break;
+    case T_BYTE   : i = 2; break;
+    case T_SHORT  : i = 3; break;
+    case T_INT    : i = 4; break;
+    case T_LONG   : i = 5; break;
+    case T_VOID   : i = 6; break;
+    case T_FLOAT  : i = 7; break;
+    case T_DOUBLE : i = 8; break;
+    case T_OBJECT : i = 9; break;
+    case T_ARRAY  : i = 9; break;
+    default       : ShouldNotReachHere();
+  }
+  assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers,
+         "index out of bounds");
+  return i;
+}
+
+// These should never be compiled since the interpreter will prefer
+// the compiled version to the intrinsic version.
+bool AbstractInterpreter::can_be_compiled(methodHandle m) {
+  switch (method_kind(m)) {
+    case Interpreter::java_lang_math_sin     : // fall thru
+    case Interpreter::java_lang_math_cos     : // fall thru
+    case Interpreter::java_lang_math_tan     : // fall thru
+    case Interpreter::java_lang_math_abs     : // fall thru
+    case Interpreter::java_lang_math_log     : // fall thru
+    case Interpreter::java_lang_math_log10   : // fall thru
+    case Interpreter::java_lang_math_sqrt    : // fall thru
+    case Interpreter::java_lang_math_pow     : // fall thru
+    case Interpreter::java_lang_math_exp     :
+      return false;
+    default:
+      return true;
+  }
+}
+
+// How much stack a method activation needs in words.
+int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
+  const int entry_size = frame::interpreter_frame_monitor_size();
+
+  // total overhead size: entry_size + (saved rfp thru expr stack
+  // bottom).  be sure to change this if you add/subtract anything
+  // to/from the overhead area
+  const int overhead_size =
+    -(frame::interpreter_frame_initial_sp_offset) + entry_size;
+
+  const int stub_code = frame::entry_frame_after_call_words;
+  const int method_stack = (method->max_locals() + method->max_stack()) *
+                           Interpreter::stackElementWords;
+  return (overhead_size + method_stack + stub_code);
+}
 
 // asm based interpreter deoptimization helpers
 int AbstractInterpreter::size_activation(int max_stack,
@@ -47,7 +97,7 @@ int AbstractInterpreter::size_activation(int max_stack,
                                          int callee_locals,
                                          bool is_top_frame) {
   // Note: This calculation must exactly parallel the frame setup
-  // in TemplateInterpreterGenerator::generate_fixed_frame.
+  // in TemplateInterpreterGenerator::generate_method_entry.
 
   // fixed size of an interpreter frame:
   int overhead = frame::sender_sp_offset -
@@ -60,6 +110,10 @@ int AbstractInterpreter::size_activation(int max_stack,
          (callee_locals - callee_params)*Interpreter::stackElementWords +
          monitors * frame::interpreter_frame_monitor_size() +
          temps* Interpreter::stackElementWords + extra_args;
+
+  // On AArch64 we always keep the stack pointer 16-aligned, so we
+  // must round up here.
+  size = round_to(size, 2);
 
   return size;
 }
@@ -123,87 +177,4 @@ void AbstractInterpreter::layout_activation(Method* method,
   }
   *interpreter_frame->interpreter_frame_cache_addr() =
     method->constants()->cache();
-}
-
-#ifndef _LP64
-int AbstractInterpreter::BasicType_as_index(BasicType type) {
-  int i = 0;
-  switch (type) {
-    case T_BOOLEAN: i = 0; break;
-    case T_CHAR   : i = 1; break;
-    case T_BYTE   : i = 2; break;
-    case T_SHORT  : i = 3; break;
-    case T_INT    : // fall through
-    case T_LONG   : // fall through
-    case T_VOID   : i = 4; break;
-    case T_FLOAT  : i = 5; break;  // have to treat float and double separately for SSE
-    case T_DOUBLE : i = 6; break;
-    case T_OBJECT : // fall through
-    case T_ARRAY  : i = 7; break;
-    default       : ShouldNotReachHere();
-  }
-  assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers, "index out of bounds");
-  return i;
-}
-#else
-int AbstractInterpreter::BasicType_as_index(BasicType type) {
-  int i = 0;
-  switch (type) {
-    case T_BOOLEAN: i = 0; break;
-    case T_CHAR   : i = 1; break;
-    case T_BYTE   : i = 2; break;
-    case T_SHORT  : i = 3; break;
-    case T_INT    : i = 4; break;
-    case T_LONG   : i = 5; break;
-    case T_VOID   : i = 6; break;
-    case T_FLOAT  : i = 7; break;
-    case T_DOUBLE : i = 8; break;
-    case T_OBJECT : i = 9; break;
-    case T_ARRAY  : i = 9; break;
-    default       : ShouldNotReachHere();
-  }
-  assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers,
-         "index out of bounds");
-  return i;
-}
-#endif // _LP64
-
-// These should never be compiled since the interpreter will prefer
-// the compiled version to the intrinsic version.
-bool AbstractInterpreter::can_be_compiled(methodHandle m) {
-  switch (method_kind(m)) {
-    case Interpreter::java_lang_math_sin     : // fall thru
-    case Interpreter::java_lang_math_cos     : // fall thru
-    case Interpreter::java_lang_math_tan     : // fall thru
-    case Interpreter::java_lang_math_abs     : // fall thru
-    case Interpreter::java_lang_math_log     : // fall thru
-    case Interpreter::java_lang_math_log10   : // fall thru
-    case Interpreter::java_lang_math_sqrt    : // fall thru
-    case Interpreter::java_lang_math_pow     : // fall thru
-    case Interpreter::java_lang_math_exp     :
-      return false;
-    default:
-      return true;
-  }
-}
-
-// How much stack a method activation needs in words.
-int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
-  const int entry_size = frame::interpreter_frame_monitor_size();
-
-  // total overhead size: entry_size + (saved rbp thru expr stack
-  // bottom).  be sure to change this if you add/subtract anything
-  // to/from the overhead area
-  const int overhead_size =
-    -(frame::interpreter_frame_initial_sp_offset) + entry_size;
-
-#ifndef _LP64
-  const int stub_code = 4;  // see generate_call_stub
-#else
-  const int stub_code = frame::entry_frame_after_call_words;
-#endif
-
-  const int method_stack = (method->max_locals() + method->max_stack()) *
-                           Interpreter::stackElementWords;
-  return (overhead_size + method_stack + stub_code);
 }
