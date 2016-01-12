@@ -985,50 +985,60 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
   return true;
 }
 
-// A POSIX conform, platform-independend siginfo print routine.
-// Short print out on one line.
-void os::Posix::print_siginfo_brief(outputStream* os, const siginfo_t* si) {
+void os::print_siginfo(outputStream* os, const void* si0) {
+
+  const siginfo_t* const si = (const siginfo_t*) si0;
+
   char buf[20];
-  os->print("siginfo: ");
+  os->print("siginfo:");
 
   if (!si) {
-    os->print("<null>");
+    os->print(" <null>");
     return;
   }
 
-  // See print_siginfo_full() for details.
   const int sig = si->si_signo;
 
-  os->print("si_signo: %d (%s)", sig, os::Posix::get_signal_name(sig, buf, sizeof(buf)));
+  os->print(" si_signo: %d (%s)", sig, os::Posix::get_signal_name(sig, buf, sizeof(buf)));
 
   enum_sigcode_desc_t ed;
-  if (get_signal_code_description(si, &ed)) {
-    os->print(", si_code: %d (%s)", si->si_code, ed.s_name);
-  } else {
-    os->print(", si_code: %d (unknown)", si->si_code);
-  }
+  get_signal_code_description(si, &ed);
+  os->print(", si_code: %d (%s)", si->si_code, ed.s_name);
 
   if (si->si_errno) {
     os->print(", si_errno: %d", si->si_errno);
   }
 
-  const int me = (int) ::getpid();
-  const int pid = (int) si->si_pid;
+  // Output additional information depending on the signal code.
 
+  // Note: Many implementations lump si_addr, si_pid, si_uid etc. together as unions,
+  // so it depends on the context which member to use. For synchronous error signals,
+  // we print si_addr, unless the signal was sent by another process or thread, in
+  // which case we print out pid or tid of the sender.
   if (si->si_code == SI_USER || si->si_code == SI_QUEUE) {
-    if (IS_VALID_PID(pid) && pid != me) {
-      os->print(", sent from pid: %d (uid: %d)", pid, (int) si->si_uid);
+    const pid_t pid = si->si_pid;
+    os->print(", si_pid: %ld", (long) pid);
+    if (IS_VALID_PID(pid)) {
+      const pid_t me = getpid();
+      if (me == pid) {
+        os->print(" (current process)");
+      }
+    } else {
+      os->print(" (invalid)");
+    }
+    os->print(", si_uid: %ld", (long) si->si_uid);
+    if (sig == SIGCHLD) {
+      os->print(", si_status: %d", si->si_status);
     }
   } else if (sig == SIGSEGV || sig == SIGBUS || sig == SIGILL ||
              sig == SIGTRAP || sig == SIGFPE) {
     os->print(", si_addr: " PTR_FORMAT, p2i(si->si_addr));
 #ifdef SIGPOLL
   } else if (sig == SIGPOLL) {
-    os->print(", si_band: " PTR64_FORMAT, (uint64_t)si->si_band);
+    os->print(", si_band: %ld", si->si_band);
 #endif
-  } else if (sig == SIGCHLD) {
-    os->print_cr(", si_pid: %d, si_uid: %d, si_status: %d", (int) si->si_pid, si->si_uid, si->si_status);
   }
+
 }
 
 int os::Posix::unblock_thread_signal_mask(const sigset_t *set) {

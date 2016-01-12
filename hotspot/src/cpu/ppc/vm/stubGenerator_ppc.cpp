@@ -231,11 +231,8 @@ class StubGenerator: public StubCodeGenerator {
       //   R16_thread  -  JavaThread*
 
       // Tos must point to last argument - element_size.
-#ifdef CC_INTERP
-      const Register tos = R17_tos;
-#else
       const Register tos = R15_esp;
-#endif
+
       __ addi(tos, r_top_of_arguments_addr, -Interpreter::stackElementSize);
 
       // initialize call_stub locals (step 2)
@@ -249,11 +246,7 @@ class StubGenerator: public StubCodeGenerator {
       assert(tos != r_arg_thread && R19_method != r_arg_thread, "trashed r_arg_thread");
 
       // Set R15_prev_state to 0 for simplifying checks in callee.
-#ifdef CC_INTERP
-      __ li(R15_prev_state, 0);
-#else
       __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R11_scratch1);
-#endif
       // Stack on entry to frame manager / native entry:
       //
       //      F0      [TOP_IJAVA_FRAME_ABI]

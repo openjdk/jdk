@@ -291,6 +291,10 @@ double G1CollectorPolicy::get_new_prediction(TruncatedSeq const* seq) const {
   return _predictor.get_new_prediction(seq);
 }
 
+size_t G1CollectorPolicy::get_new_size_prediction(TruncatedSeq const* seq) const {
+  return (size_t)get_new_prediction(seq);
+}
+
 void G1CollectorPolicy::initialize_alignments() {
   _space_alignment = HeapRegion::GrainBytes;
   size_t card_table_alignment = CardTableRS::ct_max_alignment_constraint();
@@ -477,7 +481,7 @@ bool G1CollectorPolicy::predict_will_fit(uint young_length,
   // (100 + TargetPLABWastePct) represents the increase in expected bytes during
   // copying due to anticipated waste in the PLABs.
   double safety_factor = (100.0 / G1ConfidencePercent) * (100 + TargetPLABWastePct) / 100.0;
-  size_t expected_bytes_to_copy = safety_factor * bytes_to_copy;
+  size_t expected_bytes_to_copy = (size_t)(safety_factor * bytes_to_copy);
 
   if (expected_bytes_to_copy > free_bytes) {
     // end condition 3: out-of-space
@@ -524,7 +528,7 @@ uint G1CollectorPolicy::calculate_young_list_desired_max_length() const {
 }
 
 uint G1CollectorPolicy::update_young_list_max_and_target_length() {
-  return update_young_list_max_and_target_length(get_new_prediction(_rs_lengths_seq));
+  return update_young_list_max_and_target_length(get_new_size_prediction(_rs_lengths_seq));
 }
 
 uint G1CollectorPolicy::update_young_list_max_and_target_length(size_t rs_lengths) {
@@ -629,7 +633,7 @@ G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
 
   double target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
   double survivor_regions_evac_time = predict_survivor_regions_evac_time();
-  size_t pending_cards = (size_t) get_new_prediction(_pending_cards_seq);
+  size_t pending_cards = get_new_size_prediction(_pending_cards_seq);
   size_t adj_rs_lengths = rs_lengths + predict_rs_length_diff();
   size_t scanned_cards = predict_young_card_num(adj_rs_lengths);
   double base_time_ms =
@@ -732,7 +736,7 @@ void G1CollectorPolicy::revise_young_list_target_length_if_necessary() {
 }
 
 void G1CollectorPolicy::update_rs_lengths_prediction() {
-  update_rs_lengths_prediction(get_new_prediction(_rs_lengths_seq));
+  update_rs_lengths_prediction(get_new_size_prediction(_rs_lengths_seq));
 }
 
 void G1CollectorPolicy::update_rs_lengths_prediction(size_t prediction) {
@@ -1299,8 +1303,8 @@ void G1CollectorPolicy::print_detailed_heap_transition() const {
   MetaspaceAux::print_metaspace_change(_metaspace_used_bytes_before_gc);
 }
 
-void G1CollectorPolicy::print_phases(double pause_time_sec) {
-  phase_times()->print(pause_time_sec);
+void G1CollectorPolicy::print_phases(double pause_time_ms) {
+  phase_times()->print(pause_time_ms);
 }
 
 void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
@@ -1345,7 +1349,7 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
 }
 
 size_t G1CollectorPolicy::predict_rs_length_diff() const {
-  return (size_t) get_new_prediction(_rs_length_diff_seq);
+  return get_new_size_prediction(_rs_length_diff_seq);
 }
 
 double G1CollectorPolicy::predict_alloc_rate_ms() const {

@@ -349,7 +349,7 @@ class G1GCParPhasePrinter : public StackObj {
   }
 };
 
-void G1GCPhaseTimes::print(double pause_time_sec) {
+void G1GCPhaseTimes::print(double pause_time_ms) {
   note_gc_end();
 
   G1GCParPhasePrinter par_phase_printer(this);
@@ -373,7 +373,7 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
   }
   print_stats(Indents[1], "Clear CT", _cur_clear_ct_time_ms);
   print_stats(Indents[1], "Expand Heap After Collection", _cur_expand_heap_time_ms);
-  double misc_time_ms = pause_time_sec * MILLIUNITS - accounted_time_ms();
+  double misc_time_ms = pause_time_ms - accounted_time_ms();
   print_stats(Indents[1], "Other", misc_time_ms);
   if (_cur_verify_before_time_ms > 0.0) {
     print_stats(Indents[2], "Verify Before", _cur_verify_before_time_ms);

@@ -41,6 +41,7 @@
 #include "prims/jvmtiImpl.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
 #include "utilities/resourceHash.hpp"
@@ -3096,6 +3097,17 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
           CodeBlob* cb = CodeCache::find_blob(dest);
           if (cb != NULL) {
             st.print(" %s", cb->name());
+          } else {
+            ResourceMark rm;
+            const int buflen = 1024;
+            char* buf = NEW_RESOURCE_ARRAY(char, buflen);
+            int offset;
+            if (os::dll_address_to_function_name(dest, buf, buflen, &offset)) {
+              st.print(" %s", buf);
+              if (offset != 0) {
+                st.print("+%d", offset);
+              }
+            }
           }
           return st.as_string();
         }

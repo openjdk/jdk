@@ -24,20 +24,19 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "runtime/arguments.hpp"
 
 #define __ _masm->
 
 
-#ifndef CC_INTERP
-
 /**
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
-address InterpreterGenerator::generate_CRC32_update_entry() {
+address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   if (UseCRC32Intrinsics) {
     address entry = __ pc();
 
@@ -89,7 +88,7 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
-address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32Intrinsics) {
     address entry = __ pc();
 
@@ -155,7 +154,7 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
 *   int java.util.zip.CRC32C.updateBytes(int crc, byte[] b, int off, int end)
 *   int java.util.zip.CRC32C.updateByteBuffer(int crc, long address, int off, int end)
 */
-address InterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32CIntrinsics) {
     address entry = __ pc();
     // Load parameters
@@ -201,7 +200,7 @@ address InterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpre
  * Method entry for static native method:
  *    java.lang.Float.intBitsToFloat(int bits)
  */
-address InterpreterGenerator::generate_Float_intBitsToFloat_entry() {
+address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() {
   if (UseSSE >= 1) {
     address entry = __ pc();
 
@@ -227,7 +226,7 @@ address InterpreterGenerator::generate_Float_intBitsToFloat_entry() {
  * Method entry for static native method:
  *    java.lang.Float.floatToRawIntBits(float value)
  */
-address InterpreterGenerator::generate_Float_floatToRawIntBits_entry() {
+address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() {
   if (UseSSE >= 1) {
     address entry = __ pc();
 
@@ -254,7 +253,7 @@ address InterpreterGenerator::generate_Float_floatToRawIntBits_entry() {
  * Method entry for static native method:
  *    java.lang.Double.longBitsToDouble(long bits)
  */
-address InterpreterGenerator::generate_Double_longBitsToDouble_entry() {
+address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() {
    if (UseSSE >= 2) {
      address entry = __ pc();
 
@@ -280,7 +279,7 @@ address InterpreterGenerator::generate_Double_longBitsToDouble_entry() {
  * Method entry for static native method:
  *    java.lang.Double.doubleToRawLongBits(double value)
  */
-address InterpreterGenerator::generate_Double_doubleToRawLongBits_entry() {
+address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() {
   if (UseSSE >= 2) {
     address entry = __ pc();
 
@@ -302,4 +301,3 @@ address InterpreterGenerator::generate_Double_doubleToRawLongBits_entry() {
 
   return NULL;
 }
-#endif // CC_INTERP

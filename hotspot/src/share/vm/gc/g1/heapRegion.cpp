@@ -258,7 +258,6 @@ HeapRegion::HeapRegion(uint hrm_index,
     _predicted_bytes_to_copy(0)
 {
   _rem_set = new HeapRegionRemSet(sharedOffsetArray, this);
-  assert(HeapRegionRemSet::num_par_rem_sets() > 0, "Invariant.");
 
   initialize(mr);
 }

@@ -460,6 +460,17 @@ Declares a structure type that can be used in other events.
       <value type="UTF8" field="name" label="Name" />
     </event>
 
+    <event id="GCPhaseConcurrent" path="vm/gc/phases/concurrent" label="GC Phase Concurrent">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="UTF8" field="name" label="Name" />
+    </event>
+
+    <event id="AllocationRequiringGC" path="vm/gc/detailed/allocation_requiring_gc" label="Allocation Requiring GC"
+           has_thread="true" has_stacktrace="true"  is_instant="true">
+      <value type="UINT" field="gcId"  label="Pending GC ID" relation="GC_ID" />
+      <value type="BYTES64" field="size" label="Allocation Size" />
+    </event>
+
     <!-- Compiler events -->
 
     <event id="Compilation" path="vm/compiler/compilation" label="Compilation"

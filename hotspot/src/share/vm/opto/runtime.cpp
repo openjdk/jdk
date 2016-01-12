@@ -42,6 +42,7 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -1260,7 +1261,7 @@ bool OptoRuntime::is_callee_saved_register(MachRegisterNumbers reg) {
 // Exceptions
 //
 
-static void trace_exception(oop exception_oop, address exception_pc, const char* msg) PRODUCT_RETURN;
+static void trace_exception(outputStream* st, oop exception_oop, address exception_pc, const char* msg);
 
 // The method is an entry that is always called by a C++ method not
 // directly from compiled code. Compiled code will call the C++ method following.
@@ -1283,8 +1284,9 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
   // normal bytecode execution.
   thread->clear_exception_oop_and_pc();
 
-  if (TraceExceptions) {
-    trace_exception(exception(), pc, "");
+  if (log_is_enabled(Info, exceptions)) {
+    ResourceMark rm;
+    trace_exception(LogHandle(exceptions)::info_stream(), exception(), pc, "");
   }
 
   // for AbortVMOnException flag
@@ -1649,29 +1651,25 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   return c;
 }
 
-//-----------------------------------------------------------------------------
-// Non-product code
-#ifndef PRODUCT
-
 int trace_exception_counter = 0;
-static void trace_exception(oop exception_oop, address exception_pc, const char* msg) {
-  ttyLocker ttyl;
+static void trace_exception(outputStream* st, oop exception_oop, address exception_pc, const char* msg) {
   trace_exception_counter++;
-  tty->print("%d [Exception (%s): ", trace_exception_counter, msg);
-  exception_oop->print_value();
-  tty->print(" in ");
+  stringStream tempst;
+
+  tempst.print("%d [Exception (%s): ", trace_exception_counter, msg);
+  exception_oop->print_value_on(&tempst);
+  tempst.print(" in ");
   CodeBlob* blob = CodeCache::find_blob(exception_pc);
   if (blob->is_nmethod()) {
     nmethod* nm = blob->as_nmethod_or_null();
-    nm->method()->print_value();
+    nm->method()->print_value_on(&tempst);
   } else if (blob->is_runtime_stub()) {
-    tty->print("<runtime-stub>");
+    tempst.print("<runtime-stub>");
   } else {
-    tty->print("<unknown>");
+    tempst.print("<unknown>");
   }
-  tty->print(" at " INTPTR_FORMAT,  p2i(exception_pc));
-  tty->print_cr("]");
+  tempst.print(" at " INTPTR_FORMAT,  p2i(exception_pc));
+  tempst.print("]");
+
+  st->print_raw_cr(tempst.as_string());
 }
-
-#endif  // PRODUCT
-

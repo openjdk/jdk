@@ -421,7 +421,7 @@ VirtualSpaceNode::VirtualSpaceNode(size_t bytes) : _top(NULL), _next(NULL), _rs(
       // Get a mmap region anywhere if the SharedBaseAddress fails.
       _rs = ReservedSpace(bytes, Metaspace::reserve_alignment(), large_pages);
     }
-    MetaspaceShared::set_shared_rs(&_rs);
+    MetaspaceShared::initialize_shared_rs(&_rs);
   } else
 #endif
   {

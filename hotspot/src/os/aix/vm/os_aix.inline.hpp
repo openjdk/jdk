@@ -102,19 +102,15 @@ inline int os::ftruncate(int fd, jlong length) {
 }
 
 inline struct dirent* os::readdir(DIR* dirp, dirent *dbuf) {
-  dirent* p;
-  int status;
+  dirent* p = NULL;
   assert(dirp != NULL, "just checking");
 
-  // NOTE: Linux readdir_r (on RH 6.2 and 7.2 at least) is NOT like the POSIX
-  // version. Here is the doc for this function:
-  // http://www.gnu.org/manual/glibc-2.2.3/html_node/libc_262.html
-
-  if((status = ::readdir_r(dirp, dbuf, &p)) != 0) {
-    errno = status;
+  // AIX: slightly different from POSIX.
+  // On AIX, readdir_r returns 0 or != 0 and error details in errno.
+  if (::readdir_r(dirp, dbuf, &p) != 0) {
     return NULL;
-  } else
-    return p;
+  }
+  return p;
 }
 
 inline int os::closedir(DIR *dirp) {

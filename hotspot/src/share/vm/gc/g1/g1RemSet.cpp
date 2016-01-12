@@ -25,13 +25,16 @@
 #include "precompiled.hpp"
 #include "gc/g1/concurrentG1Refine.hpp"
 #include "gc/g1/concurrentG1RefineThread.hpp"
+#include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1RemSet.inline.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.hpp"
@@ -40,13 +43,15 @@
 #include "utilities/intHisto.hpp"
 #include "utilities/stack.inline.hpp"
 
-G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
-  : _g1(g1), _conc_refine_cards(0),
-    _ct_bs(ct_bs), _g1p(_g1->g1_policy()),
-    _cg1r(g1->concurrent_g1_refine()),
-    _cset_rs_update_cl(NULL),
-    _prev_period_summary(),
-    _into_cset_dirty_card_queue_set(false)
+G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs) :
+  _g1(g1),
+  _conc_refine_cards(0),
+  _ct_bs(ct_bs),
+  _g1p(_g1->g1_policy()),
+  _cg1r(g1->concurrent_g1_refine()),
+  _cset_rs_update_cl(NULL),
+  _prev_period_summary(),
+  _into_cset_dirty_card_queue_set(false)
 {
   _cset_rs_update_cl = NEW_C_HEAP_ARRAY(G1ParPushHeapRSClosure*, n_workers(), mtGC);
   for (uint i = 0; i < n_workers(); i++) {
@@ -73,16 +78,24 @@ G1RemSet::~G1RemSet() {
   FREE_C_HEAP_ARRAY(G1ParPushHeapRSClosure*, _cset_rs_update_cl);
 }
 
+uint G1RemSet::num_par_rem_sets() {
+  return MAX2(DirtyCardQueueSet::num_par_ids() + ConcurrentG1Refine::thread_num(), ParallelGCThreads);
+}
+
+void G1RemSet::initialize(uint max_regions) {
+  G1FromCardCache::initialize(num_par_rem_sets(), max_regions);
+}
+
 ScanRSClosure::ScanRSClosure(G1ParPushHeapRSClosure* oc,
                              CodeBlobClosure* code_root_cl,
                              uint worker_i) :
-    _oc(oc),
-    _code_root_cl(code_root_cl),
-    _strong_code_root_scan_time_sec(0.0),
-    _cards(0),
-    _cards_done(0),
-    _worker_i(worker_i),
-    _try_claimed(false) {
+  _oc(oc),
+  _code_root_cl(code_root_cl),
+  _strong_code_root_scan_time_sec(0.0),
+  _cards(0),
+  _cards_done(0),
+  _worker_i(worker_i),
+  _try_claimed(false) {
   _g1h = G1CollectedHeap::heap();
   _bot_shared = _g1h->bot_shared();
   _ct_bs = _g1h->g1_barrier_set();
