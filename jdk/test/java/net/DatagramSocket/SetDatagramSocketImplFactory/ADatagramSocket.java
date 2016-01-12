@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,11 @@ public class ADatagramSocket {
         } catch (Exception ex) {
           throw new RuntimeException("Setting DatagramSocketImplFactory failed!");
         }
-        new QuoteServerThread().start();
+
+        QuoteServerThread server = new QuoteServerThread();
+        int port = server.getPort();
+        System.out.println("Server port is " + port);
+        server.start();
 
         // get a datagram socket
         DatagramSocket socket = new DatagramSocket();
@@ -49,7 +53,7 @@ public class ADatagramSocket {
         // send request
         byte[] buf = new byte[256];
         InetAddress address = InetAddress.getLocalHost();
-        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, 4445);
+        DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
         socket.send(packet);
 
         // get response
@@ -67,6 +71,7 @@ public class ADatagramSocket {
 class QuoteServerThread extends Thread {
 
     protected DatagramSocket socket = null;
+    private final int port;
 
     public QuoteServerThread() throws IOException {
         this("QuoteServerThread");
@@ -74,7 +79,11 @@ class QuoteServerThread extends Thread {
 
     public QuoteServerThread(String name) throws IOException {
         super(name);
-        socket = new DatagramSocket(4445);
+        socket = new DatagramSocket(0);
+        port =  socket.getLocalPort();
+    }
+    public int getPort(){
+        return port;
     }
 
     public void run() {
@@ -101,3 +110,4 @@ class QuoteServerThread extends Thread {
       socket.close();
     }
 }
+

@@ -34,7 +34,6 @@ package com.sun.source.doctree;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface ReferenceTree extends DocTree {
     /**
      * Returns the signature of the Java language element being referenced,

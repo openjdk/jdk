@@ -36,7 +36,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface BinaryTree extends ExpressionTree {
     /**
      * Returns left hand side (LHS) of this binary expression.

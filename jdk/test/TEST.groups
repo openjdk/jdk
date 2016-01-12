@@ -77,7 +77,6 @@ jdk_lang = \
     sun/misc \
     sun/reflect \
     jdk/lambda \
-    jdk/internal/jimage \
     vm
 
 # All of the java.util package

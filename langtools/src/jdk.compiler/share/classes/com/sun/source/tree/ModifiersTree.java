@@ -45,7 +45,6 @@ import javax.lang.model.element.Modifier;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface ModifiersTree extends Tree {
     /**
      * Returns the flags in this modifiers tree.

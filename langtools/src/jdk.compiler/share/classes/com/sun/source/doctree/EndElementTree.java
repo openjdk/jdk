@@ -35,7 +35,6 @@ import javax.lang.model.element.Name;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface EndElementTree extends DocTree {
     /**
      * Returns the name of this element.

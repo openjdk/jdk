@@ -41,7 +41,6 @@ import java.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface ParameterizedTypeTree extends Tree {
     /**
      * Returns the base type.

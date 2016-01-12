@@ -2135,7 +2135,7 @@ public class ObjectInputStream
      * corresponding modifications to the above class.
      */
     private static ClassLoader latestUserDefinedLoader() {
-        return sun.misc.VM.latestUserDefinedLoader();
+        return jdk.internal.misc.VM.latestUserDefinedLoader();
     }
 
     /**

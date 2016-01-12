@@ -39,7 +39,6 @@ import com.sun.source.tree.*;
  * @author Peter von der Ah&eacute;
  * @since 1.6
  */
-@jdk.Exported
 public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
     /**
      * The default value, returned by the {@link #defaultAction default action}.

@@ -42,7 +42,6 @@ package com.sun.source.tree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface UnaryTree extends ExpressionTree {
     /**
      * Returns the expression that is the operand of the unary operator.

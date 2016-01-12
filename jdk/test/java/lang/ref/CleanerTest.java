@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import jdk.internal.misc.CleanerImpl.PhantomCleanable;
-import jdk.internal.misc.CleanerImpl.WeakCleanable;
-import jdk.internal.misc.CleanerImpl.SoftCleanable;
+import jdk.internal.ref.PhantomCleanable;
+import jdk.internal.ref.WeakCleanable;
+import jdk.internal.ref.SoftCleanable;
+import jdk.internal.ref.CleanerFactory;
 
 import sun.hotspot.WhiteBox;
 
@@ -48,7 +49,7 @@ import org.testng.annotations.Test;
  * @test
  * @library /lib/testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc java.base/jdk.internal.ref
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
@@ -58,7 +59,7 @@ import org.testng.annotations.Test;
 @Test
 public class CleanerTest {
     // A common CleaningService used by the test for notifications
-    static final Cleaner COMMON = Cleaner.create();
+    static final Cleaner COMMON = CleanerFactory.cleaner();
 
     // Access to WhiteBox utilities
     static final WhiteBox whitebox = WhiteBox.getWhiteBox();
@@ -702,4 +703,17 @@ public class CleanerTest {
         cleaner = null;
     }
 
+    /**
+     * Test the Cleaner from the CleanerFactory.
+     */
+    @Test
+    void testCleanerFactory() {
+        Cleaner cleaner = CleanerFactory.cleaner();
+
+        Object obj = new Object();
+        CleanableCase s = setupPhantom(cleaner, obj);
+        obj = null;
+        Assert.assertTrue(checkCleaned(s.getSemaphore()),
+                "Object cleaning should have occurred using CleanerFactor.cleaner()");
+    }
 }
