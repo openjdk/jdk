@@ -41,7 +41,6 @@ import javax.lang.model.type.TypeKind;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface PrimitiveTypeTree extends Tree {
     /**
      * Returns the kind of this primitive type.

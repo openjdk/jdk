@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,13 +120,6 @@ public class JavacState {
     // ones that -sourcepath is allowed to see.
     Set<URI> visibleSrcs;
 
-    // Visible classes for linking. These are the only
-    // ones that -classpath is allowed to see.
-    // It maps from a classpath root to the set of visible classes for that root.
-    // If the set is empty, then all classes are visible for that root.
-    // It can also map from a jar file to the set of visible classes for that jar file.
-    Map<URI,Set<String>> visibleClasses;
-
     // Setup transform that always exist.
     private CompileJavaPackages compileJavaPackages = new CompileJavaPackages();
 
@@ -213,16 +206,6 @@ public class JavacState {
         }
     }
 
-    /**
-     * Specify which classes are visible to the compiler through -classpath.
-     */
-    public void setVisibleClasses(Map<String,Source> vs) {
-        visibleSrcs = new HashSet<>();
-        for (String s : vs.keySet()) {
-            Source src = vs.get(s);
-            visibleSrcs.add(src.file().toURI());
-        }
-    }
     /**
      * Returns true if this is an incremental build.
      */
@@ -820,7 +803,6 @@ public class JavacState {
             boolean r = t.transform(sjavac,
                                     srcs,
                                     visibleSrcs,
-                                    visibleClasses,
                                     prev.dependents(),
                                     outputDir.toURI(),
                                     packageArtifacts,
@@ -954,8 +936,7 @@ public class JavacState {
             }
         }
         // Read in the file and create another set of filenames with full paths.
-        try {
-            BufferedReader in = new BufferedReader(new FileReader(makefileSourceList));
+        try(BufferedReader in = new BufferedReader(new FileReader(makefileSourceList))) {
             for (;;) {
                 String l = in.readLine();
                 if (l==null) break;

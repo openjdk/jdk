@@ -1194,6 +1194,7 @@ public final class Duration
      * This instance is immutable and unaffected by this method call.
      *
      * @return the whole seconds part of the length of the duration, positive or negative
+     * @since 9
      */
     public long toSeconds() {
         return seconds;
@@ -1243,6 +1244,7 @@ public final class Duration
      * This instance is immutable and unaffected by this method call.
      *
      * @return the number of days in the duration, may be negative
+     * @since 9
      */
     public long toDaysPart(){
         return seconds / SECONDS_PER_DAY;
@@ -1258,6 +1260,7 @@ public final class Duration
      * This instance is immutable and unaffected by this method call.
      *
      * @return the number of hours part in the duration, may be negative
+     * @since 9
      */
     public int toHoursPart(){
         return (int) (toHours() % 24);
@@ -1273,7 +1276,7 @@ public final class Duration
      * This instance is immutable and unaffected by this method call.
      *
      * @return the number of minutes parts in the duration, may be negative
-     * may be negative
+     * @since 9
      */
     public int toMinutesPart(){
         return (int) (toMinutes() % MINUTES_PER_HOUR);
@@ -1289,6 +1292,7 @@ public final class Duration
      * This instance is immutable and unaffected by this method call.
      *
      * @return the number of seconds parts in the duration, may be negative
+     * @since 9
      */
     public int toSecondsPart(){
         return (int) (seconds % SECONDS_PER_MINUTE);
@@ -1306,6 +1310,7 @@ public final class Duration
      * This instance is immutable and unaffected by this method call.
      *
      * @return the number of milliseconds part of the duration.
+     * @since 9
      */
     public int toMillisPart(){
         return nanos / 1000_000;
@@ -1322,6 +1327,7 @@ public final class Duration
      * This instance is immutable and unaffected by this method call.
      *
      * @return the nanoseconds within the second part of the length of the duration, from 0 to 999,999,999
+     * @since 9
      */
     public int toNanosPart(){
         return nanos;
@@ -1385,7 +1391,7 @@ public final class Duration
      * <p>
      * The format of the returned string will be {@code PTnHnMnS}, where n is
      * the relevant hours, minutes or seconds part of the duration.
-     * Any fractional seconds are placed after a decimal point i the seconds section.
+     * Any fractional seconds are placed after a decimal point in the seconds section.
      * If a section has a zero value, it is omitted.
      * The hours, minutes and seconds will all have the same sign.
      * <p>
@@ -1406,9 +1412,13 @@ public final class Duration
         if (this == ZERO) {
             return "PT0S";
         }
-        long hours = seconds / SECONDS_PER_HOUR;
-        int minutes = (int) ((seconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
-        int secs = (int) (seconds % SECONDS_PER_MINUTE);
+        long effectiveTotalSecs = seconds;
+        if (seconds < 0 && nanos > 0) {
+            effectiveTotalSecs++;
+        }
+        long hours = effectiveTotalSecs / SECONDS_PER_HOUR;
+        int minutes = (int) ((effectiveTotalSecs % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
+        int secs = (int) (effectiveTotalSecs % SECONDS_PER_MINUTE);
         StringBuilder buf = new StringBuilder(24);
         buf.append("PT");
         if (hours != 0) {
@@ -1420,18 +1430,18 @@ public final class Duration
         if (secs == 0 && nanos == 0 && buf.length() > 2) {
             return buf.toString();
         }
-        if (secs < 0 && nanos > 0) {
-            if (secs == -1) {
+        if (seconds < 0 && nanos > 0) {
+            if (secs == 0) {
                 buf.append("-0");
             } else {
-                buf.append(secs + 1);
+                buf.append(secs);
             }
         } else {
             buf.append(secs);
         }
         if (nanos > 0) {
             int pos = buf.length();
-            if (secs < 0) {
+            if (seconds < 0) {
                 buf.append(2 * NANOS_PER_SECOND - nanos);
             } else {
                 buf.append(nanos + NANOS_PER_SECOND);

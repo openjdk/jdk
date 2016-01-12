@@ -27,8 +27,8 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.testng.TestNG;
@@ -36,6 +36,8 @@ import org.testng.annotations.Test;
 
 /*
  * @test
+ * @library /test/lib/share/classes
+ * @run testng InfoTest
  * @summary Basic tests for ProcessHandler
  * @author Roger Riggs
  */

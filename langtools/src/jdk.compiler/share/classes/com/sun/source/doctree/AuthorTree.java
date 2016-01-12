@@ -35,7 +35,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface AuthorTree extends BlockTagTree {
     /**
      * Returns the name of the author.

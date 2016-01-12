@@ -45,7 +45,6 @@ import java.io.Serializable;
  * @author Gordon Hirsch
  * @since  1.3
  */
-@jdk.Exported
 public interface Connector {
     /**
      * Returns a short identifier for the connector. Connector implementors
@@ -92,7 +91,6 @@ public interface Connector {
      * {@link Connector.IntegerArgument},
      * or {@link Connector.SelectedArgument}.
      */
-    @jdk.Exported
     public interface Argument extends Serializable {
         /**
          * Returns a short, unique identifier for the argument.
@@ -158,7 +156,6 @@ public interface Connector {
      * whose value is Boolean.  Boolean values are represented
      * by the localized versions of the strings "true" and "false".
      */
-    @jdk.Exported
     public interface BooleanArgument extends Argument {
         /**
          * Sets the value of the argument.
@@ -199,7 +196,6 @@ public interface Connector {
      * whose value is an integer.  Integer values are represented
      * by their corresponding strings.
      */
-    @jdk.Exported
     public interface IntegerArgument extends Argument {
         /**
          * Sets the value of the argument.
@@ -261,7 +257,6 @@ public interface Connector {
      * Specification for and value of a Connector argument,
      * whose value is a String.
      */
-    @jdk.Exported
     public interface StringArgument extends Argument {
         /**
          * Performs basic sanity check of argument.
@@ -274,7 +269,6 @@ public interface Connector {
      * Specification for and value of a Connector argument,
      * whose value is a String selected from a list of choices.
      */
-    @jdk.Exported
     public interface SelectedArgument extends Argument {
         /**
          * Return the possible values for the argument

@@ -67,7 +67,6 @@ import javax.net.ssl.*;
  * </pre></blockquote>
  * @since 1.6
  */
-@jdk.Exported
 public class HttpsConfigurator {
 
     private SSLContext context;

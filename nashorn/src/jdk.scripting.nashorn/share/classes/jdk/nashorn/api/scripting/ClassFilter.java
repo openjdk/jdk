@@ -31,7 +31,6 @@ package jdk.nashorn.api.scripting;
  *
  * @since 1.8u40
  */
-@jdk.Exported
 public interface ClassFilter {
      /**
       * Should the Java class of the specified name be exposed to scripts?
