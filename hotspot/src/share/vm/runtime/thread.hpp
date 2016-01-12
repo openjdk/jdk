@@ -1964,14 +1964,6 @@ class JavaThread: public Thread {
   bool is_attaching_via_jni() const { return _jni_attach_state == _attaching_via_jni; }
   bool has_attached_via_jni() const { return is_attaching_via_jni() || _jni_attach_state == _attached_via_jni; }
   inline void set_done_attaching_via_jni();
- private:
-  // This field is used to determine if a thread has claimed
-  // a par_id: it is UINT_MAX if the thread has not claimed a par_id;
-  // otherwise its value is the par_id that has been claimed.
-  uint _claimed_par_id;
- public:
-  uint get_claimed_par_id() { return _claimed_par_id; }
-  void set_claimed_par_id(uint id) { _claimed_par_id = id; }
 };
 
 // Inline implementation of JavaThread::current
