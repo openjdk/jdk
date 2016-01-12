@@ -27,32 +27,12 @@
 #include "asm/assembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/cppInterpreterGenerator.hpp"
-#include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/templateTable.hpp"
-#include "oops/arrayOop.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.hpp"
-#include "oops/oop.inline.hpp"
-#include "prims/jvmtiExport.hpp"
-#include "prims/jvmtiThreadState.hpp"
-#include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/sharedRuntime.hpp"
-#include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.hpp"
-#include "runtime/timer.hpp"
-#include "runtime/vframeArray.hpp"
-#include "utilities/debug.hpp"
-#ifdef COMPILER1
-#include "c1/c1_Runtime1.hpp"
-#endif
-#ifdef CC_INTERP
 #include "interpreter/cppInterpreter.hpp"
-#endif
 
-address AbstractInterpreterGenerator::generate_slow_signature_handler() {
+address CppInterpreterGenerator::generate_slow_signature_handler() {
   _masm->advance(1);
   return (address) InterpreterRuntime::slow_signature_handler;
 }
@@ -70,6 +50,44 @@ address CppInterpreterGenerator::generate_abstract_entry() {
   return generate_entry((address) ShouldNotCallThisEntry());
 }
 
-bool AbstractInterpreter::can_be_compiled(methodHandle m) {
-  return true;
+address CppInterpreterGenerator::generate_empty_entry() {
+  if (!UseFastEmptyMethods)
+    return NULL;
+
+  return generate_entry((address) CppInterpreter::empty_entry);
+}
+
+address CppInterpreterGenerator::generate_accessor_entry() {
+  if (!UseFastAccessorMethods)
+    return NULL;
+
+  return generate_entry((address) CppInterpreter::accessor_entry);
+}
+
+address CppInterpreterGenerator::generate_Reference_get_entry(void) {
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) {
+    // We need to generate have a routine that generates code to:
+    //   * load the value in the referent field
+    //   * passes that value to the pre-barrier.
+    //
+    // In the case of G1 this will record the value of the
+    // referent in an SATB buffer if marking is active.
+    // This will cause concurrent marking to mark the referent
+    // field as live.
+    Unimplemented();
+  }
+#endif // INCLUDE_ALL_GCS
+
+  // If G1 is not enabled then attempt to go through the normal entry point
+  // Reference.get could be instrumented by jvmti
+  return NULL;
+}
+
+address CppInterpreterGenerator::generate_native_entry(bool synchronized) {
+  return generate_entry((address) CppInterpreter::native_entry);
+}
+
+address CppInterpreterGenerator::generate_normal_entry(bool synchronized) {
+  return generate_entry((address) CppInterpreter::normal_entry);
 }
