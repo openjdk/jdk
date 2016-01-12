@@ -254,7 +254,7 @@ public final class AlawCodec extends SunCodec {
     }
 
 
-    final class AlawCodecStream extends AudioInputStream {
+    private final class AlawCodecStream extends AudioInputStream {
 
         // tempBuffer required only for encoding (when encode is true)
         private static final int tempBufferSize = 64;
@@ -443,6 +443,13 @@ public final class AlawCodec extends SunCodec {
 
                 return (i - off);
             }
+        }
+
+        @Override
+        public long skip(final long n) throws IOException {
+            // Implementation of this method assumes that we support
+            // encoding/decoding from/to 8/16 bits only
+            return encode ? super.skip(n * 2) / 2 : super.skip(n / 2) * 2;
         }
     } // end class AlawCodecStream
 } // end class ALAW
