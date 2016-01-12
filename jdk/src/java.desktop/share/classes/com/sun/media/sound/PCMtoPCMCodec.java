@@ -33,7 +33,6 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 
-
 /**
  * Converts among signed/unsigned and little/big endianness of sampled.
  *
@@ -52,11 +51,6 @@ public final class PCMtoPCMCodec extends SunCodec {
         AudioFormat.Encoding.PCM_UNSIGNED,
     };
 
-
-
-    private static final int tempBufferSize = 64;
-    private byte tempBuffer [] = null;
-
     /**
      * Constructs a new PCMtoPCM codec object.
      */
@@ -67,21 +61,31 @@ public final class PCMtoPCMCodec extends SunCodec {
 
     // NEW CODE
 
+    public AudioFormat.Encoding[] getTargetEncodings(AudioFormat sourceFormat) {
 
-    /**
-     */
-    public AudioFormat.Encoding[] getTargetEncodings(AudioFormat sourceFormat){
-
-        if( sourceFormat.getEncoding().equals( AudioFormat.Encoding.PCM_SIGNED ) ||
-            sourceFormat.getEncoding().equals( AudioFormat.Encoding.PCM_UNSIGNED ) ) {
-
-                AudioFormat.Encoding encs[] = new AudioFormat.Encoding[2];
-                encs[0] = AudioFormat.Encoding.PCM_SIGNED;
-                encs[1] = AudioFormat.Encoding.PCM_UNSIGNED;
-                return encs;
-            } else {
-                return new AudioFormat.Encoding[0];
+        final int sampleSize = sourceFormat.getSampleSizeInBits();
+        AudioFormat.Encoding encoding = sourceFormat.getEncoding();
+        if (sampleSize == 8) {
+            if (encoding.equals(AudioFormat.Encoding.PCM_SIGNED)) {
+                return new AudioFormat.Encoding[]{
+                        AudioFormat.Encoding.PCM_UNSIGNED
+                };
             }
+            if (encoding.equals(AudioFormat.Encoding.PCM_UNSIGNED)) {
+                return new AudioFormat.Encoding[]{
+                        AudioFormat.Encoding.PCM_SIGNED
+                };
+            }
+        } else if (sampleSize == 16) {
+            if (encoding.equals(AudioFormat.Encoding.PCM_SIGNED)
+                    || encoding.equals(AudioFormat.Encoding.PCM_UNSIGNED)) {
+                return new AudioFormat.Encoding[]{
+                        AudioFormat.Encoding.PCM_UNSIGNED,
+                        AudioFormat.Encoding.PCM_SIGNED
+                };
+            }
+        }
+        return new AudioFormat.Encoding[0];
     }
 
 
@@ -125,7 +129,7 @@ public final class PCMtoPCMCodec extends SunCodec {
                                                         sourceFormat.getFrameRate(),
                                                         sourceFormat.isBigEndian() );
 
-            return getAudioInputStream( targetFormat, sourceStream );
+            return getConvertedStream(targetFormat, sourceStream);
 
         } else {
             throw new IllegalArgumentException("Unsupported conversion: " + sourceStream.getFormat().toString() + " to " + targetEncoding.toString() );
@@ -136,7 +140,10 @@ public final class PCMtoPCMCodec extends SunCodec {
      * use old code
      */
     public AudioInputStream getAudioInputStream(AudioFormat targetFormat, AudioInputStream sourceStream){
-
+        if (!isConversionSupported(targetFormat, sourceStream.getFormat()))
+            throw new IllegalArgumentException("Unsupported conversion: "
+                                               + sourceStream.getFormat().toString() + " to "
+                                               + targetFormat.toString());
         return getConvertedStream( targetFormat, sourceStream );
     }
 
@@ -166,7 +173,6 @@ public final class PCMtoPCMCodec extends SunCodec {
         } else {
 
             cs = (AudioInputStream) (new PCMtoPCMCodecStream(stream, outputFormat));
-            tempBuffer = new byte[tempBufferSize];
         }
         return cs;
     }

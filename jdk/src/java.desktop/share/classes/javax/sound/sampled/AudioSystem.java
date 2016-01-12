@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -689,8 +690,11 @@ public class AudioSystem {
                 }
             }
         }
-        AudioFormat.Encoding encs2[] = encodings.toArray(new AudioFormat.Encoding[0]);
-        return encs2;
+        if (!encodings.contains(sourceEncoding)) {
+            encodings.addElement(sourceEncoding);
+        }
+
+        return encodings.toArray(new AudioFormat.Encoding[encodings.size()]);
     }
 
     // $$fb 2002-04-12: fix for 4662082: behavior of AudioSystem.getTargetEncodings() methods doesn't match the spec
@@ -711,30 +715,18 @@ public class AudioSystem {
         Objects.requireNonNull(sourceFormat);
 
         List<FormatConversionProvider> codecs = getFormatConversionProviders();
-        Vector<AudioFormat.Encoding[]> encodings = new Vector<>();
-
-        int size = 0;
-        int index = 0;
-        AudioFormat.Encoding encs[] = null;
+        List<AudioFormat.Encoding> encs = new ArrayList<>();
 
         // gather from all the codecs
-
-        for(int i=0; i<codecs.size(); i++ ) {
-            encs = codecs.get(i).getTargetEncodings(sourceFormat);
-            size += encs.length;
-            encodings.addElement( encs );
+        for (final FormatConversionProvider codec : codecs) {
+            Collections.addAll(encs, codec.getTargetEncodings(sourceFormat));
         }
 
-        // now build a new array
-
-        AudioFormat.Encoding encs2[] = new AudioFormat.Encoding[size];
-        for(int i=0; i<encodings.size(); i++ ) {
-            encs = encodings.get(i);
-            for(int j=0; j<encs.length; j++ ) {
-                encs2[index++] = encs[j];
-            }
+        if (!encs.contains(sourceFormat.getEncoding())) {
+            encs.add(sourceFormat.getEncoding());
         }
-        return encs2;
+
+        return encs.toArray(new AudioFormat.Encoding[encs.size()]);
     }
 
     /**
@@ -751,6 +743,9 @@ public class AudioSystem {
     public static boolean isConversionSupported(AudioFormat.Encoding targetEncoding, AudioFormat sourceFormat) {
         Objects.requireNonNull(targetEncoding);
         Objects.requireNonNull(sourceFormat);
+        if (sourceFormat.getEncoding().equals(targetEncoding)) {
+            return true;
+        }
 
         List<FormatConversionProvider> codecs = getFormatConversionProviders();
 
@@ -782,6 +777,9 @@ public class AudioSystem {
                                                        AudioInputStream sourceStream) {
         Objects.requireNonNull(targetEncoding);
         Objects.requireNonNull(sourceStream);
+        if (sourceStream.getFormat().getEncoding().equals(targetEncoding)) {
+            return sourceStream;
+        }
 
         List<FormatConversionProvider> codecs = getFormatConversionProviders();
 
@@ -812,31 +810,27 @@ public class AudioSystem {
         Objects.requireNonNull(sourceFormat);
 
         List<FormatConversionProvider> codecs = getFormatConversionProviders();
-        Vector<AudioFormat[]> formats = new Vector<>();
+        List<AudioFormat> formats = new ArrayList<>();
 
-        int size = 0;
-        int index = 0;
-        AudioFormat fmts[] = null;
-
+        boolean matchFound = false;
         // gather from all the codecs
-
-        for(int i=0; i<codecs.size(); i++ ) {
-            FormatConversionProvider codec = codecs.get(i);
-            fmts = codec.getTargetFormats(targetEncoding, sourceFormat);
-            size += fmts.length;
-            formats.addElement( fmts );
-        }
-
-        // now build a new array
-
-        AudioFormat fmts2[] = new AudioFormat[size];
-        for(int i=0; i<formats.size(); i++ ) {
-            fmts = formats.get(i);
-            for(int j=0; j<fmts.length; j++ ) {
-                fmts2[index++] = fmts[j];
+        for (final FormatConversionProvider codec : codecs) {
+            AudioFormat[] elements = codec
+                    .getTargetFormats(targetEncoding, sourceFormat);
+            for (AudioFormat format : elements) {
+                formats.add(format);
+                if (sourceFormat.matches(format)) {
+                    matchFound = true;
+                }
             }
         }
-        return fmts2;
+
+        if (targetEncoding.equals(sourceFormat.getEncoding())) {
+            if (!matchFound) {
+                formats.add(sourceFormat);
+            }
+        }
+        return formats.toArray(new AudioFormat[formats.size()]);
     }
 
     /**
@@ -853,6 +847,9 @@ public class AudioSystem {
     public static boolean isConversionSupported(AudioFormat targetFormat, AudioFormat sourceFormat) {
         Objects.requireNonNull(targetFormat);
         Objects.requireNonNull(sourceFormat);
+        if (sourceFormat.matches(targetFormat)) {
+            return true;
+        }
 
         List<FormatConversionProvider> codecs = getFormatConversionProviders();
 
