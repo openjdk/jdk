@@ -43,6 +43,7 @@ import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import jdk.internal.misc.VM;
 import sun.misc.ASCIICaseInsensitiveComparator;
 import sun.nio.cs.StandardCharsets;
 import sun.nio.cs.ThreadLocalCoders;
@@ -281,7 +282,7 @@ public abstract class Charset
     static boolean atBugLevel(String bl) {              // package-private
         String level = bugLevel;
         if (level == null) {
-            if (!sun.misc.VM.isBooted())
+            if (!VM.isBooted())
                 return false;
             bugLevel = level = AccessController.doPrivileged(
                 new GetPropertyAction("sun.nio.cs.bugLevel", ""));
@@ -394,7 +395,7 @@ public abstract class Charset
         // that loader to be prematurely initialized with incomplete
         // information.
         //
-        if (!sun.misc.VM.isBooted())
+        if (!VM.isBooted())
             return null;
 
         if (gate.get() != null)
@@ -445,7 +446,7 @@ public abstract class Charset
     }
 
     private static Charset lookupExtendedCharset(String charsetName) {
-        if (!sun.misc.VM.isBooted())  // see lookupViaProviders()
+        if (!VM.isBooted())  // see lookupViaProviders()
             return null;
         CharsetProvider[] ecps = ExtendedProviderHolder.extendedProviders;
         for (CharsetProvider cp : ecps) {

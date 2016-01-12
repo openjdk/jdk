@@ -69,7 +69,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleElementVisitor6
  * @see SimpleElementVisitor7
  * @see SimpleElementVisitor8
- * @since 1.9
+ * @since 9
  */
 @SupportedSourceVersion(RELEASE_9)
 public class SimpleElementVisitor9<R, P> extends SimpleElementVisitor8<R, P> {

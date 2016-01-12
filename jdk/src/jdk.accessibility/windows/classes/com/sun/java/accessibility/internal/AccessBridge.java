@@ -53,7 +53,6 @@ import java.util.concurrent.CountDownLatch;
  * Note: This class has to be public.  It's loaded from the VM like this:
  *       Class.forName(atName).newInstance();
  */
-@jdk.Exported(false)
 final public class AccessBridge {
 
     private static AccessBridge theAccessBridge;

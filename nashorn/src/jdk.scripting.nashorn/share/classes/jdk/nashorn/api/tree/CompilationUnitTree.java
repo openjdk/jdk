@@ -33,7 +33,6 @@ import java.util.List;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface CompilationUnitTree extends Tree {
     /**
      * Return the list of source elements in this compilation unit.

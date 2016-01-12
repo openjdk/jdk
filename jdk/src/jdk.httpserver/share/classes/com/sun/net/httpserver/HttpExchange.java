@@ -64,7 +64,6 @@ import java.util.*;
  * @since 1.6
  */
 
-@jdk.Exported
 public abstract class HttpExchange {
 
     protected HttpExchange () {

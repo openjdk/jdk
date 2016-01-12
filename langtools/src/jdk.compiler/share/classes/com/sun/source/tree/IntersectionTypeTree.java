@@ -34,7 +34,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface IntersectionTypeTree extends Tree {
     /**
      * Returns the bounds of the type.

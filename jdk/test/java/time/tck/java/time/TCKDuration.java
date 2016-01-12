@@ -2893,6 +2893,9 @@ public class TCKDuration extends AbstractTCKTest {
             {-1, 0, "PT-1S"},
             {-1, 1000, "PT-0.999999S"},
             {-1, 900000000, "PT-0.1S"},
+            {-60, 100_000_000, "PT-59.9S"},
+            {-59, -900_000_000, "PT-59.9S"},
+            {-60, -100_000_000, "PT-1M-0.1S"},
             {Long.MAX_VALUE, 0, "PT" + (Long.MAX_VALUE / 3600) + "H" +
                     ((Long.MAX_VALUE % 3600) / 60) + "M" + (Long.MAX_VALUE % 60) + "S"},
             {Long.MIN_VALUE, 0, "PT" + (Long.MIN_VALUE / 3600) + "H" +

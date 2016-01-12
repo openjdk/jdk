@@ -38,7 +38,6 @@ import com.sun.jdi.*;
  * @author Swamy Venkataramanappa
  * @since  1.6
  */
-@jdk.Exported
 public interface MonitorContendedEnteredEvent extends LocatableEvent {
 
     /**

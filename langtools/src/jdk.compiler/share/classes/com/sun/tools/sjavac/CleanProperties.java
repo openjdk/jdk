@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@ public class CleanProperties implements Transformer {
     public boolean transform(CompilationService sjavac,
                              Map<String,Set<URI>> pkgSrcs,
                              Set<URI>             visibleSrcs,
-                             Map<URI,Set<String>> visibleClasses,
                              Map<String,Set<String>> oldPackageDependencies,
                              URI destRoot,
                              Map<String,Set<URI>>    packageArtifacts,

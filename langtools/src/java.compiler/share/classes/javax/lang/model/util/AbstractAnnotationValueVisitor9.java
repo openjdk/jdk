@@ -57,7 +57,7 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @see AbstractAnnotationValueVisitor6
  * @see AbstractAnnotationValueVisitor7
  * @see AbstractAnnotationValueVisitor8
- * @since 1.9
+ * @since 9
  */
 @SupportedSourceVersion(RELEASE_9)
 public abstract class AbstractAnnotationValueVisitor9<R, P> extends AbstractAnnotationValueVisitor8<R, P> {

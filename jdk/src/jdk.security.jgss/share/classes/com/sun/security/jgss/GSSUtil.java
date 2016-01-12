@@ -33,7 +33,6 @@ import org.ietf.jgss.GSSCredential;
  * GSS-API Utilities for using in conjunction with Sun Microsystem's
  * implementation of Java GSS-API.
  */
-@jdk.Exported
 public class GSSUtil {
 
     /**
