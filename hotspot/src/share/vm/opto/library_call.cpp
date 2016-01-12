@@ -3077,7 +3077,7 @@ bool LibraryCallKit::inline_native_isInterrupted() {
   set_control( _gvn.transform(new IfTrueNode(iff_arg)));
 #else
   // To return true on Windows you must read the _interrupted field
-  // and check the the event state i.e. take the slow path.
+  // and check the event state i.e. take the slow path.
 #endif // TARGET_OS_FAMILY_windows
 
   // (d) Otherwise, go to the slow path.
