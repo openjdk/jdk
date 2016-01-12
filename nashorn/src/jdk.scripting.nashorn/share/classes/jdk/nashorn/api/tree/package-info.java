@@ -70,6 +70,5 @@
  *
  * @since 1.9
  */
-@jdk.Exported
 package jdk.nashorn.api.tree;
 

@@ -61,6 +61,9 @@ interface LiveStackFrame extends StackFrame {
      * local variable array is an {@link PrimitiveValue} object;
      * otherwise, the element is an {@code Object}.
      *
+     * <p>The returned array may contain null entries if a local variable is not
+     * live.
+     *
      * @return  the local variable array of this stack frame.
      */
     public Object[] getLocals();

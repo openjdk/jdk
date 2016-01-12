@@ -35,7 +35,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface DeprecatedTree extends BlockTagTree {
     /**
      * Returns the description explaining why an item is deprecated.

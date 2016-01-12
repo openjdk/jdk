@@ -78,7 +78,6 @@ package com.sun.jdi;
  *
  */
 
-@jdk.Exported
 public final class JDIPermission extends java.security.BasicPermission {
     private static final long serialVersionUID = -6988461416938786271L;
     /**

@@ -35,7 +35,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public class UnknownTreeException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;

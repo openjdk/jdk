@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,26 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.ref;
 
-import sun.io.Win32ErrorMode;
+import java.lang.ref.Cleaner;
 
-public class OSEnvironment {
+/**
+ * CleanerFactory provides a Cleaner for use within OpenJDK modules.
+ * The cleaner is created on the first reference to the CleanerFactory.
+ */
+public final class CleanerFactory {
 
-    /*
-     * Initialize any miscellenous operating system settings that need to be set
-     * for the class libraries.
-     * <p>
-     * At this time only the process-wide error mode needs to be set.
+    /* The common Cleaner. */
+    private final static Cleaner commonCleaner = Cleaner.create();
+
+    /**
+     * Cleaner for use within OpenJDK modules.
+     *
+     * @return a Cleaner for use within OpenJDK modules
      */
-    public static void initialize() {
-        Win32ErrorMode.initialize();
+    public static Cleaner cleaner() {
+        return commonCleaner;
     }
 
 }

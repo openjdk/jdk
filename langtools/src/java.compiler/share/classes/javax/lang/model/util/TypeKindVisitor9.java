@@ -72,7 +72,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see TypeKindVisitor6
  * @see TypeKindVisitor7
  * @see TypeKindVisitor8
- * @since 1.9
+ * @since 9
  */
 @SupportedSourceVersion(RELEASE_9)
 public class TypeKindVisitor9<R, P> extends TypeKindVisitor8<R, P> {

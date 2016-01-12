@@ -783,13 +783,13 @@ define SetupNativeCompilationBody
 
     $1_LD_OBJ_ARG := $$($1_ALL_OBJS)
 
-    # If there are many object files, use an @-file.
+    # If there are many object files, use an @-file...
     ifneq ($$(word 17, $$($1_ALL_OBJS)), )
       $1_OBJ_FILE_LIST := $$($1_OBJECT_DIR)/_$1_objectfilenames.txt
-      ifneq ($(TOOLCHAIN_TYPE),solstudio)
+      ifneq ($(COMPILER_COMMAND_FILE_FLAG),)
         $1_LD_OBJ_ARG := $(COMPILER_COMMAND_FILE_FLAG)$$($1_OBJ_FILE_LIST)
       else
-        # The solstudio linker does not support @-files.
+        # ...except for toolchains which don't support them.
         $1_LD_OBJ_ARG := `cat $$($1_OBJ_FILE_LIST)`
       endif
     endif

@@ -44,7 +44,6 @@ package com.sun.source.tree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface WildcardTree extends Tree {
     /**
      * Returns the bound of the wildcard.

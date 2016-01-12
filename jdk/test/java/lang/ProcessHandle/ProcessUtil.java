@@ -23,18 +23,13 @@
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.lang.ProcessBuilder;
 import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import com.sun.management.OperatingSystemMXBean;
-
-import jdk.testlibrary.Platform;
-
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.sun.management.OperatingSystemMXBean;
+import jdk.test.lib.Platform;
 
 /**
  * Useful utilities for testing Process and ProcessHandle.

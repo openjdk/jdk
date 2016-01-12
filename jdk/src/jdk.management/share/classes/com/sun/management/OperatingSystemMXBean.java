@@ -39,7 +39,6 @@ package com.sun.management;
  * @author  Mandy Chung
  * @since   1.5
  */
-@jdk.Exported
 public interface OperatingSystemMXBean extends
     java.lang.management.OperatingSystemMXBean {
 
