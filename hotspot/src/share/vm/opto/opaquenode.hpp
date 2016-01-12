@@ -50,7 +50,7 @@ class Opaque1Node : public Node {
   Node* original_loop_limit() { return req()==3 ? in(2) : NULL; }
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------Opaque2Node------------------------------------
@@ -109,7 +109,7 @@ class ProfileBooleanNode : public Node {
 
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual Node *Identity(PhaseTransform *phase);
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
 };
 

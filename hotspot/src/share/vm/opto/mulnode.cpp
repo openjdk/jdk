@@ -46,7 +46,7 @@ uint MulNode::hash() const {
 
 //------------------------------Identity---------------------------------------
 // Multiplying a one preserves the other argument
-Node *MulNode::Identity( PhaseTransform *phase ) {
+Node* MulNode::Identity(PhaseGVN* phase) {
   register const Type *one = mul_id();  // The multiplicative identity
   if( phase->type( in(1) )->higher_equal( one ) ) return in(2);
   if( phase->type( in(2) )->higher_equal( one ) ) return in(1);
@@ -139,7 +139,7 @@ Node *MulNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value-----------------------------------------
-const Type *MulNode::Value( PhaseTransform *phase ) const {
+const Type* MulNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
   // Either input is TOP ==> the result is TOP
@@ -381,7 +381,7 @@ const Type *MulDNode::mul_ring(const Type *t0, const Type *t1) const {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-const Type *MulHiLNode::Value( PhaseTransform *phase ) const {
+const Type* MulHiLNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
@@ -432,7 +432,7 @@ const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
 
 //------------------------------Identity---------------------------------------
 // Masking off the high bits of an unsigned load is not required
-Node *AndINode::Identity( PhaseTransform *phase ) {
+Node* AndINode::Identity(PhaseGVN* phase) {
 
   // x & x => x
   if (phase->eqv(in(1), in(2))) return in(1);
@@ -562,7 +562,7 @@ const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
 
 //------------------------------Identity---------------------------------------
 // Masking off the high bits of an unsigned load is not required
-Node *AndLNode::Identity( PhaseTransform *phase ) {
+Node* AndLNode::Identity(PhaseGVN* phase) {
 
   // x & x => x
   if (phase->eqv(in(1), in(2))) return in(1);
@@ -639,7 +639,7 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
-Node *LShiftINode::Identity( PhaseTransform *phase ) {
+Node* LShiftINode::Identity(PhaseGVN* phase) {
   const TypeInt *ti = phase->type( in(2) )->isa_int();  // shift count is an int
   return ( ti && ti->is_con() && ( ti->get_con() & ( BitsPerInt - 1 ) ) == 0 ) ? in(1) : this;
 }
@@ -704,7 +704,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value------------------------------------------
 // A LShiftINode shifts its input2 left by input1 amount.
-const Type *LShiftINode::Value( PhaseTransform *phase ) const {
+const Type* LShiftINode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
   // Either input is TOP ==> the result is TOP
@@ -751,7 +751,7 @@ const Type *LShiftINode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
-Node *LShiftLNode::Identity( PhaseTransform *phase ) {
+Node* LShiftLNode::Identity(PhaseGVN* phase) {
   const TypeInt *ti = phase->type( in(2) )->isa_int(); // shift count is an int
   return ( ti && ti->is_con() && ( ti->get_con() & ( BitsPerLong - 1 ) ) == 0 ) ? in(1) : this;
 }
@@ -813,7 +813,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value------------------------------------------
 // A LShiftLNode shifts its input2 left by input1 amount.
-const Type *LShiftLNode::Value( PhaseTransform *phase ) const {
+const Type* LShiftLNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
   // Either input is TOP ==> the result is TOP
@@ -860,7 +860,7 @@ const Type *LShiftLNode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
-Node *RShiftINode::Identity( PhaseTransform *phase ) {
+Node* RShiftINode::Identity(PhaseGVN* phase) {
   const TypeInt *t2 = phase->type(in(2))->isa_int();
   if( !t2 ) return this;
   if ( t2->is_con() && ( t2->get_con() & ( BitsPerInt - 1 ) ) == 0 )
@@ -959,7 +959,7 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value------------------------------------------
 // A RShiftINode shifts its input2 right by input1 amount.
-const Type *RShiftINode::Value( PhaseTransform *phase ) const {
+const Type* RShiftINode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
   // Either input is TOP ==> the result is TOP
@@ -1014,14 +1014,14 @@ const Type *RShiftINode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
-Node *RShiftLNode::Identity( PhaseTransform *phase ) {
+Node* RShiftLNode::Identity(PhaseGVN* phase) {
   const TypeInt *ti = phase->type( in(2) )->isa_int(); // shift count is an int
   return ( ti && ti->is_con() && ( ti->get_con() & ( BitsPerLong - 1 ) ) == 0 ) ? in(1) : this;
 }
 
 //------------------------------Value------------------------------------------
 // A RShiftLNode shifts its input2 right by input1 amount.
-const Type *RShiftLNode::Value( PhaseTransform *phase ) const {
+const Type* RShiftLNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
   // Either input is TOP ==> the result is TOP
@@ -1072,7 +1072,7 @@ const Type *RShiftLNode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
-Node *URShiftINode::Identity( PhaseTransform *phase ) {
+Node* URShiftINode::Identity(PhaseGVN* phase) {
   const TypeInt *ti = phase->type( in(2) )->isa_int();
   if ( ti && ti->is_con() && ( ti->get_con() & ( BitsPerInt - 1 ) ) == 0 ) return in(1);
 
@@ -1168,7 +1168,7 @@ Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value------------------------------------------
 // A URShiftINode shifts its input2 right by input1 amount.
-const Type *URShiftINode::Value( PhaseTransform *phase ) const {
+const Type* URShiftINode::Value(PhaseGVN* phase) const {
   // (This is a near clone of RShiftINode::Value.)
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
@@ -1242,7 +1242,7 @@ const Type *URShiftINode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
-Node *URShiftLNode::Identity( PhaseTransform *phase ) {
+Node* URShiftLNode::Identity(PhaseGVN* phase) {
   const TypeInt *ti = phase->type( in(2) )->isa_int(); // shift count is an int
   return ( ti && ti->is_con() && ( ti->get_con() & ( BitsPerLong - 1 ) ) == 0 ) ? in(1) : this;
 }
@@ -1297,7 +1297,7 @@ Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value------------------------------------------
 // A URShiftINode shifts its input2 right by input1 amount.
-const Type *URShiftLNode::Value( PhaseTransform *phase ) const {
+const Type* URShiftLNode::Value(PhaseGVN* phase) const {
   // (This is a near clone of RShiftLNode::Value.)
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );

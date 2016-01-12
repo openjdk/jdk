@@ -48,7 +48,7 @@
 //=============================================================================
 //------------------------------Value------------------------------------------
 // Compute the type of the RegionNode.
-const Type *RegionNode::Value( PhaseTransform *phase ) const {
+const Type* RegionNode::Value(PhaseGVN* phase) const {
   for( uint i=1; i<req(); ++i ) {       // For all paths in
     Node *n = in(i);            // Get Control source
     if( !n ) continue;          // Missing inputs are TOP
@@ -60,7 +60,7 @@ const Type *RegionNode::Value( PhaseTransform *phase ) const {
 
 //------------------------------Identity---------------------------------------
 // Check for Region being Identity.
-Node *RegionNode::Identity( PhaseTransform *phase ) {
+Node* RegionNode::Identity(PhaseGVN* phase) {
   // Cannot have Region be an identity, even if it has only 1 input.
   // Phi users cannot have their Region input folded away for them,
   // since they need to select the proper data input
@@ -892,7 +892,7 @@ void PhiNode::verify_adr_type(bool recursive) const {
 
 //------------------------------Value------------------------------------------
 // Compute the type of the PhiNode
-const Type *PhiNode::Value( PhaseTransform *phase ) const {
+const Type* PhiNode::Value(PhaseGVN* phase) const {
   Node *r = in(0);              // RegionNode
   if( !r )                      // Copy or dead
     return in(1) ? phase->type(in(1)) : Type::TOP;
@@ -1145,7 +1145,7 @@ Node* PhiNode::is_cmove_id(PhaseTransform* phase, int true_path) {
 
 //------------------------------Identity---------------------------------------
 // Check for Region being Identity.
-Node *PhiNode::Identity( PhaseTransform *phase ) {
+Node* PhiNode::Identity(PhaseGVN* phase) {
   // Check for no merging going on
   // (There used to be special-case code here when this->region->is_Loop.
   // It would check for a tributary phi on the backedge that the main phi
@@ -2069,13 +2069,13 @@ void PhiNode::dump_spec(outputStream *st) const {
 
 
 //=============================================================================
-const Type *GotoNode::Value( PhaseTransform *phase ) const {
+const Type* GotoNode::Value(PhaseGVN* phase) const {
   // If the input is reachable, then we are executed.
   // If the input is not reachable, then we are not executed.
   return phase->type(in(0));
 }
 
-Node *GotoNode::Identity( PhaseTransform *phase ) {
+Node* GotoNode::Identity(PhaseGVN* phase) {
   return in(0);                // Simple copy of incoming control
 }
 
@@ -2137,7 +2137,7 @@ const Type *PCTableNode::bottom_type() const {
 //------------------------------Value------------------------------------------
 // Compute the type of the PCTableNode.  If reachable it is a tuple of
 // Control, otherwise the table targets are not reachable
-const Type *PCTableNode::Value( PhaseTransform *phase ) const {
+const Type* PCTableNode::Value(PhaseGVN* phase) const {
   if( phase->type(in(0)) == Type::CONTROL )
     return bottom_type();
   return Type::TOP;             // All paths dead?  Then so are we
@@ -2182,7 +2182,7 @@ void JumpProjNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *o
 //------------------------------Value------------------------------------------
 // Check for being unreachable, or for coming from a Rethrow.  Rethrow's cannot
 // have the default "fall_through_index" path.
-const Type *CatchNode::Value( PhaseTransform *phase ) const {
+const Type* CatchNode::Value(PhaseGVN* phase) const {
   // Unreachable?  Then so are all paths from here.
   if( phase->type(in(0)) == Type::TOP ) return Type::TOP;
   // First assume all paths are reachable
@@ -2226,7 +2226,7 @@ uint CatchProjNode::cmp( const Node &n ) const {
 
 //------------------------------Identity---------------------------------------
 // If only 1 target is possible, choose it if it is the main control
-Node *CatchProjNode::Identity( PhaseTransform *phase ) {
+Node* CatchProjNode::Identity(PhaseGVN* phase) {
   // If my value is control and no other value is, then treat as ID
   const TypeTuple *t = phase->type(in(0))->is_tuple();
   if (t->field_at(_con) != Type::CONTROL)  return this;
@@ -2269,7 +2269,7 @@ void CatchProjNode::dump_spec(outputStream *st) const {
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // Check for CreateEx being Identity.
-Node *CreateExNode::Identity( PhaseTransform *phase ) {
+Node* CreateExNode::Identity(PhaseGVN* phase) {
   if( phase->type(in(1)) == Type::TOP ) return in(1);
   if( phase->type(in(0)) == Type::TOP ) return in(0);
   // We only come from CatchProj, unless the CatchProj goes away.
@@ -2285,7 +2285,7 @@ Node *CreateExNode::Identity( PhaseTransform *phase ) {
 //=============================================================================
 //------------------------------Value------------------------------------------
 // Check for being unreachable.
-const Type *NeverBranchNode::Value( PhaseTransform *phase ) const {
+const Type* NeverBranchNode::Value(PhaseGVN* phase) const {
   if (!in(0) || in(0)->is_top()) return Type::TOP;
   return bottom_type();
 }

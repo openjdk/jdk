@@ -29,7 +29,7 @@
 #include "opto/type.hpp"
 
 //------------------------------Value------------------------------------------
-const Type* CountLeadingZerosINode::Value(PhaseTransform* phase) const {
+const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
   const TypeInt* ti = t->isa_int();
@@ -51,7 +51,7 @@ const Type* CountLeadingZerosINode::Value(PhaseTransform* phase) const {
 }
 
 //------------------------------Value------------------------------------------
-const Type* CountLeadingZerosLNode::Value(PhaseTransform* phase) const {
+const Type* CountLeadingZerosLNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
   const TypeLong* tl = t->isa_long();
@@ -74,7 +74,7 @@ const Type* CountLeadingZerosLNode::Value(PhaseTransform* phase) const {
 }
 
 //------------------------------Value------------------------------------------
-const Type* CountTrailingZerosINode::Value(PhaseTransform* phase) const {
+const Type* CountTrailingZerosINode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
   const TypeInt* ti = t->isa_int();
@@ -96,7 +96,7 @@ const Type* CountTrailingZerosINode::Value(PhaseTransform* phase) const {
 }
 
 //------------------------------Value------------------------------------------
-const Type* CountTrailingZerosLNode::Value(PhaseTransform* phase) const {
+const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
   const Type* t = phase->type(in(1));
   if (t == Type::TOP) return Type::TOP;
   const TypeLong* tl = t->isa_long();

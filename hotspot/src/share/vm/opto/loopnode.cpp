@@ -902,7 +902,7 @@ int CountedLoopEndNode::stride_con() const {
 
 //=============================================================================
 //------------------------------Value-----------------------------------------
-const Type *LoopLimitNode::Value( PhaseTransform *phase ) const {
+const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
   const Type* init_t   = phase->type(in(Init));
   const Type* limit_t  = phase->type(in(Limit));
   const Type* stride_t = phase->type(in(Stride));
@@ -1016,7 +1016,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Identity---------------------------------------
 // If stride == 1 return limit node.
-Node *LoopLimitNode::Identity( PhaseTransform *phase ) {
+Node* LoopLimitNode::Identity(PhaseGVN* phase) {
   int stride_con = phase->type(in(Stride))->is_int()->get_con();
   if (stride_con == 1 || stride_con == -1)
     return in(Limit);
