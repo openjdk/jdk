@@ -57,7 +57,8 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
     }
 
     private static boolean canLinkTypeStatic(final Class<?> type) {
-        return type == String.class || type == Boolean.class || type == ConsString.class || Number.class.isAssignableFrom(type);
+        return type == String.class || type == Boolean.class || type == ConsString.class || type == Integer.class
+                || type == Double.class || type == Float.class || type == Short.class || type == Byte.class;
     }
 
     @Override
@@ -167,7 +168,7 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
 
     @SuppressWarnings("unused")
     private static boolean isJavaScriptPrimitive(final Object o) {
-        return JSType.isString(o) || o instanceof Boolean || o instanceof Number || o == null;
+        return JSType.isString(o) || o instanceof Boolean || JSType.isNumber(o) || o == null;
     }
 
     private static final MethodHandle GUARD_PRIMITIVE = findOwnMH("isJavaScriptPrimitive", boolean.class, Object.class);

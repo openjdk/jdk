@@ -178,6 +178,12 @@ public enum JSType {
     /** Method handle for void returns. */
     public static final Call VOID_RETURN = staticCall(JSTYPE_LOOKUP, JSType.class, "voidReturn", void.class);
 
+    /** Method handle for isString method */
+    public static final Call IS_STRING = staticCall(JSTYPE_LOOKUP, JSType.class, "isString", boolean.class, Object.class);
+
+    /** Method handle for isNumber method */
+    public static final Call IS_NUMBER = staticCall(JSTYPE_LOOKUP, JSType.class, "isNumber", boolean.class, Object.class);
+
     /**
      * The list of available accessor types in width order. This order is used for type guesses narrow{@literal ->} wide
      *  in the dual--fields world
@@ -280,7 +286,7 @@ public enum JSType {
             return JSType.STRING;
         }
 
-        if (obj instanceof Number) {
+        if (isNumber(obj)) {
             return JSType.NUMBER;
         }
 
@@ -322,7 +328,7 @@ public enum JSType {
             return JSType.STRING;
         }
 
-        if (obj instanceof Number) {
+        if (isNumber(obj)) {
             return JSType.NUMBER;
         }
 
@@ -434,7 +440,7 @@ public enum JSType {
         return obj == null ||
                obj == ScriptRuntime.UNDEFINED ||
                isString(obj) ||
-               obj instanceof Number ||
+               isNumber(obj) ||
                obj instanceof Boolean ||
                obj instanceof Symbol;
     }
@@ -610,6 +616,24 @@ public enum JSType {
     }
 
     /**
+     * Returns true if object represents a primitive JavaScript number value. Note that we only
+     * treat wrapper objects of Java primitive number types as objects that can be fully represented
+     * as JavaScript numbers (doubles). This means we exclude {@code long} and special purpose Number
+     * instances such as {@link java.util.concurrent.atomic.AtomicInteger}, as well as arbitrary precision
+     * numbers such as {@link java.math.BigInteger}.
+     *
+     * @param obj the object
+     * @return true if the object represents a primitive JavaScript number value.
+     */
+    public static boolean isNumber(final Object obj) {
+        if (obj != null) {
+            final Class<?> c = obj.getClass();
+            return c == Integer.class || c == Double.class || c == Float.class || c == Short.class || c == Byte.class;
+        }
+        return false;
+    }
+
+    /**
      * JavaScript compliant conversion of integer to String
      *
      * @param num an integer
@@ -761,7 +785,7 @@ public enum JSType {
         if (obj instanceof Double) {
             return (Double)obj;
         }
-        if (obj instanceof Number) {
+        if (isNumber(obj)) {
             return ((Number)obj).doubleValue();
         }
         return Double.NaN;
@@ -1337,7 +1361,7 @@ public enum JSType {
             return obj.toString();
         }
 
-        if (obj instanceof Number) {
+        if (isNumber(obj)) {
             return toString(((Number)obj).doubleValue());
         }
 
