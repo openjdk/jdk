@@ -69,7 +69,7 @@ import static java.time.LocalTime.NANOS_PER_MILLI;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.TimeZone;
-import sun.misc.VM;
+import jdk.internal.misc.VM;
 
 /**
  * A clock providing access to the current instant, date and time using a time-zone.

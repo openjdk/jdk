@@ -48,5 +48,4 @@
     This code and its internal interfaces are subject to change or
     deletion without notice.</b>
 */
-@jdk.Exported(false)
 package com.sun.tools.doclets.internal.toolkit.taglets;

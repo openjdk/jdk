@@ -273,5 +273,4 @@
  * from B will get a chance to link the call site in A when it encounters the
  * object from B.
  */
-@jdk.Exported
 package jdk.dynalink;

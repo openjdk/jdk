@@ -38,7 +38,6 @@ import com.sun.source.doctree.*;
  *
  * @since 1.8
  */
-@jdk.Exported
 public class SimpleDocTreeVisitor<R,P> implements DocTreeVisitor<R, P> {
     /**
      * The default value, returned by the {@link #defaultAction default action}.

@@ -35,7 +35,6 @@ package com.sun.jdi;
  * @author James McIlree
  * @since  1.3
  */
-@jdk.Exported
 public interface StringReference extends ObjectReference {
     /**
      * Returns the StringReference as a String. The returned string

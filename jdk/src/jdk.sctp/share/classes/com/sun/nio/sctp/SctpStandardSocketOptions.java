@@ -34,7 +34,6 @@ import sun.nio.ch.sctp.SctpStdSocketOption;
  *
  * @since 1.7
  */
-@jdk.Exported
 public class SctpStandardSocketOptions {
     private SctpStandardSocketOptions() {}
     /**
@@ -316,7 +315,6 @@ public class SctpStandardSocketOptions {
      *
      * @since 1.7
      */
-    @jdk.Exported
     public static class InitMaxStreams {
         private int maxInStreams;
         private int maxOutStreams;

@@ -40,7 +40,6 @@ package com.sun.source.tree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface EnhancedForLoopTree extends StatementTree {
     /**
      * Returns the control variable for the loop.

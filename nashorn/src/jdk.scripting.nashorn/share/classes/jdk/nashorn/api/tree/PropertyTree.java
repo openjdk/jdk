@@ -30,7 +30,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface PropertyTree extends Tree {
     /**
      * Returns the name of this property.
