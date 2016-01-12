@@ -162,10 +162,7 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
     Handle exception(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
 
-    {
-      ttyLocker ttyl;
-      java_lang_Throwable::print_stack_trace(exception, tty);
-    }
+    java_lang_Throwable::java_printStackTrace(exception, THREAD);
 
     // Something went wrong so disable compilation at this level
     method->set_not_compilable(CompLevel_full_optimization);
@@ -181,11 +178,7 @@ void JVMCICompiler::abort_on_pending_exception(Handle exception, const char* mes
   Thread* THREAD = Thread::current();
   CLEAR_PENDING_EXCEPTION;
 
-  {
-    ttyLocker ttyl;
-    tty->print_raw_cr(message);
-    java_lang_Throwable::print_stack_trace(exception, tty);
-  }
+  java_lang_Throwable::java_printStackTrace(exception, THREAD);
 
   // Give other aborting threads to also print their stack traces.
   // This can be very useful when debugging class initialization
