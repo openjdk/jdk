@@ -1530,13 +1530,16 @@ Node* IfNode::search_identical(int dist) {
 Node* IfProjNode::Identity(PhaseGVN* phase) {
   // Can only optimize if cannot go the other way
   const TypeTuple *t = phase->type(in(0))->is_tuple();
-  if (t == TypeTuple::IFNEITHER ||
-      // kill dead branch first otherwise the IfNode's control will
-      // have 2 control uses (the IfNode that doesn't go away because
-      // it still has uses and this branch of the
-      // If). Node::has_special_unique_user() will cause this node to
-      // be reprocessed once the dead branch is killed.
-      (always_taken(t) && in(0)->outcnt() == 1)) {
+  if (t == TypeTuple::IFNEITHER || (always_taken(t) &&
+       // During parsing (GVN) we don't remove dead code aggressively.
+       // Cut off dead branch and let PhaseRemoveUseless take care of it.
+      (!phase->is_IterGVN() ||
+       // During IGVN, first wait for the dead branch to be killed.
+       // Otherwise, the IfNode's control will have two control uses (the IfNode
+       // that doesn't go away because it still has uses and this branch of the
+       // If) which breaks other optimizations. Node::has_special_unique_user()
+       // will cause this node to be reprocessed once the dead branch is killed.
+       in(0)->outcnt() == 1))) {
     // IfNode control
     return in(0)->in(0);
   }
