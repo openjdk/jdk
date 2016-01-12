@@ -120,84 +120,6 @@ inline intptr_t* frame::real_fp() const {
   return fp();
 }
 
-#ifdef CC_INTERP
-
-inline interpreterState frame::get_interpreterState() const {
-  return (interpreterState)(((address)callers_abi())
-                            - frame::interpreter_frame_cinterpreterstate_size_in_bytes());
-}
-
-inline intptr_t** frame::interpreter_frame_locals_addr() const {
-  interpreterState istate = get_interpreterState();
-  return (intptr_t**)&istate->_locals;
-}
-
-inline intptr_t* frame::interpreter_frame_bcp_addr() const {
-  interpreterState istate = get_interpreterState();
-  return (intptr_t*)&istate->_bcp;
-}
-
-inline intptr_t* frame::interpreter_frame_mdp_addr() const {
-  interpreterState istate = get_interpreterState();
-  return (intptr_t*)&istate->_mdx;
-}
-
-inline intptr_t* frame::interpreter_frame_expression_stack() const {
-  return (intptr_t*)interpreter_frame_monitor_end() - 1;
-}
-
-inline jint frame::interpreter_frame_expression_stack_direction() {
-  return -1;
-}
-
-// top of expression stack
-inline intptr_t* frame::interpreter_frame_tos_address() const {
-  interpreterState istate = get_interpreterState();
-  return istate->_stack + 1;
-}
-
-inline intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
-  return &interpreter_frame_tos_address()[offset];
-}
-
-// monitor elements
-
-// in keeping with Intel side: end is lower in memory than begin;
-// and beginning element is oldest element
-// Also begin is one past last monitor.
-
-inline BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
-  return get_interpreterState()->monitor_base();
-}
-
-inline BasicObjectLock* frame::interpreter_frame_monitor_end() const {
-  return (BasicObjectLock*)get_interpreterState()->stack_base();
-}
-
-inline int frame::interpreter_frame_cinterpreterstate_size_in_bytes() {
-  // Size of an interpreter object. Not aligned with frame size.
-  return round_to(sizeof(BytecodeInterpreter), 8);
-}
-
-inline Method** frame::interpreter_frame_method_addr() const {
-  interpreterState istate = get_interpreterState();
-  return &istate->_method;
-}
-
-// Constant pool cache
-
-inline ConstantPoolCache** frame::interpreter_frame_cpoolcache_addr() const {
-  interpreterState istate = get_interpreterState();
-  return &istate->_constants; // should really use accessor
-}
-
-inline ConstantPoolCache** frame::interpreter_frame_cache_addr() const {
-  interpreterState istate = get_interpreterState();
-  return &istate->_constants;
-}
-
-#else // !CC_INTERP
-
 // Template Interpreter frame value accessors.
 
 inline frame::ijava_state* frame::get_ijava_state() const {
@@ -263,8 +185,6 @@ inline intptr_t* frame::interpreter_frame_tos_address() const {
 inline intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
   return &interpreter_frame_tos_address()[offset];
 }
-
-#endif // CC_INTERP
 
 inline int frame::interpreter_frame_monitor_size() {
   // Number of stack slots for a monitor.

@@ -193,33 +193,48 @@
   #define _spill_nonvolatiles_neg(_component) \
      (int)(-frame::spill_nonvolatiles_size + offset_of(frame::spill_nonvolatiles, _component))
 
-
-
-#ifndef CC_INTERP
-  //  Frame layout for the Java template interpreter on PPC64.
+  // Frame layout for the Java template interpreter on PPC64.
   //
-  //  Diffs to the CC_INTERP are marked with 'X'.
+  // In these figures the stack grows upwards, while memory grows
+  // downwards. Square brackets denote regions possibly larger than
+  // single 64 bit slots.
   //
+  //  STACK (interpreter is active):
+  //    0       [TOP_IJAVA_FRAME]
+  //            [PARENT_IJAVA_FRAME]
+  //            ...
+  //            [PARENT_IJAVA_FRAME]
+  //            [ENTRY_FRAME]
+  //            [C_FRAME]
+  //            ...
+  //            [C_FRAME]
+  //
+  //  With the following frame layouts:
   //  TOP_IJAVA_FRAME:
-  //
   //    0       [TOP_IJAVA_FRAME_ABI]
   //            alignment (optional)
   //            [operand stack]
   //            [monitors] (optional)
-  //           X[IJAVA_STATE]
+  //            [IJAVA_STATE]
   //            note: own locals are located in the caller frame.
   //
   //  PARENT_IJAVA_FRAME:
-  //
   //    0       [PARENT_IJAVA_FRAME_ABI]
   //            alignment (optional)
   //            [callee's Java result]
   //            [callee's locals w/o arguments]
   //            [outgoing arguments]
   //            [used part of operand stack w/o arguments]
-  //            [monitors]      (optional)
-  //           X[IJAVA_STATE]
+  //            [monitors] (optional)
+  //            [IJAVA_STATE]
   //
+  //  ENTRY_FRAME:
+  //    0       [PARENT_IJAVA_FRAME_ABI]
+  //            alignment (optional)
+  //            [callee's Java result]
+  //            [callee's locals w/o arguments]
+  //            [outgoing arguments]
+  //            [ENTRY_FRAME_LOCALS]
 
   struct parent_ijava_frame_abi : abi_minframe {
   };
@@ -268,113 +283,6 @@
 
 #define _ijava_state_neg(_component) \
         (int) (-frame::ijava_state_size + offset_of(frame::ijava_state, _component))
-
-#else // CC_INTERP:
-
-  //  Frame layout for the Java C++ interpreter on PPC64.
-  //
-  //  This frame layout provides a C-like frame for every Java frame.
-  //
-  //  In these figures the stack grows upwards, while memory grows
-  //  downwards. Square brackets denote regions possibly larger than
-  //  single 64 bit slots.
-  //
-  //  STACK (no JNI, no compiled code, no library calls,
-  //         interpreter-loop is active):
-  //    0       [InterpretMethod]
-  //            [TOP_IJAVA_FRAME]
-  //            [PARENT_IJAVA_FRAME]
-  //            ...
-  //            [PARENT_IJAVA_FRAME]
-  //            [ENTRY_FRAME]
-  //            [C_FRAME]
-  //            ...
-  //            [C_FRAME]
-  //
-  //  TOP_IJAVA_FRAME:
-  //    0       [TOP_IJAVA_FRAME_ABI]
-  //            alignment (optional)
-  //            [operand stack]
-  //            [monitors] (optional)
-  //            [cInterpreter object]
-  //            result, locals, and arguments are in parent frame!
-  //
-  //  PARENT_IJAVA_FRAME:
-  //    0       [PARENT_IJAVA_FRAME_ABI]
-  //            alignment (optional)
-  //            [callee's Java result]
-  //            [callee's locals w/o arguments]
-  //            [outgoing arguments]
-  //            [used part of operand stack w/o arguments]
-  //            [monitors] (optional)
-  //            [cInterpreter object]
-  //
-  //  ENTRY_FRAME:
-  //    0       [PARENT_IJAVA_FRAME_ABI]
-  //            alignment (optional)
-  //            [callee's Java result]
-  //            [callee's locals w/o arguments]
-  //            [outgoing arguments]
-  //            [ENTRY_FRAME_LOCALS]
-  //
-  //  PARENT_IJAVA_FRAME_ABI:
-  //    0       [ABI_MINFRAME]
-  //            top_frame_sp
-  //            initial_caller_sp
-  //
-  //  TOP_IJAVA_FRAME_ABI:
-  //    0       [PARENT_IJAVA_FRAME_ABI]
-  //            carg_3_unused
-  //            carg_4_unused
-  //            carg_5_unused
-  //            carg_6_unused
-  //            carg_7_unused
-  //            frame_manager_lr
-  //
-
-  // PARENT_IJAVA_FRAME_ABI
-
-  struct parent_ijava_frame_abi : abi_minframe {
-    // SOE registers.
-    // C2i adapters spill their top-frame stack-pointer here.
-    uint64_t top_frame_sp;                        //      carg_1
-    // Sp of calling compiled frame before it was resized by the c2i
-    // adapter or sp of call stub. Does not contain a valid value for
-    // non-initial frames.
-    uint64_t initial_caller_sp;                   //      carg_2
-    // aligned to frame::alignment_in_bytes (16)
-  };
-
-  enum {
-    parent_ijava_frame_abi_size = sizeof(parent_ijava_frame_abi)
-  };
-
-  #define _parent_ijava_frame_abi(_component) \
-          (offset_of(frame::parent_ijava_frame_abi, _component))
-
-  // TOP_IJAVA_FRAME_ABI
-
-  struct top_ijava_frame_abi : parent_ijava_frame_abi {
-    uint64_t carg_3_unused;                       //      carg_3
-    uint64_t card_4_unused;                       //_16   carg_4
-    uint64_t carg_5_unused;                       //      carg_5
-    uint64_t carg_6_unused;                       //_16   carg_6
-    uint64_t carg_7_unused;                       //      carg_7
-    // Use arg8 for storing frame_manager_lr. The size of
-    // top_ijava_frame_abi must match abi_reg_args.
-    uint64_t frame_manager_lr;                    //_16   carg_8
-    // nothing to add here!
-    // aligned to frame::alignment_in_bytes (16)
-  };
-
-  enum {
-    top_ijava_frame_abi_size = sizeof(top_ijava_frame_abi)
-  };
-
-  #define _top_ijava_frame_abi(_component) \
-          (offset_of(frame::top_ijava_frame_abi, _component))
-
-#endif // CC_INTERP
 
   // ENTRY_FRAME
 
@@ -495,10 +403,6 @@
 
  public:
 
-#ifdef CC_INTERP
-  // Additional interface for interpreter frames:
-  inline interpreterState get_interpreterState() const;
-#else
   inline ijava_state* get_ijava_state() const;
   // Some convenient register frame setters/getters for deoptimization.
   inline intptr_t* interpreter_frame_esp() const;
@@ -506,7 +410,6 @@
   inline void interpreter_frame_set_esp(intptr_t* esp);
   inline void interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp);
   inline void interpreter_frame_set_sender_sp(intptr_t* sender_sp);
-#endif // CC_INTERP
 
   // Size of a monitor in bytes.
   static int interpreter_frame_monitor_size_in_bytes();

@@ -72,16 +72,7 @@ int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
   #error DEBUG_LEVEL must be defined
 #endif
 
-// NOTE: Builds within Visual Studio do not define the build target in
-//       HOTSPOT_VERSION_STRING, so it must be done here
-#if defined(VISUAL_STUDIO_BUILD) && !defined(PRODUCT)
-  #ifndef HOTSPOT_BUILD_TARGET
-    #error HOTSPOT_BUILD_TARGET must be defined
-  #endif
-  #define VM_RELEASE HOTSPOT_VERSION_STRING "-" HOTSPOT_BUILD_TARGET
-#else
-  #define VM_RELEASE HOTSPOT_VERSION_STRING
-#endif
+#define VM_RELEASE HOTSPOT_VERSION_STRING
 
 // HOTSPOT_VERSION_STRING equals the JDK VERSION_STRING (unless overridden
 // in a standalone build).

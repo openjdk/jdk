@@ -3013,12 +3013,8 @@ void MacroAssembler::set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, R
   // sp points to a TOP_IJAVA_FRAME, retrieve frame's PC via
   // TOP_IJAVA_FRAME_ABI.
   // FIXME: assert that we really have a TOP_IJAVA_FRAME here!
-#ifdef CC_INTERP
-  ld(tmp1/*pc*/, _top_ijava_frame_abi(frame_manager_lr), sp);
-#else
   address entry = pc();
   load_const_optimized(tmp1, entry);
-#endif
 
   set_last_Java_frame(/*sp=*/sp, /*pc=*/tmp1);
 }

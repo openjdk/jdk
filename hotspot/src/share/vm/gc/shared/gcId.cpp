@@ -39,6 +39,10 @@ const uint GCId::create() {
   return _next_id++;
 }
 
+const uint GCId::peek() {
+  return _next_id;
+}
+
 const uint GCId::current() {
   assert(currentNamedthread()->gc_id() != undefined(), "Using undefined GC id.");
   return current_raw();

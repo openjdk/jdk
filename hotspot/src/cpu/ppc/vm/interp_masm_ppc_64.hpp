@@ -45,14 +45,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 #define thread_(field_name) in_bytes(JavaThread::field_name ## _offset()), R16_thread
 #define method_(field_name) in_bytes(Method::field_name ## _offset()), R19_method
 
-#ifdef CC_INTERP
-#define state_(field_name)  in_bytes(byte_offset_of(BytecodeInterpreter, field_name)), R14_state
-#define prev_state_(field_name)  in_bytes(byte_offset_of(BytecodeInterpreter, field_name)), R15_prev_state
-  void pop (TosState state) {};           // Not needed.
-  void push(TosState state) {};           // Not needed.
-#endif
-
-#ifndef CC_INTERP
   virtual void check_and_handle_popframe(Register java_thread);
   virtual void check_and_handle_earlyret(Register java_thread);
 
@@ -207,7 +199,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void record_static_call_in_profile(Register Rentry, Register Rtmp);
   void record_receiver_call_in_profile(Register Rklass, Register Rentry, Register Rtmp);
-#endif // !CC_INTERP
 
   void get_method_counters(Register method, Register Rcounters, Label& skip);
   void increment_invocation_counter(Register iv_be_count, Register Rtmp1, Register Rtmp2_r0);
@@ -215,8 +206,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Object locking
   void lock_object  (Register lock_reg, Register obj_reg);
   void unlock_object(Register lock_reg, bool check_for_exceptions = true);
-
-#ifndef CC_INTERP
 
   // Interpreter profiling operations
   void set_method_data_pointer_for_bcp();
@@ -260,14 +249,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_return_type(Register ret, Register tmp1, Register tmp2);
   void profile_parameters_type(Register tmp1, Register tmp2, Register tmp3, Register tmp4);
 
-#endif // !CC_INTERP
-
   // Debugging
   void verify_oop(Register reg, TosState state = atos);    // only if +VerifyOops && state == atos
-#ifndef CC_INTERP
   void verify_oop_or_return_address(Register reg, Register rtmp); // for astore
   void verify_FPU(int stack_depth, TosState state = ftos);
-#endif // !CC_INTERP
 
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 
@@ -275,33 +260,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void notify_method_entry();
   void notify_method_exit(bool is_native_method, TosState state,
                           NotifyMethodExitMode mode, bool check_exceptions);
-
-#ifdef CC_INTERP
-  // Convert the current TOP_IJAVA_FRAME into a PARENT_IJAVA_FRAME
-  // (using parent_frame_resize) and push a new interpreter
-  // TOP_IJAVA_FRAME (using frame_size).
-  void push_interpreter_frame(Register top_frame_size, Register parent_frame_resize,
-                              Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register pc=noreg);
-
-  // Pop the topmost TOP_IJAVA_FRAME and convert the previous
-  // PARENT_IJAVA_FRAME back into a TOP_IJAVA_FRAME.
-  void pop_interpreter_frame(Register tmp1, Register tmp2, Register tmp3, Register tmp4);
-
-  // Turn state's interpreter frame into the current TOP_IJAVA_FRAME.
-  void pop_interpreter_frame_to_state(Register state, Register tmp1, Register tmp2, Register tmp3);
-
-  // Set SP to initial caller's sp, but before fix the back chain.
-  void resize_frame_to_initial_caller(Register tmp1, Register tmp2);
-
-  // Pop the current interpreter state (without popping the
-  // correspoding frame) and restore R14_state and R15_prev_state
-  // accordingly. Use prev_state_may_be_0 to indicate whether
-  // prev_state may be 0 in order to generate an extra check before
-  // retrieving prev_state_(_prev_link).
-  void pop_interpreter_state(bool prev_state_may_be_0);
-
-  void restore_prev_state();
-#endif
 };
 
 #endif // CPU_PPC_VM_INTERP_MASM_PPC_64_HPP

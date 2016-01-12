@@ -446,6 +446,7 @@ class JMXStartRemoteDCmd : public DCmdWithParser {
   // com.sun.management is omitted
 
   DCmdArgument<char *> _config_file;
+  DCmdArgument<char *> _jmxremote_host;
   DCmdArgument<char *> _jmxremote_port;
   DCmdArgument<char *> _jmxremote_rmi_port;
   DCmdArgument<char *> _jmxremote_ssl;

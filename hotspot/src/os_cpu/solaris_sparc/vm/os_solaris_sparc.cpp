@@ -402,7 +402,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     // Handle ALL stack overflow variations here
     if (sig == SIGSEGV && info->si_code == SEGV_ACCERR) {
       address addr = (address) info->si_addr;
-      if (thread->in_stack_yellow_zone(addr)) {
+      if (thread->in_stack_yellow_reserved_zone(addr)) {
         // Sometimes the register windows are not properly flushed.
         if(uc->uc_mcontext.gwins != NULL) {
           ::handle_unflushed_register_windows(uc->uc_mcontext.gwins);
@@ -424,11 +424,11 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
           }
           // Throw a stack overflow exception.  Guard pages will be reenabled
           // while unwinding the stack.
-          thread->disable_stack_yellow_zone();
+          thread->disable_stack_yellow_reserved_zone();
           stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
         } else {
           // Thread was in the vm or native code.  Return and try to finish.
-          thread->disable_stack_yellow_zone();
+          thread->disable_stack_yellow_reserved_zone();
           return true;
         }
       } else if (thread->in_stack_red_zone(addr)) {

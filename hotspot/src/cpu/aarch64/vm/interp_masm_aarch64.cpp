@@ -47,8 +47,6 @@ void InterpreterMacroAssembler::jump_to_entry(address entry) {
   b(entry);
 }
 
-#ifndef CC_INTERP
-
 void InterpreterMacroAssembler::check_and_handle_popframe(Register java_thread) {
   if (JvmtiExport::can_pop_frame()) {
     Label L;
@@ -595,8 +593,6 @@ void InterpreterMacroAssembler::remove_activation(
   andr(sp, esp, -16);
 }
 
-#endif // C_INTERP
-
 // Lock object
 //
 // Args:
@@ -757,8 +753,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     restore_bcp();
   }
 }
-
-#ifndef CC_INTERP
 
 void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
                                                          Label& zero_continue) {
@@ -1394,7 +1388,6 @@ void InterpreterMacroAssembler::verify_oop(Register reg, TosState state) {
 }
 
 void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) { ; }
-#endif // !CC_INTERP
 
 
 void InterpreterMacroAssembler::notify_method_entry() {
@@ -1440,24 +1433,23 @@ void InterpreterMacroAssembler::notify_method_exit(
     // is changed then the interpreter_frame_result implementation will
     // need to be updated too.
 
-    // For c++ interpreter the result is always stored at a known location in the frame
-    // template interpreter will leave it on the top of the stack.
-    NOT_CC_INTERP(push(state);)
+    // template interpreter will leave the result on the top of the stack.
+    push(state);
     ldrw(r3, Address(rthread, JavaThread::interp_only_mode_offset()));
     cbz(r3, L);
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit));
     bind(L);
-    NOT_CC_INTERP(pop(state));
+    pop(state);
   }
 
   {
     SkipIfEqual skip(this, &DTraceMethodProbes, false);
-    NOT_CC_INTERP(push(state));
+    push(state);
     get_method(c_rarg1);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
                  rthread, c_rarg1);
-    NOT_CC_INTERP(pop(state));
+    pop(state);
   }
 }
 

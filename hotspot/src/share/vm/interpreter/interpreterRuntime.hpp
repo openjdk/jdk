@@ -115,7 +115,7 @@ class InterpreterRuntime: AllStatic {
   static void    note_rangeCheck_trap(JavaThread* thread, Method *method, int trap_bci);
   static void    note_classCheck_trap(JavaThread* thread, Method *method, int trap_bci);
   static void    note_arrayCheck_trap(JavaThread* thread, Method *method, int trap_bci);
-  // A dummy for makros that shall not profile traps.
+  // A dummy for macros that shall not profile traps.
   static void    note_no_trap(JavaThread* thread, Method *method, int trap_bci) {}
 #endif // CC_INTERP
 

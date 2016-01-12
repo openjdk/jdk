@@ -32,12 +32,6 @@
 
 #define __ _masm->
 
-#ifdef CC_INTERP
-#define EXCEPTION_ENTRY StubRoutines::throw_NullPointerException_at_call_entry()
-#else
-#define EXCEPTION_ENTRY Interpreter::throw_NullPointerException_entry()
-#endif
-
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) // nothing
 #else
@@ -51,10 +45,12 @@ inline static RegisterOrConstant constant(int value) {
   return RegisterOrConstant(value);
 }
 
-void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg, Register temp_reg, Register temp2_reg) {
-  if (VerifyMethodHandles)
-    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class), temp_reg, temp2_reg,
-                 "MH argument is a Class");
+void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg,
+                                          Register temp_reg, Register temp2_reg) {
+  if (VerifyMethodHandles) {
+    verify_klass(_masm, klass_reg, SystemDictionary::WK_KLASS_ENUM_NAME(java_lang_Class),
+                 temp_reg, temp2_reg, "MH argument is a Class");
+  }
   __ ld(klass_reg, java_lang_Class::klass_offset_in_bytes(), klass_reg);
 }
 
@@ -187,7 +183,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
                         sizeof(u2), /*is_signed*/ false);
     // assert(sizeof(u2) == sizeof(ConstMethod::_size_of_parameters), "");
     Label L;
-    __ ld(temp2, __ argument_offset(temp2, temp2, 0), CC_INTERP_ONLY(R17_tos) NOT_CC_INTERP(R15_esp));
+    __ ld(temp2, __ argument_offset(temp2, temp2, 0), R15_esp);
     __ cmpd(CCR1, temp2, recv);
     __ beq(CCR1, L);
     __ stop("receiver not on stack");
@@ -214,7 +210,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
-  Register argbase    = CC_INTERP_ONLY(R17_tos) NOT_CC_INTERP(R15_esp); // parameter (preserved)
+  Register argbase    = R15_esp; // parameter (preserved)
   Register argslot    = R3;
   Register temp1      = R6;
   Register param_size = R7;
@@ -317,10 +313,12 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       __ verify_oop(receiver_reg);
       if (iid == vmIntrinsics::_linkToSpecial) {
         // Don't actually load the klass; just null-check the receiver.
-        __ null_check_throw(receiver_reg, -1, temp1, EXCEPTION_ENTRY);
+        __ null_check_throw(receiver_reg, -1, temp1,
+                            Interpreter::throw_NullPointerException_entry());
       } else {
         // load receiver klass itself
-        __ null_check_throw(receiver_reg, oopDesc::klass_offset_in_bytes(), temp1, EXCEPTION_ENTRY);
+        __ null_check_throw(receiver_reg, oopDesc::klass_offset_in_bytes(), temp1,
+                            Interpreter::throw_NullPointerException_entry());
         __ load_klass(temp1_recv_klass, receiver_reg);
         __ verify_klass_ptr(temp1_recv_klass);
       }
