@@ -52,8 +52,8 @@ class EncodePNode : public EncodeNarrowPtrNode {
     init_class_id(Class_EncodeP);
   }
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------EncodePKlass--------------------------------
@@ -67,8 +67,8 @@ class EncodePKlassNode : public EncodeNarrowPtrNode {
     init_class_id(Class_EncodePKlass);
   }
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------DecodeNarrowPtr--------------------------------
@@ -95,8 +95,8 @@ class DecodeNNode : public DecodeNarrowPtrNode {
     init_class_id(Class_DecodeN);
   }
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------DecodeNKlass--------------------------------
@@ -110,8 +110,8 @@ class DecodeNKlassNode : public DecodeNarrowPtrNode {
     init_class_id(Class_DecodeNKlass);
   }
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 #endif // SHARE_VM_OPTO_NARROWPTRNODE_HPP

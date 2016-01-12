@@ -652,7 +652,7 @@ const RegMask &MachSafePointNode::in_RegMask( uint idx ) const {
 uint MachCallNode::cmp( const Node &n ) const
 { return _tf == ((MachCallNode&)n)._tf; }
 const Type *MachCallNode::bottom_type() const { return tf()->range(); }
-const Type *MachCallNode::Value(PhaseTransform *phase) const { return tf()->range(); }
+const Type* MachCallNode::Value(PhaseGVN* phase) const { return tf()->range(); }
 
 #ifndef PRODUCT
 void MachCallNode::dump_spec(outputStream *st) const {

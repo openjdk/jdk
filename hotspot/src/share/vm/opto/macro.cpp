@@ -244,7 +244,7 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
   } else {
     // G1 pre/post barriers
     assert(p2x->outcnt() <= 2, "expects 1 or 2 users: Xor and URShift nodes");
-    // It could be only one user, URShift node, in Object.clone() instrinsic
+    // It could be only one user, URShift node, in Object.clone() intrinsic
     // but the new allocation is passed to arraycopy stub and it could not
     // be scalar replaced. So we don't check the case.
 
