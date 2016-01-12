@@ -31,13 +31,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
-// Size of interpreter code.  Increase if too small.  Interpreter will
-// fail with a guarantee ("not enough space for interpreter generation");
-// if too small.
-// Run with +PrintInterpreter to get the VM to print out the size.
-// Max size with JVMTI
-int TemplateInterpreter::InterpreterCodeSize = 230*K;
-
 int AbstractInterpreter::BasicType_as_index(BasicType type) {
   int i = 0;
   switch (type) {
@@ -58,10 +51,19 @@ int AbstractInterpreter::BasicType_as_index(BasicType type) {
   return i;
 }
 
+// Support abs and sqrt like in compiler.
+// For others we can use a normal (native) entry.
+bool AbstractInterpreter::math_entry_available(AbstractInterpreter::MethodKind kind) {
+  if (!InlineIntrinsics) return false;
+
+  return ((kind==Interpreter::java_lang_math_sqrt && VM_Version::has_fsqrt()) ||
+          (kind==Interpreter::java_lang_math_abs));
+}
+
 // These should never be compiled since the interpreter will prefer
 // the compiled version to the intrinsic version.
 bool AbstractInterpreter::can_be_compiled(methodHandle m) {
-  return !TemplateInterpreter::math_entry_available(method_kind(m));
+  return !math_entry_available(method_kind(m));
 }
 
 // How much stack a method activation needs in stack slots.
@@ -159,15 +161,3 @@ void AbstractInterpreter::layout_activation(Method* method,
     interpreter_frame->interpreter_frame_set_sender_sp(sender_sp);
   }
 }
-
-// Support abs and sqrt like in compiler.
-// For others we can use a normal (native) entry.
-
-bool TemplateInterpreter::math_entry_available(AbstractInterpreter::MethodKind kind) {
-  if (!InlineIntrinsics) return false;
-
-  return ((kind==Interpreter::java_lang_math_sqrt && VM_Version::has_fsqrt()) ||
-          (kind==Interpreter::java_lang_math_abs));
-}
-
-
