@@ -1069,7 +1069,7 @@ bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
 
 //------------------------------Identity---------------------------------------
 // Loads are identity if previous store is to same address
-Node *LoadNode::Identity( PhaseTransform *phase ) {
+Node* LoadNode::Identity(PhaseGVN* phase) {
   // If the previous store-maker is the right kind of Store, and the store is
   // to the same address, then we are equal to the value stored.
   Node* mem = in(Memory);
@@ -1615,7 +1615,7 @@ static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicTyp
 }
 
 //------------------------------Value-----------------------------------------
-const Type *LoadNode::Value( PhaseTransform *phase ) const {
+const Type* LoadNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   Node* mem = in(MemNode::Memory);
   const Type *t1 = phase->type(mem);
@@ -1901,7 +1901,7 @@ Node *LoadBNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return LoadNode::Ideal(phase, can_reshape);
 }
 
-const Type* LoadBNode::Value(PhaseTransform *phase) const {
+const Type* LoadBNode::Value(PhaseGVN* phase) const {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
   if (value != NULL && value->is_Con() &&
@@ -1931,7 +1931,7 @@ Node* LoadUBNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return LoadNode::Ideal(phase, can_reshape);
 }
 
-const Type* LoadUBNode::Value(PhaseTransform *phase) const {
+const Type* LoadUBNode::Value(PhaseGVN* phase) const {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
   if (value != NULL && value->is_Con() &&
@@ -1961,7 +1961,7 @@ Node *LoadUSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return LoadNode::Ideal(phase, can_reshape);
 }
 
-const Type* LoadUSNode::Value(PhaseTransform *phase) const {
+const Type* LoadUSNode::Value(PhaseGVN* phase) const {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
   if (value != NULL && value->is_Con() &&
@@ -1993,7 +1993,7 @@ Node *LoadSNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return LoadNode::Ideal(phase, can_reshape);
 }
 
-const Type* LoadSNode::Value(PhaseTransform *phase) const {
+const Type* LoadSNode::Value(PhaseGVN* phase) const {
   Node* mem = in(MemNode::Memory);
   Node* value = can_see_stored_value(mem,phase);
   if (value != NULL && value->is_Con() &&
@@ -2026,7 +2026,7 @@ Node* LoadKlassNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const 
 }
 
 //------------------------------Value------------------------------------------
-const Type *LoadKlassNode::Value( PhaseTransform *phase ) const {
+const Type* LoadKlassNode::Value(PhaseGVN* phase) const {
   return klass_value_common(phase);
 }
 
@@ -2036,7 +2036,7 @@ bool LoadKlassNode::can_remove_control() const {
   return false;
 }
 
-const Type *LoadNode::klass_value_common( PhaseTransform *phase ) const {
+const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(MemNode::Memory) );
   if (t1 == Type::TOP)  return Type::TOP;
@@ -2172,11 +2172,11 @@ const Type *LoadNode::klass_value_common( PhaseTransform *phase ) const {
 //------------------------------Identity---------------------------------------
 // To clean up reflective code, simplify k.java_mirror.as_klass to plain k.
 // Also feed through the klass in Allocate(...klass...)._klass.
-Node* LoadKlassNode::Identity( PhaseTransform *phase ) {
+Node* LoadKlassNode::Identity(PhaseGVN* phase) {
   return klass_identity_common(phase);
 }
 
-Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
+Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   Node* x = LoadNode::Identity(phase);
   if (x != this)  return x;
 
@@ -2231,7 +2231,7 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
 
 
 //------------------------------Value------------------------------------------
-const Type *LoadNKlassNode::Value( PhaseTransform *phase ) const {
+const Type* LoadNKlassNode::Value(PhaseGVN* phase) const {
   const Type *t = klass_value_common(phase);
   if (t == Type::TOP)
     return t;
@@ -2242,7 +2242,7 @@ const Type *LoadNKlassNode::Value( PhaseTransform *phase ) const {
 //------------------------------Identity---------------------------------------
 // To clean up reflective code, simplify k.java_mirror.as_klass to narrow k.
 // Also feed through the klass in Allocate(...klass...)._klass.
-Node* LoadNKlassNode::Identity( PhaseTransform *phase ) {
+Node* LoadNKlassNode::Identity(PhaseGVN* phase) {
   Node *x = klass_identity_common(phase);
 
   const Type *t = phase->type( x );
@@ -2254,7 +2254,7 @@ Node* LoadNKlassNode::Identity( PhaseTransform *phase ) {
 }
 
 //------------------------------Value-----------------------------------------
-const Type *LoadRangeNode::Value( PhaseTransform *phase ) const {
+const Type* LoadRangeNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(MemNode::Memory) );
   if( t1 == Type::TOP ) return Type::TOP;
@@ -2302,7 +2302,7 @@ Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Identity---------------------------------------
 // Feed through the length in AllocateArray(...length...)._length.
-Node* LoadRangeNode::Identity( PhaseTransform *phase ) {
+Node* LoadRangeNode::Identity(PhaseGVN* phase) {
   Node* x = LoadINode::Identity(phase);
   if (x != this)  return x;
 
@@ -2473,7 +2473,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value-----------------------------------------
-const Type *StoreNode::Value( PhaseTransform *phase ) const {
+const Type* StoreNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(MemNode::Memory) );
   if( t1 == Type::TOP ) return Type::TOP;
@@ -2488,7 +2488,7 @@ const Type *StoreNode::Value( PhaseTransform *phase ) const {
 // Remove redundant stores:
 //   Store(m, p, Load(m, p)) changes to m.
 //   Store(, p, x) -> Store(m, p, x) changes to Store(m, p, x).
-Node *StoreNode::Identity( PhaseTransform *phase ) {
+Node* StoreNode::Identity(PhaseGVN* phase) {
   Node* mem = in(MemNode::Memory);
   Node* adr = in(MemNode::Address);
   Node* val = in(MemNode::ValueIn);
@@ -2642,7 +2642,7 @@ Node *StoreCNode::Ideal(PhaseGVN *phase, bool can_reshape){
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
-Node *StoreCMNode::Identity( PhaseTransform *phase ) {
+Node* StoreCMNode::Identity(PhaseGVN* phase) {
   // No need to card mark when storing a null ptr
   Node* my_store = in(MemNode::OopStore);
   if (my_store->is_Store()) {
@@ -2671,7 +2671,7 @@ Node *StoreCMNode::Ideal(PhaseGVN *phase, bool can_reshape){
 }
 
 //------------------------------Value-----------------------------------------
-const Type *StoreCMNode::Value( PhaseTransform *phase ) const {
+const Type* StoreCMNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t = phase->type( in(MemNode::Memory) );
   if( t == Type::TOP ) return Type::TOP;
@@ -2689,7 +2689,7 @@ const Type *StoreCMNode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //----------------------------------SCMemProjNode------------------------------
-const Type * SCMemProjNode::Value( PhaseTransform *phase ) const
+const Type* SCMemProjNode::Value(PhaseGVN* phase) const
 {
   return bottom_type();
 }
@@ -2745,7 +2745,7 @@ uint ClearArrayNode::match_edge(uint idx) const {
 
 //------------------------------Identity---------------------------------------
 // Clearing a zero length array does nothing
-Node *ClearArrayNode::Identity( PhaseTransform *phase ) {
+Node* ClearArrayNode::Identity(PhaseGVN* phase) {
   return phase->type(in(2))->higher_equal(TypeX::ZERO)  ? in(1) : this;
 }
 
@@ -3001,7 +3001,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
-const Type *MemBarNode::Value( PhaseTransform *phase ) const {
+const Type* MemBarNode::Value(PhaseGVN* phase) const {
   if( !in(0) ) return Type::TOP;
   if( phase->type(in(0)) == Type::TOP )
     return Type::TOP;
@@ -4143,7 +4143,7 @@ uint MergeMemNode::cmp( const Node &n ) const {
 }
 
 //------------------------------Identity---------------------------------------
-Node* MergeMemNode::Identity(PhaseTransform *phase) {
+Node* MergeMemNode::Identity(PhaseGVN* phase) {
   // Identity if this merge point does not record any interesting memory
   // disambiguations.
   Node* base_mem = base_memory();

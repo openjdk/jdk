@@ -1071,13 +1071,13 @@ void Node::raise_bottom_type(const Type* new_type) {
 
 //------------------------------Identity---------------------------------------
 // Return a node that the given node is equivalent to.
-Node *Node::Identity( PhaseTransform * ) {
+Node* Node::Identity(PhaseGVN* phase) {
   return this;                  // Default to no identities
 }
 
 //------------------------------Value------------------------------------------
 // Compute a new Type for a node using the Type of the inputs.
-const Type *Node::Value( PhaseTransform * ) const {
+const Type* Node::Value(PhaseGVN* phase) const {
   return bottom_type();         // Default to worst-case Type
 }
 
@@ -2456,7 +2456,7 @@ uint TypeNode::hash() const {
 uint TypeNode::cmp( const Node &n ) const
 { return !Type::cmp( _type, ((TypeNode&)n)._type ); }
 const Type *TypeNode::bottom_type() const { return _type; }
-const Type *TypeNode::Value( PhaseTransform * ) const { return _type; }
+const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }
 
 //------------------------------ideal_reg--------------------------------------
 uint TypeNode::ideal_reg() const {

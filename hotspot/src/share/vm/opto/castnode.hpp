@@ -44,8 +44,8 @@ class ConstraintCastNode: public TypeNode {
     init_class_id(Class_ConstraintCast);
     init_req(1, n);
   }
-  virtual Node *Identity( PhaseTransform *phase );
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const = 0;
@@ -67,7 +67,7 @@ class CastIINode: public ConstraintCastNode {
     : ConstraintCastNode(n, t, carry_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
@@ -92,8 +92,8 @@ class CheckCastPPNode: public ConstraintCastNode {
     init_req(0, c);
   }
 
-  virtual Node *Identity(PhaseTransform *phase);
-  virtual const Type *Value(PhaseTransform *phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int   Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegP; }
 };
@@ -105,9 +105,9 @@ class CastX2PNode : public Node {
   public:
   CastX2PNode( Node *n ) : Node(NULL, n) {}
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual const Type *bottom_type() const { return TypeRawPtr::BOTTOM; }
 };
@@ -119,9 +119,9 @@ class CastP2XNode : public Node {
   public:
   CastP2XNode( Node *ctrl, Node *n ) : Node(ctrl, n) {}
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegX; }
   virtual const Type *bottom_type() const { return TypeX_X; }
   // Return false to keep node from moving away from an associated card mark.
