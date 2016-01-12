@@ -1582,4 +1582,43 @@ public interface Statement extends Wrapper, AutoCloseable {
         return len >= 1 && len <= 128
                 && Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]*").matcher(identifier).matches();
     }
+
+    /**
+    * Returns a {@code String} representing a National Character Set Literal
+    * enclosed in single quotes and prefixed with a upper case letter N.
+    * Any occurrence of a single quote within the string will be replaced
+    * by two single quotes.
+    *
+    * <blockquote>
+    * <table border = 1 cellspacing=0 cellpadding=5 >
+    * <caption>Examples of the conversion:</caption>
+    * <tr>
+    * <th>Value</th>
+    * <th>Result</th>
+    * </tr>
+    * <tr> <td align='center'>Hello</td> <td align='center'>N'Hello'</td> </tr>
+    * <tr> <td align='center'>G'Day</td> <td align='center'>N'G''Day'</td> </tr>
+    * <tr> <td align='center'>'G''Day'</td>
+    * <td align='center'>N'''G''''Day'''</td> </tr>
+    * <tr> <td align='center'>I'''M</td> <td align='center'>N'I''''''M'</td>
+    * <tr> <td align='center'>N'Hello'</td> <td align='center'>N'N''Hello'''</td> </tr>
+    *
+    * </table>
+    * </blockquote>
+    * @implNote
+    * JDBC driver implementations may need to provide their own implementation
+    * of this method in order to meet the requirements of the underlying
+    * datasource. An implementation of enquoteNCharLiteral may accept a different
+    * set of characters than that accepted by the same drivers implementation of
+    * enquoteLiteral.
+    * @param val a character string
+    * @return the result of replacing every single quote character in the
+    * argument by two single quote characters where this entire result is
+    * then prefixed with 'N'.
+    * @throws NullPointerException if val is {@code null}
+    * @throws SQLException if a database access error occurs
+    */
+    default String enquoteNCharLiteral(String val)  throws SQLException {
+        return "N'" + val.replace("'", "''") +  "'";
+   }
 }

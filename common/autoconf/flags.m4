@@ -128,6 +128,26 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
   else
     COMPILER_TARGET_BITS_FLAG="-m"
     COMPILER_COMMAND_FILE_FLAG="@"
+
+    # The solstudio linker does not support @-files.
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      COMPILER_COMMAND_FILE_FLAG=
+    fi
+
+    # Check if @file is supported by gcc
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      AC_MSG_CHECKING([if @file is supported by gcc])
+      # Extra emtpy "" to prevent ECHO from interpreting '--version' as argument
+      $ECHO "" "--version" > command.file
+      if $CXX @command.file 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
+        AC_MSG_RESULT(yes)
+        COMPILER_COMMAND_FILE_FLAG="@"
+      else
+        AC_MSG_RESULT(no)
+        COMPILER_COMMAND_FILE_FLAG=
+      fi
+      rm -rf command.file
+    fi
   fi
   AC_SUBST(COMPILER_TARGET_BITS_FLAG)
   AC_SUBST(COMPILER_COMMAND_FILE_FLAG)

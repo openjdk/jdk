@@ -42,7 +42,6 @@ import java.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface ForLoopTree extends StatementTree {
     /**
      * Returns any initializers of the {@code for} statement.

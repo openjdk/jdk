@@ -35,7 +35,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface SerialDataTree extends BlockTagTree {
     /**
      * Returns the description of the serial data.

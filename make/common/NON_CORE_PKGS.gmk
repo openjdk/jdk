@@ -79,8 +79,7 @@ JCONSOLE_PKGS = com.sun.tools.jconsole
 
 TREEAPI_PKGS = com.sun.source.doctree \
     com.sun.source.tree \
-    com.sun.source.util \
-    jdk
+    com.sun.source.util
 
 NASHORNAPI_PKGS = jdk.nashorn.api.scripting \
     jdk.nashorn.api.tree

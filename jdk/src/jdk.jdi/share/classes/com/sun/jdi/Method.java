@@ -39,7 +39,6 @@ import java.util.List;
  * @author James McIlree
  * @since  1.3
  */
-@jdk.Exported
 public interface Method extends TypeComponent, Locatable, Comparable<Method> {
 
     /**
