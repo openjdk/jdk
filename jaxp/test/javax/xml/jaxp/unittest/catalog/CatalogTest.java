@@ -42,11 +42,31 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
 /*
- * @bug 8081248
+ * @bug 8081248, 8144966
  * @summary Tests basic Catalog functions.
  */
 
 public class CatalogTest {
+    /*
+       @bug 8144966
+       Verifies that passing null as CatalogFeatures will result in a NPE.
+    */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testFeatureNull() {
+        CatalogResolver resolver = CatalogManager.catalogResolver(null, "");
+
+    }
+
+    /*
+       @bug 8144966
+       Verifies that passing null as the path will result in a NPE.
+    */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void testPathNull() {
+        String path = null;
+        CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), path);
+    }
+
     /*
        Tests basic catalog feature by using a CatalogResolver instance to
     resolve a DTD reference to a locally specified DTD file. If the resolution
@@ -61,7 +81,7 @@ public class CatalogTest {
         }
         String url = getClass().getResource(xml).getFile();
         try {
-            CatalogResolver cr = CatalogManager.catalogResolver(null, catalog);
+            CatalogResolver cr = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
             XMLReader reader = saxParser.getXMLReader();
             reader.setEntityResolver(cr);
             MyHandler handler = new MyHandler(saxParser);
@@ -84,7 +104,7 @@ public class CatalogTest {
 
         String test = "testInvalidCatalog";
         try {
-            CatalogResolver resolver = CatalogManager.catalogResolver(null, catalog);
+            CatalogResolver resolver = CatalogManager.catalogResolver(CatalogFeatures.defaults(), catalog);
             String actualSystemId = resolver.resolveEntity(null, "http://remote/xml/dtd/sys/alice/docAlice.dtd").getSystemId();
         } catch (Exception e) {
             String msg = e.getMessage();
