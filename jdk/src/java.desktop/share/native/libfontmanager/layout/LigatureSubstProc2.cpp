@@ -95,6 +95,10 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
 
     if (actionOffset != 0) {
         LEReferenceTo<LigatureActionEntry> ap(stHeader, success, ligActionOffset); // byte offset
+        if (LE_FAILURE(success)) {
+            currGlyph+= dir;
+            return nextStateIndex;
+        }
         ap.addObject(ligActionIndex, success);
         LEReferenceToArrayOf<TTGlyphID> ligatureTable(stHeader, success, ligatureOffset, LE_UNBOUNDED_ARRAY);
         LigatureActionEntry action;
@@ -104,8 +108,8 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
 
         LEReferenceToArrayOf<le_uint16> componentTable(stHeader, success, componentOffset, LE_UNBOUNDED_ARRAY);
         if(LE_FAILURE(success)) {
-          currGlyph+= dir;
-          return nextStateIndex; // get out! bad font
+            currGlyph+= dir;
+            return nextStateIndex; // get out! bad font
         }
 
         do {
@@ -113,6 +117,10 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
 
             if (j++ > 0) {
                 ap.addObject(success);
+            }
+            if (LE_FAILURE(success)) {
+                currGlyph+= dir;
+                return nextStateIndex;
             }
 
             action = SWAPL(*ap.getAlias());
@@ -129,9 +137,17 @@ le_uint16 LigatureSubstitutionProcessor2::processStateEntry(LEGlyphStorage &glyp
                   return nextStateIndex; // get out! bad font
                 }
                 i += SWAPW(componentTable(LE_GET_GLYPH(glyphStorage[componentGlyph]) + (SignExtend(offset, lafComponentOffsetMask)),success));
+                if (LE_FAILURE(success)) {
+                    currGlyph+= dir;
+                    return nextStateIndex;
+                }
 
                 if (action & (lafLast | lafStore))  {
                   TTGlyphID ligatureGlyph = SWAPW(ligatureTable(i,success));
+                  if (LE_FAILURE(success)) {
+                      currGlyph+= dir;
+                      return nextStateIndex;
+                  }
                     glyphStorage[componentGlyph] = LE_SET_GLYPH(glyphStorage[componentGlyph], ligatureGlyph);
                     if(mm==nComponents) {
                       LE_DEBUG_BAD_FONT("exceeded nComponents");
