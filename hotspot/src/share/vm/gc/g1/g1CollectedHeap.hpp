@@ -290,7 +290,7 @@ private:
   void verify_before_gc();
   void verify_after_gc();
 
-  void log_gc_footer(double pause_time_counter);
+  void log_gc_footer(jlong pause_time_counter);
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
@@ -983,6 +983,8 @@ public:
 
   // The rem set and barrier set.
   G1RemSet* g1_rem_set() const { return _g1_rem_set; }
+
+  void scrub_rem_set(BitMap* region_bm, BitMap* card_bm);
 
   unsigned get_gc_time_stamp() {
     return _gc_time_stamp;

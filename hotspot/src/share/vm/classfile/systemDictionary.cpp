@@ -2386,6 +2386,7 @@ static methodHandle unpack_method_and_appendix(Handle mname,
       oop appendix = appendix_box->obj_at(0);
       if (TraceMethodHandles) {
     #ifndef PRODUCT
+        ttyLocker ttyl;
         tty->print("Linked method=" INTPTR_FORMAT ": ", p2i(m));
         m->print();
         if (appendix != NULL) { tty->print("appendix = "); appendix->print(); }

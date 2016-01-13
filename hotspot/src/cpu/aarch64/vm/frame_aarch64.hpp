@@ -63,44 +63,6 @@
 //                               <- sender sp
 // ------------------------------ Asm interpreter ----------------------------------------
 
-// ------------------------------ C++ interpreter ----------------------------------------
-//
-// Layout of C++ interpreter frame: (While executing in BytecodeInterpreter::run)
-//
-//                             <- SP (current esp/rsp)
-//    [local variables         ] BytecodeInterpreter::run local variables
-//    ...                        BytecodeInterpreter::run local variables
-//    [local variables         ] BytecodeInterpreter::run local variables
-//    [old frame pointer       ]   fp [ BytecodeInterpreter::run's ebp/rbp ]
-//    [return pc               ]  (return to frame manager)
-//    [interpreter_state*      ]  (arg to BytecodeInterpreter::run)   --------------
-//    [expression stack        ] <- last_Java_sp                           |
-//    [...                     ] * <- interpreter_state.stack              |
-//    [expression stack        ] * <- interpreter_state.stack_base         |
-//    [monitors                ]   \                                       |
-//     ...                          | monitor block size                   |
-//    [monitors                ]   / <- interpreter_state.monitor_base     |
-//    [struct interpretState   ] <-----------------------------------------|
-//    [return pc               ] (return to callee of frame manager [1]
-//    [locals and parameters   ]
-//                               <- sender sp
-
-// [1] When the c++ interpreter calls a new method it returns to the frame
-//     manager which allocates a new frame on the stack. In that case there
-//     is no real callee of this newly allocated frame. The frame manager is
-//     aware of the  additional frame(s) and will pop them as nested calls
-//     complete. Howevers tTo make it look good in the debugger the frame
-//     manager actually installs a dummy pc pointing to RecursiveInterpreterActivation
-//     with a fake interpreter_state* parameter to make it easy to debug
-//     nested calls.
-
-// Note that contrary to the layout for the assembly interpreter the
-// expression stack allocated for the C++ interpreter is full sized.
-// However this is not as bad as it seems as the interpreter frame_manager
-// will truncate the unused space on succesive method calls.
-//
-// ------------------------------ C++ interpreter ----------------------------------------
-
  public:
   enum {
     pc_return_offset                                 =  0,
@@ -108,8 +70,6 @@
     link_offset                                      =  0,
     return_addr_offset                               =  1,
     sender_sp_offset                                 =  2,
-
-#ifndef CC_INTERP
 
     // Interpreter frames
     interpreter_frame_oop_temp_offset                =  3, // for native calls only
@@ -126,8 +86,6 @@
 
     interpreter_frame_monitor_block_top_offset       = interpreter_frame_initial_sp_offset,
     interpreter_frame_monitor_block_bottom_offset    = interpreter_frame_initial_sp_offset,
-
-#endif // CC_INTERP
 
     // Entry frames
     // n.b. these values are determined by the layout defined in
@@ -193,13 +151,7 @@
   // helper to update a map with callee-saved RBP
   static void update_map_with_saved_link(RegisterMap* map, intptr_t** link_addr);
 
-#ifndef CC_INTERP
   // deoptimization support
   void interpreter_frame_set_last_sp(intptr_t* sp);
-#endif // CC_INTERP
-
-#ifdef CC_INTERP
-  inline interpreterState get_interpreterState() const;
-#endif // CC_INTERP
 
 #endif // CPU_AARCH64_VM_FRAME_AARCH64_HPP

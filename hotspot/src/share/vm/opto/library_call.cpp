@@ -3077,7 +3077,7 @@ bool LibraryCallKit::inline_native_isInterrupted() {
   set_control( _gvn.transform(new IfTrueNode(iff_arg)));
 #else
   // To return true on Windows you must read the _interrupted field
-  // and check the the event state i.e. take the slow path.
+  // and check the event state i.e. take the slow path.
 #endif // TARGET_OS_FAMILY_windows
 
   // (d) Otherwise, go to the slow path.
@@ -3151,7 +3151,7 @@ Node* LibraryCallKit::load_klass_from_mirror_common(Node* mirror,
 }
 
 //--------------------(inline_native_Class_query helpers)---------------------
-// Use this for JVM_ACC_INTERFACE, JVM_ACC_IS_CLONEABLE, JVM_ACC_HAS_FINALIZER.
+// Use this for JVM_ACC_INTERFACE, JVM_ACC_IS_CLONEABLE_FAST, JVM_ACC_HAS_FINALIZER.
 // Fall through if (mods & mask) == bits, take the guard otherwise.
 Node* LibraryCallKit::generate_access_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region) {
   // Branch around if the given klass has the given modifier bit set.
@@ -4489,14 +4489,14 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
         generate_virtual_guard(obj_klass, slow_region);
       }
 
-      // The object must be cloneable and must not have a finalizer.
+      // The object must be easily cloneable and must not have a finalizer.
       // Both of these conditions may be checked in a single test.
-      // We could optimize the cloneable test further, but we don't care.
+      // We could optimize the test further, but we don't care.
       generate_access_flags_guard(obj_klass,
                                   // Test both conditions:
-                                  JVM_ACC_IS_CLONEABLE | JVM_ACC_HAS_FINALIZER,
+                                  JVM_ACC_IS_CLONEABLE_FAST | JVM_ACC_HAS_FINALIZER,
                                   // Must be cloneable but not finalizer:
-                                  JVM_ACC_IS_CLONEABLE,
+                                  JVM_ACC_IS_CLONEABLE_FAST,
                                   slow_region);
     }
 

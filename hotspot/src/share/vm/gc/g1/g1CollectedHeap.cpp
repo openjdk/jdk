@@ -1789,9 +1789,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   uint n_queues = ParallelGCThreads;
   _task_queues = new RefToScanQueueSet(n_queues);
 
-  uint n_rem_sets = HeapRegionRemSet::num_par_rem_sets();
-  assert(n_rem_sets > 0, "Invariant.");
-
   _worker_cset_start_region = NEW_C_HEAP_ARRAY(HeapRegion*, n_queues, mtGC);
   _worker_cset_start_region_time_stamp = NEW_C_HEAP_ARRAY(uint, n_queues, mtGC);
   _evacuation_failed_info_array = NEW_C_HEAP_ARRAY(EvacuationFailedInfo, n_queues, mtGC);
@@ -1891,7 +1888,6 @@ jint G1CollectedHeap::initialize() {
   _g1_rem_set = new G1RemSet(this, g1_barrier_set());
 
   // Carve out the G1 part of the heap.
-
   ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
   size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   G1RegionToSpaceMapper* heap_storage =
@@ -1940,6 +1936,8 @@ jint G1CollectedHeap::initialize() {
   const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
   guarantee((max_regions() - 1) <= max_region_idx, "too many regions");
 
+  G1RemSet::initialize(max_regions());
+
   size_t max_cards_per_region = ((size_t)1 << (sizeof(CardIdx_t)*BitsPerByte-1)) - 1;
   guarantee(HeapRegion::CardsPerRegion > 0, "make sure it's initialized");
   guarantee(HeapRegion::CardsPerRegion < max_cards_per_region,
@@ -1966,9 +1964,6 @@ jint G1CollectedHeap::initialize() {
     return JNI_ENOMEM;
   }
   _cmThread = _cm->cmThread();
-
-  // Initialize the from_card cache structure of HeapRegionRemSet.
-  HeapRegionRemSet::init_heap(max_regions());
 
   // Now expand into the initial heap size.
   if (!expand(init_byte_size)) {
@@ -2336,7 +2331,7 @@ void G1CollectedHeap::register_concurrent_cycle_end() {
     _gc_tracer_cm->report_gc_end(_gc_timer_cm->gc_end(), _gc_timer_cm->time_partitions());
 
     // Clear state variables to prepare for the next concurrent cycle.
-     collector_state()->set_concurrent_cycle_started(false);
+    collector_state()->set_concurrent_cycle_started(false);
     _heap_summary_sent = false;
   }
 }
@@ -3600,13 +3595,13 @@ void G1CollectedHeap::reset_taskqueue_stats() {
 }
 #endif // TASKQUEUE_STATS
 
-void G1CollectedHeap::log_gc_footer(double pause_time_counter) {
+void G1CollectedHeap::log_gc_footer(jlong pause_time_counter) {
   if (evacuation_failed()) {
     log_info(gc)("To-space exhausted");
   }
 
-  double pause_time_sec = TimeHelper::counter_to_seconds(pause_time_counter);
-  g1_policy()->print_phases(pause_time_sec);
+  double pause_time_ms = TimeHelper::counter_to_millis(pause_time_counter);
+  g1_policy()->print_phases(pause_time_ms);
 
   g1_policy()->print_detailed_heap_transition();
 }
@@ -3698,8 +3693,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     }
     GCTraceTime(Info, gc) tm(gc_string, NULL, gc_cause(), true);
 
-    double pause_start_sec = os::elapsedTime();
-    double pause_start_counter = os::elapsed_counter();
+    jlong pause_start_counter = os::elapsed_counter();
     g1_policy()->note_gc_start(active_workers);
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
@@ -5416,6 +5410,33 @@ bool G1CollectedHeap::check_cset_fast_test() {
   return !cl.failures();
 }
 #endif // PRODUCT
+
+class G1ParScrubRemSetTask: public AbstractGangTask {
+protected:
+  G1RemSet* _g1rs;
+  BitMap* _region_bm;
+  BitMap* _card_bm;
+  HeapRegionClaimer _hrclaimer;
+
+public:
+  G1ParScrubRemSetTask(G1RemSet* g1_rs, BitMap* region_bm, BitMap* card_bm, uint num_workers) :
+    AbstractGangTask("G1 ScrubRS"),
+    _g1rs(g1_rs),
+    _region_bm(region_bm),
+    _card_bm(card_bm),
+    _hrclaimer(num_workers) {
+  }
+
+  void work(uint worker_id) {
+    _g1rs->scrub(_region_bm, _card_bm, worker_id, &_hrclaimer);
+  }
+};
+
+void G1CollectedHeap::scrub_rem_set(BitMap* region_bm, BitMap* card_bm) {
+  uint num_workers = workers()->active_workers();
+  G1ParScrubRemSetTask g1_par_scrub_rs_task(g1_rem_set(), region_bm, card_bm, num_workers);
+  workers()->run_task(&g1_par_scrub_rs_task);
+}
 
 void G1CollectedHeap::cleanUpCardTable() {
   G1SATBCardTableModRefBS* ct_bs = g1_barrier_set();

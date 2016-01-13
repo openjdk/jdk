@@ -37,11 +37,7 @@ define_pd_global(bool, InlineIntrinsics,             false);
 define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 true);
 define_pd_global(bool, UseOnStackReplacement,        true);
-#ifdef CC_INTERP
-define_pd_global(bool, ProfileInterpreter,           false);
-#else
 define_pd_global(bool, ProfileInterpreter,           true);
-#endif // CC_INTERP
 define_pd_global(bool, TieredCompilation,            trueInTiered);
 define_pd_global(intx, CompileThreshold,             10000);
 

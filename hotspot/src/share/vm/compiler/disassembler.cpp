@@ -360,6 +360,22 @@ void decode_env::print_address(address adr) {
     }
   }
 
+  if (_nm == NULL) {
+    // Don't do this for native methods, as the function name will be printed in
+    // nmethod::reloc_string_for().
+    ResourceMark rm;
+    const int buflen = 1024;
+    char* buf = NEW_RESOURCE_ARRAY(char, buflen);
+    int offset;
+    if (os::dll_address_to_function_name(adr, buf, buflen, &offset)) {
+      st->print(PTR_FORMAT " = %s",  p2i(adr), buf);
+      if (offset != 0) {
+        st->print("+%d", offset);
+      }
+      return;
+    }
+  }
+
   // Fall through to a simple (hexadecimal) numeral.
   st->print(PTR_FORMAT, p2i(adr));
 }
@@ -497,6 +513,7 @@ address decode_env::decode_instructions(address start, address end) {
 
 
 void Disassembler::decode(CodeBlob* cb, outputStream* st) {
+  ttyLocker ttyl;
   if (!load_library())  return;
   if (cb->is_nmethod()) {
     decode((nmethod*)cb, st);
@@ -510,12 +527,14 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
 }
 
 void Disassembler::decode(address start, address end, outputStream* st, CodeStrings c) {
+  ttyLocker ttyl;
   if (!load_library())  return;
   decode_env env(CodeCache::find_blob_unsafe(start), st, c);
   env.decode_instructions(start, end);
 }
 
 void Disassembler::decode(nmethod* nm, outputStream* st) {
+  ttyLocker ttyl;
   if (!load_library())  return;
   decode_env env(nm, st);
   env.output()->print_cr("----------------------------------------------------------------------");

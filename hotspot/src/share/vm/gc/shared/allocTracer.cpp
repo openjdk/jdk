@@ -46,3 +46,12 @@ void AllocTracer::send_allocation_in_new_tlab_event(KlassHandle klass, size_t tl
     event.commit();
   }
 }
+
+void AllocTracer::send_allocation_requiring_gc_event(size_t size, uint gcId) {
+  EventAllocationRequiringGC event;
+  if (event.should_commit()) {
+    event.set_gcId(gcId);
+    event.set_size(size);
+    event.commit();
+  }
+}

@@ -911,7 +911,7 @@ int Node::disconnect_inputs(Node *n, Compile* C) {
 Node* Node::uncast() const {
   // Should be inline:
   //return is_ConstraintCast() ? uncast_helper(this) : (Node*) this;
-  if (is_ConstraintCast() || is_CheckCastPP())
+  if (is_ConstraintCast())
     return uncast_helper(this);
   else
     return (Node*) this;
@@ -964,8 +964,6 @@ Node* Node::uncast_helper(const Node* p) {
     if (p == NULL || p->req() != 2) {
       break;
     } else if (p->is_ConstraintCast()) {
-      p = p->in(1);
-    } else if (p->is_CheckCastPP()) {
       p = p->in(1);
     } else {
       break;
@@ -1073,13 +1071,13 @@ void Node::raise_bottom_type(const Type* new_type) {
 
 //------------------------------Identity---------------------------------------
 // Return a node that the given node is equivalent to.
-Node *Node::Identity( PhaseTransform * ) {
+Node* Node::Identity(PhaseGVN* phase) {
   return this;                  // Default to no identities
 }
 
 //------------------------------Value------------------------------------------
 // Compute a new Type for a node using the Type of the inputs.
-const Type *Node::Value( PhaseTransform * ) const {
+const Type* Node::Value(PhaseGVN* phase) const {
   return bottom_type();         // Default to worst-case Type
 }
 
@@ -2458,7 +2456,7 @@ uint TypeNode::hash() const {
 uint TypeNode::cmp( const Node &n ) const
 { return !Type::cmp( _type, ((TypeNode&)n)._type ); }
 const Type *TypeNode::bottom_type() const { return _type; }
-const Type *TypeNode::Value( PhaseTransform * ) const { return _type; }
+const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }
 
 //------------------------------ideal_reg--------------------------------------
 uint TypeNode::ideal_reg() const {

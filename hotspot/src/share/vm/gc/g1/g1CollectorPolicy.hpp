@@ -179,6 +179,7 @@ class G1CollectorPolicy: public CollectorPolicy {
   G1Predictions _predictor;
 
   double get_new_prediction(TruncatedSeq const* seq) const;
+  size_t get_new_size_prediction(TruncatedSeq const* seq) const;
 
   // either equal to the number of parallel threads, if ParallelGCThreads
   // has been set, or 1 otherwise
@@ -661,7 +662,7 @@ public:
 
   void print_detailed_heap_transition() const;
 
-  virtual void print_phases(double pause_time_sec);
+  virtual void print_phases(double pause_time_ms);
 
   void record_stop_world_start();
   void record_concurrent_pause();

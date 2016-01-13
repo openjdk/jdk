@@ -36,7 +36,7 @@ public class TraceExceptionsTest {
     public static void main(String[] args) throws Exception {
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+TraceExceptions", "NoClassFound");
+            "-Xlog:exceptions=info", "NoClassFound");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("<a 'java/lang/ClassNotFoundException': NoClassFound>");
         output.shouldNotContain("<a 'java/lang/ClassNotFoundException'>");

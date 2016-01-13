@@ -388,9 +388,6 @@ static Thread* verify_thread_subroutine(Thread* gthread_value) {
 void MacroAssembler::verify_thread() {
   if (VerifyThread) {
     // NOTE: this chops off the heads of the 64-bit O registers.
-#ifdef CC_INTERP
-    save_frame(0);
-#else
     // make sure G2_thread contains the right value
     save_frame_and_mov(0, Lmethod, Lmethod);   // to avoid clobbering O0 (and propagate Lmethod for -Xprof)
     mov(G1, L1);                // avoid clobbering G1
@@ -398,7 +395,6 @@ void MacroAssembler::verify_thread() {
     mov(G3, L3);                // avoid clobbering G3
     mov(G4, L4);                // avoid clobbering G4
     mov(G5_method, L5);         // avoid clobbering G5_method
-#endif /* CC_INTERP */
 #if defined(COMPILER2) && !defined(_LP64)
     // Save & restore possible 64-bit Long arguments in G-regs
     srlx(G1,32,L0);
@@ -517,11 +513,7 @@ void MacroAssembler::reset_last_Java_frame(void) {
 
 #ifdef ASSERT
   // check that it WAS previously set
-#ifdef CC_INTERP
-    save_frame(0);
-#else
     save_frame_and_mov(0, Lmethod, Lmethod);     // Propagate Lmethod to helper frame for -Xprof
-#endif /* CC_INTERP */
     ld_ptr(sp_addr, L0);
     tst(L0);
     breakpoint_trap(Assembler::zero, Assembler::ptr_cc);
@@ -741,11 +733,7 @@ void MacroAssembler::set_vm_result(Register oop_result) {
 
 # ifdef ASSERT
     // Check that we are not overwriting any other oop.
-#ifdef CC_INTERP
-    save_frame(0);
-#else
     save_frame_and_mov(0, Lmethod, Lmethod);     // Propagate Lmethod for -Xprof
-#endif /* CC_INTERP */
     ld_ptr(vm_result_addr, L0);
     tst(L0);
     restore();
@@ -3471,9 +3459,25 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   add(top, t1, top); // t1 is tlab_size
   sub(top, ThreadLocalAllocBuffer::alignment_reserve_in_bytes(), top);
   st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_end_offset()));
+
+  if (ZeroTLAB) {
+    // This is a fast TLAB refill, therefore the GC is not notified of it.
+    // So compiled code must fill the new TLAB with zeroes.
+    ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t2);
+    zero_memory(t2, t1);
+  }
   verify_tlab();
   ba(retry);
   delayed()->nop();
+}
+
+void MacroAssembler::zero_memory(Register base, Register index) {
+  assert_different_registers(base, index);
+  Label loop;
+  bind(loop);
+  subcc(index, HeapWordSize, index);
+  brx(Assembler::greaterEqual, true, Assembler::pt, loop);
+  delayed()->st_ptr(G0, base, index);
 }
 
 void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes,
@@ -3581,7 +3585,7 @@ void MacroAssembler::bang_stack_size(Register Rsize, Register Rtsp,
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down to and including i=StackShadowPages.
-  for (int i = 1; i < StackShadowPages; i++) {
+  for (int i = 1; i < JavaThread::stack_shadow_zone_size() / os::vm_page_size(); i++) {
     set((-i*offset)+STACK_BIAS, Rscratch);
     st(G0, Rtsp, Rscratch);
   }

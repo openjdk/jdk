@@ -726,6 +726,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
 #endif
 
   if (t == NULL) {
+    ttyLocker ttyl;
     tty->print_cr("MISSING EXCEPTION HANDLER for pc " INTPTR_FORMAT " and handler bci %d", p2i(ret_pc), handler_bci);
     tty->print_cr("   Exception:");
     exception->print();
@@ -2759,7 +2760,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
 
         DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_simple));
         if (directive->PrintAssemblyOption) {
-          Disassembler::decode(nm, tty);
+          nm->print_code();
         }
         DirectivesStack::release(directive);
       }

@@ -84,10 +84,7 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
 
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   // Pass callers initial_caller_sp as unextended_sp.
-  return frame(sender_sp(), sender_pc(),
-               CC_INTERP_ONLY((intptr_t*)((parent_ijava_frame_abi *)callers_abi())->initial_caller_sp)
-               NOT_CC_INTERP((intptr_t*)get_ijava_state()->sender_sp)
-               );
+  return frame(sender_sp(), sender_pc(), (intptr_t*)get_ijava_state()->sender_sp);
 }
 
 frame frame::sender_for_compiled_frame(RegisterMap *map) const {
@@ -168,14 +165,8 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
   if (method->is_native()) {
     // Prior to calling into the runtime to notify the method exit the possible
     // result value is saved into the interpreter frame.
-#ifdef CC_INTERP
-    interpreterState istate = get_interpreterState();
-    address lresult = (address)istate + in_bytes(BytecodeInterpreter::native_lresult_offset());
-    address fresult = (address)istate + in_bytes(BytecodeInterpreter::native_fresult_offset());
-#else
     address lresult = (address)&(get_ijava_state()->lresult);
     address fresult = (address)&(get_ijava_state()->fresult);
-#endif
 
     switch (method->result_type()) {
       case T_OBJECT:
@@ -226,31 +217,6 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
 
 void frame::describe_pd(FrameValues& values, int frame_no) {
   if (is_interpreted_frame()) {
-#ifdef CC_INTERP
-    interpreterState istate = get_interpreterState();
-    values.describe(frame_no, (intptr_t*)istate, "istate");
-    values.describe(frame_no, (intptr_t*)&(istate->_thread), " thread");
-    values.describe(frame_no, (intptr_t*)&(istate->_bcp), " bcp");
-    values.describe(frame_no, (intptr_t*)&(istate->_locals), " locals");
-    values.describe(frame_no, (intptr_t*)&(istate->_constants), " constants");
-    values.describe(frame_no, (intptr_t*)&(istate->_method), err_msg(" method = %s", istate->_method->name_and_sig_as_C_string()));
-    values.describe(frame_no, (intptr_t*)&(istate->_mdx), " mdx");
-    values.describe(frame_no, (intptr_t*)&(istate->_stack), " stack");
-    values.describe(frame_no, (intptr_t*)&(istate->_msg), err_msg(" msg = %s", BytecodeInterpreter::C_msg(istate->_msg)));
-    values.describe(frame_no, (intptr_t*)&(istate->_result), " result");
-    values.describe(frame_no, (intptr_t*)&(istate->_prev_link), " prev_link");
-    values.describe(frame_no, (intptr_t*)&(istate->_oop_temp), " oop_temp");
-    values.describe(frame_no, (intptr_t*)&(istate->_stack_base), " stack_base");
-    values.describe(frame_no, (intptr_t*)&(istate->_stack_limit), " stack_limit");
-    values.describe(frame_no, (intptr_t*)&(istate->_monitor_base), " monitor_base");
-    values.describe(frame_no, (intptr_t*)&(istate->_frame_bottom), " frame_bottom");
-    values.describe(frame_no, (intptr_t*)&(istate->_last_Java_pc), " last_Java_pc");
-    values.describe(frame_no, (intptr_t*)&(istate->_last_Java_fp), " last_Java_fp");
-    values.describe(frame_no, (intptr_t*)&(istate->_last_Java_sp), " last_Java_sp");
-    values.describe(frame_no, (intptr_t*)&(istate->_self_link), " self_link");
-    values.describe(frame_no, (intptr_t*)&(istate->_native_fresult), " native_fresult");
-    values.describe(frame_no, (intptr_t*)&(istate->_native_lresult), " native_lresult");
-#else
 #define DESCRIBE_ADDRESS(name) \
   values.describe(frame_no, (intptr_t*)&(get_ijava_state()->name), #name);
 
@@ -266,7 +232,6 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
       DESCRIBE_ADDRESS(oop_tmp);
       DESCRIBE_ADDRESS(lresult);
       DESCRIBE_ADDRESS(fresult);
-#endif
   }
 }
 #endif

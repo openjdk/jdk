@@ -432,8 +432,7 @@ void before_exit(JavaThread* thread) {
   if (HAS_PENDING_EXCEPTION) {
     Handle exception(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
-    ttyLocker ttyl;
-    java_lang_Throwable::print_stack_trace(exception, tty);
+    java_lang_Throwable::java_printStackTrace(exception, THREAD);
   }
 #endif
 
