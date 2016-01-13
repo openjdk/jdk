@@ -237,6 +237,7 @@
       <to>jdk.charsets</to>
       <to>jdk.management.resource</to>
       <to>jdk.scripting.nashorn</to>
+      <to>jdk.vm.ci</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm</name>
