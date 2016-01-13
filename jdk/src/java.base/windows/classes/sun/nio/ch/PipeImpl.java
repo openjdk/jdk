@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.nio.channels.spi.*;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
+import java.security.SecureRandom;
 import java.util.Random;
 
 
@@ -47,23 +48,15 @@ import java.util.Random;
 class PipeImpl
     extends Pipe
 {
+    // Number of bytes in the secret handshake.
+    private static final int NUM_SECRET_BYTES = 16;
+
+    // Random object for handshake values
+    private static final Random RANDOM_NUMBER_GENERATOR = new SecureRandom();
 
     // Source and sink channels
     private SourceChannel source;
     private SinkChannel sink;
-
-    // Random object for handshake values
-    private static final Random rnd;
-
-    static {
-        byte[] someBytes = new byte[8];
-        boolean resultOK = IOUtil.randomBytes(someBytes);
-        if (resultOK) {
-            rnd = new Random(ByteBuffer.wrap(someBytes).getLong());
-        } else {
-            rnd = new Random();
-        }
-    }
 
     private class Initializer
         implements PrivilegedExceptionAction<Void>
@@ -112,6 +105,10 @@ class PipeImpl
                 SocketChannel sc2 = null;
 
                 try {
+                    // Create secret with a backing array.
+                    ByteBuffer secret = ByteBuffer.allocate(NUM_SECRET_BYTES);
+                    ByteBuffer bb = ByteBuffer.allocate(NUM_SECRET_BYTES);
+
                     // Loopback address
                     InetAddress lb = InetAddress.getByName("127.0.0.1");
                     assert(lb.isLoopbackAddress());
@@ -128,18 +125,22 @@ class PipeImpl
                         // Establish connection (assume connections are eagerly
                         // accepted)
                         sc1 = SocketChannel.open(sa);
-                        ByteBuffer bb = ByteBuffer.allocate(8);
-                        long secret = rnd.nextLong();
-                        bb.putLong(secret).flip();
-                        sc1.write(bb);
+                        RANDOM_NUMBER_GENERATOR.nextBytes(secret.array());
+                        do {
+                            sc1.write(secret);
+                        } while (secret.hasRemaining());
+                        secret.rewind();
 
                         // Get a connection and verify it is legitimate
                         sc2 = ssc.accept();
-                        bb.clear();
-                        sc2.read(bb);
+                        do {
+                            sc2.read(bb);
+                        } while (bb.hasRemaining());
                         bb.rewind();
-                        if (bb.getLong() == secret)
+
+                        if (bb.equals(secret))
                             break;
+
                         sc2.close();
                         sc1.close();
                     }
