@@ -26,9 +26,12 @@
 package jdk.jshell;
 
 import static jdk.internal.jshell.remote.RemoteCodes.*;
+import java.io.DataInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import com.sun.jdi.*;
@@ -69,7 +72,9 @@ class ExecutionControl {
             socket = listener.accept();
             // out before in -- match remote creation so we don't hang
             out = new ObjectOutputStream(socket.getOutputStream());
-            in = new ObjectInputStream(socket.getInputStream());
+            PipeInputStream commandIn = new PipeInputStream();
+            new DemultiplexInput(socket.getInputStream(), commandIn, proc.out, proc.err).start();
+            in = new ObjectInputStream(commandIn);
         }
     }
 
@@ -117,11 +122,13 @@ class ExecutionControl {
                 String result = in.readUTF();
                 return result;
             }
-        } catch (EOFException ex) {
-            env.shutdown();
         } catch (IOException | ClassNotFoundException ex) {
-            proc.debug(DBG_GEN, "Exception on remote invoke: %s\n", ex);
-            return "Execution failure: " + ex.getMessage();
+            if (!env.connection().isRunning()) {
+                env.shutdown();
+            } else {
+                proc.debug(DBG_GEN, "Exception on remote invoke: %s\n", ex);
+                return "Execution failure: " + ex.getMessage();
+            }
         } finally {
             synchronized (STOP_LOCK) {
                 userCodeRunning = false;
@@ -309,5 +316,113 @@ class ExecutionControl {
                 vm.resume();
             }
         }
+    }
+
+    private final class DemultiplexInput extends Thread {
+
+        private final DataInputStream delegate;
+        private final PipeInputStream command;
+        private final PrintStream out;
+        private final PrintStream err;
+
+        public DemultiplexInput(InputStream input,
+                                         PipeInputStream command,
+                                         PrintStream out,
+                                         PrintStream err) {
+            super("output reader");
+            this.delegate = new DataInputStream(input);
+            this.command = command;
+            this.out = out;
+            this.err = err;
+        }
+
+        public void run() {
+            try {
+                while (true) {
+                    int nameLen = delegate.read();
+                    if (nameLen == (-1))
+                        break;
+                    byte[] name = new byte[nameLen];
+                    DemultiplexInput.this.delegate.readFully(name);
+                    int dataLen = delegate.read();
+                    byte[] data = new byte[dataLen];
+                    DemultiplexInput.this.delegate.readFully(data);
+                    switch (new String(name, "UTF-8")) {
+                        case "err":
+                            err.write(data);
+                            break;
+                        case "out":
+                            out.write(data);
+                            break;
+                        case "command":
+                            for (byte b : data) {
+                                command.write(Byte.toUnsignedInt(b));
+                            }
+                            break;
+                    }
+                }
+            } catch (IOException ex) {
+                proc.debug(ex, "Failed reading output");
+            } finally {
+                command.close();
+            }
+        }
+
+    }
+
+    public static final class PipeInputStream extends InputStream {
+        public static final int INITIAL_SIZE = 128;
+
+        private int[] buffer = new int[INITIAL_SIZE];
+        private int start;
+        private int end;
+        private boolean closed;
+
+        @Override
+        public synchronized int read() {
+            while (start == end) {
+                if (closed) {
+                    return -1;
+                }
+                try {
+                    wait();
+                } catch (InterruptedException ex) {
+                    //ignore
+                }
+            }
+            try {
+                return buffer[start];
+            } finally {
+                start = (start + 1) % buffer.length;
+            }
+        }
+
+        public synchronized void write(int b) {
+            if (closed)
+                throw new IllegalStateException("Already closed.");
+            int newEnd = (end + 1) % buffer.length;
+            if (newEnd == start) {
+                //overflow:
+                int[] newBuffer = new int[buffer.length * 2];
+                int rightPart = (end > start ? end : buffer.length) - start;
+                int leftPart = end > start ? 0 : start - 1;
+                System.arraycopy(buffer, start, newBuffer, 0, rightPart);
+                System.arraycopy(buffer, 0, newBuffer, rightPart, leftPart);
+                buffer = newBuffer;
+                start = 0;
+                end = rightPart + leftPart;
+                newEnd = end + 1;
+            }
+            buffer[end] = b;
+            end = newEnd;
+            notifyAll();
+        }
+
+        @Override
+        public synchronized void close() {
+            closed = true;
+            notifyAll();
+        }
+
     }
 }
