@@ -49,7 +49,7 @@ import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.service.Services;
-import sun.misc.VM;
+import jdk.internal.misc.VM;
 
 //JaCoCo Exclude
 
