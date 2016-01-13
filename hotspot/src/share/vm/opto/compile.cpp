@@ -2296,17 +2296,17 @@ void Compile::Optimize() {
   DEBUG_ONLY( _modified_nodes = NULL; )
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
-  process_print_inlining();
-  // A method with only infinite loops has no edges entering loops from root
-  {
-    TracePhase tp("graphReshape", &timers[_t_graphReshaping]);
-    if (final_graph_reshaping()) {
-      assert(failing(), "must bail out w/ explicit message");
-      return;
-    }
-  }
+ process_print_inlining();
+ // A method with only infinite loops has no edges entering loops from root
+ {
+   TracePhase tp("graphReshape", &timers[_t_graphReshaping]);
+   if (final_graph_reshaping()) {
+     assert(failing(), "must bail out w/ explicit message");
+     return;
+   }
+ }
 
-  print_method(PHASE_OPTIMIZE_FINISHED, 2);
+ print_method(PHASE_OPTIMIZE_FINISHED, 2);
 }
 
 
@@ -2874,7 +2874,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
           Node* use = m->fast_out(i);
           if (use->is_Mem() || use->is_EncodeNarrowPtr()) {
             use->ensure_control_or_add_prec(n->in(0));
-          } else if (use->in(0) == NULL) {
+          } else {
             switch(use->Opcode()) {
             case Op_AddP:
             case Op_DecodeN:

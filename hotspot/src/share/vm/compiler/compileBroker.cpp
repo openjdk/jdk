@@ -227,6 +227,11 @@ bool compileBroker_init() {
 CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
+#if INCLUDE_JVMCI
+  if (task->is_blocking() && CompileBroker::compiler(task->comp_level())->is_jvmci()) {
+    task->set_jvmci_compiler_thread(thread);
+  }
+#endif
   CompileLog*     log  = thread->log();
   if (log != NULL)  task->log_task_start(log);
 }
@@ -245,10 +250,12 @@ CompileTaskWrapper::~CompileTaskWrapper() {
       MutexLocker notifier(task->lock(), thread);
       task->mark_complete();
 #if INCLUDE_JVMCI
-      if (CompileBroker::compiler(task->comp_level())->is_jvmci() &&
-        !task->has_waiter()) {
-        // The waiting thread timed out and thus did not free the task.
-        free_task = true;
+      if (CompileBroker::compiler(task->comp_level())->is_jvmci()) {
+        if (!task->has_waiter()) {
+          // The waiting thread timed out and thus did not free the task.
+          free_task = true;
+        }
+        task->set_jvmci_compiler_thread(NULL);
       }
 #endif
       if (!free_task) {
@@ -1332,11 +1339,56 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
   return new_task;
 }
 
-// 1 second should be long enough to complete most JVMCI compilations
-// and not too long to stall a blocking JVMCI compilation that
-// is trying to acquire a lock held by the app thread that submitted the
-// compilation.
-static const long BLOCKING_JVMCI_COMPILATION_TIMEOUT = 1000;
+#if INCLUDE_JVMCI
+// The number of milliseconds to wait before checking if the
+// JVMCI compiler thread is blocked.
+static const long BLOCKING_JVMCI_COMPILATION_WAIT_TIMESLICE = 500;
+
+// The number of successive times the above check is allowed to
+// see a blocked JVMCI compiler thread before unblocking the
+// thread waiting for the compilation to finish.
+static const int BLOCKING_JVMCI_COMPILATION_WAIT_TO_UNBLOCK_ATTEMPTS = 5;
+
+/**
+ * Waits for a JVMCI compiler to complete a given task. This thread
+ * waits until either the task completes or it sees the JVMCI compiler
+ * thread is blocked for N consecutive milliseconds where N is
+ * BLOCKING_JVMCI_COMPILATION_WAIT_TIMESLICE *
+ * BLOCKING_JVMCI_COMPILATION_WAIT_TO_UNBLOCK_ATTEMPTS.
+ *
+ * @return true if this thread needs to free/recycle the task
+ */
+bool CompileBroker::wait_for_jvmci_completion(CompileTask* task, JavaThread* thread) {
+  MutexLocker waiter(task->lock(), thread);
+  int consecutively_blocked = 0;
+  while (task->lock()->wait(!Mutex::_no_safepoint_check_flag, BLOCKING_JVMCI_COMPILATION_WAIT_TIMESLICE)) {
+    CompilerThread* jvmci_compiler_thread = task->jvmci_compiler_thread();
+    if (jvmci_compiler_thread != NULL) {
+      JavaThreadState state;
+      {
+        // A JVMCI compiler thread should not disappear at this point
+        // but let's be extra safe.
+        MutexLocker mu(Threads_lock, thread);
+        state = jvmci_compiler_thread->thread_state();
+      }
+      if (state == _thread_blocked) {
+        if (++consecutively_blocked == BLOCKING_JVMCI_COMPILATION_WAIT_TO_UNBLOCK_ATTEMPTS) {
+          if (PrintCompilation) {
+            task->print(tty, "wait for blocking compilation timed out");
+          }
+          break;
+        }
+      } else {
+        consecutively_blocked = 0;
+      }
+    } else {
+      // Still waiting on JVMCI compiler queue
+    }
+  }
+  task->clear_waiter();
+  return task->is_complete();
+}
+#endif
 
 /**
  *  Wait for the compilation task to complete.
@@ -1356,16 +1408,7 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   bool free_task;
 #if INCLUDE_JVMCI
   if (compiler(task->comp_level())->is_jvmci()) {
-    MutexLocker waiter(task->lock(), thread);
-    // No need to check if compilation has completed - just
-    // rely on the time out. The JVMCI compiler thread will
-    // recycle the CompileTask.
-    task->lock()->wait(!Mutex::_no_safepoint_check_flag, BLOCKING_JVMCI_COMPILATION_TIMEOUT);
-    // If the compilation completes while has_waiter is true then
-    // this thread is responsible for freeing the task.  Otherwise
-    // the compiler thread will free the task.
-    task->clear_waiter();
-    free_task = task->is_complete();
+    free_task = wait_for_jvmci_completion(task, thread);
   } else
 #endif
   {

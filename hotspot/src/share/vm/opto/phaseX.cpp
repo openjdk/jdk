@@ -835,6 +835,22 @@ Node *PhaseGVN::transform_no_reclaim( Node *n ) {
   return k;
 }
 
+bool PhaseGVN::is_dominator_helper(Node *d, Node *n, bool linear_only) {
+  if (d->is_top() || n->is_top()) {
+    return false;
+  }
+  assert(d->is_CFG() && n->is_CFG(), "must have CFG nodes");
+  int i = 0;
+  while (d != n) {
+    n = IfNode::up_one_dom(n, linear_only);
+    i++;
+    if (n == NULL || i >= 10) {
+      return false;
+    }
+  }
+  return true;
+}
+
 #ifdef ASSERT
 //------------------------------dead_loop_check--------------------------------
 // Check for a simple dead loop when a data node references itself directly
@@ -1525,7 +1541,7 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
     }
 
     // If changed Cast input, check Phi users for simple cycles
-    if( use->is_ConstraintCast() || use->is_CheckCastPP() ) {
+    if (use->is_ConstraintCast()) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
         Node* u = use->fast_out(i2);
         if (u->is_Phi())

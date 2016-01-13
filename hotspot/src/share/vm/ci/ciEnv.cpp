@@ -1045,9 +1045,6 @@ void ciEnv::register_method(ciMethod* target,
       if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
         nm->print_nmethod(printnmethods);
       }
-      if (directives->PrintAssemblyOption) {
-        Disassembler::decode(nm);
-      }
 
       nm->set_has_unsafe_access(has_unsafe_access);
       nm->set_has_wide_vectors(has_wide_vectors);

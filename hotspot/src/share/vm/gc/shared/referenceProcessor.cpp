@@ -235,7 +235,7 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
 
   // Final references
   {
-  GCTraceTime(Debug, gc, ref) tt("FinalReference", gc_timer);
+    GCTraceTime(Debug, gc, ref) tt("FinalReference", gc_timer);
     process_discovered_reflist(_discoveredFinalRefs, NULL, false,
                                is_alive, keep_alive, complete_gc, task_executor);
   }
@@ -243,7 +243,7 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   // Phantom references
   {
     GCTraceTime(Debug, gc, ref) tt("PhantomReference", gc_timer);
-    process_discovered_reflist(_discoveredPhantomRefs, NULL, false,
+    process_discovered_reflist(_discoveredPhantomRefs, NULL, true,
                                is_alive, keep_alive, complete_gc, task_executor);
 
     // Process cleaners, but include them in phantom timing.  We expect

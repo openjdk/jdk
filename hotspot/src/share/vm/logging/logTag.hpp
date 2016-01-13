@@ -37,6 +37,7 @@
   LOG_TAG(bot) \
   LOG_TAG(census) \
   LOG_TAG(classhisto) \
+  LOG_TAG(classresolve) \
   LOG_TAG(classinit) \
   LOG_TAG(comp) \
   LOG_TAG(compaction) \
@@ -44,6 +45,7 @@
   LOG_TAG(cset) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(ergo) \
+  LOG_TAG(exceptions) \
   LOG_TAG(exit) \
   LOG_TAG(freelist) \
   LOG_TAG(gc) \
@@ -55,6 +57,7 @@
   LOG_TAG(logging) \
   LOG_TAG(marking) \
   LOG_TAG(metaspace) \
+  LOG_TAG(monitorinflation) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(promotion) \

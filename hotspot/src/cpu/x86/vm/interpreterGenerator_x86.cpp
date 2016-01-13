@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,24 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 
 #define __ _masm->
 
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
-address InterpreterGenerator::generate_abstract_entry(void) {
+address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 
   address entry_point = __ pc();
 
   // abstract method entry
 
-#ifndef CC_INTERP
   //  pop return address, reset last_sp to NULL
   __ empty_expression_stack();
   __ restore_bcp();      // rsi must be correct for exception handler   (was destroyed)
   __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
-#endif
 
   // throw exception
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));

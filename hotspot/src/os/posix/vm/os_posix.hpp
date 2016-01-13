@@ -73,9 +73,6 @@ public:
   // Prints a one-line description of a combination of sigaction.sa_flags.
   static void print_sa_flags(outputStream* st, int flags);
 
-  // A POSIX conform, platform-independend siginfo print routine.
-  static void print_siginfo_brief(outputStream* os, const siginfo_t* si);
-
   static address ucontext_get_pc(const ucontext_t* ctx);
   // Set PC into context. Needed for continuation after signal.
   static void ucontext_set_pc(ucontext_t* ctx, address pc);

@@ -822,11 +822,10 @@ bool StringConcat::validate_mem_flow() {
             }
           } else if (ctrl->is_IfTrue()) { // null checks, class checks
             iff = ctrl->in(0)->as_If();
-            assert(iff->is_If(), "must be if");
             // Verify that the other arm is an uncommon trap
             Node* otherproj = iff->proj_out(1 - ctrl->as_Proj()->_con);
             CallStaticJavaNode* call = otherproj->unique_out()->isa_CallStaticJava();
-            assert(strcmp(call->_name, "uncommon_trap") == 0, "must be uncommond trap");
+            assert(strcmp(call->_name, "uncommon_trap") == 0, "must be uncommon trap");
             ctrl = iff->in(0);
           } else {
             break;
@@ -914,6 +913,13 @@ bool StringConcat::validate_control_flow() {
       BoolNode* b = iff->in(1)->isa_Bool();
 
       if (b == NULL) {
+#ifndef PRODUCT
+        if (PrintOptimizeStringConcat) {
+          tty->print_cr("unexpected input to IfNode");
+          iff->in(1)->dump();
+          tty->cr();
+        }
+#endif
         fail = true;
         break;
       }

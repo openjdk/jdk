@@ -48,7 +48,7 @@ public:
 
   OverflowINode(Node* in1, Node* in2) : OverflowNode(in1, in2) {}
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual const Type* Value(PhaseTransform* phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 
   virtual bool will_overflow(jint v1, jint v2) const = 0;
   virtual bool can_overflow(const Type* t1, const Type* t2) const = 0;
@@ -61,7 +61,7 @@ public:
 
   OverflowLNode(Node* in1, Node* in2) : OverflowNode(in1, in2) {}
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual const Type* Value(PhaseTransform* phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 
   virtual bool will_overflow(jlong v1, jlong v2) const = 0;
   virtual bool can_overflow(const Type* t1, const Type* t2) const = 0;

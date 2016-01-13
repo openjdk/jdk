@@ -38,8 +38,6 @@
 #include "runtime/synchronizer.hpp"
 #include "utilities/macros.hpp"
 
-#ifndef CC_INTERP
-
 #define __ _masm->
 
 // Global Register Names
@@ -4341,5 +4339,3 @@ void TemplateTable::multianewarray() {
   __ load_unsigned_byte(rbx, at_bcp(3));
   __ lea(rsp, Address(rsp, rbx, Interpreter::stackElementScale()));  // get rid of counts
 }
-#endif /* !CC_INTERP */
-

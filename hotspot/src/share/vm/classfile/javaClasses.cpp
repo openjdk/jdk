@@ -1784,6 +1784,20 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
   }
 }
 
+/**
+ * Print the throwable stack trace by calling the Java method java.lang.Throwable.printStackTrace().
+ */
+void java_lang_Throwable::java_printStackTrace(Handle throwable, TRAPS) {
+  assert(throwable->is_a(SystemDictionary::Throwable_klass()), "Throwable instance expected");
+  JavaValue result(T_VOID);
+  JavaCalls::call_virtual(&result,
+                          throwable,
+                          KlassHandle(THREAD, SystemDictionary::Throwable_klass()),
+                          vmSymbols::printStackTrace_name(),
+                          vmSymbols::void_method_signature(),
+                          THREAD);
+}
+
 void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHandle& method, TRAPS) {
   if (!StackTraceInThrowable) return;
   ResourceMark rm(THREAD);

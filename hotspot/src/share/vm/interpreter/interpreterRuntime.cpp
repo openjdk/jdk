@@ -35,6 +35,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/templateTable.hpp"
+#include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/constantPool.hpp"
@@ -456,21 +457,23 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
 #endif
 
     // tracing
-    if (TraceExceptions) {
+    if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm(thread);
       Symbol* message = java_lang_Throwable::detail_message(h_exception());
-      ttyLocker ttyl;  // Lock after getting the detail message
+      stringStream tempst;
       if (message != NULL) {
-        tty->print_cr("Exception <%s: %s> (" INTPTR_FORMAT ")",
-                      h_exception->print_value_string(), message->as_C_string(),
-                      p2i(h_exception()));
+        tempst.print("Exception <%s: %s> (" INTPTR_FORMAT ")\n",
+                     h_exception->print_value_string(), message->as_C_string(),
+                     p2i(h_exception()));
       } else {
-        tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")",
-                      h_exception->print_value_string(),
-                      p2i(h_exception()));
+        tempst.print("Exception <%s> (" INTPTR_FORMAT ")\n",
+                     h_exception->print_value_string(),
+                     p2i(h_exception()));
       }
-      tty->print_cr(" thrown in interpreter method <%s>", h_method->print_value_string());
-      tty->print_cr(" at bci %d for thread " INTPTR_FORMAT, current_bci, p2i(thread));
+      tempst.print(" thrown in interpreter method <%s>\n"
+                   " at bci %d for thread " INTPTR_FORMAT,
+                   h_method->print_value_string(), current_bci, p2i(thread));
+      LogHandle(exceptions)::info_stream()->print_raw_cr(tempst.as_string());
     }
 // Don't go paging in something which won't be used.
 //     else if (extable->length() == 0) {
@@ -1252,6 +1255,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
         } else {
           // debugging suppport
           if (PrintSignatureHandlers && (handler != Interpreter::slow_signature_handler())) {
+            ttyLocker ttyl;
             tty->cr();
             tty->print_cr("argument handler #%d for: %s %s (fingerprint = " UINT64_FORMAT ", %d bytes generated)",
                           _handlers->length(),

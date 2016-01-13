@@ -27,9 +27,9 @@
 #include "asm/macroAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "oops/arrayOop.hpp"
@@ -58,8 +58,6 @@
 #endif
 
 #define __ _masm->
-
-#ifndef CC_INTERP
 
 //-----------------------------------------------------------------------------
 
@@ -317,7 +315,7 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
 //
 // rmethod: method
 //
-void InterpreterGenerator::generate_counter_incr(
+void TemplateInterpreterGenerator::generate_counter_incr(
         Label* overflow,
         Label* profile_method,
         Label* profile_method_continue) {
@@ -395,7 +393,7 @@ void InterpreterGenerator::generate_counter_incr(
   }
 }
 
-void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
+void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue) {
 
   // Asm interpreter on entry
   // On return (i.e. jump to entry_point) [ back to invocation of interpreter ]
@@ -414,7 +412,7 @@ void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
                               InterpreterRuntime::frequency_counter_overflow),
              c_rarg1);
 
-  __ b(*do_continue);
+  __ b(do_continue);
 }
 
 // See if we've got enough room on the stack for locals plus overhead.
@@ -431,7 +429,7 @@ void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
 //
 // Kills:
 //      r0
-void InterpreterGenerator::generate_stack_overflow_check(void) {
+void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // monitor entry size: see picture of stack set
   // (generate_method_entry) and frame_amd64.hpp
@@ -487,12 +485,12 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   __ sub(rscratch1, rscratch1, rscratch2); // Stack limit
   __ add(r0, r0, rscratch1);
 
-  // Use the maximum number of pages we might bang.
-  const int max_pages = StackShadowPages > (StackRedPages+StackYellowPages) ? StackShadowPages :
-                                                                              (StackRedPages+StackYellowPages);
+  // Use the bigger size for banging.
+  const int max_bang_size = MAX2(JavaThread::stack_shadow_zone_size(),
+                                 JavaThread::stack_red_zone_size() + JavaThread::stack_yellow_zone_size());
 
   // add in the red and yellow zone sizes
-  __ add(r0, r0, max_pages * page_size * 2);
+  __ add(r0, r0, max_bang_size * 2);
 
   // check against the current stack bottom
   __ cmp(sp, r0);
@@ -647,7 +645,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 //
 
 // Method entry for java.lang.ref.Reference.get.
-address InterpreterGenerator::generate_Reference_get_entry(void) {
+address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 #if INCLUDE_ALL_GCS
   // Code: _aload_0, _getfield, _areturn
   // parameter size = 1
@@ -718,14 +716,14 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_accessor_entry();
+  return NULL;
 }
 
 /**
  * Method entry for static native methods:
  *   int java.util.zip.CRC32.update(int crc, int b)
  */
-address InterpreterGenerator::generate_CRC32_update_entry() {
+address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
   if (UseCRC32Intrinsics) {
     address entry = __ pc();
 
@@ -779,7 +777,7 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
  *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
  *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
  */
-address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
   if (UseCRC32Intrinsics) {
     address entry = __ pc();
 
@@ -834,14 +832,20 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
   return NULL;
 }
 
-void InterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
+// Not supported
+address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+  return NULL;
+}
+
+void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
   if (UseStackBanging) {
-    const int start_page = native_call ? StackShadowPages : 1;
+    const int n_shadow_pages = JavaThread::stack_shadow_zone_size() / os::vm_page_size();
+    const int start_page = native_call ? n_shadow_pages : 1;
     const int page_size = os::vm_page_size();
-    for (int pages = start_page; pages <= StackShadowPages ; pages++) {
+    for (int pages = start_page; pages <= n_shadow_pages ; pages++) {
       __ sub(rscratch2, sp, pages*page_size);
       __ str(zr, Address(rscratch2));
     }
@@ -852,7 +856,7 @@ void InterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
 // Interpreter stub for calling a native method. (asm interpreter)
 // This sets up a somewhat different looking stack for calling the
 // native method than the typical interpreter frame setup.
-address InterpreterGenerator::generate_native_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
@@ -1180,8 +1184,8 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_reguard;
     __ lea(rscratch1, Address(rthread, in_bytes(JavaThread::stack_guard_state_offset())));
-    __ ldrb(rscratch1, Address(rscratch1));
-    __ cmp(rscratch1, JavaThread::stack_guard_yellow_disabled);
+    __ ldrw(rscratch1, Address(rscratch1));
+    __ cmp(rscratch1, JavaThread::stack_guard_yellow_reserved_disabled);
     __ br(Assembler::NE, no_reguard);
 
     __ pusha(); // XXX only save smashed registers
@@ -1281,7 +1285,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   if (inc_counter) {
     // Handle overflow of counter and compile method
     __ bind(invocation_counter_overflow);
-    generate_counter_overflow(&continue_after_compile);
+    generate_counter_overflow(continue_after_compile);
   }
 
   return entry_point;
@@ -1290,7 +1294,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 // Generic interpreted method entry to (asm) interpreter
 //
-address InterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
@@ -1452,7 +1456,7 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
     }
     // Handle overflow of counter and compile method
     __ bind(invocation_counter_overflow);
-    generate_counter_overflow(&continue_after_compile);
+    generate_counter_overflow(continue_after_compile);
   }
 
   return entry_point;
@@ -1738,17 +1742,6 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
 }
 
 //-----------------------------------------------------------------------------
-// Generation of individual instructions
-
-// helpers for generate_and_dispatch
-
-
-InterpreterGenerator::InterpreterGenerator(StubQueue* code)
-  : TemplateInterpreterGenerator(code) {
-   generate_all(); // down here so it can be "virtual"
-}
-
-//-----------------------------------------------------------------------------
 
 // Non-product code
 #ifndef PRODUCT
@@ -1935,4 +1928,3 @@ extern "C" {
 
 #endif // BUILTIN_SIM
 #endif // !PRODUCT
-#endif // ! CC_INTERP

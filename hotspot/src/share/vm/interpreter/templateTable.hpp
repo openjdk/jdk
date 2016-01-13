@@ -355,8 +355,6 @@ class TemplateTable: AllStatic {
 # include "templateTable_x86.hpp"
 #elif defined TARGET_ARCH_MODEL_sparc
 # include "templateTable_sparc.hpp"
-#elif defined TARGET_ARCH_MODEL_zero
-# include "templateTable_zero.hpp"
 #elif defined TARGET_ARCH_MODEL_ppc_64
 # include "templateTable_ppc_64.hpp"
 #elif defined TARGET_ARCH_MODEL_aarch64

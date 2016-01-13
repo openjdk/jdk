@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,17 @@
 
 #include "precompiled.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
+#include "interpreter/cppInterpreterGenerator.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 
 #ifdef CC_INTERP
-# define __ _masm->
+
+#ifdef ZERO
+# include "entry_zero.hpp"
+#else
+#error "Only Zero CppInterpreter is supported"
+#endif
 
 void CppInterpreter::initialize() {
   if (_code != NULL) return;
@@ -42,7 +47,7 @@ void CppInterpreter::initialize() {
     NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
     _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,
                           "Interpreter");
-    InterpreterGenerator g(_code);
+    CppInterpreterGenerator g(_code);
     if (PrintInterpreter) print();
   }
 
@@ -56,11 +61,20 @@ void CppInterpreter::initialize() {
 }
 
 
-address    CppInterpreter::_tosca_to_stack         [AbstractInterpreter::number_of_result_handlers];
-address    CppInterpreter::_stack_to_stack         [AbstractInterpreter::number_of_result_handlers];
-address    CppInterpreter::_stack_to_native_abi    [AbstractInterpreter::number_of_result_handlers];
+void CppInterpreter::invoke_method(Method* method, address entry_point, TRAPS) {
+  ((ZeroEntry *) entry_point)->invoke(method, THREAD);
+}
+
+void CppInterpreter::invoke_osr(Method* method,
+                                address   entry_point,
+                                address   osr_buf,
+                                TRAPS) {
+  ((ZeroEntry *) entry_point)->invoke_osr(method, osr_buf, THREAD);
+}
+
 
 CppInterpreterGenerator::CppInterpreterGenerator(StubQueue* _code): AbstractInterpreterGenerator(_code) {
+  generate_all();
 }
 
 static const BasicType types[Interpreter::number_of_result_handlers] = {
@@ -79,36 +93,8 @@ static const BasicType types[Interpreter::number_of_result_handlers] = {
 void CppInterpreterGenerator::generate_all() {
   AbstractInterpreterGenerator::generate_all();
 
-  { CodeletMark cm(_masm, "result handlers for native calls");
-    // The various result converter stublets.
-    int is_generated[Interpreter::number_of_result_handlers];
-    memset(is_generated, 0, sizeof(is_generated));
-    int _tosca_to_stack_is_generated[Interpreter::number_of_result_handlers];
-    int _stack_to_stack_is_generated[Interpreter::number_of_result_handlers];
-    int _stack_to_native_abi_is_generated[Interpreter::number_of_result_handlers];
 
-    memset(_tosca_to_stack_is_generated, 0, sizeof(_tosca_to_stack_is_generated));
-    memset(_stack_to_stack_is_generated, 0, sizeof(_stack_to_stack_is_generated));
-    memset(_stack_to_native_abi_is_generated, 0, sizeof(_stack_to_native_abi_is_generated));
-    for (int i = 0; i < Interpreter::number_of_result_handlers; i++) {
-      BasicType type = types[i];
-      if (!is_generated[Interpreter::BasicType_as_index(type)]++) {
-        Interpreter::_native_abi_to_tosca[Interpreter::BasicType_as_index(type)] = generate_result_handler_for(type);
-      }
-      if (!_tosca_to_stack_is_generated[Interpreter::BasicType_as_index(type)]++) {
-        Interpreter::_tosca_to_stack[Interpreter::BasicType_as_index(type)] = generate_tosca_to_stack_converter(type);
-      }
-      if (!_stack_to_stack_is_generated[Interpreter::BasicType_as_index(type)]++) {
-        Interpreter::_stack_to_stack[Interpreter::BasicType_as_index(type)] = generate_stack_to_stack_converter(type);
-      }
-      if (!_stack_to_native_abi_is_generated[Interpreter::BasicType_as_index(type)]++) {
-        Interpreter::_stack_to_native_abi[Interpreter::BasicType_as_index(type)] = generate_stack_to_native_abi_converter(type);
-      }
-    }
-  }
-
-
-#define method_entry(kind) Interpreter::_entry_table[Interpreter::kind] = ((InterpreterGenerator*)this)->generate_method_entry(Interpreter::kind)
+#define method_entry(kind) Interpreter::_entry_table[Interpreter::kind] = generate_method_entry(Interpreter::kind)
 
   { CodeletMark cm(_masm, "(kind = frame_manager)");
     // all non-native method kinds
@@ -138,7 +124,63 @@ void CppInterpreterGenerator::generate_all() {
 
 
 #undef method_entry
-
 }
 
+InterpreterCodelet* CppInterpreter::codelet_containing(address pc) {
+  // FIXME: I'm pretty sure _code is null and this is never called, which is why it's copied.
+  return (InterpreterCodelet*)_code->stub_containing(pc);
+}
+
+// Generate method entries
+address CppInterpreterGenerator::generate_method_entry(
+                                        AbstractInterpreter::MethodKind kind) {
+  // determine code generation flags
+  bool native = false;
+  bool synchronized = false;
+  address entry_point = NULL;
+
+  switch (kind) {
+  case Interpreter::zerolocals             :                                          break;
+  case Interpreter::zerolocals_synchronized:                synchronized = true;      break;
+  case Interpreter::native                 : native = true;                           break;
+  case Interpreter::native_synchronized    : native = true; synchronized = true;      break;
+  case Interpreter::empty                  : entry_point = generate_empty_entry();    break;
+  case Interpreter::accessor               : entry_point = generate_accessor_entry(); break;
+  case Interpreter::abstract               : entry_point = generate_abstract_entry(); break;
+
+  case Interpreter::java_lang_math_sin     : // fall thru
+  case Interpreter::java_lang_math_cos     : // fall thru
+  case Interpreter::java_lang_math_tan     : // fall thru
+  case Interpreter::java_lang_math_abs     : // fall thru
+  case Interpreter::java_lang_math_log     : // fall thru
+  case Interpreter::java_lang_math_log10   : // fall thru
+  case Interpreter::java_lang_math_sqrt    : // fall thru
+  case Interpreter::java_lang_math_pow     : // fall thru
+  case Interpreter::java_lang_math_exp     : entry_point = generate_math_entry(kind);      break;
+  case Interpreter::java_lang_ref_reference_get
+                                           : entry_point = generate_Reference_get_entry(); break;
+  default:
+    fatal("unexpected method kind: %d", kind);
+    break;
+  }
+
+  if (entry_point) {
+    return entry_point;
+  }
+
+  // We expect the normal and native entry points to be generated first so we can reuse them.
+  if (native) {
+    entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::native_synchronized : Interpreter::native);
+    if (entry_point == NULL) {
+      entry_point = generate_native_entry(synchronized);
+    }
+  } else {
+    entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::zerolocals_synchronized : Interpreter::zerolocals);
+    if (entry_point == NULL) {
+      entry_point = generate_normal_entry(synchronized);
+    }
+  }
+
+  return entry_point;
+}
 #endif // CC_INTERP

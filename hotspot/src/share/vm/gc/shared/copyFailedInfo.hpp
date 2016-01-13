@@ -87,4 +87,4 @@ class PromotionFailedInfo : public CopyFailedInfo {
 
 class EvacuationFailedInfo : public CopyFailedInfo {};
 
-#endif /* SHARE_VM_GC_SHARED_COPYFAILEDINFO_HPP */
+#endif // SHARE_VM_GC_SHARED_COPYFAILEDINFO_HPP

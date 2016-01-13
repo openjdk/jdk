@@ -978,6 +978,8 @@ class CMSCollector: public CHeapObj<mtGC> {
   bool completed_initialization() { return _completed_initialization; }
 
   void print_eden_and_survivor_chunk_arrays();
+
+  ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
 };
 
 class CMSExpansionCause : public AllStatic  {
