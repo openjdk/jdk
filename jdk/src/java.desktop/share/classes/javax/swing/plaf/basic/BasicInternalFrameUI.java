@@ -1710,6 +1710,12 @@ public class BasicInternalFrameUI extends InternalFrameUI
                 } else {
                     parentBounds = null;
                 }
+                if ((frame.getParent() != null) && frame.isIcon()) {
+                    Boolean value = (Boolean) frame.getClientProperty("wasIconOnce");
+                    if (Boolean.FALSE.equals(value)) {
+                        iconifyFrame(frame);
+                    }
+                }
                 if ((frame.getParent() != null) && !componentListenerAdded) {
                     f.getParent().addComponentListener(componentListener);
                     componentListenerAdded = true;

@@ -480,12 +480,19 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      * @since 1.6
      */
     protected void addImpl(Component comp, Object constraints, int index) {
+        checkComponentAttributes(comp);
         super.addImpl(comp, constraints, index);
         if (componentOrderCheckingEnabled) {
             if (comp instanceof JInternalFrame ||
                 comp instanceof JInternalFrame.JDesktopIcon) {
                 componentOrderChanged = true;
             }
+        }
+    }
+
+    private void checkComponentAttributes(Component comp) {
+        if (comp instanceof JInternalFrame && ((JInternalFrame) comp).isIcon()) {
+            ((JInternalFrame) comp).putClientProperty("wasIconOnce", Boolean.FALSE);
         }
     }
 
