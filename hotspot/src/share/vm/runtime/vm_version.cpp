@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,6 +211,8 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "Sun Studio 12u1"
       #elif __SUNPRO_CC == 0x5120
         #define HOTSPOT_BUILD_COMPILER "Sun Studio 12u3"
+      #elif __SUNPRO_CC == 0x5130
+        #define HOTSPOT_BUILD_COMPILER "Sun Studio 12u4"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown Workshop:" XSTR(__SUNPRO_CC)
       #endif
