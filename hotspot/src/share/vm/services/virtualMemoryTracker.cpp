@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -416,6 +416,14 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
     return false;
   }
 
+  if (reserved_rgn->flag() == mtClassShared &&
+      reserved_rgn->contain_region(addr, size) &&
+      !reserved_rgn->same_region(addr, size)) {
+    // This is an unmapped CDS region, which is part of the reserved shared
+    // memory region.
+    // See special handling in VirtualMemoryTracker::add_reserved_region also.
+    return true;
+  }
 
   VirtualMemorySummary::record_released_memory(size, reserved_rgn->flag());
 
