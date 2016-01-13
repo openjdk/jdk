@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"
@@ -399,14 +400,11 @@ static AliasedFlag const aliased_jvm_flags[] = {
   { NULL, NULL}
 };
 
-static AliasedFlag const aliased_jvm_logging_flags[] = {
-  { "-XX:+TraceClassResolution", "-Xlog:classresolve=info"},
-  { "-XX:-TraceClassResolution", "-Xlog:classresolve=off"},
-  { "-XX:+TraceExceptions", "-Xlog:exceptions=info" },
-  { "-XX:-TraceExceptions", "-Xlog:exceptions=off" },
-  { "-XX:+TraceMonitorInflation", "-Xlog:monitorinflation=debug" },
-  { "-XX:-TraceMonitorInflation", "-Xlog:monitorinflation=off" },
-  { NULL, NULL }
+static AliasedLoggingFlag const aliased_logging_flags[] = {
+  { "TraceClassResolution", LogLevel::Info, true, LogTag::_classresolve },
+  { "TraceExceptions", LogLevel::Info, true, LogTag::_exceptions },
+  { "TraceMonitorInflation", LogLevel::Debug, true, LogTag::_monitorinflation },
+  { NULL, LogLevel::Off, false, LogTag::__NO_TAG }
 };
 
 // Return true if "v" is less than "other", where "other" may be "undefined".
@@ -939,18 +937,15 @@ const char* Arguments::handle_aliases_and_deprecation(const char* arg, bool warn
   return NULL;
 }
 
-// lookup_logging_aliases
-// Called from parse_each_vm_init_arg(). Should be called on -XX options before specific cases are checked.
-// If arg matches any aliased_jvm_logging_flags entry, look up the real name and copy it into buffer.
-bool Arguments::lookup_logging_aliases(const char* arg, char* buffer) {
-  for (size_t i = 0; aliased_jvm_logging_flags[i].alias_name != NULL; i++) {
-    const AliasedFlag& flag_status = aliased_jvm_logging_flags[i];
-    if (strcmp(flag_status.alias_name, arg) == 0) {
-      strcpy(buffer, flag_status.real_name);
-      return true;
+AliasedLoggingFlag Arguments::catch_logging_aliases(const char* name){
+  for (size_t i = 0; aliased_logging_flags[i].alias_name != NULL; i++) {
+    const AliasedLoggingFlag& alf = aliased_logging_flags[i];
+    if (strcmp(alf.alias_name, name) == 0) {
+      return alf;
     }
   }
-  return false;
+  AliasedLoggingFlag a = {NULL, LogLevel::Off, false, LogTag::__NO_TAG};
+  return a;
 }
 
 bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
@@ -962,8 +957,14 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
   char dummy;
   const char* real_name;
   bool warn_if_deprecated = true;
+  AliasedLoggingFlag alf;
 
   if (sscanf(arg, "-%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
+    alf = catch_logging_aliases(name);
+    if (alf.alias_name != NULL){
+      LogConfiguration::configure_stdout(LogLevel::Off, alf.exactMatch, alf.tag, LogTag::__NO_TAG);
+      return true;
+    }
     real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
     if (real_name == NULL) {
       return false;
@@ -971,6 +972,11 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
     return set_bool_flag(real_name, false, origin);
   }
   if (sscanf(arg, "+%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
+    alf = catch_logging_aliases(name);
+    if (alf.alias_name != NULL){
+      LogConfiguration::configure_stdout(alf.level, alf.exactMatch, alf.tag, LogTag::__NO_TAG);
+      return true;
+    }
     real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
     if (real_name == NULL) {
       return false;
@@ -2629,7 +2635,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
   for (int index = 0; index < args->nOptions; index++) {
     bool is_absolute_path = false;  // for -agentpath vs -agentlib
 
-    JavaVMOption* option = args->options + index;
+    const JavaVMOption* option = args->options + index;
 
     if (!match_option(option, "-Djava.class.path", &tail) &&
         !match_option(option, "-Dsun.java.command", &tail) &&
@@ -2641,16 +2647,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         // omitted from jvm_args string as each have their own PerfData
         // string constant object.
         build_jvm_args(option->optionString);
-    }
-
-    // char buffer to store looked up logging option.
-    char aliased_logging_option[256];
-
-    // Catch -XX options which are aliased to Unified logging commands.
-    if (match_option(option, "-XX:", &tail)) {
-      if (lookup_logging_aliases(option->optionString, aliased_logging_option)) {
-        option->optionString = aliased_logging_option;
-      }
     }
 
     // -verbose:[class/gc/jni]
