@@ -130,60 +130,9 @@ extern "C" int getargs   (procsinfo*, int, char*, int);
 #define ERROR_MP_VMGETINFO_FAILED                    102
 #define ERROR_MP_VMGETINFO_CLAIMS_NO_SUPPORT_FOR_64K 103
 
-// The semantics in this file are thus that codeptr_t is a *real code ptr*.
-// This means that any function taking codeptr_t as arguments will assume
-// a real codeptr and won't handle function descriptors (eg getFuncName),
-// whereas functions taking address as args will deal with function
-// descriptors (eg os::dll_address_to_library_name).
-typedef unsigned int* codeptr_t;
-
-// Typedefs for stackslots, stack pointers, pointers to op codes.
-typedef unsigned long stackslot_t;
-typedef stackslot_t* stackptr_t;
-
 // Query dimensions of the stack of the calling thread.
 static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size);
 static address resolve_function_descriptor_to_code_pointer(address p);
-
-// Function to check a given stack pointer against given stack limits.
-inline bool is_valid_stackpointer(stackptr_t sp, stackptr_t stack_base, size_t stack_size) {
-  if (((uintptr_t)sp) & 0x7) {
-    return false;
-  }
-  if (sp > stack_base) {
-    return false;
-  }
-  if (sp < (stackptr_t) ((address)stack_base - stack_size)) {
-    return false;
-  }
-  return true;
-}
-
-// Returns true if function is a valid codepointer.
-inline bool is_valid_codepointer(codeptr_t p) {
-  if (!p) {
-    return false;
-  }
-  if (((uintptr_t)p) & 0x3) {
-    return false;
-  }
-  if (LoadedLibraries::find_for_text_address(p, NULL) == NULL) {
-    return false;
-  }
-  return true;
-}
-
-// Macro to check a given stack pointer against given stack limits and to die if test fails.
-#define CHECK_STACK_PTR(sp, stack_base, stack_size) { \
-    guarantee(is_valid_stackpointer((stackptr_t)(sp), (stackptr_t)(stack_base), stack_size), "Stack Pointer Invalid"); \
-}
-
-// Macro to check the current stack pointer against given stacklimits.
-#define CHECK_CURRENT_STACK_PTR(stack_base, stack_size) { \
-  address sp; \
-  sp = os::current_stack_pointer(); \
-  CHECK_STACK_PTR(sp, stack_base, stack_size); \
-}
 
 static void vmembk_print_on(outputStream* os);
 
@@ -859,9 +808,6 @@ static void *java_start(Thread *thread) {
     trcVerbose("Thread " UINT64_FORMAT ": stack not in data segment.", (uint64_t) pthread_id);
   }
 
-  // Do some sanity checks.
-  CHECK_CURRENT_STACK_PTR(thread->stack_base(), thread->stack_size());
-
   // Try to randomize the cache line index of hot stack frames.
   // This helps when threads of the same stack traces evict each other's
   // cache lines. The threads can be either from the same JVM instance, or
@@ -1027,9 +973,6 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   // initialize floating point control register
   os::Aix::init_thread_fpu_state();
-
-  // some sanity checks
-  CHECK_CURRENT_STACK_PTR(thread->stack_base(), thread->stack_size());
 
   // Initial thread state is RUNNABLE
   osthread->set_state(RUNNABLE);
@@ -1382,32 +1325,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
     return false;
   }
 
-  // Go through Decoder::decode to call getFuncName which reads the name from the traceback table.
-  return Decoder::decode(addr, buf, buflen, offset, demangle);
-}
-
-static int getModuleName(codeptr_t pc,                    // [in] program counter
-                         char* p_name, size_t namelen,    // [out] optional: function name
-                         char* p_errmsg, size_t errmsglen // [out] optional: user provided buffer for error messages
-                         ) {
-
-  if (p_name && namelen > 0) {
-    *p_name = '\0';
-  }
-  if (p_errmsg && errmsglen > 0) {
-    *p_errmsg = '\0';
-  }
-
-  if (p_name && namelen > 0) {
-    loaded_module_t lm;
-    if (LoadedLibraries::find_for_text_address(pc, &lm) != NULL) {
-      strncpy(p_name, lm.shortname, namelen);
-      p_name[namelen - 1] = '\0';
-    }
-    return 0;
-  }
-
-  return -1;
+  return AixSymbols::get_function_name(addr, buf, buflen, offset, NULL, demangle);
 }
 
 bool os::dll_address_to_library_name(address addr, char* buf,
@@ -1425,10 +1343,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
     return false;
   }
 
-  if (::getModuleName((codeptr_t) addr, buf, buflen, 0, 0) == 0) {
-    return true;
-  }
-  return false;
+  return AixSymbols::get_module_name(addr, buf, buflen);
 }
 
 // Loads .dll/.so and in case of error it checks if .dll/.so was built
