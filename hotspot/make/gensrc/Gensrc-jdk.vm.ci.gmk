@@ -69,6 +69,7 @@ $(GENSRC_DIR)/_gensrc_proc_done: $(PROC_SRCS) \
 	$(eval $(call ListPathsSafely,PROC_SRCS,$(@D)/_gensrc_proc_files))
 	$(JAVA_SMALL) $(NEW_JAVAC) \
 	    -XDignore.symbol.file \
+            -bootclasspath $(JDK_OUTPUTDIR)/modules/java.base \
 	    -sourcepath $(SOURCEPATH) \
 	    -implicit:none \
 	    -proc:only \
