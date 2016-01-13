@@ -3815,6 +3815,7 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf,
   return NULL;
 }
 
+#define MAXIMUM_THREADS_TO_KEEP (16 * MAXIMUM_WAIT_OBJECTS)
 #define EXIT_TIMEOUT 300000 /* 5 minutes */
 
 static BOOL CALLBACK init_crit_sect_call(PINIT_ONCE, PVOID pcrit_sect, PVOID*) {
@@ -3833,7 +3834,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     // _endthreadex().
     // Should be large enough to avoid blocking the exiting thread due to lack of
     // a free slot.
-    static HANDLE handles[MAXIMUM_WAIT_OBJECTS];
+    static HANDLE handles[MAXIMUM_THREADS_TO_KEEP];
     static int handle_count = 0;
 
     static INIT_ONCE init_once_crit_sect = INIT_ONCE_STATIC_INIT;
@@ -3847,6 +3848,11 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
     if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, NULL)) {
       warning("crit_sect initialization failed in %s: %d\n", __FILE__, __LINE__);
     } else if (OrderAccess::load_acquire(&process_exiting) == 0) {
+      if (what != EPT_THREAD) {
+        // Atomically set process_exiting before the critical section
+        // to increase the visibility between racing threads.
+        Atomic::cmpxchg((jint)GetCurrentThreadId(), &process_exiting, 0);
+      }
       EnterCriticalSection(&crit_sect);
 
       if (what == EPT_THREAD && OrderAccess::load_acquire(&process_exiting) == 0) {
@@ -3867,14 +3873,14 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
 
         // If there's no free slot in the array of the kept handles, we'll have to
         // wait until at least one thread completes exiting.
-        if ((handle_count = j) == MAXIMUM_WAIT_OBJECTS) {
+        if ((handle_count = j) == MAXIMUM_THREADS_TO_KEEP) {
           // Raise the priority of the oldest exiting thread to increase its chances
           // to complete sooner.
           SetThreadPriority(handles[0], THREAD_PRIORITY_ABOVE_NORMAL);
           res = WaitForMultipleObjects(MAXIMUM_WAIT_OBJECTS, handles, FALSE, EXIT_TIMEOUT);
           if (res >= WAIT_OBJECT_0 && res < (WAIT_OBJECT_0 + MAXIMUM_WAIT_OBJECTS)) {
             i = (res - WAIT_OBJECT_0);
-            handle_count = MAXIMUM_WAIT_OBJECTS - 1;
+            handle_count = MAXIMUM_THREADS_TO_KEEP - 1;
             for (; i < handle_count; ++i) {
               handles[i] = handles[i + 1];
             }
@@ -3883,7 +3889,7 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
                     (res == WAIT_FAILED ? "failed" : "timed out"),
                     GetLastError(), __FILE__, __LINE__);
             // Don't keep handles, if we failed waiting for them.
-            for (i = 0; i < MAXIMUM_WAIT_OBJECTS; ++i) {
+            for (i = 0; i < MAXIMUM_THREADS_TO_KEEP; ++i) {
               CloseHandle(handles[i]);
             }
             handle_count = 0;
@@ -3904,42 +3910,59 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
         // The current exiting thread has stored its handle in the array, and now
         // should leave the critical section before calling _endthreadex().
 
-      } else if (what != EPT_THREAD) {
-        if (handle_count > 0) {
-          // Before ending the process, make sure all the threads that had called
-          // _endthreadex() completed.
+      } else if (what != EPT_THREAD && handle_count > 0) {
+        jlong start_time, finish_time, timeout_left;
+        // Before ending the process, make sure all the threads that had called
+        // _endthreadex() completed.
 
-          // Set the priority level of the current thread to the same value as
-          // the priority level of exiting threads.
-          // This is to ensure it will be given a fair chance to execute if
-          // the timeout expires.
-          hthr = GetCurrentThread();
-          SetThreadPriority(hthr, THREAD_PRIORITY_ABOVE_NORMAL);
-          for (i = 0; i < handle_count; ++i) {
-            SetThreadPriority(handles[i], THREAD_PRIORITY_ABOVE_NORMAL);
+        // Set the priority level of the current thread to the same value as
+        // the priority level of exiting threads.
+        // This is to ensure it will be given a fair chance to execute if
+        // the timeout expires.
+        hthr = GetCurrentThread();
+        SetThreadPriority(hthr, THREAD_PRIORITY_ABOVE_NORMAL);
+        start_time = os::javaTimeNanos();
+        finish_time = start_time + ((jlong)EXIT_TIMEOUT * 1000000L);
+        for (i = 0; ; ) {
+          int portion_count = handle_count - i;
+          if (portion_count > MAXIMUM_WAIT_OBJECTS) {
+            portion_count = MAXIMUM_WAIT_OBJECTS;
           }
-          res = WaitForMultipleObjects(handle_count, handles, TRUE, EXIT_TIMEOUT);
+          for (j = 0; j < portion_count; ++j) {
+            SetThreadPriority(handles[i + j], THREAD_PRIORITY_ABOVE_NORMAL);
+          }
+          timeout_left = (finish_time - start_time) / 1000000L;
+          if (timeout_left < 0) {
+            timeout_left = 0;
+          }
+          res = WaitForMultipleObjects(portion_count, handles + i, TRUE, timeout_left);
           if (res == WAIT_FAILED || res == WAIT_TIMEOUT) {
             warning("WaitForMultipleObjects %s (%u) in %s: %d\n",
                     (res == WAIT_FAILED ? "failed" : "timed out"),
                     GetLastError(), __FILE__, __LINE__);
+            // Reset portion_count so we close the remaining
+            // handles due to this error.
+            portion_count = handle_count - i;
           }
-          for (i = 0; i < handle_count; ++i) {
-            CloseHandle(handles[i]);
+          for (j = 0; j < portion_count; ++j) {
+            CloseHandle(handles[i + j]);
           }
-          handle_count = 0;
+          if ((i += portion_count) >= handle_count) {
+            break;
+          }
+          start_time = os::javaTimeNanos();
         }
-
-        OrderAccess::release_store(&process_exiting, 1);
+        handle_count = 0;
       }
 
       LeaveCriticalSection(&crit_sect);
     }
 
-    if (what == EPT_THREAD) {
-      while (OrderAccess::load_acquire(&process_exiting) != 0) {
-        // Some other thread is about to call exit(), so we
-        // don't let the current thread proceed to _endthreadex()
+    if (OrderAccess::load_acquire(&process_exiting) != 0 &&
+        process_exiting != (jint)GetCurrentThreadId()) {
+      // Some other thread is about to call exit(), so we
+      // don't let the current thread proceed to exit() or _endthreadex()
+      while (true) {
         SuspendThread(GetCurrentThread());
         // Avoid busy-wait loop, if SuspendThread() failed.
         Sleep(EXIT_TIMEOUT);
