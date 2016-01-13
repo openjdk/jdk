@@ -25,7 +25,7 @@
 
 package sun.management;
 
-import sun.misc.Perf;
+import jdk.internal.perf.Perf;
 import sun.management.counter.*;
 import sun.management.counter.perf.*;
 import java.nio.ByteBuffer;
