@@ -24,7 +24,6 @@ package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod.Options.UseProfilingInformation;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
@@ -424,7 +423,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     public ProfilingInfo getProfilingInfo(boolean includeNormal, boolean includeOSR) {
         ProfilingInfo info;
 
-        if (UseProfilingInformation.getValue() && methodData == null) {
+        if (methodData == null) {
             long metaspaceMethodData = UNSAFE.getAddress(metaspaceMethod + config().methodDataOffset);
             if (metaspaceMethodData != 0) {
                 methodData = new HotSpotMethodData(metaspaceMethodData, this);

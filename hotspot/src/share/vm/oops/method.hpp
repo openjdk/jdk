@@ -61,6 +61,7 @@ class KlassSizeStats;
 
 class Method : public Metadata {
  friend class VMStructs;
+ friend class JVMCIVMStructs;
  private:
   ConstMethod*      _constMethod;                // Method read-only data.
   MethodData*       _method_data;

@@ -503,7 +503,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* Generation and Space hierarchies                                               */                                               \
   /**********************************************************************************/                                               \
                                                                                                                                      \
-  unchecked_nonstatic_field(ageTable,          sizes,                                         sizeof(ageTable::sizes))               \
+  unchecked_nonstatic_field(AgeTable,          sizes,                                         sizeof(AgeTable::sizes))               \
                                                                                                                                      \
   nonstatic_field(BarrierSet,                  _fake_rtti,                                    BarrierSet::FakeRtti)                  \
                                                                                                                                      \
@@ -560,7 +560,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(DefNewGeneration,            _old_gen,                                      Generation*)                           \
   nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                  \
-  nonstatic_field(DefNewGeneration,            _age_table,                                    ageTable)                              \
+  nonstatic_field(DefNewGeneration,            _age_table,                                    AgeTable)                              \
   nonstatic_field(DefNewGeneration,            _eden_space,                                   ContiguousSpace*)                      \
   nonstatic_field(DefNewGeneration,            _from_space,                                   ContiguousSpace*)                      \
   nonstatic_field(DefNewGeneration,            _to_space,                                     ContiguousSpace*)                      \
@@ -849,6 +849,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(StubRoutines,                _aescrypt_decryptBlock,                        address)                               \
      static_field(StubRoutines,                _cipherBlockChaining_encryptAESCrypt,          address)                               \
      static_field(StubRoutines,                _cipherBlockChaining_decryptAESCrypt,          address)                               \
+     static_field(StubRoutines,                _counterMode_AESCrypt,                         address)                               \
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
@@ -859,6 +860,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(StubRoutines,                _mulAdd,                                       address)                               \
      static_field(StubRoutines,                _dexp,                                         address)                               \
      static_field(StubRoutines,                _dlog,                                         address)                               \
+     static_field(StubRoutines,                _dpow,                                         address)                               \
+     static_field(StubRoutines,                _vectorizedMismatch,                           address)                               \
      static_field(StubRoutines,                _jbyte_arraycopy,                              address)                               \
      static_field(StubRoutines,                _jshort_arraycopy,                             address)                               \
      static_field(StubRoutines,                _jint_arraycopy,                               address)                               \
@@ -1307,6 +1310,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
      static_field(Abstract_VM_Version,         _s_vm_release,                                 const char*)                           \
      static_field(Abstract_VM_Version,         _s_internal_vm_info_string,                    const char*)                           \
+     static_field(Abstract_VM_Version,         _features,                                     uint64_t)                              \
+     static_field(Abstract_VM_Version,         _features_string,                              const char*)                           \
      static_field(Abstract_VM_Version,         _vm_major_version,                             int)                                   \
      static_field(Abstract_VM_Version,         _vm_minor_version,                             int)                                   \
      static_field(Abstract_VM_Version,         _vm_security_version,                          int)                                   \
@@ -1600,7 +1605,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   /* Miscellaneous other GC types */                                      \
                                                                           \
-  declare_toplevel_type(ageTable)                                         \
+  declare_toplevel_type(AgeTable)                                         \
   declare_toplevel_type(Generation::StatRecord)                           \
   declare_toplevel_type(GenerationSpec)                                   \
   declare_toplevel_type(HeapWord)                                         \
@@ -2056,7 +2061,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(AtanDNode, Node)                                        \
   declare_c2_type(SqrtDNode, Node)                                        \
   declare_c2_type(Log10DNode, Node)                                       \
-  declare_c2_type(PowDNode, Node)                                         \
   declare_c2_type(ReverseBytesINode, Node)                                \
   declare_c2_type(ReverseBytesLNode, Node)                                \
   declare_c2_type(ReductionNode, Node)                                    \
@@ -2310,7 +2314,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* Generation and Space Hierarchy Constants */                          \
   /********************************************/                          \
                                                                           \
-  declare_constant(ageTable::table_size)                                  \
+  declare_constant(AgeTable::table_size)                                  \
                                                                           \
   declare_constant(BarrierSet::ModRef)                                    \
   declare_constant(BarrierSet::CardTableModRef)                           \
@@ -2843,104 +2847,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 
 
 //--------------------------------------------------------------------------------
-// VM_ADDRESSES
-//
-
-#define VM_ADDRESSES(declare_address, declare_preprocessor_address, declare_function) \
-                                                                          \
-  declare_function(SharedRuntime::register_finalizer)                     \
-  declare_function(SharedRuntime::exception_handler_for_return_address)   \
-  declare_function(SharedRuntime::OSR_migration_end)                      \
-  declare_function(SharedRuntime::dsin)                                   \
-  declare_function(SharedRuntime::dcos)                                   \
-  declare_function(SharedRuntime::dtan)                                   \
-  declare_function(SharedRuntime::dexp)                                   \
-  declare_function(SharedRuntime::dlog)                                   \
-  declare_function(SharedRuntime::dlog10)                                 \
-  declare_function(SharedRuntime::dpow)                                   \
-                                                                          \
-  declare_function(os::dll_load)                                          \
-  declare_function(os::dll_lookup)                                        \
-  declare_function(os::javaTimeMillis)                                    \
-  declare_function(os::javaTimeNanos)                                     \
-                                                                          \
-  declare_function(Deoptimization::fetch_unroll_info)                     \
-  COMPILER2_PRESENT(declare_function(Deoptimization::uncommon_trap))      \
-  declare_function(Deoptimization::unpack_frames)
-
-//--------------------------------------------------------------------------------
-// Macros operating on the above lists
-//--------------------------------------------------------------------------------
-
-// This utility macro quotes the passed string
-#define QUOTE(x) #x
-
-//--------------------------------------------------------------------------------
-// VMStructEntry macros
-//
-
-// This macro generates a VMStructEntry line for a nonstatic field
-#define GENERATE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)              \
- { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 0, offset_of(typeName, fieldName), NULL },
-
-// This macro generates a VMStructEntry line for a static field
-#define GENERATE_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
- { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 1, 0, &typeName::fieldName },
-
-// This macro generates a VMStructEntry line for a static pointer volatile field,
-// e.g.: "static ObjectMonitor * volatile gBlockList;"
-#define GENERATE_STATIC_PTR_VOLATILE_VM_STRUCT_ENTRY(typeName, fieldName, type)    \
- { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 1, 0, (void *)&typeName::fieldName },
-
-// This macro generates a VMStructEntry line for an unchecked
-// nonstatic field, in which the size of the type is also specified.
-// The type string is given as NULL, indicating an "opaque" type.
-#define GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, size)    \
-  { QUOTE(typeName), QUOTE(fieldName), NULL, 0, offset_of(typeName, fieldName), NULL },
-
-// This macro generates a VMStructEntry line for an unchecked
-// static field, in which the size of the type is also specified.
-// The type string is given as NULL, indicating an "opaque" type.
-#define GENERATE_UNCHECKED_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, size)       \
- { QUOTE(typeName), QUOTE(fieldName), NULL, 1, 0, (void*) &typeName::fieldName },
-
-// This macro generates the sentinel value indicating the end of the list
-#define GENERATE_VM_STRUCT_LAST_ENTRY() \
- { NULL, NULL, NULL, 0, 0, NULL }
-
-// This macro checks the type of a VMStructEntry by comparing pointer types
-#define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
- {typeName *dummyObj = NULL; type* dummy = &dummyObj->fieldName;                   \
-  assert(offset_of(typeName, fieldName) < sizeof(typeName), "Illegal nonstatic struct entry, field offset too large"); }
-
-// This macro checks the type of a volatile VMStructEntry by comparing pointer types
-#define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)        \
- {typedef type dummyvtype; typeName *dummyObj = NULL; volatile dummyvtype* dummy = &dummyObj->fieldName; }
-
-// This macro checks the type of a static VMStructEntry by comparing pointer types
-#define CHECK_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                    \
- {type* dummy = &typeName::fieldName; }
-
-// This macro checks the type of a static pointer volatile VMStructEntry by comparing pointer types,
-// e.g.: "static ObjectMonitor * volatile gBlockList;"
-#define CHECK_STATIC_PTR_VOLATILE_VM_STRUCT_ENTRY(typeName, fieldName, type)       \
- {type volatile * dummy = &typeName::fieldName; }
-
-// This macro ensures the type of a field and its containing type are
-// present in the type table. The assertion string is shorter than
-// preferable because (incredibly) of a bug in Solstice NFS client
-// which seems to prevent very long lines from compiling. This assertion
-// means that an entry in VMStructs::localHotSpotVMStructs[] was not
-// found in VMStructs::localHotSpotVMTypes[].
-#define ENSURE_FIELD_TYPE_PRESENT(typeName, fieldName, type)                       \
- { assert(findType(QUOTE(typeName)) != 0, "type \"" QUOTE(typeName) "\" not found in type table"); \
-   assert(findType(QUOTE(type)) != 0, "type \"" QUOTE(type) "\" not found in type table"); }
-
-// This is a no-op macro for unchecked fields
-#define CHECK_NO_OP(a, b, c)
-
-//
-// Build-specific macros:
 //
 
 // Generate and check a nonstatic field in non-product builds
@@ -2996,35 +2902,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 #endif /* COMPILER2 */
 
 //--------------------------------------------------------------------------------
-// VMTypeEntry macros
-//
-
-#define GENERATE_VM_TYPE_ENTRY(type, superclass) \
- { QUOTE(type), QUOTE(superclass), 0, 0, 0, sizeof(type) },
-
-#define GENERATE_TOPLEVEL_VM_TYPE_ENTRY(type) \
- { QUOTE(type), NULL,              0, 0, 0, sizeof(type) },
-
-#define GENERATE_OOP_VM_TYPE_ENTRY(type) \
- { QUOTE(type), NULL,              1, 0, 0, sizeof(type) },
-
-#define GENERATE_INTEGER_VM_TYPE_ENTRY(type) \
- { QUOTE(type), NULL,              0, 1, 0, sizeof(type) },
-
-#define GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY(type) \
- { QUOTE(type), NULL,              0, 1, 1, sizeof(type) },
-
-#define GENERATE_VM_TYPE_LAST_ENTRY() \
- { NULL, NULL, 0, 0, 0, 0 }
-
-#define CHECK_VM_TYPE_ENTRY(type, superclass) \
- { type* dummyObj = NULL; superclass* dummySuperObj = dummyObj; }
-
-#define CHECK_VM_TYPE_NO_OP(a)
-#define CHECK_SINGLE_ARG_VM_TYPE_NO_OP(a)
-
-//
-// Build-specific macros:
+// VMTypeEntry build-specific macros
 //
 
 #ifdef COMPILER1
@@ -3049,22 +2927,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 
 
 //--------------------------------------------------------------------------------
-// VMIntConstantEntry macros
+// VMIntConstantEntry build-specific macros
 //
-
-#define GENERATE_VM_INT_CONSTANT_ENTRY(name) \
- { QUOTE(name), (int32_t) name },
-
-#define GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY(name, value) \
- { (name), (int32_t)(value) },
-
-#define GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY(name, value) \
- { name, (int32_t) value },
-
-// This macro generates the sentinel value indicating the end of the list
-#define GENERATE_VM_INT_CONSTANT_LAST_ENTRY() \
- { NULL, 0 }
-
 
 // Generate an int constant for a C1 build
 #ifdef COMPILER1
@@ -3082,19 +2946,10 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 # define GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY(name, value)
 #endif /* COMPILER1 */
 
+
 //--------------------------------------------------------------------------------
-// VMLongConstantEntry macros
+// VMLongConstantEntry build-specific macros
 //
-
-#define GENERATE_VM_LONG_CONSTANT_ENTRY(name) \
-  { QUOTE(name), name },
-
-#define GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY(name, value) \
-  { name, value },
-
-// This macro generates the sentinel value indicating the end of the list
-#define GENERATE_VM_LONG_CONSTANT_LAST_ENTRY() \
- { NULL, 0 }
 
 // Generate a long constant for a C1 build
 #ifdef COMPILER1
@@ -3112,22 +2967,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 # define GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY(name, value)
 #endif /* COMPILER1 */
 
-//--------------------------------------------------------------------------------
-// VMAddressEntry macros
-//
-
-#define GENERATE_VM_ADDRESS_ENTRY(name) \
-  { QUOTE(name), (void*) (name) },
-
-#define GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY(name, value) \
-  { name, (void*) (value) },
-
-#define GENERATE_VM_FUNCTION_ENTRY(name) \
-  { QUOTE(name), CAST_FROM_FN_PTR(void*, &(name)) },
-
-// This macro generates the sentinel value indicating the end of the list
-#define GENERATE_VM_ADDRESS_LAST_ENTRY() \
- { NULL, NULL }
 
 //
 // Instantiation of VMStructEntries, VMTypeEntries and VMIntConstantEntries
@@ -3147,11 +2986,6 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
              GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY,
              GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
              GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
-
-#if INCLUDE_JVMCI
-  VM_STRUCTS_JVMCI(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
-                   GENERATE_STATIC_VM_STRUCT_ENTRY)
-#endif
 
 #if INCLUDE_ALL_GCS
   VM_STRUCTS_PARALLELGC(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
@@ -3214,11 +3048,6 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
            GENERATE_C2_VM_TYPE_ENTRY,
            GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
 
-#if INCLUDE_JVMCI
-  VM_TYPES_JVMCI(GENERATE_VM_TYPE_ENTRY,
-                 GENERATE_TOPLEVEL_VM_TYPE_ENTRY)
-#endif
-
 #if INCLUDE_ALL_GCS
   VM_TYPES_PARALLELGC(GENERATE_VM_TYPE_ENTRY,
                       GENERATE_TOPLEVEL_VM_TYPE_ENTRY)
@@ -3277,12 +3106,6 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
                    GENERATE_C1_VM_INT_CONSTANT_ENTRY,
                    GENERATE_C2_VM_INT_CONSTANT_ENTRY,
                    GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
-
-#if INCLUDE_JVMCI
-  VM_INT_CONSTANTS_JVMCI(GENERATE_VM_INT_CONSTANT_ENTRY,
-                         GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
-
-#endif
 
 #if INCLUDE_ALL_GCS
   VM_INT_CONSTANTS_CMS(GENERATE_VM_INT_CONSTANT_ENTRY)
@@ -3345,25 +3168,6 @@ VMLongConstantEntry VMStructs::localHotSpotVMLongConstants[] = {
                            GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 
   GENERATE_VM_LONG_CONSTANT_LAST_ENTRY()
-};
-
-VMAddressEntry VMStructs::localHotSpotVMAddresses[] = {
-
-  VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,
-               GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
-               GENERATE_VM_FUNCTION_ENTRY)
-
-  VM_ADDRESSES_OS(GENERATE_VM_ADDRESS_ENTRY,
-                  GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
-                  GENERATE_VM_FUNCTION_ENTRY)
-
-#if INCLUDE_JVMCI
-  VM_ADDRESSES_JVMCI(GENERATE_VM_ADDRESS_ENTRY,
-                     GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
-                     GENERATE_VM_FUNCTION_ENTRY)
-#endif
-
-  GENERATE_VM_ADDRESS_LAST_ENTRY()
 };
 
 // This is used both to check the types of referenced fields and, in
@@ -3574,11 +3378,6 @@ JNIEXPORT VMLongConstantEntry* gHotSpotVMLongConstants = VMStructs::localHotSpot
 JNIEXPORT uint64_t gHotSpotVMLongConstantEntryNameOffset = offset_of(VMLongConstantEntry, name);
 JNIEXPORT uint64_t gHotSpotVMLongConstantEntryValueOffset = offset_of(VMLongConstantEntry, value);
 JNIEXPORT uint64_t gHotSpotVMLongConstantEntryArrayStride = STRIDE(gHotSpotVMLongConstants);
-
-JNIEXPORT VMAddressEntry* gHotSpotVMAddresses = VMStructs::localHotSpotVMAddresses;
-JNIEXPORT uint64_t gHotSpotVMAddressEntryNameOffset = offset_of(VMAddressEntry, name);
-JNIEXPORT uint64_t gHotSpotVMAddressEntryValueOffset = offset_of(VMAddressEntry, value);
-JNIEXPORT uint64_t gHotSpotVMAddressEntryArrayStride = STRIDE(gHotSpotVMAddresses);
 }
 
 #ifdef ASSERT
@@ -3685,11 +3484,6 @@ void VMStructs::test() {
   assert(memcmp(&localHotSpotVMLongConstants[sizeof(localHotSpotVMLongConstants) / sizeof(VMLongConstantEntry) - 1],
                 &long_last_entry,
                 sizeof(VMLongConstantEntry)) == 0, "Incorrect last entry in localHotSpotVMLongConstants");
-
-  static VMAddressEntry address_last_entry = GENERATE_VM_ADDRESS_LAST_ENTRY();
-  assert(memcmp(&localHotSpotVMAddresses[sizeof(localHotSpotVMAddresses) / sizeof(VMAddressEntry) - 1],
-                &address_last_entry,
-                sizeof(VMAddressEntry)) == 0, "Incorrect last entry in localHotSpotVMAddresses");
 
 
   // Check for duplicate entries in type array

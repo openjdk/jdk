@@ -204,7 +204,7 @@ intptr_t jfieldIDWorkaround::encode_klass_hash(Klass* k, intptr_t offset) {
       field_klass = super_klass;   // super contains the field also
       super_klass = field_klass->super();
     }
-    debug_only(No_Safepoint_Verifier nosafepoint;)
+    debug_only(NoSafepointVerifier nosafepoint;)
     uintptr_t klass_hash = field_klass->identity_hash();
     return ((klass_hash & klass_mask) << klass_shift) | checked_mask_in_place;
   } else {
@@ -224,7 +224,7 @@ bool jfieldIDWorkaround::klass_hash_ok(Klass* k, jfieldID id) {
   uintptr_t as_uint = (uintptr_t) id;
   intptr_t klass_hash = (as_uint >> klass_shift) & klass_mask;
   do {
-    debug_only(No_Safepoint_Verifier nosafepoint;)
+    debug_only(NoSafepointVerifier nosafepoint;)
     // Could use a non-blocking query for identity_hash here...
     if ((k->identity_hash() & klass_mask) == klass_hash)
       return true;
@@ -1124,7 +1124,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
         selected_method = m;
     } else if (!m->has_itable_index()) {
       // non-interface call -- for that little speed boost, don't handlize
-      debug_only(No_Safepoint_Verifier nosafepoint;)
+      debug_only(NoSafepointVerifier nosafepoint;)
       // jni_GetMethodID makes sure class is linked and initialized
       // so m should have a valid vtable index.
       assert(m->valid_vtable_index(), "no valid vtable index");
@@ -3157,7 +3157,7 @@ JNI_END
 JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboolean *isCopy))
   JNIWrapper("GetPrimitiveArrayCritical");
  HOTSPOT_JNI_GETPRIMITIVEARRAYCRITICAL_ENTRY(env, array, (uintptr_t *) isCopy);
-  GC_locker::lock_critical(thread);
+  GCLocker::lock_critical(thread);
   if (isCopy != NULL) {
     *isCopy = JNI_FALSE;
   }
@@ -3179,7 +3179,7 @@ JNI_ENTRY(void, jni_ReleasePrimitiveArrayCritical(JNIEnv *env, jarray array, voi
   JNIWrapper("ReleasePrimitiveArrayCritical");
   HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_ENTRY(env, array, carray, mode);
   // The array, carray and mode arguments are ignored
-  GC_locker::unlock_critical(thread);
+  GCLocker::unlock_critical(thread);
 HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_RETURN();
 JNI_END
 
@@ -3187,7 +3187,7 @@ JNI_END
 JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jboolean *isCopy))
   JNIWrapper("GetStringCritical");
   HOTSPOT_JNI_GETSTRINGCRITICAL_ENTRY(env, string, (uintptr_t *) isCopy);
-  GC_locker::lock_critical(thread);
+  GCLocker::lock_critical(thread);
   oop s = JNIHandles::resolve_non_null(string);
   typeArrayOop s_value = java_lang_String::value(s);
   bool is_latin1 = java_lang_String::is_latin1(s);
@@ -3225,7 +3225,7 @@ JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar 
     // This assumes that ReleaseStringCritical bookends GetStringCritical.
     FREE_C_HEAP_ARRAY(jchar, chars);
   }
-  GC_locker::unlock_critical(thread);
+  GCLocker::unlock_critical(thread);
 HOTSPOT_JNI_RELEASESTRINGCRITICAL_RETURN();
 JNI_END
 

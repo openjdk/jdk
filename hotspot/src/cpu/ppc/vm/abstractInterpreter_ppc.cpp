@@ -141,9 +141,9 @@ void AbstractInterpreter::layout_activation(Method* method,
 
   intptr_t* locals_base  = (caller->is_interpreted_frame()) ?
     caller->interpreter_frame_esp() + caller_actual_parameters :
-    caller->sp() + method->max_locals() - 1 + (frame::abi_minframe_size / Interpreter::stackElementSize) ;
+    caller->sp() + method->max_locals() - 1 + (frame::abi_minframe_size / Interpreter::stackElementSize);
 
-  intptr_t* monitor_base = caller->sp() - frame::ijava_state_size / Interpreter::stackElementSize ;
+  intptr_t* monitor_base = caller->sp() - frame::ijava_state_size / Interpreter::stackElementSize;
   intptr_t* monitor      = monitor_base - (moncount * frame::interpreter_frame_monitor_size());
   intptr_t* esp_base     = monitor - 1;
   intptr_t* esp          = esp_base - tempcount - popframe_extra_args;

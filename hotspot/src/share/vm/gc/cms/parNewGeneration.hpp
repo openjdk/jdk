@@ -94,7 +94,7 @@ class ParScanThreadState {
 
   int _hash_seed;
   int _thread_num;
-  ageTable _ageTable;
+  AgeTable _ageTable;
 
   bool _to_space_full;
 
@@ -132,7 +132,7 @@ class ParScanThreadState {
                      ParallelTaskTerminator& term_);
 
  public:
-  ageTable* age_table() {return &_ageTable;}
+  AgeTable* age_table() {return &_ageTable;}
 
   ObjToScanQueue* work_queue() { return _work_queue; }
 

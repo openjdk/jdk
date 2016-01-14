@@ -275,7 +275,6 @@ import java.io.IOException;
  * @author Gordon Hirsch
  * @since  1.3
  */
-@jdk.Exported
 public interface VirtualMachineManager {
 
     /**

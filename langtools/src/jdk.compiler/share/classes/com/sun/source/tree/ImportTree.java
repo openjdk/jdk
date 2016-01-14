@@ -41,7 +41,6 @@ package com.sun.source.tree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface ImportTree extends Tree {
     /**
      * Returns true if this is a static import declaration.

@@ -205,9 +205,6 @@
       <name>javax.security.cert</name>
     </export>
     <export>
-      <name>jdk</name>
-    </export>
-    <export>
       <name>jdk.net</name>
     </export>
     <export>
@@ -233,9 +230,11 @@
       <to>java.logging</to>
       <to>java.management</to>
       <to>java.naming</to>
+      <to>java.rmi</to>
       <to>java.security.jgss</to>
       <to>java.sql</to>
       <to>java.xml</to>
+      <to>jdk.charsets</to>
       <to>jdk.management.resource</to>
       <to>jdk.scripting.nashorn</to>
     </export>

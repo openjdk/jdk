@@ -46,7 +46,6 @@ import javax.lang.model.element.Name;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface MethodTree extends Tree {
     /**
      * Returns the modifiers, including any annotations for the method being declared.

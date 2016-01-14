@@ -33,7 +33,6 @@ package com.sun.source.doctree;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface ValueTree extends InlineTagTree {
     /**
      * Returns the reference to the value.

@@ -59,7 +59,7 @@ class CompileLog;
 class DepChange;
 class   KlassDepChange;
 class   CallSiteDepChange;
-class No_Safepoint_Verifier;
+class NoSafepointVerifier;
 
 class Dependencies: public ResourceObj {
  public:
@@ -713,7 +713,7 @@ class DepChange : public StackObj {
       : _changes(changes)
     { start(); }
 
-    ContextStream(DepChange& changes, No_Safepoint_Verifier& nsv)
+    ContextStream(DepChange& changes, NoSafepointVerifier& nsv)
       : _changes(changes)
       // the nsv argument makes it safe to hold oops like _klass
     { start(); }

@@ -620,7 +620,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
         return result;
       }
 
-      if (GC_locker::is_active_and_needs_gc()) {
+      if (GCLocker::is_active_and_needs_gc()) {
         if (is_tlab) {
           return NULL;  // Caller will retry allocating individual object.
         }
@@ -647,7 +647,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
         if (!jthr->in_critical()) {
           MutexUnlocker mul(Heap_lock);
           // Wait for JNI critical section to be exited
-          GC_locker::stall_until_clear();
+          GCLocker::stall_until_clear();
           gclocker_stalled_count += 1;
           continue;
         } else {
@@ -728,7 +728,7 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
   HeapWord* result = NULL;
 
   assert(size != 0, "Precondition violated");
-  if (GC_locker::is_active_and_needs_gc()) {
+  if (GCLocker::is_active_and_needs_gc()) {
     // GC locker is active; instead of a collection we will attempt
     // to expand the heap, if there's room for expansion.
     if (!gch->is_maximal_no_gc()) {
@@ -815,8 +815,8 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
       return result;
     }
 
-    if (GC_locker::is_active_and_needs_gc()) {
-      // If the GC_locker is active, just expand and allocate.
+    if (GCLocker::is_active_and_needs_gc()) {
+      // If the GCLocker is active, just expand and allocate.
       // If that does not succeed, wait if this thread is not
       // in a critical section itself.
       result =
@@ -828,7 +828,7 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
       JavaThread* jthr = JavaThread::current();
       if (!jthr->in_critical()) {
         // Wait for JNI critical section to be exited
-        GC_locker::stall_until_clear();
+        GCLocker::stall_until_clear();
         // The GC invoked by the last thread leaving the critical
         // section will be a young collection and a full collection
         // is (currently) needed for unloading classes so continue
@@ -887,7 +887,7 @@ bool GenCollectorPolicy::should_try_older_generation_allocation(
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   size_t young_capacity = gch->young_gen()->capacity_before_gc();
   return    (word_size > heap_word_size(young_capacity))
-         || GC_locker::is_active_and_needs_gc()
+         || GCLocker::is_active_and_needs_gc()
          || gch->incremental_collection_failed();
 }
 

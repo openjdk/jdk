@@ -34,7 +34,6 @@ package com.sun.jdi;
  * @since  1.3
  */
 
-@jdk.Exported
 public class Bootstrap extends Object {
 
     /**

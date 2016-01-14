@@ -1708,10 +1708,10 @@ void VM_HeapDumper::doit() {
   CollectedHeap* ch = Universe::heap();
 
   ch->ensure_parsability(false); // must happen, even if collection does
-                                 // not happen (e.g. due to GC_locker)
+                                 // not happen (e.g. due to GCLocker)
 
   if (_gc_before_heap_dump) {
-    if (GC_locker::is_active()) {
+    if (GCLocker::is_active()) {
       warning("GC locker is held; pre-heapdump GC was skipped");
     } else {
       ch->collect_as_vm_thread(GCCause::_heap_dump);

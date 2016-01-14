@@ -40,5 +40,4 @@
  * @since   1.5
  */
 
-@jdk.Exported
 package com.sun.management;

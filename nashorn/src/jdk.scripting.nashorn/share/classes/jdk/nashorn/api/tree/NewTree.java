@@ -37,7 +37,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface NewTree extends ExpressionTree {
     /**
      * Returns the constructor expression of this 'new' expression.

@@ -36,7 +36,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface LinkTree extends InlineTagTree {
     /**
      * Returns the reference of a link.

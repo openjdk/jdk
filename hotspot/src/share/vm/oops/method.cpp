@@ -78,7 +78,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
 }
 
 Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
-  No_Safepoint_Verifier no_safepoint;
+  NoSafepointVerifier no_safepoint;
   set_constMethod(xconst);
   set_access_flags(access_flags);
 #ifdef CC_INTERP
@@ -999,7 +999,7 @@ void Method::restore_unshareable_info(TRAPS) {
 // or adapter that it points to is still live and valid.
 // This function must not hit a safepoint!
 address Method::verified_code_entry() {
-  debug_only(No_Safepoint_Verifier nsv;)
+  debug_only(NoSafepointVerifier nsv;)
   assert(_from_compiled_entry != NULL, "must be set");
   return _from_compiled_entry;
 }
@@ -1549,7 +1549,7 @@ void Method::sort_methods(Array<Method*>* methods, bool idempotent, bool set_idn
   int length = methods->length();
   if (length > 1) {
     {
-      No_Safepoint_Verifier nsv;
+      NoSafepointVerifier nsv;
       QuickSort::sort<Method*>(methods->data(), length, method_comparator, idempotent);
     }
     // Reset method ordering

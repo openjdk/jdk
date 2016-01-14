@@ -34,7 +34,6 @@ package com.sun.jdi;
  * @author James McIlree
  * @since  1.3
  */
-@jdk.Exported
 public interface DoubleValue extends PrimitiveValue, Comparable<DoubleValue> {
 
     /**

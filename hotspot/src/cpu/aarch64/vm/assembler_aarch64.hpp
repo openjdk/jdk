@@ -135,14 +135,9 @@ REGISTER_DECLARATION(Register, rlocals,   r24);
 // bytecode pointer
 REGISTER_DECLARATION(Register, rbcp,      r22);
 // Dispatch table base
-REGISTER_DECLARATION(Register, rdispatch,      r21);
+REGISTER_DECLARATION(Register, rdispatch, r21);
 // Java stack pointer
 REGISTER_DECLARATION(Register, esp,      r20);
-
-// TODO : x86 uses rbp to save SP in method handle code
-// we may need to do the same with fp
-// JSR 292 fixed register usages:
-//REGISTER_DECLARATION(Register, r_mh_SP_save, r29);
 
 #define assert_cond(ARG1) assert(ARG1, #ARG1)
 
@@ -551,6 +546,7 @@ class Address VALUE_OBJ_CLASS_SPEC {
         size = 0; break;
       default:
         ShouldNotReachHere();
+        size = 0;  // unreachable
       }
     } else {
       size = i->get(31, 31);
@@ -2041,6 +2037,8 @@ public:
   INSN(addv, 0, 0b100001);
   INSN(subv, 1, 0b100001);
   INSN(mulv, 0, 0b100111);
+  INSN(mlav, 0, 0b100101);
+  INSN(mlsv, 1, 0b100101);
   INSN(sshl, 0, 0b010001);
   INSN(ushl, 1, 0b010001);
 
