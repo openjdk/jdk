@@ -7,8 +7,8 @@ m = {empty=foo}
 m.empty = false
 m['empty'] = foo
 m[empty_key] = foo
-m.bwah = null
-m['bwah'] = null
+m.bwah = undefined
+m['bwah'] = undefined
 m.twonk = ding
 m['twonk'] = ding
 m.size()=2

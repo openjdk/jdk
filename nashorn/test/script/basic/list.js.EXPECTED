@@ -9,9 +9,14 @@ bar
 --for each end--
 l[0]=foo
 l[1]=a
-l[0.9]=null
+l[0.9]=undefined
 l['blah']=undefined
 l[size_name]()=2
-java.lang.IndexOutOfBoundsException: Index: 2, Size: 2
-java.lang.IndexOutOfBoundsException: Index: Infinity, Size: 2
-java.lang.IndexOutOfBoundsException: Index: -Infinity, Size: 2
+l[2]=undefined
+l[-1]=undefined
+l[2.1]=undefined
+l[-1.1]=undefined
+l[Infinity]=undefined
+l[-Infinity]=undefined
+l[NaN]=undefined
+l[0]=foo

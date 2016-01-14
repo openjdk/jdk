@@ -85,7 +85,11 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
         }
     };
 
-    private final BeansLinker beansLinker = new BeansLinker();
+    private final BeansLinker beansLinker;
+
+    NashornBeansLinker(final BeansLinker beansLinker) {
+        this.beansLinker = beansLinker;
+    }
 
     @Override
     public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices) throws Exception {
