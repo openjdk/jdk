@@ -1681,16 +1681,16 @@ void Arguments::set_cms_and_parnew_gc_flags() {
       // OldPLAB sizing manually turned off: Use a larger default setting,
       // unless it was manually specified. This is because a too-low value
       // will slow down scavenges.
-      FLAG_SET_ERGO(size_t, OldPLABSize, CFLS_LAB::_default_static_old_plab_size); // default value before 6631166
+      FLAG_SET_ERGO(size_t, OldPLABSize, CompactibleFreeListSpaceLAB::_default_static_old_plab_size); // default value before 6631166
     } else {
-      FLAG_SET_DEFAULT(OldPLABSize, CFLS_LAB::_default_dynamic_old_plab_size); // old CMSParPromoteBlocksToClaim default
+      FLAG_SET_DEFAULT(OldPLABSize, CompactibleFreeListSpaceLAB::_default_dynamic_old_plab_size); // old CMSParPromoteBlocksToClaim default
     }
   }
 
   // If either of the static initialization defaults have changed, note this
   // modification.
   if (!FLAG_IS_DEFAULT(OldPLABSize) || !FLAG_IS_DEFAULT(OldPLABWeight)) {
-    CFLS_LAB::modify_initialization(OldPLABSize, OldPLABWeight);
+    CompactibleFreeListSpaceLAB::modify_initialization(OldPLABSize, OldPLABWeight);
   }
 
   if (!ClassUnloading) {

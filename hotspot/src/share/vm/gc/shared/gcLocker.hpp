@@ -33,12 +33,12 @@
 // The direct lock/unlock calls do not force a collection if an unlock
 // decrements the count to zero. Avoid calling these if at all possible.
 
-class GC_locker: public AllStatic {
+class GCLocker: public AllStatic {
  private:
   // The _jni_lock_count keeps track of the number of threads that are
   // currently in a critical region.  It's only kept up to date when
   // _needs_gc is true.  The current value is computed during
-  // safepointing and decremented during the slow path of GC_locker
+  // safepointing and decremented during the slow path of GCLocker
   // unlocking.
   static volatile jint _jni_lock_count;  // number of jni active instances.
   static volatile bool _needs_gc;        // heap is filling, we need a GC
@@ -103,7 +103,7 @@ class GC_locker: public AllStatic {
   static void stall_until_clear();
 
   // The following two methods are used for JNI critical regions.
-  // If we find that we failed to perform a GC because the GC_locker
+  // If we find that we failed to perform a GC because the GCLocker
   // was active, arrange for one as soon as possible by allowing
   // all threads in critical regions to complete, but not allowing
   // other critical regions to be entered. The reasons for that are:
@@ -126,7 +126,7 @@ class GC_locker: public AllStatic {
   // _needs_gc is initially false and every java thread will go
   // through the fast path, which simply increments or decrements the
   // current thread's critical count.  When GC happens at a safepoint,
-  // GC_locker::is_active() is checked. Since there is no safepoint in
+  // GCLocker::is_active() is checked. Since there is no safepoint in
   // the fast path of lock_critical() and unlock_critical(), there is
   // no race condition between the fast path and GC. After _needs_gc
   // is set at a safepoint, every thread will go through the slow path
@@ -142,14 +142,14 @@ class GC_locker: public AllStatic {
 };
 
 
-// A No_GC_Verifier object can be placed in methods where one assumes that
+// A NoGCVerifier object can be placed in methods where one assumes that
 // no garbage collection will occur. The destructor will verify this property
 // unless the constructor is called with argument false (not verifygc).
 //
 // The check will only be done in debug mode and if verifygc true.
 
-class No_GC_Verifier: public StackObj {
- friend class Pause_No_GC_Verifier;
+class NoGCVerifier: public StackObj {
+ friend class PauseNoGCVerifier;
 
  protected:
   bool _verifygc;
@@ -157,51 +157,51 @@ class No_GC_Verifier: public StackObj {
 
  public:
 #ifdef ASSERT
-  No_GC_Verifier(bool verifygc = true);
-  ~No_GC_Verifier();
+  NoGCVerifier(bool verifygc = true);
+  ~NoGCVerifier();
 #else
-  No_GC_Verifier(bool verifygc = true) {}
-  ~No_GC_Verifier() {}
+  NoGCVerifier(bool verifygc = true) {}
+  ~NoGCVerifier() {}
 #endif
 };
 
-// A Pause_No_GC_Verifier is used to temporarily pause the behavior
-// of a No_GC_Verifier object. If we are not in debug mode or if the
-// No_GC_Verifier object has a _verifygc value of false, then there
+// A PauseNoGCVerifier is used to temporarily pause the behavior
+// of a NoGCVerifier object. If we are not in debug mode or if the
+// NoGCVerifier object has a _verifygc value of false, then there
 // is nothing to do.
 
-class Pause_No_GC_Verifier: public StackObj {
+class PauseNoGCVerifier: public StackObj {
  private:
-  No_GC_Verifier * _ngcv;
+  NoGCVerifier * _ngcv;
 
  public:
 #ifdef ASSERT
-  Pause_No_GC_Verifier(No_GC_Verifier * ngcv);
-  ~Pause_No_GC_Verifier();
+  PauseNoGCVerifier(NoGCVerifier * ngcv);
+  ~PauseNoGCVerifier();
 #else
-  Pause_No_GC_Verifier(No_GC_Verifier * ngcv) {}
-  ~Pause_No_GC_Verifier() {}
+  PauseNoGCVerifier(NoGCVerifier * ngcv) {}
+  ~PauseNoGCVerifier() {}
 #endif
 };
 
 
-// A No_Safepoint_Verifier object will throw an assertion failure if
+// A NoSafepointVerifier object will throw an assertion failure if
 // the current thread passes a possible safepoint while this object is
 // instantiated. A safepoint, will either be: an oop allocation, blocking
 // on a Mutex or JavaLock, or executing a VM operation.
 //
-// If StrictSafepointChecks is turned off, it degrades into a No_GC_Verifier
+// If StrictSafepointChecks is turned off, it degrades into a NoGCVerifier
 //
-class No_Safepoint_Verifier : public No_GC_Verifier {
- friend class Pause_No_Safepoint_Verifier;
+class NoSafepointVerifier : public NoGCVerifier {
+ friend class PauseNoSafepointVerifier;
 
  private:
   bool _activated;
   Thread *_thread;
  public:
 #ifdef ASSERT
-  No_Safepoint_Verifier(bool activated = true, bool verifygc = true ) :
-    No_GC_Verifier(verifygc),
+  NoSafepointVerifier(bool activated = true, bool verifygc = true ) :
+    NoGCVerifier(verifygc),
     _activated(activated) {
     _thread = Thread::current();
     if (_activated) {
@@ -210,33 +210,33 @@ class No_Safepoint_Verifier : public No_GC_Verifier {
     }
   }
 
-  ~No_Safepoint_Verifier() {
+  ~NoSafepointVerifier() {
     if (_activated) {
       _thread->_allow_allocation_count--;
       _thread->_allow_safepoint_count--;
     }
   }
 #else
-  No_Safepoint_Verifier(bool activated = true, bool verifygc = true) : No_GC_Verifier(verifygc){}
-  ~No_Safepoint_Verifier() {}
+  NoSafepointVerifier(bool activated = true, bool verifygc = true) : NoGCVerifier(verifygc){}
+  ~NoSafepointVerifier() {}
 #endif
 };
 
-// A Pause_No_Safepoint_Verifier is used to temporarily pause the
-// behavior of a No_Safepoint_Verifier object. If we are not in debug
-// mode then there is nothing to do. If the No_Safepoint_Verifier
+// A PauseNoSafepointVerifier is used to temporarily pause the
+// behavior of a NoSafepointVerifier object. If we are not in debug
+// mode then there is nothing to do. If the NoSafepointVerifier
 // object has an _activated value of false, then there is nothing to
 // do for safepoint and allocation checking, but there may still be
-// something to do for the underlying No_GC_Verifier object.
+// something to do for the underlying NoGCVerifier object.
 
-class Pause_No_Safepoint_Verifier : public Pause_No_GC_Verifier {
+class PauseNoSafepointVerifier : public PauseNoGCVerifier {
  private:
-  No_Safepoint_Verifier * _nsv;
+  NoSafepointVerifier * _nsv;
 
  public:
 #ifdef ASSERT
-  Pause_No_Safepoint_Verifier(No_Safepoint_Verifier * nsv)
-    : Pause_No_GC_Verifier(nsv) {
+  PauseNoSafepointVerifier(NoSafepointVerifier * nsv)
+    : PauseNoGCVerifier(nsv) {
 
     _nsv = nsv;
     if (_nsv->_activated) {
@@ -245,16 +245,16 @@ class Pause_No_Safepoint_Verifier : public Pause_No_GC_Verifier {
     }
   }
 
-  ~Pause_No_Safepoint_Verifier() {
+  ~PauseNoSafepointVerifier() {
     if (_nsv->_activated) {
       _nsv->_thread->_allow_allocation_count++;
       _nsv->_thread->_allow_safepoint_count++;
     }
   }
 #else
-  Pause_No_Safepoint_Verifier(No_Safepoint_Verifier * nsv)
-    : Pause_No_GC_Verifier(nsv) {}
-  ~Pause_No_Safepoint_Verifier() {}
+  PauseNoSafepointVerifier(NoSafepointVerifier * nsv)
+    : PauseNoGCVerifier(nsv) {}
+  ~PauseNoSafepointVerifier() {}
 #endif
 };
 
@@ -287,19 +287,19 @@ class SkipGCALot : public StackObj {
 // _thread_in_native mode. In _thread_in_native, it is ok
 // for another thread to trigger GC. The rest of the JRT_LEAF
 // rules apply.
-class JRT_Leaf_Verifier : public No_Safepoint_Verifier {
+class JRTLeafVerifier : public NoSafepointVerifier {
   static bool should_verify_GC();
  public:
 #ifdef ASSERT
-  JRT_Leaf_Verifier();
-  ~JRT_Leaf_Verifier();
+  JRTLeafVerifier();
+  ~JRTLeafVerifier();
 #else
-  JRT_Leaf_Verifier() {}
-  ~JRT_Leaf_Verifier() {}
+  JRTLeafVerifier() {}
+  ~JRTLeafVerifier() {}
 #endif
 };
 
-// A No_Alloc_Verifier object can be placed in methods where one assumes that
+// A NoAllocVerifier object can be placed in methods where one assumes that
 // no allocation will occur. The destructor will verify this property
 // unless the constructor is called with argument false (not activated).
 //
@@ -307,23 +307,23 @@ class JRT_Leaf_Verifier : public No_Safepoint_Verifier {
 // Note: this only makes sense at safepoints (otherwise, other threads may
 // allocate concurrently.)
 
-class No_Alloc_Verifier : public StackObj {
+class NoAllocVerifier : public StackObj {
  private:
   bool  _activated;
 
  public:
 #ifdef ASSERT
-  No_Alloc_Verifier(bool activated = true) {
+  NoAllocVerifier(bool activated = true) {
     _activated = activated;
     if (_activated) Thread::current()->_allow_allocation_count++;
   }
 
-  ~No_Alloc_Verifier() {
+  ~NoAllocVerifier() {
     if (_activated) Thread::current()->_allow_allocation_count--;
   }
 #else
-  No_Alloc_Verifier(bool activated = true) {}
-  ~No_Alloc_Verifier() {}
+  NoAllocVerifier(bool activated = true) {}
+  ~NoAllocVerifier() {}
 #endif
 };
 

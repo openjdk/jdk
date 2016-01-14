@@ -1536,7 +1536,7 @@ class BacktraceBuilder: public StackObj {
   objArrayOop     _mirrors;
   typeArrayOop    _cprefs; // needed to insulate method name against redefinition
   int             _index;
-  No_Safepoint_Verifier _nsv;
+  NoSafepointVerifier _nsv;
 
  public:
 
@@ -1595,7 +1595,7 @@ class BacktraceBuilder: public StackObj {
 
   void expand(TRAPS) {
     objArrayHandle old_head(THREAD, _head);
-    Pause_No_Safepoint_Verifier pnsv(&_nsv);
+    PauseNoSafepointVerifier pnsv(&_nsv);
 
     objArrayOop head = oopFactory::new_objectArray(trace_size, CHECK);
     objArrayHandle new_head(THREAD, head);

@@ -601,7 +601,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
         return result;
       }
 
-      if (GC_locker::is_active_and_needs_gc()) {
+      if (GCLocker::is_active_and_needs_gc()) {
         if (g1_policy()->can_expand_young_list()) {
           // No need for an ergo verbose message here,
           // can_expand_young_list() does this when it returns true.
@@ -617,7 +617,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
         // returns true). In this case we do not try this GC and
         // wait until the GCLocker initiated GC is performed, and
         // then retry the allocation.
-        if (GC_locker::needs_gc()) {
+        if (GCLocker::needs_gc()) {
           should_try_gc = false;
         } else {
           // Read the GC count while still holding the Heap_lock.
@@ -653,7 +653,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
       // The GCLocker is either active or the GCLocker initiated
       // GC has not yet been performed. Stall until it is and
       // then retry the allocation.
-      GC_locker::stall_until_clear();
+      GCLocker::stall_until_clear();
       (*gclocker_retry_count_ret) += 1;
     }
 
@@ -1028,7 +1028,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
         return result;
       }
 
-      if (GC_locker::is_active_and_needs_gc()) {
+      if (GCLocker::is_active_and_needs_gc()) {
         should_try_gc = false;
       } else {
          // The GCLocker may not be active but the GCLocker initiated
@@ -1036,7 +1036,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
         // returns true). In this case we do not try this GC and
         // wait until the GCLocker initiated GC is performed, and
         // then retry the allocation.
-        if (GC_locker::needs_gc()) {
+        if (GCLocker::needs_gc()) {
           should_try_gc = false;
         } else {
           // Read the GC count while still holding the Heap_lock.
@@ -1076,7 +1076,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
       // The GCLocker is either active or the GCLocker initiated
       // GC has not yet been performed. Stall until it is and
       // then retry the allocation.
-      GC_locker::stall_until_clear();
+      GCLocker::stall_until_clear();
       (*gclocker_retry_count_ret) += 1;
     }
 
@@ -1211,7 +1211,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
                                          bool clear_all_soft_refs) {
   assert_at_safepoint(true /* should_be_vm_thread */);
 
-  if (GC_locker::check_active_before_gc()) {
+  if (GCLocker::check_active_before_gc()) {
     return false;
   }
 
@@ -2396,8 +2396,8 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
         }
 
         if (retry_gc) {
-          if (GC_locker::is_active_and_needs_gc()) {
-            GC_locker::stall_until_clear();
+          if (GCLocker::is_active_and_needs_gc()) {
+            GCLocker::stall_until_clear();
           }
         }
       }
@@ -3629,7 +3629,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   assert_at_safepoint(true /* should_be_vm_thread */);
   guarantee(!is_gc_active(), "collection is not reentrant");
 
-  if (GC_locker::check_active_before_gc()) {
+  if (GCLocker::check_active_before_gc()) {
     return false;
   }
 

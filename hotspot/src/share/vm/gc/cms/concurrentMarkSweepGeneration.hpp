@@ -510,17 +510,17 @@ class CMSCollector: public CHeapObj<mtGC> {
   friend class ScanMarkedObjectsAgainCarefullyClosure;  // for sampling eden
   friend class SurvivorSpacePrecleanClosure;            // --- ditto -------
   friend class PushOrMarkClosure;             // to access _restart_addr
-  friend class Par_PushOrMarkClosure;             // to access _restart_addr
+  friend class ParPushOrMarkClosure;          // to access _restart_addr
   friend class MarkFromRootsClosure;          //  -- ditto --
                                               // ... and for clearing cards
-  friend class Par_MarkFromRootsClosure;      //  to access _restart_addr
+  friend class ParMarkFromRootsClosure;       //  to access _restart_addr
                                               // ... and for clearing cards
-  friend class Par_ConcMarkingClosure;        //  to access _restart_addr etc.
+  friend class ParConcMarkingClosure;         //  to access _restart_addr etc.
   friend class MarkFromRootsVerifyClosure;    // to access _restart_addr
   friend class PushAndMarkVerifyClosure;      //  -- ditto --
   friend class MarkRefsIntoAndScanClosure;    // to access _overflow_list
   friend class PushAndMarkClosure;            //  -- ditto --
-  friend class Par_PushAndMarkClosure;        //  -- ditto --
+  friend class ParPushAndMarkClosure;         //  -- ditto --
   friend class CMSKeepAliveClosure;           //  -- ditto --
   friend class CMSDrainMarkingStackClosure;   //  -- ditto --
   friend class CMSInnerParMarkAndPushClosure; //  -- ditto --
@@ -1282,7 +1282,7 @@ class MarkFromRootsClosure: public BitMapClosure {
 // marking from the roots following the first checkpoint.
 // XXX This should really be a subclass of The serial version
 // above, but i have not had the time to refactor things cleanly.
-class Par_MarkFromRootsClosure: public BitMapClosure {
+class ParMarkFromRootsClosure: public BitMapClosure {
   CMSCollector*  _collector;
   MemRegion      _whole_span;
   MemRegion      _span;
@@ -1295,11 +1295,11 @@ class Par_MarkFromRootsClosure: public BitMapClosure {
   HeapWord*      _threshold;
   CMSConcMarkingTask* _task;
  public:
-  Par_MarkFromRootsClosure(CMSConcMarkingTask* task, CMSCollector* collector,
-                       MemRegion span,
-                       CMSBitMap* bit_map,
-                       OopTaskQueue* work_queue,
-                       CMSMarkStack*  overflow_stack);
+  ParMarkFromRootsClosure(CMSConcMarkingTask* task, CMSCollector* collector,
+                          MemRegion span,
+                          CMSBitMap* bit_map,
+                          OopTaskQueue* work_queue,
+                          CMSMarkStack*  overflow_stack);
   bool do_bit(size_t offset);
   inline void do_yield_check();
 
@@ -1400,8 +1400,8 @@ class ScanMarkedObjectsAgainClosure: public UpwardsObjectClosure {
   bool                       _parallel;
   CMSBitMap*                 _bit_map;
   union {
-    MarkRefsIntoAndScanClosure*     _scan_closure;
-    Par_MarkRefsIntoAndScanClosure* _par_scan_closure;
+    MarkRefsIntoAndScanClosure*    _scan_closure;
+    ParMarkRefsIntoAndScanClosure* _par_scan_closure;
   };
 
  public:
@@ -1425,7 +1425,7 @@ class ScanMarkedObjectsAgainClosure: public UpwardsObjectClosure {
                                 ReferenceProcessor* rp,
                                 CMSBitMap* bit_map,
                                 OopTaskQueue* work_queue,
-                                Par_MarkRefsIntoAndScanClosure* cl):
+                                ParMarkRefsIntoAndScanClosure* cl):
     #ifdef ASSERT
       _collector(collector),
       _span(span),
@@ -1470,7 +1470,7 @@ class MarkFromDirtyCardsClosure: public MemRegionClosure {
                             CompactibleFreeListSpace* space,
                             CMSBitMap* bit_map,
                             OopTaskQueue* work_queue,
-                            Par_MarkRefsIntoAndScanClosure* cl):
+                            ParMarkRefsIntoAndScanClosure* cl):
     _space(space),
     _num_dirty_cards(0),
     _scan_cl(collector, span, collector->ref_processor(), bit_map,

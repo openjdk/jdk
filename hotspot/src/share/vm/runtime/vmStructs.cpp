@@ -503,7 +503,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* Generation and Space hierarchies                                               */                                               \
   /**********************************************************************************/                                               \
                                                                                                                                      \
-  unchecked_nonstatic_field(ageTable,          sizes,                                         sizeof(ageTable::sizes))               \
+  unchecked_nonstatic_field(AgeTable,          sizes,                                         sizeof(AgeTable::sizes))               \
                                                                                                                                      \
   nonstatic_field(BarrierSet,                  _fake_rtti,                                    BarrierSet::FakeRtti)                  \
                                                                                                                                      \
@@ -560,7 +560,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(DefNewGeneration,            _old_gen,                                      Generation*)                           \
   nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                  \
-  nonstatic_field(DefNewGeneration,            _age_table,                                    ageTable)                              \
+  nonstatic_field(DefNewGeneration,            _age_table,                                    AgeTable)                              \
   nonstatic_field(DefNewGeneration,            _eden_space,                                   ContiguousSpace*)                      \
   nonstatic_field(DefNewGeneration,            _from_space,                                   ContiguousSpace*)                      \
   nonstatic_field(DefNewGeneration,            _to_space,                                     ContiguousSpace*)                      \
@@ -1600,7 +1600,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   /* Miscellaneous other GC types */                                      \
                                                                           \
-  declare_toplevel_type(ageTable)                                         \
+  declare_toplevel_type(AgeTable)                                         \
   declare_toplevel_type(Generation::StatRecord)                           \
   declare_toplevel_type(GenerationSpec)                                   \
   declare_toplevel_type(HeapWord)                                         \
@@ -2310,7 +2310,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* Generation and Space Hierarchy Constants */                          \
   /********************************************/                          \
                                                                           \
-  declare_constant(ageTable::table_size)                                  \
+  declare_constant(AgeTable::table_size)                                  \
                                                                           \
   declare_constant(BarrierSet::ModRef)                                    \
   declare_constant(BarrierSet::CardTableModRef)                           \

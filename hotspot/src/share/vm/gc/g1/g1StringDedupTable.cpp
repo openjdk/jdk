@@ -299,7 +299,7 @@ unsigned int G1StringDedupTable::hash_code(typeArrayOop value, bool latin1) {
 
 void G1StringDedupTable::deduplicate(oop java_string, G1StringDedupStat& stat) {
   assert(java_lang_String::is_instance(java_string), "Must be a string");
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
 
   stat.inc_inspected();
 
