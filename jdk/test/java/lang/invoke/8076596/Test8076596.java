@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,28 @@
  * questions.
  */
 
-package sun.misc;
-
-import java.io.File;
-import java.io.FilenameFilter;
-
-/**
- * This class checks that only jar and zip files are included in the file list.
- * This class is used in extension installation support (ExtensionDependency).
- *
- * @deprecated this class will be removed in a future release.
- * @author  Michael Colburn
+/* @test
+ * @bug 8076596
+ * @run main/othervm/policy=Test8076596.security.policy/secure=Test8076596 -ea -esa Test8076596
  */
-@Deprecated
-public class JarFilter implements FilenameFilter {
 
-    public boolean accept(File dir, String name) {
-        String lower = name.toLowerCase();
-        return lower.endsWith(".jar") || lower.endsWith(".zip");
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
+public class Test8076596 extends SecurityManager {
+    public Test8076596() {
+        // 1. Using lambda
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> null);
+        // 2. Using inner class
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                return null;
+            }
+        });
+    }
+
+    public static void main(String[] args) {
+        // empty
     }
 }

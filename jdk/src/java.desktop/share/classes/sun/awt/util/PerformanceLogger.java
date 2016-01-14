@@ -25,7 +25,7 @@
 
 
 
-package sun.misc;
+package sun.awt.util;
 
 import java.util.Vector;
 import java.io.FileWriter;
