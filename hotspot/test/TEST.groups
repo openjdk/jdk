@@ -97,7 +97,8 @@ needs_jdk = \
   runtime/XCheckJniJsig/XCheckJSig.java \
   serviceability/attach/AttachWithStalePidFile.java \
   serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java \
-  serviceability/dcmd/vm/DynLibsTest.java
+  serviceability/dcmd/vm/DynLibsTest.java \
+  serviceability/tmtools		
 
 
 # JRE adds further tests to compact3
@@ -361,3 +362,6 @@ needs_nashorn = \
 not_needs_nashorn = \
   :jdk \
   -:needs_nashorn
+
+hotspot_tmtools = \
+  serviceability/tmtools	
