@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
-import static jdk.nashorn.internal.lookup.Lookup.EMPTY_GETTER;
 import static jdk.nashorn.internal.runtime.linker.JavaAdapterBytecodeGenerator.SUPER_PREFIX;
 
 import java.lang.invoke.MethodHandle;
@@ -60,6 +59,12 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
         BIND_DYNAMIC_METHOD = lookup.findOwnStatic("bindDynamicMethod", Object.class, Object.class, Object.class);
         GET_ADAPTER = lookup.findVirtual(JavaSuperAdapter.class, "getAdapter", MethodType.methodType(Object.class));
         IS_ADAPTER_OF_CLASS = lookup.findOwnStatic("isAdapterOfClass", boolean.class, Class.class, Object.class);
+    }
+
+    private final BeansLinker beansLinker;
+
+    JavaSuperAdapterLinker(final BeansLinker beansLinker) {
+        this.beansLinker = beansLinker;
     }
 
     @Override
@@ -101,17 +106,13 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
 
         // Delegate to BeansLinker
         final GuardedInvocation guardedInv = NashornBeansLinker.getGuardedInvocation(
-                BeansLinker.getLinkerForClass(adapterClass), linkRequest.replaceArguments(newDescriptor, args),
+                beansLinker, linkRequest.replaceArguments(newDescriptor, args),
                 linkerServices);
+        // Even for non-existent methods, Bootstrap's BeansLinker will link a
+        // noSuchMember handler.
+        assert guardedInv != null;
 
         final MethodHandle guard = IS_ADAPTER_OF_CLASS.bindTo(adapterClass);
-        if(guardedInv == null) {
-            // Short circuit the lookup here for non-existent methods by linking an empty getter. If we just returned
-            // null instead, BeansLinker would find final methods on the JavaSuperAdapter instead: getClass() and
-            // wait().
-            return new GuardedInvocation(MethodHandles.dropArguments(EMPTY_GETTER, 1,type.parameterList().subList(1,
-                    type.parameterCount())), guard).asType(descriptor);
-        }
 
         final MethodHandle invocation = guardedInv.getInvocation();
         final MethodType invType = invocation.type();
@@ -165,7 +166,7 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
      */
     @SuppressWarnings("unused")
     private static Object bindDynamicMethod(final Object dynamicMethod, final Object boundThis) {
-        return dynamicMethod == null ? ScriptRuntime.UNDEFINED : Bootstrap.bindCallable(dynamicMethod, boundThis, null);
+        return dynamicMethod == ScriptRuntime.UNDEFINED ? ScriptRuntime.UNDEFINED : Bootstrap.bindCallable(dynamicMethod, boundThis, null);
     }
 
     /**

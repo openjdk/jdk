@@ -168,9 +168,9 @@ public final class NativeBoolean extends ScriptObject {
     }
 
     /**
-     * Wrap a native string in a NativeString object.
+     * Wrap a native boolean in a NativeBoolean object.
      *
-     * @param receiver Native string.
+     * @param receiver Native boolean.
      * @return Wrapped object.
      */
     @SuppressWarnings("unused")
