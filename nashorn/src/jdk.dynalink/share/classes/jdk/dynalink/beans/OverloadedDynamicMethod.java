@@ -112,8 +112,7 @@ class OverloadedDynamicMethod extends DynamicMethod {
     /**
      * Holds a list of all methods.
      */
-    private final LinkedList<SingleDynamicMethod> methods;
-    private final ClassLoader classLoader;
+    private final LinkedList<SingleDynamicMethod> methods = new LinkedList<>();
 
     /**
      * Creates a new overloaded dynamic method.
@@ -122,13 +121,7 @@ class OverloadedDynamicMethod extends DynamicMethod {
      * @param name the name of the method
      */
     OverloadedDynamicMethod(final Class<?> clazz, final String name) {
-        this(new LinkedList<SingleDynamicMethod>(), clazz.getClassLoader(), getClassAndMethodName(clazz, name));
-    }
-
-    private OverloadedDynamicMethod(final LinkedList<SingleDynamicMethod> methods, final ClassLoader classLoader, final String name) {
-        super(name);
-        this.methods = methods;
-        this.classLoader = classLoader;
+        super(getClassAndMethodName(clazz, name));
     }
 
     @Override
@@ -287,10 +280,6 @@ class OverloadedDynamicMethod extends DynamicMethod {
         assert b.length() == totalLength;
         return b.toString();
     };
-
-    ClassLoader getClassLoader() {
-        return classLoader;
-    }
 
     private static boolean isApplicableDynamically(final LinkerServices linkerServices, final MethodType callSiteType,
             final SingleDynamicMethod m) {

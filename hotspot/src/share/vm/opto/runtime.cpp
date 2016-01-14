@@ -950,6 +950,35 @@ const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   return TypeFunc::make(domain, range);
 }
 
+//for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
+const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
+  // create input type (domain)
+  int num_args = 7;
+  if (Matcher::pass_original_key_for_aes()) {
+    num_args = 8;
+  }
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL; // src
+  fields[argp++] = TypePtr::NOTNULL; // dest
+  fields[argp++] = TypePtr::NOTNULL; // k array
+  fields[argp++] = TypePtr::NOTNULL; // counter array
+  fields[argp++] = TypeInt::INT; // src len
+  fields[argp++] = TypePtr::NOTNULL; // saved_encCounter
+  fields[argp++] = TypePtr::NOTNULL; // saved used addr
+  if (Matcher::pass_original_key_for_aes()) {
+    fields[argp++] = TypePtr::NOTNULL; // original k array
+  }
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+  // returning cipher len (int)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
 /*
  * void implCompress(byte[] buf, int ofs)
  */
@@ -1102,6 +1131,26 @@ const TypeFunc* OptoRuntime::montgomerySquare_Type() {
   fields[TypeFunc::Parms+0] = TypePtr::NOTNULL;
 
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+const TypeFunc* OptoRuntime::vectorizedMismatch_Type() {
+  // create input type (domain)
+  int num_args = 4;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // obja
+  fields[argp++] = TypePtr::NOTNULL;    // objb
+  fields[argp++] = TypeInt::INT;        // length, number of elements
+  fields[argp++] = TypeInt::INT;        // log2scale, element size
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+  //return mismatch index (int)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
   return TypeFunc::make(domain, range);
 }
 
@@ -1384,7 +1433,7 @@ address OptoRuntime::handle_exception_C(JavaThread* thread) {
 // However, there needs to be a safepoint check in the middle!  So compiled
 // safepoints are completely watertight.
 //
-// Thus, it cannot be a leaf since it contains the No_GC_Verifier.
+// Thus, it cannot be a leaf since it contains the NoGCVerifier.
 //
 // *THIS IS NOT RECOMMENDED PROGRAMMING STYLE*
 //

@@ -46,6 +46,8 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/8033445 \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/ToStringInInterfaceTest \
     $(HOTSPOT_TOPDIR)/test/runtime/SameObject \
+    $(HOTSPOT_TOPDIR)/test/compiler/floatingpoint/ \
+    $(HOTSPOT_TOPDIR)/test/compiler/calls \
     #
 
 # Add conditional directories here when needed.

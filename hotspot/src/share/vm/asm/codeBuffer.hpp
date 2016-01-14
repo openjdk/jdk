@@ -209,10 +209,7 @@ class CodeSection VALUE_OBJ_CLASS_SPEC {
 
   // Emit a relocation.
   void relocate(address at, RelocationHolder const& rspec, int format = 0);
-  void relocate(address at,    relocInfo::relocType rtype, int format = 0) {
-    if (rtype != relocInfo::none)
-      relocate(at, Relocation::spec_simple(rtype), format);
-  }
+  void relocate(address at,    relocInfo::relocType rtype, int format = 0, jint method_index = 0);
 
   // alignment requirement for starting offset
   // Requirements are that the instruction area and the

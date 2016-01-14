@@ -346,7 +346,6 @@ void Dependencies::assert_common_2(DepType dept,
       }
     }
   } else {
-    assert(dep_implicit_context_arg(dept) == 0, "sanity");
     if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
       // look in this bucket for redundant assertions
       const int stride = 2;

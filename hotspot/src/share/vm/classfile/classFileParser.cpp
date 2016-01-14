@@ -863,7 +863,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
     initialize_hashtable(interface_names);
     bool dup = false;
     {
-      debug_only(No_Safepoint_Verifier nsv;)
+      debug_only(NoSafepointVerifier nsv;)
       for (index = 0; index < itfs_len; index++) {
         const Klass* const k = _local_interfaces->at(index);
         const Symbol* const name = InstanceKlass::cast(k)->name();
@@ -1620,7 +1620,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     initialize_hashtable(names_and_sigs);
     bool dup = false;
     {
-      debug_only(No_Safepoint_Verifier nsv;)
+      debug_only(NoSafepointVerifier nsv;)
       for (AllFieldStream fs(_fields, cp); !fs.done(); fs.next()) {
         const Symbol* const name = fs.name();
         const Symbol* const sig = fs.signature();
@@ -1970,12 +1970,12 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _method_CallerSensitive;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_ForceInline_signature): {
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_ForceInline_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_ForceInline;
     }
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_DontInline_signature): {
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_DontInline_signature): {
       if (_location != _in_method)  break;  // only allow for methods
       if (!privileged)              break;  // only allow in privileged code
       return _method_DontInline;
@@ -2007,7 +2007,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       return _field_Stable;
     }
 #endif
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_Stable_signature): {
+    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Stable_signature): {
       if (_location != _in_field)   break;  // only allow for fields
       if (!privileged)              break;  // only allow in privileged code
       return _field_Stable;
@@ -2885,7 +2885,7 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
       initialize_hashtable(names_and_sigs);
       bool dup = false;
       {
-        debug_only(No_Safepoint_Verifier nsv;)
+        debug_only(NoSafepointVerifier nsv;)
         for (int i = 0; i < length; i++) {
           const Method* const m = _methods->at(i);
           // If no duplicates, add name/signature in hashtable names_and_sigs.

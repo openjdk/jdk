@@ -305,6 +305,31 @@ address CodeSection::target(Label& L, address branch_pc) {
   }
 }
 
+void CodeSection::relocate(address at, relocInfo::relocType rtype, int format, jint method_index) {
+  RelocationHolder rh;
+  switch (rtype) {
+    case relocInfo::none: return;
+    case relocInfo::opt_virtual_call_type: {
+      rh = opt_virtual_call_Relocation::spec(method_index);
+      break;
+    }
+    case relocInfo::static_call_type: {
+      rh = static_call_Relocation::spec(method_index);
+      break;
+    }
+    case relocInfo::virtual_call_type: {
+      assert(method_index == 0, "resolved method overriding is not supported");
+      rh = Relocation::spec_simple(rtype);
+      break;
+    }
+    default: {
+      rh = Relocation::spec_simple(rtype);
+      break;
+    }
+  }
+  relocate(at, rh, format);
+}
+
 void CodeSection::relocate(address at, RelocationHolder const& spec, int format) {
   Relocation* reloc = spec.reloc();
   relocInfo::relocType rtype = (relocInfo::relocType) reloc->type();
@@ -510,7 +535,7 @@ static void append_oop_references(GrowableArray<oop>* oops, Klass* k) {
 }
 
 void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
 
   GrowableArray<oop> oops;
 

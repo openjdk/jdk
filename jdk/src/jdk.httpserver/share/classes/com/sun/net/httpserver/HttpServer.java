@@ -87,7 +87,6 @@ import com.sun.net.httpserver.spi.HttpServerProvider;
  * @since 1.6
  */
 
-@jdk.Exported
 public abstract class HttpServer {
 
     /**

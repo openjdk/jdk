@@ -74,7 +74,6 @@ import com.sun.source.tree.*;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public class TreeScanner<R,P> implements TreeVisitor<R,P> {
 
     /**

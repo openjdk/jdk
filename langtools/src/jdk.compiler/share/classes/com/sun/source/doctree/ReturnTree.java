@@ -35,7 +35,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface ReturnTree extends BlockTagTree {
     /**
      * Returns the description of the return value of a method.

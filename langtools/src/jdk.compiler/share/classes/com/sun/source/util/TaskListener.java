@@ -32,7 +32,6 @@ package com.sun.source.util;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface TaskListener
 {
     /**

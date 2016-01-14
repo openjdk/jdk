@@ -45,7 +45,6 @@ import com.sun.jdi.*;
  * @author Robert Field
  * @since  1.3
  */
-@jdk.Exported
 public interface ThreadDeathEvent extends Event {
     /**
      * Returns the thread which is terminating.

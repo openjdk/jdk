@@ -54,7 +54,6 @@ package com.sun.source.doctree;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface DocTreeVisitor<R,P> {
 
     /**

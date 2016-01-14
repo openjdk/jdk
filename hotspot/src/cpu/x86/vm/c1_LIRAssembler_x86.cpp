@@ -2381,9 +2381,6 @@ void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr unused, L
         // Should consider not saving rbx, if not necessary
         __ trigfunc('t', op->as_Op2()->fpu_stack_size());
         break;
-      case lir_pow :
-        __ pow_with_fallback(op->as_Op2()->fpu_stack_size());
-        break;
       default      : ShouldNotReachHere();
     }
   } else {

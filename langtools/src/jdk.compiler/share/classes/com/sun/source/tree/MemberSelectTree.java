@@ -41,7 +41,6 @@ import javax.lang.model.element.Name;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface MemberSelectTree extends ExpressionTree {
     /**
      * Returns the expression for which a member is to be selected.

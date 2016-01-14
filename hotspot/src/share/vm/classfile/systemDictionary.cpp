@@ -475,11 +475,11 @@ void SystemDictionary::validate_protection_domain(instanceKlassHandle klass,
       // Note that we have an entry, and entries can be deleted only during GC,
       // so we cannot allow GC to occur while we're holding this entry.
 
-      // We're using a No_Safepoint_Verifier to catch any place where we
+      // We're using a NoSafepointVerifier to catch any place where we
       // might potentially do a GC at all.
       // Dictionary::do_unloading() asserts that classes in SD are only
       // unloaded at a safepoint. Anonymous classes are not in SD.
-      No_Safepoint_Verifier nosafepoint;
+      NoSafepointVerifier nosafepoint;
       dictionary()->add_protection_domain(d_index, d_hash, klass, loader_data,
                                           protection_domain, THREAD);
     }
@@ -908,11 +908,11 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     MutexLocker mu(SystemDictionary_lock, THREAD);
     // Note that we have an entry, and entries can be deleted only during GC,
     // so we cannot allow GC to occur while we're holding this entry.
-    // We're using a No_Safepoint_Verifier to catch any place where we
+    // We're using a NoSafepointVerifier to catch any place where we
     // might potentially do a GC at all.
     // Dictionary::do_unloading() asserts that classes in SD are only
     // unloaded at a safepoint. Anonymous classes are not in SD.
-    No_Safepoint_Verifier nosafepoint;
+    NoSafepointVerifier nosafepoint;
     if (dictionary()->is_valid_protection_domain(d_index, d_hash, name,
                                                  loader_data,
                                                  protection_domain)) {
@@ -961,11 +961,11 @@ Klass* SystemDictionary::find(Symbol* class_name,
   {
     // Note that we have an entry, and entries can be deleted only during GC,
     // so we cannot allow GC to occur while we're holding this entry.
-    // We're using a No_Safepoint_Verifier to catch any place where we
+    // We're using a NoSafepointVerifier to catch any place where we
     // might potentially do a GC at all.
     // Dictionary::do_unloading() asserts that classes in SD are only
     // unloaded at a safepoint. Anonymous classes are not in SD.
-    No_Safepoint_Verifier nosafepoint;
+    NoSafepointVerifier nosafepoint;
     return dictionary()->find(d_index, d_hash, class_name, loader_data,
                               protection_domain, THREAD);
   }
@@ -2210,7 +2210,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
   MutexLocker mu_s(SystemDictionary_lock, THREAD);
 
   // Better never do a GC while we're holding these oops
-  No_Safepoint_Verifier nosafepoint;
+  NoSafepointVerifier nosafepoint;
 
   Klass* klass1 = find_class(d_index1, d_hash1, constraint_name, loader_data1);
   Klass* klass2 = find_class(d_index2, d_hash2, constraint_name, loader_data2);

@@ -35,7 +35,6 @@ import java.io.IOException;
  * @author Gordon Hirsch
  * @since  1.3
  */
-@jdk.Exported
 public interface LaunchingConnector extends Connector {
     /**
      * Launches an application and connects to its VM. Properties

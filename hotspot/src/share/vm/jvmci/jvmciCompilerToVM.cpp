@@ -44,6 +44,7 @@
 #include "jvmci/jvmciEnv.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
+#include "jvmci/vmStructs_jvmci.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/deoptimization.hpp"
@@ -85,107 +86,161 @@ oop CompilerToVM::get_jvmci_type(KlassHandle klass, TRAPS) {
   return NULL;
 }
 
-void CompilerToVM::invalidate_installed_code(Handle installedCode, TRAPS) {
-  if (installedCode() == NULL) {
-    THROW(vmSymbols::java_lang_NullPointerException());
-  }
-  jlong nativeMethod = InstalledCode::address(installedCode);
-  nmethod* nm = (nmethod*)nativeMethod;
-  assert(nm == NULL || nm->jvmci_installed_code() == installedCode(), "sanity check");
-  if (nm != NULL && nm->is_alive()) {
-    // The nmethod state machinery maintains the link between the
-    // HotSpotInstalledCode and nmethod* so as long as the nmethod appears to be
-    // alive assume there is work to do and deoptimize the nmethod.
-    nm->mark_for_deoptimization();
-    VM_Deoptimize op;
-    VMThread::execute(&op);
-  }
-  InstalledCode::set_address(installedCode, 0);
-}
-
 extern "C" {
-extern VMStructEntry* gHotSpotVMStructs;
-extern uint64_t gHotSpotVMStructEntryTypeNameOffset;
-extern uint64_t gHotSpotVMStructEntryFieldNameOffset;
-extern uint64_t gHotSpotVMStructEntryTypeStringOffset;
-extern uint64_t gHotSpotVMStructEntryIsStaticOffset;
-extern uint64_t gHotSpotVMStructEntryOffsetOffset;
-extern uint64_t gHotSpotVMStructEntryAddressOffset;
-extern uint64_t gHotSpotVMStructEntryArrayStride;
+extern VMStructEntry* jvmciHotSpotVMStructs;
+extern uint64_t jvmciHotSpotVMStructEntryTypeNameOffset;
+extern uint64_t jvmciHotSpotVMStructEntryFieldNameOffset;
+extern uint64_t jvmciHotSpotVMStructEntryTypeStringOffset;
+extern uint64_t jvmciHotSpotVMStructEntryIsStaticOffset;
+extern uint64_t jvmciHotSpotVMStructEntryOffsetOffset;
+extern uint64_t jvmciHotSpotVMStructEntryAddressOffset;
+extern uint64_t jvmciHotSpotVMStructEntryArrayStride;
 
-extern VMTypeEntry* gHotSpotVMTypes;
-extern uint64_t gHotSpotVMTypeEntryTypeNameOffset;
-extern uint64_t gHotSpotVMTypeEntrySuperclassNameOffset;
-extern uint64_t gHotSpotVMTypeEntryIsOopTypeOffset;
-extern uint64_t gHotSpotVMTypeEntryIsIntegerTypeOffset;
-extern uint64_t gHotSpotVMTypeEntryIsUnsignedOffset;
-extern uint64_t gHotSpotVMTypeEntrySizeOffset;
-extern uint64_t gHotSpotVMTypeEntryArrayStride;
+extern VMTypeEntry* jvmciHotSpotVMTypes;
+extern uint64_t jvmciHotSpotVMTypeEntryTypeNameOffset;
+extern uint64_t jvmciHotSpotVMTypeEntrySuperclassNameOffset;
+extern uint64_t jvmciHotSpotVMTypeEntryIsOopTypeOffset;
+extern uint64_t jvmciHotSpotVMTypeEntryIsIntegerTypeOffset;
+extern uint64_t jvmciHotSpotVMTypeEntryIsUnsignedOffset;
+extern uint64_t jvmciHotSpotVMTypeEntrySizeOffset;
+extern uint64_t jvmciHotSpotVMTypeEntryArrayStride;
 
-extern VMIntConstantEntry* gHotSpotVMIntConstants;
-extern uint64_t gHotSpotVMIntConstantEntryNameOffset;
-extern uint64_t gHotSpotVMIntConstantEntryValueOffset;
-extern uint64_t gHotSpotVMIntConstantEntryArrayStride;
+extern VMIntConstantEntry* jvmciHotSpotVMIntConstants;
+extern uint64_t jvmciHotSpotVMIntConstantEntryNameOffset;
+extern uint64_t jvmciHotSpotVMIntConstantEntryValueOffset;
+extern uint64_t jvmciHotSpotVMIntConstantEntryArrayStride;
 
-extern VMLongConstantEntry* gHotSpotVMLongConstants;
-extern uint64_t gHotSpotVMLongConstantEntryNameOffset;
-extern uint64_t gHotSpotVMLongConstantEntryValueOffset;
-extern uint64_t gHotSpotVMLongConstantEntryArrayStride;
+extern VMLongConstantEntry* jvmciHotSpotVMLongConstants;
+extern uint64_t jvmciHotSpotVMLongConstantEntryNameOffset;
+extern uint64_t jvmciHotSpotVMLongConstantEntryValueOffset;
+extern uint64_t jvmciHotSpotVMLongConstantEntryArrayStride;
 
-extern VMAddressEntry* gHotSpotVMAddresses;
-extern uint64_t gHotSpotVMAddressEntryNameOffset;
-extern uint64_t gHotSpotVMAddressEntryValueOffset;
-extern uint64_t gHotSpotVMAddressEntryArrayStride;
+extern VMAddressEntry* jvmciHotSpotVMAddresses;
+extern uint64_t jvmciHotSpotVMAddressEntryNameOffset;
+extern uint64_t jvmciHotSpotVMAddressEntryValueOffset;
+extern uint64_t jvmciHotSpotVMAddressEntryArrayStride;
 }
 
-// FIXME This is only temporary until the GC code is changed.
-bool       CompilerToVM::_supports_inline_contig_alloc;
-HeapWord** CompilerToVM::_heap_end_addr;
-HeapWord** CompilerToVM::_heap_top_addr;
+int CompilerToVM::Data::InstanceKlass_vtable_start_offset;
+int CompilerToVM::Data::InstanceKlass_vtable_length_offset;
+
+int CompilerToVM::Data::Method_extra_stack_entries;
+
+address CompilerToVM::Data::SharedRuntime_ic_miss_stub;
+address CompilerToVM::Data::SharedRuntime_handle_wrong_method_stub;
+address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack;
+address CompilerToVM::Data::SharedRuntime_deopt_blob_uncommon_trap;
+
+size_t CompilerToVM::Data::ThreadLocalAllocBuffer_alignment_reserve;
+
+CollectedHeap* CompilerToVM::Data::Universe_collectedHeap;
+int CompilerToVM::Data::Universe_base_vtable_size;
+address CompilerToVM::Data::Universe_narrow_oop_base;
+int CompilerToVM::Data::Universe_narrow_oop_shift;
+address CompilerToVM::Data::Universe_narrow_klass_base;
+int CompilerToVM::Data::Universe_narrow_klass_shift;
+void* CompilerToVM::Data::Universe_non_oop_bits;
+uintptr_t CompilerToVM::Data::Universe_verify_oop_mask;
+uintptr_t CompilerToVM::Data::Universe_verify_oop_bits;
+
+bool       CompilerToVM::Data::_supports_inline_contig_alloc;
+HeapWord** CompilerToVM::Data::_heap_end_addr;
+HeapWord** CompilerToVM::Data::_heap_top_addr;
+
+jbyte* CompilerToVM::Data::cardtable_start_address;
+int CompilerToVM::Data::cardtable_shift;
+
+void CompilerToVM::Data::initialize() {
+  InstanceKlass_vtable_start_offset = InstanceKlass::vtable_start_offset();
+  InstanceKlass_vtable_length_offset = InstanceKlass::vtable_length_offset() * HeapWordSize;
+
+  Method_extra_stack_entries = Method::extra_stack_entries();
+
+  SharedRuntime_ic_miss_stub = SharedRuntime::get_ic_miss_stub();
+  SharedRuntime_handle_wrong_method_stub = SharedRuntime::get_handle_wrong_method_stub();
+  SharedRuntime_deopt_blob_unpack = SharedRuntime::deopt_blob()->unpack();
+  SharedRuntime_deopt_blob_uncommon_trap = SharedRuntime::deopt_blob()->uncommon_trap();
+
+  ThreadLocalAllocBuffer_alignment_reserve = ThreadLocalAllocBuffer::alignment_reserve();
+
+  Universe_collectedHeap = Universe::heap();
+  Universe_base_vtable_size = Universe::base_vtable_size();
+  Universe_narrow_oop_base = Universe::narrow_oop_base();
+  Universe_narrow_oop_shift = Universe::narrow_oop_shift();
+  Universe_narrow_klass_base = Universe::narrow_klass_base();
+  Universe_narrow_klass_shift = Universe::narrow_klass_shift();
+  Universe_non_oop_bits = Universe::non_oop_word();
+  Universe_verify_oop_mask = Universe::verify_oop_mask();
+  Universe_verify_oop_bits = Universe::verify_oop_bits();
+
+  _supports_inline_contig_alloc = Universe::heap()->supports_inline_contig_alloc();
+  _heap_end_addr = _supports_inline_contig_alloc ? Universe::heap()->end_addr() : (HeapWord**) -1;
+  _heap_top_addr = _supports_inline_contig_alloc ? Universe::heap()->top_addr() : (HeapWord**) -1;
+
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  switch (bs->kind()) {
+  case BarrierSet::CardTableModRef:
+  case BarrierSet::CardTableForRS:
+  case BarrierSet::CardTableExtension:
+  case BarrierSet::G1SATBCT:
+  case BarrierSet::G1SATBCTLogging: {
+    jbyte* base = barrier_set_cast<CardTableModRefBS>(bs)->byte_map_base;
+    assert(base != 0, "unexpected byte_map_base");
+    cardtable_start_address = base;
+    cardtable_shift = CardTableModRefBS::card_shift;
+    break;
+  }
+  case BarrierSet::ModRef:
+    cardtable_start_address = 0;
+    cardtable_shift = 0;
+    // No post barriers
+    break;
+  default:
+    ShouldNotReachHere();
+    break;
+  }
+}
 
 /**
- * We put all gHotSpotVM values in an array so we can read them easily from Java.
+ * We put all jvmciHotSpotVM values in an array so we can read them easily from Java.
  */
 static uintptr_t ciHotSpotVMData[28];
 
 C2V_VMENTRY(jlong, initializeConfiguration, (JNIEnv *env, jobject))
-  ciHotSpotVMData[0] = (uintptr_t) gHotSpotVMStructs;
-  ciHotSpotVMData[1] = gHotSpotVMStructEntryTypeNameOffset;
-  ciHotSpotVMData[2] = gHotSpotVMStructEntryFieldNameOffset;
-  ciHotSpotVMData[3] = gHotSpotVMStructEntryTypeStringOffset;
-  ciHotSpotVMData[4] = gHotSpotVMStructEntryIsStaticOffset;
-  ciHotSpotVMData[5] = gHotSpotVMStructEntryOffsetOffset;
-  ciHotSpotVMData[6] = gHotSpotVMStructEntryAddressOffset;
-  ciHotSpotVMData[7] = gHotSpotVMStructEntryArrayStride;
+  ciHotSpotVMData[0] = (uintptr_t) jvmciHotSpotVMStructs;
+  ciHotSpotVMData[1] = jvmciHotSpotVMStructEntryTypeNameOffset;
+  ciHotSpotVMData[2] = jvmciHotSpotVMStructEntryFieldNameOffset;
+  ciHotSpotVMData[3] = jvmciHotSpotVMStructEntryTypeStringOffset;
+  ciHotSpotVMData[4] = jvmciHotSpotVMStructEntryIsStaticOffset;
+  ciHotSpotVMData[5] = jvmciHotSpotVMStructEntryOffsetOffset;
+  ciHotSpotVMData[6] = jvmciHotSpotVMStructEntryAddressOffset;
+  ciHotSpotVMData[7] = jvmciHotSpotVMStructEntryArrayStride;
 
-  ciHotSpotVMData[8] = (uintptr_t) gHotSpotVMTypes;
-  ciHotSpotVMData[9] = gHotSpotVMTypeEntryTypeNameOffset;
-  ciHotSpotVMData[10] = gHotSpotVMTypeEntrySuperclassNameOffset;
-  ciHotSpotVMData[11] = gHotSpotVMTypeEntryIsOopTypeOffset;
-  ciHotSpotVMData[12] = gHotSpotVMTypeEntryIsIntegerTypeOffset;
-  ciHotSpotVMData[13] = gHotSpotVMTypeEntryIsUnsignedOffset;
-  ciHotSpotVMData[14] = gHotSpotVMTypeEntrySizeOffset;
-  ciHotSpotVMData[15] = gHotSpotVMTypeEntryArrayStride;
+  ciHotSpotVMData[8] = (uintptr_t) jvmciHotSpotVMTypes;
+  ciHotSpotVMData[9] = jvmciHotSpotVMTypeEntryTypeNameOffset;
+  ciHotSpotVMData[10] = jvmciHotSpotVMTypeEntrySuperclassNameOffset;
+  ciHotSpotVMData[11] = jvmciHotSpotVMTypeEntryIsOopTypeOffset;
+  ciHotSpotVMData[12] = jvmciHotSpotVMTypeEntryIsIntegerTypeOffset;
+  ciHotSpotVMData[13] = jvmciHotSpotVMTypeEntryIsUnsignedOffset;
+  ciHotSpotVMData[14] = jvmciHotSpotVMTypeEntrySizeOffset;
+  ciHotSpotVMData[15] = jvmciHotSpotVMTypeEntryArrayStride;
 
-  ciHotSpotVMData[16] = (uintptr_t) gHotSpotVMIntConstants;
-  ciHotSpotVMData[17] = gHotSpotVMIntConstantEntryNameOffset;
-  ciHotSpotVMData[18] = gHotSpotVMIntConstantEntryValueOffset;
-  ciHotSpotVMData[19] = gHotSpotVMIntConstantEntryArrayStride;
+  ciHotSpotVMData[16] = (uintptr_t) jvmciHotSpotVMIntConstants;
+  ciHotSpotVMData[17] = jvmciHotSpotVMIntConstantEntryNameOffset;
+  ciHotSpotVMData[18] = jvmciHotSpotVMIntConstantEntryValueOffset;
+  ciHotSpotVMData[19] = jvmciHotSpotVMIntConstantEntryArrayStride;
 
-  ciHotSpotVMData[20] = (uintptr_t) gHotSpotVMLongConstants;
-  ciHotSpotVMData[21] = gHotSpotVMLongConstantEntryNameOffset;
-  ciHotSpotVMData[22] = gHotSpotVMLongConstantEntryValueOffset;
-  ciHotSpotVMData[23] = gHotSpotVMLongConstantEntryArrayStride;
+  ciHotSpotVMData[20] = (uintptr_t) jvmciHotSpotVMLongConstants;
+  ciHotSpotVMData[21] = jvmciHotSpotVMLongConstantEntryNameOffset;
+  ciHotSpotVMData[22] = jvmciHotSpotVMLongConstantEntryValueOffset;
+  ciHotSpotVMData[23] = jvmciHotSpotVMLongConstantEntryArrayStride;
 
-  ciHotSpotVMData[24] = (uintptr_t) gHotSpotVMAddresses;
-  ciHotSpotVMData[25] = gHotSpotVMAddressEntryNameOffset;
-  ciHotSpotVMData[26] = gHotSpotVMAddressEntryValueOffset;
-  ciHotSpotVMData[27] = gHotSpotVMAddressEntryArrayStride;
+  ciHotSpotVMData[24] = (uintptr_t) jvmciHotSpotVMAddresses;
+  ciHotSpotVMData[25] = jvmciHotSpotVMAddressEntryNameOffset;
+  ciHotSpotVMData[26] = jvmciHotSpotVMAddressEntryValueOffset;
+  ciHotSpotVMData[27] = jvmciHotSpotVMAddressEntryArrayStride;
 
-  // FIXME This is only temporary until the GC code is changed.
-  CompilerToVM::_supports_inline_contig_alloc = Universe::heap()->supports_inline_contig_alloc();
-  CompilerToVM::_heap_end_addr = CompilerToVM::_supports_inline_contig_alloc ? Universe::heap()->end_addr() : (HeapWord**) -1;
-  CompilerToVM::_heap_top_addr = CompilerToVM::_supports_inline_contig_alloc ? Universe::heap()->top_addr() : (HeapWord**) -1;
+  CompilerToVM::Data::initialize();
 
   return (jlong) (address) &ciHotSpotVMData;
 C2V_END
@@ -689,18 +744,22 @@ C2V_VMENTRY(jint, installCode, (JNIEnv *jniEnv, jobject, jobject target, jobject
   } else {
     if (!installed_code_handle.is_null()) {
       assert(installed_code_handle->is_a(InstalledCode::klass()), "wrong type");
-      CompilerToVM::invalidate_installed_code(installed_code_handle, CHECK_0);
-      InstalledCode::set_address(installed_code_handle, (jlong) cb);
-      InstalledCode::set_version(installed_code_handle, InstalledCode::version(installed_code_handle) + 1);
-      if (cb->is_nmethod()) {
-        InstalledCode::set_entryPoint(installed_code_handle, (jlong) cb->as_nmethod_or_null()->verified_entry_point());
-      } else {
-        InstalledCode::set_entryPoint(installed_code_handle, (jlong) cb->code_begin());
-      }
-      if (installed_code_handle->is_a(HotSpotInstalledCode::klass())) {
-        HotSpotInstalledCode::set_size(installed_code_handle, cb->size());
-        HotSpotInstalledCode::set_codeStart(installed_code_handle, (jlong) cb->code_begin());
-        HotSpotInstalledCode::set_codeSize(installed_code_handle, cb->code_size());
+      nmethod::invalidate_installed_code(installed_code_handle, CHECK_0);
+      {
+        // Ensure that all updates to the InstalledCode fields are consistent.
+        MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+        InstalledCode::set_address(installed_code_handle, (jlong) cb);
+        InstalledCode::set_version(installed_code_handle, InstalledCode::version(installed_code_handle) + 1);
+        if (cb->is_nmethod()) {
+          InstalledCode::set_entryPoint(installed_code_handle, (jlong) cb->as_nmethod_or_null()->verified_entry_point());
+        } else {
+          InstalledCode::set_entryPoint(installed_code_handle, (jlong) cb->code_begin());
+        }
+        if (installed_code_handle->is_a(HotSpotInstalledCode::klass())) {
+          HotSpotInstalledCode::set_size(installed_code_handle, cb->size());
+          HotSpotInstalledCode::set_codeStart(installed_code_handle, (jlong) cb->code_begin());
+          HotSpotInstalledCode::set_codeSize(installed_code_handle, cb->code_size());
+        }
       }
       nmethod* nm = cb->as_nmethod_or_null();
       if (nm != NULL && installed_code_handle->is_scavengable()) {
@@ -972,7 +1031,7 @@ C2V_END
 
 C2V_VMENTRY(void, invalidateInstalledCode, (JNIEnv*, jobject, jobject installed_code))
   Handle installed_code_handle = JNIHandles::resolve(installed_code);
-  CompilerToVM::invalidate_installed_code(installed_code_handle, CHECK);
+  nmethod::invalidate_installed_code(installed_code_handle, CHECK);
 C2V_END
 
 C2V_VMENTRY(jobject, readUncompressedOop, (JNIEnv*, jobject, jlong addr))

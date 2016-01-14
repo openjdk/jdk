@@ -31,7 +31,7 @@ import jdk.internal.misc.JavaNioAccess;
 import jdk.internal.misc.JavaLangRefAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.Unsafe;
-import sun.misc.VM;
+import jdk.internal.misc.VM;
 
 /**
  * Access to bits, native and otherwise.

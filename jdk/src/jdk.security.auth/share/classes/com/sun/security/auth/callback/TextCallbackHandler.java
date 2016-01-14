@@ -46,7 +46,6 @@ import sun.security.util.ConsoleCallbackHandler;
  * @see javax.security.auth.callback
  */
 
-@jdk.Exported
 public class TextCallbackHandler implements CallbackHandler {
     private final CallbackHandler consoleHandler;
 
