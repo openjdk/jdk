@@ -4839,7 +4839,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1452769076
+DATE_WHEN_GENERATED=1452780299
 
 ###############################################################################
 #
@@ -62030,7 +62030,6 @@ fi
 
   # Move configure.log from current directory to the build output root
   if test -e ./configure.log; then
-    echo found it
     $MV -f ./configure.log "$OUTPUT_ROOT/configure.log" 2> /dev/null
   fi
 

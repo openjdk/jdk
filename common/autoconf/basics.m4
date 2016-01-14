@@ -1190,7 +1190,6 @@ AC_DEFUN_ONCE([BASIC_POST_CONFIG_OUTPUT],
 
   # Move configure.log from current directory to the build output root
   if test -e ./configure.log; then
-    echo found it
     $MV -f ./configure.log "$OUTPUT_ROOT/configure.log" 2> /dev/null
   fi
 
