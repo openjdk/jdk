@@ -153,6 +153,13 @@ class JvmciJDKDeployedDist(object):
     def deploy(self, jdkDir):
         mx.nyi('deploy', self)
 
+    def post_parse_cmd_line(self):
+        self.set_archiveparticipant()
+
+    def set_archiveparticipant(self):
+        dist = self.dist()
+        dist.set_archiveparticipant(JVMCIArchiveParticipant(dist))
+
 class ExtJDKDeployedDist(JvmciJDKDeployedDist):
     def __init__(self, name):
         JvmciJDKDeployedDist.__init__(self, name)
@@ -668,15 +675,10 @@ class JVMCIArchiveParticipant:
 
     def __opened__(self, arc, srcArc, services):
         self.services = services
+        self.jvmciServices = services
         self.arc = arc
 
     def __add__(self, arcname, contents):
-        if arcname.startswith('META-INF/jvmci.providers/'):
-            provider = arcname[len('META-INF/jvmci.providers/'):]
-            for service in contents.strip().split(os.linesep):
-                assert service
-                self.services.setdefault(service, []).append(provider)
-            return True
         return False
 
     def __addsrc__(self, arcname, contents):
@@ -864,6 +866,4 @@ def mx_post_parse_cmd_line(opts):
     _vm.update(jvmVariant, debugLevel, jvmciMode)
 
     for jdkDist in jdkDeployedDists:
-        dist = jdkDist.dist()
-        if isinstance(jdkDist, JvmciJDKDeployedDist):
-            dist.set_archiveparticipant(JVMCIArchiveParticipant(dist))
+        jdkDist.post_parse_cmd_line()
