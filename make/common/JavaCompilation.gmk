@@ -267,7 +267,7 @@ define SetupJavaCompilationBody
     $1_ALL_COPIES := $$(filter $$($1_INCLUDE_PATTERN),$$($1_ALL_COPIES))
   endif
   ifneq (,$$($1_EXCLUDE_PATTERN))
-    $1_ALL_COPIES := $$(filter-out $$($1_EXCLUDES_PATTERN),$$($1_ALL_COPIES))
+    $1_ALL_COPIES := $$(filter-out $$($1_EXCLUDE_PATTERN),$$($1_ALL_COPIES))
   endif
   ifneq (,$$($1_ALL_COPIES))
     # Yep, there are files to be copied!
