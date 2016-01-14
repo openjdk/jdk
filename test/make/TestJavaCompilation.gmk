@@ -239,6 +239,7 @@ TEST_TARGETS += $(OUTPUT_DIR)/_jar3_updated
 
 $(eval $(call SetupJavaCompiler,BOOT_JAVAC, \
     JAVAC := $(JAVAC), \
+    DISABLE_SJAVAC := true, \
 ))
 
 JAVA_SRC_ROOT1 := $(OUTPUT_DIR)/javaroot1
