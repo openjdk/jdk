@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,26 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.ref;
 
-import java.io.IOException;
+import java.lang.ref.Cleaner;
 
-public class CEFormatException extends IOException {
-    static final long serialVersionUID = -7139121221067081482L;
-    public CEFormatException(String s) {
-        super(s);
+/**
+ * CleanerFactory provides a Cleaner for use within OpenJDK modules.
+ * The cleaner is created on the first reference to the CleanerFactory.
+ */
+public final class CleanerFactory {
+
+    /* The common Cleaner. */
+    private final static Cleaner commonCleaner = Cleaner.create();
+
+    /**
+     * Cleaner for use within OpenJDK modules.
+     *
+     * @return a Cleaner for use within OpenJDK modules
+     */
+    public static Cleaner cleaner() {
+        return commonCleaner;
     }
-}
 
+}
