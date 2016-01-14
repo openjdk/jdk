@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,7 @@ public class DOMSource implements Source {
      *
      * @param systemID Base URL for this DOM tree.
      */
+    @Override
     public void setSystemId(String systemID) {
         this.systemID = systemID;
     }
@@ -132,7 +133,25 @@ public class DOMSource implements Source {
      *
      * @return Base URL for this DOM tree.
      */
+    @Override
     public String getSystemId() {
         return this.systemID;
+    }
+
+    /**
+     * Indicates whether the {@code DOMSource} object is empty. Empty is
+     * defined as follows:
+     * <ul>
+     * <li>if the system identifier and node are {@code null};
+     * </li>
+     * <li>if the system identifier is null, and the {@code node} has no child nodes.
+     * </li>
+     * </ul>
+     *
+     * @return true if the {@code DOMSource} object is empty, false otherwise
+     */
+    @Override
+    public boolean isEmpty() {
+        return systemID == null && (node == null || !node.hasChildNodes());
     }
 }
