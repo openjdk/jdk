@@ -61,7 +61,6 @@ import java.security.BasicPermission;
  * @since 1.8
  */
 
-@jdk.Exported
 public final class NetworkPermission extends BasicPermission {
 
     private static final long serialVersionUID = -2012939586906722291L;

@@ -107,7 +107,7 @@ public class TestKeyPairGenerator extends PKCS11Test {
         data = new byte[2048];
         // keypair generation is very slow, test only a few short keys
         int[] keyLengths = {512, 512, 1024};
-        BigInteger[] pubExps = {null, BigInteger.valueOf(3), null};
+        BigInteger[] pubExps = {null, RSAKeyGenParameterSpec.F4, null};
         KeyPair[] keyPairs = new KeyPair[3];
         RandomFactory.getRandom().nextBytes(data);
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", provider);

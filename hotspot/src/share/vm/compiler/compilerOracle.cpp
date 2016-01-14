@@ -247,15 +247,6 @@ TypedMethodOptionMatcher::~TypedMethodOptionMatcher() {
   if (_option != NULL) {
     os::free((void*)_option);
   }
-  if (_class_name != NULL) {
-    _class_name->decrement_refcount();
-  }
-  if (_method_name != NULL) {
-    _method_name->decrement_refcount();
-  }
-  if (_signature != NULL) {
-    _signature->decrement_refcount();
-  }
 }
 
 TypedMethodOptionMatcher* TypedMethodOptionMatcher::parse_method_pattern(char*& line, const char*& error_msg) {

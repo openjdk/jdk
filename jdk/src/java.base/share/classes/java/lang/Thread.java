@@ -1869,7 +1869,7 @@ class Thread implements Runnable {
      */
     public State getState() {
         // get current thread state
-        return sun.misc.VM.toThreadState(threadStatus);
+        return jdk.internal.misc.VM.toThreadState(threadStatus);
     }
 
     // Added in JSR-166

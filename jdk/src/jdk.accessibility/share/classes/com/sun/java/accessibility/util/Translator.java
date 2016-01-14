@@ -58,7 +58,6 @@ import javax.accessibility.*;
  * to implement accessibility features for a toolkit.  Instead of relying upon this
  * code, a toolkit's components should implement interface {@code Accessible} directly.
  */
-@jdk.Exported
 public class Translator extends AccessibleContext
         implements Accessible, AccessibleComponent {
 

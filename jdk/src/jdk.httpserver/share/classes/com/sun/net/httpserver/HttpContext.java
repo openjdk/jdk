@@ -40,7 +40,6 @@ import java.util.*;
  * context can be pre- and post-processed by each Filter in the chain.
  * @since 1.6
  */
-@jdk.Exported
 public abstract class HttpContext {
 
     protected HttpContext () {
