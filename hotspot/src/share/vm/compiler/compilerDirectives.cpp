@@ -164,20 +164,15 @@ int CompilerDirectives::refcount() {
 
 DirectiveSet* CompilerDirectives::get_for(AbstractCompiler *comp) {
   assert(DirectivesStack_lock->owned_by_self(), "");
-  inc_refcount(); // The compiling thread is responsible to decrement this when finished.
   if (comp == NULL) { // Xint
     return _c1_store;
-  } else if (comp->is_c2()) {
+  } else  if (comp->is_c2()) {
     return _c2_store;
-  } else if (comp->is_c1()) {
+  } else {
+    // use c1_store as default
+    assert(comp->is_c1() || comp->is_jvmci() || comp->is_shark(), "");
     return _c1_store;
-  } else if (comp->is_shark()) {
-    return NULL;
-  } else if (comp->is_jvmci()) {
-    return NULL;
   }
-  ShouldNotReachHere();
-  return NULL;
 }
 
 // In the list of disabled intrinsics, the ID of the disabled intrinsics can separated:
@@ -459,6 +454,7 @@ DirectiveSet* DirectivesStack::getDefaultDirective(AbstractCompiler* comp) {
   MutexLockerEx locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
 
   assert(_bottom != NULL, "Must never be empty");
+  _bottom->inc_refcount();
   return _bottom->get_for(comp);
 }
 
@@ -521,12 +517,13 @@ void DirectivesStack::print(outputStream* st) {
 }
 
 void DirectivesStack::release(DirectiveSet* set) {
+  assert(set != NULL, "Never NULL");
   MutexLockerEx locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
   if (set->is_exclusive_copy()) {
     // Old CompilecCmmands forced us to create an exclusive copy
     delete set;
   } else {
-    assert(set->directive() != NULL, "");
+    assert(set->directive() != NULL, "Never NULL");
     release(set->directive());
   }
 }
@@ -553,26 +550,18 @@ DirectiveSet* DirectivesStack::getMatchingDirective(methodHandle method, Abstrac
     while (dir != NULL) {
       if (dir->is_default_directive() || dir->match(method)) {
         match = dir->get_for(comp);
-        if (match == NULL) {
-          // temporary workaround for compilers without directives.
-          if (dir->is_default_directive()) {
-            // default dir is always enabled
-            // match c1 store - it contains all common flags even if C1 is unavailable
-            match = dir->_c1_store;
-            break;
-          }
-        } else {
-          if (match->EnableOption) {
-            // The directiveSet for this compile is also enabled -> success
-            break;
-          }
+        assert(match != NULL, "Consistency");
+        if (match->EnableOption) {
+          // The directiveSet for this compile is also enabled -> success
+          dir->inc_refcount();
+          break;
         }
       }
       dir = dir->next();
     }
   }
-
   guarantee(match != NULL, "There should always be a default directive that matches");
+
   // Check for legacy compile commands update, without DirectivesStack_lock
   return match->compilecommand_compatibility_init(method);
 }
