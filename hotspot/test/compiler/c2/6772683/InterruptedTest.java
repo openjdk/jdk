@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,39 @@
  * @test
  * @bug 6772683
  * @summary Thread.isInterrupted() fails to return true on multiprocessor PC
- * @run main/othervm InterruptedTest
+ * @run main/othervm InterruptedTest 100
  */
 
 public class InterruptedTest {
 
     public static void main(String[] args) throws Exception {
+        /* The value of the threshold determines for how many seconds
+         * the main thread must wait for the worker thread. On highly
+         * loaded systems it can take a while until the worker thread
+         * obtains CPU time and is able to check if it was interrupted
+         * by the main thread. The higher the threshold the likelier
+         * the worker thread can check if it was interrupted (that is
+         * required for successul test execution).
+         */
+        int threshold = 100;
+
+        if (args.length != 1) {
+            System.out.println("Incorrect number of arguments");
+            System.exit(1);
+        }
+
+        try {
+            threshold = Integer.parseInt(args[0]);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid argument format");
+            System.exit(1);
+        }
+
+        if (threshold < 1) {
+            System.out.println("Threshold must be at least 1");
+            System.exit(1);
+        }
+
         Thread workerThread = new Thread("worker") {
             public void run() {
                 System.out.println("Worker thread: running...");
@@ -42,24 +69,27 @@ public class InterruptedTest {
         };
         System.out.println("Main thread: starts a worker thread...");
         workerThread.start();
-        System.out.println("Main thread: waits at most 5s for the worker thread to die...");
+        System.out.println("Main thread: waits 5 seconds after starting the worker thread");
         workerThread.join(5000); // Wait 5 sec to let run() method to be compiled
+
         int ntries = 0;
-        while (workerThread.isAlive() && ntries < 5) {
+        while (workerThread.isAlive() && ntries < threshold) {
             System.out.println("Main thread: interrupts the worker thread...");
             workerThread.interrupt();
             if (workerThread.isInterrupted()) {
                 System.out.println("Main thread: worker thread is interrupted");
             }
             ntries++;
-            System.out.println("Main thread: waits for the worker thread to die...");
+            System.out.println("Main thread: waits 1 second for the worker thread to die...");
             workerThread.join(1000); // Wait 1 sec and try again
         }
-        if (ntries == 5) {
-          System.out.println("Main thread: the worker thread dod not die");
+
+        if (ntries == threshold) {
+          System.out.println("Main thread: the worker thread did not die after " +
+                             ntries + " seconds have elapsed");
           System.exit(97);
         }
+
         System.out.println("Main thread: bye");
     }
-
 }
