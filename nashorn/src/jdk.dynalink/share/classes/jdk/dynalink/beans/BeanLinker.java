@@ -129,25 +129,21 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     }
 
     @Override
-    protected GuardedInvocationComponent getGuardedInvocationComponent(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> operations, final Object name) throws Exception {
-        final GuardedInvocationComponent superGic = super.getGuardedInvocationComponent(callSiteDescriptor,
-                linkerServices, operations, name);
+    protected GuardedInvocationComponent getGuardedInvocationComponent(final ComponentLinkRequest req) throws Exception {
+        final GuardedInvocationComponent superGic = super.getGuardedInvocationComponent(req);
         if(superGic != null) {
             return superGic;
         }
-        if(operations.isEmpty()) {
-            return null;
-        }
-        final Operation op = operations.get(0);
-        if(op == StandardOperation.GET_ELEMENT) {
-            return getElementGetter(callSiteDescriptor, linkerServices, pop(operations), name);
-        }
-        if(op == StandardOperation.SET_ELEMENT) {
-            return getElementSetter(callSiteDescriptor, linkerServices, pop(operations), name);
-        }
-        if(op == StandardOperation.GET_LENGTH) {
-            return getLengthGetter(callSiteDescriptor);
+        if (!req.operations.isEmpty()) {
+            final Operation op = req.operations.get(0);
+            if (op instanceof StandardOperation) {
+                switch ((StandardOperation)op) {
+                case GET_ELEMENT: return getElementGetter(req.popOperations());
+                case SET_ELEMENT: return getElementSetter(req.popOperations());
+                case GET_LENGTH:  return getLengthGetter(req.getDescriptor());
+                default:
+                }
+            }
         }
         return null;
     }
@@ -170,12 +166,12 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         ARRAY, LIST, MAP
     };
 
-    private GuardedInvocationComponent getElementGetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> operations, final Object name) throws Exception {
+    private GuardedInvocationComponent getElementGetter(final ComponentLinkRequest req) throws Exception {
+        final CallSiteDescriptor callSiteDescriptor = req.getDescriptor();
+        final LinkerServices linkerServices = req.linkerServices;
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
         final Class<?> declaredType = callSiteType.parameterType(0);
-        final GuardedInvocationComponent nextComponent = getGuardedInvocationComponent(callSiteDescriptor,
-                linkerServices, operations, name);
+        final GuardedInvocationComponent nextComponent = getNextComponent(req);
 
         // If declared type of receiver at the call site is already an array, a list or map, bind without guard. Thing
         // is, it'd be quite stupid of a call site creator to go though invokedynamic when it knows in advance they're
@@ -211,6 +207,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
         // Convert the key to a number if we're working with a list or array
         final Object typedName;
+        final Object name = req.name;
         if(collectionType != CollectionType.MAP && name != null) {
             typedName = convertKeyToInteger(name, linkerServices);
             if(typedName == null) {
@@ -399,8 +396,9 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     private static final MethodHandle PUT_MAP_ELEMENT = Lookup.PUBLIC.findVirtual(Map.class, "put",
             MethodType.methodType(Object.class, Object.class, Object.class));
 
-    private GuardedInvocationComponent getElementSetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> operations, final Object name) throws Exception {
+    private GuardedInvocationComponent getElementSetter(final ComponentLinkRequest req) throws Exception {
+        final CallSiteDescriptor callSiteDescriptor = req.getDescriptor();
+        final LinkerServices linkerServices = req.linkerServices;
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
         final Class<?> declaredType = callSiteType.parameterType(0);
 
@@ -441,14 +439,14 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         // In contrast to, say, getElementGetter, we only compute the nextComponent if the target object is not a map,
         // as maps will always succeed in setting the element and will never need to fall back to the next component
         // operation.
-        final GuardedInvocationComponent nextComponent = collectionType == CollectionType.MAP ? null : getGuardedInvocationComponent(
-                callSiteDescriptor, linkerServices, operations, name);
+        final GuardedInvocationComponent nextComponent = collectionType == CollectionType.MAP ? null : getNextComponent(req);
         if(gic == null) {
             return nextComponent;
         }
 
         // Convert the key to a number if we're working with a list or array
         final Object typedName;
+        final Object name = req.name;
         if(collectionType != CollectionType.MAP && name != null) {
             typedName = convertKeyToInteger(name, linkerServices);
             if(typedName == null) {
