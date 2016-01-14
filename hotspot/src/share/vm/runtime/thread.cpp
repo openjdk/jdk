@@ -2440,7 +2440,7 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
 // normal checks but also performs the transition back into
 // thread_in_Java state.  This is required so that critical natives
 // can potentially block and perform a GC if they are the last thread
-// exiting the GC_locker.
+// exiting the GCLocker.
 void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThread *thread) {
   check_special_condition_for_native_trans(thread);
 
@@ -2449,7 +2449,7 @@ void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThr
 
   if (thread->do_critical_native_unlock()) {
     ThreadInVMfromJavaNoAsyncException tiv(thread);
-    GC_locker::unlock_critical(thread);
+    GCLocker::unlock_critical(thread);
     thread->clear_critical_native_unlock();
   }
 }

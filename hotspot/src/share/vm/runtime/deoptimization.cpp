@@ -296,7 +296,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Ensure that no safepoint is taken after pointers have been stored
   // in fields of rematerialized objects.  If a safepoint occurs from here on
   // out the java state residing in the vframeArray will be missed.
-  No_Safepoint_Verifier no_safepoint;
+  NoSafepointVerifier no_safepoint;
 
   vframeArray* array = create_vframeArray(thread, deoptee, &map, chunk, realloc_failures);
 #if defined(COMPILER2) || INCLUDE_JVMCI

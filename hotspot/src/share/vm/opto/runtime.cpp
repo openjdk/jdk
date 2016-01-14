@@ -1383,7 +1383,7 @@ address OptoRuntime::handle_exception_C(JavaThread* thread) {
 // However, there needs to be a safepoint check in the middle!  So compiled
 // safepoints are completely watertight.
 //
-// Thus, it cannot be a leaf since it contains the No_GC_Verifier.
+// Thus, it cannot be a leaf since it contains the NoGCVerifier.
 //
 // *THIS IS NOT RECOMMENDED PROGRAMMING STYLE*
 //

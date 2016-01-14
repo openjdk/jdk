@@ -264,7 +264,7 @@ Symbol* SymbolTable::lookup(const Symbol* sym, int begin, int end, TRAPS) {
   unsigned int hashValue;
   char* name;
   {
-    debug_only(No_Safepoint_Verifier nsv;)
+    debug_only(NoSafepointVerifier nsv;)
 
     name = (char*)sym->base() + begin;
     len = end - begin;
@@ -288,7 +288,7 @@ Symbol* SymbolTable::lookup(const Symbol* sym, int begin, int end, TRAPS) {
     buffer[i] = name[i];
   }
   // Make sure there is no safepoint in the code above since name can't move.
-  // We can't include the code in No_Safepoint_Verifier because of the
+  // We can't include the code in NoSafepointVerifier because of the
   // ResourceMark.
 
   // Grab SymbolTable_lock first.
@@ -405,7 +405,7 @@ Symbol* SymbolTable::basic_add(int index_arg, u1 *name, int len,
   }
 
   // Cannot hit a safepoint in this function because the "this" pointer can move.
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
 
   // Check if the symbol table has been rehashed, if so, need to recalculate
   // the hash value and index.
@@ -454,7 +454,7 @@ bool SymbolTable::basic_add(ClassLoaderData* loader_data, const constantPoolHand
   }
 
   // Cannot hit a safepoint in this function because the "this" pointer can move.
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
 
   for (int i=0; i<names_count; i++) {
     // Check if the symbol table has been rehashed, if so, need to recalculate

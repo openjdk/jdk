@@ -136,7 +136,7 @@ oop StringTable::basic_add(int index_arg, Handle string, jchar* name,
   assert(java_lang_String::equals(string(), name, len),
          "string must be properly initialized");
   // Cannot hit a safepoint in this function because the "this" pointer can move.
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
 
   // Check if the symbol table has been rehashed, if so, need to recalculate
   // the hash value and index before second lookup.
