@@ -3451,6 +3451,31 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # questions.
 #
 
+# Create a function/macro that takes a series of named arguments. The call is
+# similar to AC_DEFUN, but the setup of the function looks like this:
+# BASIC_DEFUN_NAMED([MYFUNC], [FOO *BAR], [$@], [
+# ... do something
+#   AC_MSG_NOTICE([Value of BAR is ARG_BAR])
+# ])
+# A star (*) in front of a named argument means that it is required and it's
+# presence will be verified. To pass e.g. the first value as a normal indexed
+# argument, use [m4_shift($@)] as the third argument instead of [$@]. These
+# arguments are referenced in the function by their name prefixed by ARG_, e.g.
+# "ARG_FOO".
+#
+# The generated function can be called like this:
+# MYFUNC(FOO: [foo-val], BAR:
+#     [
+#         $ECHO hello world
+#     ])
+#
+#
+# Argument 1: Name of the function to define
+# Argument 2: List of legal named arguments, with a * prefix for required arguments
+# Argument 3: Argument array to treat as named, typically $@
+# Argument 4: The main function body
+
+
 # Test if $1 is a valid argument to $3 (often is $JAVA passed as $3)
 # If so, then append $1 to $2 \
 # Also set JVM_ARG_OK to true/false depending on outcome.
@@ -3886,16 +3911,20 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
-# FLAGS_COMPILER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
-#                                   [RUN-IF-FALSE])
+# FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                   IF_FALSE: [RUN-IF-FALSE])
 # ------------------------------------------------------------
 # Check that the c and c++ compilers support an argument
 
 
-# FLAGS_LINKER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
-#                                    [RUN-IF-FALSE])
+
+
+# FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                   IF_FALSE: [RUN-IF-FALSE])
 # ------------------------------------------------------------
 # Check that the linker support an argument
+
+
 
 
 
@@ -4810,7 +4839,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1452261921
+DATE_WHEN_GENERATED=1452769076
 
 ###############################################################################
 #
@@ -45358,6 +45387,54 @@ $as_echo "$as_me: Rewriting BUILD_AR to \"$new_complete\"" >&6;}
     # "-Og" suppported for GCC 4.8 and later
     CFLAG_OPTIMIZE_DEBUG_FLAG="-Og"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"" >&5
 $as_echo_n "checking if compiler supports \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"... " >&6; }
   supports=yes
@@ -45417,14 +45494,75 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     HAS_CFLAG_OPTIMIZE_DEBUG=true
   else
+    :
     HAS_CFLAG_OPTIMIZE_DEBUG=false
   fi
 
 
+
+
+
+
+
+
+
+
+
+
+
     # "-z relro" supported in GNU binutils 2.17 and later
     LINKER_RELRO_FLAG="-Wl,-z,relro"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if linker supports \"$LINKER_RELRO_FLAG\"" >&5
 $as_echo_n "checking if linker supports \"$LINKER_RELRO_FLAG\"... " >&6; }
@@ -45467,14 +45605,75 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     HAS_LINKER_RELRO=true
   else
+    :
     HAS_LINKER_RELRO=false
   fi
 
 
+
+
+
+
+
+
+
+
+
+
+
     # "-z now" supported in GNU binutils 2.11 and later
     LINKER_NOW_FLAG="-Wl,-z,now"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if linker supports \"$LINKER_NOW_FLAG\"" >&5
 $as_echo_n "checking if linker supports \"$LINKER_NOW_FLAG\"... " >&6; }
@@ -45517,10 +45716,23 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     HAS_LINKER_NOW=true
   else
+    :
     HAS_LINKER_NOW=false
   fi
+
+
+
+
+
+
+
+
+
+
+
 
   fi
 
@@ -46842,6 +47054,49 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # Not all versions of gcc support -fstack-protector
       STACK_PROTECTOR_CFLAG="-fstack-protector-all"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"" >&5
 $as_echo_n "checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"... " >&6; }
   supports=yes
@@ -46902,9 +47157,22 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
     :
+
   else
+    :
     STACK_PROTECTOR_CFLAG=""
   fi
+
+
+
+
+
+
+
+
+
+
+
 
 
       CFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_CFLAG --param ssp-buffer-size=1"
@@ -47384,6 +47652,49 @@ $as_echo "$supports" >&6; }
       ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   esac
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$ZERO_ARCHFLAG\"" >&5
 $as_echo_n "checking if compiler supports \"$ZERO_ARCHFLAG\"... " >&6; }
   supports=yes
@@ -47444,14 +47755,75 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
     :
+
   else
+    :
     ZERO_ARCHFLAG=""
   fi
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   # Check that the compiler supports -mX (or -qX on AIX) flags
   # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"" >&5
 $as_echo_n "checking if compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"... " >&6; }
@@ -47512,10 +47884,23 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     COMPILER_SUPPORTS_TARGET_BITS_FLAG=true
   else
+    :
     COMPILER_SUPPORTS_TARGET_BITS_FLAG=false
   fi
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -47565,6 +47950,54 @@ $as_echo "yes (default)" >&6; }
     gcc)
       # Prior to gcc 4.4, a -Wno-X where X is unknown for that version of gcc will cause an error
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
 $as_echo_n "checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
   supports=yes
@@ -47624,11 +48057,24 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     GCC_CAN_DISABLE_WARNINGS=true
   else
+    :
     GCC_CAN_DISABLE_WARNINGS=false
 
   fi
+
+
+
+
+
+
+
+
+
+
+
 
       if test "x$GCC_CAN_DISABLE_WARNINGS" = "xtrue"; then
         DISABLE_WARNING_PREFIX="-Wno-"
@@ -47640,6 +48086,54 @@ $as_echo "$supports" >&6; }
       CC_OLD="$CC"
       CC="$BUILD_CC"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
 $as_echo_n "checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
   supports=yes
@@ -47699,11 +48193,24 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     BUILD_CC_CAN_DISABLE_WARNINGS=true
   else
+    :
     BUILD_CC_CAN_DISABLE_WARNINGS=false
 
   fi
+
+
+
+
+
+
+
+
+
+
+
 
       if test "x$BUILD_CC_CAN_DISABLE_WARNINGS" = "xtrue"; then
         BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
