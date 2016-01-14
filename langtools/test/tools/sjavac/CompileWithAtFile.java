@@ -47,8 +47,8 @@ public class CompileWithAtFile extends SJavacTester {
 
     void test() throws Exception {
         tb.writeFile(GENSRC.resolve("list.txt"),
-                     "-if */alfa/omega/A.java\n" +
-                     "-if */beta/B.java\n" +
+                     "-i alfa/omega/A.java\n" +
+                     "-i beta/B.java\n" +
                      GENSRC + "\n" +
                      "-d " + BIN + "\n" +
                      "--state-dir=" + BIN + "\n");

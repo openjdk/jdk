@@ -182,9 +182,9 @@ final class OuterWrap implements GeneralWrap {
             return null;
         }
 
-    @Override
-    public String toString() {
-        return "WrappedDiagnostic(" + getMessage(null) + ":" + getPosition() + ")";
-    }
+        @Override
+        public String toString() {
+            return "WrappedDiagnostic(" + getMessage(null) + ":" + getPosition() + ")";
+        }
     }
 }

@@ -1,7 +1,5 @@
 T6891079.java:8:14: compiler.err.invalid.binary.number
 T6891079.java:9:15: compiler.err.invalid.binary.number
-T6891079.java:9:18: compiler.err.expected: token.identifier
 T6891079.java:10:14: compiler.err.invalid.hex.number
 T6891079.java:11:15: compiler.err.invalid.hex.number
-T6891079.java:11:18: compiler.err.expected: token.identifier
-6 errors
+4 errors

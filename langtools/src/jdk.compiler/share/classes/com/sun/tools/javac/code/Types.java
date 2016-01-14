@@ -1146,14 +1146,21 @@ public class Types {
                     if (!visit(supertype(t), supertype(s)))
                         return false;
 
-                    HashSet<UniqueType> set = new HashSet<>();
-                    for (Type x : interfaces(t))
-                        set.add(new UniqueType(x, Types.this));
-                    for (Type x : interfaces(s)) {
-                        if (!set.remove(new UniqueType(x, Types.this)))
+                    Map<Symbol,Type> tMap = new HashMap<>();
+                    for (Type ti : interfaces(t)) {
+                        if (tMap.containsKey(ti)) {
+                            throw new AssertionError("Malformed intersection");
+                        }
+                        tMap.put(ti.tsym, ti);
+                    }
+                    for (Type si : interfaces(s)) {
+                        if (!tMap.containsKey(si.tsym))
+                            return false;
+                        Type ti = tMap.remove(si.tsym);
+                        if (!visit(ti, si))
                             return false;
                     }
-                    return (set.isEmpty());
+                    return tMap.isEmpty();
                 }
                 return t.tsym == s.tsym
                     && visit(t.getEnclosingType(), s.getEnclosingType())

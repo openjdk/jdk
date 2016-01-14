@@ -62,9 +62,7 @@ public class OptionTestUtil {
 
             if (!sl1.getPath().equals(sl2.getPath()) ||
                     !sl1.getIncludes().equals(sl2.getIncludes()) ||
-                    !sl1.getExcludes().equals(sl2.getExcludes()) ||
-                    !sl1.getIncludedFiles().equals(sl2.getIncludedFiles()) ||
-                    !sl1.getExcludedFiles().equals(sl2.getExcludedFiles()))
+                    !sl1.getExcludes().equals(sl2.getExcludes()))
                 throw new AssertionError("Expected " + sl1 + " but got " + sl2);
         }
     }
