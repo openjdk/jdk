@@ -27,6 +27,10 @@
 
 const int StackAlignmentInBytes  = 16;
 
+// Indicates whether the C calling conventions require that
+// 32-bit integer argument values are extended to 64 bits.
+const bool CCallingConventionRequiresIntsAsLongs = false;
+
 #define SUPPORTS_NATIVE_CX8
 
 // The expected size in bytes of a cache line, used to pad data structures.

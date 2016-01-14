@@ -121,7 +121,27 @@ public abstract class CommandLineOptionTest {
             throw new AssertionError(errorMessage, e);
         }
 
+        verifyOutput(expectedMessages, unexpectedMessages,
+                wrongWarningMessage, outputAnalyzer);
+    }
 
+    /**
+     * Verifies that JVM startup behavior matches our expectations.
+     *
+     * @param expectedMessages an array of patterns that should occur in JVM
+     *                         output. If {@code null} then
+     *                         JVM output could be empty.
+     * @param unexpectedMessages an array of patterns that should not occur
+     *                           in JVM output. If {@code null} then
+     *                           JVM output could be empty.
+     * @param wrongWarningMessage message that will be shown if messages are
+     *                            not as expected.
+     * @param outputAnalyzer OutputAnalyzer instance
+     * @throws AssertionError if verification fails.
+     */
+    public static void verifyOutput(String[] expectedMessages,
+            String[] unexpectedMessages, String wrongWarningMessage,
+            OutputAnalyzer outputAnalyzer) {
         if (expectedMessages != null) {
             for (String expectedMessage : expectedMessages) {
                 try {
@@ -199,7 +219,7 @@ public abstract class CommandLineOptionTest {
     public static void verifyOptionValue(String optionName,
             String expectedValue, String optionErrorString,
             String... additionalVMOpts) throws Throwable {
-        verifyOptionValue(optionName, expectedValue,  optionErrorString,
+        verifyOptionValue(optionName, expectedValue, optionErrorString,
                 true, additionalVMOpts);
     }
 
@@ -247,12 +267,30 @@ public abstract class CommandLineOptionTest {
                     optionName);
             throw new AssertionError(errorMessage, e);
         }
+        verifyOptionValue(optionName, expectedValue, optionErrorString,
+                outputAnalyzer);
+    }
+
+    /**
+     * Verifies that value of specified JVM option is the same as
+     * expected value.
+     *
+     * @param optionName a name of tested option.
+     * @param expectedValue expected value of tested option.
+     * @param optionErrorString message will be shown if option value is not
+     *                          as expected.
+     * @param outputAnalyzer OutputAnalyzer instance
+     * @throws AssertionError if verification fails
+     */
+    public static void verifyOptionValue(String optionName,
+            String expectedValue, String optionErrorString,
+            OutputAnalyzer outputAnalyzer) {
         try {
-        outputAnalyzer.shouldMatch(String.format(
-                CommandLineOptionTest.PRINT_FLAGS_FINAL_FORMAT,
-                optionName, expectedValue));
+            outputAnalyzer.shouldMatch(String.format(
+                    CommandLineOptionTest.PRINT_FLAGS_FINAL_FORMAT,
+                    optionName, expectedValue));
         } catch (RuntimeException e) {
-            String errorMessage =  String.format(
+            String errorMessage = String.format(
                     "Option '%s' is expected to have '%s' value%n%s",
                     optionName, expectedValue,
                     optionErrorString);

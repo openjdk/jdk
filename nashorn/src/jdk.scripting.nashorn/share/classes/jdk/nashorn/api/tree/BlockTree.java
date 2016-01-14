@@ -39,7 +39,6 @@ import java.util.List;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface BlockTree extends StatementTree {
     /**
      * Returns the list of statements in this block.

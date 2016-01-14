@@ -609,11 +609,16 @@ REGISTER_DECLARATION(Register, R26_tmp6, R26);
 REGISTER_DECLARATION(Register, R27_tmp7, R27);
 REGISTER_DECLARATION(Register, R28_tmp8, R28);
 REGISTER_DECLARATION(Register, R29_tmp9, R29);
+#ifndef CC_INTERP
 REGISTER_DECLARATION(Register, R24_dispatch_addr,     R24);
 REGISTER_DECLARATION(Register, R25_templateTableBase, R25);
 REGISTER_DECLARATION(Register, R26_monitor,           R26);
 REGISTER_DECLARATION(Register, R27_constPoolCache,    R27);
 REGISTER_DECLARATION(Register, R28_mdx,               R28);
+#endif // CC_INTERP
+
+REGISTER_DECLARATION(Register, R19_inline_cache_reg, R19);
+REGISTER_DECLARATION(Register, R29_TOC, R29);
 
 #ifndef DONT_USE_REGISTER_DEFINES
 #define R21_tmp1         AS_REGISTER(Register, R21)
@@ -635,7 +640,11 @@ REGISTER_DECLARATION(Register, R28_mdx,               R28);
 #define R28_mdx               AS_REGISTER(Register, R28)
 #endif
 
+#define R19_inline_cache_reg AS_REGISTER(Register, R19)
+#define R29_TOC AS_REGISTER(Register, R29)
+
 #define CCR4_is_synced AS_REGISTER(ConditionRegister, CCR4)
+#endif
 
 // Scratch registers are volatile.
 REGISTER_DECLARATION(Register, R11_scratch1, R11);

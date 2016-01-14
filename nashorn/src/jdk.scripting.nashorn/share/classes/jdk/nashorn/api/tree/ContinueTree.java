@@ -36,7 +36,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface ContinueTree extends GotoTree {
     /**
      * Label associated with this continue statement. This is null

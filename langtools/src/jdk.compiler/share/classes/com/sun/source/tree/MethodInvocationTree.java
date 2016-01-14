@@ -43,7 +43,6 @@ import java.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface MethodInvocationTree extends ExpressionTree {
     /**
      * Returns the type arguments for this method invocation.

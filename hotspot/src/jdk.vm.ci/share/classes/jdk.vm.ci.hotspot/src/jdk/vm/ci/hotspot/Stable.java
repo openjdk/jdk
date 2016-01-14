@@ -29,7 +29,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation functions as an alias for the java.lang.invoke.Stable annotation within JVMCI
+ * This annotation functions as an alias for the jdk.internal.vm.annotation.Stable annotation within JVMCI
  * code. It is specially recognized during class file parsing in the same way as that annotation.
  */
 @Target(ElementType.FIELD)

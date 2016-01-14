@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ public class LocaleProviders {
     static void bug8013903Test() {
         if (System.getProperty("os.name").startsWith("Windows")) {
             Date sampleDate = new Date(0x10000000000L);
-            String fallbackResult = "Heisei 16.Nov.03 (Wed) AM 11:53:47";
+            String hostResult = "\u5e73\u6210 16.11.03 (Wed) AM 11:53:47";
             String jreResult = "\u5e73\u6210 16.11.03 (\u6c34) \u5348\u524d 11:53:47";
             Locale l = new Locale("ja", "JP", "JP");
             SimpleDateFormat sdf = new SimpleDateFormat("GGGG yyyy.MMM.dd '('E')' a hh:mm:ss", l);
@@ -227,11 +227,10 @@ public class LocaleProviders {
                         result + "\", expected: \"" + jreResult);
                 }
             } else {
-                // should be FALLBACK, as Windows HOST does not return
-                // display names
-                if (!fallbackResult.equals(result)) {
+                // Windows display names. Subject to change if Windows changes its format.
+                if (!hostResult.equals(result)) {
                     throw new RuntimeException("Format failed. result: \"" +
-                        result + "\", expected: \"" + fallbackResult);
+                        result + "\", expected: \"" + hostResult);
                 }
             }
         }

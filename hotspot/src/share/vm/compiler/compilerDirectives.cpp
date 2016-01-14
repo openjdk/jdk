@@ -86,16 +86,21 @@ void CompilerDirectives::print(outputStream* st) {
   //---
 }
 
-void CompilerDirectives::finalize() {
+void CompilerDirectives::finalize(outputStream* st) {
   if (_c1_store != NULL) {
-    _c1_store->finalize();
+    _c1_store->finalize(st);
   }
   if (_c2_store != NULL) {
-    _c2_store->finalize();
+    _c2_store->finalize(st);
   }
 }
 
-void DirectiveSet::finalize() {
+void DirectiveSet::finalize(outputStream* st) {
+  // Check LogOption and warn
+  if (LogOption && !LogCompilation) {
+    st->print_cr("Warning:  +LogCompilation must be set to enable compilation logging from directives");
+  }
+
   // if any flag has been modified - set directive as enabled
   // unless it already has been explicitly set.
   if (!_modified[EnableIndex]) {
@@ -252,12 +257,14 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(methodHandle metho
         changed = true;
       }
     }
-    if (CompilerOracle::should_log(method)) {
-      if (!_modified[LogIndex]) {
-        set->LogOption = true;
+    if (!_modified[LogIndex]) {
+      bool log = CompilerOracle::should_log(method);
+      if (log != set->LogOption) {
+        set->LogOption = log;
         changed = true;
       }
     }
+
     if (CompilerOracle::should_print(method)) {
       if (!_modified[PrintAssemblyIndex]) {
         set->PrintAssemblyOption = true;
@@ -306,7 +313,7 @@ CompilerDirectives* DirectiveSet::directive() {
 
 bool DirectiveSet::matches_inline(methodHandle method, int inline_action) {
   if (_inlinematchers != NULL) {
-    if (_inlinematchers->match(method, InlineMatcher::force_inline)) {
+    if (_inlinematchers->match(method, inline_action)) {
       return true;
     }
   }
@@ -318,11 +325,11 @@ bool DirectiveSet::should_inline(ciMethod* inlinee) {
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, inlinee->get_Method());
 
-  if (matches_inline(mh, InlineMatcher::force_inline)) {
-    return true;
+  if (_inlinematchers != NULL) {
+    return matches_inline(mh, InlineMatcher::force_inline);
   }
-  if (!CompilerDirectivesIgnoreCompileCommandsOption && CompilerOracle::should_inline(mh)) {
-    return true;
+  if (!CompilerDirectivesIgnoreCompileCommandsOption) {
+    return CompilerOracle::should_inline(mh);
   }
   return false;
 }
@@ -332,11 +339,11 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, inlinee->get_Method());
 
-  if (matches_inline(mh, InlineMatcher::dont_inline)) {
-    return true;
+  if (_inlinematchers != NULL) {
+    return matches_inline(mh, InlineMatcher::dont_inline);
   }
-  if (!CompilerDirectivesIgnoreCompileCommandsOption && CompilerOracle::should_not_inline(mh)) {
-    return true;
+  if (!CompilerDirectivesIgnoreCompileCommandsOption) {
+    return CompilerOracle::should_not_inline(mh);
   }
   return false;
 }
@@ -487,6 +494,14 @@ void DirectivesStack::pop_inner() {
   DirectivesStack::release(tmp);
 }
 
+bool DirectivesStack::check_capacity(int request_size, outputStream* st) {
+  if ((request_size + _depth) > CompilerDirectivesLimit) {
+    st->print_cr("Could not add %i more directives. Currently %i/%i directives.", request_size, _depth, CompilerDirectivesLimit);
+    return false;
+  }
+  return true;
+}
+
 void DirectivesStack::clear() {
   // holding the lock during the whole operation ensuring consistent result
   MutexLockerEx locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
@@ -546,10 +561,11 @@ DirectiveSet* DirectivesStack::getMatchingDirective(methodHandle method, Abstrac
             match = dir->_c1_store;
             break;
           }
-        }
-        if (match->EnableOption) {
-          // The directiveSet for this compile is also enabled -> success
-          break;
+        } else {
+          if (match->EnableOption) {
+            // The directiveSet for this compile is also enabled -> success
+            break;
+          }
         }
       }
       dir = dir->next();

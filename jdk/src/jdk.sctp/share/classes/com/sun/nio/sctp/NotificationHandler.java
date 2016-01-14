@@ -49,7 +49,6 @@ package com.sun.nio.sctp;
  *
  * @since 1.7
  */
-@jdk.Exported
 public interface NotificationHandler<T> {
     /**
      * Invoked when a notification is received from the SCTP stack.

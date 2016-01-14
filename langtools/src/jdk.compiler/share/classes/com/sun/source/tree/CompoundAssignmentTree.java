@@ -40,7 +40,6 @@ package com.sun.source.tree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface CompoundAssignmentTree extends ExpressionTree {
     /**
      * Returns the variable on the left hand side of the compound assignment.

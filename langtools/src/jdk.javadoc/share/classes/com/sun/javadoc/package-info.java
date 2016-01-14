@@ -144,5 +144,4 @@ producing output like:
 @see com.sun.javadoc.Doclet
 @see com.sun.javadoc.RootDoc
 */
-@jdk.Exported
 package com.sun.javadoc;

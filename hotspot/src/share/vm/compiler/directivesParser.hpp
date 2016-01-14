@@ -126,8 +126,10 @@ private:
   DirectiveSet*       current_directiveset;
 
   void push_tmp(CompilerDirectives* dir);
+  void clean_tmp();
   CompilerDirectives* pop_tmp();
   CompilerDirectives* _tmp_top; // temporary storage for dirs while parsing
+  int _tmp_depth;               // Number of directives that has been parsed but not installed.
 
   static uint mask(keytype kt);
 

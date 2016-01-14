@@ -37,7 +37,6 @@ import com.sun.source.doctree.DocTree;
  *
  * @since 1.8
  */
-@jdk.Exported
 public class DocTreePathScanner<R, P> extends DocTreeScanner<R, P> {
     /**
      * Scans a tree from a position identified by a tree path.

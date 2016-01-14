@@ -45,7 +45,6 @@ import sun.awt.AWTPermissions;
  * level support for capturing the top-level containers as they are created.
  */
 
-@jdk.Exported
 public class AWTEventMonitor {
 
     /**
