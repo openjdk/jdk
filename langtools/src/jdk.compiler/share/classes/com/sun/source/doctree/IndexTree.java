@@ -33,9 +33,8 @@ import java.util.List;
  * <p>
  * {&#064;index keyword optional description} <br>
  *
- * @since 1.9
+ * @since 9
  */
-@jdk.Exported
 public interface IndexTree extends InlineTagTree {
     /**
      * Returns the specified search term.

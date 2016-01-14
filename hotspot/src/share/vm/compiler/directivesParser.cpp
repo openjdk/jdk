@@ -30,6 +30,7 @@
 #include <string.h>
 
 void DirectivesParser::push_tmp(CompilerDirectives* dir) {
+  _tmp_depth++;
   dir->set_next(_tmp_top);
   _tmp_top = dir;
 }
@@ -41,17 +42,29 @@ CompilerDirectives* DirectivesParser::pop_tmp() {
   CompilerDirectives* tmp = _tmp_top;
   _tmp_top = _tmp_top->next();
   tmp->set_next(NULL);
+  _tmp_depth--;
   return tmp;
+}
+
+void DirectivesParser::clean_tmp() {
+  CompilerDirectives* tmp = pop_tmp();
+  while (tmp != NULL) {
+    delete tmp;
+    tmp = pop_tmp();
+  }
+  assert(_tmp_depth == 0, "Consistency");
 }
 
 bool DirectivesParser::parse_string(const char* text, outputStream* st) {
   DirectivesParser cd(text, st);
   if (cd.valid()) {
     return cd.install_directives();
+  } else {
+    cd.clean_tmp();
+    st->flush();
+    st->print_cr("Parsing of compiler directives failed");
+    return false;
   }
-  st->flush();
-  st->print_cr("Parsing of compiler directives failed");
-  return false;
 }
 
 bool DirectivesParser::has_file() {
@@ -91,6 +104,12 @@ bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream*
 }
 
 bool DirectivesParser::install_directives() {
+  // Check limit
+  if (!DirectivesStack::check_capacity(_tmp_depth, _st)) {
+    clean_tmp();
+    return false;
+  }
+
   // Pop from internal temporary stack and push to compileBroker.
   CompilerDirectives* tmp = pop_tmp();
   int i = 0;
@@ -104,7 +123,7 @@ bool DirectivesParser::install_directives() {
     return false;
   } else {
     _st->print_cr("%i compiler directives added", i);
-    if (PrintCompilerDirectives) {
+    if (CompilerDirectivesPrint) {
       // Print entire directives stack after new has been pushed.
       DirectivesStack::print(_st);
     }
@@ -113,7 +132,7 @@ bool DirectivesParser::install_directives() {
 }
 
 DirectivesParser::DirectivesParser(const char* text, outputStream* st)
-: JSON(text, false, st), depth(0), current_directive(NULL), current_directiveset(NULL), _tmp_top(NULL) {
+: JSON(text, false, st), depth(0), current_directive(NULL), current_directiveset(NULL), _tmp_top(NULL), _tmp_depth(0) {
 #ifndef PRODUCT
   memset(stack, 0, MAX_DEPTH * sizeof(stack[0]));
 #endif
@@ -121,6 +140,8 @@ DirectivesParser::DirectivesParser(const char* text, outputStream* st)
 }
 
 DirectivesParser::~DirectivesParser() {
+  assert(_tmp_top == NULL, "Consistency");
+  assert(_tmp_depth == 0, "Consistency");
 }
 
 const DirectivesParser::key DirectivesParser::keys[] = {
@@ -379,11 +400,12 @@ bool DirectivesParser::set_option(JSON_TYPE t, JSON_VAL* v) {
 
       const char* error_msg = NULL;
       if (current_directiveset == NULL) {
-        if (!current_directive->_c1_store->parse_and_add_inline(s, error_msg)) {
-          assert (error_msg != NULL, "Must have valid error message");
-          error(VALUE_ERROR, "Method pattern error: %s", error_msg);
-        }
-        if (!current_directive->_c2_store->parse_and_add_inline(s, error_msg)) {
+        if (current_directive->_c1_store->parse_and_add_inline(s, error_msg)) {
+          if (!current_directive->_c2_store->parse_and_add_inline(s, error_msg)) {
+            assert (error_msg != NULL, "Must have valid error message");
+            error(VALUE_ERROR, "Method pattern error: %s", error_msg);
+          }
+        } else {
           assert (error_msg != NULL, "Must have valid error message");
           error(VALUE_ERROR, "Method pattern error: %s", error_msg);
         }
@@ -520,7 +542,7 @@ bool DirectivesParser::callback(JSON_TYPE t, JSON_VAL* v, uint rlimit) {
           error(INTERNAL_ERROR, "Directive missing required match.");
           return false;
         }
-        current_directive->finalize();
+        current_directive->finalize(_st);
         push_tmp(current_directive);
         current_directive = NULL;
         break;
@@ -583,6 +605,7 @@ void DirectivesParser::test(const char* text, bool should_pass) {
       tty->print("-- DirectivesParser test failed as expected --\n");
     }
   }
+  cd.clean_tmp();
 }
 
 bool DirectivesParser::test() {

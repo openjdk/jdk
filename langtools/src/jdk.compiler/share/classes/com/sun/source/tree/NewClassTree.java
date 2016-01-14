@@ -48,7 +48,6 @@ import java.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface NewClassTree extends ExpressionTree {
     /**
      * Returns the enclosing expression, or {@code null} if none.

@@ -30,6 +30,7 @@
 #include "oops/oop.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/top.hpp"
+#include "code/codeCache.hpp"
 
 // The following classes are used for operations
 // initiated by a Java thread but that must
@@ -44,6 +45,7 @@
   template(ThreadDump)                            \
   template(PrintThreads)                          \
   template(FindDeadlocks)                         \
+  template(ClearICs)                              \
   template(ForceSafepoint)                        \
   template(ForceAsyncSafepoint)                   \
   template(Deoptimize)                            \
@@ -228,6 +230,13 @@ class VM_ThreadStop: public VM_Operation {
   void oops_do(OopClosure* f) {
     f->do_oop(&_thread); f->do_oop(&_throwable);
   }
+};
+
+class VM_ClearICs: public VM_Operation {
+ public:
+  VM_ClearICs() {}
+  void doit()         { CodeCache::clear_inline_caches(); }
+  VMOp_Type type() const { return VMOp_ClearICs; }
 };
 
 // dummy vm op, evaluated just to force a safepoint

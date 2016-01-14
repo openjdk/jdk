@@ -36,7 +36,6 @@ package com.sun.tools.attach;
  * com.sun.tools.attach.VirtualMachine#loadAgentPath loadAgentPath} methods
  * if the agent, or agent library, cannot be loaded.
  */
-@jdk.Exported
 public class AgentLoadException extends Exception {
 
     /** use serialVersionUID for interoperability */

@@ -37,9 +37,6 @@
 
 # include <sys/sysinfo.h>
 
-int VM_Version::_features = VM_Version::unknown_m;
-int VM_Version::_measured_cache_line_size = 32; // pessimistic init value
-const char* VM_Version::_features_str = "";
 bool VM_Version::_is_determine_features_test_running = false;
 
 
@@ -56,7 +53,7 @@ void VM_Version::initialize() {
 
   // If PowerArchitecturePPC64 hasn't been specified explicitly determine from features.
   if (FLAG_IS_DEFAULT(PowerArchitecturePPC64)) {
-    if (VM_Version::has_lqarx()) {
+    if (VM_Version::has_tcheck() && VM_Version::has_lqarx()) {
       FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 8);
     } else if (VM_Version::has_popcntw()) {
       FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 7);
@@ -68,10 +65,19 @@ void VM_Version::initialize() {
       FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 0);
     }
   }
-  guarantee(PowerArchitecturePPC64 == 0 || PowerArchitecturePPC64 == 5 ||
-            PowerArchitecturePPC64 == 6 || PowerArchitecturePPC64 == 7 ||
-            PowerArchitecturePPC64 == 8,
-            "PowerArchitecturePPC64 should be 0, 5, 6, 7, or 8");
+
+  bool PowerArchitecturePPC64_ok = false;
+  switch (PowerArchitecturePPC64) {
+    case 8: if (!VM_Version::has_tcheck() ) break;
+            if (!VM_Version::has_lqarx()  ) break;
+    case 7: if (!VM_Version::has_popcntw()) break;
+    case 6: if (!VM_Version::has_cmpb()   ) break;
+    case 5: if (!VM_Version::has_popcntb()) break;
+    case 0: PowerArchitecturePPC64_ok = true; break;
+    default: break;
+  }
+  guarantee(PowerArchitecturePPC64_ok, "PowerArchitecturePPC64 cannot be set to "
+            UINTX_FORMAT " on this machine", PowerArchitecturePPC64);
 
   // Power 8: Configure Data Stream Control Register.
   if (PowerArchitecturePPC64 >= 8) {
@@ -122,7 +128,7 @@ void VM_Version::initialize() {
                (has_tcheck()  ? " tcheck"  : "")
                // Make sure number of %s matches num_features!
               );
-  _features_str = os::strdup(buf);
+  _features_string = os::strdup(buf);
   if (Verbose) {
     print_features();
   }
@@ -132,9 +138,15 @@ void VM_Version::initialize() {
   // and 'atomic long memory ops' (see Unsafe_GetLongVolatile).
   _supports_cx8 = true;
 
+  // Used by C1.
+  _supports_atomic_getset4 = true;
+  _supports_atomic_getadd4 = true;
+  _supports_atomic_getset8 = true;
+  _supports_atomic_getadd8 = true;
+
   UseSSE = 0; // Only on x86 and x64
 
-  intx cache_line_size = _measured_cache_line_size;
+  intx cache_line_size = L1_data_cache_line_size();
 
   if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) AllocatePrefetchStyle = 1;
 
@@ -184,6 +196,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESIntrinsics, false);
   }
 
+  if (UseAESCTRIntrinsics) {
+    warning("AES/CTR intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+  }
+
   if (UseGHASHIntrinsics) {
     warning("GHASH intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
@@ -208,6 +225,18 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;
   }
+  if (FLAG_IS_DEFAULT(UseMontgomeryMultiplyIntrinsic)) {
+    UseMontgomeryMultiplyIntrinsic = true;
+  }
+  if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
+    UseMontgomerySquareIntrinsic = true;
+  }
+
+  if (UseVectorizedMismatchIntrinsic) {
+    warning("UseVectorizedMismatchIntrinsic specified, but not available on this CPU.");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
 
   // Adjust RTM (Restricted Transactional Memory) flags.
   if (UseRTMLocking) {
@@ -276,11 +305,9 @@ void VM_Version::initialize() {
     }
   }
 
-  // This machine does not allow unaligned memory accesses
-  if (UseUnalignedAccesses) {
-    if (!FLAG_IS_DEFAULT(UseUnalignedAccesses))
-      warning("Unaligned memory access is not available on this CPU");
-    FLAG_SET_DEFAULT(UseUnalignedAccesses, false);
+  // This machine allows unaligned memory accesses
+  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
+    FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
   }
 }
 
@@ -306,7 +333,7 @@ bool VM_Version::use_biased_locking() {
 }
 
 void VM_Version::print_features() {
-  tty->print_cr("Version: %s cache_line_size = %d", cpu_features(), (int) get_cache_line_size());
+  tty->print_cr("Version: %s L1_data_cache_line_size=%d", features_string(), L1_data_cache_line_size());
 }
 
 #ifdef COMPILER2
@@ -607,7 +634,7 @@ void VM_Version::determine_features() {
   int count = 0; // count zeroed bytes
   for (int i = 0; i < BUFFER_SIZE; i++) if (test_area[i] == 0) count++;
   guarantee(is_power_of_2(count), "cache line size needs to be a power of 2");
-  _measured_cache_line_size = count;
+  _L1_data_cache_line_size = count;
 
   // Execute code. Illegal instructions will be replaced by 0 in the signal handler.
   VM_Version::_is_determine_features_test_running = true;
@@ -705,7 +732,7 @@ void VM_Version::config_dscr() {
   }
 }
 
-static int saved_features = 0;
+static uint64_t saved_features = 0;
 
 void VM_Version::allow_all() {
   saved_features = _features;

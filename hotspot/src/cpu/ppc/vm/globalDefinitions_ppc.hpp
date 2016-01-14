@@ -35,10 +35,17 @@ const int BytesPerInstWord = 4;
 
 const int StackAlignmentInBytes = 16;
 
+// Indicates whether the C calling conventions require that
+// 32-bit integer argument values are extended to 64 bits.
+const bool CCallingConventionRequiresIntsAsLongs = true;
+
 #define SUPPORTS_NATIVE_CX8
 
 // The PPC CPUs are NOT multiple-copy-atomic.
 #define CPU_NOT_MULTIPLE_COPY_ATOMIC
+
+// The expected size in bytes of a cache line, used to pad data structures.
+#define DEFAULT_CACHE_LINE_SIZE 128
 
 #if defined(COMPILER2) && defined(AIX)
 // Include Transactional Memory lock eliding optimization

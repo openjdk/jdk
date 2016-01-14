@@ -74,7 +74,7 @@ import javax.lang.model.SourceVersion;
  * @see ElementKindVisitor6
  * @see ElementKindVisitor7
  * @see ElementKindVisitor8
- * @since 1.9
+ * @since 9
  */
 @SupportedSourceVersion(RELEASE_9)
 public class ElementKindVisitor9<R, P> extends ElementKindVisitor8<R, P> {
