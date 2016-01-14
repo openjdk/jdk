@@ -72,7 +72,6 @@ import javax.swing.SwingWorker;
  *
  * @since 1.6
  */
-@jdk.Exported
 public abstract class JConsolePlugin {
     private volatile JConsoleContext context = null;
     private List<PropertyChangeListener> listeners = null;

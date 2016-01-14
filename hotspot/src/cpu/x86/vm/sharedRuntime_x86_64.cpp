@@ -189,7 +189,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       }
       // Save full ZMM registes(16..num_xmm_regs)
       base_addr = XSAVE_AREA_UPPERBANK;
-      int off = 0;
+      off = 0;
       int vector_len = Assembler::AVX_512bit;
       for (int n = 16; n < num_xmm_regs; n++) {
         __ evmovdqul(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n), vector_len);
@@ -199,7 +199,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     if (VM_Version::supports_evex()) {
       // Save upper bank of ZMM registers(16..31) for double/float usage
       int base_addr = XSAVE_AREA_UPPERBANK;
-      int off = 0;
+      off = 0;
       for (int n = 16; n < num_xmm_regs; n++) {
         __ movsd(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n));
       }
@@ -325,7 +325,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     assert(MaxVectorSize == 64, "only 512bit vectors are supported now");
   }
 #else
-  assert(!save_vectors, "vectors are generated only by C2");
+  assert(!restore_vectors, "vectors are generated only by C2");
 #endif
 
   // On EVEX enabled targets everything is handled in pop fpu state

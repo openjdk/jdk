@@ -72,5 +72,4 @@
  * @since 1.7
  */
 
-@jdk.Exported
 package com.sun.nio.sctp;

@@ -23,30 +23,31 @@
 
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.concurrent.ExecutionException;
-import jdk.testlibrary.Utils;
+
+import jdk.test.lib.Utils;
 import org.testng.Assert;
 import org.testng.TestNG;
 import org.testng.annotations.Test;
 
 /*
  * @test
- * @library /lib/testlibrary
- * Test counting and JavaChild.spawning and counting of Processes.
- * @run testng/othervm InfoTest
+ * @library /test/lib/share/classes
+ * @build jdk.test.lib.Utils
+ * @run testng/othervm TreeTest
+ * @summary Test counting and JavaChild.spawning and counting of Processes.
  * @key intermittent
  * @author Roger Riggs
  */

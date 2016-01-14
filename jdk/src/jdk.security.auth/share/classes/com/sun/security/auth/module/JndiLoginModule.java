@@ -151,7 +151,6 @@ import com.sun.security.auth.UnixNumericGroupPrincipal;
  * </pre>
  *
  */
-@jdk.Exported
 public class JndiLoginModule implements LoginModule {
 
     private static final ResourceBundle rb = AccessController.doPrivileged(

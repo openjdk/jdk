@@ -33,12 +33,10 @@ import javax.lang.model.element.Name;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface AttributeTree extends DocTree {
     /**
      * The kind of an attribute value.
      */
-    @jdk.Exported
     enum ValueKind {
         /** The attribute value is empty. */
         EMPTY,

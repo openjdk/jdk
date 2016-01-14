@@ -30,7 +30,6 @@ package jdk.security.jarsigner;
  *
  * @since 1.9
  */
-@jdk.Exported
 public class JarSignerException extends RuntimeException {
 
     private static final long serialVersionUID = -4732217075689309530L;

@@ -303,7 +303,6 @@ import com.sun.security.auth.UserPrincipal;
  *
  * @since 1.6
  */
-@jdk.Exported
 public class LdapLoginModule implements LoginModule {
 
     // Use the default classloader for this class to load the prompt strings.

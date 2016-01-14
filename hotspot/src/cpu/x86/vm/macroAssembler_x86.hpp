@@ -846,7 +846,7 @@ class MacroAssembler: public Assembler {
   void call(AddressLiteral entry);
 
   // Emit the CompiledIC call idiom
-  void ic_call(address entry);
+  void ic_call(address entry, jint method_index = 0);
 
   // Jumps
 
@@ -911,23 +911,18 @@ class MacroAssembler: public Assembler {
   void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp1 LP64_ONLY(COMMA Register tmp2));
+  void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
+                XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
+                Register rdx NOT_LP64(COMMA  Register tmp) LP64_ONLY(COMMA  Register tmp1)
+                LP64_ONLY(COMMA  Register tmp2) LP64_ONLY(COMMA  Register tmp3) LP64_ONLY(COMMA  Register tmp4));
 
   void increase_precision();
   void restore_precision();
-
-  // computes pow(x,y). Fallback to runtime call included.
-  void pow_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(num_fpu_regs_in_use); }
 
 private:
 
   // call runtime as a fallback for trig functions and pow/exp.
   void fp_runtime_fallback(address runtime_entry, int nb_args, int num_fpu_regs_in_use);
-
-  // computes 2^(Ylog2X); Ylog2X in ST(0)
-  void pow_exp_core_encoding();
-
-  // computes pow(x,y) or exp(x). Fallback to runtime call included.
-  void pow_or_exp(int num_fpu_regs_in_use);
 
   // these are private because users should be doing movflt/movdbl
 
@@ -1342,7 +1337,6 @@ public:
                                Register carry2);
   void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
-
   void square_rshift(Register x, Register len, Register z, Register tmp1, Register tmp3,
                      Register tmp4, Register tmp5, Register rdxReg, Register raxReg);
   void multiply_add_64_bmi2(Register sum, Register op1, Register op2, Register carry,
@@ -1361,6 +1355,9 @@ public:
   void mul_add(Register out, Register in, Register offset, Register len, Register k, Register tmp1,
                Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register rdxReg,
                Register raxReg);
+  void vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,
+                           Register result, Register tmp1, Register tmp2,
+                           XMMRegister vec1, XMMRegister vec2, XMMRegister vec3);
 #endif
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.

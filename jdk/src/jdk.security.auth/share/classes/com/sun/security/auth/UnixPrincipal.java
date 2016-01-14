@@ -41,7 +41,6 @@ import java.security.Principal;
  * @see java.security.Principal
  * @see javax.security.auth.Subject
  */
-@jdk.Exported
 public class UnixPrincipal implements Principal, java.io.Serializable {
 
     private static final long serialVersionUID = -2951667807323493631L;

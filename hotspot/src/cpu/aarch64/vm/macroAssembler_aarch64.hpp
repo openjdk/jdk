@@ -410,7 +410,7 @@ class MacroAssembler: public Assembler {
 
 #define WRAP(INSN)                                                            \
   void INSN(Register Rd, Register Rn, Register Rm, Register Ra) {             \
-    if ((VM_Version::cpu_cpuFeatures() & VM_Version::CPU_A53MAC) && Ra != zr) \
+    if ((VM_Version::features() & VM_Version::CPU_A53MAC) && Ra != zr)        \
       nop();                                                                  \
     Assembler::INSN(Rd, Rn, Rm, Ra);                                          \
   }
@@ -478,6 +478,32 @@ public:
 
   void mov(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
     orr(Vd, T, Vn, Vn);
+  }
+
+public:
+
+  // Generalized Test Bit And Branch, including a "far" variety which
+  // spans more than 32KiB.
+  void tbr(Condition cond, Register Rt, int bitpos, Label &dest, bool far = false) {
+    assert(cond == EQ || cond == NE, "must be");
+
+    if (far)
+      cond = ~cond;
+
+    void (Assembler::* branch)(Register Rt, int bitpos, Label &L);
+    if (cond == Assembler::EQ)
+      branch = &Assembler::tbz;
+    else
+      branch = &Assembler::tbnz;
+
+    if (far) {
+      Label L;
+      (this->*branch)(Rt, bitpos, L);
+      b(dest);
+      bind(L);
+    } else {
+      (this->*branch)(Rt, bitpos, dest);
+    }
   }
 
   // macro instructions for accessing and updating floating point
@@ -976,7 +1002,7 @@ public:
   }
 
   // Emit the CompiledIC call idiom
-  address ic_call(address entry);
+  address ic_call(address entry, jint method_index = 0);
 
 public:
 

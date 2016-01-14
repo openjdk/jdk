@@ -398,7 +398,7 @@ void print_statistics() {
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread
 //       can run before_exit() and all other threads must wait.
-void before_exit(JavaThread * thread) {
+void before_exit(JavaThread* thread) {
   #define BEFORE_EXIT_NOT_RUN 0
   #define BEFORE_EXIT_RUNNING 1
   #define BEFORE_EXIT_DONE    2
@@ -426,7 +426,15 @@ void before_exit(JavaThread * thread) {
   }
 
 #if INCLUDE_JVMCI
-  JVMCIRuntime::shutdown();
+  // We are not using CATCH here because we want the exit to continue normally.
+  Thread* THREAD = thread;
+  JVMCIRuntime::shutdown(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    Handle exception(THREAD, PENDING_EXCEPTION);
+    CLEAR_PENDING_EXCEPTION;
+    ttyLocker ttyl;
+    java_lang_Throwable::print_stack_trace(exception, tty);
+  }
 #endif
 
   // Hang forever on exit if we're reporting an error.
@@ -612,9 +620,7 @@ void vm_exit_during_initialization(Handle exception) {
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
   }
-  java_lang_Throwable::print(exception, tty);
-  tty->cr();
-  java_lang_Throwable::print_stack_trace(exception(), tty);
+  java_lang_Throwable::print_stack_trace(exception, tty);
   tty->cr();
   vm_notify_during_shutdown(NULL, NULL);
 

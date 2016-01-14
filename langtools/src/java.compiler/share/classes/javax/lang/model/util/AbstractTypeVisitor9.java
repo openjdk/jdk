@@ -61,7 +61,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractTypeVisitor6
  * @see AbstractTypeVisitor7
  * @see AbstractTypeVisitor8
- * @since 1.9
+ * @since 9
  */
 @SupportedSourceVersion(RELEASE_9)
 public abstract class AbstractTypeVisitor9<R, P> extends AbstractTypeVisitor8<R, P> {
