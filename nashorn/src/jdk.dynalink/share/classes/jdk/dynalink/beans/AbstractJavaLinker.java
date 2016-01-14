@@ -349,31 +349,52 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             throws Exception {
         final CallSiteDescriptor callSiteDescriptor = request.getCallSiteDescriptor();
 
+        final MissingMemberHandlerFactory missingMemberHandlerFactory;
+        final LinkerServices directLinkerServices;
+        if (linkerServices instanceof LinkerServicesWithMissingMemberHandlerFactory) {
+            final LinkerServicesWithMissingMemberHandlerFactory lswmmhf = ((LinkerServicesWithMissingMemberHandlerFactory)linkerServices);
+            missingMemberHandlerFactory = lswmmhf.missingMemberHandlerFactory;
+            directLinkerServices = lswmmhf.linkerServices;
+        } else {
+            missingMemberHandlerFactory = null;
+            directLinkerServices = linkerServices;
+        }
+
         // Handle NamedOperation(CALL_METHOD, name) separately
         final Operation operation = callSiteDescriptor.getOperation();
         if (operation instanceof NamedOperation) {
             final NamedOperation namedOperation = (NamedOperation)operation;
             if (namedOperation.getBaseOperation() == StandardOperation.CALL_METHOD) {
-                return createGuardedDynamicMethodInvocation(callSiteDescriptor,
-                        linkerServices, namedOperation.getName().toString(), methods);
+                final GuardedInvocation inv =
+                        createGuardedDynamicMethodInvocation(callSiteDescriptor,
+                        directLinkerServices, namedOperation.getName().toString(), methods);
+                if (inv == null) {
+                    return createNoSuchMemberHandler(missingMemberHandlerFactory,
+                            request, directLinkerServices).getGuardedInvocation();
+                }
+                return inv;
             }
         }
 
         final GuardedInvocationComponent gic = getGuardedInvocationComponent(
-                new ComponentLinkRequest(request, linkerServices));
+                new ComponentLinkRequest(request, directLinkerServices,
+                        missingMemberHandlerFactory));
         return gic != null ? gic.getGuardedInvocation() : null;
     }
 
     static final class ComponentLinkRequest {
         final LinkRequest linkRequest;
         final LinkerServices linkerServices;
+        final MissingMemberHandlerFactory missingMemberHandlerFactory;
         final List<Operation> operations;
         final Object name;
 
         ComponentLinkRequest(final LinkRequest linkRequest,
-                final LinkerServices linkerServices) {
+                final LinkerServices linkerServices,
+                final MissingMemberHandlerFactory missingMemberHandlerFactory) {
             this.linkRequest = linkRequest;
             this.linkerServices = linkerServices;
+            this.missingMemberHandlerFactory = missingMemberHandlerFactory;
             final Operation operation = linkRequest.getCallSiteDescriptor().getOperation();
             this.operations = Arrays.asList(
                     CompositeOperation.getOperations(
@@ -383,9 +404,11 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
 
         private ComponentLinkRequest(final LinkRequest linkRequest,
                 final LinkerServices linkerServices,
+                final MissingMemberHandlerFactory missingMemberHandlerFactory,
                 final List<Operation> operations, final Object name) {
             this.linkRequest = linkRequest;
             this.linkerServices = linkerServices;
+            this.missingMemberHandlerFactory = missingMemberHandlerFactory;
             this.operations = operations;
             this.name = name;
         }
@@ -396,6 +419,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
 
         ComponentLinkRequest popOperations() {
             return new ComponentLinkRequest(linkRequest, linkerServices,
+                    missingMemberHandlerFactory,
                     operations.subList(1, operations.size()), name);
         }
     }
@@ -416,13 +440,30 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
 
     GuardedInvocationComponent getNextComponent(final ComponentLinkRequest req) throws Exception {
         if (req.operations.isEmpty()) {
-            return null;
+            return createNoSuchMemberHandler(req.missingMemberHandlerFactory,
+                    req.linkRequest, req.linkerServices);
         }
         final GuardedInvocationComponent gic = getGuardedInvocationComponent(req);
         if (gic != null) {
             return gic;
         }
         return getNextComponent(req.popOperations());
+    }
+
+    private GuardedInvocationComponent createNoSuchMemberHandler(
+            final MissingMemberHandlerFactory missingMemberHandlerFactory,
+            final LinkRequest linkRequest, final LinkerServices linkerServices) throws Exception {
+        if (missingMemberHandlerFactory == null) {
+            return null;
+        }
+        final MethodHandle handler = missingMemberHandlerFactory.createMissingMemberHandler(linkRequest, linkerServices);
+        if (handler == null) {
+            return null;
+        }
+        final MethodType type = linkRequest.getCallSiteDescriptor().getMethodType();
+        // The returned handler is allowed to differ in return type.
+        assert handler.type().changeReturnType(type.returnType()).equals(type);
+        return getClassGuardedInvocationComponent(handler, type);
     }
 
     static final <T> List<T> pop(final List<T> l) {
