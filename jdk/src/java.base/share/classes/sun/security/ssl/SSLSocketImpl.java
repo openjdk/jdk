@@ -2598,7 +2598,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
 
     @Override
     public synchronized String getHandshakeApplicationProtocol() {
-        if ((handshaker != null) && !handshaker.started()) {
+        if ((handshaker != null) && handshaker.started()) {
             return handshaker.getHandshakeApplicationProtocol();
         }
         return null;
