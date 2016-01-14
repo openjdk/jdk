@@ -340,7 +340,8 @@ hotspot_runtime = \
 
 hotspot_serviceability = \
   sanity/ExecuteInternalVMTests.java \
-  serviceability/dcmd/compiler
+  serviceability/dcmd/compiler \
+  serviceability/logging
 
 hotspot_jprt = \
   :hotspot_compiler_1 \
