@@ -52,37 +52,12 @@ import javax.sound.sampled.AudioSystem;
  */
 public final class WaveFileWriter extends SunFileWriter {
 
-    // magic numbers
-    static  final int RIFF_MAGIC = 1380533830;
-    static  final int WAVE_MAGIC = 1463899717;
-    static  final int FMT_MAGIC  = 0x666d7420; // "fmt "
-    static  final int DATA_MAGIC = 0x64617461; // "data"
-
-    // encodings
-    static final int WAVE_FORMAT_UNKNOWN   = 0x0000;
-    static final int WAVE_FORMAT_PCM       = 0x0001;
-    static final int WAVE_FORMAT_ADPCM     = 0x0002;
-    static final int WAVE_FORMAT_ALAW      = 0x0006;
-    static final int WAVE_FORMAT_MULAW     = 0x0007;
-    static final int WAVE_FORMAT_OKI_ADPCM = 0x0010;
-    static final int WAVE_FORMAT_DIGISTD   = 0x0015;
-    static final int WAVE_FORMAT_DIGIFIX   = 0x0016;
-    static final int WAVE_IBM_FORMAT_MULAW = 0x0101;
-    static final int WAVE_IBM_FORMAT_ALAW  = 0x0102;
-    static final int WAVE_IBM_FORMAT_ADPCM = 0x0103;
-    static final int WAVE_FORMAT_DVI_ADPCM = 0x0011;
-    static final int WAVE_FORMAT_SX7383    = 0x1C07;
-
     /**
      * Constructs a new WaveFileWriter object.
      */
     public WaveFileWriter() {
         super(new AudioFileFormat.Type[]{AudioFileFormat.Type.WAVE});
     }
-
-
-    // METHODS TO IMPLEMENT AudioFileWriter
-
 
     @Override
     public AudioFileFormat.Type[] getAudioFileTypes(AudioInputStream stream) {
@@ -126,8 +101,7 @@ public final class WaveFileWriter extends SunFileWriter {
             throw new IOException("stream length not specified");
         }
 
-        int bytesWritten = writeWaveFile(stream, waveFileFormat, out);
-        return bytesWritten;
+        return writeWaveFile(stream, waveFileFormat, out);
     }
 
 
@@ -200,9 +174,9 @@ public final class WaveFileWriter extends SunFileWriter {
             encoding = streamEncoding;
             sampleSizeInBits = streamFormat.getSampleSizeInBits();
             if (streamEncoding.equals(AudioFormat.Encoding.ALAW)) {
-                waveType = WAVE_FORMAT_ALAW;
+                waveType = WaveFileFormat.WAVE_FORMAT_ALAW;
             } else {
-                waveType = WAVE_FORMAT_MULAW;
+                waveType = WaveFileFormat.WAVE_FORMAT_MULAW;
             }
         } else if ( streamFormat.getSampleSizeInBits()==8 ) {
             encoding = AudioFormat.Encoding.PCM_UNSIGNED;
