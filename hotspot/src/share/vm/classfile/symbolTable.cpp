@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -667,3 +667,53 @@ int SymboltableDCmd::num_arguments() {
     return 0;
   }
 }
+
+#ifndef PRODUCT
+// Internal test of TempNewSymbol
+void Test_TempNewSymbol() {
+  // Assert messages assume these symbols are unique, and the refcounts start at
+  // one, but code does not rely on this.
+  Thread* THREAD = Thread::current();
+  Symbol* abc = SymbolTable::new_symbol("abc", CATCH);
+  int abccount = abc->refcount();
+  TempNewSymbol ss = abc;
+  assert(ss->refcount() == abccount, "only one abc");
+  assert(ss->refcount() == abc->refcount(), "should match TempNewSymbol");
+
+  Symbol* efg = SymbolTable::new_symbol("efg", CATCH);
+  Symbol* hij = SymbolTable::new_symbol("hij", CATCH);
+  int efgcount = efg->refcount();
+  int hijcount = hij->refcount();
+
+  TempNewSymbol s1 = efg;
+  TempNewSymbol s2 = hij;
+  assert(s1->refcount() == efgcount, "one efg");
+  assert(s2->refcount() == hijcount, "one hij");
+
+  // Assignment operator
+  s1 = s2;
+  assert(hij->refcount() == hijcount + 1, "should be two hij");
+  assert(efg->refcount() == efgcount - 1, "should be no efg");
+
+  s1 = ss;  // s1 is abc
+  assert(s1->refcount() == abccount + 1, "should be two abc (s1 and ss)");
+  assert(hij->refcount() == hijcount, "should only have one hij now (s2)");
+
+  s1 = s1; // self assignment
+  assert(s1->refcount() == abccount + 1, "should still be two abc (s1 and ss)");
+
+  TempNewSymbol s3;
+  Symbol* klm = SymbolTable::new_symbol("klm", CATCH);
+  int klmcount = klm->refcount();
+  s3 = klm;   // assignment
+  assert(s3->refcount() == klmcount, "only one klm now");
+
+  Symbol* xyz = SymbolTable::new_symbol("xyz", CATCH);
+  int xyzcount = xyz->refcount();
+  { // inner scope
+     TempNewSymbol s_inner = xyz;
+  }
+  assert(xyz->refcount() == (xyzcount - 1),
+         "Should have been decremented by dtor in inner scope");
+}
+#endif // PRODUCT
