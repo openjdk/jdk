@@ -259,6 +259,10 @@ AWTGetGlyphOutline(CGGlyph *glyphs, NSFont *font,
 
     OSStatus status = noErr;
 
+    if ( isnan(tx->a) || isnan(tx->b) || isnan(tx->c) ||
+         isnan(tx->d) || isnan(tx->tx) || isnan(tx->ty)) {
+        return status;
+    }
     glyphs = glyphs + inStartIndex;
 //    advanceArray = advanceArray + inStartIndex; // TODO(cpc): use advance
 
