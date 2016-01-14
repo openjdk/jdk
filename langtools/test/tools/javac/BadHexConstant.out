@@ -1,3 +1,2 @@
 BadHexConstant.java:12:14: compiler.err.invalid.hex.number
-BadHexConstant.java:12:17: compiler.err.expected: token.identifier
-2 errors
+1 error
