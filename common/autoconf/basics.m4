@@ -23,6 +23,74 @@
 # questions.
 #
 
+# Create a function/macro that takes a series of named arguments. The call is
+# similar to AC_DEFUN, but the setup of the function looks like this:
+# BASIC_DEFUN_NAMED([MYFUNC], [FOO *BAR], [$@], [
+# ... do something
+#   AC_MSG_NOTICE([Value of BAR is ARG_BAR])
+# ])
+# A star (*) in front of a named argument means that it is required and it's
+# presence will be verified. To pass e.g. the first value as a normal indexed
+# argument, use [m4_shift($@)] as the third argument instead of [$@]. These
+# arguments are referenced in the function by their name prefixed by ARG_, e.g.
+# "ARG_FOO".
+#
+# The generated function can be called like this:
+# MYFUNC(FOO: [foo-val], BAR:
+#     [
+#         $ECHO hello world
+#     ])
+#
+#
+# Argument 1: Name of the function to define
+# Argument 2: List of legal named arguments, with a * prefix for required arguments
+# Argument 3: Argument array to treat as named, typically $@
+# Argument 4: The main function body
+AC_DEFUN([BASIC_DEFUN_NAMED],
+[
+  AC_DEFUN($1, [
+    m4_foreach(arg, m4_split($2), [
+      m4_if(m4_bregexp(arg, [^\*]), -1,
+        [
+          m4_set_add(legal_named_args, arg)
+        ],
+        [
+          m4_set_add(legal_named_args, m4_substr(arg, 1))
+          m4_set_add(required_named_args, m4_substr(arg, 1))
+        ]
+      )
+    ])
+
+    m4_foreach([arg], [$3], [
+      m4_define(arg_name, m4_substr(arg, 0, m4_bregexp(arg, [: ])))
+      m4_set_contains(legal_named_args, arg_name, [],[AC_MSG_ERROR([Internal error: arg_name is not a valid named argument to [$1]. Valid arguments are 'm4_set_contents(legal_named_args, [ ])'.])])
+      m4_set_remove(required_named_args, arg_name)
+      m4_set_remove(legal_named_args, arg_name)
+      m4_pushdef([ARG_][]arg_name, m4_substr(arg, m4_incr(m4_incr(m4_bregexp(arg, [: ])))))
+      m4_set_add(defined_args, arg_name)
+      m4_undefine([arg_name])
+    ])
+    m4_set_empty(required_named_args, [], [
+      AC_MSG_ERROR([Internal error: Required named arguments are missing for [$1]. Missing arguments: 'm4_set_contents(required_named_args, [ ])'])
+    ])
+    m4_foreach([arg], m4_indir([m4_dquote]m4_set_listc([legal_named_args])), [
+      m4_pushdef([ARG_][]arg, [])
+      m4_set_add(defined_args, arg)
+    ])
+    m4_set_delete(legal_named_args)
+    m4_set_delete(required_named_args)
+
+    # Execute function body
+    $4
+
+    m4_foreach([arg], m4_indir([m4_dquote]m4_set_listc([defined_args])), [
+      m4_popdef([ARG_][]arg)
+    ])
+
+    m4_set_delete(defined_args)
+  ])
+])
+
 # Test if $1 is a valid argument to $3 (often is $JAVA passed as $3)
 # If so, then append $1 to $2 \
 # Also set JVM_ARG_OK to true/false depending on outcome.
