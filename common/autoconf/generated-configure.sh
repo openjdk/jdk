@@ -14818,7 +14818,7 @@ test -n "$target_alias" &&
       VAR_CPU_ENDIAN=big
       ;;
     powerpc64le)
-      VAR_CPU=ppc64
+      VAR_CPU=ppc64le
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
@@ -14957,7 +14957,7 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_CPU_ENDIAN=big
       ;;
     powerpc64le)
-      VAR_CPU=ppc64
+      VAR_CPU=ppc64le
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
@@ -47249,7 +47249,7 @@ $as_echo "$supports" >&6; }
       C_O_FLAG_HI="-O3 -qstrict"
       C_O_FLAG_NORM="-O2"
       C_O_FLAG_DEBUG="-qnoopt"
-      C_O_FLAG_NONE="-qnoop"
+      C_O_FLAG_NONE="-qnoopt"
     elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
       C_O_FLAG_HIGHEST="-O2"
       C_O_FLAG_HI="-O1"
@@ -48273,7 +48273,10 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
 
     ENABLE_DEBUG_SYMBOLS=true
     ZIP_DEBUGINFO_FILES=true
-    DEBUG_BINARIES=true
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
     ENABLE_DEBUG_SYMBOLS=false
@@ -48283,6 +48286,8 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xinternal; then
     ENABLE_DEBUG_SYMBOLS=false  # -g option only
     ZIP_DEBUGINFO_FILES=false
+    # Fastdebug builds with this setting will essentially be slowdebug
+    # in hotspot.
     DEBUG_BINARIES=true
     STRIP_POLICY=no_strip
     STRIP=""
@@ -48298,7 +48303,10 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
 
     ENABLE_DEBUG_SYMBOLS=true
     ZIP_DEBUGINFO_FILES=false
-    DEBUG_BINARIES=true
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
   else
     as_fn_error $? "Allowed native debug symbols are: none, internal, external, zipped" "$LINENO" 5
