@@ -110,7 +110,7 @@ public class Arrays {
      * Checks that {@code fromIndex} and {@code toIndex} are in
      * the range and throws an exception if they aren't.
      */
-    private static void rangeCheck(int arrayLength, int fromIndex, int toIndex) {
+    static void rangeCheck(int arrayLength, int fromIndex, int toIndex) {
         if (fromIndex > toIndex) {
             throw new IllegalArgumentException(
                     "fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
@@ -2579,11 +2579,7 @@ public class Arrays {
         if (a2.length != length)
             return false;
 
-        for (int i=0; i<length; i++)
-            if (a[i] != a2[i])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, a2, length) < 0;
     }
 
     /**
@@ -2628,11 +2624,9 @@ public class Arrays {
         if (aLength != bLength)
             return false;
 
-        for (int i = 0; i < aLength; i++)
-            if (a[aFromIndex++] != b[bFromIndex++])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, aFromIndex,
+                                      b, bFromIndex,
+                                      aLength) < 0;
     }
 
     /**
@@ -2657,11 +2651,7 @@ public class Arrays {
         if (a2.length != length)
             return false;
 
-        for (int i=0; i<length; i++)
-            if (a[i] != a2[i])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, a2, length) < 0;
     }
 
     /**
@@ -2706,11 +2696,9 @@ public class Arrays {
         if (aLength != bLength)
             return false;
 
-        for (int i = 0; i < aLength; i++)
-            if (a[aFromIndex++] != b[bFromIndex++])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, aFromIndex,
+                                      b, bFromIndex,
+                                      aLength) < 0;
     }
 
     /**
@@ -2735,11 +2723,7 @@ public class Arrays {
         if (a2.length != length)
             return false;
 
-        for (int i=0; i<length; i++)
-            if (a[i] != a2[i])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, a2, length) < 0;
     }
 
     /**
@@ -2784,11 +2768,9 @@ public class Arrays {
         if (aLength != bLength)
             return false;
 
-        for (int i = 0; i < aLength; i++)
-            if (a[aFromIndex++] != b[bFromIndex++])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, aFromIndex,
+                                      b, bFromIndex,
+                                      aLength) < 0;
     }
 
     /**
@@ -2814,11 +2796,7 @@ public class Arrays {
         if (a2.length != length)
             return false;
 
-        for (int i=0; i<length; i++)
-            if (a[i] != a2[i])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, a2, length) < 0;
     }
 
     /**
@@ -2863,11 +2841,9 @@ public class Arrays {
         if (aLength != bLength)
             return false;
 
-        for (int i = 0; i < aLength; i++)
-            if (a[aFromIndex++] != b[bFromIndex++])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, aFromIndex,
+                                      b, bFromIndex,
+                                      aLength) < 0;
     }
 
     /**
@@ -2893,11 +2869,7 @@ public class Arrays {
         if (a2.length != length)
             return false;
 
-        for (int i=0; i<length; i++)
-            if (a[i] != a2[i])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, a2, length) < 0;
     }
 
     /**
@@ -2942,11 +2914,9 @@ public class Arrays {
         if (aLength != bLength)
             return false;
 
-        for (int i = 0; i < aLength; i++)
-            if (a[aFromIndex++] != b[bFromIndex++])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, aFromIndex,
+                                      b, bFromIndex,
+                                      aLength) < 0;
     }
 
     /**
@@ -2971,11 +2941,7 @@ public class Arrays {
         if (a2.length != length)
             return false;
 
-        for (int i=0; i<length; i++)
-            if (a[i] != a2[i])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, a2, length) < 0;
     }
 
     /**
@@ -3020,11 +2986,9 @@ public class Arrays {
         if (aLength != bLength)
             return false;
 
-        for (int i = 0; i < aLength; i++)
-            if (a[aFromIndex++] != b[bFromIndex++])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(a, aFromIndex,
+                                      b, bFromIndex,
+                                      aLength) < 0;
     }
 
     /**
@@ -3055,14 +3019,7 @@ public class Arrays {
         if (a2.length != length)
             return false;
 
-        for (int i=0; i<length; i++) {
-            double v1 = a[i], v2 = a2[i];
-            if (Double.doubleToRawLongBits(v1) != Double.doubleToRawLongBits(v2))
-                if (!Double.isNaN(v1) || !Double.isNaN(v2))
-                    return false;
-        }
-
-        return true;
+        return ArraysSupport.mismatch(a, a2, length) < 0;
     }
 
     /**
@@ -3113,14 +3070,8 @@ public class Arrays {
         if (aLength != bLength)
             return false;
 
-        for (int i = 0; i < aLength; i++) {
-            Double va = a[aFromIndex++], vb = b[bFromIndex++];
-            if (Double.doubleToRawLongBits(va) != Double.doubleToRawLongBits(vb))
-                if (!Double.isNaN(va) || !Double.isNaN(vb))
-                    return false;
-        }
-
-        return true;
+        return ArraysSupport.mismatch(a, aFromIndex,
+                                      b, bFromIndex, aLength) < 0;
     }
 
     /**
@@ -3151,14 +3102,7 @@ public class Arrays {
         if (a2.length != length)
             return false;
 
-        for (int i=0; i<length; i++) {
-            float v1 = a[i], v2 = a2[i];
-            if (Float.floatToRawIntBits(v1) != Float.floatToRawIntBits(v2))
-                if (!Float.isNaN(v1) || !Float.isNaN(v2))
-                    return false;
-        }
-
-        return true;
+        return ArraysSupport.mismatch(a, a2, length) < 0;
     }
 
     /**
@@ -3209,14 +3153,8 @@ public class Arrays {
         if (aLength != bLength)
             return false;
 
-        for (int i = 0; i < aLength; i++) {
-            float va = a[aFromIndex++], vb = b[bFromIndex++];
-            if (Float.floatToRawIntBits(va) != Float.floatToRawIntBits(vb))
-                if (!Float.isNaN(va) || !Float.isNaN(vb))
-                    return false;
-        }
-
-        return true;
+        return ArraysSupport.mismatch(a, aFromIndex,
+                                      b, bFromIndex, aLength) < 0;
     }
 
     /**
@@ -5804,9 +5742,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return Boolean.compare(a[i], b[i]);
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Boolean.compare(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -5880,11 +5819,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            boolean va = a[aFromIndex++];
-            boolean vb = b[bFromIndex++];
-            if (va != vb) return Boolean.compare(va, vb);
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Boolean.compare(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -5939,9 +5878,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return Byte.compare(a[i], b[i]);
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Byte.compare(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -6014,11 +5954,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            byte va = a[aFromIndex++];
-            byte vb = b[bFromIndex++];
-            if (va != vb) return Byte.compare(va, vb);
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Byte.compare(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -6066,9 +6006,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return Byte.compareUnsigned(a[i], b[i]);
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Byte.compareUnsigned(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -6133,11 +6074,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            byte va = a[aFromIndex++];
-            byte vb = b[bFromIndex++];
-            if (va != vb) return Byte.compareUnsigned(va, vb);
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Byte.compareUnsigned(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -6192,9 +6133,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return Short.compare(a[i], b[i]);
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Short.compare(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -6267,11 +6209,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            short va = a[aFromIndex++];
-            short vb = b[bFromIndex++];
-            if (va != vb) return Short.compare(va, vb);
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Short.compare(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -6319,9 +6261,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return Short.compareUnsigned(a[i], b[i]);
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Short.compareUnsigned(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -6385,11 +6328,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            short va = a[aFromIndex++];
-            short vb = b[bFromIndex++];
-            if (va != vb) return Short.compareUnsigned(va, vb);
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Short.compareUnsigned(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -6444,9 +6387,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return Character.compare(a[i], b[i]);
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Character.compare(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -6519,11 +6463,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            char va = a[aFromIndex++];
-            char vb = b[bFromIndex++];
-            if (va != vb) return Character.compare(va, vb);
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Character.compare(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -6578,9 +6522,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return Integer.compare(a[i], b[i]);
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Integer.compare(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -6653,11 +6598,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            int va = a[aFromIndex++];
-            int vb = b[bFromIndex++];
-            if (va != vb) return Integer.compare(va, vb);
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Integer.compare(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -6705,9 +6650,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return Integer.compareUnsigned(a[i], b[i]);
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Integer.compareUnsigned(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -6771,11 +6717,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            int va = a[aFromIndex++];
-            int vb = b[bFromIndex++];
-            if (va != vb) return Integer.compareUnsigned(va, vb);
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Integer.compareUnsigned(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -6830,9 +6776,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return Long.compare(a[i], b[i]);
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Long.compare(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -6905,11 +6852,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            long va = a[aFromIndex++];
-            long vb = b[bFromIndex++];
-            if (va != vb) return Long.compare(va, vb);
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Long.compare(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -6957,9 +6904,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return Long.compareUnsigned(a[i], b[i]);
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Long.compareUnsigned(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -7023,11 +6971,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            long va = a[aFromIndex++];
-            long vb = b[bFromIndex++];
-            if (va != vb) return Long.compareUnsigned(va, vb);
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Long.compareUnsigned(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -7082,13 +7030,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            float va = a[i], vb = b[i];
-            if (Float.floatToRawIntBits(va) != Float.floatToRawIntBits(vb)) {
-                int c = Float.compare(va, vb);
-                if (c != 0) return c;
-            }
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Float.compare(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -7161,13 +7106,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            float va = a[aFromIndex++], vb = b[bFromIndex++];
-            if (Float.floatToRawIntBits(va) != Float.floatToRawIntBits(vb)) {
-                int c = Float.compare(va, vb);
-                if (c != 0) return c;
-            }
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Float.compare(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -7222,13 +7165,10 @@ public class Arrays {
         if (a == null || b == null)
             return a == null ? -1 : 1;
 
-        int length = Math.min(a.length, b.length);
-        for (int i = 0; i < length; i++) {
-            double va = a[i], vb = b[i];
-            if (Double.doubleToRawLongBits(va) != Double.doubleToRawLongBits(vb)) {
-                int c = Double.compare(va, vb);
-                if (c != 0) return c;
-            }
+        int i = ArraysSupport.mismatch(a, b,
+                                       Math.min(a.length, b.length));
+        if (i >= 0) {
+            return Double.compare(a[i], b[i]);
         }
 
         return a.length - b.length;
@@ -7301,13 +7241,11 @@ public class Arrays {
 
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
-        int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            double va = a[aFromIndex++], vb = b[bFromIndex++];
-            if (Double.doubleToRawLongBits(va) != Double.doubleToRawLongBits(vb)) {
-                int c = Double.compare(va, vb);
-                if (c != 0) return c;
-            }
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       Math.min(aLength, bLength));
+        if (i >= 0) {
+            return Double.compare(a[aFromIndex + i], b[bFromIndex + i]);
         }
 
         return aLength - bLength;
@@ -7673,11 +7611,8 @@ public class Arrays {
         if (a == b)
             return -1;
 
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return i;
-        }
-
-        return a.length != b.length ? length : -1;
+        int i = ArraysSupport.mismatch(a, b, length);
+        return (i < 0 && a.length != b.length) ? length : i;
     }
 
     /**
@@ -7749,11 +7684,10 @@ public class Arrays {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            if (a[aFromIndex++] != b[bFromIndex++]) return i;
-        }
-
-        return aLength != bLength ? length : -1;
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       length);
+        return (i < 0 && aLength != bLength) ? length : i;
     }
 
     // Mismatch byte
@@ -7804,11 +7738,8 @@ public class Arrays {
         if (a == b)
             return -1;
 
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return i;
-        }
-
-        return a.length != b.length ? length : -1;
+        int i = ArraysSupport.mismatch(a, b, length);
+        return (i < 0 && a.length != b.length) ? length : i;
     }
 
     /**
@@ -7880,11 +7811,10 @@ public class Arrays {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            if (a[aFromIndex++] != b[bFromIndex++]) return i;
-        }
-
-        return aLength != bLength ? length : -1;
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       length);
+        return (i < 0 && aLength != bLength) ? length : i;
     }
 
     // Mismatch char
@@ -7935,11 +7865,8 @@ public class Arrays {
         if (a == b)
             return -1;
 
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return i;
-        }
-
-        return a.length != b.length ? length : -1;
+        int i = ArraysSupport.mismatch(a, b, length);
+        return (i < 0 && a.length != b.length) ? length : i;
     }
 
     /**
@@ -8011,11 +7938,10 @@ public class Arrays {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            if (a[aFromIndex++] != b[bFromIndex++]) return i;
-        }
-
-        return aLength != bLength ? length : -1;
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       length);
+        return (i < 0 && aLength != bLength) ? length : i;
     }
 
     // Mismatch short
@@ -8066,11 +7992,8 @@ public class Arrays {
         if (a == b)
             return -1;
 
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return i;
-        }
-
-        return a.length != b.length ? length : -1;
+        int i = ArraysSupport.mismatch(a, b, length);
+        return (i < 0 && a.length != b.length) ? length : i;
     }
 
     /**
@@ -8142,11 +8065,10 @@ public class Arrays {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            if (a[aFromIndex++] != b[bFromIndex++]) return i;
-        }
-
-        return aLength != bLength ? length : -1;
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       length);
+        return (i < 0 && aLength != bLength) ? length : i;
     }
 
     // Mismatch int
@@ -8197,11 +8119,8 @@ public class Arrays {
         if (a == b)
             return -1;
 
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return i;
-        }
-
-        return a.length != b.length ? length : -1;
+        int i = ArraysSupport.mismatch(a, b, length);
+        return (i < 0 && a.length != b.length) ? length : i;
     }
 
     /**
@@ -8273,11 +8192,10 @@ public class Arrays {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            if (a[aFromIndex++] != b[bFromIndex++]) return i;
-        }
-
-        return aLength != bLength ? length : -1;
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       length);
+        return (i < 0 && aLength != bLength) ? length : i;
     }
 
     // Mismatch long
@@ -8328,11 +8246,8 @@ public class Arrays {
         if (a == b)
             return -1;
 
-        for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) return i;
-        }
-
-        return a.length != b.length ? length : -1;
+        int i = ArraysSupport.mismatch(a, b, length);
+        return (i < 0 && a.length != b.length) ? length : i;
     }
 
     /**
@@ -8404,11 +8319,10 @@ public class Arrays {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            if (a[aFromIndex++] != b[bFromIndex++]) return i;
-        }
-
-        return aLength != bLength ? length : -1;
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       length);
+        return (i < 0 && aLength != bLength) ? length : i;
     }
 
     // Mismatch float
@@ -8459,14 +8373,8 @@ public class Arrays {
         if (a == b)
             return -1;
 
-        for (int i = 0; i < length; i++) {
-            float va = a[i], vb = b[i];
-            if (Float.floatToRawIntBits(va) != Float.floatToRawIntBits(vb))
-                if (!Float.isNaN(va) || !Float.isNaN(vb))
-                    return i;
-        }
-
-        return a.length != b.length ? length : -1;
+        int i = ArraysSupport.mismatch(a, b, length);
+        return (i < 0 && a.length != b.length) ? length : i;
     }
 
     /**
@@ -8538,14 +8446,10 @@ public class Arrays {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            float va = a[aFromIndex++], vb = b[bFromIndex++];
-            if (Float.floatToRawIntBits(va) != Float.floatToRawIntBits(vb))
-                if (!Float.isNaN(va) || !Float.isNaN(vb))
-                    return i;
-        }
-
-        return aLength != bLength ? length : -1;
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       length);
+        return (i < 0 && aLength != bLength) ? length : i;
     }
 
     // Mismatch double
@@ -8596,14 +8500,8 @@ public class Arrays {
         if (a == b)
             return -1;
 
-        for (int i = 0; i < length; i++) {
-            double va = a[i], vb = b[i];
-            if (Double.doubleToRawLongBits(va) != Double.doubleToRawLongBits(vb))
-                if (!Double.isNaN(va) || !Double.isNaN(vb))
-                    return i;
-        }
-
-        return a.length != b.length ? length : -1;
+        int i = ArraysSupport.mismatch(a, b, length);
+        return (i < 0 && a.length != b.length) ? length : i;
     }
 
     /**
@@ -8675,14 +8573,10 @@ public class Arrays {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
-        for (int i = 0; i < length; i++) {
-            double va = a[aFromIndex++], vb = b[bFromIndex++];
-            if (Double.doubleToRawLongBits(va) != Double.doubleToRawLongBits(vb))
-                if (!Double.isNaN(va) || !Double.isNaN(vb))
-                    return i;
-        }
-
-        return aLength != bLength ? length : -1;
+        int i = ArraysSupport.mismatch(a, aFromIndex,
+                                       b, bFromIndex,
+                                       length);
+        return (i < 0 && aLength != bLength) ? length : i;
     }
 
     // Mismatch objects
