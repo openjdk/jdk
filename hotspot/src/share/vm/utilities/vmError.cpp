@@ -1234,38 +1234,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     log_done = true;
   }
 
-
-  static bool skip_OnError = false;
-  if (!skip_OnError && OnError && OnError[0]) {
-    skip_OnError = true;
-
-    out.print_raw_cr("#");
-    out.print_raw   ("# -XX:OnError=\"");
-    out.print_raw   (OnError);
-    out.print_raw_cr("\"");
-
-    char* cmd;
-    const char* ptr = OnError;
-    while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != NULL){
-      out.print_raw   ("#   Executing ");
-#if defined(LINUX) || defined(_ALLBSD_SOURCE)
-      out.print_raw   ("/bin/sh -c ");
-#elif defined(SOLARIS)
-      out.print_raw   ("/usr/bin/sh -c ");
-#endif
-      out.print_raw   ("\"");
-      out.print_raw   (cmd);
-      out.print_raw_cr("\" ...");
-
-      if (os::fork_and_exec(cmd) < 0) {
-        out.print_cr("os::fork_and_exec failed: %s (%d)", strerror(errno), errno);
-      }
-    }
-
-    // done with OnError
-    OnError = NULL;
-  }
-
   static bool skip_replay = ReplayCompiles; // Do not overwrite file during replay
   if (DumpReplayDataOnError && _thread && _thread->is_Compiler_thread() && !skip_replay) {
     skip_replay = true;
@@ -1293,6 +1261,40 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
     out.print_raw_cr("#");
     print_bug_submit_message(&out, _thread);
+  }
+
+  static bool skip_OnError = false;
+  if (!skip_OnError && OnError && OnError[0]) {
+    skip_OnError = true;
+
+    // Flush output and finish logs before running OnError commands.
+    ostream_abort();
+
+    out.print_raw_cr("#");
+    out.print_raw   ("# -XX:OnError=\"");
+    out.print_raw   (OnError);
+    out.print_raw_cr("\"");
+
+    char* cmd;
+    const char* ptr = OnError;
+    while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != NULL){
+      out.print_raw   ("#   Executing ");
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
+      out.print_raw   ("/bin/sh -c ");
+#elif defined(SOLARIS)
+      out.print_raw   ("/usr/bin/sh -c ");
+#endif
+      out.print_raw   ("\"");
+      out.print_raw   (cmd);
+      out.print_raw_cr("\" ...");
+
+      if (os::fork_and_exec(cmd) < 0) {
+        out.print_cr("os::fork_and_exec failed: %s (%d)", strerror(errno), errno);
+      }
+    }
+
+    // done with OnError
+    OnError = NULL;
   }
 
   if (!UseOSErrorReporting) {
