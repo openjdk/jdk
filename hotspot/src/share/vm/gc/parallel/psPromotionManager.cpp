@@ -30,6 +30,7 @@
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/padded.inline.hpp"
@@ -99,7 +100,7 @@ void PSPromotionManager::pre_scavenge() {
 bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
   bool promotion_failure_occurred = false;
 
-  TASKQUEUE_STATS_ONLY(if (PrintTaskqueue) print_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
   for (uint i = 0; i < ParallelGCThreads + 1; i++) {
     PSPromotionManager* manager = manager_array(i);
     assert(manager->claimed_stack_depth()->is_empty(), "should be empty");
@@ -128,7 +129,13 @@ static const char* const pm_stats_hdr[] = {
 };
 
 void
-PSPromotionManager::print_taskqueue_stats(outputStream* const out) {
+PSPromotionManager::print_taskqueue_stats() {
+  if (!develop_log_is_enabled(Trace, gc, task, stats)) {
+    return;
+  }
+  LogHandle(gc, task, stats) log;
+  ResourceMark rm;
+  outputStream* out = log.trace_stream();
   out->print_cr("== GC Tasks Stats, GC %3d",
                 ParallelScavengeHeap::heap()->total_collections());
 
@@ -368,12 +375,7 @@ static void oop_ps_push_contents_specialized(oop obj, InstanceRefKlass *klass, P
   T  next_oop = oopDesc::load_heap_oop(next_addr);
   if (!oopDesc::is_null(next_oop)) { // i.e. ref is not "active"
     T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
-    debug_only(
-      if(TraceReferenceGC && PrintGCDetails) {
-        gclog_or_tty->print_cr("   Process discovered as normal "
-                               PTR_FORMAT, p2i(discovered_addr));
-      }
-    )
+    log_develop_trace(gc, ref)("   Process discovered as normal " PTR_FORMAT, p2i(discovered_addr));
     if (PSScavenge::should_scavenge(discovered_addr)) {
       pm->claim_or_forward_depth(discovered_addr);
     }
@@ -430,13 +432,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
     obj = obj->forwardee();
   }
 
-  if (TraceScavenge) {
-    gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " (%d)}",
-                           "promotion-failure",
-                           obj->klass()->internal_name(),
-                           p2i(obj), obj->size());
-
-  }
+  log_develop_trace(gc, scavenge)("{promotion-failure %s " PTR_FORMAT " (%d)}", obj->klass()->internal_name(), p2i(obj), obj->size());
 
   return obj;
 }

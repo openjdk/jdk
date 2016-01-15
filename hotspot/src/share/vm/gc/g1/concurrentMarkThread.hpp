@@ -40,7 +40,6 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   double _vtime_accum;  // Accumulated virtual time.
 
   double _vtime_mark_accum;
-  void cm_log(bool doit, bool join_sts, const char* fmt, ...) ATTRIBUTE_PRINTF(4, 5);
 
  public:
   virtual void run();

@@ -40,5 +40,3 @@
   // For others we can use a normal (native) entry.
   static bool math_entry_available(AbstractInterpreter::MethodKind kind);
 #endif // CPU_PPC_VM_TEMPLATEINTERPRETER_PPC_HPP
-
-

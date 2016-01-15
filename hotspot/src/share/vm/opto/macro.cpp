@@ -1522,11 +1522,20 @@ void PhaseMacroExpand::expand_allocate_common(
 
     // If initialization is performed by an array copy, any required
     // MemBarStoreStore was already added. If the object does not
-    // escape no need for a MemBarStoreStore. Otherwise we need a
-    // MemBarStoreStore so that stores that initialize this object
-    // can't be reordered with a subsequent store that makes this
-    // object accessible by other threads.
+    // escape no need for a MemBarStoreStore. If the object does not
+    // escape in its initializer and memory barrier (MemBarStoreStore or
+    // stronger) is already added at exit of initializer, also no need
+    // for a MemBarStoreStore. Otherwise we need a MemBarStoreStore
+    // so that stores that initialize this object can't be reordered
+    // with a subsequent store that makes this object accessible by
+    // other threads.
+    // Other threads include java threads and JVM internal threads
+    // (for example concurrent GC threads). Current concurrent GC
+    // implementation: CMS and G1 will not scan newly created object,
+    // so it's safe to skip storestore barrier when allocation does
+    // not escape.
     if (!alloc->does_not_escape_thread() &&
+        !alloc->is_allocation_MemBar_redundant() &&
         (init == NULL || !init->is_complete_with_arraycopy())) {
       if (init == NULL || init->req() < InitializeNode::RawStores) {
         // No InitializeNode or no stores captured by zeroing

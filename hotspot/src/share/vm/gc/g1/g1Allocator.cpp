@@ -353,7 +353,7 @@ bool G1ArchiveAllocator::alloc_new_region() {
   assert(hr->is_empty(), "expected empty region (index %u)", hr->hrm_index());
   hr->set_archive();
   _g1h->old_set_add(hr);
-  _g1h->hr_printer()->alloc(hr, G1HRPrinter::Archive);
+  _g1h->hr_printer()->alloc(hr);
   _allocated_regions.append(hr);
   _allocation_region = hr;
 

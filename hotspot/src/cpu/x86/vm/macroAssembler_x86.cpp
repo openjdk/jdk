@@ -1059,12 +1059,28 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // touch it again.  (It was touched as (tmp-pagesize) but then tmp
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
-  // the way down to and including i=StackShadowPages.
-  for (int i = 1; i < StackShadowPages; i++) {
+  // the way down including all pages in the shadow zone.
+  for (int i = 1; i < ((int)JavaThread::stack_shadow_zone_size() / os::vm_page_size()); i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
     movptr(Address(tmp, (-i*os::vm_page_size())), size );
   }
+}
+
+void MacroAssembler::reserved_stack_check() {
+    // testing if reserved zone needs to be enabled
+    Label no_reserved_zone_enabling;
+    Register thread = NOT_LP64(rsi) LP64_ONLY(r15_thread);
+    NOT_LP64(get_thread(rsi);)
+
+    cmpptr(rsp, Address(thread, JavaThread::reserved_stack_activation_offset()));
+    jcc(Assembler::below, no_reserved_zone_enabling);
+
+    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), thread);
+    jump(RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()));
+    should_not_reach_here();
+
+    bind(no_reserved_zone_enabling);
 }
 
 int MacroAssembler::biased_locking_enter(Register lock_reg,
@@ -2261,8 +2277,8 @@ void MacroAssembler::call(AddressLiteral entry) {
   }
 }
 
-void MacroAssembler::ic_call(address entry) {
-  RelocationHolder rh = virtual_call_Relocation::spec(pc());
+void MacroAssembler::ic_call(address entry, jint method_index) {
+  RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   movptr(rax, (intptr_t)Universe::non_oop_word());
   call(AddressLiteral(entry, rh));
 }
@@ -2509,11 +2525,9 @@ void MacroAssembler::call_VM_base(Register oop_result,
   // Only interpreter should have to clear fp
   reset_last_Java_frame(java_thread, true, false);
 
-#ifndef CC_INTERP
    // C++ interp handles this in the interpreter
   check_and_handle_popframe(java_thread);
   check_and_handle_earlyret(java_thread);
-#endif /* CC_INTERP */
 
   if (check_exceptions) {
     // check for pending exceptions (java_thread is set upon return)
@@ -3044,50 +3058,6 @@ void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src) {
   }
 }
 
-void MacroAssembler::pow_exp_core_encoding() {
-  // kills rax, rcx, rdx
-  subptr(rsp,sizeof(jdouble));
-  // computes 2^X. Stack: X ...
-  // f2xm1 computes 2^X-1 but only operates on -1<=X<=1. Get int(X) and
-  // keep it on the thread's stack to compute 2^int(X) later
-  // then compute 2^(X-int(X)) as (2^(X-int(X)-1+1)
-  // final result is obtained with: 2^X = 2^int(X) * 2^(X-int(X))
-  fld_s(0);                 // Stack: X X ...
-  frndint();                // Stack: int(X) X ...
-  fsuba(1);                 // Stack: int(X) X-int(X) ...
-  fistp_s(Address(rsp,0));  // move int(X) as integer to thread's stack. Stack: X-int(X) ...
-  f2xm1();                  // Stack: 2^(X-int(X))-1 ...
-  fld1();                   // Stack: 1 2^(X-int(X))-1 ...
-  faddp(1);                 // Stack: 2^(X-int(X))
-  // computes 2^(int(X)): add exponent bias (1023) to int(X), then
-  // shift int(X)+1023 to exponent position.
-  // Exponent is limited to 11 bits if int(X)+1023 does not fit in 11
-  // bits, set result to NaN. 0x000 and 0x7FF are reserved exponent
-  // values so detect them and set result to NaN.
-  movl(rax,Address(rsp,0));
-  movl(rcx, -2048); // 11 bit mask and valid NaN binary encoding
-  addl(rax, 1023);
-  movl(rdx,rax);
-  shll(rax,20);
-  // Check that 0 < int(X)+1023 < 2047. Otherwise set rax to NaN.
-  addl(rdx,1);
-  // Check that 1 < int(X)+1023+1 < 2048
-  // in 3 steps:
-  // 1- (int(X)+1023+1)&-2048 == 0 => 0 <= int(X)+1023+1 < 2048
-  // 2- (int(X)+1023+1)&-2048 != 0
-  // 3- (int(X)+1023+1)&-2048 != 1
-  // Do 2- first because addl just updated the flags.
-  cmov32(Assembler::equal,rax,rcx);
-  cmpl(rdx,1);
-  cmov32(Assembler::equal,rax,rcx);
-  testl(rdx,rcx);
-  cmov32(Assembler::notEqual,rax,rcx);
-  movl(Address(rsp,4),rax);
-  movl(Address(rsp,0),0);
-  fmul_d(Address(rsp,0));   // Stack: 2^X ...
-  addptr(rsp,sizeof(jdouble));
-}
-
 void MacroAssembler::increase_precision() {
   subptr(rsp, BytesPerWord);
   fnstcw(Address(rsp, 0));
@@ -3101,194 +3071,6 @@ void MacroAssembler::increase_precision() {
 void MacroAssembler::restore_precision() {
   fldcw(Address(rsp, 0));
   addptr(rsp, BytesPerWord);
-}
-
-void MacroAssembler::fast_pow() {
-  // computes X^Y = 2^(Y * log2(X))
-  // if fast computation is not possible, result is NaN. Requires
-  // fallback from user of this macro.
-  // increase precision for intermediate steps of the computation
-  BLOCK_COMMENT("fast_pow {");
-  increase_precision();
-  fyl2x();                 // Stack: (Y*log2(X)) ...
-  pow_exp_core_encoding(); // Stack: exp(X) ...
-  restore_precision();
-  BLOCK_COMMENT("} fast_pow");
-}
-
-void MacroAssembler::pow_or_exp(int num_fpu_regs_in_use) {
-  // kills rax, rcx, rdx
-  // pow and exp needs 2 extra registers on the fpu stack.
-  Label slow_case, done;
-  Register tmp = noreg;
-  if (!VM_Version::supports_cmov()) {
-    // fcmp needs a temporary so preserve rdx,
-    tmp = rdx;
-  }
-  Register tmp2 = rax;
-  Register tmp3 = rcx;
-
-  // Stack: X Y
-  Label x_negative, y_not_2;
-
-  static double two = 2.0;
-  ExternalAddress two_addr((address)&two);
-
-  // constant maybe too far on 64 bit
-  lea(tmp2, two_addr);
-  fld_d(Address(tmp2, 0));    // Stack: 2 X Y
-  fcmp(tmp, 2, true, false);  // Stack: X Y
-  jcc(Assembler::parity, y_not_2);
-  jcc(Assembler::notEqual, y_not_2);
-
-  fxch(); fpop();             // Stack: X
-  fmul(0);                    // Stack: X*X
-
-  jmp(done);
-
-  bind(y_not_2);
-
-  fldz();                     // Stack: 0 X Y
-  fcmp(tmp, 1, true, false);  // Stack: X Y
-  jcc(Assembler::above, x_negative);
-
-  // X >= 0
-
-  fld_s(1);                   // duplicate arguments for runtime call. Stack: Y X Y
-  fld_s(1);                   // Stack: X Y X Y
-  fast_pow();                 // Stack: X^Y X Y
-  fcmp(tmp, 0, false, false); // Stack: X^Y X Y
-  // X^Y not equal to itself: X^Y is NaN go to slow case.
-  jcc(Assembler::parity, slow_case);
-  // get rid of duplicate arguments. Stack: X^Y
-  if (num_fpu_regs_in_use > 0) {
-    fxch(); fpop();
-    fxch(); fpop();
-  } else {
-    ffree(2);
-    ffree(1);
-  }
-  jmp(done);
-
-  // X <= 0
-  bind(x_negative);
-
-  fld_s(1);                   // Stack: Y X Y
-  frndint();                  // Stack: int(Y) X Y
-  fcmp(tmp, 2, false, false); // Stack: int(Y) X Y
-  jcc(Assembler::notEqual, slow_case);
-
-  subptr(rsp, 8);
-
-  // For X^Y, when X < 0, Y has to be an integer and the final
-  // result depends on whether it's odd or even. We just checked
-  // that int(Y) == Y.  We move int(Y) to gp registers as a 64 bit
-  // integer to test its parity. If int(Y) is huge and doesn't fit
-  // in the 64 bit integer range, the integer indefinite value will
-  // end up in the gp registers. Huge numbers are all even, the
-  // integer indefinite number is even so it's fine.
-
-#ifdef ASSERT
-  // Let's check we don't end up with an integer indefinite number
-  // when not expected. First test for huge numbers: check whether
-  // int(Y)+1 == int(Y) which is true for very large numbers and
-  // those are all even. A 64 bit integer is guaranteed to not
-  // overflow for numbers where y+1 != y (when precision is set to
-  // double precision).
-  Label y_not_huge;
-
-  fld1();                     // Stack: 1 int(Y) X Y
-  fadd(1);                    // Stack: 1+int(Y) int(Y) X Y
-
-#ifdef _LP64
-  // trip to memory to force the precision down from double extended
-  // precision
-  fstp_d(Address(rsp, 0));
-  fld_d(Address(rsp, 0));
-#endif
-
-  fcmp(tmp, 1, true, false);  // Stack: int(Y) X Y
-#endif
-
-  // move int(Y) as 64 bit integer to thread's stack
-  fistp_d(Address(rsp,0));    // Stack: X Y
-
-#ifdef ASSERT
-  jcc(Assembler::notEqual, y_not_huge);
-
-  // Y is huge so we know it's even. It may not fit in a 64 bit
-  // integer and we don't want the debug code below to see the
-  // integer indefinite value so overwrite int(Y) on the thread's
-  // stack with 0.
-  movl(Address(rsp, 0), 0);
-  movl(Address(rsp, 4), 0);
-
-  bind(y_not_huge);
-#endif
-
-  fld_s(1);                   // duplicate arguments for runtime call. Stack: Y X Y
-  fld_s(1);                   // Stack: X Y X Y
-  fabs();                     // Stack: abs(X) Y X Y
-  fast_pow();                 // Stack: abs(X)^Y X Y
-  fcmp(tmp, 0, false, false); // Stack: abs(X)^Y X Y
-  // abs(X)^Y not equal to itself: abs(X)^Y is NaN go to slow case.
-
-  pop(tmp2);
-  NOT_LP64(pop(tmp3));
-  jcc(Assembler::parity, slow_case);
-
-#ifdef ASSERT
-  // Check that int(Y) is not integer indefinite value (int
-  // overflow). Shouldn't happen because for values that would
-  // overflow, 1+int(Y)==Y which was tested earlier.
-#ifndef _LP64
-  {
-    Label integer;
-    testl(tmp2, tmp2);
-    jcc(Assembler::notZero, integer);
-    cmpl(tmp3, 0x80000000);
-    jcc(Assembler::notZero, integer);
-    STOP("integer indefinite value shouldn't be seen here");
-    bind(integer);
-  }
-#else
-  {
-    Label integer;
-    mov(tmp3, tmp2); // preserve tmp2 for parity check below
-    shlq(tmp3, 1);
-    jcc(Assembler::carryClear, integer);
-    jcc(Assembler::notZero, integer);
-    STOP("integer indefinite value shouldn't be seen here");
-    bind(integer);
-  }
-#endif
-#endif
-
-  // get rid of duplicate arguments. Stack: X^Y
-  if (num_fpu_regs_in_use > 0) {
-    fxch(); fpop();
-    fxch(); fpop();
-  } else {
-    ffree(2);
-    ffree(1);
-  }
-
-  testl(tmp2, 1);
-  jcc(Assembler::zero, done); // X <= 0, Y even: X^Y = abs(X)^Y
-  // X <= 0, Y even: X^Y = -abs(X)^Y
-
-  fchs();                     // Stack: -abs(X)^Y Y
-  jmp(done);
-
-  // slow case: runtime call
-  bind(slow_case);
-
-  fpop();                       // pop incorrect result or int(Y)
-
-  fp_runtime_fallback(CAST_FROM_FN_PTR(address, SharedRuntime::dpow), 2, num_fpu_regs_in_use);
-
-  // Come here with result in F-TOS
-  bind(done);
 }
 
 void MacroAssembler::fpop() {
@@ -8000,8 +7782,14 @@ void MacroAssembler::string_compare(Register str1, Register str2,
                                     XMMRegister vec1, int ae) {
   ShortBranchVerifier sbv(this);
   Label LENGTH_DIFF_LABEL, POP_LABEL, DONE_LABEL, WHILE_HEAD_LABEL;
+  Label COMPARE_WIDE_VECTORS_LOOP_FAILED;  // used only _LP64 && AVX3
   int stride, stride2, adr_stride, adr_stride1, adr_stride2;
+  int stride2x2 = 0x40;
   Address::ScaleFactor scale, scale1, scale2;
+
+  if (ae != StrIntrinsicNode::LL) {
+    stride2x2 = 0x20;
+  }
 
   if (ae == StrIntrinsicNode::LU || ae == StrIntrinsicNode::UL) {
     shrl(cnt2, 1);
@@ -8012,15 +7800,15 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   movl(result, cnt1);
   subl(cnt1, cnt2);
   push(cnt1);
-  cmov32(Assembler::lessEqual, cnt2, result);
+  cmov32(Assembler::lessEqual, cnt2, result);    // cnt2 = min(cnt1, cnt2)
 
   // Is the minimum length zero?
   testl(cnt2, cnt2);
   jcc(Assembler::zero, LENGTH_DIFF_LABEL);
   if (ae == StrIntrinsicNode::LL) {
     // Load first bytes
-    load_unsigned_byte(result, Address(str1, 0));
-    load_unsigned_byte(cnt1, Address(str2, 0));
+    load_unsigned_byte(result, Address(str1, 0));  // result = str1[0]
+    load_unsigned_byte(cnt1, Address(str2, 0));    // cnt1   = str2[0]
   } else if (ae == StrIntrinsicNode::UU) {
     // Load first characters
     load_unsigned_short(result, Address(str1, 0));
@@ -8061,7 +7849,10 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     assert(UseSSE >= 4, "SSE4 must be enabled for SSE4.2 intrinsics to be available");
     Label COMPARE_WIDE_VECTORS, VECTOR_NOT_EQUAL, COMPARE_WIDE_TAIL, COMPARE_SMALL_STR;
     Label COMPARE_WIDE_VECTORS_LOOP, COMPARE_16_CHARS, COMPARE_INDEX_CHAR;
+    Label COMPARE_WIDE_VECTORS_LOOP_AVX2;
     Label COMPARE_TAIL_LONG;
+    Label COMPARE_WIDE_VECTORS_LOOP_AVX3;  // used only _LP64 && AVX3
+
     int pcmpmask = 0x19;
     if (ae == StrIntrinsicNode::LL) {
       pcmpmask &= ~0x01;
@@ -8124,11 +7915,40 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     }
     subl(result, stride2);
     subl(cnt2, stride2);
-    jccb(Assembler::zero, COMPARE_WIDE_TAIL);
+    jcc(Assembler::zero, COMPARE_WIDE_TAIL);
     negptr(result);
 
     //  In a loop, compare 16-chars (32-bytes) at once using (vpxor+vptest)
     bind(COMPARE_WIDE_VECTORS_LOOP);
+
+#ifdef _LP64
+    if (VM_Version::supports_avx512vlbw()) { // trying 64 bytes fast loop
+      cmpl(cnt2, stride2x2);
+      jccb(Assembler::below, COMPARE_WIDE_VECTORS_LOOP_AVX2);
+      testl(cnt2, stride2x2-1);   // cnt2 holds the vector count
+      jccb(Assembler::notZero, COMPARE_WIDE_VECTORS_LOOP_AVX2);   // means we cannot subtract by 0x40
+
+      bind(COMPARE_WIDE_VECTORS_LOOP_AVX3); // the hottest loop
+      if (ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UU) {
+        evmovdquq(vec1, Address(str1, result, scale), Assembler::AVX_512bit);
+        evpcmpeqb(k7, vec1, Address(str2, result, scale), Assembler::AVX_512bit); // k7 == 11..11, if operands equal, otherwise k7 has some 0
+      } else {
+        vpmovzxbw(vec1, Address(str1, result, scale1), Assembler::AVX_512bit);
+        evpcmpeqb(k7, vec1, Address(str2, result, scale2), Assembler::AVX_512bit); // k7 == 11..11, if operands equal, otherwise k7 has some 0
+      }
+      kortestql(k7, k7);
+      jcc(Assembler::aboveEqual, COMPARE_WIDE_VECTORS_LOOP_FAILED);     // miscompare
+      addptr(result, stride2x2);  // update since we already compared at this addr
+      subl(cnt2, stride2x2);      // and sub the size too
+      jccb(Assembler::notZero, COMPARE_WIDE_VECTORS_LOOP_AVX3);
+
+      vpxor(vec1, vec1);
+      jmpb(COMPARE_WIDE_TAIL);
+    }//if (VM_Version::supports_avx512vlbw())
+#endif // _LP64
+
+
+    bind(COMPARE_WIDE_VECTORS_LOOP_AVX2);
     if (ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UU) {
       vmovdqu(vec1, Address(str1, result, scale));
       vpxor(vec1, Address(str2, result, scale));
@@ -8137,7 +7957,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
       vpxor(vec1, Address(str2, result, scale2));
     }
     vptest(vec1, vec1);
-    jccb(Assembler::notZero, VECTOR_NOT_EQUAL);
+    jcc(Assembler::notZero, VECTOR_NOT_EQUAL);
     addptr(result, stride2);
     subl(cnt2, stride2);
     jccb(Assembler::notZero, COMPARE_WIDE_VECTORS_LOOP);
@@ -8152,7 +7972,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     movl(result, stride2);
     movl(cnt2, result);
     negptr(result);
-    jmpb(COMPARE_WIDE_VECTORS_LOOP);
+    jmp(COMPARE_WIDE_VECTORS_LOOP_AVX2);
 
     // Identifies the mismatching (higher or lower)16-bytes in the 32-byte vectors.
     bind(VECTOR_NOT_EQUAL);
@@ -8296,6 +8116,34 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   }
   jmpb(DONE_LABEL);
 
+#ifdef _LP64
+  if (VM_Version::supports_avx512vlbw()) {
+
+    bind(COMPARE_WIDE_VECTORS_LOOP_FAILED);
+
+    kmovql(cnt1, k7);
+    notq(cnt1);
+    bsfq(cnt2, cnt1);
+    if (ae != StrIntrinsicNode::LL) {
+      // Divide diff by 2 to get number of chars
+      sarl(cnt2, 1);
+    }
+    addq(result, cnt2);
+    if (ae == StrIntrinsicNode::LL) {
+      load_unsigned_byte(cnt1, Address(str2, result));
+      load_unsigned_byte(result, Address(str1, result));
+    } else if (ae == StrIntrinsicNode::UU) {
+      load_unsigned_short(cnt1, Address(str2, result, scale));
+      load_unsigned_short(result, Address(str1, result, scale));
+    } else {
+      load_unsigned_short(cnt1, Address(str2, result, scale2));
+      load_unsigned_byte(result, Address(str1, result, scale1));
+    }
+    subl(result, cnt1);
+    jmpb(POP_LABEL);
+  }//if (VM_Version::supports_avx512vlbw())
+#endif // _LP64
+
   // Discard the stored length difference
   bind(POP_LABEL);
   pop(cnt1);
@@ -8305,6 +8153,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   if(ae == StrIntrinsicNode::UL) {
     negl(result);
   }
+
 }
 
 // Search for Non-ASCII character (Negative byte value) in a byte array,
@@ -8496,13 +8345,53 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ar
     // Compare 32-byte vectors
     andl(result, 0x0000001f);  //   tail count (in bytes)
     andl(limit, 0xffffffe0);   // vector count (in bytes)
-    jccb(Assembler::zero, COMPARE_TAIL);
+    jcc(Assembler::zero, COMPARE_TAIL);
 
     lea(ary1, Address(ary1, limit, Address::times_1));
     lea(ary2, Address(ary2, limit, Address::times_1));
     negptr(limit);
 
     bind(COMPARE_WIDE_VECTORS);
+
+#ifdef _LP64
+    if (VM_Version::supports_avx512vlbw()) { // trying 64 bytes fast loop
+      Label COMPARE_WIDE_VECTORS_LOOP_AVX2, COMPARE_WIDE_VECTORS_LOOP_AVX3;
+
+      cmpl(limit, -64);
+      jccb(Assembler::greater, COMPARE_WIDE_VECTORS_LOOP_AVX2);
+
+      bind(COMPARE_WIDE_VECTORS_LOOP_AVX3); // the hottest loop
+
+      evmovdquq(vec1, Address(ary1, limit, Address::times_1), Assembler::AVX_512bit);
+      evpcmpeqb(k7, vec1, Address(ary2, limit, Address::times_1), Assembler::AVX_512bit);
+      kortestql(k7, k7);
+      jcc(Assembler::aboveEqual, FALSE_LABEL);     // miscompare
+      addptr(limit, 64);  // update since we already compared at this addr
+      cmpl(limit, -64);
+      jccb(Assembler::lessEqual, COMPARE_WIDE_VECTORS_LOOP_AVX3);
+
+      // At this point we may still need to compare -limit+result bytes.
+      // We could execute the next two instruction and just continue via non-wide path:
+      //  cmpl(limit, 0);
+      //  jcc(Assembler::equal, COMPARE_TAIL);  // true
+      // But since we stopped at the points ary{1,2}+limit which are
+      // not farther than 64 bytes from the ends of arrays ary{1,2}+result
+      // (|limit| <= 32 and result < 32),
+      // we may just compare the last 64 bytes.
+      //
+      addptr(result, -64);   // it is safe, bc we just came from this area
+      evmovdquq(vec1, Address(ary1, result, Address::times_1), Assembler::AVX_512bit);
+      evpcmpeqb(k7, vec1, Address(ary2, result, Address::times_1), Assembler::AVX_512bit);
+      kortestql(k7, k7);
+      jcc(Assembler::aboveEqual, FALSE_LABEL);     // miscompare
+
+      jmp(TRUE_LABEL);
+
+      bind(COMPARE_WIDE_VECTORS_LOOP_AVX2);
+
+    }//if (VM_Version::supports_avx512vlbw())
+#endif //_LP64
+
     vmovdqu(vec1, Address(ary1, limit, Address::times_1));
     vmovdqu(vec2, Address(ary2, limit, Address::times_1));
     vpxor(vec1, vec2);
@@ -9440,13 +9329,184 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   pop(tmp1);
 }
 
+void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,
+  Register result, Register tmp1, Register tmp2, XMMRegister rymm0, XMMRegister rymm1, XMMRegister rymm2){
+  assert(UseSSE42Intrinsics, "SSE4.2 must be enabled.");
+  Label VECTOR32_LOOP, VECTOR16_LOOP, VECTOR8_LOOP, VECTOR4_LOOP;
+  Label VECTOR16_TAIL, VECTOR8_TAIL, VECTOR4_TAIL;
+  Label VECTOR32_NOT_EQUAL, VECTOR16_NOT_EQUAL, VECTOR8_NOT_EQUAL, VECTOR4_NOT_EQUAL;
+  Label SAME_TILL_END, DONE;
+  Label BYTES_LOOP, BYTES_TAIL, BYTES_NOT_EQUAL;
+
+  //scale is in rcx in both Win64 and Unix
+  ShortBranchVerifier sbv(this);
+
+  shlq(length);
+  xorq(result, result);
+
+  cmpq(length, 8);
+  jcc(Assembler::equal, VECTOR8_LOOP);
+  jcc(Assembler::less, VECTOR4_TAIL);
+
+  if (UseAVX >= 2){
+
+    cmpq(length, 16);
+    jcc(Assembler::equal, VECTOR16_LOOP);
+    jcc(Assembler::less, VECTOR8_LOOP);
+
+    cmpq(length, 32);
+    jccb(Assembler::less, VECTOR16_TAIL);
+
+    subq(length, 32);
+    bind(VECTOR32_LOOP);
+    vmovdqu(rymm0, Address(obja, result));
+    vmovdqu(rymm1, Address(objb, result));
+    vpxor(rymm2, rymm0, rymm1, Assembler::AVX_256bit);
+    vptest(rymm2, rymm2);
+    jcc(Assembler::notZero, VECTOR32_NOT_EQUAL);//mismatch found
+    addq(result, 32);
+    subq(length, 32);
+    jccb(Assembler::greaterEqual, VECTOR32_LOOP);
+    addq(length, 32);
+    jcc(Assembler::equal, SAME_TILL_END);
+    //falling through if less than 32 bytes left //close the branch here.
+
+    bind(VECTOR16_TAIL);
+    cmpq(length, 16);
+    jccb(Assembler::less, VECTOR8_TAIL);
+    bind(VECTOR16_LOOP);
+    movdqu(rymm0, Address(obja, result));
+    movdqu(rymm1, Address(objb, result));
+    vpxor(rymm2, rymm0, rymm1, Assembler::AVX_128bit);
+    ptest(rymm2, rymm2);
+    jcc(Assembler::notZero, VECTOR16_NOT_EQUAL);//mismatch found
+    addq(result, 16);
+    subq(length, 16);
+    jcc(Assembler::equal, SAME_TILL_END);
+    //falling through if less than 16 bytes left
+  } else {//regular intrinsics
+
+    cmpq(length, 16);
+    jccb(Assembler::less, VECTOR8_TAIL);
+
+    subq(length, 16);
+    bind(VECTOR16_LOOP);
+    movdqu(rymm0, Address(obja, result));
+    movdqu(rymm1, Address(objb, result));
+    pxor(rymm0, rymm1);
+    ptest(rymm0, rymm0);
+    jcc(Assembler::notZero, VECTOR16_NOT_EQUAL);//mismatch found
+    addq(result, 16);
+    subq(length, 16);
+    jccb(Assembler::greaterEqual, VECTOR16_LOOP);
+    addq(length, 16);
+    jcc(Assembler::equal, SAME_TILL_END);
+    //falling through if less than 16 bytes left
+  }
+
+  bind(VECTOR8_TAIL);
+  cmpq(length, 8);
+  jccb(Assembler::less, VECTOR4_TAIL);
+  bind(VECTOR8_LOOP);
+  movq(tmp1, Address(obja, result));
+  movq(tmp2, Address(objb, result));
+  xorq(tmp1, tmp2);
+  testq(tmp1, tmp1);
+  jcc(Assembler::notZero, VECTOR8_NOT_EQUAL);//mismatch found
+  addq(result, 8);
+  subq(length, 8);
+  jcc(Assembler::equal, SAME_TILL_END);
+  //falling through if less than 8 bytes left
+
+  bind(VECTOR4_TAIL);
+  cmpq(length, 4);
+  jccb(Assembler::less, BYTES_TAIL);
+  bind(VECTOR4_LOOP);
+  movl(tmp1, Address(obja, result));
+  xorl(tmp1, Address(objb, result));
+  testl(tmp1, tmp1);
+  jcc(Assembler::notZero, VECTOR4_NOT_EQUAL);//mismatch found
+  addq(result, 4);
+  subq(length, 4);
+  jcc(Assembler::equal, SAME_TILL_END);
+  //falling through if less than 4 bytes left
+
+  bind(BYTES_TAIL);
+  bind(BYTES_LOOP);
+  load_unsigned_byte(tmp1, Address(obja, result));
+  load_unsigned_byte(tmp2, Address(objb, result));
+  xorl(tmp1, tmp2);
+  testl(tmp1, tmp1);
+  jccb(Assembler::notZero, BYTES_NOT_EQUAL);//mismatch found
+  decq(length);
+  jccb(Assembler::zero, SAME_TILL_END);
+  incq(result);
+  load_unsigned_byte(tmp1, Address(obja, result));
+  load_unsigned_byte(tmp2, Address(objb, result));
+  xorl(tmp1, tmp2);
+  testl(tmp1, tmp1);
+  jccb(Assembler::notZero, BYTES_NOT_EQUAL);//mismatch found
+  decq(length);
+  jccb(Assembler::zero, SAME_TILL_END);
+  incq(result);
+  load_unsigned_byte(tmp1, Address(obja, result));
+  load_unsigned_byte(tmp2, Address(objb, result));
+  xorl(tmp1, tmp2);
+  testl(tmp1, tmp1);
+  jccb(Assembler::notZero, BYTES_NOT_EQUAL);//mismatch found
+  jmpb(SAME_TILL_END);
+
+  if (UseAVX >= 2){
+    bind(VECTOR32_NOT_EQUAL);
+    vpcmpeqb(rymm2, rymm2, rymm2, Assembler::AVX_256bit);
+    vpcmpeqb(rymm0, rymm0, rymm1, Assembler::AVX_256bit);
+    vpxor(rymm0, rymm0, rymm2, Assembler::AVX_256bit);
+    vpmovmskb(tmp1, rymm0);
+    bsfq(tmp1, tmp1);
+    addq(result, tmp1);
+    shrq(result);
+    jmpb(DONE);
+  }
+
+  bind(VECTOR16_NOT_EQUAL);
+  if (UseAVX >= 2){
+    vpcmpeqb(rymm2, rymm2, rymm2, Assembler::AVX_128bit);
+    vpcmpeqb(rymm0, rymm0, rymm1, Assembler::AVX_128bit);
+    pxor(rymm0, rymm2);
+  } else {
+    pcmpeqb(rymm2, rymm2);
+    pxor(rymm0, rymm1);
+    pcmpeqb(rymm0, rymm1);
+    pxor(rymm0, rymm2);
+  }
+  pmovmskb(tmp1, rymm0);
+  bsfq(tmp1, tmp1);
+  addq(result, tmp1);
+  shrq(result);
+  jmpb(DONE);
+
+  bind(VECTOR8_NOT_EQUAL);
+  bind(VECTOR4_NOT_EQUAL);
+  bsfq(tmp1, tmp1);
+  shrq(tmp1, 3);
+  addq(result, tmp1);
+  bind(BYTES_NOT_EQUAL);
+  shrq(result);
+  jmpb(DONE);
+
+  bind(SAME_TILL_END);
+  mov64(result, -1);
+
+  bind(DONE);
+}
+
+
 //Helper functions for square_to_len()
 
 /**
  * Store the squares of x[], right shifted one bit (divided by 2) into z[]
  * Preserves x and z and modifies rest of the registers.
  */
-
 void MacroAssembler::square_rshift(Register x, Register xlen, Register z, Register tmp1, Register tmp3, Register tmp4, Register tmp5, Register rdxReg, Register raxReg) {
   // Perform square and right shift by 1
   // Handle odd xlen case first, then for even xlen do the following

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/filemap.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
@@ -122,3 +123,22 @@ void VMError::reset_signal_handlers() {
   os::Posix::unblock_thread_signal_mask(&newset);
 
 }
+
+// Write a hint to the stream in case siginfo relates to a segv/bus error
+// and the offending address points into CDS archive.
+void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
+  if (siginfo && UseSharedSpaces) {
+    const siginfo_t* const si = (siginfo_t*)siginfo;
+    if (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) {
+      const void* const fault_addr = si->si_addr;
+      if (fault_addr != NULL) {
+        FileMapInfo* const mapinfo = FileMapInfo::current_info();
+        if (mapinfo->is_in_shared_space(fault_addr)) {
+          st->print("Error accessing class data sharing archive. "
+            "Mapped file inaccessible during execution, possible disk/network problem.");
+        }
+      }
+    }
+  }
+}
+

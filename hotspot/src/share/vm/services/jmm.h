@@ -227,16 +227,10 @@ typedef struct jmmInterface_1_ {
   jint         (JNICALL *GetOptionalSupport)     (JNIEnv *env,
                                                   jmmOptionalSupport* support_ptr);
 
-  /* This is used by JDK 6 and earlier.
-   * For JDK 7 and after, use GetInputArgumentArray.
-   */
-  jobject      (JNICALL *GetInputArguments)      (JNIEnv *env);
-
   jint         (JNICALL *GetThreadInfo)          (JNIEnv *env,
                                                   jlongArray ids,
                                                   jint maxDepth,
                                                   jobjectArray infoArray);
-  jobjectArray (JNICALL *GetInputArgumentArray)  (JNIEnv *env);
 
   jobjectArray (JNICALL *GetMemoryPools)         (JNIEnv* env, jobject mgr);
 

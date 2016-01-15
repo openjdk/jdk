@@ -213,20 +213,6 @@ void PSVirtualSpace::verify() const {
   }
 }
 
-void PSVirtualSpace::print() const {
-  gclog_or_tty->print_cr("virtual space [" PTR_FORMAT "]:  alignment="
-                         SIZE_FORMAT "K grows %s%s",
-                         p2i(this), alignment() / K, grows_up() ? "up" : "down",
-                         special() ? " (pinned in memory)" : "");
-  gclog_or_tty->print_cr("    reserved=" SIZE_FORMAT "K"
-                         " [" PTR_FORMAT "," PTR_FORMAT "]"
-                         " committed=" SIZE_FORMAT "K"
-                         " [" PTR_FORMAT "," PTR_FORMAT "]",
-                         reserved_size() / K,
-                         p2i(reserved_low_addr()), p2i(reserved_high_addr()),
-                         committed_size() / K,
-                         p2i(committed_low_addr()), p2i(committed_high_addr()));
-}
 #endif // #ifndef PRODUCT
 
 void PSVirtualSpace::print_space_boundaries_on(outputStream* st) const {

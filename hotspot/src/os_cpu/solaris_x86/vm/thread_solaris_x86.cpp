@@ -65,23 +65,19 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr,
 
   // Something would really have to be screwed up to get a NULL pc
 
-  if (addr.pc() == NULL ) {
+  if (addr.pc() == NULL) {
     assert(false, "NULL pc from signal handler!");
     return false;
-
   }
 
   // If sp and fp are nonsense just leave them out
 
-  if ((address)ret_sp >= jt->stack_base() ||
-      (address)ret_sp < jt->stack_base() - jt->stack_size() ) {
-
-      ret_sp = NULL;
-      ret_fp = NULL;
+  if (!jt->on_local_stack((address)ret_sp)) {
+    ret_sp = NULL;
+    ret_fp = NULL;
   } else {
-
     // sp is reasonable is fp reasonable?
-    if ( (address)ret_fp >= jt->stack_base() || ret_fp < ret_sp) {
+    if ((address)ret_fp >= jt->stack_base() || ret_fp < ret_sp) {
       ret_fp = NULL;
     }
   }

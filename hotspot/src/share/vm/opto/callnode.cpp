@@ -959,7 +959,8 @@ bool CallNode::is_call_to_arraycopystub() const {
 uint CallJavaNode::size_of() const { return sizeof(*this); }
 uint CallJavaNode::cmp( const Node &n ) const {
   CallJavaNode &call = (CallJavaNode&)n;
-  return CallNode::cmp(call) && _method == call._method;
+  return CallNode::cmp(call) && _method == call._method &&
+         _override_symbolic_info == call._override_symbolic_info;
 }
 #ifndef PRODUCT
 void CallJavaNode::dump_spec(outputStream *st) const {
@@ -1332,6 +1333,7 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
   init_flags(Flag_is_macro);
   _is_scalar_replaceable = false;
   _is_non_escaping = false;
+  _is_allocation_MemBar_redundant = false;
   Node *topnode = C->top();
 
   init_req( TypeFunc::Control  , ctrl );
@@ -1344,6 +1346,23 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
   init_req( InitialTest        , initial_test);
   init_req( ALength            , topnode);
   C->add_macro_node(this);
+}
+
+void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
+{
+  assert(initializer != NULL &&
+         initializer->is_initializer() &&
+         !initializer->is_static(),
+             "unexpected initializer method");
+  BCEscapeAnalyzer* analyzer = initializer->get_bcea();
+  if (analyzer == NULL) {
+    return;
+  }
+
+  // Allocation node is first parameter in its initializer
+  if (analyzer->is_arg_stack(0) || analyzer->is_arg_local(0)) {
+    _is_allocation_MemBar_redundant = true;
+  }
 }
 
 //=============================================================================

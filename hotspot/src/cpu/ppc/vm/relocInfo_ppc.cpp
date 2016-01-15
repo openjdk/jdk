@@ -84,13 +84,11 @@ address Relocation::pd_call_destination(address orig_addr) {
     NativeConditionalFarBranch* branch = NativeConditionalFarBranch_at(inst_loc);
     return branch->branch_destination();
   } else {
-    // There are two instructions at the beginning of a stub, therefore we
-    // load at orig_addr + 8.
     orig_addr = nativeCall_at(inst_loc)->get_trampoline();
     if (orig_addr == NULL) {
       return (address) -1;
     } else {
-      return (address) nativeMovConstReg_at(orig_addr + 8)->data();
+      return ((NativeCallTrampolineStub*)orig_addr)->destination();
     }
   }
 }
