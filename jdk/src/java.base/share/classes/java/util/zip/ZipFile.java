@@ -54,6 +54,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.perf.PerfCounter;
 
 import static java.util.zip.ZipConstants.*;
 import static java.util.zip.ZipConstants64.*;
@@ -210,8 +211,8 @@ class ZipFile implements ZipConstants, Closeable {
         this.name = name;
         long t0 = System.nanoTime();
         this.zsrc = Source.get(file, (mode & OPEN_DELETE) != 0);
-        sun.misc.PerfCounter.getZipFileOpenTime().addElapsedTimeFrom(t0);
-        sun.misc.PerfCounter.getZipFileCount().increment();
+        PerfCounter.getZipFileOpenTime().addElapsedTimeFrom(t0);
+        PerfCounter.getZipFileCount().increment();
     }
 
     /**
@@ -1251,7 +1252,7 @@ class ZipFile implements ZipConstants, Closeable {
                     idx = getEntryNext(idx);
                 }
                 /* If not addSlash, or slash is already there, we are done */
-                if (!addSlash  || name[name.length - 1] == '/') {
+                if (!addSlash  || name.length == 0 || name[name.length - 1] == '/') {
                      return -1;
                 }
                 /* Add slash and try once more */

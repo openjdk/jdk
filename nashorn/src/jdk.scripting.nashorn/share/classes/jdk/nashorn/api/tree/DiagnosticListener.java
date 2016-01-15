@@ -30,7 +30,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 @FunctionalInterface
 public interface DiagnosticListener {
     /**

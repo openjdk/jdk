@@ -45,7 +45,6 @@ import java.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface CaseTree extends Tree {
     /**
      * Returns the expression for the case, or

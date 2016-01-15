@@ -39,14 +39,12 @@ import javax.lang.model.element.Name;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface MemberReferenceTree extends ExpressionTree {
 
     /**
      * There are two kinds of member references: (i) method references and
      * (ii) constructor references
      */
-    @jdk.Exported
     public enum ReferenceMode {
         /** enum constant for method references. */
         INVOKE,

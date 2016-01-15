@@ -40,7 +40,6 @@ import java.util.Iterator;
  * @since  1.3
  */
 
-@jdk.Exported
 public interface EventIterator extends Iterator<Event> {
 
     /**

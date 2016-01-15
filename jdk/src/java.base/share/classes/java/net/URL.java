@@ -1242,7 +1242,7 @@ public final class URL implements java.io.Serializable {
     private static ThreadLocal<Object> gate = new ThreadLocal<>();
 
     private static URLStreamHandler lookupViaProviders(final String protocol) {
-        if (!sun.misc.VM.isBooted())
+        if (!jdk.internal.misc.VM.isBooted())
             return null;
 
         if (gate.get() != null)

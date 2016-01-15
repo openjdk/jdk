@@ -36,7 +36,6 @@ import java.util.List;
  * @since 1.8
  *
  */
-@jdk.Exported
 public interface UnknownInlineTagTree extends InlineTagTree {
     /**
      * Returns the content of an unrecognized inline tag.

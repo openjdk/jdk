@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ ssize_t handleWrite(FD fd, const void *buf, jint len);
 ssize_t handleRead(FD fd, void *buf, jint len);
 jint handleAvailable(FD fd, jlong *pbytes);
 jint handleSetLength(FD fd, jlong length);
-
+jlong handleGetLength(FD fd);
 FD handleOpen(const char *path, int oflag, int mode);
 
 /*
@@ -72,6 +72,7 @@ FD handleOpen(const char *path, int oflag, int mode);
 #define IO_Append handleWrite
 #define IO_Available handleAvailable
 #define IO_SetLength handleSetLength
+#define IO_GetLength handleGetLength
 
 #ifdef _ALLBSD_SOURCE
 #define open64 open
