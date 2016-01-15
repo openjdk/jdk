@@ -35,6 +35,7 @@
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "memory/metaspace.hpp"
 #include "utilities/ostream.hpp"
 
 class AdjoiningGenerations;
@@ -85,6 +86,10 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   virtual Name kind() const {
     return CollectedHeap::ParallelScavengeHeap;
+  }
+
+  virtual const char* name() const {
+    return "Parallel";
   }
 
   virtual CollectorPolicy* collector_policy() const { return _collector_policy; }
@@ -215,9 +220,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
 
-  void verify(bool silent, VerifyOption option /* ignored */);
-
-  void print_heap_change(size_t prev_used);
+  void verify(VerifyOption option /* ignored */);
 
   // Resize the young generation.  The reserved space for the
   // generation may be expanded in preparation for the resize.
@@ -239,6 +242,28 @@ class ParallelScavengeHeap : public CollectedHeap {
     ParStrongRootsScope();
     ~ParStrongRootsScope();
   };
+};
+
+// Simple class for storing info about the heap at the start of GC, to be used
+// after GC for comparison/printing.
+class PreGCValues {
+public:
+  PreGCValues(ParallelScavengeHeap* heap) :
+      _heap_used(heap->used()),
+      _young_gen_used(heap->young_gen()->used_in_bytes()),
+      _old_gen_used(heap->old_gen()->used_in_bytes()),
+      _metadata_used(MetaspaceAux::used_bytes()) { };
+
+  size_t heap_used() const      { return _heap_used; }
+  size_t young_gen_used() const { return _young_gen_used; }
+  size_t old_gen_used() const   { return _old_gen_used; }
+  size_t metadata_used() const  { return _metadata_used; }
+
+private:
+  size_t _heap_used;
+  size_t _young_gen_used;
+  size_t _old_gen_used;
+  size_t _metadata_used;
 };
 
 #endif // SHARE_VM_GC_PARALLEL_PARALLELSCAVENGEHEAP_HPP

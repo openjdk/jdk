@@ -124,30 +124,30 @@ include $(GAMMADIR)/make/jdk_version
 
 # JDK_PREVIOUS_VERSION is only needed to facilitate standalone builds
 ifeq ($(JDK_PREVIOUS_VERSION),)
-  JDK_PREVIOUS_VERSION=$(STANDALONE_JDK_PREVIOUS_VERSION)
+  export JDK_PREVIOUS_VERSION=$(STANDALONE_JDK_PREVIOUS_VERSION)
 endif
 # Java versions needed
 ifeq ($(VERSION_MAJOR),)
-  VERSION_MAJOR=$(STANDALONE_JDK_MAJOR_VER)
+  export VERSION_MAJOR=$(STANDALONE_JDK_MAJOR_VER)
 endif
 ifeq ($(VERSION_MINOR),)
-  VERSION_MINOR=$(STANDALONE_JDK_MINOR_VER)
+  export VERSION_MINOR=$(STANDALONE_JDK_MINOR_VER)
 endif
 ifeq ($(VERSION_SECURITY),)
-  VERSION_SECURITY=$(STANDALONE_JDK_SECURITY_VER)
+  export VERSION_SECURITY=$(STANDALONE_JDK_SECURITY_VER)
 endif
 ifeq ($(VERSION_PATCH),)
-  VERSION_PATCH=$(STANDALONE_JDK_PATCH_VER)
+  export VERSION_PATCH=$(STANDALONE_JDK_PATCH_VER)
 endif
 ifeq ($(VERSION_BUILD),)
-  VERSION_BUILD=0
+  export VERSION_BUILD=0
 endif
 ifeq ($(VERSION_SHORT),)
-  VERSION_SHORT=$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_SECURITY)
+  export VERSION_SHORT=$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_SECURITY)
 endif
 ifeq ($(VERSION_STRING),)
   # Note that this is an extremely rough and incorrect approximation of a correct version string.
-  VERSION_STRING=$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_SECURITY)-internal
+  export VERSION_STRING=$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_SECURITY)-internal
 endif
 
 ifneq ($(HOTSPOT_RELEASE_VERSION),)
@@ -277,7 +277,7 @@ ifneq ($(OSNAME),windows)
 
   # Use uname output for SRCARCH, but deal with platform differences. If ARCH
   # is not explicitly listed below, it is treated as x86.
-  SRCARCH    ?= $(ARCH/$(filter sparc sparc64 ia64 amd64 x86_64 ppc ppc64 aarch64 zero,$(ARCH)))
+  SRCARCH    ?= $(ARCH/$(filter sparc sparc64 ia64 amd64 x86_64 ppc ppc64 ppc64le aarch64 zero,$(ARCH)))
   ARCH/       = x86
   ARCH/sparc  = sparc
   ARCH/sparc64= sparc
@@ -285,6 +285,7 @@ ifneq ($(OSNAME),windows)
   ARCH/amd64  = x86
   ARCH/x86_64 = x86
   ARCH/ppc64  = ppc
+  ARCH/ppc64le= ppc
   ARCH/ppc    = ppc
   ARCH/aarch64= aarch64
   ARCH/zero   = zero
@@ -309,8 +310,13 @@ ifneq ($(OSNAME),windows)
     endif
   endif
 
-  # LIBARCH is 1:1 mapping from BUILDARCH
-  LIBARCH        ?= $(LIBARCH/$(BUILDARCH))
+  # LIBARCH is 1:1 mapping from BUILDARCH, except for ARCH=ppc64le
+  ifeq ($(ARCH),ppc64le)
+    LIBARCH      ?= ppc64le
+  else
+    LIBARCH      ?= $(LIBARCH/$(BUILDARCH))
+  endif
+
   LIBARCH/i486    = i386
   LIBARCH/amd64   = amd64
   LIBARCH/sparc   = sparc

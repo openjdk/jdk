@@ -39,8 +39,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
 
-#ifndef CC_INTERP
-
 #define __ _masm->
 
 // Platform-dependent initialization
@@ -3795,4 +3793,3 @@ void TemplateTable::multianewarray() {
   __ load_unsigned_byte(r1, at_bcp(3));
   __ lea(esp, Address(esp, r1, Address::uxtw(3)));
 }
-#endif // !CC_INTERP

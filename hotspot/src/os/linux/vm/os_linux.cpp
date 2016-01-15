@@ -621,7 +621,7 @@ bool os::Linux::manually_expand_stack(JavaThread * t, address addr) {
   assert(t->osthread()->expanding_stack(), "expand should be set");
   assert(t->stack_base() != NULL, "stack_base was not initialized");
 
-  if (addr <  t->stack_base() && addr >= t->stack_yellow_zone_base()) {
+  if (addr <  t->stack_base() && addr >= t->stack_reserved_zone_base()) {
     sigset_t mask_all, old_sigset;
     sigfillset(&mask_all);
     pthread_sigmask(SIG_SETMASK, &mask_all, &old_sigset);
@@ -836,7 +836,7 @@ bool os::create_attached_thread(JavaThread* thread) {
     // is no gap between the last two virtual memory regions.
 
     JavaThread *jt = (JavaThread *)thread;
-    address addr = jt->stack_yellow_zone_base();
+    address addr = jt->stack_reserved_zone_base();
     assert(addr != NULL, "initialization problem?");
     assert(jt->stack_available(addr) > 0, "stack guard should not be enabled");
 
@@ -1341,7 +1341,7 @@ void os::shutdown() {
 // Note: os::abort() might be called very early during initialization, or
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, void* context) {
+void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
@@ -1733,7 +1733,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #if defined(VM_LITTLE_ENDIAN)
     {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2LSB, (char*)"Power PC 64"},
 #else
-    {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64"},
+    {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64 LE"},
 #endif
     {EM_ARM,         EM_ARM,     ELFCLASS32,   ELFDATA2LSB, (char*)"ARM"},
     {EM_S390,        EM_S390,    ELFCLASSNONE, ELFDATA2MSB, (char*)"IBM System/390"},
@@ -1861,10 +1861,9 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
     JavaThread *jt = Threads::first();
 
     while (jt) {
-      if (!jt->stack_guard_zone_unused() &&        // Stack not yet fully initialized
-          jt->stack_yellow_zone_enabled()) {       // No pending stack overflow exceptions
-        if (!os::guard_memory((char *) jt->stack_red_zone_base() - jt->stack_red_zone_size(),
-                              jt->stack_yellow_zone_size() + jt->stack_red_zone_size())) {
+      if (!jt->stack_guard_zone_unused() &&     // Stack not yet fully initialized
+          jt->stack_guards_enabled()) {         // No pending stack overflow exceptions
+        if (!os::guard_memory((char *)jt->stack_end(), jt->stack_guard_zone_size())) {
           warning("Attempt to reguard stack yellow zone failed.");
         }
       }
@@ -2177,6 +2176,8 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 const char* search_string = "model name";
 #elif defined(SPARC)
 const char* search_string = "cpu";
+#elif defined(PPC64)
+const char* search_string = "cpu";
 #else
 const char* search_string = "Processor";
 #endif
@@ -2234,25 +2235,6 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
   strncpy(cpuinfo, "unknown", length);
 #endif
 }
-
-void os::print_siginfo(outputStream* st, void* siginfo) {
-  const siginfo_t* si = (const siginfo_t*)siginfo;
-
-  os::Posix::print_siginfo_brief(st, si);
-#if INCLUDE_CDS
-  if (si && (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) &&
-      UseSharedSpaces) {
-    FileMapInfo* mapinfo = FileMapInfo::current_info();
-    if (mapinfo->is_in_shared_space(si->si_addr)) {
-      st->print("\n\nError accessing class data sharing archive."   \
-                " Mapped file inaccessible during execution, "      \
-                " possible disk/network problem.");
-    }
-  }
-#endif
-  st->cr();
-}
-
 
 static void print_signal_handler(outputStream* st, int sig,
                                  char* buf, size_t buflen);
@@ -4597,15 +4579,6 @@ void os::init(void) {
   }
   // else it defaults to CLOCK_REALTIME
 
-  // If the pagesize of the VM is greater than 8K determine the appropriate
-  // number of initial guard pages.  The user can change this with the
-  // command line arguments, if needed.
-  if (vm_page_size() > (int)Linux::vm_default_page_size()) {
-    StackYellowPages = 1;
-    StackRedPages = 1;
-    StackShadowPages = round_to((StackShadowPages*Linux::vm_default_page_size()), vm_page_size()) / vm_page_size();
-  }
-
   // retrieve entry point for pthread_setname_np
   Linux::_pthread_setname_np =
     (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
@@ -4664,7 +4637,8 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Linux::min_stack_allowed = MAX2(os::Linux::min_stack_allowed,
-                                      (size_t)(StackYellowPages+StackRedPages+StackShadowPages) * Linux::page_size() +
+                                      JavaThread::stack_guard_zone_size() +
+                                      JavaThread::stack_shadow_zone_size() +
                                       (2*BytesPerWord COMPILER2_PRESENT(+1)) * Linux::vm_default_page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
@@ -4846,7 +4820,7 @@ void PcFetcher::do_task(const os::SuspendedThreadTaskContext& context) {
   Thread* thread = context.thread();
   OSThread* osthread = thread->osthread();
   if (osthread->ucontext() != NULL) {
-    _epc = os::Linux::ucontext_get_pc((ucontext_t *) context.ucontext());
+    _epc = os::Linux::ucontext_get_pc((const ucontext_t *) context.ucontext());
   } else {
     // NULL context is unexpected, double-check this is the VMThread
     guarantee(thread->is_VM_thread(), "can only be called for VMThread");

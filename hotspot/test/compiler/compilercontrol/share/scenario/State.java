@@ -135,6 +135,10 @@ public class State {
                 + "\nprint_inline " + printInline;
     }
 
+    public Optional<Boolean> getCompilableOptional(Scenario.Compiler compiler) {
+        return compile[compiler.ordinal()];
+    }
+
     public boolean isC1Compilable() {
         return compile[Scenario.Compiler.C1.ordinal()].orElse(true);
     }

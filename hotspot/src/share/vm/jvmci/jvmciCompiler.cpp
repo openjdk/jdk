@@ -112,6 +112,15 @@ void JVMCICompiler::bootstrap() {
   _bootstrapping = false;
 }
 
+#define CHECK_ABORT THREAD); \
+if (HAS_PENDING_EXCEPTION) { \
+  char buf[256]; \
+  jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
+  JVMCICompiler::abort_on_pending_exception(PENDING_EXCEPTION, buf); \
+  return; \
+} \
+(void)(0
+
 void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JVMCIEnv* env) {
   JVMCI_EXCEPTION_CONTEXT
 
@@ -150,12 +159,12 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
   // should be handled by the Java code in some useful way but if they leak
   // through to here report them instead of dying or silently ignoring them.
   if (HAS_PENDING_EXCEPTION) {
-    Handle throwable = PENDING_EXCEPTION;
+    Handle exception(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
 
-    JVMCIRuntime::call_printStackTrace(throwable, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      CLEAR_PENDING_EXCEPTION;
+    {
+      ttyLocker ttyl;
+      java_lang_Throwable::print_stack_trace(exception, tty);
     }
 
     // Something went wrong so disable compilation at this level
@@ -165,6 +174,28 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
   }
 }
 
+/**
+ * Aborts the VM due to an unexpected exception.
+ */
+void JVMCICompiler::abort_on_pending_exception(Handle exception, const char* message, bool dump_core) {
+  Thread* THREAD = Thread::current();
+  CLEAR_PENDING_EXCEPTION;
+
+  {
+    ttyLocker ttyl;
+    tty->print_raw_cr(message);
+    java_lang_Throwable::print_stack_trace(exception, tty);
+  }
+
+  // Give other aborting threads to also print their stack traces.
+  // This can be very useful when debugging class initialization
+  // failures.
+  assert(THREAD->is_Java_thread(), "compiler threads should be Java threads");
+  const bool interruptible = true;
+  os::sleep(THREAD, 200, interruptible);
+
+  vm_abort(dump_core);
+}
 
 // Compilation entry point for methods
 void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive) {

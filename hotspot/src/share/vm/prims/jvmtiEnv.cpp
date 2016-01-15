@@ -29,6 +29,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/logConfiguration.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -628,7 +629,11 @@ JvmtiEnv::SetVerboseFlag(jvmtiVerboseFlag flag, jboolean value) {
     TraceClassUnloading = value != 0;
     break;
   case JVMTI_VERBOSE_GC:
-    PrintGC = value != 0;
+    if (value == 0) {
+      LogConfiguration::parse_log_arguments("stdout", "gc=off", NULL, NULL, NULL);
+    } else {
+      LogConfiguration::parse_log_arguments("stdout", "gc", NULL, NULL, NULL);
+    }
     break;
   case JVMTI_VERBOSE_JNI:
     PrintJNIResolving = value != 0;

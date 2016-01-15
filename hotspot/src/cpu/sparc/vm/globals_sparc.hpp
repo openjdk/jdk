@@ -54,6 +54,7 @@ define_pd_global(intx, InlineSmallCode,       1500);
 
 #define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)
+#define DEFAULT_STACK_RESERVED_PAGES (SOLARIS_ONLY(1) NOT_SOLARIS(0))
 
 #ifdef _LP64
 // Stack slots are 2X larger in LP64 than in the 32 bit VM.
@@ -69,10 +70,12 @@ define_pd_global(intx, VMThreadStackSize,     512);
 #define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES
 #define MIN_STACK_RED_PAGES DEFAULT_STACK_RED_PAGES
 #define MIN_STACK_SHADOW_PAGES DEFAULT_STACK_SHADOW_PAGES
+#define MIN_STACK_RESERVED_PAGES (0)
 
 define_pd_global(intx, StackYellowPages, DEFAULT_STACK_YELLOW_PAGES);
 define_pd_global(intx, StackRedPages, DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages, DEFAULT_STACK_SHADOW_PAGES);
+define_pd_global(intx, StackReservedPages, DEFAULT_STACK_RESERVED_PAGES);
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);

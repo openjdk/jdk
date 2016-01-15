@@ -132,7 +132,7 @@ class SpoolBlock: public FreeChunk {
   }
 
   void print_on(outputStream* st) const;
-  void print() const { print_on(gclog_or_tty); }
+  void print() const { print_on(tty); }
 };
 
 class PromotionInfo VALUE_OBJ_CLASS_SPEC {

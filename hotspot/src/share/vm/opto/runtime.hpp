@@ -287,6 +287,7 @@ private:
 
   static const TypeFunc* aescrypt_block_Type();
   static const TypeFunc* cipherBlockChaining_aescrypt_Type();
+  static const TypeFunc* counterMode_aescrypt_Type();
 
   static const TypeFunc* sha_implCompress_Type();
   static const TypeFunc* digestBase_implCompressMB_Type();
@@ -298,6 +299,8 @@ private:
   static const TypeFunc* squareToLen_Type();
 
   static const TypeFunc* mulAdd_Type();
+
+  static const TypeFunc* vectorizedMismatch_Type();
 
   static const TypeFunc* ghash_processBlocks_Type();
 

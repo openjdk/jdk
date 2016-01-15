@@ -840,53 +840,6 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
       break;
     }
 
-    case lir_pow: {
-      // pow needs two temporary fpu stack slots, so there are two temporary
-      // registers (stored in tmp1 and tmp2 of the operation).
-      // the stack allocator must guarantee that the stack slots are really free,
-      // otherwise there might be a stack overflow.
-      assert(left->is_fpu_register(), "must be");
-      assert(right->is_fpu_register(), "must be");
-      assert(res->is_fpu_register(), "must be");
-
-      assert(op2->tmp1_opr()->is_fpu_register(), "tmp1 is the first temporary register");
-      assert(op2->tmp2_opr()->is_fpu_register(), "tmp2 is the second temporary register");
-      assert(fpu_num(left) != fpu_num(right) && fpu_num(left) != fpu_num(op2->tmp1_opr()) && fpu_num(left) != fpu_num(op2->tmp2_opr()) && fpu_num(left) != fpu_num(res), "need distinct temp registers");
-      assert(fpu_num(right) != fpu_num(op2->tmp1_opr()) && fpu_num(right) != fpu_num(op2->tmp2_opr()) && fpu_num(right) != fpu_num(res), "need distinct temp registers");
-      assert(fpu_num(op2->tmp1_opr()) != fpu_num(op2->tmp2_opr()) && fpu_num(op2->tmp1_opr()) != fpu_num(res), "need distinct temp registers");
-      assert(fpu_num(op2->tmp2_opr()) != fpu_num(res), "need distinct temp registers");
-
-      insert_free_if_dead(op2->tmp1_opr());
-      insert_free_if_dead(op2->tmp2_opr());
-
-      // Must bring both operands to top of stack with following operand ordering:
-      // * fpu stack before pow: ... right left
-      // * fpu stack after pow:  ... left
-
-      insert_free_if_dead(res, right);
-
-      if (tos_offset(right) != 1) {
-        insert_exchange(right);
-        insert_exchange(1);
-      }
-      insert_exchange(left);
-      assert(tos_offset(right) == 1, "check");
-      assert(tos_offset(left) == 0, "check");
-
-      new_left = to_fpu_stack_top(left);
-      new_right = to_fpu_stack(right);
-
-      op2->set_fpu_stack_size(sim()->stack_size());
-      assert(sim()->stack_size() <= 6, "at least two stack slots must be free");
-
-      sim()->pop();
-
-      do_rename(right, res);
-
-      new_res = to_fpu_stack_top(res);
-      break;
-    }
-
     default: {
       assert(false, "missed a fpu-operation");
     }
