@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,20 @@
  */
 
 /*
- * @test Test6581734.java
+ * @test TestMBeanCMS.java
  * @bug 6581734
  * @requires vm.gc=="ConcMarkSweep" | vm.gc=="null"
  * @summary CMS Old Gen's collection usage is zero after GC which is incorrect
  * @modules java.management
- * @run main/othervm -Xmx512m -verbose:gc -XX:+UseConcMarkSweepGC Test6581734
+ * @run main/othervm -Xmx512m -verbose:gc -XX:+UseConcMarkSweepGC TestMBeanCMS
  *
  */
-import java.util.*;
-import java.lang.management.*;
+
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryPoolMXBean;
+import java.util.LinkedList;
+import java.util.List;
 
 // 6581734 states that memory pool usage via the mbean is wrong
 // for CMS (zero, even after a collection).
@@ -41,29 +45,29 @@ import java.lang.management.*;
 // -- closed as dup of 6581734 as the same fix resolves both.
 
 
-public class Test6581734 {
+public class TestMBeanCMS {
 
     private String poolName = "CMS";
     private String collectorName = "ConcurrentMarkSweep";
 
     public static void main(String [] args) {
 
-        Test6581734 t = null;
+        TestMBeanCMS t = null;
         if (args.length==2) {
-            t = new Test6581734(args[0], args[1]);
+            t = new TestMBeanCMS(args[0], args[1]);
         } else {
             System.out.println("Defaulting to monitor CMS pool and collector.");
-            t = new Test6581734();
+            t = new TestMBeanCMS();
         }
         t.run();
     }
 
-    public Test6581734(String pool, String collector) {
+    public TestMBeanCMS(String pool, String collector) {
         poolName = pool;
         collectorName = collector;
     }
 
-    public Test6581734() {
+    public TestMBeanCMS() {
     }
 
     public void run() {
