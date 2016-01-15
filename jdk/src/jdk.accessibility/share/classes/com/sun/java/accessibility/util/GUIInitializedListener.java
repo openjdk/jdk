@@ -49,7 +49,6 @@ import javax.accessibility.*;
  * @see EventQueueMonitor#removeGUIInitializedListener
  *
  */
-@jdk.Exported
 public interface GUIInitializedListener extends EventListener {
 
     /**

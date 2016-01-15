@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2004, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,17 @@
  * questions.
  */
 
-package java.lang.invoke;
+package jdk.internal.misc;
 
-import java.lang.annotation.*;
+/** @deprecated */
+@Deprecated
+public interface VMNotification {
 
-/**
- * Internal marker for some methods in the JSR 292 implementation.
- */
-/*non-public*/
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
-@Retention(RetentionPolicy.RUNTIME)
-@interface DontInline {
+    // when the vm switches allocation states, we get notified
+    // (possible semantics: if the state changes while in this
+    // notification, don't recursively notify).
+    // oldState and newState may be the same if we are just releasing
+    // suspended threads.
+    void newAllocState(int oldState, int newState,
+                       boolean threadsSuspended);
 }

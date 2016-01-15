@@ -9,6 +9,6 @@
  * @compile/fail/ref=WarnStaticImport.out -XDrawDiagnostics  -Werror -Xlint:none WarnStaticImport.java
  */
 
-import static sun.misc.VM.getFinalRefCount;
+import static sun.security.x509.OIDMap.getOID;
 
 public class WarnStaticImport {}

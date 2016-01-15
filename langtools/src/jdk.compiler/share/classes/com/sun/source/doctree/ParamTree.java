@@ -35,7 +35,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface ParamTree extends BlockTagTree {
     /**
      * Returns true if this is documenting a type parameter.

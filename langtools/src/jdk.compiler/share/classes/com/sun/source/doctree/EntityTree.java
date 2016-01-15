@@ -38,7 +38,6 @@ import javax.lang.model.element.Name;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface EntityTree extends DocTree {
     /**
      * Returns the name or value of the entity.

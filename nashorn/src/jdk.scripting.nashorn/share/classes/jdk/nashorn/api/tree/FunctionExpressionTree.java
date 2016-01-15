@@ -39,7 +39,6 @@ import java.util.List;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface FunctionExpressionTree extends ExpressionTree {
     /**
      * Returns the name of the function being declared.

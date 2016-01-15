@@ -42,8 +42,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.ref.CleanerFactory;
 
 /* This class is for the exclusive use of ProcessBuilder.start() to
  * create new processes.
@@ -417,6 +419,10 @@ final class ProcessImpl extends Process {
 
         handle = create(cmdstr, envblock, path,
                         stdHandles, redirectErrorStream);
+        // Register a cleaning function to close the handle
+        final long local_handle = handle;    // local to prevent capture of this
+        CleanerFactory.cleaner().register(this, () -> closeHandle(local_handle));
+
         processHandle = ProcessHandleImpl.getInternal(getProcessId0(handle));
 
         java.security.AccessController.doPrivileged(
@@ -461,10 +467,6 @@ final class ProcessImpl extends Process {
 
     public InputStream getErrorStream() {
         return stderr_stream;
-    }
-
-    protected void finalize() {
-        closeHandle(handle);
     }
 
     private static final int STILL_ACTIVE = getStillActive();

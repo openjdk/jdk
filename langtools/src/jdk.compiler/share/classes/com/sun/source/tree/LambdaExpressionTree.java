@@ -37,7 +37,6 @@ import java.util.List;
  *   (x,y)-> { return x + y; }
  * }</pre>
  */
-@jdk.Exported
 public interface LambdaExpressionTree extends ExpressionTree {
 
     /**
@@ -47,7 +46,6 @@ public interface LambdaExpressionTree extends ExpressionTree {
      * <li> statement lambdas, whose body is a block
      * </ul>
      */
-    @jdk.Exported
     public enum BodyKind {
         /** enum constant for expression lambdas */
         EXPRESSION,
