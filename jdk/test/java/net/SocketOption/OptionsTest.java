@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,11 @@ public class OptionsTest {
     static NetworkInterface getNetworkInterface() {
         try {
             Enumeration<NetworkInterface> nifs = NetworkInterface.getNetworkInterfaces();
-            if (nifs.hasMoreElements()) {
-                return (NetworkInterface)nifs.nextElement();
+            while (nifs.hasMoreElements()) {
+                NetworkInterface ni = (NetworkInterface)nifs.nextElement();
+                if (ni.supportsMulticast()) {
+                    return ni;
+                }
             }
         } catch (Exception e) {
         }

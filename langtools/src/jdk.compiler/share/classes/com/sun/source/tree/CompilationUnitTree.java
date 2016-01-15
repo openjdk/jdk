@@ -37,7 +37,6 @@ import javax.tools.JavaFileObject;
  * @author Peter von der Ah&eacute;
  * @since 1.6
  */
-@jdk.Exported
 public interface CompilationUnitTree extends Tree {
     /**
      * Returns the annotations listed on any package declaration
@@ -59,7 +58,7 @@ public interface CompilationUnitTree extends Tree {
      * Returns the package tree associated with this compilation unit,
      * or {@code null} if there is no package declaration.
      * @return the package tree
-     * @since 1.9
+     * @since 9
      */
     PackageTree getPackage();
 

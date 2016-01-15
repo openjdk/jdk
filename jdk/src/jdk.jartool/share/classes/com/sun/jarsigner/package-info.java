@@ -35,5 +35,4 @@
  * to sign JAR files.
  */
 
-@jdk.Exported
 package com.sun.jarsigner;

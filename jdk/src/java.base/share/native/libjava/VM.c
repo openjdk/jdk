@@ -28,7 +28,7 @@
 #include "jvm.h"
 #include "jdk_util.h"
 
-#include "sun_misc_VM.h"
+#include "jdk_internal_misc_VM.h"
 
 /* Only register the performance-critical methods */
 static JNINativeMethod methods[] = {
@@ -36,12 +36,12 @@ static JNINativeMethod methods[] = {
 };
 
 JNIEXPORT jobject JNICALL
-Java_sun_misc_VM_latestUserDefinedLoader(JNIEnv *env, jclass cls) {
+Java_jdk_internal_misc_VM_latestUserDefinedLoader(JNIEnv *env, jclass cls) {
     return JVM_LatestUserDefinedLoader(env);
 }
 
 JNIEXPORT void JNICALL
-Java_sun_misc_VM_initialize(JNIEnv *env, jclass cls) {
+Java_jdk_internal_misc_VM_initialize(JNIEnv *env, jclass cls) {
     if (!JDK_InitJvmHandle()) {
         JNU_ThrowInternalError(env, "Handle for JVM not found for symbol lookup");
         return;
@@ -50,8 +50,8 @@ Java_sun_misc_VM_initialize(JNIEnv *env, jclass cls) {
     // Registers implementations of native methods described in methods[]
     // above.
     // In particular, registers JVM_GetNanoTimeAdjustment as the implementation
-    // of the native sun.misc.VM.getNanoTimeAdjustment - avoiding the cost of
-    // introducing a Java_sun_misc_VM_getNanoTimeAdjustment  wrapper
+    // of the native VM.getNanoTimeAdjustment - avoiding the cost of
+    // introducing a Java_jdk_internal_misc_VM_getNanoTimeAdjustment wrapper
     (*env)->RegisterNatives(env, cls,
                             methods, sizeof(methods)/sizeof(methods[0]));
 }

@@ -40,7 +40,6 @@ import java.security.PrivilegedAction;
  * @see AWTEventMonitor
  * @see SwingEventMonitor
  */
-@jdk.Exported
 public class EventQueueMonitor
         implements AWTEventListener {
 

@@ -40,7 +40,6 @@ import com.sun.jdi.*;
  * @author Robert Field
  * @since  1.3
  */
-@jdk.Exported
 public interface MethodExitEvent extends LocatableEvent {
 
     /**

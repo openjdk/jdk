@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,28 @@
  * questions.
  */
 
-package java.lang.invoke;
-
-import java.lang.annotation.*;
-
-/**
- * Internal marker for some methods in the JSR 292 implementation.
+/* @test
+ * @bug 8076596
+ * @run main/othervm/policy=Test8076596.security.policy/secure=Test8076596 -ea -esa Test8076596
  */
-/*non-public*/
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
-@Retention(RetentionPolicy.RUNTIME)
-@interface ForceInline {
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
+public class Test8076596 extends SecurityManager {
+    public Test8076596() {
+        // 1. Using lambda
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> null);
+        // 2. Using inner class
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                return null;
+            }
+        });
+    }
+
+    public static void main(String[] args) {
+        // empty
+    }
 }

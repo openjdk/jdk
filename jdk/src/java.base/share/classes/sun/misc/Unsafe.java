@@ -25,13 +25,13 @@
 
 package sun.misc;
 
-import java.lang.reflect.Field;
-import java.security.ProtectionDomain;
-
+import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.VM;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import java.lang.reflect.Field;
+import java.security.ProtectionDomain;
 
 
 /**
@@ -1035,9 +1035,4 @@ public final class Unsafe {
     private static void throwIllegalAccessError() {
         throw new IllegalAccessError();
     }
-
-    // JVM interface methods
-    private native boolean unalignedAccess0();
-    private native boolean isBigEndian0();
-
 }
