@@ -3407,8 +3407,7 @@ Node* GraphKit::new_instance(Node* klass_node,
   if (layout_is_con) {
     assert(!StressReflectiveCode, "stress mode does not use these paths");
     bool must_go_slow = Klass::layout_helper_needs_slow_path(layout_con);
-    initial_slow_test = must_go_slow? intcon(1): extra_slow_test;
-
+    initial_slow_test = must_go_slow ? intcon(1) : extra_slow_test;
   } else {   // reflective case
     // This reflective path is used by Unsafe.allocateInstance.
     // (It may be stress-tested by specifying StressReflectiveCode.)
