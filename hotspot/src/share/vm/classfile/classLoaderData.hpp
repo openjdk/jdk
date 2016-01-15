@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,9 +275,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Used to make sure that this CLD is not unloaded.
   void set_keep_alive(bool value) { _keep_alive = value; }
 
-  unsigned int identity_hash() const {
-    return _class_loader == NULL ? 0 : _class_loader->identity_hash();
-  }
+  inline unsigned int identity_hash() const;
 
   // Used when tracing from klasses.
   void oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim);
