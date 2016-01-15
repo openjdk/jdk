@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,18 @@
  */
 
 /*
- * @test TestFullGCount.java
+ * @test TestFullGCCount.java
  * @bug 7072527
  * @summary CMS: JMM GC counters overcount in some cases
  * @modules java.management
  * @run main/othervm -Xlog:gc TestFullGCCount
  */
-import java.util.*;
-import java.lang.management.*;
+
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 /*
  * Originally for a specific failure in CMS, this test now monitors all
@@ -43,12 +47,12 @@ public class TestFullGCCount {
         int iterations = 20;
         boolean failed = false;
         String errorMessage = "";
-        HashMap<String, List> counts = new HashMap<String, List>();
+        HashMap<String, List> counts = new HashMap<>();
 
         // Prime the collection of count lists for all collectors.
         for (int i = 0; i < collectors.size(); i++) {
             GarbageCollectorMXBean collector = collectors.get(i);
-            counts.put(collector.getName(), new ArrayList<Long>(iterations));
+            counts.put(collector.getName(), new ArrayList<>(iterations));
         }
 
         // Perform some gc, record collector counts.
