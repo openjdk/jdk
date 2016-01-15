@@ -3451,6 +3451,31 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # questions.
 #
 
+# Create a function/macro that takes a series of named arguments. The call is
+# similar to AC_DEFUN, but the setup of the function looks like this:
+# BASIC_DEFUN_NAMED([MYFUNC], [FOO *BAR], [$@], [
+# ... do something
+#   AC_MSG_NOTICE([Value of BAR is ARG_BAR])
+# ])
+# A star (*) in front of a named argument means that it is required and it's
+# presence will be verified. To pass e.g. the first value as a normal indexed
+# argument, use [m4_shift($@)] as the third argument instead of [$@]. These
+# arguments are referenced in the function by their name prefixed by ARG_, e.g.
+# "ARG_FOO".
+#
+# The generated function can be called like this:
+# MYFUNC(FOO: [foo-val], BAR:
+#     [
+#         $ECHO hello world
+#     ])
+#
+#
+# Argument 1: Name of the function to define
+# Argument 2: List of legal named arguments, with a * prefix for required arguments
+# Argument 3: Argument array to treat as named, typically $@
+# Argument 4: The main function body
+
+
 # Test if $1 is a valid argument to $3 (often is $JAVA passed as $3)
 # If so, then append $1 to $2 \
 # Also set JVM_ARG_OK to true/false depending on outcome.
@@ -3794,6 +3819,15 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 ################################################################################
 #
+# Runs icecc-create-env once and prints the error if it fails
+#
+# $1: arguments to icecc-create-env
+# $2: log file
+#
+
+
+################################################################################
+#
 # Optionally enable distributed compilation of native code using icecc/icecream
 #
 
@@ -3877,16 +3911,20 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
-# FLAGS_COMPILER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
-#                                   [RUN-IF-FALSE])
+# FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                   IF_FALSE: [RUN-IF-FALSE])
 # ------------------------------------------------------------
 # Check that the c and c++ compilers support an argument
 
 
-# FLAGS_LINKER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
-#                                    [RUN-IF-FALSE])
+
+
+# FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                   IF_FALSE: [RUN-IF-FALSE])
 # ------------------------------------------------------------
 # Check that the linker support an argument
+
+
 
 
 
@@ -4308,7 +4346,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4801,7 +4839,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1450277321
+DATE_WHEN_GENERATED=1452780299
 
 ###############################################################################
 #
@@ -45349,6 +45387,54 @@ $as_echo "$as_me: Rewriting BUILD_AR to \"$new_complete\"" >&6;}
     # "-Og" suppported for GCC 4.8 and later
     CFLAG_OPTIMIZE_DEBUG_FLAG="-Og"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"" >&5
 $as_echo_n "checking if compiler supports \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"... " >&6; }
   supports=yes
@@ -45408,14 +45494,75 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     HAS_CFLAG_OPTIMIZE_DEBUG=true
   else
+    :
     HAS_CFLAG_OPTIMIZE_DEBUG=false
   fi
 
 
+
+
+
+
+
+
+
+
+
+
+
     # "-z relro" supported in GNU binutils 2.17 and later
     LINKER_RELRO_FLAG="-Wl,-z,relro"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if linker supports \"$LINKER_RELRO_FLAG\"" >&5
 $as_echo_n "checking if linker supports \"$LINKER_RELRO_FLAG\"... " >&6; }
@@ -45458,14 +45605,75 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     HAS_LINKER_RELRO=true
   else
+    :
     HAS_LINKER_RELRO=false
   fi
 
 
+
+
+
+
+
+
+
+
+
+
+
     # "-z now" supported in GNU binutils 2.11 and later
     LINKER_NOW_FLAG="-Wl,-z,now"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if linker supports \"$LINKER_NOW_FLAG\"" >&5
 $as_echo_n "checking if linker supports \"$LINKER_NOW_FLAG\"... " >&6; }
@@ -45508,10 +45716,23 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     HAS_LINKER_NOW=true
   else
+    :
     HAS_LINKER_NOW=false
   fi
+
+
+
+
+
+
+
+
+
+
+
 
   fi
 
@@ -45930,6 +46151,29 @@ $as_echo "$tool_specified" >&6; }
   else
     COMPILER_TARGET_BITS_FLAG="-m"
     COMPILER_COMMAND_FILE_FLAG="@"
+
+    # The solstudio linker does not support @-files.
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      COMPILER_COMMAND_FILE_FLAG=
+    fi
+
+    # Check if @file is supported by gcc
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if @file is supported by gcc" >&5
+$as_echo_n "checking if @file is supported by gcc... " >&6; }
+      # Extra emtpy "" to prevent ECHO from interpreting '--version' as argument
+      $ECHO "" "--version" > command.file
+      if $CXX @command.file 2>&5 >&5; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        COMPILER_COMMAND_FILE_FLAG="@"
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        COMPILER_COMMAND_FILE_FLAG=
+      fi
+      rm -rf command.file
+    fi
   fi
 
 
@@ -46810,6 +47054,49 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # Not all versions of gcc support -fstack-protector
       STACK_PROTECTOR_CFLAG="-fstack-protector-all"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"" >&5
 $as_echo_n "checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"... " >&6; }
   supports=yes
@@ -46870,9 +47157,22 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
     :
+
   else
+    :
     STACK_PROTECTOR_CFLAG=""
   fi
+
+
+
+
+
+
+
+
+
+
+
 
 
       CFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_CFLAG --param ssp-buffer-size=1"
@@ -47352,6 +47652,49 @@ $as_echo "$supports" >&6; }
       ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   esac
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$ZERO_ARCHFLAG\"" >&5
 $as_echo_n "checking if compiler supports \"$ZERO_ARCHFLAG\"... " >&6; }
   supports=yes
@@ -47412,14 +47755,75 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
     :
+
   else
+    :
     ZERO_ARCHFLAG=""
   fi
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   # Check that the compiler supports -mX (or -qX on AIX) flags
   # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"" >&5
 $as_echo_n "checking if compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"... " >&6; }
@@ -47480,10 +47884,23 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     COMPILER_SUPPORTS_TARGET_BITS_FLAG=true
   else
+    :
     COMPILER_SUPPORTS_TARGET_BITS_FLAG=false
   fi
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -47533,6 +47950,54 @@ $as_echo "yes (default)" >&6; }
     gcc)
       # Prior to gcc 4.4, a -Wno-X where X is unknown for that version of gcc will cause an error
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
 $as_echo_n "checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
   supports=yes
@@ -47592,11 +48057,24 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     GCC_CAN_DISABLE_WARNINGS=true
   else
+    :
     GCC_CAN_DISABLE_WARNINGS=false
 
   fi
+
+
+
+
+
+
+
+
+
+
+
 
       if test "x$GCC_CAN_DISABLE_WARNINGS" = "xtrue"; then
         DISABLE_WARNING_PREFIX="-Wno-"
@@ -47608,6 +48086,54 @@ $as_echo "$supports" >&6; }
       CC_OLD="$CC"
       CC="$BUILD_CC"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
 $as_echo_n "checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
   supports=yes
@@ -47667,11 +48193,24 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
+    :
     BUILD_CC_CAN_DISABLE_WARNINGS=true
   else
+    :
     BUILD_CC_CAN_DISABLE_WARNINGS=false
 
   fi
+
+
+
+
+
+
+
+
+
+
+
 
       if test "x$BUILD_CC_CAN_DISABLE_WARNINGS" = "xtrue"; then
         BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
@@ -51742,12 +52281,28 @@ $as_echo "$as_me: WARNING: cups not used, so --with-cups[-*] is ignored" >&2;}
     fi
 
     if test "x${with_cups}" != x; then
-      CUPS_CFLAGS="-I${with_cups}/include"
-      CUPS_FOUND=yes
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cups headers" >&5
+$as_echo_n "checking for cups headers... " >&6; }
+      if test -s "${with_cups}/include/cups/cups.h"; then
+        CUPS_CFLAGS="-I${with_cups}/include"
+        CUPS_FOUND=yes
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CUPS_FOUND" >&5
+$as_echo "$CUPS_FOUND" >&6; }
+      else
+        as_fn_error $? "Can't find 'include/cups/cups.h' under ${with_cups} given with the --with-cups option." "$LINENO" 5
+      fi
     fi
     if test "x${with_cups_include}" != x; then
-      CUPS_CFLAGS="-I${with_cups_include}"
-      CUPS_FOUND=yes
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cups headers" >&5
+$as_echo_n "checking for cups headers... " >&6; }
+      if test -s "${with_cups_include}/cups/cups.h"; then
+        CUPS_CFLAGS="-I${with_cups_include}"
+        CUPS_FOUND=yes
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CUPS_FOUND" >&5
+$as_echo "$CUPS_FOUND" >&6; }
+      else
+        as_fn_error $? "Can't find 'cups/cups.h' under ${with_cups_include} given with the --with-cups-include option." "$LINENO" 5
+      fi
     fi
     if test "x$CUPS_FOUND" = xno; then
       # Are the cups headers installed in the default /usr/include location?
@@ -59543,11 +60098,23 @@ $as_echo "$tool_specified" >&6; }
     # be sent to the other hosts in the icecream cluster.
     icecc_create_env_log="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/icecc_create_env.log"
     ${MKDIR} -p ${CONFIGURESUPPORT_OUTPUTDIR}/icecc
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icecc build environment for target compiler" >&5
-$as_echo_n "checking for icecc build environment for target compiler... " >&6; }
+    # Older versions of icecc does not have the --gcc parameter
+    if ${ICECC_CREATE_ENV} | $GREP -q -e --gcc; then
+      icecc_gcc_arg="--gcc"
+    fi
     if test "x${TOOLCHAIN_TYPE}" = "xgcc"; then
-      cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-          && ${ICECC_CREATE_ENV} --gcc ${CC} ${CXX} > ${icecc_create_env_log}
+
+  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} ${icecc_gcc_arg} ${CC} ${CXX} > \
+          ${icecc_create_env_log} 2>&1
+  if test "$?" != "0"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
+$as_echo "$as_me: icecc-create-env output:" >&6;}
+    cat \
+          ${icecc_create_env_log}
+    as_fn_error $? "Failed to create icecc compiler environment" "$LINENO" 5
+  fi
+
     elif test "x$TOOLCHAIN_TYPE" = "xclang"; then
       # For clang, the icecc compilerwrapper is needed. It usually resides next
       # to icecc-create-env.
@@ -59755,8 +60322,16 @@ $as_echo "$tool_specified" >&6; }
   fi
 
 
-      cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-          && ${ICECC_CREATE_ENV} --clang ${CC} ${ICECC_WRAPPER} > ${icecc_create_env_log}
+
+  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} --clang ${CC} ${ICECC_WRAPPER} > ${icecc_create_env_log} 2>&1
+  if test "$?" != "0"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
+$as_echo "$as_me: icecc-create-env output:" >&6;}
+    cat ${icecc_create_env_log}
+    as_fn_error $? "Failed to create icecc compiler environment" "$LINENO" 5
+  fi
+
     else
       as_fn_error $? "Can only create icecc compiler packages for toolchain types gcc and clang" "$LINENO" 5
     fi
@@ -59765,26 +60340,53 @@ $as_echo "$tool_specified" >&6; }
     # to find it.
     ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log}`"
     ICECC_ENV_BUNDLE="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/${ICECC_ENV_BUNDLE_BASENAME}"
+    if test ! -f ${ICECC_ENV_BUNDLE}; then
+      as_fn_error $? "icecc-create-env did not produce an environment ${ICECC_ENV_BUNDLE}" "$LINENO" 5
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icecc build environment for target compiler" >&5
+$as_echo_n "checking for icecc build environment for target compiler... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${ICECC_ENV_BUNDLE}" >&5
 $as_echo "${ICECC_ENV_BUNDLE}" >&6; }
     ICECC="ICECC_VERSION=${ICECC_ENV_BUNDLE} ICECC_CC=${CC} ICECC_CXX=${CXX} ${ICECC_CMD}"
 
     if test "x${COMPILE_TYPE}" = "xcross"; then
       # If cross compiling, create a separate env package for the build compiler
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icecc build environment for build compiler" >&5
-$as_echo_n "checking for icecc build environment for build compiler... " >&6; }
       # Assume "gcc" or "cc" is gcc and "clang" is clang. Otherwise bail.
+      icecc_create_env_log_build="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/icecc_create_env_build.log"
       if test "x${BUILD_CC##*/}" = "xgcc" ||  test "x${BUILD_CC##*/}" = "xcc"; then
-        cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-            && ${ICECC_CREATE_ENV} --gcc ${BUILD_CC} ${BUILD_CXX} > ${icecc_create_env_log}
+
+  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} ${icecc_gcc_arg} ${BUILD_CC} ${BUILD_CXX} > \
+            ${icecc_create_env_log_build} 2>&1
+  if test "$?" != "0"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
+$as_echo "$as_me: icecc-create-env output:" >&6;}
+    cat \
+            ${icecc_create_env_log_build}
+    as_fn_error $? "Failed to create icecc compiler environment" "$LINENO" 5
+  fi
+
       elif test "x${BUILD_CC##*/}" = "xclang"; then
-        cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-            && ${ICECC_CREATE_ENV} --clang ${BUILD_CC} ${ICECC_WRAPPER} > ${icecc_create_env_log}
+
+  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} --clang ${BUILD_CC} ${ICECC_WRAPPER} > ${icecc_create_env_log_build} 2>&1
+  if test "$?" != "0"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
+$as_echo "$as_me: icecc-create-env output:" >&6;}
+    cat ${icecc_create_env_log_build}
+    as_fn_error $? "Failed to create icecc compiler environment" "$LINENO" 5
+  fi
+
       else
         as_fn_error $? "Cannot create icecc compiler package for ${BUILD_CC}" "$LINENO" 5
       fi
-      ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log}`"
+      ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log_build}`"
       ICECC_ENV_BUNDLE="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/${ICECC_ENV_BUNDLE_BASENAME}"
+      if test ! -f ${ICECC_ENV_BUNDLE}; then
+        as_fn_error $? "icecc-create-env did not produce an environment ${ICECC_ENV_BUNDLE}" "$LINENO" 5
+      fi
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icecc build environment for build compiler" >&5
+$as_echo_n "checking for icecc build environment for build compiler... " >&6; }
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${ICECC_ENV_BUNDLE}" >&5
 $as_echo "${ICECC_ENV_BUNDLE}" >&6; }
       BUILD_ICECC="ICECC_VERSION=${ICECC_ENV_BUNDLE} ICECC_CC=${BUILD_CC} \
@@ -61428,7 +62030,6 @@ fi
 
   # Move configure.log from current directory to the build output root
   if test -e ./configure.log; then
-    echo found it
     $MV -f ./configure.log "$OUTPUT_ROOT/configure.log" 2> /dev/null
   fi
 

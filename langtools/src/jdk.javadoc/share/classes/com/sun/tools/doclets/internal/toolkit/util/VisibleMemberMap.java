@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ public class VisibleMemberMap {
         for (ProgramElementDoc element : list) {
             Object key = getMemberKey(element);
             Map<ProgramElementDoc, String> memberLevelMap = memberNameMap.get(key);
-            if (level.equals(memberLevelMap.get(element)))
+            if (memberLevelMap != null && level.equals(memberLevelMap.get(element)))
                 memberLevelMap.remove(element);
         }
     }

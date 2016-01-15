@@ -46,6 +46,7 @@ import sun.reflect.annotation.AnnotationType;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.misc.JavaLangAccess;;
 import jdk.internal.misc.SharedSecrets;;
+import jdk.internal.misc.VM;
 import jdk.internal.logger.LoggerFinderLoader;
 import jdk.internal.logger.LazyLoggers;
 import jdk.internal.logger.LocalizedLoggerWrapper;
@@ -1534,6 +1535,8 @@ public final class System {
      * @return an instance of {@link Logger} that can be used by the calling
      *         class.
      * @throws NullPointerException if {@code name} is {@code null}.
+     *
+     * @since 9
      */
     @CallerSensitive
     public static Logger getLogger(String name) {
@@ -1571,6 +1574,8 @@ public final class System {
      * resource bundle for message localization.
      * @throws NullPointerException if {@code name} is {@code null} or
      *         {@code bundle} is {@code null}.
+     *
+     * @since 9
      */
     @CallerSensitive
     public static Logger getLogger(String name, ResourceBundle bundle) {
@@ -1817,12 +1822,12 @@ public final class System {
         // removed from the system properties.
         //
         // See java.lang.Integer.IntegerCache and the
-        // sun.misc.VM.saveAndRemoveProperties method for example.
+        // VM.saveAndRemoveProperties method for example.
         //
         // Save a private copy of the system properties object that
         // can only be accessed by the internal implementation.  Remove
         // certain system properties that are not intended for public access.
-        sun.misc.VM.saveAndRemoveProperties(props);
+        VM.saveAndRemoveProperties(props);
 
 
         lineSeparator = props.getProperty("line.separator");
@@ -1846,7 +1851,7 @@ public final class System {
         // set for the class libraries. Currently this is no-op everywhere except
         // for Windows where the process-wide error mode is set before the java.io
         // classes are used.
-        sun.misc.VM.initializeOSEnvironment();
+        VM.initializeOSEnvironment();
 
         // The main thread is not added to its thread group in the same
         // way as other threads; we must do it ourselves here.
@@ -1857,10 +1862,10 @@ public final class System {
         setJavaLangAccess();
 
         // Subsystems that are invoked during initialization can invoke
-        // sun.misc.VM.isBooted() in order to avoid doing things that should
+        // VM.isBooted() in order to avoid doing things that should
         // wait until the application class loader has been set up.
         // IMPORTANT: Ensure that this remains the last initialization action!
-        sun.misc.VM.booted();
+        VM.booted();
     }
 
     private static void setJavaLangAccess() {

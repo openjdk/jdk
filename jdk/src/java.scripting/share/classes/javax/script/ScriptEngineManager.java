@@ -33,7 +33,8 @@ import java.util.ServiceConfigurationError;
  * The <code>ScriptEngineManager</code> implements a discovery and instantiation
  * mechanism for <code>ScriptEngine</code> classes and also maintains a
  * collection of key/value pairs storing state shared by all engines created
- * by the Manager. This class uses the <a href="../../../technotes/guides/jar/jar.html#Service%20Provider">service provider</a> mechanism to enumerate all the
+ * by the Manager. This class uses the service provider mechanism described in the
+ * {@link java.util.ServiceLoader} class to enumerate all the
  * implementations of <code>ScriptEngineFactory</code>. <br><br>
  * The <code>ScriptEngineManager</code> provides a method to return a list of all these factories
  * as well as utility methods which look up factories on the basis of language name, file extension
@@ -64,7 +65,7 @@ public class ScriptEngineManager  {
     /**
      * This constructor loads the implementations of
      * <code>ScriptEngineFactory</code> visible to the given
-     * <code>ClassLoader</code> using the <a href="../../../technotes/guides/jar/jar.html#Service%20Provider">service provider</a> mechanism.<br><br>
+     * <code>ClassLoader</code> using the service provider mechanism.<br><br>
      * If loader is <code>null</code>, the script engine factories that are
      * bundled with the platform are loaded. <br>
      *

@@ -32,7 +32,6 @@ package com.sun.nio.sctp;
  *
  * @since 1.7
  */
-@jdk.Exported
 public abstract class ShutdownNotification implements Notification {
     /**
      * Initializes a new instance of this class.

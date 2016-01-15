@@ -51,7 +51,6 @@ import com.sun.source.tree.Tree;
  *
  * @author Peter von der Ah&eacute;
  */
-@jdk.Exported
 public abstract class Trees {
     /**
      * Returns a Trees object for a given CompilationTask.

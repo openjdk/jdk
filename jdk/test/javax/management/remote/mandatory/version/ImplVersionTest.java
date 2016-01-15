@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  * @test
  * @bug 5046815
  * @summary Test that RMIServer.getVersion() reflects the JDK version when
- * JMX is bundled into the Java platform and the application is run with a
- * security manager and the test codebase has the java permission to read
- * the "java.runtime.version" system property.
+ * the Java platform and the application is run with a security manager and the
+ * test codebase has the java permission to read the "java.runtime.version"
+ * system property.
  * @author Luis-Miguel Alventosa, Joel Feraud
  * @modules java.management
  * @run clean ImplVersionTest ImplVersionCommand
@@ -36,8 +36,6 @@
  */
 
 import java.io.File;
-import java.security.CodeSource;
-import javax.management.MBeanServer;
 
 public class ImplVersionTest {
 

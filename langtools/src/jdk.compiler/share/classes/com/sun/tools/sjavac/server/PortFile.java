@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,11 +174,20 @@ public class PortFile {
     /**
      * Delete the port file.
      */
-    public void delete() throws IOException {
+    public void delete() throws IOException, InterruptedException {
         // Access to file must be closed before deleting.
         rwfile.close();
-        // Now delete.
+
         file.delete();
+
+        // Wait until file has been deleted (deletes are asynchronous on Windows!) otherwise we
+        // might shutdown the server and prevent another one from starting.
+        for (int i = 0; i < 10 && file.exists(); i++) {
+            Thread.sleep(1000);
+        }
+        if (file.exists()) {
+            throw new IOException("Failed to delete file.");
+        }
     }
 
     /**

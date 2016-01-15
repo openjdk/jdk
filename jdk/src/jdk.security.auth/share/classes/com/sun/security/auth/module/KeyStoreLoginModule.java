@@ -110,7 +110,6 @@ import sun.security.util.Password;
  *
  * </dl>
  */
-@jdk.Exported
 public class KeyStoreLoginModule implements LoginModule {
 
     private static final ResourceBundle rb = AccessController.doPrivileged(

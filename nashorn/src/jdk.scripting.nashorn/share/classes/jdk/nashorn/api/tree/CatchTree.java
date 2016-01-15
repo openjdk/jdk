@@ -36,7 +36,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface CatchTree extends Tree {
     /**
      * Returns the catch parameter identifier of the exception caught.

@@ -220,8 +220,6 @@ public class Options {
                 for (SourceLocation sl : locs) {
                     for (String pkg : sl.includes) addArg(Option.I, pkg);
                     for (String pkg : sl.excludes) addArg(Option.X, pkg);
-                    for (String f : sl.excludedFiles) addArg(Option.XF, f);
-                    for (String f : sl.includedFiles) addArg(Option.IF, f);
                     addArg(opt, sl.getPath());
                 }
             }
@@ -380,18 +378,6 @@ public class Options {
         }
 
         @Override
-        public void excludeFile(String exclFilePattern) {
-            exclFilePattern = Util.normalizeDriveLetter(exclFilePattern);
-            excludeFiles.add(exclFilePattern);
-        }
-
-        @Override
-        public void includeFile(String inclFilePattern) {
-            inclFilePattern = Util.normalizeDriveLetter(inclFilePattern);
-            includeFiles.add(inclFilePattern);
-        }
-
-        @Override
         public void addTransformer(String suffix, Transformer tr) {
             if (trRules.containsKey(suffix)) {
                 reportError("More than one transformer specified for " +
@@ -519,9 +505,7 @@ public class Options {
                 result.add(new SourceLocation(
                         path,
                         includes,
-                        excludes,
-                        includeFiles,
-                        excludeFiles));
+                        excludes));
             }
             resetFilters();
             return result;

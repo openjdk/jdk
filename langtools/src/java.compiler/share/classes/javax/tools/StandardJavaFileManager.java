@@ -187,7 +187,7 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * a directory or if this file manager does not support any of the
      * given paths.
      *
-     * @since 1.9
+     * @since 9
      */
     default Iterable<? extends JavaFileObject> getJavaFileObjectsFromPaths(
             Iterable<? extends Path> paths) {
@@ -226,7 +226,7 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * @throws NullPointerException if the given array contains null
      * elements
      *
-     * @since 1.9
+     * @since 9
      */
     default Iterable<? extends JavaFileObject> getJavaFileObjects(Path... paths) {
         return getJavaFileObjectsFromPaths(Arrays.asList(paths));
@@ -295,7 +295,7 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * @throws IOException if {@code location} is an output location and
      * {@code paths} does not represent an existing directory
      *
-     * @since 1.9
+     * @since 9
      */
     default void setLocationFromPaths(Location location, Iterable<? extends Path> paths)
         throws IOException {
@@ -324,7 +324,7 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * associated search path
      *
      * @see #setLocationFromPaths
-     * @since 1.9
+     * @since 9
      */
     default Iterable<? extends Path> getLocationAsPaths(Location location) {
         return asPaths(getLocation(location));
@@ -345,7 +345,7 @@ public interface StandardJavaFileManager extends JavaFileManager {
      * @throws IllegalArgumentException if the file object does not have an underlying path
      * @throws UnsupportedOperationException if the operation is not supported by this file manager
      *
-     * @since 1.9
+     * @since 9
      */
     default Path asPath(FileObject file) {
         throw new UnsupportedOperationException();

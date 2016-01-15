@@ -256,8 +256,9 @@ public final class NativeDate extends ScriptObject {
      * @return a Date that points to the current moment in time
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static long now(final Object self) {
-        return System.currentTimeMillis();
+    public static double now(final Object self) {
+        // convert to double as long does not represent the primitive JS number type
+        return (double) System.currentTimeMillis();
     }
 
     /**
