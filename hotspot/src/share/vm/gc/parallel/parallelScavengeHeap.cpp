@@ -250,7 +250,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
       }
 
       // Failed to allocate without a gc.
-      if (GC_locker::is_active_and_needs_gc()) {
+      if (GCLocker::is_active_and_needs_gc()) {
         // If this thread is not in a jni critical section, we stall
         // the requestor until the critical section has cleared and
         // GC allowed. When the critical section clears, a GC is
@@ -260,7 +260,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         JavaThread* jthr = JavaThread::current();
         if (!jthr->in_critical()) {
           MutexUnlocker mul(Heap_lock);
-          GC_locker::stall_until_clear();
+          GCLocker::stall_until_clear();
           gclocker_stalled_count += 1;
           continue;
         } else {
@@ -350,7 +350,7 @@ ParallelScavengeHeap::death_march_check(HeapWord* const addr, size_t size) {
 }
 
 HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
-  if (!should_alloc_in_eden(size) || GC_locker::is_active_and_needs_gc()) {
+  if (!should_alloc_in_eden(size) || GCLocker::is_active_and_needs_gc()) {
     // Size is too big for eden, or gc is locked out.
     return old_gen()->allocate(size);
   }

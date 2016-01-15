@@ -741,9 +741,6 @@ public:
   product(bool, ForceTimeHighResolution, false,                             \
           "Using high time resolution (for Win32 only)")                    \
                                                                             \
-  develop(bool, TraceItables, false,                                        \
-          "Trace initialization and use of itables")                        \
-                                                                            \
   develop(bool, TracePcPatching, false,                                     \
           "Trace usage of frame::patch_pc")                                 \
                                                                             \
@@ -892,7 +889,7 @@ public:
                                                                             \
   notproduct(bool, StrictSafepointChecks, trueInDebug,                      \
           "Enable strict checks that safepoints cannot happen for threads " \
-          "that use No_Safepoint_Verifier")                                 \
+          "that use NoSafepointVerifier")                                   \
                                                                             \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
@@ -2704,9 +2701,6 @@ public:
                                                                             \
   develop(bool, DebugVtables, false,                                        \
           "add debugging code to vtable dispatch")                          \
-                                                                            \
-  develop(bool, PrintVtables, false,                                        \
-          "print vtables when printing klass")                              \
                                                                             \
   notproduct(bool, PrintVtableStats, false,                                 \
           "print vtables stats at end of run")                              \
