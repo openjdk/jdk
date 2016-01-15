@@ -35,7 +35,6 @@ import java.util.List;
  *
  * @since 1.7
  */
-@jdk.Exported
 public interface UnionTypeTree extends Tree {
     /**
      * Returns the alternative type expressions.

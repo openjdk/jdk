@@ -43,9 +43,8 @@ import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.EmbeddedFrame;
 import sun.awt.SunToolkit;
+import sun.awt.util.PerformanceLogger;
 import sun.misc.ManagedLocalsThread;
-import sun.misc.MessageUtils;
-import sun.misc.PerformanceLogger;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -117,8 +116,6 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      * The current applet size.
      */
     Dimension currentAppletSize = new Dimension(10, 10);
-
-    MessageUtils mu = new MessageUtils();
 
     /**
      * The thread to use during applet loading

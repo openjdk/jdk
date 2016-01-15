@@ -93,7 +93,7 @@ public enum Option {
             CLASSPATH.processMatching(iter, helper);
         }
     },
-    X("-x", "Exclude directory from the subsequent source directory") {
+    X("-x", "Exclude files matching the given pattern") {
         @Override
         protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
             String pattern = getFilePatternArg(iter, helper);
@@ -101,28 +101,12 @@ public enum Option {
                 helper.exclude(pattern);
         }
     },
-    I("-i", "Include only the given directory from the subsequent source directory") {
+    I("-i", "Include only files matching the given pattern") {
         @Override
         protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
             String pattern = getFilePatternArg(iter, helper);
             if (pattern != null)
                 helper.include(pattern);
-        }
-    },
-    XF("-xf", "Exclude a given file") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            String pattern = getFilePatternArg(iter, helper);
-            if (pattern != null)
-                helper.excludeFile(pattern);
-        }
-    },
-    IF("-if", "Include only the given file") {
-        @Override
-        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
-            String pattern = getFilePatternArg(iter, helper);
-            if (pattern != null)
-                helper.includeFile(pattern);
         }
     },
     TR("-tr", "Translate resources") {
@@ -338,7 +322,7 @@ public enum Option {
     String getFilePatternArg(ArgumentIterator iter, OptionHelper helper) {
 
         if (!iter.hasNext()) {
-            helper.reportError(arg + " must be followed by a file or directory pattern.");
+            helper.reportError(arg + " must be followed by a glob pattern.");
             return null;
         }
 

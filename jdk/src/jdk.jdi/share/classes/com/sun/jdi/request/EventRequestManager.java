@@ -44,7 +44,6 @@ import java.util.List;
  * @since  1.3
  */
 
-@jdk.Exported
 public interface EventRequestManager extends Mirror {
 
     /**

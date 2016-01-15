@@ -68,7 +68,6 @@ import com.sun.tools.javac.tree.DCTree.DCIndex;
  *
  * @since 1.8
  */
-@jdk.Exported
 public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
 
     /**

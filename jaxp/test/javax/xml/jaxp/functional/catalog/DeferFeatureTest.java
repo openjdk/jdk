@@ -56,23 +56,14 @@ public class DeferFeatureTest {
 
     @DataProvider(name = "catalog-countOfLoadedCatalogFile")
     private Object[][] data() {
-        return new Object[][] {
-                // This catalog specifies null catalog explicitly,
-                // and the count of loaded catalogs should be 0.
-                { createCatalog(null), 0 },
-
-                // This catalog specifies null catalog implicitly,
-                // and the count of loaded catalogs should be 0.
-                { createCatalog(CatalogFeatures.defaults()), 0 },
-
-                // This catalog loads null catalog with true DEFER,
-                // and the count of loaded catalogs should be 0.
-                { createCatalog(createDeferFeature(DEFER_TRUE)), 0 },
-
-                // This catalog loads null catalog with false DEFER.
-                // It should load all of none-current catalogs and the
-                // count of loaded catalogs should be 3.
-                { createCatalog(createDeferFeature(DEFER_FALSE)), 3 } };
+        return new Object[][]{
+            // By default, alternative catalogs are not loaded.
+            {createCatalog(CatalogFeatures.defaults()), 0},
+            // Alternative catalogs are not loaded when DEFER is set to true.
+            {createCatalog(createDeferFeature(DEFER_TRUE)), 0},
+            // The 3 alternative catalogs are not pre-loaded
+            //when DEFER is set to false.
+            {createCatalog(createDeferFeature(DEFER_FALSE)), 3}};
     }
 
     private CatalogFeatures createDeferFeature(String defer) {

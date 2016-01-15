@@ -33,7 +33,6 @@ import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.util.Context;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -395,7 +394,7 @@ class TaskFactory {
                 LinkedHashMap<String, Diag> diagMap = new LinkedHashMap<>();
                 for (Diagnostic<? extends JavaFileObject> in : diagnostics.getDiagnostics()) {
                     Diag d = diag(in);
-                    String uniqueKey = d.getCode() + ":" + d.getPosition() + ":" + d.getMessage(null);
+                    String uniqueKey = d.getCode() + ":" + d.getPosition() + ":" + d.getMessage(PARSED_LOCALE);
                     diagMap.put(uniqueKey, d);
                 }
                 diags = new DiagList(diagMap.values());
@@ -410,7 +409,7 @@ class TaskFactory {
         String shortErrorMessage() {
             StringBuilder sb = new StringBuilder();
             for (Diag diag : getDiagnostics()) {
-                for (String line : diag.getMessage(null).split("\\r?\\n")) {
+                for (String line : diag.getMessage(PARSED_LOCALE).split("\\r?\\n")) {
                     if (!line.trim().startsWith("location:")) {
                         sb.append(line);
                     }
@@ -422,7 +421,7 @@ class TaskFactory {
         void debugPrintDiagnostics(String src) {
             for (Diag diag : getDiagnostics()) {
                 state.debug(DBG_GEN, "ERROR --\n");
-                for (String line : diag.getMessage(null).split("\\r?\\n")) {
+                for (String line : diag.getMessage(PARSED_LOCALE).split("\\r?\\n")) {
                     if (!line.trim().startsWith("location:")) {
                         state.debug(DBG_GEN, "%s\n", line);
                     }

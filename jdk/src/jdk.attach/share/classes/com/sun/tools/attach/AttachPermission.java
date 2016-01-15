@@ -79,7 +79,6 @@ package com.sun.tools.attach;
  * @see com.sun.tools.attach.spi.AttachProvider
  */
 
-@jdk.Exported
 public final class AttachPermission extends java.security.BasicPermission {
 
     /** use serialVersionUID for interoperability */
