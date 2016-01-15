@@ -964,7 +964,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         assert(cache_index >= 0 && cache_index < pool->cache()->length(), "unexpected cache index");
         ConstantPoolCacheEntry* cpce = pool->cache()->entry_at(cache_index);
         cpce->set_method_handle(pool, info);
-        appendix = info.resolved_appendix();  // just in case somebody already resolved the entry
+        appendix = cpce->appendix_if_resolved(pool); // just in case somebody already resolved the entry
         break;
       }
       case Bytecodes::_invokedynamic: {
@@ -975,8 +975,6 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
       }
       default: fatal("unexpected bytecode for load_appendix_patching_id");
     }
-    assert(appendix.not_null(), "%s @ %d (%s)",
-           caller_method->name_and_sig_as_C_string(), bci, Bytecodes::name(bc));
   } else {
     ShouldNotReachHere();
   }
