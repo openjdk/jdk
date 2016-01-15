@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,11 +475,11 @@ void SystemDictionary::validate_protection_domain(instanceKlassHandle klass,
       // Note that we have an entry, and entries can be deleted only during GC,
       // so we cannot allow GC to occur while we're holding this entry.
 
-      // We're using a No_Safepoint_Verifier to catch any place where we
+      // We're using a NoSafepointVerifier to catch any place where we
       // might potentially do a GC at all.
       // Dictionary::do_unloading() asserts that classes in SD are only
       // unloaded at a safepoint. Anonymous classes are not in SD.
-      No_Safepoint_Verifier nosafepoint;
+      NoSafepointVerifier nosafepoint;
       dictionary()->add_protection_domain(d_index, d_hash, klass, loader_data,
                                           protection_domain, THREAD);
     }
@@ -908,11 +908,11 @@ Klass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     MutexLocker mu(SystemDictionary_lock, THREAD);
     // Note that we have an entry, and entries can be deleted only during GC,
     // so we cannot allow GC to occur while we're holding this entry.
-    // We're using a No_Safepoint_Verifier to catch any place where we
+    // We're using a NoSafepointVerifier to catch any place where we
     // might potentially do a GC at all.
     // Dictionary::do_unloading() asserts that classes in SD are only
     // unloaded at a safepoint. Anonymous classes are not in SD.
-    No_Safepoint_Verifier nosafepoint;
+    NoSafepointVerifier nosafepoint;
     if (dictionary()->is_valid_protection_domain(d_index, d_hash, name,
                                                  loader_data,
                                                  protection_domain)) {
@@ -961,11 +961,11 @@ Klass* SystemDictionary::find(Symbol* class_name,
   {
     // Note that we have an entry, and entries can be deleted only during GC,
     // so we cannot allow GC to occur while we're holding this entry.
-    // We're using a No_Safepoint_Verifier to catch any place where we
+    // We're using a NoSafepointVerifier to catch any place where we
     // might potentially do a GC at all.
     // Dictionary::do_unloading() asserts that classes in SD are only
     // unloaded at a safepoint. Anonymous classes are not in SD.
-    No_Safepoint_Verifier nosafepoint;
+    NoSafepointVerifier nosafepoint;
     return dictionary()->find(d_index, d_hash, class_name, loader_data,
                               protection_domain, THREAD);
   }
@@ -1974,12 +1974,11 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   InstanceKlass::cast(WK_KLASS(Reference_klass))->set_reference_type(REF_OTHER);
   InstanceRefKlass::update_nonstatic_oop_maps(WK_KLASS(Reference_klass));
 
-  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(Cleaner_klass), scan, CHECK);
+  initialize_wk_klasses_through(WK_KLASS_ENUM_NAME(PhantomReference_klass), scan, CHECK);
   InstanceKlass::cast(WK_KLASS(SoftReference_klass))->set_reference_type(REF_SOFT);
   InstanceKlass::cast(WK_KLASS(WeakReference_klass))->set_reference_type(REF_WEAK);
   InstanceKlass::cast(WK_KLASS(FinalReference_klass))->set_reference_type(REF_FINAL);
   InstanceKlass::cast(WK_KLASS(PhantomReference_klass))->set_reference_type(REF_PHANTOM);
-  InstanceKlass::cast(WK_KLASS(Cleaner_klass))->set_reference_type(REF_CLEANER);
 
   // JSR 292 classes
   WKID jsr292_group_start = WK_KLASS_ENUM_NAME(MethodHandle_klass);
@@ -2211,7 +2210,7 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
   MutexLocker mu_s(SystemDictionary_lock, THREAD);
 
   // Better never do a GC while we're holding these oops
-  No_Safepoint_Verifier nosafepoint;
+  NoSafepointVerifier nosafepoint;
 
   Klass* klass1 = find_class(d_index1, d_hash1, constraint_name, loader_data1);
   Klass* klass2 = find_class(d_index2, d_hash2, constraint_name, loader_data2);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,10 +160,7 @@ class typeArrayOopDesc : public arrayOopDesc {
   }
 
  public:
-  int object_size() {
-    TypeArrayKlass* tk = TypeArrayKlass::cast(klass());
-    return object_size(tk->layout_helper(), length());
-  }
+  inline int object_size();
 };
 
 #endif // SHARE_VM_OOPS_TYPEARRAYOOP_HPP
