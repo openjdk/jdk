@@ -131,13 +131,12 @@ compact3 = \
 # Tests that require compact3 API's
 #
 needs_compact3 = \
-  gc/6581734/Test6581734.java \
-  gc/7072527/TestFullGCCount.java \
-  gc/g1/TestHumongousAllocInitialMark.java \
+  gc/TestFullGCCount.java \
   gc/arguments/TestG1HeapRegionSize.java \
-  gc/metaspace/TestMetaspaceMemoryPool.java \
   gc/arguments/TestDynMinHeapFreeRatio.java \
   gc/arguments/TestDynMaxHeapFreeRatio.java \
+  gc/cms/TestMBeanCMS.java \
+  gc/g1/TestHumongousAllocInitialMark.java \
   gc/g1/TestShrinkAuxiliaryData00.java \
   gc/g1/TestShrinkAuxiliaryData05.java \
   gc/g1/TestShrinkAuxiliaryData10.java \
@@ -145,6 +144,7 @@ needs_compact3 = \
   gc/g1/TestShrinkAuxiliaryData20.java \
   gc/g1/TestShrinkAuxiliaryData25.java \
   gc/g1/TestShrinkAuxiliaryData30.java \
+  gc/metaspace/TestMetaspaceMemoryPool.java \
   gc/survivorAlignment \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   runtime/NMT/JcmdSummaryDiff.java \
