@@ -3144,6 +3144,18 @@ public final class Locale implements Cloneable, Serializable {
                    && range.equals(other.range)
                    && weight == other.weight;
         }
+
+        /**
+         * Returns an informative string representation of this {@code LanguageRange}
+         * object, consisting of language range and weight if the range is
+         * weighted and the weight is less than the max weight.
+         *
+         * @return a string representation of this {@code LanguageRange} object.
+         */
+        @Override
+        public String toString() {
+            return (weight == MAX_WEIGHT) ? range : range + ";q=" + weight;
+        }
     }
 
     /**

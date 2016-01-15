@@ -58,7 +58,6 @@ import java.util.Map;
  * @author James McIlree
  * @since  1.3
  */
-@jdk.Exported
 public interface StackFrame extends Mirror, Locatable {
 
     /**

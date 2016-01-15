@@ -30,7 +30,7 @@ import java.security.ProtectionDomain;
 
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
-import sun.misc.VM;
+import jdk.internal.misc.VM;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
 

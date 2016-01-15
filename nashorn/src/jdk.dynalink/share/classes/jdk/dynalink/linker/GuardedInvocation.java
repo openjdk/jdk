@@ -202,6 +202,9 @@ public class GuardedInvocation {
         this.invocation = Objects.requireNonNull(invocation);
         this.guard = guard;
         this.switchPoints = switchPoint == null ? null : new SwitchPoint[] { switchPoint };
+        if (exception != null && !Throwable.class.isAssignableFrom(exception)) {
+            throw new IllegalArgumentException(exception.getName() + " is not assignable from Throwable");
+        }
         this.exception = exception;
     }
 
@@ -228,6 +231,9 @@ public class GuardedInvocation {
         this.invocation = Objects.requireNonNull(invocation);
         this.guard = guard;
         this.switchPoints = switchPoints == null ? null : switchPoints.clone();
+        if (exception != null && !Throwable.class.isAssignableFrom(exception)) {
+            throw new IllegalArgumentException(exception.getName() + " is not assignable from Throwable");
+        }
         this.exception = exception;
     }
 

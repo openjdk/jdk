@@ -62,7 +62,7 @@ public class CompileWithOverrideSources extends SJavacTester {
         tb.writeFile(GENSRC2.resolve("beta/B.java"),
                      "package beta; public class B { }");
 
-        compile("-x", "beta",
+        compile("-x", "beta/*",
                 GENSRC.toString(),
                 GENSRC2.toString(),
                 "-d", BIN.toString(),

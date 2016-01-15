@@ -37,7 +37,6 @@ import java.util.Objects;
  *
  * @since 1.8
  */
-@jdk.Exported
 public class DocTreePath implements Iterable<DocTree> {
     /**
      * Returns a documentation tree path for a tree node within a compilation unit,

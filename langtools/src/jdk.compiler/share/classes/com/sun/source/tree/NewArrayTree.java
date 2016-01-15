@@ -43,7 +43,6 @@ import java.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface NewArrayTree extends ExpressionTree {
     /**
      * Returns the base type of the expression.

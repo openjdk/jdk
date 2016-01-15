@@ -34,7 +34,6 @@ import sun.security.krb5.internal.AuthorizationData;
  * functionalities not defined by {@code org.ietf.jgss.GSSContext},
  * such as querying context-specific attributes.
  */
-@jdk.Exported
 public interface ExtendedGSSContext extends GSSContext {
 
     // The impl is almost identical to GSSContextImpl with only 2 differences:
