@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,10 @@ int ConstantPool::cp_to_object_index(int cp_index) {
   int i = reference_map()->find(cp_index);
   // We might not find the index for jsr292 call.
   return (i < 0) ? _no_index_sentinel : i;
+}
+
+void ConstantPool::string_at_put(int which, int obj_index, oop str) {
+  resolved_references()->obj_at_put(obj_index, str);
 }
 
 void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, KlassHandle k) {
