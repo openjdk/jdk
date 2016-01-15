@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,16 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
-import java.io.IOException;
+public class OSEnvironment {
 
-public class CEFormatException extends IOException {
-    static final long serialVersionUID = -7139121221067081482L;
-    public CEFormatException(String s) {
-        super(s);
+    /*
+     * Initialize any miscellaneous operating system settings that need to be set
+     * for the class libraries.
+     */
+    public static void initialize() {
+        // no-op on Solaris and Linux
     }
-}
 
+}

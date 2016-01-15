@@ -26,6 +26,7 @@
 package sun.misc;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.VM;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 

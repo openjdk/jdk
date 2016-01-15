@@ -36,14 +36,12 @@ import com.sun.source.tree.CompilationUnitTree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public final class TaskEvent
 {
     /**
      * Kind of task event.
      * @since 1.6
      */
-    @jdk.Exported
     public enum Kind {
         /**
          * For events related to the parsing of a file.
@@ -74,7 +72,7 @@ public final class TaskEvent
          * This event is not sent when using {@link JavacTask#parse()},
          * {@link JavacTask#analyze()} or {@link JavacTask#generate()}.
          *
-         * @since 1.9
+         * @since 9
          */
         COMPILATION,
     }

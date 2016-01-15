@@ -1,4 +1,4 @@
-WarnStaticImport.java:12:23: compiler.warn.sun.proprietary: sun.misc.VM
+WarnStaticImport.java:12:32: compiler.warn.sun.proprietary: sun.security.x509.OIDMap
 - compiler.err.warnings.and.werror
 1 error
 1 warning

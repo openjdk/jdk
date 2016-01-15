@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import sun.misc.Perf;
+import jdk.internal.perf.Perf;
 import sun.management.counter.Units;
 import sun.management.counter.Counter;
 import sun.management.counter.perf.PerfInstrumentation;

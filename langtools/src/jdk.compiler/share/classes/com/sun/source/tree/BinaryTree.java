@@ -40,7 +40,6 @@ package com.sun.source.tree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface BinaryTree extends ExpressionTree {
     /**
      * Returns the left (first) operand of the expression.

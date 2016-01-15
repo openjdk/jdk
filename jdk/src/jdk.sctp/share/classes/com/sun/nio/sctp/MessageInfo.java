@@ -56,7 +56,6 @@ import java.net.SocketAddress;
  *
  * @since 1.7
  */
-@jdk.Exported
 public abstract class MessageInfo {
     /**
      * Initializes a new instance of this class.
