@@ -39,7 +39,6 @@ import java.util.List;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface FunctionCallTree extends ExpressionTree {
     /**
      * Returns the function being called.

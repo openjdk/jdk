@@ -97,7 +97,7 @@ public class ExtendedCharsets extends AbstractCharsetProvider {
     protected void init() {
         if (initialized)
             return;
-        if (!sun.misc.VM.isBooted())
+        if (!jdk.internal.misc.VM.isBooted())
             return;
 
         String map = getProperty("sun.nio.cs.map");

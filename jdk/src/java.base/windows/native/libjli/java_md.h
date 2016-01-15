@@ -54,4 +54,7 @@ extern jlong Counter2Micros(jlong counts);
 
 int UnsetEnv(char *name);
 
+jboolean
+GetApplicationHomeFromDll(char *buf, jint bufsize);
+
 #endif /* JAVA_MD_H */

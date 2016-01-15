@@ -42,7 +42,6 @@ import com.sun.jdi.connect.spi.TransportService;        // for javadoc
  * @author Gordon Hirsch
  * @since  1.3
  */
-@jdk.Exported
 public interface Transport {
     /**
      * Returns a short identifier for the transport.

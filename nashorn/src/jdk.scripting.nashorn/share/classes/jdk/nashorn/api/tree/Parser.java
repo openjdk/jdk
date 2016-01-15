@@ -38,7 +38,6 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface Parser {
     /**
      * Parses the source file and returns compilation unit tree

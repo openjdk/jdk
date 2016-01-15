@@ -59,7 +59,7 @@ class MemoryImpl extends NotificationEmitterSupport
     }
 
     public int getObjectPendingFinalizationCount() {
-        return sun.misc.VM.getFinalRefCount();
+        return jdk.internal.misc.VM.getFinalRefCount();
     }
 
     public void gc() {
