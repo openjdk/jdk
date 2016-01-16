@@ -74,7 +74,7 @@ public final class NativeRegExpExecResult extends ScriptObject {
     @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
     public static Object length(final Object self) {
         if (self instanceof ScriptObject) {
-            return JSType.toUint32(((ScriptObject)self).getArray().length());
+            return (double) JSType.toUint32(((ScriptObject)self).getArray().length());
         }
 
         return 0;

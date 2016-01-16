@@ -104,8 +104,8 @@ abstract public class TestAESBase {
       cipher = Cipher.getInstance(algorithm + "/" + mode + "/" + paddingStr, "SunJCE");
       dCipher = Cipher.getInstance(algorithm + "/" + mode + "/" + paddingStr, "SunJCE");
 
-      // CBC init
-      if (mode.equals("CBC")) {
+      // CBC or CTR init
+      if (mode.equals("CBC") || mode.equals("CTR")) {
         IvParameterSpec initVector = new IvParameterSpec(iv);
         cipher.init(Cipher.ENCRYPT_MODE, key, initVector);
         algParams = cipher.getParameters();

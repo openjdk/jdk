@@ -41,7 +41,6 @@ package com.sun.source.tree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface AssertTree extends StatementTree {
     /**
      * Returns the condition being asserted.

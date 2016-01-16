@@ -43,5 +43,4 @@
  * extension.
  */
 
-@jdk.Exported
 package com.sun.jdi.event;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ int currentDirLength(const WCHAR* path, int pathlen);
 int handleAvailable(FD fd, jlong *pbytes);
 int handleSync(FD fd);
 int handleSetLength(FD fd, jlong length);
+jlong handleGetLength(FD fd);
 JNIEXPORT jint handleRead(FD fd, void *buf, jint len);
 jint handleWrite(FD fd, const void *buf, jint len);
 jint handleAppend(FD fd, const void *buf, jint len);
@@ -84,6 +85,7 @@ FD winFileHandleOpen(JNIEnv *env, jstring path, int flags);
 #define IO_Lseek handleLseek
 #define IO_Available handleAvailable
 #define IO_SetLength handleSetLength
+#define IO_GetLength handleGetLength
 
 /*
  * Setting the handle field in Java_java_io_FileDescriptor_set for

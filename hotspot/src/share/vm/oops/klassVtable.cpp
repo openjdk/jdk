@@ -59,7 +59,7 @@ void klassVtable::compute_vtable_size_and_num_mirandas(
     Array<Method*>* methods, AccessFlags class_flags,
     Handle classloader, Symbol* classname, Array<Klass*>* local_interfaces,
     TRAPS) {
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
 
   // set up default result values
   int vtable_length = 0;

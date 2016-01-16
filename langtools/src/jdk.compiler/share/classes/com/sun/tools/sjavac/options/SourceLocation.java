@@ -25,11 +25,13 @@
 
 package com.sun.tools.sjavac.options;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Module;
 import com.sun.tools.sjavac.ProblemException;
 import com.sun.tools.sjavac.Source;
@@ -49,18 +51,14 @@ public class SourceLocation {
     private Path path;
 
     // Package include / exclude patterns and file includes / excludes.
-    List<String> includes, excludes, includedFiles, excludedFiles;
+    List<String> includes, excludes;
 
     public SourceLocation(Path path,
                           List<String> includes,
-                          List<String> excludes,
-                          List<String> includedFiles,
-                          List<String> excludedFiles) {
+                          List<String> excludes) {
         this.path = path;
         this.includes = includes;
         this.excludes = excludes;
-        this.includedFiles = includedFiles;
-        this.excludedFiles = excludedFiles;
     }
 
 
@@ -81,17 +79,23 @@ public class SourceLocation {
                                 Map<String, Module> foundModules,
                                 Module currentModule,
                                 boolean permitSourcesInDefaultPackage,
-                                boolean inLinksrc) {
+                                boolean inLinksrc)
+                                        throws IOException {
         try {
-            Source.scanRoot(path.toFile(), suffixes, excludes, includes,
-                    excludedFiles, includedFiles, foundFiles, foundModules,
-                    currentModule, permitSourcesInDefaultPackage, false,
-                    inLinksrc);
+            Source.scanRoot(path.toFile(),
+                            suffixes,
+                            excludes,
+                            includes,
+                            foundFiles,
+                            foundModules,
+                            currentModule,
+                            permitSourcesInDefaultPackage,
+                            false,
+                            inLinksrc);
         } catch (ProblemException e) {
             e.printStackTrace();
         }
     }
-
     /** Get the root directory of this source location */
     public Path getPath() {
         return path;
@@ -107,14 +111,9 @@ public class SourceLocation {
         return excludes;
     }
 
-    /** Get the file include patterns */
-    public List<String> getIncludedFiles() {
-        return includedFiles;
+    @Override
+    public String toString() {
+        return String.format("%s[\"%s\", includes: %s, excludes: %s]",
+                             getClass().getSimpleName(), path, includes, excludes);
     }
-
-    /** Get the file exclude patterns */
-    public List<String> getExcludedFiles() {
-        return excludedFiles;
-    }
-
 }

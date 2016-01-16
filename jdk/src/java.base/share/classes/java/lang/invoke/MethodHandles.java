@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1836,7 +1836,7 @@ return mh1;
                 return false;
             }
             ClassLoader loader = defc.getClassLoader();
-            if (!sun.misc.VM.isSystemDomainLoader(loader)) {
+            if (!jdk.internal.misc.VM.isSystemDomainLoader(loader)) {
                 ClassLoader sysl = ClassLoader.getSystemClassLoader();
                 boolean found = false;
                 while (sysl != null) {
@@ -3120,6 +3120,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                                 MethodHandle handler) {
         MethodType ttype = target.type();
         MethodType htype = handler.type();
+        if (!Throwable.class.isAssignableFrom(exType))
+            throw new ClassCastException(exType.getName());
         if (htype.parameterCount() < 1 ||
             !htype.parameterType(0).isAssignableFrom(exType))
             throw newIllegalArgumentException("handler does not accept exception type "+exType);

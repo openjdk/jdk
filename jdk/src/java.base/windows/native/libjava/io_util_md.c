@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -583,4 +583,15 @@ handleLseek(FD fd, jlong offset, jint whence)
         return -1;
     }
     return long_to_jlong(pos.QuadPart);
+}
+
+jlong
+handleGetLength(FD fd) {
+    HANDLE h = (HANDLE) fd;
+    LARGE_INTEGER length;
+    if (GetFileSizeEx(h, &length) != 0) {
+        return long_to_jlong(length.QuadPart);
+    } else {
+        return -1;
+    }
 }

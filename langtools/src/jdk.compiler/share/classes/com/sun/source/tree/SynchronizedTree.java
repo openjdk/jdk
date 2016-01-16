@@ -40,7 +40,6 @@ package com.sun.source.tree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface SynchronizedTree extends StatementTree {
     /**
      * Returns the expression on which to synchronize.

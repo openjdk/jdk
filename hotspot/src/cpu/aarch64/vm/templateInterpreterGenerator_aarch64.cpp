@@ -248,6 +248,7 @@ void TemplateInterpreterGenerator::generate_transcendental_entry(AbstractInterpr
     break;
   default:
     ShouldNotReachHere();
+    fn = NULL;  // unreachable
   }
   const int gpargs = 0, rtype = 3;
   __ mov(rscratch1, fn);
@@ -436,6 +437,19 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   __ restore_constant_pool_cache();
   __ get_method(rmethod);
 
+#if INCLUDE_JVMCI
+  // Check if we need to take lock at entry of synchronized method.
+  if (UseJVMCICompiler) {
+    Label L;
+    __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+    __ cbz(rscratch1, L);
+    // Clear flag.
+    __ strb(zr, Address(rthread, JavaThread::pending_monitorenter_offset()));
+    // Take lock.
+    lock_method();
+    __ bind(L);
+  }
+#endif
   // handle exceptions
   {
     Label L;
@@ -580,7 +594,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(
       __ br(Assembler::LT, *profile_method_continue);
 
       // if no method data exists, go to profile_method
-      __ test_method_data_pointer(r0, *profile_method);
+      __ test_method_data_pointer(rscratch2, *profile_method);
     }
 
     {

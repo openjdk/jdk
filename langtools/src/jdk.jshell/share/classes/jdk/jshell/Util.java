@@ -25,6 +25,7 @@
 
 package jdk.jshell;
 
+import java.util.Locale;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.lang.model.element.Name;
@@ -39,6 +40,8 @@ class Util {
 
     static final String REPL_CLASS_PREFIX = "$REPL";
     static final String REPL_DOESNOTMATTER_CLASS_NAME = REPL_CLASS_PREFIX+"00DOESNOTMATTER";
+
+    static final Locale PARSED_LOCALE = Locale.ROOT;
 
     static boolean isDoIt(Name name) {
         return isDoIt(name.toString());

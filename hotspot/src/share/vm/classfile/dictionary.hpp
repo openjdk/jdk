@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,14 +196,9 @@ private:
     return entry;
   }
 
-  static unsigned int compute_hash(oop protection_domain) {
-    return (unsigned int)(protection_domain->identity_hash());
-  }
+  static unsigned int compute_hash(oop protection_domain);
 
-  int index_for(oop protection_domain) {
-    return hash_to_index(compute_hash(protection_domain));
-  }
-
+  int index_for(oop protection_domain);
   ProtectionDomainCacheEntry* add_entry(int index, unsigned int hash, oop protection_domain);
   ProtectionDomainCacheEntry* find_entry(int index, oop protection_domain);
 

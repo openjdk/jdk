@@ -45,7 +45,6 @@ package com.sun.source.tree;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface IfTree extends StatementTree {
     /**
      * Returns the condition of the if-statement.

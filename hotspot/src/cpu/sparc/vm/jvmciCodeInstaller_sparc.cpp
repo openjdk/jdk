@@ -73,7 +73,7 @@ void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, T
     NativeMovConstReg32* move = nativeMovConstReg32_at(pc);
     narrowKlass narrowOop = record_narrow_metadata_reference(constant, CHECK);
     move->set_data((intptr_t)narrowOop);
-    TRACE_jvmci_3("relocating (narrow metaspace constant) at %p/%p", pc, narrowOop);
+    TRACE_jvmci_3("relocating (narrow metaspace constant) at " PTR_FORMAT "/0x%x", p2i(pc), narrowOop);
 #else
     JVMCI_ERROR("compressed Klass* on 32bit");
 #endif
@@ -81,7 +81,7 @@ void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, T
     NativeMovConstReg* move = nativeMovConstReg_at(pc);
     Metadata* reference = record_metadata_reference(constant, CHECK);
     move->set_data((intptr_t)reference);
-    TRACE_jvmci_3("relocating (metaspace constant) at %p/%p", pc, reference);
+    TRACE_jvmci_3("relocating (metaspace constant) at " PTR_FORMAT "/" PTR_FORMAT, p2i(pc), p2i(reference));
   }
 }
 

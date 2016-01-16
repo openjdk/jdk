@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 
 /*
  * @test
- * @bug 8051498
+ * @bug 8051498 8145849
  * @summary JEP 244: TLS Application-Layer Protocol Negotiation Extension
+ * @compile MyX509ExtendedKeyManager.java
  * @run main/othervm SSLEngineAlpnTest h2          h2          h2
  * @run main/othervm SSLEngineAlpnTest h2          h2,http/1.1 h2
  * @run main/othervm SSLEngineAlpnTest h2,http/1.1 h2,http/1.1 h2
@@ -162,7 +163,7 @@ public class SSLEngineAlpnTest {
             throw new Exception("Invalid number of test parameters");
         }
 
-        SSLEngineAlpnTest test = new SSLEngineAlpnTest();
+        SSLEngineAlpnTest test = new SSLEngineAlpnTest(args[2]);
         try {
             test.runTest(convert(args[0]), convert(args[1]), args[2]);
         } catch (SSLHandshakeException she) {
@@ -179,7 +180,7 @@ public class SSLEngineAlpnTest {
     /*
      * Create an initialized SSLContext to use for these tests.
      */
-    public SSLEngineAlpnTest() throws Exception {
+    public SSLEngineAlpnTest(String expectedAP) throws Exception {
 
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
@@ -192,12 +193,20 @@ public class SSLEngineAlpnTest {
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
 
+        KeyManager [] kms = kmf.getKeyManagers();
+        if (!(kms[0] instanceof X509ExtendedKeyManager)) {
+            throw new Exception("kms[0] not X509ExtendedKeyManager");
+        }
+
+        kms = new KeyManager[] { new MyX509ExtendedKeyManager(
+                (X509ExtendedKeyManager) kms[0], expectedAP) };
+
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         tmf.init(ts);
 
         SSLContext sslCtx = SSLContext.getInstance("TLS");
 
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        sslCtx.init(kms, tmf.getTrustManagers(), null);
 
         sslc = sslCtx;
     }
@@ -327,6 +336,11 @@ public class SSLEngineAlpnTest {
             return;
         }
 
+        if (engine.getHandshakeApplicationProtocol() != null) {
+            throw new Exception ("getHandshakeApplicationProtocol() should "
+                    + "return null after the handshake is completed");
+        }
+
         String ap = engine.getApplicationProtocol();
         System.out.println("Application Protocol: \"" + ap + "\"");
 
@@ -384,6 +398,12 @@ public class SSLEngineAlpnTest {
         sslp = clientEngine.getSSLParameters();
         sslp.setApplicationProtocols(clientAPs);
         clientEngine.setSSLParameters(sslp);
+
+        if ((clientEngine.getHandshakeApplicationProtocol() != null) ||
+                (serverEngine.getHandshakeApplicationProtocol() != null)) {
+            throw new Exception ("getHandshakeApplicationProtocol() should "
+                    + "return null before the handshake starts");
+        }
     }
 
     /*

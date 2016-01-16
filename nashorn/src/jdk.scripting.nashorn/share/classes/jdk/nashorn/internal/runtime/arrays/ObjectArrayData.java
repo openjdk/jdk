@@ -236,22 +236,22 @@ final class ObjectArrayData extends ContinuousArrayData implements AnyElements {
     }
 
     @Override
-    public long fastPush(final int arg) {
+    public double fastPush(final int arg) {
         return fastPush((Object)arg);
     }
 
     @Override
-    public long fastPush(final long arg) {
+    public double fastPush(final long arg) {
         return fastPush((Object)arg);
     }
 
     @Override
-    public long fastPush(final double arg) {
+    public double fastPush(final double arg) {
         return fastPush((Object)arg);
     }
 
     @Override
-    public long fastPush(final Object arg) {
+    public double fastPush(final Object arg) {
         final int len = (int)length();
         if (len == array.length) {
             array = Arrays.copyOf(array, nextSize(len));

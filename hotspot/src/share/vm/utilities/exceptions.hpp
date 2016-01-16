@@ -60,6 +60,7 @@ class JavaCallArguments;
 
 class ThreadShadow: public CHeapObj<mtThread> {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 
  protected:
   oop  _pending_exception;                       // Thread has gc actions.

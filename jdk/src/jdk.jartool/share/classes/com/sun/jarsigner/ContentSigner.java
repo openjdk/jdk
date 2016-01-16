@@ -38,7 +38,6 @@ import java.security.cert.CertificateException;
  * @deprecated This class has been deprecated.
  */
 
-@jdk.Exported
 @Deprecated
 public abstract class ContentSigner {
 

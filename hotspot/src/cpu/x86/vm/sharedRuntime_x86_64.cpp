@@ -189,7 +189,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       }
       // Save full ZMM registes(16..num_xmm_regs)
       base_addr = XSAVE_AREA_UPPERBANK;
-      int off = 0;
+      off = 0;
       int vector_len = Assembler::AVX_512bit;
       for (int n = 16; n < num_xmm_regs; n++) {
         __ evmovdqul(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n), vector_len);
@@ -199,7 +199,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     if (VM_Version::supports_evex()) {
       // Save upper bank of ZMM registers(16..31) for double/float usage
       int base_addr = XSAVE_AREA_UPPERBANK;
-      int off = 0;
+      off = 0;
       for (int n = 16; n < num_xmm_regs; n++) {
         __ movsd(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n));
       }
@@ -325,7 +325,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     assert(MaxVectorSize == 64, "only 512bit vectors are supported now");
   }
 #else
-  assert(!save_vectors, "vectors are generated only by C2");
+  assert(!restore_vectors, "vectors are generated only by C2");
 #endif
 
   // On EVEX enabled targets everything is handled in pop fpu state
@@ -1416,7 +1416,7 @@ static void save_or_restore_arguments(MacroAssembler* masm,
 }
 
 
-// Check GC_locker::needs_gc and enter the runtime if it's true.  This
+// Check GCLocker::needs_gc and enter the runtime if it's true.  This
 // keeps a new JNI critical region from starting until a GC has been
 // forced.  Save down any oops in registers and describe them in an
 // OopMap.
@@ -1428,9 +1428,9 @@ static void check_needs_gc_for_critical_native(MacroAssembler* masm,
                                                OopMapSet* oop_maps,
                                                VMRegPair* in_regs,
                                                BasicType* in_sig_bt) {
-  __ block_comment("check GC_locker::needs_gc");
+  __ block_comment("check GCLocker::needs_gc");
   Label cont;
-  __ cmp8(ExternalAddress((address)GC_locker::needs_gc_address()), false);
+  __ cmp8(ExternalAddress((address)GCLocker::needs_gc_address()), false);
   __ jcc(Assembler::equal, cont);
 
   // Save down any incoming oops and call into the runtime to halt for a GC
@@ -1795,14 +1795,14 @@ static void gen_special_dispatch(MacroAssembler* masm,
 // GetPrimtiveArrayCritical and disallow the use of any other JNI
 // functions.  The wrapper is expected to unpack the arguments before
 // passing them to the callee and perform checks before and after the
-// native call to ensure that they GC_locker
+// native call to ensure that they GCLocker
 // lock_critical/unlock_critical semantics are followed.  Some other
 // parts of JNI setup are skipped like the tear down of the JNI handle
 // block and the check for pending exceptions it's impossible for them
 // to be thrown.
 //
 // They are roughly structured like this:
-//    if (GC_locker::needs_gc())
+//    if (GCLocker::needs_gc())
 //      SharedRuntime::block_for_jni_critical();
 //    tranistion to thread_in_native
 //    unpack arrray arguments and call native entry point

@@ -749,34 +749,33 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
 
   if (TieredCompilation) {
     const int increment = InvocationCounter::count_increment;
-    const int mask = ((1 << Tier0InvokeNotifyFreqLog) - 1) << InvocationCounter::count_shift;
     Label no_mdo;
     if (ProfileInterpreter) {
-      const Register Rmdo = Rscratch1;
+      const Register Rmdo = R3_counters;
       // If no method data exists, go to profile_continue.
       __ ld(Rmdo, in_bytes(Method::method_data_offset()), R19_method);
       __ cmpdi(CCR0, Rmdo, 0);
       __ beq(CCR0, no_mdo);
 
-      // Increment backedge counter in the MDO.
-      const int mdo_bc_offs = in_bytes(MethodData::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
-      __ lwz(Rscratch2, mdo_bc_offs, Rmdo);
+      // Increment invocation counter in the MDO.
+      const int mdo_ic_offs = in_bytes(MethodData::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+      __ lwz(Rscratch2, mdo_ic_offs, Rmdo);
+      __ lwz(Rscratch1, in_bytes(MethodData::invoke_mask_offset()), Rmdo);
       __ addi(Rscratch2, Rscratch2, increment);
-      __ stw(Rscratch2, mdo_bc_offs, Rmdo);
-      __ load_const_optimized(Rscratch1, mask, R0);
+      __ stw(Rscratch2, mdo_ic_offs, Rmdo);
       __ and_(Rscratch1, Rscratch2, Rscratch1);
       __ bne(CCR0, done);
       __ b(*overflow);
     }
 
     // Increment counter in MethodCounters*.
-    const int mo_bc_offs = in_bytes(MethodCounters::backedge_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
+    const int mo_ic_offs = in_bytes(MethodCounters::invocation_counter_offset()) + in_bytes(InvocationCounter::counter_offset());
     __ bind(no_mdo);
     __ get_method_counters(R19_method, R3_counters, done);
-    __ lwz(Rscratch2, mo_bc_offs, R3_counters);
+    __ lwz(Rscratch2, mo_ic_offs, R3_counters);
+    __ lwz(Rscratch1, in_bytes(MethodCounters::invoke_mask_offset()), R3_counters);
     __ addi(Rscratch2, Rscratch2, increment);
-    __ stw(Rscratch2, mo_bc_offs, R3_counters);
-    __ load_const_optimized(Rscratch1, mask, R0);
+    __ stw(Rscratch2, mo_ic_offs, R3_counters);
     __ and_(Rscratch1, Rscratch2, Rscratch1);
     __ beq(CCR0, *overflow);
 
@@ -797,8 +796,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
     // Check if we must create a method data obj.
     if (ProfileInterpreter && profile_method != NULL) {
       const Register profile_limit = Rscratch1;
-      int pl_offs = __ load_const_optimized(profile_limit, &InvocationCounter::InterpreterProfileLimit, R0, true);
-      __ lwz(profile_limit, pl_offs, profile_limit);
+      __ lwz(profile_limit, in_bytes(MethodCounters::interpreter_profile_limit_offset()), R3_counters);
       // Test to see if we should create a method data oop.
       __ cmpw(CCR0, Rsum_ivc_bec, profile_limit);
       __ blt(CCR0, *profile_method_continue);
@@ -808,9 +806,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow, Label*
     // Finally check for counter overflow.
     if (overflow) {
       const Register invocation_limit = Rscratch1;
-      int il_offs = __ load_const_optimized(invocation_limit, &InvocationCounter::InterpreterInvocationLimit, R0, true);
-      __ lwz(invocation_limit, il_offs, invocation_limit);
-      assert(4 == sizeof(InvocationCounter::InterpreterInvocationLimit), "unexpected field size");
+      __ lwz(invocation_limit, in_bytes(MethodCounters::interpreter_invocation_limit_offset()), R3_counters);
       __ cmpw(CCR0, Rsum_ivc_bec, invocation_limit);
       __ bge(CCR0, *overflow);
     }

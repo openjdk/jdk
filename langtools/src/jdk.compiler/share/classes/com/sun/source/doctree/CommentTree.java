@@ -33,7 +33,6 @@ package com.sun.source.doctree;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface CommentTree extends DocTree {
     /**
      * Returns the text of the comment.

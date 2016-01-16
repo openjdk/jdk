@@ -1902,17 +1902,18 @@ encode %{
     // who we intended to call.
     cbuf.set_insts_mark();
     $$$emit8$primary;
+
     if (!_method) {
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
-                     runtime_call_Relocation::spec(), RELOC_IMM32 );
-    } else if (_optimized_virtual) {
-      emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
-                     opt_virtual_call_Relocation::spec(), RELOC_IMM32 );
+                     runtime_call_Relocation::spec(),
+                     RELOC_IMM32);
     } else {
+      int method_index = resolved_method_index(cbuf);
+      RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
+                                                  : static_call_Relocation::spec(method_index);
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
-                     static_call_Relocation::spec(), RELOC_IMM32 );
-    }
-    if (_method) {  // Emit stub for static call.
+                     rspec, RELOC_DISP32);
+      // Emit stubs for static call.
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
       if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
@@ -1923,7 +1924,7 @@ encode %{
 
   enc_class Java_Dynamic_Call (method meth) %{    // JAVA DYNAMIC CALL
     MacroAssembler _masm(&cbuf);
-    __ ic_call((address)$meth$$method);
+    __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
   %}
 
   enc_class Java_Compiled_Call (method meth) %{    // JAVA COMPILED CALL
@@ -9884,39 +9885,6 @@ instruct sqrtDPR_reg(regDPR dst, regDPR src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct powDPR_reg(regDPR X, regDPR1 Y, eAXRegI rax, eDXRegI rdx, eCXRegI rcx, eFlagsReg cr) %{
-  predicate (UseSSE<=1);
-  match(Set Y (PowD X Y));  // Raise X to the Yth power
-  effect(KILL rax, KILL rdx, KILL rcx, KILL cr);
-  format %{ "fast_pow $X $Y -> $Y  // KILL $rax, $rcx, $rdx" %}
-  ins_encode %{
-    __ subptr(rsp, 8);
-    __ fld_s($X$$reg - 1);
-    __ fast_pow();
-    __ addptr(rsp, 8);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct powD_reg(regD dst, regD src0, regD src1, eAXRegI rax, eDXRegI rdx, eCXRegI rcx, eFlagsReg cr) %{
-  predicate (UseSSE>=2);
-  match(Set dst (PowD src0 src1));  // Raise src0 to the src1'th power
-  effect(KILL rax, KILL rdx, KILL rcx, KILL cr);
-  format %{ "fast_pow $src0 $src1 -> $dst  // KILL $rax, $rcx, $rdx" %}
-  ins_encode %{
-    __ subptr(rsp, 8);
-    __ movdbl(Address(rsp, 0), $src1$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-    __ movdbl(Address(rsp, 0), $src0$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-    __ fast_pow();
-    __ fstp_d(Address(rsp, 0));
-    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
-    __ addptr(rsp, 8);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct log10DPR_reg(regDPR1 dst, regDPR1 src) %{
   predicate (UseSSE<=1);
   // The source Double operand on FPU stack
@@ -11508,7 +11476,7 @@ instruct string_equals(eDIRegP str1, eSIRegP str2, eCXRegI cnt, eAXRegI result,
     __ arrays_equals(false, $str1$$Register, $str2$$Register,
                      $cnt$$Register, $result$$Register, $tmp3$$Register,
                      $tmp1$$XMMRegister, $tmp2$$XMMRegister, false /* char */);
-  %} 
+  %}
 
   ins_pipe( pipe_slow );
 %}

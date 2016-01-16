@@ -295,5 +295,10 @@ class LinkResolver: AllStatic {
   static void resolve_invoke(CallInfo& result, Handle recv,
                              const constantPoolHandle& pool, int index,
                              Bytecodes::Code byte, TRAPS);
+
+  // runtime resolving from attached method
+  static void resolve_invoke(CallInfo& result, Handle& recv,
+                             const methodHandle& attached_method,
+                             Bytecodes::Code byte, TRAPS);
 };
 #endif // SHARE_VM_INTERPRETER_LINKRESOLVER_HPP
