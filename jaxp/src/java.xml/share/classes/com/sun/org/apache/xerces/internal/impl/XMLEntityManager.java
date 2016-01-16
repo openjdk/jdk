@@ -1008,12 +1008,14 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         }
 
         // do default resolution
-        //this works for both stax & Xerces, if staxInputSource is null, it means parser need to revert to default resolution
+        //this works for both stax & Xerces, if staxInputSource is null,
+        //it means parser need to revert to default resolution
         if (staxInputSource == null) {
             // REVISIT: when systemId is null, I think we should return null.
             //          is this the right solution? -SG
             //if (systemId != null)
-            staxInputSource = new StaxXMLInputSource(new XMLInputSource(publicId, literalSystemId, baseSystemId));
+            staxInputSource = new StaxXMLInputSource(
+                    new XMLInputSource(publicId, literalSystemId, baseSystemId), false);
         }else if(staxInputSource.hasXMLStreamOrXMLEventReader()){
             //Waiting for the clarification from EG. - nb
         }

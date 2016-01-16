@@ -1155,7 +1155,7 @@ public class XMLDocumentScannerImpl
                             StaxXMLInputSource staxInputSource =  fEntityManager.resolveEntityAsPerStax(resourceIdentifier);
 
                             // Check access permission. If the source is resolved by a resolver, the check is skipped.
-                            if (!staxInputSource.hasResolver()) {
+                            if (!staxInputSource.isCreatedByResolver()) {
                                 String accessError = checkAccess(fDoctypeSystemId, fAccessExternalDTD);
                                 if (accessError != null) {
                                     reportFatalError("AccessExternalDTD", new Object[]{ SecuritySupport.sanitizePath(fDoctypeSystemId), accessError });
