@@ -3535,6 +3535,16 @@ void G1CollectedHeap::register_humongous_regions_with_cset() {
   cl.flush_rem_set_entries();
 }
 
+class VerifyRegionRemSetClosure : public HeapRegionClosure {
+  public:
+    bool doHeapRegion(HeapRegion* hr) {
+      if (!hr->is_archive() && !hr->is_continues_humongous()) {
+        hr->verify_rem_set();
+      }
+      return false;
+    }
+};
+
 #ifdef ASSERT
 class VerifyCSetClosure: public HeapRegionClosure {
 public:
@@ -3723,6 +3733,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       gc_prologue(false);
       increment_total_collections(false /* full gc */);
       increment_gc_time_stamp();
+
+      if (VerifyRememberedSets) {
+        log_info(gc, verify)("[Verifying RemSets before GC]");
+        VerifyRegionRemSetClosure v_cl;
+        heap_region_iterate(&v_cl);
+      }
 
       verify_before_gc();
 
@@ -3927,6 +3943,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // is_gc_active() check to decided which top to use when
         // scanning cards (see CR 7039627).
         increment_gc_time_stamp();
+
+        if (VerifyRememberedSets) {
+          log_info(gc, verify)("[Verifying RemSets after GC]");
+          VerifyRegionRemSetClosure v_cl;
+          heap_region_iterate(&v_cl);
+        }
 
         verify_after_gc();
         check_bitmaps("GC End");
