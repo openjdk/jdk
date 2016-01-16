@@ -42,6 +42,8 @@ include $(SRC_ROOT)/make/MainSupport.gmk
 
 # Load the vital tools for all the makefiles.
 include $(SRC_ROOT)/make/common/MakeBase.gmk
+# Explicitly generate module deps makefile data
+include $(SRC_ROOT)/make/GenerateModuleDeps.gmk
 include $(SRC_ROOT)/make/common/Modules.gmk
 
 # Declare ALL_TARGETS as an immediate variable. This variable is a list of all
@@ -78,7 +80,7 @@ interim-cldrconverter:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CopyInterimCLDRConverter.gmk)
 
 buildtools-jdk:
-	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Tools.gmk java-tools)
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileTools.gmk)
 
 ALL_TARGETS += buildtools-langtools interim-langtools \
     interim-rmic interim-cldrconverter buildtools-jdk
@@ -218,7 +220,7 @@ ALL_TARGETS += demos-jdk samples-jdk
 # used to track the exact sources used to build that image.
 source-tips: $(SUPPORT_OUTPUTDIR)/source_tips
 $(SUPPORT_OUTPUTDIR)/source_tips: FRC
-	@$(MKDIR) -p $(@D)
+	$(call MakeDir, $(@D))
 	@$(RM) $@
 	@$(call GetSourceTips)
 
@@ -656,7 +658,7 @@ print-modules:
 	  @$(ECHO) $(sort $(ALL_MODULES))
 
 create-main-targets-include:
-	  @$(ECHO) $(LOG_INFO) Generating main target list
+	  $(call LogInfo, Generating main target list)
 	  @$(ECHO) ALL_MAIN_TARGETS := $(sort $(ALL_TARGETS)) > \
 	      $(MAKESUPPORT_OUTPUTDIR)/main-targets.gmk
 

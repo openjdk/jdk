@@ -155,7 +155,7 @@ ifeq ($(HAS_SPEC),)
     else ifeq ($$(LOG_LEVEL), debug)
       MAKE_LOG_FLAGS :=
     else ifeq ($$(LOG_LEVEL), trace)
-      MAKE_LOG_FLAGS := -d
+      MAKE_LOG_FLAGS :=
     else
       $$(info Error: LOG must be one of: warn, info, debug or trace.)
       $$(error Cannot continue)
@@ -235,11 +235,15 @@ ifeq ($(HAS_SPEC),)
           $$(foreach var, $$(all_confs), $$(info * $$(var)))
           $$(error Cannot continue)
         else
-          ifeq ($$(words $$(matching_confs)), 1)
-            $$(info Building configuration '$$(matching_confs)' (matching CONF=$$(CONF)))
-          else
-            $$(info Building these configurations (matching CONF=$$(CONF)):)
-            $$(foreach var, $$(matching_confs), $$(info * $$(var)))
+          # Don't repeat this output on make restarts caused by including
+          # generated files.
+          ifeq ($$(MAKE_RESTARTS),)
+            ifeq ($$(words $$(matching_confs)), 1)
+              $$(info Building configuration '$$(matching_confs)' (matching CONF=$$(CONF)))
+            else
+              $$(info Building these configurations (matching CONF=$$(CONF)):)
+              $$(foreach var, $$(matching_confs), $$(info * $$(var)))
+            endif
           endif
         endif
 
@@ -284,7 +288,7 @@ ifeq ($(HAS_SPEC),)
 
     $$(main_targets_file):
 	@( cd $$(topdir) && \
-	    $$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(topdir)/make/Main.gmk \
+	$$(MAKE) $$(MAKE_LOG_FLAGS) -r -R -f $$(topdir)/make/Main.gmk \
 	    -I $$(topdir)/make/common SPEC=$(strip $2) NO_RECIPES=true \
 	    LOG_LEVEL=$$(LOG_LEVEL) \
 	    create-main-targets-include )
@@ -313,7 +317,7 @@ else # $(HAS_SPEC)=true
   BUILD_LOG := $(OUTPUT_ROOT)/build.log
   BUILD_TRACE_LOG := $(OUTPUT_ROOT)/build-trace-time.log
 
-  BUILD_LOG_WRAPPER := $(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)
+  BUILD_LOG_PIPE := > >($(TEE) -a $(BUILD_LOG)) 2> >($(TEE) -a $(BUILD_LOG) >&2)
 
   # Sanity check the spec file, so it matches this source code
   define CheckSpecSanity
@@ -455,7 +459,7 @@ else # $(HAS_SPEC)=true
   endef
 
   define RotateLogFiles
-	$(RM) $(BUILD_LOG).old 2> /dev/null
+	$(RM) $(BUILD_LOG).old 2> /dev/null && \
 	$(MV) $(BUILD_LOG) $(BUILD_LOG).old 2> /dev/null || true
 	$(if $(findstring trace, $(LOG_LEVEL)), \
 	  $(RM) $(BUILD_TRACE_LOG).old 2> /dev/null && \
@@ -464,7 +468,7 @@ else # $(HAS_SPEC)=true
   endef
 
   define PrepareFailureLogs
-	$(RM) -r $(MAKESUPPORT_OUTPUTDIR)/failure-logs 2> /dev/null
+	$(RM) -r $(MAKESUPPORT_OUTPUTDIR)/failure-logs 2> /dev/null && \
 	$(MKDIR) -p $(MAKESUPPORT_OUTPUTDIR)/failure-logs
   endef
 
@@ -483,8 +487,8 @@ else # $(HAS_SPEC)=true
   endef
 
   define StartGlobalTimer
-	$(RM) -r $(BUILDTIMESDIR) 2> /dev/null
-	$(MKDIR) -p $(BUILDTIMESDIR)
+	$(RM) -r $(BUILDTIMESDIR) 2> /dev/null && \
+	$(MKDIR) -p $(BUILDTIMESDIR) && \
 	$(call RecordStartTime,TOTAL)
   endef
 
@@ -495,13 +499,14 @@ else # $(HAS_SPEC)=true
   # Find all build_time_* files and print their contents in a list sorted
   # on the name of the sub repository.
   define ReportBuildTimes
-	$(BUILD_LOG_WRAPPER) $(PRINTF) $(LOG_INFO) -- \
+	$(PRINTF) $(LOG_INFO) -- \
 	    "----- Build times -------\nStart %s\nEnd   %s\n%s\n%s\n-------------------------\n" \
 	    "`$(CAT) $(BUILDTIMESDIR)/build_time_start_TOTAL_human_readable`" \
 	    "`$(CAT) $(BUILDTIMESDIR)/build_time_end_TOTAL_human_readable`" \
 	    "`$(LS) $(BUILDTIMESDIR)/build_time_diff_* | $(GREP) -v _TOTAL | \
 	    $(XARGS) $(CAT) | $(SORT) -k 2`" \
-	    "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_TOTAL`"
+	    "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_TOTAL`" \
+	    $(BUILD_LOG_PIPE)
   endef
 
 endif # HAS_SPEC

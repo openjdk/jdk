@@ -86,8 +86,7 @@ BUILDTIMESDIR=$(OUTPUT_ROOT)/make-support/build-times
 
 # Record starting time for build of a sub repository.
 define RecordStartTime
-	$(MKDIR) -p $(BUILDTIMESDIR)
-	$(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_start_$(strip $1)
+	$(DATE) '+%Y %m %d %H %M %S' | $(NAWK) '{ print $$1,$$2,$$3,$$4,$$5,$$6,($$4*3600+$$5*60+$$6) }' > $(BUILDTIMESDIR)/build_time_start_$(strip $1) && \
 	$(DATE) '+%Y-%m-%d %H:%M:%S' > $(BUILDTIMESDIR)/build_time_start_$(strip $1)_human_readable
 endef
 
@@ -233,6 +232,7 @@ else # HAS_FILE_FUNCTION
   endef
 endif # HAS_FILE_FUNCTION
 
+################################################################################
 # The source tips can come from the Mercurial repository, or in the files
 # $(HGTIP_FILENAME) which contains the tip but is also positioned in the same
 # directory as the original $(HGDIR) directory.
@@ -264,11 +264,13 @@ define GetSourceTips
 	$(PRINTF) "\n" >> $@
 endef
 
-# Create the HGTIP_FILENAME file. Called from jdk/make/closed/bundles.gmk
+# Create the HGTIP_FILENAME file. Called from closed/make/SourceBundles.gmk
 define CreateHgTip
 	$(HG) tip --repository $1 --template '{node|short}\n' > $1/$(HGTIP_FILENAME); \
 	$(ECHO) $1/$(HGTIP_FILENAME)
 endef
+
+################################################################################
 
 define SetupLogging
   ifeq ($$(LOG_LEVEL), trace)
@@ -368,9 +370,9 @@ endef
 
 ################################################################################
 # Make directory without forking mkdir if not needed
+# 1: List of directories to create
 MakeDir = \
-    $(strip $(if $(subst $(wildcard $1 $2 $3 $4 $5 $6 $7 $8 $9),,$(strip $1 $2 $3 $4 $5 $6 $7 $8 $9)),\
-      $(shell $(MKDIR) -p $1 $2 $3 $4 $5 $6 $7 $8 $9)))
+    $(strip $(if $(wildcard $1), , $(shell $(MKDIR) -p $1)))
 
 ################################################################################
 # Assign a variable only if it is empty
@@ -418,7 +420,8 @@ else
   # Running mkdir and cp in the same shell speeds up copy intensive tasks in Cygwin
   # significantly.
   define install-file
-	$(MKDIR) -p '$(@D)' && $(CP) -fP '$<' '$@'
+	$(call MakeDir, $(@D))
+	$(CP) -fP '$<' '$@'
   endef
 endif
 
@@ -518,9 +521,9 @@ ifneq ($(DISABLE_CACHE_FIND), true)
   # Param 1 - Dirs to find in
   # Param 2 - (optional) specialization. Normally "-a \( ... \)" expression.
   define CacheFind
-    $(if $(filter-out $(addsuffix /%,- $(FIND_CACHE_DIRS)) $(FIND_CACHE_DIRS),$1), \
+      $(if $(filter-out $(addsuffix /%,- $(FIND_CACHE_DIRS)) $(FIND_CACHE_DIRS),$1), \
     $(shell $(FIND) $1 \( -type f -o -type l \) $2), \
-    $(filter $(addsuffix /%,$(patsubst %/,%,$1)) $1,$(FIND_CACHE)))
+        $(filter $(addsuffix /%,$(patsubst %/,%,$1)) $1,$(FIND_CACHE)))
   endef
 
 else
@@ -541,7 +544,7 @@ define AddFileToCopy
   # 3 : Variable to add targets to
   # 4 : Macro to call for copy operation
   $2: $1
-	$(ECHO) $(LOG_INFO) Copying $$(patsubst $(OUTPUT_ROOT)/%,%,$$@)
+	$$(call LogInfo, Copying $$(patsubst $(OUTPUT_ROOT)/%,%,$$@))
 	$$($$(strip $4))
 
   $3 += $2
@@ -686,8 +689,10 @@ DependOnVariable = \
 # Param 2 - A compact but representative name to describe this command
 # Param 3 - Command to run
 LogFailures = \
-  ( ($(BASH) $(SRC_ROOT)/common/bin/logger.sh $1 $3 && $(RM) $1) || \
-  (exitcode=$(DOLLAR)$(DOLLAR)? && $(MV) $1 $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(strip $2).log && exit $(DOLLAR)$(DOLLAR)exitcode) )
+  ( $3 > >($(TEE) $1) 2> >($(TEE) $1 >&2) || \
+      (exitcode=$(DOLLAR)$(DOLLAR)? && \
+      $(CP) $1 $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(strip $2).log && \
+      exit $(DOLLAR)$(DOLLAR)exitcode) )
 
 ################################################################################
 # Find lib dir for module
