@@ -31,8 +31,8 @@ tier1 = \
     -java/util/zip/TestLocalTime.java \
     :jdk_util \
     -java/util/WeakHashMap/GCDuringIteration.java \
-    -java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java
-    -java/util/concurrent/forkjoin/FJExceptionTableLeak.java
+    -java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
+    -java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
@@ -43,7 +43,7 @@ tier2 = \
     java/util/zip/TestLocalTime.java \
     java/util/WeakHashMap/GCDuringIteration.java \
     java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
-    java/util/concurrent/forkjoin/FJExceptionTableLeak.java
+    java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
     :jdk_io \
     :jdk_nio \
     -sun/nio/cs/ISO8859x.java \
