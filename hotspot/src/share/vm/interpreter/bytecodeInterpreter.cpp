@@ -2780,7 +2780,7 @@ run:
       MORE_STACK(1);
       pc = METHOD->code_base() + continuation_bci;
       if (log_is_enabled(Info, exceptions)) {
-        ResourceMark rm(thread);
+        ResourceMark rm(THREAD);
         stringStream tempst;
         tempst.print("interpreter method <%s>\n"
                      " at bci %d, continuing at %d for thread " INTPTR_FORMAT,
