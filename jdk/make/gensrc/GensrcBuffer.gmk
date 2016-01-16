@@ -23,7 +23,7 @@
 # questions.
 #
 
-GENSRC_BUFFER := 
+GENSRC_BUFFER :=
 
 GENSRC_BUFFER_DST := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/nio
 
@@ -31,9 +31,9 @@ GENSRC_BUFFER_SRC := $(JDK_TOPDIR)/src/java.base/share/classes/java/nio
 
 ###
 
-$(GENSRC_BUFFER_DST)/_the.buffer.dir: 
-	$(ECHO) "Generating buffer classes"
-	$(MKDIR) -p $(@D)
+$(GENSRC_BUFFER_DST)/_the.buffer.dir:
+	$(call LogInfo, Generating buffer classes)
+	$(call MakeDir, $(@D))
 	$(TOUCH) $@
 
 define fixRw
