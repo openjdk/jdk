@@ -23,8 +23,6 @@
 # questions.
 #
 
-include $(SPEC)
-include MakeBase.gmk
 include NativeCompilation.gmk
 
 GLOBAL_VERSION_INFO_RESOURCE := $(JDK_TOPDIR)/src/java.base/windows/native/common/version.rc
@@ -87,3 +85,5 @@ ifeq ($(USE_EXTERNAL_LIBZ), true)
 else
   ZLIB_CPPFLAGS := -I$(JDK_TOPDIR)/src/java.base/share/native/libzip/zlib-1.2.8
 endif
+
+###############################################################################

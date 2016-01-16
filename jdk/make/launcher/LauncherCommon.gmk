@@ -31,9 +31,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   ENABLE_DEBUG_SYMBOLS := false
 endif
 
-# Prepare the find cache.
-$(eval $(call FillCacheFind, $(JDK_TOPDIR)/src/java.base/share/native/launcher))
-
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN)
 else
@@ -124,7 +121,7 @@ define SetupBuildLauncherBody
       $1_LDFLAGS += -exported_symbols_list \
               $(SUPPORT_OUTPUTDIR)/build-static/exported.symbols
       $1_LIBS += \
-          $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/java.base -name "*.a") \
+          $$(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/java.base -name "*.a") \
           $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libdt_socket.a \
           $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libjdwp.a \
           $(SUPPORT_OUTPUTDIR)/native/java.base/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX) \
@@ -174,8 +171,7 @@ define SetupBuildLauncherBody
   endif
 
   $$(eval $$(call SetupNativeCompilation, BUILD_LAUNCHER_$1, \
-      SRC := $(LAUNCHER_SRC), \
-      INCLUDE_FILES := main.c, \
+      EXTRA_FILES := $(LAUNCHER_SRC)/main.c, \
       OPTIMIZATION := $$($1_OPTIMIZATION), \
       CFLAGS := $$($1_CFLAGS) \
           $(LAUNCHER_CFLAGS) \

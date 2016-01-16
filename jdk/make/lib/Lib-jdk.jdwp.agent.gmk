@@ -111,7 +111,7 @@ ifeq ($(STATIC_BUILD), true)
   JDK_JDWP_AGENT_EXPORT_SYMBOL_FILE := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/jdk.jdwp.agent.symbols
 
   $(JDK_JDWP_AGENT_EXPORT_SYMBOL_FILE): $(JDK_JDWP_AGENT_EXPORT_SYMBOLS_SRC)
-	$(ECHO) $(LOG_INFO) "Generating jdk.jdwp.agent symbols file"
+	$(call LogInfo, Generating jdk.jdwp.agent symbols file)
 	$(CAT) $^ > $@
 
   # The individual symbol files is generated when the respective lib is built

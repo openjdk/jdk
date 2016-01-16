@@ -750,7 +750,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   $(BUILD_LIBJAWT): $(BUILD_LIBAWT)
 
   $(JDK_OUTPUTDIR)/lib/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX): $(BUILD_LIBJAWT)
-	$(ECHO) Copying $(@F)
+	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%, %, $@))
+	$(call MakeDir, $(@D))
 	$(CP) $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjawt/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX) $@
 
   TARGETS += $(JDK_OUTPUTDIR)/lib/$(LIBRARY_PREFIX)jawt$(STATIC_LIBRARY_SUFFIX)

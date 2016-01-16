@@ -32,21 +32,12 @@ GENSRC_EXCEPTIONS_CMD := $(JDK_TOPDIR)/make/scripts/genExceptions.sh
 
 GENSRC_EXCEPTIONS_SRC_DIRS := . charset channels
 
-###
-
-$(GENSRC_EXCEPTIONS_DST)/_the.exceptions.dir:
-	$(ECHO) "Generating exceptions classes"
-	$(MKDIR) -p $(@D)
-	$(TOUCH) $@
-
-
-###
-
 $(GENSRC_EXCEPTIONS_DST)/_the.%.marker: $(GENSRC_EXCEPTIONS_SRC)/%/exceptions \
-    $(GENSRC_EXCEPTIONS_CMD) \
-    $(GENSRC_EXCEPTIONS_DST)/_the.exceptions.dir
-	$(MKDIR) -p $(@D)/$*
-	SCRIPTS="$(JDK_TOPDIR)/make/scripts" NAWK="$(NAWK)" SH="$(SH)" $(SH) $(GENSRC_EXCEPTIONS_CMD) $< $(@D)/$* $(LOG_INFO)
+    $(GENSRC_EXCEPTIONS_CMD)
+	$(call LogInfo, Generating exceptions java.nio $*)
+	$(call MakeDir, $(@D)/$*)
+	SCRIPTS="$(JDK_TOPDIR)/make/scripts" NAWK="$(NAWK)" SH="$(SH)" $(SH) \
+	    $(GENSRC_EXCEPTIONS_CMD) $< $(@D)/$* $(LOG_DEBUG)
 	$(TOUCH) $@
 
 GENSRC_EXCEPTIONS += $(foreach D,$(GENSRC_EXCEPTIONS_SRC_DIRS),$(GENSRC_EXCEPTIONS_DST)/_the.$(D).marker)
