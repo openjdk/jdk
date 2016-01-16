@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,9 @@
 
 // key: compiler.misc.token.identifier
 // key: compiler.err.expected
-// key: compiler.err.invalid.binary.number
-// key: compiler.misc.count.error.plural
+// key: compiler.misc.count.error
 // key: compiler.err.error
 // run: backdoor
 
-class IdentifierExpected {
-    long bl = 0BL;
+class {
 }

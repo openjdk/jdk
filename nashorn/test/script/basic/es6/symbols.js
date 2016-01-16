@@ -40,11 +40,11 @@ Assert.assertTrue(Symbol([1, 2, 3]).toString() === 'Symbol(1,2,3)');
 Assert.assertTrue(Symbol(null).toString() === 'Symbol(null)');
 Assert.assertTrue(Symbol(undefined).toString() === 'Symbol()');
 
-var s1 = Symbol();
-var s2 = Symbol("s2");
+const s1 = Symbol();
+const s2 = Symbol("s2");
 Assert.assertFalse(s1 instanceof Symbol); // not an object
 
-var obj = {};
+let obj = {};
 obj['foo'] = 'foo';
 obj[s1] = s1;
 obj['bar'] = 'bar';
@@ -57,17 +57,17 @@ Assert.assertTrue(obj['bar'] === 'bar');
 Assert.assertTrue(obj[1] === 1);
 Assert.assertTrue(obj[s2] === s2);
 
-var expectedNames = ['1', 'foo', 'bar'];
-var expectedSymbols = [s1, s2];
-var actualNames = Object.getOwnPropertyNames(obj);
-var actualSymbols = Object.getOwnPropertySymbols(obj);
+const expectedNames = ['1', 'foo', 'bar'];
+const expectedSymbols = [s1, s2];
+const actualNames = Object.getOwnPropertyNames(obj);
+let actualSymbols = Object.getOwnPropertySymbols(obj);
 Assert.assertTrue(expectedNames.length == actualNames.length);
 Assert.assertTrue(expectedSymbols.length == actualSymbols.length);
 
-for (var key in expectedNames) {
+for (let key in expectedNames) {
     Assert.assertTrue(expectedNames[key] === actualNames[key]);
 }
-for (var key in expectedSymbols) {
+for (let key in expectedSymbols) {
     Assert.assertTrue(expectedSymbols[key] === actualSymbols[key]);
 }
 
@@ -114,8 +114,8 @@ try {
 
 // Symbol.for and Symbol.keyFor
 
-var uncached = Symbol('foo');
-var cached = Symbol.for('foo');
+const uncached = Symbol('foo');
+const cached = Symbol.for('foo');
 
 Assert.assertTrue(uncached !== cached);
 Assert.assertTrue(Symbol.keyFor(uncached) === undefined);
@@ -123,9 +123,15 @@ Assert.assertTrue(Symbol.keyFor(cached) === 'foo');
 Assert.assertTrue(cached === Symbol.for('foo'));
 Assert.assertTrue(cached === Symbol.for('f' + 'oo'));
 
+// JDK-8147008: Make sure symbols are handled by primitive linker
+Symbol.prototype.foo = 123;
+Symbol.prototype[s2] = s2;
+Assert.assertEquals(s1.foo, 123);
+Assert.assertEquals(s2[s2], s2);
+
 // Object wrapper
 
-var o = Object(s1);
+const o = Object(s1);
 obj = {};
 obj[s1] = "s1";
 Assert.assertTrue(o == s1);
@@ -134,6 +140,8 @@ Assert.assertTrue(typeof o === 'object');
 Assert.assertTrue(o instanceof Symbol);
 Assert.assertTrue(obj[o] == 's1');
 Assert.assertTrue(o in obj);
+Assert.assertEquals(o.foo, 123);
+Assert.assertEquals(o[s2], s2);
 
 // various non-strict comparisons that should fail
 

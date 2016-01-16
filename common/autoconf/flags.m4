@@ -128,6 +128,26 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
   else
     COMPILER_TARGET_BITS_FLAG="-m"
     COMPILER_COMMAND_FILE_FLAG="@"
+
+    # The solstudio linker does not support @-files.
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      COMPILER_COMMAND_FILE_FLAG=
+    fi
+
+    # Check if @file is supported by gcc
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      AC_MSG_CHECKING([if @file is supported by gcc])
+      # Extra emtpy "" to prevent ECHO from interpreting '--version' as argument
+      $ECHO "" "--version" > command.file
+      if $CXX @command.file 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
+        AC_MSG_RESULT(yes)
+        COMPILER_COMMAND_FILE_FLAG="@"
+      else
+        AC_MSG_RESULT(no)
+        COMPILER_COMMAND_FILE_FLAG=
+      fi
+      rm -rf command.file
+    fi
   fi
   AC_SUBST(COMPILER_TARGET_BITS_FLAG)
   AC_SUBST(COMPILER_COMMAND_FILE_FLAG)
@@ -405,7 +425,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
       # Add runtime stack smashing and undefined behavior checks.
       # Not all versions of gcc support -fstack-protector
       STACK_PROTECTOR_CFLAG="-fstack-protector-all"
-      FLAGS_COMPILER_CHECK_ARGUMENTS([$STACK_PROTECTOR_CFLAG], [], [STACK_PROTECTOR_CFLAG=""])
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$STACK_PROTECTOR_CFLAG], IF_FALSE: [STACK_PROTECTOR_CFLAG=""])
 
       CFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_CFLAG --param ssp-buffer-size=1"
       CXXFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_CFLAG --param ssp-buffer-size=1"
@@ -722,7 +742,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
       -I${JDK_TOPDIR}/src/java.base/share/native/include \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include \
-      -I${JDK_TOPDIR}/src/java.base/share/native/libjava \ 
+      -I${JDK_TOPDIR}/src/java.base/share/native/libjava \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava"
 
   # The shared libraries are compiled using the picflag.
@@ -876,17 +896,18 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   AC_SUBST(LDFLAGS_TESTEXE)
 ])
 
-# FLAGS_COMPILER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
-#                                   [RUN-IF-FALSE])
+# FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                   IF_FALSE: [RUN-IF-FALSE])
 # ------------------------------------------------------------
 # Check that the c and c++ compilers support an argument
-AC_DEFUN([FLAGS_COMPILER_CHECK_ARGUMENTS],
+BASIC_DEFUN_NAMED([FLAGS_COMPILER_CHECK_ARGUMENTS],
+    [*ARGUMENT IF_TRUE IF_FALSE], [$@],
 [
-  AC_MSG_CHECKING([if compiler supports "$1"])
+  AC_MSG_CHECKING([if compiler supports "ARG_ARGUMENT"])
   supports=yes
 
   saved_cflags="$CFLAGS"
-  CFLAGS="$CFLAGS $1"
+  CFLAGS="$CFLAGS ARG_ARGUMENT"
   AC_LANG_PUSH([C])
   AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int i;]])], [],
       [supports=no])
@@ -894,7 +915,7 @@ AC_DEFUN([FLAGS_COMPILER_CHECK_ARGUMENTS],
   CFLAGS="$saved_cflags"
 
   saved_cxxflags="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAG $1"
+  CXXFLAGS="$CXXFLAG ARG_ARGUMENT"
   AC_LANG_PUSH([C++])
   AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int i;]])], [],
       [supports=no])
@@ -903,23 +924,26 @@ AC_DEFUN([FLAGS_COMPILER_CHECK_ARGUMENTS],
 
   AC_MSG_RESULT([$supports])
   if test "x$supports" = "xyes" ; then
-    m4_ifval([$2], [$2], [:])
+    :
+    ARG_IF_TRUE
   else
-    m4_ifval([$3], [$3], [:])
+    :
+    ARG_IF_FALSE
   fi
 ])
 
-# FLAGS_LINKER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
-#                                    [RUN-IF-FALSE])
+# FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                   IF_FALSE: [RUN-IF-FALSE])
 # ------------------------------------------------------------
 # Check that the linker support an argument
-AC_DEFUN([FLAGS_LINKER_CHECK_ARGUMENTS],
+BASIC_DEFUN_NAMED([FLAGS_LINKER_CHECK_ARGUMENTS],
+    [*ARGUMENT IF_TRUE IF_FALSE], [$@],
 [
-  AC_MSG_CHECKING([if linker supports "$1"])
+  AC_MSG_CHECKING([if linker supports "ARG_ARGUMENT"])
   supports=yes
 
   saved_ldflags="$LDFLAGS"
-  LDFLAGS="$LDFLAGS $1"
+  LDFLAGS="$LDFLAGS ARG_ARGUMENT"
   AC_LANG_PUSH([C])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[]])],
       [], [supports=no])
@@ -928,9 +952,11 @@ AC_DEFUN([FLAGS_LINKER_CHECK_ARGUMENTS],
 
   AC_MSG_RESULT([$supports])
   if test "x$supports" = "xyes" ; then
-    m4_ifval([$2], [$2], [:])
+    :
+    ARG_IF_TRUE
   else
-    m4_ifval([$3], [$3], [:])
+    :
+    ARG_IF_FALSE
   fi
 ])
 
@@ -945,14 +971,14 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
     *)
       ZERO_ARCHFLAG="${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
   esac
-  FLAGS_COMPILER_CHECK_ARGUMENTS([$ZERO_ARCHFLAG], [], [ZERO_ARCHFLAG=""])
+  FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$ZERO_ARCHFLAG], IF_FALSE: [ZERO_ARCHFLAG=""])
   AC_SUBST(ZERO_ARCHFLAG)
 
   # Check that the compiler supports -mX (or -qX on AIX) flags
   # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
-  FLAGS_COMPILER_CHECK_ARGUMENTS([${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}],
-      [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
-      [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
+  FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}],
+      IF_TRUE: [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
+      IF_FALSE: [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
   AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
 
   AC_ARG_ENABLE([warnings-as-errors], [AS_HELP_STRING([--disable-warnings-as-errors],
@@ -993,9 +1019,9 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
       ;;
     gcc)
       # Prior to gcc 4.4, a -Wno-X where X is unknown for that version of gcc will cause an error
-      FLAGS_COMPILER_CHECK_ARGUMENTS([-Wno-this-is-a-warning-that-do-not-exist],
-          [GCC_CAN_DISABLE_WARNINGS=true],
-          [GCC_CAN_DISABLE_WARNINGS=false]
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [-Wno-this-is-a-warning-that-do-not-exist],
+          IF_TRUE: [GCC_CAN_DISABLE_WARNINGS=true],
+          IF_FALSE: [GCC_CAN_DISABLE_WARNINGS=false]
       )
       if test "x$GCC_CAN_DISABLE_WARNINGS" = "xtrue"; then
         DISABLE_WARNING_PREFIX="-Wno-"
@@ -1006,9 +1032,9 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
       # Repeate the check for the BUILD_CC
       CC_OLD="$CC"
       CC="$BUILD_CC"
-      FLAGS_COMPILER_CHECK_ARGUMENTS([-Wno-this-is-a-warning-that-do-not-exist],
-          [BUILD_CC_CAN_DISABLE_WARNINGS=true],
-          [BUILD_CC_CAN_DISABLE_WARNINGS=false]
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [-Wno-this-is-a-warning-that-do-not-exist],
+          IF_TRUE: [BUILD_CC_CAN_DISABLE_WARNINGS=true],
+          IF_FALSE: [BUILD_CC_CAN_DISABLE_WARNINGS=false]
       )
       if test "x$BUILD_CC_CAN_DISABLE_WARNINGS" = "xtrue"; then
         BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"

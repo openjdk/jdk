@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -346,7 +346,6 @@ void Dependencies::assert_common_2(DepType dept,
       }
     }
   } else {
-    assert(dep_implicit_context_arg(dept) == 0, "sanity");
     if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
       // look in this bucket for redundant assertions
       const int stride = 2;
@@ -1950,3 +1949,10 @@ void Dependencies::print_statistics() {
   }
 }
 #endif
+
+CallSiteDepChange::CallSiteDepChange(Handle call_site, Handle method_handle) :
+  _call_site(call_site),
+  _method_handle(method_handle) {
+  assert(_call_site()->is_a(SystemDictionary::CallSite_klass()), "must be");
+  assert(_method_handle.is_null() || _method_handle()->is_a(SystemDictionary::MethodHandle_klass()), "must be");
+}

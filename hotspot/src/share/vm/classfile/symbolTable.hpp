@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,17 @@
 class BoolObjectClosure;
 class outputStream;
 
-// Class to hold a newly created or referenced Symbol* temporarily in scope.
-// new_symbol() and lookup() will create a Symbol* if not already in the
+// TempNewSymbol acts as a handle class in a handle/body idiom and is
+// responsible for proper resource management of the body (which is a Symbol*).
+// The body is resource managed by a reference counting scheme.
+// TempNewSymbol can therefore be used to properly hold a newly created or referenced
+// Symbol* temporarily in scope.
+//
+// Routines in SymbolTable will initialize the reference count of a Symbol* before
+// it becomes "managed" by TempNewSymbol instances. As a handle class, TempNewSymbol
+// needs to maintain proper reference counting in context of copy semantics.
+//
+// In SymbolTable, new_symbol() and lookup() will create a Symbol* if not already in the
 // symbol table and add to the symbol's reference count.
 // probe() and lookup_only() will increment the refcount if symbol is found.
 class TempNewSymbol : public StackObj {
@@ -51,25 +60,38 @@ class TempNewSymbol : public StackObj {
 
  public:
   TempNewSymbol() : _temp(NULL) {}
-  // Creating or looking up a symbol increments the symbol's reference count
+
+  // Conversion from a Symbol* to a TempNewSymbol.
+  // Does not increment the current reference count.
   TempNewSymbol(Symbol *s) : _temp(s) {}
 
-  // Operator= increments reference count.
-  void operator=(const TempNewSymbol &s) {
-    //clear();  //FIXME
-    _temp = s._temp;
-    if (_temp !=NULL) _temp->increment_refcount();
+  // Copy constructor increments reference count.
+  TempNewSymbol(const TempNewSymbol& rhs) : _temp(rhs._temp) {
+    if (_temp != NULL) {
+      _temp->increment_refcount();
+    }
   }
 
-  // Decrement reference counter so it can go away if it's unique
-  void clear() { if (_temp != NULL)  _temp->decrement_refcount();  _temp = NULL; }
+  // Assignment operator uses a c++ trick called copy and swap idiom.
+  // rhs is passed by value so within the scope of this method it is a copy.
+  // At method exit it contains the former value of _temp, triggering the correct refcount
+  // decrement upon destruction.
+  void operator=(TempNewSymbol rhs) {
+    Symbol* tmp = rhs._temp;
+    rhs._temp = _temp;
+    _temp = tmp;
+  }
 
-  ~TempNewSymbol() { clear(); }
+  // Decrement reference counter so it can go away if it's unused
+  ~TempNewSymbol() {
+    if (_temp != NULL) {
+      _temp->decrement_refcount();
+    }
+  }
 
-  // Operators so they can be used like Symbols
+  // Symbol* conversion operators
   Symbol* operator -> () const                   { return _temp; }
   bool    operator == (Symbol* o) const          { return _temp == o; }
-  // Sneaky conversion function
   operator Symbol*()                             { return _temp; }
 };
 

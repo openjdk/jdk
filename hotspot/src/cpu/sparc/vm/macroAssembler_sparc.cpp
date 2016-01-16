@@ -181,19 +181,6 @@ void MacroAssembler::null_check(Register reg, int offset) {
 
 // Ring buffer jumps
 
-#ifndef PRODUCT
-void MacroAssembler::ret(  bool trace )   { if (trace) {
-                                                    mov(I7, O7); // traceable register
-                                                    JMP(O7, 2 * BytesPerInstWord);
-                                                  } else {
-                                                    jmpl( I7, 2 * BytesPerInstWord, G0 );
-                                                  }
-                                                }
-
-void MacroAssembler::retl( bool trace )  { if (trace) JMP(O7, 2 * BytesPerInstWord);
-                                                 else jmpl( O7, 2 * BytesPerInstWord, G0 ); }
-#endif /* PRODUCT */
-
 
 void MacroAssembler::jmp2(Register r1, Register r2, const char* file, int line ) {
   assert_not_delayed();
@@ -758,8 +745,8 @@ void MacroAssembler::set_vm_result(Register oop_result) {
 }
 
 
-void MacroAssembler::ic_call(address entry, bool emit_delay) {
-  RelocationHolder rspec = virtual_call_Relocation::spec(pc());
+void MacroAssembler::ic_call(address entry, bool emit_delay, jint method_index) {
+  RelocationHolder rspec = virtual_call_Relocation::spec(pc(), method_index);
   patchable_set((intptr_t)Universe::non_oop_word(), G5_inline_cache_reg);
   relocate(rspec);
   call(entry, relocInfo::none);
@@ -767,7 +754,6 @@ void MacroAssembler::ic_call(address entry, bool emit_delay) {
     delayed()->nop();
   }
 }
-
 
 void MacroAssembler::card_table_write(jbyte* byte_map_base,
                                       Register tmp, Register obj) {

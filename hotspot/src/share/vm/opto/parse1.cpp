@@ -962,6 +962,14 @@ void Parse::do_exits() {
            PPC64_ONLY(wrote_volatile() ||)
            (AlwaysSafeConstructors && wrote_fields()))) {
     _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
+
+    // If Memory barrier is created for final fields write
+    // and allocation node does not escape the initialize method,
+    // then barrier introduced by allocation node can be removed.
+    if (DoEscapeAnalysis && alloc_with_final()) {
+      AllocateNode *alloc = AllocateNode::Ideal_allocation(alloc_with_final(), &_gvn);
+      alloc->compute_MemBar_redundancy(method());
+    }
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();
       tty->print_cr(" writes finals and needs a memory barrier");

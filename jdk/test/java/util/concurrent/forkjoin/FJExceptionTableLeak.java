@@ -37,6 +37,7 @@
  * @bug 8004138
  * @summary Check if ForkJoinPool table leaks thrown exceptions.
  * @run main/othervm -Xmx2200k FJExceptionTableLeak
+ * @key intermittent
  */
 
 import java.util.concurrent.ForkJoinPool;

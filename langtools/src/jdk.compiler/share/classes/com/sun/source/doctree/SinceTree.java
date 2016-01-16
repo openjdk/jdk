@@ -35,7 +35,6 @@ import java.util.List;
  *
  * @since 1.8
  */
-@jdk.Exported
 public interface SinceTree extends BlockTagTree {
     /**
      * Returns the text explaining the availability of the item being documented.

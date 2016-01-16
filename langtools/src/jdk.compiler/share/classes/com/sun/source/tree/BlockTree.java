@@ -45,7 +45,6 @@ import java.util.List;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-@jdk.Exported
 public interface BlockTree extends StatementTree {
     /**
      * Returns true if and only if this is a static initializer block.

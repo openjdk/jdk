@@ -1493,18 +1493,6 @@ void java_lang_Throwable::clear_stacktrace(oop throwable) {
 }
 
 
-void java_lang_Throwable::print(oop throwable, outputStream* st) {
-  ResourceMark rm;
-  Klass* k = throwable->klass();
-  assert(k != NULL, "just checking");
-  st->print("%s", k->external_name());
-  oop msg = message(throwable);
-  if (msg != NULL) {
-    st->print(": %s", java_lang_String::as_utf8_string(msg));
-  }
-}
-
-
 void java_lang_Throwable::print(Handle throwable, outputStream* st) {
   ResourceMark rm;
   Klass* k = throwable->klass();
@@ -1536,7 +1524,7 @@ class BacktraceBuilder: public StackObj {
   objArrayOop     _mirrors;
   typeArrayOop    _cprefs; // needed to insulate method name against redefinition
   int             _index;
-  No_Safepoint_Verifier _nsv;
+  NoSafepointVerifier _nsv;
 
  public:
 
@@ -1595,7 +1583,7 @@ class BacktraceBuilder: public StackObj {
 
   void expand(TRAPS) {
     objArrayHandle old_head(THREAD, _head);
-    Pause_No_Safepoint_Verifier pnsv(&_nsv);
+    PauseNoSafepointVerifier pnsv(&_nsv);
 
     objArrayOop head = oopFactory::new_objectArray(trace_size, CHECK);
     objArrayHandle new_head(THREAD, head);
@@ -1732,20 +1720,25 @@ const char* java_lang_Throwable::no_stack_trace_message() {
   return "\t<<no stack trace available>>";
 }
 
+/**
+ * Print the throwable message and its stack trace plus all causes by walking the
+ * cause chain.  The output looks the same as of Throwable.printStackTrace().
+ */
+void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) {
+  // First, print the message.
+  print(throwable, st);
+  st->cr();
 
-// Currently used only for exceptions occurring during startup
-void java_lang_Throwable::print_stack_trace(oop throwable, outputStream* st) {
-  Thread *THREAD = Thread::current();
-  Handle h_throwable(THREAD, throwable);
-  while (h_throwable.not_null()) {
-    objArrayHandle result (THREAD, objArrayOop(backtrace(h_throwable())));
+  // Now print the stack trace.
+  Thread* THREAD = Thread::current();
+  while (throwable.not_null()) {
+    objArrayHandle result (THREAD, objArrayOop(backtrace(throwable())));
     if (result.is_null()) {
       st->print_raw_cr(no_stack_trace_message());
       return;
     }
 
     while (result.not_null()) {
-
       // Get method id, bci, version and mirror from chunk
       typeArrayHandle methods (THREAD, BacktraceBuilder::get_methods(result));
       typeArrayHandle bcis (THREAD, BacktraceBuilder::get_bcis(result));
@@ -1770,20 +1763,20 @@ void java_lang_Throwable::print_stack_trace(oop throwable, outputStream* st) {
       EXCEPTION_MARK;
       JavaValue cause(T_OBJECT);
       JavaCalls::call_virtual(&cause,
-                              h_throwable,
-                              KlassHandle(THREAD, h_throwable->klass()),
+                              throwable,
+                              KlassHandle(THREAD, throwable->klass()),
                               vmSymbols::getCause_name(),
                               vmSymbols::void_throwable_signature(),
                               THREAD);
       // Ignore any exceptions. we are in the middle of exception handling. Same as classic VM.
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION;
-        h_throwable = Handle();
+        throwable = Handle();
       } else {
-        h_throwable = Handle(THREAD, (oop) cause.get_jobject());
-        if (h_throwable.not_null()) {
+        throwable = Handle(THREAD, (oop) cause.get_jobject());
+        if (throwable.not_null()) {
           st->print("Caused by: ");
-          print(h_throwable, st);
+          print(throwable, st);
           st->cr();
         }
       }

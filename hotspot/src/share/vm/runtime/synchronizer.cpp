@@ -159,7 +159,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc * obj, Thread * self, bool all) {
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(self->is_Java_thread(), "invariant");
   assert(((JavaThread *) self)->thread_state() == _thread_in_Java, "invariant");
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
   if (obj == NULL) return false;  // slow-path for invalid obj
   const markOop mark = obj->mark();
 
@@ -209,7 +209,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread * Self,
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(Self->is_Java_thread(), "invariant");
   assert(((JavaThread *) Self)->thread_state() == _thread_in_Java, "invariant");
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
   if (obj == NULL) return false;       // Need to throw NPE
   const markOop mark = obj->mark();
 
@@ -1734,7 +1734,7 @@ class ReleaseJavaMonitorsClosure: public MonitorClosure {
 
 void ObjectSynchronizer::release_monitors_owned_by_thread(TRAPS) {
   assert(THREAD == JavaThread::current(), "must be current Java thread");
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
   ReleaseJavaMonitorsClosure rjmc(THREAD);
   Thread::muxAcquire(&gListLock, "release_monitors_owned_by_thread");
   ObjectSynchronizer::monitors_iterate(&rjmc);

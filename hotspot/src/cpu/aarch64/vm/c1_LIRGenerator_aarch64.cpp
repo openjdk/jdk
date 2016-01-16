@@ -238,6 +238,7 @@ LIR_Opr LIRGenerator::load_immediate(int x, BasicType type) {
     }
   } else {
     ShouldNotReachHere();
+    r = NULL;  // unreachable
   }
   return r;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -832,6 +832,9 @@ public:
   product(bool, UseAESIntrinsics, false,                                    \
           "Use intrinsics for AES versions of crypto")                      \
                                                                             \
+  product(bool, UseAESCTRIntrinsics, false,                                 \
+          "Use intrinsics for the paralleled version of AES/CTR crypto")    \
+                                                                            \
   product(bool, UseSHA1Intrinsics, false,                                   \
           "Use intrinsics for SHA-1 crypto hash function. "                 \
           "Requires that UseSHA is enabled.")                               \
@@ -852,6 +855,9 @@ public:
                                                                             \
   product(bool, UseAdler32Intrinsics, false,                                \
           "use intrinsics for java.util.zip.Adler32")                       \
+                                                                            \
+  product(bool, UseVectorizedMismatchIntrinsic, false,                      \
+          "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \
                                                                             \
   diagnostic(ccstrlist, DisableIntrinsic, "",                               \
          "do not expand intrinsics whose (internal) names appear here")     \
@@ -883,7 +889,7 @@ public:
                                                                             \
   notproduct(bool, StrictSafepointChecks, trueInDebug,                      \
           "Enable strict checks that safepoints cannot happen for threads " \
-          "that use No_Safepoint_Verifier")                                 \
+          "that use NoSafepointVerifier")                                   \
                                                                             \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
@@ -2327,6 +2333,14 @@ public:
                                                                             \
   diagnostic(bool, VerifyDuringGC, false,                                   \
           "Verify memory system during GC (between phases)")                \
+                                                                            \
+  diagnostic(ccstrlist, VerifySubSet, "",                                   \
+          "Memory sub-systems to verify when Verify*GC flag(s) "            \
+          "are enabled. One or more sub-systems can be specified "          \
+          "in a comma separated string. Sub-systems are: "                  \
+          "threads, heap, symbol_table, string_table, codecache, "          \
+          "dictionary, classloader_data_graph, metaspace, jni_handles, "    \
+          "c-heap, codecache_oops")                                         \
                                                                             \
   diagnostic(bool, GCParallelVerificationEnabled, true,                     \
           "Enable parallel memory system verification")                     \
@@ -4162,8 +4176,11 @@ public:
   diagnostic(bool, CompilerDirectivesIgnoreCompileCommands, false,          \
              "Disable backwards compatibility for compile commands.")       \
                                                                             \
-  diagnostic(bool, PrintCompilerDirectives, false,                          \
-             "Print compiler directives on installation.")
+  diagnostic(bool, CompilerDirectivesPrint, false,                          \
+             "Print compiler directives on installation.")                  \
+  diagnostic(int,  CompilerDirectivesLimit, 50,                             \
+             "Limit on number of compiler directives.")
+
 
 /*
  *  Macros for factoring of globals

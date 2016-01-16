@@ -285,7 +285,7 @@ JVM_LEAF(jlong, JVM_NanoTime(JNIEnv *env, jclass ignored))
   return os::javaTimeNanos();
 JVM_END
 
-// The function below is actually exposed by sun.misc.VM and not
+// The function below is actually exposed by jdk.internal.misc.VM and not
 // java.lang.System, but we choose to keep it here so that it stays next
 // to JVM_CurrentTimeMillis and JVM_NanoTime
 

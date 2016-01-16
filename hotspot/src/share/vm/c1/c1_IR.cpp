@@ -579,10 +579,7 @@ void ComputeLinearScanOrder::count_edges(BlockBegin* cur, BlockBegin* parent) {
     assert(is_visited(cur), "block must be visisted when block is active");
     assert(parent != NULL, "must have parent");
 
-    cur->set(BlockBegin::linear_scan_loop_header_flag);
     cur->set(BlockBegin::backward_branch_target_flag);
-
-    parent->set(BlockBegin::linear_scan_loop_end_flag);
 
     // When a loop header is also the start of an exception handler, then the backward branch is
     // an exception edge. Because such edges are usually critical edges which cannot be split, the
@@ -592,6 +589,10 @@ void ComputeLinearScanOrder::count_edges(BlockBegin* cur, BlockBegin* parent) {
       _iterative_dominators = true;
       return;
     }
+
+    cur->set(BlockBegin::linear_scan_loop_header_flag);
+    parent->set(BlockBegin::linear_scan_loop_end_flag);
+
     assert(parent->number_of_sux() == 1 && parent->sux_at(0) == cur,
            "loop end blocks must have one successor (critical edges are split)");
 

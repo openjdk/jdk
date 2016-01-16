@@ -41,7 +41,6 @@ import java.security.Principal;
  * @see java.security.Principal
  * @see javax.security.auth.Subject
  */
-@jdk.Exported
 public class UnixNumericGroupPrincipal implements
                                         Principal,
                                         java.io.Serializable {

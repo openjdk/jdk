@@ -101,6 +101,7 @@ class WorkerThread;
 
 class Thread: public ThreadShadow {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
  private:
 
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
@@ -255,7 +256,7 @@ class Thread: public ThreadShadow {
   // If !allow_allocation(), then an assertion failure will happen during allocation
   // (Hence, !allow_safepoint() => !allow_allocation()).
   //
-  // The two classes No_Safepoint_Verifier and No_Allocation_Verifier are used to set these counters.
+  // The two classes NoSafepointVerifier and No_Allocation_Verifier are used to set these counters.
   //
   NOT_PRODUCT(int _allow_safepoint_count;)      // If 0, thread allow a safepoint to happen
   debug_only(int _allow_allocation_count;)     // If 0, the thread is allowed to allocate oops.
@@ -263,10 +264,10 @@ class Thread: public ThreadShadow {
   // Used by SkipGCALot class.
   NOT_PRODUCT(bool _skip_gcalot;)               // Should we elide gc-a-lot?
 
-  friend class No_Alloc_Verifier;
-  friend class No_Safepoint_Verifier;
-  friend class Pause_No_Safepoint_Verifier;
-  friend class GC_locker;
+  friend class NoAllocVerifier;
+  friend class NoSafepointVerifier;
+  friend class PauseNoSafepointVerifier;
+  friend class GCLocker;
 
   ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
@@ -783,6 +784,7 @@ typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class JavaThread: public Thread {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
   friend class WhiteBox;
  private:
   JavaThread*    _next;                          // The next thread in the Threads list

@@ -27,7 +27,7 @@ package java.lang;
 
 import java.io.PrintStream;
 import java.util.Arrays;
-import sun.misc.VM;
+import jdk.internal.misc.VM;
 
 /**
  * A thread group represents a set of threads. In addition, a thread

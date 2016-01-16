@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ class KlassSizeStats;
 
 class ConstantPool : public Metadata {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
  private:
@@ -302,9 +303,7 @@ class ConstantPool : public Metadata {
     *symbol_at_addr(which) = s;
   }
 
-  void string_at_put(int which, int obj_index, oop str) {
-    resolved_references()->obj_at_put(obj_index, str);
-  }
+  void string_at_put(int which, int obj_index, oop str);
 
   // For temporary use while constructing constant pool
   void string_index_at_put(int which, int string_index) {

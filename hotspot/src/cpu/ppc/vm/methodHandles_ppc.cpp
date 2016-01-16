@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,8 +502,7 @@ void trace_method_handle_stub(const char* adaptername,
       frame cur_frame = os::current_frame();
 
       // Robust search of trace_calling_frame (independant of inlining).
-      // Assumes saved_regs comes from a pusha in the trace_calling_frame.
-      assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
+      assert(cur_frame.sp() <= saved_regs, "registers not saved on stack ?");
       frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
       while (trace_calling_frame.fp() < saved_regs) {
         trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
@@ -537,7 +536,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   BLOCK_COMMENT("trace_method_handle {");
 
   const Register tmp = R11; // Will be preserved.
-  const int nbytes_save = 11*8; // volatile gprs except R0
+  const int nbytes_save = MacroAssembler::num_volatile_regs * 8;
   __ save_volatile_gprs(R1_SP, -nbytes_save); // except R0
   __ save_LR_CR(tmp); // save in old frame
 

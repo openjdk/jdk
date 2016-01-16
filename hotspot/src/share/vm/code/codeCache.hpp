@@ -76,6 +76,7 @@ class DepChange;
 
 class CodeCache : AllStatic {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
   friend class NMethodIterator;
   friend class WhiteBox;
   friend class CodeCacheLoader;

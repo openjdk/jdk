@@ -47,11 +47,11 @@ class DefNewGeneration: public Generation {
 protected:
   Generation* _old_gen;
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
-  ageTable    _age_table;
+  AgeTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes
   size_t      _pretenure_size_threshold_words;
 
-  ageTable*   age_table() { return &_age_table; }
+  AgeTable*   age_table() { return &_age_table; }
 
   // Initialize state to optimistically assume no promotion failure will
   // happen.

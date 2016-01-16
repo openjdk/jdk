@@ -253,8 +253,8 @@ prep: clean
 
 # Cleanup
 clean:
-	$(RM) -r $(ABS_TEST_OUTPUT_DIR)
-	$(RM) $(ARCHIVE_BUNDLE)
+	@$(RM) -r $(ABS_TEST_OUTPUT_DIR)
+	@$(RM) $(ARCHIVE_BUNDLE)
 
 ################################################################
 

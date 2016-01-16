@@ -268,6 +268,9 @@
                                                                                                   \
   /* Intrinsic Annotation (JDK 9 and above) */                                                    \
   template(jdk_internal_HotSpotIntrinsicCandidate_signature, "Ljdk/internal/HotSpotIntrinsicCandidate;") \
+  template(jdk_internal_vm_annotation_ForceInline_signature, "Ljdk/internal/vm/annotation/ForceInline;") \
+  template(jdk_internal_vm_annotation_DontInline_signature,  "Ljdk/internal/vm/annotation/DontInline;")  \
+  template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;")      \
                                                                                                   \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \
@@ -286,10 +289,7 @@
   template(java_lang_invoke_MethodHandleNatives,      "java/lang/invoke/MethodHandleNatives")     \
   template(java_lang_invoke_MethodHandleNatives_CallSiteContext, "java/lang/invoke/MethodHandleNatives$CallSiteContext") \
   template(java_lang_invoke_LambdaForm,               "java/lang/invoke/LambdaForm")              \
-  template(java_lang_invoke_ForceInline_signature,    "Ljava/lang/invoke/ForceInline;")           \
-  template(java_lang_invoke_DontInline_signature,     "Ljava/lang/invoke/DontInline;")            \
   template(java_lang_invoke_InjectedProfile_signature, "Ljava/lang/invoke/InjectedProfile;")      \
-  template(java_lang_invoke_Stable_signature,         "Ljava/lang/invoke/Stable;")                \
   template(java_lang_invoke_LambdaForm_Compiled_signature, "Ljava/lang/invoke/LambdaForm$Compiled;") \
   template(java_lang_invoke_LambdaForm_Hidden_signature, "Ljava/lang/invoke/LambdaForm$Hidden;")  \
   template(java_lang_invoke_MethodHandleNatives_CallSiteContext_signature, "Ljava/lang/invoke/MethodHandleNatives$CallSiteContext;") \
@@ -957,6 +957,11 @@
    do_name(     montgomerySquare_name,                             "implMontgomerySquare")                              \
    do_signature(montgomerySquare_signature,                        "([I[IIJ[I)[I")                                      \
                                                                                                                         \
+  do_class(java_util_ArraysSupport, "java/util/ArraysSupport")                                                          \
+  do_intrinsic(_vectorizedMismatch, java_util_ArraysSupport, vectorizedMismatch_name, vectorizedMismatch_signature, F_S)\
+   do_name(vectorizedMismatch_name, "vectorizedMismatch")                                                               \
+   do_signature(vectorizedMismatch_signature, "(Ljava/lang/Object;JLjava/lang/Object;JII)I")                            \
+                                                                                                                        \
   /* java/lang/ref/Reference */                                                                                         \
   do_intrinsic(_Reference_get,            java_lang_ref_Reference, get_name,    void_object_signature, F_R)             \
                                                                                                                         \
@@ -974,6 +979,10 @@
    do_name(     encrypt_name,                                      "implEncrypt")                                       \
    do_name(     decrypt_name,                                      "implDecrypt")                                       \
    do_signature(byteArray_int_int_byteArray_int_signature,         "([BII[BI)I")                                        \
+                                                                                                                        \
+  do_class(com_sun_crypto_provider_counterMode,      "com/sun/crypto/provider/CounterMode")                             \
+   do_intrinsic(_counterMode_AESCrypt, com_sun_crypto_provider_counterMode, crypt_name, byteArray_int_int_byteArray_int_signature, F_R)   \
+   do_name(     crypt_name,                                 "implCrypt")                                                    \
                                                                                                                         \
   /* support for sun.security.provider.SHA */                                                                           \
   do_class(sun_security_provider_sha,                              "sun/security/provider/SHA")                         \
@@ -1053,6 +1062,11 @@
   do_intrinsic(_isCompileConstant, java_lang_invoke_MethodHandleImpl, isCompileConstant_name, isCompileConstant_signature, F_S) \
    do_name(     isCompileConstant_name,                          "isCompileConstant")                                   \
    do_alias(    isCompileConstant_signature,                      object_boolean_signature)                             \
+                                                                                                                        \
+  do_class(sun_hotspot_WhiteBox,                                 "sun/hotspot/WhiteBox")                                \
+  do_intrinsic(_deoptimize,          sun_hotspot_WhiteBox,        deoptimize_name, deoptimize_signature, F_R)           \
+   do_name(     deoptimize_name,                                 "deoptimize")                                          \
+   do_alias(    deoptimize_signature,                             void_method_signature)                                \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getObject_signature,       "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
@@ -1318,6 +1332,7 @@
 class vmSymbols: AllStatic {
   friend class vmIntrinsics;
   friend class VMStructs;
+  friend class JVMCIVMStructs;
  public:
   // enum for figuring positions and size of array holding Symbol*s
   enum SID {

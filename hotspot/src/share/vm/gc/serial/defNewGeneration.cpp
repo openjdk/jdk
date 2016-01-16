@@ -357,7 +357,7 @@ bool DefNewGeneration::expand(size_t bytes) {
   // For example if the first expand fail for unknown reasons,
   // but the second succeeds and expands the heap to its maximum
   // value.
-  if (GC_locker::is_active()) {
+  if (GCLocker::is_active()) {
     log_debug(gc)("Garbage collection disabled, expanded heap instead");
   }
 
@@ -527,7 +527,7 @@ void DefNewGeneration::space_iterate(SpaceClosure* blk,
 // The last collection bailed out, we are running out of heap space,
 // so we try to allocate the from-space, too.
 HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
-  bool should_try_alloc = should_allocate_from_space() || GC_locker::is_active_and_needs_gc();
+  bool should_try_alloc = should_allocate_from_space() || GCLocker::is_active_and_needs_gc();
 
   // If the Heap_lock is not locked by this thread, this will be called
   // again later with the Heap_lock held.
@@ -910,7 +910,7 @@ bool DefNewGeneration::collection_attempt_is_safe() {
 void DefNewGeneration::gc_epilogue(bool full) {
   DEBUG_ONLY(static bool seen_incremental_collection_failed = false;)
 
-  assert(!GC_locker::is_active(), "We should not be executing here");
+  assert(!GCLocker::is_active(), "We should not be executing here");
   // Check if the heap is approaching full after a collection has
   // been done.  Generally the young generation is empty at
   // a minimum at the end of a collection.  If it is not, then

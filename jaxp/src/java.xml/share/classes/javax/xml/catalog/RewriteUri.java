@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ final class RewriteUri extends BaseEntry {
     public String getURIStartString () {
         return uriStartString;
     }
+
     /**
      * Get the rewritePrefix attribute.
      * @return The rewritePrefix attribute value.
@@ -91,14 +92,20 @@ final class RewriteUri extends BaseEntry {
      */
     @Override
     public String match(String systemId, int currentMatch) {
-        if (uriStartString.length() <= systemId.length() &&
+        if (uriStartString.length() < systemId.length() &&
                 uriStartString.equals(systemId.substring(0, uriStartString.length()))) {
             if (currentMatch < uriStartString.length()) {
                 String prefix = rewritePrefix.toExternalForm();
-                if (!prefix.endsWith(SLASH) && !systemId.startsWith(SLASH)) {
-                    return prefix + SLASH + systemId.substring(uriStartString.length());
+                String sysId;
+                if (uriStartString.endsWith(SLASH)) {
+                    sysId = systemId.substring(uriStartString.length());
                 } else {
-                    return prefix + systemId.substring(uriStartString.length());
+                    sysId = systemId.substring(uriStartString.length() + 1);
+                }
+                if (prefix.endsWith(SLASH)) {
+                    return prefix + sysId;
+                } else {
+                    return prefix + SLASH + sysId;
                 }
             }
         }

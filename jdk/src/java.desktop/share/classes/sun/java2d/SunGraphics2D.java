@@ -88,9 +88,9 @@ import java.awt.font.FontRenderContext;
 import sun.java2d.loops.XORComposite;
 import sun.awt.ConstrainableGraphics;
 import sun.awt.SunHints;
+import sun.awt.util.PerformanceLogger;
 import java.util.Map;
 import java.util.Iterator;
-import sun.misc.PerformanceLogger;
 
 import java.lang.annotation.Native;
 import java.awt.image.MultiResolutionImage;

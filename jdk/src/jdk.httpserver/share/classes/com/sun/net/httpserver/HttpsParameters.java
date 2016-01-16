@@ -49,7 +49,6 @@ import javax.net.ssl.SSLParameters;
  * are used, and any settings made in this object are ignored.
  * @since 1.6
  */
-@jdk.Exported
 public abstract class HttpsParameters {
 
     private String[] cipherSuites;

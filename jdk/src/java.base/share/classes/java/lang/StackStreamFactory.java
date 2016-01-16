@@ -24,7 +24,7 @@
  */
 package java.lang;
 
-import sun.misc.VM;
+import jdk.internal.misc.VM;
 
 import java.io.PrintStream;
 import java.lang.StackWalker.Option;
