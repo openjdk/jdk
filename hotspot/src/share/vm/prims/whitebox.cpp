@@ -1096,6 +1096,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
 
   CodeBlobStub stub(code);
   jobjectArray codeBlob = codeBlob2objectArray(thread, env, &stub);
+  CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 0, codeBlob);
 
   jobject level = integerBox(thread, env, code->comp_level());
@@ -1181,6 +1182,7 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
   for (GrowableArrayIterator<CodeBlobStub*> it = blobs.begin();
        it != blobs.end(); ++it) {
     jobjectArray obj = codeBlob2objectArray(thread, env, *it);
+    CHECK_JNI_EXCEPTION_(env, NULL);
     env->SetObjectArrayElement(result, i, obj);
     ++i;
   }
