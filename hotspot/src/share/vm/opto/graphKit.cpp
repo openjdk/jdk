@@ -4340,20 +4340,51 @@ void GraphKit::store_String_coder(Node* ctrl, Node* str, Node* value) {
                   value, T_BYTE, coder_field_idx, MemNode::unordered);
 }
 
-Node* GraphKit::compress_string(Node* src, Node* dst, Node* count) {
+// Capture src and dst memory state with a MergeMemNode
+Node* GraphKit::capture_memory(const TypePtr* src_type, const TypePtr* dst_type) {
+  if (src_type == dst_type) {
+    // Types are equal, we don't need a MergeMemNode
+    return memory(src_type);
+  }
+  MergeMemNode* merge = MergeMemNode::make(map()->memory());
+  record_for_igvn(merge); // fold it up later, if possible
+  int src_idx = C->get_alias_index(src_type);
+  int dst_idx = C->get_alias_index(dst_type);
+  merge->set_memory_at(src_idx, memory(src_idx));
+  merge->set_memory_at(dst_idx, memory(dst_idx));
+  return merge;
+}
+
+Node* GraphKit::compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count) {
   assert(Matcher::match_rule_supported(Op_StrCompressedCopy), "Intrinsic not supported");
-  uint idx = C->get_alias_index(TypeAryPtr::BYTES);
-  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), memory(idx), src, dst, count);
+  assert(src_type == TypeAryPtr::BYTES || src_type == TypeAryPtr::CHARS, "invalid source type");
+  // If input and output memory types differ, capture both states to preserve
+  // the dependency between preceding and subsequent loads/stores.
+  // For example, the following program:
+  //  StoreB
+  //  compress_string
+  //  LoadB
+  // has this memory graph (use->def):
+  //  LoadB -> compress_string -> CharMem
+  //             ... -> StoreB -> ByteMem
+  // The intrinsic hides the dependency between LoadB and StoreB, causing
+  // the load to read from memory not containing the result of the StoreB.
+  // The correct memory graph should look like this:
+  //  LoadB -> compress_string -> MergeMem(CharMem, StoreB(ByteMem))
+  Node* mem = capture_memory(src_type, TypeAryPtr::BYTES);
+  StrCompressedCopyNode* str = new StrCompressedCopyNode(control(), mem, src, dst, count);
   Node* res_mem = _gvn.transform(new SCMemProjNode(str));
-  set_memory(res_mem, idx);
+  set_memory(res_mem, TypeAryPtr::BYTES);
   return str;
 }
 
-void GraphKit::inflate_string(Node* src, Node* dst, Node* count) {
+void GraphKit::inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count) {
   assert(Matcher::match_rule_supported(Op_StrInflatedCopy), "Intrinsic not supported");
-  uint idx = C->get_alias_index(TypeAryPtr::BYTES);
-  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), memory(idx), src, dst, count);
-  set_memory(_gvn.transform(str), idx);
+  assert(dst_type == TypeAryPtr::BYTES || dst_type == TypeAryPtr::CHARS, "invalid dest type");
+  // Capture src and dst memory (see comment in 'compress_string').
+  Node* mem = capture_memory(TypeAryPtr::BYTES, dst_type);
+  StrInflatedCopyNode* str = new StrInflatedCopyNode(control(), mem, src, dst, count);
+  set_memory(_gvn.transform(str), dst_type);
 }
 
 void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* count) {
