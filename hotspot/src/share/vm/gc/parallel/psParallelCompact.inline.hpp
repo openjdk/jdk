@@ -31,6 +31,16 @@
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 
+inline bool PSParallelCompact::mark_obj(oop obj) {
+  const int obj_size = obj->size();
+  if (mark_bitmap()->mark_obj(obj, obj_size)) {
+    _summary_data.add_obj(obj, obj_size);
+    return true;
+  } else {
+    return false;
+  }
+}
+
 template <class T>
 inline void PSParallelCompact::adjust_pointer(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3167,5 +3167,16 @@ UpdateOnlyClosure::UpdateOnlyClosure(ParMarkBitMap* mbm,
 ParMarkBitMapClosure::IterationStatus
 UpdateOnlyClosure::do_addr(HeapWord* addr, size_t words) {
   do_addr(addr);
+  return ParMarkBitMap::incomplete;
+}
+
+ParMarkBitMapClosure::IterationStatus
+FillClosure::do_addr(HeapWord* addr, size_t size) {
+  CollectedHeap::fill_with_objects(addr, size);
+  HeapWord* const end = addr + size;
+  do {
+    _start_array->allocate_block(addr);
+    addr += oop(addr)->size();
+  } while (addr < end);
   return ParMarkBitMap::incomplete;
 }

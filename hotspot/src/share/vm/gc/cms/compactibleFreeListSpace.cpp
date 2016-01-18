@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,10 @@ void CompactibleFreeListSpace::initializeIndexedFreeListArray() {
     assert(_indexedFreeList[i].tail() == NULL, "reset check failed");
     assert(_indexedFreeList[i].hint() == IndexSetSize, "reset check failed");
   }
+}
+
+size_t CompactibleFreeListSpace::obj_size(const HeapWord* addr) const {
+  return adjustObjectSize(oop(addr)->size());
 }
 
 void CompactibleFreeListSpace::resetIndexedFreeListArray() {

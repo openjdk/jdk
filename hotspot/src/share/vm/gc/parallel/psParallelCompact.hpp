@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1242,16 +1242,6 @@ class PSParallelCompact : AllStatic {
 #endif  // #ifdef ASSERT
 };
 
-inline bool PSParallelCompact::mark_obj(oop obj) {
-  const int obj_size = obj->size();
-  if (mark_bitmap()->mark_obj(obj, obj_size)) {
-    _summary_data.add_obj(obj, obj_size);
-    return true;
-  } else {
-    return false;
-  }
-}
-
 inline bool PSParallelCompact::is_marked(oop obj) {
   return mark_bitmap()->is_marked(obj);
 }
@@ -1386,9 +1376,8 @@ class UpdateOnlyClosure: public ParMarkBitMapClosure {
   inline void do_addr(HeapWord* addr);
 };
 
-class FillClosure: public ParMarkBitMapClosure
-{
-public:
+class FillClosure: public ParMarkBitMapClosure {
+ public:
   FillClosure(ParCompactionManager* cm, PSParallelCompact::SpaceId space_id) :
     ParMarkBitMapClosure(PSParallelCompact::mark_bitmap(), cm),
     _start_array(PSParallelCompact::start_array(space_id))
@@ -1397,17 +1386,9 @@ public:
            "cannot use FillClosure in the young gen");
   }
 
-  virtual IterationStatus do_addr(HeapWord* addr, size_t size) {
-    CollectedHeap::fill_with_objects(addr, size);
-    HeapWord* const end = addr + size;
-    do {
-      _start_array->allocate_block(addr);
-      addr += oop(addr)->size();
-    } while (addr < end);
-    return ParMarkBitMap::incomplete;
-  }
+  virtual IterationStatus do_addr(HeapWord* addr, size_t size);
 
-private:
+ private:
   ObjectStartArray* const _start_array;
 };
 
