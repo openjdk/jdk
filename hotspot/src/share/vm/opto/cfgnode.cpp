@@ -1171,9 +1171,7 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
 Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
   //  1) One unique direct input,
   // or if uncast is true:
-  //  2) some of the inputs have an intervening ConstraintCast and
-  //     the type of input is the same or sharper (more specific)
-  //     than the phi's type.
+  //  2) some of the inputs have an intervening ConstraintCast
   //  3) an input is a self loop
   //
   //  1) input   or   2) input     or   3) input __
@@ -1193,7 +1191,21 @@ Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
     Node* n = in(i);
     if (n == NULL)
       continue;
-    Node* un = uncast ? n->uncast() : n;
+    Node* un = n;
+    if (uncast) {
+#ifdef ASSERT
+      Node* m = un->uncast();
+#endif
+      while (un != NULL && un->req() == 2 && un->is_ConstraintCast()) {
+        Node* next = un->in(1);
+        if (phase->type(next)->isa_rawptr() && phase->type(un)->isa_oopptr()) {
+          // risk exposing raw ptr at safepoint
+          break;
+        }
+        un = next;
+      }
+      assert(m == un || un->in(1) == m, "Only expected at CheckCastPP from allocation");
+    }
     if (un == NULL || un == this || phase->type(un) == Type::TOP) {
       continue; // ignore if top, or in(i) and "this" are in a data cycle
     }
