@@ -277,13 +277,6 @@ class IfNode : public MultiBranchNode {
   virtual uint size_of() const { return sizeof(*this); }
 
 private:
-  ProjNode* range_check_trap_proj() {
-    int flip_test = 0;
-    Node* l = NULL;
-    Node* r = NULL;
-    return range_check_trap_proj(flip_test, l, r);
-  }
-
   // Helper methods for fold_compares
   bool cmpi_folds(PhaseIterGVN* igvn);
   bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);

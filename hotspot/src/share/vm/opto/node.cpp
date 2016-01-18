@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
@@ -516,6 +517,11 @@ Node *Node::clone() const {
     C->add_macro_node(n);
   if (is_expensive())
     C->add_expensive_node(n);
+  // If the cloned node is a range check dependent CastII, add it to the list.
+  CastIINode* cast = n->isa_CastII();
+  if (cast != NULL && cast->has_range_check()) {
+    C->add_range_check_cast(cast);
+  }
 
   n->set_idx(C->next_unique()); // Get new unique index as well
   debug_only( n->verify_construction() );
@@ -644,6 +650,11 @@ void Node::destruct() {
   if (is_expensive()) {
     compile->remove_expensive_node(this);
   }
+  CastIINode* cast = isa_CastII();
+  if (cast != NULL && cast->has_range_check()) {
+    compile->remove_range_check_cast(cast);
+  }
+
   if (is_SafePoint()) {
     as_SafePoint()->delete_replaced_nodes();
   }
@@ -1378,6 +1389,10 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       }
       if (dead->is_expensive()) {
         igvn->C->remove_expensive_node(dead);
+      }
+      CastIINode* cast = dead->isa_CastII();
+      if (cast != NULL && cast->has_range_check()) {
+        igvn->C->remove_range_check_cast(cast);
       }
       igvn->C->record_dead_node(dead->_idx);
       // Kill all inputs to the dead guy

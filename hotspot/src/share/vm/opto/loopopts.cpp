@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/divnode.hpp"
@@ -997,6 +998,9 @@ static bool merge_point_safe(Node* region) {
 #ifdef _LP64
         if (m->Opcode() == Op_ConvI2L)
           return false;
+        if (m->is_CastII() && m->isa_CastII()->has_range_check()) {
+          return false;
+        }
 #endif
       }
     }

@@ -62,13 +62,33 @@ class ConstraintCastNode: public TypeNode {
 //------------------------------CastIINode-------------------------------------
 // cast integer to integer (different range)
 class CastIINode: public ConstraintCastNode {
+  protected:
+  // Is this node dependent on a range check?
+  const bool _range_check_dependency;
+  virtual uint cmp(const Node &n) const;
+  virtual uint size_of() const;
+
   public:
-  CastIINode(Node *n, const Type *t, bool carry_dependency = false)
-    : ConstraintCastNode(n, t, carry_dependency) {}
+  CastIINode(Node* n, const Type* t, bool carry_dependency = false, bool range_check_dependency = false)
+    : ConstraintCastNode(n, t, carry_dependency), _range_check_dependency(range_check_dependency) {
+    init_class_id(Class_CastII);
+  }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  const bool has_range_check() {
+#ifdef _LP64
+    return _range_check_dependency;
+#else
+    assert(!_range_check_dependency, "Should not have range check dependency");
+    return false;
+#endif
+  }
+
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream* st) const;
+#endif
 };
 
 //------------------------------CastPPNode-------------------------------------
