@@ -634,7 +634,9 @@ class GraphKit : public Phase {
   // Return addressing for an array element.
   Node* array_element_address(Node* ary, Node* idx, BasicType elembt,
                               // Optional constraint on the array size:
-                              const TypeInt* sizetype = NULL);
+                              const TypeInt* sizetype = NULL,
+                              // Optional control dependency (for example, on range check)
+                              Node* ctrl = NULL);
 
   // Return a load of array element at idx.
   Node* load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAryPtr* arytype);
