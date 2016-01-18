@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "opto/addnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/phaseX.hpp"
@@ -293,7 +294,8 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
 #ifdef _LP64
-  // Convert ConvI2L(AddI(x, y)) to AddL(ConvI2L(x), ConvI2L(y)) ,
+  // Convert ConvI2L(AddI(x, y)) to AddL(ConvI2L(x), ConvI2L(y)) or
+  // ConvI2L(CastII(AddI(x, y))) to AddL(ConvI2L(CastII(x)), ConvI2L(CastII(y))),
   // but only if x and y have subranges that cannot cause 32-bit overflow,
   // under the assumption that x+y is in my own subrange this->type().
 
@@ -317,6 +319,13 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* z = in(1);
   int op = z->Opcode();
+  Node* ctrl = NULL;
+  if (op == Op_CastII && z->as_CastII()->has_range_check()) {
+    // Skip CastII node but save control dependency
+    ctrl = z->in(0);
+    z = z->in(1);
+    op = z->Opcode();
+  }
   if (op == Op_AddI || op == Op_SubI) {
     Node* x = z->in(1);
     Node* y = z->in(2);
@@ -374,9 +383,10 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       rylo = -ryhi;
       ryhi = -rylo0;
     }
-
-    Node* cx = phase->transform( new ConvI2LNode(x, TypeLong::make(rxlo, rxhi, widen)) );
-    Node* cy = phase->transform( new ConvI2LNode(y, TypeLong::make(rylo, ryhi, widen)) );
+    assert(rxlo == (int)rxlo && rxhi == (int)rxhi, "x should not overflow");
+    assert(rylo == (int)rylo && ryhi == (int)ryhi, "y should not overflow");
+    Node* cx = phase->C->constrained_convI2L(phase, x, TypeInt::make(rxlo, rxhi, widen), ctrl);
+    Node* cy = phase->C->constrained_convI2L(phase, y, TypeInt::make(rylo, ryhi, widen), ctrl);
     switch (op) {
       case Op_AddI:  return new AddLNode(cx, cy);
       case Op_SubI:  return new SubLNode(cx, cy);

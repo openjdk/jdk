@@ -1104,7 +1104,8 @@ void IfNode::improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGV
         if (ctrl == fail) {
           Node* init_n = stack.node_at(1);
           assert(init_n->Opcode() == Op_ConvI2L, "unexpected first node");
-          Node* new_n = igvn->C->conv_I2X_index(igvn, l, array_size);
+          // Create a new narrow ConvI2L node that is dependent on the range check
+          Node* new_n = igvn->C->conv_I2X_index(igvn, l, array_size, fail);
 
           // The type of the ConvI2L may be widen and so the new
           // ConvI2L may not be better than an existing ConvI2L
