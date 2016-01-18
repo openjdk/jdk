@@ -277,6 +277,23 @@ Node *CastIINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return NULL;
 }
 
+uint CastIINode::cmp(const Node &n) const {
+  return ConstraintCastNode::cmp(n) && ((CastIINode&)n)._range_check_dependency == _range_check_dependency;
+}
+
+uint CastIINode::size_of() const {
+  return sizeof(*this);
+}
+
+#ifndef PRODUCT
+void CastIINode::dump_spec(outputStream* st) const {
+  ConstraintCastNode::dump_spec(st);
+  if (_range_check_dependency) {
+    st->print(" range check dependency");
+  }
+}
+#endif
+
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If input is already higher or equal to cast type, then this is an identity.

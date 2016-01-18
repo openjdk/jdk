@@ -1359,9 +1359,9 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   // 'dst_start' points to dst array + scaled offset
   Node* count = NULL;
   if (compress) {
-    count = compress_string(src_start, dst_start, length);
+    count = compress_string(src_start, TypeAryPtr::get_array_body_type(src_elem), dst_start, length);
   } else {
-    inflate_string(src_start, dst_start, length);
+    inflate_string(src_start, dst_start, TypeAryPtr::get_array_body_type(dst_elem), length);
   }
 
   if (alloc != NULL) {
@@ -1587,7 +1587,7 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     (void) store_to_memory(control(), adr, ch, T_CHAR, TypeAryPtr::BYTES, MemNode::unordered,
                            false, false, true /* mismatched */);
   } else {
-    ch = make_load(control(), adr, TypeInt::CHAR, T_CHAR, MemNode::unordered,
+    ch = make_load(control(), adr, TypeInt::CHAR, T_CHAR, TypeAryPtr::BYTES, MemNode::unordered,
                    LoadNode::DependsOnlyOnTest, false, false, true /* mismatched */);
     set_result(ch);
   }
