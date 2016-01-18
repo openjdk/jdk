@@ -27,7 +27,6 @@ import jdk.vm.ci.code.CompilationResult.DataPatch;
 import jdk.vm.ci.code.CompilationResult.Mark;
 import jdk.vm.ci.code.DataSection.Data;
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 
@@ -120,12 +119,6 @@ public interface CodeCacheProvider {
      * @return the minimum size of the outgoing parameter area in bytes
      */
     int getMinimumOutgoingSize();
-
-    /**
-     * Determines if a {@link DataPatch} should be created for a given primitive constant that is
-     * part of a {@link CompilationResult}. A data patch is always created for an object constant.
-     */
-    boolean needsDataPatch(JavaConstant constant);
 
     /**
      * Create a {@link Data} item for one or more {@link Constant Constants}, that can be used in a
