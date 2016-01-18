@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,13 +154,9 @@ public:
 
   HEAP_INSPECTION_COLUMNS_DO(DECLARE_KLASS_SIZE_STATS_FIELD)
 
-  static int count(oop x) {
-    return (HeapWordSize * (((x) != NULL) ? (x)->size() : 0));
-  }
+  static int count(oop x);
 
-  static int count_array(objArrayOop x) {
-    return (HeapWordSize * (((x) != NULL) ? (x)->size() : 0));
-  }
+  static int count_array(objArrayOop x);
 
   template <class T> static int count(T* x) {
     return (HeapWordSize * ((x) ? (x)->size() : 0));
