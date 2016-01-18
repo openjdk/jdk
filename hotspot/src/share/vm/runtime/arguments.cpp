@@ -2659,11 +2659,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           return JNI_EINVAL;
         }
       } else if (!strcmp(tail, ":gc")) {
-        // LogConfiguration_lock is not set up yet, but this code is executed by a single thread
-        bool ret = LogConfiguration::parse_log_arguments("stdout", "gc", NULL, NULL, NULL);
-        if (!ret) {
-          return JNI_EINVAL;
-        }
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
       } else if (!strcmp(tail, ":jni")) {
         if (FLAG_SET_CMDLINE(bool, PrintJNIResolving, true) != Flag::SUCCESS) {
           return JNI_EINVAL;
