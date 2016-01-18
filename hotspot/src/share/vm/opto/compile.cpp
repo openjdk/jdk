@@ -934,7 +934,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                            compiler,
                            has_unsafe_access(),
                            SharedRuntime::is_wide_vector(max_vector_size()),
-                           _directive,
                            rtm_state()
                            );
 
