@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * Test that shebang handling works properly.
  *
  * @test
- * @runif os.not.windows
  * @option -scripting
  * @run
  */
@@ -126,8 +125,9 @@ function insn(name) {
 }
 
 function run(viajjs, name, arg1, arg2) {
-    var prefix = viajjs ? "${jjs} -scripting " : ''
-    $EXEC("${prefix}./shebang.js ${arg1} ${arg2}")
+    var prefix = viajjs ? "${jjs} -scripting " : win ? 'sh -c "' : '',
+        suffix = viajjs ? '' : win ? '"' : ''
+    $EXEC("${prefix}./shebang.js ${arg1} ${arg2}${suffix}")
     print("* ${name} via ${viajjs ? 'jjs' : 'shebang'}")
     print($OUT.trim())
     print($ERR.trim())
@@ -143,8 +143,8 @@ shebs.forEach(function(sheb) {
     $EXEC('chmod +x shebang.js')
     run(false, 'noargs', '', '')
     run(true, 'noargs', '', '')
-    run(false, 'withargs', 'a.js', '"hello world"')
-    run(true, 'withargs', 'a.js', '"hello world"')
+    run(false, 'withargs', 'a.js', "'hello world'")
+    run(true, 'withargs', 'a.js', "'hello world'")
     $EXEC('rm shebang.js')
 })
 
