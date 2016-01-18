@@ -173,10 +173,6 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
         runtime.getCompilerToVM().invalidateInstalledCode(installedCode);
     }
 
-    public boolean needsDataPatch(JavaConstant constant) {
-        return constant instanceof HotSpotMetaspaceConstant;
-    }
-
     private Data createSingleDataItem(Constant constant) {
         int size;
         DataBuilder builder;
