@@ -38,7 +38,6 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -959,7 +958,6 @@ void ciEnv::register_method(ciMethod* target,
                             AbstractCompiler* compiler,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
-                            DirectiveSet* directives,
                             RTMState  rtm_state) {
   VM_ENTRY_MARK;
   nmethod* nm = NULL;
@@ -1041,11 +1039,6 @@ void ciEnv::register_method(ciMethod* target,
     code_buffer->free_blob();
 
     if (nm != NULL) {
-      bool printnmethods = directives->PrintAssemblyOption || directives->PrintNMethodsOption;
-      if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
-        nm->print_nmethod(printnmethods);
-      }
-
       nm->set_has_unsafe_access(has_unsafe_access);
       nm->set_has_wide_vectors(has_wide_vectors);
 #if INCLUDE_RTM_OPT

@@ -1884,7 +1884,6 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     post_compile(thread, task, event, !ci_env.failing(), &ci_env);
   }
-  DirectivesStack::release(directive);
   pop_jni_handle_block();
 
   methodHandle method(thread, task->method());
@@ -1892,6 +1891,15 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   DTRACE_METHOD_COMPILE_END_PROBE(method, compiler_name(task_level), task->is_success());
 
   collect_statistics(thread, time, task);
+
+  bool printnmethods = directive->PrintAssemblyOption || directive->PrintNMethodsOption;
+  if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
+    nmethod* nm = task->code();
+    if (nm != NULL) {
+      nm->print_nmethod(printnmethods);
+    }
+  }
+  DirectivesStack::release(directive);
 
   if (PrintCompilation && PrintCompilation2) {
     tty->print("%7d ", (int) tty->time_stamp().milliseconds());  // print timestamp
