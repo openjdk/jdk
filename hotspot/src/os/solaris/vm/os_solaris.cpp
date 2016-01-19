@@ -5667,8 +5667,6 @@ bool os::is_headless_jre() {
 
 size_t os::write(int fd, const void *buf, unsigned int nBytes) {
   size_t res;
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
-         "Assumed _thread_in_native");
   RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
   return res;
 }

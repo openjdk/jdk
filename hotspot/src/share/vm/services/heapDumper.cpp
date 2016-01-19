@@ -379,11 +379,11 @@ class DumpWriter : public StackObj {
   };
 
   int _fd;              // file descriptor (-1 if dump file not open)
-  jlong _bytes_written; // number of byte written to dump file
+  julong _bytes_written; // number of byte written to dump file
 
   char* _buffer;    // internal buffer
-  int _size;
-  int _pos;
+  size_t _size;
+  size_t _pos;
 
   char* _error;   // error message when I/O fails
 
@@ -391,14 +391,14 @@ class DumpWriter : public StackObj {
   int file_descriptor() const                   { return _fd; }
 
   char* buffer() const                          { return _buffer; }
-  int buffer_size() const                       { return _size; }
-  int position() const                          { return _pos; }
-  void set_position(int pos)                    { _pos = pos; }
+  size_t buffer_size() const                    { return _size; }
+  size_t position() const                       { return _pos; }
+  void set_position(size_t pos)                 { _pos = pos; }
 
   void set_error(const char* error)             { _error = (char*)os::strdup(error); }
 
   // all I/O go through this function
-  void write_internal(void* s, int len);
+  void write_internal(void* s, size_t len);
 
  public:
   DumpWriter(const char* path);
@@ -409,14 +409,14 @@ class DumpWriter : public StackObj {
   void flush();
 
   // total number of bytes written to the disk
-  jlong bytes_written() const           { return _bytes_written; }
+  julong bytes_written() const          { return _bytes_written; }
 
   // adjust the number of bytes written to disk (used to keep the count
   // of the number of bytes written in case of rewrites)
-  void adjust_bytes_written(jlong n)     { _bytes_written += n; }
+  void adjust_bytes_written(jlong n)    { _bytes_written += n; }
 
   // number of (buffered) bytes as yet unwritten to the dump file
-  jlong bytes_unwritten() const          { return (jlong)position(); }
+  size_t bytes_unwritten() const        { return position(); }
 
   char* error() const                   { return _error; }
 
@@ -424,7 +424,7 @@ class DumpWriter : public StackObj {
   void seek_to_offset(jlong pos);
 
   // writer functions
-  void write_raw(void* s, int len);
+  void write_raw(void* s, size_t len);
   void write_u1(u1 x)                   { write_raw((void*)&x, 1); }
   void write_u2(u2 x);
   void write_u4(u4 x);
@@ -471,35 +471,40 @@ void DumpWriter::close() {
   // flush and close dump file
   if (is_open()) {
     flush();
-    ::close(file_descriptor());
+    os::close(file_descriptor());
     set_file_descriptor(-1);
   }
 }
 
 // write directly to the file
-void DumpWriter::write_internal(void* s, int len) {
+void DumpWriter::write_internal(void* s, size_t len) {
   if (is_open()) {
-    int n = ::write(file_descriptor(), s, len);
-    if (n > 0) {
-      _bytes_written += n;
-    }
-    if (n != len) {
+    const char* pos = (char*)s;
+    ssize_t n = 0;
+    while (len > 0) {
+      uint tmp = (uint)MIN2(len, (size_t)UINT_MAX);
+      n = os::write(file_descriptor(), pos, tmp);
+
       if (n < 0) {
+        // EINTR cannot happen here, os::write will take care of that
         set_error(strerror(errno));
-      } else {
-        set_error("file size limit");
+        os::close(file_descriptor());
+        set_file_descriptor(-1);
+        return;
       }
-      ::close(file_descriptor());
-      set_file_descriptor(-1);
+
+      _bytes_written += n;
+      pos += n;
+      len -= n;
     }
   }
 }
 
 // write raw bytes
-void DumpWriter::write_raw(void* s, int len) {
+void DumpWriter::write_raw(void* s, size_t len) {
   if (is_open()) {
-    // flush buffer to make toom
-    if ((position()+ len) >= buffer_size()) {
+    // flush buffer to make room
+    if ((position() + len) >= buffer_size()) {
       flush();
     }
 
@@ -522,13 +527,12 @@ void DumpWriter::flush() {
   }
 }
 
-
 jlong DumpWriter::current_offset() {
   if (is_open()) {
     // the offset is the file offset plus whatever we have buffered
     jlong offset = os::current_file_offset(file_descriptor());
     assert(offset >= 0, "lseek failed");
-    return offset + (jlong)position();
+    return offset + position();
   } else {
     return (jlong)-1;
   }
@@ -777,7 +781,7 @@ u4 DumperSupport::instance_size(Klass* k) {
   HandleMark hm;
   instanceKlassHandle ikh = instanceKlassHandle(Thread::current(), k);
 
-  int size = 0;
+  u4 size = 0;
 
   for (FieldStream fld(ikh, false, false); !fld.eos(); fld.next()) {
     if (!fld.access_flags().is_static()) {
@@ -802,7 +806,7 @@ u4 DumperSupport::instance_size(Klass* k) {
       }
     }
   }
-  return (u4)size;
+  return size;
 }
 
 // dumps static fields of the given class
@@ -1039,8 +1043,7 @@ void DumperSupport::dump_prim_array(DumpWriter* writer, typeArrayOop array) {
   }
 
   // If the byte ordering is big endian then we can copy most types directly
-  int length_in_bytes = array->length() * type2aelembytes(type);
-  assert(length_in_bytes > 0, "nothing to copy");
+  u4 length_in_bytes = (u4)array->length() * type2aelembytes(type);
 
   switch (type) {
     case T_INT : {
@@ -1293,22 +1296,18 @@ void HeapObjectDumper::do_object(oop o) {
     }
   }
 
-  // create a HPROF_GC_INSTANCE record for each object
   if (o->is_instance()) {
+    // create a HPROF_GC_INSTANCE record for each object
     DumperSupport::dump_instance(writer(), o);
     mark_end_of_record();
-  } else {
+  } else if (o->is_objArray()) {
     // create a HPROF_GC_OBJ_ARRAY_DUMP record for each object array
-    if (o->is_objArray()) {
-      DumperSupport::dump_object_array(writer(), objArrayOop(o));
-      mark_end_of_record();
-    } else {
-      // create a HPROF_GC_PRIM_ARRAY_DUMP record for each type array
-      if (o->is_typeArray()) {
-        DumperSupport::dump_prim_array(writer(), typeArrayOop(o));
-        mark_end_of_record();
-      }
-    }
+    DumperSupport::dump_object_array(writer(), objArrayOop(o));
+    mark_end_of_record();
+  } else if (o->is_typeArray()) {
+    // create a HPROF_GC_PRIM_ARRAY_DUMP record for each type array
+    DumperSupport::dump_prim_array(writer(), typeArrayOop(o));
+    mark_end_of_record();
   }
 }
 
@@ -1456,11 +1455,11 @@ void VM_HeapDumper::write_current_dump_record_length() {
     assert(dump_start() >= 0, "no dump start recorded");
 
     // calculate the size of the dump record
-    jlong dump_end = writer()->current_offset();
-    jlong dump_len = (dump_end - dump_start() - 4);
+    julong dump_end = writer()->current_offset();
+    julong dump_len = (dump_end - dump_start() - 4);
 
     // record length must fit in a u4
-    if (dump_len > (jlong)(4L*(jlong)G)) {
+    if (dump_len > max_juint) {
       warning("record is too large");
     }
 
@@ -1469,7 +1468,7 @@ void VM_HeapDumper::write_current_dump_record_length() {
     writer()->write_u4((u4)dump_len);
 
     // adjust the total size written to keep the bytes written correct.
-    writer()->adjust_bytes_written(-((long) sizeof(u4)));
+    writer()->adjust_bytes_written(-((jlong) sizeof(u4)));
 
     // seek to dump end so we can continue
     writer()->seek_to_offset(dump_end);
@@ -1485,12 +1484,12 @@ void VM_HeapDumper::check_segment_length() {
   if (writer()->is_open()) {
     if (is_segmented_dump()) {
       // don't use current_offset that would be too expensive on a per record basis
-      jlong dump_end = writer()->bytes_written() + writer()->bytes_unwritten();
-      assert(dump_end == writer()->current_offset(), "checking");
-      jlong dump_len = (dump_end - dump_start() - 4);
-      assert(dump_len >= 0 && dump_len <= max_juint, "bad dump length");
+      julong dump_end = writer()->bytes_written() + writer()->bytes_unwritten();
+      assert(dump_end == (julong)writer()->current_offset(), "checking");
+      julong dump_len = (dump_end - dump_start() - 4);
+      assert(dump_len <= max_juint, "bad dump length");
 
-      if (dump_len > (jlong)HeapDumpSegmentSize) {
+      if (dump_len > HeapDumpSegmentSize) {
         write_current_dump_record_length();
         write_dump_header();
       }
@@ -1887,7 +1886,7 @@ int HeapDumper::dump(const char* path) {
   if (print_to_tty()) {
     timer()->stop();
     if (error() == NULL) {
-      tty->print_cr("Heap dump file created [" JLONG_FORMAT " bytes in %3.3f secs]",
+      tty->print_cr("Heap dump file created [" JULONG_FORMAT " bytes in %3.3f secs]",
                     writer.bytes_written(), timer()->seconds());
     } else {
       tty->print_cr("Dump file is incomplete: %s", writer.error());
