@@ -261,18 +261,17 @@ define add_native_source
           # The Visual Studio compiler lacks a feature for generating make dependencies, but by
           # setting -showIncludes, all included files are printed. These are filtered out and
           # parsed into make dependences.
-          # Keep as much as possible on one execution line for best performance on Windows
-	  $(RM) $$($1_$2_DEP).exitvalue ; \
-	  ($(call LogFailures, $$($1_$2_OBJ).log, $$($1_SAFE_NAME)_$$(notdir $2), \
+          # Keep as much as possible on one execution line for best performance on Windows.
+          # No need to save exit code from compilation since pipefail is always active on
+          # Windows.
+	  $(call LogFailures, $$($1_$2_OBJ).log, $$($1_SAFE_NAME)_$$(notdir $2), \
 	      $$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) \
-	          $(CC_OUT_OPTION)$$($1_$2_OBJ) $2) || echo $$$$? > $$($1_$2_DEP).exitvalue ) \
-	      | $(TEE) $$($1_$2_DEP).raw | $(GREP) -v -e "^Note: including file:" \
+	          $(CC_OUT_OPTION)$$($1_$2_OBJ) $2) \
+	      | $(GREP) -v -e "^Note: including file:" \
 	          -e "^$(notdir $2)$$$$" || test "$$$$?" = "1" ; \
-	      ( test -s $$($1_$2_DEP).exitvalue \
-	          && exit `$(CAT) $$($1_$2_DEP).exitvalue` || true ) ; \
-	  ($(ECHO) $$@: \\ ; \
-	      $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_$2_DEP).raw) \
-	      | $(SORT) -u > $$($1_$2_DEP) ; \
+	  $(ECHO) $$@: \\ > $$($1_$2_DEP) ; \
+	  $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_$2_OBJ).log \
+	      | $(SORT) -u >> $$($1_$2_DEP) ; \
 	  $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_$2_DEP) > $$($1_$2_DEP_TARGETS)
         endif
   endif
@@ -658,14 +657,14 @@ define SetupNativeCompilationBody
           $$($1_RES).vardeps)
 
       $$($1_RES): $$($1_VERSIONINFO_RESOURCE) $$($1_RES_VARDEPS_FILE)
-		$(ECHO) $(LOG_INFO) "Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$(notdir $$($1_TARGET)))"
+		$$(call LogInfo, Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$(notdir $$($1_TARGET))))
 		$$($1_RC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
 		    $$($1_VERSIONINFO_RESOURCE)
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL for this.
 		$$($1_CC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
-		    $(CC_OUT_OPTION)$$($1_RES_DEP).obj $$($1_VERSIONINFO_RESOURCE) > $$($1_RES_DEP).raw 2>&1 || exit 0
-		($(ECHO) $$($1_RES): \\ \
-		&& $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).raw) > $$($1_RES_DEP)
+		    $(CC_OUT_OPTION)$$($1_RES_DEP).obj $$($1_VERSIONINFO_RESOURCE) > $$($1_RES_DEP).raw 2>&1 || true ; \
+		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEP) ; \
+		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).raw >> $$($1_RES_DEP) ; \
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEP) > $$($1_RES_DEP_TARGETS)
     endif
   endif
@@ -801,7 +800,7 @@ define SetupNativeCompilationBody
                 endif
                 # Keep as much as possible on one execution line for best performance
                 # on Windows
-		$(ECHO) $(LOG_INFO) "Linking $$($1_BASENAME)" ; \
+		$$(call LogInfo, Linking $$($1_BASENAME))
 		$(call LogFailures, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link.log, $$($1_SAFE_NAME)_link, \
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		    $(LD_OUT_OPTION)$$@ \
@@ -820,7 +819,7 @@ define SetupNativeCompilationBody
 
     # Generating a static library, ie object file archive.
     $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE)
-	$(ECHO) $(LOG_INFO) "Archiving $$($1_STATIC_LIBRARY)"
+	$$(call LogInfo, Archiving $$($1_STATIC_LIBRARY))
 	$(call LogFailures, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link.log, $$($1_SAFE_NAME)_link, \
 	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_ALL_OBJS) \
 	        $$($1_RES))
@@ -842,7 +841,7 @@ define SetupNativeCompilationBody
 
     $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
         $$($1_VARDEPS_FILE)
-		$(ECHO) $(LOG_INFO) "Linking executable $$($1_BASENAME)" ; \
+		$$(call LogInfo, Linking executable $$($1_BASENAME))
 		$(call LogFailures, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link.log, $$($1_SAFE_NAME)_link, \
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		        $(EXE_OUT_OPTION)$$($1_TARGET) \
