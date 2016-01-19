@@ -98,7 +98,6 @@ class ArrayKlass: public Klass {
   bool compute_is_subtype_of(Klass* k);
 
   // Sizing
-  static int header_size()                 { return sizeof(ArrayKlass)/wordSize; }
   static int static_size(int header_size);
 
 #if INCLUDE_SERVICES
@@ -109,12 +108,6 @@ class ArrayKlass: public Klass {
   }
 #endif
 
-  // Java vtable
-  klassVtable* vtable() const;             // return new klassVtable
- protected:
-  inline intptr_t* start_of_vtable() const;
-
- public:
   // Iterators
   void array_klasses_do(void f(Klass* k));
   void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);

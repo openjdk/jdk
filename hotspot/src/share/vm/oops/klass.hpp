@@ -57,6 +57,7 @@ class ParCompactionManager;
 class PSPromotionManager;
 class KlassSizeStats;
 class fieldDescriptor;
+class vtableEntry;
 
 class Klass : public Metadata {
   friend class VMStructs;
@@ -377,7 +378,7 @@ protected:
 #endif
 
   // vtables
-  virtual klassVtable* vtable() const = 0;
+  klassVtable* vtable() const;
   int vtable_length() const { return _vtable_len; }
 
   // subclass check
@@ -443,7 +444,10 @@ protected:
 
   void set_vtable_length(int len) { _vtable_len= len; }
 
+  vtableEntry* start_of_vtable() const;
  public:
+  Method* method_at_vtable(int index);
+
   static ByteSize vtable_start_offset();
   static ByteSize vtable_length_offset() {
     return byte_offset_of(Klass, _vtable_len);
