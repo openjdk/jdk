@@ -654,12 +654,11 @@ public abstract class ImageReader {
     }
 
     /**
-     * Returns an {@code ImageTypeSpecifier} indicating the
-     * {@code SampleModel} and {@code ColorModel} which most
-     * closely represents the "raw" internal format of the image.  For
-     * example, for a JPEG image the raw type might have a YCbCr color
-     * space even though the image would conventionally be transformed
-     * into an RGB color space prior to display.  The returned value
+     * Returns an <code>ImageTypeSpecifier</code> indicating the
+     * <code>SampleModel</code> and <code>ColorModel</code> which most
+     * closely represents the "raw" internal format of the image.  If
+     * there is no close match then a type which preserves the most
+     * information from the image should be returned.  The returned value
      * should also be included in the list of values returned by
      * {@code getImageTypes}.
      *

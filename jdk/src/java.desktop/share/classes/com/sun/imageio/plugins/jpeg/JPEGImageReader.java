@@ -1788,6 +1788,8 @@ class ImageTypeProducer {
             case JPEG.JCS_GRAYSCALE:
                 return ImageTypeSpecifier.createFromBufferedImageType
                         (BufferedImage.TYPE_BYTE_GRAY);
+            case JPEG.JCS_YCbCr:
+            //there is no YCbCr raw type so by default we assume it as RGB
             case JPEG.JCS_RGB:
                 return ImageTypeSpecifier.createInterleaved(JPEG.JCS.sRGB,
                         JPEG.bOffsRGB,
