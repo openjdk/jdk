@@ -3496,4 +3496,8 @@ void VMStructs::test() {
     }
   }
 }
+
+void VMStructs_test() {
+  VMStructs::test();
+}
 #endif
