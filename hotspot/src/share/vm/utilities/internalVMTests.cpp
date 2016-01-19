@@ -26,22 +26,9 @@
 
 #ifndef PRODUCT
 
-#include "classfile/altHashing.hpp"
-#include "compiler/directivesParser.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcTimer.hpp"
-#include "memory/guardedMemory.hpp"
 #include "utilities/internalVMTests.hpp"
-#include "utilities/json.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/quickSort.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc/g1/heapRegionRemSet.hpp"
-#endif
-#if INCLUDE_VM_STRUCTS
-#include "runtime/vmStructs.hpp"
-#endif
 
 #define run_unit_test(unit_test_function_call)              \
   tty->print_cr("Running test: " #unit_test_function_call); \
@@ -67,6 +54,21 @@ void TestResourcehash_test();
 void TestChunkedList_test();
 void Test_log_length();
 void Test_TempNewSymbol();
+void GlobalDefinitions_test();
+void GCTimer_test();
+void arrayOopDesc_test();
+void CollectedHeap_test();
+void QuickSort_test();
+void GuardedMemory_test();
+void AltHashing_test();
+void ObjectMonitor_test();
+void JSON_test();
+void DirectivesParser_test();
+
+#if INCLUDE_VM_STRUCTS
+void VMStructs_test();
+#endif
+
 #if INCLUDE_ALL_GCS
 void TestOldFreeSpaceCalculation_test();
 void TestG1BiasedArray_test();
@@ -74,7 +76,7 @@ void TestBufferingOopClosure_test();
 void TestCodeCacheRemSet_test();
 void FreeRegionList_test();
 void IHOP_test();
-void test_memset_with_concurrent_readers() NOT_DEBUG_RETURN;
+void test_memset_with_concurrent_readers();
 void TestPredictions_test();
 void WorkerDataArray_test();
 #endif
@@ -90,28 +92,28 @@ void InternalVMTests::run() {
   run_unit_test(TestMetaspaceAux_test());
   run_unit_test(TestMetachunk_test());
   run_unit_test(TestVirtualSpaceNode_test());
-  run_unit_test(GlobalDefinitions::test_globals());
-  run_unit_test(GCTimerAllTest::all());
-  run_unit_test(arrayOopDesc::test_max_array_length());
-  run_unit_test(CollectedHeap::test_is_in());
-  run_unit_test(QuickSort::test_quick_sort());
-  run_unit_test(GuardedMemory::test_guarded_memory());
-  run_unit_test(AltHashing::test_alt_hash());
+  run_unit_test(GlobalDefinitions_test());
+  run_unit_test(GCTimer_test());
+  run_unit_test(arrayOopDesc_test());
+  run_unit_test(CollectedHeap_test());
+  run_unit_test(QuickSort_test());
+  run_unit_test(GuardedMemory_test());
+  run_unit_test(AltHashing_test());
   run_unit_test(TestNewSize_test());
   run_unit_test(TestOldSize_test());
   run_unit_test(TestKlass_test());
   run_unit_test(TestBitMap_test());
   run_unit_test(TestAsUtf8());
   run_unit_test(TestResourcehash_test());
-  run_unit_test(ObjectMonitor::sanity_checks());
+  run_unit_test(ObjectMonitor_test());
   run_unit_test(Test_linked_list());
   run_unit_test(TestChunkedList_test());
-  run_unit_test(JSONTest::test());
+  run_unit_test(JSON_test());
   run_unit_test(Test_log_length());
-  run_unit_test(DirectivesParser::test());
+  run_unit_test(DirectivesParser_test());
   run_unit_test(Test_TempNewSymbol());
 #if INCLUDE_VM_STRUCTS
-  run_unit_test(VMStructs::test());
+  run_unit_test(VMStructs_test());
 #endif
 #if INCLUDE_ALL_GCS
   run_unit_test(TestOldFreeSpaceCalculation_test());
