@@ -2551,6 +2551,7 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(uint worker_i) {
     // Previous workers starting region is valid
     // so let's iterate from there
     start_ind = (cs_size * (worker_i - 1)) / active_workers;
+    OrderAccess::loadload();
     result = _worker_cset_start_region[worker_i - 1];
   }
 
