@@ -1,0 +1,64 @@
+#
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# This file is included from Main.gmk only.
+
+include $(SRC_ROOT)/make/common/JavaCompilation.gmk
+include $(SRC_ROOT)/make/common/SetupJavaCompilers.gmk
+
+################################################################################
+
+$(eval $(call SetupJavaCompilation, BUILD_GENMODULESLIST, \
+    SETUP := BOOT_JAVAC, \
+    SRC := $(JDK_TOPDIR)/make/src/classes, \
+    INCLUDES := build/tools/module, \
+    EXCLUDE_FILES := ImageBuilder.java ModuleArchive.java, \
+    BIN := $(MAKESUPPORT_OUTPUTDIR)/bt_classes_moduleslist, \
+    DISABLE_SJAVAC := true, \
+))
+
+TOOL_GENMODULESLIST = $(JAVA_SMALL) \
+    -cp "$(MAKESUPPORT_OUTPUTDIR)/bt_classes_moduleslist" \
+    build.tools.module.GenModulesList
+
+MODULES_LIST_FILE := $(MAKESUPPORT_OUTPUTDIR)/modules.list
+# The module deps makefile is used from make/common/Modules.gmk
+MODULE_DEPS_MAKEFILE := $(MAKESUPPORT_OUTPUTDIR)/module-deps.gmk
+
+$(MODULES_LIST_FILE): $(SRC_ROOT)/modules.xml $(BUILD_GENMODULESLIST)
+	$(TOOL_GENMODULESLIST) -o $@ $(filter %.xml, $^)
+
+$(MODULE_DEPS_MAKEFILE): $(MODULES_LIST_FILE)
+	$(CAT) $^ | $(SED) -e 's/^\([^:]*\):/DEPS_\1 :=/g' > $@
+
+TARGETS += $(MODULE_DEPS_MAKEFILE)
+
+################################################################################
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, , GenerateModuleDeps.gmk))
+
+# Trigger generation of this file and restart make if it changed.
+-include $(MODULE_DEPS_MAKEFILE)
