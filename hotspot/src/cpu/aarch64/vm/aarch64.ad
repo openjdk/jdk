@@ -4442,11 +4442,7 @@ encode %{
 
   enc_class aarch64_enc_mov_byte_map_base(iRegP dst, immByteMapBase src) %{
     MacroAssembler _masm(&cbuf);
-    address page = (address)$src$$constant;
-    Register dst_reg = as_Register($dst$$reg);
-    unsigned long off;
-    __ adrp(dst_reg, ExternalAddress(page), off);
-    assert(off == 0, "assumed offset == 0");
+    __ load_byte_map_base($dst$$Register);
   %}
 
   enc_class aarch64_enc_mov_n(iRegN dst, immN src) %{
