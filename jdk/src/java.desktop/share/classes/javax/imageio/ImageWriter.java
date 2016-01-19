@@ -1482,7 +1482,6 @@ public abstract class ImageWriter implements ImageTranscoder {
      * @exception IllegalArgumentException if any of the following are true:
      * <ul>
      * <li> {@code image} is {@code null}.
-     * <li> {@code param} is {@code null}.
      * <li> the intersected region does not contain at least one pixel.
      * <li> the layout of {@code image} does not match, or this
      * writer cannot convert it to, the existing image layout.
@@ -1543,7 +1542,6 @@ public abstract class ImageWriter implements ImageTranscoder {
      * @exception IllegalArgumentException if any of the following are true:
      * <ul>
      * <li> {@code raster} is {@code null}.
-     * <li> {@code param} is {@code null}.
      * <li> the intersected region does not contain at least one pixel.
      * <li> the layout of {@code raster} does not match, or this
      * writer cannot convert it to, the existing image layout.
