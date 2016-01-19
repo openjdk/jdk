@@ -4415,7 +4415,7 @@ jint os::init_2(void) {
   os::Solaris::min_stack_allowed = MAX2(os::Solaris::min_stack_allowed,
                                         JavaThread::stack_guard_zone_size() +
                                         JavaThread::stack_shadow_zone_size() +
-                                        2*BytesPerWord COMPILER2_PRESENT(+1) * page_size);
+                                        (2*BytesPerWord COMPILER2_PRESENT(+1)) * page_size);
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&
