@@ -133,7 +133,7 @@ class JDIConnection {
         return vm;
     }
 
-    boolean setConnectorArg(String name, String value) {
+    synchronized boolean setConnectorArg(String name, String value) {
         /*
          * Too late if the connection already made
          */
@@ -165,7 +165,7 @@ class JDIConnection {
         }
     }
 
-    boolean isOpen() {
+    synchronized boolean isOpen() {
         return (vm != null);
     }
 
@@ -173,13 +173,17 @@ class JDIConnection {
         return (connector instanceof LaunchingConnector);
     }
 
-    public void disposeVM() {
+    synchronized boolean isRunning() {
+        return process != null && process.isAlive();
+    }
+
+    public synchronized void disposeVM() {
         try {
             if (vm != null) {
                 vm.dispose(); // This could NPE, so it is caught below
                 vm = null;
             }
-        } catch (VMDisconnectedException | NullPointerException ex) {
+        } catch (VMDisconnectedException ex) {
             // Ignore if already closed
         } finally {
             if (process != null) {

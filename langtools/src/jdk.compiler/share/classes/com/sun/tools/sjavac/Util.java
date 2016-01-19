@@ -230,4 +230,10 @@ public class Util {
                                            Function<? super T, ? extends I> indexFunction) {
         return c.stream().collect(Collectors.<T, I, T>toMap(indexFunction, o -> o));
     }
+
+    public static String fileSuffix(Path file) {
+        String fileNameStr = file.getFileName().toString();
+        int dotIndex = fileNameStr.indexOf('.');
+        return dotIndex == -1 ? "" : fileNameStr.substring(dotIndex);
+    }
 }
