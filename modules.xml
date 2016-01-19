@@ -239,6 +239,12 @@
       <to>jdk.scripting.nashorn</to>
     </export>
     <export>
+      <name>jdk.internal.perf</name>
+      <to>java.desktop</to>
+      <to>java.management</to>
+      <to>jdk.jvmstat</to>
+    </export>
+    <export>
       <name>jdk.internal.org.objectweb.asm</name>
       <to>java.instrument</to>
       <to>jdk.jfr</to>

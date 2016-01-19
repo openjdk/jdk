@@ -146,7 +146,11 @@ import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * are otherwise public and link requests have call site descriptors carrying
  * full-strength {@link Lookup} objects and not weakened lookups or the public
  * lookup.</p>
- * <p>The class also exposes various static methods for discovery of available
+ * <p><strong>The behavior for handling missing members</strong> can be
+ * customized by passing a {@link MissingMemberHandlerFactory} to the
+ * {@link BeansLinker#BeansLinker(MissingMemberHandlerFactory) constructor}.
+ * </p>
+ * <p>The class also exposes various methods for discovery of available
  * property and method names on classes and class instances, as well as access
  * to per-class linkers using the {@link #getLinkerForClass(Class)}
  * method.</p>
@@ -164,10 +168,27 @@ public class BeansLinker implements GuardingDynamicLinker {
         }
     };
 
+    private final MissingMemberHandlerFactory missingMemberHandlerFactory;
+
     /**
-     * Creates a new beans linker.
+     * Creates a new beans linker. Equivalent to
+     * {@link BeansLinker#BeansLinker(MissingMemberHandlerFactory)} with
+     * {@code null} passed as the missing member handler factory, resulting in
+     * the default behavior for linking and evaluating missing members.
      */
     public BeansLinker() {
+        this(null);
+    }
+
+    /**
+     * Creates a new beans linker with the specified factory for creating
+     * missing member handlers. The passed factory can be null if the default
+     * behavior is adequate. See {@link MissingMemberHandlerFactory} for details.
+     * @param missingMemberHandlerFactory a factory for creating handlers for
+     * operations on missing members.
+     */
+    public BeansLinker(final MissingMemberHandlerFactory missingMemberHandlerFactory) {
+        this.missingMemberHandlerFactory = missingMemberHandlerFactory;
     }
 
     /**
@@ -178,7 +199,37 @@ public class BeansLinker implements GuardingDynamicLinker {
      * @param clazz the class
      * @return a bean linker for that class
      */
-    public static TypeBasedGuardingDynamicLinker getLinkerForClass(final Class<?> clazz) {
+    public TypeBasedGuardingDynamicLinker getLinkerForClass(final Class<?> clazz) {
+        final TypeBasedGuardingDynamicLinker staticLinker = getStaticLinkerForClass(clazz);
+        if (missingMemberHandlerFactory == null) {
+            return staticLinker;
+        }
+        return new NoSuchMemberHandlerBindingLinker(staticLinker, missingMemberHandlerFactory);
+    }
+
+    private static class NoSuchMemberHandlerBindingLinker implements TypeBasedGuardingDynamicLinker {
+        private final TypeBasedGuardingDynamicLinker linker;
+        private final MissingMemberHandlerFactory missingMemberHandlerFactory;
+
+        NoSuchMemberHandlerBindingLinker(final TypeBasedGuardingDynamicLinker linker, final MissingMemberHandlerFactory missingMemberHandlerFactory) {
+            this.linker = linker;
+            this.missingMemberHandlerFactory = missingMemberHandlerFactory;
+        }
+
+        @Override
+        public boolean canLinkType(final Class<?> type) {
+            return linker.canLinkType(type);
+        }
+
+        @Override
+        public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices) throws Exception {
+            return linker.getGuardedInvocation(linkRequest,
+                    LinkerServicesWithMissingMemberHandlerFactory.get(
+                            linkerServices, missingMemberHandlerFactory));
+        }
+    }
+
+    static TypeBasedGuardingDynamicLinker getStaticLinkerForClass(final Class<?> clazz) {
         return linkers.get(clazz);
     }
 
@@ -234,7 +285,7 @@ public class BeansLinker implements GuardingDynamicLinker {
      * @return a set of names of all readable instance properties of a class.
      */
     public static Set<String> getReadableInstancePropertyNames(final Class<?> clazz) {
-        final TypeBasedGuardingDynamicLinker linker = getLinkerForClass(clazz);
+        final TypeBasedGuardingDynamicLinker linker = getStaticLinkerForClass(clazz);
         if(linker instanceof BeanLinker) {
             return ((BeanLinker)linker).getReadablePropertyNames();
         }
@@ -247,7 +298,7 @@ public class BeansLinker implements GuardingDynamicLinker {
      * @return a set of names of all writable instance properties of a class.
      */
     public static Set<String> getWritableInstancePropertyNames(final Class<?> clazz) {
-        final TypeBasedGuardingDynamicLinker linker = getLinkerForClass(clazz);
+        final TypeBasedGuardingDynamicLinker linker = getStaticLinkerForClass(clazz);
         if(linker instanceof BeanLinker) {
             return ((BeanLinker)linker).getWritablePropertyNames();
         }
@@ -260,7 +311,7 @@ public class BeansLinker implements GuardingDynamicLinker {
      * @return a set of names of all instance methods of a class.
      */
     public static Set<String> getInstanceMethodNames(final Class<?> clazz) {
-        final TypeBasedGuardingDynamicLinker linker = getLinkerForClass(clazz);
+        final TypeBasedGuardingDynamicLinker linker = getStaticLinkerForClass(clazz);
         if(linker instanceof BeanLinker) {
             return ((BeanLinker)linker).getMethodNames();
         }
@@ -302,6 +353,8 @@ public class BeansLinker implements GuardingDynamicLinker {
             // Can't operate on null
             return null;
         }
-        return getLinkerForClass(receiver.getClass()).getGuardedInvocation(request, linkerServices);
+        return getLinkerForClass(receiver.getClass()).getGuardedInvocation(request,
+                LinkerServicesWithMissingMemberHandlerFactory.get(linkerServices,
+                        missingMemberHandlerFactory));
     }
 }

@@ -23,8 +23,6 @@
 # questions.
 #
 
-include $(SPEC)
-include MakeBase.gmk
 include NativeCompilation.gmk
 
 # Hook to include the corresponding custom file, if present.
@@ -92,3 +90,5 @@ ifeq ($(USE_EXTERNAL_LIBZ), true)
 else
   ZLIB_CPPFLAGS := -I$(JDK_TOPDIR)/src/java.base/share/native/libzip/zlib-1.2.8
 endif
+
+###############################################################################

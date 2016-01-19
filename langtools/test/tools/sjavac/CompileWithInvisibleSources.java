@@ -64,7 +64,7 @@ public class CompileWithInvisibleSources extends SJavacTester {
                      "package beta; public class B { }");
 
         compile(GENSRC.toString(),
-                "-x", "beta",
+                "-x", "beta/*",
                 "-sourcepath", GENSRC2.toString(),
                 "-sourcepath", GENSRC3.toString(),
                 "-d", BIN.toString(),
