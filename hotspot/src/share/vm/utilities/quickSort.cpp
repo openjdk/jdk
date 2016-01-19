@@ -72,7 +72,7 @@ extern "C" {
   }
 }
 
-void QuickSort::print_array(const char* prefix, int* array, int length) {
+static void print_array(const char* prefix, int* array, int length) {
   tty->print("%s:", prefix);
   for (int i = 0; i < length; i++) {
     tty->print(" %d", array[i]);
@@ -80,7 +80,7 @@ void QuickSort::print_array(const char* prefix, int* array, int length) {
   tty->cr();
 }
 
-bool QuickSort::compare_arrays(int* actual, int* expected, int length) {
+static bool compare_arrays(int* actual, int* expected, int length) {
   for (int i = 0; i < length; i++) {
     if (actual[i] != expected[i]) {
       print_array("Sorted array  ", actual, length);
@@ -92,12 +92,12 @@ bool QuickSort::compare_arrays(int* actual, int* expected, int length) {
 }
 
 template <class C>
-bool QuickSort::sort_and_compare(int* arrayToSort, int* expectedResult, int length, C comparator, bool idempotent) {
-  sort<int, C>(arrayToSort, length, comparator, idempotent);
+static bool sort_and_compare(int* arrayToSort, int* expectedResult, int length, C comparator, bool idempotent = false) {
+  QuickSort::sort<int, C>(arrayToSort, length, comparator, idempotent);
   return compare_arrays(arrayToSort, expectedResult, length);
 }
 
-void QuickSort::test_quick_sort() {
+void QuickSort_test() {
   {
     int* test_array = NULL;
     int* expected_array = NULL;
@@ -208,15 +208,14 @@ void QuickSort::test_quick_sort() {
     // Now sort them once with the test_even_odd_comparator. Then sort the
     // test_array one more time with test_even_odd_comparator and verify that
     // it is idempotent.
-    sort(expected_array, length, test_even_odd_comparator, true);
-    sort(test_array, length, test_even_odd_comparator, true);
+    QuickSort::sort(expected_array, length, test_even_odd_comparator, true);
+    QuickSort::sort(test_array, length, test_even_odd_comparator, true);
     assert(compare_arrays(test_array, expected_array, length), "Sorting identical arrays rendered different results");
-    sort(test_array, length, test_even_odd_comparator, true);
+    QuickSort::sort(test_array, length, test_even_odd_comparator, true);
     assert(compare_arrays(test_array, expected_array, length), "Sorting already sorted array changed order of elements - not idempotent");
 
     FREE_C_HEAP_ARRAY(int, test_array);
     FREE_C_HEAP_ARRAY(int, expected_array);
   }
 }
-
 #endif
