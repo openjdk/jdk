@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 8028994
+ * @ignore 8147477
+ * @ignore 8147494
  * @author Staffan Larsen
  * @library /lib/testlibrary
  * @modules jdk.attach/sun.tools.attach
