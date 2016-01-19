@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass) {
   } else if (!resolved_klass->is_interface()) {
     // A default or miranda method.  Compute the vtable index.
     ResourceMark rm;
-    klassVtable* vt = InstanceKlass::cast(resolved_klass)->vtable();
+    klassVtable* vt = resolved_klass->vtable();
     index = LinkResolver::vtable_index_of_interface_method(resolved_klass,
                            resolved_method);
     assert(index >= 0 , "we should have valid vtable index at this point");
@@ -1227,8 +1227,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
                            resolved_method);
     assert(vtable_index >= 0 , "we should have valid vtable index at this point");
 
-    InstanceKlass* inst = InstanceKlass::cast(recv_klass());
-    selected_method = methodHandle(THREAD, inst->method_at_vtable(vtable_index));
+    selected_method = methodHandle(THREAD, recv_klass->method_at_vtable(vtable_index));
   } else {
     // at this point we are sure that resolved_method is virtual and not
     // a default or miranda method; therefore, it must have a valid vtable index.
@@ -1243,10 +1242,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
       assert(resolved_method->can_be_statically_bound(), "cannot override this method");
       selected_method = resolved_method;
     } else {
-      // recv_klass might be an arrayKlassOop but all vtables start at
-      // the same place. The cast is to avoid virtual call and assertion.
-      InstanceKlass* inst = (InstanceKlass*)recv_klass();
-      selected_method = methodHandle(THREAD, inst->method_at_vtable(vtable_index));
+      selected_method = methodHandle(THREAD, recv_klass->method_at_vtable(vtable_index));
     }
   }
 

@@ -944,11 +944,10 @@ public:
   virtual void collect_statistics(KlassSizeStats *sz) const;
 #endif
 
-  intptr_t* start_of_vtable() const        { return (intptr_t*) ((address)this + in_bytes(vtable_start_offset())); }
-  intptr_t* start_of_itable() const        { return start_of_vtable() + vtable_length(); }
-  int  itable_offset_in_words() const { return start_of_itable() - (intptr_t*)this; }
+  intptr_t* start_of_itable()   const { return (intptr_t*)start_of_vtable() + vtable_length(); }
+  intptr_t* end_of_itable()     const { return start_of_itable() + itable_length(); }
 
-  intptr_t* end_of_itable() const          { return start_of_itable() + itable_length(); }
+  int  itable_offset_in_words() const { return start_of_itable() - (intptr_t*)this; }
 
   address static_field_addr(int offset);
 
@@ -997,9 +996,7 @@ public:
     return !layout_helper_needs_slow_path(layout_helper());
   }
 
-  // Java vtable/itable
-  klassVtable* vtable() const;        // return new klassVtable wrapper
-  inline Method* method_at_vtable(int index);
+  // Java itable
   klassItable* itable() const;        // return new klassItable wrapper
   Method* method_at_itable(Klass* holder, int index, TRAPS);
 
@@ -1248,17 +1245,6 @@ public:
 
   void oop_verify_on(oop obj, outputStream* st);
 };
-
-inline Method* InstanceKlass::method_at_vtable(int index)  {
-#ifndef PRODUCT
-  assert(index >= 0, "valid vtable index");
-  if (DebugVtables) {
-    verify_vtable_index(index);
-  }
-#endif
-  vtableEntry* ve = (vtableEntry*)start_of_vtable();
-  return ve[index].method();
-}
 
 // for adding methods
 // UNSET_IDNUM return means no more ids available

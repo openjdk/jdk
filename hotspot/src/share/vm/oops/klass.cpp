@@ -659,6 +659,24 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 
+klassVtable* Klass::vtable() const {
+  return new klassVtable(this, start_of_vtable(), vtable_length() / vtableEntry::size());
+}
+
+vtableEntry* Klass::start_of_vtable() const {
+  return (vtableEntry*) ((address)this + in_bytes(vtable_start_offset()));
+}
+
+Method* Klass::method_at_vtable(int index)  {
+#ifndef PRODUCT
+  assert(index >= 0, "valid vtable index");
+  if (DebugVtables) {
+    verify_vtable_index(index);
+  }
+#endif
+  return start_of_vtable()[index].method();
+}
+
 ByteSize Klass::vtable_start_offset() {
   return in_ByteSize(InstanceKlass::header_size() * wordSize);
 }

@@ -364,10 +364,6 @@ bool InstanceKlass::should_be_initialized() const {
   return !is_initialized();
 }
 
-klassVtable* InstanceKlass::vtable() const {
-  return new klassVtable(this, start_of_vtable(), vtable_length() / vtableEntry::size());
-}
-
 klassItable* InstanceKlass::itable() const {
   return new klassItable(instanceKlassHandle(this));
 }
@@ -2665,6 +2661,10 @@ static void print_vtable(intptr_t* start, int len, outputStream* st) {
     }
     st->cr();
   }
+}
+
+static void print_vtable(vtableEntry* start, int len, outputStream* st) {
+  return print_vtable(reinterpret_cast<intptr_t*>(start), len, st);
 }
 
 void InstanceKlass::print_on(outputStream* st) const {

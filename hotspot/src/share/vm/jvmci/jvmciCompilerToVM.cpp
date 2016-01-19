@@ -655,8 +655,7 @@ C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_t
         vtable_index = LinkResolver::vtable_index_of_interface_method(holder_klass, resolved_method);
         assert(vtable_index >= 0 , "we should have valid vtable index at this point");
 
-        InstanceKlass* inst = InstanceKlass::cast(recv_klass);
-        selected_method = inst->method_at_vtable(vtable_index);
+        selected_method = recv_klass->method_at_vtable(vtable_index);
       } else {
         // at this point we are sure that resolved_method is virtual and not
         // a miranda method; therefore, it must have a valid vtable index.
@@ -671,10 +670,7 @@ C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_t
           assert(resolved_method->can_be_statically_bound(), "cannot override this method");
           selected_method = resolved_method();
         } else {
-          // recv_klass might be an arrayKlassOop but all vtables start at
-          // the same place. The cast is to avoid virtual call and assertion.
-          InstanceKlass* inst = (InstanceKlass*)recv_klass;
-          selected_method = inst->method_at_vtable(vtable_index);
+          selected_method = recv_klass->method_at_vtable(vtable_index);
         }
       }
       oop result = CompilerToVM::get_jvmci_method(selected_method, CHECK_NULL);

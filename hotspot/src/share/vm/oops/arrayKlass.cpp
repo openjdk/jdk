@@ -117,19 +117,6 @@ bool ArrayKlass::compute_is_subtype_of(Klass* k) {
          || k == SystemDictionary::Serializable_klass();
 }
 
-
-inline intptr_t* ArrayKlass::start_of_vtable() const {
-  // all vtables start at the same place, that's why we use InstanceKlass::header_size here
-  return ((intptr_t*)this) + InstanceKlass::header_size();
-}
-
-
-klassVtable* ArrayKlass::vtable() const {
-  KlassHandle kh(Thread::current(), this);
-  return new klassVtable(kh, start_of_vtable(), vtable_length() / vtableEntry::size());
-}
-
-
 objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
   if (length < 0) {
     THROW_0(vmSymbols::java_lang_NegativeArraySizeException());
