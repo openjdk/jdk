@@ -240,9 +240,14 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
     #define FLOAT_ARCH_STR XSTR(FLOAT_ARCH)
   #endif
 
-  return VMNAME " (" VM_RELEASE ") for " OS "-" CPU FLOAT_ARCH_STR
-         " JRE (" VERSION_STRING "), built on " __DATE__ " " __TIME__
-         " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER;
+  #define INTERNAL_VERSION_SUFFIX VM_RELEASE ")" \
+         " for " OS "-" CPU FLOAT_ARCH_STR \
+         " JRE (" VERSION_STRING "), built on " __DATE__ " " __TIME__ \
+         " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER
+
+  return strcmp(DEBUG_LEVEL, "release") == 0
+      ? VMNAME " (" INTERNAL_VERSION_SUFFIX
+      : VMNAME " (" DEBUG_LEVEL " " INTERNAL_VERSION_SUFFIX;
 }
 
 const char *Abstract_VM_Version::vm_build_user() {
@@ -251,6 +256,11 @@ const char *Abstract_VM_Version::vm_build_user() {
 
 const char *Abstract_VM_Version::jdk_debug_level() {
   return DEBUG_LEVEL;
+}
+
+const char *Abstract_VM_Version::printable_jdk_debug_level() {
+  // Debug level is not printed for "release" builds
+  return strcmp(DEBUG_LEVEL, "release") == 0 ? "" : DEBUG_LEVEL " ";
 }
 
 unsigned int Abstract_VM_Version::jvm_version() {
