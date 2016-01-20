@@ -3742,7 +3742,7 @@ bool os::find(address addr, outputStream* st) {
   loaded_module_t lm;
   if (LoadedLibraries::find_for_text_address(addr, &lm) != NULL ||
       LoadedLibraries::find_for_data_address(addr, &lm) != NULL) {
-    st->print("%s", lm.path);
+    st->print_cr("%s", lm.path);
     return true;
   }
 
