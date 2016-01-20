@@ -38,6 +38,8 @@ import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.IvParameterSpec;
 
+import sun.security.jca.JCAUtil;
+
 /**
  * Cipher wrapper class utilizing ucrypto APIs. This class currently supports
  * - AES/ECB/NOPADDING
@@ -288,7 +290,10 @@ class NativeCipher extends CipherSpi {
                 if (encrypt) {
                     // generate IV if none supplied for encryption
                     ivBytes = new byte[blockSize];
-                    new SecureRandom().nextBytes(ivBytes);
+                    if (random == null) {
+                        random = JCAUtil.getSecureRandom();
+                    }
+                    random.nextBytes(ivBytes);
                 } else {
                     throw new InvalidAlgorithmParameterException
                             ("Parameters required for decryption");

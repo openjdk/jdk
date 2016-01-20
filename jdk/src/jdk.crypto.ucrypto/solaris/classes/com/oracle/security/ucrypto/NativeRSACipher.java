@@ -63,6 +63,7 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
+import sun.security.jca.JCAUtil;
 import sun.security.util.KeyUtil;
 
 /**
@@ -201,6 +202,9 @@ public class NativeRSACipher extends CipherSpi {
                         "No Parameters can be specified");
             }
             spec = params;
+            if (random == null) {
+                random = JCAUtil.getSecureRandom();
+            }
             this.random = random;   // for TLS RSA premaster secret
         }
         boolean doEncrypt = (opmode == Cipher.ENCRYPT_MODE || opmode == Cipher.WRAP_MODE);
