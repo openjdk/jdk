@@ -56,7 +56,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET, \
         -D "JDK_INTERNAL_NAME=dt_socket" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libdt_socket, \
-    DEBUG_SYMBOLS := true))
+))
 
 $(BUILD_LIBDT_SOCKET): $(call FindLib, java.base, java)
 
@@ -95,7 +95,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP, \
         -D "JDK_INTERNAL_NAME=jdwp" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjdwp, \
-    DEBUG_SYMBOLS := true))
+))
 
 $(BUILD_LIBJDWP): $(call FindLib, java.base, java)
 

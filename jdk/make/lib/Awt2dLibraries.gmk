@@ -69,7 +69,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE, \
         -D "JDK_INTERNAL_NAME=mlib_image" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmlib_image, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 $(BUILD_LIBMLIB_IMAGE): $(call FindLib, java.base, java)
 
@@ -134,7 +134,7 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := -ljava -ljvm -lc $(BUILD_LIBMLIB_LDLIBS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmlib_image_v, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   $(BUILD_LIBMLIB_IMAGE_V): $(call FindLib, java.base, java)
 
@@ -279,7 +279,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
         -D "JDK_INTERNAL_NAME=awt" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 $(BUILD_LIBAWT): $(call FindLib, java.base, java)
 
@@ -369,7 +369,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
             -D "JDK_INTERNAL_NAME=xawt" \
             -D "JDK_FTYPE=0x2L", \
         OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt_xawt, \
-        DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+    ))
 
     $(BUILD_LIBAWT_XAWT): $(call FindLib, java.base, java)
 
@@ -433,7 +433,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBLCMS, \
         -D "JDK_INTERNAL_NAME=lcms" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/liblcms, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 TARGETS += $(BUILD_LIBLCMS)
 
@@ -509,7 +509,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVAJPEG, \
         -D "JDK_FTYPE=0x2L", \
     REORDER := $(BUILD_LIBJAVAJPEG_REORDER), \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjavajpeg, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 $(BUILD_LIBJAVAJPEG): $(call FindLib, java.base, java)
 
@@ -578,7 +578,7 @@ ifeq ($(BUILD_HEADLESS), true)
         LIBS_linux := -lm $(LIBDL), \
         LIBS_solaris := -lm $(LIBDL) $(LIBCXX) -lc, \
         OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt_headless, \
-        DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+    ))
 
     $(BUILD_LIBAWT_HEADLESS): $(BUILD_LIBAWT)
 
@@ -700,7 +700,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
         -D "JDK_INTERNAL_NAME=fontmanager" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfontmanager, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
 
@@ -745,7 +745,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
           -D "JDK_INTERNAL_NAME=jawt" \
           -D "JDK_FTYPE=0x2L", \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjawt, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   $(BUILD_LIBJAWT): $(BUILD_LIBAWT)
 
@@ -805,7 +805,7 @@ else # OPENJDK_TARGET_OS not windows
       LIBS_solaris := $(X_LIBS) -lXrender, \
       LIBS_macosx := -framework Cocoa, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjawt, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   ifndef BUILD_HEADLESS_ONLY
     $(BUILD_LIBJAWT): $(BUILD_LIBAWT_XAWT)
@@ -927,7 +927,7 @@ ifndef BUILD_HEADLESS_ONLY
           -D "JDK_INTERNAL_NAME=splashscreen" \
           -D "JDK_FTYPE=0x2L", \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsplashscreen, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   TARGETS += $(BUILD_LIBSPLASHSCREEN)
 
@@ -1003,7 +1003,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework OpenGL \
           -framework QuartzCore -ljava, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt_lwawt, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   TARGETS += $(BUILD_LIBAWT_LWAWT)
 
@@ -1045,7 +1045,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework JavaRuntimeSupport \
           -ljava -ljvm, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosxui, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   TARGETS += $(BUILD_LIBOSXUI)
 
