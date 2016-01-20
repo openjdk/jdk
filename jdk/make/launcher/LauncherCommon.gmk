@@ -25,12 +25,6 @@
 
 include NativeCompilation.gmk
 
-# SetupNativeCompilation now supports debug symbols on macosx for hotspot.
-# Disable it here for the jdk binaries until we decide to enable them.
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  ENABLE_DEBUG_SYMBOLS := false
-endif
-
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN)
 else
@@ -200,7 +194,6 @@ define SetupBuildLauncherBody
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/$1_objs, \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
       PROGRAM := $1, \
-      DEBUG_SYMBOLS := true, \
       VERSIONINFO_RESOURCE := $$($1_VERSION_INFO_RESOURCE), \
       RC_FLAGS := $$(RC_FLAGS) \
           -D "JDK_FNAME=$1$(EXE_SUFFIX)" \

@@ -68,7 +68,7 @@ ifeq ($(ENABLE_INTREE_EC), yes)
           -D "JDK_INTERNAL_NAME=sunec" \
           -D "JDK_FTYPE=0x2L", \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsunec, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   TARGETS += $(BUILD_LIBSUNEC)
 endif

@@ -61,7 +61,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
             -D "JDK_INTERNAL_NAME=javaaccessbridge$1" \
             -D "JDK_FTYPE=0x02L", \
         OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjavaaccessbridge$1, \
-        DEBUG_SYMBOLS := true)
+    )
 
     $$(BUILD_JAVAACCESSBRIDGE$1): $(SUPPORT_OUTPUTDIR)/native/java.desktop/libjawt/jawt.lib
 
@@ -91,7 +91,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
             -D "JDK_INTERNAL_NAME=windowsaccessbridge$1" \
             -D "JDK_FTYPE=0x02L", \
         OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libwindowsaccessbridge$1, \
-        DEBUG_SYMBOLS := true)
+    )
 
     TARGETS += $$(BUILD_WINDOWSACCESSBRIDGE$1)
 
@@ -113,7 +113,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
             -D "JDK_INTERNAL_NAME=jabsysinfo" \
             -D "JDK_FTYPE=0x02L", \
         OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/lib/libjabsysinfo, \
-        DEBUG_SYMBOLS := true)
+    )
 
     TARGETS += $$(BUILD_ACCESSBRIDGESYSINFO)
 

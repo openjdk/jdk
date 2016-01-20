@@ -130,7 +130,6 @@ ifneq ($(BUILD_JEXEC_SRC), )
       LDFLAGS := $(LDFLAGS_JDKEXE), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jexec_obj, \
       OUTPUT_DIR := $(BUILD_JEXEC_DST_DIR), \
-      DEBUG_SYMBOLS := true, \
       PROGRAM := jexec))
 
   TARGETS += $(BUILD_JEXEC)
