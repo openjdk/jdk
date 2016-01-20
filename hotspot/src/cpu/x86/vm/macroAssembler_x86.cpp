@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5818,11 +5818,6 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // %%% Could store the aligned, prescaled offset in the klassoop.
   lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
-  if (HeapWordsPerLong > 1) {
-    // Round up to align_object_offset boundary
-    // see code for InstanceKlass::start_of_itable!
-    round_to(scan_temp, BytesPerLong);
-  }
 
   // Adjust recv_klass by scaled itable_index, so we can free itable_index.
   assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");

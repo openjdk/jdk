@@ -2196,22 +2196,10 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // %%% We should store the aligned, prescaled offset in the klassoop.
   // Then the next several instructions would fold away.
 
-  int round_to_unit = ((HeapWordsPerLong > 1) ? BytesPerLong : 0);
   int itb_offset = vtable_base;
-  if (round_to_unit != 0) {
-    // hoist first instruction of round_to(scan_temp, BytesPerLong):
-    itb_offset += round_to_unit - wordSize;
-  }
   int itb_scale = exact_log2(vtableEntry::size() * wordSize);
   sll(scan_temp, itb_scale,  scan_temp);
   add(scan_temp, itb_offset, scan_temp);
-  if (round_to_unit != 0) {
-    // Round up to align_object_offset boundary
-    // see code for InstanceKlass::start_of_itable!
-    // Was: round_to(scan_temp, BytesPerLong);
-    // Hoisted: add(scan_temp, BytesPerLong-1, scan_temp);
-    and3(scan_temp, -round_to_unit, scan_temp);
-  }
   add(recv_klass, scan_temp, scan_temp);
 
   // Adjust recv_klass by scaled itable_index, so we can free itable_index.

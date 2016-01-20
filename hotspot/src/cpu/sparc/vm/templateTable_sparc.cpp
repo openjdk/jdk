@@ -3158,9 +3158,6 @@ void TemplateTable::invokeinterface(int byte_no) {
   Register Rtemp = O1_flags;
 
   __ ld(O2_Klass, InstanceKlass::vtable_length_offset() * wordSize, Rtemp);
-  if (align_object_offset(1) > 1) {
-    __ round_to(Rtemp, align_object_offset(1));
-  }
   __ sll(Rtemp, LogBytesPerWord, Rtemp);   // Rscratch *= 4;
   if (Assembler::is_simm13(base)) {
     __ add(Rtemp, base, Rtemp);
