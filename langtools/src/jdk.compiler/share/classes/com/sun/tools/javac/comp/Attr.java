@@ -3873,8 +3873,6 @@ public class Attr extends JCTree.Visitor {
                    v.name != names._class;
         }
 
-    Warner noteWarner = new Warner();
-
     /**
      * Check that method arguments conform to its instantiation.
      **/
@@ -3928,7 +3926,7 @@ public class Attr extends JCTree.Visitor {
         // For methods, we need to compute the instance type by
         // Resolve.instantiate from the symbol's type as well as
         // any type arguments and value arguments.
-        noteWarner.clear();
+        Warner noteWarner = new Warner();
         try {
             Type owntype = rs.checkMethod(
                     env,
