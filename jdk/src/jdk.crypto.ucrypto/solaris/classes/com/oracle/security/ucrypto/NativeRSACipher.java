@@ -72,7 +72,7 @@ import sun.security.util.KeyUtil;
  * - RSA/ECB/NOPADDING
  * - RSA/ECB/PKCS1PADDING
  *
- * @since 1.9
+ * @since 9
  */
 public class NativeRSACipher extends CipherSpi {
     // fields set in constructor
