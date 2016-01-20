@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,7 @@ int ArrayKlass::static_size(int header_size) {
   // If this assert fails, see comments in base_create_array_klass.
   header_size = InstanceKlass::header_size();
   int vtable_len = Universe::base_vtable_size();
-#ifdef _LP64
-  int size = header_size + align_object_offset(vtable_len);
-#else
   int size = header_size + vtable_len;
-#endif
   return align_object_size(size);
 }
 
