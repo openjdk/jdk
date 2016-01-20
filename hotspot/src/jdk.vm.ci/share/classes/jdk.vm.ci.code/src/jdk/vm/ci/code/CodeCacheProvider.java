@@ -22,11 +22,8 @@
  */
 package jdk.vm.ci.code;
 
-import jdk.vm.ci.code.CompilationResult.Call;
-import jdk.vm.ci.code.CompilationResult.DataPatch;
-import jdk.vm.ci.code.CompilationResult.Mark;
-import jdk.vm.ci.code.DataSection.Data;
-import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.code.site.Call;
+import jdk.vm.ci.code.site.Mark;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
 
@@ -40,7 +37,7 @@ public interface CodeCacheProvider {
      * default implementation of the method.
      *
      * @param method a method implemented by the installed code
-     * @param compResult the compilation result to be added
+     * @param compiledCode the compiled code to be added
      * @param log the speculation log to be used
      * @param installedCode a predefined {@link InstalledCode} object to use as a reference to the
      *            installed code. If {@code null}, a new {@link InstalledCode} object will be
@@ -48,8 +45,8 @@ public interface CodeCacheProvider {
      * @return a reference to the ready-to-run code
      * @throws BailoutException if the code installation failed
      */
-    default InstalledCode addCode(ResolvedJavaMethod method, CompilationResult compResult, SpeculationLog log, InstalledCode installedCode) {
-        return installCode(new CompilationRequest(method), compResult, installedCode, log, false);
+    default InstalledCode addCode(ResolvedJavaMethod method, CompiledCode compiledCode, SpeculationLog log, InstalledCode installedCode) {
+        return installCode(method, compiledCode, installedCode, log, false);
     }
 
     /**
@@ -58,21 +55,20 @@ public interface CodeCacheProvider {
      *
      * @param method a method implemented by the installed code and for which the installed code
      *            becomes the default implementation
-     * @param compResult the compilation result to be added
+     * @param compiledCode the compiled code to be added
      * @return a reference to the ready-to-run code
      * @throws BailoutException if the code installation failed
      */
-    default InstalledCode setDefaultCode(ResolvedJavaMethod method, CompilationResult compResult) {
-        return installCode(new CompilationRequest(method), compResult, null, null, true);
+    default InstalledCode setDefaultCode(ResolvedJavaMethod method, CompiledCode compiledCode) {
+        return installCode(method, compiledCode, null, null, true);
     }
 
     /**
      * Installs code based on a given compilation result.
      *
-     * @param compRequest details of the method compiled to produce {@code compResult} or
-     *            {@code null} if the input to {@code compResult} was not a
-     *            {@link ResolvedJavaMethod}
-     * @param compResult the compilation result to be added
+     * @param method the method compiled to produce {@code compiledCode} or {@code null} if the
+     *            input to {@code compResult} was not a {@link ResolvedJavaMethod}
+     * @param compiledCode the compiled code to be added
      * @param installedCode a pre-allocated {@link InstalledCode} object to use as a reference to
      *            the installed code. If {@code null}, a new {@link InstalledCode} object will be
      *            created.
@@ -84,7 +80,7 @@ public interface CodeCacheProvider {
      * @return a reference to the compiled and ready-to-run installed code
      * @throws BailoutException if the code installation failed
      */
-    InstalledCode installCode(CompilationRequest compRequest, CompilationResult compResult, InstalledCode installedCode, SpeculationLog log, boolean isDefault);
+    InstalledCode installCode(ResolvedJavaMethod method, CompiledCode compiledCode, InstalledCode installedCode, SpeculationLog log, boolean isDefault);
 
     /**
      * Invalidates {@code installedCode} such that {@link InvalidInstalledCodeException} will be
@@ -119,13 +115,6 @@ public interface CodeCacheProvider {
      * @return the minimum size of the outgoing parameter area in bytes
      */
     int getMinimumOutgoingSize();
-
-    /**
-     * Create a {@link Data} item for one or more {@link Constant Constants}, that can be used in a
-     * {@link DataPatch}. If more than one {@link Constant} is given, then they are tightly packed
-     * into a single {@link Data} item.
-     */
-    Data createDataItem(Constant... constants);
 
     /**
      * Gets a description of the target architecture.
