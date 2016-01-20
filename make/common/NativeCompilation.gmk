@@ -305,7 +305,6 @@ endef
 #   RC_FLAGS flags for RC.
 #   MAPFILE mapfile
 #   REORDER reorder file
-#   DEBUG_SYMBOLS add debug symbols (if configured on)
 #   CC the compiler to use, default is $(CC)
 #   LD the linker to use, default is $(LD)
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
@@ -538,25 +537,9 @@ define SetupNativeCompilationBody
     $1_EXTRA_CXXFLAGS:=$$($1_EXTRA_CFLAGS)
   endif
 
-  ifeq ($(DEBUG_BINARIES), true)
-    $1_EXTRA_CFLAGS+=$(CFLAGS_DEBUG_SYMBOLS)
-    $1_EXTRA_CXXFLAGS+=$(CXXFLAGS_DEBUG_SYMBOLS)
-  endif
-  ifeq ($$($1_DEBUG_SYMBOLS), true)
-    ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
-      ifdef OPENJDK
-        # Always add debug symbols
-        $1_EXTRA_CFLAGS+=$(CFLAGS_DEBUG_SYMBOLS)
-        $1_EXTRA_CXXFLAGS+=$(CXXFLAGS_DEBUG_SYMBOLS)
-      else
-        # Programs don't get the debug symbols added in the old build. It's not clear if
-        # this is intentional.
-        ifeq ($$($1_PROGRAM),)
-          $1_EXTRA_CFLAGS+=$(CFLAGS_DEBUG_SYMBOLS)
-          $1_EXTRA_CXXFLAGS+=$(CXXFLAGS_DEBUG_SYMBOLS)
-        endif
-      endif
-    endif
+  ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
+    $1_EXTRA_CFLAGS += $(CFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_CXXFLAGS += $(CXXFLAGS_DEBUG_SYMBOLS)
   endif
 
   ifneq (,$$($1_REORDER))
@@ -695,67 +678,67 @@ define SetupNativeCompilationBody
 
   # Need to make sure TARGET is first on list
   $1 := $$($1_TARGET)
-  ifeq ($$($1_STATIC_LIBRARY),)
-    ifeq ($$($1_DEBUG_SYMBOLS), true)
-      ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
-        ifneq ($$($1_OUTPUT_DIR), $$($1_OBJECT_DIR))
-          # The dependency on TARGET is needed on windows for debuginfo files
-          # to be rebuilt properly.
-          $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/% $$($1_TARGET)
+  
+  ifeq ($(COPY_DEBUG_SYMBOLS), true)
+    # Only copy debug symbols for dynamic libraries and programs.
+    ifeq ($$($1_STATIC_LIBRARY), )
+      ifneq ($$($1_OUTPUT_DIR), $$($1_OBJECT_DIR))
+        # The dependency on TARGET is needed on windows for debuginfo files
+        # to be rebuilt properly.
+        $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/% $$($1_TARGET)
 		$(CP) $$< $$@
-        endif
+      endif
 
-        # Generate debuginfo files.
-        ifeq ($(OPENJDK_TARGET_OS), windows)
-          $1_EXTRA_LDFLAGS += "-pdb:$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb" \
-              "-map:$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).map"
-          $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb \
-              $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).map
-          # No separate command is needed for debuginfo on windows, instead
-          # touch target to make sure it has a later time stamp than the debug
-          # symbol files to avoid unnecessary relinking on rebuild.
-          $1_CREATE_DEBUGINFO_CMDS := $(TOUCH) $$($1_TARGET)
+      # Generate debuginfo files.
+      ifeq ($(OPENJDK_TARGET_OS), windows)
+        $1_EXTRA_LDFLAGS += "-pdb:$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb" \
+            "-map:$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).map"
+        $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb \
+            $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).map
+        # No separate command is needed for debuginfo on windows, instead
+        # touch target to make sure it has a later time stamp than the debug
+        # symbol files to avoid unnecessary relinking on rebuild.
+        $1_CREATE_DEBUGINFO_CMDS := $(TOUCH) $$($1_TARGET)
 
-        else ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
-          $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).debuginfo
-          # Setup the command line creating debuginfo files, to be run after linking.
-          # It cannot be run separately since it updates the original target file
-          $1_CREATE_DEBUGINFO_CMDS := \
-              $(OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE) \
-              $(CD) $$($1_OUTPUT_DIR) && \
-                  $(OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
+      else ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
+        $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).debuginfo
+        # Setup the command line creating debuginfo files, to be run after linking.
+        # It cannot be run separately since it updates the original target file
+        $1_CREATE_DEBUGINFO_CMDS := \
+            $(OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE) \
+            $(CD) $$($1_OUTPUT_DIR) && \
+                $(OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
 
-        else ifeq ($(OPENJDK_TARGET_OS), macosx)
-          $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_BASENAME).dSYM
-          # On Macosx, the debuginfo generation doesn't touch the linked binary, but
-          # to avoid always relinking, touch it anyway to force a later timestamp than
-          # the dSYM files.
-          $1_CREATE_DEBUGINFO_CMDS := \
-              $(DSYMUTIL) --out $$($1_DEBUGINFO_FILES) $$($1_TARGET) $$(NEWLINE) \
-              $(TOUCH) $$($1_TARGET)
-        endif # OPENJDK_TARGET_OS
+      else ifeq ($(OPENJDK_TARGET_OS), macosx)
+        $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_BASENAME).dSYM
+        # On Macosx, the debuginfo generation doesn't touch the linked binary, but
+        # to avoid always relinking, touch it anyway to force a later timestamp than
+        # the dSYM files.
+        $1_CREATE_DEBUGINFO_CMDS := \
+            $(DSYMUTIL) --out $$($1_DEBUGINFO_FILES) $$($1_TARGET) $$(NEWLINE) \
+            $(TOUCH) $$($1_TARGET)
+      endif # OPENJDK_TARGET_OS
 
-        # This dependency dance ensures that debug info files get rebuilt
-        # properly if deleted.
-        $$($1_TARGET): $$($1_DEBUGINFO_FILES)
-        $$($1_DEBUGINFO_FILES): $$($1_ALL_OBJS)
+      # This dependency dance ensures that debug info files get rebuilt
+      # properly if deleted.
+      $$($1_TARGET): $$($1_DEBUGINFO_FILES)
+      $$($1_DEBUGINFO_FILES): $$($1_ALL_OBJS)
 
-        ifeq ($(ZIP_DEBUGINFO_FILES), true)
-          $1_DEBUGINFO_ZIP := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).diz
-          $1 += $$(subst $$($1_OBJECT_DIR),$$($1_OUTPUT_DIR),$$($1_DEBUGINFO_ZIP))
+      ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
+        $1_DEBUGINFO_ZIP := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).diz
+        $1 += $$(subst $$($1_OBJECT_DIR),$$($1_OUTPUT_DIR),$$($1_DEBUGINFO_ZIP))
 
-          # The dependency on TARGET is needed for debuginfo files
-          # to be rebuilt properly.
-          $$($1_DEBUGINFO_ZIP): $$($1_DEBUGINFO_FILES) $$($1_TARGET)
+        # The dependency on TARGET is needed for debuginfo files
+        # to be rebuilt properly.
+        $$($1_DEBUGINFO_ZIP): $$($1_DEBUGINFO_FILES) $$($1_TARGET)
 		$(CD) $$($1_OBJECT_DIR) \
-		&& $(ZIP) -q $$@ $$(notdir $$($1_DEBUGINFO_FILES))
+		&& $(ZIP) -q -r $$@ $$(notdir $$($1_DEBUGINFO_FILES))
 
-        else
-          $1 += $$(subst $$($1_OBJECT_DIR),$$($1_OUTPUT_DIR),$$($1_DEBUGINFO_FILES))
-        endif
-      endif # $(ENABLE_DEBUG_SYMBOLS)
-    endif # $1_DEBUG_SYMBOLS
-  endif # !STATIC_LIBRARY
+      else
+        $1 += $$(subst $$($1_OBJECT_DIR),$$($1_OUTPUT_DIR),$$($1_DEBUGINFO_FILES))
+      endif
+    endif # !STATIC_LIBRARY
+  endif # COPY_DEBUG_SYMBOLS
 
   ifeq ($$($1_STRIP_SYMBOLS), true)
     ifneq ($$($1_STRIP), )

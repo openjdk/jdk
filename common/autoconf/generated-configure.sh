@@ -688,11 +688,11 @@ STATIC_CXX_SETTING
 FIXPATH_DETACH_FLAG
 FIXPATH
 GCOV_ENABLED
-ZIP_DEBUGINFO_FILES
-ENABLE_DEBUG_SYMBOLS
 STRIP_POLICY
 DEBUG_BINARIES
-NATIVE_DEBUG_SYMBOLS
+ZIP_EXTERNAL_DEBUG_SYMBOLS
+COPY_DEBUG_SYMBOLS
+COMPILE_WITH_DEBUG_SYMBOLS
 CFLAGS_WARNINGS_ARE_ERRORS
 DISABLE_WARNING_PREFIX
 HOTSPOT_SET_WARNINGS_AS_ERRORS
@@ -4119,6 +4119,16 @@ pkgadd_help() {
 
 
 
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false
+    # Fastdebug builds with this setting will essentially be slowdebug
+    # in hotspot.
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false
 #
 # Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -4839,7 +4849,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1452935762
+DATE_WHEN_GENERATED=1453279620
 
 ###############################################################################
 #
@@ -47031,7 +47041,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     CXXFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     CFLAGS_DEBUG_SYMBOLS="-g -xs"
-    # FIXME: likely a bug, this disables debug symbols rather than enables them
+    # -g0 enables debug symbols without disabling inlining.
     CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_DEBUG_SYMBOLS="-g"
@@ -48271,26 +48281,31 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
       fi
     fi
 
-    ENABLE_DEBUG_SYMBOLS=true
-    ZIP_DEBUGINFO_FILES=true
-    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
-    # will basically do slowdebug builds when DEBUG_BINARIES is set for
-    # fastdebug builds
+    COMPILE_WITH_DEBUG_SYMBOLS=true
+    COPY_DEBUG_SYMBOLS=true
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=true
+
+    # Hotspot legacy support, not relevant with COPY_DEBUG_SYMBOLS=true
     DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
+
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
-    ENABLE_DEBUG_SYMBOLS=false
-    ZIP_DEBUGINFO_FILES=false
+    COMPILE_WITH_DEBUG_SYMBOLS=false
+    COPY_DEBUG_SYMBOLS=false
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=false
+
     DEBUG_BINARIES=false
     STRIP_POLICY=no_strip
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xinternal; then
-    ENABLE_DEBUG_SYMBOLS=false  # -g option only
-    ZIP_DEBUGINFO_FILES=false
-    # Fastdebug builds with this setting will essentially be slowdebug
-    # in hotspot.
+    COMPILE_WITH_DEBUG_SYMBOLS=true
+    COPY_DEBUG_SYMBOLS=false
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=false
+
+    # Hotspot legacy support, will turn on -g when COPY_DEBUG_SYMBOLS=false
     DEBUG_BINARIES=true
     STRIP_POLICY=no_strip
     STRIP=""
+
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xexternal; then
 
     if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -48301,11 +48316,11 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
       fi
     fi
 
-    ENABLE_DEBUG_SYMBOLS=true
-    ZIP_DEBUGINFO_FILES=false
-    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
-    # will basically do slowdebug builds when DEBUG_BINARIES is set for
-    # fastdebug builds
+    COMPILE_WITH_DEBUG_SYMBOLS=true
+    COPY_DEBUG_SYMBOLS=true
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=false
+
+    # Hotspot legacy support, not relevant with COPY_DEBUG_SYMBOLS=true
     DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
   else
@@ -48355,6 +48370,8 @@ $as_echo "$as_me: WARNING: Please use --with-native-debug-symbols=zipped ." >&2;
 
 
 
+
+  # Legacy values
 
 
 
