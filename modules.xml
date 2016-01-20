@@ -267,6 +267,10 @@
       <to>jdk.scripting.nashorn</to>
     </export>
     <export>
+      <name>jdk.internal.ref</name>
+      <to>java.desktop</to>
+    </export>
+    <export>
       <name>jdk.internal</name>
       <to>jdk.jfr</to>
     </export>
