@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 package javax.sql;
 
 import java.sql.SQLException;
-import java.io.PrintWriter;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.ShardingKeyBuilder;
 import java.util.logging.Logger;
 
 /**
@@ -128,4 +128,20 @@ public interface CommonDataSource {
      * @since 1.7
      */
     public Logger getParentLogger() throws SQLFeatureNotSupportedException;
+
+    //------------------------- JDBC 4.3 -----------------------------------
+
+    /**
+     * Creates a new {@code ShardingKeyBuilder} instance
+     * @implSpec
+     * The default implementation will throw a {@code SQLFeatureNotSupportedException}.
+     * @return The ShardingKeyBuilder instance that was created
+     * @throws SQLException if an error occurs creating the builder
+     * @throws SQLFeatureNotSupportedException if the driver does not support this method
+     * @since 9
+     * @see ShardingKeyBuilder
+    */
+    default ShardingKeyBuilder createShardingKeyBuilder() throws SQLException {
+        throw new SQLFeatureNotSupportedException("createShardingKeyBuilder not implemented");
+  };
 }
