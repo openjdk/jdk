@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -828,9 +828,6 @@ public:
                                                                             \
   notproduct(bool, StressCriticalJNINatives, false,                         \
           "Exercise register saving code in critical natives")              \
-                                                                            \
-  product(bool, UseSSE42Intrinsics, false,                                  \
-          "SSE4.2 versions of intrinsics")                                  \
                                                                             \
   product(bool, UseAESIntrinsics, false,                                    \
           "Use intrinsics for AES versions of crypto")                      \

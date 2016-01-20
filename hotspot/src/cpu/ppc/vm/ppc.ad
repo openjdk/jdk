@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 // Copyright 2012, 2015 SAP AG. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -956,36 +956,40 @@ static int cc_to_biint(int cc, int flags_reg) {
 // the instruction. The padding must match the size of a NOP instruction.
 
 int string_indexOf_imm1_charNode::compute_padding(int current_offset) const {
-  return (3*4-current_offset)&31;
+  return (3*4-current_offset)&31;  // see MacroAssembler::string_indexof_1
 }
 
 int string_indexOf_imm1Node::compute_padding(int current_offset) const {
-  return (2*4-current_offset)&31;
+  return (3*4-current_offset)&31;  // see MacroAssembler::string_indexof_1
+}
+
+int string_indexOfCharNode::compute_padding(int current_offset) const {
+  return (3*4-current_offset)&31;  // see MacroAssembler::string_indexof_1
 }
 
 int string_indexOf_immNode::compute_padding(int current_offset) const {
-  return (3*4-current_offset)&31;
+  return (3*4-current_offset)&31;  // see MacroAssembler::string_indexof(constant needlecount)
 }
 
 int string_indexOfNode::compute_padding(int current_offset) const {
-  return (1*4-current_offset)&31;
+  return (1*4-current_offset)&31;  // see MacroAssembler::string_indexof(variable needlecount)
 }
 
 int string_compareNode::compute_padding(int current_offset) const {
-  return (4*4-current_offset)&31;
+  return (2*4-current_offset)&31;  // see MacroAssembler::string_compare
 }
 
 int string_equals_immNode::compute_padding(int current_offset) const {
-  if (opnd_array(3)->constant() < 16) return 0; // Don't insert nops for short version (loop completely unrolled).
-  return (2*4-current_offset)&31;
+  if (opnd_array(3)->constant() < 16) return 0; // For strlen < 16 no nops because loop completely unrolled
+  return (2*4-current_offset)&31;               // Genral case - see MacroAssembler::char_arrays_equalsImm
 }
 
 int string_equalsNode::compute_padding(int current_offset) const {
-  return (7*4-current_offset)&31;
+  return (7*4-current_offset)&31;  // see MacroAssembler::char_arrays_equals
 }
 
 int inlineCallClearArrayNode::compute_padding(int current_offset) const {
-  return (2*4-current_offset)&31;
+  return (2*4-current_offset)&31;  // see MacroAssembler::clear_memory_doubleword
 }
 
 //=============================================================================
@@ -2024,6 +2028,8 @@ const bool Matcher::match_rule_supported(int opcode) {
   case Op_StrEquals:
     return SpecialStringEquals && !CompactStrings;
   case Op_StrIndexOf:
+    return SpecialStringIndexOf && !CompactStrings;
+  case Op_StrIndexOfChar:
     return SpecialStringIndexOf && !CompactStrings;
   }
 
@@ -11034,11 +11040,11 @@ instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, Universe dummy, reg
 instruct string_indexOf_imm1_char(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
                                   immP needleImm, immL offsetImm, immI_1 needlecntImm,
                                   iRegIdst tmp1, iRegIdst tmp2,
-                                  flagsRegCR0 cr0, flagsRegCR1 cr1) %{
+                                  flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
   predicate(SpecialStringIndexOf && !CompactStrings);  // type check implicit by parameter type, See Matcher::match_rule_supported
   match(Set result (StrIndexOf (Binary haystack haycnt) (Binary (AddP needleImm offsetImm) needlecntImm)));
 
-  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1);
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
 
   ins_cost(150);
   format %{ "String IndexOf CSCL1 $haystack[0..$haycnt], $needleImm+$offsetImm[0..$needlecntImm]"
@@ -11050,10 +11056,23 @@ instruct string_indexOf_imm1_char(iRegIdst result, iRegPsrc haystack, iRegIsrc h
     immPOper *needleOper = (immPOper *)$needleImm;
     const TypeOopPtr *t = needleOper->type()->isa_oopptr();
     ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
-
+    jchar chr;
+    if (java_lang_String::has_coder_field()) {
+      // New compact strings byte array strings
+#ifdef VM_LITTLE_ENDIAN
+      chr = (((jchar)needle_values->element_value(1).as_byte()) << 8) |
+              (jchar)needle_values->element_value(0).as_byte();
+#else
+      chr = (((jchar)needle_values->element_value(0).as_byte()) << 8) |
+              (jchar)needle_values->element_value(1).as_byte();
+#endif
+    } else {
+      // Old char array strings
+      chr = needle_values->char_at(0);
+    }
     __ string_indexof_1($result$$Register,
                         $haystack$$Register, $haycnt$$Register,
-                        R0, needle_values->char_at(0),
+                        R0, chr,
                         $tmp1$$Register, $tmp2$$Register);
   %}
   ins_pipe(pipe_class_compare);
@@ -11073,12 +11092,13 @@ instruct string_indexOf_imm1_char(iRegIdst result, iRegPsrc haystack, iRegIsrc h
 instruct string_indexOf_imm1(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
                              rscratch2RegP needle, immI_1 needlecntImm,
                              iRegIdst tmp1, iRegIdst tmp2,
-                             flagsRegCR0 cr0, flagsRegCR1 cr1) %{
+                             flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
   match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecntImm)));
   effect(USE_KILL needle, /* TDEF needle, */ TEMP_DEF result,
-         TEMP tmp1, TEMP tmp2);
+         TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
   // Required for EA: check if it is still a type_array.
-  predicate(SpecialStringIndexOf && !CompactStrings && n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
+  predicate(SpecialStringIndexOf && !CompactStrings &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
             n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
   ins_cost(180);
 
@@ -11091,17 +11111,54 @@ instruct string_indexOf_imm1(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt
     Node *ndl = in(operand_index($needle));  // The node that defines needle.
     ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
     guarantee(needle_values, "sanity");
-    if (needle_values != NULL) {
-      __ string_indexof_1($result$$Register,
-                          $haystack$$Register, $haycnt$$Register,
-                          R0, needle_values->char_at(0),
-                          $tmp1$$Register, $tmp2$$Register);
+    jchar chr;
+    if (java_lang_String::has_coder_field()) {
+      // New compact strings byte array strings
+#ifdef VM_LITTLE_ENDIAN
+      chr = (((jchar)needle_values->element_value(1).as_byte()) << 8) |
+              (jchar)needle_values->element_value(0).as_byte();
+#else
+      chr = (((jchar)needle_values->element_value(0).as_byte()) << 8) |
+              (jchar)needle_values->element_value(1).as_byte();
+#endif
     } else {
-      __ string_indexof_1($result$$Register,
-                          $haystack$$Register, $haycnt$$Register,
-                          $needle$$Register, 0,
-                          $tmp1$$Register, $tmp2$$Register);
+      // Old char array strings
+      chr = needle_values->char_at(0);
     }
+    __ string_indexof_1($result$$Register,
+                        $haystack$$Register, $haycnt$$Register,
+                        R0, chr,
+                        $tmp1$$Register, $tmp2$$Register);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+// String_IndexOfChar
+//
+// Assumes register result differs from all input registers.
+//
+// Preserves registers haystack, haycnt
+// Kills     registers tmp1, tmp2
+// Defines   registers result
+//
+// Use dst register classes if register gets killed, as it is the case for tmp registers!
+instruct string_indexOfChar(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+                            iRegIsrc ch, iRegIdst tmp1, iRegIdst tmp2,
+                            flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
+  match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  predicate(SpecialStringIndexOf && !CompactStrings);
+  ins_cost(180);
+
+  ins_alignment(8); // 'compute_padding()' gets called, up to this number-1 nops will get inserted.
+
+  format %{ "String IndexOfChar $haystack[0..$haycnt], $ch"
+            " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
+  ins_encode %{
+    __ string_indexof_1($result$$Register,
+                        $haystack$$Register, $haycnt$$Register,
+                        $ch$$Register, 0 /* this is not used if the character is already in a register */,
+                        $tmp1$$Register, $tmp2$$Register);
   %}
   ins_pipe(pipe_class_compare);
 %}
@@ -11120,10 +11177,10 @@ instruct string_indexOf_imm1(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt
 instruct string_indexOf_imm(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
                             iRegPsrc needle, uimmI15 needlecntImm,
                             iRegIdst tmp1, iRegIdst tmp2, iRegIdst tmp3, iRegIdst tmp4, iRegIdst tmp5,
-                            flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6) %{
+                            flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6, regCTR ctr) %{
   match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecntImm)));
   effect(USE_KILL haycnt, /* better: TDEF haycnt, */ TEMP_DEF result,
-         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6);
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   // Required for EA: check if it is still a type_array.
   predicate(SpecialStringIndexOf && !CompactStrings && n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
             n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
@@ -11153,11 +11210,11 @@ instruct string_indexOf_imm(iRegIdst result, iRegPsrc haystack, rscratch1RegI ha
 // Use dst register classes if register gets killed, as it is the case for tmp registers!
 instruct string_indexOf(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt, iRegPsrc needle, rscratch2RegI needlecnt,
                         iRegLdst tmp1, iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4,
-                        flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6) %{
+                        flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6, regCTR ctr) %{
   match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecnt)));
   effect(USE_KILL haycnt, USE_KILL needlecnt, /*better: TDEF haycnt, TDEF needlecnt,*/
          TEMP_DEF result,
-         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr0, KILL cr1, KILL cr6);
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
   predicate(SpecialStringIndexOf && !CompactStrings);  // See Matcher::match_rule_supported.
   ins_cost(300);
 
