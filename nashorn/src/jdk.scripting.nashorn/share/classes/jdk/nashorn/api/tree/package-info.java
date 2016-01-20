@@ -68,7 +68,7 @@
  * </code>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 package jdk.nashorn.api.tree;
 
