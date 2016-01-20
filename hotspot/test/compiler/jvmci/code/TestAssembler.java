@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,30 @@ package compiler.jvmci.code;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.code.CompilationResult;
-import jdk.vm.ci.code.CompilationResult.DataSectionReference;
 import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
+import jdk.vm.ci.code.site.ConstantReference;
+import jdk.vm.ci.code.site.DataPatch;
+import jdk.vm.ci.code.site.DataSectionReference;
+import jdk.vm.ci.code.site.Infopoint;
+import jdk.vm.ci.code.site.InfopointReason;
+import jdk.vm.ci.code.site.Reference;
+import jdk.vm.ci.code.site.Site;
+import jdk.vm.ci.hotspot.HotSpotCompiledCode;
+import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
+import jdk.vm.ci.hotspot.HotSpotCompiledNmethod;
 import jdk.vm.ci.hotspot.HotSpotConstant;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.VMConstant;
 
 /**
  * Simple assembler used by the code installation tests.
@@ -49,6 +62,7 @@ public abstract class TestAssembler {
 
     /**
      * Emit code to grow the stack frame.
+     *
      * @param size the size in bytes that the stack should grow
      */
     public abstract void emitGrowStack(int size);
@@ -84,18 +98,20 @@ public abstract class TestAssembler {
     public abstract Register emitLoadFloat(float value);
 
     /**
-     * Emit code to load a constant oop or metaspace pointer to a register.
-     * The pointer may be wide or narrow, depending on {@link HotSpotConstant#isCompressed() c.isCompressed()}.
+     * Emit code to load a constant oop or metaspace pointer to a register. The pointer may be wide
+     * or narrow, depending on {@link HotSpotConstant#isCompressed() c.isCompressed()}.
      */
     public abstract Register emitLoadPointer(HotSpotConstant c);
 
     /**
-     * Emit code to load a wide pointer from the {@link DataSection} to a register.
+     * Emit code to load a wide pointer from the {@link HotSpotCompiledCode#dataSection} to a
+     * register.
      */
     public abstract Register emitLoadPointer(DataSectionReference ref);
 
     /**
-     * Emit code to load a narrow pointer from the {@link DataSection} to a register.
+     * Emit code to load a narrow pointer from the {@link HotSpotCompiledCode#dataSection} to a
+     * register.
      */
     public abstract Register emitLoadNarrowPointer(DataSectionReference ref);
 
@@ -149,14 +165,13 @@ public abstract class TestAssembler {
      */
     public abstract void emitTrap(DebugInfo info);
 
-    protected int position() {
-        return data.position();
-    }
-
-    public final CompilationResult result;
     public final LIRKind narrowOopKind;
 
-    private ByteBuffer data;
+    protected final Buffer code;
+    protected final Buffer data;
+    private final ArrayList<Site> sites;
+    private final ArrayList<DataPatch> dataPatches;
+
     protected final CodeCacheProvider codeCache;
 
     private final Register[] registers;
@@ -166,11 +181,14 @@ public abstract class TestAssembler {
     private int stackAlignment;
     private int curStackSlot;
 
-    protected TestAssembler(CompilationResult result, CodeCacheProvider codeCache, int initialFrameSize, int stackAlignment, PlatformKind narrowOopKind, Register... registers) {
-        this.result = result;
+    protected TestAssembler(CodeCacheProvider codeCache, int initialFrameSize, int stackAlignment, PlatformKind narrowOopKind, Register... registers) {
         this.narrowOopKind = LIRKind.reference(narrowOopKind);
 
-        this.data = ByteBuffer.allocate(32).order(ByteOrder.nativeOrder());
+        this.code = new Buffer();
+        this.data = new Buffer();
+        this.sites = new ArrayList<>();
+        this.dataPatches = new ArrayList<>();
+
         this.codeCache = codeCache;
 
         this.registers = registers;
@@ -198,38 +216,87 @@ public abstract class TestAssembler {
         return StackSlot.get(kind, -curStackSlot, true);
     }
 
-    public void finish() {
-        result.setTotalFrameSize(frameSize);
-        result.setTargetCode(data.array(), data.position());
+    protected void recordImplicitException(DebugInfo info) {
+        sites.add(new Infopoint(code.position(), info, InfopointReason.IMPLICIT_EXCEPTION));
     }
 
-    private void ensureSize(int length) {
-        if (length >= data.limit()) {
-            byte[] newBuf = Arrays.copyOf(data.array(), length * 4);
-            ByteBuffer newData = ByteBuffer.wrap(newBuf);
-            newData.order(data.order());
-            newData.position(data.position());
-            data = newData;
+    protected void recordDataPatchInCode(Reference ref) {
+        sites.add(new DataPatch(code.position(), ref));
+    }
+
+    protected void recordDataPatchInData(Reference ref) {
+        dataPatches.add(new DataPatch(data.position(), ref));
+    }
+
+    public DataSectionReference emitDataItem(HotSpotConstant c) {
+        DataSectionReference ref = new DataSectionReference();
+        ref.setOffset(data.position());
+
+        recordDataPatchInData(new ConstantReference((VMConstant) c));
+        if (c.isCompressed()) {
+            data.emitInt(0xDEADDEAD);
+        } else {
+            data.emitLong(0xDEADDEADDEADDEADL);
         }
+
+        return ref;
     }
 
-    protected void emitByte(int b) {
-        ensureSize(data.position() + 1);
-        data.put((byte) (b & 0xFF));
+    public HotSpotCompiledCode finish(HotSpotResolvedJavaMethod method) {
+        int id = method.allocateCompileId(0);
+        byte[] finishedCode = code.finish();
+        Site[] finishedSites = sites.toArray(new Site[0]);
+        byte[] finishedData = data.finish();
+        DataPatch[] finishedDataPatches = dataPatches.toArray(new DataPatch[0]);
+        return new HotSpotCompiledNmethod(method.getName(), finishedCode, finishedCode.length, finishedSites, new Assumption[0], new ResolvedJavaMethod[]{method}, new Comment[0], finishedData, 16,
+                        finishedDataPatches, false, frameSize, 0, method, 0, id, 0L, false);
     }
 
-    protected void emitShort(int b) {
-        ensureSize(data.position() + 2);
-        data.putShort((short) b);
-    }
+    protected static class Buffer {
 
-    protected void emitInt(int b) {
-        ensureSize(data.position() + 4);
-        data.putInt(b);
-    }
+        private ByteBuffer data = ByteBuffer.allocate(32).order(ByteOrder.nativeOrder());
 
-    protected void emitLong(long b) {
-        ensureSize(data.position() + 8);
-        data.putLong(b);
+        private void ensureSize(int length) {
+            if (length >= data.limit()) {
+                byte[] newBuf = Arrays.copyOf(data.array(), length * 4);
+                ByteBuffer newData = ByteBuffer.wrap(newBuf);
+                newData.order(data.order());
+                newData.position(data.position());
+                data = newData;
+            }
+        }
+
+        public int position() {
+            return data.position();
+        }
+
+        public void emitByte(int b) {
+            ensureSize(data.position() + 1);
+            data.put((byte) (b & 0xFF));
+        }
+
+        public void emitShort(int b) {
+            ensureSize(data.position() + 2);
+            data.putShort((short) b);
+        }
+
+        public void emitInt(int b) {
+            ensureSize(data.position() + 4);
+            data.putInt(b);
+        }
+
+        public void emitLong(long b) {
+            ensureSize(data.position() + 8);
+            data.putLong(b);
+        }
+
+        public void emitFloat(float f) {
+            ensureSize(data.position() + 4);
+            data.putFloat(f);
+        }
+
+        private byte[] finish() {
+            return Arrays.copyOf(data.array(), data.position());
+        }
     }
 }

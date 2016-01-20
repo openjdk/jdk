@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,43 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
- * Package that defines the interface between a Java application that wants to install code and the runtime.
- * The runtime provides in implementation of the {@link jdk.vm.ci.code.CodeCacheProvider} interface.
- * The method {@link jdk.vm.ci.code.CodeCacheProvider#addCode(jdk.vm.ci.meta.ResolvedJavaMethod, CompiledCode, jdk.vm.ci.meta.SpeculationLog, InstalledCode)}
- * can be used to install code.
- */
-package jdk.vm.ci.code;
+package jdk.vm.ci.code.site;
 
+import java.util.Objects;
+
+import jdk.vm.ci.meta.VMConstant;
+
+public final class ConstantReference extends Reference {
+
+    private final VMConstant constant;
+
+    public ConstantReference(VMConstant constant) {
+        this.constant = constant;
+    }
+
+    public VMConstant getConstant() {
+        return constant;
+    }
+
+    @Override
+    public String toString() {
+        return constant.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return constant.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof ConstantReference) {
+            ConstantReference that = (ConstantReference) obj;
+            return Objects.equals(this.constant, that.constant);
+        }
+        return false;
+    }
+}

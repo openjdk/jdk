@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,20 +30,18 @@
 
 package compiler.jvmci.errors;
 
-import static jdk.vm.ci.code.CompilationResult.ConstantReference;
-import static jdk.vm.ci.code.CompilationResult.DataPatch;
-import static jdk.vm.ci.code.CompilationResult.DataSectionReference;
-import static jdk.vm.ci.code.CompilationResult.Infopoint;
-import static jdk.vm.ci.code.CompilationResult.Reference;
-import static jdk.vm.ci.code.DataSection.Data;
-import static jdk.vm.ci.code.DataSection.DataBuilder;
-import static jdk.vm.ci.meta.Assumptions.Assumption;
-
-import jdk.vm.ci.code.CompilationResult;
-import jdk.vm.ci.code.InfopointReason;
+import jdk.vm.ci.code.site.ConstantReference;
+import jdk.vm.ci.code.site.DataPatch;
+import jdk.vm.ci.code.site.DataSectionReference;
+import jdk.vm.ci.code.site.Infopoint;
+import jdk.vm.ci.code.site.InfopointReason;
+import jdk.vm.ci.code.site.Mark;
+import jdk.vm.ci.code.site.Reference;
+import jdk.vm.ci.code.site.Site;
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
 import jdk.vm.ci.hotspot.HotSpotConstant;
-import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.VMConstant;
 
 import org.junit.Test;
@@ -82,153 +80,104 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
 
     @Test(expected = JVMCIError.class)
     public void testInvalidAssumption() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.setAssumptions(new Assumption[]{new InvalidAssumption()});
-        installCode(result);
+        installEmptyCode(new Site[0], new Assumption[]{new InvalidAssumption()}, new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidAlignment() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.getDataSection().insertData(new Data(7, 1, DataBuilder.zero(1)));
-        installCode(result);
+        installEmptyCode(new Site[0], new Assumption[0], new Comment[0], 7, new DataPatch[0]);
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullDataPatchInDataSection() {
-        CompilationResult result = createEmptyCompilationResult();
-        Data data = new Data(1, 1, (buffer, patch) -> {
-            patch.accept(null);
-            buffer.put((byte) 0);
-        });
-        result.getDataSection().insertData(data);
-        installCode(result);
+        installEmptyCode(new Site[0], new Assumption[0], new Comment[0], 16, new DataPatch[]{null});
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullReferenceInDataSection() {
-        CompilationResult result = createEmptyCompilationResult();
-        Data data = new Data(1, 1, (buffer, patch) -> {
-            patch.accept(new DataPatch(buffer.position(), null));
-            buffer.put((byte) 0);
-        });
-        result.getDataSection().insertData(data);
-        installCode(result);
+        installEmptyCode(new Site[0], new Assumption[0], new Comment[0], 16, new DataPatch[]{new DataPatch(0, null)});
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidDataSectionReference() {
-        CompilationResult result = createEmptyCompilationResult();
-        DataSectionReference ref = result.getDataSection().insertData(new Data(1, 1, DataBuilder.zero(1)));
-        Data data = new Data(1, 1, (buffer, patch) -> {
-            patch.accept(new DataPatch(buffer.position(), ref));
-            buffer.put((byte) 0);
-        });
-        result.getDataSection().insertData(data);
-        installCode(result);
+        DataSectionReference ref = new DataSectionReference();
+        ref.setOffset(0);
+        installEmptyCode(new Site[0], new Assumption[0], new Comment[0], 16, new DataPatch[]{new DataPatch(0, ref)});
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidNarrowMethodInDataSection() {
-        CompilationResult result = createEmptyCompilationResult();
         HotSpotConstant c = (HotSpotConstant) dummyMethod.getEncoding();
-        Data data = new Data(4, 4, (buffer, patch) -> {
-            patch.accept(new DataPatch(buffer.position(), new ConstantReference((VMConstant) c.compress())));
-            buffer.putInt(0);
-        });
-        result.getDataSection().insertData(data);
-        installCode(result);
+        ConstantReference ref = new ConstantReference((VMConstant) c.compress());
+        installEmptyCode(new Site[0], new Assumption[0], new Comment[0], 16, new DataPatch[]{new DataPatch(0, ref)});
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullConstantInDataSection() {
-        CompilationResult result = createEmptyCompilationResult();
-        Data data = new Data(1, 1, (buffer, patch) -> {
-            patch.accept(new DataPatch(buffer.position(), new ConstantReference(null)));
-        });
-        result.getDataSection().insertData(data);
-        installCode(result);
+        ConstantReference ref = new ConstantReference(null);
+        installEmptyCode(new Site[0], new Assumption[0], new Comment[0], 16, new DataPatch[]{new DataPatch(0, ref)});
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidConstantInDataSection() {
-        CompilationResult result = createEmptyCompilationResult();
-        Data data = new Data(1, 1, (buffer, patch) -> {
-            patch.accept(new DataPatch(buffer.position(), new ConstantReference(new InvalidVMConstant())));
-        });
-        result.getDataSection().insertData(data);
-        installCode(result);
+        ConstantReference ref = new ConstantReference(new InvalidVMConstant());
+        installEmptyCode(new Site[0], new Assumption[0], new Comment[0], 16, new DataPatch[]{new DataPatch(0, ref)});
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullReferenceInCode() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.recordDataPatch(0, null);
-        installCode(result);
+        installEmptyCode(new Site[]{new DataPatch(0, null)}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullConstantInCode() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.recordDataPatch(0, new ConstantReference(null));
-        installCode(result);
+        ConstantReference ref = new ConstantReference(null);
+        installEmptyCode(new Site[]{new DataPatch(0, ref)}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidConstantInCode() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.recordDataPatch(0, new ConstantReference(new InvalidVMConstant()));
-        installCode(result);
+        ConstantReference ref = new ConstantReference(new InvalidVMConstant());
+        installEmptyCode(new Site[]{new DataPatch(0, ref)}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidReference() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.recordDataPatch(0, new InvalidReference());
-        installCode(result);
+        InvalidReference ref = new InvalidReference();
+        installEmptyCode(new Site[]{new DataPatch(0, ref)}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = JVMCIError.class)
     public void testOutOfBoundsDataSectionReference() {
-        CompilationResult result = createEmptyCompilationResult();
         DataSectionReference ref = new DataSectionReference();
         ref.setOffset(0x1000);
-        result.recordDataPatch(0, ref);
-        installCode(result);
+        installEmptyCode(new Site[]{new DataPatch(0, ref)}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidMark() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.recordMark(0, new Object());
-        installCode(result);
+        installEmptyCode(new Site[]{new Mark(0, new Object())}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidMarkInt() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.recordMark(0, -1);
-        installCode(result);
+        installEmptyCode(new Site[]{new Mark(0, -1)}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testNullInfopoint() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.addInfopoint(null);
-        installCode(result);
+    public void testNullSite() {
+        installEmptyCode(new Site[]{null}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = JVMCIError.class)
     public void testInfopointMissingDebugInfo() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.addInfopoint(new Infopoint(0, null, InfopointReason.METHOD_START));
-        installCode(result);
+        Infopoint info = new Infopoint(0, null, InfopointReason.METHOD_START);
+        installEmptyCode(new Site[]{info}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = JVMCIError.class)
     public void testSafepointMissingDebugInfo() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.addInfopoint(new Infopoint(0, null, InfopointReason.SAFEPOINT));
-        installCode(result);
+        Infopoint info = new Infopoint(0, null, InfopointReason.SAFEPOINT);
+        installEmptyCode(new Site[]{info}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 }
