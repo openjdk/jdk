@@ -38,7 +38,7 @@ default: all
 # Get all files in src, make or agent subdirs in hotspot directory and
 # filter out .hg. This skips the test directory.
 HOTSPOT_FILES := $(shell $(FIND) -L \
-    $(HOTSPOT_TOPDIR)/src $(HOTSPOT_TOPDIR)/make $(HOTSPOT_TOPDIR)/agent \
+    $(HOTSPOT_TOPDIR)/src $(HOTSPOT_TOPDIR)/make \
     -name ".hg" -prune -o -print)
 
 # The old build creates hotspot output dir before calling hotspot and
