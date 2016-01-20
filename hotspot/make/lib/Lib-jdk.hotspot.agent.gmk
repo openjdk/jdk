@@ -110,7 +110,6 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBSA, \
     LIBS := $(SA_LIBS), \
     MAPFILE := $(SA_MAPFILE), \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsa, \
-    DEBUG_SYMBOLS := true, \
     STRIP_SYMBOLS := true, \
 ))
 
