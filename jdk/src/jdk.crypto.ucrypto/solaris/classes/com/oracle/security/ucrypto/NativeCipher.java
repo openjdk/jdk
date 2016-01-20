@@ -48,7 +48,7 @@ import sun.security.jca.JCAUtil;
  * - AES/CFB128/NOPADDING
  * (Support for GCM mode is inside the child class NativeGCMCipher)
  *
- * @since 1.9
+ * @since 9
  */
 class NativeCipher extends CipherSpi {
 

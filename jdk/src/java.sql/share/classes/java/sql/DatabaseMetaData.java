@@ -3694,7 +3694,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return {@code true} if this database supports sharding;
      *         {@code false} otherwise
      * @exception SQLException if a database access error occurs
-     * @since 1.9
+     * @since 9
      */
     default boolean supportsSharding() throws SQLException {
         return false;

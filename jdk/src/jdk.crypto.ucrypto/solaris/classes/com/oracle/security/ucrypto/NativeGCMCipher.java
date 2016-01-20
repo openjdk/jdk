@@ -42,7 +42,7 @@ import sun.security.jca.JCAUtil;
  * Cipher wrapper class utilizing ucrypto APIs. This class currently supports
  * - AES/GCM/NoPADDING
  *
- * @since 1.9
+ * @since 9
  */
 class NativeGCMCipher extends NativeCipher {
 

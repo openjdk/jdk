@@ -423,7 +423,7 @@ public class FileHandler extends StreamHandler {
      * @exception  IllegalArgumentException if {@code limit < 0}, or {@code count < 1}.
      * @exception  IllegalArgumentException if pattern is an empty string
      *
-     * @since 1.9
+     * @since 9
      *
      */
     public FileHandler(String pattern, long limit, int count, boolean append)

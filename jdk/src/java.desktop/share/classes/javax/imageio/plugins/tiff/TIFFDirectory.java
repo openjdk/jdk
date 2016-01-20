@@ -95,7 +95,7 @@ import com.sun.imageio.plugins.tiff.TIFFImageMetadata;
  * or removing <code>TIFFField</code>s or <code>TIFFTagSet</code>s, it
  * <i>must</i> be synchronized externally.</p>
  *
- * @since 1.9
+ * @since 9
  * @see   IIOMetadata
  * @see   TIFFField
  * @see   TIFFTag

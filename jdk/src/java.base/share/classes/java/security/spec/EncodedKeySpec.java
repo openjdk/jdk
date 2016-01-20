@@ -74,7 +74,7 @@ public abstract class EncodedKeySpec implements KeySpec {
      * or {@code algorithm} is null.
      * @throws IllegalArgumentException if {@code algorithm} is
      * the empty string {@code ""}
-     * @since 1.9
+     * @since 9
      */
     protected EncodedKeySpec(byte[] encodedKey, String algorithm) {
         if (algorithm == null) {
@@ -93,7 +93,7 @@ public abstract class EncodedKeySpec implements KeySpec {
      * Returns the name of the algorithm of the encoded key.
      *
      * @return the name of the algorithm, or null if not specified
-     * @since 1.9
+     * @since 9
      */
     public String getAlgorithm() {
         return algorithmName;

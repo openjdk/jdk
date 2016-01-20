@@ -96,7 +96,7 @@ public class VMOption {
         ERGONOMIC,
         /**
          * The VM option was set using the attach framework.
-         * @since 1.9
+         * @since 9
          */
         ATTACH_ON_DEMAND,
         /**

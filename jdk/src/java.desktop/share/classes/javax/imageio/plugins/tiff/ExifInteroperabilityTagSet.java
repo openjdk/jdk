@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * A class representing the tags found in an Exif Interoperability IFD.
  *
- * @since 1.9
+ * @since 9
  * @see   ExifTIFFTagSet
  */
 public class ExifInteroperabilityTagSet extends TIFFTagSet {

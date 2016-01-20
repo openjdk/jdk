@@ -41,7 +41,7 @@ import java.util.*;
  * Models a service that provides support for a particular client key exchange
  * mode. Currently used to implement Kerberos-related cipher suites.
  *
- * @since 1.9
+ * @since 9
  */
 public interface ClientKeyExchangeService {
 
