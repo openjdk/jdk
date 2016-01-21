@@ -413,14 +413,14 @@ jck-runtime-summary: FRC
 
 # Check to make sure these directories exist
 check-jck:
-    if [ ! -d '$(JCK_HOME)' ]; then \
-        echo "JCK_HOME $(JCK_HOME) missing" ; \
-        $(EXIT) 1 ; \
-    fi
-    if [ ! -d '$(PRODUCT_HOME)' ]; then \
-        echo "PRODUCT_HOME $(PRODUCT_HOME) missing" ; \
-        $(EXIT) 1 ; \
-    fi
+	if [ ! -d '$(JCK_HOME)' ]; then \
+	    echo "JCK_HOME $(JCK_HOME) missing" ; \
+	    $(EXIT) 1 ; \
+	fi
+	if [ ! -d '$(PRODUCT_HOME)' ]; then \
+	    echo "PRODUCT_HOME $(PRODUCT_HOME) missing" ; \
+	    $(EXIT) 1 ; \
+	fi
 
 all-summary: FRC
 	@if [ -n "`find $(TEST_OUTPUT_DIR) -name status.txt`" ]; then
