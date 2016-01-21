@@ -43,27 +43,22 @@ public class StaxXMLInputSource {
     XMLEventReader fEventReader ;
     XMLInputSource fInputSource ;
 
-    //indicate if the source is resolved by a resolver
-    boolean fHasResolver = false;
+    //indicates if the source is created by a resolver
+    boolean fIsCreatedByResolver = false;
 
     /** Creates a new instance of StaxXMLInputSource */
-    public StaxXMLInputSource(XMLStreamReader streamReader) {
+    public StaxXMLInputSource(XMLStreamReader streamReader, boolean byResolver) {
         fStreamReader = streamReader ;
     }
 
     /** Creates a new instance of StaxXMLInputSource */
-    public StaxXMLInputSource(XMLEventReader eventReader) {
+    public StaxXMLInputSource(XMLEventReader eventReader, boolean byResolver) {
         fEventReader = eventReader ;
     }
 
-    public StaxXMLInputSource(XMLInputSource inputSource){
+    public StaxXMLInputSource(XMLInputSource inputSource, boolean byResolver){
         fInputSource = inputSource ;
-
-    }
-
-    public StaxXMLInputSource(XMLInputSource inputSource, boolean hasResolver){
-        fInputSource = inputSource ;
-        fHasResolver = hasResolver;
+        fIsCreatedByResolver = byResolver;
     }
 
     public XMLStreamReader getXMLStreamReader(){
@@ -82,7 +77,7 @@ public class StaxXMLInputSource {
         return (fStreamReader == null) && (fEventReader == null) ? false : true ;
     }
 
-    public boolean hasResolver() {
-        return fHasResolver;
+    public boolean isCreatedByResolver() {
+        return fIsCreatedByResolver;
     }
 }
