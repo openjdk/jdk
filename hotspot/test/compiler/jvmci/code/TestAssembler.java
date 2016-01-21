@@ -295,6 +295,15 @@ public abstract class TestAssembler {
             data.putFloat(f);
         }
 
+        public void align(int alignment) {
+            int pos = data.position();
+            int misaligned = pos % alignment;
+            if (misaligned != 0) {
+                pos += alignment - misaligned;
+                data.position(pos);
+            }
+        }
+
         private byte[] finish() {
             return Arrays.copyOf(data.array(), data.position());
         }
