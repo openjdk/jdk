@@ -109,10 +109,11 @@ public class SPARCTestAssembler extends TestAssembler {
 
     @Override
     public Register emitLoadLong(long c) {
-        if ((c & 0xFFFFFFFF) == c) {
+        if ((c & 0xFFFF_FFFFL) == c) {
             return emitLoadInt((int) c);
         } else {
             DataSectionReference ref = new DataSectionReference();
+            data.align(8);
             ref.setOffset(data.position());
             data.emitLong(c);
             return emitLoadPointer(ref);
@@ -133,6 +134,7 @@ public class SPARCTestAssembler extends TestAssembler {
     @Override
     public Register emitLoadFloat(float c) {
         DataSectionReference ref = new DataSectionReference();
+        data.align(4);
         ref.setOffset(data.position());
         data.emitFloat(c);
 
@@ -261,5 +263,15 @@ public class SPARCTestAssembler extends TestAssembler {
     public void emitTrap(DebugInfo info) {
         recordImplicitException(info);
         emitOp3(0b11, SPARC.g0, 0b001011, SPARC.g0, 0); // LDX [g0+0], g0
+    }
+
+    @Override
+    public DataSectionReference emitDataItem(HotSpotConstant c) {
+        if (c.isCompressed()) {
+            data.align(4);
+        } else {
+            data.align(8);
+        }
+        return super.emitDataItem(c);
     }
 }
