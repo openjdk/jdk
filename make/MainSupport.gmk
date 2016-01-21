@@ -141,7 +141,6 @@ define DeclareRecipeForModuleMakefile
   else
     $2-$$($1_TARGET_SUFFIX):
   endif
-	$(ECHO) $(LOG_INFO) "Building $$@"
         ifeq ($$($1_USE_WRAPPER), true)
 	  +($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) \
 	      -f ModuleWrapper.gmk \
