@@ -471,7 +471,7 @@ public class SynthToolBarUI extends BasicToolBarUI
                 // be distributed among the "glue", if any
                 int extraSpacePerGlue = 0;
                 if (glueCount > 0) {
-                    int minWidth = minimumLayoutSize(parent).width;
+                    int minWidth = preferredLayoutSize(parent).width;
                     extraSpacePerGlue = (tb.getWidth() - minWidth) / glueCount;
                     if (extraSpacePerGlue < 0) extraSpacePerGlue = 0;
                 }
