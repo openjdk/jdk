@@ -36,7 +36,7 @@ import java.security.*;
  * MessageDigest implementation class. This class currently supports
  * MD5, SHA1, SHA256, SHA384, and SHA512
  *
- * @since 1.9
+ * @since 9
  */
 public abstract class NativeDigest extends MessageDigestSpi
         implements Cloneable {

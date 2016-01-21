@@ -53,7 +53,7 @@ import org.testng.annotations.Test;
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *      -verbose:gc -Xmx4m CleanerTest
+ *      -verbose:gc CleanerTest
  */
 
 @Test

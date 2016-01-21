@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@ package java.security;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.misc.JavaSecurityAccess;
 import jdk.internal.misc.JavaSecurityProtectionDomainAccess;
@@ -472,11 +472,15 @@ public class ProtectionDomain {
      *
      * This class stores ProtectionDomains as weak keys in a ConcurrentHashMap
      * with additional support for checking and removing weak keys that are no
-     * longer in use.
+     * longer in use. There can be cases where the permission collection may
+     * have a chain of strong references back to the ProtectionDomain, which
+     * ordinarily would prevent the entry from being removed from the map. To
+     * address that, we wrap the permission collection in a SoftReference so
+     * that it can be reclaimed by the garbage collector due to memory demand.
      */
     private static class PDCache implements ProtectionDomainCache {
         private final ConcurrentHashMap<WeakProtectionDomainKey,
-                                        PermissionCollection>
+                                        SoftReference<PermissionCollection>>
                                         pdMap = new ConcurrentHashMap<>();
         private final ReferenceQueue<Key> queue = new ReferenceQueue<>();
 
@@ -485,15 +489,15 @@ public class ProtectionDomain {
             processQueue(queue, pdMap);
             WeakProtectionDomainKey weakPd =
                 new WeakProtectionDomainKey(pd, queue);
-            pdMap.putIfAbsent(weakPd, pc);
+            pdMap.put(weakPd, new SoftReference<>(pc));
         }
 
         @Override
         public PermissionCollection get(ProtectionDomain pd) {
             processQueue(queue, pdMap);
-            WeakProtectionDomainKey weakPd =
-                new WeakProtectionDomainKey(pd, queue);
-            return pdMap.get(weakPd);
+            WeakProtectionDomainKey weakPd = new WeakProtectionDomainKey(pd);
+            SoftReference<PermissionCollection> sr = pdMap.get(weakPd);
+            return (sr == null) ? null : sr.get();
         }
 
         /**
@@ -533,8 +537,17 @@ public class ProtectionDomain {
             this((pd == null ? NULL_KEY : pd.key), rq);
         }
 
+        WeakProtectionDomainKey(ProtectionDomain pd) {
+            this(pd == null ? NULL_KEY : pd.key);
+        }
+
         private WeakProtectionDomainKey(Key key, ReferenceQueue<Key> rq) {
             super(key, rq);
+            hash = key.hashCode();
+        }
+
+        private WeakProtectionDomainKey(Key key) {
+            super(key);
             hash = key.hashCode();
         }
 

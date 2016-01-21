@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,8 @@ public class SessionTimeOutTests {
 
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
-        serverPorts[createdPorts++] = sslServerSocket.getLocalPort();
+        int slot = createdPorts.getAndIncrement();
+        serverPorts[slot] = sslServerSocket.getLocalPort();
 
         /*
          * Signal Client, we're ready for his connect.
@@ -288,8 +289,8 @@ public class SessionTimeOutTests {
      * The remainder is just support stuff
      */
 
-    volatile int serverPorts[] = new int[PORTS];
-    volatile int createdPorts = 0;
+    int serverPorts[] = new int[PORTS];
+    AtomicInteger createdPorts = new AtomicInteger(0);
     static SSLServerSocketFactory sslssf;
     static SSLSocketFactory sslsf;
     static SSLContext sslctx;

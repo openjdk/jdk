@@ -349,55 +349,121 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             throws Exception {
         final CallSiteDescriptor callSiteDescriptor = request.getCallSiteDescriptor();
 
+        final MissingMemberHandlerFactory missingMemberHandlerFactory;
+        final LinkerServices directLinkerServices;
+        if (linkerServices instanceof LinkerServicesWithMissingMemberHandlerFactory) {
+            final LinkerServicesWithMissingMemberHandlerFactory lswmmhf = ((LinkerServicesWithMissingMemberHandlerFactory)linkerServices);
+            missingMemberHandlerFactory = lswmmhf.missingMemberHandlerFactory;
+            directLinkerServices = lswmmhf.linkerServices;
+        } else {
+            missingMemberHandlerFactory = null;
+            directLinkerServices = linkerServices;
+        }
+
         // Handle NamedOperation(CALL_METHOD, name) separately
         final Operation operation = callSiteDescriptor.getOperation();
         if (operation instanceof NamedOperation) {
             final NamedOperation namedOperation = (NamedOperation)operation;
             if (namedOperation.getBaseOperation() == StandardOperation.CALL_METHOD) {
-                return createGuardedDynamicMethodInvocation(callSiteDescriptor,
-                        linkerServices, namedOperation.getName().toString(), methods);
+                final GuardedInvocation inv =
+                        createGuardedDynamicMethodInvocation(callSiteDescriptor,
+                        directLinkerServices, namedOperation.getName().toString(), methods);
+                if (inv == null) {
+                    return createNoSuchMemberHandler(missingMemberHandlerFactory,
+                            request, directLinkerServices).getGuardedInvocation();
+                }
+                return inv;
             }
         }
 
-        List<Operation> operations = Arrays.asList(
-                CompositeOperation.getOperations(
-                        NamedOperation.getBaseOperation(operation)));
-        final Object name = NamedOperation.getName(operation);
+        final GuardedInvocationComponent gic = getGuardedInvocationComponent(
+                new ComponentLinkRequest(request, directLinkerServices,
+                        missingMemberHandlerFactory));
+        return gic != null ? gic.getGuardedInvocation() : null;
+    }
 
-        while(!operations.isEmpty()) {
-            final GuardedInvocationComponent gic =
-                    getGuardedInvocationComponent(callSiteDescriptor,
-                            linkerServices, operations, name);
-            if(gic != null) {
-                return gic.getGuardedInvocation();
+    static final class ComponentLinkRequest {
+        final LinkRequest linkRequest;
+        final LinkerServices linkerServices;
+        final MissingMemberHandlerFactory missingMemberHandlerFactory;
+        final List<Operation> operations;
+        final Object name;
+
+        ComponentLinkRequest(final LinkRequest linkRequest,
+                final LinkerServices linkerServices,
+                final MissingMemberHandlerFactory missingMemberHandlerFactory) {
+            this.linkRequest = linkRequest;
+            this.linkerServices = linkerServices;
+            this.missingMemberHandlerFactory = missingMemberHandlerFactory;
+            final Operation operation = linkRequest.getCallSiteDescriptor().getOperation();
+            this.operations = Arrays.asList(
+                    CompositeOperation.getOperations(
+                            NamedOperation.getBaseOperation(operation)));
+            this.name = NamedOperation.getName(operation);
+        }
+
+        private ComponentLinkRequest(final LinkRequest linkRequest,
+                final LinkerServices linkerServices,
+                final MissingMemberHandlerFactory missingMemberHandlerFactory,
+                final List<Operation> operations, final Object name) {
+            this.linkRequest = linkRequest;
+            this.linkerServices = linkerServices;
+            this.missingMemberHandlerFactory = missingMemberHandlerFactory;
+            this.operations = operations;
+            this.name = name;
+        }
+
+        CallSiteDescriptor getDescriptor() {
+            return linkRequest.getCallSiteDescriptor();
+        }
+
+        ComponentLinkRequest popOperations() {
+            return new ComponentLinkRequest(linkRequest, linkerServices,
+                    missingMemberHandlerFactory,
+                    operations.subList(1, operations.size()), name);
+        }
+    }
+
+    protected GuardedInvocationComponent getGuardedInvocationComponent(final ComponentLinkRequest req)
+    throws Exception {
+        final Operation op = req.operations.get(0);
+        if (op instanceof StandardOperation) {
+            switch((StandardOperation)op) {
+            case GET_PROPERTY: return getPropertyGetter(req.popOperations());
+            case SET_PROPERTY: return getPropertySetter(req.popOperations());
+            case GET_METHOD: return getMethodGetter(req.popOperations());
+            default:
             }
-            operations = pop(operations);
         }
         return null;
     }
 
-    protected GuardedInvocationComponent getGuardedInvocationComponent(
-            final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices,
-            final List<Operation> operations, final Object name)
-    throws Exception {
-        if(operations.isEmpty()) {
+    GuardedInvocationComponent getNextComponent(final ComponentLinkRequest req) throws Exception {
+        if (req.operations.isEmpty()) {
+            return createNoSuchMemberHandler(req.missingMemberHandlerFactory,
+                    req.linkRequest, req.linkerServices);
+        }
+        final GuardedInvocationComponent gic = getGuardedInvocationComponent(req);
+        if (gic != null) {
+            return gic;
+        }
+        return getNextComponent(req.popOperations());
+    }
+
+    private GuardedInvocationComponent createNoSuchMemberHandler(
+            final MissingMemberHandlerFactory missingMemberHandlerFactory,
+            final LinkRequest linkRequest, final LinkerServices linkerServices) throws Exception {
+        if (missingMemberHandlerFactory == null) {
             return null;
         }
-        final Operation op = operations.get(0);
-        // Either GET_PROPERTY:name(this) or GET_PROPERTY(this, name)
-        if(op == StandardOperation.GET_PROPERTY) {
-            return getPropertyGetter(callSiteDescriptor, linkerServices, pop(operations), name);
+        final MethodHandle handler = missingMemberHandlerFactory.createMissingMemberHandler(linkRequest, linkerServices);
+        if (handler == null) {
+            return null;
         }
-        // Either SET_PROPERTY:name(this, value) or SET_PROPERTY(this, name, value)
-        if(op == StandardOperation.SET_PROPERTY) {
-            return getPropertySetter(callSiteDescriptor, linkerServices, pop(operations), name);
-        }
-        // Either GET_METHOD:name(this), or GET_METHOD(this, name)
-        if(op == StandardOperation.GET_METHOD) {
-            return getMethodGetter(callSiteDescriptor, linkerServices, pop(operations), name);
-        }
-        return null;
+        final MethodType type = linkRequest.getCallSiteDescriptor().getMethodType();
+        // The returned handler is allowed to differ in return type.
+        assert handler.type().changeReturnType(type.returnType()).equals(type);
+        return getClassGuardedInvocationComponent(handler, type);
     }
 
     static final <T> List<T> pop(final List<T> l) {
@@ -483,16 +549,15 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
     private static final MethodHandle CONSTANT_NULL_DROP_METHOD_HANDLE = MethodHandles.dropArguments(
             MethodHandles.constant(Object.class, null), 0, MethodHandle.class);
 
-    private GuardedInvocationComponent getPropertySetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> operations, final Object name) throws Exception {
-        if (name == null) {
-            return getUnnamedPropertySetter(callSiteDescriptor, linkerServices, operations);
+    private GuardedInvocationComponent getPropertySetter(final ComponentLinkRequest req) throws Exception {
+        if (req.name == null) {
+            return getUnnamedPropertySetter(req);
         }
-        return getNamedPropertySetter(callSiteDescriptor, linkerServices, operations, name);
+        return getNamedPropertySetter(req);
     }
 
-    private GuardedInvocationComponent getUnnamedPropertySetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> operations) throws Exception {
+    private GuardedInvocationComponent getUnnamedPropertySetter(final ComponentLinkRequest req) throws Exception {
+        final CallSiteDescriptor callSiteDescriptor = req.getDescriptor();
         // Must have three arguments: target object, property name, and property value.
         assertParameterCount(callSiteDescriptor, 3);
 
@@ -501,6 +566,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         // invoked, we'll conservatively presume Object return type. The one exception is void return.
         final MethodType origType = callSiteDescriptor.getMethodType();
         final MethodType type = origType.returnType() == void.class ? origType : origType.changeReturnType(Object.class);
+        final LinkerServices linkerServices = req.linkerServices;
 
         // What's below is basically:
         //   foldArguments(guardWithTest(isNotNull, invoke, null|nextComponent.invocation),
@@ -527,11 +593,10 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         // Handle to invoke the setter, dropping unnecessary fold arguments R(MethodHandle, O, N, V)
         final MethodHandle invokeHandleFolded = MethodHandles.dropArguments(invokeHandle, 2, type.parameterType(
                 1));
-        final GuardedInvocationComponent nextComponent = getGuardedInvocationComponent(callSiteDescriptor,
-                linkerServices, operations, null);
+        final GuardedInvocationComponent nextComponent = getNextComponent(req);
 
         final MethodHandle fallbackFolded;
-        if(nextComponent == null) {
+        if (nextComponent == null) {
             // Object(MethodHandle)->Object(MethodHandle, O, N, V); returns constant null
             fallbackFolded = MethodHandles.dropArguments(CONSTANT_NULL_DROP_METHOD_HANDLE, 1,
                     type.parameterList()).asType(type.insertParameterTypes(0, MethodHandle.class));
@@ -551,19 +616,19 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         return nextComponent.compose(compositeSetter, getClassGuard(type), clazz, ValidationType.EXACT_CLASS);
     }
 
-    private GuardedInvocationComponent getNamedPropertySetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> operations, final Object name) throws Exception {
+    private GuardedInvocationComponent getNamedPropertySetter(final ComponentLinkRequest req) throws Exception {
+        final CallSiteDescriptor callSiteDescriptor = req.getDescriptor();
         // Must have two arguments: target object and property value
         assertParameterCount(callSiteDescriptor, 2);
-        final GuardedInvocation gi = createGuardedDynamicMethodInvocation(callSiteDescriptor, linkerServices,
-                name.toString(), propertySetters);
+        final GuardedInvocation gi = createGuardedDynamicMethodInvocation(callSiteDescriptor, req.linkerServices,
+                req.name.toString(), propertySetters);
         // If we have a property setter with this name, this composite operation will always stop here
         if(gi != null) {
             return new GuardedInvocationComponent(gi, clazz, ValidationType.EXACT_CLASS);
         }
         // If we don't have a property setter with this name, always fall back to the next operation in the
         // composite (if any)
-        return getGuardedInvocationComponent(callSiteDescriptor, linkerServices, operations, name);
+        return getNextComponent(req);
     }
 
     private static final Lookup privateLookup = new Lookup(MethodHandles.lookup());
@@ -576,20 +641,18 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             "getTarget", MethodType.methodType(MethodHandle.class, CallSiteDescriptor.class, LinkerServices.class));
     private static final MethodHandle GETTER_INVOKER = MethodHandles.invoker(MethodType.methodType(Object.class, Object.class));
 
-    private GuardedInvocationComponent getPropertyGetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> ops, final Object name) throws Exception {
-        if (name == null) {
-            return getUnnamedPropertyGetter(callSiteDescriptor, linkerServices, ops);
+    private GuardedInvocationComponent getPropertyGetter(final ComponentLinkRequest req) throws Exception {
+        if (req.name == null) {
+            return getUnnamedPropertyGetter(req);
         }
-
-        return getNamedPropertyGetter(callSiteDescriptor, linkerServices, ops, name);
+        return getNamedPropertyGetter(req);
     }
 
-    private GuardedInvocationComponent getUnnamedPropertyGetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> ops) throws Exception {
+    private GuardedInvocationComponent getUnnamedPropertyGetter(final ComponentLinkRequest req) throws Exception {
         // Since we can't know what kind of a getter we'll get back on different invocations, we'll just
         // conservatively presume Object. Note we can't just coerce to a narrower call site type as the linking
         // runtime might not allow coercing at that call site.
+        final CallSiteDescriptor callSiteDescriptor = req.getDescriptor();
         final MethodType type = callSiteDescriptor.getMethodType().changeReturnType(Object.class);
         // Must have exactly two arguments: receiver and name
         assertParameterCount(callSiteDescriptor, 2);
@@ -600,6 +663,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         // AnnotatedDynamicMethod; if it is non-null, invoke its "handle" field, otherwise either return null,
         // or delegate to next component's invocation.
 
+        final LinkerServices linkerServices = req.linkerServices;
         final MethodHandle typedGetter = linkerServices.asType(getPropertyGetterHandle, type.changeReturnType(
                 AnnotatedDynamicMethod.class));
         final MethodHandle callSiteBoundMethodGetter = MethodHandles.insertArguments(
@@ -613,8 +677,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         // Object(AnnotatedDynamicMethod, T0)->Object(AnnotatedDynamicMethod, T0, T1)
         final MethodHandle invokeHandleFolded = MethodHandles.dropArguments(invokeHandleTyped, 2,
                 type.parameterType(1));
-        final GuardedInvocationComponent nextComponent = getGuardedInvocationComponent(callSiteDescriptor,
-                linkerServices, ops, null);
+        final GuardedInvocationComponent nextComponent = getNextComponent(req);
 
         final MethodHandle fallbackFolded;
         if(nextComponent == null) {
@@ -639,17 +702,17 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         return nextComponent.compose(compositeGetter, getClassGuard(type), clazz, ValidationType.EXACT_CLASS);
     }
 
-    private GuardedInvocationComponent getNamedPropertyGetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> ops, final Object name) throws Exception {
+    private GuardedInvocationComponent getNamedPropertyGetter(final ComponentLinkRequest req) throws Exception {
+        final CallSiteDescriptor callSiteDescriptor = req.getDescriptor();
         // Must have exactly one argument: receiver
         assertParameterCount(callSiteDescriptor, 1);
         // Fixed name
-        final AnnotatedDynamicMethod annGetter = propertyGetters.get(name.toString());
+        final AnnotatedDynamicMethod annGetter = propertyGetters.get(req.name.toString());
         if(annGetter == null) {
             // We have no such property, always delegate to the next component operation
-            return getGuardedInvocationComponent(callSiteDescriptor, linkerServices, ops, name);
+            return getNextComponent(req);
         }
-        final MethodHandle getter = annGetter.getInvocation(callSiteDescriptor, linkerServices);
+        final MethodHandle getter = annGetter.getInvocation(req);
         // NOTE: since property getters (not field getters!) are no-arg, we don't have to worry about them being
         // overloaded in a subclass. Therefore, we can discover the most abstract superclass that has the
         // method, and use that as the guard with Guards.isInstance() for a more stably linked call site. If
@@ -686,28 +749,27 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             MethodType.methodType(boolean.class, Object.class));
     private static final MethodHandle OBJECT_IDENTITY = MethodHandles.identity(Object.class);
 
-    private GuardedInvocationComponent getMethodGetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> ops, final Object name) throws Exception {
-        // The created method handle will always return a DynamicMethod (or null), but since we don't want that type to
-        // be visible outside of this linker, declare it to return Object.
-        final MethodType type = callSiteDescriptor.getMethodType().changeReturnType(Object.class);
-        if (name == null) {
-            return getUnnamedMethodGetter(callSiteDescriptor, linkerServices, ops, type);
+    private GuardedInvocationComponent getMethodGetter(final ComponentLinkRequest req) throws Exception {
+        if (req.name == null) {
+            return getUnnamedMethodGetter(req);
         }
-
-        return getNamedMethodGetter(callSiteDescriptor, linkerServices, ops, name, type);
+        return getNamedMethodGetter(req);
     }
 
-    private GuardedInvocationComponent getUnnamedMethodGetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> ops, final MethodType type) throws Exception {
+    private static MethodType getMethodGetterType(final ComponentLinkRequest req) {
+        // The created method handle will always return a DynamicMethod (or null), but since we don't want that type to
+        // be visible outside of this linker, declare it to return Object.
+        return req.getDescriptor().getMethodType().changeReturnType(Object.class);
+    }
+
+    private GuardedInvocationComponent getUnnamedMethodGetter(final ComponentLinkRequest req) throws Exception {
         // Must have exactly two arguments: receiver and name
-        assertParameterCount(callSiteDescriptor, 2);
-        final GuardedInvocationComponent nextComponent = getGuardedInvocationComponent(callSiteDescriptor,
-                linkerServices, ops, null);
-        if(nextComponent == null || !InternalTypeUtilities.areAssignable(DynamicMethod.class,
-                nextComponent.getGuardedInvocation().getInvocation().type().returnType())) {
-            // No next component operation, or it can never produce a dynamic method; just return a component
-            // for this operation.
+        assertParameterCount(req.getDescriptor(), 2);
+        final GuardedInvocationComponent nextComponent = getNextComponent(req);
+        final LinkerServices linkerServices = req.linkerServices;
+        final MethodType type = getMethodGetterType(req);
+        if(nextComponent == null) {
+            // No next component operation; just return a component for this operation.
             return getClassGuardedInvocationComponent(linkerServices.asType(getDynamicMethod, type), type);
         }
 
@@ -728,25 +790,28 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         final MethodHandle nextCombinedInvocation = MethodHandles.dropArguments(nextComponentInvocation, 0,
                 Object.class);
         // Assemble it all into a fold(guard(isNotNull, identity, nextInvocation), get)
+        // Note that nextCombinedInvocation needs to have its return type changed to Object
         final MethodHandle compositeGetter = MethodHandles.foldArguments(MethodHandles.guardWithTest(
-                IS_DYNAMIC_METHOD, returnMethodHandle, nextCombinedInvocation), typedGetter);
+                IS_DYNAMIC_METHOD, returnMethodHandle,
+                nextCombinedInvocation.asType(nextCombinedInvocation.type().changeReturnType(Object.class))),
+                typedGetter);
 
         return nextComponent.compose(compositeGetter, getClassGuard(type), clazz, ValidationType.EXACT_CLASS);
     }
 
-    private GuardedInvocationComponent getNamedMethodGetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> ops, final Object name, final MethodType type)
+    private GuardedInvocationComponent getNamedMethodGetter(final ComponentLinkRequest req)
             throws Exception {
         // Must have exactly one argument: receiver
-        assertParameterCount(callSiteDescriptor, 1);
-        final DynamicMethod method = getDynamicMethod(name.toString());
+        assertParameterCount(req.getDescriptor(), 1);
+        final DynamicMethod method = getDynamicMethod(req.name.toString());
         if(method == null) {
             // We have no such method, always delegate to the next component
-            return getGuardedInvocationComponent(callSiteDescriptor, linkerServices, ops, name);
+            return getNextComponent(req);
         }
         // No delegation to the next component of the composite operation; if we have a method with that name,
         // we'll always return it at this point.
-        return getClassGuardedInvocationComponent(linkerServices.asType(MethodHandles.dropArguments(
+        final MethodType type = getMethodGetterType(req);
+        return getClassGuardedInvocationComponent(req.linkerServices.asType(MethodHandles.dropArguments(
                 MethodHandles.constant(Object.class, method), 0, type.parameterType(0)), type), type);
     }
 
@@ -876,8 +941,8 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             this.validationType = validationType;
         }
 
-        MethodHandle getInvocation(final CallSiteDescriptor callSiteDescriptor, final LinkerServices linkerServices) {
-            return method.getInvocation(callSiteDescriptor, linkerServices);
+        MethodHandle getInvocation(final ComponentLinkRequest req) {
+            return method.getInvocation(req.getDescriptor(), req.linkerServices);
         }
 
         @SuppressWarnings("unused")

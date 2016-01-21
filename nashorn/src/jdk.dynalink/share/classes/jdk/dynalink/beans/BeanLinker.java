@@ -88,6 +88,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import jdk.dynalink.CallSiteDescriptor;
@@ -129,25 +130,21 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     }
 
     @Override
-    protected GuardedInvocationComponent getGuardedInvocationComponent(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> operations, final Object name) throws Exception {
-        final GuardedInvocationComponent superGic = super.getGuardedInvocationComponent(callSiteDescriptor,
-                linkerServices, operations, name);
+    protected GuardedInvocationComponent getGuardedInvocationComponent(final ComponentLinkRequest req) throws Exception {
+        final GuardedInvocationComponent superGic = super.getGuardedInvocationComponent(req);
         if(superGic != null) {
             return superGic;
         }
-        if(operations.isEmpty()) {
-            return null;
-        }
-        final Operation op = operations.get(0);
-        if(op == StandardOperation.GET_ELEMENT) {
-            return getElementGetter(callSiteDescriptor, linkerServices, pop(operations), name);
-        }
-        if(op == StandardOperation.SET_ELEMENT) {
-            return getElementSetter(callSiteDescriptor, linkerServices, pop(operations), name);
-        }
-        if(op == StandardOperation.GET_LENGTH) {
-            return getLengthGetter(callSiteDescriptor);
+        if (!req.operations.isEmpty()) {
+            final Operation op = req.operations.get(0);
+            if (op instanceof StandardOperation) {
+                switch ((StandardOperation)op) {
+                case GET_ELEMENT: return getElementGetter(req.popOperations());
+                case SET_ELEMENT: return getElementSetter(req.popOperations());
+                case GET_LENGTH:  return getLengthGetter(req.getDescriptor());
+                default:
+                }
+            }
         }
         return null;
     }
@@ -166,16 +163,31 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     private static final MethodHandle LIST_GUARD = Guards.getInstanceOfGuard(List.class);
     private static final MethodHandle MAP_GUARD = Guards.getInstanceOfGuard(Map.class);
 
+    private static final MethodHandle NULL_GETTER_1;
+    private static final MethodHandle NULL_GETTER_2;
+    static {
+        final MethodHandle constantNull = MethodHandles.constant(Object.class, null);
+        NULL_GETTER_1 = dropObjectArguments(constantNull, 1);
+        NULL_GETTER_2 = dropObjectArguments(constantNull, 2);
+    }
+
+    private static MethodHandle dropObjectArguments(final MethodHandle m, final int n) {
+        return MethodHandles.dropArguments(m, 0, Collections.nCopies(n, Object.class));
+    }
+
     private enum CollectionType {
         ARRAY, LIST, MAP
     };
 
-    private GuardedInvocationComponent getElementGetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> operations, final Object name) throws Exception {
+    private GuardedInvocationComponent getElementGetter(final ComponentLinkRequest req) throws Exception {
+        final CallSiteDescriptor callSiteDescriptor = req.getDescriptor();
+        final Object name = req.name;
+        final boolean isFixedKey = name != null;
+        assertParameterCount(callSiteDescriptor, isFixedKey ? 1 : 2);
+        final LinkerServices linkerServices = req.linkerServices;
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
         final Class<?> declaredType = callSiteType.parameterType(0);
-        final GuardedInvocationComponent nextComponent = getGuardedInvocationComponent(callSiteDescriptor,
-                linkerServices, operations, name);
+        final GuardedInvocationComponent nextComponent = getNextComponent(req);
 
         // If declared type of receiver at the call site is already an array, a list or map, bind without guard. Thing
         // is, it'd be quite stupid of a call site creator to go though invokedynamic when it knows in advance they're
@@ -211,12 +223,14 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
         // Convert the key to a number if we're working with a list or array
         final Object typedName;
-        if(collectionType != CollectionType.MAP && name != null) {
-            typedName = convertKeyToInteger(name, linkerServices);
-            if(typedName == null) {
-                // key is not numeric, it can never succeed
+        if (collectionType != CollectionType.MAP && isFixedKey) {
+            final Integer integer = convertKeyToInteger(name, linkerServices);
+            if (integer == null || integer.intValue() < 0) {
+                // key is not a non-negative integer, it can never address an
+                // array or list element
                 return nextComponent;
             }
+            typedName = integer;
         } else {
             typedName = name;
         }
@@ -225,36 +239,44 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         final Binder binder = new Binder(linkerServices, callSiteType, typedName);
         final MethodHandle invocation = gi.getInvocation();
 
-        if(nextComponent == null) {
-            return gic.replaceInvocation(binder.bind(invocation));
-        }
-
         final MethodHandle checkGuard;
         switch(collectionType) {
         case LIST:
-            checkGuard = convertArgToInt(RANGE_CHECK_LIST, linkerServices, callSiteDescriptor);
+            checkGuard = convertArgToNumber(RANGE_CHECK_LIST, linkerServices, callSiteDescriptor);
             break;
         case MAP:
-            // TODO: A more complex solution could be devised for maps, one where we do a get() first, and fold it
-            // into a GWT that tests if it returned null, and if it did, do another GWT with containsKey()
-            // that returns constant null (on true), or falls back to next component (on false)
             checkGuard = linkerServices.filterInternalObjects(CONTAINS_MAP);
             break;
         case ARRAY:
-            checkGuard = convertArgToInt(RANGE_CHECK_ARRAY, linkerServices, callSiteDescriptor);
+            checkGuard = convertArgToNumber(RANGE_CHECK_ARRAY, linkerServices, callSiteDescriptor);
             break;
         default:
             throw new AssertionError();
         }
+
+        // If there's no next component, produce a fixed null-returning one
+        final GuardedInvocationComponent finalNextComponent;
+        if (nextComponent != null) {
+            finalNextComponent = nextComponent;
+        } else {
+            final MethodHandle nullGetterHandle = isFixedKey ? NULL_GETTER_1 : NULL_GETTER_2;
+            finalNextComponent = createGuardedInvocationComponentAsType(nullGetterHandle, callSiteType, linkerServices);
+        }
+
         final MethodPair matchedInvocations = matchReturnTypes(binder.bind(invocation),
-                nextComponent.getGuardedInvocation().getInvocation());
-        return nextComponent.compose(matchedInvocations.guardWithTest(binder.bindTest(checkGuard)), gi.getGuard(),
+                finalNextComponent.getGuardedInvocation().getInvocation());
+        return finalNextComponent.compose(matchedInvocations.guardWithTest(binder.bindTest(checkGuard)), gi.getGuard(),
                 gic.getValidatorClass(), gic.getValidationType());
     }
 
     private static GuardedInvocationComponent createInternalFilteredGuardedInvocationComponent(
             final MethodHandle invocation, final LinkerServices linkerServices) {
         return new GuardedInvocationComponent(linkerServices.filterInternalObjects(invocation));
+    }
+
+    private static GuardedInvocationComponent createGuardedInvocationComponentAsType(
+            final MethodHandle invocation, final MethodType fromType, final LinkerServices linkerServices) {
+        return new GuardedInvocationComponent(linkerServices.asType(invocation, fromType));
     }
 
     private static GuardedInvocationComponent createInternalFilteredGuardedInvocationComponent(
@@ -310,7 +332,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         return intIndex;
     }
 
-    private static MethodHandle convertArgToInt(final MethodHandle mh, final LinkerServices ls, final CallSiteDescriptor desc) {
+    private static MethodHandle convertArgToNumber(final MethodHandle mh, final LinkerServices ls, final CallSiteDescriptor desc) {
         final Class<?> sourceType = desc.getMethodType().parameterType(1);
         if(TypeUtilities.isMethodInvocationConvertible(sourceType, Number.class)) {
             return mh;
@@ -366,14 +388,10 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         }
         final Number n = (Number)index;
         final int intIndex = n.intValue();
-        final double doubleValue = n.doubleValue();
-        if(intIndex != doubleValue && !Double.isInfinite(doubleValue)) { // let infinite trigger IOOBE
+        if (intIndex != n.doubleValue()) {
             return false;
         }
-        if(0 <= intIndex && intIndex < Array.getLength(array)) {
-            return true;
-        }
-        throw new ArrayIndexOutOfBoundsException("Array index out of range: " + n);
+        return 0 <= intIndex && intIndex < Array.getLength(array);
     }
 
     @SuppressWarnings("unused")
@@ -383,14 +401,14 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         }
         final Number n = (Number)index;
         final int intIndex = n.intValue();
-        final double doubleValue = n.doubleValue();
-        if(intIndex != doubleValue && !Double.isInfinite(doubleValue)) { // let infinite trigger IOOBE
+        if (intIndex != n.doubleValue()) {
             return false;
         }
-        if(0 <= intIndex && intIndex < list.size()) {
-            return true;
-        }
-        throw new IndexOutOfBoundsException("Index: " + n + ", Size: " + list.size());
+        return 0 <= intIndex && intIndex < list.size();
+    }
+
+    @SuppressWarnings("unused")
+    private static void noOpSetter() {
     }
 
     private static final MethodHandle SET_LIST_ELEMENT = Lookup.PUBLIC.findVirtual(List.class, "set",
@@ -399,8 +417,20 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     private static final MethodHandle PUT_MAP_ELEMENT = Lookup.PUBLIC.findVirtual(Map.class, "put",
             MethodType.methodType(Object.class, Object.class, Object.class));
 
-    private GuardedInvocationComponent getElementSetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<Operation> operations, final Object name) throws Exception {
+    private static final MethodHandle NO_OP_SETTER_2;
+    private static final MethodHandle NO_OP_SETTER_3;
+    static {
+        final MethodHandle noOpSetter = Lookup.findOwnStatic(MethodHandles.lookup(), "noOpSetter", void.class);
+        NO_OP_SETTER_2 = dropObjectArguments(noOpSetter, 2);
+        NO_OP_SETTER_3 = dropObjectArguments(noOpSetter, 3);
+    }
+
+    private GuardedInvocationComponent getElementSetter(final ComponentLinkRequest req) throws Exception {
+        final CallSiteDescriptor callSiteDescriptor = req.getDescriptor();
+        final Object name = req.name;
+        final boolean isFixedKey = name != null;
+        assertParameterCount(callSiteDescriptor, isFixedKey ? 2 : 3);
+        final LinkerServices linkerServices = req.linkerServices;
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
         final Class<?> declaredType = callSiteType.parameterType(0);
 
@@ -441,20 +471,21 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         // In contrast to, say, getElementGetter, we only compute the nextComponent if the target object is not a map,
         // as maps will always succeed in setting the element and will never need to fall back to the next component
         // operation.
-        final GuardedInvocationComponent nextComponent = collectionType == CollectionType.MAP ? null : getGuardedInvocationComponent(
-                callSiteDescriptor, linkerServices, operations, name);
+        final GuardedInvocationComponent nextComponent = collectionType == CollectionType.MAP ? null : getNextComponent(req);
         if(gic == null) {
             return nextComponent;
         }
 
         // Convert the key to a number if we're working with a list or array
         final Object typedName;
-        if(collectionType != CollectionType.MAP && name != null) {
-            typedName = convertKeyToInteger(name, linkerServices);
-            if(typedName == null) {
-                // key is not numeric, it can never succeed
+        if (collectionType != CollectionType.MAP && isFixedKey) {
+            final Integer integer = convertKeyToInteger(name, linkerServices);
+            if (integer == null || integer.intValue() < 0) {
+                // key is not a non-negative integer, it can never address an
+                // array or list element
                 return nextComponent;
             }
+            typedName = integer;
         } else {
             typedName = name;
         }
@@ -463,16 +494,27 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         final Binder binder = new Binder(linkerServices, callSiteType, typedName);
         final MethodHandle invocation = gi.getInvocation();
 
-        if(nextComponent == null) {
+        if (collectionType == CollectionType.MAP) {
+            assert nextComponent == null;
             return gic.replaceInvocation(binder.bind(invocation));
         }
 
         assert collectionType == CollectionType.LIST || collectionType == CollectionType.ARRAY;
-        final MethodHandle checkGuard = convertArgToInt(collectionType == CollectionType.LIST ? RANGE_CHECK_LIST :
+        final MethodHandle checkGuard = convertArgToNumber(collectionType == CollectionType.LIST ? RANGE_CHECK_LIST :
             RANGE_CHECK_ARRAY, linkerServices, callSiteDescriptor);
+
+        // If there's no next component, produce a no-op one.
+        final GuardedInvocationComponent finalNextComponent;
+        if (nextComponent != null) {
+            finalNextComponent = nextComponent;
+        } else {
+            final MethodHandle noOpSetterHandle = isFixedKey ? NO_OP_SETTER_2 : NO_OP_SETTER_3;
+            finalNextComponent = createGuardedInvocationComponentAsType(noOpSetterHandle, callSiteType, linkerServices);
+        }
+
         final MethodPair matchedInvocations = matchReturnTypes(binder.bind(invocation),
-                nextComponent.getGuardedInvocation().getInvocation());
-        return nextComponent.compose(matchedInvocations.guardWithTest(binder.bindTest(checkGuard)), gi.getGuard(),
+                finalNextComponent.getGuardedInvocation().getInvocation());
+        return finalNextComponent.compose(matchedInvocations.guardWithTest(binder.bindTest(checkGuard)), gi.getGuard(),
                 gic.getValidatorClass(), gic.getValidationType());
     }
 

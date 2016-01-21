@@ -46,7 +46,7 @@ import javax.imageio.ImageReadParam;
  * <code>ExifParentTIFFTagSet</code>, and <code>GeoTIFFTagSet</code>
  * are included.
  *
- * @since 1.9
+ * @since 9
  */
 public class TIFFImageReadParam extends ImageReadParam {
 

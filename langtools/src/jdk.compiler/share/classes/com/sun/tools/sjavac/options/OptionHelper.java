@@ -53,12 +53,6 @@ public abstract class OptionHelper {
     /** Record a package inclusion pattern */
     public abstract void include(String incl);
 
-    /** Record a file exclusion */
-    public abstract void excludeFile(String exclFile);
-
-    /** Record a file inclusion */
-    public abstract void includeFile(String inclFile);
-
     /** Record a root of sources to be compiled */
     public abstract void sourceRoots(List<Path> path);
 

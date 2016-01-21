@@ -75,8 +75,8 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
       # For full static builds, we're overloading the SHARED_LIBRARY
       # variables in order to limit the amount of changes required.
       # It would be better to remove SHARED and just use LIBRARY and
-      # LIBRARY_SUFFIX for libraries that can be built either 
-      # shared or static and use STATIC_* for libraries that are 
+      # LIBRARY_SUFFIX for libraries that can be built either
+      # shared or static and use STATIC_* for libraries that are
       # always built statically.
       if test "x$STATIC_BUILD" = xtrue; then
         SHARED_LIBRARY='lib[$]1.a'
@@ -824,21 +824,21 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
 
     # "-Og" suppported for GCC 4.8 and later
     CFLAG_OPTIMIZE_DEBUG_FLAG="-Og"
-    FLAGS_COMPILER_CHECK_ARGUMENTS([$CFLAG_OPTIMIZE_DEBUG_FLAG],
-      [HAS_CFLAG_OPTIMIZE_DEBUG=true],
-      [HAS_CFLAG_OPTIMIZE_DEBUG=false])
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$CFLAG_OPTIMIZE_DEBUG_FLAG],
+      IF_TRUE: [HAS_CFLAG_OPTIMIZE_DEBUG=true],
+      IF_FALSE: [HAS_CFLAG_OPTIMIZE_DEBUG=false])
 
     # "-z relro" supported in GNU binutils 2.17 and later
     LINKER_RELRO_FLAG="-Wl,-z,relro"
-    FLAGS_LINKER_CHECK_ARGUMENTS([$LINKER_RELRO_FLAG],
-      [HAS_LINKER_RELRO=true],
-      [HAS_LINKER_RELRO=false])
+    FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [$LINKER_RELRO_FLAG],
+      IF_TRUE: [HAS_LINKER_RELRO=true],
+      IF_FALSE: [HAS_LINKER_RELRO=false])
 
     # "-z now" supported in GNU binutils 2.11 and later
     LINKER_NOW_FLAG="-Wl,-z,now"
-    FLAGS_LINKER_CHECK_ARGUMENTS([$LINKER_NOW_FLAG],
-      [HAS_LINKER_NOW=true],
-      [HAS_LINKER_NOW=false])
+    FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [$LINKER_NOW_FLAG],
+      IF_TRUE: [HAS_LINKER_NOW=true],
+      IF_FALSE: [HAS_LINKER_NOW=false])
   fi
 
   # Check for broken SuSE 'ld' for which 'Only anonymous version tag is allowed

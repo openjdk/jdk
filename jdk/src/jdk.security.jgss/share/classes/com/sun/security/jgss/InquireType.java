@@ -40,7 +40,7 @@ public enum InquireType {
      *    <li>Format: "RAW"
      *    <li>Encoded form: the raw key bytes, not in any ASN.1 encoding
      *    </ul>
-     * @deprecated as of 1.9, replaced by {@link #KRB5_GET_SESSION_KEY_EX}
+     * @deprecated as of 9, replaced by {@link #KRB5_GET_SESSION_KEY_EX}
      * which returns an instance of
      * {@link javax.security.auth.kerberos.EncryptionKey}
      * that implements the {@link javax.crypto.SecretKey} interface and
@@ -53,7 +53,7 @@ public enum InquireType {
      * established Kerberos 5 security context. The return value is an
      * instance of {@link javax.security.auth.kerberos.EncryptionKey}.
      *
-     * @since 1.9
+     * @since 9
      */
     KRB5_GET_SESSION_KEY_EX,
     /**
@@ -83,7 +83,7 @@ public enum InquireType {
      * is about to send to an acceptor. The return type is an instance of
      * {@link javax.security.auth.kerberos.KerberosCredMessage}.
      *
-     * @since 1.9
+     * @since 9
      */
     KRB5_GET_KRB_CRED,
 }

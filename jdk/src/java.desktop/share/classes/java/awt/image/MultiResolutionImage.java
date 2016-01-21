@@ -52,7 +52,7 @@ import java.util.List;
  * @see java.awt.Toolkit#getImage(java.lang.String filename)
  * @see java.awt.Toolkit#getImage(java.net.URL url)
  *
- * @since 1.9
+ * @since 9
  */
 public interface MultiResolutionImage {
 
@@ -67,7 +67,7 @@ public interface MultiResolutionImage {
      *         {@code destImageHeight} is less than or equal to zero, infinity,
      *         or NaN.
      *
-     * @since 1.9
+     * @since 9
      */
     Image getResolutionVariant(double destImageWidth, double destImageHeight);
 
@@ -78,7 +78,7 @@ public interface MultiResolutionImage {
      * Note that many implementations might return an unmodifiable list.
      *
      * @return list of resolution variants.
-     * @since 1.9
+     * @since 9
      */
     public List<Image> getResolutionVariants();
 }

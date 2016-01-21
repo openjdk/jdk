@@ -152,13 +152,13 @@ public class ReplToolTesting {
     }
 
     public String getCommandOutput() {
-        String s = cmdout.toString();
+        String s = normalizeLineEndings(cmdout.toString());
         cmdout.reset();
         return s;
     }
 
     public String getCommandErrorOutput() {
-        String s = cmderr.toString();
+        String s = normalizeLineEndings(cmderr.toString());
         cmderr.reset();
         return s;
     }
@@ -168,13 +168,13 @@ public class ReplToolTesting {
     }
 
     public String getUserOutput() {
-        String s = userout.toString();
+        String s = normalizeLineEndings(userout.toString());
         userout.reset();
         return s;
     }
 
     public String getUserErrorOutput() {
-        String s = usererr.toString();
+        String s = normalizeLineEndings(usererr.toString());
         usererr.reset();
         return s;
     }
@@ -459,6 +459,10 @@ public class ReplToolTesting {
         if (expected != null) {
             assertEquals(got, expected, "Kind: " + kind + ".\n");
         }
+    }
+
+    private String normalizeLineEndings(String text) {
+        return text.replace(System.getProperty("line.separator"), "\n");
     }
 
     public static abstract class MemberInfo {

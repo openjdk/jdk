@@ -39,7 +39,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * which does not imply the automatic analysis.
  *
  * @see BeanInfo#getBeanDescriptor
- * @since 1.9
+ * @since 9
  *
  * @author Sergey A. Malenkov
  */

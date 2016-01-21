@@ -320,7 +320,7 @@ final class ServerHandshaker extends Handshaker {
             case HandshakeMessage.ht_certificate_verify:
                 CertificateVerify cvm =
                         new CertificateVerify(input,
-                            localSupportedSignAlgs, protocolVersion);
+                            getLocalSupportedSignAlgs(), protocolVersion);
                 handshakeState.update(cvm, resumingSession);
                 this.clientCertificateVerify(cvm);
 
@@ -772,11 +772,10 @@ final class ServerHandshaker extends Handshaker {
                     Collection<SignatureAndHashAlgorithm>
                         supportedPeerSignAlgs =
                             SignatureAndHashAlgorithm.getSupportedAlgorithms(
-                                                            peerSignAlgs);
+                                algorithmConstraints, peerSignAlgs);
                     if (supportedPeerSignAlgs.isEmpty()) {
                         throw new SSLHandshakeException(
-                            "No supported signature and hash algorithm " +
-                            "in common");
+                            "No signature and hash algorithm in common");
                     }
 
                     setPeerSupportedSignAlgs(supportedPeerSignAlgs);
@@ -1351,6 +1350,13 @@ final class ServerHandshaker extends Handshaker {
                     supportedSignAlgs =
                         new ArrayList<SignatureAndHashAlgorithm>(1);
                     supportedSignAlgs.add(algorithm);
+
+                    supportedSignAlgs =
+                            SignatureAndHashAlgorithm.getSupportedAlgorithms(
+                                algorithmConstraints, supportedSignAlgs);
+
+                    // May be no default activated signature algorithm, but
+                    // let the following process make the final decision.
                 }
 
                 // Sets the peer supported signature algorithm to use in KM
@@ -1395,6 +1401,11 @@ final class ServerHandshaker extends Handshaker {
                     SignatureAndHashAlgorithm.getPreferableAlgorithm(
                                         supportedSignAlgs, "RSA", privateKey);
                 if (preferableSignatureAlgorithm == null) {
+                    if ((debug != null) && Debug.isOn("handshake")) {
+                        System.out.println(
+                                "No signature and hash algorithm for cipher " +
+                                suite);
+                    }
                     return false;
                 }
             }
@@ -1413,6 +1424,11 @@ final class ServerHandshaker extends Handshaker {
                     SignatureAndHashAlgorithm.getPreferableAlgorithm(
                                         supportedSignAlgs, "RSA", privateKey);
                 if (preferableSignatureAlgorithm == null) {
+                    if ((debug != null) && Debug.isOn("handshake")) {
+                        System.out.println(
+                                "No signature and hash algorithm for cipher " +
+                                suite);
+                    }
                     return false;
                 }
             }
@@ -1428,6 +1444,11 @@ final class ServerHandshaker extends Handshaker {
                     SignatureAndHashAlgorithm.getPreferableAlgorithm(
                                                 supportedSignAlgs, "DSA");
                 if (preferableSignatureAlgorithm == null) {
+                    if ((debug != null) && Debug.isOn("handshake")) {
+                        System.out.println(
+                                "No signature and hash algorithm for cipher " +
+                                suite);
+                    }
                     return false;
                 }
             }
@@ -1446,6 +1467,11 @@ final class ServerHandshaker extends Handshaker {
                     SignatureAndHashAlgorithm.getPreferableAlgorithm(
                                             supportedSignAlgs, "ECDSA");
                 if (preferableSignatureAlgorithm == null) {
+                    if ((debug != null) && Debug.isOn("handshake")) {
+                        System.out.println(
+                                "No signature and hash algorithm for cipher " +
+                                suite);
+                    }
                     return false;
                 }
             }
@@ -1487,7 +1513,8 @@ final class ServerHandshaker extends Handshaker {
                     ClientKeyExchangeService.find(keyExchange.name);
             if (p == null) {
                 // internal error, unknown key exchange
-                throw new RuntimeException("Unrecognized cipherSuite: " + suite);
+                throw new RuntimeException(
+                        "Unrecognized cipherSuite: " + suite);
             }
             // need service creds
             if (serviceCreds == null) {

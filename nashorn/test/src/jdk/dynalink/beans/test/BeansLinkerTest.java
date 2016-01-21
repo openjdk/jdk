@@ -33,6 +33,7 @@ import static jdk.dynalink.StandardOperation.SET_PROPERTY;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +45,7 @@ import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.DynamicLinkerFactory;
 import jdk.dynalink.NamedOperation;
+import jdk.dynalink.NoSuchDynamicMethodException;
 import jdk.dynalink.Operation;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.support.SimpleRelinkableCallSite;
@@ -207,6 +209,30 @@ public class BeansLinkerTest {
         Assert.assertEquals("element2", map.get("name"));
     }
 
+    @Test
+    public static void testMissingMembersAtLinkTime() {
+        testPermutations(GETTER_PERMUTATIONS, (op) -> expectNoSuchDynamicMethodException(()-> call(named("foo", op), new Object())));
+        testPermutations(SETTER_PERMUTATIONS, (op) -> expectNoSuchDynamicMethodException(()-> call(named("foo", op), new Object(), "newValue")));
+    }
+
+    @Test
+    public static void testMissingMembersAtRunTime() {
+        call(GET_ELEMENT, new ArrayList<>(), "foo");
+        Stream.of(new HashMap(), new ArrayList(), new Object[0]).forEach((receiver) -> {
+            testPermutations(GETTER_PERMUTATIONS, (op) -> { System.err.println(op + " " + receiver.getClass().getName()); Assert.assertNull(call(op, receiver, "foo"));});
+            // No assertion for the setter; we just expect it to silently succeed
+            testPermutations(SETTER_PERMUTATIONS, (op) -> call(op, receiver, "foo", "newValue"));
+        });
+    }
+
+    private static void expectNoSuchDynamicMethodException(final Runnable r) {
+        try {
+            r.run();
+            Assert.fail("Should've thrown NoSuchDynamicMethodException");
+        } catch(final NoSuchDynamicMethodException e) {
+        }
+    }
+
     private static Operation[] GETTER_PERMUTATIONS = new Operation[] {
         GET_PROPERTY,
         GET_METHOD,
@@ -238,6 +264,10 @@ public class BeansLinkerTest {
 
     private static void testPermutations(final Operation[] ops, final Pattern regex, final int expectedCount, final Consumer<Operation> test) {
         testPermutationsWithFilter(ops, (op)->regex.matcher(op.toString()).matches(), expectedCount, test);
+    }
+
+    private static void testPermutations(final Operation[] ops, final Consumer<Operation> test) {
+        testPermutationsWithFilter(ops, (op)->true, ops.length, test);
     }
 
     private static void testPermutationsWithFilter(final Operation[] ops, final Predicate<Operation> filter, final int expectedCount, final Consumer<Operation> test) {
