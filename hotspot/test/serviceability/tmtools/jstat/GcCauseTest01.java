@@ -30,6 +30,7 @@
  *          collection time increase.
  * @library /test/lib/share/classes
  * @library ../share
+ * @ignore 8147848
  * @build common.*
  * @build utils.*
  *

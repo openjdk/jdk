@@ -29,6 +29,7 @@ import utils.*;
  * displayed with jstat -gccapacity.
  * @library /test/lib/share/classes
  * @library ../share
+ * @ignore 8147848
  * @build common.*
  * @build utils.*
  * @run main/othervm -XX:+UsePerfData GcCapacityTest
