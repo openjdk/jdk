@@ -39,7 +39,7 @@ import java.util.List;
  * <p>The definitions of the data types referenced by the field
  * definitions may be found in the {@link TIFFTag TIFFTag} class.</p>
  *
- * @since 1.9
+ * @since 9
  */
 public class GeoTIFFTagSet extends TIFFTagSet {
 

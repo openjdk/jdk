@@ -148,7 +148,7 @@ public class KeyIdentifier {
             return true;
         if (!(other instanceof KeyIdentifier))
             return false;
-        return java.util.Arrays.equals(octetString,
-                                       ((KeyIdentifier)other).getIdentifier());
+        byte[] otherString = ((KeyIdentifier)other).octetString;
+        return java.util.Arrays.equals(octetString, otherString);
     }
 }

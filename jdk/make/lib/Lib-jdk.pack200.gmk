@@ -52,7 +52,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK, \
         -D "JDK_FNAME=unpack.dll" \
         -D "JDK_INTERNAL_NAME=unpack" \
         -D "JDK_FTYPE=0x2L", \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 $(BUILD_LIBUNPACK): $(call FindLib, java.base, java)
 

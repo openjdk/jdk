@@ -26,6 +26,7 @@
 package jdk.internal.ref;
 
 import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import java.lang.ref.PhantomReference;
 import java.util.Objects;
 
@@ -66,9 +67,9 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
         this.list = CleanerImpl.getCleanerImpl(cleaner).phantomCleanableList;
         insert();
 
-        // TODO: Replace getClass() with ReachabilityFence when it is available
-        cleaner.getClass();
-        referent.getClass();
+        // Ensure referent and cleaner remain accessible
+        Reference.reachabilityFence(referent);
+        Reference.reachabilityFence(cleaner);
     }
 
     /**

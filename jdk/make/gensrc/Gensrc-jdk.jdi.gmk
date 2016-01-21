@@ -40,19 +40,18 @@ $(HEADER_FILE): $(JDWP_SPEC_FILE) $(BUILD_TOOLS_JDK)
 
 # Touch the target of this rule at the end to avoid triggering false rebuilds
 $(JAVA_FILE): $(JDWP_SPEC_FILE) $(BUILD_TOOLS_JDK) $(HEADER_FILE)
-	$(MKDIR) -p $(@D)
-	$(MKDIR) -p $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent
+	$(call LogInfo, Creating JDWP.java and JDWPCommands.h from jdwp.spec)
+	$(call MakeDir, $(@D) $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent)
 	$(RM) $@ $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h
-	$(ECHO) $(LOG_INFO) Creating JDWP.java and JDWPCommands.h from jdwp.spec
 	$(TOOL_JDWPGEN) $< -jdi $@ -include \
 	    $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h
 	$(TOUCH) $@
 
 $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/jdwp-protocol.html: $(JDWP_SPEC_FILE) \
     $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $(@D)
+	$(call LogInfo, Creating $(@F) from jdwp.spec)
+	$(call MakeDir, $(@D))
 	$(RM) $@
-	$(ECHO) $(LOG_INFO) Creating $(@F) from jdwp.spec
 	$(TOOL_JDWPGEN) $< -doc $@
 
 GENSRC_JDWP := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java \
@@ -63,14 +62,14 @@ GENSRC_JDK_JDI += $(GENSRC_JDWP)
 ################################################################################
 
 define process-provider
-	$(MKDIR) -p $(@D)
+	$(call MakeDir, $(@D))
 	$(CAT) $^ | $(SED) -e "s/^#\[$(OPENJDK_TARGET_OS)\]//" > $@
 endef
 
 # Filter com.sun.jdi.connect.Connector
 $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector: \
     $(JDK_TOPDIR)/src/jdk.jdi/share/classes/META-INF/services/com.sun.jdi.connect.Connector \
-    $(HOTSPOT_TOPDIR)/agent/src/share/classes/META-INF/services/com.sun.jdi.connect.Connector
+    $(HOTSPOT_TOPDIR)/src/jdk.hotspot.agent/share/classes/META-INF/services/com.sun.jdi.connect.Connector
 	$(process-provider)
 
 # Copy the same service file into jdk.hotspot.agent so that they are kept the same.

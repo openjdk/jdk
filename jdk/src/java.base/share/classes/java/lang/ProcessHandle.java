@@ -89,7 +89,7 @@ import java.util.stream.Stream;
  * {@link #compareTo(ProcessHandle) compareTo} methods to compare ProcessHandles.
  *
  * @see Process
- * @since 1.9
+ * @since 9
  */
 public interface ProcessHandle extends Comparable<ProcessHandle> {
 
@@ -215,7 +215,7 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      * by the operating system privileges of the process making the request.
      * The return types are {@code Optional<T>} allowing explicit tests
      * and actions if the value is available.
-     * @since 1.9
+     * @since 9
      */
     public interface Info {
         /**
