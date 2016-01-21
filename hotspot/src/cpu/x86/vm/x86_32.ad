@@ -968,14 +968,15 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
   case Op_VecS:
     calc_size = 3+src_offset_size + 3+dst_offset_size;
     break;
-  case Op_VecD:
+  case Op_VecD: {
     calc_size = 3+src_offset_size + 3+dst_offset_size;
-    src_offset += 4;
-    dst_offset += 4;
-    src_offset_size = (src_offset == 0) ? 0 : ((src_offset < 0x80) ? 1 : 4);
-    dst_offset_size = (dst_offset == 0) ? 0 : ((dst_offset < 0x80) ? 1 : 4);
+    int tmp_src_offset = src_offset + 4;
+    int tmp_dst_offset = dst_offset + 4;
+    src_offset_size = (tmp_src_offset == 0) ? 0 : ((tmp_src_offset < 0x80) ? 1 : 4);
+    dst_offset_size = (tmp_dst_offset == 0) ? 0 : ((tmp_dst_offset < 0x80) ? 1 : 4);
     calc_size += 3+src_offset_size + 3+dst_offset_size;
     break;
+  }   
   case Op_VecX:
   case Op_VecY:
   case Op_VecZ:
@@ -1020,7 +1021,7 @@ static int vec_stack_to_stack_helper(CodeBuffer *cbuf, bool do_size, int src_off
       ShouldNotReachHere();
     }
     int size = __ offset() - offset;
-    assert(size == calc_size, "incorrect size calculattion");
+    assert(size == calc_size, "incorrect size calculation");
     return size;
 #ifndef PRODUCT
   } else if (!do_size) {

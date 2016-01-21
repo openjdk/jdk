@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,8 @@
 
 package compiler.jvmci.code;
 
-import jdk.vm.ci.code.CompilationResult.DataSectionReference;
-import jdk.vm.ci.code.DataSection.Data;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -52,7 +51,6 @@ public class DataPatchTest extends CodeInstallationTest {
     private void test(TestCompiler compiler) {
         test(compiler, getMethod("getConstClass"));
     }
-
 
     @Test
     public void testInlineObject() {
@@ -81,8 +79,7 @@ public class DataPatchTest extends CodeInstallationTest {
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
             HotSpotConstant c = (HotSpotConstant) type.getJavaClass();
-            Data data = codeCache.createDataItem(c);
-            DataSectionReference ref = asm.result.getDataSection().insertData(data);
+            DataSectionReference ref = asm.emitDataItem(c);
             Register ret = asm.emitLoadPointer(ref);
             asm.emitPointerRet(ret);
         });
@@ -95,8 +92,7 @@ public class DataPatchTest extends CodeInstallationTest {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
             HotSpotConstant c = (HotSpotConstant) type.getJavaClass();
             HotSpotConstant cCompressed = (HotSpotConstant) c.compress();
-            Data data = codeCache.createDataItem(cCompressed);
-            DataSectionReference ref = asm.result.getDataSection().insertData(data);
+            DataSectionReference ref = asm.emitDataItem(cCompressed);
             Register compressed = asm.emitLoadNarrowPointer(ref);
             Register ret = asm.emitUncompressPointer(compressed, HotSpotVMConfig.config().narrowOopBase, HotSpotVMConfig.config().narrowOopShift);
             asm.emitPointerRet(ret);
@@ -131,8 +127,7 @@ public class DataPatchTest extends CodeInstallationTest {
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
             HotSpotConstant hub = (HotSpotConstant) type.getObjectHub();
-            Data data = codeCache.createDataItem(hub);
-            DataSectionReference ref = asm.result.getDataSection().insertData(data);
+            DataSectionReference ref = asm.emitDataItem(hub);
             Register klass = asm.emitLoadPointer(ref);
             Register ret = asm.emitLoadPointer(klass, HotSpotVMConfig.config().classMirrorOffset);
             asm.emitPointerRet(ret);
@@ -146,8 +141,7 @@ public class DataPatchTest extends CodeInstallationTest {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
             HotSpotConstant hub = (HotSpotConstant) type.getObjectHub();
             HotSpotConstant narrowHub = (HotSpotConstant) hub.compress();
-            Data data = codeCache.createDataItem(narrowHub);
-            DataSectionReference ref = asm.result.getDataSection().insertData(data);
+            DataSectionReference ref = asm.emitDataItem(narrowHub);
             Register narrowKlass = asm.emitLoadNarrowPointer(ref);
             Register klass = asm.emitUncompressPointer(narrowKlass, HotSpotVMConfig.config().narrowKlassBase, HotSpotVMConfig.config().narrowKlassShift);
             Register ret = asm.emitLoadPointer(klass, HotSpotVMConfig.config().classMirrorOffset);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
- * Package that defines the interface between a Java application that wants to install code and the runtime.
- * The runtime provides in implementation of the {@link jdk.vm.ci.code.CodeCacheProvider} interface.
- * The method {@link jdk.vm.ci.code.CodeCacheProvider#addCode(jdk.vm.ci.meta.ResolvedJavaMethod, CompiledCode, jdk.vm.ci.meta.SpeculationLog, InstalledCode)}
- * can be used to install code.
- */
-package jdk.vm.ci.code;
+package jdk.vm.ci.code.site;
 
+/**
+ * A reason for infopoint insertion.
+ */
+public enum InfopointReason {
+
+    SAFEPOINT,
+    CALL,
+    IMPLICIT_EXCEPTION,
+    METASPACE_ACCESS,
+    METHOD_START,
+    METHOD_END,
+    BYTECODE_POSITION;
+}
