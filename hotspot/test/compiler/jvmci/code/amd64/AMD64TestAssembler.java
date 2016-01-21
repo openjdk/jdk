@@ -45,8 +45,22 @@ public class AMD64TestAssembler extends TestAssembler {
         super(codeCache, 16, 16, AMD64Kind.DWORD, AMD64.rax, AMD64.rcx, AMD64.rdi, AMD64.r8, AMD64.r9, AMD64.r10);
     }
 
+    private void emitFatNop() {
+        // 5 byte NOP:
+        // NOP DWORD ptr [EAX + EAX*1 + 00H]
+        code.emitByte(0x0F);
+        code.emitByte(0x1F);
+        code.emitByte(0x44);
+        code.emitByte(0x00);
+        code.emitByte(0x00);
+    }
+
     @Override
     public void emitPrologue() {
+        // WARNING: Initial instruction MUST be 5 bytes or longer so that
+        // NativeJump::patch_verified_entry will be able to patch out the entry
+        // code safely.
+        emitFatNop();
         code.emitByte(0x50 | AMD64.rbp.encoding);  // PUSH rbp
         emitMove(true, AMD64.rbp, AMD64.rsp);      // MOV rbp, rsp
     }
