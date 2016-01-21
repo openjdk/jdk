@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,28 +64,28 @@
   template(jdk_vm_ci_meta_Assumptions_ConcreteMethod,             "jdk/vm/ci/meta/Assumptions$ConcreteMethod")             \
   template(jdk_vm_ci_meta_Assumptions_CallSiteTargetValue,        "jdk/vm/ci/meta/Assumptions$CallSiteTargetValue")        \
   template(jdk_vm_ci_code_Architecture,                           "jdk/vm/ci/code/Architecture")                           \
-  template(jdk_vm_ci_code_TargetDescription,                      "jdk/vm/ci/code/TargetDescription")                      \
-  template(jdk_vm_ci_code_CompilationResult_Call,                 "jdk/vm/ci/code/CompilationResult$Call")                 \
-  template(jdk_vm_ci_code_CompilationResult_ConstantReference,    "jdk/vm/ci/code/CompilationResult$ConstantReference")    \
-  template(jdk_vm_ci_code_CompilationResult_DataPatch,            "jdk/vm/ci/code/CompilationResult$DataPatch")            \
-  template(jdk_vm_ci_code_CompilationResult_DataSectionReference, "jdk/vm/ci/code/CompilationResult$DataSectionReference") \
-  template(jdk_vm_ci_code_CompilationResult_ExceptionHandler,     "jdk/vm/ci/code/CompilationResult$ExceptionHandler")     \
-  template(jdk_vm_ci_code_CompilationResult_Mark,                 "jdk/vm/ci/code/CompilationResult$Mark")                 \
-  template(jdk_vm_ci_code_CompilationResult_Infopoint,            "jdk/vm/ci/code/CompilationResult$Infopoint")            \
-  template(jdk_vm_ci_code_CompilationResult_Site,                 "jdk/vm/ci/code/CompilationResult$Site")                 \
-  template(jdk_vm_ci_code_InfopointReason,                        "jdk/vm/ci/code/InfopointReason")                        \
-  template(jdk_vm_ci_code_InstalledCode,                          "jdk/vm/ci/code/InstalledCode")                          \
   template(jdk_vm_ci_code_BytecodeFrame,                          "jdk/vm/ci/code/BytecodeFrame")                          \
   template(jdk_vm_ci_code_BytecodePosition,                       "jdk/vm/ci/code/BytecodePosition")                       \
   template(jdk_vm_ci_code_DebugInfo,                              "jdk/vm/ci/code/DebugInfo")                              \
+  template(jdk_vm_ci_code_InstalledCode,                          "jdk/vm/ci/code/InstalledCode")                          \
   template(jdk_vm_ci_code_Location,                               "jdk/vm/ci/code/Location")                               \
   template(jdk_vm_ci_code_Register,                               "jdk/vm/ci/code/Register")                               \
   template(jdk_vm_ci_code_RegisterValue,                          "jdk/vm/ci/code/RegisterValue")                          \
   template(jdk_vm_ci_code_StackSlot,                              "jdk/vm/ci/code/StackSlot")                              \
   template(jdk_vm_ci_code_StackLockValue,                         "jdk/vm/ci/code/StackLockValue")                         \
+  template(jdk_vm_ci_code_TargetDescription,                      "jdk/vm/ci/code/TargetDescription")                      \
   template(jdk_vm_ci_code_VirtualObject,                          "jdk/vm/ci/code/VirtualObject")                          \
   template(jdk_vm_ci_code_RegisterSaveLayout,                     "jdk/vm/ci/code/RegisterSaveLayout")                     \
   template(jdk_vm_ci_code_InvalidInstalledCodeException,          "jdk/vm/ci/code/InvalidInstalledCodeException")          \
+  template(jdk_vm_ci_code_site_Call,                              "jdk/vm/ci/code/site/Call")                              \
+  template(jdk_vm_ci_code_site_ConstantReference,                 "jdk/vm/ci/code/site/ConstantReference")                 \
+  template(jdk_vm_ci_code_site_DataPatch,                         "jdk/vm/ci/code/site/DataPatch")                         \
+  template(jdk_vm_ci_code_site_DataSectionReference,              "jdk/vm/ci/code/site/DataSectionReference")              \
+  template(jdk_vm_ci_code_site_ExceptionHandler,                  "jdk/vm/ci/code/site/ExceptionHandler")                  \
+  template(jdk_vm_ci_code_site_Mark,                              "jdk/vm/ci/code/site/Mark")                              \
+  template(jdk_vm_ci_code_site_Infopoint,                         "jdk/vm/ci/code/site/Infopoint")                         \
+  template(jdk_vm_ci_code_site_Site,                              "jdk/vm/ci/code/site/Site")                              \
+  template(jdk_vm_ci_code_site_InfopointReason,                   "jdk/vm/ci/code/site/InfopointReason")                   \
   template(jdk_vm_ci_common_JVMCIError,                           "jdk/vm/ci/common/JVMCIError")                           \
   template(compileMethod_name,                                    "compileMethod")                                         \
   template(compileMethod_signature,                               "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;IJI)V")   \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -971,8 +971,10 @@ Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1_start, Node
                              str1_start, cnt1, str2_start, cnt2, ae);
     break;
   case Op_StrEquals:
+    // We already know that cnt1 == cnt2 here (checked in 'inline_string_equals').
+    // Use the constant length if there is one because optimized match rule may exist.
     result = new StrEqualsNode(control(), memory(TypeAryPtr::BYTES),
-                               str1_start, str2_start, cnt1, ae);
+                               str1_start, str2_start, cnt2->is_Con() ? cnt2 : cnt1, ae);
     break;
   default:
     ShouldNotReachHere();
@@ -1131,7 +1133,7 @@ bool LibraryCallKit::inline_objects_checkIndex() {
 
 //------------------------------inline_string_indexOf------------------------
 bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
-  if (!Matcher::has_match_rule(Op_StrIndexOf) || !UseSSE42Intrinsics) {
+  if (!Matcher::match_rule_supported(Op_StrIndexOf)) {
     return false;
   }
   Node* src = argument(0);
@@ -1175,7 +1177,7 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
   }
-  if (!Matcher::has_match_rule(Op_StrIndexOf) || !UseSSE42Intrinsics) {
+  if (!Matcher::match_rule_supported(Op_StrIndexOf)) {
     return false;
   }
   assert(callee()->signature()->size() == 5, "String.indexOf() has 5 arguments");
@@ -1260,7 +1262,7 @@ bool LibraryCallKit::inline_string_indexOfChar() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
   }
-  if (!Matcher::has_match_rule(Op_StrIndexOfChar) || !(UseSSE > 4)) {
+  if (!Matcher::match_rule_supported(Op_StrIndexOfChar)) {
     return false;
   }
   assert(callee()->signature()->size() == 4, "String.indexOfChar() has 4 arguments");

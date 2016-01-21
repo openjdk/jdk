@@ -3172,11 +3172,12 @@ void MacroAssembler::clear_memory_doubleword(Register base_ptr, Register cnt_dwo
 //
 // Assumes that result differs from all other registers.
 //
-// Haystack, needle are the addresses of jchar-arrays.
-// NeedleChar is needle[0] if it is known at compile time.
-// Haycnt is the length of the haystack. We assume haycnt >=1.
+// 'haystack' is the addresses of a jchar-array.
+// 'needle' is either the character to search for or R0.
+// 'needleChar' is the character to search for if 'needle' == R0..
+// 'haycnt' is the length of the haystack. We assume 'haycnt' >=1.
 //
-// Preserves haystack, haycnt, kills all other registers.
+// Preserves haystack, haycnt, needle and kills all other registers.
 //
 // If needle == R0, we search for the constant needleChar.
 void MacroAssembler::string_indexof_1(Register result, Register haystack, Register haycnt,
@@ -3186,13 +3187,11 @@ void MacroAssembler::string_indexof_1(Register result, Register haystack, Regist
   assert_different_registers(result, haystack, haycnt, needle, tmp1, tmp2);
 
   Label L_InnerLoop, L_FinalCheck, L_Found1, L_Found2, L_Found3, L_NotFound, L_End;
-  Register needle0 = needle, // Contains needle[0].
-           addr = tmp1,
+  Register addr = tmp1,
            ch1 = tmp2,
            ch2 = R0;
 
-//2 (variable) or 3 (const):
-   if (needle != R0) lhz(needle0, 0, needle); // Preload needle character, needle has len==1.
+//3:
    dcbtct(haystack, 0x00);                        // Indicate R/O access to haystack.
 
    srwi_(tmp2, haycnt, 1);   // Shift right by exact_log2(UNROLL_FACTOR).
@@ -3203,8 +3202,8 @@ void MacroAssembler::string_indexof_1(Register result, Register haystack, Regist
   bind(L_InnerLoop);             // Main work horse (2x unrolled search loop).
    lhz(ch1, 0, addr);        // Load characters from haystack.
    lhz(ch2, 2, addr);
-   (needle != R0) ? cmpw(CCR0, ch1, needle0) : cmplwi(CCR0, ch1, needleChar);
-   (needle != R0) ? cmpw(CCR1, ch2, needle0) : cmplwi(CCR1, ch2, needleChar);
+   (needle != R0) ? cmpw(CCR0, ch1, needle) : cmplwi(CCR0, ch1, needleChar);
+   (needle != R0) ? cmpw(CCR1, ch2, needle) : cmplwi(CCR1, ch2, needleChar);
    beq(CCR0, L_Found1);   // Did we find the needle?
    beq(CCR1, L_Found2);
    addi(addr, addr, 4);
@@ -3214,7 +3213,7 @@ void MacroAssembler::string_indexof_1(Register result, Register haystack, Regist
    andi_(R0, haycnt, 1);
    beq(CCR0, L_NotFound);
    lhz(ch1, 0, addr);        // One position left at which we have to compare.
-   (needle != R0) ? cmpw(CCR1, ch1, needle0) : cmplwi(CCR1, ch1, needleChar);
+   (needle != R0) ? cmpw(CCR1, ch1, needle) : cmplwi(CCR1, ch1, needleChar);
    beq(CCR1, L_Found3);
 //21:
   bind(L_NotFound);
@@ -3399,7 +3398,15 @@ void MacroAssembler::string_compare(Register str1_reg, Register str2_reg, Regist
             chr2_reg = cnt2_reg,
             addr_diff = str2_reg;
 
+   // 'cnt_reg' contains the number of characters in the string's character array for the
+   // pre-CompactStrings strings implementation and the number of bytes in the string's
+   // byte array for the CompactStrings strings implementation.
+   const int HAS_COMPACT_STRING = java_lang_String::has_coder_field() ? 1 : 0; // '1' = byte array, '0' = char array
+
    // Offset 0 should be 32 byte aligned.
+//-6:
+    srawi(cnt1_reg, cnt1_reg, HAS_COMPACT_STRING);
+    srawi(cnt2_reg, cnt2_reg, HAS_COMPACT_STRING);
 //-4:
     dcbtct(str1_reg, 0x00);  // Indicate R/O access to str1.
     dcbtct(str2_reg, 0x00);  // Indicate R/O access to str2.
@@ -3478,14 +3485,21 @@ void MacroAssembler::char_arrays_equals(Register str1_reg, Register str2_reg, Re
   Register index_reg = tmp5_reg;
   Register cbc_iter  = tmp4_reg;
 
+  // 'cnt_reg' contains the number of characters in the string's character array for the
+  // pre-CompactStrings strings implementation and the number of bytes in the string's
+  // byte array for the CompactStrings strings implementation.
+  const int HAS_COMPACT_STRING = java_lang_String::has_coder_field() ? 1 : 0; // '1' = byte array, '0' = char array
+
 //-1:
   dcbtct(str1_reg, 0x00);  // Indicate R/O access to str1.
   dcbtct(str2_reg, 0x00);  // Indicate R/O access to str2.
 //1:
-  andi(cbc_iter, cnt_reg, 4-1);            // Remaining iterations after 4 java characters per iteration loop.
+  // cbc_iter: remaining characters after the '4 java characters per iteration' loop.
+  rlwinm(cbc_iter, cnt_reg, 32 - HAS_COMPACT_STRING, 30, 31); // (cnt_reg % (HAS_COMPACT_STRING ? 8 : 4)) >> HAS_COMPACT_STRING
   li(index_reg, 0); // init
   li(result_reg, 0); // assume false
-  srwi_(tmp2_reg, cnt_reg, exact_log2(4)); // Div: 4 java characters per iteration (main loop).
+  // tmp2_reg: units of 4 java characters (i.e. 8 bytes) per iteration (main loop).
+  srwi_(tmp2_reg, cnt_reg, exact_log2(4 << HAS_COMPACT_STRING)); // cnt_reg / (HAS_COMPACT_STRING ? 8 : 4)
 
   cmpwi(CCR1, cbc_iter, 0);             // CCR1 = (cbc_iter==0)
   beq(CCR0, Linit_cbc);                 // too short
@@ -3525,6 +3539,11 @@ void MacroAssembler::char_arrays_equalsImm(Register str1_reg, Register str2_reg,
   assert_different_registers(result_reg, str2_reg, tmp1_reg, tmp2_reg);
   assert(sizeof(jchar) == 2, "must be");
   assert(cntval >= 0 && ((cntval & 0x7fff) == cntval), "wrong immediate");
+
+  // 'cntval' contains the number of characters in the string's character array for the
+  // pre-CompactStrings strings implementation and the number of bytes in the string's
+  // byte array for the CompactStrings strings implementation.
+  cntval >>= (java_lang_String::has_coder_field() ? 1 : 0); // '1' = byte array strings, '0' = char array strings
 
   Label Ldone_false;
 

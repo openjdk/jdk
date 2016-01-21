@@ -22,30 +22,18 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotCompressedNullConstant.COMPRESSED_NULL;
-
 import java.lang.reflect.Field;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.CodeCacheProvider;
-import jdk.vm.ci.code.CompilationRequest;
-import jdk.vm.ci.code.CompilationResult;
-import jdk.vm.ci.code.CompilationResult.Call;
-import jdk.vm.ci.code.CompilationResult.ConstantReference;
-import jdk.vm.ci.code.CompilationResult.DataPatch;
-import jdk.vm.ci.code.CompilationResult.Mark;
-import jdk.vm.ci.code.DataSection;
-import jdk.vm.ci.code.DataSection.Data;
-import jdk.vm.ci.code.DataSection.DataBuilder;
+import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.common.JVMCIError;
-import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.SerializableConstant;
+import jdk.vm.ci.code.site.Call;
+import jdk.vm.ci.code.site.Mark;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.SpeculationLog;
-import jdk.vm.ci.meta.VMConstant;
 
 /**
  * HotSpot implementation of {@link CodeCacheProvider}.
@@ -113,41 +101,25 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
         return runtime.getConfig().runtimeCallStackSize;
     }
 
-    private InstalledCode logOrDump(InstalledCode installedCode, CompilationResult compResult) {
-        ((HotSpotJVMCIRuntime) runtime).notifyInstall(this, installedCode, compResult);
+    private InstalledCode logOrDump(InstalledCode installedCode, CompiledCode compiledCode) {
+        ((HotSpotJVMCIRuntime) runtime).notifyInstall(this, installedCode, compiledCode);
         return installedCode;
     }
 
-    public InstalledCode installCode(CompilationRequest compRequest, CompilationResult compResult, InstalledCode installedCode, SpeculationLog log, boolean isDefault) {
-        HotSpotResolvedJavaMethod method = compRequest != null ? (HotSpotResolvedJavaMethod) compRequest.getMethod() : null;
+    public InstalledCode installCode(ResolvedJavaMethod method, CompiledCode compiledCode, InstalledCode installedCode, SpeculationLog log, boolean isDefault) {
         InstalledCode resultInstalledCode;
         if (installedCode == null) {
             if (method == null) {
                 // Must be a stub
-                resultInstalledCode = new HotSpotRuntimeStub(compResult.getName());
+                resultInstalledCode = new HotSpotRuntimeStub(((HotSpotCompiledCode) compiledCode).getName());
             } else {
-                resultInstalledCode = new HotSpotNmethod(method, compResult.getName(), isDefault);
+                resultInstalledCode = new HotSpotNmethod((HotSpotResolvedJavaMethod) method, ((HotSpotCompiledCode) compiledCode).getName(), isDefault);
             }
         } else {
             resultInstalledCode = installedCode;
         }
-        HotSpotCompiledCode compiledCode;
-        if (method != null) {
-            final int id;
-            final long jvmciEnv;
-            if (compRequest instanceof HotSpotCompilationRequest) {
-                HotSpotCompilationRequest hsCompRequest = (HotSpotCompilationRequest) compRequest;
-                id = hsCompRequest.getId();
-                jvmciEnv = hsCompRequest.getJvmciEnv();
-            } else {
-                id = method.allocateCompileId(compRequest.getEntryBCI());
-                jvmciEnv = 0L;
-            }
-            compiledCode = new HotSpotCompiledNmethod(method, compResult, id, jvmciEnv);
-        } else {
-            compiledCode = new HotSpotCompiledCode(compResult);
-        }
-        int result = runtime.getCompilerToVM().installCode(target, compiledCode, resultInstalledCode, (HotSpotSpeculationLog) log);
+
+        int result = runtime.getCompilerToVM().installCode(target, (HotSpotCompiledCode) compiledCode, resultInstalledCode, (HotSpotSpeculationLog) log);
         if (result != config.codeInstallResultOk) {
             String resultDesc = config.getCodeInstallResultDescription(result);
             if (compiledCode instanceof HotSpotCompiledNmethod) {
@@ -163,81 +135,14 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
                 }
                 throw new BailoutException(result != config.codeInstallResultDependenciesFailed, msg);
             } else {
-                throw new BailoutException("Error installing %s: %s", compResult.getName(), resultDesc);
+                throw new BailoutException("Error installing %s: %s", ((HotSpotCompiledCode) compiledCode).getName(), resultDesc);
             }
         }
-        return logOrDump(resultInstalledCode, compResult);
+        return logOrDump(resultInstalledCode, compiledCode);
     }
 
     public void invalidateInstalledCode(InstalledCode installedCode) {
         runtime.getCompilerToVM().invalidateInstalledCode(installedCode);
-    }
-
-    private Data createSingleDataItem(Constant constant) {
-        int size;
-        DataBuilder builder;
-        if (constant instanceof VMConstant) {
-            VMConstant vmConstant = (VMConstant) constant;
-            boolean compressed;
-            if (constant instanceof HotSpotConstant) {
-                HotSpotConstant c = (HotSpotConstant) vmConstant;
-                compressed = c.isCompressed();
-            } else {
-                throw new JVMCIError(String.valueOf(constant));
-            }
-
-            size = compressed ? 4 : target.wordSize;
-            if (size == 4) {
-                builder = (buffer, patch) -> {
-                    patch.accept(new DataPatch(buffer.position(), new ConstantReference(vmConstant)));
-                    buffer.putInt(0xDEADDEAD);
-                };
-            } else {
-                assert size == 8;
-                builder = (buffer, patch) -> {
-                    patch.accept(new DataPatch(buffer.position(), new ConstantReference(vmConstant)));
-                    buffer.putLong(0xDEADDEADDEADDEADL);
-                };
-            }
-        } else if (JavaConstant.isNull(constant)) {
-            boolean compressed = COMPRESSED_NULL.equals(constant);
-            size = compressed ? 4 : target.wordSize;
-            builder = DataBuilder.zero(size);
-        } else if (constant instanceof SerializableConstant) {
-            SerializableConstant s = (SerializableConstant) constant;
-            size = s.getSerializedSize();
-            builder = DataBuilder.serializable(s);
-        } else {
-            throw new JVMCIError(String.valueOf(constant));
-        }
-
-        return new Data(size, size, builder);
-    }
-
-    public Data createDataItem(Constant... constants) {
-        assert constants.length > 0;
-        if (constants.length == 1) {
-            return createSingleDataItem(constants[0]);
-        } else {
-            DataBuilder[] builders = new DataBuilder[constants.length];
-            int size = 0;
-            int alignment = 1;
-            for (int i = 0; i < constants.length; i++) {
-                Data data = createSingleDataItem(constants[i]);
-
-                assert size % data.getAlignment() == 0 : "invalid alignment in packed constants";
-                alignment = DataSection.lcm(alignment, data.getAlignment());
-
-                builders[i] = data.getBuilder();
-                size += data.getSize();
-            }
-            DataBuilder ret = (buffer, patches) -> {
-                for (DataBuilder b : builders) {
-                    b.emit(buffer, patches);
-                }
-            };
-            return new Data(alignment, size, ret);
-        }
     }
 
     @Override
