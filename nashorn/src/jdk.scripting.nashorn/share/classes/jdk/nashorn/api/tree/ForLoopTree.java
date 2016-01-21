@@ -34,7 +34,7 @@ package jdk.nashorn.api.tree;
  *       <em>statement</em>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface ForLoopTree extends ConditionalLoopTree {
     /**

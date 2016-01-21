@@ -35,7 +35,7 @@ package jdk.nashorn.api.tree;
  *   while ( <em>expression</em> );
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface DoWhileLoopTree extends ConditionalLoopTree {
     /**
