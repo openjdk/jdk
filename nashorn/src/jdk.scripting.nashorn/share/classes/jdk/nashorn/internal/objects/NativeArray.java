@@ -70,7 +70,6 @@ import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
 import jdk.nashorn.internal.runtime.arrays.ContinuousArrayData;
 import jdk.nashorn.internal.runtime.arrays.IntElements;
-import jdk.nashorn.internal.runtime.arrays.IntOrLongElements;
 import jdk.nashorn.internal.runtime.arrays.IteratorAction;
 import jdk.nashorn.internal.runtime.arrays.NumericElements;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
@@ -285,7 +284,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
         final long newLen = NativeArray.validLength(newLenDesc.getValue());
 
         // Step 3e - note that we need to convert to int or double as long is not considered a JS number type anymore
-        newLenDesc.setValue(JSType.isRepresentableAsInt(newLen) ? Integer.valueOf((int) newLen) : Double.valueOf((double) newLen));
+        newLenDesc.setValue(JSType.toNarrowestNumber(newLen));
 
         // Step 3f
         // increasing array length - just need to set new length value (and attributes if any) and return
@@ -1043,7 +1042,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
             if (bulkable(sobj) && sobj.getArray().length() + args.length <= JSType.MAX_UINT) {
                 final ArrayData newData = sobj.getArray().push(true, args);
                 sobj.setArray(newData);
-                return newData.length();
+                return JSType.toNarrowestNumber(newData.length());
             }
 
             long len = JSType.toUint32(sobj.getLength());
@@ -1052,7 +1051,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
             }
             sobj.set("length", len, CALLSITE_STRICT);
 
-            return len;
+            return JSType.toNarrowestNumber(len);
         } catch (final ClassCastException | NullPointerException e) {
             throw typeError(Context.getGlobal(), e, "not.an.object", ScriptRuntime.safeToString(self));
         }
@@ -1471,7 +1470,7 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
         final long newLength = len + items.length;
         sobj.set("length", newLength, CALLSITE_STRICT);
 
-        return newLength;
+        return JSType.toNarrowestNumber(newLength);
     }
 
     /**
