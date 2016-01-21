@@ -33,7 +33,7 @@ package jdk.nashorn.api.tree;
  * {@linkplain TreeVisitor tree visitor} to indicate that the
  * visitor was created for a prior version of the language.
  *
- * @since 1.9
+ * @since 9
  */
 public class UnknownTreeException extends RuntimeException {
 
