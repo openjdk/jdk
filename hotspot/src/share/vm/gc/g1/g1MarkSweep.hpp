@@ -92,7 +92,7 @@ class G1PrepareCompactClosure : public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   ModRefBarrierSet* _mrbs;
   CompactPoint _cp;
-  HeapRegionSetCount _humongous_regions_removed;
+  uint _humongous_regions_removed;
 
   virtual void prepare_for_compaction(HeapRegion* hr, HeapWord* end);
   void prepare_for_compaction_work(CompactPoint* cp, HeapRegion* hr, HeapWord* end);
@@ -103,7 +103,7 @@ class G1PrepareCompactClosure : public HeapRegionClosure {
   G1PrepareCompactClosure() :
     _g1h(G1CollectedHeap::heap()),
     _mrbs(_g1h->g1_barrier_set()),
-    _humongous_regions_removed() { }
+    _humongous_regions_removed(0) { }
 
   void update_sets();
   bool doHeapRegion(HeapRegion* hr);

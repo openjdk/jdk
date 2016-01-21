@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Stack;
-import java.util.TreeSet;
 import java.util.Vector;
 
 abstract class HsArgHandler extends ArgHandler {
@@ -570,10 +567,6 @@ public abstract class WinGammaPlatform {
         allConfigs.add(new C1DebugConfig());
         allConfigs.add(new C1FastDebugConfig());
         allConfigs.add(new C1ProductConfig());
-
-        allConfigs.add(new C2DebugConfig());
-        allConfigs.add(new C2FastDebugConfig());
-        allConfigs.add(new C2ProductConfig());
 
         allConfigs.add(new TieredDebugConfig());
         allConfigs.add(new TieredFastDebugConfig());

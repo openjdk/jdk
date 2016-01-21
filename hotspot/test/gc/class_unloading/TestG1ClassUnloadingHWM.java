@@ -54,8 +54,7 @@ public class TestG1ClassUnloadingHWM {
       "-Xmn" + YoungGenSize,
       "-XX:+UseG1GC",
       "-XX:" + (enableUnloading ? "+" : "-") + "ClassUnloadingWithConcurrentMark",
-      "-XX:+PrintHeapAtGC",
-      "-XX:+PrintGCDetails",
+      "-Xlog:gc",
       TestG1ClassUnloadingHWM.AllocateBeyondMetaspaceSize.class.getName(),
       "" + MetaspaceSize,
       "" + YoungGenSize);
@@ -74,16 +73,16 @@ public class TestG1ClassUnloadingHWM {
     // -XX:-ClassUnloadingWithConcurrentMark is used, so we expect a full GC instead of a concurrent cycle.
     OutputAnalyzer out = runWithoutG1ClassUnloading();
 
-    out.shouldMatch(".*Full GC.*");
-    out.shouldNotMatch(".*initial-mark.*");
+    out.shouldMatch(".*Pause Full.*");
+    out.shouldNotMatch(".*Pause Initial Mark.*");
   }
 
   public static void testWithG1ClassUnloading() throws Exception {
     // -XX:+ClassUnloadingWithConcurrentMark is used, so we expect a concurrent cycle instead of a full GC.
     OutputAnalyzer out = runWithG1ClassUnloading();
 
-    out.shouldMatch(".*initial-mark.*");
-    out.shouldNotMatch(".*Full GC.*");
+    out.shouldMatch(".*Pause Initial Mark.*");
+    out.shouldNotMatch(".*Pause Full.*");
   }
 
   public static void main(String args[]) throws Exception {

@@ -364,7 +364,9 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   void clear_discovered_references(DiscoveredList& refs_list);
 
   // Calculate the number of jni handles.
-  unsigned int count_jni_refs();
+  size_t count_jni_refs();
+
+  void log_reflist_counts(DiscoveredList ref_lists[], size_t total_count) PRODUCT_RETURN;
 
   // Balances reference queues.
   void balance_queues(DiscoveredList ref_lists[]);

@@ -1001,7 +1001,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, PhaseRegAlloc* ra, const MachNode* n, 
 #endif
 }
 
-void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, relocInfo::relocType rtype, bool preserve_g2 = false) {
+void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, RelocationHolder const& rspec, bool preserve_g2 = false) {
   // The method which records debug information at every safepoint
   // expects the call to be the first instruction in the snippet as
   // it creates a PcDesc structure which tracks the offset of a call
@@ -1023,7 +1023,7 @@ void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, relocInfo::relocTyp
   int startpos = __ offset();
 #endif /* ASSERT */
 
-  __ call((address)entry_point, rtype);
+  __ call((address)entry_point, rspec);
 
   if (preserve_g2)   __ delayed()->mov(G2, L7);
   else __ delayed()->nop();
@@ -1293,6 +1293,10 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
 
   __ verify_thread();
+
+  if (StackReservedPages > 0 && C->has_reserved_stack_access()) {
+    __ reserved_stack_check();
+  }
 
   // If this does safepoint polling, then do it here
   if(do_polling() && ra_->C->is_method_compilation()) {
@@ -2594,8 +2598,7 @@ encode %{
   enc_class Java_To_Runtime (method meth) %{    // CALL Java_To_Runtime
     // CALL directly to the runtime
     // The user of this is responsible for ensuring that R_L7 is empty (killed).
-    emit_call_reloc(cbuf, $meth$$method, relocInfo::runtime_call_type,
-                    /*preserve_g2=*/true);
+    emit_call_reloc(cbuf, $meth$$method, runtime_call_Relocation::spec(), /*preserve_g2=*/true);
   %}
 
   enc_class preserve_SP %{
@@ -2612,13 +2615,14 @@ encode %{
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
     // who we intended to call.
     if (!_method) {
-      emit_call_reloc(cbuf, $meth$$method, relocInfo::runtime_call_type);
-    } else if (_optimized_virtual) {
-      emit_call_reloc(cbuf, $meth$$method, relocInfo::opt_virtual_call_type);
+      emit_call_reloc(cbuf, $meth$$method, runtime_call_Relocation::spec());
     } else {
-      emit_call_reloc(cbuf, $meth$$method, relocInfo::static_call_type);
-    }
-    if (_method) {  // Emit stub for static call.
+      int method_index = resolved_method_index(cbuf);
+      RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
+                                                  : static_call_Relocation::spec(method_index);
+      emit_call_reloc(cbuf, $meth$$method, rspec);
+
+      // Emit stub for static call.
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
       // Stub does not fit into scratch buffer if TraceJumps is enabled
       if (stub == NULL && !(TraceJumps && Compile::current()->in_scratch_emit_size())) {
@@ -2639,7 +2643,7 @@ encode %{
       Register G5_ic_reg = reg_to_register_object(Matcher::inline_cache_reg_encode());
       assert(G5_ic_reg == G5_inline_cache_reg, "G5_inline_cache_reg used in assemble_ic_buffer_code()");
       assert(G5_ic_reg == G5_megamorphic_method, "G5_megamorphic_method used in megamorphic call stub");
-      __ ic_call((address)$meth$$method);
+      __ ic_call((address)$meth$$method, /*emit_delay=*/true, resolved_method_index(cbuf));
     } else {
       assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
       // Just go thru the vtable
@@ -10070,10 +10074,10 @@ instruct string_compareL(o0RegP str1, o1RegP str2, g3RegI cnt1, g4RegI cnt2, not
   format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp" %}
   ins_encode %{
     __ string_compare($str1$$Register, $str2$$Register,
-                      $cnt1$$Register, $cnt2$$Register, 
+                      $cnt1$$Register, $cnt2$$Register,
                       $tmp$$Register, $tmp$$Register,
                       $result$$Register, StrIntrinsicNode::LL);
-  %}                    
+  %}
   ins_pipe(long_memory_op);
 %}
 
@@ -10089,7 +10093,7 @@ instruct string_compareU(o0RegP str1, o1RegP str2, g3RegI cnt1, g4RegI cnt2, not
                       $cnt1$$Register, $cnt2$$Register,
                       $tmp$$Register, $tmp$$Register,
                       $result$$Register, StrIntrinsicNode::UU);
-  %}                    
+  %}
   ins_pipe(long_memory_op);
 %}
 
@@ -10105,7 +10109,7 @@ instruct string_compareLU(o0RegP str1, o1RegP str2, g3RegI cnt1, g4RegI cnt2, no
                       $cnt1$$Register, $cnt2$$Register,
                       $tmp1$$Register, $tmp2$$Register,
                       $result$$Register, StrIntrinsicNode::LU);
-  %}                    
+  %}
   ins_pipe(long_memory_op);
 %}
 
@@ -10118,10 +10122,10 @@ instruct string_compareUL(o0RegP str1, o1RegP str2, g3RegI cnt1, g4RegI cnt2, no
   format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1,$tmp2" %}
   ins_encode %{
     __ string_compare($str2$$Register, $str1$$Register,
-                      $cnt2$$Register, $cnt1$$Register, 
+                      $cnt2$$Register, $cnt1$$Register,
                       $tmp1$$Register, $tmp2$$Register,
                       $result$$Register, StrIntrinsicNode::UL);
-  %}                    
+  %}
   ins_pipe(long_memory_op);
 %}
 

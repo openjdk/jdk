@@ -25,7 +25,7 @@
 #define SHARE_VM_LOGGING_LOGFILEOUTPUT_HPP
 
 #include "logging/logFileStreamOutput.hpp"
-#include "runtime/mutex.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogDecorations;
@@ -44,7 +44,6 @@ class LogFileOutput : public LogFileStreamOutput {
   static char         _pid_str[PidBufferSize];
   static char         _vm_start_time_str[StartTimeBufferSize];
 
-  Mutex _rotation_lock;
   const char* _name;
   char* _file_name;
   char* _archive_name;
@@ -57,14 +56,17 @@ class LogFileOutput : public LogFileStreamOutput {
   size_t  _rotate_size;
   size_t  _current_size;
 
+  // Semaphore used for synchronizing file rotations and writes
+  Semaphore _rotation_semaphore;
+
   void archive();
+  void rotate();
   bool configure_rotation(const char* options);
   char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string);
   static size_t parse_value(const char* value_str);
 
-  bool should_rotate(bool force) {
-    return is_rotatable() &&
-             (force || (_rotate_size > 0 && _current_size >= _rotate_size));
+  bool should_rotate() {
+    return _file_count > 0 && _rotate_size > 0 && _current_size >= _rotate_size;
   }
 
  public:
@@ -72,12 +74,7 @@ class LogFileOutput : public LogFileStreamOutput {
   virtual ~LogFileOutput();
   virtual bool initialize(const char* options);
   virtual int write(const LogDecorations& decorations, const char* msg);
-
-  virtual bool is_rotatable() {
-    return LogConfiguration::is_post_initialized() && (_file_count > 0);
-  }
-
-  virtual void rotate(bool force);
+  virtual void force_rotate();
 
   virtual const char* name() const {
     return _name;
