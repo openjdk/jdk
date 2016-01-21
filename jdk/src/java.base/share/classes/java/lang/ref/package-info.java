@@ -66,9 +66,9 @@
  * object with a <em>reference queue</em> at the time the reference
  * object is created.  Some time after the garbage collector
  * determines that the reachability of the referent has changed to the
- * value corresponding to the type of the reference, it will add the
- * reference to the associated queue.  At this point, the reference is
- * considered to be <em>enqueued</em>.  The program may remove
+ * value corresponding to the type of the reference, it will clear the
+ * reference and add it to the associated queue.  At this point, the
+ * reference is considered to be <em>enqueued</em>.  The program may remove
  * references from a queue either by polling or by blocking until a
  * reference becomes available.  Reference queues are implemented by
  * the {@link java.lang.ref.ReferenceQueue} class.
@@ -93,16 +93,6 @@
  * ReferenceQueue.poll} method simply checks an internal data
  * structure, this check will add little overhead to the hashtable
  * access methods.
- *
- * <h3>Automatically-cleared references</h3>
- *
- * Soft and weak references are automatically cleared by the collector
- * before being added to the queues with which they are registered, if
- * any.  Therefore soft and weak references need not be registered
- * with a queue in order to be useful, while phantom references do.
- * An object that is reachable via phantom references will remain so
- * until all such references are cleared or themselves become
- * unreachable.
  *
  * <a name="reachability"></a>
  * <h3>Reachability</h3>

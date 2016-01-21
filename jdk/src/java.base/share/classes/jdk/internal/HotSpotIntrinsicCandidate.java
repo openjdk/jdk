@@ -117,7 +117,7 @@ import java.lang.annotation.*;
  * and that (2) for all methods of that class annotated with
  * {@code @HotSpotIntrinsicCandidate} there is an intrinsic in the list.
  *
- * @since 1.9
+ * @since 9
  */
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)

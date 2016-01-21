@@ -1878,7 +1878,7 @@ class MutableBigInteger {
      * @throws ArithmeticException if the value returned by {@code bitLength()}
      * overflows the range of {@code int}.
      * @return the integer square root of {@code this}
-     * @since 1.9
+     * @since 9
      */
     MutableBigInteger sqrt() {
         // Special cases.

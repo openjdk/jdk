@@ -81,7 +81,7 @@ import java.util.stream.Stream;
  * will cause a {@link NullPointerException NullPointerException}
  * to be thrown.
  *
- * @since 1.9
+ * @since 9
  */
 public final class StackWalker {
     /**
@@ -92,7 +92,7 @@ public final class StackWalker {
      * by the {@linkplain Option stack walking options} of a {@linkplain
      * StackWalker stack walker}.
      *
-     * @since 1.9
+     * @since 9
      * @jvms 2.6
      */
     public static interface StackFrame {
@@ -185,7 +185,7 @@ public final class StackWalker {
      * Stack walker option to configure the {@linkplain StackFrame stack frame}
      * information obtained by a {@code StackWalker}.
      *
-     * @since 1.9
+     * @since 9
      */
     public enum Option {
         /**

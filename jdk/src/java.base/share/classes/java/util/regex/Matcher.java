@@ -974,7 +974,7 @@ public final class Matcher implements MatchResult {
      * @throws  IndexOutOfBoundsException
      *          If the replacement string refers to a capturing group
      *          that does not exist in the pattern
-     * @since 1.9
+     * @since 9
      */
     public Matcher appendReplacement(StringBuilder sb, String replacement) {
         // If no match, return error
@@ -1117,7 +1117,7 @@ public final class Matcher implements MatchResult {
      *
      * @return  The target string builder
      *
-     * @since 1.9
+     * @since 9
      */
     public StringBuilder appendTail(StringBuilder sb) {
         sb.append(text, lastAppendPosition, getTextLength());
@@ -1229,7 +1229,7 @@ public final class Matcher implements MatchResult {
      * @throws ConcurrentModificationException if it is detected, on a
      *         best-effort basis, that the replacer function modified this
      *         matcher's state
-     * @since 1.9
+     * @since 9
      */
     public String replaceAll(Function<MatchResult, String> replacer) {
         Objects.requireNonNull(replacer);
@@ -1273,7 +1273,7 @@ public final class Matcher implements MatchResult {
      * modification is detected.
      *
      * @return a sequential stream of match results.
-     * @since 1.9
+     * @since 9
      */
     public Stream<MatchResult> results() {
         class MatchResultIterator implements Iterator<MatchResult> {
@@ -1451,7 +1451,7 @@ public final class Matcher implements MatchResult {
      * @throws ConcurrentModificationException if it is detected, on a
      *         best-effort basis, that the replacer function modified this
      *         matcher's state
-     * @since 1.9
+     * @since 9
      */
     public String replaceFirst(Function<MatchResult, String> replacer) {
         Objects.requireNonNull(replacer);
