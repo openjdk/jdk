@@ -50,7 +50,7 @@ import java.util.Objects;
  * @see java.awt.image.MultiResolutionImage
  * @see java.awt.image.AbstractMultiResolutionImage
  *
- * @since 1.9
+ * @since 9
  */
 public class BaseMultiResolutionImage extends AbstractMultiResolutionImage {
 
@@ -66,7 +66,7 @@ public class BaseMultiResolutionImage extends AbstractMultiResolutionImage {
      * @throws NullPointerException if the specified {@code resolutionVariants}
      *          contains one or more null elements
      *
-     * @since 1.9
+     * @since 9
      */
     public BaseMultiResolutionImage(Image... resolutionVariants) {
         this(0, resolutionVariants);
@@ -86,7 +86,7 @@ public class BaseMultiResolutionImage extends AbstractMultiResolutionImage {
      *          negative or greater than or equal to {@code resolutionVariants}
      *          length.
      *
-     * @since 1.9
+     * @since 9
      */
     public BaseMultiResolutionImage(int baseImageIndex,
                                     Image... resolutionVariants) {

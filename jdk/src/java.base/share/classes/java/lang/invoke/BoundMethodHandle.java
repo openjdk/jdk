@@ -25,25 +25,25 @@
 
 package java.lang.invoke;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import static java.lang.invoke.LambdaForm.*;
-import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleStatics.*;
+import jdk.internal.vm.annotation.Stable;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.FieldVisitor;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import sun.invoke.util.ValueConversions;
+import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.LambdaForm.NamedFunction;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.function.Function;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import sun.invoke.util.ValueConversions;
-import sun.invoke.util.Wrapper;
-
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
+import static java.lang.invoke.LambdaForm.BasicType;
+import static java.lang.invoke.LambdaForm.BasicType.*;
+import static java.lang.invoke.MethodHandleStatics.*;
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
  * The flavor of method handle which emulates an invoke instruction
@@ -459,7 +459,7 @@ import jdk.internal.org.objectweb.asm.MethodVisitor;
         static final String BMH_SIG  = "L"+BMH+";";
         static final String SPECIES_DATA     = "java/lang/invoke/BoundMethodHandle$SpeciesData";
         static final String SPECIES_DATA_SIG = "L"+SPECIES_DATA+";";
-        static final String STABLE_SIG       = "Ljava/lang/invoke/Stable;";
+        static final String STABLE_SIG       = "Ljdk/internal/vm/annotation/Stable;";
 
         static final String SPECIES_PREFIX_NAME = "Species_";
         static final String SPECIES_PREFIX_PATH = BMH + "$" + SPECIES_PREFIX_NAME;

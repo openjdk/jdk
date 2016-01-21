@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.sql.ShardingKey;
  * to create a {@link XAConnection}:
  *
  * <pre>{@code
- *     DataSource ds = new MyDataSource();
+ *     XADataSource ds = new MyXADataSource();
  *     ShardingKey superShardingKey = ds.createShardingKeyBuilder()
  *                           .subkey("EASTERN_REGION", JDBCType.VARCHAR)
  *                           .build();
@@ -52,7 +52,7 @@ import java.sql.ShardingKey;
  *                       .build();
  * }</pre>
  *
- * @since 1.9
+ * @since 9
  *
  */
 public interface XAConnectionBuilder  {

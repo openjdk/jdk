@@ -59,7 +59,7 @@ import java.awt.Image;
  * @see java.awt.Image
  * @see java.awt.image.MultiResolutionImage
  *
- * @since 1.9
+ * @since 9
  */
 public abstract class AbstractMultiResolutionImage extends java.awt.Image
         implements MultiResolutionImage {
@@ -96,7 +96,7 @@ public abstract class AbstractMultiResolutionImage extends java.awt.Image
      *
      * @return the base image of the set of multi-resolution images
      *
-     * @since 1.9
+     * @since 9
      */
     protected abstract Image getBaseImage();
 }

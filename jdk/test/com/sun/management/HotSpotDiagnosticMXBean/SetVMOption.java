@@ -30,7 +30,7 @@
  * @author  Jaroslav Bachorik
  *
  * @modules jdk.management
- * @run main/othervm -XX:+PrintGCDetails SetVMOption
+ * @run main/othervm -XX:+HeapDumpOnOutOfMemoryError SetVMOption
  */
 
 import java.lang.management.ManagementFactory;
@@ -40,7 +40,7 @@ import com.sun.management.VMOption;
 import com.sun.management.VMOption.Origin;
 
 public class SetVMOption {
-    private static final String PRINT_GC_DETAILS = "PrintGCDetails";
+    private static final String HEAP_DUMP_ON_OOM = "HeapDumpOnOutOfMemoryError";
     private static final String EXPECTED_VALUE = "true";
     private static final String BAD_VALUE = "yes";
     private static final String NEW_VALUE = "false";
@@ -51,7 +51,7 @@ public class SetVMOption {
         mbean =
             ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
 
-        VMOption option = findPrintGCDetailsOption();
+        VMOption option = findHeapDumpOnOomOption();
         if (!option.getValue().equalsIgnoreCase(EXPECTED_VALUE)) {
             throw new RuntimeException("Unexpected value: " +
                 option.getValue() + " expected: " + EXPECTED_VALUE);
@@ -61,14 +61,14 @@ public class SetVMOption {
                 option.getOrigin() + " expected: VM_CREATION");
         }
         if (!option.isWriteable()) {
-            throw new RuntimeException("Expected " + PRINT_GC_DETAILS +
+            throw new RuntimeException("Expected " + HEAP_DUMP_ON_OOM +
                 " to be writeable");
         }
 
         // set VM option to a new value
-        mbean.setVMOption(PRINT_GC_DETAILS, NEW_VALUE);
+        mbean.setVMOption(HEAP_DUMP_ON_OOM, NEW_VALUE);
 
-        option = findPrintGCDetailsOption();
+        option = findHeapDumpOnOomOption();
         if (!option.getValue().equalsIgnoreCase(NEW_VALUE)) {
             throw new RuntimeException("Unexpected value: " +
                 option.getValue() + " expected: " + NEW_VALUE);
@@ -77,7 +77,7 @@ public class SetVMOption {
             throw new RuntimeException("Unexpected origin: " +
                 option.getOrigin() + " expected: MANAGEMENT");
         }
-        VMOption o = mbean.getVMOption(PRINT_GC_DETAILS);
+        VMOption o = mbean.getVMOption(HEAP_DUMP_ON_OOM);
         if (!option.getValue().equals(o.getValue())) {
             throw new RuntimeException("Unmatched value: " +
                 option.getValue() + " expected: " + o.getValue());
@@ -123,17 +123,17 @@ public class SetVMOption {
         }
     }
 
-    public static VMOption findPrintGCDetailsOption() {
+    public static VMOption findHeapDumpOnOomOption() {
         List<VMOption> options = mbean.getDiagnosticOptions();
         VMOption gcDetails = null;
         for (VMOption o : options) {
-            if (o.getName().equals(PRINT_GC_DETAILS)) {
+            if (o.getName().equals(HEAP_DUMP_ON_OOM)) {
                  gcDetails = o;
                  break;
             }
         }
         if (gcDetails == null) {
-            throw new RuntimeException("VM option " + PRINT_GC_DETAILS +
+            throw new RuntimeException("VM option " + HEAP_DUMP_ON_OOM +
                 " not found");
         }
         return gcDetails;

@@ -81,17 +81,12 @@ public class GarbageCollectorExtImpl extends GarbageCollectorImpl
         GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION
     };
 
-    private MBeanNotificationInfo[] notifInfo = null;
     public MBeanNotificationInfo[] getNotificationInfo() {
-        synchronized (this) {
-            if (notifInfo == null) {
-                 notifInfo = new MBeanNotificationInfo[1];
-                 notifInfo[0] = new MBeanNotificationInfo(gcNotifTypes,
-                                                          notifName,
-                                                          "GC Notification");
-            }
-        }
-        return notifInfo;
+        return new MBeanNotificationInfo[]{
+            new MBeanNotificationInfo(gcNotifTypes,
+            notifName,
+            "GC Notification")
+        };
     }
 
     private static long seqNumber = 0;

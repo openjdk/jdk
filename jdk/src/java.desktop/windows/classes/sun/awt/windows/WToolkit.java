@@ -67,10 +67,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
+import sun.awt.util.PerformanceLogger;
 import sun.font.FontManager;
 import sun.font.FontManagerFactory;
 import sun.font.SunFontManager;
-import sun.misc.PerformanceLogger;
 import sun.util.logging.PlatformLogger;
 
 public final class WToolkit extends SunToolkit implements Runnable {

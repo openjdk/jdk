@@ -26,11 +26,20 @@
 package com.sun.tools.sjavac;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.PathMatcher;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Set;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.regex.PatternSyntaxException;
 
 /** A Source object maintains information about a source file.
  * For example which package it belongs to and kind of source it is.
@@ -56,8 +65,6 @@ public class Source implements Comparable<Source> {
     private long lastModified;
     // The source File.
     private File file;
-    // The source root under which file resides.
-    private File root;
     // If the source is generated.
     private boolean isGenerated;
     // If the source is only linked to, not compiled.
@@ -78,7 +85,7 @@ public class Source implements Comparable<Source> {
         return name.hashCode();
     }
 
-    public Source(Module m, String n, File f, File r) {
+    public Source(Module m, String n, File f) {
         name = n;
         int dp = n.lastIndexOf(".");
         if (dp != -1) {
@@ -87,7 +94,6 @@ public class Source implements Comparable<Source> {
             suffix = "";
         }
         file = f;
-        root = r;
         lastModified = f.lastModified();
         linkedOnly = false;
     }
@@ -102,7 +108,6 @@ public class Source implements Comparable<Source> {
             suffix = "";
         }
         file = null;
-        root = null;
         lastModified = lm;
         linkedOnly = false;
         int ls = n.lastIndexOf('/');
@@ -112,7 +117,6 @@ public class Source implements Comparable<Source> {
     public String suffix() { return suffix; }
     public Package pkg() { return pkg; }
     public File   file() { return file; }
-    public File   root() { return root; }
     public long lastModified() {
         return lastModified;
     }
@@ -183,225 +187,122 @@ public class Source implements Comparable<Source> {
      */
     static public void scanRoot(File root,
                                 Set<String> suffixes,
-                                List<String> excludes, List<String> includes,
-                                List<String> excludeFiles, List<String> includeFiles,
+                                List<String> excludes,
+                                List<String> includes,
                                 Map<String,Source> foundFiles,
                                 Map<String,Module> foundModules,
-                                Module currentModule,
+                                final Module currentModule,
                                 boolean permitSourcesWithoutPackage,
                                 boolean inGensrc,
                                 boolean inLinksrc)
-        throws ProblemException {
+                                        throws IOException, ProblemException {
 
-        if (root == null) return;
-        int root_prefix = root.getPath().length()+1;
-        // This is the root source directory, it must not contain any Java sources files
-        // because we do not allow Java source files without a package.
-        // (Unless of course --permit-sources-without-package has been specified.)
-        // It might contain other source files however, (for -tr and -copy) these will
-        // always be included, since no package pattern can match the root directory.
-        currentModule = addFilesInDir(root, root_prefix, root, suffixes, permitSourcesWithoutPackage,
-                                       excludeFiles, includeFiles,
-                                       foundFiles, foundModules, currentModule,
-                                       inGensrc, inLinksrc);
+        if (root == null)
+            return;
 
-        File[] dirfiles = root.listFiles();
-        for (File d : dirfiles) {
-            if (d.isDirectory()) {
-                // Descend into the directory structure.
-                scanDirectory(d, root_prefix, root, suffixes,
-                              excludes, includes, excludeFiles, includeFiles,
-                              foundFiles, foundModules, currentModule, inGensrc, inLinksrc);
-            }
+        FileSystem fs = root.toPath().getFileSystem();
+
+        if (includes.isEmpty()) {
+            includes = Collections.singletonList("**");
         }
-    }
 
-    /**
-     * Test if a path matches any of the patterns given.
-     * The pattern foo/bar matches only foo/bar
-     * The pattern foo/* matches foo/bar and foo/bar/zoo etc
-     */
-    static private boolean hasMatch(String path, List<String> patterns) {
+        List<PathMatcher> includeMatchers = createPathMatchers(fs, includes);
+        List<PathMatcher> excludeMatchers = createPathMatchers(fs, excludes);
 
-        // Convert Windows '\' to '/' for the sake of comparing with the patterns
-        path = path.replace(File.separatorChar, '/');
+        Files.walkFileTree(root.toPath(), new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 
-        for (String p : patterns) {
-            // Exact match
-            if (p.equals(path))
-                return true;
+                Path relToRoot = root.toPath().relativize(file);
 
-            // Single dot the end matches this package and all its subpackages.
-            if (p.endsWith("/*")) {
-                // Remove the wildcard
-                String patprefix = p.substring(0,p.length()-2);
-                // Does the path start with the pattern prefix?
-                if (path.startsWith(patprefix)) {
-                    // If the path has the same length as the pattern prefix, then it is a match.
-                    // If the path is longer, then make sure that
-                    // the next part of the path starts with a dot (.) to prevent
-                    // wildcard matching in the middle of a package name.
-                    if (path.length()==patprefix.length() || path.charAt(patprefix.length())=='/') {
-                        return true;
+                if (includeMatchers.stream().anyMatch(im -> im.matches(relToRoot))
+                        && excludeMatchers.stream().noneMatch(em -> em.matches(relToRoot))
+                        && suffixes.contains(Util.fileSuffix(file))) {
+
+                    // TODO: Test this.
+                    Source existing = foundFiles.get(file);
+                    if (existing != null) {
+                        throw new IOException("You have already added the file "+file+" from "+existing.file().getPath());
                     }
-                }
-            }
-        }
-        return false;
-    }
+                    existing = currentModule.lookupSource(file.toString());
+                    if (existing != null) {
 
-    /**
-     * Matches patterns with the asterisk first. */
-     // The pattern foo/bar.java only matches foo/bar.java
-     // The pattern */bar.java matches foo/bar.java and zoo/bar.java etc
-    static private boolean hasFileMatch(String path, List<String> patterns) {
-        // Convert Windows '\' to '/' for the sake of comparing with the patterns
-        path = path.replace(File.separatorChar, '/');
+                            // Oups, the source is already added, could be ok, could be not, lets check.
+                            if (inLinksrc) {
+                                // So we are collecting sources for linking only.
+                                if (existing.isLinkedOnly()) {
+                                    // Ouch, this one is also for linking only. Bad.
+                                    throw new IOException("You have already added the link only file " + file + " from " + existing.file().getPath());
+                                }
+                                // Ok, the existing source is to be compiled. Thus this link only is redundant
+                                // since all compiled are also linked to. Continue to the next source.
+                                // But we need to add the source, so that it will be visible to linking,
+                                // if not the multi core compile will fail because a JavaCompiler cannot
+                                // find the necessary dependencies for its part of the source.
+                                foundFiles.put(file.toString(), existing);
+                            } else {
+                                // We are looking for sources to compile, if we find an existing to be compiled
+                                // source with the same name, it is an internal error, since we must
+                                // find the sources to be compiled before we find the sources to be linked to.
+                                throw new IOException("Internal error: Double add of file " + file + " from " + existing.file().getPath());
+                            }
 
-        path = Util.normalizeDriveLetter(path);
-        for (String p : patterns) {
-            // Exact match
-            if (p.equals(path)) {
-                return true;
-            }
-            // Single dot the end matches this package and all its subpackages.
-            if (p.startsWith("*")) {
-                // Remove the wildcard
-                String patsuffix = p.substring(1);
-                // Does the path start with the pattern prefix?
-                if (path.endsWith(patsuffix)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Add the files in the directory, assuming that the file has not been excluded.
-     * Returns a fresh Module object, if this was a dir with a module-info.java file.
-     */
-    static private Module addFilesInDir(File dir, int rootPrefix, File root,
-                                        Set<String> suffixes, boolean allow_javas,
-                                        List<String> excludeFiles, List<String> includeFiles,
-                                        Map<String,Source> foundFiles,
-                                        Map<String,Module> foundModules,
-                                        Module currentModule,
-                                        boolean inGensrc,
-                                        boolean inLinksrc)
-        throws ProblemException
-    {
-        for (File f : dir.listFiles()) {
-
-            if (!f.isFile())
-                continue;
-
-            boolean should_add =
-                (excludeFiles == null || excludeFiles.isEmpty() || !hasFileMatch(f.getPath(), excludeFiles))
-                && (includeFiles == null || includeFiles.isEmpty() || hasFileMatch(f.getPath(), includeFiles));
-
-            if (!should_add)
-                continue;
-
-            if (!allow_javas && f.getName().endsWith(".java")) {
-                throw new ProblemException("No .java files are allowed in the source root "+dir.getPath()+
-                                           ", please remove "+f.getName());
-            }
-            // Extract the file name relative the root.
-            String fn = f.getPath().substring(rootPrefix);
-            // Extract the package name.
-            int sp = fn.lastIndexOf(File.separatorChar);
-            String pkg = "";
-            if (sp != -1) {
-                pkg = fn.substring(0,sp).replace(File.separatorChar,'.');
-            }
-            // Is this a module-info.java file?
-            if (fn.endsWith("module-info.java")) {
-                // Aha! We have recursed into a module!
-                if (!currentModule.name().equals("")) {
-                    throw new ProblemException("You have an extra module-info.java inside a module! Please remove "+fn);
-                }
-                String module_name = fn.substring(0,fn.length()-16);
-                currentModule = new Module(module_name, f.getPath());
-                foundModules.put(module_name, currentModule);
-            }
-            // Extract the suffix.
-            int dp = fn.lastIndexOf(".");
-            String suffix = "";
-            if (dp > 0) {
-                suffix = fn.substring(dp);
-            }
-            // Should the file be added?
-            if (suffixes.contains(suffix)) {
-                Source of = foundFiles.get(f.getPath());
-                if (of != null) {
-                    throw new ProblemException("You have already added the file "+fn+" from "+of.file().getPath());
-                }
-                of = currentModule.lookupSource(f.getPath());
-                if (of != null) {
-                    // Oups, the source is already added, could be ok, could be not, lets check.
-                    if (inLinksrc) {
-                        // So we are collecting sources for linking only.
-                        if (of.isLinkedOnly()) {
-                            // Ouch, this one is also for linking only. Bad.
-                            throw new ProblemException("You have already added the link only file "+fn+" from "+of.file().getPath());
-                        }
-                        // Ok, the existing source is to be compiled. Thus this link only is redundant
-                        // since all compiled are also linked to. Continue to the next source.
-                        // But we need to add the source, so that it will be visible to linking,
-                        // if not the multi core compile will fail because a JavaCompiler cannot
-                        // find the necessary dependencies for its part of the source.
-                        foundFiles.put(f.getPath(), of);
-                        continue;
                     } else {
-                        // We are looking for sources to compile, if we find an existing to be compiled
-                        // source with the same name, it is an internal error, since we must
-                        // find the sources to be compiled before we find the sources to be linked to.
-                        throw new ProblemException("Internal error: Double add of file "+fn+" from "+of.file().getPath());
+
+                        //////////////////////////////////////////////////////////////
+                        // Add source
+                        Source s = new Source(currentModule, file.toString(), file.toFile());
+                        if (inGensrc) {
+                            s.markAsGenerated();
+                        }
+                        if (inLinksrc) {
+                            s.markAsLinkedOnly();
+                        }
+                        String pkg = packageOfJavaFile(root.toPath(), file);
+                        pkg = currentModule.name() + ":" + pkg;
+                        foundFiles.put(file.toString(), s);
+                        currentModule.addSource(pkg, s);
+                        //////////////////////////////////////////////////////////////
                     }
                 }
-                Source s = new Source(currentModule, f.getPath(), f, root);
-                if (inGensrc) s.markAsGenerated();
-                if (inLinksrc) {
-                    s.markAsLinkedOnly();
-                }
-                pkg = currentModule.name()+":"+pkg;
-                foundFiles.put(f.getPath(), s);
-                currentModule.addSource(pkg, s);
+
+                return FileVisitResult.CONTINUE;
             }
-        }
-        return currentModule;
+        });
     }
 
-    static private void scanDirectory(File dir, int rootPrefix, File root,
-                                      Set<String> suffixes,
-                                      List<String> excludes, List<String> includes,
-                                      List<String> excludeFiles, List<String> includeFiles,
-                                      Map<String,Source> foundFiles,
-                                      Map<String,Module> foundModules,
-                                      Module currentModule, boolean inGensrc, boolean inLinksrc)
-        throws ProblemException {
-
-        String path = "";
-        // Remove the root prefix from the dir path
-        if (dir.getPath().length() > rootPrefix) {
-            path = dir.getPath().substring(rootPrefix);
-        }
-        // Should this package directory be included and not excluded?
-        if ((includes==null || includes.isEmpty() || hasMatch(path, includes)) &&
-            (excludes==null || excludes.isEmpty() || !hasMatch(path, excludes))) {
-            // Add the source files.
-            currentModule = addFilesInDir(dir, rootPrefix, root, suffixes, true, excludeFiles, includeFiles,
-                                          foundFiles, foundModules, currentModule, inGensrc, inLinksrc);
-        }
-
-        for (File d : dir.listFiles()) {
-            if (d.isDirectory()) {
-                // Descend into the directory structure.
-                scanDirectory(d, rootPrefix, root, suffixes,
-                              excludes, includes, excludeFiles, includeFiles,
-                              foundFiles, foundModules, currentModule, inGensrc, inLinksrc);
+    private static List<PathMatcher> createPathMatchers(FileSystem fs, List<String> patterns) {
+        List<PathMatcher> matchers = new ArrayList<>();
+        for (String pattern : patterns) {
+            try {
+                matchers.add(fs.getPathMatcher("glob:" + pattern));
+            } catch (PatternSyntaxException e) {
+                Log.error("Invalid pattern: " + pattern);
+                throw e;
             }
         }
+        return matchers;
+    }
+
+    private static String packageOfJavaFile(Path sourceRoot, Path javaFile) {
+        Path javaFileDir = javaFile.getParent();
+        Path packageDir = sourceRoot.relativize(javaFileDir);
+        List<String> separateDirs = new ArrayList<>();
+        for (Path pathElement : packageDir) {
+            separateDirs.add(pathElement.getFileName().toString());
+        }
+        return String.join(".", separateDirs);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s[pkg: %s, name: %s, suffix: %s, file: %s, isGenerated: %b, linkedOnly: %b]",
+                             getClass().getSimpleName(),
+                             pkg,
+                             name,
+                             suffix,
+                             file,
+                             isGenerated,
+                             linkedOnly);
     }
 }
