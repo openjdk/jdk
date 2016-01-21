@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,77 +144,77 @@ public class SjavacImpl implements Sjavac {
             Module current_module = new Module("", "");
             modules.put("", current_module);
 
-            // Find all sources, use the suffix rules to know which files are sources.
-            Map<String,Source> sources = new HashMap<>();
-
-            // Find the files, this will automatically populate the found modules
-            // with found packages where the sources are found!
-            findSourceFiles(options.getSources(),
-                            suffixRules.keySet(),
-                            sources,
-                            modules,
-                            current_module,
-                            options.isDefaultPackagePermitted(),
-                            false);
-
-            if (sources.isEmpty()) {
-                Log.error("Found nothing to compile!");
-                return RC_FATAL;
-            }
-
-
-            // Create a map of all source files that are available for linking. Both -src and
-            // -sourcepath point to such files. It is possible to specify multiple
-            // -sourcepath options to enable different filtering rules. If the
-            // filters are the same for multiple sourcepaths, they may be concatenated
-            // using :(;). Before sending the list of sourcepaths to javac, they are
-            // all concatenated. The list created here is used by the SmartFileWrapper to
-            // make sure only the correct sources are actually available.
-            // We might find more modules here as well.
-            Map<String,Source> sources_to_link_to = new HashMap<>();
-
-            List<SourceLocation> sourceResolutionLocations = new ArrayList<>();
-            sourceResolutionLocations.addAll(options.getSources());
-            sourceResolutionLocations.addAll(options.getSourceSearchPaths());
-            findSourceFiles(sourceResolutionLocations,
-                            Collections.singleton(".java"),
-                            sources_to_link_to,
-                            modules,
-                            current_module,
-                            options.isDefaultPackagePermitted(),
-                            true);
-
-            // Add the set of sources to the build database.
-            javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
-            javac_state.now().checkInternalState("checking sources", false, sources);
-            javac_state.now().checkInternalState("checking linked sources", true, sources_to_link_to);
-            javac_state.setVisibleSources(sources_to_link_to);
-
-            int round = 0;
-            printRound(round);
-
-            // If there is any change in the source files, taint packages
-            // and mark the database in need of saving.
-            javac_state.checkSourceStatus(false);
-
-            // Find all existing artifacts. Their timestamp will match the last modified timestamps stored
-            // in javac_state, simply because loading of the JavacState will clean out all artifacts
-            // that do not match the javac_state database.
-            javac_state.findAllArtifacts();
-
-            // Remove unidentified artifacts from the bin, gensrc and header dirs.
-            // (Unless we allow them to be there.)
-            // I.e. artifacts that are not known according to the build database (javac_state).
-            // For examples, files that have been manually copied into these dirs.
-            // Artifacts with bad timestamps (ie the on disk timestamp does not match the timestamp
-            // in javac_state) have already been removed when the javac_state was loaded.
-            if (!options.areUnidentifiedArtifactsPermitted()) {
-                javac_state.removeUnidentifiedArtifacts();
-            }
-            // Go through all sources and taint all packages that miss artifacts.
-            javac_state.taintPackagesThatMissArtifacts();
-
             try {
+                // Find all sources, use the suffix rules to know which files are sources.
+                Map<String,Source> sources = new HashMap<>();
+
+                // Find the files, this will automatically populate the found modules
+                // with found packages where the sources are found!
+                findSourceFiles(options.getSources(),
+                                suffixRules.keySet(),
+                                sources,
+                                modules,
+                                current_module,
+                                options.isDefaultPackagePermitted(),
+                                false);
+
+                if (sources.isEmpty()) {
+                    Log.error("Found nothing to compile!");
+                    return RC_FATAL;
+                }
+
+
+                // Create a map of all source files that are available for linking. Both -src and
+                // -sourcepath point to such files. It is possible to specify multiple
+                // -sourcepath options to enable different filtering rules. If the
+                // filters are the same for multiple sourcepaths, they may be concatenated
+                // using :(;). Before sending the list of sourcepaths to javac, they are
+                // all concatenated. The list created here is used by the SmartFileWrapper to
+                // make sure only the correct sources are actually available.
+                // We might find more modules here as well.
+                Map<String,Source> sources_to_link_to = new HashMap<>();
+
+                List<SourceLocation> sourceResolutionLocations = new ArrayList<>();
+                sourceResolutionLocations.addAll(options.getSources());
+                sourceResolutionLocations.addAll(options.getSourceSearchPaths());
+                findSourceFiles(sourceResolutionLocations,
+                                Collections.singleton(".java"),
+                                sources_to_link_to,
+                                modules,
+                                current_module,
+                                options.isDefaultPackagePermitted(),
+                                true);
+
+                // Add the set of sources to the build database.
+                javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
+                javac_state.now().checkInternalState("checking sources", false, sources);
+                javac_state.now().checkInternalState("checking linked sources", true, sources_to_link_to);
+                javac_state.setVisibleSources(sources_to_link_to);
+
+                int round = 0;
+                printRound(round);
+
+                // If there is any change in the source files, taint packages
+                // and mark the database in need of saving.
+                javac_state.checkSourceStatus(false);
+
+                // Find all existing artifacts. Their timestamp will match the last modified timestamps stored
+                // in javac_state, simply because loading of the JavacState will clean out all artifacts
+                // that do not match the javac_state database.
+                javac_state.findAllArtifacts();
+
+                // Remove unidentified artifacts from the bin, gensrc and header dirs.
+                // (Unless we allow them to be there.)
+                // I.e. artifacts that are not known according to the build database (javac_state).
+                // For examples, files that have been manually copied into these dirs.
+                // Artifacts with bad timestamps (ie the on disk timestamp does not match the timestamp
+                // in javac_state) have already been removed when the javac_state was loaded.
+                if (!options.areUnidentifiedArtifactsPermitted()) {
+                    javac_state.removeUnidentifiedArtifacts();
+                }
+                // Go through all sources and taint all packages that miss artifacts.
+                javac_state.taintPackagesThatMissArtifacts();
+
                 // Check recorded classpath public apis. Taint packages that depend on
                 // classpath classes whose public apis have changed.
                 javac_state.taintPackagesDependingOnChangedClasspathPackages();
@@ -229,8 +229,16 @@ public class SjavacImpl implements Sjavac {
                 // (Generated sources must always have a package.)
                 Map<String,Source> generated_sources = new HashMap<>();
 
-                Source.scanRoot(Util.pathToFile(options.getGenSrcDir()), Util.set(".java"), null, null, null, null,
-                        generated_sources, modules, current_module, false, true, false);
+                Source.scanRoot(Util.pathToFile(options.getGenSrcDir()),
+                                Util.set(".java"),
+                                Collections.emptyList(),
+                                Collections.emptyList(),
+                                generated_sources,
+                                modules,
+                                current_module,
+                                false,
+                                true,
+                                false);
                 javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
                 // Recheck the the source files and their timestamps again.
                 javac_state.checkSourceStatus(true);
@@ -254,7 +262,10 @@ public class SjavacImpl implements Sjavac {
                         printRound(round);
                     // Clean out artifacts in tainted packages.
                     javac_state.deleteClassArtifactsInTaintedPackages();
-                    again = javac_state.performJavaCompilations(compilationService, options, recently_compiled, rc);
+                    again = javac_state.performJavaCompilations(compilationService,
+                                                                options,
+                                                                recently_compiled,
+                                                                rc);
                     if (!rc[0]) {
                         Log.debug("Compilation failed.");
                         break;
@@ -299,8 +310,6 @@ public class SjavacImpl implements Sjavac {
             err = "Please specify output directory.";
         } else if (options.isJavaFilesAmongJavacArgs()) {
             err = "Sjavac does not handle explicit compilation of single .java files.";
-        } else if (options.getServerConf() == null) {
-            err = "No server configuration provided.";
         } else if (!options.getImplicitPolicy().equals("none")) {
             err = "The only allowed setting for sjavac is -implicit:none";
         } else if (options.getSources().isEmpty() && options.getStateDir() != null) {
@@ -344,7 +353,8 @@ public class SjavacImpl implements Sjavac {
                                        Map<String, Module> foundModules,
                                        Module currentModule,
                                        boolean permitSourcesInDefaultPackage,
-                                       boolean inLinksrc) {
+                                       boolean inLinksrc)
+                                               throws IOException {
 
         for (SourceLocation source : sourceLocations) {
             source.findSourceFiles(sourceTypes,

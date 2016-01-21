@@ -54,7 +54,7 @@ import sun.security.x509.X500Name;
  * Core implementation of a LDAP Cert Store.
  * @see java.security.cert.CertStore
  *
- * @since       1.9
+ * @since       9
  */
 final class LDAPCertStoreImpl {
 

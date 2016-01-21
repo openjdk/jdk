@@ -340,7 +340,7 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
     }
 
     @Override
-    public long fastPush(final int arg) {
+    public double fastPush(final int arg) {
         final int len = (int)length();
         if (len == array.length) {
             array = Arrays.copyOf(array, nextSize(len));
@@ -359,11 +359,6 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
         final int elem = array[newLength];
         array[newLength] = 0;
         return elem;
-    }
-
-    @Override
-    public long fastPopLong() {
-        return fastPopInt();
     }
 
     @Override

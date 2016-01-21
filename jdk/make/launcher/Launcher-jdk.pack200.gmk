@@ -100,7 +100,6 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
         -D "JDK_FNAME=unpack200.exe" \
         -D "JDK_INTERNAL_NAME=unpack200" \
         -D "JDK_FTYPE=0x1L", \
-    DEBUG_SYMBOLS := true, \
     MANIFEST := $(JDK_TOPDIR)/src/jdk.pack200/windows/native/unpack200/unpack200_proto.exe.manifest, \
     MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS), \
 ))

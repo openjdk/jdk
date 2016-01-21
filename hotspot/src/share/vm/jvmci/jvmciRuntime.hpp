@@ -71,8 +71,6 @@ class JVMCIRuntime: public AllStatic {
   static bool _HotSpotJVMCIRuntime_initialized;
   static bool _well_known_classes_initialized;
   static const char* _compiler;
-  static int _options_count;
-  static SystemProperty** _options;
 
   static int _trivial_prefixes_count;
   static char** _trivial_prefixes;
@@ -98,20 +96,6 @@ class JVMCIRuntime: public AllStatic {
    * when JVMCI is initialized.
    */
   static void save_compiler(const char* compiler);
-
-  /**
-   * Saves the value of the system properties starting with "jvmci.option." for processing
-   * when JVMCI is initialized.
-   *
-   * @param props the head of the system property list
-   */
-  static void save_options(SystemProperty* props);
-
-  /**
-   * If either the PrintFlags or ShowFlags JVMCI option is present,
-   * then JVMCI is initialized to show the help message.
-   */
-  static void maybe_print_flags(TRAPS);
 
   static bool is_HotSpotJVMCIRuntime_initialized() { return _HotSpotJVMCIRuntime_initialized; }
 
@@ -145,7 +129,7 @@ class JVMCIRuntime: public AllStatic {
 
   static void metadata_do(void f(Metadata*));
 
-  static void shutdown();
+  static void shutdown(TRAPS);
 
   static bool shutdown_called() {
     return _shutdown_called;
@@ -153,34 +137,6 @@ class JVMCIRuntime: public AllStatic {
 
   static bool treat_as_trivial(Method* method);
   static void parse_lines(char* path, ParseClosure* closure, bool warnStatFailure);
-
-  /**
-   * Aborts the VM due to an unexpected exception.
-   */
-  static void abort_on_pending_exception(Handle exception, const char* message, bool dump_core = false);
-
-  /**
-   * Calls Throwable.printStackTrace() on a given exception.
-   */
-  static void call_printStackTrace(Handle exception, Thread* thread);
-
-#define CHECK_ABORT THREAD); \
-  if (HAS_PENDING_EXCEPTION) { \
-    char buf[256]; \
-    jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::abort_on_pending_exception(PENDING_EXCEPTION, buf); \
-    return; \
-  } \
-  (void)(0
-
-#define CHECK_ABORT_(result) THREAD); \
-  if (HAS_PENDING_EXCEPTION) { \
-    char buf[256]; \
-    jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::abort_on_pending_exception(PENDING_EXCEPTION, buf); \
-    return result; \
-  } \
-  (void)(0
 
   static BasicType kindToBasicType(Handle kind, TRAPS);
 

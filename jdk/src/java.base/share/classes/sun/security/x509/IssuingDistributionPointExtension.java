@@ -261,6 +261,7 @@ public class IssuingDistributionPointExtension extends Extension
                 throw new IOException(
                     "Attribute value should be of type ReasonFlags.");
             }
+            revocationReasons = (ReasonFlags)obj;
 
         } else if (name.equalsIgnoreCase(INDIRECT_CRL)) {
             if (!(obj instanceof Boolean)) {
@@ -289,7 +290,6 @@ public class IssuingDistributionPointExtension extends Extension
                     "Attribute value should be of type Boolean.");
             }
             hasOnlyAttributeCerts = ((Boolean)obj).booleanValue();
-
 
         } else {
             throw new IOException("Attribute name [" + name +

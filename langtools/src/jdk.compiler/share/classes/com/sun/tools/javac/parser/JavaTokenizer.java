@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,15 +301,16 @@ public class JavaTokenizer {
     }
 
     /** Read a number.
-     *  @param radix  The radix of the number; one of 2, j8, 10, 16.
+     *  @param radix  The radix of the number; one of 2, 8, 10, 16.
      */
     private void scanNumber(int pos, int radix) {
         // for octal, allow base-10 digit in case it's a float literal
         this.radix = radix;
         int digitRadix = (radix == 8 ? 10 : radix);
-        boolean seendigit = false;
-        if (reader.digit(pos, digitRadix) >= 0) {
-            seendigit = true;
+        int firstDigit = reader.digit(pos, Math.max(10, digitRadix));
+        boolean seendigit = firstDigit >= 0;
+        boolean seenValidDigit = firstDigit >= 0 && firstDigit < digitRadix;
+        if (seendigit) {
             scanDigits(pos, digitRadix);
         }
         if (radix == 16 && reader.ch == '.') {
@@ -325,6 +326,16 @@ public class JavaTokenizer {
                     reader.ch == 'd' || reader.ch == 'D')) {
             scanFractionAndSuffix(pos);
         } else {
+            if (!seenValidDigit) {
+                switch (radix) {
+                case 2:
+                    lexError(pos, "invalid.binary.number");
+                    break;
+                case 16:
+                    lexError(pos, "invalid.hex.number");
+                    break;
+                }
+            }
             if (reader.ch == 'l' || reader.ch == 'L') {
                 reader.scanChar();
                 tk = TokenKind.LONGLITERAL;
@@ -491,13 +502,7 @@ public class JavaTokenizer {
                     if (reader.ch == 'x' || reader.ch == 'X') {
                         reader.scanChar();
                         skipIllegalUnderscores();
-                        if (reader.ch == '.') {
-                            scanHexFractionAndSuffix(pos, false);
-                        } else if (reader.digit(pos, 16) < 0) {
-                            lexError(pos, "invalid.hex.number");
-                        } else {
-                            scanNumber(pos, 16);
-                        }
+                        scanNumber(pos, 16);
                     } else if (reader.ch == 'b' || reader.ch == 'B') {
                         if (!allowBinaryLiterals) {
                             lexError(pos, "unsupported.binary.lit", source.name);
@@ -505,11 +510,7 @@ public class JavaTokenizer {
                         }
                         reader.scanChar();
                         skipIllegalUnderscores();
-                        if (reader.digit(pos, 2) < 0) {
-                            lexError(pos, "invalid.binary.number");
-                        } else {
-                            scanNumber(pos, 2);
-                        }
+                        scanNumber(pos, 2);
                     } else {
                         reader.putChar('0');
                         if (reader.ch == '_') {

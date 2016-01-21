@@ -1077,7 +1077,7 @@ void os::shutdown() {
 // Note: os::abort() might be called very early during initialization, or
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, void* context) {
+void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
@@ -1709,24 +1709,6 @@ void os::print_memory_info(outputStream* st) {
             os::available_memory() >> 10);
   st->cr();
 }
-
-void os::print_siginfo(outputStream* st, void* siginfo) {
-  const siginfo_t* si = (const siginfo_t*)siginfo;
-
-  os::Posix::print_siginfo_brief(st, si);
-
-  if (si && (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) &&
-      UseSharedSpaces) {
-    FileMapInfo* mapinfo = FileMapInfo::current_info();
-    if (mapinfo->is_in_shared_space(si->si_addr)) {
-      st->print("\n\nError accessing class data sharing archive."   \
-                " Mapped file inaccessible during execution, "      \
-                " possible disk/network problem.");
-    }
-  }
-  st->cr();
-}
-
 
 static void print_signal_handler(outputStream* st, int sig,
                                  char* buf, size_t buflen);
@@ -3497,8 +3479,9 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Bsd::min_stack_allowed = MAX2(os::Bsd::min_stack_allowed,
-                                    (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
-                                    2*BytesPerWord COMPILER2_PRESENT(+1)) * Bsd::page_size());
+                                    JavaThread::stack_guard_zone_size() +
+                                    JavaThread::stack_shadow_zone_size() +
+                                    2*BytesPerWord COMPILER2_PRESENT(+1) * Bsd::page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&
@@ -3643,7 +3626,7 @@ void PcFetcher::do_task(const os::SuspendedThreadTaskContext& context) {
   Thread* thread = context.thread();
   OSThread* osthread = thread->osthread();
   if (osthread->ucontext() != NULL) {
-    _epc = os::Bsd::ucontext_get_pc((ucontext_t *) context.ucontext());
+    _epc = os::Bsd::ucontext_get_pc((const ucontext_t *) context.ucontext());
   } else {
     // NULL context is unexpected, double-check this is the VMThread
     guarantee(thread->is_VM_thread(), "can only be called for VMThread");

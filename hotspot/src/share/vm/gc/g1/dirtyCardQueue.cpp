@@ -112,7 +112,7 @@ void DirtyCardQueueSet::initialize(CardTableEntryClosure* cl,
                           fl_owner);
   set_buffer_size(G1UpdateBufferSize);
   _shared_dirty_card_queue.set_lock(lock);
-  _free_ids = new FreeIdSet((int) num_par_ids(), _cbl_mon);
+  _free_ids = new FreeIdSet(num_par_ids(), _cbl_mon);
 }
 
 void DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {

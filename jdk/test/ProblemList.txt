@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,9 @@ javax/management/MBeanServer/OldMBeanServerTest.java            aix-all
 # 8042215
 javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java			generic-all
 
+# 8147985
+sun/management/jmxremote/bootstrap/JMXInterfaceBindingTest.java generic-all
+
 ############################################################################
 
 # jdk_net
@@ -298,6 +301,9 @@ sun/security/provider/SecureRandom/StrongSecureRandom.java      macosx-10.10
 
 # 8074580
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               generic-all
+
+# 8146387
+javax/net/ssl/SSLSession/SessionCacheSizeTests.java windows-all,solaris-all
 
 ############################################################################
 

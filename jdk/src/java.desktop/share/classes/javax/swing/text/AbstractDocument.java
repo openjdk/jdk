@@ -3023,7 +3023,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
         /**
          * {@inheritDoc}
-         * @since 1.9
+         * @since 9
          */
         @Override
         public void lockEdit() {
@@ -3032,7 +3032,7 @@ public abstract class AbstractDocument implements Document, Serializable {
 
         /**
          * {@inheritDoc}
-         * @since 1.9
+         * @since 9
          */
         @Override
         public void unlockEdit() {

@@ -60,7 +60,7 @@ import org.w3c.dom.DOMException;
  * nodes will be siblings and appear as direct children of the root node, no
  * matter how deeply nested the structure of the original document.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113'>Document Object Model (DOM) Level 2 Traversal and Range Specification</a>.
- * @since 1.9, DOM Level 2
+ * @since 9, DOM Level 2
  */
 public interface TreeWalker {
     /**

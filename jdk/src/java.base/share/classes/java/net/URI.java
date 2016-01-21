@@ -1146,13 +1146,30 @@ public final class URI
         if (part != null) {
             return part;
         }
-        StringBuilder sb = new StringBuilder();
-        appendSchemeSpecificPart(sb, null, getAuthority(), getUserInfo(),
+
+        String s = string;
+        if (s != null) {
+            // if string is defined, components will have been parsed
+            int start = 0;
+            int end = s.length();
+            if (scheme != null) {
+                start = scheme.length() + 1;
+            }
+            if (fragment != null) {
+                end -= fragment.length() + 1;
+            }
+            if (path != null && path.length() == end - start) {
+                part = path;
+            } else {
+                part = s.substring(start, end);
+            }
+        } else {
+            StringBuilder sb = new StringBuilder();
+            appendSchemeSpecificPart(sb, null, getAuthority(), getUserInfo(),
                                  host, port, getPath(), getQuery());
-        if (sb.length() == 0) {
-            return null;
+            part = sb.toString();
         }
-        return schemeSpecificPart = sb.toString();
+        return schemeSpecificPart = part;
     }
 
     /**
@@ -3056,7 +3073,6 @@ public final class URI
         //
         void parse(boolean rsa) throws URISyntaxException {
             requireServerAuthority = rsa;
-            int ssp;                    // Start of scheme-specific part
             int n = input.length();
             int p = scan(0, n, "/?#", ":");
             if ((p >= 0) && at(p, n, ':')) {
@@ -3066,21 +3082,20 @@ public final class URI
                 checkChars(1, p, L_SCHEME, H_SCHEME, "scheme name");
                 scheme = input.substring(0, p);
                 p++;                    // Skip ':'
-                ssp = p;
                 if (at(p, n, '/')) {
                     p = parseHierarchical(p, n);
                 } else {
+                    // opaque; need to create the schemeSpecificPart
                     int q = scan(p, n, "#");
                     if (q <= p)
                         failExpecting("scheme-specific part", p);
                     checkChars(p, q, L_URIC, H_URIC, "opaque part");
+                    schemeSpecificPart = input.substring(p, q);
                     p = q;
                 }
             } else {
-                ssp = 0;
                 p = parseHierarchical(0, n);
             }
-            schemeSpecificPart = input.substring(ssp, p);
             if (at(p, n, '#')) {
                 checkChars(p + 1, n, L_URIC, H_URIC, "fragment");
                 fragment = input.substring(p + 1, n);

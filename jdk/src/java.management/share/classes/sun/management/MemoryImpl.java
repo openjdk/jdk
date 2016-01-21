@@ -115,17 +115,10 @@ class MemoryImpl extends NotificationEmitterSupport
         "Memory usage exceeds collection usage threshold"
     };
 
-    private MBeanNotificationInfo[] notifInfo = null;
     public MBeanNotificationInfo[] getNotificationInfo() {
-        synchronized (this) {
-            if (notifInfo == null) {
-                 notifInfo = new MBeanNotificationInfo[1];
-                 notifInfo[0] = new MBeanNotificationInfo(notifTypes,
-                                                          notifName,
-                                                          "Memory Notification");
-            }
-        }
-        return notifInfo;
+        return new MBeanNotificationInfo[] {
+            new MBeanNotificationInfo(notifTypes, notifName, "Memory Notification")
+        };
     }
 
     private static String getNotifMsg(String notifType) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,14 +64,13 @@ public class CompileWithInvisibleSources extends SJavacTester {
                      "package beta; public class B { }");
 
         compile(GENSRC.toString(),
-                "-x", "beta",
+                "-x", "beta/*",
                 "-sourcepath", GENSRC2.toString(),
                 "-sourcepath", GENSRC3.toString(),
                 "-d", BIN.toString(),
                 "--state-dir=" + BIN,
                 "-h", HEADERS.toString(),
-                "-j", "1",
-                SERVER_ARG);
+                "-j", "1");
 
         System.out.println("The first compile went well!");
         Map<String,Long> new_bin_state = collectState(BIN);
@@ -87,8 +86,7 @@ public class CompileWithInvisibleSources extends SJavacTester {
                              "-d", BIN.toString(),
                              "--state-dir=" + BIN,
                              "-h", HEADERS.toString(),
-                             "-j", "1",
-                             SERVER_ARG);
+                             "-j", "1");
 
         System.out.println("----- Compile without exluded beta failed, as expected! Good!");
     }

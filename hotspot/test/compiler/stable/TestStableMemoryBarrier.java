@@ -36,6 +36,8 @@
  */
 package java.lang.invoke;
 
+import jdk.internal.vm.annotation.Stable;
+
 import java.lang.reflect.InvocationTargetException;
 
 public class TestStableMemoryBarrier {

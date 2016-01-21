@@ -1,10 +1,10 @@
 abc
 [jdk.dynalink.beans.SimpleDynamicMethod java.lang.String(char[],int,int)]
 ava
-TypeError: null is not a function
-TypeError: null is not a function
-TypeError: null is not a function
+TypeError: Java.type("java.lang.Object")["()xxxxx"] is not a function
+TypeError: Java.type("java.lang.Object")["("] is not a function
+TypeError: Java.type("java.lang.Object")[")"] is not a function
 TypeError: Constructor [jdk.dynalink.beans.SimpleDynamicMethod java.lang.String(char[],int,int)] requires "new".
-TypeError: null is not a function
-TypeError: null is not a function
+TypeError: Java.type("java.lang.Runnable")["()"] is not a function
+TypeError: Java.type("java.lang.Runnable")["(int)"] is not a function
 java.lang.InstantiationException: java.io.InputStream

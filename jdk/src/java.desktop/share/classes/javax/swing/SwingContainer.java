@@ -45,7 +45,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * with the {@code isContainer} attribute allow to directly specify
  * whether a Swing component is a container or not.
  *
- * @since 1.9
+ * @since 9
  *
  * @author Sergey A. Malenkov
  */

@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_G1_G1REMSETSUMMARY_HPP
 #define SHARE_VM_GC_G1_G1REMSETSUMMARY_HPP
 
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 class G1RemSet;
@@ -57,26 +58,12 @@ private:
     _sampling_thread_vtime = value;
   }
 
-  void free_and_null() {
-    if (_rs_threads_vtimes) {
-      FREE_C_HEAP_ARRAY(double, _rs_threads_vtimes);
-      _rs_threads_vtimes = NULL;
-      _num_vtimes = 0;
-    }
-  }
-
   // update this summary with current data from various places
   void update();
 
 public:
-  G1RemSetSummary() : _remset(NULL), _num_refined_cards(0),
-    _num_processed_buf_mutator(0), _num_processed_buf_rs_threads(0), _num_coarsenings(0),
-    _rs_threads_vtimes(NULL), _num_vtimes(0), _sampling_thread_vtime(0.0f) {
-  }
-
-  ~G1RemSetSummary() {
-    free_and_null();
-  }
+  G1RemSetSummary();
+  ~G1RemSetSummary();
 
   // set the counters in this summary to the values of the others
   void set(G1RemSetSummary* other);
@@ -85,6 +72,7 @@ public:
 
   // initialize and get the first sampling
   void initialize(G1RemSet* remset);
+  bool const initialized() { return _rs_threads_vtimes != NULL; }
 
   void print_on(outputStream* out);
 

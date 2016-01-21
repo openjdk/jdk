@@ -50,7 +50,7 @@ GENSRC_SOR_BIN := $(BUILDTOOLS_OUTPUTDIR)/native/genSocketOptionRegistry
 SOR_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSRC_SOR_SRC)/$(GENSRC_SOR_SRC_FILE) | \
     $(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }')
 
-$(eval $(call SetupNativeCompilation,BUILD_GENSRC_SOR_EXE, \
+$(eval $(call SetupNativeCompilation, BUILD_GENSRC_SOR_EXE, \
     SRC := $(GENSRC_SOR_SRC), \
     INCLUDE_FILES := $(GENSRC_SOR_SRC_FILE), \
     TOOLCHAIN := TOOLCHAIN_BUILD, \
@@ -86,7 +86,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   UC_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSRC_UC_SRC)/$(GENSRC_UC_SRC_FILE) | \
       $(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }')
 
-  $(eval $(call SetupNativeCompilation,BUILD_GENSRC_UC_EXE, \
+  $(eval $(call SetupNativeCompilation, BUILD_GENSRC_UC_EXE, \
       SRC := $(GENSRC_UC_SRC), \
       INCLUDE_FILES := $(GENSRC_UC_SRC_FILE), \
       TOOLCHAIN := TOOLCHAIN_BUILD, \
@@ -124,7 +124,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   SOL_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSRC_SOL_SRC)/$(GENSRC_SOL_SRC_FILE) | \
       $(NAWK) '/^.*Copyright.*Oracle/ { printf "%s %s",$$4,$$5 }')
 
-  $(eval $(call SetupNativeCompilation,BUILD_GENSRC_SOL_EXE, \
+  $(eval $(call SetupNativeCompilation, BUILD_GENSRC_SOL_EXE, \
       SRC := $(GENSRC_SOL_SRC), \
       INCLUDE_FILES := $(GENSRC_SOL_SRC_FILE), \
       TOOLCHAIN := TOOLCHAIN_BUILD, \

@@ -23,14 +23,16 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265
+ * @bug 8143037 8142447 8144095 8140265 8144906
+ * @requires os.family != "solaris"
  * @summary Tests for Basic tests for REPL tool
  * @library /tools/lib
  * @ignore 8139873
  * @build KullaTesting TestingInputStream ToolBox Compiler
- * @run testng ToolBasicTest
+ * @run testng/timeout=600 ToolBasicTest
  */
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -460,8 +462,7 @@ public class ToolBasicTest extends ReplToolTesting {
         Path unknown = compiler.getPath("UNKNOWN.jar");
         test(true, new String[]{unknown.toString()},
                 "|  File '" + unknown
-                + "' is not found: " + unknown
-                + " (No such file or directory)\n");
+                + "' is not found: " + unresolvableMessage(unknown) + "\n");
     }
 
     public void testReset() {
@@ -514,8 +515,7 @@ public class ToolBasicTest extends ReplToolTesting {
             test(
                     (a) -> assertCommand(a, s + " " + unknown,
                             "|  File '" + unknown
-                                    + "' is not found: " + unknown
-                                    + " (No such file or directory)\n")
+                                    + "' is not found: " + unresolvableMessage(unknown) + "\n")
             );
         }
     }
@@ -872,6 +872,15 @@ public class ToolBasicTest extends ReplToolTesting {
                 a -> assertCommand(a, "/2", "System.err.println(2)\n", "", null, "", "2\n"),
                 a -> assertCommand(a, "/1", "System.err.println(1)\n", "", null, "", "1\n")
         );
+    }
+
+    private String unresolvableMessage(Path p) {
+        try {
+            new FileInputStream(p.toFile());
+            throw new AssertionError("Expected exception did not occur.");
+        } catch (IOException ex) {
+            return ex.getMessage();
+        }
     }
 
     public void testCommandPrefix() {

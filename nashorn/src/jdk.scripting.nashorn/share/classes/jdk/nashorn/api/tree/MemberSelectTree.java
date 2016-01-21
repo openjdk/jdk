@@ -33,7 +33,7 @@ package jdk.nashorn.api.tree;
  *   <em>expression</em> . <em>identifier</em>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface MemberSelectTree extends ExpressionTree {
     /**

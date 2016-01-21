@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,10 +67,10 @@ public class ClientMain {
         Log.debug("==========================================================");
 
         // Prepare sjavac object
-        boolean background = Util.extractBooleanOption("background", options.getServerConf(), true);
+        boolean useServer = options.getServerConf() != null;
         Sjavac sjavac;
         // Create an sjavac implementation to be used for compilation
-        if (background) {
+        if (useServer) {
             try {
                 sjavac = new SjavacClient(options);
             } catch (PortFileInaccessibleException e) {
@@ -83,7 +83,8 @@ public class ClientMain {
 
         int rc = sjavac.compile(args, out, err);
 
-        if (!background)
+        // If sjavac is running in the foreground we should shut it down at this point
+        if (!useServer)
             sjavac.shutdown();
 
         return rc;

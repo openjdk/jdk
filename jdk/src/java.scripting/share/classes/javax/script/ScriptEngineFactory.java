@@ -31,12 +31,14 @@ import java.util.List;
  * <code>ScriptEngineFactory</code> is used to describe and instantiate
  * <code>ScriptEngines</code>.
  * <br><br>
- * Each class implementing <code>ScriptEngine</code> has a corresponding factory
- * that exposes metadata describing the engine class.
+ * Each class implementing <code>ScriptEngine</code> has a corresponding
+ * factory that exposes metadata describing the engine class.
  * <br><br>The <code>ScriptEngineManager</code>
- * uses the service provider mechanism described in the <i>Jar File Specification</i> to obtain
- * instances of all <code>ScriptEngineFactories</code> available in
- * the current ClassLoader.
+ * uses the service-provider loader mechanism described in the
+ * {@link java.util.ServiceLoader} class to obtain
+ * instances of {@code ScriptEngineFactory} instances.
+ * See {@link ScriptEngineManager#ScriptEngineManager()} and
+ * {@link ScriptEngineManager#ScriptEngineManager(java.lang.ClassLoader)}.
  *
  * @since 1.6
  */

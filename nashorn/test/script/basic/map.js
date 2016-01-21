@@ -44,8 +44,8 @@ print("m.empty = " + m.empty) // prints "false"
 print("m['empty'] = " + m['empty'])
 print("m[empty_key] = " + m[empty_key]) // prints "foo"
 
-print("m.bwah = " + m.bwah) // prints "null"
-print("m['bwah'] = " + m['bwah']) // prints "null"
+print("m.bwah = " + m.bwah) // prints "undefined"
+print("m['bwah'] = " + m['bwah']) // prints "undefined"
 
 m.put("twonk", "ding")
 print("m.twonk = " + m.twonk) // prints "ding"

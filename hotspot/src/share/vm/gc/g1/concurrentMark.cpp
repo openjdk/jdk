@@ -31,25 +31,22 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
-#include "gc/g1/g1ErgoVerbose.hpp"
-#include "gc/g1/g1Log.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
-#include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcTraceTime.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
@@ -232,9 +229,7 @@ void CMMarkStack::expand() {
   // Clear expansion flag
   _should_expand = false;
   if (_capacity == (jint) MarkStackSizeMax) {
-    if (PrintGCDetails && Verbose) {
-      gclog_or_tty->print_cr(" (benign) Can't expand marking stack capacity, at max size limit");
-    }
+    log_trace(gc)("(benign) Can't expand marking stack capacity, at max size limit");
     return;
   }
   // Double capacity if possible
@@ -254,12 +249,9 @@ void CMMarkStack::expand() {
     _index = 0;
     _capacity = new_capacity;
   } else {
-    if (PrintGCDetails && Verbose) {
-      // Failed to double capacity, continue;
-      gclog_or_tty->print(" (benign) Failed to expand marking stack capacity from "
-                          SIZE_FORMAT "K to " SIZE_FORMAT "K",
-                          _capacity / K, new_capacity / K);
-    }
+    // Failed to double capacity, continue;
+    log_trace(gc)("(benign) Failed to expand marking stack capacity from " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+                  _capacity / K, new_capacity / K);
   }
 }
 
@@ -442,6 +434,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   _has_aborted(false),
   _restart_for_overflow(false),
   _concurrent_marking_in_progress(false),
+  _concurrent_phase_started(false),
 
   // _verbose_level set below
 
@@ -848,10 +841,7 @@ void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
       // marking.
       reset_marking_state(true /* clear_overflow */);
 
-      if (G1Log::fine()) {
-        gclog_or_tty->gclog_stamp();
-        gclog_or_tty->print_cr("[GC concurrent-mark-reset-for-overflow]");
-      }
+      log_info(gc)("Concurrent Mark reset for overflow");
     }
   }
 
@@ -987,8 +977,6 @@ public:
 };
 
 void ConcurrentMark::scanRootRegions() {
-  double scan_start = os::elapsedTime();
-
   // Start of concurrent marking.
   ClassLoaderDataGraph::clear_claimed_marks();
 
@@ -996,10 +984,7 @@ void ConcurrentMark::scanRootRegions() {
   // at least one root region to scan. So, if it's false, we
   // should not attempt to do any further work.
   if (root_regions()->scan_in_progress()) {
-    if (G1Log::fine()) {
-      gclog_or_tty->gclog_stamp();
-      gclog_or_tty->print_cr("[GC concurrent-root-region-scan-start]");
-    }
+    GCTraceConcTime(Info, gc) tt("Concurrent Root Region Scan");
 
     _parallel_marking_threads = calc_parallel_marking_threads();
     assert(parallel_marking_threads() <= max_parallel_marking_threads(),
@@ -1010,15 +995,23 @@ void ConcurrentMark::scanRootRegions() {
     _parallel_workers->set_active_workers(active_workers);
     _parallel_workers->run_task(&task);
 
-    if (G1Log::fine()) {
-      gclog_or_tty->gclog_stamp();
-      gclog_or_tty->print_cr("[GC concurrent-root-region-scan-end, %1.7lf secs]", os::elapsedTime() - scan_start);
-    }
-
     // It's possible that has_aborted() is true here without actually
     // aborting the survivor scan earlier. This is OK as it's
     // mainly used for sanity checking.
     root_regions()->scan_finished();
+  }
+}
+
+void ConcurrentMark::register_concurrent_phase_start(const char* title) {
+  assert(!_concurrent_phase_started, "Sanity");
+  _concurrent_phase_started = true;
+  _g1h->gc_timer_cm()->register_gc_concurrent_start(title);
+}
+
+void ConcurrentMark::register_concurrent_phase_end() {
+  if (_concurrent_phase_started) {
+    _concurrent_phase_started = false;
+    _g1h->gc_timer_cm()->register_gc_concurrent_end();
   }
 }
 
@@ -1049,22 +1042,6 @@ void ConcurrentMark::markFromRoots() {
   print_stats();
 }
 
-// Helper class to get rid of some boilerplate code.
-class G1CMTraceTime : public StackObj {
-  GCTraceTimeImpl _gc_trace_time;
-  static bool doit_and_prepend(bool doit) {
-    if (doit) {
-      gclog_or_tty->put(' ');
-    }
-    return doit;
-  }
-
- public:
-  G1CMTraceTime(const char* title, bool doit)
-    : _gc_trace_time(title, doit_and_prepend(doit), false, G1CollectedHeap::heap()->gc_timer_cm()) {
-  }
-};
-
 void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   // world is stopped at this checkpoint
   assert(SafepointSynchronize::is_at_safepoint(),
@@ -1083,8 +1060,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
     g1h->prepare_for_verify();
-    Universe::verify(VerifyOption_G1UsePrevMarking,
-                     " VerifyDuringGC:(before)");
+    Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (before)");
   }
   g1h->check_bitmaps("Remark Start");
 
@@ -1102,16 +1078,13 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   if (has_overflown()) {
     // Oops.  We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
-    if (G1TraceMarkStackOverflow) {
-      gclog_or_tty->print_cr("\nRemark led to restart for overflow.");
-    }
+    log_develop_trace(gc)("Remark led to restart for overflow.");
 
     // Verify the heap w.r.t. the previous marking bitmap.
     if (VerifyDuringGC) {
       HandleMark hm;  // handle scope
       g1h->prepare_for_verify();
-      Universe::verify(VerifyOption_G1UsePrevMarking,
-                       " VerifyDuringGC:(overflow)");
+      Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (overflow)");
     }
 
     // Clear the marking state because we will be restarting
@@ -1119,7 +1092,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     reset_marking_state();
   } else {
     {
-      G1CMTraceTime trace("GC aggregate-data", G1Log::finer());
+      GCTraceTime(Debug, gc) trace("GC Aggregate Data", g1h->gc_timer_cm());
 
       // Aggregate the per-task counting data that we have accumulated
       // while marking.
@@ -1136,8 +1109,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     if (VerifyDuringGC) {
       HandleMark hm;  // handle scope
       g1h->prepare_for_verify();
-      Universe::verify(VerifyOption_G1UseNextMarking,
-                       " VerifyDuringGC:(after)");
+      Universe::verify(VerifyOption_G1UseNextMarking, "During GC (after)");
     }
     g1h->check_bitmaps("Remark End");
     assert(!restart_for_overflow(), "sanity");
@@ -1523,8 +1495,8 @@ class G1NoteEndOfConcMarkClosure : public HeapRegionClosure {
   G1CollectedHeap* _g1;
   size_t _freed_bytes;
   FreeRegionList* _local_cleanup_list;
-  HeapRegionSetCount _old_regions_removed;
-  HeapRegionSetCount _humongous_regions_removed;
+  uint _old_regions_removed;
+  uint _humongous_regions_removed;
   HRRSCleanupTask* _hrrs_cleanup_task;
 
 public:
@@ -1534,13 +1506,13 @@ public:
     _g1(g1),
     _freed_bytes(0),
     _local_cleanup_list(local_cleanup_list),
-    _old_regions_removed(),
-    _humongous_regions_removed(),
+    _old_regions_removed(0),
+    _humongous_regions_removed(0),
     _hrrs_cleanup_task(hrrs_cleanup_task) { }
 
   size_t freed_bytes() { return _freed_bytes; }
-  const HeapRegionSetCount& old_regions_removed() { return _old_regions_removed; }
-  const HeapRegionSetCount& humongous_regions_removed() { return _humongous_regions_removed; }
+  const uint old_regions_removed() { return _old_regions_removed; }
+  const uint humongous_regions_removed() { return _humongous_regions_removed; }
 
   bool doHeapRegion(HeapRegion *hr) {
     if (hr->is_archive()) {
@@ -1555,10 +1527,10 @@ public:
       _freed_bytes += hr->used();
       hr->set_containing_set(NULL);
       if (hr->is_humongous()) {
-        _humongous_regions_removed.increment(1u, hr->capacity());
+        _humongous_regions_removed++;
         _g1->free_humongous_region(hr, _local_cleanup_list, true);
       } else {
-        _old_regions_removed.increment(1u, hr->capacity());
+        _old_regions_removed++;
         _g1->free_region(hr, _local_cleanup_list, true);
       }
     } else {
@@ -1621,24 +1593,6 @@ public:
   }
 };
 
-class G1ParScrubRemSetTask: public AbstractGangTask {
-protected:
-  G1RemSet* _g1rs;
-  BitMap* _region_bm;
-  BitMap* _card_bm;
-  HeapRegionClaimer _hrclaimer;
-
-public:
-  G1ParScrubRemSetTask(G1CollectedHeap* g1h, BitMap* region_bm, BitMap* card_bm, uint n_workers) :
-      AbstractGangTask("G1 ScrubRS"), _g1rs(g1h->g1_rem_set()), _region_bm(region_bm), _card_bm(card_bm), _hrclaimer(n_workers) {
-  }
-
-  void work(uint worker_id) {
-    _g1rs->scrub(_region_bm, _card_bm, worker_id, &_hrclaimer);
-  }
-
-};
-
 void ConcurrentMark::cleanup() {
   // world is stopped at this checkpoint
   assert(SafepointSynchronize::is_at_safepoint(),
@@ -1656,8 +1610,7 @@ void ConcurrentMark::cleanup() {
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
     g1h->prepare_for_verify();
-    Universe::verify(VerifyOption_G1UsePrevMarking,
-                     " VerifyDuringGC:(before)");
+    Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (before)");
   }
   g1h->check_bitmaps("Cleanup Start");
 
@@ -1699,8 +1652,8 @@ void ConcurrentMark::cleanup() {
   double this_final_counting_time = (count_end - start);
   _total_counting_time += this_final_counting_time;
 
-  if (G1PrintRegionLivenessInfo) {
-    G1PrintRegionLivenessInfoClosure cl(gclog_or_tty, "Post-Marking");
+  if (log_is_enabled(Trace, gc, liveness)) {
+    G1PrintRegionLivenessInfoClosure cl("Post-Marking");
     _g1h->heap_region_iterate(&cl);
   }
 
@@ -1727,12 +1680,8 @@ void ConcurrentMark::cleanup() {
   // regions.
   if (G1ScrubRemSets) {
     double rs_scrub_start = os::elapsedTime();
-    G1ParScrubRemSetTask g1_par_scrub_rs_task(g1h, &_region_bm, &_card_bm, n_workers);
-    g1h->workers()->run_task(&g1_par_scrub_rs_task);
-
-    double rs_scrub_end = os::elapsedTime();
-    double this_rs_scrub_time = (rs_scrub_end - rs_scrub_start);
-    _total_rs_scrub_time += this_rs_scrub_time;
+    g1h->scrub_rem_set(&_region_bm, &_card_bm);
+    _total_rs_scrub_time += (os::elapsedTime() - rs_scrub_start);
   }
 
   // this will also free any regions totally full of garbage objects,
@@ -1743,10 +1692,6 @@ void ConcurrentMark::cleanup() {
   double end = os::elapsedTime();
   _cleanup_times.add((end - start) * 1000.0);
 
-  if (G1Log::fine()) {
-    g1h->g1_policy()->print_heap_transition(start_used_bytes);
-  }
-
   // Clean up will have freed any regions completely full of garbage.
   // Update the soft reference policy with the new heap occupancy.
   Universe::update_heap_info_at_gc();
@@ -1754,8 +1699,7 @@ void ConcurrentMark::cleanup() {
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
     g1h->prepare_for_verify();
-    Universe::verify(VerifyOption_G1UsePrevMarking,
-                     " VerifyDuringGC:(after)");
+    Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (after)");
   }
 
   g1h->check_bitmaps("Cleanup End");
@@ -1788,11 +1732,9 @@ void ConcurrentMark::completeCleanup() {
   _cleanup_list.verify_optional();
   FreeRegionList tmp_free_list("Tmp Free List");
 
-  if (G1ConcRegionFreeingVerbose) {
-    gclog_or_tty->print_cr("G1ConcRegionFreeing [complete cleanup] : "
-                           "cleanup list has %u entries",
-                           _cleanup_list.length());
-  }
+  log_develop_trace(gc, freelist)("G1ConcRegionFreeing [complete cleanup] : "
+                                  "cleanup list has %u entries",
+                                  _cleanup_list.length());
 
   // No one else should be accessing the _cleanup_list at this point,
   // so it is not necessary to take any locks
@@ -1810,13 +1752,11 @@ void ConcurrentMark::completeCleanup() {
     // region from the _cleanup_list).
     if ((tmp_free_list.length() % G1SecondaryFreeListAppendLength == 0) ||
         _cleanup_list.is_empty()) {
-      if (G1ConcRegionFreeingVerbose) {
-        gclog_or_tty->print_cr("G1ConcRegionFreeing [complete cleanup] : "
-                               "appending %u entries to the secondary_free_list, "
-                               "cleanup list still has %u entries",
-                               tmp_free_list.length(),
-                               _cleanup_list.length());
-      }
+      log_develop_trace(gc, freelist)("G1ConcRegionFreeing [complete cleanup] : "
+                                      "appending %u entries to the secondary_free_list, "
+                                      "cleanup list still has %u entries",
+                                      tmp_free_list.length(),
+                                      _cleanup_list.length());
 
       {
         MutexLockerEx x(SecondaryFreeList_lock, Mutex::_no_safepoint_check_flag);
@@ -2073,7 +2013,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   // Inner scope to exclude the cleaning of the string and symbol
   // tables from the displayed time.
   {
-    G1CMTraceTime t("GC ref-proc", G1Log::finer());
+    GCTraceTime(Debug, gc) trace("GC Ref Proc", g1h->gc_timer_cm());
 
     ReferenceProcessor* rp = g1h->ref_processor_cm();
 
@@ -2163,24 +2103,24 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
 
   // Unload Klasses, String, Symbols, Code Cache, etc.
   {
-    G1CMTraceTime trace("Unloading", G1Log::finer());
+    GCTraceTime(Debug, gc) trace("Unloading", g1h->gc_timer_cm());
 
     if (ClassUnloadingWithConcurrentMark) {
       bool purged_classes;
 
       {
-        G1CMTraceTime trace("System Dictionary Unloading", G1Log::finest());
+        GCTraceTime(Trace, gc) trace("System Dictionary Unloading", g1h->gc_timer_cm());
         purged_classes = SystemDictionary::do_unloading(&g1_is_alive, false /* Defer klass cleaning */);
       }
 
       {
-        G1CMTraceTime trace("Parallel Unloading", G1Log::finest());
+        GCTraceTime(Trace, gc) trace("Parallel Unloading", g1h->gc_timer_cm());
         weakRefsWorkParallelPart(&g1_is_alive, purged_classes);
       }
     }
 
     if (G1StringDedup::is_enabled()) {
-      G1CMTraceTime trace("String Deduplication Unlink", G1Log::finest());
+      GCTraceTime(Trace, gc) trace("String Deduplication Unlink", g1h->gc_timer_cm());
       G1StringDedup::unlink(&g1_is_alive);
     }
   }
@@ -2301,7 +2241,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
   HandleMark   hm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  G1CMTraceTime trace("Finalize Marking", G1Log::finer());
+  GCTraceTime(Debug, gc) trace("Finalize Marking", g1h->gc_timer_cm());
 
   g1h->ensure_parsability(false);
 
@@ -2614,12 +2554,13 @@ void ConcurrentMark::clear_all_count_data() {
 }
 
 void ConcurrentMark::print_stats() {
-  if (G1MarkingVerboseLevel > 0) {
-    gclog_or_tty->print_cr("---------------------------------------------------------------------");
-    for (size_t i = 0; i < _active_tasks; ++i) {
-      _tasks[i]->print_stats();
-      gclog_or_tty->print_cr("---------------------------------------------------------------------");
-    }
+  if (!log_is_enabled(Debug, gc, stats)) {
+    return;
+  }
+  log_debug(gc, stats)("---------------------------------------------------------------------");
+  for (size_t i = 0; i < _active_tasks; ++i) {
+    _tasks[i]->print_stats();
+    log_debug(gc, stats)("---------------------------------------------------------------------");
   }
 }
 
@@ -2658,21 +2599,30 @@ void ConcurrentMark::abort() {
                                  satb_mq_set.is_active() /* expected_active */);
 
   _g1h->trace_heap_after_concurrent_cycle();
+
+  // Close any open concurrent phase timing
+  register_concurrent_phase_end();
+
   _g1h->register_concurrent_cycle_end();
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,
                                NumberSeq& ns) {
-  gclog_or_tty->print_cr("%s%5d %12s: total time = %8.2f s (avg = %8.2f ms).",
+  log_trace(gc, marking)("%s%5d %12s: total time = %8.2f s (avg = %8.2f ms).",
                          prefix, ns.num(), name, ns.sum()/1000.0, ns.avg());
   if (ns.num() > 0) {
-    gclog_or_tty->print_cr("%s         [std. dev = %8.2f ms, max = %8.2f ms]",
+    log_trace(gc, marking)("%s         [std. dev = %8.2f ms, max = %8.2f ms]",
                            prefix, ns.sd(), ns.maximum());
   }
 }
 
 void ConcurrentMark::print_summary_info() {
-  gclog_or_tty->print_cr(" Concurrent marking:");
+  LogHandle(gc, marking) log;
+  if (!log.is_trace()) {
+    return;
+  }
+
+  log.trace(" Concurrent marking:");
   print_ms_time_info("  ", "init marks", _init_times);
   print_ms_time_info("  ", "remarks", _remark_times);
   {
@@ -2681,25 +2631,16 @@ void ConcurrentMark::print_summary_info() {
 
   }
   print_ms_time_info("  ", "cleanups", _cleanup_times);
-  gclog_or_tty->print_cr("    Final counting total time = %8.2f s (avg = %8.2f ms).",
-                         _total_counting_time,
-                         (_cleanup_times.num() > 0 ? _total_counting_time * 1000.0 /
-                          (double)_cleanup_times.num()
-                         : 0.0));
+  log.trace("    Final counting total time = %8.2f s (avg = %8.2f ms).",
+            _total_counting_time, (_cleanup_times.num() > 0 ? _total_counting_time * 1000.0 / (double)_cleanup_times.num() : 0.0));
   if (G1ScrubRemSets) {
-    gclog_or_tty->print_cr("    RS scrub total time = %8.2f s (avg = %8.2f ms).",
-                           _total_rs_scrub_time,
-                           (_cleanup_times.num() > 0 ? _total_rs_scrub_time * 1000.0 /
-                            (double)_cleanup_times.num()
-                           : 0.0));
+    log.trace("    RS scrub total time = %8.2f s (avg = %8.2f ms).",
+              _total_rs_scrub_time, (_cleanup_times.num() > 0 ? _total_rs_scrub_time * 1000.0 / (double)_cleanup_times.num() : 0.0));
   }
-  gclog_or_tty->print_cr("  Total stop_world time = %8.2f s.",
-                         (_init_times.sum() + _remark_times.sum() +
-                          _cleanup_times.sum())/1000.0);
-  gclog_or_tty->print_cr("  Total concurrent time = %8.2f s "
-                "(%8.2f s marking).",
-                cmThread()->vtime_accum(),
-                cmThread()->vtime_mark_accum());
+  log.trace("  Total stop_world time = %8.2f s.",
+            (_init_times.sum() + _remark_times.sum() + _cleanup_times.sum())/1000.0);
+  log.trace("  Total concurrent time = %8.2f s (%8.2f s marking).",
+            cmThread()->vtime_accum(), cmThread()->vtime_mark_accum());
 }
 
 void ConcurrentMark::print_worker_threads_on(outputStream* st) const {
@@ -3079,15 +3020,15 @@ void CMTask::drain_satb_buffers() {
 }
 
 void CMTask::print_stats() {
-  gclog_or_tty->print_cr("Marking Stats, task = %u, calls = %d",
-                         _worker_id, _calls);
-  gclog_or_tty->print_cr("  Elapsed time = %1.2lfms, Termination time = %1.2lfms",
-                         _elapsed_time_ms, _termination_time_ms);
-  gclog_or_tty->print_cr("  Step Times (cum): num = %d, avg = %1.2lfms, sd = %1.2lfms",
-                         _step_times_ms.num(), _step_times_ms.avg(),
-                         _step_times_ms.sd());
-  gclog_or_tty->print_cr("                    max = %1.2lfms, total = %1.2lfms",
-                         _step_times_ms.maximum(), _step_times_ms.sum());
+  log_debug(gc, stats)("Marking Stats, task = %u, calls = %d",
+                       _worker_id, _calls);
+  log_debug(gc, stats)("  Elapsed time = %1.2lfms, Termination time = %1.2lfms",
+                       _elapsed_time_ms, _termination_time_ms);
+  log_debug(gc, stats)("  Step Times (cum): num = %d, avg = %1.2lfms, sd = %1.2lfms",
+                       _step_times_ms.num(), _step_times_ms.avg(),
+                       _step_times_ms.sd());
+  log_debug(gc, stats)("                    max = %1.2lfms, total = %1.2lfms",
+                       _step_times_ms.maximum(), _step_times_ms.sum());
 }
 
 bool ConcurrentMark::try_stealing(uint worker_id, int* hash_seed, oop& obj) {
@@ -3587,9 +3528,8 @@ CMTask::CMTask(uint worker_id,
 #define G1PPRL_SUM_MB_PERC_FORMAT(tag) G1PPRL_SUM_MB_FORMAT(tag) " / %1.2f %%"
 
 G1PrintRegionLivenessInfoClosure::
-G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name)
-  : _out(out),
-    _total_used_bytes(0), _total_capacity_bytes(0),
+G1PrintRegionLivenessInfoClosure(const char* phase_name)
+  : _total_used_bytes(0), _total_capacity_bytes(0),
     _total_prev_live_bytes(0), _total_next_live_bytes(0),
     _hum_used_bytes(0), _hum_capacity_bytes(0),
     _hum_prev_live_bytes(0), _hum_next_live_bytes(0),
@@ -3599,38 +3539,37 @@ G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name)
   double now = os::elapsedTime();
 
   // Print the header of the output.
-  _out->cr();
-  _out->print_cr(G1PPRL_LINE_PREFIX" PHASE %s @ %1.3f", phase_name, now);
-  _out->print_cr(G1PPRL_LINE_PREFIX" HEAP"
-                 G1PPRL_SUM_ADDR_FORMAT("reserved")
-                 G1PPRL_SUM_BYTE_FORMAT("region-size"),
-                 p2i(g1_reserved.start()), p2i(g1_reserved.end()),
-                 HeapRegion::GrainBytes);
-  _out->print_cr(G1PPRL_LINE_PREFIX);
-  _out->print_cr(G1PPRL_LINE_PREFIX
-                G1PPRL_TYPE_H_FORMAT
-                G1PPRL_ADDR_BASE_H_FORMAT
-                G1PPRL_BYTE_H_FORMAT
-                G1PPRL_BYTE_H_FORMAT
-                G1PPRL_BYTE_H_FORMAT
-                G1PPRL_DOUBLE_H_FORMAT
-                G1PPRL_BYTE_H_FORMAT
-                G1PPRL_BYTE_H_FORMAT,
-                "type", "address-range",
-                "used", "prev-live", "next-live", "gc-eff",
-                "remset", "code-roots");
-  _out->print_cr(G1PPRL_LINE_PREFIX
-                G1PPRL_TYPE_H_FORMAT
-                G1PPRL_ADDR_BASE_H_FORMAT
-                G1PPRL_BYTE_H_FORMAT
-                G1PPRL_BYTE_H_FORMAT
-                G1PPRL_BYTE_H_FORMAT
-                G1PPRL_DOUBLE_H_FORMAT
-                G1PPRL_BYTE_H_FORMAT
-                G1PPRL_BYTE_H_FORMAT,
-                "", "",
-                "(bytes)", "(bytes)", "(bytes)", "(bytes/ms)",
-                "(bytes)", "(bytes)");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" PHASE %s @ %1.3f", phase_name, now);
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" HEAP"
+                          G1PPRL_SUM_ADDR_FORMAT("reserved")
+                          G1PPRL_SUM_BYTE_FORMAT("region-size"),
+                          p2i(g1_reserved.start()), p2i(g1_reserved.end()),
+                          HeapRegion::GrainBytes);
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_TYPE_H_FORMAT
+                          G1PPRL_ADDR_BASE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_DOUBLE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT,
+                          "type", "address-range",
+                          "used", "prev-live", "next-live", "gc-eff",
+                          "remset", "code-roots");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_TYPE_H_FORMAT
+                          G1PPRL_ADDR_BASE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_DOUBLE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT
+                          G1PPRL_BYTE_H_FORMAT,
+                          "", "",
+                          "(bytes)", "(bytes)", "(bytes)", "(bytes/ms)",
+                          "(bytes)", "(bytes)");
 }
 
 // It takes as a parameter a reference to one of the _hum_* fields, it
@@ -3701,18 +3640,18 @@ bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
   _total_strong_code_roots_bytes += strong_code_roots_bytes;
 
   // Print a line for this particular region.
-  _out->print_cr(G1PPRL_LINE_PREFIX
-                 G1PPRL_TYPE_FORMAT
-                 G1PPRL_ADDR_BASE_FORMAT
-                 G1PPRL_BYTE_FORMAT
-                 G1PPRL_BYTE_FORMAT
-                 G1PPRL_BYTE_FORMAT
-                 G1PPRL_DOUBLE_FORMAT
-                 G1PPRL_BYTE_FORMAT
-                 G1PPRL_BYTE_FORMAT,
-                 type, p2i(bottom), p2i(end),
-                 used_bytes, prev_live_bytes, next_live_bytes, gc_eff,
-                 remset_bytes, strong_code_roots_bytes);
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                          G1PPRL_TYPE_FORMAT
+                          G1PPRL_ADDR_BASE_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_DOUBLE_FORMAT
+                          G1PPRL_BYTE_FORMAT
+                          G1PPRL_BYTE_FORMAT,
+                          type, p2i(bottom), p2i(end),
+                          used_bytes, prev_live_bytes, next_live_bytes, gc_eff,
+                          remset_bytes, strong_code_roots_bytes);
 
   return false;
 }
@@ -3721,23 +3660,22 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   // add static memory usages to remembered set sizes
   _total_remset_bytes += HeapRegionRemSet::fl_mem_size() + HeapRegionRemSet::static_mem_size();
   // Print the footer of the output.
-  _out->print_cr(G1PPRL_LINE_PREFIX);
-  _out->print_cr(G1PPRL_LINE_PREFIX
-                 " SUMMARY"
-                 G1PPRL_SUM_MB_FORMAT("capacity")
-                 G1PPRL_SUM_MB_PERC_FORMAT("used")
-                 G1PPRL_SUM_MB_PERC_FORMAT("prev-live")
-                 G1PPRL_SUM_MB_PERC_FORMAT("next-live")
-                 G1PPRL_SUM_MB_FORMAT("remset")
-                 G1PPRL_SUM_MB_FORMAT("code-roots"),
-                 bytes_to_mb(_total_capacity_bytes),
-                 bytes_to_mb(_total_used_bytes),
-                 perc(_total_used_bytes, _total_capacity_bytes),
-                 bytes_to_mb(_total_prev_live_bytes),
-                 perc(_total_prev_live_bytes, _total_capacity_bytes),
-                 bytes_to_mb(_total_next_live_bytes),
-                 perc(_total_next_live_bytes, _total_capacity_bytes),
-                 bytes_to_mb(_total_remset_bytes),
-                 bytes_to_mb(_total_strong_code_roots_bytes));
-  _out->cr();
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
+                         " SUMMARY"
+                         G1PPRL_SUM_MB_FORMAT("capacity")
+                         G1PPRL_SUM_MB_PERC_FORMAT("used")
+                         G1PPRL_SUM_MB_PERC_FORMAT("prev-live")
+                         G1PPRL_SUM_MB_PERC_FORMAT("next-live")
+                         G1PPRL_SUM_MB_FORMAT("remset")
+                         G1PPRL_SUM_MB_FORMAT("code-roots"),
+                         bytes_to_mb(_total_capacity_bytes),
+                         bytes_to_mb(_total_used_bytes),
+                         perc(_total_used_bytes, _total_capacity_bytes),
+                         bytes_to_mb(_total_prev_live_bytes),
+                         perc(_total_prev_live_bytes, _total_capacity_bytes),
+                         bytes_to_mb(_total_next_live_bytes),
+                         perc(_total_next_live_bytes, _total_capacity_bytes),
+                         bytes_to_mb(_total_remset_bytes),
+                         bytes_to_mb(_total_strong_code_roots_bytes));
 }

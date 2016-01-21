@@ -26,9 +26,9 @@
 #include "asm/macroAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
@@ -53,7 +53,7 @@
 
 // Generation of Interpreter
 //
-// The InterpreterGenerator generates the interpreter into Interpreter::_code.
+// The TemplateInterpreterGenerator generates the interpreter into Interpreter::_code.
 
 
 #define __ _masm->
@@ -194,7 +194,7 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
 }
 #endif
 
-void InterpreterGenerator::generate_counter_overflow(Label& Lcontinue) {
+void TemplateInterpreterGenerator::generate_counter_overflow(Label& Lcontinue) {
 
   // Generate code to initiate compilation on the counter overflow.
 
@@ -219,7 +219,7 @@ void InterpreterGenerator::generate_counter_overflow(Label& Lcontinue) {
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
 //
-address InterpreterGenerator::generate_abstract_entry(void) {
+address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   address entry = __ pc();
   // abstract method entry
   // throw exception
