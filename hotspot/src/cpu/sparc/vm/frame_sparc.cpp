@@ -441,12 +441,10 @@ intptr_t* frame::interpreter_frame_sender_sp() const {
   return fp();
 }
 
-#ifndef CC_INTERP
 void frame::set_interpreter_frame_sender_sp(intptr_t* sender_sp) {
   assert(is_interpreted_frame(), "interpreted frame expected");
   Unimplemented();
 }
-#endif // CC_INTERP
 
 frame frame::sender_for_entry_frame(RegisterMap *map) const {
   assert(map != NULL, "map must be set");
@@ -600,9 +598,6 @@ bool frame::is_valid_stack_pointer(intptr_t* valid_sp, intptr_t* sp) {
 }
 
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
-#ifdef CC_INTERP
-  // Is there anything to do?
-#else
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
   if (fp() == 0 || (intptr_t(fp()) & (2*wordSize-1)) != 0) {
@@ -632,7 +627,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // stack frames shouldn't be much larger than max_stack elements
 
-  if (fp() - sp() > 1024 + m->max_stack()*Interpreter::stackElementSize) {
+  if (fp() - unextended_sp() > 1024 + m->max_stack()*Interpreter::stackElementSize) {
     return false;
   }
 
@@ -654,7 +649,6 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   if (locals > thread->stack_base() || locals < (address) fp()) return false;
 
   // We'd have to be pretty unlucky to be mislead at this point
-#endif /* CC_INTERP */
   return true;
 }
 
@@ -712,14 +706,8 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     // Prior to notifying the runtime of the method_exit the possible result
     // value is saved to l_scratch and d_scratch.
 
-#ifdef CC_INTERP
-    interpreterState istate = get_interpreterState();
-    intptr_t* l_scratch = (intptr_t*) &istate->_native_lresult;
-    intptr_t* d_scratch = (intptr_t*) &istate->_native_fresult;
-#else /* CC_INTERP */
     intptr_t* l_scratch = fp() + interpreter_frame_l_scratch_fp_offset;
     intptr_t* d_scratch = fp() + interpreter_frame_d_scratch_fp_offset;
-#endif /* CC_INTERP */
 
     address l_addr = (address)l_scratch;
 #ifdef _LP64
@@ -731,13 +719,9 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     switch (type) {
       case T_OBJECT:
       case T_ARRAY: {
-#ifdef CC_INTERP
-        *oop_result = istate->_oop_temp;
-#else
         oop obj = cast_to_oop(at(interpreter_frame_oop_temp_offset));
         assert(obj == NULL || Universe::heap()->is_in(obj), "sanity check");
         *oop_result = obj;
-#endif // CC_INTERP
         break;
       }
 
@@ -797,7 +781,6 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
   }
 
   if (is_interpreted_frame()) {
-#ifndef CC_INTERP
     DESCRIBE_FP_OFFSET(interpreter_frame_d_scratch_fp);
     DESCRIBE_FP_OFFSET(interpreter_frame_l_scratch_fp);
     DESCRIBE_FP_OFFSET(interpreter_frame_padding);
@@ -808,7 +791,6 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     if ((esp >= sp()) && (esp < fp())) {
       values.describe(-1, esp, "*Lesp");
     }
-#endif
   }
 
   if (!is_compiled_frame()) {

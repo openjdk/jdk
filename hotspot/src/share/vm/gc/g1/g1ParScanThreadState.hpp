@@ -96,6 +96,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   bool verify_task(StarTask ref) const;
 #endif // ASSERT
 
+  template <class T> void do_oop_ext(T* ref);
   template <class T> void push_on_queue(T* ref);
 
   template <class T> void update_rs(HeapRegion* from, T* p, oop o) {

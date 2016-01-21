@@ -44,7 +44,7 @@ public class TestWBGC {
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
                 "-XX:MaxTenuringThreshold=1",
-                "-XX:+PrintGC",
+                "-Xlog:gc",
                 GCYoungTest.class.getName());
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

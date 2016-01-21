@@ -26,6 +26,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
+#include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -136,14 +137,11 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
   assert(h_exception() != NULL, "exception should not be NULL");
 
   // tracing (do this up front - so it works during boot strapping)
-  if (TraceExceptions) {
-    ttyLocker ttyl;
-    tty->print_cr("Exception <%s%s%s> (" INTPTR_FORMAT ") \n"
-                  "thrown [%s, line %d]\nfor thread " INTPTR_FORMAT,
-                  h_exception->print_value_string(),
-                  message ? ": " : "", message ? message : "",
-                  p2i(h_exception()), file, line, p2i(thread));
-  }
+  log_info(exceptions)("Exception <%s%s%s> (" INTPTR_FORMAT ") \n"
+                       "thrown [%s, line %d]\nfor thread " INTPTR_FORMAT,
+                       h_exception->print_value_string(),
+                       message ? ": " : "", message ? message : "",
+                       p2i(h_exception()), file, line, p2i(thread));
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(h_exception, message);
 

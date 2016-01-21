@@ -26,12 +26,15 @@
  * @bug 8139564
  * @summary defaultmethods=debug should have logging from each of the statements in the code
  * @library /testlibrary
+ * @ignore 8146435
  * @modules java.base/sun.misc
  *          java.management
+ * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver DefaultMethodsTest
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class DefaultMethodsTest {
     public static void main(String[] args) throws Exception {

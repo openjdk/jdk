@@ -1756,7 +1756,7 @@ class Socket implements java.io.Closeable {
      *         {@link java.net.StandardSocketOptions StandardSocketOptions}
      *         do not require any security permission.
      *
-     * @since 1.9
+     * @since 9
      */
     public <T> Socket setOption(SocketOption<T> name, T value) throws IOException {
         getImpl().setOption(name, value);
@@ -1784,7 +1784,7 @@ class Socket implements java.io.Closeable {
      *         {@link java.net.StandardSocketOptions StandardSocketOptions}
      *         do not require any security permission.
      *
-     * @since 1.9
+     * @since 9
      */
     @SuppressWarnings("unchecked")
     public <T> T getOption(SocketOption<T> name) throws IOException {
@@ -1803,7 +1803,7 @@ class Socket implements java.io.Closeable {
      * @return A set of the socket options supported by this socket. This set
      *         may be empty if the socket's SocketImpl cannot be created.
      *
-     * @since 1.9
+     * @since 9
      */
     public Set<SocketOption<?>> supportedOptions() {
         synchronized (Socket.class) {

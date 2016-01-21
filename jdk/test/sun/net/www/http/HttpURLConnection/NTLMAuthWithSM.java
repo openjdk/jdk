@@ -39,6 +39,7 @@ import sun.net.www.protocol.http.ntlm.NTLMAuthenticationCallback;
 /*
  * @test
  * @bug 8137174
+ * @modules java.base/sun.net.www.protocol.http.ntlm
  * @summary Checks if NTLM auth works fine if security manager set
  * @run main/othervm/java.security.policy=NTLMAuthWithSM.policy NTLMAuthWithSM
  */

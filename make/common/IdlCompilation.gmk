@@ -56,10 +56,9 @@ define add_idl_package
     $4_OLDIMPLBASE_MSG:=with -oldImplBase
   endif
   $5 : $4
-	$(MKDIR) -p $3/$$($4_TMPDIR)
+	$$(call LogInfo, Compiling IDL $(patsubst $2/%,%,$4))
+	$$(call MakeDir, $$(@D))
 	$(RM) -rf $3/$$($4_TMPDIR)
-	$(MKDIR) -p $(dir $5)
-	$(ECHO) $(LOG_INFO) Compiling IDL $(patsubst $2/%,%,$4)
 	$8 -td $3/$$($4_TMPDIR) \
 	    -i $2/org/omg/CORBA \
 	    -i $2/org/omg/PortableInterceptor \

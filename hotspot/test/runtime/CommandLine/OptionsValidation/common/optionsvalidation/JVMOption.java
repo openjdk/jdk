@@ -25,7 +25,10 @@ package optionsvalidation;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.AttachOperationFailedException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import jdk.test.lib.DynamicVMOption;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
@@ -64,6 +67,8 @@ public abstract class JVMOption {
      */
     protected boolean testMaxRange;
 
+    private Set<Integer> allowedExitCodes;
+
     /**
      * Prepend string which added before testing option to the command line
      */
@@ -73,6 +78,9 @@ public abstract class JVMOption {
     protected JVMOption() {
         this.prepend = new ArrayList<>();
         prependString = new StringBuilder();
+        allowedExitCodes = new HashSet<>();
+        allowedExitCodes.add(0);
+        allowedExitCodes.add(1);
         withRange = false;
         testMinRange = true;
         testMaxRange = true;
@@ -159,6 +167,10 @@ public abstract class JVMOption {
      */
     public final void excludeTestMaxRange() {
         testMaxRange = false;
+    }
+
+    public final void setAllowedExitCodes(Integer... allowedExitCodes) {
+        this.allowedExitCodes.addAll(Arrays.asList(allowedExitCodes));
     }
 
     /**
@@ -384,13 +396,13 @@ public abstract class JVMOption {
             printOutputContent(out);
             result = false;
         } else if (valid == true) {
-            if ((exitCode != 0) && (exitCode != 1)) {
+            if (!allowedExitCodes.contains(exitCode)) {
                 failedMessage(name, fullOptionString, valid, "JVM exited with unexpected error code = " + exitCode);
                 printOutputContent(out);
                 result = false;
-            } else if ((exitCode == 1) && (out.getOutput().isEmpty() == true)) {
-                failedMessage(name, fullOptionString, valid, "JVM exited with error(exitcode == 1)"
-                        + ", but with empty stdout and stderr. Description of error is needed!");
+            } else if ((exitCode != 0) && (out.getOutput().isEmpty() == true)) {
+                failedMessage(name, fullOptionString, valid, "JVM exited with error(exitcode == " + exitCode +
+                        "), but with empty stdout and stderr. Description of error is needed!");
                 result = false;
             } else if (out.getOutput().contains("is outside the allowed range")) {
                 failedMessage(name, fullOptionString, valid, "JVM output contains \"is outside the allowed range\"");

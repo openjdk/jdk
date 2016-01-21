@@ -82,7 +82,7 @@ public class X509EncodedKeySpec extends EncodedKeySpec {
      * or {@code algorithm} is null.
      * @throws IllegalArgumentException if {@code algorithm} is
      * the empty string {@code ""}
-     * @since 1.9
+     * @since 9
      */
     public X509EncodedKeySpec(byte[] encodedKey, String algorithm) {
         super(encodedKey, algorithm);

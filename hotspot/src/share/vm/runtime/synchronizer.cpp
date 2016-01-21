@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "logging/log.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/padded.hpp"
 #include "memory/resourceArea.hpp"
@@ -1414,12 +1415,12 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
       // to avoid false sharing on MP systems ...
       OM_PERFDATA_OP(Inflations, inc());
       TEVENT(Inflate: overwrite stacklock);
-      if (TraceMonitorInflation) {
+      if (log_is_enabled(Debug, monitorinflation)) {
         if (object->is_instance()) {
           ResourceMark rm;
-          tty->print_cr("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-                        p2i(object), p2i(object->mark()),
-                        object->klass()->external_name());
+          log_debug(monitorinflation)("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
+                                      p2i(object), p2i(object->mark()),
+                                      object->klass()->external_name());
         }
       }
       return m;
@@ -1462,12 +1463,12 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
     // cache lines to avoid false sharing on MP systems ...
     OM_PERFDATA_OP(Inflations, inc());
     TEVENT(Inflate: overwrite neutral);
-    if (TraceMonitorInflation) {
+    if (log_is_enabled(Debug, monitorinflation)) {
       if (object->is_instance()) {
         ResourceMark rm;
-        tty->print_cr("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-                      p2i(object), p2i(object->mark()),
-                      object->klass()->external_name());
+        log_debug(monitorinflation)("Inflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
+                                    p2i(object), p2i(object->mark()),
+                                    object->klass()->external_name());
       }
     }
     return m;
@@ -1526,11 +1527,13 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
     // It's idle - scavenge and return to the global free list
     // plain old deflation ...
     TEVENT(deflate_idle_monitors - scavenge1);
-    if (TraceMonitorInflation) {
+    if (log_is_enabled(Debug, monitorinflation)) {
       if (obj->is_instance()) {
         ResourceMark rm;
-        tty->print_cr("Deflating object " INTPTR_FORMAT " , mark " INTPTR_FORMAT " , type %s",
-                      p2i(obj), p2i(obj->mark()), obj->klass()->external_name());
+        log_debug(monitorinflation)("Deflating object " INTPTR_FORMAT " , "
+                                    "mark " INTPTR_FORMAT " , type %s",
+                                    p2i(obj), p2i(obj->mark()),
+                                    obj->klass()->external_name());
       }
     }
 

@@ -51,7 +51,7 @@ package jdk.nashorn.api.tree;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @since 1.9
+ * @since 9
  */
 public interface TreeVisitor<R,P> {
     /**

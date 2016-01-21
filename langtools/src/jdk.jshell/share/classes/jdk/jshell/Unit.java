@@ -50,6 +50,7 @@ import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
 import static jdk.jshell.Snippet.Status.REJECTED;
 import static jdk.jshell.Snippet.Status.VALID;
+import static jdk.jshell.Util.PARSED_LOCALE;
 import static jdk.jshell.Util.expunge;
 
 /**
@@ -456,7 +457,7 @@ final class Unit {
             for (Diag diag : diags) {
                 if (diag.isError()) {
                     if (diag.isResolutionError()) {
-                        String m = diag.getMessage(null);
+                        String m = diag.getMessage(PARSED_LOCALE);
                         int symPos = m.indexOf(RESOLVE_ERROR_SYMBOL);
                         if (symPos >= 0) {
                             m = m.substring(symPos + RESOLVE_ERROR_SYMBOL.length());

@@ -40,7 +40,7 @@
 #define UNIX_PATH_MAX   sizeof(((struct sockaddr_un *)0)->sun_path)
 #endif
 
-// The attach mechanism on Linux uses a UNIX domain socket. An attach listener
+// The attach mechanism on AIX  uses a UNIX domain socket. An attach listener
 // thread is created at startup or is created on-demand via a signal from
 // the client tool. The attach listener creates a socket and binds it to a file
 // in the filesystem. The attach listener then acts as a simple (single-
@@ -349,7 +349,7 @@ AixAttachOperation* AixAttachListener::read_request(int s) {
 
 // Dequeue an operation
 //
-// In the Linux implementation there is only a single operation and clients
+// In the Aix implementation there is only a single operation and clients
 // cannot queue commands (except at the socket level).
 //
 AixAttachOperation* AixAttachListener::dequeue() {

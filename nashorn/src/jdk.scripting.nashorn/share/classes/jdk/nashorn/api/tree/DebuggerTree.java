@@ -33,7 +33,7 @@ package jdk.nashorn.api.tree;
  *     <em>debugger;</em>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface DebuggerTree extends StatementTree {
 }

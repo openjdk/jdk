@@ -98,7 +98,7 @@ public final class JpsHelper {
      * -XX:+UsePerfData is required for running the tests on embedded platforms.
      */
     public static final String[] VM_ARGS = {
-        "-XX:+UsePerfData", "-Xmx512m", "-XX:+PrintGCDetails",
+        "-XX:+UsePerfData", "-Xmx512m", "-Xlog:gc",
         "-Dmultiline.prop=value1\nvalue2\r\nvalue3"
     };
     /**

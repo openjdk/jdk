@@ -25,6 +25,10 @@
 
 WIN_VERIFY_LIB := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libverify/verify.lib
 
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, jdk, lib/CoreLibraries.gmk))
+
+
 ##########################################################################################
 # libfdlibm is statically linked with libjava below and not delivered into the
 # product on its own.
@@ -51,7 +55,7 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
       DISABLED_WARNINGS_microsoft := 4146 4244 4018, \
       ARFLAGS := $(ARFLAGS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
 else
 
@@ -64,7 +68,7 @@ else
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBFDLIBM_CFLAGS), \
       LDFLAGS := -nostdlib -r -arch x86_64, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   BUILD_LIBFDLIBM := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX)
   $(BUILD_LIBFDLIBM): $(BUILD_LIBFDLIBM_MAC)
@@ -82,7 +86,7 @@ endif
 
 LIBVERIFY_OPTIMIZATION := HIGH
 ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
-  ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
+  ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
     LIBVERIFY_OPTIMIZATION := LOW
   endif
 endif
@@ -106,7 +110,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBVERIFY, \
         -D "JDK_FTYPE=0x2L", \
     REORDER := $(BUILD_LIBVERIFY_REORDER), \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libverify, \
-    DEBUG_SYMBOLS := true))
+))
 
 TARGETS += $(BUILD_LIBVERIFY)
 
@@ -118,6 +122,9 @@ LIBJAVA_CFLAGS := $(addprefix -I, $(LIBJAVA_SRC_DIRS)) \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libfdlibm \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
     -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"'
+
+# Make it possible to override this variable
+LIBJAVA_MAPFILE ?= $(JDK_TOPDIR)/make/mapfiles/libjava/mapfile-vers
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   BUILD_LIBJAVA_java_props_md.c_CFLAGS := -x objective-c
@@ -146,7 +153,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     System.c_CFLAGS := $(VERSION_CFLAGS), \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjava/mapfile-vers, \
+    MAPFILE := $(LIBJAVA_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/, \
@@ -171,7 +178,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
         -D "JDK_FTYPE=0x2L", \
     REORDER := $(LIBJAVA_REORDER), \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 TARGETS += $(BUILD_LIBJAVA)
 
@@ -228,8 +235,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
         -D "JDK_INTERNAL_NAME=zip" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libzip, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
-
+))
 
 $(BUILD_LIBZIP): $(BUILD_LIBJAVA)
 
@@ -273,7 +279,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
         -D "JDK_INTERNAL_NAME=jimage" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjimage, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 $(BUILD_LIBJIMAGE): $(BUILD_LIBJAVA)
 
@@ -389,7 +395,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
         -D "JDK_INTERNAL_NAME=jli" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 TARGETS += $(BUILD_LIBJLI)
 
@@ -407,7 +413,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       CFLAGS := $(STATIC_LIBRARY_FLAGS) $(LIBJLI_CFLAGS), \
       ARFLAGS := $(ARFLAGS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   TARGETS += $(BUILD_LIBJLI_STATIC)
 
@@ -426,7 +432,7 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS), \
       LDFLAGS := -nostdlib -r, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   ifeq ($(STATIC_BUILD), true)
     TARGETS += $(BUILD_LIBJLI_STATIC)

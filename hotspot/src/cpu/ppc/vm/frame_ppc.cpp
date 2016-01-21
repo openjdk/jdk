@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,7 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
 
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   // Pass callers initial_caller_sp as unextended_sp.
-  return frame(sender_sp(), sender_pc(),
-               CC_INTERP_ONLY((intptr_t*)((parent_ijava_frame_abi *)callers_abi())->initial_caller_sp)
-               NOT_CC_INTERP((intptr_t*)get_ijava_state()->sender_sp)
-               );
+  return frame(sender_sp(), sender_pc(), (intptr_t*)get_ijava_state()->sender_sp);
 }
 
 frame frame::sender_for_compiled_frame(RegisterMap *map) const {
@@ -168,14 +165,8 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
   if (method->is_native()) {
     // Prior to calling into the runtime to notify the method exit the possible
     // result value is saved into the interpreter frame.
-#ifdef CC_INTERP
-    interpreterState istate = get_interpreterState();
-    address lresult = (address)istate + in_bytes(BytecodeInterpreter::native_lresult_offset());
-    address fresult = (address)istate + in_bytes(BytecodeInterpreter::native_fresult_offset());
-#else
     address lresult = (address)&(get_ijava_state()->lresult);
     address fresult = (address)&(get_ijava_state()->fresult);
-#endif
 
     switch (method->result_type()) {
       case T_OBJECT:
@@ -226,31 +217,6 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
 
 void frame::describe_pd(FrameValues& values, int frame_no) {
   if (is_interpreted_frame()) {
-#ifdef CC_INTERP
-    interpreterState istate = get_interpreterState();
-    values.describe(frame_no, (intptr_t*)istate, "istate");
-    values.describe(frame_no, (intptr_t*)&(istate->_thread), " thread");
-    values.describe(frame_no, (intptr_t*)&(istate->_bcp), " bcp");
-    values.describe(frame_no, (intptr_t*)&(istate->_locals), " locals");
-    values.describe(frame_no, (intptr_t*)&(istate->_constants), " constants");
-    values.describe(frame_no, (intptr_t*)&(istate->_method), err_msg(" method = %s", istate->_method->name_and_sig_as_C_string()));
-    values.describe(frame_no, (intptr_t*)&(istate->_mdx), " mdx");
-    values.describe(frame_no, (intptr_t*)&(istate->_stack), " stack");
-    values.describe(frame_no, (intptr_t*)&(istate->_msg), err_msg(" msg = %s", BytecodeInterpreter::C_msg(istate->_msg)));
-    values.describe(frame_no, (intptr_t*)&(istate->_result), " result");
-    values.describe(frame_no, (intptr_t*)&(istate->_prev_link), " prev_link");
-    values.describe(frame_no, (intptr_t*)&(istate->_oop_temp), " oop_temp");
-    values.describe(frame_no, (intptr_t*)&(istate->_stack_base), " stack_base");
-    values.describe(frame_no, (intptr_t*)&(istate->_stack_limit), " stack_limit");
-    values.describe(frame_no, (intptr_t*)&(istate->_monitor_base), " monitor_base");
-    values.describe(frame_no, (intptr_t*)&(istate->_frame_bottom), " frame_bottom");
-    values.describe(frame_no, (intptr_t*)&(istate->_last_Java_pc), " last_Java_pc");
-    values.describe(frame_no, (intptr_t*)&(istate->_last_Java_fp), " last_Java_fp");
-    values.describe(frame_no, (intptr_t*)&(istate->_last_Java_sp), " last_Java_sp");
-    values.describe(frame_no, (intptr_t*)&(istate->_self_link), " self_link");
-    values.describe(frame_no, (intptr_t*)&(istate->_native_fresult), " native_fresult");
-    values.describe(frame_no, (intptr_t*)&(istate->_native_lresult), " native_lresult");
-#else
 #define DESCRIBE_ADDRESS(name) \
   values.describe(frame_no, (intptr_t*)&(get_ijava_state()->name), #name);
 
@@ -266,43 +232,9 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
       DESCRIBE_ADDRESS(oop_tmp);
       DESCRIBE_ADDRESS(lresult);
       DESCRIBE_ADDRESS(fresult);
-#endif
   }
 }
 #endif
-
-void frame::adjust_unextended_sp() {
-  // If we are returning to a compiled MethodHandle call site, the
-  // saved_fp will in fact be a saved value of the unextended SP. The
-  // simplest way to tell whether we are returning to such a call site
-  // is as follows:
-
-  if (is_compiled_frame() && false /*is_at_mh_callsite()*/) {  // TODO PPC port
-    // If the sender PC is a deoptimization point, get the original
-    // PC. For MethodHandle call site the unextended_sp is stored in
-    // saved_fp.
-    _unextended_sp = _fp - _cb->frame_size();
-
-#ifdef ASSERT
-    nmethod *sender_nm = _cb->as_nmethod_or_null();
-    assert(sender_nm && *_sp == *_unextended_sp, "backlink changed");
-
-    intptr_t* sp = _unextended_sp;  // check if stack can be walked from here
-    for (int x = 0; x < 5; ++x) {   // check up to a couple of backlinks
-      intptr_t* prev_sp = *(intptr_t**)sp;
-      if (prev_sp == 0) break;      // end of stack
-      assert(prev_sp>sp, "broken stack");
-      sp = prev_sp;
-    }
-
-    if (sender_nm->is_deopt_mh_entry(_pc)) { // checks for deoptimization
-      address original_pc = sender_nm->get_original_pc(this);
-      assert(sender_nm->insts_contains(original_pc), "original PC must be in nmethod");
-      assert(sender_nm->is_method_handle_return(original_pc), "must be");
-    }
-#endif
-  }
-}
 
 intptr_t *frame::initial_deoptimization_info() {
   // unused... but returns fp() to minimize changes introduced by 7087445

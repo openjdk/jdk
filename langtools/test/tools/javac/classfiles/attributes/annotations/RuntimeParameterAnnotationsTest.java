@@ -25,6 +25,9 @@
  * @test
  * @bug 8044411
  * @summary Tests the RuntimeParameterVisibleAnnotations/RuntimeParameterInvisibleAnnotations attribute.
+ * @modules jdk.jdeps/com.sun.tools.classfile
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib /tools/javac/lib ../lib
  * @build WorkAnnotations TestBase TestResult InMemoryFileManager ToolBox
  * @build TestCase ClassType TestAnnotationInfo

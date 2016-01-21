@@ -48,7 +48,7 @@ endif
 
 LIBMANAGEMENT_EXT_OPTIMIZATION := HIGH
 ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
-  ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
+  ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
     LIBMANAGEMENT_EXT_OPTIMIZATION := LOW
   endif
 endif
@@ -73,7 +73,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT_EXT, \
         -D "JDK_INTERNAL_NAME=management_ext" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmanagement_ext, \
-    DEBUG_SYMBOLS := true))
+))
 
 $(BUILD_LIBMANAGEMENT_EXT): $(call FindLib, java.base, java)
 

@@ -131,8 +131,9 @@ bool NativeInstruction::is_load_store_with_small_offset(Register reg) {
 void NativeCall::verify() {
   NativeInstruction::verify();
   // make sure code pattern is actually a call instruction
-  if (!is_op(long_at(0), Assembler::call_op)) {
-    fatal("not a call");
+  int x = long_at(0);
+  if (!is_op(x, Assembler::call_op)) {
+    fatal("not a call: 0x%x @ " INTPTR_FORMAT, x, p2i(instruction_address()));
   }
 }
 

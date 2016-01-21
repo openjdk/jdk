@@ -43,9 +43,9 @@ public interface CatalogUriResolver extends URIResolver {
      * absolute if the absolute URI is required
      *
      * @return a {@link javax.xml.transform.Source} object if a mapping is found.
-     * If no mapping is found, returns a {@link javax.xml.transform.Source} object
-     * containing an empty {@link java.io.Reader} if the
-     * {@code javax.xml.catalog.resolve} property is set to {@code ignore};
+     * If no mapping is found, returns an empty {@link javax.xml.transform.Source}
+     * object if the {@code javax.xml.catalog.resolve} property is set to
+     * {@code ignore};
      * returns a {@link javax.xml.transform.Source} object with the original URI
      * (href, or href resolved with base if base is not null) if the
      * {@code javax.xml.catalog.resolve} property is set to {@code continue}.

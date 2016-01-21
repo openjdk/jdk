@@ -159,6 +159,9 @@ class Universe: AllStatic {
   static oop          _out_of_memory_error_gc_overhead_limit;
   static oop          _out_of_memory_error_realloc_objects;
 
+  // preallocated cause message for delayed StackOverflowError
+  static oop          _delayed_stack_overflow_error_message;
+
   static Array<int>*       _the_empty_int_array;    // Canonicalized int array
   static Array<u2>*        _the_empty_short_array;  // Canonicalized short array
   static Array<Klass*>*  _the_empty_klass_array;  // Canonicalized klass obj array
@@ -339,6 +342,7 @@ class Universe: AllStatic {
   static oop out_of_memory_error_array_size()         { return gen_out_of_memory_error(_out_of_memory_error_array_size); }
   static oop out_of_memory_error_gc_overhead_limit()  { return gen_out_of_memory_error(_out_of_memory_error_gc_overhead_limit);  }
   static oop out_of_memory_error_realloc_objects()    { return gen_out_of_memory_error(_out_of_memory_error_realloc_objects);  }
+  static oop delayed_stack_overflow_error_message()   { return _delayed_stack_overflow_error_message; }
 
   // Accessors needed for fast allocation
   static Klass** boolArrayKlassObj_addr()           { return &_boolArrayKlassObj;   }
@@ -460,26 +464,19 @@ class Universe: AllStatic {
 
   // Debugging
   static bool verify_in_progress() { return _verify_in_progress; }
-  static void verify(VerifyOption option, const char* prefix, bool silent = VerifySilently);
-  static void verify(const char* prefix, bool silent = VerifySilently) {
-    verify(VerifyOption_Default, prefix, silent);
+  static void verify(VerifyOption option, const char* prefix);
+  static void verify(const char* prefix) {
+    verify(VerifyOption_Default, prefix);
   }
-  static void verify(bool silent = VerifySilently) {
-    verify("", silent);
+  static void verify() {
+    verify("");
   }
 
   static int  verify_count()       { return _verify_count; }
-  // The default behavior is to call print_on() on gclog_or_tty.
-  static void print();
-  // The extended parameter determines which method on the heap will
-  // be called: print_on() (extended == false) or print_extended_on()
-  // (extended == true).
-  static void print_on(outputStream* st, bool extended = false);
+  static void print_on(outputStream* st);
   static void print_heap_at_SIGBREAK();
-  static void print_heap_before_gc() { print_heap_before_gc(gclog_or_tty); }
-  static void print_heap_after_gc()  { print_heap_after_gc(gclog_or_tty); }
-  static void print_heap_before_gc(outputStream* st, bool ignore_extended = false);
-  static void print_heap_after_gc(outputStream* st, bool ignore_extended = false);
+  static void print_heap_before_gc();
+  static void print_heap_after_gc();
 
   // Change the number of dummy objects kept reachable by the full gc dummy
   // array; this should trigger relocation in a sliding compaction collector.

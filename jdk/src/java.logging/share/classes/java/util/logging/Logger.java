@@ -1300,7 +1300,7 @@ public class Logger {
      *                  can be {@code null}.
      * @param   msg     The string message (or a key in the message catalog)
      * @param   params  Parameters to the message (optional, may be none).
-     * @since 1.9
+     * @since 9
      */
     public void logrb(Level level, ResourceBundle bundle, String msg, Object... params) {
         if (!isLoggable(level)) {
@@ -1417,7 +1417,7 @@ public class Logger {
      *                  can be {@code null}.
      * @param   msg     The string message (or a key in the message catalog)
      * @param   thrown  Throwable associated with the log message.
-     * @since 1.9
+     * @since 9
      */
     public void logrb(Level level, ResourceBundle bundle, String msg,
             Throwable thrown) {
