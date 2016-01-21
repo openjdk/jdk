@@ -3484,10 +3484,14 @@ int Matcher::regnum_to_fpu_offset(int regnum)
   return 0;
 }
 
-bool Matcher::is_short_branch_offset(int rule, int br_size, int offset)
-{
-  Unimplemented();
-  return false;
+// Is this branch offset short enough that a short branch can be used?
+//
+// NOTE: If the platform does not provide any short branch variants, then
+//       this method should return false for offset 0.
+bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
+  // The passed offset is relative to address of the branch.
+
+  return (-32768 <= offset && offset < 32768);
 }
 
 const bool Matcher::isSimpleConstant64(jlong value) {
@@ -4667,17 +4671,12 @@ encode %{
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
       call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &cbuf);
-    } else if (_optimized_virtual) {
-      call = __ trampoline_call(Address(addr, relocInfo::opt_virtual_call_type), &cbuf);
     } else {
-      call = __ trampoline_call(Address(addr, relocInfo::static_call_type), &cbuf);
-    }
-    if (call == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full");
-      return;
-    }
+      int method_index = resolved_method_index(cbuf);
+      RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
+                                                  : static_call_Relocation::spec(method_index);
+      call = __ trampoline_call(Address(addr, rspec), &cbuf);
 
-    if (_method) {
       // Emit stub for static call
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
       if (stub == NULL) {
@@ -4685,11 +4684,16 @@ encode %{
         return;
       }
     }
+    if (call == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
   %}
 
   enc_class aarch64_enc_java_dynamic_call(method meth) %{
     MacroAssembler _masm(&cbuf);
-    address call = __ ic_call((address)$meth$$method);
+    int method_index = resolved_method_index(cbuf);
+    address call = __ ic_call((address)$meth$$method, method_index);
     if (call == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
@@ -13845,7 +13849,8 @@ instruct cmpP_narrowOop_imm0_branch(cmpOp cmp, iRegN oop, immP0 zero, label labl
 
 // Test bit and Branch
 
-instruct cmpL_branch_sign(cmpOp cmp, iRegL op1, immL0 op2, label labl, rFlagsReg cr) %{
+// Patterns for short (< 32KiB) variants
+instruct cmpL_branch_sign(cmpOp cmp, iRegL op1, immL0 op2, label labl) %{
   match(If cmp (CmpL op1 op2));
   predicate(n->in(1)->as_Bool()->_test._test == BoolTest::lt
             || n->in(1)->as_Bool()->_test._test == BoolTest::ge);
@@ -13855,16 +13860,15 @@ instruct cmpL_branch_sign(cmpOp cmp, iRegL op1, immL0 op2, label labl, rFlagsReg
   format %{ "cb$cmp   $op1, $labl # long" %}
   ins_encode %{
     Label* L = $labl$$label;
-    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    if (cond == Assembler::LT)
-      __ tbnz($op1$$Register, 63, *L);
-    else
-      __ tbz($op1$$Register, 63, *L);
+    Assembler::Condition cond =
+      ((Assembler::Condition)$cmp$$cmpcode == Assembler::LT) ? Assembler::NE : Assembler::EQ;
+    __ tbr(cond, $op1$$Register, 63, *L);
   %}
   ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
 %}
 
-instruct cmpI_branch_sign(cmpOp cmp, iRegIorL2I op1, immI0 op2, label labl, rFlagsReg cr) %{
+instruct cmpI_branch_sign(cmpOp cmp, iRegIorL2I op1, immI0 op2, label labl) %{
   match(If cmp (CmpI op1 op2));
   predicate(n->in(1)->as_Bool()->_test._test == BoolTest::lt
             || n->in(1)->as_Bool()->_test._test == BoolTest::ge);
@@ -13874,16 +13878,15 @@ instruct cmpI_branch_sign(cmpOp cmp, iRegIorL2I op1, immI0 op2, label labl, rFla
   format %{ "cb$cmp   $op1, $labl # int" %}
   ins_encode %{
     Label* L = $labl$$label;
-    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    if (cond == Assembler::LT)
-      __ tbnz($op1$$Register, 31, *L);
-    else
-      __ tbz($op1$$Register, 31, *L);
+    Assembler::Condition cond =
+      ((Assembler::Condition)$cmp$$cmpcode == Assembler::LT) ? Assembler::NE : Assembler::EQ;
+    __ tbr(cond, $op1$$Register, 31, *L);
   %}
   ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
 %}
 
-instruct cmpL_branch_bit(cmpOp cmp, iRegL op1, immL op2, immL0 op3, label labl, rFlagsReg cr) %{
+instruct cmpL_branch_bit(cmpOp cmp, iRegL op1, immL op2, immL0 op3, label labl) %{
   match(If cmp (CmpL (AndL op1 op2) op3));
   predicate((n->in(1)->as_Bool()->_test._test == BoolTest::ne
             || n->in(1)->as_Bool()->_test._test == BoolTest::eq)
@@ -13896,15 +13899,13 @@ instruct cmpL_branch_bit(cmpOp cmp, iRegL op1, immL op2, immL0 op3, label labl, 
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
     int bit = exact_log2($op2$$constant);
-    if (cond == Assembler::EQ)
-      __ tbz($op1$$Register, bit, *L);
-    else
-      __ tbnz($op1$$Register, bit, *L);
+    __ tbr(cond, $op1$$Register, bit, *L);
   %}
   ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
 %}
 
-instruct cmpI_branch_bit(cmpOp cmp, iRegIorL2I op1, immI op2, immI0 op3, label labl, rFlagsReg cr) %{
+instruct cmpI_branch_bit(cmpOp cmp, iRegIorL2I op1, immI op2, immI0 op3, label labl) %{
   match(If cmp (CmpI (AndI op1 op2) op3));
   predicate((n->in(1)->as_Bool()->_test._test == BoolTest::ne
             || n->in(1)->as_Bool()->_test._test == BoolTest::eq)
@@ -13917,10 +13918,79 @@ instruct cmpI_branch_bit(cmpOp cmp, iRegIorL2I op1, immI op2, immI0 op3, label l
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
     int bit = exact_log2($op2$$constant);
-    if (cond == Assembler::EQ)
-      __ tbz($op1$$Register, bit, *L);
-    else
-      __ tbnz($op1$$Register, bit, *L);
+    __ tbr(cond, $op1$$Register, bit, *L);
+  %}
+  ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
+%}
+
+// And far variants
+instruct far_cmpL_branch_sign(cmpOp cmp, iRegL op1, immL0 op2, label labl) %{
+  match(If cmp (CmpL op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::lt
+            || n->in(1)->as_Bool()->_test._test == BoolTest::ge);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "cb$cmp   $op1, $labl # long" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond =
+      ((Assembler::Condition)$cmp$$cmpcode == Assembler::LT) ? Assembler::NE : Assembler::EQ;
+    __ tbr(cond, $op1$$Register, 63, *L, /*far*/true);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct far_cmpI_branch_sign(cmpOp cmp, iRegIorL2I op1, immI0 op2, label labl) %{
+  match(If cmp (CmpI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::lt
+            || n->in(1)->as_Bool()->_test._test == BoolTest::ge);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "cb$cmp   $op1, $labl # int" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond =
+      ((Assembler::Condition)$cmp$$cmpcode == Assembler::LT) ? Assembler::NE : Assembler::EQ;
+    __ tbr(cond, $op1$$Register, 31, *L, /*far*/true);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct far_cmpL_branch_bit(cmpOp cmp, iRegL op1, immL op2, immL0 op3, label labl) %{
+  match(If cmp (CmpL (AndL op1 op2) op3));
+  predicate((n->in(1)->as_Bool()->_test._test == BoolTest::ne
+            || n->in(1)->as_Bool()->_test._test == BoolTest::eq)
+            && is_power_of_2(n->in(2)->in(1)->in(2)->get_long()));
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "tb$cmp   $op1, $op2, $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    int bit = exact_log2($op2$$constant);
+    __ tbr(cond, $op1$$Register, bit, *L, /*far*/true);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct far_cmpI_branch_bit(cmpOp cmp, iRegIorL2I op1, immI op2, immI0 op3, label labl) %{
+  match(If cmp (CmpI (AndI op1 op2) op3));
+  predicate((n->in(1)->as_Bool()->_test._test == BoolTest::ne
+            || n->in(1)->as_Bool()->_test._test == BoolTest::eq)
+            && is_power_of_2(n->in(2)->in(1)->in(2)->get_int()));
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "tb$cmp   $op1, $op2, $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    int bit = exact_log2($op2$$constant);
+    __ tbr(cond, $op1$$Register, bit, *L, /*far*/true);
   %}
   ins_pipe(pipe_cmp_branch);
 %}
@@ -15312,6 +15382,124 @@ instruct vmul2D(vecX dst, vecX src1, vecX src2)
   format %{ "fmul  $dst,$src1,$src2\t# vector (2D)" %}
   ins_encode %{
     __ fmul(as_FloatRegister($dst$$reg), __ T2D,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// --------------------------------- MLA --------------------------------------
+
+instruct vmla4S(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (AddVS dst (MulVS src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlav  $dst,$src1,$src2\t# vector (4H)" %}
+  ins_encode %{
+    __ mlav(as_FloatRegister($dst$$reg), __ T4H,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmla8S(vecX dst, vecX src1, vecX src2)
+%{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (AddVS dst (MulVS src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlav  $dst,$src1,$src2\t# vector (8H)" %}
+  ins_encode %{
+    __ mlav(as_FloatRegister($dst$$reg), __ T8H,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmla2I(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVI dst (MulVI src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlav  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ mlav(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmla4I(vecX dst, vecX src1, vecX src2)
+%{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AddVI dst (MulVI src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlav  $dst,$src1,$src2\t# vector (4S)" %}
+  ins_encode %{
+    __ mlav(as_FloatRegister($dst$$reg), __ T4S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// --------------------------------- MLS --------------------------------------
+
+instruct vmls4S(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (SubVS dst (MulVS src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlsv  $dst,$src1,$src2\t# vector (4H)" %}
+  ins_encode %{
+    __ mlsv(as_FloatRegister($dst$$reg), __ T4H,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmls8S(vecX dst, vecX src1, vecX src2)
+%{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (SubVS dst (MulVS src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlsv  $dst,$src1,$src2\t# vector (8H)" %}
+  ins_encode %{
+    __ mlsv(as_FloatRegister($dst$$reg), __ T8H,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmls2I(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (SubVI dst (MulVI src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlsv  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ mlsv(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmls4I(vecX dst, vecX src1, vecX src2)
+%{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (SubVI dst (MulVI src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlsv  $dst,$src1,$src2\t# vector (4S)" %}
+  ins_encode %{
+    __ mlsv(as_FloatRegister($dst$$reg), __ T4S,
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}

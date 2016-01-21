@@ -518,6 +518,10 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   // Pop the stack before the safepoint code
   __ remove_frame(initial_frame_size_in_bytes());
 
+  if (StackReservedPages > 0 && compilation()->has_reserved_stack_access()) {
+    __ reserved_stack_check();
+  }
+
   bool result_is_oop = result->is_valid() ? result->is_oop() : false;
 
   // Note: we do not need to round double result; float result has the right precision
@@ -2376,9 +2380,6 @@ void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr unused, L
       case lir_tan :
         // Should consider not saving rbx, if not necessary
         __ trigfunc('t', op->as_Op2()->fpu_stack_size());
-        break;
-      case lir_pow :
-        __ pow_with_fallback(op->as_Op2()->fpu_stack_size());
         break;
       default      : ShouldNotReachHere();
     }

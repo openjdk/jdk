@@ -68,10 +68,10 @@ public class TestLogging {
     public static final int ALLOCATION_COUNT = 15;
 
     public static void main(String args[]) throws Exception {
-        // Test turns logging on by giving -XX:+PrintGC flag
-        test("-XX:+PrintGC");
-        // Test turns logging on by giving -XX:+PrintGCDetails
-        test("-XX:+PrintGCDetails");
+        // Test turns logging on by giving -Xlog:gc flag
+        test("-Xlog:gc");
+        // Test turns logging on by giving -Xlog:gc=debug flag
+        test("-Xlog:gc=debug");
     }
 
     private static void test(String vmFlag) throws Exception {
@@ -79,7 +79,7 @@ public class TestLogging {
         OutputAnalyzer output = spawnMixedGCProvoker(vmFlag);
         System.out.println(output.getStdout());
         output.shouldHaveExitValue(0);
-        output.shouldContain("GC pause (G1 Evacuation Pause) (mixed)");
+        output.shouldContain("Pause Mixed (G1 Evacuation Pause)");
     }
 
     /**

@@ -119,11 +119,8 @@ class MacroAssembler: public Assembler {
 
   // Emits an oop const to the constant pool, loads the constant, and
   // sets a relocation info with address current_pc.
-  void load_const_from_method_toc(Register dst, AddressLiteral& a, Register toc);
-  void load_toc_from_toc(Register dst, AddressLiteral& a, Register toc) {
-    assert(dst == R2_TOC, "base register must be TOC");
-    load_const_from_method_toc(dst, a, toc);
-  }
+  // Returns true if successful.
+  bool load_const_from_method_toc(Register dst, AddressLiteral& a, Register toc, bool fixed_size = false);
 
   static bool is_load_const_from_method_toc_at(address a);
   static int get_offset_of_load_const_from_method_toc_at(address a);
@@ -174,6 +171,7 @@ class MacroAssembler: public Assembler {
   // optimize: flag for telling the conditional far branch to optimize
   //           itself when relocated.
   void bc_far(int boint, int biint, Label& dest, int optimize);
+  void bc_far_optimized(int boint, int biint, Label& dest); // 1 or 2 instructions
   // Relocation of conditional far branches.
   static bool    is_bc_far_at(address instruction_addr);
   static address get_dest_of_bc_far_at(address instruction_addr);
@@ -262,6 +260,7 @@ class MacroAssembler: public Assembler {
   // some ABI-related functions
   void save_nonvolatile_gprs(   Register dst_base, int offset);
   void restore_nonvolatile_gprs(Register src_base, int offset);
+  enum { num_volatile_regs = 11 + 14 }; // GPR + FPR
   void save_volatile_gprs(   Register dst_base, int offset);
   void restore_volatile_gprs(Register src_base, int offset);
   void save_LR_CR(   Register tmp);     // tmp contains LR on return.
@@ -461,8 +460,10 @@ class MacroAssembler: public Assembler {
                                      Register super_klass,
                                      Register temp1_reg,
                                      Register temp2_reg,
-                                     Label& L_success,
-                                     Label& L_failure);
+                                     Label* L_success,
+                                     Label* L_failure,
+                                     Label* L_slow_path = NULL, // default fall through
+                                     RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
@@ -506,6 +507,28 @@ class MacroAssembler: public Assembler {
   // emitted after this one will go in an annulled delay slot if the
   // biased locking exit case failed.
   void biased_locking_exit(ConditionRegister cr_reg, Register mark_addr, Register temp_reg, Label& done);
+
+  // allocation (for C1)
+  void eden_allocate(
+    Register obj,                      // result: pointer to object after successful allocation
+    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
+    int      con_size_in_bytes,        // object size in bytes if   known at compile time
+    Register t1,                       // temp register
+    Register t2,                       // temp register
+    Label&   slow_case                 // continuation point if fast allocation fails
+  );
+  void tlab_allocate(
+    Register obj,                      // result: pointer to object after successful allocation
+    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
+    int      con_size_in_bytes,        // object size in bytes if   known at compile time
+    Register t1,                       // temp register
+    Label&   slow_case                 // continuation point if fast allocation fails
+  );
+  void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
+  void incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register t1, Register t2);
+
+  enum { trampoline_stub_size = 6 * 4 };
+  address emit_trampoline_stub(int destination_toc_offset, int insts_call_instruction_offset, Register Rtoc = noreg);
 
   void atomic_inc_ptr(Register addr, Register result, int simm16 = 1);
   void atomic_ori_int(Register addr, Register result, int uimm16);
@@ -597,9 +620,7 @@ class MacroAssembler: public Assembler {
 
   // Implicit or explicit null check, jumps to static address exception_entry.
   inline void null_check_throw(Register a, int offset, Register temp_reg, address exception_entry);
-
-  // Check accessed object for null. Use SIGTRAP-based null checks on AIX.
-  inline void load_with_trap_null_check(Register d, int si16, Register s1);
+  inline void null_check(Register a, int offset, Label *Lis_null); // implicit only if Lis_null not provided
 
   // Load heap oop and decompress. Loaded oop may not be null.
   // Specify tmp to save one cycle.
@@ -619,19 +640,16 @@ class MacroAssembler: public Assembler {
   inline Register decode_heap_oop_not_null(Register d, Register src = noreg);
 
   // Null allowed.
+  inline Register encode_heap_oop(Register d, Register src); // Prefer null check in GC barrier!
   inline void decode_heap_oop(Register d);
 
   // Load/Store klass oop from klass field. Compress.
   void load_klass(Register dst, Register src);
-  void load_klass_with_trap_null_check(Register dst, Register src);
   void store_klass(Register dst_oop, Register klass, Register tmp = R0);
   void store_klass_gap(Register dst_oop, Register val = noreg); // Will store 0 if val not specified.
   static int instr_size_for_decode_klass_not_null();
   void decode_klass_not_null(Register dst, Register src = noreg);
   Register encode_klass_not_null(Register dst, Register src = noreg);
-
-  // Load common heap base into register.
-  void reinit_heapbase(Register d, Register tmp = noreg);
 
   // SIGTRAP-based range checks for arrays.
   inline void trap_range_check_l(Register a, Register b);
@@ -750,6 +768,7 @@ class MacroAssembler: public Assembler {
 
   // Emit code to verify that reg contains a valid oop if +VerifyOops is set.
   void verify_oop(Register reg, const char* s = "broken oop");
+  void verify_oop_addr(RegisterOrConstant offs, Register base, const char* s = "contains broken oop");
 
   // TODO: verify method and klass metadata (compare against vptr?)
   void _verify_method_ptr(Register reg, const char * msg, const char * file, int line) {}

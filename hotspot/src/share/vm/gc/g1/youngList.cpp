@@ -29,6 +29,7 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/youngList.hpp"
+#include "logging/log.hpp"
 #include "utilities/ostream.hpp"
 
 YoungList::YoungList(G1CollectedHeap* g1h) :
@@ -98,10 +99,10 @@ bool YoungList::check_list_well_formed() {
   HeapRegion* last = NULL;
   while (curr != NULL) {
     if (!curr->is_young()) {
-      gclog_or_tty->print_cr("### YOUNG REGION " PTR_FORMAT "-" PTR_FORMAT " "
-                             "incorrectly tagged (y: %d, surv: %d)",
-                             p2i(curr->bottom()), p2i(curr->end()),
-                             curr->is_young(), curr->is_survivor());
+      log_info(gc, verify)("### YOUNG REGION " PTR_FORMAT "-" PTR_FORMAT " "
+                           "incorrectly tagged (y: %d, surv: %d)",
+                           p2i(curr->bottom()), p2i(curr->end()),
+                           curr->is_young(), curr->is_survivor());
       ret = false;
     }
     ++length;
@@ -111,9 +112,8 @@ bool YoungList::check_list_well_formed() {
   ret = ret && (length == _length);
 
   if (!ret) {
-    gclog_or_tty->print_cr("### YOUNG LIST seems not well formed!");
-    gclog_or_tty->print_cr("###   list has %u entries, _length is %u",
-                           length, _length);
+    log_info(gc, verify)("### YOUNG LIST seems not well formed!");
+    log_info(gc, verify)("###   list has %u entries, _length is %u", length, _length);
   }
 
   return ret;
@@ -123,20 +123,19 @@ bool YoungList::check_list_empty(bool check_sample) {
   bool ret = true;
 
   if (_length != 0) {
-    gclog_or_tty->print_cr("### YOUNG LIST should have 0 length, not %u",
-                  _length);
+    log_info(gc, verify)("### YOUNG LIST should have 0 length, not %u", _length);
     ret = false;
   }
   if (check_sample && _last_sampled_rs_lengths != 0) {
-    gclog_or_tty->print_cr("### YOUNG LIST has non-zero last sampled RS lengths");
+    log_info(gc, verify)("### YOUNG LIST has non-zero last sampled RS lengths");
     ret = false;
   }
   if (_head != NULL) {
-    gclog_or_tty->print_cr("### YOUNG LIST does not have a NULL head");
+    log_info(gc, verify)("### YOUNG LIST does not have a NULL head");
     ret = false;
   }
   if (!ret) {
-    gclog_or_tty->print_cr("### YOUNG LIST does not seem empty");
+    log_info(gc, verify)("### YOUNG LIST does not seem empty");
   }
 
   return ret;
@@ -171,7 +170,6 @@ YoungList::rs_length_sampling_next() {
   _curr = _curr->get_next_young_region();
   if (_curr == NULL) {
     _last_sampled_rs_lengths = _sampled_rs_lengths;
-    // gclog_or_tty->print_cr("last sampled RS lengths = %d", _last_sampled_rs_lengths);
   }
 }
 
@@ -222,13 +220,13 @@ void YoungList::print() {
   const char* names[] = {"YOUNG", "SURVIVOR"};
 
   for (uint list = 0; list < ARRAY_SIZE(lists); ++list) {
-    gclog_or_tty->print_cr("%s LIST CONTENTS", names[list]);
+    tty->print_cr("%s LIST CONTENTS", names[list]);
     HeapRegion *curr = lists[list];
     if (curr == NULL) {
-      gclog_or_tty->print_cr("  empty");
+      tty->print_cr("  empty");
     }
     while (curr != NULL) {
-      gclog_or_tty->print_cr("  " HR_FORMAT ", P: " PTR_FORMAT ", N: " PTR_FORMAT ", age: %4d",
+      tty->print_cr("  " HR_FORMAT ", P: " PTR_FORMAT ", N: " PTR_FORMAT ", age: %4d",
                              HR_FORMAT_PARAMS(curr),
                              p2i(curr->prev_top_at_mark_start()),
                              p2i(curr->next_top_at_mark_start()),
@@ -237,5 +235,5 @@ void YoungList::print() {
     }
   }
 
-  gclog_or_tty->cr();
+  tty->cr();
 }

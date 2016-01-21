@@ -34,6 +34,7 @@
 
 address StubRoutines::x86::_verify_mxcsr_entry = NULL;
 address StubRoutines::x86::_key_shuffle_mask_addr = NULL;
+address StubRoutines::x86::_counter_shuffle_mask_addr = NULL;
 address StubRoutines::x86::_ghash_long_swap_mask_addr = NULL;
 address StubRoutines::x86::_ghash_byte_swap_mask_addr = NULL;
 

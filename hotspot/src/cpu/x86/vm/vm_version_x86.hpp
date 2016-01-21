@@ -30,7 +30,9 @@
 
 class VM_Version : public Abstract_VM_Version {
   friend class VMStructs;
-public:
+  friend class JVMCIVMStructs;
+
+ public:
   // cpuid result register layouts.  These are all unions of a uint32_t
   // (in case anyone wants access to the register as a whole) and a bitfield.
 
@@ -244,14 +246,11 @@ protected:
   static int _cpu;
   static int _model;
   static int _stepping;
-  static uint64_t _cpuFeatures; // features returned by the "cpuid" instruction
-                                // 0 if this instruction is not available
-  static const char* _features_str;
 
   static address   _cpuinfo_segv_addr; // address of instruction which causes SEGV
   static address   _cpuinfo_cont_addr; // address of instruction after the one which causes SEGV
 
-  enum {
+  enum Feature_Flag {
     CPU_CX8      = (1 << 0), // next bits are from cpuid 1 (EDX)
     CPU_CMOV     = (1 << 1),
     CPU_FXSR     = (1 << 2),
@@ -285,11 +284,11 @@ protected:
     CPU_AVX512ER = (1 << 29),
     CPU_AVX512CD = (1 << 30),
     CPU_AVX512BW = (1 << 31)
-  } cpuFeatureFlags;
+  };
 
 #define CPU_AVX512VL UCONST64(0x100000000) // EVEX instructions with smaller vector length : enums are limited to 32bit
 
-  enum {
+  enum Extended_Family {
     // AMD
     CPU_FAMILY_AMD_11H       = 0x11,
     // Intel
@@ -307,7 +306,7 @@ protected:
     CPU_MODEL_HASWELL_E7     = 0x3f,
     CPU_MODEL_BROADWELL      = 0x3d,
     CPU_MODEL_SKYLAKE        = CPU_MODEL_HASWELL_E3
-  } cpuExtendedFamily;
+  };
 
   // cpuid information block.  All info derived from executing cpuid with
   // various function numbers is stored here.  Intel and AMD info is
@@ -597,9 +596,9 @@ public:
   static void set_cpuinfo_cont_addr(address pc) { _cpuinfo_cont_addr = pc; }
   static address  cpuinfo_cont_addr()           { return _cpuinfo_cont_addr; }
 
-  static void clean_cpuFeatures()   { _cpuFeatures = 0; }
-  static void set_avx_cpuFeatures() { _cpuFeatures = (CPU_SSE | CPU_SSE2 | CPU_AVX); }
-  static void set_evex_cpuFeatures() { _cpuFeatures = (CPU_AVX512F | CPU_SSE | CPU_SSE2 ); }
+  static void clean_cpuFeatures()   { _features = 0; }
+  static void set_avx_cpuFeatures() { _features = (CPU_SSE | CPU_SSE2 | CPU_AVX); }
+  static void set_evex_cpuFeatures() { _features = (CPU_AVX512F | CPU_SSE | CPU_SSE2 ); }
 
 
   // Initialization
@@ -687,36 +686,36 @@ public:
   //
   // Feature identification
   //
-  static bool supports_cpuid()    { return _cpuFeatures  != 0; }
-  static bool supports_cmpxchg8() { return (_cpuFeatures & CPU_CX8) != 0; }
-  static bool supports_cmov()     { return (_cpuFeatures & CPU_CMOV) != 0; }
-  static bool supports_fxsr()     { return (_cpuFeatures & CPU_FXSR) != 0; }
-  static bool supports_ht()       { return (_cpuFeatures & CPU_HT) != 0; }
-  static bool supports_mmx()      { return (_cpuFeatures & CPU_MMX) != 0; }
-  static bool supports_sse()      { return (_cpuFeatures & CPU_SSE) != 0; }
-  static bool supports_sse2()     { return (_cpuFeatures & CPU_SSE2) != 0; }
-  static bool supports_sse3()     { return (_cpuFeatures & CPU_SSE3) != 0; }
-  static bool supports_ssse3()    { return (_cpuFeatures & CPU_SSSE3)!= 0; }
-  static bool supports_sse4_1()   { return (_cpuFeatures & CPU_SSE4_1) != 0; }
-  static bool supports_sse4_2()   { return (_cpuFeatures & CPU_SSE4_2) != 0; }
-  static bool supports_popcnt()   { return (_cpuFeatures & CPU_POPCNT) != 0; }
-  static bool supports_avx()      { return (_cpuFeatures & CPU_AVX) != 0; }
-  static bool supports_avx2()     { return (_cpuFeatures & CPU_AVX2) != 0; }
-  static bool supports_tsc()      { return (_cpuFeatures & CPU_TSC)    != 0; }
-  static bool supports_aes()      { return (_cpuFeatures & CPU_AES) != 0; }
-  static bool supports_erms()     { return (_cpuFeatures & CPU_ERMS) != 0; }
-  static bool supports_clmul()    { return (_cpuFeatures & CPU_CLMUL) != 0; }
-  static bool supports_rtm()      { return (_cpuFeatures & CPU_RTM) != 0; }
-  static bool supports_bmi1()     { return (_cpuFeatures & CPU_BMI1) != 0; }
-  static bool supports_bmi2()     { return (_cpuFeatures & CPU_BMI2) != 0; }
-  static bool supports_adx()      { return (_cpuFeatures & CPU_ADX) != 0; }
-  static bool supports_evex()     { return (_cpuFeatures & CPU_AVX512F) != 0; }
-  static bool supports_avx512dq() { return (_cpuFeatures & CPU_AVX512DQ) != 0; }
-  static bool supports_avx512pf() { return (_cpuFeatures & CPU_AVX512PF) != 0; }
-  static bool supports_avx512er() { return (_cpuFeatures & CPU_AVX512ER) != 0; }
-  static bool supports_avx512cd() { return (_cpuFeatures & CPU_AVX512CD) != 0; }
-  static bool supports_avx512bw() { return (_cpuFeatures & CPU_AVX512BW) != 0; }
-  static bool supports_avx512vl() { return (_cpuFeatures & CPU_AVX512VL) != 0; }
+  static bool supports_cpuid()    { return _features  != 0; }
+  static bool supports_cmpxchg8() { return (_features & CPU_CX8) != 0; }
+  static bool supports_cmov()     { return (_features & CPU_CMOV) != 0; }
+  static bool supports_fxsr()     { return (_features & CPU_FXSR) != 0; }
+  static bool supports_ht()       { return (_features & CPU_HT) != 0; }
+  static bool supports_mmx()      { return (_features & CPU_MMX) != 0; }
+  static bool supports_sse()      { return (_features & CPU_SSE) != 0; }
+  static bool supports_sse2()     { return (_features & CPU_SSE2) != 0; }
+  static bool supports_sse3()     { return (_features & CPU_SSE3) != 0; }
+  static bool supports_ssse3()    { return (_features & CPU_SSSE3)!= 0; }
+  static bool supports_sse4_1()   { return (_features & CPU_SSE4_1) != 0; }
+  static bool supports_sse4_2()   { return (_features & CPU_SSE4_2) != 0; }
+  static bool supports_popcnt()   { return (_features & CPU_POPCNT) != 0; }
+  static bool supports_avx()      { return (_features & CPU_AVX) != 0; }
+  static bool supports_avx2()     { return (_features & CPU_AVX2) != 0; }
+  static bool supports_tsc()      { return (_features & CPU_TSC)    != 0; }
+  static bool supports_aes()      { return (_features & CPU_AES) != 0; }
+  static bool supports_erms()     { return (_features & CPU_ERMS) != 0; }
+  static bool supports_clmul()    { return (_features & CPU_CLMUL) != 0; }
+  static bool supports_rtm()      { return (_features & CPU_RTM) != 0; }
+  static bool supports_bmi1()     { return (_features & CPU_BMI1) != 0; }
+  static bool supports_bmi2()     { return (_features & CPU_BMI2) != 0; }
+  static bool supports_adx()      { return (_features & CPU_ADX) != 0; }
+  static bool supports_evex()     { return (_features & CPU_AVX512F) != 0; }
+  static bool supports_avx512dq() { return (_features & CPU_AVX512DQ) != 0; }
+  static bool supports_avx512pf() { return (_features & CPU_AVX512PF) != 0; }
+  static bool supports_avx512er() { return (_features & CPU_AVX512ER) != 0; }
+  static bool supports_avx512cd() { return (_features & CPU_AVX512CD) != 0; }
+  static bool supports_avx512bw() { return (_features & CPU_AVX512BW) != 0; }
+  static bool supports_avx512vl() { return (_features & CPU_AVX512VL) != 0; }
   static bool supports_avx512vlbw() { return (supports_avx512bw() && supports_avx512vl()); }
   static bool supports_avx512novl() { return (supports_evex() && !supports_avx512vl()); }
   static bool supports_avx512nobw() { return (supports_evex() && !supports_avx512bw()); }
@@ -745,17 +744,17 @@ public:
   }
 
   // AMD features
-  static bool supports_3dnow_prefetch()    { return (_cpuFeatures & CPU_3DNOW_PREFETCH) != 0; }
+  static bool supports_3dnow_prefetch()    { return (_features & CPU_3DNOW_PREFETCH) != 0; }
   static bool supports_mmx_ext()  { return is_amd() && _cpuid_info.ext_cpuid1_edx.bits.mmx_amd != 0; }
-  static bool supports_lzcnt()    { return (_cpuFeatures & CPU_LZCNT) != 0; }
-  static bool supports_sse4a()    { return (_cpuFeatures & CPU_SSE4A) != 0; }
+  static bool supports_lzcnt()    { return (_features & CPU_LZCNT) != 0; }
+  static bool supports_sse4a()    { return (_features & CPU_SSE4A) != 0; }
 
   static bool is_amd_Barcelona()  { return is_amd() &&
                                            extended_cpu_family() == CPU_FAMILY_AMD_11H; }
 
   // Intel and AMD newer cores support fast timestamps well
   static bool supports_tscinv_bit() {
-    return (_cpuFeatures & CPU_TSCINV) != 0;
+    return (_features & CPU_TSCINV) != 0;
   }
   static bool supports_tscinv() {
     return supports_tscinv_bit() &&
@@ -768,8 +767,6 @@ public:
                                            supports_sse3() && _model != 0x1C; }
 
   static bool supports_compare_and_exchange() { return true; }
-
-  static const char* cpu_features()           { return _features_str; }
 
   static intx allocate_prefetch_distance() {
     // This method should be called before allocate_prefetch_style().

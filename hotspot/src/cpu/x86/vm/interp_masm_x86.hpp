@@ -36,7 +36,6 @@ typedef ByteSize (*OffsetFunction)(uint);
 
 class InterpreterMacroAssembler: public MacroAssembler {
 
-#ifndef CC_INTERP
  protected:
   // Interpreter specific version of call_VM_base
   virtual void call_VM_leaf_base(address entry_point,
@@ -54,7 +53,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // base routine for all dispatches
   void dispatch_base(TosState state, address* table, bool verifyoop = true);
-#endif // CC_INTERP
 
  public:
   InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code),
@@ -64,15 +62,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void jump_to_entry(address entry);
 
   void load_earlyret_value(TosState state);
-
-#ifdef CC_INTERP
-  void save_bcp()                                          { /*  not needed in c++ interpreter and harmless */ }
-  void restore_bcp()                                       { /*  not needed in c++ interpreter and harmless */ }
-
-  // Helpers for runtime call arguments/results
-  void get_method(Register reg);
-
-#else
 
   // Interpreter-specific registers
   void save_bcp() {
@@ -219,14 +208,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
                          bool throw_monitor_exception = true,
                          bool install_monitor_exception = true,
                          bool notify_jvmdi = true);
-#endif // CC_INTERP
   void get_method_counters(Register method, Register mcs, Label& skip);
 
   // Object locking
   void lock_object  (Register lock_reg);
   void unlock_object(Register lock_reg);
-
-#ifndef CC_INTERP
 
   // Interpreter profiling operations
   void set_method_data_pointer_for_bcp();
@@ -285,8 +271,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // only if +VerifyFPU  && (state == ftos || state == dtos)
   void verify_FPU(int stack_depth, TosState state = ftos);
 
-#endif // !CC_INTERP
-
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 
   // support for jvmti/dtrace
@@ -299,12 +283,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   Register _bcp_register; // register that contains the bcp
 
  public:
-#ifndef CC_INTERP
   void profile_obj_type(Register obj, const Address& mdo_addr);
   void profile_arguments_type(Register mdp, Register callee, Register tmp, bool is_virtual);
   void profile_return_type(Register mdp, Register ret, Register tmp);
   void profile_parameters_type(Register mdp, Register tmp1, Register tmp2);
-#endif /* !CC_INTERP */
 
 };
 
