@@ -52,28 +52,28 @@ public class ExceptionsTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:exceptions=info", "-Xcomp",
-            "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
-            InternalClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:exceptions=info",
+                                                                  "-Xcomp",
+                                                                  "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
+                                                                  InternalClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+TraceExceptions", "-Xcomp",
-            "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
-            InternalClass.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+TraceExceptions",
+                                                   "-Xcomp",
+                                                   "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
+                                                   InternalClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:exceptions=off", "-Xcomp",
-            "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
-            InternalClass.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:exceptions=off",
+                                                   "-Xcomp",
+                                                   "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
+                                                   InternalClass.class.getName());
         analyzeOutputOff(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:-TraceExceptions", "-Xcomp",
-            "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
-            InternalClass.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-XX:-TraceExceptions",
+                                                   "-Xcomp",
+                                                   "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
+                                                   InternalClass.class.getName());
         analyzeOutputOff(pb);
     }
 
