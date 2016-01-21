@@ -257,7 +257,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_os: "macosx",
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit"),
-            configure_args: concat(common.configure_args, "--with-sdk-name=macosx10.9"),
+            configure_args: common.configure_args,
             make_args: common.make_args
         },
 
