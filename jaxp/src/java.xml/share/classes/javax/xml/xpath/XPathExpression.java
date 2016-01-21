@@ -246,7 +246,7 @@ public interface XPathExpression {
      * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type is not available.
      * @throws NullPointerException If {@code type} is {@code null}.
      *
-     * @since 1.9
+     * @since 9
      */
     default <T>T evaluateExpression(Object item, Class<T> type)
         throws XPathExpressionException
@@ -292,7 +292,7 @@ public interface XPathExpression {
      * does not support the
      * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type.
      *
-     * @since 1.9
+     * @since 9
      */
     default XPathEvaluationResult<?> evaluateExpression(Object item)
         throws XPathExpressionException
@@ -338,7 +338,7 @@ public interface XPathExpression {
      * is not available.
      * @throws NullPointerException If {@code source or type} is {@code null}.
      *
-     * @since 1.9
+     * @since 9
      */
     default <T>T evaluateExpression(InputSource source, Class<T> type)
         throws XPathExpressionException
@@ -377,7 +377,7 @@ public interface XPathExpression {
      * {@link XPathEvaluationResult.XPathResultType#ANY ANY} type.
      * @throws NullPointerException If {@code source} is {@code null}.
      *
-     * @since 1.9
+     * @since 9
      */
     default XPathEvaluationResult<?> evaluateExpression(InputSource source)
         throws XPathExpressionException
