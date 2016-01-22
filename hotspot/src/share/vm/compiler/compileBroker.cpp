@@ -466,9 +466,16 @@ CompileQueue* CompileBroker::compile_queue(int comp_level) {
   return NULL;
 }
 
-
 void CompileBroker::print_compile_queues(outputStream* st) {
+  st->print_cr("Current compiles: ");
   MutexLocker locker(MethodCompileQueue_lock);
+  MutexLocker locker2(Threads_lock);
+
+  char buf[2000];
+  int buflen = sizeof(buf);
+  Threads::print_threads_compiling(st, buf, buflen);
+
+  st->cr();
   if (_c1_compile_queue != NULL) {
     _c1_compile_queue->print(st);
   }
@@ -479,8 +486,7 @@ void CompileBroker::print_compile_queues(outputStream* st) {
 
 void CompileQueue::print(outputStream* st) {
   assert(MethodCompileQueue_lock->owned_by_self(), "must own lock");
-  st->print_cr("Contents of %s", name());
-  st->print_cr("----------------------------");
+  st->print_cr("%s:", name());
   CompileTask* task = _first;
   if (task == NULL) {
     st->print_cr("Empty");
@@ -490,7 +496,7 @@ void CompileQueue::print(outputStream* st) {
       task = task->next();
     }
   }
-  st->print_cr("----------------------------");
+  st->cr();
 }
 
 void CompileQueue::print_tty() {
@@ -2355,10 +2361,3 @@ void CompileBroker::print_last_compile() {
   }
 }
 
-
-void CompileBroker::print_compiler_threads_on(outputStream* st) {
-#ifndef PRODUCT
-  st->print_cr("Compiler thread printing unimplemented.");
-  st->cr();
-#endif
-}
