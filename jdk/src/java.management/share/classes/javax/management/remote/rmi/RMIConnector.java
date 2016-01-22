@@ -2250,7 +2250,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         return attributes != null ?
                 attributes.asList().stream()
                         .map(Attribute::getName)
-                        .collect(Collectors.joining("[", ", ", "]"))
+                        .collect(Collectors.joining(", ", "[", "]"))
                 : "[]";
     }
 }
