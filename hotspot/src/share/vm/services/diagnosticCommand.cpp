@@ -832,18 +832,15 @@ void VMDynamicLibrariesDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 void CompileQueueDCmd::execute(DCmdSource source, TRAPS) {
-  VM_PrintCompileQueue printCompileQueueOp(output());
-  VMThread::execute(&printCompileQueueOp);
+  CompileBroker::print_compile_queues(output());
 }
 
 void CodeListDCmd::execute(DCmdSource source, TRAPS) {
-  VM_PrintCodeList printCodeListOp(output());
-  VMThread::execute(&printCodeListOp);
+  CodeCache::print_codelist(output());
 }
 
 void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
-  VM_PrintCodeCache printCodeCacheOp(output());
-  VMThread::execute(&printCodeCacheOp);
+  CodeCache::print_layout(output());
 }
 
 void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
