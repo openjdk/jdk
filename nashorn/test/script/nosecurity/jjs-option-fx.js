@@ -35,7 +35,7 @@
 
 load(__DIR__ + "jjs-common.js")
 
-var msg_flag = "print(typeof($STAGE));";
+var msg_flag = "print(typeof($STAGE)); exit();";
 
 // flag test expected output variables
 var e_outn = "undefined"
