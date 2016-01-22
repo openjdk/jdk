@@ -834,30 +834,6 @@ C2V_VMENTRY(jint, getMetadata, (JNIEnv *jniEnv, jobject, jobject target, jobject
   return result;
 C2V_END
 
-C2V_VMENTRY(void, notifyCompilationStatistics, (JNIEnv *jniEnv, jobject, jint id, jobject hotspot_method, jboolean osr, jint processedBytecodes, jlong time, jlong timeUnitsPerSecond, jobject installed_code))
-  JVMCICompiler* compiler = JVMCICompiler::instance(CHECK);
-  CompilerStatistics* stats = compiler->stats();
-
-  elapsedTimer timer = elapsedTimer(time, timeUnitsPerSecond);
-  if (osr) {
-    stats->_osr.update(timer, processedBytecodes);
-  } else {
-    stats->_standard.update(timer, processedBytecodes);
-  }
-  Handle installed_code_handle = JNIHandles::resolve(installed_code);
-  if (installed_code_handle->is_a(HotSpotInstalledCode::klass())) {
-    stats->_nmethods_size += HotSpotInstalledCode::size(installed_code_handle);
-    stats->_nmethods_code_size += HotSpotInstalledCode::codeSize(installed_code_handle);
-  }
-
-  if (CITimeEach) {
-    methodHandle method = CompilerToVM::asMethod(hotspot_method);
-    float bytes_per_sec = 1.0 * processedBytecodes / timer.seconds();
-    tty->print_cr("%3d   seconds: %f bytes/sec: %f (bytes %d)",
-                  id, timer.seconds(), bytes_per_sec, processedBytecodes);
-  }
-C2V_END
-
 C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv *jniEnv, jobject))
   JVMCICompiler* compiler = JVMCICompiler::instance(CHECK);
   CompilerStatistics* stats = compiler->stats();
@@ -1447,7 +1423,6 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC"initializeConfiguration",                      CC"("HS_CONFIG")J",                                                               FN_PTR(initializeConfiguration)},
   {CC"installCode",                                  CC"("TARGET_DESCRIPTION HS_COMPILED_CODE INSTALLED_CODE HS_SPECULATION_LOG")I",   FN_PTR(installCode)},
   {CC"getMetadata",                                  CC"("TARGET_DESCRIPTION HS_COMPILED_CODE HS_METADATA")I",                         FN_PTR(getMetadata)},
-  {CC"notifyCompilationStatistics",                  CC"(I"HS_RESOLVED_METHOD"ZIJJ"INSTALLED_CODE")V",                                 FN_PTR(notifyCompilationStatistics)},
   {CC"resetCompilationStatistics",                   CC"()V",                                                                          FN_PTR(resetCompilationStatistics)},
   {CC"disassembleCodeBlob",                          CC"("INSTALLED_CODE")"STRING,                                                     FN_PTR(disassembleCodeBlob)},
   {CC"executeInstalledCode",                         CC"(["OBJECT INSTALLED_CODE")"OBJECT,                                             FN_PTR(executeInstalledCode)},

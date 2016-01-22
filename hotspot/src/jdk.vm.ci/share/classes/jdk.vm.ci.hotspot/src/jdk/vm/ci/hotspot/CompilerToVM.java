@@ -317,21 +317,6 @@ final class CompilerToVM {
     public native int getMetadata(TargetDescription target, HotSpotCompiledCode compiledCode, HotSpotMetaData metaData);
 
     /**
-     * Notifies the VM of statistics for a completed compilation.
-     *
-     * @param id the identifier of the compilation
-     * @param method the method compiled
-     * @param osr specifies if the compilation was for on-stack-replacement
-     * @param processedBytecodes the number of bytecodes processed during the compilation, including
-     *            the bytecodes of all inlined methods
-     * @param time the amount time spent compiling {@code method}
-     * @param timeUnitsPerSecond the granularity of the units for the {@code time} value
-     * @param installedCode the nmethod installed as a result of the compilation
-     */
-    synchronized native void notifyCompilationStatistics(int id, HotSpotResolvedJavaMethodImpl method, boolean osr, int processedBytecodes, long time, long timeUnitsPerSecond,
-                    InstalledCode installedCode);
-
-    /**
      * Resets all compilation statistics.
      */
     native void resetCompilationStatistics();
