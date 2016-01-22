@@ -29,6 +29,7 @@ import static jdk.vm.ci.inittimer.InitTimer.timer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
+import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.code.TargetDescription;
@@ -589,4 +590,14 @@ final class CompilerToVM {
      * @throws IllegalArgumentException if an out of range position is given
      */
     native int methodDataProfileDataSize(long metaspaceMethodData, int position);
+
+    /**
+     * Return the amount of native stack required for the interpreter frames represented by
+     * {@code frame}. This is used when emitting the stack banging code to ensure that there is
+     * enough space for the frames during deoptimization.
+     *
+     * @param frame
+     * @return the number of bytes required for deoptimization of this frame state
+     */
+    native int interpreterFrameSize(BytecodeFrame frame);
 }
