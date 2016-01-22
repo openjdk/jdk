@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.*;
 import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import sun.misc.ManagedLocalsThread;
 // These imports needed only as a workaround for a JavaDoc bug
 import java.lang.Integer;
 import java.lang.Long;
@@ -1515,7 +1514,11 @@ public abstract class AbstractPreferences extends Preferences {
      * A single background thread ("the event notification thread") monitors
      * the event queue and delivers events that are placed on the queue.
      */
-    private static class EventDispatchThread extends ManagedLocalsThread {
+    private static class EventDispatchThread extends Thread {
+        private EventDispatchThread() {
+            super(null, null, "Event Dispatch Thread", 0, false);
+        }
+
         public void run() {
             while(true) {
                 // Wait on eventQueue till an event is present
