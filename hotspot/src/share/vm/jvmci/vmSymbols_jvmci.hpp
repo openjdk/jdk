@@ -66,6 +66,7 @@
   template(jdk_vm_ci_code_Architecture,                           "jdk/vm/ci/code/Architecture")                           \
   template(jdk_vm_ci_code_BytecodeFrame,                          "jdk/vm/ci/code/BytecodeFrame")                          \
   template(jdk_vm_ci_code_BytecodePosition,                       "jdk/vm/ci/code/BytecodePosition")                       \
+  template(jdk_vm_ci_code_CompilationRequestResult,               "jdk/vm/ci/code/CompilationRequestResult")               \
   template(jdk_vm_ci_code_DebugInfo,                              "jdk/vm/ci/code/DebugInfo")                              \
   template(jdk_vm_ci_code_InstalledCode,                          "jdk/vm/ci/code/InstalledCode")                          \
   template(jdk_vm_ci_code_Location,                               "jdk/vm/ci/code/Location")                               \
@@ -88,7 +89,7 @@
   template(jdk_vm_ci_code_site_InfopointReason,                   "jdk/vm/ci/code/site/InfopointReason")                   \
   template(jdk_vm_ci_common_JVMCIError,                           "jdk/vm/ci/common/JVMCIError")                           \
   template(compileMethod_name,                                    "compileMethod")                                         \
-  template(compileMethod_signature,                               "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;IJI)V")   \
+  template(compileMethod_signature,                               "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;IJI)Ljdk/vm/ci/code/CompilationRequestResult;") \
   template(fromMetaspace_name,                                    "fromMetaspace")                                         \
   template(method_fromMetaspace_signature,                        "(J)Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;")      \
   template(constantPool_fromMetaspace_signature,                  "(J)Ljdk/vm/ci/hotspot/HotSpotConstantPool;")            \

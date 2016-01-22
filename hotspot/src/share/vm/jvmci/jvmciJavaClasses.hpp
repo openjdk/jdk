@@ -161,6 +161,11 @@ class JVMCIJavaClasses : AllStatic {
   start_class(site_Mark)                                                                                                                                       \
     oop_field(site_Mark, id, "Ljava/lang/Object;")                                                                                                             \
   end_class                                                                                                                                                    \
+  start_class(CompilationRequestResult)                                                                                                                        \
+    oop_field(CompilationRequestResult, failureMessage, "Ljava/lang/String;")                                                                                  \
+    boolean_field(CompilationRequestResult, retry)                                                                                                             \
+    int_field(CompilationRequestResult, inlinedBytecodes)                                                                                                      \
+  end_class                                                                                                                                                    \
   start_class(DebugInfo)                                                                                                                                       \
     oop_field(DebugInfo, bytecodePosition, "Ljdk/vm/ci/code/BytecodePosition;")                                                                                \
     oop_field(DebugInfo, referenceMap, "Ljdk/vm/ci/code/ReferenceMap;")                                                                                        \
@@ -287,7 +292,7 @@ class JVMCIJavaClasses : AllStatic {
     long_field(HotSpotConstantPool, metaspaceConstantPool)                                                                                                     \
   end_class                                                                                                                                                    \
   start_class(HotSpotJVMCIRuntime)                                                                                                                             \
-  objArrayOop_field(HotSpotJVMCIRuntime, trivialPrefixes, "[Ljava/lang/String;")                                                                               \
+    objArrayOop_field(HotSpotJVMCIRuntime, trivialPrefixes, "[Ljava/lang/String;")                                                                             \
   end_class                                                                                                                                                    \
   /* end*/
 
