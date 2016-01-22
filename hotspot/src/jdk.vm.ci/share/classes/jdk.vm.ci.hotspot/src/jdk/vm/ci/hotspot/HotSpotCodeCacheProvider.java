@@ -25,6 +25,7 @@ package jdk.vm.ci.hotspot;
 import java.lang.reflect.Field;
 
 import jdk.vm.ci.code.BailoutException;
+import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
@@ -167,6 +168,10 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
 
     public boolean shouldDebugNonSafepoints() {
         return runtime.getCompilerToVM().shouldDebugNonSafepoints();
+    }
+
+    public int interpreterFrameSize(BytecodeFrame pos) {
+        return runtime.getCompilerToVM().interpreterFrameSize(pos);
     }
 
     /**

@@ -149,6 +149,8 @@ HeapWord** CompilerToVM::Data::_heap_top_addr;
 jbyte* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
 
+int CompilerToVM::Data::vm_page_size;
+
 void CompilerToVM::Data::initialize() {
   InstanceKlass_vtable_start_offset = InstanceKlass::vtable_start_offset();
   InstanceKlass_vtable_length_offset = InstanceKlass::vtable_length_offset() * HeapWordSize;
@@ -198,6 +200,8 @@ void CompilerToVM::Data::initialize() {
     ShouldNotReachHere();
     break;
   }
+
+  vm_page_size = os::vm_page_size();
 }
 
 /**
@@ -1364,6 +1368,42 @@ C2V_VMENTRY(int, methodDataProfileDataSize, (JNIEnv*, jobject, jlong metaspace_m
   THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), err_msg("Invalid profile data position %d", position));
 C2V_END
 
+C2V_VMENTRY(int, interpreterFrameSize, (JNIEnv*, jobject, jobject bytecode_frame_handle))
+  if (bytecode_frame_handle == NULL) {
+    THROW_0(vmSymbols::java_lang_NullPointerException());
+  }
+
+  oop top_bytecode_frame = JNIHandles::resolve_non_null(bytecode_frame_handle);
+  oop bytecode_frame = top_bytecode_frame;
+  int size = 0;
+  int callee_parameters = 0;
+  int callee_locals = 0;
+  Method* method = getMethodFromHotSpotMethod(BytecodePosition::method(bytecode_frame));
+  int extra_args = method->max_stack() - BytecodeFrame::numStack(bytecode_frame);
+
+  while (bytecode_frame != NULL) {
+    int locks = BytecodeFrame::numLocks(bytecode_frame);
+    int temps = BytecodeFrame::numStack(bytecode_frame);
+    bool is_top_frame = (bytecode_frame == top_bytecode_frame);
+    Method* method = getMethodFromHotSpotMethod(BytecodePosition::method(bytecode_frame));
+
+    int frame_size = BytesPerWord * Interpreter::size_activation(method->max_stack(),
+                                                                 temps + callee_parameters,
+                                                                 extra_args,
+                                                                 locks,
+                                                                 callee_parameters,
+                                                                 callee_locals,
+                                                                 is_top_frame);
+    size += frame_size;
+
+    callee_parameters = method->size_of_parameters();
+    callee_locals = method->max_locals();
+    extra_args = 0;
+    bytecode_frame = BytecodePosition::caller(bytecode_frame);
+  }
+  return size + Deoptimization::last_frame_adjust(0, callee_locals) * BytesPerWord;
+C2V_END
+
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
@@ -1374,6 +1414,7 @@ C2V_END
 #define STACK_TRACE_ELEMENT   "Ljava/lang/StackTraceElement;"
 #define INSTALLED_CODE        "Ljdk/vm/ci/code/InstalledCode;"
 #define TARGET_DESCRIPTION    "Ljdk/vm/ci/code/TargetDescription;"
+#define BYTECODE_FRAME        "Ljdk/vm/ci/code/BytecodeFrame;"
 #define RESOLVED_METHOD       "Ljdk/vm/ci/meta/ResolvedJavaMethod;"
 #define HS_RESOLVED_METHOD    "Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;"
 #define HS_RESOLVED_KLASS     "Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;"
@@ -1443,6 +1484,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC"writeDebugOutput",                             CC"([BII)V",                                                                      FN_PTR(writeDebugOutput)},
   {CC"flushDebugOutput",                             CC"()V",                                                                          FN_PTR(flushDebugOutput)},
   {CC"methodDataProfileDataSize",                    CC"(JI)I",                                                                        FN_PTR(methodDataProfileDataSize)},
+  {CC"interpreterFrameSize",                         CC"("BYTECODE_FRAME")I",                                                          FN_PTR(interpreterFrameSize)},
 };
 
 int CompilerToVM::methods_count() {
