@@ -225,10 +225,10 @@ public class PortFile {
      * Wait for the port file to contain values that look valid.
      */
     public void waitForValidValues() throws IOException, InterruptedException {
-        final int MAX_ATTEMPTS = 10;
         final int MS_BETWEEN_ATTEMPTS = 500;
         long startTime = System.currentTimeMillis();
-        for (int attempt = 0; ; attempt++) {
+        long timeout = startTime + getServerStartupTimeoutSeconds() * 1000;
+        while (true) {
             Log.debug("Looking for valid port file values...");
             lock();
             getValues();
@@ -237,12 +237,13 @@ public class PortFile {
                 Log.debug("Valid port file values found after " + (System.currentTimeMillis() - startTime) + " ms");
                 return;
             }
-            if (attempt >= MAX_ATTEMPTS) {
-                throw new IOException("No port file values materialized. Giving up after " +
-                                      (System.currentTimeMillis() - startTime) + " ms");
+            if (System.currentTimeMillis() > timeout) {
+                break;
             }
             Thread.sleep(MS_BETWEEN_ATTEMPTS);
         }
+        throw new IOException("No port file values materialized. Giving up after " +
+                                      (System.currentTimeMillis() - startTime) + " ms");
     }
 
     /**
@@ -281,5 +282,16 @@ public class PortFile {
      */
     public String getFilename() {
         return filename;
+    }
+
+    private long getServerStartupTimeoutSeconds() {
+        String str = System.getProperty("serverStartupTimeout");
+        if (str != null) {
+            try {
+                return Integer.parseInt(str);
+            } catch (NumberFormatException e) {
+            }
+        }
+        return 60;
     }
 }
