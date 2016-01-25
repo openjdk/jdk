@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,11 +232,17 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
    const char* runtime_name = JDK_Version::runtime_name() != NULL ?
                                 JDK_Version::runtime_name() : "";
    const char* runtime_version = JDK_Version::runtime_version() != NULL ?
-                                JDK_Version::runtime_version() : "";
-   st->print_cr("# JRE version: %s (%s) (build %s)", runtime_name, buf, runtime_version);
+                                   JDK_Version::runtime_version() : "";
+   const char* jdk_debug_level = Abstract_VM_Version::printable_jdk_debug_level() != NULL ?
+                                   Abstract_VM_Version::printable_jdk_debug_level() : "";
+
+   st->print_cr("# JRE version: %s (%s) (%sbuild %s)", runtime_name, buf,
+                 jdk_debug_level, runtime_version);
+
    // This is the long version with some default settings added
-   st->print_cr("# Java VM: %s (%s, %s%s%s%s%s, %s, %s)",
+   st->print_cr("# Java VM: %s (%s%s, %s%s%s%s%s, %s, %s)",
                  Abstract_VM_Version::vm_name(),
+                 jdk_debug_level,
                  Abstract_VM_Version::vm_release(),
                  Abstract_VM_Version::vm_info_string(),
                  TieredCompilation ? ", tiered" : "",
