@@ -29,7 +29,6 @@
 import java.net.*;
 import java.util.*;
 import java.lang.reflect.*;
-import com.sun.net.ssl.internal.ssl.*;
 
 public class CheckMethods {
     static boolean debug = false;
