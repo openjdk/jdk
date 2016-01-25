@@ -34,21 +34,13 @@ import java.security.PermissionCollection;
 import java.security.Policy;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Set;
-import java.util.Map.Entry;
-import java.util.Collection;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Enumeration;
-import java.util.Properties;
-import java.util.IdentityHashMap;
 import java.util.StringTokenizer;
 import java.util.NoSuchElementException;
 
@@ -165,7 +157,17 @@ public final class ORBUtility {
      * Return default ValueHandler
      */
     public static ValueHandler createValueHandler() {
+        ValueHandler vh;
+        try {
+            vh = AccessController.doPrivileged(new PrivilegedExceptionAction<ValueHandler>() {
+                public ValueHandler run() throws Exception {
         return Util.createValueHandler();
+    }
+            });
+        } catch (PrivilegedActionException e) {
+            throw new InternalError(e.getCause());
+        }
+        return vh;
     }
 
     /**
@@ -664,7 +666,16 @@ public final class ORBUtility {
      * ValueHandler.
      */
     public static byte getMaxStreamFormatVersion() {
-        ValueHandler vh = Util.createValueHandler();
+        ValueHandler vh;
+        try {
+            vh = AccessController.doPrivileged(new PrivilegedExceptionAction<ValueHandler>() {
+                public ValueHandler run() throws Exception {
+                    return Util.createValueHandler();
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            throw new InternalError(e.getCause());
+        }
 
         if (!(vh instanceof javax.rmi.CORBA.ValueHandlerMultiFormat))
             return ORBConstants.STREAM_FORMAT_VERSION_1;
