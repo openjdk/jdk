@@ -25,13 +25,13 @@ package compiler.jvmci.code.amd64;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64Kind;
-import jdk.vm.ci.code.CallingConvention.Type;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataSectionReference;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.LIRKind;
@@ -76,12 +76,12 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public Register emitIntArg0() {
-        return codeCache.getRegisterConfig().getCallingConventionRegisters(Type.JavaCall, JavaKind.Int)[0];
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCall, JavaKind.Int)[0];
     }
 
     @Override
     public Register emitIntArg1() {
-        return codeCache.getRegisterConfig().getCallingConventionRegisters(Type.JavaCall, JavaKind.Int)[1];
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCall, JavaKind.Int)[1];
     }
 
     private void emitREX(boolean w, int r, int x, int b) {
