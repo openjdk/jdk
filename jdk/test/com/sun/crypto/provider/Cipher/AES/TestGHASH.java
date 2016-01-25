@@ -25,6 +25,7 @@
 /*
  * @test
  * @bug 8069072
+ * @modules java.base/com.sun.crypto.provider
  * @summary Test vectors for com.sun.crypto.provider.GHASH.
  *
  * Single iteration to verify software-only GHASH algorithm.

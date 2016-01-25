@@ -26,9 +26,7 @@
 
 import java.text.*;
 import java.util.*;
-import sun.text.resources.*;
 import sun.util.locale.provider.*;
-import sun.util.resources.*;
 
 public class BreakIteratorProviderTest extends ProviderTest {
 

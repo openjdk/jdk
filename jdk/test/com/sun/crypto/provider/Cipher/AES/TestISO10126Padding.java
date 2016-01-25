@@ -35,7 +35,6 @@ import java.security.spec.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.security.Provider;
-import com.sun.crypto.provider.*;
 
 public class TestISO10126Padding {
     private static final String ALGO = "AES";

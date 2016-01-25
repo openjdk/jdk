@@ -48,7 +48,7 @@ import java.util.stream.Stream;
  * @bug 8010117
  * @summary Verify if CallerSensitive methods are annotated with
  *          sun.reflect.CallerSensitive annotation
- * @modules jdk.compiler/com.sun.tools.classfile jdk.jdeps/com.sun.tools.jdeps
+ * @modules jdk.jdeps/com.sun.tools.classfile jdk.jdeps/com.sun.tools.jdeps
  * @build CallerSensitiveFinder
  * @run main/othervm/timeout=900 CallerSensitiveFinder
  */
