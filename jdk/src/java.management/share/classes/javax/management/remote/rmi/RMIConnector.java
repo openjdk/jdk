@@ -65,6 +65,7 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.stream.Collectors;
 import javax.management.Attribute;
 import javax.management.AttributeList;
 import javax.management.AttributeNotFoundException;
@@ -689,9 +690,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             if (logger.debugOn())
                 logger.debug("createMBean(String,ObjectName,Object[],String[])",
                         "className=" + className + ", name="
-                        + name + ", params="
-                        + objects(params) + ", signature="
-                        + strings(signature));
+                        + name + ", signature=" + strings(signature));
 
             final MarshalledObject<Object[]> sParams =
                     new MarshalledObject<Object[]>(params);
@@ -730,8 +729,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             if (logger.debugOn()) logger.debug(
                     "createMBean(String,ObjectName,ObjectName,Object[],String[])",
                     "className=" + className + ", name=" + name + ", loaderName="
-                    + loaderName + ", params=" + objects(params)
-                    + ", signature=" + strings(signature));
+                    + loaderName + ", signature=" + strings(signature));
 
             final MarshalledObject<Object[]> sParams =
                     new MarshalledObject<Object[]>(params);
@@ -931,8 +929,8 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 IOException {
 
             if (logger.debugOn()) logger.debug("setAttribute",
-                    "name=" + name + ", attribute="
-                    + attribute);
+                    "name=" + name + ", attribute name="
+                    + attribute.getName());
 
             final MarshalledObject<Attribute> sAttribute =
                     new MarshalledObject<Attribute>(attribute);
@@ -954,9 +952,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 ReflectionException,
                 IOException {
 
-            if (logger.debugOn()) logger.debug("setAttributes",
-                    "name=" + name + ", attributes="
-                    + attributes);
+            if (logger.debugOn()) {
+                logger.debug("setAttributes",
+                    "name=" + name + ", attribute names="
+                    + getAttributesNames(attributes));
+            }
 
             final MarshalledObject<AttributeList> sAttributes =
                     new MarshalledObject<AttributeList>(attributes);
@@ -989,7 +989,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             if (logger.debugOn()) logger.debug("invoke",
                     "name=" + name
                     + ", operationName=" + operationName
-                    + ", params=" + objects(params)
                     + ", signature=" + strings(signature));
 
             final MarshalledObject<Object[]> sParams =
@@ -2245,5 +2244,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
     private static String strings(final String[] strs) {
         return objects(strs);
+    }
+
+    static String getAttributesNames(AttributeList attributes) {
+        return attributes != null ?
+                attributes.asList().stream()
+                        .map(Attribute::getName)
+                        .collect(Collectors.joining(", ", "[", "]"))
+                : "[]";
     }
 }

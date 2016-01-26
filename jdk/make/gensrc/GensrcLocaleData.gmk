@@ -28,8 +28,9 @@
 # into LocaleDataMetaInfo.java
 
 # First go look for all locale files
-LOCALE_FILES := $(shell $(FIND) $(JDK_TOPDIR)/src/java.base/share/classes \
-    $(JDK_TOPDIR)/src/jdk.localedata/share/classes \
+LOCALE_FILES := $(shell $(FIND) \
+    $(JDK_TOPDIR)/src/$(MODULE)/share/classes/sun/text/resources \
+    $(JDK_TOPDIR)/src/$(MODULE)/share/classes/sun/util/resources \
     -name "FormatData_*.java" -o -name "FormatData_*.properties" -o \
     -name "CollationData_*.java" -o -name "CollationData_*.properties" -o \
     -name "TimeZoneNames_*.java" -o -name "TimeZoneNames_*.properties" -o \
@@ -42,17 +43,21 @@ LOCALE_FILES := $(shell $(FIND) $(JDK_TOPDIR)/src/java.base/share/classes \
 LOCALE_RESOURCES := $(sort $(subst .properties,,$(subst .java,,$(notdir $(LOCALE_FILES)))))
 
 # Include the list of resources found during the previous compile.
--include $(SUPPORT_OUTPUTDIR)/gensrc/_the.locale_resources
+-include $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the.locale_resources
 
 MISSING_RESOURCES := $(filter-out $(LOCALE_RESOURCES), $(PREV_LOCALE_RESOURCES))
 NEW_RESOURCES := $(filter-out $(PREV_LOCALE_RESOURCES), $(LOCALE_RESOURCES))
 
 ifneq (, $(MISSING_RESOURCES)$(NEW_RESOURCES))
   # There is a difference in the number of supported resources. Trigger a regeneration.
-  $(shell $(RM) $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/BaseLocaleDataMetaInfo.java \
-    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java \
-    $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/cldr/CLDRBaseLocaleDataMetaInfo.java \
-    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/cldr/provider/CLDRLocaleDataMetaInfo_jdk_localedata.java)
+  ifeq ($(MODULE), java.base)
+    $(shell $(RM) $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/BaseLocaleDataMetaInfo.java \
+        $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/cldr/CLDRBaseLocaleDataMetaInfo.java)
+  endif
+  ifeq ($(MODULE), jdk.localedata)
+    $(shell $(RM) $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java \
+        $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/cldr/provider/CLDRLocaleDataMetaInfo_jdk_localedata.java)
+  endif
 endif
 
 # The base locales
@@ -121,18 +126,18 @@ SED_NONBASEARGS += -e 's/$(HASH)AvailableLocales_Locales$(HASH)/$(sort $(ALL_NON
 
 $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/BaseLocaleDataMetaInfo.java: \
     $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/locale/provider/LocaleDataMetaInfo-XLocales.java.template
+	$(call LogInfo, Creating sun/util/locale/provider/BaseLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources)
 	$(MKDIR) -p $(@D)
-	$(ECHO) Creating sun/util/locale/provider/BaseLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
 	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" \
-	    > $(SUPPORT_OUTPUTDIR)/gensrc/_the.locale_resources
+	    > $(SUPPORT_OUTPUTDIR)/gensrc/java.base/_the.locale_resources
 	$(SED) $(SED_BASEARGS) $< > $@
 
 $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java: \
     $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/locale/provider/LocaleDataMetaInfo-XLocales.java.template
+	$(call LogInfo, Creating sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources)
 	$(MKDIR) -p $(@D)
-	$(ECHO) Creating sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
 	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" \
-	    > $(SUPPORT_OUTPUTDIR)/gensrc/_the.locale_resources
+	    > $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/_the.locale_resources
 	$(SED) $(SED_NONBASEARGS) $< > $@
 
 GENSRC_BASELOCALEDATA := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/BaseLocaleDataMetaInfo.java

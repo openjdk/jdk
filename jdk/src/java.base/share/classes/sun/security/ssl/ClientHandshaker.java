@@ -333,7 +333,7 @@ final class ClientHandshaker extends Handshaker {
                             input, serverKey,
                             clnt_random.random_bytes, svr_random.random_bytes,
                             messageLen,
-                            localSupportedSignAlgs, protocolVersion);
+                            getLocalSupportedSignAlgs(), protocolVersion);
                     handshakeState.update(dhSrvKeyExchange, resumingSession);
                     this.serverKeyExchange(dhSrvKeyExchange);
                 } catch (GeneralSecurityException e) {
@@ -348,7 +348,7 @@ final class ClientHandshaker extends Handshaker {
                         new ECDH_ServerKeyExchange
                             (input, serverKey, clnt_random.random_bytes,
                             svr_random.random_bytes,
-                            localSupportedSignAlgs, protocolVersion);
+                            getLocalSupportedSignAlgs(), protocolVersion);
                     handshakeState.update(ecdhSrvKeyExchange, resumingSession);
                     this.serverKeyExchange(ecdhSrvKeyExchange);
                 } catch (GeneralSecurityException e) {
@@ -398,7 +398,7 @@ final class ClientHandshaker extends Handshaker {
 
                 Collection<SignatureAndHashAlgorithm> supportedPeerSignAlgs =
                     SignatureAndHashAlgorithm.getSupportedAlgorithms(
-                                                            peerSignAlgs);
+                            algorithmConstraints, peerSignAlgs);
                 if (supportedPeerSignAlgs.isEmpty()) {
                     throw new SSLHandshakeException(
                         "No supported signature and hash algorithm in common");
@@ -1211,8 +1211,8 @@ final class ClientHandshaker extends Handshaker {
                 if (protocolVersion.useTLS12PlusSpec()) {
                     preferableSignatureAlgorithm =
                         SignatureAndHashAlgorithm.getPreferableAlgorithm(
-                            peerSupportedSignAlgs, signingKey.getAlgorithm(),
-                            signingKey);
+                            getPeerSupportedSignAlgs(),
+                            signingKey.getAlgorithm(), signingKey);
 
                     if (preferableSignatureAlgorithm == null) {
                         throw new SSLHandshakeException(

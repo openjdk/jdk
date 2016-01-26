@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,7 @@ public class CompileWithOverrideSources extends SJavacTester {
                 "-d", BIN.toString(),
                 "--state-dir=" + BIN,
                 "-h", HEADERS.toString(),
-                "-j", "1",
-                SERVER_ARG);
+                "-j", "1");
         Map<String,Long> new_bin_state = collectState(BIN);
         verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
                                      BIN + "/alfa/omega/A.class",
@@ -84,8 +83,7 @@ public class CompileWithOverrideSources extends SJavacTester {
                              "-d", BIN.toString(),
                              "--state-dir=" + BIN,
                              "-h", HEADERS.toString(),
-                             "-j", "1",
-                             SERVER_ARG);
+                             "-j", "1");
 
         System.out.println("----- Compile without exluded beta failed, as expected! Good!");
     }

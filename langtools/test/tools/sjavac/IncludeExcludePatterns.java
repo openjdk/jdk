@@ -125,7 +125,6 @@ public class IncludeExcludePatterns extends SjavacBase {
         toolbox.cleanDirectory(BIN);
         toolbox.cleanDirectory(STATE_DIR);
         String args = filterArgs + " " + SRC
-                + " --server:portfile=testportfile,background=false"
                 + " -d " + BIN
                 + " --state-dir=" + STATE_DIR;
         int rc = compile((Object[]) args.split(" "));

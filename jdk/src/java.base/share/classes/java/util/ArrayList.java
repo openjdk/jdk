@@ -207,39 +207,19 @@ public class ArrayList<E> extends AbstractList<E>
      * necessary, to ensure that it can hold at least the number of elements
      * specified by the minimum capacity argument.
      *
-     * @param   minCapacity   the desired minimum capacity
+     * @param minCapacity the desired minimum capacity
      */
     public void ensureCapacity(int minCapacity) {
-        int minExpand = (elementData != DEFAULTCAPACITY_EMPTY_ELEMENTDATA)
-            // any size if not default element table
-            ? 0
-            // larger than default for default empty table. It's already
-            // supposed to be at default size.
-            : DEFAULT_CAPACITY;
-
-        if (minCapacity > minExpand) {
-            ensureExplicitCapacity(minCapacity);
-        }
-    }
-
-    private void ensureCapacityInternal(int minCapacity) {
-        if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA) {
-            minCapacity = Math.max(DEFAULT_CAPACITY, minCapacity);
-        }
-
-        ensureExplicitCapacity(minCapacity);
-    }
-
-    private void ensureExplicitCapacity(int minCapacity) {
-        modCount++;
-
-        // overflow-conscious code
-        if (minCapacity - elementData.length > 0)
+        if (minCapacity > elementData.length
+            && !(elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA
+                 && minCapacity <= DEFAULT_CAPACITY)) {
+            modCount++;
             grow(minCapacity);
+        }
     }
 
     /**
-     * The maximum size of array to allocate.
+     * The maximum size of array to allocate (unless necessary).
      * Some VMs reserve some header words in an array.
      * Attempts to allocate larger arrays may result in
      * OutOfMemoryError: Requested array size exceeds VM limit
@@ -251,25 +231,48 @@ public class ArrayList<E> extends AbstractList<E>
      * number of elements specified by the minimum capacity argument.
      *
      * @param minCapacity the desired minimum capacity
+     * @throws OutOfMemoryError if minCapacity is less than zero
      */
-    private void grow(int minCapacity) {
+    private Object[] grow(int minCapacity) {
+        return elementData = Arrays.copyOf(elementData,
+                                           newCapacity(minCapacity));
+    }
+
+    private Object[] grow() {
+        return grow(size + 1);
+    }
+
+    /**
+     * Returns a capacity at least as large as the given minimum capacity.
+     * Returns the current capacity increased by 50% if that suffices.
+     * Will not return a capacity greater than MAX_ARRAY_SIZE unless
+     * the given minimum capacity is greater than MAX_ARRAY_SIZE.
+     *
+     * @param minCapacity the desired minimum capacity
+     * @throws OutOfMemoryError if minCapacity is less than zero
+     */
+    private int newCapacity(int minCapacity) {
         // overflow-conscious code
         int oldCapacity = elementData.length;
         int newCapacity = oldCapacity + (oldCapacity >> 1);
-        if (newCapacity - minCapacity < 0)
-            newCapacity = minCapacity;
-        if (newCapacity - MAX_ARRAY_SIZE > 0)
-            newCapacity = hugeCapacity(minCapacity);
-        // minCapacity is usually close to size, so this is a win:
-        elementData = Arrays.copyOf(elementData, newCapacity);
+        if (newCapacity - minCapacity <= 0) {
+            if (elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA)
+                return Math.max(DEFAULT_CAPACITY, minCapacity);
+            if (minCapacity < 0) // overflow
+                throw new OutOfMemoryError();
+            return minCapacity;
+        }
+        return (newCapacity - MAX_ARRAY_SIZE <= 0)
+            ? newCapacity
+            : hugeCapacity(minCapacity);
     }
 
     private static int hugeCapacity(int minCapacity) {
         if (minCapacity < 0) // overflow
             throw new OutOfMemoryError();
-        return (minCapacity > MAX_ARRAY_SIZE) ?
-            Integer.MAX_VALUE :
-            MAX_ARRAY_SIZE;
+        return (minCapacity > MAX_ARRAY_SIZE)
+            ? Integer.MAX_VALUE
+            : MAX_ARRAY_SIZE;
     }
 
     /**
@@ -452,14 +455,26 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * This helper method split out from add(E) to keep method
+     * bytecode size under 35 (the -XX:MaxInlineSize default value),
+     * which helps when add(E) is called in a C1-compiled loop.
+     */
+    private void add(E e, Object[] elementData, int s) {
+        if (s == elementData.length)
+            elementData = grow();
+        elementData[s] = e;
+        size = s + 1;
+    }
+
+    /**
      * Appends the specified element to the end of this list.
      *
      * @param e element to be appended to this list
      * @return {@code true} (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
-        ensureCapacityInternal(size + 1);  // Increments modCount!!
-        elementData[size++] = e;
+        modCount++;
+        add(e, elementData, size);
         return true;
     }
 
@@ -474,12 +489,16 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public void add(int index, E element) {
         rangeCheckForAdd(index);
-
-        ensureCapacityInternal(size + 1);  // Increments modCount!!
-        System.arraycopy(elementData, index, elementData, index + 1,
-                         size - index);
+        modCount++;
+        final int s;
+        Object[] elementData;
+        if ((s = size) == (elementData = this.elementData).length)
+            elementData = grow();
+        System.arraycopy(elementData, index,
+                         elementData, index + 1,
+                         s - index);
         elementData[index] = element;
-        size++;
+        size = s + 1;
     }
 
     /**
@@ -578,11 +597,17 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public boolean addAll(Collection<? extends E> c) {
         Object[] a = c.toArray();
+        modCount++;
         int numNew = a.length;
-        ensureCapacityInternal(size + numNew);  // Increments modCount
-        System.arraycopy(a, 0, elementData, size, numNew);
-        size += numNew;
-        return numNew != 0;
+        if (numNew == 0)
+            return false;
+        Object[] elementData;
+        final int s;
+        if (numNew > (elementData = this.elementData).length - (s = size))
+            elementData = grow(s + numNew);
+        System.arraycopy(a, 0, elementData, s, numNew);
+        size = s + numNew;
+        return true;
     }
 
     /**
@@ -604,17 +629,23 @@ public class ArrayList<E> extends AbstractList<E>
         rangeCheckForAdd(index);
 
         Object[] a = c.toArray();
+        modCount++;
         int numNew = a.length;
-        ensureCapacityInternal(size + numNew);  // Increments modCount
+        if (numNew == 0)
+            return false;
+        Object[] elementData;
+        final int s;
+        if (numNew > (elementData = this.elementData).length - (s = size))
+            elementData = grow(s + numNew);
 
-        int numMoved = size - index;
+        int numMoved = s - index;
         if (numMoved > 0)
-            System.arraycopy(elementData, index, elementData, index + numNew,
+            System.arraycopy(elementData, index,
+                             elementData, index + numNew,
                              numMoved);
-
         System.arraycopy(a, 0, elementData, index, numNew);
-        size += numNew;
-        return numNew != 0;
+        size = s + numNew;
+        return true;
     }
 
     /**
@@ -786,7 +817,6 @@ public class ArrayList<E> extends AbstractList<E>
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
-        elementData = EMPTY_ELEMENTDATA;
 
         // Read in size, and any hidden stuff
         s.defaultReadObject();
@@ -795,14 +825,19 @@ public class ArrayList<E> extends AbstractList<E>
         s.readInt(); // ignored
 
         if (size > 0) {
-            // be like clone(), allocate array based upon size not capacity
-            ensureCapacityInternal(size);
+            // like clone(), allocate array based upon size not capacity
+            Object[] elements = new Object[size];
 
-            Object[] a = elementData;
             // Read in all elements in the proper order.
-            for (int i=0; i<size; i++) {
-                a[i] = s.readObject();
+            for (int i = 0; i < size; i++) {
+                elements[i] = s.readObject();
             }
+
+            elementData = elements;
+        } else if (size == 0) {
+            elementData = EMPTY_ELEMENTDATA;
+        } else {
+            throw new java.io.InvalidObjectException("Invalid size: " + size);
         }
     }
 

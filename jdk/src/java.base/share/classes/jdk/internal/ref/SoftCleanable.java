@@ -26,6 +26,7 @@
 package jdk.internal.ref;
 
 import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.Objects;
 
@@ -66,9 +67,9 @@ public abstract class SoftCleanable<T> extends SoftReference<T>
         list = CleanerImpl.getCleanerImpl(cleaner).softCleanableList;
         insert();
 
-        // TODO: Replace getClass() with ReachabilityFence when it is available
-        cleaner.getClass();
-        referent.getClass();
+        // Ensure referent and cleaner remain accessible
+        Reference.reachabilityFence(referent);
+        Reference.reachabilityFence(cleaner);
     }
 
     /**

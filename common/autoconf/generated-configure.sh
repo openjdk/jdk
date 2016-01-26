@@ -688,11 +688,11 @@ STATIC_CXX_SETTING
 FIXPATH_DETACH_FLAG
 FIXPATH
 GCOV_ENABLED
-ZIP_DEBUGINFO_FILES
-ENABLE_DEBUG_SYMBOLS
 STRIP_POLICY
 DEBUG_BINARIES
-NATIVE_DEBUG_SYMBOLS
+ZIP_EXTERNAL_DEBUG_SYMBOLS
+COPY_DEBUG_SYMBOLS
+COMPILE_WITH_DEBUG_SYMBOLS
 CFLAGS_WARNINGS_ARE_ERRORS
 DISABLE_WARNING_PREFIX
 HOTSPOT_SET_WARNINGS_AS_ERRORS
@@ -4119,6 +4119,16 @@ pkgadd_help() {
 
 
 
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false
+    # Fastdebug builds with this setting will essentially be slowdebug
+    # in hotspot.
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false
 #
 # Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -4839,7 +4849,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1452780299
+DATE_WHEN_GENERATED=1453385294
 
 ###############################################################################
 #
@@ -14818,7 +14828,7 @@ test -n "$target_alias" &&
       VAR_CPU_ENDIAN=big
       ;;
     powerpc64le)
-      VAR_CPU=ppc64
+      VAR_CPU=ppc64le
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
@@ -14957,7 +14967,7 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
       VAR_CPU_ENDIAN=big
       ;;
     powerpc64le)
-      VAR_CPU=ppc64
+      VAR_CPU=ppc64le
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
@@ -47031,7 +47041,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     CXXFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     CFLAGS_DEBUG_SYMBOLS="-g -xs"
-    # FIXME: likely a bug, this disables debug symbols rather than enables them
+    # -g0 enables debug symbols without disabling inlining.
     CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_DEBUG_SYMBOLS="-g"
@@ -47249,7 +47259,7 @@ $as_echo "$supports" >&6; }
       C_O_FLAG_HI="-O3 -qstrict"
       C_O_FLAG_NORM="-O2"
       C_O_FLAG_DEBUG="-qnoopt"
-      C_O_FLAG_NONE="-qnoop"
+      C_O_FLAG_NONE="-qnoopt"
     elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
       C_O_FLAG_HIGHEST="-O2"
       C_O_FLAG_HI="-O1"
@@ -48271,21 +48281,31 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
       fi
     fi
 
-    ENABLE_DEBUG_SYMBOLS=true
-    ZIP_DEBUGINFO_FILES=true
-    DEBUG_BINARIES=true
+    COMPILE_WITH_DEBUG_SYMBOLS=true
+    COPY_DEBUG_SYMBOLS=true
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=true
+
+    # Hotspot legacy support, not relevant with COPY_DEBUG_SYMBOLS=true
+    DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
+
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
-    ENABLE_DEBUG_SYMBOLS=false
-    ZIP_DEBUGINFO_FILES=false
+    COMPILE_WITH_DEBUG_SYMBOLS=false
+    COPY_DEBUG_SYMBOLS=false
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=false
+
     DEBUG_BINARIES=false
     STRIP_POLICY=no_strip
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xinternal; then
-    ENABLE_DEBUG_SYMBOLS=false  # -g option only
-    ZIP_DEBUGINFO_FILES=false
+    COMPILE_WITH_DEBUG_SYMBOLS=true
+    COPY_DEBUG_SYMBOLS=false
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=false
+
+    # Hotspot legacy support, will turn on -g when COPY_DEBUG_SYMBOLS=false
     DEBUG_BINARIES=true
     STRIP_POLICY=no_strip
     STRIP=""
+
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xexternal; then
 
     if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
@@ -48296,9 +48316,12 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
       fi
     fi
 
-    ENABLE_DEBUG_SYMBOLS=true
-    ZIP_DEBUGINFO_FILES=false
-    DEBUG_BINARIES=true
+    COMPILE_WITH_DEBUG_SYMBOLS=true
+    COPY_DEBUG_SYMBOLS=true
+    ZIP_EXTERNAL_DEBUG_SYMBOLS=false
+
+    # Hotspot legacy support, not relevant with COPY_DEBUG_SYMBOLS=true
+    DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
   else
     as_fn_error $? "Allowed native debug symbols are: none, internal, external, zipped" "$LINENO" 5
@@ -48347,6 +48370,8 @@ $as_echo "$as_me: WARNING: Please use --with-native-debug-symbols=zipped ." >&2;
 
 
 
+
+  # Legacy values
 
 
 
@@ -59224,9 +59249,9 @@ $as_echo_n "checking for number of cores... " >&6; }
     # Looks like a Solaris system
     NUM_CORES=`LC_MESSAGES=C /usr/sbin/psrinfo -v | grep -c on-line`
     FOUND_CORES=yes
-  elif test -x /usr/sbin/system_profiler; then
+  elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
-    NUM_CORES=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Cores' | awk  '{print $5}'`
+    NUM_CORES=`/usr/sbin/sysctl -n hw.ncpu`
     FOUND_CORES=yes
   elif test "x$OPENJDK_BUILD_OS" = xaix ; then
     NUM_CORES=`/usr/sbin/prtconf | grep "^Number Of Processors" | awk '{ print $4 }'`
@@ -59278,10 +59303,10 @@ $as_echo_n "checking for memory size... " >&6; }
     # Looks like a Solaris or AIX system
     MEMORY_SIZE=`/usr/sbin/prtconf | grep "^Memory [Ss]ize" | awk '{ print $3 }'`
     FOUND_MEM=yes
-  elif test -x /usr/sbin/system_profiler; then
+  elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
-    MEMORY_SIZE=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Memory' | awk  '{print $2}'`
-    MEMORY_SIZE=`expr $MEMORY_SIZE \* 1024`
+    MEMORY_SIZE=`/usr/sbin/sysctl -n hw.memsize`
+    MEMORY_SIZE=`expr $MEMORY_SIZE / 1024 / 1024`
     FOUND_MEM=yes
   elif test "x$OPENJDK_BUILD_OS" = xwindows; then
     # Windows, but without cygwin

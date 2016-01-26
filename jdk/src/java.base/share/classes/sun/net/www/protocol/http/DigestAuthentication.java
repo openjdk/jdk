@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.net.URL;
 import java.net.ProtocolException;
 import java.net.PasswordAuthentication;
 import java.util.Arrays;
-import java.util.StringTokenizer;
 import java.util.Random;
 
 import sun.net.www.HeaderParser;
@@ -146,9 +145,9 @@ class DigestAuthentication extends AuthenticationInfo {
 
         synchronized void setQop (String qop) {
             if (qop != null) {
-                StringTokenizer st = new StringTokenizer (qop, " ");
-                while (st.hasMoreTokens()) {
-                    if (st.nextToken().equalsIgnoreCase ("auth")) {
+                String items[] = qop.split(",");
+                for (String item : items) {
+                    if ("auth".equalsIgnoreCase(item.trim())) {
                         serverQop = true;
                         return;
                     }
@@ -163,7 +162,7 @@ class DigestAuthentication extends AuthenticationInfo {
         synchronized String getNonce () { return nonce;}
 
         synchronized void setNonce (String s) {
-            if (!s.equals(nonce)) {
+            if (nonce == null || !s.equals(nonce)) {
                 nonce=s;
                 NCcount = 0;
                 redoCachedHA1 = true;

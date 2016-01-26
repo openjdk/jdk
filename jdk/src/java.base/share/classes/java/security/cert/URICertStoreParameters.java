@@ -43,7 +43,7 @@ import java.net.URI;
  * provide the necessary locking. Multiple threads each manipulating
  * separate objects need not synchronize.
  *
- * @since       1.9
+ * @since       9
  * @see         CertStore
  * @see         java.net.URI
  */

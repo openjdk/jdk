@@ -31,7 +31,7 @@ package jdk.nashorn.api.tree;
  * <p><b>WARNING:</b> This interface and its sub-interfaces are
  * subject to change as the ECMAScript  programming language evolves.
  *
- * @since 1.9
+ * @since 9
  */
 public interface Tree {
 

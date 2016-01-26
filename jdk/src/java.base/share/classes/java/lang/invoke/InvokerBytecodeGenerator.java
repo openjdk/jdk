@@ -625,9 +625,9 @@ class InvokerBytecodeGenerator {
 
         if (lambdaForm.forceInline) {
             // Force inlining of this invoker method.
-            mv.visitAnnotation("Ljava/lang/invoke/ForceInline;", true);
+            mv.visitAnnotation("Ljdk/internal/vm/annotation/ForceInline;", true);
         } else {
-            mv.visitAnnotation("Ljava/lang/invoke/DontInline;", true);
+            mv.visitAnnotation("Ljdk/internal/vm/annotation/DontInline;", true);
         }
 
         if (lambdaForm.customized != null) {
@@ -1309,7 +1309,7 @@ class InvokerBytecodeGenerator {
         mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
 
         // Don't inline the interpreter entry.
-        mv.visitAnnotation("Ljava/lang/invoke/DontInline;", true);
+        mv.visitAnnotation("Ljdk/internal/vm/annotation/DontInline;", true);
 
         // create parameter array
         emitIconstInsn(invokerType.parameterCount());
@@ -1368,7 +1368,7 @@ class InvokerBytecodeGenerator {
         mv.visitAnnotation("Ljava/lang/invoke/LambdaForm$Hidden;", true);
 
         // Force inlining of this invoker method.
-        mv.visitAnnotation("Ljava/lang/invoke/ForceInline;", true);
+        mv.visitAnnotation("Ljdk/internal/vm/annotation/ForceInline;", true);
 
         // Load receiver
         emitAloadInsn(0);

@@ -54,7 +54,13 @@ public class PropertyListeners {
      */
     PropertyListeners(final PropertyListeners listener) {
         if (listener != null && listener.listeners != null) {
-            this.listeners = new WeakHashMap<>(listener.listeners);
+            this.listeners = new WeakHashMap<>();
+            // We need to copy the nested weak sets in order to avoid concurrent modification issues, see JDK-8146274
+            synchronized (listener) {
+                for (final Map.Entry<Object, WeakPropertyMapSet> entry : listener.listeners.entrySet()) {
+                    this.listeners.put(entry.getKey(), new WeakPropertyMapSet(entry.getValue()));
+                }
+            }
         }
     }
 
@@ -228,7 +234,15 @@ public class PropertyListeners {
 
     private static class WeakPropertyMapSet {
 
-        private final WeakHashMap<PropertyMap, Boolean> map = new WeakHashMap<>();
+        private final WeakHashMap<PropertyMap, Boolean> map;
+
+        WeakPropertyMapSet() {
+            this.map = new WeakHashMap<>();
+        }
+
+        WeakPropertyMapSet(final WeakPropertyMapSet set) {
+            this.map = new WeakHashMap<>(set.map);
+        }
 
         void add(final PropertyMap propertyMap) {
             map.put(propertyMap, Boolean.TRUE);

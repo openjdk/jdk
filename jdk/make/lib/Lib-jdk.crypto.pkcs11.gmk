@@ -51,7 +51,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PKCS11, \
         -D "JDK_INTERNAL_NAME=j2pkcs11" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libj2pkcs11, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 TARGETS += $(BUILD_LIBJ2PKCS11)
 

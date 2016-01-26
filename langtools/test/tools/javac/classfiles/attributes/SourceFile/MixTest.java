@@ -26,10 +26,10 @@
  * @summary sourcefile attribute test for complex structure of nested classes and other types.
  * @bug 8040129
  * @library /tools/lib /tools/javac/lib ../lib
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.classfile
  * @build ToolBox SourceFileTestBase TestBase InMemoryFileManager
  * @run main MixTest
  */

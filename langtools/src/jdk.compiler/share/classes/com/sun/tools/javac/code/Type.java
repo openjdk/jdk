@@ -368,6 +368,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 accept(stripMetadata, null) :
                 this;
     }
+
+    public Type stripMetadata() {
+        return accept(stripMetadata, null);
+    }
     //where
         private final static TypeMapping<Void> stripMetadata = new TypeMapping<Void>() {
             @Override
