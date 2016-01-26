@@ -577,7 +577,7 @@ reg_class no_special_reg32_with_fp(
     R26
  /* R27, */                     // heapbase
  /* R28, */                     // thread
-    R29,                        // fp
+ /* R29, */                     // fp
  /* R30, */                     // lr
  /* R31 */                      // sp
 );
@@ -646,7 +646,7 @@ reg_class no_special_reg_with_fp(
     R26, R26_H,
  /* R27, R27_H, */              // heapbase
  /* R28, R28_H, */              // thread
-    R29, R29_H,                 // fp
+ /* R29, R29_H, */              // fp
  /* R30, R30_H, */              // lr
  /* R31, R31_H */               // sp
 );
