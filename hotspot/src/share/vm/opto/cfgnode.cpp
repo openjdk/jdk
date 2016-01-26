@@ -904,25 +904,34 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
 
   // Check for trip-counted loop.  If so, be smarter.
   CountedLoopNode* l = r->is_CountedLoop() ? r->as_CountedLoop() : NULL;
-  if (l && l->can_be_counted_loop(phase) &&
-      ((const Node*)l->phi() == this)) { // Trip counted loop!
+  if (l && ((const Node*)l->phi() == this)) { // Trip counted loop!
     // protect against init_trip() or limit() returning NULL
-    const Node *init   = l->init_trip();
-    const Node *limit  = l->limit();
-    const Node* stride = l->stride();
-    if (init != NULL && limit != NULL && stride != NULL) {
-      const TypeInt* lo = phase->type(init)->isa_int();
-      const TypeInt* hi = phase->type(limit)->isa_int();
-      const TypeInt* stride_t = phase->type(stride)->isa_int();
-      if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
-        assert(stride_t->_hi >= stride_t->_lo, "bad stride type");
-        if (stride_t->_hi < 0) {          // Down-counter loop
-          swap(lo, hi);
-          return TypeInt::make(MIN2(lo->_lo, hi->_lo) , hi->_hi, 3);
-        } else if (stride_t->_lo >= 0) {
-          return TypeInt::make(lo->_lo, MAX2(lo->_hi, hi->_hi), 3);
+    if (l->can_be_counted_loop(phase)) {
+      const Node *init   = l->init_trip();
+      const Node *limit  = l->limit();
+      const Node* stride = l->stride();
+      if (init != NULL && limit != NULL && stride != NULL) {
+        const TypeInt* lo = phase->type(init)->isa_int();
+        const TypeInt* hi = phase->type(limit)->isa_int();
+        const TypeInt* stride_t = phase->type(stride)->isa_int();
+        if (lo != NULL && hi != NULL && stride_t != NULL) { // Dying loops might have TOP here
+          assert(stride_t->_hi >= stride_t->_lo, "bad stride type");
+          if (stride_t->_hi < 0) {          // Down-counter loop
+            swap(lo, hi);
+            return TypeInt::make(MIN2(lo->_lo, hi->_lo) , hi->_hi, 3);
+          } else if (stride_t->_lo >= 0) {
+            return TypeInt::make(lo->_lo, MAX2(lo->_hi, hi->_hi), 3);
+          }
         }
       }
+    } else if (l->in(LoopNode::LoopBackControl) != NULL &&
+               in(LoopNode::EntryControl) != NULL &&
+               phase->type(l->in(LoopNode::LoopBackControl)) == Type::TOP) {
+      // During CCP, if we saturate the type of a counted loop's Phi
+      // before the special code for counted loop above has a chance
+      // to run (that is as long as the type of the backedge's control
+      // is top), we might end up with non monotonic types
+      return phase->type(in(LoopNode::EntryControl));
     }
   }
 
