@@ -27,21 +27,11 @@ import java.lang.reflect.Modifier;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
-import jdk.vm.ci.options.Option;
-import jdk.vm.ci.options.OptionType;
-import jdk.vm.ci.options.OptionValue;
 
 /**
  * Implementation of {@link JavaMethod} for resolved HotSpot methods.
  */
 public interface HotSpotResolvedJavaMethod extends ResolvedJavaMethod {
-
-    public static class Options {
-        // @formatter:off
-        @Option(help = "", type = OptionType.Debug)
-        public static final OptionValue<Boolean> UseProfilingInformation = new OptionValue<>(true);
-        // @formatter:on
-    }
 
     /**
      * Returns true if this method has a {@code CallerSensitive} annotation.

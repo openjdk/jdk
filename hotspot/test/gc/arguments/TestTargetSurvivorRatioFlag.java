@@ -79,7 +79,7 @@ public class TestTargetSurvivorRatioFlag {
 
     // Patterns used during log parsing
     public static final String TENURING_DISTRIBUTION = "Desired survivor size";
-    public static final String AGE_TABLE_ENTRY = "-[\\s]+age[\\s]+([0-9]+):[\\s]+([0-9]+)[\\s]+bytes,[\\s]+([0-9]+)[\\s]+total";
+    public static final String AGE_TABLE_ENTRY = ".*-[\\s]+age[\\s]+([0-9]+):[\\s]+([0-9]+)[\\s]+bytes,[\\s]+([0-9]+)[\\s]+total";
     public static final String MAX_SURVIVOR_SIZE = "Max survivor size: ([0-9]+)";
 
     public static void main(String args[]) throws Exception {
@@ -133,7 +133,7 @@ public class TestTargetSurvivorRatioFlag {
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
                 "-XX:+UseAdaptiveSizePolicy",
-                "-XX:+PrintTenuringDistribution",
+                "-Xlog:gc+age=trace",
                 "-XX:MaxTenuringThreshold=" + MAX_TENURING_THRESHOLD,
                 "-XX:NewSize=" + MAX_NEW_SIZE,
                 "-XX:MaxNewSize=" + MAX_NEW_SIZE,

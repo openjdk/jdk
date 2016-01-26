@@ -28,6 +28,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcUtil.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
 
@@ -500,9 +501,8 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   }
 
   // Printing support
-  virtual bool print_adaptive_size_policy_on(outputStream* st) const;
-  bool print_adaptive_size_policy_on(outputStream* st,
-                                     uint tenuring_threshold) const;
+  virtual bool print() const;
+  void print_tenuring_threshold(uint new_tenuring_threshold) const;
 };
 
 // Class that can be used to print information about the
@@ -510,46 +510,26 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
 // AdaptiveSizePolicyOutputInterval.  Only print information
 // if an adaptive size policy is in use.
 class AdaptiveSizePolicyOutput : StackObj {
-  AdaptiveSizePolicy* _size_policy;
-  bool _do_print;
-  bool print_test(uint count) {
-    // A count of zero is a special value that indicates that the
-    // interval test should be ignored.  An interval is of zero is
-    // a special value that indicates that the interval test should
-    // always fail (never do the print based on the interval test).
-    return PrintGCDetails &&
+  static bool enabled() {
+    return UseParallelGC &&
            UseAdaptiveSizePolicy &&
-           UseParallelGC &&
-           (AdaptiveSizePolicyOutputInterval > 0) &&
-           ((count == 0) ||
-             ((count % AdaptiveSizePolicyOutputInterval) == 0));
+           log_is_enabled(Debug, gc, ergo);
   }
  public:
-  // The special value of a zero count can be used to ignore
-  // the count test.
-  AdaptiveSizePolicyOutput(uint count) {
-    if (UseAdaptiveSizePolicy && (AdaptiveSizePolicyOutputInterval > 0)) {
-      CollectedHeap* heap = Universe::heap();
-      _size_policy = heap->size_policy();
-      _do_print = print_test(count);
-    } else {
-      _size_policy = NULL;
-      _do_print = false;
+  static void print() {
+    if (enabled()) {
+      Universe::heap()->size_policy()->print();
     }
   }
-  AdaptiveSizePolicyOutput(AdaptiveSizePolicy* size_policy,
-                           uint count) :
-    _size_policy(size_policy) {
-    if (UseAdaptiveSizePolicy && (AdaptiveSizePolicyOutputInterval > 0)) {
-      _do_print = print_test(count);
-    } else {
-      _do_print = false;
-    }
-  }
-  ~AdaptiveSizePolicyOutput() {
-    if (_do_print) {
-      assert(UseAdaptiveSizePolicy, "Should not be in use");
-      _size_policy->print_adaptive_size_policy_on(gclog_or_tty);
+
+  static void print(AdaptiveSizePolicy* size_policy, uint count) {
+    bool do_print =
+        enabled() &&
+        (AdaptiveSizePolicyOutputInterval > 0) &&
+        (count % AdaptiveSizePolicyOutputInterval) == 0;
+
+    if (do_print) {
+      size_policy->print();
     }
   }
 };

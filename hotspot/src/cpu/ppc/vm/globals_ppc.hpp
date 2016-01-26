@@ -44,14 +44,17 @@ define_pd_global(bool, UncommonNullCast,      true);  // Uncommon-trap NULLs pas
 #define DEFAULT_STACK_YELLOW_PAGES (6)
 #define DEFAULT_STACK_RED_PAGES (1)
 #define DEFAULT_STACK_SHADOW_PAGES (6 DEBUG_ONLY(+2))
+#define DEFAULT_STACK_RESERVED_PAGES (0)
 
-#define MIN_STACK_YELLOW_PAGES (1)
+#define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES
 #define MIN_STACK_RED_PAGES DEFAULT_STACK_RED_PAGES
-#define MIN_STACK_SHADOW_PAGES (1)
+#define MIN_STACK_SHADOW_PAGES (3 DEBUG_ONLY(+1))
+#define MIN_STACK_RESERVED_PAGES (0)
 
 define_pd_global(intx, StackYellowPages,      DEFAULT_STACK_YELLOW_PAGES);
 define_pd_global(intx, StackRedPages,         DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages,      DEFAULT_STACK_SHADOW_PAGES);
+define_pd_global(intx, StackReservedPages,    DEFAULT_STACK_RESERVED_PAGES);
 
 // Use large code-entry alignment.
 define_pd_global(intx, CodeEntryAlignment,    128);

@@ -89,11 +89,11 @@ class FreeBlockDictionary: public CHeapObj<mtGC> {
     virtual size_t   total_count() = 0;
   )
 
-  virtual void       report_statistics() const {
-    gclog_or_tty->print("No statistics available");
+  virtual void       report_statistics(outputStream* st) const {
+    st->print_cr("No statistics available");
   }
 
-  virtual void       print_dict_census() const = 0;
+  virtual void       print_dict_census(outputStream* st) const = 0;
   virtual void       print_free_lists(outputStream* st) const = 0;
 
   virtual void       verify()         const = 0;

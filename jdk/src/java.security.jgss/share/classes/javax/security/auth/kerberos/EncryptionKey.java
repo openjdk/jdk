@@ -44,7 +44,7 @@ import javax.security.auth.DestroyFailedException;
  * The key material of an {@code EncryptionKey} is defined as the value
  * of the {@code keyValue} above.
  *
- * @since 1.9
+ * @since 9
  */
 public final class EncryptionKey implements SecretKey {
 

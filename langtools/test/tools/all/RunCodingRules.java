@@ -29,6 +29,7 @@
  *          java.logging
  *          java.xml
  *          jdk.compiler/com.sun.tools.javac.resources
+ *          jdk.compiler/com.sun.tools.javac.util
  */
 
 

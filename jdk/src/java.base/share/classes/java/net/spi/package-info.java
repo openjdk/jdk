@@ -29,7 +29,7 @@
  * <p> Only developers who are defining new URL stream handler providers
  * should need to make direct use of this package.
  *
- * @since 1.9
+ * @since 9
  */
 
 package java.net.spi;

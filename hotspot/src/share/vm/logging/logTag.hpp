@@ -31,11 +31,55 @@
 // (The tags 'all', 'disable' and 'help' are special tags that can
 // not be used in log calls, and should not be listed below.)
 #define LOG_TAG_LIST \
+  LOG_TAG(alloc) \
+  LOG_TAG(age) \
+  LOG_TAG(barrier) \
+  LOG_TAG(bot) \
+  LOG_TAG(census) \
+  LOG_TAG(classhisto) \
+  LOG_TAG(classresolve) \
   LOG_TAG(classinit) \
+  LOG_TAG(comp) \
+  LOG_TAG(compaction) \
+  LOG_TAG(cpu) \
+  LOG_TAG(cset) \
   LOG_TAG(defaultmethods) \
+  LOG_TAG(ergo) \
+  LOG_TAG(exceptions) \
+  LOG_TAG(exit) \
+  LOG_TAG(freelist) \
   LOG_TAG(gc) \
+  LOG_TAG(heap) \
+  LOG_TAG(humongous) \
+  LOG_TAG(ihop) \
+  LOG_TAG(jni) \
+  LOG_TAG(liveness) \
   LOG_TAG(logging) \
+  LOG_TAG(marking) \
+  LOG_TAG(metaspace) \
+  LOG_TAG(monitorinflation) \
+  LOG_TAG(phases) \
+  LOG_TAG(plab) \
+  LOG_TAG(promotion) \
+  LOG_TAG(ref) \
+  LOG_TAG(refine) \
+  LOG_TAG(region) \
+  LOG_TAG(remset) \
+  LOG_TAG(rt) \
   LOG_TAG(safepoint) \
+  LOG_TAG(scavenge) \
+  LOG_TAG(scrub) \
+  LOG_TAG(start) \
+  LOG_TAG(state) \
+  LOG_TAG(stats) \
+  LOG_TAG(stringdedup) \
+  LOG_TAG(survivor) \
+  LOG_TAG(svc) \
+  LOG_TAG(sweep) \
+  LOG_TAG(task) \
+  LOG_TAG(tlab) \
+  LOG_TAG(time) \
+  LOG_TAG(verify) \
   LOG_TAG(vmoperation)
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)

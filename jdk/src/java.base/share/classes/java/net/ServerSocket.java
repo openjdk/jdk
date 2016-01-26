@@ -946,7 +946,7 @@ class ServerSocket implements java.io.Closeable {
      *         {@link java.net.StandardSocketOptions StandardSocketOptions}
      *         do not require any security permission.
      *
-     * @since 1.9
+     * @since 9
      */
     public <T> ServerSocket setOption(SocketOption<T> name, T value)
         throws IOException
@@ -976,7 +976,7 @@ class ServerSocket implements java.io.Closeable {
      *         {@link java.net.StandardSocketOptions StandardSocketOptions}
      *         do not require any security permission.
      *
-     * @since 1.9
+     * @since 9
      */
     public <T> T getOption(SocketOption<T> name) throws IOException {
         return getImpl().getOption(name);
@@ -994,7 +994,7 @@ class ServerSocket implements java.io.Closeable {
      * @return A set of the socket options supported by this socket. This set
      *         may be empty if the socket's SocketImpl cannot be created.
      *
-     * @since 1.9
+     * @since 9
      */
     public Set<SocketOption<?>> supportedOptions() {
         synchronized (ServerSocket.class) {

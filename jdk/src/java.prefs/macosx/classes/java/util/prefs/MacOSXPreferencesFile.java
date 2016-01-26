@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.lang.ref.WeakReference;
-import sun.misc.ManagedLocalsThread;
 
 
 /*
@@ -344,7 +343,8 @@ class MacOSXPreferencesFile {
     {
         if (timer == null) {
             timer = new Timer(true); // daemon
-            Thread flushThread = new ManagedLocalsThread() {
+            Thread flushThread =
+                new Thread(null, null, "Flush Thread", 0, false) {
                 @Override
                 public void run() {
                     flushWorld();

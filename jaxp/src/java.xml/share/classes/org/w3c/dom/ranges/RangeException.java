@@ -45,7 +45,7 @@ package org.w3c.dom.ranges;
  * Range operations may throw a <code>RangeException</code> as specified in
  * their method descriptions.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113'>Document Object Model (DOM) Level 2 Traversal and Range Specification</a>.
- * @since 1.9, DOM Level 2
+ * @since 9, DOM Level 2
  */
 public class RangeException extends RuntimeException {
     public RangeException(short code, String message) {

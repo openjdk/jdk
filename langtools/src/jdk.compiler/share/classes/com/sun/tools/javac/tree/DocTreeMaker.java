@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,26 @@ import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.ListIterator;
+
+import javax.lang.model.element.Name;
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
 
 import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
+import com.sun.source.doctree.IdentifierTree;
+import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
+import com.sun.source.util.DocTreeFactory;
 import com.sun.tools.doclint.HtmlTag;
 import com.sun.tools.javac.api.JavacTrees;
+import com.sun.tools.javac.parser.ParserFactory;
+import com.sun.tools.javac.parser.ReferenceParser;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.tree.DCTree.DCAttribute;
 import com.sun.tools.javac.tree.DCTree.DCAuthor;
@@ -70,12 +80,12 @@ import com.sun.tools.javac.tree.DCTree.DCUnknownInlineTag;
 import com.sun.tools.javac.tree.DCTree.DCValue;
 import com.sun.tools.javac.tree.DCTree.DCVersion;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.DiagnosticSource;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
-import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
 
@@ -88,7 +98,7 @@ import static com.sun.tools.doclint.HtmlTag.*;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class DocTreeMaker {
+public class DocTreeMaker implements DocTreeFactory {
 
     /** The context key for the tree factory. */
     protected static final Context.Key<DocTreeMaker> treeMakerKey = new Context.Key<>();
@@ -114,6 +124,9 @@ public class DocTreeMaker {
 
     private final JavacTrees trees;
 
+    /** Utility class to parse reference signatures. */
+    private final ReferenceParser referenceParser;
+
     /** Create a tree maker with NOPOS as initial position.
      */
     protected DocTreeMaker(Context context) {
@@ -121,11 +134,13 @@ public class DocTreeMaker {
         diags = JCDiagnostic.Factory.instance(context);
         this.pos = Position.NOPOS;
         trees = JavacTrees.instance(context);
+        referenceParser = new ReferenceParser(ParserFactory.instance(context));
         sentenceBreakTags = EnumSet.of(H1, H2, H3, H4, H5, H6, PRE, P);
     }
 
     /** Reassign current position.
      */
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public DocTreeMaker at(int pos) {
         this.pos = pos;
         return this;
@@ -138,39 +153,44 @@ public class DocTreeMaker {
         return this;
     }
 
-    public DCAttribute Attribute(Name name, ValueKind vkind, List<DCTree> value) {
-        DCAttribute tree = new DCAttribute(name, vkind, value);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCAttribute newAttributeTree(javax.lang.model.element.Name name, ValueKind vkind, java.util.List<? extends DocTree> value) {
+        DCAttribute tree = new DCAttribute(name, vkind, cast(value));
         tree.pos = pos;
         return tree;
     }
 
-    public DCAuthor Author(List<DCTree> name) {
-        DCAuthor tree = new DCAuthor(name);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCAuthor newAuthorTree(java.util.List<? extends DocTree> name) {
+        DCAuthor tree = new DCAuthor(cast(name));
         tree.pos = pos;
         return tree;
     }
 
-    public DCLiteral Code(DCText text) {
-        DCLiteral tree = new DCLiteral(Kind.CODE, text);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCLiteral newCodeTree(TextTree text) {
+        DCLiteral tree = new DCLiteral(Kind.CODE, (DCText) text);
         tree.pos = pos;
         return tree;
     }
 
-    public DCComment Comment(String text) {
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCComment newCommentTree(String text) {
         DCComment tree = new DCComment(text);
         tree.pos = pos;
         return tree;
     }
 
-    public DCDeprecated Deprecated(List<DCTree> text) {
-        DCDeprecated tree = new DCDeprecated(text);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCDeprecated newDeprecatedTree(List<? extends DocTree> text) {
+        DCDeprecated tree = new DCDeprecated(cast(text));
         tree.pos = pos;
         return tree;
     }
 
-    public DCDocComment DocComment(Comment comment, List<DCTree> fullBody, List<DCTree> tags) {
+    public DCDocComment newDocCommentTree(Comment comment, List<? extends DocTree> fullBody, List<? extends DocTree> tags) {
         Pair<List<DCTree>, List<DCTree>> pair = splitBody(fullBody);
-        DCDocComment tree = new DCDocComment(comment, fullBody, pair.fst, pair.snd, tags);
+        DCDocComment tree = new DCDocComment(comment, cast(fullBody), pair.fst, pair.snd, cast(tags));
         tree.pos = pos;
         return tree;
     }
@@ -180,172 +200,219 @@ public class DocTreeMaker {
      * first sentence and a body, this is useful, in cases
      * where the trees are being synthesized by a tool.
      */
-    public DCDocComment DocComment(List<DCTree> firstSentence, List<DCTree> body, List<DCTree> tags) {
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCDocComment newDocCommentTree(List<? extends DocTree> firstSentence, List<? extends DocTree> body, List<? extends DocTree> tags) {
         ListBuffer<DCTree> lb = new ListBuffer<>();
-        lb.addAll(firstSentence);
-        lb.addAll(body);
+        lb.addAll(cast(firstSentence));
+        lb.addAll(cast(body));
         List<DCTree> fullBody = lb.toList();
-        DCDocComment tree = new DCDocComment(null, fullBody, firstSentence, body, tags);
+        DCDocComment tree = new DCDocComment(null, fullBody, cast(firstSentence), cast(body), cast(tags));
         return tree;
     }
 
-    public DCDocRoot DocRoot() {
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCDocRoot newDocRootTree() {
         DCDocRoot tree = new DCDocRoot();
         tree.pos = pos;
         return tree;
     }
 
-    public DCEndElement EndElement(Name name) {
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCEndElement newEndElementTree(Name name) {
         DCEndElement tree = new DCEndElement(name);
         tree.pos = pos;
         return tree;
     }
 
-    public DCEntity Entity(Name name) {
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCEntity newEntityTree(Name name) {
         DCEntity tree = new DCEntity(name);
         tree.pos = pos;
         return tree;
     }
 
-    public DCErroneous Erroneous(String text, DiagnosticSource diagSource, String code, Object... args) {
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCErroneous newErroneousTree(String text, Diagnostic<JavaFileObject> diag) {
+        DCErroneous tree = new DCErroneous(text, (JCDiagnostic) diag);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public DCErroneous newErroneousTree(String text, DiagnosticSource diagSource, String code, Object... args) {
         DCErroneous tree = new DCErroneous(text, diags, diagSource, code, args);
         tree.pos = pos;
         return tree;
     }
 
-    public DCThrows Exception(DCReference name, List<DCTree> description) {
-        DCThrows tree = new DCThrows(Kind.EXCEPTION, name, description);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCThrows newExceptionTree(ReferenceTree name, List<? extends DocTree> description) {
+        // TODO: verify the reference is just to a type (not a field or method)
+        DCThrows tree = new DCThrows(Kind.EXCEPTION, (DCReference) name, cast(description));
         tree.pos = pos;
         return tree;
     }
 
-    public DCIdentifier Identifier(Name name) {
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCIdentifier newIdentifierTree(Name name) {
         DCIdentifier tree = new DCIdentifier(name);
         tree.pos = pos;
         return tree;
     }
 
-    public DCIndex Index(DCTree term, List<DCTree> description) {
-        DCIndex tree = new DCIndex(term, description);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCIndex newIndexTree(DocTree term, List<? extends DocTree> description) {
+        DCIndex tree = new DCIndex((DCTree) term, cast(description));
         tree.pos = pos;
         return tree;
     }
 
-    public DCInheritDoc InheritDoc() {
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCInheritDoc newInheritDocTree() {
         DCInheritDoc tree = new DCInheritDoc();
         tree.pos = pos;
         return tree;
     }
 
-    public DCLink Link(DCReference ref, List<DCTree> label) {
-        DCLink tree = new DCLink(Kind.LINK, ref, label);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCLink newLinkTree(ReferenceTree ref, List<? extends DocTree> label) {
+        DCLink tree = new DCLink(Kind.LINK, (DCReference) ref, cast(label));
         tree.pos = pos;
         return tree;
     }
 
-    public DCLink LinkPlain(DCReference ref, List<DCTree> label) {
-        DCLink tree = new DCLink(Kind.LINK_PLAIN, ref, label);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCLink newLinkPlainTree(ReferenceTree ref, List<? extends DocTree> label) {
+        DCLink tree = new DCLink(Kind.LINK_PLAIN, (DCReference) ref, cast(label));
         tree.pos = pos;
         return tree;
     }
 
-    public DCLiteral Literal(DCText text) {
-        DCLiteral tree = new DCLiteral(Kind.LITERAL, text);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCLiteral newLiteralTree(TextTree text) {
+        DCLiteral tree = new DCLiteral(Kind.LITERAL, (DCText) text);
         tree.pos = pos;
         return tree;
     }
 
-    public DCParam Param(boolean isTypeParameter, DCIdentifier name, List<DCTree> description) {
-        DCParam tree = new DCParam(isTypeParameter, name, description);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCParam newParamTree(boolean isTypeParameter, IdentifierTree name, List<? extends DocTree> description) {
+        DCParam tree = new DCParam(isTypeParameter, (DCIdentifier) name, cast(description));
         tree.pos = pos;
         return tree;
     }
 
-    public DCReference Reference(String signature,
-            JCTree qualExpr, Name member, List<JCTree> paramTypes) {
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCReference newReferenceTree(String signature) {
+        try {
+            ReferenceParser.Reference ref = referenceParser.parse(signature);
+            DCReference tree = new DCReference(signature, ref.qualExpr, ref.member, ref.paramTypes);
+            tree.pos = pos;
+            return tree;
+        } catch (ReferenceParser.ParseException e) {
+            throw new IllegalArgumentException("invalid signature", e);
+        }
+    }
+
+    public DCReference newReferenceTree(String signature, JCTree qualExpr, Name member, List<JCTree> paramTypes) {
         DCReference tree = new DCReference(signature, qualExpr, member, paramTypes);
         tree.pos = pos;
         return tree;
     }
 
-    public DCReturn Return(List<DCTree> description) {
-        DCReturn tree = new DCReturn(description);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCReturn newReturnTree(List<? extends DocTree> description) {
+        DCReturn tree = new DCReturn(cast(description));
         tree.pos = pos;
         return tree;
     }
 
-    public DCSee See(List<DCTree> reference) {
-        DCSee tree = new DCSee(reference);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCSee newSeeTree(List<? extends DocTree> reference) {
+        DCSee tree = new DCSee(cast(reference));
         tree.pos = pos;
         return tree;
     }
 
-    public DCSerial Serial(List<DCTree> description) {
-        DCSerial tree = new DCSerial(description);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCSerial newSerialTree(List<? extends DocTree> description) {
+        DCSerial tree = new DCSerial(cast(description));
         tree.pos = pos;
         return tree;
     }
 
-    public DCSerialData SerialData(List<DCTree> description) {
-        DCSerialData tree = new DCSerialData(description);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCSerialData newSerialDataTree(List<? extends DocTree> description) {
+        DCSerialData tree = new DCSerialData(cast(description));
         tree.pos = pos;
         return tree;
     }
 
-    public DCSerialField SerialField(DCIdentifier name, DCReference type, List<DCTree> description) {
-        DCSerialField tree = new DCSerialField(name, type, description);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCSerialField newSerialFieldTree(IdentifierTree name, ReferenceTree type, List<? extends DocTree> description) {
+        DCSerialField tree = new DCSerialField((DCIdentifier) name, (DCReference) type, cast(description));
         tree.pos = pos;
         return tree;
     }
 
-    public DCSince Since(List<DCTree> text) {
-        DCSince tree = new DCSince(text);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCSince newSinceTree(List<? extends DocTree> text) {
+        DCSince tree = new DCSince(cast(text));
         tree.pos = pos;
         return tree;
     }
 
-    public DCStartElement StartElement(Name name, List<DCTree> attrs, boolean selfClosing) {
-        DCStartElement tree = new DCStartElement(name, attrs, selfClosing);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCStartElement newStartElementTree(Name name, List<? extends DocTree> attrs, boolean selfClosing) {
+        DCStartElement tree = new DCStartElement(name, cast(attrs), selfClosing);
         tree.pos = pos;
         return tree;
     }
 
-    public DCText Text(String text) {
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCText newTextTree(String text) {
         DCText tree = new DCText(text);
         tree.pos = pos;
         return tree;
     }
 
-    public DCThrows Throws(DCReference name, List<DCTree> description) {
-        DCThrows tree = new DCThrows(Kind.THROWS, name, description);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCThrows newThrowsTree(ReferenceTree name, List<? extends DocTree> description) {
+        // TODO: verify the reference is just to a type (not a field or method)
+        DCThrows tree = new DCThrows(Kind.THROWS, (DCReference) name, cast(description));
         tree.pos = pos;
         return tree;
     }
 
-    public DCUnknownBlockTag UnknownBlockTag(Name name, List<DCTree> content) {
-        DCUnknownBlockTag tree = new DCUnknownBlockTag(name, content);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCUnknownBlockTag newUnknownBlockTagTree(Name name, List<? extends DocTree> content) {
+        DCUnknownBlockTag tree = new DCUnknownBlockTag(name, cast(content));
         tree.pos = pos;
         return tree;
     }
 
-    public DCUnknownInlineTag UnknownInlineTag(Name name, List<DCTree> content) {
-        DCUnknownInlineTag tree = new DCUnknownInlineTag(name, content);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCUnknownInlineTag newUnknownInlineTagTree(Name name, List<? extends DocTree> content) {
+        DCUnknownInlineTag tree = new DCUnknownInlineTag(name, cast(content));
         tree.pos = pos;
         return tree;
     }
 
-    public DCValue Value(DCReference ref) {
-        DCValue tree = new DCValue(ref);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCValue newValueTree(ReferenceTree ref) {
+        // TODO: verify the reference is to a constant value
+        DCValue tree = new DCValue((DCReference) ref);
         tree.pos = pos;
         return tree;
     }
 
-    public DCVersion Version(List<DCTree> text) {
-        DCVersion tree = new DCVersion(text);
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCVersion newVersionTree(List<? extends DocTree> text) {
+        DCVersion tree = new DCVersion(cast(text));
         tree.pos = pos;
         return tree;
     }
 
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public java.util.List<DocTree> getFirstSentence(java.util.List<? extends DocTree> list) {
         Pair<List<DCTree>, List<DCTree>> pair = splitBody(list);
         return new ArrayList<>(pair.fst);
@@ -389,12 +456,12 @@ public class DocTreeMaker {
                         int sbreak = getSentenceBreak(s, peekedNext);
                         if (sbreak > 0) {
                             s = removeTrailingWhitespace(s.substring(0, sbreak));
-                            DCText text = this.at(spos).Text(s);
+                            DCText text = this.at(spos).newTextTree(s);
                             fs.add(text);
                             foundFirstSentence = true;
                             int nwPos = skipWhiteSpace(tt.getBody(), sbreak);
                             if (nwPos > 0) {
-                                DCText text2 = this.at(spos + nwPos).Text(tt.getBody().substring(nwPos));
+                                DCText text2 = this.at(spos + nwPos).newTextTree(tt.getBody().substring(nwPos));
                                 body.add(text2);
                             }
                             continue;
@@ -405,7 +472,7 @@ public class DocTreeMaker {
                             if (sbrk) {
                                 DocTree next = itr.next();
                                 s = removeTrailingWhitespace(s);
-                                DCText text = this.at(spos).Text(s);
+                                DCText text = this.at(spos).newTextTree(s);
                                 fs.add(text);
                                 body.add((DCTree) next);
                                 foundFirstSentence = true;
@@ -436,7 +503,7 @@ public class DocTreeMaker {
     /*
      * Computes the first sentence break, a simple dot-space algorithm.
      */
-    int defaultSentenceBreak(String s) {
+    private int defaultSentenceBreak(String s) {
         // scan for period followed by whitespace
         int period = -1;
         for (int i = 0; i < s.length(); i++) {
@@ -483,7 +550,7 @@ public class DocTreeMaker {
      * Therefore, we have to probe further to determine whether
      * there really is a sentence break or not at the end of this run of text.
      */
-    int getSentenceBreak(String s, DocTree dt) {
+    private int getSentenceBreak(String s, DocTree dt) {
         BreakIterator breakIterator = trees.getBreakIterator();
         if (breakIterator == null) {
             return defaultSentenceBreak(s);
@@ -533,11 +600,11 @@ public class DocTreeMaker {
         return -1; // indeterminate at this time
     }
 
-    boolean isSentenceBreak(javax.lang.model.element.Name tagName) {
+    private boolean isSentenceBreak(javax.lang.model.element.Name tagName) {
         return sentenceBreakTags.contains(get(tagName));
     }
 
-    boolean isSentenceBreak(DocTree dt, boolean isFirstDocTree) {
+    private boolean isSentenceBreak(DocTree dt, boolean isFirstDocTree) {
         switch (dt.getKind()) {
             case START_ELEMENT:
                     StartElementTree set = (StartElementTree)dt;
@@ -553,7 +620,7 @@ public class DocTreeMaker {
     /*
      * Returns the position of the the first non-white space
      */
-    int skipWhiteSpace(String s, int start) {
+    private int skipWhiteSpace(String s, int start) {
         for (int i = start; i < s.length(); i++) {
             char c = s.charAt(i);
             if (!Character.isWhitespace(c)) {
@@ -563,7 +630,7 @@ public class DocTreeMaker {
         return -1;
     }
 
-    String removeTrailingWhitespace(String s) {
+    private String removeTrailingWhitespace(String s) {
         for (int i = s.length() - 1 ; i >= 0 ; i--) {
             char ch = s.charAt(i);
             if (!Character.isWhitespace(ch)) {
@@ -571,5 +638,10 @@ public class DocTreeMaker {
             }
         }
         return s;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<DCTree> cast(List<? extends DocTree> list) {
+        return (List<DCTree>) list;
     }
 }

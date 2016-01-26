@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,7 +222,7 @@ class BuildConfig {
         } else {
             sysDefines.add("HOTSPOT_LIB_ARCH=\\\"amd64\\\"");
         }
-
+        sysDefines.add("DEBUG_LEVEL=\\\"" + get("Build")+"\\\"");
         sysDefines.addAll(defines);
 
         put("Define", sysDefines);
@@ -540,28 +540,6 @@ class C1FastDebugConfig extends GenericDebugNonKernelConfig {
     }
 }
 
-class C2DebugConfig extends GenericDebugNonKernelConfig {
-    String getOptFlag() {
-        return getCI().getNoOptFlag();
-    }
-
-    C2DebugConfig() {
-        initNames("compiler2", "debug", "jvm.dll");
-        init(getIncludes(), getDefines());
-    }
-}
-
-class C2FastDebugConfig extends GenericDebugNonKernelConfig {
-    String getOptFlag() {
-        return getCI().getOptFlag();
-    }
-
-    C2FastDebugConfig() {
-        initNames("compiler2", "fastdebug", "jvm.dll");
-        init(getIncludes(), getDefines());
-    }
-}
-
 class TieredDebugConfig extends GenericDebugNonKernelConfig {
     String getOptFlag() {
         return getCI().getNoOptFlag();
@@ -599,13 +577,6 @@ abstract class ProductConfig extends BuildConfig {
 class C1ProductConfig extends ProductConfig {
     C1ProductConfig() {
         initNames("compiler1", "product", "jvm.dll");
-        init(getIncludes(), getDefines());
-    }
-}
-
-class C2ProductConfig extends ProductConfig {
-    C2ProductConfig() {
-        initNames("compiler2", "product", "jvm.dll");
         init(getIncludes(), getDefines());
     }
 }

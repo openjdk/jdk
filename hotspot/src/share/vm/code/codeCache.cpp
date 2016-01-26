@@ -321,6 +321,10 @@ ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
 
   ReservedCodeSpace rs(r_size, rs_align, rs_align > 0);
 
+  if (!rs.is_reserved()) {
+    vm_exit_during_initialization("Could not reserve enough space for code cache");
+  }
+
   // Initialize bounds
   _low_bound = (address)rs.base();
   _high_bound = _low_bound + rs.size();

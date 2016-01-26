@@ -90,7 +90,7 @@ abstract class Handshaker {
     AlgorithmConstraints        algorithmConstraints = null;
 
     // Local supported signature and algorithms
-    Collection<SignatureAndHashAlgorithm> localSupportedSignAlgs;
+    private Collection<SignatureAndHashAlgorithm> localSupportedSignAlgs;
 
     // Peer supported signature and algorithms
     Collection<SignatureAndHashAlgorithm> peerSupportedSignAlgs;

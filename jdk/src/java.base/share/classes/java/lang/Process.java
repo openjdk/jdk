@@ -304,7 +304,7 @@ public abstract class Process {
      *         otherwise, {@link #destroy} forcibly terminates the process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
-     * @since 1.9
+     * @since 9
      */
     public boolean supportsNormalTermination() {
         throw new UnsupportedOperationException(this.getClass()
@@ -340,7 +340,7 @@ public abstract class Process {
      * @return the native process id of the process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
-     * @since 1.9
+     * @since 9
      */
     public long getPid() {
         return toHandle().getPid();
@@ -409,7 +409,7 @@ public abstract class Process {
      *
      * @return a new {@code CompletableFuture<Process>} for the Process
      *
-     * @since 1.9
+     * @since 9
      */
     public CompletableFuture<Process> onExit() {
         return CompletableFuture.supplyAsync(this::waitForInternal);
@@ -471,7 +471,7 @@ public abstract class Process {
      *         does not support this operation
      * @throws SecurityException if a security manager has been installed and
      *         it denies RuntimePermission("manageProcess")
-     * @since 1.9
+     * @since 9
      */
     public ProcessHandle toHandle() {
         throw new UnsupportedOperationException(this.getClass()
@@ -491,7 +491,7 @@ public abstract class Process {
      * @return a snapshot of information about the process, always non-null
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
-     * @since 1.9
+     * @since 9
      */
     public ProcessHandle.Info info() {
         return toHandle().info();
@@ -516,7 +516,7 @@ public abstract class Process {
      *         does not support this operation
      * @throws SecurityException if a security manager has been installed and
      *         it denies RuntimePermission("manageProcess")
-     * @since 1.9
+     * @since 9
      */
     public Stream<ProcessHandle> children() {
         return toHandle().children();
@@ -542,7 +542,7 @@ public abstract class Process {
      *         does not support this operation
      * @throws SecurityException if a security manager has been installed and
      *         it denies RuntimePermission("manageProcess")
-     * @since 1.9
+     * @since 9
      */
     public Stream<ProcessHandle> descendants() {
         return toHandle().descendants();
