@@ -553,7 +553,7 @@ public class ScriptFunction extends ScriptObject {
      * @param prototype actual prototype object
      * @return property map
      */
-    private synchronized PropertyMap getAllocatorMap(final ScriptObject prototype) {
+    private PropertyMap getAllocatorMap(final ScriptObject prototype) {
         if (allocatorMap == null || allocatorMap.isInvalidSharedMapFor(prototype)) {
             // The prototype map has changed since this function was last used as constructor.
             // Get a new allocator map.
