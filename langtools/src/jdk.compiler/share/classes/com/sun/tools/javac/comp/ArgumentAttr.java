@@ -68,6 +68,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.DEFERRED;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
 import static com.sun.tools.javac.code.TypeTag.METHOD;
@@ -275,7 +276,7 @@ public class ArgumentAttr extends JCTree.Visitor {
                 res.type != null && res.type.hasTag(FORALL) ||
                 (res.flags() & Flags.VARARGS) != 0 ||
                 (TreeInfo.isStaticSelector(exprTree, tree.name.table.names) &&
-                exprTree.type.isRaw())) {
+                exprTree.type.isRaw() && !exprTree.type.hasTag(ARRAY))) {
             tree.overloadKind = JCMemberReference.OverloadKind.OVERLOADED;
         } else {
             tree.overloadKind = JCMemberReference.OverloadKind.UNOVERLOADED;
