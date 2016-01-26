@@ -1,5 +1,5 @@
 suite = {
-  "mxversion" : "5.5.12",
+  "mxversion" : "5.6.11",
   "name" : "jvmci",
   "url" : "http://openjdk.java.net/projects/graal",
   "developer" : {
@@ -24,15 +24,13 @@ suite = {
 
   "defaultLicense" : "GPLv2-CPE",
 
-  # This puts mx/ as a sibiling of the JDK build configuration directories
+  # This puts mx/ as a sibling of the JDK build configuration directories
   # (e.g., macosx-x86_64-normal-server-release).
   "outputRoot" : "../build/mx/hotspot",
 
     # ------------- Libraries -------------
 
   "libraries" : {
-
-    # ------------- Libraries -------------
 
     "HCFDIS" : {
       "urls" : ["https://lafo.ssw.uni-linz.ac.at/pub/hcfdis-3.jar"],
@@ -53,6 +51,13 @@ suite = {
       "sha1" : "122b87ca88e41a415cf8b523fd3d03b4325134a3",
       "urls" : ["https://lafo.ssw.uni-linz.ac.at/pub/graal-external-deps/batik-all-1.7.jar"],
     },
+
+    # Stubs for classes introduced in JDK9 that allow compilation with a JDK8 javac and Eclipse.
+    # The "path" and "sha1" attributes are added when mx_jvmci is loaded
+    # (see mx_jvmci._update_JDK9_STUBS_library()).
+    "JDK9_STUBS" : {
+        "license" : "GPLv2-CPE",
+     },
   },
 
   "projects" : {
@@ -163,6 +168,7 @@ suite = {
         "jdk.vm.ci.inittimer",
         "jdk.vm.ci.runtime",
         "jdk.vm.ci.services",
+        "JDK9_STUBS",
       ],
       "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
@@ -298,6 +304,7 @@ suite = {
         "jdk.vm.ci.hotspot.amd64",
         "jdk.vm.ci.hotspot.sparc",
       ],
+      "exclude" : ["JDK9_STUBS"]
     },
   },
 }
