@@ -1008,12 +1008,14 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         }
 
         // do default resolution
-        //this works for both stax & Xerces, if staxInputSource is null, it means parser need to revert to default resolution
+        //this works for both stax & Xerces, if staxInputSource is null,
+        //it means parser need to revert to default resolution
         if (staxInputSource == null) {
             // REVISIT: when systemId is null, I think we should return null.
             //          is this the right solution? -SG
             //if (systemId != null)
-            staxInputSource = new StaxXMLInputSource(new XMLInputSource(publicId, literalSystemId, baseSystemId));
+            staxInputSource = new StaxXMLInputSource(
+                    new XMLInputSource(publicId, literalSystemId, baseSystemId), false);
         }else if(staxInputSource.hasXMLStreamOrXMLEventReader()){
             //Waiting for the clarification from EG. - nb
         }
@@ -1108,7 +1110,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     /**
      * Starts a named entity.
      *
-     * @param reference flag to indicate whether the entity is an Entity Reference.
+     * @param isGE flag to indicate whether the entity is a General Entity
      * @param entityName The name of the entity to start.
      * @param literal    True if this entity is started within a literal
      *                   value.
@@ -1116,7 +1118,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
      * @throws IOException  Thrown on i/o error.
      * @throws XNIException Thrown by entity handler to signal an error.
      */
-    public void startEntity(boolean reference, String entityName, boolean literal)
+    public void startEntity(boolean isGE, String entityName, boolean literal)
     throws IOException, XNIException {
 
         // was entity declared?
@@ -1240,7 +1242,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         }
 
         // start the entity
-        startEntity(reference, entityName, xmlInputSource, literal, external);
+        startEntity(isGE, entityName, xmlInputSource, literal, external);
 
     } // startEntity(String,boolean)
 
@@ -1289,7 +1291,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
      * This method can be used to insert an application defined XML
      * entity stream into the parsing stream.
      *
-     * @param reference flag to indicate whether the entity is an Entity Reference.
+     * @param isGE flag to indicate whether the entity is a General Entity
      * @param name           The name of the entity.
      * @param xmlInputSource The input source of the entity.
      * @param literal        True if this entity is started within a
@@ -1299,12 +1301,12 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
      * @throws IOException  Thrown on i/o error.
      * @throws XNIException Thrown by entity handler to signal an error.
      */
-    public void startEntity(boolean reference, String name,
+    public void startEntity(boolean isGE, String name,
             XMLInputSource xmlInputSource,
             boolean literal, boolean isExternal)
             throws IOException, XNIException {
 
-        String encoding = setupCurrentEntity(reference, name, xmlInputSource, literal, isExternal);
+        String encoding = setupCurrentEntity(isGE, name, xmlInputSource, literal, isExternal);
 
         //when entity expansion limit is set by the Application, we need to
         //check for the entity expansion limit set by the parser, if number of entity

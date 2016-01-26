@@ -26,10 +26,10 @@
  * @summary local variable type table attribute test.
  * @bug 8040097
  * @library /tools/lib /tools/javac/lib ../lib
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.util
+ *          jdk.jdeps/com.sun.tools.classfile
  * @build ToolBox LocalVariableTestBase TestBase InMemoryFileManager
  * @compile -g LocalVariableTypeTableTest.java
  * @run main LocalVariableTypeTableTest

@@ -66,7 +66,7 @@ public class RunUtil {
         opts.addAll(Arrays.asList(Utils.getTestJavaOpts()));
         opts.add("-cp");
         opts.add(System.getProperty("test.class.path", "test.class.path"));
-        opts.add("-XX:+PrintGCDetails");
+        opts.add("-Xlog:gc*=debug");
 
         if (clearGcOpts) {
             opts = Utils.removeGcOpts(opts);

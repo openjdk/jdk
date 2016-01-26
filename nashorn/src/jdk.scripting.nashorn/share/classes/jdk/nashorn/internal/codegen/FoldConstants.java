@@ -335,7 +335,7 @@ final class FoldConstants extends SimpleNodeVisitor implements Loggable {
                 break;
             case SHR:
                 final long result = JSType.toUint32(lhs.getInt32() >>> rhs.getInt32());
-                return LiteralNode.newInstance(token, finish, JSType.isRepresentableAsInt(result) ? (int) result : (double) result);
+                return LiteralNode.newInstance(token, finish, JSType.toNarrowestNumber(result));
             case SAR:
                 return LiteralNode.newInstance(token, finish, lhs.getInt32() >> rhs.getInt32());
             case SHL:

@@ -25,6 +25,8 @@
  * @test
  * @bug 8141092
  * @summary Test Completion
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib
  * @build KullaTesting TestingInputStream ToolBox Compiler
  * @run testng CompletionSuggestionTest

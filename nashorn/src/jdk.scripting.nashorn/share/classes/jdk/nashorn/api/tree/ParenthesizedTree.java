@@ -34,7 +34,7 @@ package jdk.nashorn.api.tree;
  *   ( <em>expression</em> )
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface ParenthesizedTree extends ExpressionTree {
     /**

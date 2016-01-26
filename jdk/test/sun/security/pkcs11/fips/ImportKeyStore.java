@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,8 @@ public class ImportKeyStore {
     public static void main(String[] args) throws Exception {
         String nssCfg = "--name=NSS\nnssSecmodDirectory=.\n ";
 //          "attributes(*,CKO_PRIVATE_KEY,CKK_DSA) = { CKA_NETSCAPE_DB = 0h00 }";
-        Provider p = new sun.security.pkcs11.SunPKCS11(nssCfg);
+        Provider p = Security.getProvider("SunPKCS11");
+        p.configure(nssCfg);
 
         KeyStore ks = KeyStore.getInstance("PKCS11", p);
         ks.load(null, "test12".toCharArray());

@@ -32,7 +32,6 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
-import sun.misc.*;
 
 
 public class Write {

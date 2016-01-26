@@ -55,7 +55,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
           -D "JDK_INTERNAL_NAME=dt_shmem" \
           -D "JDK_FTYPE=0x2L", \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libdt_shmem, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   TARGETS += $(BUILD_LIBDT_SHMEM)
 

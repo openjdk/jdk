@@ -36,11 +36,13 @@ import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.GCMParameterSpec;
 
+import sun.security.jca.JCAUtil;
+
 /**
  * Cipher wrapper class utilizing ucrypto APIs. This class currently supports
  * - AES/GCM/NoPADDING
  *
- * @since 1.9
+ * @since 9
  */
 class NativeGCMCipher extends NativeCipher {
 
@@ -200,7 +202,10 @@ class NativeGCMCipher extends NativeCipher {
 
                 // generate IV if none supplied for encryption
                 ivBytes = new byte[blockSize];
-                new SecureRandom().nextBytes(ivBytes);
+                if (random == null) {
+                    random = JCAUtil.getSecureRandom();
+                }
+                random.nextBytes(ivBytes);
             } else {
                 throw new InvalidAlgorithmParameterException("Parameters required for decryption");
             }

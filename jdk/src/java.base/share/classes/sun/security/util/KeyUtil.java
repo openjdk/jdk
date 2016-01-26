@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 import java.math.BigInteger;
+
+import sun.security.jca.JCAUtil;
 
 /**
  * A utility class to get key length, valiate keys, etc.
@@ -143,8 +145,6 @@ public final class KeyUtil {
 
     /**
      * Returns whether the specified provider is Oracle provider or not.
-     * <P>
-     * Note that this method is only apply to SunJCE and SunPKCS11 at present.
      *
      * @param  providerName
      *         the provider name
@@ -152,8 +152,11 @@ public final class KeyUtil {
      *         {@code providerName} is Oracle provider
      */
     public static final boolean isOracleJCEProvider(String providerName) {
-        return providerName != null && (providerName.equals("SunJCE") ||
-                                        providerName.startsWith("SunPKCS11"));
+        return providerName != null &&
+                (providerName.equals("SunJCE") ||
+                    providerName.equals("SunMSCAPI") ||
+                    providerName.equals("OracleUcrypto") ||
+                    providerName.startsWith("SunPKCS11"));
     }
 
     /**
@@ -200,7 +203,7 @@ public final class KeyUtil {
             byte[] encoded, boolean isFailOver) {
 
         if (random == null) {
-            random = new SecureRandom();
+            random = JCAUtil.getSecureRandom();
         }
         byte[] replacer = new byte[48];
         random.nextBytes(replacer);

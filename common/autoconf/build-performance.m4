@@ -37,9 +37,9 @@ AC_DEFUN([BPERF_CHECK_CORES],
     # Looks like a Solaris system
     NUM_CORES=`LC_MESSAGES=C /usr/sbin/psrinfo -v | grep -c on-line`
     FOUND_CORES=yes
-  elif test -x /usr/sbin/system_profiler; then
+  elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
-    NUM_CORES=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Cores' | awk  '{print [$]5}'`
+    NUM_CORES=`/usr/sbin/sysctl -n hw.ncpu`
     FOUND_CORES=yes
   elif test "x$OPENJDK_BUILD_OS" = xaix ; then
     NUM_CORES=`/usr/sbin/prtconf | grep "^Number Of Processors" | awk '{ print [$]4 }'`
@@ -74,10 +74,10 @@ AC_DEFUN([BPERF_CHECK_MEMORY_SIZE],
     # Looks like a Solaris or AIX system
     MEMORY_SIZE=`/usr/sbin/prtconf | grep "^Memory [[Ss]]ize" | awk '{ print [$]3 }'`
     FOUND_MEM=yes
-  elif test -x /usr/sbin/system_profiler; then
+  elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
-    MEMORY_SIZE=`/usr/sbin/system_profiler -detailLevel full SPHardwareDataType | grep 'Memory' | awk  '{print [$]2}'`
-    MEMORY_SIZE=`expr $MEMORY_SIZE \* 1024`
+    MEMORY_SIZE=`/usr/sbin/sysctl -n hw.memsize`
+    MEMORY_SIZE=`expr $MEMORY_SIZE / 1024 / 1024`
     FOUND_MEM=yes
   elif test "x$OPENJDK_BUILD_OS" = xwindows; then
     # Windows, but without cygwin

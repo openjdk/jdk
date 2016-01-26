@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 8028994
+ * @ignore 8147477
+ * @ignore 8147494
  * @author Staffan Larsen
  * @library /lib/testlibrary
  * @modules jdk.attach/sun.tools.attach
@@ -62,7 +64,7 @@ public class CheckOrigin {
             ProcessBuilder pb = ProcessTools.
                 createJavaProcessBuilder(
                     "-XX:+UseConcMarkSweepGC",  // this will cause UseParNewGC to be FLAG_SET_ERGO
-                    "-XX:+PrintGCDetails",
+                    "-XX:+UseCodeAging",
                     "-XX:+UseCerealGC",         // Should be ignored.
                     "-XX:Flags=" + flagsFile.getAbsolutePath(),
                     "-cp", System.getProperty("test.class.path"),
@@ -97,7 +99,7 @@ public class CheckOrigin {
             // Not set, so should be default
             checkOrigin("ManagementServer", Origin.DEFAULT);
             // Set on the command line
-            checkOrigin("PrintGCDetails", Origin.VM_CREATION);
+            checkOrigin("UseCodeAging", Origin.VM_CREATION);
             // Set in _JAVA_OPTIONS
             checkOrigin("TraceExceptions", Origin.ENVIRON_VAR);
             // Set in JAVA_TOOL_OPTIONS

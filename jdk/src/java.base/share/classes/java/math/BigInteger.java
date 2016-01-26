@@ -297,7 +297,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws IndexOutOfBoundsException if the provided array offset and
      *         length would cause an index into the byte array to be
      *         negative or greater than or equal to the array length.
-     * @since 1.9
+     * @since 9
      */
     public BigInteger(byte[] val, int off, int len) {
         if (val.length == 0) {
@@ -385,7 +385,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @throws IndexOutOfBoundsException if the provided array offset and
      *         length would cause an index into the byte array to be
      *         negative or greater than or equal to the array length.
-     * @since 1.9
+     * @since 9
      */
     public BigInteger(int signum, byte[] magnitude, int off, int len) {
         if (signum < -1 || signum > 1) {
@@ -2424,7 +2424,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         {@code (i * sqrt(-val))} where <i>i</i> is the
      *         <i>imaginary unit</i> and is equal to
      *         {@code sqrt(-1)}.)
-     * @since  1.9
+     * @since  9
      */
     public BigInteger sqrt() {
         if (this.signum < 0) {
@@ -2447,7 +2447,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         <i>imaginary unit</i> and is equal to
      *         {@code sqrt(-1)}.)
      * @see #sqrt()
-     * @since  1.9
+     * @since  9
      */
     public BigInteger[] sqrtAndRemainder() {
         BigInteger s = sqrt();

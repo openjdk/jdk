@@ -449,7 +449,7 @@ public class DriverManager {
      * to which the current caller has access.
      *
      * @return the stream of JDBC Drivers loaded by the caller's class loader
-     * @since 1.9
+     * @since 9
      */
     @CallerSensitive
     public static Stream<Driver> drivers() {
