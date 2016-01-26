@@ -27,6 +27,7 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 
 import java.lang.reflect.Array;
 
+import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
@@ -354,5 +355,19 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
             dimensions++;
         }
         return dimensions;
+    }
+
+    @Override
+    public JavaConstant asJavaClass(ResolvedJavaType type) {
+        return HotSpotObjectConstantImpl.forObject(((HotSpotResolvedJavaType) type).mirror());
+    }
+
+    @Override
+    public Constant asObjectHub(ResolvedJavaType type) {
+        if (type instanceof HotSpotResolvedObjectType) {
+            return ((HotSpotResolvedObjectType) type).klass();
+        } else {
+            throw JVMCIError.unimplemented();
+        }
     }
 }

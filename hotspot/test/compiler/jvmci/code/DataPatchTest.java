@@ -56,7 +56,7 @@ public class DataPatchTest extends CodeInstallationTest {
     public void testInlineObject() {
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
-            HotSpotConstant c = (HotSpotConstant) type.getJavaClass();
+            HotSpotConstant c = (HotSpotConstant) constantReflection.asJavaClass(type);
             Register ret = asm.emitLoadPointer(c);
             asm.emitPointerRet(ret);
         });
@@ -67,7 +67,7 @@ public class DataPatchTest extends CodeInstallationTest {
         Assume.assumeTrue(HotSpotVMConfig.config().useCompressedOops);
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
-            HotSpotConstant c = (HotSpotConstant) type.getJavaClass();
+            HotSpotConstant c = (HotSpotConstant) constantReflection.asJavaClass(type);
             Register compressed = asm.emitLoadPointer((HotSpotConstant) c.compress());
             Register ret = asm.emitUncompressPointer(compressed, HotSpotVMConfig.config().narrowOopBase, HotSpotVMConfig.config().narrowOopShift);
             asm.emitPointerRet(ret);
@@ -78,7 +78,7 @@ public class DataPatchTest extends CodeInstallationTest {
     public void testDataSectionReference() {
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
-            HotSpotConstant c = (HotSpotConstant) type.getJavaClass();
+            HotSpotConstant c = (HotSpotConstant) constantReflection.asJavaClass(type);
             DataSectionReference ref = asm.emitDataItem(c);
             Register ret = asm.emitLoadPointer(ref);
             asm.emitPointerRet(ret);
@@ -90,7 +90,7 @@ public class DataPatchTest extends CodeInstallationTest {
         Assume.assumeTrue(HotSpotVMConfig.config().useCompressedOops);
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
-            HotSpotConstant c = (HotSpotConstant) type.getJavaClass();
+            HotSpotConstant c = (HotSpotConstant) constantReflection.asJavaClass(type);
             HotSpotConstant cCompressed = (HotSpotConstant) c.compress();
             DataSectionReference ref = asm.emitDataItem(cCompressed);
             Register compressed = asm.emitLoadNarrowPointer(ref);
@@ -103,7 +103,7 @@ public class DataPatchTest extends CodeInstallationTest {
     public void testInlineMetadata() {
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
-            Register klass = asm.emitLoadPointer((HotSpotConstant) type.getObjectHub());
+            Register klass = asm.emitLoadPointer((HotSpotConstant) constantReflection.asObjectHub(type));
             Register ret = asm.emitLoadPointer(klass, HotSpotVMConfig.config().classMirrorOffset);
             asm.emitPointerRet(ret);
         });
@@ -114,7 +114,7 @@ public class DataPatchTest extends CodeInstallationTest {
         Assume.assumeTrue(HotSpotVMConfig.config().useCompressedClassPointers);
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
-            HotSpotConstant hub = (HotSpotConstant) type.getObjectHub();
+            HotSpotConstant hub = (HotSpotConstant) constantReflection.asObjectHub(type);
             Register narrowKlass = asm.emitLoadPointer((HotSpotConstant) hub.compress());
             Register klass = asm.emitUncompressPointer(narrowKlass, HotSpotVMConfig.config().narrowKlassBase, HotSpotVMConfig.config().narrowKlassShift);
             Register ret = asm.emitLoadPointer(klass, HotSpotVMConfig.config().classMirrorOffset);
@@ -126,7 +126,7 @@ public class DataPatchTest extends CodeInstallationTest {
     public void testMetadataInDataSection() {
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
-            HotSpotConstant hub = (HotSpotConstant) type.getObjectHub();
+            HotSpotConstant hub = (HotSpotConstant) constantReflection.asObjectHub(type);
             DataSectionReference ref = asm.emitDataItem(hub);
             Register klass = asm.emitLoadPointer(ref);
             Register ret = asm.emitLoadPointer(klass, HotSpotVMConfig.config().classMirrorOffset);
@@ -139,7 +139,7 @@ public class DataPatchTest extends CodeInstallationTest {
         Assume.assumeTrue(HotSpotVMConfig.config().useCompressedClassPointers);
         test(asm -> {
             ResolvedJavaType type = metaAccess.lookupJavaType(getConstClass());
-            HotSpotConstant hub = (HotSpotConstant) type.getObjectHub();
+            HotSpotConstant hub = (HotSpotConstant) constantReflection.asObjectHub(type);
             HotSpotConstant narrowHub = (HotSpotConstant) hub.compress();
             DataSectionReference ref = asm.emitDataItem(narrowHub);
             Register narrowKlass = asm.emitLoadNarrowPointer(ref);
