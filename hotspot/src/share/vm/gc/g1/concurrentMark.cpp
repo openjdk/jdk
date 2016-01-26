@@ -31,6 +31,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -1062,7 +1063,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     g1h->prepare_for_verify();
     Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (before)");
   }
-  g1h->check_bitmaps("Remark Start");
+  g1h->verifier()->check_bitmaps("Remark Start");
 
   G1CollectorPolicy* g1p = g1h->g1_policy();
   g1p->record_concurrent_mark_remark_start();
@@ -1111,7 +1112,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
       g1h->prepare_for_verify();
       Universe::verify(VerifyOption_G1UseNextMarking, "During GC (after)");
     }
-    g1h->check_bitmaps("Remark End");
+    g1h->verifier()->check_bitmaps("Remark End");
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state since marking completed
     set_non_marking_state();
@@ -1605,14 +1606,14 @@ void ConcurrentMark::cleanup() {
     return;
   }
 
-  g1h->verify_region_sets_optional();
+  g1h->verifier()->verify_region_sets_optional();
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
     g1h->prepare_for_verify();
     Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (before)");
   }
-  g1h->check_bitmaps("Cleanup Start");
+  g1h->verifier()->check_bitmaps("Cleanup Start");
 
   G1CollectorPolicy* g1p = g1h->g1_policy();
   g1p->record_concurrent_mark_cleanup_start();
@@ -1702,9 +1703,9 @@ void ConcurrentMark::cleanup() {
     Universe::verify(VerifyOption_G1UsePrevMarking, "During GC (after)");
   }
 
-  g1h->check_bitmaps("Cleanup End");
+  g1h->verifier()->check_bitmaps("Cleanup End");
 
-  g1h->verify_region_sets_optional();
+  g1h->verifier()->verify_region_sets_optional();
 
   // We need to make this be a "collection" so any collection pause that
   // races with it goes around and waits for completeCleanup to finish.
