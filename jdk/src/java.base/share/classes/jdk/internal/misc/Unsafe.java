@@ -1081,7 +1081,7 @@ public final class Unsafe {
      * @return the value fetched from the indicated object
      * @throws RuntimeException No defined exceptions are thrown, not even
      *         {@link NullPointerException}
-     * @since 1.9
+     * @since 9
      */
     @HotSpotIntrinsicCandidate
     public final long getLongUnaligned(Object o, long offset) {
@@ -1115,7 +1115,7 @@ public final class Unsafe {
      * @param offset The offset in bytes from the start of the object
      * @param bigEndian The endianness of the value
      * @return the value fetched from the indicated object
-     * @since 1.9
+     * @since 9
      */
     public final long getLongUnaligned(Object o, long offset, boolean bigEndian) {
         return convEndian(bigEndian, getLongUnaligned(o, offset));
@@ -1193,7 +1193,7 @@ public final class Unsafe {
      * @param x the value to store
      * @throws RuntimeException No defined exceptions are thrown, not even
      *         {@link NullPointerException}
-     * @since 1.9
+     * @since 9
      */
     @HotSpotIntrinsicCandidate
     public final void putLongUnaligned(Object o, long offset, long x) {
@@ -1231,7 +1231,7 @@ public final class Unsafe {
      * @param bigEndian The endianness of the value
      * @throws RuntimeException No defined exceptions are thrown, not even
      *         {@link NullPointerException}
-     * @since 1.9
+     * @since 9
      */
     public final void putLongUnaligned(Object o, long offset, long x, boolean bigEndian) {
         putLongUnaligned(o, offset, convEndian(bigEndian, x));

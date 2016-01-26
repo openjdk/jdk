@@ -35,6 +35,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/templateTable.hpp"
+#include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/constantPool.hpp"
@@ -314,6 +315,27 @@ IRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* thread)
   THROW_HANDLE(exception);
 IRT_END
 
+IRT_ENTRY(address, InterpreterRuntime::check_ReservedStackAccess_annotated_methods(JavaThread* thread))
+  frame fr = thread->last_frame();
+  assert(fr.is_java_frame(), "Must be a Java frame");
+  frame activation = SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
+  if (activation.sp() != NULL) {
+    thread->disable_stack_reserved_zone();
+    thread->set_reserved_stack_activation((address)activation.unextended_sp());
+  }
+  return (address)activation.sp();
+IRT_END
+
+ IRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread* thread))
+  Handle exception = get_preinitialized_exception(
+                                 SystemDictionary::StackOverflowError_klass(),
+                                 CHECK);
+  java_lang_Throwable::set_message(exception(),
+          Universe::delayed_stack_overflow_error_message());
+  // Increment counter for hs_err file reporting
+  Atomic::inc(&Exceptions::_stack_overflow_errors);
+  THROW_HANDLE(exception);
+IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* thread, char* name, char* message))
   // lookup exception klass
@@ -435,21 +457,23 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
 #endif
 
     // tracing
-    if (TraceExceptions) {
+    if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm(thread);
       Symbol* message = java_lang_Throwable::detail_message(h_exception());
-      ttyLocker ttyl;  // Lock after getting the detail message
+      stringStream tempst;
       if (message != NULL) {
-        tty->print_cr("Exception <%s: %s> (" INTPTR_FORMAT ")",
-                      h_exception->print_value_string(), message->as_C_string(),
-                      p2i(h_exception()));
+        tempst.print("Exception <%s: %s> (" INTPTR_FORMAT ")\n",
+                     h_exception->print_value_string(), message->as_C_string(),
+                     p2i(h_exception()));
       } else {
-        tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")",
-                      h_exception->print_value_string(),
-                      p2i(h_exception()));
+        tempst.print("Exception <%s> (" INTPTR_FORMAT ")\n",
+                     h_exception->print_value_string(),
+                     p2i(h_exception()));
       }
-      tty->print_cr(" thrown in interpreter method <%s>", h_method->print_value_string());
-      tty->print_cr(" at bci %d for thread " INTPTR_FORMAT, current_bci, p2i(thread));
+      tempst.print(" thrown in interpreter method <%s>\n"
+                   " at bci %d for thread " INTPTR_FORMAT,
+                   h_method->print_value_string(), current_bci, p2i(thread));
+      LogHandle(exceptions)::info_stream()->print_raw_cr(tempst.as_string());
     }
 // Don't go paging in something which won't be used.
 //     else if (extable->length() == 0) {

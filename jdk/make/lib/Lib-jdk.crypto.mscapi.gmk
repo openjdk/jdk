@@ -47,7 +47,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
           -D "JDK_INTERNAL_NAME=sunmscapi" \
           -D "JDK_FTYPE=0x2L", \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsunmscapi, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   TARGETS += $(BUILD_LIBSUNMSCAPI)
 endif

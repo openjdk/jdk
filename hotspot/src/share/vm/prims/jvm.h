@@ -141,6 +141,10 @@ JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject src, jint src_pos,
 JNIEXPORT jobject JNICALL
 JVM_InitProperties(JNIEnv *env, jobject p);
 
+/*
+ * java.lang.Runtime
+ */
+
 JNIEXPORT void JNICALL
 JVM_Halt(jint code);
 
@@ -187,6 +191,9 @@ JVM_FindLibraryEntry(void *handle, const char *name);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsSupportedJNIVersion(jint version);
+
+JNIEXPORT jobjectArray JNICALL
+JVM_GetVmArguments(JNIEnv *env);
 
 /*
  * java.lang.Throwable

@@ -59,7 +59,7 @@ import org.w3c.dom.Node;
  * filter may be used with a number of different kinds of traversals,
  * encouraging code reuse.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Traversal-Range-20001113'>Document Object Model (DOM) Level 2 Traversal and Range Specification</a>.
- * @since 1.9, DOM Level 2
+ * @since 9, DOM Level 2
  */
 public interface NodeFilter {
     // Constants returned by acceptNode

@@ -24,6 +24,9 @@
 /*
  * @test
  * @summary Tests for shell error translation
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
  * @build KullaTesting TestingInputStream ExpectedDiagnostic ToolBox Compiler
  * @run testng ErrorTranslationTest

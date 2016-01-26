@@ -24,6 +24,9 @@
 /*
  * @test
  * @summary Testing start-up options.
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
  * @build Compiler ToolBox
  * @run testng StartOptionTest

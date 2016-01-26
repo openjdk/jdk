@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/filemap.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
@@ -45,4 +46,23 @@ LONG WINAPI crash_handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
 void VMError::reset_signal_handlers() {
   SetUnhandledExceptionFilter(crash_handler);
+}
+
+// Write a hint to the stream in case siginfo relates to a segv/bus error
+// and the offending address points into CDS archive.
+void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
+  if (siginfo && UseSharedSpaces) {
+    const EXCEPTION_RECORD* const er = (const EXCEPTION_RECORD*)siginfo;
+    if (er->ExceptionCode == EXCEPTION_IN_PAGE_ERROR &&
+        er->NumberParameters >= 2) {
+      const void* const fault_addr = (const void*) er->ExceptionInformation[1];
+      if (fault_addr != NULL) {
+        FileMapInfo* const mapinfo = FileMapInfo::current_info();
+        if (mapinfo->is_in_shared_space(fault_addr)) {
+          st->print("Error accessing class data sharing archive. "
+            "Mapped file inaccessible during execution, possible disk/network problem.");
+      }
+    }
+    }
+  }
 }

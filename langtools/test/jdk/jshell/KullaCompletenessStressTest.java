@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Test SourceCodeAnalysis
+ * @modules jdk.compiler/com.sun.tools.javac.api
  * @build KullaTesting TestingInputStream KullaCompletenessStressTest CompletenessStressTest
  * @run testng KullaCompletenessStressTest
  */

@@ -111,6 +111,7 @@
                 JVM_GetSystemPackages;
                 JVM_GetTemporaryDirectory;
                 JVM_GetVersionInfo;
+                JVM_GetVmArguments;
                 JVM_Halt;
                 JVM_HoldsLock;
                 JVM_IHashCode;

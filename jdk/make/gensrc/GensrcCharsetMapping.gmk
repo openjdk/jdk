@@ -44,13 +44,13 @@ $(CHARSET_DONE_BASE)-stdcs: $(CHARSET_DATA_DIR)/charsets \
     $(wildcard $(CHARSET_DATA_DIR)/$(CHARSET_STANDARD_OS)) \
     $(CHARSET_TEMPLATES) $(CHARSET_STANDARD_JAVA_TEMPLATES) \
     $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $(@D)
+	$(call LogInfo, Generating java.base charset mapping)
+	$(call MakeDir, $(@D))
 	$(TOOL_CHARSETMAPPING) $(CHARSET_DATA_DIR) $(CHARSET_GENSRC_JAVA_DIR_BASE) \
 	    stdcs charsets $(CHARSET_STANDARD_OS) \
 	    $(CHARSET_STANDARD_JAVA_TEMPLATES) $(CHARSET_EXTSRC_DIR) \
 	    $(CHARSET_COPYRIGHT_HEADER) \
-            $(LOG_INFO)
+            $(LOG_DEBUG)
 	$(TOUCH) '$@'
 
 GENSRC_JAVA_BASE += $(CHARSET_DONE_BASE)-stdcs
-

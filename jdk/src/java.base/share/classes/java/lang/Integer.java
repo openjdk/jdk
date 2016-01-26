@@ -716,7 +716,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *             {@code radix}, or if {@code radix} is either smaller than
      *             {@link java.lang.Character#MIN_RADIX} or larger than
      *             {@link java.lang.Character#MAX_RADIX}.
-     * @since  1.9
+     * @since  9
      */
     public static int parseInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
@@ -899,7 +899,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *             {@code radix}, or if {@code radix} is either smaller than
      *             {@link java.lang.Character#MIN_RADIX} or larger than
      *             {@link java.lang.Character#MAX_RADIX}.
-     * @since  1.9
+     * @since  9
      */
     public static int parseUnsignedInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {

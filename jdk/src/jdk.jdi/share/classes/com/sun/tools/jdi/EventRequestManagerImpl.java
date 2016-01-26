@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import java.util.*;
 class EventRequestManagerImpl extends MirrorImpl
                                        implements EventRequestManager
 {
-    List<? extends EventRequest>[] requestLists;
+    private final List<? extends EventRequest>[] requestLists;
     private static int methodExitEventCmd = 0;
 
     static int JDWPtoJDISuspendPolicy(byte jdwpPolicy) {
@@ -83,7 +83,7 @@ class EventRequestManagerImpl extends MirrorImpl
         return System.identityHashCode(this);
     }
 
-    abstract class EventRequestImpl extends MirrorImpl implements EventRequest {
+    private abstract class EventRequestImpl extends MirrorImpl implements EventRequest {
         int id;
 
         /*
@@ -734,7 +734,7 @@ class EventRequestManagerImpl extends MirrorImpl
         }
         requestLists = new List[highest+1];
         for (int i=0; i <= highest; i++) {
-            requestLists[i] = new ArrayList<>();
+            requestLists[i] = Collections.synchronizedList(new ArrayList<>());
         }
     }
 
@@ -933,22 +933,27 @@ class EventRequestManagerImpl extends MirrorImpl
     }
 
     List<? extends EventRequest> unmodifiableRequestList(int eventCmd) {
-        return Collections.unmodifiableList(requestList(eventCmd));
+        // No need of explicit synchronization for requestList here.
+        // It is taken care internally by SynchronizedList class.
+        return Collections.unmodifiableList(new ArrayList<>(requestList(eventCmd)));
     }
 
     EventRequest request(int eventCmd, int requestId) {
         List<? extends EventRequest> rl = requestList(eventCmd);
-        for (int i = rl.size() - 1; i >= 0; i--) {
-            EventRequestImpl er = (EventRequestImpl)rl.get(i);
-            if (er.id == requestId) {
-                return er;
+        synchronized(rl) {   // Refer Collections.synchronizedList javadoc.
+            Iterator<? extends EventRequest> itr = rl.iterator();
+            while (itr.hasNext()){
+                EventRequestImpl er = (EventRequestImpl)itr.next();
+                if (er.id == requestId)
+                    return er;
             }
         }
         return null;
     }
 
-    List<? extends EventRequest>  requestList(int eventCmd) {
+    private List<? extends EventRequest>  requestList(int eventCmd) {
         return requestLists[eventCmd];
     }
 
 }
+

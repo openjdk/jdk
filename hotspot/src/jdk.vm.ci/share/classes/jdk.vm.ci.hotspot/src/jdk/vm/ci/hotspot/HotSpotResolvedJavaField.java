@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,14 @@ public interface HotSpotResolvedJavaField extends ResolvedJavaField {
     int offset();
 
     /**
-     * Checks if this field has the {@link Stable} annotation.
-     *
-     * @return true if field has {@link Stable} annotation, false otherwise
+     * Determines if this field should be treated as a constant.
      */
     boolean isStable();
 
     /**
-     * If this field is stable, checks if default values (0, null, etc.) should be considered stable
-     * as well.
-     *
-     * @return true if default values should be considered stable, false otherwise
+     * Determines if this field should be considered constant if it has the default value for its
+     * type (e.g, 0, null, etc.). The result of this method is undefined if this field is not
+     * {@linkplain #isStable() stable}.
      */
     boolean isDefaultStable();
 }

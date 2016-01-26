@@ -24,6 +24,8 @@
 /*
  * @test
  * @summary Test imports
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
  * @library /tools/lib
  * @build KullaTesting TestingInputStream ToolBox ExpectedDiagnostic
  * @run testng ImportTest

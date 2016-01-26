@@ -399,6 +399,7 @@
       <to>java.xml.crypto</to>
       <to>jdk.crypto.ec</to>
       <to>jdk.crypto.pkcs11</to>
+      <to>jdk.crypto.ucrypto</to>
       <to>jdk.naming.dns</to>
     </export>
     <export>

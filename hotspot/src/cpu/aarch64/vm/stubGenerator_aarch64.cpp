@@ -958,8 +958,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register t0 = r3, t1 = r4;
 
     if (is_backwards) {
-      __ lea(s, Address(s, count, Address::uxtw(exact_log2(-step))));
-      __ lea(d, Address(d, count, Address::uxtw(exact_log2(-step))));
+      __ lea(s, Address(s, count, Address::lsl(exact_log2(-step))));
+      __ lea(d, Address(d, count, Address::lsl(exact_log2(-step))));
     }
 
     Label done, tail;
@@ -1051,10 +1051,10 @@ class StubGenerator: public StubCodeGenerator {
     __ cmp(rscratch2, count);
     __ br(Assembler::HS, end);
     if (size == (size_t)wordSize) {
-      __ ldr(temp, Address(a, rscratch2, Address::uxtw(exact_log2(size))));
+      __ ldr(temp, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ verify_oop(temp);
     } else {
-      __ ldrw(r16, Address(a, rscratch2, Address::uxtw(exact_log2(size))));
+      __ ldrw(r16, Address(a, rscratch2, Address::lsl(exact_log2(size))));
       __ decode_heap_oop(temp); // calls verify_oop
     }
     __ add(rscratch2, rscratch2, size);
@@ -1087,12 +1087,14 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
+    __ enter();
+
     if (entry != NULL) {
       *entry = __ pc();
       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
       BLOCK_COMMENT("Entry:");
     }
-    __ enter();
+
     if (is_oop) {
       __ push(RegSet::of(d, count), sp);
       // no registers are destroyed by this call
@@ -1104,10 +1106,11 @@ class StubGenerator: public StubCodeGenerator {
       if (VerifyOops)
         verify_oop_array(size, d, count, r16);
       __ sub(count, count, 1); // make an inclusive end pointer
-      __ lea(count, Address(d, count, Address::uxtw(exact_log2(size))));
+      __ lea(count, Address(d, count, Address::lsl(exact_log2(size))));
       gen_write_ref_array_post_barrier(d, count, rscratch1);
     }
     __ leave();
+    __ mov(r0, zr); // return 0
     __ ret(lr);
 #ifdef BUILTIN_SIM
     {
@@ -1140,11 +1143,16 @@ class StubGenerator: public StubCodeGenerator {
 
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
+    __ enter();
 
+    if (entry != NULL) {
+      *entry = __ pc();
+      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
+      BLOCK_COMMENT("Entry:");
+    }
     __ cmp(d, s);
     __ br(Assembler::LS, nooverlap_target);
 
-    __ enter();
     if (is_oop) {
       __ push(RegSet::of(d, count), sp);
       // no registers are destroyed by this call
@@ -1160,6 +1168,7 @@ class StubGenerator: public StubCodeGenerator {
       gen_write_ref_array_post_barrier(d, count, rscratch1);
     }
     __ leave();
+    __ mov(r0, zr); // return 0
     __ ret(lr);
 #ifdef BUILTIN_SIM
     {
@@ -1559,7 +1568,29 @@ class StubGenerator: public StubCodeGenerator {
                               Register dst_pos, // destination position (c_rarg3)
                               Register length,
                               Register temp,
-                              Label& L_failed) { Unimplemented(); }
+                              Label& L_failed) {
+    BLOCK_COMMENT("arraycopy_range_checks:");
+
+    assert_different_registers(rscratch1, temp);
+
+    //  if (src_pos + length > arrayOop(src)->length())  FAIL;
+    __ ldrw(rscratch1, Address(src, arrayOopDesc::length_offset_in_bytes()));
+    __ addw(temp, length, src_pos);
+    __ cmpw(temp, rscratch1);
+    __ br(Assembler::HI, L_failed);
+
+    //  if (dst_pos + length > arrayOop(dst)->length())  FAIL;
+    __ ldrw(rscratch1, Address(dst, arrayOopDesc::length_offset_in_bytes()));
+    __ addw(temp, length, dst_pos);
+    __ cmpw(temp, rscratch1);
+    __ br(Assembler::HI, L_failed);
+
+    // Have to clean up high 32 bits of 'src_pos' and 'dst_pos'.
+    __ movw(src_pos, src_pos);
+    __ movw(dst_pos, dst_pos);
+
+    BLOCK_COMMENT("arraycopy_range_checks done");
+  }
 
   // These stubs get called from some dumb test routine.
   // I'll write them properly when they're called from
@@ -1568,6 +1599,309 @@ class StubGenerator: public StubCodeGenerator {
     assert(count == 0, "huh?");
   }
 
+
+  //
+  //  Generate 'unsafe' array copy stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t argument instead of an element count.
+  //
+  //  Input:
+  //    c_rarg0   - source array address
+  //    c_rarg1   - destination array address
+  //    c_rarg2   - byte count, treated as ssize_t, can be zero
+  //
+  // Examines the alignment of the operands and dispatches
+  // to a long, int, short, or byte copy loop.
+  //
+  address generate_unsafe_copy(const char *name,
+                               address byte_copy_entry) {
+#ifdef PRODUCT
+    return StubRoutines::_jbyte_arraycopy;
+#else
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+    // bump this on entry, not on exit:
+    __ lea(rscratch2, ExternalAddress((address)&SharedRuntime::_unsafe_array_copy_ctr));
+    __ incrementw(Address(rscratch2));
+    __ b(RuntimeAddress(byte_copy_entry));
+    return start;
+#endif
+  }
+
+  //
+  //  Generate generic array copy stubs
+  //
+  //  Input:
+  //    c_rarg0    -  src oop
+  //    c_rarg1    -  src_pos (32-bits)
+  //    c_rarg2    -  dst oop
+  //    c_rarg3    -  dst_pos (32-bits)
+  //    c_rarg4    -  element count (32-bits)
+  //
+  //  Output:
+  //    r0 ==  0  -  success
+  //    r0 == -1^K - failure, where K is partial transfer count
+  //
+  address generate_generic_copy(const char *name,
+                                address byte_copy_entry, address short_copy_entry,
+                                address int_copy_entry, address oop_copy_entry,
+                                address long_copy_entry, address checkcast_copy_entry) {
+
+    Label L_failed, L_failed_0, L_objArray;
+    Label L_copy_bytes, L_copy_shorts, L_copy_ints, L_copy_longs;
+
+    // Input registers
+    const Register src        = c_rarg0;  // source array oop
+    const Register src_pos    = c_rarg1;  // source position
+    const Register dst        = c_rarg2;  // destination array oop
+    const Register dst_pos    = c_rarg3;  // destination position
+    const Register length     = c_rarg4;
+
+    StubCodeMark mark(this, "StubRoutines", name);
+
+    __ align(CodeEntryAlignment);
+    address start = __ pc();
+
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    // bump this on entry, not on exit:
+    inc_counter_np(SharedRuntime::_generic_array_copy_ctr);
+
+    //-----------------------------------------------------------------------
+    // Assembler stub will be used for this call to arraycopy
+    // if the following conditions are met:
+    //
+    // (1) src and dst must not be null.
+    // (2) src_pos must not be negative.
+    // (3) dst_pos must not be negative.
+    // (4) length  must not be negative.
+    // (5) src klass and dst klass should be the same and not NULL.
+    // (6) src and dst should be arrays.
+    // (7) src_pos + length must not exceed length of src.
+    // (8) dst_pos + length must not exceed length of dst.
+    //
+
+    //  if (src == NULL) return -1;
+    __ cbz(src, L_failed);
+
+    //  if (src_pos < 0) return -1;
+    __ tbnz(src_pos, 31, L_failed);  // i.e. sign bit set
+
+    //  if (dst == NULL) return -1;
+    __ cbz(dst, L_failed);
+
+    //  if (dst_pos < 0) return -1;
+    __ tbnz(dst_pos, 31, L_failed);  // i.e. sign bit set
+
+    // registers used as temp
+    const Register scratch_length    = r16; // elements count to copy
+    const Register scratch_src_klass = r17; // array klass
+    const Register lh                = r18; // layout helper
+
+    //  if (length < 0) return -1;
+    __ movw(scratch_length, length);        // length (elements count, 32-bits value)
+    __ tbnz(scratch_length, 31, L_failed);  // i.e. sign bit set
+
+    __ load_klass(scratch_src_klass, src);
+#ifdef ASSERT
+    //  assert(src->klass() != NULL);
+    {
+      BLOCK_COMMENT("assert klasses not null {");
+      Label L1, L2;
+      __ cbnz(scratch_src_klass, L2);   // it is broken if klass is NULL
+      __ bind(L1);
+      __ stop("broken null klass");
+      __ bind(L2);
+      __ load_klass(rscratch1, dst);
+      __ cbz(rscratch1, L1);     // this would be broken also
+      BLOCK_COMMENT("} assert klasses not null done");
+    }
+#endif
+
+    // Load layout helper (32-bits)
+    //
+    //  |array_tag|     | header_size | element_type |     |log2_element_size|
+    // 32        30    24            16              8     2                 0
+    //
+    //   array_tag: typeArray = 0x3, objArray = 0x2, non-array = 0x0
+    //
+
+    const int lh_offset = in_bytes(Klass::layout_helper_offset());
+
+    // Handle objArrays completely differently...
+    const jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
+    __ ldrw(lh, Address(scratch_src_klass, lh_offset));
+    __ movw(rscratch1, objArray_lh);
+    __ eorw(rscratch2, lh, rscratch1);
+    __ cbzw(rscratch2, L_objArray);
+
+    //  if (src->klass() != dst->klass()) return -1;
+    __ load_klass(rscratch2, dst);
+    __ eor(rscratch2, rscratch2, scratch_src_klass);
+    __ cbnz(rscratch2, L_failed);
+
+    //  if (!src->is_Array()) return -1;
+    __ tbz(lh, 31, L_failed);  // i.e. (lh >= 0)
+
+    // At this point, it is known to be a typeArray (array_tag 0x3).
+#ifdef ASSERT
+    {
+      BLOCK_COMMENT("assert primitive array {");
+      Label L;
+      __ movw(rscratch2, Klass::_lh_array_tag_type_value << Klass::_lh_array_tag_shift);
+      __ cmpw(lh, rscratch2);
+      __ br(Assembler::GE, L);
+      __ stop("must be a primitive array");
+      __ bind(L);
+      BLOCK_COMMENT("} assert primitive array done");
+    }
+#endif
+
+    arraycopy_range_checks(src, src_pos, dst, dst_pos, scratch_length,
+                           rscratch2, L_failed);
+
+    // TypeArrayKlass
+    //
+    // src_addr = (src + array_header_in_bytes()) + (src_pos << log2elemsize);
+    // dst_addr = (dst + array_header_in_bytes()) + (dst_pos << log2elemsize);
+    //
+
+    const Register rscratch1_offset = rscratch1;    // array offset
+    const Register r18_elsize = lh; // element size
+
+    __ ubfx(rscratch1_offset, lh, Klass::_lh_header_size_shift,
+           exact_log2(Klass::_lh_header_size_mask+1));   // array_offset
+    __ add(src, src, rscratch1_offset);           // src array offset
+    __ add(dst, dst, rscratch1_offset);           // dst array offset
+    BLOCK_COMMENT("choose copy loop based on element size");
+
+    // next registers should be set before the jump to corresponding stub
+    const Register from     = c_rarg0;  // source array address
+    const Register to       = c_rarg1;  // destination array address
+    const Register count    = c_rarg2;  // elements count
+
+    // 'from', 'to', 'count' registers should be set in such order
+    // since they are the same as 'src', 'src_pos', 'dst'.
+
+    assert(Klass::_lh_log2_element_size_shift == 0, "fix this code");
+
+    // The possible values of elsize are 0-3, i.e. exact_log2(element
+    // size in bytes).  We do a simple bitwise binary search.
+  __ BIND(L_copy_bytes);
+    __ tbnz(r18_elsize, 1, L_copy_ints);
+    __ tbnz(r18_elsize, 0, L_copy_shorts);
+    __ lea(from, Address(src, src_pos));// src_addr
+    __ lea(to,   Address(dst, dst_pos));// dst_addr
+    __ movw(count, scratch_length); // length
+    __ b(RuntimeAddress(byte_copy_entry));
+
+  __ BIND(L_copy_shorts);
+    __ lea(from, Address(src, src_pos, Address::lsl(1)));// src_addr
+    __ lea(to,   Address(dst, dst_pos, Address::lsl(1)));// dst_addr
+    __ movw(count, scratch_length); // length
+    __ b(RuntimeAddress(short_copy_entry));
+
+  __ BIND(L_copy_ints);
+    __ tbnz(r18_elsize, 0, L_copy_longs);
+    __ lea(from, Address(src, src_pos, Address::lsl(2)));// src_addr
+    __ lea(to,   Address(dst, dst_pos, Address::lsl(2)));// dst_addr
+    __ movw(count, scratch_length); // length
+    __ b(RuntimeAddress(int_copy_entry));
+
+  __ BIND(L_copy_longs);
+#ifdef ASSERT
+    {
+      BLOCK_COMMENT("assert long copy {");
+      Label L;
+      __ andw(lh, lh, Klass::_lh_log2_element_size_mask); // lh -> r18_elsize
+      __ cmpw(r18_elsize, LogBytesPerLong);
+      __ br(Assembler::EQ, L);
+      __ stop("must be long copy, but elsize is wrong");
+      __ bind(L);
+      BLOCK_COMMENT("} assert long copy done");
+    }
+#endif
+    __ lea(from, Address(src, src_pos, Address::lsl(3)));// src_addr
+    __ lea(to,   Address(dst, dst_pos, Address::lsl(3)));// dst_addr
+    __ movw(count, scratch_length); // length
+    __ b(RuntimeAddress(long_copy_entry));
+
+    // ObjArrayKlass
+  __ BIND(L_objArray);
+    // live at this point:  scratch_src_klass, scratch_length, src[_pos], dst[_pos]
+
+    Label L_plain_copy, L_checkcast_copy;
+    //  test array classes for subtyping
+    __ load_klass(r18, dst);
+    __ cmp(scratch_src_klass, r18); // usual case is exact equality
+    __ br(Assembler::NE, L_checkcast_copy);
+
+    // Identically typed arrays can be copied without element-wise checks.
+    arraycopy_range_checks(src, src_pos, dst, dst_pos, scratch_length,
+                           rscratch2, L_failed);
+
+    __ lea(from, Address(src, src_pos, Address::lsl(3)));
+    __ add(from, from, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+    __ lea(to, Address(dst, dst_pos, Address::lsl(3)));
+    __ add(to, to, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+    __ movw(count, scratch_length); // length
+  __ BIND(L_plain_copy);
+    __ b(RuntimeAddress(oop_copy_entry));
+
+  __ BIND(L_checkcast_copy);
+    // live at this point:  scratch_src_klass, scratch_length, r18 (dst_klass)
+    {
+      // Before looking at dst.length, make sure dst is also an objArray.
+      __ ldrw(rscratch1, Address(r18, lh_offset));
+      __ movw(rscratch2, objArray_lh);
+      __ eorw(rscratch1, rscratch1, rscratch2);
+      __ cbnzw(rscratch1, L_failed);
+
+      // It is safe to examine both src.length and dst.length.
+      arraycopy_range_checks(src, src_pos, dst, dst_pos, scratch_length,
+                             r18, L_failed);
+
+      const Register rscratch2_dst_klass = rscratch2;
+      __ load_klass(rscratch2_dst_klass, dst); // reload
+
+      // Marshal the base address arguments now, freeing registers.
+      __ lea(from, Address(src, src_pos, Address::lsl(3)));
+      __ add(from, from, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+      __ lea(to, Address(dst, dst_pos, Address::lsl(3)));
+      __ add(to, to, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+      __ movw(count, length);           // length (reloaded)
+      Register sco_temp = c_rarg3;      // this register is free now
+      assert_different_registers(from, to, count, sco_temp,
+                                 rscratch2_dst_klass, scratch_src_klass);
+      // assert_clean_int(count, sco_temp);
+
+      // Generate the type check.
+      const int sco_offset = in_bytes(Klass::super_check_offset_offset());
+      __ ldrw(sco_temp, Address(rscratch2_dst_klass, sco_offset));
+      // assert_clean_int(sco_temp, r18);
+      generate_type_check(scratch_src_klass, sco_temp, rscratch2_dst_klass, L_plain_copy);
+
+      // Fetch destination element klass from the ObjArrayKlass header.
+      int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
+      __ ldr(rscratch2_dst_klass, Address(rscratch2_dst_klass, ek_offset));
+      __ ldrw(sco_temp, Address(rscratch2_dst_klass, sco_offset));
+
+      // the checkcast_copy loop needs two extra arguments:
+      assert(c_rarg3 == sco_temp, "#3 already in place");
+      // Set up arguments for checkcast_copy_entry.
+      __ mov(c_rarg4, rscratch2_dst_klass);  // dst.klass.element_klass
+      __ b(RuntimeAddress(checkcast_copy_entry));
+    }
+
+  __ BIND(L_failed);
+    __ mov(r0, -1);
+    __ leave();   // required for proper stackwalking of RuntimeStub frame
+    __ ret(lr);
+
+    return start;
+  }
 
   void generate_arraycopy_stubs() {
     address entry;
@@ -1655,6 +1989,18 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy("checkcast_arraycopy", &entry_checkcast_arraycopy);
     StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy("checkcast_arraycopy_uninit", NULL,
                                                                         /*dest_uninitialized*/true);
+
+    StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy("unsafe_arraycopy",
+                                                              entry_jbyte_arraycopy);
+
+    StubRoutines::_generic_arraycopy   = generate_generic_copy("generic_arraycopy",
+                                                               entry_jbyte_arraycopy,
+                                                               entry_jshort_arraycopy,
+                                                               entry_jint_arraycopy,
+                                                               entry_oop_arraycopy,
+                                                               entry_jlong_arraycopy,
+                                                               entry_checkcast_arraycopy);
+
   }
 
   void generate_math_stubs() { Unimplemented(); }
@@ -1973,7 +2319,7 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg4   - input length
   //
   // Output:
-  //   x0        - input length
+  //   r0        - input length
   //
   address generate_cipherBlockChaining_decryptAESCrypt() {
     assert(UseAES, "need AES instructions and misaligned SSE support");

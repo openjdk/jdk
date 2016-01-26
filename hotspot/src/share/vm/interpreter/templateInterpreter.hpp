@@ -34,6 +34,7 @@
 #ifndef CC_INTERP
 
 class InterpreterMacroAssembler;
+class InterpreterCodelet;
 
 //------------------------------------------------------------------------------------------------------------------------
 // A little wrapper class to group tosca-specific entry points into a unit.
@@ -85,7 +86,6 @@ class TemplateInterpreter: public AbstractInterpreter {
   friend class VMStructs;
   friend class InterpreterMacroAssembler;
   friend class TemplateInterpreterGenerator;
-  friend class InterpreterGenerator;
   friend class TemplateTable;
   friend class CodeCacheExtensions;
   // friend class Interpreter;
@@ -137,6 +137,9 @@ class TemplateInterpreter: public AbstractInterpreter {
   static void       initialize();
   // this only returns whether a pc is within generated code for the interpreter.
   static bool       contains(address pc)                        { return _code != NULL && _code->contains(pc); }
+  // Debugging/printing
+  static InterpreterCodelet* codelet_containing(address pc);
+
 
  public:
 
@@ -188,26 +191,15 @@ class TemplateInterpreter: public AbstractInterpreter {
   // Compute the address for reexecution
   static address deopt_reexecute_entry(Method* method, address bcp);
 
-#ifdef TARGET_ARCH_x86
-# include "templateInterpreter_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "templateInterpreter_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "templateInterpreter_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "templateInterpreter_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "templateInterpreter_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "templateInterpreter_aarch64.hpp"
-#endif
+  // Size of interpreter code.  Max size with JVMTI
+  static int InterpreterCodeSize;
 
-
+#ifdef PPC
+ public:
+  // PPC-only: Support abs and sqrt like in compiler.
+  // For others we can use a normal (native) entry.
+  static bool math_entry_available(AbstractInterpreter::MethodKind kind);
+#endif
 };
 
 #endif // !CC_INTERP

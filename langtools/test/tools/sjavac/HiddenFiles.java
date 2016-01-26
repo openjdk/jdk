@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ public class HiddenFiles extends SjavacBase {
         // This compilation should fail (return RC_FATAL) since A.java refers to B.java and B.java
         // is excluded.
         int rc = compile("-x", "pkg/B.java", SRC.toString(),
-                         "--server:portfile=testportfile,background=false",
                          "-d", BIN.toString(),
                          "--state-dir=" + STATE_DIR);
 

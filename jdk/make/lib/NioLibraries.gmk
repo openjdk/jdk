@@ -91,7 +91,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
         -D "JDK_INTERNAL_NAME=nio" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libnio, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 TARGETS += $(BUILD_LIBNIO)
 

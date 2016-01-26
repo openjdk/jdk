@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,28 +87,14 @@ public interface XADataSource extends CommonDataSource {
    * Creates a new {@code XAConnectionBuilder} instance
    * @implSpec
    * The default implementation will throw a {@code SQLFeatureNotSupportedException}.
-   * @return The ConnectionBuilder instance that was created
+   * @return The XAConnectionBuilder instance that was created
    * @throws SQLException if an error occurs creating the builder
    * @throws SQLFeatureNotSupportedException if the driver does not support sharding
-   * @since 1.9
+   * @since 9
    * @see XAConnectionBuilder
    */
   default XAConnectionBuilder createXAConnectionBuilder() throws SQLException {
         throw new SQLFeatureNotSupportedException("createXAConnectionBuilder not implemented");
   };
 
-  /**
-   * Creates a new {@code ShardingKeyBuilder} instance
-   * @implSpec
-   * The default implementation will throw a {@code SQLFeatureNotSupportedException}.
-   * @return The ShardingKeyBuilder instance that was created
-   * @throws SQLException if an error occurs creating the builder
-   * @throws SQLFeatureNotSupportedException if the driver does not support this method
-   * @since 1.9
-   * @see ShardingKeyBuilder
-   */
-  default ShardingKeyBuilder createShardingKeyBuilder()
-          throws SQLException {
-        throw new SQLFeatureNotSupportedException("createShardingKeyBuilder not implemented");
-  };
  }

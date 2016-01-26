@@ -23,12 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "asm/codeBuffer.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 
 
 // Implementation of AbstractAssembler
@@ -132,7 +133,7 @@ void AbstractAssembler::generate_stack_overflow_check(int frame_size_in_bytes) {
     // is greater than a page.
 
     const int page_size = os::vm_page_size();
-    int bang_end = StackShadowPages * page_size;
+    int bang_end = (int)JavaThread::stack_shadow_zone_size();
 
     // This is how far the previous frame's stack banging extended.
     const int bang_end_safe = bang_end;

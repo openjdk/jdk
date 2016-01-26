@@ -27,7 +27,8 @@
  * @summary Check that GarbageCollectionNotification contents are reasonable
  * @author  Frederic Parain
  * @requires vm.opt.ExplicitGCInvokesConcurrent == null | vm.opt.ExplicitGCInvokesConcurrent == false
- * @modules jdk.management
+ * @modules java.management/sun.management
+ *          jdk.management
  * @run     main/othervm GarbageCollectionNotificationContentTest
  */
 

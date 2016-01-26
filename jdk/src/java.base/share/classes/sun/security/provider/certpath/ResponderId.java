@@ -49,7 +49,7 @@ import sun.security.util.DerValue;
  * </pre>
  *
  * @see ResponderId.Type
- * @since 1.9
+ * @since 9
  */
 public final class ResponderId {
 
@@ -58,7 +58,7 @@ public final class ResponderId {
      * {@code ResponderId}.
      *
      * @see ResponderId
-     * @since 1.9
+     * @since 9
      */
     public static enum Type {
         /**

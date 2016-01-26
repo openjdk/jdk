@@ -25,6 +25,7 @@
  * @test
  * @bug 8080679
  * @summary Verify the conversion from key events to escape sequences works properly.
+ * @modules jdk.internal.le/jdk.internal.jline
  * @requires os.family == "windows"
  */
 

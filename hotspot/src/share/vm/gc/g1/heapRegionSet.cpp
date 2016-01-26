@@ -49,8 +49,8 @@ void HeapRegionSetBase::verify() {
   // verification might fail and send us on a wild goose chase.
   check_mt_safety();
 
-  guarantee_heap_region_set(( is_empty() && length() == 0 && total_capacity_bytes() == 0) ||
-                            (!is_empty() && length() > 0  && total_capacity_bytes() > 0) ,
+  guarantee_heap_region_set(( is_empty() && length() == 0) ||
+                            (!is_empty() && length() > 0),
                             "invariant");
 }
 
@@ -81,14 +81,12 @@ void HeapRegionSetBase::print_on(outputStream* out, bool print_contents) {
   out->print_cr("    free              : %s", BOOL_TO_STR(regions_free()));
   out->print_cr("  Attributes");
   out->print_cr("    length            : %14u", length());
-  out->print_cr("    total capacity    : " SIZE_FORMAT_W(14) " bytes",
-                total_capacity_bytes());
 }
 
 HeapRegionSetBase::HeapRegionSetBase(const char* name, bool humongous, bool free, HRSMtSafeChecker* mt_safety_checker)
   : _name(name), _verify_in_progress(false),
     _is_humongous(humongous), _is_free(free), _mt_safety_checker(mt_safety_checker),
-    _count()
+    _length(0)
 { }
 
 void FreeRegionList::set_unrealistically_long_length(uint len) {
@@ -177,7 +175,7 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
     }
   }
 
-  _count.increment(from_list->length(), from_list->total_capacity_bytes());
+  _length += from_list->length();
   from_list->clear();
 
   verify_optional();
@@ -255,28 +253,10 @@ void FreeRegionList::verify() {
 }
 
 void FreeRegionList::clear() {
-  _count = HeapRegionSetCount();
+  _length = 0;
   _head = NULL;
   _tail = NULL;
   _last = NULL;
-}
-
-void FreeRegionList::print_on(outputStream* out, bool print_contents) {
-  HeapRegionSetBase::print_on(out, print_contents);
-  out->print_cr("  Linking");
-  out->print_cr("    head              : " PTR_FORMAT, p2i(_head));
-  out->print_cr("    tail              : " PTR_FORMAT, p2i(_tail));
-
-  if (print_contents) {
-    out->print_cr("  Contents");
-    FreeRegionListIterator iter(this);
-    while (iter.more_available()) {
-      HeapRegion* hr = iter.get_next();
-      hr->print_on(out);
-    }
-  }
-
-  out->cr();
 }
 
 void FreeRegionList::verify_list() {
@@ -312,8 +292,6 @@ void FreeRegionList::verify_list() {
   guarantee(_tail == prev0, "Expected %s to end with %u but it ended with %u.", name(), _tail->hrm_index(), prev0->hrm_index());
   guarantee(_tail == NULL || _tail->next() == NULL, "_tail should not have a next");
   guarantee(length() == count, "%s count mismatch. Expected %u, actual %u.", name(), length(), count);
-  guarantee(total_capacity_bytes() == capacity, "%s capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
-            name(), total_capacity_bytes(), capacity);
 }
 
 // Note on the check_mt_safety() methods below:
