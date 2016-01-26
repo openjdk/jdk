@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,11 +357,41 @@ bool DefNewGeneration::expand(size_t bytes) {
   // For example if the first expand fail for unknown reasons,
   // but the second succeeds and expands the heap to its maximum
   // value.
-  if (GC_locker::is_active()) {
+  if (GCLocker::is_active()) {
     log_debug(gc)("Garbage collection disabled, expanded heap instead");
   }
 
   return success;
+}
+
+size_t DefNewGeneration::adjust_for_thread_increase(size_t new_size_candidate,
+                                                    size_t new_size_before,
+                                                    size_t alignment) const {
+  size_t desired_new_size = new_size_before;
+
+  if (NewSizeThreadIncrease > 0) {
+    int threads_count;
+    size_t thread_increase_size = 0;
+
+    // 1. Check an overflow at 'threads_count * NewSizeThreadIncrease'.
+    threads_count = Threads::number_of_non_daemon_threads();
+    if (threads_count > 0 && NewSizeThreadIncrease <= max_uintx / threads_count) {
+      thread_increase_size = threads_count * NewSizeThreadIncrease;
+
+      // 2. Check an overflow at 'new_size_candidate + thread_increase_size'.
+      if (new_size_candidate <= max_uintx - thread_increase_size) {
+        new_size_candidate += thread_increase_size;
+
+        // 3. Check an overflow at 'align_size_up'.
+        size_t aligned_max = ((max_uintx - alignment) & ~(alignment-1));
+        if (new_size_candidate <= aligned_max) {
+          desired_new_size = align_size_up(new_size_candidate, alignment);
+        }
+      }
+    }
+  }
+
+  return desired_new_size;
 }
 
 void DefNewGeneration::compute_new_size() {
@@ -385,12 +415,13 @@ void DefNewGeneration::compute_new_size() {
   // All space sizes must be multiples of Generation::GenGrain.
   size_t alignment = Generation::GenGrain;
 
-  // Compute desired new generation size based on NewRatio and
-  // NewSizeThreadIncrease
-  size_t desired_new_size = old_size/NewRatio;
-  int threads_count = Threads::number_of_non_daemon_threads();
-  size_t thread_increase_size = threads_count * NewSizeThreadIncrease;
-  desired_new_size = align_size_up(desired_new_size + thread_increase_size, alignment);
+  int threads_count = 0;
+  size_t thread_increase_size = 0;
+
+  size_t new_size_candidate = old_size / NewRatio;
+  // Compute desired new generation size based on NewRatio and NewSizeThreadIncrease
+  // and reverts to previous value if any overflow happens
+  size_t desired_new_size = adjust_for_thread_increase(new_size_candidate, new_size_before, alignment);
 
   // Adjust new generation size
   desired_new_size = MAX2(MIN2(desired_new_size, max_new_size), min_new_size);
@@ -496,7 +527,7 @@ void DefNewGeneration::space_iterate(SpaceClosure* blk,
 // The last collection bailed out, we are running out of heap space,
 // so we try to allocate the from-space, too.
 HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
-  bool should_try_alloc = should_allocate_from_space() || GC_locker::is_active_and_needs_gc();
+  bool should_try_alloc = should_allocate_from_space() || GCLocker::is_active_and_needs_gc();
 
   // If the Heap_lock is not locked by this thread, this will be called
   // again later with the Heap_lock held.
@@ -879,7 +910,7 @@ bool DefNewGeneration::collection_attempt_is_safe() {
 void DefNewGeneration::gc_epilogue(bool full) {
   DEBUG_ONLY(static bool seen_incremental_collection_failed = false;)
 
-  assert(!GC_locker::is_active(), "We should not be executing here");
+  assert(!GCLocker::is_active(), "We should not be executing here");
   // Check if the heap is approaching full after a collection has
   // been done.  Generally the young generation is empty at
   // a minimum at the end of a collection.  If it is not, then

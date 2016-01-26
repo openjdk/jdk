@@ -115,12 +115,12 @@ public:
 // The time stamps are re-initialized to zero at cleanup and at Full GCs.
 // The current scheme that uses sequential unsigned ints will fail only if we have 4b
 // evacuation pauses between two cleanups, which is _highly_ unlikely.
-class G1OffsetTableContigSpace: public CompactibleSpace {
+class G1ContiguousSpace: public CompactibleSpace {
   friend class VMStructs;
   HeapWord* volatile _top;
   HeapWord* volatile _scan_top;
  protected:
-  G1BlockOffsetArrayContigSpace _offsets;
+  G1BlockOffsetTablePart _bot_part;
   Mutex _par_alloc_lock;
   volatile unsigned _gc_time_stamp;
   // When we need to retire an allocation region, while other threads
@@ -132,14 +132,13 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
   HeapWord* _pre_dummy_top;
 
  public:
-  G1OffsetTableContigSpace(G1BlockOffsetSharedArray* sharedOffsetArray,
-                           MemRegion mr);
+  G1ContiguousSpace(G1BlockOffsetTable* bot);
 
   void set_top(HeapWord* value) { _top = value; }
   HeapWord* top() const { return _top; }
 
  protected:
-  // Reset the G1OffsetTableContigSpace.
+  // Reset the G1ContiguousSpace.
   virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
 
   HeapWord* volatile* top_addr() { return &_top; }
@@ -166,9 +165,6 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
 
   void object_iterate(ObjectClosure* blk);
   void safe_object_iterate(ObjectClosure* blk);
-
-  void set_bottom(HeapWord* value);
-  void set_end(HeapWord* value);
 
   void mangle_unused_area() PRODUCT_RETURN;
   void mangle_unused_area_complete() PRODUCT_RETURN;
@@ -213,15 +209,15 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
   virtual void print() const;
 
   void reset_bot() {
-    _offsets.reset_bot();
+    _bot_part.reset_bot();
   }
 
   void print_bot_on(outputStream* out) {
-    _offsets.print_on(out);
+    _bot_part.print_on(out);
   }
 };
 
-class HeapRegion: public G1OffsetTableContigSpace {
+class HeapRegion: public G1ContiguousSpace {
   friend class VMStructs;
   // Allow scan_and_forward to call (private) overrides for auxiliary functions on this class
   template <typename SpaceType>
@@ -232,8 +228,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // (Might want to make this "inline" later, to avoid some alloc failure
   // issues.)
   HeapRegionRemSet* _rem_set;
-
-  G1BlockOffsetArrayContigSpace* offsets() { return &_offsets; }
 
   // Auxiliary functions for scan_and_forward support.
   // See comments for CompactibleSpace for more information.
@@ -330,7 +324,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
  public:
   HeapRegion(uint hrm_index,
-             G1BlockOffsetSharedArray* sharedOffsetArray,
+             G1BlockOffsetTable* bot,
              MemRegion mr);
 
   // Initializing the HeapRegion not only resets the data structure, but also
@@ -751,6 +745,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // Override; it uses the "prev" marking information
   virtual void verify() const;
+
+  void verify_rem_set(VerifyOption vo, bool *failures) const;
+  void verify_rem_set() const;
 };
 
 // HeapRegionClosure is used for iterating over regions.
