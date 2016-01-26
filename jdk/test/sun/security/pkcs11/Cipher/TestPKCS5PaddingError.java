@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,18 @@
  * @summary Test internal PKCS5Padding impl with various error conditions.
  * @author Valerie Peng
  * @library ..
+ * @run main/othervm TestPKCS5PaddingError
+ * @run main/othervm TestPKCS5PaddingError sm
  */
-import java.io.*;
-import java.nio.*;
-import java.util.*;
 
-import java.security.*;
-import java.security.spec.AlgorithmParameterSpec;
-
-import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
+import java.security.AlgorithmParameters;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 
 public class TestPKCS5PaddingError extends PKCS11Test {
     private static class CI { // class for holding Cipher Information
@@ -62,10 +64,8 @@ public class TestPKCS5PaddingError extends PKCS11Test {
 
     private static StringBuffer debugBuf = new StringBuffer();
 
+    @Override
     public void main(Provider p) throws Exception {
-        boolean status = true;
-        Random random = new Random();
-
         try {
             byte[] plainText = new byte[200];
 
@@ -127,6 +127,6 @@ public class TestPKCS5PaddingError extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestPKCS5PaddingError());
+        main(new TestPKCS5PaddingError(), args);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,21 @@
  * @author Andreas Sterbenz
  * @library ..
  * @library ../../../../java/security/testlibrary
+ * @run main/othervm TestECDH
+ * @run main/othervm TestECDH sm policy
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
-import java.security.spec.*;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
 import java.security.interfaces.ECPublicKey;
-
-import javax.crypto.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
+import javax.crypto.KeyAgreement;
 
 public class TestECDH extends PKCS11Test {
 
@@ -55,6 +60,7 @@ public class TestECDH extends PKCS11Test {
 
     private final static String secret163 = "04:ae:71:c1:c6:4d:f4:34:4d:72:70:a4:64:65:7f:2d:88:2d:3f:50:be";
 
+    @Override
     public void main(Provider p) throws Exception {
         if (p.getService("KeyAgreement", "ECDH") == null) {
             System.out.println("Provider does not support ECDH, skipping");
@@ -89,10 +95,12 @@ public class TestECDH extends PKCS11Test {
         System.out.println("OK");
     }
 
-    private final static void test(Provider p, String pub1s, String priv1s, String pub2s, String priv2s, String secrets) throws Exception {
+    private final static void test(Provider p, String pub1s, String priv1s,
+            String pub2s, String priv2s, String secrets) throws Exception {
         KeyFactory kf = KeyFactory.getInstance("EC", p);
         PublicKey pub1 = kf.generatePublic(new X509EncodedKeySpec(parse(pub1s)));
-        System.out.println("Testing using parameters " + ((ECPublicKey)pub1).getParams() + "...");
+        System.out.println("Testing using parameters "
+                + ((ECPublicKey)pub1).getParams() + "...");
 
         PrivateKey priv1 = kf.generatePrivate(new PKCS8EncodedKeySpec(parse(priv1s)));
         PublicKey pub2 = kf.generatePublic(new X509EncodedKeySpec(parse(pub2s)));
@@ -121,7 +129,7 @@ public class TestECDH extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestECDH());
+        main(new TestECDH(), args);
     }
 
 }

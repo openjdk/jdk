@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,111 +29,112 @@
  * @library ..
  * @modules java.base/sun.security.internal.interfaces
  *          java.base/sun.security.internal.spec
+ * @run main/othervm TestMasterSecret
+ * @run main/othervm TestMasterSecret sm TestMasterSecret.policy
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.Security;
+import java.io.BufferedReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Provider;
-
+import java.util.Arrays;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-
-import javax.crypto.spec.*;
-
-import sun.security.internal.spec.*;
+import javax.crypto.spec.SecretKeySpec;
 import sun.security.internal.interfaces.TlsMasterSecret;
+import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 
 public class TestMasterSecret extends PKCS11Test {
 
-    private static int PREFIX_LENGTH = "m-premaster:  ".length();
+    private static final int PREFIX_LENGTH = "m-premaster:  ".length();
 
     public static void main(String[] args) throws Exception {
-        main(new TestMasterSecret());
+        main(new TestMasterSecret(), args);
     }
 
+    @Override
     public void main(Provider provider) throws Exception {
         if (provider.getService("KeyGenerator", "SunTlsMasterSecret") == null) {
             System.out.println("Not supported by provider, skipping");
             return;
         }
-        InputStream in = new FileInputStream(new File(BASE, "masterdata.txt"));
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
-        int n = 0;
-        int lineNumber = 0;
+        try (BufferedReader reader = Files.newBufferedReader(
+                Paths.get(BASE, "masterdata.txt"))) {
 
-        String algorithm = null;
-        byte[] premaster = null;
-        byte[] clientRandom = null;
-        byte[] serverRandom = null;
-        int protoMajor = 0;
-        int protoMinor = 0;
-        int preMajor = 0;
-        int preMinor = 0;
-        byte[] master = null;
+            int n = 0;
+            int lineNumber = 0;
 
-        while (true) {
-            String line = reader.readLine();
-            lineNumber++;
-            if (line == null) {
-                break;
-            }
-            if (line.startsWith("m-") == false) {
-                continue;
-            }
-            String data = line.substring(PREFIX_LENGTH);
-            if (line.startsWith("m-algorithm:")) {
-                algorithm = data;
-            } else if (line.startsWith("m-premaster:")) {
-                premaster = parse(data);
-            } else if (line.startsWith("m-crandom:")) {
-                clientRandom = parse(data);
-            } else if (line.startsWith("m-srandom:")) {
-                serverRandom = parse(data);
-            } else if (line.startsWith("m-protomajor:")) {
-                protoMajor = Integer.parseInt(data);
-            } else if (line.startsWith("m-protominor:")) {
-                protoMinor = Integer.parseInt(data);
-            } else if (line.startsWith("m-premajor:")) {
-                preMajor = Integer.parseInt(data);
-            } else if (line.startsWith("m-preminor:")) {
-                preMinor = Integer.parseInt(data);
-            } else if (line.startsWith("m-master:")) {
-                master = parse(data);
+            String algorithm = null;
+            byte[] premaster = null;
+            byte[] clientRandom = null;
+            byte[] serverRandom = null;
+            int protoMajor = 0;
+            int protoMinor = 0;
+            int preMajor = 0;
+            int preMinor = 0;
+            byte[] master = null;
 
-                System.out.print(".");
-                n++;
-
-                KeyGenerator kg =
-                    KeyGenerator.getInstance("SunTlsMasterSecret", provider);
-                SecretKey premasterKey =
-                    new SecretKeySpec(premaster, algorithm);
-                TlsMasterSecretParameterSpec spec =
-                    new TlsMasterSecretParameterSpec(premasterKey,
-                        protoMajor, protoMinor, clientRandom, serverRandom,
-                        null, -1, -1);
-                kg.init(spec);
-                TlsMasterSecret key = (TlsMasterSecret)kg.generateKey();
-                byte[] enc = key.getEncoded();
-                if (Arrays.equals(master, enc) == false) {
-                    throw new Exception("mismatch line: " + lineNumber);
+            while (true) {
+                String line = reader.readLine();
+                lineNumber++;
+                if (line == null) {
+                    break;
                 }
-                if ((preMajor != key.getMajorVersion()) ||
-                        (preMinor != key.getMinorVersion())) {
-                    throw new Exception("version mismatch line: " + lineNumber);
+                if (line.startsWith("m-") == false) {
+                    continue;
                 }
-            } else {
-                throw new Exception("Unknown line: " + line);
+                String data = line.substring(PREFIX_LENGTH);
+                if (line.startsWith("m-algorithm:")) {
+                    algorithm = data;
+                } else if (line.startsWith("m-premaster:")) {
+                    premaster = parse(data);
+                } else if (line.startsWith("m-crandom:")) {
+                    clientRandom = parse(data);
+                } else if (line.startsWith("m-srandom:")) {
+                    serverRandom = parse(data);
+                } else if (line.startsWith("m-protomajor:")) {
+                    protoMajor = Integer.parseInt(data);
+                } else if (line.startsWith("m-protominor:")) {
+                    protoMinor = Integer.parseInt(data);
+                } else if (line.startsWith("m-premajor:")) {
+                    preMajor = Integer.parseInt(data);
+                } else if (line.startsWith("m-preminor:")) {
+                    preMinor = Integer.parseInt(data);
+                } else if (line.startsWith("m-master:")) {
+                    master = parse(data);
+
+                    System.out.print(".");
+                    n++;
+
+                    KeyGenerator kg =
+                        KeyGenerator.getInstance("SunTlsMasterSecret", provider);
+                    SecretKey premasterKey =
+                        new SecretKeySpec(premaster, algorithm);
+                    TlsMasterSecretParameterSpec spec =
+                        new TlsMasterSecretParameterSpec(premasterKey,
+                            protoMajor, protoMinor, clientRandom, serverRandom,
+                            null, -1, -1);
+                    kg.init(spec);
+                    TlsMasterSecret key = (TlsMasterSecret)kg.generateKey();
+                    byte[] enc = key.getEncoded();
+                    if (Arrays.equals(master, enc) == false) {
+                        throw new Exception("mismatch line: " + lineNumber);
+                    }
+                    if ((preMajor != key.getMajorVersion()) ||
+                            (preMinor != key.getMinorVersion())) {
+                        throw new Exception("version mismatch line: " + lineNumber);
+                    }
+                } else {
+                    throw new Exception("Unknown line: " + line);
+                }
             }
+            if (n == 0) {
+                throw new Exception("no tests");
+            }
+            System.out.println();
+            System.out.println("OK: " + n + " tests");
         }
-        if (n == 0) {
-            throw new Exception("no tests");
-        }
-        in.close();
-        System.out.println();
-        System.out.println("OK: " + n + " tests");
     }
 
 }

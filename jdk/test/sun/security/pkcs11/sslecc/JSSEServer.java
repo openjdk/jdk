@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,17 @@
  * questions.
  */
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
-
-import java.security.*;
-import java.security.cert.*;
-import java.security.cert.Certificate;
-
-import javax.net.ssl.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
 
 class JSSEServer extends CipherTest.Server {
 
@@ -48,15 +49,17 @@ class JSSEServer extends CipherTest.Server {
         serverSocket.setWantClientAuth(true);
     }
 
+    @Override
     public void run() {
         System.out.println("JSSE Server listening on port " + cipherTest.serverPort);
         Executor exec = Executors.newFixedThreadPool
-                            (cipherTest.THREADS, DaemonThreadFactory.INSTANCE);
+                            (CipherTest.THREADS, DaemonThreadFactory.INSTANCE);
         try {
             while (true) {
                 final SSLSocket socket = (SSLSocket)serverSocket.accept();
                 socket.setSoTimeout(cipherTest.TIMEOUT);
                 Runnable r = new Runnable() {
+                    @Override
                     public void run() {
                         try {
                             InputStream in = socket.getInputStream();

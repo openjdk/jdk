@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,21 @@
  * @author Valerie Peng
  * @library ..
  * @key randomness
+ * @run main/othervm TestRawRSACipher
+ * @run main/othervm TestRawRSACipher sm
  */
 
-import javax.crypto.*;
-import java.io.*;
-import javax.crypto.spec.SecretKeySpec;
-import java.security.*;
-import java.util.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Provider;
+import java.util.Arrays;
+import java.util.Random;
+import javax.crypto.Cipher;
 
 public class TestRawRSACipher extends PKCS11Test {
 
+    @Override
     public void main(Provider p) throws Exception {
         try {
             Cipher.getInstance("RSA/ECB/NoPadding", p);
@@ -80,6 +85,6 @@ public class TestRawRSACipher extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestRawRSACipher());
+        main(new TestRawRSACipher(), args);
     }
 }

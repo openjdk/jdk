@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,22 @@
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @run main/othervm ReinitCipher
+ * @run main/othervm ReinitCipher sm
  */
 
-import java.util.*;
-
-import java.security.*;
-
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.security.Provider;
+import java.util.Random;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 public class ReinitCipher extends PKCS11Test {
 
     public static void main(String[] args) throws Exception {
-        main(new ReinitCipher());
+        main(new ReinitCipher(), args);
     }
 
+    @Override
     public void main(Provider p) throws Exception {
         if (p.getService("Cipher", "ARCFOUR") == null) {
             System.out.println("Not supported by provider, skipping");

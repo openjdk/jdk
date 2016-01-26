@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,136 +28,138 @@
  * @author Andreas Sterbenz
  * @library ..
  * @modules java.base/sun.security.internal.spec
+ * @run main/othervm TestKeyMaterial
+ * @run main/othervm TestKeyMaterial sm policy
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.Security;
+import java.io.BufferedReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Provider;
-
+import java.util.Arrays;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-
-import javax.crypto.spec.*;
-
-import sun.security.internal.spec.*;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import sun.security.internal.spec.TlsKeyMaterialParameterSpec;
+import sun.security.internal.spec.TlsKeyMaterialSpec;
 
 public class TestKeyMaterial extends PKCS11Test {
 
-    private static int PREFIX_LENGTH = "km-master:  ".length();
+    private static final int PREFIX_LENGTH = "km-master:  ".length();
 
     public static void main(String[] args) throws Exception {
-        main(new TestKeyMaterial());
+        main(new TestKeyMaterial(), args);
     }
 
+    @Override
     public void main(Provider provider) throws Exception {
         if (provider.getService("KeyGenerator", "SunTlsKeyMaterial") == null) {
             System.out.println("Provider does not support algorithm, skipping");
             return;
         }
 
-        InputStream in = new FileInputStream(new File(BASE, "keymatdata.txt"));
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        try (BufferedReader reader = Files.newBufferedReader(
+                Paths.get(BASE, "keymatdata.txt"))) {
 
-        int n = 0;
-        int lineNumber = 0;
+            int n = 0;
+            int lineNumber = 0;
 
-        byte[] master = null;
-        int major = 0;
-        int minor = 0;
-        byte[] clientRandom = null;
-        byte[] serverRandom = null;
-        String cipherAlgorithm = null;
-        int keyLength = 0;
-        int expandedKeyLength = 0;
-        int ivLength = 0;
-        int macLength = 0;
-        byte[] clientCipherBytes = null;
-        byte[] serverCipherBytes = null;
-        byte[] clientIv = null;
-        byte[] serverIv = null;
-        byte[] clientMacBytes = null;
-        byte[] serverMacBytes = null;
+            byte[] master = null;
+            int major = 0;
+            int minor = 0;
+            byte[] clientRandom = null;
+            byte[] serverRandom = null;
+            String cipherAlgorithm = null;
+            int keyLength = 0;
+            int expandedKeyLength = 0;
+            int ivLength = 0;
+            int macLength = 0;
+            byte[] clientCipherBytes = null;
+            byte[] serverCipherBytes = null;
+            byte[] clientIv = null;
+            byte[] serverIv = null;
+            byte[] clientMacBytes = null;
+            byte[] serverMacBytes = null;
 
-        while (true) {
-            String line = reader.readLine();
-            lineNumber++;
-            if (line == null) {
-                break;
+            while (true) {
+                String line = reader.readLine();
+                lineNumber++;
+                if (line == null) {
+                    break;
+                }
+                if (line.startsWith("km-") == false) {
+                    continue;
+                }
+                String data = line.substring(PREFIX_LENGTH);
+                if (line.startsWith("km-master:")) {
+                    master = parse(data);
+                } else if (line.startsWith("km-major:")) {
+                    major = Integer.parseInt(data);
+                } else if (line.startsWith("km-minor:")) {
+                    minor = Integer.parseInt(data);
+                } else if (line.startsWith("km-crandom:")) {
+                    clientRandom = parse(data);
+                } else if (line.startsWith("km-srandom:")) {
+                    serverRandom = parse(data);
+                } else if (line.startsWith("km-cipalg:")) {
+                    cipherAlgorithm = data;
+                } else if (line.startsWith("km-keylen:")) {
+                    keyLength = Integer.parseInt(data);
+                } else if (line.startsWith("km-explen:")) {
+                    expandedKeyLength = Integer.parseInt(data);
+                } else if (line.startsWith("km-ivlen:")) {
+                    ivLength = Integer.parseInt(data);
+                } else if (line.startsWith("km-maclen:")) {
+                    macLength = Integer.parseInt(data);
+                } else if (line.startsWith("km-ccipkey:")) {
+                    clientCipherBytes = parse(data);
+                } else if (line.startsWith("km-scipkey:")) {
+                    serverCipherBytes = parse(data);
+                } else if (line.startsWith("km-civ:")) {
+                    clientIv = parse(data);
+                } else if (line.startsWith("km-siv:")) {
+                    serverIv = parse(data);
+                } else if (line.startsWith("km-cmackey:")) {
+                    clientMacBytes = parse(data);
+                } else if (line.startsWith("km-smackey:")) {
+                    serverMacBytes = parse(data);
+
+                    System.out.print(".");
+                    n++;
+
+                    KeyGenerator kg =
+                        KeyGenerator.getInstance("SunTlsKeyMaterial", provider);
+                    SecretKey masterKey =
+                        new SecretKeySpec(master, "TlsMasterSecret");
+                    TlsKeyMaterialParameterSpec spec =
+                        new TlsKeyMaterialParameterSpec(masterKey, major, minor,
+                        clientRandom, serverRandom, cipherAlgorithm,
+                        keyLength, expandedKeyLength, ivLength, macLength,
+                        null, -1, -1);
+
+                    kg.init(spec);
+                    TlsKeyMaterialSpec result =
+                        (TlsKeyMaterialSpec)kg.generateKey();
+                    match(lineNumber, clientCipherBytes,
+                        result.getClientCipherKey(), cipherAlgorithm);
+                    match(lineNumber, serverCipherBytes,
+                        result.getServerCipherKey(), cipherAlgorithm);
+                    match(lineNumber, clientIv, result.getClientIv(), "");
+                    match(lineNumber, serverIv, result.getServerIv(), "");
+                    match(lineNumber, clientMacBytes, result.getClientMacKey(), "");
+                    match(lineNumber, serverMacBytes, result.getServerMacKey(), "");
+
+                } else {
+                    throw new Exception("Unknown line: " + line);
+                }
             }
-            if (line.startsWith("km-") == false) {
-                continue;
+            if (n == 0) {
+                throw new Exception("no tests");
             }
-            String data = line.substring(PREFIX_LENGTH);
-            if (line.startsWith("km-master:")) {
-                master = parse(data);
-            } else if (line.startsWith("km-major:")) {
-                major = Integer.parseInt(data);
-            } else if (line.startsWith("km-minor:")) {
-                minor = Integer.parseInt(data);
-            } else if (line.startsWith("km-crandom:")) {
-                clientRandom = parse(data);
-            } else if (line.startsWith("km-srandom:")) {
-                serverRandom = parse(data);
-            } else if (line.startsWith("km-cipalg:")) {
-                cipherAlgorithm = data;
-            } else if (line.startsWith("km-keylen:")) {
-                keyLength = Integer.parseInt(data);
-            } else if (line.startsWith("km-explen:")) {
-                expandedKeyLength = Integer.parseInt(data);
-            } else if (line.startsWith("km-ivlen:")) {
-                ivLength = Integer.parseInt(data);
-            } else if (line.startsWith("km-maclen:")) {
-                macLength = Integer.parseInt(data);
-            } else if (line.startsWith("km-ccipkey:")) {
-                clientCipherBytes = parse(data);
-            } else if (line.startsWith("km-scipkey:")) {
-                serverCipherBytes = parse(data);
-            } else if (line.startsWith("km-civ:")) {
-                clientIv = parse(data);
-            } else if (line.startsWith("km-siv:")) {
-                serverIv = parse(data);
-            } else if (line.startsWith("km-cmackey:")) {
-                clientMacBytes = parse(data);
-            } else if (line.startsWith("km-smackey:")) {
-                serverMacBytes = parse(data);
-
-                System.out.print(".");
-                n++;
-
-                KeyGenerator kg =
-                    KeyGenerator.getInstance("SunTlsKeyMaterial", provider);
-                SecretKey masterKey =
-                    new SecretKeySpec(master, "TlsMasterSecret");
-                TlsKeyMaterialParameterSpec spec =
-                    new TlsKeyMaterialParameterSpec(masterKey, major, minor,
-                    clientRandom, serverRandom, cipherAlgorithm,
-                    keyLength, expandedKeyLength, ivLength, macLength,
-                    null, -1, -1);
-
-                kg.init(spec);
-                TlsKeyMaterialSpec result =
-                    (TlsKeyMaterialSpec)kg.generateKey();
-                match(lineNumber, clientCipherBytes,
-                    result.getClientCipherKey(), cipherAlgorithm);
-                match(lineNumber, serverCipherBytes,
-                    result.getServerCipherKey(), cipherAlgorithm);
-                match(lineNumber, clientIv, result.getClientIv(), "");
-                match(lineNumber, serverIv, result.getServerIv(), "");
-                match(lineNumber, clientMacBytes, result.getClientMacKey(), "");
-                match(lineNumber, serverMacBytes, result.getServerMacKey(), "");
-
-            } else {
-                throw new Exception("Unknown line: " + line);
-            }
+            System.out.println();
+            System.out.println("OK: " + n + " tests");
         }
-        if (n == 0) {
-            throw new Exception("no tests");
-        }
-        in.close();
-        System.out.println();
-        System.out.println("OK: " + n + " tests");
     }
 
     private static void stripParity(byte[] b) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,14 @@
  * @author Valerie Peng
  * @library ..
  * @key randomness
+ * @run main/othervm TestCloning
+ * @run main/othervm TestCloning sm
  */
 
-import java.util.*;
-
-import java.security.*;
+import java.security.MessageDigest;
+import java.security.Provider;
+import java.util.Arrays;
+import java.util.Random;
 
 public class TestCloning extends PKCS11Test {
 
@@ -41,13 +44,14 @@ public class TestCloning extends PKCS11Test {
     };
 
     public static void main(String[] args) throws Exception {
-        main(new TestCloning());
+        main(new TestCloning(), args);
     }
 
     private static final byte[] data1 = new byte[10];
     private static final byte[] data2 = new byte[10*1024];
 
 
+    @Override
     public void main(Provider p) throws Exception {
         Random r = new Random();
         byte[] data1 = new byte[10];
