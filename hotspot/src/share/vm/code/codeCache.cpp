@@ -1034,7 +1034,7 @@ int CodeCache::mark_for_deoptimization(DepChange& changes) {
   // implementor.
   // nmethod::check_all_dependencies works only correctly, if no safepoint
   // can happen
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
   for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
     Klass* d = str.klass();
     number_of_marked_CodeBlobs += InstanceKlass::cast(d)->mark_dependent_nmethods(changes);

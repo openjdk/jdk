@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test TestObjectTenuringFlags
  * @key gc
  * @bug 6521376
- * @requires vm.gc=="Parallel"
+ * @requires vm.gc=="Parallel" | vm.gc=="null"
  * @summary Tests argument processing for NeverTenure, AlwaysTenure,
  * and MaxTenuringThreshold
  * @library /testlibrary

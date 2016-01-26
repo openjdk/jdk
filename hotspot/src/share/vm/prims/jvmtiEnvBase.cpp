@@ -95,7 +95,7 @@ JvmtiEnvBase::initialize() {
   {
     // This block of code must not contain any safepoints, as list deallocation
     // (which occurs at a safepoint) cannot occur simultaneously with this list
-    // addition.  Note: No_Safepoint_Verifier cannot, currently, be used before
+    // addition.  Note: NoSafepointVerifier cannot, currently, be used before
     // threads exist.
     JvmtiEnvIterator it;
     JvmtiEnvBase *previous_env = NULL;

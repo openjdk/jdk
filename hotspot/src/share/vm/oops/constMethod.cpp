@@ -49,7 +49,7 @@ ConstMethod::ConstMethod(int byte_code_size,
                          MethodType method_type,
                          int size) {
 
-  No_Safepoint_Verifier no_safepoint;
+  NoSafepointVerifier no_safepoint;
   init_fingerprint();
   set_constants(NULL);
   set_stackmap_data(NULL);

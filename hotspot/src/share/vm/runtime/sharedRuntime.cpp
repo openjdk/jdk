@@ -2787,8 +2787,8 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::block_for_jni_critical(JavaThread* threa
     return;
   }
   // Lock and unlock a critical section to give the system a chance to block
-  GC_locker::lock_critical(thread);
-  GC_locker::unlock_critical(thread);
+  GCLocker::lock_critical(thread);
+  GCLocker::unlock_critical(thread);
 JRT_END
 
 // -------------------------------------------------------------------------
