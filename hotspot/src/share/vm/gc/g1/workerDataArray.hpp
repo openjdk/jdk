@@ -32,7 +32,6 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
   uint        _length;
   const char* _title;
   bool        _print_sum;
-  int         _log_level;
   uint        _indent_level;
   bool        _enabled;
 
@@ -46,7 +45,6 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
   WorkerDataArray(uint length,
                   const char* title,
                   bool print_sum,
-                  int log_level,
                   uint indent_level);
 
   ~WorkerDataArray();
@@ -78,10 +76,6 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
 
   bool should_print_sum() const {
     return _print_sum;
-  }
-
-  int log_level() const {
-    return _log_level;
   }
 
   void clear();

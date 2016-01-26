@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,11 +174,20 @@ public class PortFile {
     /**
      * Delete the port file.
      */
-    public void delete() throws IOException {
+    public void delete() throws IOException, InterruptedException {
         // Access to file must be closed before deleting.
         rwfile.close();
-        // Now delete.
+
         file.delete();
+
+        // Wait until file has been deleted (deletes are asynchronous on Windows!) otherwise we
+        // might shutdown the server and prevent another one from starting.
+        for (int i = 0; i < 10 && file.exists(); i++) {
+            Thread.sleep(1000);
+        }
+        if (file.exists()) {
+            throw new IOException("Failed to delete file.");
+        }
     }
 
     /**
@@ -216,10 +225,10 @@ public class PortFile {
      * Wait for the port file to contain values that look valid.
      */
     public void waitForValidValues() throws IOException, InterruptedException {
-        final int MAX_ATTEMPTS = 10;
         final int MS_BETWEEN_ATTEMPTS = 500;
         long startTime = System.currentTimeMillis();
-        for (int attempt = 0; ; attempt++) {
+        long timeout = startTime + getServerStartupTimeoutSeconds() * 1000;
+        while (true) {
             Log.debug("Looking for valid port file values...");
             lock();
             getValues();
@@ -228,12 +237,13 @@ public class PortFile {
                 Log.debug("Valid port file values found after " + (System.currentTimeMillis() - startTime) + " ms");
                 return;
             }
-            if (attempt >= MAX_ATTEMPTS) {
-                throw new IOException("No port file values materialized. Giving up after " +
-                                      (System.currentTimeMillis() - startTime) + " ms");
+            if (System.currentTimeMillis() > timeout) {
+                break;
             }
             Thread.sleep(MS_BETWEEN_ATTEMPTS);
         }
+        throw new IOException("No port file values materialized. Giving up after " +
+                                      (System.currentTimeMillis() - startTime) + " ms");
     }
 
     /**
@@ -272,5 +282,16 @@ public class PortFile {
      */
     public String getFilename() {
         return filename;
+    }
+
+    private long getServerStartupTimeoutSeconds() {
+        String str = System.getProperty("serverStartupTimeout");
+        if (str != null) {
+            try {
+                return Integer.parseInt(str);
+            } catch (NumberFormatException e) {
+            }
+        }
+        return 60;
     }
 }

@@ -62,9 +62,9 @@ LOGWRAPPER_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.corba/_logwrappers
 $(EXCEPTION_DIR)/%SystemException.java: \
     $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
     $(BUILD_TOOLS_CORBA)
-	$(MKDIR) -p $(@D)
+	$(call LogInfo, Generating class file from $*.mc)
+	$(call MakeDir, $(@D))
 	$(RM) -f $(@D)/_the_wrappers.d
-	$(ECHO) $(LOG_INFO) Generating class file from $*.mc
 	$(TOOL_LOGUTIL_CMD) make-class $< $(@D)
 
 # Generate LogWrapper properties file by concatening resource files
@@ -77,17 +77,17 @@ $(EXCEPTION_DIR)/LogStrings.properties: \
     $(LOGWRAPPER_DIR)/ORBUtilSystemException.resource \
     $(LOGWRAPPER_DIR)/POASystemException.resource \
     $(LOGWRAPPER_DIR)/UtilSystemException.resource
-	$(MKDIR) -p $(@D)
-	$(ECHO) $(LOG_INFO) Concatenating 8 resource files into $(@F)
+	$(call LogInfo, Concatenating 8 resource files into $(@F))
+	$(call MakeDir, $(@D))
 	$(CAT) $^ > $@
 
 # The resources files are generated from lisp-like .mc files.
 $(LOGWRAPPER_DIR)/%SystemException.resource: \
     $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
     $(BUILD_TOOLS_CORBA)
-	$(MKDIR) -p $(@D)
+	$(call LogInfo, Generating resource file from $*.mc)
+	$(call MakeDir, $(@D))
 	$(RM) -f $(@D)/_the_wrappers.d
-	$(ECHO) $(LOG_INFO) Generating resource file from $*.mc
 	$(TOOL_LOGUTIL_CMD) make-resource $< $(@D)
 
 
@@ -240,4 +240,3 @@ $(SUPPORT_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/orbutil/resources/s
 
 all: $(BUILD_IDLS) $(LOGWRAPPER_TARGETS) \
     $(SUPPORT_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_HK.properties
-

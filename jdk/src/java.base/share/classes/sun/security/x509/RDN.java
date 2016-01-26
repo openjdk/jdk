@@ -27,6 +27,8 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
+import java.util.StringJoiner;
 import java.util.*;
 
 import sun.security.util.*;
@@ -436,31 +438,19 @@ public class RDN {
                                assertion[0].toRFC2253String(oidMap);
         }
 
-        StringBuilder relname = new StringBuilder();
-        if (!canonical) {
-            for (int i = 0; i < assertion.length; i++) {
-                if (i > 0) {
-                    relname.append('+');
-                }
-                relname.append(assertion[i].toRFC2253String(oidMap));
-            }
-        } else {
+        AVA[] toOutput = assertion;
+        if (canonical) {
             // order the string type AVA's alphabetically,
             // followed by the oid type AVA's numerically
-            List<AVA> avaList = new ArrayList<>(assertion.length);
-            for (int i = 0; i < assertion.length; i++) {
-                avaList.add(assertion[i]);
-            }
-            java.util.Collections.sort(avaList, AVAComparator.getInstance());
-
-            for (int i = 0; i < avaList.size(); i++) {
-                if (i > 0) {
-                    relname.append('+');
-                }
-                relname.append(avaList.get(i).toRFC2253CanonicalString());
-            }
+            toOutput = assertion.clone();
+            Arrays.sort(toOutput, AVAComparator.getInstance());
         }
-        return relname.toString();
+        StringJoiner sj = new StringJoiner("+");
+        for (AVA ava : toOutput) {
+            sj.add(canonical ? ava.toRFC2253CanonicalString()
+                             : ava.toRFC2253String(oidMap));
+        }
+        return sj.toString();
     }
 
 }

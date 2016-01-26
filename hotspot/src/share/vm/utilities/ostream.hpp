@@ -108,7 +108,6 @@ class outputStream : public ResourceObj {
    void date_stamp(bool guard) {
      date_stamp(guard, "", ": ");
    }
-   void gclog_stamp();
 
    // portable printing of 64 bit integers
    void print_jlong(jlong value);
@@ -127,7 +126,6 @@ class outputStream : public ResourceObj {
 // standard output
 // ANSI C++ name collision
 extern outputStream* tty;           // tty output
-extern outputStream* gclog_or_tty;  // stream for gc log if -Xloggc:<f>, or tty
 
 class streamIndentor : public StackObj {
  private:
@@ -246,30 +244,6 @@ public:
     guarantee(_current_line.size() == 0, "Buffer not flushed. Missing call to print_cr()?");
   }
 };
-
-class gcLogFileStream : public fileStream {
- protected:
-  const char*  _file_name;
-  jlong  _bytes_written;
-  uintx  _cur_file_num;             // current logfile rotation number, from 0 to NumberOfGCLogFiles-1
- public:
-  gcLogFileStream(const char* file_name);
-  ~gcLogFileStream();
-  virtual void write(const char* c, size_t len);
-  virtual void rotate_log(bool force, outputStream* out = NULL);
-  void dump_loggc_header();
-
-  /* If "force" sets true, force log file rotation from outside JVM */
-  bool should_rotate(bool force) {
-    return force ||
-             ((GCLogFileSize != 0) && (_bytes_written >= (jlong)GCLogFileSize));
-  }
-};
-
-#ifndef PRODUCT
-// unit test for checking -Xloggc:<filename> parsing result
-void test_loggc_filename();
-#endif
 
 void ostream_init();
 void ostream_init_log();

@@ -678,7 +678,7 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer *cbuf) {
 
   if (cbuf) cbuf->set_insts_mark();
   relocate(entry.rspec());
-  if (Assembler::reachable_from_branch_at(pc(), entry.target())) {
+  if (!far_branches()) {
     bl(entry.target());
   } else {
     bl(pc());
@@ -733,8 +733,8 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   return stub;
 }
 
-address MacroAssembler::ic_call(address entry) {
-  RelocationHolder rh = virtual_call_Relocation::spec(pc());
+address MacroAssembler::ic_call(address entry, jint method_index) {
+  RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   // address const_ptr = long_constant((jlong)Universe::non_oop_word());
   // unsigned long offset;
   // ldr_constant(rscratch2, const_ptr);
@@ -3938,7 +3938,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down to and including i=StackShadowPages.
-  for (int i = 0; i< StackShadowPages-1; i++) {
+  for (int i = 0; i < (JavaThread::stack_shadow_zone_size() / os::vm_page_size()) - 1; i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
     lea(tmp, Address(tmp, -os::vm_page_size()));

@@ -159,7 +159,7 @@ WB_END
 
 WB_ENTRY(void, WB_PrintHeapSizes(JNIEnv* env, jobject o)) {
   CollectorPolicy * p = Universe::heap()->collector_policy();
-  gclog_or_tty->print_cr("Minimum heap " SIZE_FORMAT " Initial heap "
+  tty->print_cr("Minimum heap " SIZE_FORMAT " Initial heap "
     SIZE_FORMAT " Maximum heap " SIZE_FORMAT " Space alignment " SIZE_FORMAT " Heap alignment " SIZE_FORMAT,
     p->min_heap_byte_size(), p->initial_heap_byte_size(), p->max_heap_byte_size(),
     p->space_alignment(), p->heap_alignment());
@@ -307,6 +307,18 @@ WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   oop result = JNIHandles::resolve(obj);
   const HeapRegion* hr = g1->heap_region_containing(result);
   return hr->is_humongous();
+WB_END
+
+WB_ENTRY(jboolean, WB_G1BelongsToHumongousRegion(JNIEnv* env, jobject o, jlong addr))
+  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  const HeapRegion* hr = g1->heap_region_containing((void*) addr);
+  return hr->is_humongous();
+WB_END
+
+WB_ENTRY(jboolean, WB_G1BelongsToFreeRegion(JNIEnv* env, jobject o, jlong addr))
+  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  const HeapRegion* hr = g1->heap_region_containing((void*) addr);
+  return hr->is_free();
 WB_END
 
 WB_ENTRY(jlong, WB_G1NumMaxRegions(JNIEnv* env, jobject o))
@@ -1005,9 +1017,9 @@ WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jstring, WB_GetCPUFeatures(JNIEnv* env, jobject o))
-  const char* cpu_features = VM_Version::cpu_features();
+  const char* features = VM_Version::features_string();
   ThreadToNativeFromVM ttn(thread);
-  jstring features_string = env->NewStringUTF(cpu_features);
+  jstring features_string = env->NewStringUTF(features);
 
   CHECK_JNI_EXCEPTION_(env, NULL);
 
@@ -1201,7 +1213,7 @@ WB_END
 
 WB_ENTRY(jlong, WB_GetThreadRemainingStackSize(JNIEnv* env, jobject o))
   JavaThread* t = JavaThread::current();
-  return (jlong) t->stack_available(os::current_stack_pointer()) - (jlong) StackShadowPages * os::vm_page_size();
+  return (jlong) t->stack_available(os::current_stack_pointer()) - (jlong)JavaThread::stack_shadow_zone_size();
 WB_END
 
 
@@ -1288,6 +1300,11 @@ WB_END
 WB_ENTRY(jlong, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
   instanceKlassHandle ikh(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   return (jlong) ikh->constants();
+WB_END
+
+WB_ENTRY(void, WB_ClearInlineCaches(JNIEnv* env, jobject wb))
+  VM_ClearICs clear_ics;
+  VMThread::execute(&clear_ics);
 WB_END
 
 template <typename T>
@@ -1478,7 +1495,9 @@ static JNINativeMethod methods[] = {
   {CC"isSharedClass", CC"(Ljava/lang/Class;)Z",       (void*)&WB_IsSharedClass },
 #if INCLUDE_ALL_GCS
   {CC"g1InConcurrentMark", CC"()Z",                   (void*)&WB_G1InConcurrentMark},
-  {CC"g1IsHumongous0",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
+  {CC"g1IsHumongous0",      CC"(Ljava/lang/Object;)Z",(void*)&WB_G1IsHumongous     },
+  {CC"g1BelongsToHumongousRegion0", CC"(J)Z",         (void*)&WB_G1BelongsToHumongousRegion},
+  {CC"g1BelongsToFreeRegion0", CC"(J)Z",              (void*)&WB_G1BelongsToFreeRegion},
   {CC"g1NumMaxRegions",    CC"()J",                   (void*)&WB_G1NumMaxRegions  },
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
@@ -1615,6 +1634,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetMethodStringOption},
   {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
   {CC"areSharedStringsIgnored",           CC"()Z",    (void*)&WB_AreSharedStringsIgnored },
+  {CC"clearInlineCaches",  CC"()V",                   (void*)&WB_ClearInlineCaches },
 };
 
 #undef CC

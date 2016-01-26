@@ -65,8 +65,8 @@ GENSRC_AWT_ICONS_DST_NAME = AWTIcon$(2)_$(subst .,_,$(subst -,_,$(1)))
 ################################################################################
 
 $(GENSRC_AWT_ICONS_TMP)/_the.icons.dir:
-	$(ECHO) Generating icon classes
-	$(MKDIR) -p $(GENSRC_AWT_ICONS_DST)
+	$(call LogInfo, Generating icon classes)
+	$(call MakeDir, $(GENSRC_AWT_ICONS_DST))
 	$(TOUCH) $@
 
 ################################################################################
@@ -121,8 +121,9 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   endif
 
   $(GENSRC_OSX_ICONS): $(GENSRC_OSX_ICONS_SRC) $(BUILD_TOOLS_JDK)
+	$(call LogInfo, Generating $(patsubst $(OUTPUT_ROOT)/%, %, $@))
+	$(call MakeDir, $(@D))
 	$(RM) $@ $@.tmp
-	$(MKDIR) -p $(dir $@)
 	$(ECHO) "static unsigned char sAWTIconData[] = { " >> $@.tmp
 	$(CAT) $< | $(TOOL_OSX_TOBIN) >> $@.tmp
 	$(ECHO) "};" >> $@.tmp

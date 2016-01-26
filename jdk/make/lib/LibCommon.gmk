@@ -23,8 +23,6 @@
 # questions.
 #
 
-include $(SPEC)
-include MakeBase.gmk
 include NativeCompilation.gmk
 
 # Hook to include the corresponding custom file, if present.
@@ -37,25 +35,6 @@ GLOBAL_VERSION_INFO_RESOURCE := $(JDK_TOPDIR)/src/java.base/windows/native/commo
 # Absolute paths to lib files on windows for use in LDFLAGS. Should figure out a more
 # elegant solution to this.
 WIN_JAVA_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
-
-ifdef OPENJDK
-  # Build everything with debugging on OpenJDK
-  DEBUG_ALL_BINARIES := true
-else
-  # Use this variable to set DEBUG_SYMBOLS true on windows for all libraries, but
-  # not on other platforms.
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-    DEBUG_ALL_BINARIES := true
-  else
-    DEBUG_ALL_BINARIES := false
-  endif
-endif
-
-# SetupNativeCompilation now supports debug symbols on macosx for hotspot.
-# Disable it here for the jdk libraries until we decide to enable them.
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  ENABLE_DEBUG_SYMBOLS := false
-endif
 
 ################################################################################
 # Find the default set of src dirs for a native library.
@@ -92,3 +71,5 @@ ifeq ($(USE_EXTERNAL_LIBZ), true)
 else
   ZLIB_CPPFLAGS := -I$(JDK_TOPDIR)/src/java.base/share/native/libzip/zlib-1.2.8
 endif
+
+###############################################################################

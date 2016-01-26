@@ -34,7 +34,7 @@
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcTraceTime.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generation.hpp"
@@ -45,6 +45,7 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -270,9 +271,9 @@ void ParScanThreadState::undo_alloc_in_to_space(HeapWord* obj, size_t word_sz) {
 }
 
 void ParScanThreadState::print_promotion_failure_size() {
-  if (_promotion_failed_info.has_failed() && PrintPromotionFailure) {
-    gclog_or_tty->print(" (%d: promotion failure size = " SIZE_FORMAT ") ",
-                        _thread_num, _promotion_failed_info.first_size());
+  if (_promotion_failed_info.has_failed()) {
+    log_trace(gc, promotion)(" (%d: promotion failure size = " SIZE_FORMAT ") ",
+                             _thread_num, _promotion_failed_info.first_size());
   }
 }
 
@@ -298,11 +299,11 @@ public:
 
   #if TASKQUEUE_STATS
   static void
-    print_termination_stats_hdr(outputStream* const st = gclog_or_tty);
-  void print_termination_stats(outputStream* const st = gclog_or_tty);
+    print_termination_stats_hdr(outputStream* const st);
+  void print_termination_stats();
   static void
-    print_taskqueue_stats_hdr(outputStream* const st = gclog_or_tty);
-  void print_taskqueue_stats(outputStream* const st = gclog_or_tty);
+    print_taskqueue_stats_hdr(outputStream* const st);
+  void print_taskqueue_stats();
   void reset_stats();
   #endif // TASKQUEUE_STATS
 
@@ -383,7 +384,15 @@ void ParScanThreadStateSet::print_termination_stats_hdr(outputStream* const st) 
   st->print_raw_cr("--- --------- --------- ------ --------- ------ --------");
 }
 
-void ParScanThreadStateSet::print_termination_stats(outputStream* const st) {
+void ParScanThreadStateSet::print_termination_stats() {
+  LogHandle(gc, task, stats) log;
+  if (!log.is_debug()) {
+    return;
+  }
+
+  ResourceMark rm;
+  outputStream* st = log.debug_stream();
+
   print_termination_stats_hdr(st);
 
   for (int i = 0; i < length(); ++i) {
@@ -404,7 +413,13 @@ void ParScanThreadStateSet::print_taskqueue_stats_hdr(outputStream* const st) {
   st->print_raw("--- "); TaskQueueStats::print_header(2, st); st->cr();
 }
 
-void ParScanThreadStateSet::print_taskqueue_stats(outputStream* const st) {
+void ParScanThreadStateSet::print_taskqueue_stats() {
+  if (!develop_log_is_enabled(Trace, gc, task, stats)) {
+    return;
+  }
+  LogHandle(gc, task, stats) log;
+  ResourceMark rm;
+  outputStream* st = log.trace_stream();
   print_taskqueue_stats_hdr(st);
 
   TaskQueueStats totals;
@@ -823,9 +838,7 @@ void ParNewGeneration::handle_promotion_failed(GenCollectedHeap* gch, ParScanThr
   _promo_failure_scan_stack.clear(true); // Clear cached segments.
 
   remove_forwarding_pointers();
-  if (PrintGCDetails) {
-    gclog_or_tty->print(" (promotion failed)");
-  }
+  log_info(gc, promotion)("Promotion failed");
   // All the spaces are in play for mark-sweep.
   swap_spaces();  // Make life simpler for CMS || rescan; see 6483690.
   from()->set_next_compaction_space(to());
@@ -882,9 +895,7 @@ void ParNewGeneration::collect(bool   full,
     size_policy->minor_collection_begin();
   }
 
-  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL);
-  // Capture heap used before collection (for printing).
-  size_t gch_prev_used = gch->used();
+  GCTraceTime(Trace, gc) t1("ParNew", NULL, gch->gc_cause());
 
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
@@ -990,12 +1001,8 @@ void ParNewGeneration::collect(bool   full,
     plab_stats()->adjust_desired_plab_sz();
   }
 
-  if (PrintGC && !PrintGCDetails) {
-    gch->print_heap_change(gch_prev_used);
-  }
-
-  TASKQUEUE_STATS_ONLY(if (PrintTerminationStats) thread_state_set.print_termination_stats());
-  TASKQUEUE_STATS_ONLY(if (PrintTaskqueue) thread_state_set.print_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(thread_state_set.print_termination_stats());
+  TASKQUEUE_STATS_ONLY(thread_state_set.print_taskqueue_stats());
 
   if (UseAdaptiveSizePolicy) {
     size_policy->minor_collection_end(gch->gc_cause());
@@ -1150,11 +1157,9 @@ oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
 
   // This code must come after the CAS test, or it will print incorrect
   // information.
-  if (TraceScavenge) {
-    gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
-       is_in_reserved(new_obj) ? "copying" : "tenuring",
-       new_obj->klass()->internal_name(), p2i(old), p2i(new_obj), new_obj->size());
-  }
+  log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
+                                  is_in_reserved(new_obj) ? "copying" : "tenuring",
+                                  new_obj->klass()->internal_name(), p2i(old), p2i(new_obj), new_obj->size());
 
   if (forward_ptr == NULL) {
     oop obj_to_push = new_obj;
@@ -1176,9 +1181,7 @@ oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
     )
     if (simulate_overflow || !par_scan_state->work_queue()->push(obj_to_push)) {
       // Add stats for overflow pushes.
-      if (Verbose && PrintGCDetails) {
-        gclog_or_tty->print("queue overflow!\n");
-      }
+      log_develop_trace(gc)("Queue Overflow");
       push_on_overflow_list(old, par_scan_state);
       TASKQUEUE_STATS_ONLY(par_scan_state->taskqueue_stats().record_overflow(0));
     }

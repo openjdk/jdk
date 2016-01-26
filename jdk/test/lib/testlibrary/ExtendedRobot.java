@@ -48,7 +48,7 @@ import java.awt.event.KeyEvent;
  * </pre>
  *
  * @author      Dmitriy Ermashov
- * @since       1.9
+ * @since       9
  */
 
 public class ExtendedRobot extends Robot {

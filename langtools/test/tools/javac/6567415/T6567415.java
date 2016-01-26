@@ -26,7 +26,7 @@
  * @bug 6567415
  * @summary Test to ensure javac does not go into an infinite loop, while
  *               reading a classfile of a specific length.
- * @modules jdk.compiler
+ * @modules jdk.compiler/com.sun.tools.javac.jvm
  * @compile -XDignore.symbol.file T6567415.java
  * @run main T6567415
  * @author ksrini

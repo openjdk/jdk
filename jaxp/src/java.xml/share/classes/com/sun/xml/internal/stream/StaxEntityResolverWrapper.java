@@ -71,12 +71,12 @@ public class StaxEntityResolverWrapper {
         if(object == null) return null ;
 
         if(object  instanceof java.io.InputStream){
-            return new StaxXMLInputSource(new XMLInputSource(null, null, null, (InputStream)object, null));
+            return new StaxXMLInputSource(new XMLInputSource(null, null, null, (InputStream)object, null), true);
         }
         else if(object instanceof XMLStreamReader){
-            return new StaxXMLInputSource((XMLStreamReader)object) ;
+            return new StaxXMLInputSource((XMLStreamReader)object, true) ;
         }else if(object instanceof XMLEventReader){
-            return new StaxXMLInputSource((XMLEventReader)object) ;
+            return new StaxXMLInputSource((XMLEventReader)object, true) ;
         }
 
         return null ;

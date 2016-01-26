@@ -133,7 +133,7 @@ void SharkStack::CreateStackOverflowCheck(Value* sp) {
   builder()->CreateCondBr(
     builder()->CreateICmpULT(
       free_stack,
-      LLVMValue::intptr_constant(StackShadowPages * os::vm_page_size())),
+      LLVMValue::intptr_constant(JavaThread::stack_shadow_zone_size())),
     overflow, abi_ok);
 
   // Handle overflows

@@ -34,7 +34,7 @@ package jdk.nashorn.api.tree;
  *       <em>block</em>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface CatchTree extends Tree {
     /**

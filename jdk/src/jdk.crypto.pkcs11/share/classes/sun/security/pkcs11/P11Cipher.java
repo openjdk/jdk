@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 
 import sun.nio.ch.DirectBuffer;
+import sun.security.jca.JCAUtil;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
@@ -379,7 +380,7 @@ final class P11Cipher extends CipherSpi {
                 }
                 // generate random IV
                 if (random == null) {
-                    random = new SecureRandom();
+                    random = JCAUtil.getSecureRandom();
                 }
                 iv = new byte[blockSize];
                 random.nextBytes(iv);

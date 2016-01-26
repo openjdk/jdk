@@ -30,6 +30,7 @@
 #include "oops/oop.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/top.hpp"
+#include "code/codeCache.hpp"
 
 // The following classes are used for operations
 // initiated by a Java thread but that must
@@ -44,6 +45,7 @@
   template(ThreadDump)                            \
   template(PrintThreads)                          \
   template(FindDeadlocks)                         \
+  template(ClearICs)                              \
   template(ForceSafepoint)                        \
   template(ForceAsyncSafepoint)                   \
   template(Deoptimize)                            \
@@ -230,6 +232,13 @@ class VM_ThreadStop: public VM_Operation {
   }
 };
 
+class VM_ClearICs: public VM_Operation {
+ public:
+  VM_ClearICs() {}
+  void doit()         { CodeCache::clear_inline_caches(); }
+  VMOp_Type type() const { return VMOp_ClearICs; }
+};
+
 // dummy vm op, evaluated just to force a safepoint
 class VM_ForceSafepoint: public VM_Operation {
  public:
@@ -311,10 +320,7 @@ class VM_UnlinkSymbols: public VM_Operation {
 };
 
 class VM_Verify: public VM_Operation {
- private:
-  bool _silent;
  public:
-  VM_Verify(bool silent = VerifySilently) : _silent(silent) {}
   VMOp_Type type() const { return VMOp_Verify; }
   void doit();
 };
@@ -416,17 +422,6 @@ class VM_Exit: public VM_Operation {
   }
   VMOp_Type type() const { return VMOp_Exit; }
   void doit();
-};
-
-
-class VM_RotateGCLog: public VM_Operation {
- private:
-  outputStream* _out;
-
- public:
-  VM_RotateGCLog(outputStream* st) : _out(st) {}
-  VMOp_Type type() const { return VMOp_RotateGCLog; }
-  void doit() { gclog_or_tty->rotate_log(true, _out); }
 };
 
 class VM_PrintCompileQueue: public VM_Operation {

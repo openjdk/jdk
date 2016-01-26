@@ -46,6 +46,11 @@ const TypeFunc* CallGenerator::tf() const {
   return TypeFunc::make(method());
 }
 
+bool CallGenerator::is_inlined_mh_linker(JVMState* jvms, ciMethod* callee) {
+  ciMethod* symbolic_info = jvms->method()->get_method_at_bci(jvms->bci());
+  return symbolic_info->is_method_handle_intrinsic() && !callee->is_method_handle_intrinsic();
+}
+
 //-----------------------------ParseGenerator---------------------------------
 // Internal class which handles all direct bytecode traversal.
 class ParseGenerator : public InlineCallGenerator {
@@ -137,6 +142,13 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   }
 
   CallStaticJavaNode *call = new CallStaticJavaNode(kit.C, tf(), target, method(), kit.bci());
+  if (is_inlined_mh_linker(jvms, method())) {
+    // To be able to issue a direct call and skip a call to MH.linkTo*/invokeBasic adapter,
+    // additional information about the method being invoked should be attached
+    // to the call site to make resolution logic work
+    // (see SharedRuntime::resolve_static_call_C).
+    call->set_override_symbolic_info(true);
+  }
   _call_node = call;  // Save the call node in case we need it later
   if (!is_static) {
     // Make an explicit receiver null_check as part of this call.
@@ -192,7 +204,10 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   // the call instruction will have a seemingly deficient out-count.
   // (The bailout says something misleading about an "infinite loop".)
   if (kit.gvn().type(receiver)->higher_equal(TypePtr::NULL_PTR)) {
-    kit.inc_sp(method()->arg_size());  // restore arguments
+    assert(Bytecodes::is_invoke(kit.java_bc()), "%d: %s", kit.java_bc(), Bytecodes::name(kit.java_bc()));
+    ciMethod* declared_method = kit.method()->get_method_at_bci(kit.bci());
+    int arg_size = declared_method->signature()->arg_size_for_bc(kit.java_bc());
+    kit.inc_sp(arg_size);  // restore arguments
     kit.uncommon_trap(Deoptimization::Reason_null_check,
                       Deoptimization::Action_none,
                       NULL, "null receiver");
@@ -226,6 +241,13 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms) {
   address target = SharedRuntime::get_resolve_virtual_call_stub();
   // Normal inline cache used for call
   CallDynamicJavaNode *call = new CallDynamicJavaNode(tf(), target, method(), _vtable_index, kit.bci());
+  if (is_inlined_mh_linker(jvms, method())) {
+    // To be able to issue a direct call (optimized virtual or virtual)
+    // and skip a call to MH.linkTo*/invokeBasic adapter, additional information
+    // about the method being invoked should be attached to the call site to
+    // make resolution logic work (see SharedRuntime::resolve_{virtual,opt_virtual}_call_C).
+    call->set_override_symbolic_info(true);
+  }
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call);
   Node* ret = kit.set_results_for_java_call(call);
@@ -463,8 +485,8 @@ bool LateInlineMHCallGenerator::do_late_inline_check(JVMState* jvms) {
     _attempt++;
   }
 
-  if (cg != NULL) {
-    assert(!cg->is_late_inline() && cg->is_inline(), "we're doing late inlining");
+  if (cg != NULL && cg->is_inline()) {
+    assert(!cg->is_late_inline(), "we're doing late inlining");
     _inline_cg = cg;
     Compile::current()->dec_number_of_mh_late_inlines();
     return true;
@@ -807,8 +829,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         const int vtable_index = Method::invalid_vtable_index;
         CallGenerator* cg = C->call_generator(target, vtable_index, false, jvms, true, PROB_ALWAYS, NULL, true, true);
         assert(cg == NULL || !cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
-        if (cg != NULL && cg->is_inline())
-          return cg;
+        return cg;
       } else {
         const char* msg = "receiver not constant";
         if (PrintInlining)  C->print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
@@ -829,7 +850,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
         const TypeOopPtr* oop_ptr = member_name->bottom_type()->is_oopptr();
         ciMethod* target = oop_ptr->const_oop()->as_member_name()->get_vmtarget();
 
-        // In lamda forms we erase signature types to avoid resolving issues
+        // In lambda forms we erase signature types to avoid resolving issues
         // involving class loaders.  When we optimize a method handle invoke
         // to a direct call we must cast the receiver and arguments to its
         // actual types.
@@ -882,10 +903,9 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           // provide us with a type
           speculative_receiver_type = (receiver_type != NULL) ? receiver_type->speculative_type() : NULL;
         }
-        CallGenerator* cg = C->call_generator(target, vtable_index, call_does_dispatch, jvms, true, PROB_ALWAYS, speculative_receiver_type, true, true);
+        CallGenerator* cg = C->call_generator(target, vtable_index, call_does_dispatch, jvms, /*allow_inline=*/true, PROB_ALWAYS, speculative_receiver_type, true, true);
         assert(cg == NULL || !cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");
-        if (cg != NULL && cg->is_inline())
-          return cg;
+        return cg;
       } else {
         const char* msg = "member_name not constant";
         if (PrintInlining)  C->print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);

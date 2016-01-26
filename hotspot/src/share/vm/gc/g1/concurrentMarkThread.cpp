@@ -26,12 +26,13 @@
 #include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
-#include "gc/g1/g1Log.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/vmThread.hpp"
 
@@ -78,20 +79,6 @@ public:
   }
 };
 
-// We want to avoid that the logging from the concurrent thread is mixed
-// with the logging from a STW GC. So, if necessary join the STS to ensure
-// that the logging is done either before or after the STW logging.
-void ConcurrentMarkThread::cm_log(bool doit, bool join_sts, const char* fmt, ...) {
-  if (doit) {
-    SuspendibleThreadSetJoiner sts_joiner(join_sts);
-    va_list args;
-    va_start(args, fmt);
-    gclog_or_tty->gclog_stamp();
-    gclog_or_tty->vprint_cr(fmt, args);
-    va_end(args);
-  }
-}
-
 // Marking pauses can be scheduled flexibly, so we might delay marking to meet MMU.
 void ConcurrentMarkThread::delay_to_keep_mmu(G1CollectorPolicy* g1_policy, bool remark) {
   if (g1_policy->adaptive_young_list_length()) {
@@ -103,6 +90,20 @@ void ConcurrentMarkThread::delay_to_keep_mmu(G1CollectorPolicy* g1_policy, bool 
     os::sleep(this, sleep_time_ms, false);
   }
 }
+
+class GCConcPhaseTimer : StackObj {
+  ConcurrentMark* _cm;
+
+ public:
+  GCConcPhaseTimer(ConcurrentMark* cm, const char* title) : _cm(cm) {
+    _cm->register_concurrent_phase_start(title);
+  }
+
+  ~GCConcPhaseTimer() {
+    _cm->register_concurrent_phase_end();
+  }
+};
+
 void ConcurrentMarkThread::run() {
   initialize_in_thread();
   wait_for_universe_init();
@@ -140,34 +141,41 @@ void ConcurrentMarkThread::run_service() {
       // correctness issue.
 
       if (!cm()->has_aborted()) {
+        GCConcPhaseTimer(_cm, "Concurrent Root Region Scanning");
         _cm->scanRootRegions();
       }
 
-      double mark_start_sec = os::elapsedTime();
-      cm_log(G1Log::fine(), true, "[GC concurrent-mark-start]");
+      // It would be nice to use the GCTraceConcTime class here but
+      // the "end" logging is inside the loop and not at the end of
+      // a scope. Mimicking the same log output as GCTraceConcTime instead.
+      jlong mark_start = os::elapsed_counter();
+      log_info(gc)("Concurrent Mark (%.3fs)", TimeHelper::counter_to_seconds(mark_start));
 
       int iter = 0;
       do {
         iter++;
         if (!cm()->has_aborted()) {
+          GCConcPhaseTimer(_cm, "Concurrent Mark");
           _cm->markFromRoots();
         }
 
         double mark_end_time = os::elapsedVTime();
-        double mark_end_sec = os::elapsedTime();
+        jlong mark_end = os::elapsed_counter();
         _vtime_mark_accum += (mark_end_time - cycle_start);
         if (!cm()->has_aborted()) {
           delay_to_keep_mmu(g1_policy, true /* remark */);
-
-          cm_log(G1Log::fine(), true, "[GC concurrent-mark-end, %1.7lf secs]", mark_end_sec - mark_start_sec);
+          log_info(gc)("Concurrent Mark (%.3fs, %.3fs) %.3fms",
+                       TimeHelper::counter_to_seconds(mark_start),
+                       TimeHelper::counter_to_seconds(mark_end),
+                       TimeHelper::counter_to_millis(mark_end - mark_start));
 
           CMCheckpointRootsFinalClosure final_cl(_cm);
-          VM_CGC_Operation op(&final_cl, "GC remark", true /* needs_pll */);
+          VM_CGC_Operation op(&final_cl, "Pause Remark", true /* needs_pll */);
           VMThread::execute(&op);
         }
         if (cm()->restart_for_overflow()) {
-          cm_log(G1TraceMarkStackOverflow, true, "Restarting conc marking because of MS overflow in remark (restart #%d).", iter);
-          cm_log(G1Log::fine(), true, "[GC concurrent-mark-restart-for-overflow]");
+          log_debug(gc)("Restarting conc marking because of MS overflow in remark (restart #%d).", iter);
+          log_info(gc)("Concurrent Mark restart for overflow");
         }
       } while (cm()->restart_for_overflow());
 
@@ -181,7 +189,7 @@ void ConcurrentMarkThread::run_service() {
         delay_to_keep_mmu(g1_policy, false /* cleanup */);
 
         CMCleanUp cl_cl(_cm);
-        VM_CGC_Operation op(&cl_cl, "GC cleanup", false /* needs_pll */);
+        VM_CGC_Operation op(&cl_cl, "Pause Cleanup", false /* needs_pll */);
         VMThread::execute(&op);
       } else {
         // We don't want to update the marking status if a GC pause
@@ -201,8 +209,8 @@ void ConcurrentMarkThread::run_service() {
         // place, it would wait for us to process the regions
         // reclaimed by cleanup.
 
-        double cleanup_start_sec = os::elapsedTime();
-        cm_log(G1Log::fine(), false, "[GC concurrent-cleanup-start]");
+        GCTraceConcTime(Info, gc) tt("Concurrent Cleanup");
+        GCConcPhaseTimer(_cm, "Concurrent Cleanup");
 
         // Now do the concurrent cleanup operation.
         _cm->completeCleanup();
@@ -217,9 +225,6 @@ void ConcurrentMarkThread::run_service() {
         // while it's trying to join the STS, which is conditional on
         // the GC workers finishing.
         g1h->reset_free_regions_coming();
-
-        double cleanup_end_sec = os::elapsedTime();
-        cm_log(G1Log::fine(), true, "[GC concurrent-cleanup-end, %1.7lf secs]", cleanup_end_sec - cleanup_start_sec);
       }
       guarantee(cm()->cleanup_list_is_empty(),
                 "at this point there should be no regions on the cleanup list");
@@ -253,7 +258,7 @@ void ConcurrentMarkThread::run_service() {
         if (!cm()->has_aborted()) {
           g1_policy->record_concurrent_mark_cleanup_completed();
         } else {
-          cm_log(G1Log::fine(), false, "[GC concurrent-mark-abort]");
+          log_info(gc)("Concurrent Mark abort");
         }
       }
 
@@ -262,6 +267,7 @@ void ConcurrentMarkThread::run_service() {
       // We may have aborted just before the remark. Do not bother clearing the
       // bitmap then, as it has been done during mark abort.
       if (!cm()->has_aborted()) {
+        GCConcPhaseTimer(_cm, "Concurrent Bitmap Clearing");
         _cm->clearNextBitmap();
       } else {
         assert(!G1VerifyBitmaps || _cm->nextMarkBitmapIsClear(), "Next mark bitmap must be clear");

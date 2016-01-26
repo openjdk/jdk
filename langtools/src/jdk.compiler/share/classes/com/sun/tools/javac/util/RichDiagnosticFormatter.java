@@ -235,16 +235,16 @@ public class RichDiagnosticFormatter extends
     }
 
     private boolean unique(TypeVar typevar) {
-        typevar = (TypeVar)typevar.stripMetadataIfNeeded();
+        typevar = (TypeVar) typevar.stripMetadata();
 
         int found = 0;
         for (Type t : whereClauses.get(WhereClauseKind.TYPEVAR).keySet()) {
-            if (t.toString().equals(typevar.toString())) {
+            if (t.stripMetadata().toString().equals(typevar.toString())) {
                 found++;
             }
         }
         if (found < 1)
-            throw new AssertionError("Missing type variable in where clause " + typevar);
+            throw new AssertionError("Missing type variable in where clause: " + typevar);
         return found == 1;
     }
     //where

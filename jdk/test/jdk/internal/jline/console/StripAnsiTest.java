@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8080679
+ * @modules jdk.internal.le/jdk.internal.jline.console
  * @summary Verify ConsoleReader.stripAnsi strips escape sequences from its input correctly.
  */
 

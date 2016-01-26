@@ -747,7 +747,7 @@ public final class Long extends Number implements Comparable<Long> {
      *             {@code radix}, or if {@code radix} is either smaller than
      *             {@link java.lang.Character#MIN_RADIX} or larger than
      *             {@link java.lang.Character#MAX_RADIX}.
-     * @since  1.9
+     * @since  9
      */
     public static long parseLong(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
@@ -993,7 +993,7 @@ public final class Long extends Number implements Comparable<Long> {
      *             {@code radix}, or if {@code radix} is either smaller than
      *             {@link java.lang.Character#MIN_RADIX} or larger than
      *             {@link java.lang.Character#MAX_RADIX}.
-     * @since  1.9
+     * @since  9
      */
     public static long parseUnsignedLong(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
