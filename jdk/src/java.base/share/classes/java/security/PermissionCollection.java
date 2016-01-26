@@ -144,7 +144,7 @@ public abstract class PermissionCollection implements java.io.Serializable {
      * the enumeration returned from a call to {@link #elements()}.
      *
      * @return a stream of all the Permissions.
-     * @since 1.9
+     * @since 9
      */
     public Stream<Permission> elementsAsStream() {
         int characteristics = isReadOnly()

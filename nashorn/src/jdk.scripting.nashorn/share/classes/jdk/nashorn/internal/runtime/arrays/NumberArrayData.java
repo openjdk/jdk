@@ -303,17 +303,17 @@ final class NumberArrayData extends ContinuousArrayData implements NumericElemen
     }
 
     @Override
-    public long fastPush(final int arg) {
+    public double fastPush(final int arg) {
         return fastPush((double)arg);
     }
 
     @Override
-    public long fastPush(final long arg) {
+    public double fastPush(final long arg) {
         return fastPush((double)arg);
     }
 
     @Override
-    public long fastPush(final double arg) {
+    public double fastPush(final double arg) {
         final int len = (int)length();
         if (len == array.length) {
            //note that fastpush never creates spares arrays, there is nothing to gain by that - it will just use even more memory

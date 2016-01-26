@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public class Util {
     }
 
     public static boolean extractBooleanOption(String opName, String s, boolean deflt) {
-       String str = extractStringOption(opName, s);
+        String str = extractStringOption(opName, s);
         return "true".equals(str) ? true
              : "false".equals(str) ? false
              : deflt;
@@ -229,5 +229,11 @@ public class Util {
     public static <I, T> Map<I, T> indexBy(Collection<? extends T> c,
                                            Function<? super T, ? extends I> indexFunction) {
         return c.stream().collect(Collectors.<T, I, T>toMap(indexFunction, o -> o));
+    }
+
+    public static String fileSuffix(Path file) {
+        String fileNameStr = file.getFileName().toString();
+        int dotIndex = fileNameStr.indexOf('.');
+        return dotIndex == -1 ? "" : fileNameStr.substring(dotIndex);
     }
 }

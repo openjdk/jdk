@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/jniHandles.hpp"
@@ -393,9 +394,7 @@ void JNIHandleBlock::weak_oops_do(BoolObjectClosure* is_alive,
           f->do_oop(root);
         } else {
           // The weakly referenced object is not alive, clear the reference by storing NULL
-          if (TraceReferenceGC) {
-            tty->print_cr("Clearing JNI weak reference (" INTPTR_FORMAT ")", p2i(root));
-          }
+          log_develop_trace(gc, ref)("Clearing JNI weak reference (" INTPTR_FORMAT ")", p2i(root));
           *root = NULL;
         }
       }

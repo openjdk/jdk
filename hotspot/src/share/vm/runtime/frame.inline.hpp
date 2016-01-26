@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,13 +49,6 @@ inline bool frame::is_stub_frame() const {
 inline bool frame::is_first_frame() const {
   return is_entry_frame() && entry_frame_is_first();
 }
-
-#ifdef CC_INTERP
-inline oop* frame::interpreter_frame_temp_oop_addr() const {
-  interpreterState istate = get_interpreterState();
-  return (oop *)&istate->_oop_temp;
-}
-#endif // CC_INTERP
 
 // here are the platform-dependent bodies:
 

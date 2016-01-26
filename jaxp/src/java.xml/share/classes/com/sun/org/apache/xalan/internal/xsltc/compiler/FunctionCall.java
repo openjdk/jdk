@@ -932,9 +932,9 @@ class FunctionCall extends Expression {
                     //Check if FSP and SM - only then process with loading
                     if (namespace != null && isSecureProcessing
                             && isExtensionFunctionEnabled
-                            && (namespace.equals(JAVA_EXT_XALAN)
-                            || namespace.equals(JAVA_EXT_XSLTC)
-                            || namespace.equals(JAVA_EXT_XALAN_OLD)
+                            && (namespace.startsWith(JAVA_EXT_XALAN)
+                            || namespace.startsWith(JAVA_EXT_XSLTC)
+                            || namespace.startsWith(JAVA_EXT_XALAN_OLD)
                             || namespace.startsWith(XALAN_CLASSPACKAGE_NAMESPACE))) {
                         _clazz = getXSLTC().loadExternalFunction(_className);
                     } else {

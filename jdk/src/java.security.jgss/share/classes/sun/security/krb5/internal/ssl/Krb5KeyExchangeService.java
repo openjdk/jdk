@@ -65,7 +65,7 @@ import java.util.Set;
 /**
  * The provider for TLS_KRB_ cipher suites.
  *
- * @since 1.9
+ * @since 9
  */
 public class Krb5KeyExchangeService implements ClientKeyExchangeService {
 

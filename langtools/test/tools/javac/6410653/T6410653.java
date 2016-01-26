@@ -27,7 +27,7 @@
  * @summary REGRESSION: javac crashes if -d or -s argument is a file
  * @author  Peter von der Ah\u00e9
  * @modules java.compiler
- *          jdk.compiler
+ *          jdk.compiler/com.sun.tools.javac.util
  */
 
 import java.lang.reflect.Field;

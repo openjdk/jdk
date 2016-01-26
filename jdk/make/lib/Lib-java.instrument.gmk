@@ -84,7 +84,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
         -D "JDK_INTERNAL_NAME=instrument" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libinstrument, \
-    DEBUG_SYMBOLS := true))
+))
 
 ifneq (, $(findstring $(OPENJDK_TARGET_OS), macosx windows aix))
   $(BUILD_LIBINSTRUMENT): $(SUPPORT_OUTPUTDIR)/native/java.base/$(LIBRARY_PREFIX)jli_static$(STATIC_LIBRARY_SUFFIX)

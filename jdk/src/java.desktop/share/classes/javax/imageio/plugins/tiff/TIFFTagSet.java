@@ -44,7 +44,7 @@ import java.util.TreeSet;
  * name, legal data types, and mnemonic names for some or all of ts
  * data values.
  *
- * @since 1.9
+ * @since 9
  * @see   TIFFTag
  */
 public class TIFFTagSet {

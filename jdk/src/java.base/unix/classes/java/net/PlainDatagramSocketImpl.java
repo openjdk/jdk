@@ -47,6 +47,9 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
         if (!name.equals(ExtendedSocketOptions.SO_FLOW_SLA)) {
             super.setOption(name, value);
         } else {
+            if (!flowSupported()) {
+                throw new UnsupportedOperationException("unsupported option");
+            }
             if (isClosed()) {
                 throw new SocketException("Socket closed");
             }
@@ -60,6 +63,9 @@ class PlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
     protected <T> T getOption(SocketOption<T> name) throws IOException {
         if (!name.equals(ExtendedSocketOptions.SO_FLOW_SLA)) {
             return super.getOption(name);
+        }
+        if (!flowSupported()) {
+            throw new UnsupportedOperationException("unsupported option");
         }
         if (isClosed()) {
             throw new SocketException("Socket closed");

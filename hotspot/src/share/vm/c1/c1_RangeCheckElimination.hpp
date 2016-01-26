@@ -50,8 +50,8 @@ private:
   private:
     void* operator new(size_t size) throw();
     void* operator new[](size_t size) throw();
-    void operator delete(void* p);
-    void operator delete[](void* p);
+    void operator delete(void* p) { ShouldNotReachHere(); }
+    void operator delete[](void* p) { ShouldNotReachHere(); }
 
     IR *_ir;
     boolArray _used;

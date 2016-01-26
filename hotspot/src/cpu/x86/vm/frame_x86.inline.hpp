@@ -151,59 +151,6 @@ inline intptr_t* frame::unextended_sp() const     { return _unextended_sp; }
 inline address* frame::sender_pc_addr()      const { return (address*) addr_at( return_addr_offset); }
 inline address  frame::sender_pc()           const { return *sender_pc_addr(); }
 
-#ifdef CC_INTERP
-
-inline interpreterState frame::get_interpreterState() const {
-  return ((interpreterState)addr_at( -((int)sizeof(BytecodeInterpreter))/wordSize ));
-}
-
-inline intptr_t*    frame::sender_sp()        const {
-  // Hmm this seems awfully expensive QQQ, is this really called with interpreted frames?
-  if (is_interpreted_frame()) {
-    assert(false, "should never happen");
-    return get_interpreterState()->sender_sp();
-  } else {
-    return            addr_at(sender_sp_offset);
-  }
-}
-
-inline intptr_t** frame::interpreter_frame_locals_addr() const {
-  assert(is_interpreted_frame(), "must be interpreted");
-  return &(get_interpreterState()->_locals);
-}
-
-inline intptr_t* frame::interpreter_frame_bcp_addr() const {
-  assert(is_interpreted_frame(), "must be interpreted");
-  return (intptr_t*) &(get_interpreterState()->_bcp);
-}
-
-
-// Constant pool cache
-
-inline ConstantPoolCache** frame::interpreter_frame_cache_addr() const {
-  assert(is_interpreted_frame(), "must be interpreted");
-  return &(get_interpreterState()->_constants);
-}
-
-// Method
-
-inline Method** frame::interpreter_frame_method_addr() const {
-  assert(is_interpreted_frame(), "must be interpreted");
-  return &(get_interpreterState()->_method);
-}
-
-inline intptr_t* frame::interpreter_frame_mdp_addr() const {
-  assert(is_interpreted_frame(), "must be interpreted");
-  return (intptr_t*) &(get_interpreterState()->_mdx);
-}
-
-// top of expression stack
-inline intptr_t* frame::interpreter_frame_tos_address() const {
-  assert(is_interpreted_frame(), "wrong frame type");
-  return get_interpreterState()->_stack + 1;
-}
-
-#else /* asm interpreter */
 inline intptr_t*    frame::sender_sp()        const { return            addr_at(   sender_sp_offset); }
 
 inline intptr_t** frame::interpreter_frame_locals_addr() const {
@@ -254,8 +201,6 @@ inline intptr_t* frame::interpreter_frame_tos_address() const {
 inline oop* frame::interpreter_frame_temp_oop_addr() const {
   return (oop *)(fp() + interpreter_frame_oop_temp_offset);
 }
-
-#endif /* CC_INTERP */
 
 inline int frame::pd_oop_map_offset_adjustment() const {
   return 0;

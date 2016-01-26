@@ -57,7 +57,6 @@ public class TestPrintRegionRememberedSetInfo {
             "-Xmx10m",
             "-XX:+ExplicitGCInvokesConcurrent",
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+G1PrintRegionLivenessInfo",
             "-XX:G1HeapRegionSize=1M",
             "-XX:InitiatingHeapOccupancyPercent=0",
         };
@@ -79,13 +78,13 @@ public class TestPrintRegionRememberedSetInfo {
     public static void main(String[] args) throws Exception {
         String result;
 
-        result = runTest("-XX:+G1PrintRegionLivenessInfo");
+        result = runTest("-Xlog:gc+liveness=trace");
         // check that we got region statistics output
         if (result.indexOf("PHASE") == -1) {
             throw new RuntimeException("Unexpected output from -XX:+PrintRegionLivenessInfo found.");
         }
 
-        result = runTest("-XX:-G1PrintRegionLivenessInfo");
+        result = runTest("-Xlog:gc+liveness");
         if (result.indexOf("remset") != -1) {
             throw new RuntimeException("Should find remembered set information in output.");
         }

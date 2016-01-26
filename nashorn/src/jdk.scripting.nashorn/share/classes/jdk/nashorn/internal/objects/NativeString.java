@@ -146,7 +146,7 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
 
         if (returnType == Object.class && JSType.isString(self)) {
             try {
-                return new GuardedInvocation(MH.findStatic(MethodHandles.lookup(), NativeString.class, "get", desc.getMethodType()), NashornGuards.getInstanceOf2Guard(String.class, ConsString.class));
+                return new GuardedInvocation(MH.findStatic(MethodHandles.lookup(), NativeString.class, "get", desc.getMethodType()), NashornGuards.getStringGuard());
             } catch (final LookupException e) {
                 //empty. Shouldn't happen. Fall back to super
             }
@@ -1235,8 +1235,8 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
      * @return Link to be invoked at call site.
      */
     public static GuardedInvocation lookupPrimitive(final LinkRequest request, final Object receiver) {
-        final MethodHandle guard = NashornGuards.getInstanceOf2Guard(String.class, ConsString.class);
-        return PrimitiveLookup.lookupPrimitive(request, guard, new NativeString((CharSequence)receiver), WRAPFILTER, PROTOFILTER);
+        return PrimitiveLookup.lookupPrimitive(request, NashornGuards.getStringGuard(),
+                new NativeString((CharSequence)receiver), WRAPFILTER, PROTOFILTER);
     }
 
     @SuppressWarnings("unused")

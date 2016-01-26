@@ -130,7 +130,7 @@ public final class NetworkInterface {
      *
      * @return a Stream object with all or a subset of the InetAddresses
      * bound to this network interface
-     * @since 1.9
+     * @since 9
      */
     public Stream<InetAddress> inetAddresses() {
         return streamFromArray(getCheckedInetAddresses());
@@ -208,7 +208,7 @@ public final class NetworkInterface {
      *
      * @return a Stream object with all of the subinterfaces
      * of this network interface
-     * @since 1.9
+     * @since 9
      */
     public Stream<NetworkInterface> subInterfaces() {
         return streamFromArray(childs);
@@ -362,7 +362,7 @@ public final class NetworkInterface {
      *
      * @return a Stream of NetworkInterfaces found on this machine
      * @exception  SocketException  if an I/O error occurs.
-     * @since 1.9
+     * @since 9
      */
     public static Stream<NetworkInterface> networkInterfaces()
         throws SocketException {

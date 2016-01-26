@@ -762,9 +762,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     public byte[] getTBSCertList() throws CRLException {
         if (tbsCertList == null)
             throw new CRLException("Uninitialized CRL");
-        byte[] dup = new byte[tbsCertList.length];
-        System.arraycopy(tbsCertList, 0, dup, 0, dup.length);
-        return dup;
+        return tbsCertList.clone();
     }
 
     /**
@@ -775,9 +773,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
     public byte[] getSignature() {
         if (signature == null)
             return null;
-        byte[] dup = new byte[signature.length];
-        System.arraycopy(signature, 0, dup, 0, dup.length);
-        return dup;
+        return signature.clone();
     }
 
     /**

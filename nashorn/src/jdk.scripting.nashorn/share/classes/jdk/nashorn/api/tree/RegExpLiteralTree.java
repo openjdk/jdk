@@ -28,7 +28,7 @@ package jdk.nashorn.api.tree;
 /**
  * Represents regular expression literal in the source code.
  *
- * @since 1.9
+ * @since 9
  */
 public interface RegExpLiteralTree extends Tree {
     /**

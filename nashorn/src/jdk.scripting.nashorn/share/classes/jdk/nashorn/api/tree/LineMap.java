@@ -29,7 +29,7 @@ package jdk.nashorn.api.tree;
  * Provides methods to convert between character positions and line numbers
  * for a compilation unit.
  *
- * @since 1.9
+ * @since 9
  */
 public interface LineMap {
     /**

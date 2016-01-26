@@ -373,22 +373,26 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @throws IOException if an I/O error occurs, or if the socket is closed.
      *
-     * @since 1.9
+     * @since 9
      */
     protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
-        if (name == StandardSocketOptions.SO_KEEPALIVE) {
+        if (name == StandardSocketOptions.SO_KEEPALIVE &&
+                (getSocket() != null)) {
             setOption(SocketOptions.SO_KEEPALIVE, value);
-        } else if (name == StandardSocketOptions.SO_SNDBUF) {
+        } else if (name == StandardSocketOptions.SO_SNDBUF &&
+                (getSocket() != null)) {
             setOption(SocketOptions.SO_SNDBUF, value);
         } else if (name == StandardSocketOptions.SO_RCVBUF) {
             setOption(SocketOptions.SO_RCVBUF, value);
         } else if (name == StandardSocketOptions.SO_REUSEADDR) {
             setOption(SocketOptions.SO_REUSEADDR, value);
-        } else if (name == StandardSocketOptions.SO_LINGER) {
+        } else if (name == StandardSocketOptions.SO_LINGER &&
+                (getSocket() != null)) {
             setOption(SocketOptions.SO_LINGER, value);
         } else if (name == StandardSocketOptions.IP_TOS) {
             setOption(SocketOptions.IP_TOS, value);
-        } else if (name == StandardSocketOptions.TCP_NODELAY) {
+        } else if (name == StandardSocketOptions.TCP_NODELAY &&
+                (getSocket() != null)) {
             setOption(SocketOptions.TCP_NODELAY, value);
         } else {
             throw new UnsupportedOperationException("unsupported option");
@@ -408,23 +412,27 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @throws IOException if an I/O error occurs, or if the socket is closed.
      *
-     * @since 1.9
+     * @since 9
      */
     @SuppressWarnings("unchecked")
     protected <T> T getOption(SocketOption<T> name) throws IOException {
-        if (name == StandardSocketOptions.SO_KEEPALIVE) {
+        if (name == StandardSocketOptions.SO_KEEPALIVE &&
+                (getSocket() != null)) {
             return (T)getOption(SocketOptions.SO_KEEPALIVE);
-        } else if (name == StandardSocketOptions.SO_SNDBUF) {
+        } else if (name == StandardSocketOptions.SO_SNDBUF &&
+                (getSocket() != null)) {
             return (T)getOption(SocketOptions.SO_SNDBUF);
         } else if (name == StandardSocketOptions.SO_RCVBUF) {
             return (T)getOption(SocketOptions.SO_RCVBUF);
         } else if (name == StandardSocketOptions.SO_REUSEADDR) {
             return (T)getOption(SocketOptions.SO_REUSEADDR);
-        } else if (name == StandardSocketOptions.SO_LINGER) {
+        } else if (name == StandardSocketOptions.SO_LINGER &&
+                (getSocket() != null)) {
             return (T)getOption(SocketOptions.SO_LINGER);
         } else if (name == StandardSocketOptions.IP_TOS) {
             return (T)getOption(SocketOptions.IP_TOS);
-        } else if (name == StandardSocketOptions.TCP_NODELAY) {
+        } else if (name == StandardSocketOptions.TCP_NODELAY &&
+                (getSocket() != null)) {
             return (T)getOption(SocketOptions.TCP_NODELAY);
         } else {
             throw new UnsupportedOperationException("unsupported option");

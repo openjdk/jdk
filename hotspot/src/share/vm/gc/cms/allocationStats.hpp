@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_CMS_ALLOCATIONSTATS_HPP
 
 #include "gc/shared/gcUtil.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -119,11 +120,9 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
       ssize_t old_desired = _desired;
       float delta_ise = (CMSExtrapolateSweep ? intra_sweep_estimate : 0.0);
       _desired = (ssize_t)(new_rate * (inter_sweep_estimate + delta_ise));
-      if (PrintFLSStatistics > 1) {
-        gclog_or_tty->print_cr("demand: " SSIZE_FORMAT ", old_rate: %f, current_rate: %f, "
-                               "new_rate: %f, old_desired: " SSIZE_FORMAT ", new_desired: " SSIZE_FORMAT,
-                                demand, old_rate, rate, new_rate, old_desired, _desired);
-      }
+      log_trace(gc, freelist)("demand: " SSIZE_FORMAT ", old_rate: %f, current_rate: %f, "
+                              "new_rate: %f, old_desired: " SSIZE_FORMAT ", new_desired: " SSIZE_FORMAT,
+                              demand, old_rate, rate, new_rate, old_desired, _desired);
     }
   }
 

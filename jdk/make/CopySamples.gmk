@@ -28,41 +28,38 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
+################################################################################
+
 SAMPLE_TARGET_DIR := $(SUPPORT_OUTPUTDIR)/sample/image
 SAMPLE_SOURCE_DIR := $(JDK_TOPDIR)/src/sample/share
-SAMPLE_CLOSED_SOURCE_DIR := $(JDK_TOPDIR)/src/closed/sample/share
 SAMPLE_SOLARIS_SOURCE_DIR := $(JDK_TOPDIR)/src/sample/solaris
 
 # Exclude the vm directory
-SAMPLE_FIND_FILTER := -name vm -prune -o
+$(eval $(call SetupCopyFiles, COPY_SHARE_SAMPLES, \
+    SRC := $(SAMPLE_SOURCE_DIR), \
+    DEST := $(SAMPLE_TARGET_DIR), \
+    FILES := $(filter-out $(SAMPLE_SOURCE_DIR)/vm/%, \
+        $(call CacheFind, $(SAMPLE_SOURCE_DIR))), \
+))
 
-SAMPLE_SOURCE := $(shell $(FIND) $(SAMPLE_SOURCE_DIR) $(SAMPLE_FIND_FILTER) -type f -print)
-SAMPLE_TARGET := $(subst $(SAMPLE_SOURCE_DIR),$(SAMPLE_TARGET_DIR),$(SAMPLE_SOURCE))
-
-ifndef OPENJDK
-# Exclude Main.java in EbayClient dir
-  SAMPLE_CLOSED_SOURCE := $(shell $(FIND) $(SAMPLE_CLOSED_SOURCE_DIR) -type f -print | $(GREP) -v EbayClient/Main.java)
-  SAMPLE_CLOSED_TARGET := $(subst $(SAMPLE_CLOSED_SOURCE_DIR),$(SAMPLE_TARGET_DIR),$(SAMPLE_CLOSED_SOURCE))
-  SAMPLE_TARGET += $(SAMPLE_CLOSED_TARGET)
-endif
+TARGETS += $(COPY_SHARE_SAMPLES)
 
 ifneq (, $(filter $(OPENJDK_TARGET_OS), solaris macosx))
-  SAMPLE_SOLARIS_SOURCE := $(shell $(FIND) $(SAMPLE_SOLARIS_SOURCE_DIR) -type f -print)
-  SAMPLE_SOLARIS_TARGET := $(subst $(SAMPLE_SOLARIS_SOURCE_DIR),$(SAMPLE_TARGET_DIR),$(SAMPLE_SOLARIS_SOURCE))
-  SAMPLE_TARGET += $(SAMPLE_SOLARIS_TARGET)
+  $(eval $(call SetupCopyFiles, COPY_SOLARIS_SAMPLES, \
+      SRC := $(SAMPLE_SOLARIS_SOURCE_DIR), \
+      DEST := $(SAMPLE_TARGET_DIR), \
+      FILES := $(call CacheFind, $(SAMPLE_SOLARIS_SOURCE_DIR)), \
+  ))
+
+  TARGETS += $(COPY_SOLARIS_SAMPLES)
 endif
 
-$(SAMPLE_TARGET_DIR)/dtrace/%: $(SAMPLE_SOLARIS_SOURCE_DIR)/dtrace/%
-	$(call install-file)
+################################################################################
 
-$(SAMPLE_TARGET_DIR)/webservices/%: $(SAMPLE_CLOSED_SOURCE_DIR)/webservices/%
-	$(call install-file)
+$(eval $(call IncludeCustomExtension, jdk, CopySamples.gmk))
 
-$(SAMPLE_TARGET_DIR)/%: $(SAMPLE_SOURCE_DIR)/%
-	$(call install-file)
+################################################################################
 
-COPY_FILES += $(SAMPLE_TARGET)
+all: $(TARGETS)
 
-all: $(COPY_FILES)
-
-.PHONY: all
+.PHONY: all default

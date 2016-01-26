@@ -33,7 +33,7 @@ package jdk.nashorn.api.tree;
  *   <em>condition</em> ? <em>trueExpression</em> : <em>falseExpression</em>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface ConditionalExpressionTree extends ExpressionTree {
     /**

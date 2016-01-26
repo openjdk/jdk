@@ -68,7 +68,6 @@ Flag::Error InitialBootClassLoaderMetaspaceSizeConstraintFunc(size_t value, bool
 Flag::Error InitialHeapSizeConstraintFunc(size_t value, bool verbose);
 Flag::Error MaxHeapSizeConstraintFunc(size_t value, bool verbose);
 Flag::Error HeapBaseMinAddressConstraintFunc(size_t value, bool verbose);
-Flag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbose);
 Flag::Error NewSizeConstraintFunc(size_t value, bool verbose);
 Flag::Error MinTLABSizeConstraintFunc(size_t value, bool verbose);
 Flag::Error TLABSizeConstraintFunc(size_t value, bool verbose);

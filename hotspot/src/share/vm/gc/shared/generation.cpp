@@ -36,6 +36,7 @@
 #include "gc/shared/generation.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -68,20 +69,6 @@ size_t Generation::initial_size() {
 
 size_t Generation::max_capacity() const {
   return reserved().byte_size();
-}
-
-void Generation::print_heap_change(size_t prev_used) const {
-  if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print(" "  SIZE_FORMAT
-                        "->" SIZE_FORMAT
-                        "("  SIZE_FORMAT ")",
-                        prev_used, used(), capacity());
-  } else {
-    gclog_or_tty->print(" "  SIZE_FORMAT "K"
-                        "->" SIZE_FORMAT "K"
-                        "("  SIZE_FORMAT "K)",
-                        prev_used / K, used() / K, capacity() / K);
-  }
 }
 
 // By default we get a single threaded default reference processor;
@@ -171,12 +158,8 @@ size_t Generation::max_contiguous_available() const {
 bool Generation::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
   size_t available = max_contiguous_available();
   bool   res = (available >= max_promotion_in_bytes);
-  if (PrintGC && Verbose) {
-    gclog_or_tty->print_cr(
-      "Generation: promo attempt is%s safe: available(" SIZE_FORMAT ") %s max_promo(" SIZE_FORMAT ")",
-      res? "":" not", available, res? ">=":"<",
-      max_promotion_in_bytes);
-  }
+  log_trace(gc)("Generation: promo attempt is%s safe: available(" SIZE_FORMAT ") %s max_promo(" SIZE_FORMAT ")",
+                res? "":" not", available, res? ">=":"<", max_promotion_in_bytes);
   return res;
 }
 

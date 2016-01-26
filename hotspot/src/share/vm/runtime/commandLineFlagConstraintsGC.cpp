@@ -563,15 +563,6 @@ Flag::Error HeapBaseMinAddressConstraintFunc(size_t value, bool verbose) {
   return MaxSizeForHeapAlignment("HeapBaseMinAddress", value, verbose);
 }
 
-Flag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbose) {
-  if (UseNUMA && UseNUMAInterleaving) {
-    size_t min_interleave_granularity = UseLargePages ? os::large_page_size() : os::vm_allocation_granularity();
-    return MaxSizeForAlignment("NUMAInterleaveGranularity", value, min_interleave_granularity, verbose);
-  } else {
-    return Flag::SUCCESS;
-  }
-}
-
 Flag::Error NewSizeConstraintFunc(size_t value, bool verbose) {
 #ifdef _LP64
 #if INCLUDE_ALL_GCS

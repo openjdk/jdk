@@ -138,7 +138,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
         -D "JDK_INTERNAL_NAME=jsound" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjsound, \
-    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+))
 
 $(BUILD_LIBJSOUND): $(BUILD_LIBJAVA)
 
@@ -173,7 +173,7 @@ ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(ALSA_LIBS) -ljava -ljvm, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjsoundalsa, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   $(BUILD_LIBJSOUNDALSA): $(BUILD_LIBJAVA)
 
@@ -204,7 +204,7 @@ ifneq ($(filter jsoundds, $(EXTRA_SOUND_JNI_LIBS)), )
           -D "JDK_INTERNAL_NAME=jsoundds" \
           -D "JDK_FTYPE=0x2L", \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjsoundds, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   $(BUILD_LIBJSOUNDDS): $(BUILD_LIBJAVA)
 
