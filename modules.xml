@@ -1744,6 +1744,10 @@
     </export>
   </module>
   <module>
+    <name>jdk.internal.opt</name>
+    <depend>java.base</depend>
+  </module>
+  <module>
     <name>jdk.jartool</name>
     <depend>java.base</depend>
     <export>
