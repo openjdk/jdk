@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,18 @@
  * @bug 7146728
  * @summary Interop test for DH with secret that has a leading 0x00 byte
  * @library ..
+ * @run main/othervm TestInterop
+ * @run main/othervm TestInterop sm
  */
 import java.math.BigInteger;
-import java.util.*;
-
-import java.security.*;
-
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.util.Arrays;
+import javax.crypto.KeyAgreement;
+import javax.crypto.spec.DHPrivateKeySpec;
+import javax.crypto.spec.DHPublicKeySpec;
 
 public class TestInterop extends PKCS11Test {
 
@@ -72,6 +76,7 @@ public class TestInterop extends PKCS11Test {
     + "30313414180008978013330410484011186019824874948204261839391153650949864"
     + "429505597086564709");
 
+    @Override
     public void main(Provider prov) throws Exception {
         if (prov.getService("KeyAgreement", "DH") == null) {
             System.out.println("DH not supported, skipping");
@@ -138,6 +143,6 @@ public class TestInterop extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestInterop());
+        main(new TestInterop(), args);
     }
 }

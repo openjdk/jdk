@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,26 +29,41 @@
  * @library ..
  * @library ../../../../java/security/testlibrary
  * @key randomness
+ * @run main/othervm ReadPKCS12
+ * @run main/othervm ReadPKCS12 sm policy
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
-import java.security.interfaces.*;
-import java.security.cert.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Signature;
 import java.security.cert.Certificate;
-
-import javax.security.auth.x500.X500Principal;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 public class ReadPKCS12 extends PKCS11Test {
 
     private final static boolean COPY = false;
 
     public static void main(String[] args) throws Exception {
-        main(new ReadPKCS12());
+        main(new ReadPKCS12(), args);
     }
 
+    @Override
     public void main(Provider p) throws Exception {
         if (p.getService("Signature", "SHA1withECDSA") == null) {
             System.out.println("Provider does not support ECDSA, skipping...");
@@ -71,29 +86,30 @@ public class ReadPKCS12 extends PKCS11Test {
         KeyStore ks2;
         if (COPY) {
             ks2 = KeyStore.getInstance("JKS");
-            InputStream in = new FileInputStream("keystore.old");
-            ks2.load(in, "passphrase".toCharArray());
-            in.close();
+            try (InputStream in = new FileInputStream("keystore.old")) {
+                ks2.load(in, "passphrase".toCharArray());
+            }
         }
 
         File dir = new File(BASE, "pkcs12");
         File closedDir = new File(CLOSED_BASE, "pkcs12");
 
-        Map<String,char[]> passwords = new HashMap<String,char[]>();
-        BufferedReader reader = new BufferedReader(new FileReader((new File(BASE, "p12passwords.txt"))));
-        while (true) {
-            String line = reader.readLine();
-            if (line == null) {
-                break;
+        Map<String,char[]> passwords = new HashMap<>();
+        try (BufferedReader reader = new BufferedReader(
+                new FileReader(new File(BASE, "p12passwords.txt")))) {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                line = line.trim();
+                if ((line.length() == 0) || line.startsWith("#")) {
+                    continue;
+                }
+                String[] s = line.split(" ");
+                passwords.put(s[0], s[1].toCharArray());
             }
-            line = line.trim();
-            if ((line.length() == 0) || line.startsWith("#")) {
-                continue;
-            }
-            String[] s = line.split(" ");
-            passwords.put(s[0], s[1].toCharArray());
         }
-        reader.close();
 
         for (File file : concat(dir.listFiles(), closedDir.listFiles())) {
             String name = file.getName();
@@ -108,10 +124,11 @@ public class ReadPKCS12 extends PKCS11Test {
                 password = passwords.get("*");
             }
 
-            InputStream in = new FileInputStream(file);
-            KeyStore ks = KeyStore.getInstance("PKCS12");
-            ks.load(in, password);
-            in.close();
+            KeyStore ks;
+            try (InputStream in = new FileInputStream(file)) {
+                ks = KeyStore.getInstance("PKCS12");
+                ks.load(in, password);
+            }
             List<String> aliases = Collections.list(ks.aliases());
             System.out.println("Aliases: " + aliases);
 
@@ -147,9 +164,9 @@ public class ReadPKCS12 extends PKCS11Test {
         }
 
         if (COPY) {
-            OutputStream out = new FileOutputStream("keystore.new");
-            ks2.store(out, "passphrase".toCharArray());
-            out.close();
+            try (OutputStream out = new FileOutputStream("keystore.new")) {
+                ks2.store(out, "passphrase".toCharArray());
+            }
         }
 
         System.out.println("OK");

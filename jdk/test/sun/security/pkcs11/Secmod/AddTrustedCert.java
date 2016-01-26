@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,21 @@
  * @author Andreas Sterbenz
  * @library ..
  * @run main/othervm AddTrustedCert
+ * @run main/othervm AddTrustedCert sm policy
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
-import java.security.KeyStore.*;
-import java.security.cert.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.KeyStore.TrustedCertificateEntry;
+import java.security.Provider;
+import java.security.Security;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.TreeSet;
 
 public class AddTrustedCert extends SecmodTest {
 
@@ -56,6 +63,13 @@ public class AddTrustedCert extends SecmodTest {
 
         System.out.println(p);
         Security.addProvider(p);
+
+        if (args.length > 1 && "sm".equals(args[0])) {
+            System.setProperty("java.security.policy",
+                    BASE + File.separator + args[1]);
+            System.setSecurityManager(new SecurityManager());
+        }
+
         KeyStore ks = KeyStore.getInstance(PKCS11, p);
         ks.load(null, password);
         Collection<String> aliases = new TreeSet<>(Collections.list(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,14 @@
  * @summary Ensure that 2048-bit DH key pairs can be generated
  * @author Valerie Peng
  * @library ..
+ * @run main/othervm TestDH2048
+ * @run main/othervm TestDH2048 sm
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
-
-import javax.crypto.*;
+import java.security.InvalidParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Provider;
 
 public class TestDH2048 extends PKCS11Test {
 
@@ -47,6 +47,7 @@ public class TestDH2048 extends PKCS11Test {
         }
     }
 
+    @Override
     public void main(Provider p) throws Exception {
         if (p.getService("KeyPairGenerator", "DH") == null) {
             System.out.println("KPG for DH not supported, skipping");
@@ -61,6 +62,6 @@ public class TestDH2048 extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestDH2048());
+        main(new TestDH2048(), args);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,23 +28,22 @@
  * @author Andreas Sterbenz
  * @library ..
  * @modules java.base/sun.security.internal.spec
+ * @run main/othervm TestPremaster
+ * @run main/othervm TestPremaster sm policy
  */
 
-import java.security.Security;
 import java.security.Provider;
-
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.util.Formatter;
-
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 
 public class TestPremaster extends PKCS11Test {
 
     public static void main(String[] args) throws Exception {
-        main(new TestPremaster());
+        main(new TestPremaster(), args);
     }
 
+    @Override
     public void main(Provider provider) throws Exception {
         if (provider.getService(
                 "KeyGenerator", "SunTlsRsaPremasterSecret") == null) {

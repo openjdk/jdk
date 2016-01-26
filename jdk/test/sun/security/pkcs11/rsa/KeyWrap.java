@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,28 @@
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @run main/othervm KeyWrap
+ * @run main/othervm KeyWrap sm
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
-
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.util.Random;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 public class KeyWrap extends PKCS11Test {
 
+    @Override
     public void main(Provider p) throws Exception {
         try {
             Cipher.getInstance("RSA/ECB/PKCS1Padding", p);
@@ -62,7 +72,7 @@ public class KeyWrap extends PKCS11Test {
                 PublicKey pub = (PublicKey)kf.translateKey(kp.getPublic());
                 PrivateKey priv = (PrivateKey)kf.translateKey(kp.getPrivate());
                 kp = new KeyPair(pub, priv);
-            } catch (Exception ee) {
+            } catch (NoSuchAlgorithmException | InvalidKeyException ee) {
                 ee.printStackTrace();
                 System.out.println("Provider does not support RSA, skipping");
                 return;
@@ -93,7 +103,7 @@ public class KeyWrap extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new KeyWrap());
+        main(new KeyWrap(), args);
     }
 
 }

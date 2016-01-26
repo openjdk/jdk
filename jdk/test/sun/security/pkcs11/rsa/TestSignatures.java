@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,24 @@
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @run main/othervm TestSignatures
+ * @run main/othervm TestSignatures sm rsakeys.ks.policy
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
-import java.security.interfaces.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.KeyFactory;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Enumeration;
+import java.util.Random;
 
 public class TestSignatures extends PKCS11Test {
-
-    private final static String BASE = System.getProperty("test.src", ".");
 
     private static final char[] password = "test12".toCharArray();
 
@@ -47,14 +54,16 @@ public class TestSignatures extends PKCS11Test {
     private static byte[] data;
 
     static KeyStore getKeyStore() throws Exception {
-        InputStream in = new FileInputStream(new File(BASE, "rsakeys.ks"));
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(in, password);
-        in.close();
+        KeyStore ks;
+        try (InputStream in = new FileInputStream(new File(BASE, "rsakeys.ks"))) {
+            ks = KeyStore.getInstance("JKS");
+            ks.load(in, password);
+        }
         return ks;
     }
 
-    private static void testSignature(String algorithm, PrivateKey privateKey, PublicKey publicKey) throws Exception {
+    private static void testSignature(String algorithm, PrivateKey privateKey,
+            PublicKey publicKey) throws Exception {
         System.out.println("Testing " + algorithm + "...");
         Signature s = Signature.getInstance(algorithm, provider);
         s.initSign(privateKey);
@@ -78,7 +87,8 @@ public class TestSignatures extends PKCS11Test {
         }
     }
 
-    private static void test(PrivateKey privateKey, PublicKey publicKey) throws Exception {
+    private static void test(PrivateKey privateKey, PublicKey publicKey)
+            throws Exception {
         testSignature("MD2withRSA", privateKey, publicKey);
         testSignature("MD5withRSA", privateKey, publicKey);
         testSignature("SHA1withRSA", privateKey, publicKey);
@@ -93,9 +103,10 @@ public class TestSignatures extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestSignatures());
+        main(new TestSignatures(), args);
     }
 
+    @Override
     public void main(Provider p) throws Exception {
 
         /*
@@ -103,9 +114,9 @@ public class TestSignatures extends PKCS11Test {
          * when running SunPKCS11-Solaris (8044554)
          */
         if (p.getName().equals("SunPKCS11-Solaris") &&
-            System.getProperty("os.name").equals("SunOS") &&
-            System.getProperty("os.arch").equals("sparcv9") &&
-            System.getProperty("os.version").compareTo("5.11") <= 0 &&
+            props.getProperty("os.name").equals("SunOS") &&
+            props.getProperty("os.arch").equals("sparcv9") &&
+            props.getProperty("os.version").compareTo("5.11") <= 0 &&
             getDistro().compareTo("11.2") < 0) {
 
             System.out.println("SunPKCS11-Solaris provider requires " +

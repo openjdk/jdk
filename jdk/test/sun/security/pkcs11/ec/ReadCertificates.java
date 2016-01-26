@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,31 @@
  * @author Andreas Sterbenz
  * @library ..
  * @library ../../../../java/security/testlibrary
+ * @run main/othervm ReadCertificates
+ * @run main/othervm ReadCertificates sm policy
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.cert.*;
-import java.security.*;
-import java.security.interfaces.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECParameterSpec;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import javax.security.auth.x500.X500Principal;
 
 public class ReadCertificates extends PKCS11Test {
@@ -49,16 +64,18 @@ public class ReadCertificates extends PKCS11Test {
 
     private static Collection<X509Certificate> readCertificates(File file) throws Exception {
         System.out.println("Loading " + file.getName() + "...");
-        InputStream in = new FileInputStream(file);
-        Collection<X509Certificate> certs = (Collection<X509Certificate>)factory.generateCertificates(in);
-        in.close();
+        Collection<X509Certificate> certs;
+        try (InputStream in = new FileInputStream(file)) {
+            certs = (Collection<X509Certificate>)factory.generateCertificates(in);
+        }
         return certs;
     }
 
     public static void main(String[] args) throws Exception {
-        main(new ReadCertificates());
+        main(new ReadCertificates(), args);
     }
 
+    @Override
     public void main(Provider p) throws Exception {
         if (p.getService("Signature", "SHA1withECDSA") == null) {
             System.out.println("Provider does not support ECDSA, skipping...");
@@ -79,7 +96,7 @@ public class ReadCertificates extends PKCS11Test {
         } catch (CertificateException e) {
             // ignore
         }
-        Map<X500Principal,X509Certificate> certs = new LinkedHashMap<X500Principal,X509Certificate>();
+        Map<X500Principal,X509Certificate> certs = new LinkedHashMap<>();
 
         File dir = new File(BASE, "certs");
         File closedDir = new File(CLOSED_BASE, "certs");
@@ -103,7 +120,7 @@ public class ReadCertificates extends PKCS11Test {
         System.out.println("OK: " + certs.size() + " certificates.");
 
         // Get supported curves
-        Vector<ECParameterSpec> supportedEC = getKnownCurves(p);
+        List<ECParameterSpec> supportedEC = getKnownCurves(p);
 
         System.out.println("Test Certs:\n");
         for (X509Certificate cert : certs.values()) {
@@ -127,7 +144,8 @@ public class ReadCertificates extends PKCS11Test {
                System.out.println("Warning: " + e.getMessage() +
                    ". Trying another provider...");
                cert.verify(key);
-           } catch (Exception e) {
+           } catch (CertificateException | InvalidKeyException |
+                    NoSuchProviderException | SignatureException e) {
                System.out.println(e.getMessage());
                if (key instanceof ECPublicKey) {
                    System.out.println("Failed.\n\tCurve: " +
@@ -145,7 +163,7 @@ public class ReadCertificates extends PKCS11Test {
         // try some random invalid signatures to make sure we get the correct
         // error
         System.out.println("Checking incorrect signatures...");
-        List<X509Certificate> certList = new ArrayList<X509Certificate>(certs.values());
+        List<X509Certificate> certList = new ArrayList<>(certs.values());
         for (int i = 0; i < 20; i++) {
             X509Certificate cert, signer;
             do {
@@ -161,9 +179,7 @@ public class ReadCertificates extends PKCS11Test {
                 } else {
                     throw new Exception("Verified invalid signature");
                 }
-            } catch (SignatureException e) {
-                System.out.println("OK: " + e);
-            } catch (InvalidKeyException e) {
+            } catch (SignatureException | InvalidKeyException e) {
                 System.out.println("OK: " + e);
             }
         }
