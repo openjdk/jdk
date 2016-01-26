@@ -233,42 +233,56 @@ public class Vector<E>
     public synchronized void ensureCapacity(int minCapacity) {
         if (minCapacity > 0) {
             modCount++;
-            ensureCapacityHelper(minCapacity);
+            if (minCapacity > elementData.length)
+                grow(minCapacity);
         }
     }
 
     /**
-     * This implements the unsynchronized semantics of ensureCapacity.
-     * Synchronized methods in this class can internally call this
-     * method for ensuring capacity without incurring the cost of an
-     * extra synchronization.
-     *
-     * @see #ensureCapacity(int)
-     */
-    private void ensureCapacityHelper(int minCapacity) {
-        // overflow-conscious code
-        if (minCapacity - elementData.length > 0)
-            grow(minCapacity);
-    }
-
-    /**
-     * The maximum size of array to allocate.
+     * The maximum size of array to allocate (unless necessary).
      * Some VMs reserve some header words in an array.
      * Attempts to allocate larger arrays may result in
      * OutOfMemoryError: Requested array size exceeds VM limit
      */
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
-    private void grow(int minCapacity) {
+    /**
+     * Increases the capacity to ensure that it can hold at least the
+     * number of elements specified by the minimum capacity argument.
+     *
+     * @param minCapacity the desired minimum capacity
+     * @throws OutOfMemoryError if minCapacity is less than zero
+     */
+    private Object[] grow(int minCapacity) {
+        return elementData = Arrays.copyOf(elementData,
+                                           newCapacity(minCapacity));
+    }
+
+    private Object[] grow() {
+        return grow(elementCount + 1);
+    }
+
+    /**
+     * Returns a capacity at least as large as the given minimum capacity.
+     * Will not return a capacity greater than MAX_ARRAY_SIZE unless
+     * the given minimum capacity is greater than MAX_ARRAY_SIZE.
+     *
+     * @param minCapacity the desired minimum capacity
+     * @throws OutOfMemoryError if minCapacity is less than zero
+     */
+    private int newCapacity(int minCapacity) {
         // overflow-conscious code
         int oldCapacity = elementData.length;
         int newCapacity = oldCapacity + ((capacityIncrement > 0) ?
                                          capacityIncrement : oldCapacity);
-        if (newCapacity - minCapacity < 0)
-            newCapacity = minCapacity;
-        if (newCapacity - MAX_ARRAY_SIZE > 0)
-            newCapacity = hugeCapacity(minCapacity);
-        elementData = Arrays.copyOf(elementData, newCapacity);
+        if (newCapacity - minCapacity <= 0) {
+            if (minCapacity < 0) // overflow
+                throw new OutOfMemoryError();
+            return minCapacity;
+        }
+        return (newCapacity - MAX_ARRAY_SIZE <= 0)
+            ? newCapacity
+            : hugeCapacity(minCapacity);
     }
 
     private static int hugeCapacity(int minCapacity) {
@@ -290,13 +304,10 @@ public class Vector<E>
      */
     public synchronized void setSize(int newSize) {
         modCount++;
-        if (newSize > elementCount) {
-            ensureCapacityHelper(newSize);
-        } else {
-            for (int i = newSize ; i < elementCount ; i++) {
-                elementData[i] = null;
-            }
-        }
+        if (newSize > elementData.length)
+            grow(newSize);
+        for (int i = newSize; i < elementCount; i++)
+            elementData[i] = null;
         elementCount = newSize;
     }
 
@@ -604,11 +615,16 @@ public class Vector<E>
             throw new ArrayIndexOutOfBoundsException(index
                                                      + " > " + elementCount);
         }
-        ensureCapacityHelper(elementCount + 1);
-        System.arraycopy(elementData, index, elementData, index + 1, elementCount - index);
-        elementData[index] = obj;
         modCount++;
-        elementCount++;
+        final int s = elementCount;
+        Object[] elementData = this.elementData;
+        if (s == elementData.length)
+            elementData = grow();
+        System.arraycopy(elementData, index,
+                         elementData, index + 1,
+                         s - index);
+        elementData[index] = obj;
+        elementCount = s + 1;
     }
 
     /**
@@ -623,9 +639,8 @@ public class Vector<E>
      * @param   obj   the component to be added
      */
     public synchronized void addElement(E obj) {
-        ensureCapacityHelper(elementCount + 1);
         modCount++;
-        elementData[elementCount++] = obj;
+        add(obj, elementData, elementCount);
     }
 
     /**
@@ -781,6 +796,18 @@ public class Vector<E>
     }
 
     /**
+     * This helper method split out from add(E) to keep method
+     * bytecode size under 35 (the -XX:MaxInlineSize default value),
+     * which helps when add(E) is called in a C1-compiled loop.
+     */
+    private void add(E e, Object[] elementData, int s) {
+        if (s == elementData.length)
+            elementData = grow();
+        elementData[s] = e;
+        elementCount = s + 1;
+    }
+
+    /**
      * Appends the specified element to the end of this Vector.
      *
      * @param e element to be appended to this Vector
@@ -788,9 +815,8 @@ public class Vector<E>
      * @since 1.2
      */
     public synchronized boolean add(E e) {
-        ensureCapacityHelper(elementCount + 1);
         modCount++;
-        elementData[elementCount++] = e;
+        add(e, elementData, elementCount);
         return true;
     }
 
@@ -891,16 +917,19 @@ public class Vector<E>
      */
     public boolean addAll(Collection<? extends E> c) {
         Object[] a = c.toArray();
+        modCount++;
         int numNew = a.length;
-        if (numNew > 0) {
-            synchronized (this) {
-                ensureCapacityHelper(elementCount + numNew);
-                System.arraycopy(a, 0, elementData, elementCount, numNew);
-                modCount++;
-                elementCount += numNew;
-            }
+        if (numNew == 0)
+            return false;
+        synchronized (this) {
+            Object[] elementData = this.elementData;
+            final int s = elementCount;
+            if (numNew > elementData.length - s)
+                elementData = grow(s + numNew);
+            System.arraycopy(a, 0, elementData, s, numNew);
+            elementCount = s + numNew;
+            return true;
         }
-        return numNew > 0;
     }
 
     /**
@@ -969,21 +998,23 @@ public class Vector<E>
             throw new ArrayIndexOutOfBoundsException(index);
 
         Object[] a = c.toArray();
+        modCount++;
         int numNew = a.length;
+        if (numNew == 0)
+            return false;
+        Object[] elementData = this.elementData;
+        final int s = elementCount;
+        if (numNew > elementData.length - s)
+            elementData = grow(s + numNew);
 
-        if (numNew > 0) {
-            ensureCapacityHelper(elementCount + numNew);
-
-            int numMoved = elementCount - index;
-            if (numMoved > 0)
-                System.arraycopy(elementData, index, elementData,
-                        index + numNew, numMoved);
-
-             System.arraycopy(a, 0, elementData, index, numNew);
-             elementCount += numNew;
-             modCount++;
-        }
-        return numNew > 0;
+        int numMoved = s - index;
+        if (numMoved > 0)
+            System.arraycopy(elementData, index,
+                             elementData, index + numNew,
+                             numMoved);
+        System.arraycopy(a, 0, elementData, index, numNew);
+        elementCount = s + numNew;
+        return true;
     }
 
     /**
