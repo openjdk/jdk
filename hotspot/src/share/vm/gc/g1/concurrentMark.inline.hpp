@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,6 +185,14 @@ inline bool CMBitMapRO::iterate(BitMapClosure* cl, MemRegion mr) {
   return true;
 }
 
+// The argument addr should be the start address of a valid object
+HeapWord* CMBitMapRO::nextObject(HeapWord* addr) {
+  oop obj = (oop) addr;
+  HeapWord* res =  addr + obj->size();
+  assert(offsetToHeapWord(heapWordToOffset(res)) == res, "sanity");
+  return res;
+}
+
 #define check_mark(addr)                                                       \
   assert(_bmStartWord <= (addr) && (addr) < (_bmStartWord + _bmWordSize),      \
          "outside underlying space?");                                         \
@@ -351,6 +359,15 @@ inline void ConcurrentMark::markPrev(oop p) {
   // Note we are overriding the read-only view of the prev map here, via
   // the cast.
   ((CMBitMap*)_prevMarkBitMap)->mark((HeapWord*) p);
+}
+
+bool ConcurrentMark::isPrevMarked(oop p) const {
+  assert(p != NULL && p->is_oop(), "expected an oop");
+  HeapWord* addr = (HeapWord*)p;
+  assert(addr >= _prevMarkBitMap->startWord() ||
+         addr < _prevMarkBitMap->endWord(), "in a region");
+
+  return _prevMarkBitMap->isMarked(addr);
 }
 
 inline void ConcurrentMark::grayRoot(oop obj, size_t word_size,

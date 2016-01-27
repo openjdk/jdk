@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/parallel/objectStartArray.hpp"
+#include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -122,7 +122,6 @@ void ObjectStartArray::set_covered_region(MemRegion mr) {
 void ObjectStartArray::reset() {
   memset(_blocks_region.start(), clean_block, _blocks_region.byte_size());
 }
-
 
 bool ObjectStartArray::object_starts_in_range(HeapWord* start_addr,
                                               HeapWord* end_addr) const {

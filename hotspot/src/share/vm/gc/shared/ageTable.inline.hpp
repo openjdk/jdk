@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,15 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_OBJARRAYOOP_INLINE_HPP
-#define SHARE_VM_OOPS_OBJARRAYOOP_INLINE_HPP
+#ifndef SHARE_VM_GC_SHARED_AGETABLE_INLINE_HPP
+#define SHARE_VM_GC_SHARED_AGETABLE_INLINE_HPP
 
-#include "oops/objArrayOop.hpp"
+#include "gc/shared/ageTable.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/globals.hpp"
 
-inline oop objArrayOopDesc::obj_at(int index) const {
-  // With UseCompressedOops decode the narrow oop in the objArray to an
-  // uncompressed oop.  Otherwise this is simply a "*" operator.
-  if (UseCompressedOops) {
-    return load_decode_heap_oop(obj_at_addr<narrowOop>(index));
-  } else {
-    return load_decode_heap_oop(obj_at_addr<oop>(index));
-  }
+// add entry
+void AgeTable::add(oop p, size_t oop_size) {
+  add(p->age(), oop_size);
 }
 
-void objArrayOopDesc::obj_at_put(int index, oop value) {
-  if (UseCompressedOops) {
-    oop_store(obj_at_addr<narrowOop>(index), value);
-  } else {
-    oop_store(obj_at_addr<oop>(index), value);
-  }
-}
-
-#endif // SHARE_VM_OOPS_OBJARRAYOOP_INLINE_HPP
+#endif // SHARE_VM_GC_SHARED_AGETABLE_INLINE_HPP

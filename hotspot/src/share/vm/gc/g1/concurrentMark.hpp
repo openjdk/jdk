@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,12 +96,7 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
   }
 
   // The argument addr should be the start address of a valid object
-  HeapWord* nextObject(HeapWord* addr) {
-    oop obj = (oop) addr;
-    HeapWord* res =  addr + obj->size();
-    assert(offsetToHeapWord(heapWordToOffset(res)) == res, "sanity");
-    return res;
-  }
+  inline HeapWord* nextObject(HeapWord* addr);
 
   void print_on_error(outputStream* st, const char* prefix) const;
 
@@ -627,14 +622,7 @@ public:
   // If marking is not in progress, it's a no-op.
   void verify_no_cset_oops() PRODUCT_RETURN;
 
-  bool isPrevMarked(oop p) const {
-    assert(p != NULL && p->is_oop(), "expected an oop");
-    HeapWord* addr = (HeapWord*)p;
-    assert(addr >= _prevMarkBitMap->startWord() ||
-           addr < _prevMarkBitMap->endWord(), "in a region");
-
-    return _prevMarkBitMap->isMarked(addr);
-  }
+  inline bool isPrevMarked(oop p) const;
 
   inline bool do_yield_check(uint worker_i = 0);
 

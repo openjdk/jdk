@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/parMarkBitMap.hpp"
-#include "gc/parallel/psParallelCompact.hpp"
+#include "gc/parallel/psParallelCompact.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
