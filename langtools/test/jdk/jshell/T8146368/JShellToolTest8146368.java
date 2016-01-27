@@ -25,6 +25,7 @@
  * @test
  * @bug 8146368
  * @summary Test Smashing Error when user language is Japanese
+ * @modules jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib /jdk/jshell
  * @build ReplToolTesting
  * @run testng/othervm -Duser.language=ja JShellToolTest8146368

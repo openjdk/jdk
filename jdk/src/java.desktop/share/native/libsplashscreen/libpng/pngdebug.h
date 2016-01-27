@@ -29,11 +29,10 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
+ * Last changed in libpng 1.6.8 [December 19, 2013]
  * Copyright (c) 1998-2013 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
- *
- * Last changed in libpng 1.6.8 [December 19, 2013]
  *
  * This code is released under the libpng license.
  * For conditions of distribution and use, see the disclaimer

@@ -1156,8 +1156,8 @@ Java_sun_font_FontConfigManager_getFontConfig
             continue;
         }
         pattern = (*FcNameParse)((FcChar8 *)fcName);
+        (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
         if (pattern == NULL) {
-            (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
             closeFontConfig(libfontconfig, JNI_FALSE);
             return;
         }
@@ -1175,7 +1175,6 @@ Java_sun_font_FontConfigManager_getFontConfig
         fontset = (*FcFontSort)(NULL, pattern, FcTrue, NULL, &result);
         if (fontset == NULL) {
             (*FcPatternDestroy)(pattern);
-            (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
             closeFontConfig(libfontconfig, JNI_FALSE);
             return;
         }
@@ -1207,7 +1206,6 @@ Java_sun_font_FontConfigManager_getFontConfig
             }
             (*FcPatternDestroy)(pattern);
             (*FcFontSetDestroy)(fontset);
-            (*env)->ReleaseStringUTFChars(env, fcNameStr, (const char*)fcName);
             closeFontConfig(libfontconfig, JNI_FALSE);
             return;
         }
@@ -1249,8 +1247,6 @@ Java_sun_font_FontConfigManager_getFontConfig
                 free(file);
                 (*FcPatternDestroy)(pattern);
                 (*FcFontSetDestroy)(fontset);
-                (*env)->ReleaseStringUTFChars(env,
-                                              fcNameStr, (const char*)fcName);
                 closeFontConfig(libfontconfig, JNI_FALSE);
                 return;
             }
@@ -1298,6 +1294,16 @@ Java_sun_font_FontConfigManager_getFontConfig
         if (includeFallbacks) {
             fcFontArr =
                 (*env)->NewObjectArray(env, fontCount, fcFontClass, NULL);
+            if (IS_NULL(fcFontArr)) {
+                free(family);
+                free(fullname);
+                free(styleStr);
+                free(file);
+                (*FcPatternDestroy)(pattern);
+                (*FcFontSetDestroy)(fontset);
+                closeFontConfig(libfontconfig, JNI_FALSE);
+                return;
+            }
             (*env)->SetObjectField(env,fcCompFontObj, fcAllFontsID, fcFontArr);
         }
         fn=0;
@@ -1306,18 +1312,23 @@ Java_sun_font_FontConfigManager_getFontConfig
             if (family[j] != NULL) {
                 jobject fcFont =
                     (*env)->NewObject(env, fcFontClass, fcFontCons);
+                if (IS_NULL(fcFont)) break;
                 jstr = (*env)->NewStringUTF(env, (const char*)family[j]);
+                if (IS_NULL(jstr)) break;
                 (*env)->SetObjectField(env, fcFont, familyNameID, jstr);
                 if (file[j] != NULL) {
                     jstr = (*env)->NewStringUTF(env, (const char*)file[j]);
+                    if (IS_NULL(jstr)) break;
                     (*env)->SetObjectField(env, fcFont, fontFileID, jstr);
                 }
                 if (styleStr[j] != NULL) {
                     jstr = (*env)->NewStringUTF(env, (const char*)styleStr[j]);
+                    if (IS_NULL(jstr)) break;
                     (*env)->SetObjectField(env, fcFont, styleNameID, jstr);
                 }
                 if (fullname[j] != NULL) {
                     jstr = (*env)->NewStringUTF(env, (const char*)fullname[j]);
+                    if (IS_NULL(jstr)) break;
                     (*env)->SetObjectField(env, fcFont, fullNameID, jstr);
                 }
                 if (fn==0) {
@@ -1331,7 +1342,6 @@ Java_sun_font_FontConfigManager_getFontConfig
                 }
             }
         }
-        (*env)->ReleaseStringUTFChars (env, fcNameStr, (const char*)fcName);
         (*FcFontSetDestroy)(fontset);
         (*FcPatternDestroy)(pattern);
         free(family);

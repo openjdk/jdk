@@ -28,7 +28,7 @@ import javax.swing.undo.UndoableEdit;
 
 /**
  * UndoableEdit support for undo/redo actions synchronization
- * @since 1.9
+ * @since 9
  */
 public interface UndoableEditLockSupport extends UndoableEdit {
     /**

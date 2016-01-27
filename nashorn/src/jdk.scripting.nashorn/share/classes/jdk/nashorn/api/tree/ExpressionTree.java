@@ -29,6 +29,6 @@ package jdk.nashorn.api.tree;
  * A tree node used as the base class for the different types of
  * expressions.
  *
- * @since 1.9
+ * @since 9
  */
 public interface ExpressionTree extends Tree {}

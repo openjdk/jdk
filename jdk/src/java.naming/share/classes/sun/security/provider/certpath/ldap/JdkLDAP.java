@@ -34,7 +34,7 @@ import java.security.cert.CertStoreParameters;
  * Provider class for the JdkLDAP provider.
  * Supports LDAP cert store.
  *
- * @since   1.9
+ * @since   9
  */
 public final class JdkLDAP extends Provider {
 

@@ -49,7 +49,7 @@ import sun.security.util.PropertyExpander;
  * where <Service> can be "MessageDigest", "Cipher", etc. and <Algorithm>
  * reprepresents the value that's passed into the various getInstance() calls.
  *
- * @since   1.9
+ * @since   9
  */
 final class Config {
 

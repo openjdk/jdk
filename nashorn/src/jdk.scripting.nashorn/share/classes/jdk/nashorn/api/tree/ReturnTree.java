@@ -34,7 +34,7 @@ package jdk.nashorn.api.tree;
  *   return <em>expression</em>;
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface ReturnTree extends StatementTree {
     /**

@@ -533,7 +533,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                  predicate to apply to elements to determine the longest
      *                  prefix of elements.
      * @return the new stream
-     * @since 1.9
+     * @since 9
      */
     default Stream<T> takeWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate);
@@ -599,7 +599,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *                  predicate to apply to elements to determine the longest
      *                  prefix of elements.
      * @return the new stream
-     * @since 1.9
+     * @since 9
      */
     default Stream<T> dropWhile(Predicate<? super T> predicate) {
         Objects.requireNonNull(predicate);
@@ -1146,7 +1146,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * @param <T> the type of stream elements
      * @return a stream with a single element if the specified element
      *         is non-null, otherwise an empty stream
-     * @since 1.9
+     * @since 9
      */
     public static<T> Stream<T> ofNullable(T t) {
         return t == null ? Stream.empty()

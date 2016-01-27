@@ -32,7 +32,7 @@ import java.util.Map;
  *
  * JAXBContextFactory can be located using {@link java.util.ServiceLoader#load(Class)}
  *
- * @since 1.9, JAXB 2.3
+ * @since 9, JAXB 2.3
  */
 public interface JAXBContextFactory {
 
@@ -68,7 +68,7 @@ public interface JAXBContextFactory {
      * @throws IllegalArgumentException
      *      if the parameter contains {@code null} (i.e., {@code newInstance(null,someMap);})
      *
-     * @since 1.9, JAXB 2.3
+     * @since 9, JAXB 2.3
      */
     JAXBContext createContext(Class<?>[] classesToBeBound,
                               Map<String, ?> properties ) throws JAXBException;
@@ -100,7 +100,7 @@ public interface JAXBContextFactory {
      *   <li>failure to locate a value for the context factory provider property</li>
      *   <li>mixing schema derived packages from different providers on the same contextPath</li>
      * </ol>
-     * @since 1.9, JAXB 2.3
+     * @since 9, JAXB 2.3
      */
     JAXBContext createContext(String contextPath,
                               ClassLoader classLoader,

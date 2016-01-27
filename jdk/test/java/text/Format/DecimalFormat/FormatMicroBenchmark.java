@@ -51,7 +51,7 @@
  *    getting reliable numbers. Otherwise GC activity may corrupt results.
  *    As of jdk80b48 using "-Xms500m -Xmx500m -XX:NewSize=400m" covers
  *    all cases.
- *  - Optionally using "-XX:+printGC" option provides information that
+ *  - Optionally using "-Xlog:gc" option provides information that
  *    helps checking any GC activity while benches are run.
  *
  * Vm Options:
@@ -60,7 +60,7 @@
  *     non fast-path case:  -Xms500m -Xmx500m -XX:NewSize=400m
  *    or use worst case (non fast-path above) with both types of algorithm.
  *
- *  - use -XX:+PrintGC to verify memory consumption of the benchmarks.
+ *  - use -Xlog:gc to verify memory consumption of the benchmarks.
  *    (See "Checking Memory Consumption" below).
  *
  * Description:
@@ -166,7 +166,7 @@
  *  but  is   not enough,  since  any   unexpected  incremental  GC  may  lower
  *  artificially the estimation of the memory consumption.
  *
- *  Options to  set are -Xms, -Xmx,  -XX:NewSize, plus -XX:+PrintGC to evaluate
+ *  Options to  set are -Xms, -Xmx,  -XX:NewSize, plus -Xlog:gc to evaluate
  *  correctly  the  values of  these options. When  running "-verbose", varying
  *  numbers reported for memory consumption may  indicate bad choices for these
  *  options.
@@ -217,7 +217,7 @@ public class FormatMicroBenchmark {
             "   getting reliable numbers. Otherwise GC activity may corrupt results.\n" +
             "   As of jdk80b48 using \"-Xms500m -Xmx500m -XX:NewSize=400m\" covers \n" +
             "   all cases.\n" +
-            " - Optionally using \"-XX:+printGC\" option provides information that \n" +
+            " - Optionally using \"-Xlog:gc\" option provides information that \n" +
             "   helps checking any GC activity while benches are run.\n\n" +
             "Look at the heading comments and description in source code for " +
             "detailed information.\n");
