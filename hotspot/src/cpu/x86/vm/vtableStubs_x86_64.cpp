@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   if (DebugVtables) {
     Label L;
     // check offset vs vtable length
-    __ cmpl(Address(rax, InstanceKlass::vtable_length_offset() * wordSize),
+    __ cmpl(Address(rax, InstanceKlass::vtable_length_offset()),
             vtable_index * vtableEntry::size());
     __ jcc(Assembler::greater, L);
     __ movl(rbx, vtable_index);

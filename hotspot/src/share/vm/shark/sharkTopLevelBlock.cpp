@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1143,8 +1143,8 @@ Value *SharkTopLevelBlock::get_virtual_callee(SharkValue* receiver,
     builder()->CreateArrayAddress(
       klass,
       SharkType::Method_type(),
-      vtableEntry::size() * wordSize,
-      in_ByteSize(InstanceKlass::vtable_start_offset() * wordSize),
+      vtableEntry::size_in_bytes(),
+      InstanceKlass::vtable_start_offset(),
       LLVMValue::intptr_constant(vtable_index)),
     "callee");
 }
@@ -1166,12 +1166,12 @@ Value* SharkTopLevelBlock::get_interface_callee(SharkValue *receiver,
   Value *vtable_start = builder()->CreateAdd(
     builder()->CreatePtrToInt(object_klass, SharkType::intptr_type()),
     LLVMValue::intptr_constant(
-      InstanceKlass::vtable_start_offset() * HeapWordSize),
+      in_bytes(InstanceKlass::vtable_start_offset())),
     "vtable_start");
 
   Value *vtable_length = builder()->CreateValueOfStructEntry(
     object_klass,
-    in_ByteSize(InstanceKlass::vtable_length_offset() * HeapWordSize),
+    InstanceKlass::vtable_length_offset(),
     SharkType::jint_type(),
     "vtable_length");
   vtable_length =
@@ -1182,7 +1182,7 @@ Value* SharkTopLevelBlock::get_interface_callee(SharkValue *receiver,
     vtable_start,
     builder()->CreateShl(
       vtable_length,
-      LLVMValue::intptr_constant(exact_log2(vtableEntry::size() * wordSize))),
+      LLVMValue::intptr_constant(exact_log2(vtableEntry::size_in_bytes()))),
     needs_aligning ? "" : "itable_start");
   if (needs_aligning) {
     itable_start = builder()->CreateAnd(

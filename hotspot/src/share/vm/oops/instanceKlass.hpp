@@ -949,10 +949,10 @@ public:
   virtual void collect_statistics(KlassSizeStats *sz) const;
 #endif
 
-  static int vtable_start_offset()    { return header_size(); }
-  static int vtable_length_offset()   { return offset_of(InstanceKlass, _vtable_len) / HeapWordSize; }
+  static ByteSize vtable_start_offset()    { return in_ByteSize(header_size() * wordSize); }
+  static ByteSize vtable_length_offset()   { return byte_offset_of(InstanceKlass, _vtable_len); }
 
-  intptr_t* start_of_vtable() const        { return ((intptr_t*)this) + vtable_start_offset(); }
+  intptr_t* start_of_vtable() const        { return (intptr_t*) ((address)this + in_bytes(vtable_start_offset())); }
   intptr_t* start_of_itable() const        { return start_of_vtable() + vtable_length(); }
   int  itable_offset_in_words() const { return start_of_itable() - (intptr_t*)this; }
 

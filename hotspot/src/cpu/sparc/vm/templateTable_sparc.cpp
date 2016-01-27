@@ -3153,11 +3153,11 @@ void TemplateTable::invokeinterface(int byte_no) {
   //
 
   // compute start of first itableOffsetEntry (which is at end of vtable)
-  const int base = InstanceKlass::vtable_start_offset() * wordSize;
+  const int base = in_bytes(InstanceKlass::vtable_start_offset());
   Label search;
   Register Rtemp = O1_flags;
 
-  __ ld(O2_Klass, InstanceKlass::vtable_length_offset() * wordSize, Rtemp);
+  __ ld(O2_Klass, in_bytes(InstanceKlass::vtable_length_offset()), Rtemp);
   __ sll(Rtemp, LogBytesPerWord, Rtemp);   // Rscratch *= 4;
   if (Assembler::is_simm13(base)) {
     __ add(Rtemp, base, Rtemp);
