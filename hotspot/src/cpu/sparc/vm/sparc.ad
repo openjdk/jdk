@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -601,8 +601,8 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
            NativeCall::instruction_size);  // sethi; setlo; call; delay slot
   } else {
     assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
-    int entry_offset = InstanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
-    int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
+    int entry_offset = in_bytes(InstanceKlass::vtable_start_offset()) + vtable_index*vtableEntry::size_in_bytes();
+    int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
     int klass_load_size;
     if (UseCompressedClassPointers) {
       assert(Universe::heap() != NULL, "java heap should be initialized");
@@ -2658,8 +2658,8 @@ encode %{
       } else {
         klass_load_size = 1*BytesPerInstWord;
       }
-      int entry_offset = InstanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
-      int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
+      int entry_offset = in_bytes(InstanceKlass::vtable_start_offset()) + vtable_index*vtableEntry::size_in_bytes();
+      int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
       if (Assembler::is_simm13(v_off)) {
         __ ld_ptr(G3, v_off, G5_method);
       } else {

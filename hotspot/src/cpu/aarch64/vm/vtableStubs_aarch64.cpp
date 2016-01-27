@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -73,7 +73,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   if (DebugVtables) {
     Label L;
     // check offset vs vtable length
-    __ ldrw(rscratch1, Address(r19, InstanceKlass::vtable_length_offset() * wordSize));
+    __ ldrw(rscratch1, Address(r19, InstanceKlass::vtable_length_offset()));
     __ cmpw(rscratch1, vtable_index * vtableEntry::size());
     __ br(Assembler::GT, L);
     __ enter();

@@ -2188,16 +2188,16 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   }
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
-  int vtable_base = InstanceKlass::vtable_start_offset() * wordSize;
+  int vtable_base = in_bytes(InstanceKlass::vtable_start_offset());
   int scan_step   = itableOffsetEntry::size() * wordSize;
-  int vte_size    = vtableEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size_in_bytes();
 
-  lduw(recv_klass, InstanceKlass::vtable_length_offset() * wordSize, scan_temp);
+  lduw(recv_klass, in_bytes(InstanceKlass::vtable_length_offset()), scan_temp);
   // %%% We should store the aligned, prescaled offset in the klassoop.
   // Then the next several instructions would fold away.
 
   int itb_offset = vtable_base;
-  int itb_scale = exact_log2(vtableEntry::size() * wordSize);
+  int itb_scale = exact_log2(vtableEntry::size_in_bytes());
   sll(scan_temp, itb_scale,  scan_temp);
   add(scan_temp, itb_offset, scan_temp);
   add(recv_klass, scan_temp, scan_temp);
@@ -2268,16 +2268,16 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            Register method_result) {
   assert_different_registers(recv_klass, method_result, vtable_index.register_or_noreg());
   Register sethi_temp = method_result;
-  const int base = (InstanceKlass::vtable_start_offset() * wordSize +
-                    // method pointer offset within the vtable entry:
-                    vtableEntry::method_offset_in_bytes());
+  const int base = in_bytes(InstanceKlass::vtable_start_offset()) +
+                   // method pointer offset within the vtable entry:
+                   vtableEntry::method_offset_in_bytes();
   RegisterOrConstant vtable_offset = vtable_index;
   // Each of the following three lines potentially generates an instruction.
   // But the total number of address formation instructions will always be
   // at most two, and will often be zero.  In any case, it will be optimal.
   // If vtable_index is a register, we will have (sll_ptr N,x; inc_ptr B,x; ld_ptr k,x).
   // If vtable_index is a constant, we will have at most (set B+X<<N,t; ld_ptr k,t).
-  vtable_offset = regcon_sll_ptr(vtable_index, exact_log2(vtableEntry::size() * wordSize), vtable_offset);
+  vtable_offset = regcon_sll_ptr(vtable_index, exact_log2(vtableEntry::size_in_bytes()), vtable_offset);
   vtable_offset = regcon_inc_ptr(vtable_offset, base, vtable_offset, sethi_temp);
   Address vtable_entry_addr(recv_klass, ensure_simm13_or_reg(vtable_offset, sethi_temp));
   ld_ptr(vtable_entry_addr, method_result);

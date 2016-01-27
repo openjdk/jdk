@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,9 @@ class vtableEntry VALUE_OBJ_CLASS_SPEC {
   // size in words
   static int size() {
     return sizeof(vtableEntry) / sizeof(HeapWord);
+  }
+  static int size_in_bytes() {
+    return sizeof(vtableEntry);
   }
   static int method_offset_in_bytes() { return offset_of(vtableEntry, _method); }
   Method* method() const    { return _method; }

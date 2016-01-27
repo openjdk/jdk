@@ -151,8 +151,8 @@ jbyte* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
 
 void CompilerToVM::Data::initialize() {
-  InstanceKlass_vtable_start_offset = InstanceKlass::vtable_start_offset();
-  InstanceKlass_vtable_length_offset = InstanceKlass::vtable_length_offset() * HeapWordSize;
+  InstanceKlass_vtable_start_offset = in_bytes(InstanceKlass::vtable_start_offset());
+  InstanceKlass_vtable_length_offset = in_bytes(InstanceKlass::vtable_length_offset());
 
   Method_extra_stack_entries = Method::extra_stack_entries();
 
