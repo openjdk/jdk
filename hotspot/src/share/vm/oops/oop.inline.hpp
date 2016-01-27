@@ -100,7 +100,7 @@ void oopDesc::init_mark() {
   set_mark(markOopDesc::prototype_for_object(this));
 }
 
-inline Klass* oopDesc::klass() const {
+Klass* oopDesc::klass() const {
   if (UseCompressedClassPointers) {
     return Klass::decode_klass_not_null(_metadata._compressed_klass);
   } else {
@@ -129,7 +129,7 @@ narrowKlass* oopDesc::compressed_klass_addr() {
   return &_metadata._compressed_klass;
 }
 
-inline void oopDesc::set_klass(Klass* k) {
+void oopDesc::set_klass(Klass* k) {
   // since klasses are promoted no store check is needed
   assert(Universe::is_bootstrapping() || k != NULL, "must be a real Klass*");
   assert(Universe::is_bootstrapping() || k->is_klass(), "not a Klass*");
@@ -144,7 +144,7 @@ int oopDesc::klass_gap() const {
   return *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes());
 }
 
-inline void oopDesc::set_klass_gap(int v) {
+void oopDesc::set_klass_gap(int v) {
   if (UseCompressedClassPointers) {
     *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes()) = v;
   }
@@ -174,7 +174,7 @@ bool oopDesc::is_a(Klass* k) const {
   return klass()->is_subtype_of(k);
 }
 
-inline int oopDesc::size()  {
+int oopDesc::size()  {
   return size_given_klass(klass());
 }
 
@@ -264,7 +264,7 @@ int oopDesc::size_given_klass(Klass* klass)  {
 }
 
 bool oopDesc::is_instance()  const { return klass()->is_instance_klass();  }
-inline bool oopDesc::is_array()     const { return klass()->is_array_klass();     }
+bool oopDesc::is_array()     const { return klass()->is_array_klass();     }
 bool oopDesc::is_objArray()  const { return klass()->is_objArray_klass();  }
 bool oopDesc::is_typeArray() const { return klass()->is_typeArray_klass(); }
 
@@ -298,7 +298,7 @@ inline bool check_obj_alignment(oop obj) {
   return cast_from_oop<intptr_t>(obj) % MinObjAlignmentInBytes == 0;
 }
 
-inline oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
+oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
   address base = Universe::narrow_oop_base();
   int    shift = Universe::narrow_oop_shift();
@@ -307,7 +307,7 @@ inline oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
   return result;
 }
 
-inline oop oopDesc::decode_heap_oop(narrowOop v) {
+oop oopDesc::decode_heap_oop(narrowOop v) {
   return is_null(v) ? (oop)NULL : decode_heap_oop_not_null(v);
 }
 
@@ -325,7 +325,7 @@ narrowOop oopDesc::encode_heap_oop_not_null(oop v) {
   return (narrowOop)result;
 }
 
-inline narrowOop oopDesc::encode_heap_oop(oop v) {
+narrowOop oopDesc::encode_heap_oop(oop v) {
   return (is_null(v)) ? (narrowOop)0 : encode_heap_oop_not_null(v);
 }
 
@@ -516,7 +516,7 @@ bool oopDesc::has_bias_pattern() const {
 }
 
 // used only for asserts
-inline bool oopDesc::is_oop(bool ignore_mark_word) const {
+bool oopDesc::is_oop(bool ignore_mark_word) const {
   oop obj = (oop) this;
   if (!check_obj_alignment(obj)) return false;
   if (!Universe::heap()->is_in_reserved(obj)) return false;
@@ -538,7 +538,7 @@ inline bool oopDesc::is_oop(bool ignore_mark_word) const {
 
 
 // used only for asserts
-inline bool oopDesc::is_oop_or_null(bool ignore_mark_word) const {
+bool oopDesc::is_oop_or_null(bool ignore_mark_word) const {
   return this == NULL ? true : is_oop(ignore_mark_word);
 }
 
@@ -620,7 +620,7 @@ oop oopDesc::forwardee() const {
 }
 
 // The following method needs to be MT safe.
-inline uint oopDesc::age() const {
+uint oopDesc::age() const {
   assert(!is_forwarded(), "Attempt to read age from forwarded mark");
   if (has_displaced_mark()) {
     return displaced_mark()->age();
