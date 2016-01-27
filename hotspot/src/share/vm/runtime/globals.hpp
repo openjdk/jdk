@@ -3395,10 +3395,10 @@ public:
           "also has a smaller default value; see arguments.cpp.")           \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, MarkSweepAlwaysCompactCount,     4,                        \
+  product(uint, MarkSweepAlwaysCompactCount,     4,                         \
           "How often should we fully compact the heap (ignoring the dead "  \
           "space parameters)")                                              \
-          range(1, max_uintx)                                               \
+          range(1, max_juint)                                               \
                                                                             \
   develop(uintx, GCExpandToAllocateDelayMillis, 0,                          \
           "Delay between expansion and allocation (in milliseconds)")       \
