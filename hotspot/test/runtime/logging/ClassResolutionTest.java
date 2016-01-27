@@ -58,26 +58,28 @@ public class ClassResolutionTest {
     public static void main(String... args) throws Exception {
 
         // (1) classresolve should turn on.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:classresolve=info", ClassResolutionTestMain.class.getName());
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:classresolve=info",
+                                                                  ClassResolutionTestMain.class.getName());
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
         o.shouldContain("[classresolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
 
         // (2) classresolve should turn off.
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog", "-Xlog:classresolve=off",  ClassResolutionTestMain.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog",
+                                                   "-Xlog:classresolve=off",
+                                                   ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());
         o.shouldNotContain("[classresolve]");
 
         // (3) TraceClassResolution should turn on.
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+TraceClassResolution", ClassResolutionTestMain.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+TraceClassResolution",
+                                                   ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());
         o.shouldContain("[classresolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
 
         // (4) TraceClassResolution should turn off.
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog", "-XX:-TraceClassResolution",  ClassResolutionTestMain.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog",
+                                                   "-XX:-TraceClassResolution",
+                                                   ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());
         o.shouldNotContain("[classresolve]");
 
