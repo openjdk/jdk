@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ void PSMarkSweep::invoke(bool maximum_heap_compaction) {
     heap->collector_policy()->should_clear_all_soft_refs();
 
   uint count = maximum_heap_compaction ? 1 : MarkSweepAlwaysCompactCount;
-  UIntXFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
+  UIntFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
   PSMarkSweep::invoke_no_policy(clear_all_soft_refs || maximum_heap_compaction);
 }
 
