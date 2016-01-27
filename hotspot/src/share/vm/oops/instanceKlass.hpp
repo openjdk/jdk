@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -927,17 +927,15 @@ public:
   }
 
   // Sizing (in words)
-  static int header_size()            { return align_object_offset(sizeof(InstanceKlass)/HeapWordSize); }
+  static int header_size()            { return sizeof(InstanceKlass)/HeapWordSize; }
 
   static int size(int vtable_length, int itable_length,
                   int nonstatic_oop_map_size,
                   bool is_interface, bool is_anonymous) {
     return align_object_size(header_size() +
-           align_object_offset(vtable_length) +
-           align_object_offset(itable_length) +
-           ((is_interface || is_anonymous) ?
-             align_object_offset(nonstatic_oop_map_size) :
-             nonstatic_oop_map_size) +
+           vtable_length +
+           itable_length +
+           nonstatic_oop_map_size +
            (is_interface ? (int)sizeof(Klass*)/HeapWordSize : 0) +
            (is_anonymous ? (int)sizeof(Klass*)/HeapWordSize : 0));
   }
@@ -955,7 +953,7 @@ public:
   static int vtable_length_offset()   { return offset_of(InstanceKlass, _vtable_len) / HeapWordSize; }
 
   intptr_t* start_of_vtable() const        { return ((intptr_t*)this) + vtable_start_offset(); }
-  intptr_t* start_of_itable() const        { return start_of_vtable() + align_object_offset(vtable_length()); }
+  intptr_t* start_of_itable() const        { return start_of_vtable() + vtable_length(); }
   int  itable_offset_in_words() const { return start_of_itable() - (intptr_t*)this; }
 
   intptr_t* end_of_itable() const          { return start_of_itable() + itable_length(); }
@@ -963,7 +961,7 @@ public:
   address static_field_addr(int offset);
 
   OopMapBlock* start_of_nonstatic_oop_maps() const {
-    return (OopMapBlock*)(start_of_itable() + align_object_offset(itable_length()));
+    return (OopMapBlock*)(start_of_itable() + itable_length());
   }
 
   Klass** end_of_nonstatic_oop_maps() const {
