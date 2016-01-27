@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2910,12 +2910,9 @@ void InstanceKlass::collect_statistics(KlassSizeStats *sz) const {
   Klass::collect_statistics(sz);
 
   sz->_inst_size  = HeapWordSize * size_helper();
-  sz->_vtab_bytes = HeapWordSize * align_object_offset(vtable_length());
-  sz->_itab_bytes = HeapWordSize * align_object_offset(itable_length());
-  sz->_nonstatic_oopmap_bytes = HeapWordSize *
-        ((is_interface() || is_anonymous()) ?
-         align_object_offset(nonstatic_oop_map_size()) :
-         nonstatic_oop_map_size());
+  sz->_vtab_bytes = HeapWordSize * vtable_length();
+  sz->_itab_bytes = HeapWordSize * itable_length();
+  sz->_nonstatic_oopmap_bytes = HeapWordSize * nonstatic_oop_map_size();
 
   int n = 0;
   n += (sz->_methods_array_bytes         = sz->count_array(methods()));

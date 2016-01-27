@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
+#include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -223,7 +224,7 @@ public:
       if (hr->evacuation_failed()) {
         hr->note_self_forwarding_removal_start(during_initial_mark,
                                                during_conc_mark);
-        _g1h->check_bitmaps("Self-Forwarding Ptr Removal", hr);
+        _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
 
         // In the common case (i.e. when there is no evacuation
         // failure) we make sure that the following is done when
