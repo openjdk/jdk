@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,34 +38,6 @@ import java.util.LinkedList;
 
 public class TestG1TraceEagerReclaimHumongousObjects {
   public static void main(String[] args) throws Exception {
-    testGCLogs();
-    testHumongousObjectGCLogs();
-  }
-
-  private static void testGCLogs() throws Exception {
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                               "-Xms128M",
-                                               "-Xmx128M",
-                                               "-Xmn16M",
-                                               "-XX:G1HeapRegionSize=1M",
-                                               "-Xlog:gc+phases=trace",
-                                               "-XX:+UnlockExperimentalVMOptions",
-                                               GCTest.class.getName());
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-
-    // As G1EagerReclaimHumongousObjects is set(default), below logs should be displayed.
-    // And GCTest doesn't have humongous objects, so values should be zero.
-    output.shouldContain("Humongous Reclaim");
-    output.shouldContain("Humongous Total: 0");
-    output.shouldContain("Humongous Candidate: 0");
-    output.shouldContain("Humongous Reclaimed: 0");
-
-    output.shouldHaveExitValue(0);
-  }
-
-  private static void testHumongousObjectGCLogs() throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                "-Xms128M",
                                                "-Xmx128M",
@@ -88,19 +60,6 @@ public class TestG1TraceEagerReclaimHumongousObjects {
     output.shouldContain("Live humongous");
     output.shouldContain("Dead humongous region");
     output.shouldHaveExitValue(0);
-  }
-
-  static class GCTest {
-    private static byte[] garbage;
-
-    public static void main(String [] args) {
-      System.out.println("Creating garbage");
-      // create 128MB of garbage. This should result in at least one GC
-      for (int i = 0; i < 1024; i++) {
-        garbage = new byte[128 * 1024];
-      }
-      System.out.println("Done");
-    }
   }
 
   static class GCWithHumongousObjectTest {
