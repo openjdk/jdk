@@ -36,6 +36,7 @@ import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectInputStream.GetField;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -405,7 +406,7 @@ public final class URL implements java.io.Serializable {
             }
         }
 
-        protocol = protocol.toLowerCase();
+        protocol = protocol.toLowerCase(Locale.ROOT);
         this.protocol = protocol;
         if (host != null) {
 
@@ -579,8 +580,7 @@ public final class URL implements java.io.Serializable {
             for (i = start ; !aRef && (i < limit) &&
                      ((c = spec.charAt(i)) != '/') ; i++) {
                 if (c == ':') {
-
-                    String s = spec.substring(start, i).toLowerCase();
+                    String s = spec.substring(start, i).toLowerCase(Locale.ROOT);
                     if (isValidProtocol(s)) {
                         newProtocol = s;
                         start = i + 1;
