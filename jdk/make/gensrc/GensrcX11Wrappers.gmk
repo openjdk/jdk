@@ -63,14 +63,14 @@ GENSRC_X11_SIZES_USED := $(addprefix $(GENSRC_X11WRAPPERS_TMP)/sizes., $(GENSRC_
 # Copy only the sizes.* files that are actually needed. WrapperGenerator picks up any it finds from the
 # file prefix it is given so those not needed need to be hidden.
 $(GENSRC_X11WRAPPERS_TMP)/sizes.%: $(GENSRC_SIZER_DIR)/sizes.%
-	$(MKDIR) -p $(@D)
+	$(call MakeDir, $(@D))
 	$(RM) '$@'
 	$(SORT) $< > $@
 
 # Run the tool on the offset files copied from the source repository to generate several Java classes
 # used in awt.
 $(SUPPORT_OUTPUTDIR)/gensrc/java.desktop/_the.generated.x11: $(GENSRC_X11_SIZES_USED) $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $(GENSRC_X11WRAPPERS_DST)
+	$(call MakeDir, $(GENSRC_X11WRAPPERS_DST))
 	$(TOOL_WRAPPERGENERATOR) $(GENSRC_X11WRAPPERS_DST) $(GENSRC_SIZER_DIR)/xlibtypes.txt "gen" $(GENSRC_X11WRAPPERS_TMP)/sizes
 	$(TOUCH) $@
 
@@ -82,8 +82,8 @@ ifneq ($(COMPILE_TYPE), cross)
 
   # Generate the C code for the program that will output the offset file.
   $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c: $(GENSRC_SIZER_DIR)/xlibtypes.txt $(BUILD_TOOLS_JDK)
-	$(ECHO) "Generating X11 wrapper ($*-bit version)"
-	$(MKDIR) -p $(@D)
+	$(call LogInfo, Generating X11 wrapper ($*-bit version))
+	$(call MakeDir, $(@D))
 	$(TOOL_WRAPPERGENERATOR) $(@D) $(GENSRC_SIZER_DIR)/xlibtypes.txt "sizer" $*
 
   # use -m32/-m64 only if the compiler supports it
@@ -103,7 +103,7 @@ ifneq ($(COMPILE_TYPE), cross)
 
   # Compile the C code into an executable.
   $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe: $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c
-	$(MKDIR) -p $(@D)
+	$(call MakeDir, $(@D))
 	(cd $(@D) && $(CC) $(MEMORY_MODEL_FLAG) -o $@ $< \
 	    $(X_CFLAGS) \
 	    $(X_LIBS) \
@@ -114,9 +114,9 @@ ifneq ($(COMPILE_TYPE), cross)
   # Run the executable create the offset file and check that it is identical
   # to the offset file in the source code repository.
   $(GENSRC_X11WRAPPERS_TMP)/sizes.%.verification: $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe
-	$(MKDIR) -p $(@D)
+	$(call LogInfo, Verifying X11 wrapper sizes)
+	$(call MakeDir, $(@D))
 	$(GENSRC_X11WRAPPERS_TMP)/sizer.$*.exe | $(SORT) > $@.tmp
-	$(ECHO) Verifying $(GENSRC_X11WRAPPERS_TMP)/sizes.$*.verification.tmp to $(GENSRC_X11WRAPPERS_TMP)/sizes.$*
 	$(DIFF) $(GENSRC_X11WRAPPERS_TMP)/sizes.$*.verification.tmp $(GENSRC_X11WRAPPERS_TMP)/sizes.$*
 	mv $@.tmp $@
 

@@ -24,6 +24,8 @@
 /*
  * @test
  * @summary Test Completion
+ * @modules jdk.jshell/jdk.internal.jshell.tool
+ *          jdk.internal.le/jdk.internal.jline.console.history
  * @build HistoryTest
  * @run testng HistoryTest
  */

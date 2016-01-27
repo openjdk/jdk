@@ -37,7 +37,7 @@ import java.util.List;
  *      <em>body</em>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface FunctionExpressionTree extends ExpressionTree {
     /**

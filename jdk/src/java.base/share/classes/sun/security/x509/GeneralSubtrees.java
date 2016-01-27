@@ -189,7 +189,7 @@ public class GeneralSubtrees implements Cloneable {
         // the list: if any subsequent entry matches or widens entry n,
         // remove entry n. If any subsequent entries narrow entry n, remove
         // the subsequent entries.
-        for (int i = 0; i < size(); i++) {
+        for (int i = 0; i < (size() - 1); i++) {
             GeneralNameInterface current = getGeneralNameInterface(i);
             boolean remove1 = false;
 

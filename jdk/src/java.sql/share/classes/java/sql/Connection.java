@@ -1538,7 +1538,7 @@ throws SQLException;
      * prior to returning the {@code PooledConnection} back to the cache</li>
      * </ul>
      * @throws SQLException if an error occurs
-     * @since 1.9
+     * @since 9
      * @see endRequest
      * @see javax.sql.PooledConnection
      */
@@ -1580,7 +1580,7 @@ throws SQLException;
      * prior to returning the {@code PooledConnection} back to the cache</li>
      * </ul>
      * @throws SQLException if an error occurs
-     * @since 1.9
+     * @since 9
      * @see beginRequest
      * @see javax.sql.PooledConnection
      */
@@ -1614,7 +1614,7 @@ throws SQLException;
      * this method is called on a closed {@code connection}; or
      * the {@code timeout} value is less than 0.
      * @throws SQLFeatureNotSupportedException if the driver does not support sharding
-     * @since 1.9
+     * @since 9
      * @see ShardingKey
      * @see ShardingKeyBuilder
      */
@@ -1645,7 +1645,7 @@ throws SQLException;
      * this method is called on a closed {@code connection}; the {@code shardingkey}
      * is {@code null}; or the {@code timeout} value is less than 0.
      * @throws SQLFeatureNotSupportedException if the driver does not support sharding
-     * @since 1.9
+     * @since 9
      * @see ShardingKey
      * @see ShardingKeyBuilder
      */
@@ -1671,7 +1671,7 @@ throws SQLException;
      * the {@code shardingkey} is {@code null}; or
      * a {@code superSharedingKey} is specified without a {@code shardingKey}
      * @throws SQLFeatureNotSupportedException if the driver does not support sharding
-     * @since 1.9
+     * @since 9
      * @see ShardingKey
      * @see ShardingKeyBuilder
      */
@@ -1694,7 +1694,7 @@ throws SQLException;
      * this method is called on a closed {@code connection}; or the
      * {@code shardkingKey} is {@code null}
      * @throws SQLFeatureNotSupportedException if the driver does not support sharding
-     * @since 1.9
+     * @since 9
      * @see ShardingKey
      * @see ShardingKeyBuilder
      */

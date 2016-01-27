@@ -26,10 +26,10 @@
  * @bug 8042251
  * @summary Test that there are no inner classes attributes in case of there are no inner classes.
  * @library /tools/lib /tools/javac/lib ../lib
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.classfile
  * @build TestBase InMemoryFileManager ToolBox
  * @run main NoInnerClassesTest
  */

@@ -261,18 +261,17 @@ define add_native_source
           # The Visual Studio compiler lacks a feature for generating make dependencies, but by
           # setting -showIncludes, all included files are printed. These are filtered out and
           # parsed into make dependences.
-          # Keep as much as possible on one execution line for best performance on Windows
-	  $(RM) $$($1_$2_DEP).exitvalue ; \
-	  ($(call LogFailures, $$($1_$2_OBJ).log, $$($1_SAFE_NAME)_$$(notdir $2), \
+          # Keep as much as possible on one execution line for best performance on Windows.
+          # No need to save exit code from compilation since pipefail is always active on
+          # Windows.
+	  $(call LogFailures, $$($1_$2_OBJ).log, $$($1_SAFE_NAME)_$$(notdir $2), \
 	      $$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) \
-	          $(CC_OUT_OPTION)$$($1_$2_OBJ) $2) || echo $$$$? > $$($1_$2_DEP).exitvalue ) \
-	      | $(TEE) $$($1_$2_DEP).raw | $(GREP) -v -e "^Note: including file:" \
+	          $(CC_OUT_OPTION)$$($1_$2_OBJ) $2) \
+	      | $(GREP) -v -e "^Note: including file:" \
 	          -e "^$(notdir $2)$$$$" || test "$$$$?" = "1" ; \
-	      ( test -s $$($1_$2_DEP).exitvalue \
-	          && exit `$(CAT) $$($1_$2_DEP).exitvalue` || true ) ; \
-	  ($(ECHO) $$@: \\ ; \
-	      $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_$2_DEP).raw) \
-	      | $(SORT) -u > $$($1_$2_DEP) ; \
+	  $(ECHO) $$@: \\ > $$($1_$2_DEP) ; \
+	  $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_$2_OBJ).log \
+	      | $(SORT) -u >> $$($1_$2_DEP) ; \
 	  $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_$2_DEP) > $$($1_$2_DEP_TARGETS)
         endif
   endif
@@ -306,7 +305,6 @@ endef
 #   RC_FLAGS flags for RC.
 #   MAPFILE mapfile
 #   REORDER reorder file
-#   DEBUG_SYMBOLS add debug symbols (if configured on)
 #   CC the compiler to use, default is $(CC)
 #   LD the linker to use, default is $(LD)
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
@@ -539,25 +537,9 @@ define SetupNativeCompilationBody
     $1_EXTRA_CXXFLAGS:=$$($1_EXTRA_CFLAGS)
   endif
 
-  ifeq ($(DEBUG_BINARIES), true)
-    $1_EXTRA_CFLAGS+=$(CFLAGS_DEBUG_SYMBOLS)
-    $1_EXTRA_CXXFLAGS+=$(CXXFLAGS_DEBUG_SYMBOLS)
-  endif
-  ifeq ($$($1_DEBUG_SYMBOLS), true)
-    ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
-      ifdef OPENJDK
-        # Always add debug symbols
-        $1_EXTRA_CFLAGS+=$(CFLAGS_DEBUG_SYMBOLS)
-        $1_EXTRA_CXXFLAGS+=$(CXXFLAGS_DEBUG_SYMBOLS)
-      else
-        # Programs don't get the debug symbols added in the old build. It's not clear if
-        # this is intentional.
-        ifeq ($$($1_PROGRAM),)
-          $1_EXTRA_CFLAGS+=$(CFLAGS_DEBUG_SYMBOLS)
-          $1_EXTRA_CXXFLAGS+=$(CXXFLAGS_DEBUG_SYMBOLS)
-        endif
-      endif
-    endif
+  ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
+    $1_EXTRA_CFLAGS += $(CFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_CXXFLAGS += $(CXXFLAGS_DEBUG_SYMBOLS)
   endif
 
   ifneq (,$$($1_REORDER))
@@ -658,14 +640,14 @@ define SetupNativeCompilationBody
           $$($1_RES).vardeps)
 
       $$($1_RES): $$($1_VERSIONINFO_RESOURCE) $$($1_RES_VARDEPS_FILE)
-		$(ECHO) $(LOG_INFO) "Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$(notdir $$($1_TARGET)))"
+		$$(call LogInfo, Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$(notdir $$($1_TARGET))))
 		$$($1_RC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
 		    $$($1_VERSIONINFO_RESOURCE)
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL for this.
 		$$($1_CC) $$($1_RC_FLAGS) $$($1_SYSROOT_CFLAGS) -showIncludes -nologo -TC \
-		    $(CC_OUT_OPTION)$$($1_RES_DEP).obj $$($1_VERSIONINFO_RESOURCE) > $$($1_RES_DEP).raw 2>&1 || exit 0
-		($(ECHO) $$($1_RES): \\ \
-		&& $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).raw) > $$($1_RES_DEP)
+		    $(CC_OUT_OPTION)$$($1_RES_DEP).obj $$($1_VERSIONINFO_RESOURCE) > $$($1_RES_DEP).raw 2>&1 || true ; \
+		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEP) ; \
+		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).raw >> $$($1_RES_DEP) ; \
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEP) > $$($1_RES_DEP_TARGETS)
     endif
   endif
@@ -696,67 +678,67 @@ define SetupNativeCompilationBody
 
   # Need to make sure TARGET is first on list
   $1 := $$($1_TARGET)
-  ifeq ($$($1_STATIC_LIBRARY),)
-    ifeq ($$($1_DEBUG_SYMBOLS), true)
-      ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
-        ifneq ($$($1_OUTPUT_DIR), $$($1_OBJECT_DIR))
-          # The dependency on TARGET is needed on windows for debuginfo files
-          # to be rebuilt properly.
-          $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/% $$($1_TARGET)
+  
+  ifeq ($(COPY_DEBUG_SYMBOLS), true)
+    # Only copy debug symbols for dynamic libraries and programs.
+    ifeq ($$($1_STATIC_LIBRARY), )
+      ifneq ($$($1_OUTPUT_DIR), $$($1_OBJECT_DIR))
+        # The dependency on TARGET is needed on windows for debuginfo files
+        # to be rebuilt properly.
+        $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/% $$($1_TARGET)
 		$(CP) $$< $$@
-        endif
+      endif
 
-        # Generate debuginfo files.
-        ifeq ($(OPENJDK_TARGET_OS), windows)
-          $1_EXTRA_LDFLAGS += "-pdb:$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb" \
-              "-map:$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).map"
-          $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb \
-              $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).map
-          # No separate command is needed for debuginfo on windows, instead
-          # touch target to make sure it has a later time stamp than the debug
-          # symbol files to avoid unnecessary relinking on rebuild.
-          $1_CREATE_DEBUGINFO_CMDS := $(TOUCH) $$($1_TARGET)
+      # Generate debuginfo files.
+      ifeq ($(OPENJDK_TARGET_OS), windows)
+        $1_EXTRA_LDFLAGS += "-pdb:$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb" \
+            "-map:$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).map"
+        $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb \
+            $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).map
+        # No separate command is needed for debuginfo on windows, instead
+        # touch target to make sure it has a later time stamp than the debug
+        # symbol files to avoid unnecessary relinking on rebuild.
+        $1_CREATE_DEBUGINFO_CMDS := $(TOUCH) $$($1_TARGET)
 
-        else ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
-          $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).debuginfo
-          # Setup the command line creating debuginfo files, to be run after linking.
-          # It cannot be run separately since it updates the original target file
-          $1_CREATE_DEBUGINFO_CMDS := \
-              $(OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE) \
-              $(CD) $$($1_OUTPUT_DIR) && \
-                  $(OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
+      else ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
+        $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).debuginfo
+        # Setup the command line creating debuginfo files, to be run after linking.
+        # It cannot be run separately since it updates the original target file
+        $1_CREATE_DEBUGINFO_CMDS := \
+            $(OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE) \
+            $(CD) $$($1_OUTPUT_DIR) && \
+                $(OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
 
-        else ifeq ($(OPENJDK_TARGET_OS), macosx)
-          $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_BASENAME).dSYM
-          # On Macosx, the debuginfo generation doesn't touch the linked binary, but
-          # to avoid always relinking, touch it anyway to force a later timestamp than
-          # the dSYM files.
-          $1_CREATE_DEBUGINFO_CMDS := \
-              $(DSYMUTIL) --out $$($1_DEBUGINFO_FILES) $$($1_TARGET) $$(NEWLINE) \
-              $(TOUCH) $$($1_TARGET)
-        endif # OPENJDK_TARGET_OS
+      else ifeq ($(OPENJDK_TARGET_OS), macosx)
+        $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_BASENAME).dSYM
+        # On Macosx, the debuginfo generation doesn't touch the linked binary, but
+        # to avoid always relinking, touch it anyway to force a later timestamp than
+        # the dSYM files.
+        $1_CREATE_DEBUGINFO_CMDS := \
+            $(DSYMUTIL) --out $$($1_DEBUGINFO_FILES) $$($1_TARGET) $$(NEWLINE) \
+            $(TOUCH) $$($1_TARGET)
+      endif # OPENJDK_TARGET_OS
 
-        # This dependency dance ensures that debug info files get rebuilt
-        # properly if deleted.
-        $$($1_TARGET): $$($1_DEBUGINFO_FILES)
-        $$($1_DEBUGINFO_FILES): $$($1_ALL_OBJS)
+      # This dependency dance ensures that debug info files get rebuilt
+      # properly if deleted.
+      $$($1_TARGET): $$($1_DEBUGINFO_FILES)
+      $$($1_DEBUGINFO_FILES): $$($1_ALL_OBJS)
 
-        ifeq ($(ZIP_DEBUGINFO_FILES), true)
-          $1_DEBUGINFO_ZIP := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).diz
-          $1 += $$(subst $$($1_OBJECT_DIR),$$($1_OUTPUT_DIR),$$($1_DEBUGINFO_ZIP))
+      ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
+        $1_DEBUGINFO_ZIP := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).diz
+        $1 += $$(subst $$($1_OBJECT_DIR),$$($1_OUTPUT_DIR),$$($1_DEBUGINFO_ZIP))
 
-          # The dependency on TARGET is needed for debuginfo files
-          # to be rebuilt properly.
-          $$($1_DEBUGINFO_ZIP): $$($1_DEBUGINFO_FILES) $$($1_TARGET)
+        # The dependency on TARGET is needed for debuginfo files
+        # to be rebuilt properly.
+        $$($1_DEBUGINFO_ZIP): $$($1_DEBUGINFO_FILES) $$($1_TARGET)
 		$(CD) $$($1_OBJECT_DIR) \
-		&& $(ZIP) -q $$@ $$(notdir $$($1_DEBUGINFO_FILES))
+		&& $(ZIP) -q -r $$@ $$(notdir $$($1_DEBUGINFO_FILES))
 
-        else
-          $1 += $$(subst $$($1_OBJECT_DIR),$$($1_OUTPUT_DIR),$$($1_DEBUGINFO_FILES))
-        endif
-      endif # $(ENABLE_DEBUG_SYMBOLS)
-    endif # $1_DEBUG_SYMBOLS
-  endif # !STATIC_LIBRARY
+      else
+        $1 += $$(subst $$($1_OBJECT_DIR),$$($1_OUTPUT_DIR),$$($1_DEBUGINFO_FILES))
+      endif
+    endif # !STATIC_LIBRARY
+  endif # COPY_DEBUG_SYMBOLS
 
   ifeq ($$($1_STRIP_SYMBOLS), true)
     ifneq ($$($1_STRIP), )
@@ -801,7 +783,7 @@ define SetupNativeCompilationBody
                 endif
                 # Keep as much as possible on one execution line for best performance
                 # on Windows
-		$(ECHO) $(LOG_INFO) "Linking $$($1_BASENAME)" ; \
+		$$(call LogInfo, Linking $$($1_BASENAME))
 		$(call LogFailures, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link.log, $$($1_SAFE_NAME)_link, \
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		    $(LD_OUT_OPTION)$$@ \
@@ -820,7 +802,7 @@ define SetupNativeCompilationBody
 
     # Generating a static library, ie object file archive.
     $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE)
-	$(ECHO) $(LOG_INFO) "Archiving $$($1_STATIC_LIBRARY)"
+	$$(call LogInfo, Archiving $$($1_STATIC_LIBRARY))
 	$(call LogFailures, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link.log, $$($1_SAFE_NAME)_link, \
 	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_ALL_OBJS) \
 	        $$($1_RES))
@@ -842,7 +824,7 @@ define SetupNativeCompilationBody
 
     $$($1_TARGET): $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
         $$($1_VARDEPS_FILE)
-		$(ECHO) $(LOG_INFO) "Linking executable $$($1_BASENAME)" ; \
+		$$(call LogInfo, Linking executable $$($1_BASENAME))
 		$(call LogFailures, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link.log, $$($1_SAFE_NAME)_link, \
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		        $(EXE_OUT_OPTION)$$($1_TARGET) \

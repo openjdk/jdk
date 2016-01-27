@@ -29,8 +29,8 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Last changed in libpng 1.6.15 [November 20, 2014]
- * Copyright (c) 1998-2014 Glenn Randers-Pehrson
+ * Last changed in libpng 1.6.20 [December 3, 2015]
+ * Copyright (c) 1998-2015 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -117,7 +117,13 @@ png_get_int_32)(png_const_bytep buf)
       return uval;
 
    uval = (uval ^ 0xffffffff) + 1;  /* 2's complement: -x = ~x+1 */
-   return -(png_int_32)uval;
+   if ((uval & 0x80000000) == 0) /* no overflow */
+       return -(png_int_32)uval;
+   /* The following has to be safe; this function only gets called on PNG data
+    * and if we get here that data is invalid.  0 is the most safe value and
+    * if not then an attacker would surely just generate a PNG with 0 instead.
+    */
+   return 0;
 }
 
 /* Grab an unsigned 16-bit integer from a buffer in big-endian format. */
@@ -126,7 +132,7 @@ png_get_uint_16)(png_const_bytep buf)
 {
    /* ANSI-C requires an int value to accomodate at least 16 bits so this
     * works and allows the compiler not to worry about possible narrowing
-    * on 32 bit systems.  (Pre-ANSI systems did not make integers smaller
+    * on 32-bit systems.  (Pre-ANSI systems did not make integers smaller
     * than 16 bits either.)
     */
    unsigned int val =
@@ -369,7 +375,7 @@ png_inflate_claim(png_structrp png_ptr, png_uint_32 owner)
        * are minimal.
        */
       (void)png_safecat(msg, (sizeof msg), 4, " using zstream");
-#if PNG_LIBPNG_BUILD_BASE_TYPE >= PNG_LIBPNG_BUILD_RC
+#if PNG_RELEASE_BUILD
       png_chunk_warning(png_ptr, msg);
       png_ptr->zowner = 0;
 #else
@@ -399,10 +405,16 @@ png_inflate_claim(png_structrp png_ptr, png_uint_32 owner)
 
       if (((png_ptr->options >> PNG_MAXIMUM_INFLATE_WINDOW) & 3) ==
           PNG_OPTION_ON)
+      {
          window_bits = 15;
+         png_ptr->zstream_start = 0; /* fixed window size */
+      }
 
       else
+      {
          window_bits = 0;
+         png_ptr->zstream_start = 1;
+      }
 # else
 #   define window_bits 0
 # endif
@@ -450,6 +462,31 @@ png_inflate_claim(png_structrp png_ptr, png_uint_32 owner)
 # undef window_bits
 #endif
 }
+
+#if PNG_ZLIB_VERNUM >= 0x1240
+/* Handle the start of the inflate stream if we called inflateInit2(strm,0);
+ * in this case some zlib versions skip validation of the CINFO field and, in
+ * certain circumstances, libpng may end up displaying an invalid image, in
+ * contrast to implementations that call zlib in the normal way (e.g. libpng
+ * 1.5).
+ */
+int /* PRIVATE */
+png_zlib_inflate(png_structrp png_ptr, int flush)
+{
+   if (png_ptr->zstream_start && png_ptr->zstream.avail_in > 0)
+   {
+      if ((*png_ptr->zstream.next_in >> 4) > 7)
+      {
+         png_ptr->zstream.msg = "invalid window size (libpng)";
+         return Z_DATA_ERROR;
+      }
+
+      png_ptr->zstream_start = 0;
+   }
+
+   return inflate(&png_ptr->zstream, flush);
+}
+#endif /* Zlib >= 1.2.4 */
 
 #ifdef PNG_READ_COMPRESSED_TEXT_SUPPORTED
 /* png_inflate now returns zlib error codes including Z_OK and Z_STREAM_END to
@@ -544,7 +581,7 @@ png_inflate(png_structrp png_ptr, png_uint_32 owner, int finish,
           * the previous chunk of input data.  Tell zlib if we have reached the
           * end of the output buffer.
           */
-         ret = inflate(&png_ptr->zstream, avail_out > 0 ? Z_NO_FLUSH :
+         ret = PNG_INFLATE(png_ptr, avail_out > 0 ? Z_NO_FLUSH :
              (finish ? Z_FINISH : Z_SYNC_FLUSH));
       } while (ret == Z_OK);
 
@@ -603,7 +640,7 @@ png_decompress_chunk(png_structrp png_ptr,
     */
    png_alloc_size_t limit = PNG_SIZE_MAX;
 
-# ifdef PNG_SET_CHUNK_MALLOC_LIMIT_SUPPORTED
+# ifdef PNG_SET_USER_LIMITS_SUPPORTED
    if (png_ptr->user_chunk_malloc_max > 0 &&
        png_ptr->user_chunk_malloc_max < limit)
       limit = png_ptr->user_chunk_malloc_max;
@@ -698,7 +735,6 @@ png_decompress_chunk(png_structrp png_ptr,
                    * success)
                    */
                   png_free(png_ptr, text);
-                  text = NULL;
 
                   /* This really is very benign, but it's still an error because
                    * the extra space may otherwise be used as a Trojan Horse.
@@ -794,7 +830,7 @@ png_inflate_read(png_structrp png_ptr, png_bytep read_buffer, uInt read_size,
           * the available output is produced; this allows reading of truncated
           * streams.
           */
-         ret = inflate(&png_ptr->zstream,
+         ret = PNG_INFLATE(png_ptr,
             *chunk_bytes > 0 ? Z_NO_FLUSH : (finish ? Z_FINISH : Z_SYNC_FLUSH));
       }
       while (ret == Z_OK && (*out_size > 0 || png_ptr->zstream.avail_out > 0));
@@ -895,7 +931,7 @@ void /* PRIVATE */
 png_handle_PLTE(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_color palette[PNG_MAX_PALETTE_LENGTH];
-   int num, i;
+   int max_palette_length, num, i;
 #ifdef PNG_POINTER_INDEXING_SUPPORTED
    png_colorp pal_ptr;
 #endif
@@ -956,6 +992,19 @@ png_handle_PLTE(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    /* The cast is safe because 'length' is less than 3*PNG_MAX_PALETTE_LENGTH */
    num = (int)length / 3;
 
+   /* If the palette has 256 or fewer entries but is too large for the bit
+    * depth, we don't issue an error, to preserve the behavior of previous
+    * libpng versions. We silently truncate the unused extra palette entries
+    * here.
+    */
+   if (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
+      max_palette_length = (1 << png_ptr->bit_depth);
+   else
+      max_palette_length = PNG_MAX_PALETTE_LENGTH;
+
+   if (num > max_palette_length)
+      num = max_palette_length;
+
 #ifdef PNG_POINTER_INDEXING_SUPPORTED
    for (i = 0, pal_ptr = palette; i < num; i++, pal_ptr++)
    {
@@ -988,7 +1037,7 @@ png_handle_PLTE(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    if (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE)
 #endif
    {
-      png_crc_finish(png_ptr, 0);
+      png_crc_finish(png_ptr, (int) length - num * 3);
    }
 
 #ifndef PNG_READ_OPT_PLTE_SUPPORTED
@@ -1175,11 +1224,13 @@ png_handle_sBIT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
       return;
 
    for (i=0; i<truelen; ++i)
+   {
       if (buf[i] == 0 || buf[i] > sample_depth)
       {
          png_chunk_benign_error(png_ptr, "invalid");
          return;
       }
+   }
 
    if ((png_ptr->color_type & PNG_COLOR_MASK_COLOR) != 0)
    {
@@ -1490,10 +1541,10 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
                                     finished = 1;
 
 #                                   ifdef PNG_sRGB_SUPPORTED
-                                       /* Check for a match against sRGB */
-                                       png_icc_set_sRGB(png_ptr,
-                                          &png_ptr->colorspace, profile,
-                                          png_ptr->zstream.adler);
+                                    /* Check for a match against sRGB */
+                                    png_icc_set_sRGB(png_ptr,
+                                       &png_ptr->colorspace, profile,
+                                       png_ptr->zstream.adler);
 #                                   endif
 
                                     /* Steal the profile for info_ptr. */
@@ -1543,8 +1594,10 @@ png_handle_iCCP(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
                                  else if (size > 0)
                                     errmsg = "truncated";
 
+#ifndef __COVERITY__
                                  else
                                     errmsg = png_ptr->zstream.msg;
+#endif
                               }
 
                               /* else png_icc_check_tag_table output an error */
@@ -1676,7 +1729,7 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    ++entry_start;
 
    /* A sample depth should follow the separator, and we should be on it  */
-   if (entry_start > buffer + length - 2)
+   if (length < 2U || entry_start > buffer + (length - 2U))
    {
       png_warning(png_ptr, "malformed sPLT chunk");
       return;
@@ -1701,8 +1754,8 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    if (dl > max_dl)
    {
-       png_warning(png_ptr, "sPLT chunk too long");
-       return;
+      png_warning(png_ptr, "sPLT chunk too long");
+      return;
    }
 
    new_palette.nentries = (png_int_32)(data_length / entry_size);
@@ -1712,8 +1765,8 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    if (new_palette.entries == NULL)
    {
-       png_warning(png_ptr, "sPLT chunk requires too much memory");
-       return;
+      png_warning(png_ptr, "sPLT chunk requires too much memory");
+      return;
    }
 
 #ifdef PNG_POINTER_INDEXING_SUPPORTED
@@ -1843,7 +1896,8 @@ png_handle_tRNS(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
          return;
       }
 
-      if (length > png_ptr->num_palette || length > PNG_MAX_PALETTE_LENGTH ||
+      if (length > (unsigned int) png_ptr->num_palette ||
+         length > (unsigned int) PNG_MAX_PALETTE_LENGTH ||
          length == 0)
       {
          png_crc_finish(png_ptr, length);
@@ -2006,7 +2060,8 @@ png_handle_hIST(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    num = length / 2 ;
 
-   if (num != png_ptr->num_palette || num > PNG_MAX_PALETTE_LENGTH)
+   if (num != (unsigned int) png_ptr->num_palette ||
+       num > (unsigned int) PNG_MAX_PALETTE_LENGTH)
    {
       png_crc_finish(png_ptr, length);
       png_chunk_benign_error(png_ptr, "invalid");
@@ -2178,7 +2233,7 @@ png_handle_pCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    /* We need to have at least 12 bytes after the purpose string
     * in order to get the parameter information.
     */
-   if (endptr <= buf + 12)
+   if (endptr - buf <= 12)
    {
       png_chunk_benign_error(png_ptr, "invalid");
       return;
@@ -2741,14 +2796,14 @@ png_cache_unknown_chunk(png_structrp png_ptr, png_uint_32 length)
       png_ptr->unknown_chunk.data = NULL;
    }
 
-#  ifdef PNG_SET_CHUNK_MALLOC_LIMIT_SUPPORTED
-      if (png_ptr->user_chunk_malloc_max > 0 &&
-          png_ptr->user_chunk_malloc_max < limit)
-         limit = png_ptr->user_chunk_malloc_max;
+#  ifdef PNG_SET_USER_LIMITS_SUPPORTED
+   if (png_ptr->user_chunk_malloc_max > 0 &&
+       png_ptr->user_chunk_malloc_max < limit)
+      limit = png_ptr->user_chunk_malloc_max;
 
 #  elif PNG_USER_CHUNK_MALLOC_MAX > 0
-      if (PNG_USER_CHUNK_MALLOC_MAX < limit)
-         limit = PNG_USER_CHUNK_MALLOC_MAX;
+   if (PNG_USER_CHUNK_MALLOC_MAX < limit)
+      limit = PNG_USER_CHUNK_MALLOC_MAX;
 #  endif
 
    if (length <= limit)
@@ -2811,7 +2866,7 @@ png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
     */
 #  ifndef PNG_HANDLE_AS_UNKNOWN_SUPPORTED
 #     ifdef PNG_SET_UNKNOWN_CHUNKS_SUPPORTED
-         keep = png_chunk_unknown_handling(png_ptr, png_ptr->chunk_name);
+   keep = png_chunk_unknown_handling(png_ptr, png_ptr->chunk_name);
 #     endif
 #  endif
 
@@ -2820,153 +2875,153 @@ png_handle_unknown(png_structrp png_ptr, png_inforp info_ptr,
     * PNG_READ_UNKNOWN_CHUNKS_SUPPORTED)
     */
 #  ifdef PNG_READ_USER_CHUNKS_SUPPORTED
-      /* The user callback takes precedence over the chunk keep value, but the
-       * keep value is still required to validate a save of a critical chunk.
-       */
-      if (png_ptr->read_user_chunk_fn != NULL)
+   /* The user callback takes precedence over the chunk keep value, but the
+    * keep value is still required to validate a save of a critical chunk.
+    */
+   if (png_ptr->read_user_chunk_fn != NULL)
+   {
+      if (png_cache_unknown_chunk(png_ptr, length) != 0)
       {
-         if (png_cache_unknown_chunk(png_ptr, length) != 0)
+         /* Callback to user unknown chunk handler */
+         int ret = (*(png_ptr->read_user_chunk_fn))(png_ptr,
+            &png_ptr->unknown_chunk);
+
+         /* ret is:
+          * negative: An error occurred; png_chunk_error will be called.
+          *     zero: The chunk was not handled, the chunk will be discarded
+          *           unless png_set_keep_unknown_chunks has been used to set
+          *           a 'keep' behavior for this particular chunk, in which
+          *           case that will be used.  A critical chunk will cause an
+          *           error at this point unless it is to be saved.
+          * positive: The chunk was handled, libpng will ignore/discard it.
+          */
+         if (ret < 0)
+            png_chunk_error(png_ptr, "error in user chunk");
+
+         else if (ret == 0)
          {
-            /* Callback to user unknown chunk handler */
-            int ret = (*(png_ptr->read_user_chunk_fn))(png_ptr,
-               &png_ptr->unknown_chunk);
-
-            /* ret is:
-             * negative: An error occured, png_chunk_error will be called.
-             *     zero: The chunk was not handled, the chunk will be discarded
-             *           unless png_set_keep_unknown_chunks has been used to set
-             *           a 'keep' behavior for this particular chunk, in which
-             *           case that will be used.  A critical chunk will cause an
-             *           error at this point unless it is to be saved.
-             * positive: The chunk was handled, libpng will ignore/discard it.
+            /* If the keep value is 'default' or 'never' override it, but
+             * still error out on critical chunks unless the keep value is
+             * 'always'  While this is weird it is the behavior in 1.4.12.
+             * A possible improvement would be to obey the value set for the
+             * chunk, but this would be an API change that would probably
+             * damage some applications.
+             *
+             * The png_app_warning below catches the case that matters, where
+             * the application has not set specific save or ignore for this
+             * chunk or global save or ignore.
              */
-            if (ret < 0)
-               png_chunk_error(png_ptr, "error in user chunk");
-
-            else if (ret == 0)
+            if (keep < PNG_HANDLE_CHUNK_IF_SAFE)
             {
-               /* If the keep value is 'default' or 'never' override it, but
-                * still error out on critical chunks unless the keep value is
-                * 'always'  While this is weird it is the behavior in 1.4.12.
-                * A possible improvement would be to obey the value set for the
-                * chunk, but this would be an API change that would probably
-                * damage some applications.
-                *
-                * The png_app_warning below catches the case that matters, where
-                * the application has not set specific save or ignore for this
-                * chunk or global save or ignore.
-                */
-               if (keep < PNG_HANDLE_CHUNK_IF_SAFE)
+#              ifdef PNG_SET_UNKNOWN_CHUNKS_SUPPORTED
+               if (png_ptr->unknown_default < PNG_HANDLE_CHUNK_IF_SAFE)
                {
-#                 ifdef PNG_SET_UNKNOWN_CHUNKS_SUPPORTED
-                     if (png_ptr->unknown_default < PNG_HANDLE_CHUNK_IF_SAFE)
-                     {
-                        png_chunk_warning(png_ptr, "Saving unknown chunk:");
-                        png_app_warning(png_ptr,
-                           "forcing save of an unhandled chunk;"
-                           " please call png_set_keep_unknown_chunks");
-                           /* with keep = PNG_HANDLE_CHUNK_IF_SAFE */
-                     }
-#                 endif
-                  keep = PNG_HANDLE_CHUNK_IF_SAFE;
+                  png_chunk_warning(png_ptr, "Saving unknown chunk:");
+                  png_app_warning(png_ptr,
+                     "forcing save of an unhandled chunk;"
+                     " please call png_set_keep_unknown_chunks");
+                     /* with keep = PNG_HANDLE_CHUNK_IF_SAFE */
                }
-            }
-
-            else /* chunk was handled */
-            {
-               handled = 1;
-               /* Critical chunks can be safely discarded at this point. */
-               keep = PNG_HANDLE_CHUNK_NEVER;
+#              endif
+               keep = PNG_HANDLE_CHUNK_IF_SAFE;
             }
          }
 
-         else
-            keep = PNG_HANDLE_CHUNK_NEVER; /* insufficient memory */
+         else /* chunk was handled */
+         {
+            handled = 1;
+            /* Critical chunks can be safely discarded at this point. */
+            keep = PNG_HANDLE_CHUNK_NEVER;
+         }
       }
 
       else
-         /* Use the SAVE_UNKNOWN_CHUNKS code or skip the chunk */
+         keep = PNG_HANDLE_CHUNK_NEVER; /* insufficient memory */
+   }
+
+   else
+   /* Use the SAVE_UNKNOWN_CHUNKS code or skip the chunk */
 #  endif /* READ_USER_CHUNKS */
 
 #  ifdef PNG_SAVE_UNKNOWN_CHUNKS_SUPPORTED
+   {
+      /* keep is currently just the per-chunk setting, if there was no
+       * setting change it to the global default now (not that this may
+       * still be AS_DEFAULT) then obtain the cache of the chunk if required,
+       * if not simply skip the chunk.
+       */
+      if (keep == PNG_HANDLE_CHUNK_AS_DEFAULT)
+         keep = png_ptr->unknown_default;
+
+      if (keep == PNG_HANDLE_CHUNK_ALWAYS ||
+         (keep == PNG_HANDLE_CHUNK_IF_SAFE &&
+          PNG_CHUNK_ANCILLARY(png_ptr->chunk_name)))
       {
-         /* keep is currently just the per-chunk setting, if there was no
-          * setting change it to the global default now (not that this may
-          * still be AS_DEFAULT) then obtain the cache of the chunk if required,
-          * if not simply skip the chunk.
-          */
-         if (keep == PNG_HANDLE_CHUNK_AS_DEFAULT)
-            keep = png_ptr->unknown_default;
-
-         if (keep == PNG_HANDLE_CHUNK_ALWAYS ||
-            (keep == PNG_HANDLE_CHUNK_IF_SAFE &&
-             PNG_CHUNK_ANCILLARY(png_ptr->chunk_name)))
-         {
-            if (png_cache_unknown_chunk(png_ptr, length) == 0)
-               keep = PNG_HANDLE_CHUNK_NEVER;
-         }
-
-         else
-            png_crc_finish(png_ptr, length);
+         if (png_cache_unknown_chunk(png_ptr, length) == 0)
+            keep = PNG_HANDLE_CHUNK_NEVER;
       }
+
+      else
+         png_crc_finish(png_ptr, length);
+   }
 #  else
 #     ifndef PNG_READ_USER_CHUNKS_SUPPORTED
 #        error no method to support READ_UNKNOWN_CHUNKS
 #     endif
 
-      {
-         /* If here there is no read callback pointer set and no support is
-          * compiled in to just save the unknown chunks, so simply skip this
-          * chunk.  If 'keep' is something other than AS_DEFAULT or NEVER then
-          * the app has erroneously asked for unknown chunk saving when there
-          * is no support.
-          */
-         if (keep > PNG_HANDLE_CHUNK_NEVER)
-            png_app_error(png_ptr, "no unknown chunk support available");
+   {
+      /* If here there is no read callback pointer set and no support is
+       * compiled in to just save the unknown chunks, so simply skip this
+       * chunk.  If 'keep' is something other than AS_DEFAULT or NEVER then
+       * the app has erroneously asked for unknown chunk saving when there
+       * is no support.
+       */
+      if (keep > PNG_HANDLE_CHUNK_NEVER)
+         png_app_error(png_ptr, "no unknown chunk support available");
 
-         png_crc_finish(png_ptr, length);
-      }
+      png_crc_finish(png_ptr, length);
+   }
 #  endif
 
 #  ifdef PNG_STORE_UNKNOWN_CHUNKS_SUPPORTED
-      /* Now store the chunk in the chunk list if appropriate, and if the limits
-       * permit it.
-       */
-      if (keep == PNG_HANDLE_CHUNK_ALWAYS ||
-         (keep == PNG_HANDLE_CHUNK_IF_SAFE &&
-          PNG_CHUNK_ANCILLARY(png_ptr->chunk_name)))
+   /* Now store the chunk in the chunk list if appropriate, and if the limits
+    * permit it.
+    */
+   if (keep == PNG_HANDLE_CHUNK_ALWAYS ||
+      (keep == PNG_HANDLE_CHUNK_IF_SAFE &&
+       PNG_CHUNK_ANCILLARY(png_ptr->chunk_name)))
+   {
+#     ifdef PNG_USER_LIMITS_SUPPORTED
+      switch (png_ptr->user_chunk_cache_max)
       {
-#     ifdef PNG_USER_LIMITS_SUPPORTED
-         switch (png_ptr->user_chunk_cache_max)
-         {
-            case 2:
-               png_ptr->user_chunk_cache_max = 1;
-               png_chunk_benign_error(png_ptr, "no space in chunk cache");
-               /* FALL THROUGH */
-            case 1:
-               /* NOTE: prior to 1.6.0 this case resulted in an unknown critical
-                * chunk being skipped, now there will be a hard error below.
-                */
-               break;
+         case 2:
+            png_ptr->user_chunk_cache_max = 1;
+            png_chunk_benign_error(png_ptr, "no space in chunk cache");
+            /* FALL THROUGH */
+         case 1:
+            /* NOTE: prior to 1.6.0 this case resulted in an unknown critical
+             * chunk being skipped, now there will be a hard error below.
+             */
+            break;
 
-            default: /* not at limit */
-               --(png_ptr->user_chunk_cache_max);
-               /* FALL THROUGH */
-            case 0: /* no limit */
-#     endif /* USER_LIMITS */
-               /* Here when the limit isn't reached or when limits are compiled
-                * out; store the chunk.
-                */
-               png_set_unknown_chunks(png_ptr, info_ptr,
-                  &png_ptr->unknown_chunk, 1);
-               handled = 1;
-#     ifdef PNG_USER_LIMITS_SUPPORTED
-               break;
-         }
-#     endif
+         default: /* not at limit */
+            --(png_ptr->user_chunk_cache_max);
+            /* FALL THROUGH */
+         case 0: /* no limit */
+#  endif /* USER_LIMITS */
+            /* Here when the limit isn't reached or when limits are compiled
+             * out; store the chunk.
+             */
+            png_set_unknown_chunks(png_ptr, info_ptr,
+               &png_ptr->unknown_chunk, 1);
+            handled = 1;
+#  ifdef PNG_USER_LIMITS_SUPPORTED
+            break;
       }
+#  endif
+   }
 #  else /* no store support: the chunk must be handled by the user callback */
-      PNG_UNUSED(info_ptr)
+   PNG_UNUSED(info_ptr)
 #  endif
 
    /* Regardless of the error handling below the cached data (if any) can be
@@ -3068,13 +3123,13 @@ png_combine_row(png_const_structrp png_ptr, png_bytep dp, int display)
       end_ptr = dp + PNG_ROWBYTES(pixel_depth, row_width) - 1;
       end_byte = *end_ptr;
 #     ifdef PNG_READ_PACKSWAP_SUPPORTED
-         if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
-            /* little-endian byte */
-            end_mask = 0xff << end_mask;
+      if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
+         /* little-endian byte */
+         end_mask = 0xff << end_mask;
 
-         else /* big-endian byte */
+      else /* big-endian byte */
 #     endif
-         end_mask = 0xff >> end_mask;
+      end_mask = 0xff >> end_mask;
       /* end_mask is now the bits to *keep* from the destination row */
    }
 
@@ -3232,12 +3287,12 @@ png_combine_row(png_const_structrp png_ptr, png_bytep dp, int display)
          png_uint_32 mask;
 
 #        ifdef PNG_READ_PACKSWAP_SUPPORTED
-            if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
-               mask = MASK(pass, pixel_depth, display, 0);
+         if ((png_ptr->transformations & PNG_PACKSWAP) != 0)
+            mask = MASK(pass, pixel_depth, display, 0);
 
-            else
+         else
 #        endif
-            mask = MASK(pass, pixel_depth, display, 1);
+         mask = MASK(pass, pixel_depth, display, 1);
 
          for (;;)
          {
@@ -3838,15 +3893,15 @@ png_read_filter_row_paeth_1byte_pixel(png_row_infop row_info, png_bytep row,
       p = b - c;
       pc = a - c;
 
-#     ifdef PNG_USE_ABS
-         pa = abs(p);
-         pb = abs(pc);
-         pc = abs(p + pc);
-#     else
-         pa = p < 0 ? -p : p;
-         pb = pc < 0 ? -pc : pc;
-         pc = (p + pc) < 0 ? -(p + pc) : p + pc;
-#     endif
+#ifdef PNG_USE_ABS
+      pa = abs(p);
+      pb = abs(pc);
+      pc = abs(p + pc);
+#else
+      pa = p < 0 ? -p : p;
+      pb = pc < 0 ? -pc : pc;
+      pc = (p + pc) < 0 ? -(p + pc) : p + pc;
+#endif
 
       /* Find the best predictor, the least of pa, pb, pc favoring the earlier
        * ones in the case of a tie.
@@ -3893,15 +3948,15 @@ png_read_filter_row_paeth_multibyte_pixel(png_row_infop row_info, png_bytep row,
       p = b - c;
       pc = a - c;
 
-#     ifdef PNG_USE_ABS
-         pa = abs(p);
-         pb = abs(pc);
-         pc = abs(p + pc);
-#     else
-         pa = p < 0 ? -p : p;
-         pb = pc < 0 ? -pc : pc;
-         pc = (p + pc) < 0 ? -(p + pc) : p + pc;
-#     endif
+#ifdef PNG_USE_ABS
+      pa = abs(p);
+      pb = abs(pc);
+      pc = abs(p + pc);
+#else
+      pa = p < 0 ? -p : p;
+      pb = pc < 0 ? -pc : pc;
+      pc = (p + pc) < 0 ? -(p + pc) : p + pc;
+#endif
 
       if (pb < pa) pa = pb, a = b;
       if (pc < pa) a = c;
@@ -4043,7 +4098,7 @@ png_read_IDAT_data(png_structrp png_ptr, png_bytep output,
        *
        * TODO: deal more elegantly with truncated IDAT lists.
        */
-      ret = inflate(&png_ptr->zstream, Z_NO_FLUSH);
+      ret = PNG_INFLATE(png_ptr, Z_NO_FLUSH);
 
       /* Take the unconsumed output back. */
       if (output != NULL)
@@ -4306,18 +4361,18 @@ png_read_start_row(png_structrp png_ptr)
 #ifdef PNG_READ_EXPAND_16_SUPPORTED
    if ((png_ptr->transformations & PNG_EXPAND_16) != 0)
    {
-#     ifdef PNG_READ_EXPAND_SUPPORTED
-         /* In fact it is an error if it isn't supported, but checking is
-          * the safe way.
-          */
-         if ((png_ptr->transformations & PNG_EXPAND) != 0)
-         {
-            if (png_ptr->bit_depth < 16)
-               max_pixel_depth *= 2;
-         }
-         else
-#     endif
-         png_ptr->transformations &= ~PNG_EXPAND_16;
+#  ifdef PNG_READ_EXPAND_SUPPORTED
+      /* In fact it is an error if it isn't supported, but checking is
+       * the safe way.
+       */
+      if ((png_ptr->transformations & PNG_EXPAND) != 0)
+      {
+         if (png_ptr->bit_depth < 16)
+            max_pixel_depth *= 2;
+      }
+      else
+#  endif
+      png_ptr->transformations &= ~PNG_EXPAND_16;
    }
 #endif
 

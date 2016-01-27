@@ -24,6 +24,8 @@
 /**
  * @test
  * @bug 8056897
+ * @modules jdk.compiler/com.sun.tools.javac.parser
+ *          jdk.compiler/com.sun.tools.javac.util
  * @summary Proper lexing of integer literals.
  */
 

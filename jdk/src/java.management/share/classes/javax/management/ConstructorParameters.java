@@ -62,7 +62,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  * the JMX introspection will give an absolute precedence to the latter one.
  * </p>
  *
- * @since 1.9
+ * @since 9
  */
 @Documented @Target(CONSTRUCTOR) @Retention(RUNTIME)
 public @interface ConstructorParameters {

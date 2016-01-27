@@ -92,8 +92,6 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
      */
     final Enum<?>[] universe;
 
-    private static Enum<?>[] ZERO_LENGTH_ENUM_ARRAY = new Enum<?>[0];
-
     EnumSet(Class<E>elementType, Enum<?>[] universe) {
         this.elementType = elementType;
         this.universe    = universe;
@@ -421,6 +419,9 @@ public abstract class EnumSet<E extends Enum<E>> extends AbstractSet<E>
     private static class SerializationProxy <E extends Enum<E>>
         implements java.io.Serializable
     {
+
+        private static final Enum<?>[] ZERO_LENGTH_ENUM_ARRAY = new Enum<?>[0];
+
         /**
          * The element type of this enum set.
          *

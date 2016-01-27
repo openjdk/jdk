@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2207,6 +2207,9 @@ public class Lower extends TreeTranslator {
             if ((id.sym.flags() & FINAL) != 0 && id.sym.owner.kind == MTH)
                 return builder.build(rval);
         }
+        Name name = TreeInfo.name(rval);
+        if (name == names._super)
+            return builder.build(rval);
         VarSymbol var =
             new VarSymbol(FINAL|SYNTHETIC,
                           names.fromString(
