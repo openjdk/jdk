@@ -53,6 +53,7 @@ void Test_linked_list();
 void TestResourcehash_test();
 void TestChunkedList_test();
 void Test_log_length();
+void Test_configure_stdout();
 void Test_TempNewSymbol();
 void GlobalDefinitions_test();
 void GCTimer_test();
@@ -110,6 +111,7 @@ void InternalVMTests::run() {
   run_unit_test(TestChunkedList_test());
   run_unit_test(JSON_test());
   run_unit_test(Test_log_length());
+  run_unit_test(Test_configure_stdout());
   run_unit_test(DirectivesParser_test());
   run_unit_test(Test_TempNewSymbol());
 #if INCLUDE_VM_STRUCTS
