@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.tools.JavaFileManager;
 
 import com.sun.javadoc.*;
@@ -37,6 +38,7 @@ import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
+import com.sun.tools.doclets.internal.toolkit.util.VisibleMemberMap.GetterSetter;
 import com.sun.tools.javac.util.StringUtils;
 
 /**
@@ -303,6 +305,11 @@ public abstract class Configuration {
      * command-line.
      */
     public SortedSet<PackageDoc> packages;
+
+    // The following three fields provide caches for use by all instances of VisibleMemberMap.
+    public final Map<ClassDoc, ProgramElementDoc[]> propertiesCache = new HashMap<>();
+    public final Map<ProgramElementDoc, ProgramElementDoc> classPropertiesMap = new HashMap<>();
+    public final Map<ProgramElementDoc, GetterSetter> getterSetterMap = new HashMap<>();
 
     /**
      * Constructor. Constructs the message retriever with resource file.
