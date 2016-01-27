@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8141211
- * @summary exceptions=info output should have an exception message for both interpreter and compiled methods
+ * @summary exceptions=info output should have an exception message for interpreter methods
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management
@@ -40,8 +40,6 @@ public class ExceptionsTest {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("<a 'java/lang/RuntimeException': Test exception 1 for logging>");
         output.shouldContain(" thrown in interpreter method ");
-        output.shouldContain(" thrown in compiled method ");
-        output.shouldContain("Exception 2 caught.");
         output.shouldHaveExitValue(0);
     }
 
@@ -52,47 +50,30 @@ public class ExceptionsTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:exceptions=info", "-Xcomp",
-            "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
-            InternalClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:exceptions=info",
+                                                                  InternalClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+TraceExceptions", "-Xcomp",
-            "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
-            InternalClass.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+TraceExceptions",
+                                                   InternalClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:exceptions=off", "-Xcomp",
-            "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
-            InternalClass.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:exceptions=off",
+                                                   InternalClass.class.getName());
         analyzeOutputOff(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:-TraceExceptions", "-Xcomp",
-            "-XX:CompileCommand=compileonly,ExceptionsTest$InternalClass::compileMe",
-            InternalClass.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-XX:-TraceExceptions",
+                                                   InternalClass.class.getName());
         analyzeOutputOff(pb);
     }
 
     public static class InternalClass {
-        public static void compileMe() throws Exception {
-            try {
-                throw new RuntimeException("Test exception 2 for logging");
-            } catch (Exception e) {
-                System.out.println("Exception 2 caught.");
-            }
-        }
-
         public static void main(String[] args) throws Exception {
             try {
                 throw new RuntimeException("Test exception 1 for logging");
             } catch (Exception e) {
                 System.out.println("Exception 1 caught.");
             }
-            compileMe();
         }
     }
 }
