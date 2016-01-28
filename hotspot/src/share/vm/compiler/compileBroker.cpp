@@ -227,6 +227,11 @@ bool compileBroker_init() {
 CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
+#if INCLUDE_JVMCI
+  if (task->is_blocking() && CompileBroker::compiler(task->comp_level())->is_jvmci()) {
+    task->set_jvmci_compiler_thread(thread);
+  }
+#endif
   CompileLog*     log  = thread->log();
   if (log != NULL)  task->log_task_start(log);
 }
@@ -245,10 +250,12 @@ CompileTaskWrapper::~CompileTaskWrapper() {
       MutexLocker notifier(task->lock(), thread);
       task->mark_complete();
 #if INCLUDE_JVMCI
-      if (CompileBroker::compiler(task->comp_level())->is_jvmci() &&
-        !task->has_waiter()) {
-        // The waiting thread timed out and thus did not free the task.
-        free_task = true;
+      if (CompileBroker::compiler(task->comp_level())->is_jvmci()) {
+        if (!task->has_waiter()) {
+          // The waiting thread timed out and thus did not free the task.
+          free_task = true;
+        }
+        task->set_jvmci_compiler_thread(NULL);
       }
 #endif
       if (!free_task) {
@@ -1332,11 +1339,56 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
   return new_task;
 }
 
-// 1 second should be long enough to complete most JVMCI compilations
-// and not too long to stall a blocking JVMCI compilation that
-// is trying to acquire a lock held by the app thread that submitted the
-// compilation.
-static const long BLOCKING_JVMCI_COMPILATION_TIMEOUT = 1000;
+#if INCLUDE_JVMCI
+// The number of milliseconds to wait before checking if the
+// JVMCI compiler thread is blocked.
+static const long BLOCKING_JVMCI_COMPILATION_WAIT_TIMESLICE = 500;
+
+// The number of successive times the above check is allowed to
+// see a blocked JVMCI compiler thread before unblocking the
+// thread waiting for the compilation to finish.
+static const int BLOCKING_JVMCI_COMPILATION_WAIT_TO_UNBLOCK_ATTEMPTS = 5;
+
+/**
+ * Waits for a JVMCI compiler to complete a given task. This thread
+ * waits until either the task completes or it sees the JVMCI compiler
+ * thread is blocked for N consecutive milliseconds where N is
+ * BLOCKING_JVMCI_COMPILATION_WAIT_TIMESLICE *
+ * BLOCKING_JVMCI_COMPILATION_WAIT_TO_UNBLOCK_ATTEMPTS.
+ *
+ * @return true if this thread needs to free/recycle the task
+ */
+bool CompileBroker::wait_for_jvmci_completion(CompileTask* task, JavaThread* thread) {
+  MutexLocker waiter(task->lock(), thread);
+  int consecutively_blocked = 0;
+  while (task->lock()->wait(!Mutex::_no_safepoint_check_flag, BLOCKING_JVMCI_COMPILATION_WAIT_TIMESLICE)) {
+    CompilerThread* jvmci_compiler_thread = task->jvmci_compiler_thread();
+    if (jvmci_compiler_thread != NULL) {
+      JavaThreadState state;
+      {
+        // A JVMCI compiler thread should not disappear at this point
+        // but let's be extra safe.
+        MutexLocker mu(Threads_lock, thread);
+        state = jvmci_compiler_thread->thread_state();
+      }
+      if (state == _thread_blocked) {
+        if (++consecutively_blocked == BLOCKING_JVMCI_COMPILATION_WAIT_TO_UNBLOCK_ATTEMPTS) {
+          if (PrintCompilation) {
+            task->print(tty, "wait for blocking compilation timed out");
+          }
+          break;
+        }
+      } else {
+        consecutively_blocked = 0;
+      }
+    } else {
+      // Still waiting on JVMCI compiler queue
+    }
+  }
+  task->clear_waiter();
+  return task->is_complete();
+}
+#endif
 
 /**
  *  Wait for the compilation task to complete.
@@ -1356,16 +1408,7 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   bool free_task;
 #if INCLUDE_JVMCI
   if (compiler(task->comp_level())->is_jvmci()) {
-    MutexLocker waiter(task->lock(), thread);
-    // No need to check if compilation has completed - just
-    // rely on the time out. The JVMCI compiler thread will
-    // recycle the CompileTask.
-    task->lock()->wait(!Mutex::_no_safepoint_check_flag, BLOCKING_JVMCI_COMPILATION_TIMEOUT);
-    // If the compilation completes while has_waiter is true then
-    // this thread is responsible for freeing the task.  Otherwise
-    // the compiler thread will free the task.
-    task->clear_waiter();
-    free_task = task->is_complete();
+    free_task = wait_for_jvmci_completion(task, thread);
   } else
 #endif
   {
@@ -1755,6 +1798,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   push_jni_handle_block();
   Method* target_handle = task->method();
   int compilable = ciEnv::MethodCompilable;
+  const char* failure_reason = NULL;
+  const char* retry_message = NULL;
   AbstractCompiler *comp = compiler(task_level);
 
   int system_dictionary_modification_counter;
@@ -1774,10 +1819,16 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     jvmci->compile_method(method, osr_bci, &env);
 
     post_compile(thread, task, event, task->code() != NULL, NULL);
+
+    failure_reason = env.failure_reason();
+    if (!env.retryable()) {
+      retry_message = "not retryable";
+      compilable = ciEnv::MethodCompilable_not_at_tier;
+    }
+
   } else
 #endif // INCLUDE_JVMCI
   {
-
     NoHandleMark  nhm;
     ThreadToNativeFromVM ttn(thread);
 
@@ -1825,30 +1876,44 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     compilable = ci_env.compilable();
 
     if (ci_env.failing()) {
-      task->set_failure_reason(ci_env.failure_reason());
-      ci_env.report_failure(ci_env.failure_reason());
-      const char* retry_message = ci_env.retry_message();
-      if (_compilation_log != NULL) {
-        _compilation_log->log_failure(thread, task, ci_env.failure_reason(), retry_message);
-      }
-      if (PrintCompilation) {
-        FormatBufferResource msg = retry_message != NULL ?
-            FormatBufferResource("COMPILE SKIPPED: %s (%s)", ci_env.failure_reason(), retry_message) :
-            FormatBufferResource("COMPILE SKIPPED: %s",      ci_env.failure_reason());
-        task->print(tty, msg);
-      }
+      failure_reason = ci_env.failure_reason();
+      retry_message = ci_env.retry_message();
+      ci_env.report_failure(failure_reason);
     }
 
     post_compile(thread, task, event, !ci_env.failing(), &ci_env);
   }
-  DirectivesStack::release(directive);
+  // Remove the JNI handle block after the ciEnv destructor has run in
+  // the previous block.
   pop_jni_handle_block();
+
+  if (failure_reason != NULL) {
+    task->set_failure_reason(failure_reason);
+    if (_compilation_log != NULL) {
+      _compilation_log->log_failure(thread, task, failure_reason, retry_message);
+    }
+    if (PrintCompilation) {
+      FormatBufferResource msg = retry_message != NULL ?
+        FormatBufferResource("COMPILE SKIPPED: %s (%s)", failure_reason, retry_message) :
+        FormatBufferResource("COMPILE SKIPPED: %s",      failure_reason);
+      task->print(tty, msg);
+    }
+  }
 
   methodHandle method(thread, task->method());
 
   DTRACE_METHOD_COMPILE_END_PROBE(method, compiler_name(task_level), task->is_success());
 
   collect_statistics(thread, time, task);
+
+  bool printnmethods = directive->PrintAssemblyOption || directive->PrintNMethodsOption;
+  if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
+    nmethod* nm = task->code();
+    if (nm != NULL) {
+      nm->print_nmethod(printnmethods);
+    }
+  }
+  DirectivesStack::release(directive);
 
   if (PrintCompilation && PrintCompilation2) {
     tty->print("%7d ", (int) tty->time_stamp().milliseconds());  // print timestamp

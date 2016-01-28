@@ -76,7 +76,7 @@ public:
   virtual bool pinned() const { return true; };
   virtual const Type *bottom_type() const;
   virtual const TypePtr *adr_type() const { return TypePtr::BOTTOM; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_reg, uint length ) const;
   virtual const RegMask &in_RegMask(uint) const;
@@ -127,7 +127,7 @@ public:
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
   virtual bool depends_only_on_test() const { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const;
 #ifndef PRODUCT
@@ -148,7 +148,7 @@ class RethrowNode : public Node {
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
   virtual bool depends_only_on_test() const { return false; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
 #ifndef PRODUCT
@@ -465,11 +465,11 @@ public:
   // Standard Node stuff
   virtual int            Opcode() const;
   virtual bool           pinned() const { return true; }
-  virtual const Type    *Value( PhaseTransform *phase ) const;
+  virtual const Type*    Value(PhaseGVN* phase) const;
   virtual const Type    *bottom_type() const { return Type::CONTROL; }
   virtual const TypePtr *adr_type() const { return _adr_type; }
   virtual Node          *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual Node          *Identity( PhaseTransform *phase );
+  virtual Node*          Identity(PhaseGVN* phase);
   virtual uint           ideal_reg() const { return 0; }
   virtual const RegMask &in_RegMask(uint) const;
   virtual const RegMask &out_RegMask() const;
@@ -593,9 +593,9 @@ public:
   void set_generator(CallGenerator* cg) { _generator = cg; }
 
   virtual const Type *bottom_type() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual Node *Identity( PhaseTransform *phase ) { return this; }
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual uint        cmp( const Node &n ) const;
   virtual uint        size_of() const = 0;
   virtual void        calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const;

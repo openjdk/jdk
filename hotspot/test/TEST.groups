@@ -289,6 +289,7 @@ hotspot_compiler_3 = \
   compiler/jsr292/ \
   compiler/loopopts/ \
   compiler/macronodes/ \
+  compiler/memoryinitialization/ \
   compiler/osr/ \
   compiler/regalloc/ \
   compiler/runtime/ \

@@ -736,9 +736,7 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
 
     case lir_abs:
     case lir_sqrt:
-    case lir_sin:
     case lir_tan:
-    case lir_cos:
     case lir_log10:
       intrinsic_op(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op);
       break;

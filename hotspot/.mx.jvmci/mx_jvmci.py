@@ -40,6 +40,8 @@ from mx_unittest import unittest
 
 _suite = mx.suite('jvmci')
 
+JVMCI_VERSION = 9
+
 """
 Top level directory of the JDK source workspace.
 """
@@ -153,10 +155,16 @@ class JvmciJDKDeployedDist(object):
     def deploy(self, jdkDir):
         mx.nyi('deploy', self)
 
+    def post_parse_cmd_line(self):
+        self.set_archiveparticipant()
+
+    def set_archiveparticipant(self):
+        dist = self.dist()
+        dist.set_archiveparticipant(JVMCIArchiveParticipant(dist))
+
 class ExtJDKDeployedDist(JvmciJDKDeployedDist):
     def __init__(self, name):
         JvmciJDKDeployedDist.__init__(self, name)
-
 
 """
 The monolithic JVMCI distribution is deployed through use of -Xbootclasspath/p
@@ -186,7 +194,7 @@ To build hotspot and import it into the JDK: "mx make hotspot import-hotspot"
         # JDK9 must be bootstrapped with a JDK8
         compliance = mx.JavaCompliance('8')
         jdk8 = mx.get_jdk(compliance.exactMatch, versionDescription=compliance.value)
-        cmd = ['sh', 'configure', '--with-debug-level=' + _vm.debugLevel, '--disable-debug-symbols', '--disable-precompiled-headers',
+        cmd = ['sh', 'configure', '--with-debug-level=' + _vm.debugLevel, '--with-native-debug-symbols=none', '--disable-precompiled-headers',
                '--with-jvm-variants=' + _vm.jvmVariant, '--disable-warnings-as-errors', '--with-boot-jdk=' + jdk8.home]
         mx.run(cmd, cwd=_jdkSourceRoot)
     cmd = [mx.gmake_cmd(), 'CONF=' + _vm.debugLevel]
@@ -205,7 +213,15 @@ To build hotspot and import it into the JDK: "mx make hotspot import-hotspot"
     mx.run(cmd, cwd=_jdkSourceRoot)
 
     if 'images' in cmd:
-        _create_jdk_bundle(jdkBuildDir)
+        jdkImageDir = join(jdkBuildDir, 'images', 'jdk')
+
+        # The OpenJDK build creates an empty cacerts file so copy one from
+        # the default JDK (which is assumed to be an OracleJDK)
+        srcCerts = join(mx.get_jdk(tag='default').home, 'jre', 'lib', 'security', 'cacerts')
+        dstCerts = join(jdkImageDir, 'lib', 'security', 'cacerts')
+        shutil.copyfile(srcCerts, dstCerts)
+
+        _create_jdk_bundle(jdkBuildDir, _vm.debugLevel, jdkImageDir)
 
 def _get_jdk_bundle_arches():
     """
@@ -220,15 +236,14 @@ def _get_jdk_bundle_arches():
         return ['sparcv9']
     mx.abort('Unsupported JDK bundle arch: ' + cpu)
 
-def _create_jdk_bundle(jdkBuildDir):
+def _create_jdk_bundle(jdkBuildDir, debugLevel, jdkImageDir):
     """
     Creates a tar.gz JDK archive, an accompanying tar.gz.sha1 file with its
     SHA1 signature plus symlinks to the archive for non-canonical architecture names.
     """
-    jdkImageDir = join(jdkBuildDir, 'images', 'jdk')
 
     arches = _get_jdk_bundle_arches()
-    jdkTgzPath = join(_suite.get_output_root(), 'jdk-bundles', 'jdk9-{}-{}.tar.gz'.format(_get_openjdk_os(), arches[0]))
+    jdkTgzPath = join(_suite.get_output_root(), 'jdk-bundles', 'jdk9-{}-{}-{}.tar.gz'.format(debugLevel, _get_openjdk_os(), arches[0]))
     with mx.Archiver(jdkTgzPath, kind='tgz') as arc:
         mx.log('Creating ' + jdkTgzPath)
         for root, _, filenames in os.walk(jdkImageDir):
@@ -236,10 +251,6 @@ def _create_jdk_bundle(jdkBuildDir):
                 f = join(root, name)
                 arcname = 'jdk1.9.0/' + os.path.relpath(f, jdkImageDir)
                 arc.zf.add(name=f, arcname=arcname, recursive=False)
-        # The OpenJDK build creates an empty cacerts file so grab one from
-        # the default JDK which is assumed to be an OracleJDK
-        cacerts = join(mx.get_jdk(tag='default').home, 'jre', 'lib', 'security', 'cacerts')
-        arc.zf.add(name=cacerts, arcname='jdk1.9.0/lib/security/cacerts')
 
     with open(jdkTgzPath + '.sha1', 'w') as fp:
         mx.log('Creating ' + jdkTgzPath + '.sha1')
@@ -252,7 +263,7 @@ def _create_jdk_bundle(jdkBuildDir):
         os.symlink(source, link_name)
 
     for arch in arches[1:]:
-        link_name = join(_suite.get_output_root(), 'jdk-bundles', 'jdk9-{}-{}.tar.gz'.format(_get_openjdk_os(), arch))
+        link_name = join(_suite.get_output_root(), 'jdk-bundles', 'jdk9-{}-{}-{}.tar.gz'.format(debugLevel, _get_openjdk_os(), arch))
         jdkTgzName = os.path.basename(jdkTgzPath)
         _create_link(jdkTgzName, link_name)
         _create_link(jdkTgzName + '.sha1', link_name + '.sha1')
@@ -668,15 +679,10 @@ class JVMCIArchiveParticipant:
 
     def __opened__(self, arc, srcArc, services):
         self.services = services
+        self.jvmciServices = services
         self.arc = arc
 
     def __add__(self, arcname, contents):
-        if arcname.startswith('META-INF/jvmci.providers/'):
-            provider = arcname[len('META-INF/jvmci.providers/'):]
-            for service in contents.strip().split(os.linesep):
-                assert service
-                self.services.setdefault(service, []).append(provider)
-            return True
         return False
 
     def __addsrc__(self, arcname, contents):
@@ -757,6 +763,14 @@ class JVMCI9JDKConfig(mx.JDKConfig):
 
         args = ['-Xbootclasspath/p:' + dep.classpath_repr() for dep in _jvmci_bootclasspath_prepends] + args
 
+        # Remove JVMCI jars from class path. They are only necessary when
+        # compiling with a javac from JDK8 or earlier.
+        cpIndex, cp = mx.find_classpath_arg(args)
+        if cp:
+            excluded = frozenset([dist.path for dist in _suite.dists])
+            cp = os.pathsep.join([e for e in cp.split(os.pathsep) if e not in excluded])
+            args[cpIndex] = cp
+
         jvmciModeArgs = _jvmciModes[_vm.jvmciMode]
         if jvmciModeArgs:
             bcpDeps = [jdkDist.dist() for jdkDist in jdkDeployedDists]
@@ -812,7 +826,7 @@ def get_jvmci_jdk(debugLevel=None):
         _jvmci_jdks[debugLevel] = jdk
     return jdk
 
-class JVMCIJDKFactory(mx.JDKFactory):
+class JVMCI9JDKFactory(mx.JDKFactory):
     def getJDKConfig(self):
         jdk = get_jvmci_jdk(_vm.debugLevel)
         return jdk
@@ -836,8 +850,9 @@ mx.add_argument('--jdk-jvm-variant', '--vm', action='store', choices=_jdkJvmVari
 mx.add_argument('--jdk-debug-level', '--vmbuild', action='store', choices=_jdkDebugLevels + sorted(_legacyVmbuilds.viewkeys()), help='the JDK debug level to build/run (default: ' + _vm.debugLevel + ')')
 mx.add_argument('-I', '--use-jdk-image', action='store_true', help='build/run JDK image instead of exploded JDK')
 
+mx.addJDKFactory(_JVMCI_JDK_TAG, mx.JavaCompliance('9'), JVMCI9JDKFactory())
+
 def mx_post_parse_cmd_line(opts):
-    mx.addJDKFactory(_JVMCI_JDK_TAG, mx.JavaCompliance('9'), JVMCIJDKFactory())
     mx.set_java_command_default_jdk_tag(_JVMCI_JDK_TAG)
 
     jdkTag = mx.get_jdk_option().tag
@@ -864,6 +879,39 @@ def mx_post_parse_cmd_line(opts):
     _vm.update(jvmVariant, debugLevel, jvmciMode)
 
     for jdkDist in jdkDeployedDists:
-        dist = jdkDist.dist()
-        if isinstance(jdkDist, JvmciJDKDeployedDist):
-            dist.set_archiveparticipant(JVMCIArchiveParticipant(dist))
+        jdkDist.post_parse_cmd_line()
+
+def _update_JDK9_STUBS_library():
+    """
+    Sets the "path" and "sha1" attributes of the "JDK9_STUBS" library.
+    """
+    jdk9InternalLib = _suite.suiteDict['libraries']['JDK9_STUBS']
+    jarInputDir = join(_suite.get_output_root(), 'jdk9-stubs')
+    jarPath = join(_suite.get_output_root(), 'jdk9-stubs.jar')
+
+    stubs = [
+        ('jdk.internal.misc', 'VM', """package jdk.internal.misc;
+public class VM {
+    public static String getSavedProperty(String key) {
+        throw new InternalError("should not reach here");
+    }
+}
+""")
+    ]
+
+    if not exists(jarPath):
+        sourceFiles = []
+        for (package, className, source) in stubs:
+            sourceFile = join(jarInputDir, package.replace('.', os.sep), className + '.java')
+            mx.ensure_dir_exists(os.path.dirname(sourceFile))
+            with open(sourceFile, 'w') as fp:
+                fp.write(source)
+            sourceFiles.append(sourceFile)
+        jdk = mx.get_jdk(tag='default')
+        mx.run([jdk.javac, '-d', jarInputDir] + sourceFiles)
+        mx.run([jdk.jar, 'cf', jarPath, '.'], cwd=jarInputDir)
+
+    jdk9InternalLib['path'] = jarPath
+    jdk9InternalLib['sha1'] = mx.sha1OfFile(jarPath)
+
+_update_JDK9_STUBS_library()

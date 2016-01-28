@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.service;
+package jdk.vm.ci.services;
 
 import java.util.Formatter;
 import java.util.Iterator;

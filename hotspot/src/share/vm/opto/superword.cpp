@@ -3343,6 +3343,11 @@ bool SWPointer::scaled_iv(Node* n) {
       return true;
     }
   } else if (opc == Op_ConvI2L) {
+    if (n->in(1)->Opcode() == Op_CastII &&
+        n->in(1)->as_CastII()->has_range_check()) {
+      // Skip range check dependent CastII nodes
+      n = n->in(1);
+    }
     if (scaled_iv_plus_offset(n->in(1))) {
       NOT_PRODUCT(_tracer.scaled_iv_7(n);)
       return true;
@@ -3437,11 +3442,19 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
   if (invariant(n)) {
     if (opc == Op_ConvI2L) {
       n = n->in(1);
+      if (n->Opcode() == Op_CastII &&
+          n->as_CastII()->has_range_check()) {
+        // Skip range check dependent CastII nodes
+        assert(invariant(n), "sanity");
+        n = n->in(1);
+      }
     }
-    _negate_invar = negate;
-    _invar = n;
-    NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
-    return true;
+    if (n->bottom_type()->isa_int()) {
+      _negate_invar = negate;
+      _invar = n;
+      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
+      return true;
+    }
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)

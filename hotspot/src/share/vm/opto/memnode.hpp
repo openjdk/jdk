@@ -207,7 +207,7 @@ public:
 
   // Handle algebraic identities here.  If we have an identity, return the Node
   // we are equivalent to.  We look for Load of a Store.
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
 
   // If the load is from Field memory and the pointer is non-null, it might be possible to
   // zero out the control input.
@@ -223,11 +223,11 @@ public:
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 
   // Common methods for LoadKlass and LoadNKlass nodes.
-  const Type *klass_value_common( PhaseTransform *phase ) const;
-  Node *klass_identity_common( PhaseTransform *phase );
+  const Type* klass_value_common(PhaseGVN* phase) const;
+  Node* klass_identity_common(PhaseGVN* phase);
 
   virtual uint ideal_reg() const;
   virtual const Type *bottom_type() const;
@@ -284,7 +284,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value(PhaseTransform *phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreB; }
   virtual BasicType memory_type() const { return T_BYTE; }
 };
@@ -298,7 +298,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value(PhaseTransform *phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreB; }
   virtual BasicType memory_type() const { return T_BYTE; }
 };
@@ -312,7 +312,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value(PhaseTransform *phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreC; }
   virtual BasicType memory_type() const { return T_CHAR; }
 };
@@ -326,7 +326,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value(PhaseTransform *phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int store_Opcode() const { return Op_StoreC; }
   virtual BasicType memory_type() const { return T_SHORT; }
 };
@@ -350,8 +350,8 @@ public:
   LoadRangeNode(Node *c, Node *mem, Node *adr, const TypeInt *ti = TypeInt::POS)
     : LoadINode(c, mem, adr, TypeAryPtr::RANGE, ti, MemNode::unordered) {}
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
@@ -483,8 +483,8 @@ public:
   LoadKlassNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeKlassPtr *tk, MemOrd mo)
     : LoadPNode(c, mem, adr, at, tk, mo) {}
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual bool depends_only_on_test() const { return true; }
 
   // Polymorphic factory method:
@@ -503,8 +503,8 @@ public:
   virtual int store_Opcode() const { return Op_StoreNKlass; }
   virtual BasicType memory_type() const { return T_NARROWKLASS; }
 
-  virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual bool depends_only_on_test() const { return true; }
 };
 
@@ -581,10 +581,10 @@ public:
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 
   // Check for identity function on memory (Load then Store at same address)
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
 
   // Do not match memory edge
   virtual uint match_edge(uint idx) const;
@@ -746,9 +746,9 @@ public:
            "bad oop alias idx");
   }
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual BasicType memory_type() const { return T_VOID; } // unspecific
   int oop_alias_idx() const { return _oop_alias_idx; }
 };
@@ -782,7 +782,7 @@ public:
     return ctrl->in(MemNode::Memory)->adr_type();
   }
   virtual uint ideal_reg() const { return 0;} // memory projections don't have a register
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const {};
 #endif
@@ -934,7 +934,7 @@ public:
   // ClearArray modifies array elements, and so affects only the
   // array memory addressed by the bottom_type of its base address.
   virtual const class TypePtr *adr_type() const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const;
 
@@ -983,7 +983,7 @@ public:
   MemBarNode(Compile* C, int alias_idx, Node* precedent);
   virtual int Opcode() const = 0;
   virtual const class TypePtr *adr_type() const { return _adr_type; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const { return 0; }
   virtual const Type *bottom_type() const { return TypeTuple::MEMBAR; }
@@ -1199,7 +1199,7 @@ public:
   static MergeMemNode* make(Node* base_memory);
 
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return 0; }

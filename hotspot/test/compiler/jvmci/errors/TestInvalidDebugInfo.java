@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,24 +30,26 @@
 
 package compiler.jvmci.errors;
 
-import static jdk.vm.ci.code.CompilationResult.Infopoint;
-
 import jdk.vm.ci.code.BytecodeFrame;
-import jdk.vm.ci.code.CompilationResult;
 import jdk.vm.ci.code.DebugInfo;
-import jdk.vm.ci.code.InfopointReason;
 import jdk.vm.ci.code.Location;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.VirtualObject;
+import jdk.vm.ci.code.site.DataPatch;
+import jdk.vm.ci.code.site.Infopoint;
+import jdk.vm.ci.code.site.InfopointReason;
+import jdk.vm.ci.code.site.Site;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
 import jdk.vm.ci.hotspot.HotSpotReferenceMap;
+import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaValue;
 import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Value;
-import jdk.vm.ci.common.JVMCIError;
 
 import org.junit.Test;
 
@@ -67,10 +69,7 @@ public class TestInvalidDebugInfo extends CodeInstallerTest {
         BytecodeFrame frame = new BytecodeFrame(null, dummyMethod, 0, false, false, values, slotKinds, locals, stack, locks);
         DebugInfo info = new DebugInfo(frame, vobj);
         info.setReferenceMap(new HotSpotReferenceMap(new Location[0], new Location[0], new int[0], 8));
-
-        CompilationResult result = createEmptyCompilationResult();
-        result.addInfopoint(new Infopoint(0, info, InfopointReason.SAFEPOINT));
-        installCode(result);
+        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = NullPointerException.class)

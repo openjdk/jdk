@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,9 +184,18 @@ define_pd_global(bool, PreserveFramePointer, false);
   product(bool, UseCountTrailingZerosInstruction, false,                    \
           "Use count trailing zeros instruction")                           \
                                                                             \
+  product(bool, UseSSE42Intrinsics, false,                                  \
+          "SSE4.2 versions of intrinsics")                                  \
+                                                                            \
   product(bool, UseBMI1Instructions, false,                                 \
           "Use BMI1 instructions")                                          \
                                                                             \
   product(bool, UseBMI2Instructions, false,                                 \
-          "Use BMI2 instructions")
+          "Use BMI2 instructions")                                          \
+                                                                            \
+  diagnostic(bool, UseLibmSinIntrinsic, true,                               \
+          "Use Libm Sin Intrinsic")                                         \
+                                                                            \
+  diagnostic(bool, UseLibmCosIntrinsic, true,                               \
+          "Use Libm Cos Intrinsic")
 #endif // CPU_X86_VM_GLOBALS_X86_HPP

@@ -449,6 +449,7 @@ methodHandle LinkResolver::lookup_polymorphic_method(
         assert(result->intrinsic_id() != vmIntrinsics::_invokeGeneric, "wrong place to find this");
         assert(basic_signature == result->signature(), "predict the result signature");
         if (TraceMethodHandles) {
+          ttyLocker ttyl;
           tty->print("lookup_polymorphic_method => intrinsic ");
           result->print_on(tty);
         }
@@ -481,6 +482,7 @@ methodHandle LinkResolver::lookup_polymorphic_method(
                                                             &method_type,
                                                             CHECK_NULL);
       if (TraceMethodHandles) {
+        ttyLocker ttyl;
         tty->print("lookup_polymorphic_method => (via Java) ");
         result->print_on(tty);
         tty->print("  lookup_polymorphic_method => appendix = ");
@@ -1613,10 +1615,11 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   }
 
   if (TraceMethodHandles) {
-      ResourceMark rm(THREAD);
-      tty->print_cr("resolve_invokedynamic #%d %s %s",
+    ResourceMark rm(THREAD);
+    tty->print_cr("resolve_invokedynamic #%d %s %s in %s",
                   ConstantPool::decode_invokedynamic_index(index),
-                  method_name->as_C_string(), method_signature->as_C_string());
+                  method_name->as_C_string(), method_signature->as_C_string(),
+                  current_klass->name()->as_C_string());
     tty->print("  BSM info: "); bootstrap_specifier->print();
   }
 
