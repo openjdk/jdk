@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ outputStream::outputStream(int width) {
   _newlines    = 0;
   _precount    = 0;
   _indentation = 0;
+  _scratch     = NULL;
+  _scratch_len = 0;
 }
 
 outputStream::outputStream(int width, bool has_time_stamps) {
@@ -52,6 +54,8 @@ outputStream::outputStream(int width, bool has_time_stamps) {
   _newlines    = 0;
   _precount    = 0;
   _indentation = 0;
+  _scratch     = NULL;
+  _scratch_len = 0;
   if (has_time_stamps)  _stamp.update();
 }
 
@@ -119,38 +123,47 @@ const char* outputStream::do_vsnprintf(char* buffer, size_t buflen,
   return result;
 }
 
-void outputStream::print(const char* format, ...) {
+void outputStream::do_vsnprintf_and_write_with_automatic_buffer(const char* format, va_list ap, bool add_cr) {
   char buffer[O_BUFLEN];
+  size_t len;
+  const char* str = do_vsnprintf(buffer, sizeof(buffer), format, ap, add_cr, len);
+  write(str, len);
+}
+
+void outputStream::do_vsnprintf_and_write_with_scratch_buffer(const char* format, va_list ap, bool add_cr) {
+  size_t len;
+  const char* str = do_vsnprintf(_scratch, _scratch_len, format, ap, add_cr, len);
+  write(str, len);
+}
+
+void outputStream::do_vsnprintf_and_write(const char* format, va_list ap, bool add_cr) {
+  if (_scratch) {
+    do_vsnprintf_and_write_with_scratch_buffer(format, ap, add_cr);
+  } else {
+    do_vsnprintf_and_write_with_automatic_buffer(format, ap, add_cr);
+  }
+}
+
+void outputStream::print(const char* format, ...) {
   va_list ap;
   va_start(ap, format);
-  size_t len;
-  const char* str = do_vsnprintf(buffer, O_BUFLEN, format, ap, false, len);
-  write(str, len);
+  do_vsnprintf_and_write(format, ap, false);
   va_end(ap);
 }
 
 void outputStream::print_cr(const char* format, ...) {
-  char buffer[O_BUFLEN];
   va_list ap;
   va_start(ap, format);
-  size_t len;
-  const char* str = do_vsnprintf(buffer, O_BUFLEN, format, ap, true, len);
-  write(str, len);
+  do_vsnprintf_and_write(format, ap, true);
   va_end(ap);
 }
 
 void outputStream::vprint(const char *format, va_list argptr) {
-  char buffer[O_BUFLEN];
-  size_t len;
-  const char* str = do_vsnprintf(buffer, O_BUFLEN, format, argptr, false, len);
-  write(str, len);
+  do_vsnprintf_and_write(format, argptr, false);
 }
 
 void outputStream::vprint_cr(const char* format, va_list argptr) {
-  char buffer[O_BUFLEN];
-  size_t len;
-  const char* str = do_vsnprintf(buffer, O_BUFLEN, format, argptr, true, len);
-  write(str, len);
+  do_vsnprintf_and_write(format, argptr, true);
 }
 
 void outputStream::fill_to(int col) {
@@ -956,53 +969,6 @@ void ostream_abort() {
     static char buf[4096];
     defaultStream::instance->finish_log_on_error(buf, sizeof(buf));
   }
-}
-
-staticBufferStream::staticBufferStream(char* buffer, size_t buflen,
-                                       outputStream *outer_stream) {
-  _buffer = buffer;
-  _buflen = buflen;
-  _outer_stream = outer_stream;
-  // compile task prints time stamp relative to VM start
-  _stamp.update_to(1);
-}
-
-void staticBufferStream::write(const char* c, size_t len) {
-  _outer_stream->print_raw(c, (int)len);
-}
-
-void staticBufferStream::flush() {
-  _outer_stream->flush();
-}
-
-void staticBufferStream::print(const char* format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  size_t len;
-  const char* str = do_vsnprintf(_buffer, _buflen, format, ap, false, len);
-  write(str, len);
-  va_end(ap);
-}
-
-void staticBufferStream::print_cr(const char* format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  size_t len;
-  const char* str = do_vsnprintf(_buffer, _buflen, format, ap, true, len);
-  write(str, len);
-  va_end(ap);
-}
-
-void staticBufferStream::vprint(const char *format, va_list argptr) {
-  size_t len;
-  const char* str = do_vsnprintf(_buffer, _buflen, format, argptr, false, len);
-  write(str, len);
-}
-
-void staticBufferStream::vprint_cr(const char* format, va_list argptr) {
-  size_t len;
-  const char* str = do_vsnprintf(_buffer, _buflen, format, argptr, true, len);
-  write(str, len);
 }
 
 bufferedStream::bufferedStream(size_t initial_size, size_t bufmax) : outputStream() {
