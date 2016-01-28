@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -489,11 +489,11 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
     double overall_cm_overhead =
       (double) MaxGCPauseMillis * marking_overhead /
       (double) GCPauseIntervalMillis;
-    double cpu_ratio = 1.0 / (double) os::processor_count();
+    double cpu_ratio = 1.0 / (double) os::active_processor_count();
     double marking_thread_num = ceil(overall_cm_overhead / cpu_ratio);
     double marking_task_overhead =
       overall_cm_overhead / marking_thread_num *
-                                              (double) os::processor_count();
+                                              (double) os::active_processor_count();
     double sleep_factor =
                        (1.0 - marking_task_overhead) / marking_task_overhead;
 
