@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,8 @@ ParCompactionManager::ParCompactionManager() :
 
   marking_stack()->initialize();
   _objarray_stack.initialize();
+
+  reset_bitmap_query_cache();
 }
 
 ParCompactionManager::~ParCompactionManager() {
@@ -122,6 +124,13 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
     "Could not create ParCompactionManager");
   assert(PSParallelCompact::gc_task_manager()->workers() != 0,
     "Not initialized?");
+}
+
+void ParCompactionManager::reset_all_bitmap_query_caches() {
+  uint parallel_gc_threads = PSParallelCompact::gc_task_manager()->workers();
+  for (uint i=0; i<=parallel_gc_threads; i++) {
+    _manager_array[i]->reset_bitmap_query_cache();
+  }
 }
 
 int ParCompactionManager::pop_recycled_stack_index() {
