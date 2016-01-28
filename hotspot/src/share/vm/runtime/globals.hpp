@@ -2391,6 +2391,14 @@ public:
           "will sleep while yielding before giving up and resuming GC")     \
           range(0, max_juint)                                               \
                                                                             \
+  product(bool, PrintGC, false,                                             \
+          "Print message at garbage collection. "                           \
+          "Deprecated, use -Xlog:gc instead.")                              \
+                                                                            \
+  product(bool, PrintGCDetails, false,                                      \
+          "Print more details at garbage collection. "                      \
+          "Deprecated, use -Xlog:gc* instead.")                             \
+                                                                            \
   develop(intx, ConcGCYieldTimeout, 0,                                      \
           "If non-zero, assert that GC threads yield within this "          \
           "number of milliseconds")                                         \
