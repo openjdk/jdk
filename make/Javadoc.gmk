@@ -418,7 +418,7 @@ DOCLETAPI_WINDOWTITLE := Doclet API
 DOCLETAPI_HEADER := <strong>Doclet API</strong>
 DOCLETAPI_BOTTOM := $(call CommonTrademarkBottom,$(DOCLETAPI_FIRST_COPYRIGHT_YEAR))
 DOCLETAPI_GROUPNAME := Packages
-DOCLETAPI_REGEXP := com.sun.javadoc
+DOCLETAPI_REGEXP := jdk.javadoc.doclet.*
 # DOCLETAPI_PKGS is located in NON_CORE_PKGS.gmk
 
 # The index.html, options, and packages files
@@ -462,12 +462,69 @@ $(DOCLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(DOCLETAPI_PKGS))
 
 #############################################################
 #
+# old docletapidocs
+#
+
+ALL_OTHER_TARGETS += olddocletapidocs
+
+OLD_DOCLET_DIR := $(JDK_API_DOCSDIR)/javadoc/old
+OLD_DOCLETAPI_DOCDIR := $(OLD_DOCLET_DIR)/doclet
+OLD_DOCLETAPI2COREAPI := ../../../$(JDKJRE2COREAPI)
+OLD_DOCLETAPI_DOCTITLE := Doclet API
+OLD_DOCLETAPI_WINDOWTITLE := Doclet API
+OLD_DOCLETAPI_HEADER := <strong>Doclet API</strong>
+OLD_DOCLETAPI_BOTTOM := $(call CommonTrademarkBottom,$(DOCLETAPI_FIRST_COPYRIGHT_YEAR))
+OLD_DOCLETAPI_GROUPNAME := Packages
+OLD_DOCLETAPI_REGEXP := com.sun.javadoc
+# OLD_DOCLETAPI_PKGS is located in NON_CORE_PKGS.gmk
+
+# The index.html, options, and packages files
+OLD_DOCLETAPI_INDEX_FILE = $(OLD_DOCLETAPI_DOCDIR)/index.html
+OLD_DOCLETAPI_OPTIONS_FILE = $(DOCSTMPDIR)/old-docletapi.options
+OLD_DOCLETAPI_PACKAGES_FILE = $(DOCSTMPDIR)/old-docletapi.packages
+
+olddocletapidocs: $(OLD_DOCLETAPI_INDEX_FILE)
+
+# Set relative location to core api document root
+$(OLD_DOCLETAPI_INDEX_FILE): GET2DOCSDIR=$(OLD_DOCLETAPI2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(OLD_DOCLETAPI_INDEX_FILE): $(OLD_DOCLETAPI_OPTIONS_FILE) $(OLD_DOCLETAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(OLD_DOCLETAPI_OPTIONS_FILE),$(OLD_DOCLETAPI_PACKAGES_FILE))
+	$(JAVADOC_CMD_SMALL) -d $(@D) \
+	    @$(OLD_DOCLETAPI_OPTIONS_FILE) @$(OLD_DOCLETAPI_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(OLD_DOCLETAPI_OPTIONS_FILE):
+	$(prep-target)
+	@($(call COMMON_JAVADOCFLAGS) ; \
+          $(call COMMON_JAVADOCTAGS) ; \
+	  $(call OptionOnly,-Xdoclint:all) ; \
+	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
+	  $(call OptionPair,-encoding,ascii) ; \
+	  $(call OptionOnly,-breakiterator) ; \
+	  $(call OptionPair,-doctitle,$(OLD_DOCLETAPI_DOCTITLE)) ; \
+	  $(call OptionPair,-windowtitle,$(OLD_DOCLETAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
+	  $(call OptionPair,-header,$(OLD_DOCLETAPI_HEADER)$(DRAFT_HEADER)) ; \
+	  $(call OptionPair,-bottom,$(OLD_DOCLETAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
+	  $(call OptionTrip,-group,$(OLD_DOCLETAPI_GROUPNAME),$(OLD_DOCLETAPI_REGEXP)); \
+	  $(call OptionTrip,-linkoffline,$(OLD_DOCLETAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
+	) >> $@
+
+# Create a file with the package names in it
+$(OLD_DOCLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(OLD_DOCLETAPI_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(OLD_DOCLETAPI_PKGS))
+
+#############################################################
+#
 # tagletapidocs
 #
 
 ALL_OTHER_TARGETS += tagletapidocs
-TAGLETAPI_DOCDIR := $(JDK_API_DOCSDIR)/javadoc/taglet
-TAGLETAPI2COREAPI := ../../$(JDKJRE2COREAPI)
+TAGLETAPI_DOCDIR := $(OLD_DOCLET_DIR)/taglet
+TAGLETAPI2COREAPI := ../../../$(JDKJRE2COREAPI)
 TAGLETAPI_BOTTOM := $(call CommonTrademarkBottom,$(TAGLETAPI_FIRST_COPYRIGHT_YEAR))
 # TAGLETAPI_FILE is located in NON_CORE_PKGS.gmk
 

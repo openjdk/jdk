@@ -66,7 +66,10 @@ HTTPSERVER_PKGS = com.sun.net.httpserver \
 
 NIO_PKGS = com.sun.nio.file
 
-DOCLETAPI_PKGS = com.sun.javadoc
+OLD_DOCLETAPI_PKGS = com.sun.javadoc
+
+DOCLETAPI_PKGS = jdk.javadoc.doclet \
+    jdk.javadoc.doclet.taglet
 
 TAGLETAPI_FILE = com/sun/tools/doclets/Taglet.java
 
