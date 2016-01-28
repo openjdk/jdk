@@ -1812,7 +1812,7 @@ public class LambdaToMethod extends TreeTranslator {
 
             TranslationContext(T tree) {
                 this.tree = tree;
-                this.owner = owner();
+                this.owner = owner(true);
                 this.depth = frameStack.size() - 1;
                 this.prev = context();
                 ClassSymbol csym =
