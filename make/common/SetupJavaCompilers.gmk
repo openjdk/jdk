@@ -55,7 +55,7 @@ $(eval $(call SetupJavaCompiler,BOOT_JAVAC, \
 $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE, \
     JVM := $(JAVA_SMALL), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := $(BOOT_JDK_SOURCETARGET) -XDignore.symbol.file=true \
+    FLAGS := $(BOOT_JDK_SOURCETARGET) -XDignore.symbol.file=true -XDstringConcat=inline \
         $(DISABLE_WARNINGS) -Xlint:-options, \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
