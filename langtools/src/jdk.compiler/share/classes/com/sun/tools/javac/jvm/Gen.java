@@ -25,8 +25,6 @@
 
 package com.sun.tools.javac.jvm;
 
-import java.util.*;
-
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
@@ -45,7 +43,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.jvm.CRTFlags.*;
@@ -69,12 +66,12 @@ public class Gen extends JCTree.Visitor {
     private final TreeMaker make;
     private final Names names;
     private final Target target;
-    private final Map<Type,Symbol> stringBufferAppend;
     private Name accessDollar;
     private final Types types;
     private final Lower lower;
     private final Flow flow;
     private final Annotate annotate;
+    private final StringConcat concat;
 
     /** Format of stackmap tables to be generated. */
     private final Code.StackMapFormat stackMap;
@@ -105,8 +102,9 @@ public class Gen extends JCTree.Visitor {
         make = TreeMaker.instance(context);
         target = Target.instance(context);
         types = Types.instance(context);
+        concat = StringConcat.instance(context);
+
         methodType = new MethodType(null, null, null, syms.methodClass);
-        stringBufferAppend = new HashMap<>();
         accessDollar = names.
             fromString("access" + target.syntheticNameChar());
         flow = Flow.instance(context);
@@ -751,6 +749,18 @@ public class Gen extends JCTree.Visitor {
             if (markBranches) result.tree = _tree;
             return result;
         }
+    }
+
+    public Code getCode() {
+        return code;
+    }
+
+    public Items getItems() {
+        return items;
+    }
+
+    public Env<AttrContext> getAttrEnv() {
+        return attrEnv;
     }
 
     /** Visitor class for expressions which might be constant expressions.
@@ -1895,25 +1905,7 @@ public class Gen extends JCTree.Visitor {
         OperatorSymbol operator = (OperatorSymbol) tree.operator;
         Item l;
         if (operator.opcode == string_add) {
-            // Generate code to make a string buffer
-            makeStringBuffer(tree.pos());
-
-            // Generate code for first string, possibly save one
-            // copy under buffer
-            l = genExpr(tree.lhs, tree.lhs.type);
-            if (l.width() > 0) {
-                code.emitop0(dup_x1 + 3 * (l.width() - 1));
-            }
-
-            // Load first string and append to buffer.
-            l.load();
-            appendString(tree.lhs);
-
-            // Append all other strings to buffer.
-            appendStrings(tree.rhs);
-
-            // Convert buffer to string.
-            bufferToString(tree.pos());
+            l = concat.makeConcat(tree);
         } else {
             // Generate code for first expression
             l = genExpr(tree.lhs, tree.lhs.type);
@@ -2026,13 +2018,7 @@ public class Gen extends JCTree.Visitor {
     public void visitBinary(JCBinary tree) {
         OperatorSymbol operator = (OperatorSymbol)tree.operator;
         if (operator.opcode == string_add) {
-            // Create a string buffer.
-            makeStringBuffer(tree.pos());
-            // Append all strings to buffer.
-            appendStrings(tree);
-            // Convert buffer to string.
-            bufferToString(tree.pos());
-            result = items.makeStackItem(syms.stringType);
+            result = concat.makeConcat(tree);
         } else if (tree.hasTag(AND)) {
             CondItem lcond = genCond(tree.lhs, CRT_FLOW_CONTROLLER);
             if (!lcond.isFalse()) {
@@ -2066,67 +2052,7 @@ public class Gen extends JCTree.Visitor {
             result = completeBinop(tree.lhs, tree.rhs, operator);
         }
     }
-//where
-        /** Make a new string buffer.
-         */
-        void makeStringBuffer(DiagnosticPosition pos) {
-            code.emitop2(new_, makeRef(pos, syms.stringBuilderType));
-            code.emitop0(dup);
-            callMethod(
-                    pos, syms.stringBuilderType, names.init, List.<Type>nil(), false);
-        }
 
-        /** Append value (on tos) to string buffer (on tos - 1).
-         */
-        void appendString(JCTree tree) {
-            Type t = tree.type.baseType();
-            if (!t.isPrimitive() && t.tsym != syms.stringType.tsym) {
-                t = syms.objectType;
-            }
-            items.makeMemberItem(getStringBufferAppend(tree, t), false).invoke();
-        }
-        Symbol getStringBufferAppend(JCTree tree, Type t) {
-            Assert.checkNull(t.constValue());
-            Symbol method = stringBufferAppend.get(t);
-            if (method == null) {
-                method = rs.resolveInternalMethod(tree.pos(),
-                                                  attrEnv,
-                                                  syms.stringBuilderType,
-                                                  names.append,
-                                                  List.of(t),
-                                                  null);
-                stringBufferAppend.put(t, method);
-            }
-            return method;
-        }
-
-        /** Add all strings in tree to string buffer.
-         */
-        void appendStrings(JCTree tree) {
-            tree = TreeInfo.skipParens(tree);
-            if (tree.hasTag(PLUS) && tree.type.constValue() == null) {
-                JCBinary op = (JCBinary) tree;
-                if (op.operator.kind == MTH &&
-                    ((OperatorSymbol) op.operator).opcode == string_add) {
-                    appendStrings(op.lhs);
-                    appendStrings(op.rhs);
-                    return;
-                }
-            }
-            genExpr(tree, tree.type).load();
-            appendString(tree);
-        }
-
-        /** Convert string buffer on tos to string.
-         */
-        void bufferToString(DiagnosticPosition pos) {
-            callMethod(
-                    pos,
-                    syms.stringBuilderType,
-                    names.toString,
-                    List.<Type>nil(),
-                    false);
-        }
 
         /** Complete generating code for operation, with left operand
          *  already on stack.
