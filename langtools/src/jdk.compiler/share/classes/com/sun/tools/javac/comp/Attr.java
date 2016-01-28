@@ -239,7 +239,7 @@ public class Attr extends JCTree.Visitor {
             //this means we are dealing with a partially inferred poly expression
             owntype = shouldCheck ? resultInfo.pt : found;
             if (resultInfo.checkMode.installPostInferenceHook()) {
-                inferenceContext.addFreeTypeListener(List.of(found, resultInfo.pt),
+                inferenceContext.addFreeTypeListener(List.of(found),
                         instantiatedContext -> {
                             ResultInfo pendingResult =
                                     resultInfo.dup(inferenceContext.asInstType(resultInfo.pt));
