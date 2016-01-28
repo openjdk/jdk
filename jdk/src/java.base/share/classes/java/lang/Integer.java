@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,7 +339,6 @@ public final class Integer extends Number implements Comparable<Integer> {
         // assert shift > 0 && shift <=5 : "Illegal shift value";
         int mag = Integer.SIZE - Integer.numberOfLeadingZeros(val);
         int chars = Math.max(((mag + (shift - 1)) / shift), 1);
-
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[chars];
             formatUnsignedInt(val, shift, buf, 0, chars);
@@ -477,8 +476,13 @@ public final class Integer extends Number implements Comparable<Integer> {
      * values, to cover the Integer.MIN_VALUE case. Converting otherwise
      * (negative to positive) will expose -Integer.MIN_VALUE that overflows
      * integer.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, Latin1-encoded
+     * @return index of the most significant digit or minus sign, if present
      */
-    static void getChars(int i, int index, byte[] buf) {
+    static int getChars(int i, int index, byte[] buf) {
         int q, r;
         int charPos = index;
 
@@ -509,9 +513,19 @@ public final class Integer extends Number implements Comparable<Integer> {
         if (negative) {
             buf[--charPos] = (byte)'-';
         }
+        return charPos;
     }
 
-    static void getCharsUTF16(int i, int index, byte[] buf) {
+    /**
+     * This is a variant of {@link #getChars(int, int, byte[])}, but for
+     * UTF-16 coder.
+     *
+     * @param i     value to convert
+     * @param index next index, after the least significant digit
+     * @param buf   target buffer, UTF16-coded.
+     * @return index of the most significant digit or minus sign, if present
+     */
+    static int getCharsUTF16(int i, int index, byte[] buf) {
         int q, r;
         int charPos = index;
 
@@ -542,6 +556,7 @@ public final class Integer extends Number implements Comparable<Integer> {
         if (negative) {
             StringUTF16.putChar(buf, --charPos, '-');
         }
+        return charPos;
     }
 
     // Left here for compatibility reasons, see JDK-8143900.
