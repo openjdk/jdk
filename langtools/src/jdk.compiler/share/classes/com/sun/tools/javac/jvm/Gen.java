@@ -2173,8 +2173,8 @@ public class Gen extends JCTree.Visitor {
         }
 
     public void visitTypeCast(JCTypeCast tree) {
-        setTypeAnnotationPositions(tree.pos);
         result = genExpr(tree.expr, tree.clazz.type).load();
+        setTypeAnnotationPositions(tree.pos);
         // Additional code is only needed if we cast to a reference type
         // which is not statically a supertype of the expression's type.
         // For basic types, the coerce(...) in genExpr(...) will do
@@ -2191,8 +2191,8 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitTypeTest(JCInstanceOf tree) {
-        setTypeAnnotationPositions(tree.pos);
         genExpr(tree.expr, tree.expr.type).load();
+        setTypeAnnotationPositions(tree.pos);
         code.emitop2(instanceof_, makeRef(tree.pos(), tree.clazz.type));
         result = items.makeStackItem(syms.booleanType);
     }
