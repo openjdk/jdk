@@ -21,12 +21,21 @@
  * questions.
  */
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.CertPath;
+import java.security.cert.CertificateFactory;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.ZipFile;
+import jdk.security.jarsigner.JarSigner;
 
 public class CreateMultiReleaseTestJars {
     final private String main =
@@ -120,14 +129,21 @@ public class CreateMultiReleaseTestJars {
         String testsrc = System.getProperty("test.src",".");
         String testdir = findTestDir(testsrc);
         String keystore = testdir + "/sun/security/tools/jarsigner/JarSigning.keystore";
-        String[] jsArgs = {
-                "-keystore", keystore,
-                "-storepass", "bbbbbb",
-                "-signedJar", "signed-multi-release.jar",
-                "multi-release.jar", "b"
-        };
-        sun.security.tools.jarsigner.Main.main(jsArgs);
 
+        // jarsigner -keystore keystore -storepass "bbbbbb"
+        //           -signedJar signed-multi-release.jar multi-release.jar b
+
+        char[] password = "bbbbbb".toCharArray();
+        KeyStore ks = KeyStore.getInstance(new File(keystore), password);
+        PrivateKey pkb = (PrivateKey)ks.getKey("b", password);
+        CertPath cp = CertificateFactory.getInstance("X.509")
+                .generateCertPath(Arrays.asList(ks.getCertificateChain("b")));
+        JarSigner js = new JarSigner.Builder(pkb, cp).build();
+        try (ZipFile in = new ZipFile("multi-release.jar");
+             FileOutputStream os = new FileOutputStream("signed-multi-release.jar"))
+        {
+            js.sign(in, os);
+        }
     }
 
     String findTestDir(String dir) throws IOException {
