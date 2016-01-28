@@ -35,7 +35,6 @@
  */
 
 import com.sun.tools.javadoc.*;
-import java.nio.file.Paths;
 
 public class SampleApiTest {
 
