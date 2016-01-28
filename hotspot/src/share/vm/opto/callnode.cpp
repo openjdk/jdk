@@ -49,7 +49,7 @@ uint StartNode::size_of() const { return sizeof(*this); }
 uint StartNode::cmp( const Node &n ) const
 { return _domain == ((StartNode&)n)._domain; }
 const Type *StartNode::bottom_type() const { return _domain; }
-const Type *StartNode::Value(PhaseTransform *phase) const { return _domain; }
+const Type* StartNode::Value(PhaseGVN* phase) const { return _domain; }
 #ifndef PRODUCT
 void StartNode::dump_spec(outputStream *st) const { st->print(" #"); _domain->dump_on(st);}
 void StartNode::dump_compact_spec(outputStream *st) const { /* empty */ }
@@ -173,7 +173,7 @@ Node *ReturnNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
-const Type *ReturnNode::Value( PhaseTransform *phase ) const {
+const Type* ReturnNode::Value(PhaseGVN* phase) const {
   return ( phase->type(in(TypeFunc::Control)) == Type::TOP)
     ? Type::TOP
     : Type::BOTTOM;
@@ -218,7 +218,7 @@ Node *RethrowNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
-const Type *RethrowNode::Value( PhaseTransform *phase ) const {
+const Type* RethrowNode::Value(PhaseGVN* phase) const {
   return (phase->type(in(TypeFunc::Control)) == Type::TOP)
     ? Type::TOP
     : Type::BOTTOM;
@@ -685,7 +685,7 @@ void CallNode::dump_spec(outputStream *st) const {
 #endif
 
 const Type *CallNode::bottom_type() const { return tf()->range(); }
-const Type *CallNode::Value(PhaseTransform *phase) const {
+const Type* CallNode::Value(PhaseGVN* phase) const {
   if (phase->type(in(0)) == Type::TOP)  return Type::TOP;
   return tf()->range();
 }
@@ -1133,7 +1133,7 @@ Node *SafePointNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Identity---------------------------------------
 // Remove obviously duplicate safepoints
-Node *SafePointNode::Identity( PhaseTransform *phase ) {
+Node* SafePointNode::Identity(PhaseGVN* phase) {
 
   // If you have back to back safepoints, remove one
   if( in(TypeFunc::Control)->is_SafePoint() )
@@ -1156,7 +1156,7 @@ Node *SafePointNode::Identity( PhaseTransform *phase ) {
 }
 
 //------------------------------Value------------------------------------------
-const Type *SafePointNode::Value( PhaseTransform *phase ) const {
+const Type* SafePointNode::Value(PhaseGVN* phase) const {
   if( phase->type(in(0)) == Type::TOP ) return Type::TOP;
   if( phase->eqv( in(0), this ) ) return Type::TOP; // Dead infinite loop
   return Type::CONTROL;

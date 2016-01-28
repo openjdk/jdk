@@ -3469,9 +3469,25 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   add(top, t1, top); // t1 is tlab_size
   sub(top, ThreadLocalAllocBuffer::alignment_reserve_in_bytes(), top);
   st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_end_offset()));
+
+  if (ZeroTLAB) {
+    // This is a fast TLAB refill, therefore the GC is not notified of it.
+    // So compiled code must fill the new TLAB with zeroes.
+    ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t2);
+    zero_memory(t2, t1);
+  }
   verify_tlab();
   ba(retry);
   delayed()->nop();
+}
+
+void MacroAssembler::zero_memory(Register base, Register index) {
+  assert_different_registers(base, index);
+  Label loop;
+  bind(loop);
+  subcc(index, HeapWordSize, index);
+  brx(Assembler::greaterEqual, true, Assembler::pt, loop);
+  delayed()->st_ptr(G0, base, index);
 }
 
 void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes,

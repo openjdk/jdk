@@ -509,6 +509,7 @@ class java_lang_Throwable: AllStatic {
   // Printing
   static void print(Handle throwable, outputStream* st);
   static void print_stack_trace(Handle throwable, outputStream* st);
+  static void java_printStackTrace(Handle throwable, TRAPS);
   // Debugging
   friend class JavaClasses;
 };

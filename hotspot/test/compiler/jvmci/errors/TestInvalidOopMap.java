@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,21 +30,22 @@
 
 package compiler.jvmci.errors;
 
-import static jdk.vm.ci.code.CompilationResult.Infopoint;
-
 import jdk.vm.ci.code.BytecodePosition;
-import jdk.vm.ci.code.CompilationResult;
 import jdk.vm.ci.code.DebugInfo;
-import jdk.vm.ci.code.InfopointReason;
 import jdk.vm.ci.code.Location;
 import jdk.vm.ci.code.ReferenceMap;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.site.DataPatch;
+import jdk.vm.ci.code.site.Infopoint;
+import jdk.vm.ci.code.site.InfopointReason;
+import jdk.vm.ci.code.site.Site;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
 import jdk.vm.ci.hotspot.HotSpotReferenceMap;
 import jdk.vm.ci.hotspot.HotSpotVMConfig;
+import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.PlatformKind;
-import jdk.vm.ci.common.JVMCIError;
 
 import org.junit.Test;
 
@@ -60,10 +61,7 @@ public class TestInvalidOopMap extends CodeInstallerTest {
         BytecodePosition pos = new BytecodePosition(null, dummyMethod, 0);
         DebugInfo info = new DebugInfo(pos);
         info.setReferenceMap(refMap);
-
-        CompilationResult result = createEmptyCompilationResult();
-        result.addInfopoint(new Infopoint(0, info, InfopointReason.SAFEPOINT));
-        installCode(result);
+        installEmptyCode(new Site[]{new Infopoint(0, info, InfopointReason.SAFEPOINT)}, new Assumption[0], new Comment[0], 16, new DataPatch[0]);
     }
 
     @Test(expected = NullPointerException.class)
