@@ -4119,16 +4119,6 @@ pkgadd_help() {
 
 
 
-    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
-    # will basically do slowdebug builds when DEBUG_BINARIES is set for
-    # fastdebug builds
-    DEBUG_BINARIES=false
-    # Fastdebug builds with this setting will essentially be slowdebug
-    # in hotspot.
-    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
-    # will basically do slowdebug builds when DEBUG_BINARIES is set for
-    # fastdebug builds
-    DEBUG_BINARIES=false
 #
 # Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -4849,7 +4839,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1453385294
+DATE_WHEN_GENERATED=1453964370
 
 ###############################################################################
 #
