@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @bug 8144168
+ * @bug 8144168 8148432
  * @summary No type annotations generated for nested lambdas
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  * @build ToolBox
- * @run compile NestedLambdasCastedTest.java
+ * @run compile -g NestedLambdasCastedTest.java
  * @run main NestedLambdasCastedTest
  */
 
@@ -78,8 +78,9 @@ public class NestedLambdasCastedTest {
                 .run()
                 .getOutput(ToolBox.OutputKind.DIRECT);
         ExpectedOutputHolder holder = new ExpectedOutputHolder();
-        for (String s : holder.outputs)
-        if (!javapOut.contains(s))
-            throw new AssertionError("Expected type annotation on LOCAL_VARIABLE missing");
+        for (String s : holder.outputs) {
+            if (!javapOut.contains(s))
+                throw new AssertionError("Expected type annotation on LOCAL_VARIABLE missing");
+        }
     }
 }
