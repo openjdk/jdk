@@ -70,8 +70,16 @@ public class DefaultFormat implements Format {
         return "^JNI\\sglobal\\sreferences:\\s((.+))$";
     }
 
+    // Sample string that matches the pattern:
+    // waiting on <0x000000008f64e6d0> (a java.lang.Object)
     protected String monitorInfoPattern() {
         return "^\\s+\\-\\s(locked|waiting\\son|waiting\\sto\\slock)\\s\\<(.*)\\>\\s\\(((.*))\\)$";
+    }
+
+    // Sample string that matches the pattern:
+    // waiting on <no object reference available>
+    protected String monitorInfoNoObjectRefPattern() {
+        return "^\\s+\\-\\s(locked|waiting\\son|waiting\\sto\\slock)\\s\\<(.*)\\>$";
     }
 
     protected String vmVersionInfoPattern() {
@@ -100,7 +108,10 @@ public class DefaultFormat implements Format {
                     currentMethodInfo = parseMethodInfo(line);
                     currentThreadStack.addMethod(currentMethodInfo);
                 } else if (line.matches(monitorInfoPattern())) {
-                    MonitorInfo mi = parseMonitorInfo(line);
+                    MonitorInfo mi = parseMonitorInfo(line, monitorInfoPattern());
+                    currentMethodInfo.getLocks().add(mi);
+                } else if (line.matches(monitorInfoNoObjectRefPattern())) {
+                    MonitorInfo mi = parseMonitorInfo(line, monitorInfoNoObjectRefPattern());
                     currentMethodInfo.getLocks().add(mi);
                 } else if (line.matches(extendedStatusPattern())) {
                     currentThreadStack.setExtendedStatus(parseExtendedStatus(line));
@@ -125,16 +136,17 @@ public class DefaultFormat implements Format {
         return result;
     }
 
-    private MonitorInfo parseMonitorInfo(String line) {
+    private MonitorInfo parseMonitorInfo(String line, String pattern) {
         Scanner s = new Scanner(line);
-        s.findInLine(monitorInfoPattern());
+        s.findInLine(pattern);
         MonitorInfo mi = new MonitorInfo();
         MatchResult res = s.match();
 
         mi.setType(res.group(1));
         mi.setMonitorAddress(res.group(2));
-        mi.setMonitorClass(res.group(3));
-
+        if (res.groupCount() > 2) {
+            mi.setMonitorClass(res.group(3));
+        }
         return mi;
     }
 
