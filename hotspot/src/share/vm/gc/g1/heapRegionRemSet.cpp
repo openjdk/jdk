@@ -789,6 +789,9 @@ void HeapRegionRemSet::scrub(CardTableModRefBS* ctbs,
 
 void HeapRegionRemSet::add_strong_code_root(nmethod* nm) {
   assert(nm != NULL, "sanity");
+  assert((!CodeCache_lock->owned_by_self() || SafepointSynchronize::is_at_safepoint()),
+          "should call add_strong_code_root_locked instead. CodeCache_lock->owned_by_self(): %s, is_at_safepoint(): %s",
+          BOOL_TO_STR(CodeCache_lock->owned_by_self()), BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()));
   // Optimistic unlocked contains-check
   if (!_code_roots.contains(nm)) {
     MutexLockerEx ml(&_m, Mutex::_no_safepoint_check_flag);
@@ -798,6 +801,12 @@ void HeapRegionRemSet::add_strong_code_root(nmethod* nm) {
 
 void HeapRegionRemSet::add_strong_code_root_locked(nmethod* nm) {
   assert(nm != NULL, "sanity");
+  assert((CodeCache_lock->owned_by_self() ||
+         (SafepointSynchronize::is_at_safepoint() &&
+          (_m.owned_by_self() || Thread::current()->is_VM_thread()))),
+          "not safely locked. CodeCache_lock->owned_by_self(): %s, is_at_safepoint(): %s, _m.owned_by_self(): %s, Thread::current()->is_VM_thread(): %s",
+          BOOL_TO_STR(CodeCache_lock->owned_by_self()), BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()),
+          BOOL_TO_STR(_m.owned_by_self()), BOOL_TO_STR(Thread::current()->is_VM_thread()));
   _code_roots.add(nm);
 }
 
