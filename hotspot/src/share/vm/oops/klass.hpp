@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -578,7 +578,7 @@ protected:
   virtual void oop_ps_push_contents(  oop obj, PSPromotionManager* pm)   = 0;
   // Parallel Compact
   virtual void oop_pc_follow_contents(oop obj, ParCompactionManager* cm) = 0;
-  virtual void oop_pc_update_pointers(oop obj) = 0;
+  virtual void oop_pc_update_pointers(oop obj, ParCompactionManager* cm) = 0;
 #endif
 
   // Iterators specialized to particular subtypes

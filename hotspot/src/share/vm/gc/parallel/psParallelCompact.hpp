@@ -451,10 +451,10 @@ public:
   HeapWord* partial_obj_end(size_t region_idx) const;
 
   // Return the location of the object after compaction.
-  HeapWord* calc_new_pointer(HeapWord* addr);
+  HeapWord* calc_new_pointer(HeapWord* addr, ParCompactionManager* cm);
 
-  HeapWord* calc_new_pointer(oop p) {
-    return calc_new_pointer((HeapWord*) p);
+  HeapWord* calc_new_pointer(oop p, ParCompactionManager* cm) {
+    return calc_new_pointer((HeapWord*) p, cm);
   }
 
 #ifdef  ASSERT
@@ -937,17 +937,29 @@ class PSParallelCompact : AllStatic {
 
   class AdjustPointerClosure: public ExtendedOopClosure {
    public:
+    AdjustPointerClosure(ParCompactionManager* cm) {
+      assert(cm != NULL, "associate ParCompactionManage should not be NULL");
+      _cm = cm;
+    }
     template <typename T> void do_oop_nv(T* p);
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
 
     // This closure provides its own oop verification code.
     debug_only(virtual bool should_verify_oops() { return false; })
+   private:
+    ParCompactionManager* _cm;
   };
 
   class AdjustKlassClosure : public KlassClosure {
    public:
+    AdjustKlassClosure(ParCompactionManager* cm) {
+      assert(cm != NULL, "associate ParCompactionManage should not be NULL");
+      _cm = cm;
+    }
     void do_klass(Klass* klass);
+   private:
+    ParCompactionManager* _cm;
   };
 
   friend class AdjustPointerClosure;
@@ -966,8 +978,6 @@ class PSParallelCompact : AllStatic {
   static ParallelCompactData  _summary_data;
   static IsAliveClosure       _is_alive_closure;
   static SpaceInfo            _space_info[last_space_id];
-  static AdjustPointerClosure _adjust_pointer_closure;
-  static AdjustKlassClosure   _adjust_klass_closure;
 
   // Reference processing (used in ...follow_contents)
   static ReferenceProcessor*  _ref_processor;
@@ -1063,7 +1073,7 @@ class PSParallelCompact : AllStatic {
   static void summary_phase(ParCompactionManager* cm, bool maximum_compaction);
 
   // Adjust addresses in roots.  Does not adjust addresses in heap.
-  static void adjust_roots();
+  static void adjust_roots(ParCompactionManager* cm);
 
   DEBUG_ONLY(static void write_block_fill_histogram();)
 
@@ -1109,10 +1119,6 @@ class PSParallelCompact : AllStatic {
   static bool initialize();
 
   // Closure accessors
-  static PSParallelCompact::AdjustPointerClosure* adjust_pointer_closure() {
-    return &_adjust_pointer_closure;
-  }
-  static KlassClosure* adjust_klass_closure()      { return (KlassClosure*)&_adjust_klass_closure; }
   static BoolObjectClosure* is_alive_closure()     { return (BoolObjectClosure*)&_is_alive_closure; }
 
   // Public accessors
@@ -1127,7 +1133,7 @@ class PSParallelCompact : AllStatic {
   static inline bool mark_obj(oop obj);
   static inline bool is_marked(oop obj);
 
-  template <class T> static inline void adjust_pointer(T* p);
+  template <class T> static inline void adjust_pointer(T* p, ParCompactionManager* cm);
 
   // Compaction support.
   // Return true if p is in the range [beg_addr, end_addr).
