@@ -83,6 +83,7 @@ public class ArrayManagement {
         int oldCapacity = capacity(list);
         int oldModCount = modCount(list);
         list.ensureCapacity(capacity);
+        assertTrue(capacity(list) >= capacity || capacity(list) == 0);
         assertEquals(modCount(list),
                      (capacity(list) == oldCapacity)
                      ? oldModCount

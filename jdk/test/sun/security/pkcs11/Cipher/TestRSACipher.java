@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,20 +28,28 @@
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @run main/othervm TestRSACipher
+ * @run main/othervm TestRSACipher sm
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
-
-import javax.crypto.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.Random;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 
 public class TestRSACipher extends PKCS11Test {
 
     private static final String[] RSA_ALGOS =
         { "RSA/ECB/PKCS1Padding", "RSA" };
 
+    @Override
     public void main(Provider p) throws Exception {
         try {
             Cipher.getInstance(RSA_ALGOS[0], p);
@@ -122,7 +130,7 @@ public class TestRSACipher extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestRSACipher());
+        main(new TestRSACipher(), args);
     }
 
 }
