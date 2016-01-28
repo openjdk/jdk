@@ -311,6 +311,8 @@ public abstract class Configuration {
     public final Map<ProgramElementDoc, ProgramElementDoc> classPropertiesMap = new HashMap<>();
     public final Map<ProgramElementDoc, GetterSetter> getterSetterMap = new HashMap<>();
 
+    public DocFileFactory docFileFactory;
+
     /**
      * Constructor. Constructs the message retriever with resource file.
      */
