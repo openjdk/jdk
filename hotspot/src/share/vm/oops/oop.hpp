@@ -330,8 +330,8 @@ class oopDesc {
   inline int  ms_adjust_pointers();
 #if INCLUDE_ALL_GCS
   // Parallel Compact
-  inline void pc_follow_contents(ParCompactionManager* pc);
-  inline void pc_update_contents();
+  inline void pc_follow_contents(ParCompactionManager* cm);
+  inline void pc_update_contents(ParCompactionManager* cm);
   // Parallel Scavenge
   inline void ps_push_contents(PSPromotionManager* pm);
 #endif
