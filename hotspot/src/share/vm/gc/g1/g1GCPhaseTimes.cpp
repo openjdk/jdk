@@ -125,7 +125,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[StringDedupQueueFixup] = new WorkerDataArray<double>(max_gc_threads, "Queue Fixup:", true, 2);
   _gc_par_phases[StringDedupTableFixup] = new WorkerDataArray<double>(max_gc_threads, "Table Fixup:", true, 2);
 
-  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>(max_gc_threads, "Parallel Redirty", true, 3);
+  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>(max_gc_threads, "Parallel Redirty:", true, 3);
   _redirtied_cards = new WorkerDataArray<size_t>(max_gc_threads, "Redirtied Cards:", true, 3);
   _gc_par_phases[RedirtyCards]->link_thread_work_items(_redirtied_cards);
 }

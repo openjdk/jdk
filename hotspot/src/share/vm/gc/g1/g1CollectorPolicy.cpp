@@ -2310,7 +2310,7 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
       // whether we added any apparently expensive regions or not, to
       // avoid generating output per region.
       log_debug(gc, ergo, cset)("Added expensive regions to CSet (old CSet region num not reached min)."
-                                "old %u regions, expensive: %u regions, min %u regions, remaining time: %1.2fms",
+                                "old: %u regions, expensive: %u regions, min: %u regions, remaining time: %1.2fms",
                                 old_cset_region_length(), expensive_region_num, min_old_cset_length, time_remaining_ms);
     }
 
@@ -2319,7 +2319,7 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
 
   stop_incremental_cset_building();
 
-  log_debug(gc, ergo, cset)("Finish choosing CSet. old %u regions, predicted old region time: %1.2fms, time remaining: %1.2f",
+  log_debug(gc, ergo, cset)("Finish choosing CSet. old: %u regions, predicted old region time: %1.2fms, time remaining: %1.2f",
                             old_cset_region_length(), predicted_old_time_ms, time_remaining_ms);
 
   double non_young_end_time_sec = os::elapsedTime();
