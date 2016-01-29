@@ -2930,7 +2930,7 @@ bool ciTypeFlow::is_dominated_by(int bci, int dom_bci) {
   }
 
   // Dominated[i] is true if block i is dominated by dom_block
-  int num_blocks = _methodBlocks->num_blocks();
+  int num_blocks = block_count();
   bool* dominated = NEW_RESOURCE_ARRAY(bool, num_blocks);
   for (int i = 0; i < num_blocks; ++i) {
     dominated[i] = true;

@@ -378,30 +378,4 @@ public:
   bool all_tasks_completed();
 };
 
-// Represents a set of free small integer ids.
-class FreeIdSet : public CHeapObj<mtGC> {
-  enum {
-    end_of_list = UINT_MAX,
-    claimed = UINT_MAX - 1
-  };
-
-  uint _size;
-  Monitor* _mon;
-
-  uint* _ids;
-  uint _hd;
-  uint _waiters;
-  uint _claimed;
-
-public:
-  FreeIdSet(uint size, Monitor* mon);
-  ~FreeIdSet();
-
-  // Returns an unclaimed parallel id (waiting for one to be released if
-  // necessary).
-  uint claim_par_id();
-
-  void release_par_id(uint id);
-};
-
 #endif // SHARE_VM_GC_SHARED_WORKGROUP_HPP

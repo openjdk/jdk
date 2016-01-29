@@ -340,7 +340,7 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
     // We cannot tolerate a GC in this block, because we've
     // cached the bytecodes in 'code_base'. If the Method*
     // moves, the bytecodes will also move.
-    No_Safepoint_Verifier nsv;
+    NoSafepointVerifier nsv;
     Bytecodes::Code c;
 
     // Bytecodes and their length

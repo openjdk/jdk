@@ -339,9 +339,9 @@ class LoopLimitNode : public Node {
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 // -----------------------------IdealLoopTree----------------------------------

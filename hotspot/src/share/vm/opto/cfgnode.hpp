@@ -91,8 +91,8 @@ public:
   virtual uint hash() const { return NO_HASH; }  // CFG nodes do not hash
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type *bottom_type() const { return Type::CONTROL; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const RegMask &out_RegMask() const;
   bool try_clean_mem_phi(PhaseGVN *phase);
@@ -175,7 +175,14 @@ public:
 
   // Determine a unique non-trivial input, if any.
   // Ignore casts if it helps.  Return NULL on failure.
-  Node* unique_input(PhaseTransform *phase);
+  Node* unique_input(PhaseTransform *phase, bool uncast);
+  Node* unique_input(PhaseTransform *phase) {
+    Node* uin = unique_input(phase, false);
+    if (uin == NULL) {
+      uin = unique_input(phase, true);
+    }
+    return uin;
+  }
 
   // Check for a simple dead loop.
   enum LoopSafety { Safe = 0, Unsafe, UnsafeLoop };
@@ -198,8 +205,8 @@ public:
            type()->higher_equal(tp);
   }
 
-  virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const RegMask &out_RegMask() const;
   virtual const RegMask &in_RegMask(uint) const;
@@ -227,8 +234,8 @@ public:
   virtual const Node *is_block_proj() const { return this; }
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type *bottom_type() const { return Type::CONTROL; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const RegMask &out_RegMask() const;
 
 #ifndef PRODUCT
@@ -270,13 +277,6 @@ class IfNode : public MultiBranchNode {
   virtual uint size_of() const { return sizeof(*this); }
 
 private:
-  ProjNode* range_check_trap_proj() {
-    int flip_test = 0;
-    Node* l = NULL;
-    Node* r = NULL;
-    return range_check_trap_proj(flip_test, l, r);
-  }
-
   // Helper methods for fold_compares
   bool cmpi_folds(PhaseIterGVN* igvn);
   bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);
@@ -377,7 +377,7 @@ public:
   virtual bool pinned() const { return true; }
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual int required_outcnt() const { return 2; }
   virtual const RegMask &out_RegMask() const;
   Node* fold_compares(PhaseIterGVN* phase);
@@ -411,7 +411,7 @@ public:
 class IfProjNode : public CProjNode {
 public:
   IfProjNode(IfNode *ifnode, uint idx) : CProjNode(ifnode,idx) {}
-  virtual Node *Identity(PhaseTransform *phase);
+  virtual Node* Identity(PhaseGVN* phase);
 
 protected:
   // Type of If input when this branch is always taken
@@ -465,7 +465,7 @@ public:
     init_req(1, idx);
   }
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *bottom_type() const;
   virtual bool pinned() const { return true; }
@@ -525,7 +525,7 @@ public:
     init_class_id(Class_Catch);
   }
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 // CatchProjNode controls which exception handler is targetted after a call.
@@ -553,7 +553,7 @@ public:
   }
 
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type *bottom_type() const { return Type::CONTROL; }
   int  handler_bci() const        { return _handler_bci; }
   bool is_handler_proj() const    { return _handler_bci >= 0; }
@@ -572,7 +572,7 @@ public:
     init_req(1, i_o);
   }
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual bool pinned() const { return true; }
   uint match_edge(uint idx) const { return 0; }
   virtual uint ideal_reg() const { return Op_RegP; }
@@ -588,7 +588,7 @@ public:
   virtual int Opcode() const;
   virtual bool pinned() const { return true; };
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int required_outcnt() const { return 2; }
   virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const { }

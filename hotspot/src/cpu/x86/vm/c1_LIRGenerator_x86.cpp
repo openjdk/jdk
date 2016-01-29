@@ -811,7 +811,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   assert(x->number_of_arguments() == 1 || (x->number_of_arguments() == 2 && x->id() == vmIntrinsics::_dpow), "wrong type");
 
   if (x->id() == vmIntrinsics::_dexp || x->id() == vmIntrinsics::_dlog ||
-      x->id() == vmIntrinsics::_dpow) {
+      x->id() == vmIntrinsics::_dpow || x->id() == vmIntrinsics::_dcos ||
+      x->id() == vmIntrinsics::_dsin) {
     do_LibmIntrinsic(x);
     return;
   }
@@ -821,11 +822,10 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   bool use_fpu = false;
   if (UseSSE >= 2) {
     switch(x->id()) {
-      case vmIntrinsics::_dsin:
-      case vmIntrinsics::_dcos:
       case vmIntrinsics::_dtan:
       case vmIntrinsics::_dlog10:
         use_fpu = true;
+        break;
     }
   } else {
     value.set_destroys_register();
@@ -870,8 +870,6 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   switch(x->id()) {
     case vmIntrinsics::_dabs:   __ abs  (calc_input, calc_result, LIR_OprFact::illegalOpr); break;
     case vmIntrinsics::_dsqrt:  __ sqrt (calc_input, calc_result, LIR_OprFact::illegalOpr); break;
-    case vmIntrinsics::_dsin:   __ sin  (calc_input, calc_result, tmp1, tmp2);              break;
-    case vmIntrinsics::_dcos:   __ cos  (calc_input, calc_result, tmp1, tmp2);              break;
     case vmIntrinsics::_dtan:   __ tan  (calc_input, calc_result, tmp1, tmp2);              break;
     case vmIntrinsics::_dlog10: __ log10(calc_input, calc_result, tmp1);                    break;
     default:                    ShouldNotReachHere();
@@ -923,17 +921,29 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
     case vmIntrinsics::_dlog:
       if (VM_Version::supports_sse2()) {
         __ call_runtime_leaf(StubRoutines::dlog(), getThreadTemp(), result_reg, cc->args());
-      }
-      else {
+      } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog), getThreadTemp(), result_reg, cc->args());
       }
       break;
     case vmIntrinsics::_dpow:
       if (VM_Version::supports_sse2()) {
         __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args());
-      }
-      else {
+      } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dpow), getThreadTemp(), result_reg, cc->args());
+      }
+      break;
+    case vmIntrinsics::_dsin:
+      if (VM_Version::supports_sse2() && StubRoutines::dsin() != NULL) {
+        __ call_runtime_leaf(StubRoutines::dsin(), getThreadTemp(), result_reg, cc->args());
+      } else {
+        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dsin), getThreadTemp(), result_reg, cc->args());
+      }
+      break;
+    case vmIntrinsics::_dcos:
+      if (VM_Version::supports_sse2() && StubRoutines::dcos() != NULL) {
+        __ call_runtime_leaf(StubRoutines::dcos(), getThreadTemp(), result_reg, cc->args());
+      } else {
+        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dcos), getThreadTemp(), result_reg, cc->args());
       }
       break;
     default:  ShouldNotReachHere();
@@ -949,8 +959,23 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
     case vmIntrinsics::_dpow:
       __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args());
       break;
+    case vmIntrinsics::_dsin:
+      if (StubRoutines::dsin() != NULL) {
+        __ call_runtime_leaf(StubRoutines::dsin(), getThreadTemp(), result_reg, cc->args());
+      } else {
+        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dsin), getThreadTemp(), result_reg, cc->args());
+      }
+      break;
+    case vmIntrinsics::_dcos:
+      if (StubRoutines::dcos() != NULL) {
+        __ call_runtime_leaf(StubRoutines::dcos(), getThreadTemp(), result_reg, cc->args());
+      } else {
+        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dcos), getThreadTemp(), result_reg, cc->args());
+      }
+      break;
+    default:  ShouldNotReachHere();
   }
-#endif
+#endif // _LP64
   __ move(result_reg, calc_result);
 }
 

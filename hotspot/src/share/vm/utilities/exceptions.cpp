@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -501,4 +501,19 @@ void Exceptions::debug_check_abort_helper(Handle exception, const char* message)
     }
   }
   debug_check_abort(exception()->klass()->external_name(), message);
+}
+
+// for logging exceptions
+void Exceptions::log_exception(Handle exception, stringStream tempst) {
+  ResourceMark rm;
+  Symbol* message = java_lang_Throwable::detail_message(exception());
+  if (message != NULL) {
+    log_info(exceptions)("Exception <%s: %s> (" INTPTR_FORMAT ")\n thrown in %s",
+                         exception->print_value_string(),
+                         message->as_C_string(), p2i(exception()), tempst.as_string());
+  } else {
+    log_info(exceptions)("Exception <%s> (" INTPTR_FORMAT ")\n thrown in %s",
+                         exception->print_value_string(),
+                         p2i(exception()), tempst.as_string());
+  }
 }

@@ -958,8 +958,6 @@ enum LIR_Code {
       , lir_rem
       , lir_sqrt
       , lir_abs
-      , lir_sin
-      , lir_cos
       , lir_tan
       , lir_log10
       , lir_logic_and
@@ -2194,8 +2192,6 @@ class LIR_List: public CompilationResourceObj {
   void abs (LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_abs , from, tmp, to)); }
   void sqrt(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_sqrt, from, tmp, to)); }
   void log10 (LIR_Opr from, LIR_Opr to, LIR_Opr tmp)              { append(new LIR_Op2(lir_log10, from, LIR_OprFact::illegalOpr, to, tmp)); }
-  void sin (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_Op2(lir_sin , from, tmp1, to, tmp2)); }
-  void cos (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_Op2(lir_cos , from, tmp1, to, tmp2)); }
   void tan (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_Op2(lir_tan , from, tmp1, to, tmp2)); }
 
   void add (LIR_Opr left, LIR_Opr right, LIR_Opr res)      { append(new LIR_Op2(lir_add, left, right, res)); }

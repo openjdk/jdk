@@ -2660,7 +2660,7 @@ bool IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new )
 
 //=============================================================================
 // Process all the loops in the loop tree and replace any fill
-// patterns with an intrisc version.
+// patterns with an intrinsic version.
 bool PhaseIdealLoop::do_intrinsify_fill() {
   bool changed = false;
   for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
@@ -2758,8 +2758,9 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   }
 
   // Make sure the address expression can be handled.  It should be
-  // head->phi * elsize + con.  head->phi might have a ConvI2L.
+  // head->phi * elsize + con.  head->phi might have a ConvI2L(CastII()).
   Node* elements[4];
+  Node* cast = NULL;
   Node* conv = NULL;
   bool found_index = false;
   int count = store->in(MemNode::Address)->as_AddP()->unpack_offsets(elements, ARRAY_SIZE(elements));
@@ -2774,6 +2775,12 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
         conv = value;
         value = value->in(1);
       }
+      if (value->Opcode() == Op_CastII &&
+          value->as_CastII()->has_range_check()) {
+        // Skip range check dependent CastII nodes
+        cast = value;
+        value = value->in(1);
+      }
 #endif
       if (value != head->phi()) {
         msg = "unhandled shift in address";
@@ -2786,9 +2793,16 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
         }
       }
     } else if (n->Opcode() == Op_ConvI2L && conv == NULL) {
-      if (n->in(1) == head->phi()) {
+      conv = n;
+      n = n->in(1);
+      if (n->Opcode() == Op_CastII &&
+          n->as_CastII()->has_range_check()) {
+        // Skip range check dependent CastII nodes
+        cast = n;
+        n = n->in(1);
+      }
+      if (n == head->phi()) {
         found_index = true;
-        conv = n;
       } else {
         msg = "unhandled input to ConvI2L";
       }
@@ -2847,6 +2861,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   // Address elements are ok
   if (con)   ok.set(con->_idx);
   if (shift) ok.set(shift->_idx);
+  if (cast)  ok.set(cast->_idx);
   if (conv)  ok.set(conv->_idx);
 
   for (uint i = 0; msg == NULL && i < lpt->_body.size(); i++) {

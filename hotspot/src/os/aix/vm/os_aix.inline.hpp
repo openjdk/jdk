@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2015 SAP AG. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ inline void os::pd_split_reserved_memory(char *base, size_t size,
 }
 
 // Bang the shadow pages if they need to be touched to be mapped.
-inline void os::bang_stack_shadow_pages() {
+inline void os::map_stack_shadow_pages() {
 }
 
 inline void os::dll_unload(void *lib) {
