@@ -32,9 +32,11 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -730,6 +732,36 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
   return resolved_method;
 }
 
+static void trace_method_resolution(const char* prefix,
+                                    KlassHandle klass,
+                                    KlassHandle resolved_klass,
+                                    const methodHandle& method,
+                                    bool logitables,
+                                    int index = -1) {
+#ifndef PRODUCT
+  ResourceMark rm;
+  outputStream* st;
+  if (logitables) {
+    st = LogHandle(itables)::trace_stream();
+  } else {
+    st = LogHandle(vtables)::trace_stream();
+  }
+  st->print("%s%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
+            prefix,
+            (klass.is_null() ? "<NULL>" : klass->internal_name()),
+            (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
+            Method::name_and_sig_as_C_string(resolved_klass(),
+                                             method->name(),
+                                             method->signature()),
+            method->method_holder()->internal_name());
+  method->print_linkage_flags(st);
+  if (index != -1) {
+    st->print("vtable_index:%d", index);
+  }
+  st->cr();
+#endif // PRODUCT
+}
+
 methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info,
                                                     bool nostatics, TRAPS) {
 
@@ -786,10 +818,10 @@ methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info,
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  if (TraceItables && Verbose) {
+  if (develop_log_is_enabled(Trace, itables)) {
     trace_method_resolution("invokeinterface resolved method: caller-class",
-                            link_info.current_klass(), resolved_klass, resolved_method);
-    tty->cr();
+                            link_info.current_klass(), resolved_klass,
+                            resolved_method, true);
   }
 
   return resolved_method;
@@ -1034,10 +1066,9 @@ methodHandle LinkResolver::linktime_resolve_special_method(const LinkInfo& link_
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  if (TraceItables && Verbose) {
+  if (develop_log_is_enabled(Trace, itables)) {
     trace_method_resolution("invokespecial resolved method: caller-class:",
-                            current_klass, resolved_klass, resolved_method);
-    tty->cr();
+                            current_klass, resolved_klass, resolved_method, true);
   }
 
   return resolved_method;
@@ -1106,10 +1137,9 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
                                                sel_method->signature()));
   }
 
-  if (TraceItables && Verbose) {
+  if (develop_log_is_enabled(Trace, itables)) {
     trace_method_resolution("invokespecial selected method: resolved-class:",
-                            resolved_klass, resolved_klass, sel_method);
-    tty->cr();
+                            resolved_klass, resolved_klass, sel_method, true);
   }
 
   // setup result
@@ -1160,10 +1190,9 @@ methodHandle LinkResolver::linktime_resolve_virtual_method(const LinkInfo& link_
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  if (PrintVtables && Verbose) {
+  if (develop_log_is_enabled(Trace, vtables)) {
     trace_method_resolution("invokevirtual resolved method: caller-class:",
-                            current_klass, resolved_klass, resolved_method);
-    tty->cr();
+                            current_klass, resolved_klass, resolved_method, false);
   }
 
   return resolved_method;
@@ -1241,10 +1270,10 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
                                                       selected_method->signature()));
   }
 
-  if (PrintVtables && Verbose) {
+  if (develop_log_is_enabled(Trace, vtables)) {
     trace_method_resolution("invokevirtual selected method: receiver-class:",
-                            recv_klass, resolved_klass, selected_method);
-    tty->print_cr("vtable_index:%d", vtable_index);
+                            recv_klass, resolved_klass, selected_method,
+                            false, vtable_index);
   }
   // setup result
   result.set_virtual(resolved_klass, recv_klass, resolved_method, selected_method, vtable_index, CHECK);
@@ -1340,10 +1369,9 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
                                                       sel_method->signature()));
   }
 
-  if (TraceItables && Verbose) {
+  if (develop_log_is_enabled(Trace, itables)) {
     trace_method_resolution("invokeinterface selected method: receiver-class",
-                            recv_klass, resolved_klass, sel_method);
-    tty->cr();
+                            recv_klass, resolved_klass, sel_method, true);
   }
   // setup result
   if (!resolved_method->has_itable_index()) {
@@ -1618,28 +1646,3 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
   result.set_handle(resolved_method, resolved_appendix, resolved_method_type, THREAD);
   wrap_invokedynamic_exception(CHECK);
 }
-
-#ifndef PRODUCT
-void LinkResolver::trace_method_resolution(const char* prefix,
-                                           KlassHandle klass,
-                                           KlassHandle resolved_klass,
-                                           const methodHandle& method) {
-  ResourceMark rm;
-  tty->print("%s%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
-             prefix,
-             (klass.is_null() ? "<NULL>" : klass->internal_name()),
-             (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
-             Method::name_and_sig_as_C_string(resolved_klass(),
-                                              method->name(),
-                                              method->signature()),
-             method->method_holder()->internal_name()
-             );
-  method->access_flags().print_on(tty);
-  if (method->is_default_method()) {
-    tty->print("default ");
-  }
-  if (method->is_overpass()) {
-    tty->print("overpass ");
-  }
-}
-#endif // PRODUCT

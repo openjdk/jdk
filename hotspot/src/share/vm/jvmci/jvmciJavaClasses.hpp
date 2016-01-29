@@ -26,6 +26,7 @@
 
 #include "classfile/systemDictionary.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/oop.inline.hpp"
 
 class JVMCIJavaClasses : AllStatic {
  public:

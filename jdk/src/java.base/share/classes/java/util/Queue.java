@@ -129,14 +129,6 @@ package java.util;
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
  *
- * @see java.util.Collection
- * @see LinkedList
- * @see PriorityQueue
- * @see java.util.concurrent.LinkedBlockingQueue
- * @see java.util.concurrent.BlockingQueue
- * @see java.util.concurrent.ArrayBlockingQueue
- * @see java.util.concurrent.LinkedBlockingQueue
- * @see java.util.concurrent.PriorityBlockingQueue
  * @since 1.5
  * @author Doug Lea
  * @param <E> the type of elements held in this queue

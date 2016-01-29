@@ -382,7 +382,7 @@ CompileTask* CompileQueue::get() {
 
   CompileTask* task;
   {
-    No_Safepoint_Verifier nsv;
+    NoSafepointVerifier nsv;
     task = CompilationPolicy::policy()->select_task(this);
   }
 

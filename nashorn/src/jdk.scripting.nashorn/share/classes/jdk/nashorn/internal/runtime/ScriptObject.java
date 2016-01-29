@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1334,7 +1334,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         for (ScriptObject self = this; self != null; self = self.getProto()) {
             keys.addAll(Arrays.asList(self.getOwnKeys(String.class, true, nonEnumerable)));
         }
-        return keys.toArray(new String[keys.size()]);
+        return keys.toArray(new String[0]);
     }
 
     /**
@@ -2146,7 +2146,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
 
         switchPoints.add(getMap().getSwitchPoint(name));
-        return switchPoints.toArray(new SwitchPoint[switchPoints.size()]);
+        return switchPoints.toArray(new SwitchPoint[0]);
     }
 
     private void checkSharedProtoMap() {
@@ -2505,7 +2505,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             for (ScriptObject self = object; self != null; self = self.getProto()) {
                 keys.addAll(Arrays.asList(self.getOwnKeys(String.class, false, nonEnumerable)));
             }
-            this.values = keys.toArray(new String[keys.size()]);
+            this.values = keys.toArray(new String[0]);
         }
     }
 
@@ -2523,7 +2523,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
                     valueList.add(self.get(key));
                 }
             }
-            this.values = valueList.toArray(new Object[valueList.size()]);
+            this.values = valueList.toArray(new Object[0]);
         }
     }
 

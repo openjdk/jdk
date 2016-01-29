@@ -741,9 +741,6 @@ public:
   product(bool, ForceTimeHighResolution, false,                             \
           "Using high time resolution (for Win32 only)")                    \
                                                                             \
-  develop(bool, TraceItables, false,                                        \
-          "Trace initialization and use of itables")                        \
-                                                                            \
   develop(bool, TracePcPatching, false,                                     \
           "Trace usage of frame::patch_pc")                                 \
                                                                             \
@@ -889,7 +886,7 @@ public:
                                                                             \
   notproduct(bool, StrictSafepointChecks, trueInDebug,                      \
           "Enable strict checks that safepoints cannot happen for threads " \
-          "that use No_Safepoint_Verifier")                                 \
+          "that use NoSafepointVerifier")                                   \
                                                                             \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
@@ -2334,6 +2331,14 @@ public:
   diagnostic(bool, VerifyDuringGC, false,                                   \
           "Verify memory system during GC (between phases)")                \
                                                                             \
+  diagnostic(ccstrlist, VerifySubSet, "",                                   \
+          "Memory sub-systems to verify when Verify*GC flag(s) "            \
+          "are enabled. One or more sub-systems can be specified "          \
+          "in a comma separated string. Sub-systems are: "                  \
+          "threads, heap, symbol_table, string_table, codecache, "          \
+          "dictionary, classloader_data_graph, metaspace, jni_handles, "    \
+          "c-heap, codecache_oops")                                         \
+                                                                            \
   diagnostic(bool, GCParallelVerificationEnabled, true,                     \
           "Enable parallel memory system verification")                     \
                                                                             \
@@ -2701,9 +2706,6 @@ public:
                                                                             \
   develop(bool, DebugVtables, false,                                        \
           "add debugging code to vtable dispatch")                          \
-                                                                            \
-  develop(bool, PrintVtables, false,                                        \
-          "print vtables when printing klass")                              \
                                                                             \
   notproduct(bool, PrintVtableStats, false,                                 \
           "print vtables stats at end of run")                              \

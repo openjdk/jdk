@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,11 @@ public class Start extends ToolOption.Helper {
         this(programName, errWriter, warnWriter, noticeWriter, defaultDocletClassName, null);
     }
 
-    Start(String programName,
+    public Start(PrintWriter pw) {
+        this(javadocName, pw, pw, pw, standardDocletClassName);
+    }
+
+    public Start(String programName,
           PrintWriter errWriter,
           PrintWriter warnWriter,
           PrintWriter noticeWriter,
@@ -139,7 +143,7 @@ public class Start extends ToolOption.Helper {
         this(javadocName, docletParentClassLoader);
     }
 
-    Start() {
+    public Start() {
         this(javadocName);
     }
 
@@ -212,7 +216,7 @@ public class Start extends ToolOption.Helper {
     /**
      * Main program - external wrapper
      */
-    int begin(String... argv) {
+    public int begin(String... argv) {
         boolean ok = begin(null, argv, Collections.<JavaFileObject> emptySet());
         return ok ? 0 : 1;
     }

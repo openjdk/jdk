@@ -996,7 +996,7 @@ void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
   int marked = 0;
   CallSiteDepChange changes(call_site(), target());
   {
-    No_Safepoint_Verifier nsv;
+    NoSafepointVerifier nsv;
     MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     oop context = java_lang_invoke_CallSite::context(call_site());
@@ -1354,7 +1354,7 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
 
     int marked = 0;
     {
-      No_Safepoint_Verifier nsv;
+      NoSafepointVerifier nsv;
       MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       assert(safe_to_expunge(), "removal is not safe");
       DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
