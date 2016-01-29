@@ -34,6 +34,7 @@ public class Platform {
     private static final String vmName      = System.getProperty("java.vm.name");
     private static final String userName    = System.getProperty("user.name");
     private static final String compiler    = System.getProperty("sun.management.compiler");
+    private static final String vmInfo      = System.getProperty("java.vm.info");
 
     public static boolean isClient() {
         return vmName.endsWith(" Client VM");
@@ -61,6 +62,18 @@ public class Platform {
 
     public static boolean isTieredSupported() {
         return compiler.contains("Tiered Compilers");
+    }
+
+    public static boolean isInt() {
+        return vmInfo.contains("interpreted");
+    }
+
+    public static boolean isMixed() {
+        return vmInfo.contains("mixed");
+    }
+
+    public static boolean isComp() {
+        return vmInfo.contains("compiled");
     }
 
     public static boolean is32bit() {
@@ -135,12 +148,6 @@ public class Platform {
         return isArch("aarch64");
     }
 
-    private static boolean isArch(String archnameRE) {
-        return Pattern.compile(archnameRE, Pattern.CASE_INSENSITIVE)
-                .matcher(osArch)
-                .matches();
-    }
-
     public static String getOsArch() {
         return osArch;
     }
@@ -202,5 +209,11 @@ public class Platform {
      */
     public static boolean canAttachOSX() throws Exception {
         return userName.equals("root");
+    }
+
+    private static boolean isArch(String archnameRE) {
+        return Pattern.compile(archnameRE, Pattern.CASE_INSENSITIVE)
+                      .matcher(osArch)
+                      .matches();
     }
 }
