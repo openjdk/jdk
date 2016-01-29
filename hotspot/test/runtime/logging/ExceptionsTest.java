@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141211
+ * @bug 8141211 8147477
  * @summary exceptions=info output should have an exception message for interpreter methods
  * @library /testlibrary
  * @modules java.base/sun.misc
@@ -32,10 +32,17 @@
  * @run driver ExceptionsTest
  */
 
+import java.io.File;
+import java.util.Map;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
 
 public class ExceptionsTest {
+    static void updateEnvironment(ProcessBuilder pb, String environmentVariable, String value) {
+        Map<String, String> env = pb.environment();
+        env.put(environmentVariable, value);
+    }
+
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("<a 'java/lang/RuntimeException': Test exception 1 for logging>");
@@ -65,6 +72,19 @@ public class ExceptionsTest {
         pb = ProcessTools.createJavaProcessBuilder("-XX:-TraceExceptions",
                                                    InternalClass.class.getName());
         analyzeOutputOff(pb);
+
+        pb = ProcessTools.createJavaProcessBuilder(InternalClass.class.getName());
+        updateEnvironment(pb, "_JAVA_OPTIONS", "-XX:+TraceExceptions");
+        analyzeOutputOn(pb);
+
+        pb = ProcessTools.createJavaProcessBuilder(InternalClass.class.getName());
+        updateEnvironment(pb, "JAVA_TOOL_OPTIONS", "-Xlog:exceptions=info -XX:-TraceExceptions");
+        analyzeOutputOff(pb);
+
+        pb = ProcessTools.createJavaProcessBuilder("-XX:VMOptionsFile=" + System.getProperty("test.src", ".")
+                                                   + File.separator + "ExceptionsTest_options_file",
+                                                   InternalClass.class.getName());
+        analyzeOutputOn(pb);
     }
 
     public static class InternalClass {
