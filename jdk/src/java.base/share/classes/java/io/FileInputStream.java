@@ -280,7 +280,11 @@ class FileInputStream extends InputStream
      * @exception  IOException  if n is negative, if the stream does not
      *             support seek, or if an I/O error occurs.
      */
-    public native long skip(long n) throws IOException;
+    public long skip(long n) throws IOException {
+        return skip0(n);
+    }
+
+    private native long skip0(long n) throws IOException;
 
     /**
      * Returns an estimate of the number of remaining bytes that can be read (or
@@ -299,7 +303,11 @@ class FileInputStream extends InputStream
      * @exception  IOException  if this file input stream has been closed by calling
      *             {@code close} or an I/O error occurs.
      */
-    public native int available() throws IOException;
+    public int available() throws IOException {
+        return available0();
+    }
+
+    private native int available0() throws IOException;
 
     /**
      * Closes this file input stream and releases any system resources
