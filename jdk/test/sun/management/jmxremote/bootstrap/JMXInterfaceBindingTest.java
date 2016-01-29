@@ -23,9 +23,11 @@
 
 import java.io.File;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import jdk.testlibrary.ProcessThread;
 import jdk.testlibrary.ProcessTools;
@@ -72,25 +74,28 @@ public class JMXInterfaceBindingTest {
                                                 "truststore";
     public static final String TEST_CLASSPATH = System.getProperty("test.classes", ".");
 
-    public void run(InetAddress[] addrs) {
+    public void run(List<InetAddress> addrs) {
         System.out.println("DEBUG: Running tests with plain sockets.");
         runTests(addrs, false);
         System.out.println("DEBUG: Running tests with SSL sockets.");
         runTests(addrs, true);
     }
 
-    private void runTests(InetAddress[] addrs, boolean useSSL) {
-        ProcessThread[] jvms = new ProcessThread[addrs.length];
-        for (int i = 0; i < addrs.length; i++) {
+    private void runTests(List<InetAddress> addrs, boolean useSSL) {
+        List<ProcessThread> jvms = new ArrayList<>(addrs.size());
+        int i = 1;
+        for (InetAddress addr : addrs) {
+            String address = JMXAgentInterfaceBinding.wrapAddress(addr.getHostAddress());
             System.out.println();
             String msg = String.format("DEBUG: Launching java tester for triplet (HOSTNAME,JMX_PORT,RMI_PORT) == (%s,%d,%d)",
-                    addrs[i].getHostAddress(),
+                    address,
                     JMX_PORT,
                     RMI_PORT);
             System.out.println(msg);
-            jvms[i] = runJMXBindingTest(addrs[i], useSSL);
-            jvms[i].start();
-            System.out.println("DEBUG: Started " + (i + 1) + " Process(es).");
+            ProcessThread jvm = runJMXBindingTest(address, useSSL);
+            jvms.add(jvm);
+            jvm.start();
+            System.out.println("DEBUG: Started " + (i++) + " Process(es).");
         }
         int failedProcesses = 0;
         for (ProcessThread pt: jvms) {
@@ -117,15 +122,15 @@ public class JMXInterfaceBindingTest {
             }
         }
         if (failedProcesses > 0) {
-            throw new RuntimeException("Test FAILED. " + failedProcesses + " out of " + addrs.length + " process(es) failed to start the JMX agent.");
+            throw new RuntimeException("Test FAILED. " + failedProcesses + " out of " + addrs.size() + " process(es) failed to start the JMX agent.");
         }
     }
 
-    private ProcessThread runJMXBindingTest(InetAddress a, boolean useSSL) {
+    private ProcessThread runJMXBindingTest(String address, boolean useSSL) {
         List<String> args = new ArrayList<>();
         args.add("-classpath");
         args.add(TEST_CLASSPATH);
-        args.add("-Dcom.sun.management.jmxremote.host=" + a.getHostAddress());
+        args.add("-Dcom.sun.management.jmxremote.host=" + address);
         args.add("-Dcom.sun.management.jmxremote.port=" + JMX_PORT);
         args.add("-Dcom.sun.management.jmxremote.rmi.port=" + RMI_PORT);
         args.add("-Dcom.sun.management.jmxremote.authenticate=false");
@@ -138,14 +143,14 @@ public class JMXInterfaceBindingTest {
             args.add("-Djavax.net.ssl.trustStorePassword=trustword");
         }
         args.add(TEST_CLASS);
-        args.add(a.getHostAddress());
+        args.add(address);
         args.add(Integer.toString(JMX_PORT));
         args.add(Integer.toString(RMI_PORT));
         args.add(Boolean.toString(useSSL));
         try {
             ProcessBuilder builder = ProcessTools.createJavaProcessBuilder(args.toArray(new String[] {}));
             System.out.println(ProcessTools.getCommandLine(builder));
-            ProcessThread jvm = new ProcessThread("JMX-Tester-" + a.getHostAddress(), JMXInterfaceBindingTest::isJMXAgentResponseAvailable, builder);
+            ProcessThread jvm = new ProcessThread("JMX-Tester-" + address, JMXInterfaceBindingTest::isJMXAgentResponseAvailable, builder);
             return jvm;
         } catch (Exception e) {
             throw new RuntimeException("Test failed", e);
@@ -171,8 +176,8 @@ public class JMXInterfaceBindingTest {
     }
 
     public static void main(String[] args) {
-        InetAddress[] addrs = getAddressesForLocalHost();
-        if (addrs.length < 2) {
+        List<InetAddress> addrs = getAddressesForLocalHost();
+        if (addrs.size() < 2) {
             System.out.println("Ignoring manual test since no more than one IPs are configured for 'localhost'");
             return;
         }
@@ -181,13 +186,24 @@ public class JMXInterfaceBindingTest {
         System.out.println("All tests PASSED.");
     }
 
-    private static InetAddress[] getAddressesForLocalHost() {
-        InetAddress[] addrs;
+    private static List<InetAddress> getAddressesForLocalHost() {
+
         try {
-            addrs = InetAddress.getAllByName("localhost");
-        } catch (UnknownHostException e) {
+            return NetworkInterface.networkInterfaces()
+                .flatMap(NetworkInterface::inetAddresses)
+                .filter(JMXInterfaceBindingTest::isNonloopbackLocalhost)
+                .collect(Collectors.toList());
+        } catch (SocketException e) {
             throw new RuntimeException("Test failed", e);
         }
-        return addrs;
+    }
+
+    // we need 'real' localhost addresses only (eg. not loopback ones)
+    // so we can bind the remote JMX connector to them
+    private static boolean isNonloopbackLocalhost(InetAddress i) {
+        if (!i.isLoopbackAddress()) {
+            return i.getHostName().toLowerCase().equals("localhost");
+        }
+        return false;
     }
 }
