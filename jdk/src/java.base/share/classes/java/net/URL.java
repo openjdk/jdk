@@ -659,6 +659,42 @@ public final class URL implements java.io.Serializable {
         }
     }
 
+    /**
+     * Creates a URL from a URI, as if by invoking {@code uri.toURL()}.
+     *
+     * @see java.net.URI#toURL()
+     */
+    static URL fromURI(URI uri) throws MalformedURLException {
+        if (!uri.isAbsolute()) {
+            throw new IllegalArgumentException("URI is not absolute");
+        }
+        String protocol = uri.getScheme();
+        if (!uri.isOpaque() && uri.getRawFragment() == null &&
+                !isOverrideable(protocol)) {
+            // non-opaque URIs will have already validated the components,
+            // so using the component-based URL constructor here is safe.
+            //
+            // All URL constructors will properly check if the scheme
+            // maps to a valid protocol handler
+
+            String query = uri.getRawQuery();
+            String path = uri.getRawPath();
+            String file = (query == null) ? path : path + "?" + query;
+
+            // URL represent undefined host as empty string while URI use null
+            String host = uri.getHost();
+            if (host == null) {
+                host = "";
+            }
+
+            int port = uri.getPort();
+
+            return new URL(protocol, host, port, file, null);
+        } else {
+            return new URL((URL)null, uri.toString(), null);
+        }
+    }
+
     /*
      * Returns true if specified string is a valid protocol name.
      */
@@ -1275,11 +1311,28 @@ public final class URL implements java.io.Serializable {
         }
     }
 
-    private static final String[] NON_OVERRIDEABLE_PROTOCOLS = {"file", "jrt"};
-    private static boolean isOverrideable(String protocol) {
-        for (String p : NON_OVERRIDEABLE_PROTOCOLS)
-            if (protocol.equalsIgnoreCase(p))
+
+    /**
+     * Non-overrideable protocols: "jrt" and "file"
+     *
+     * Character-based comparison for performance reasons; also ensures
+     * case-insensitive comparison in a locale-independent fashion.
+     */
+    static boolean isOverrideable(String protocol) {
+        if (protocol.length() == 3) {
+            if ((Character.toLowerCase(protocol.charAt(0)) == 'j') &&
+                    (Character.toLowerCase(protocol.charAt(1)) == 'r') &&
+                    (Character.toLowerCase(protocol.charAt(2)) == 't')) {
                 return false;
+            }
+        } else if (protocol.length() == 4) {
+            if ((Character.toLowerCase(protocol.charAt(0)) == 'f') &&
+                    (Character.toLowerCase(protocol.charAt(1)) == 'i') &&
+                    (Character.toLowerCase(protocol.charAt(2)) == 'l') &&
+                    (Character.toLowerCase(protocol.charAt(3)) == 'e')) {
+                return false;
+            }
+        }
         return true;
     }
 
