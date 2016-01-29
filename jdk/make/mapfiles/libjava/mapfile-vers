@@ -77,13 +77,13 @@ SUNWprivate_1.1 {
 		Java_java_io_FileDescriptor_initIDs;
 		Java_java_io_FileDescriptor_sync;
 		Java_java_io_FileDescriptor_getAppend;
-		Java_java_io_FileInputStream_available;
+		Java_java_io_FileInputStream_available0;
 		Java_java_io_FileInputStream_close0;
 		Java_java_io_FileInputStream_initIDs;
 		Java_java_io_FileInputStream_open0;
 		Java_java_io_FileInputStream_read0;
 		Java_java_io_FileInputStream_readBytes;
-		Java_java_io_FileInputStream_skip;
+		Java_java_io_FileInputStream_skip0;
 		Java_java_io_FileOutputStream_close0;
 		Java_java_io_FileOutputStream_initIDs;
 		Java_java_io_FileOutputStream_open0;

@@ -44,7 +44,7 @@ text: .text%Java_java_io_FileInputStream_open0;
 text: .text%fileOpen;
 text: .text%Java_java_io_FileInputStream_readBytes;
 text: .text%readBytes;
-text: .text%Java_java_io_FileInputStream_available;
+text: .text%Java_java_io_FileInputStream_available0;
 text: .text%Java_java_io_FileInputStream_close0;
 text: .text%Java_java_lang_System_mapLibraryName;
 text: .text%Java_java_io_UnixFileSystem_getBooleanAttributes0;
