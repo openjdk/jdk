@@ -268,7 +268,7 @@ bool PSScavenge::invoke_no_policy() {
 
   scavenge_entry.update();
 
-  if (GC_locker::check_active_before_gc()) {
+  if (GCLocker::check_active_before_gc()) {
     return false;
   }
 

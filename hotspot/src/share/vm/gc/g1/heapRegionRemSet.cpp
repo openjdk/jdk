@@ -687,9 +687,9 @@ OtherRegionsTable::do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task) {
   _sparse_table.do_cleanup_work(hrrs_cleanup_task);
 }
 
-HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
+HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetTable* bot,
                                    HeapRegion* hr)
-  : _bosa(bosa),
+  : _bot(bot),
     _m(Mutex::leaf, FormatBuffer<128>("HeapRegionRemSet lock #%u", hr->hrm_index()), true, Monitor::_safepoint_check_never),
     _code_roots(), _other_regions(hr, &_m), _iter_state(Unclaimed), _iter_claimed(0) {
   reset_for_par_iteration();
@@ -728,8 +728,7 @@ void HeapRegionRemSet::print() {
   HeapRegionRemSetIterator iter(this);
   size_t card_index;
   while (iter.has_next(card_index)) {
-    HeapWord* card_start =
-      G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
+    HeapWord* card_start = _bot->address_for_index(card_index);
     tty->print_cr("  Card " PTR_FORMAT, p2i(card_start));
   }
   if (iter.n_yielded() != occupied()) {
@@ -825,7 +824,7 @@ HeapRegionRemSetIterator:: HeapRegionRemSetIterator(HeapRegionRemSet* hrrs) :
   _hrrs(hrrs),
   _g1h(G1CollectedHeap::heap()),
   _coarse_map(&hrrs->_other_regions._coarse_map),
-  _bosa(hrrs->_bosa),
+  _bot(hrrs->_bot),
   _is(Sparse),
   // Set these values so that we increment to the first region.
   _coarse_cur_region_index(-1),
@@ -852,7 +851,7 @@ bool HeapRegionRemSetIterator::coarse_has_next(size_t& card_index) {
       _coarse_cur_region_cur_card = 0;
       HeapWord* r_bot =
         _g1h->region_at((uint) _coarse_cur_region_index)->bottom();
-      _cur_region_card_offset = _bosa->index_for(r_bot);
+      _cur_region_card_offset = _bot->index_for(r_bot);
     } else {
       return false;
     }
@@ -893,7 +892,7 @@ void HeapRegionRemSetIterator::switch_to_prt(PerRegionTable* prt) {
   _fine_cur_prt = prt;
 
   HeapWord* r_bot = _fine_cur_prt->hr()->bottom();
-  _cur_region_card_offset = _bosa->index_for(r_bot);
+  _cur_region_card_offset = _bot->index_for(r_bot);
 
   // The bitmap scan for the PRT always scans from _cur_region_cur_card + 1.
   // To avoid special-casing this start case, and not miss the first bitmap
@@ -1001,7 +1000,7 @@ void HeapRegionRemSet::test() {
   size_t card_index;
   while (iter.has_next(card_index)) {
     HeapWord* card_start =
-      G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
+      G1CollectedHeap::heap()->bot()->address_for_index(card_index);
     tty->print_cr("  Card " PTR_FORMAT ".", p2i(card_start));
     sum++;
   }

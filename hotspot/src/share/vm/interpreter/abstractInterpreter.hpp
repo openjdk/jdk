@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,6 +284,12 @@ class AbstractInterpreter: AllStatic {
     default:        ShouldNotReachHere();
     }
   }
+
+  static void initialize_method_handle_entries();
+
+  // PPC-only: Support abs and sqrt like in compiler.
+  // For others we can use a normal (native) entry.
+  static bool math_entry_available(MethodKind kind);
 };
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -293,16 +299,6 @@ class Template;
 class AbstractInterpreterGenerator: public StackObj {
  protected:
   InterpreterMacroAssembler* _masm;
-
-  // shared code sequences
-  // Converter for native abi result to tosca result
-  address generate_result_handler_for(BasicType type);
-  address generate_slow_signature_handler();
-
-  void bang_stack_shadow_pages(bool native_call);
-
-  void generate_all();
-  void initialize_method_handle_entries();
 
  public:
   AbstractInterpreterGenerator(StubQueue* _code);

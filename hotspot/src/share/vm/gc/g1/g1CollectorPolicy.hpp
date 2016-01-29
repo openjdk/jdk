@@ -841,7 +841,7 @@ private:
   HeapRegion* _recorded_survivor_head;
   HeapRegion* _recorded_survivor_tail;
 
-  ageTable _survivors_age_table;
+  AgeTable _survivors_age_table;
 
 public:
   uint tenuring_threshold() const { return _tenuring_threshold; }
@@ -882,7 +882,7 @@ public:
     return _recorded_survivor_regions;
   }
 
-  void record_age_table(ageTable* age_table) {
+  void record_age_table(AgeTable* age_table) {
     _survivors_age_table.merge(age_table);
   }
 

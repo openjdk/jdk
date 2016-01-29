@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -77,7 +78,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
 }
 
 Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
-  No_Safepoint_Verifier no_safepoint;
+  NoSafepointVerifier no_safepoint;
   set_constMethod(xconst);
   set_access_flags(access_flags);
 #ifdef CC_INTERP
@@ -998,7 +999,7 @@ void Method::restore_unshareable_info(TRAPS) {
 // or adapter that it points to is still live and valid.
 // This function must not hit a safepoint!
 address Method::verified_code_entry() {
-  debug_only(No_Safepoint_Verifier nsv;)
+  debug_only(NoSafepointVerifier nsv;)
   assert(_from_compiled_entry != NULL, "must be set");
   return _from_compiled_entry;
 }
@@ -1550,7 +1551,7 @@ void Method::sort_methods(Array<Method*>* methods, bool idempotent, bool set_idn
   int length = methods->length();
   if (length > 1) {
     {
-      No_Safepoint_Verifier nsv;
+      NoSafepointVerifier nsv;
       QuickSort::sort<Method*>(methods->data(), length, method_comparator, idempotent);
     }
     // Reset method ordering
@@ -2209,6 +2210,15 @@ void Method::print_on(outputStream* st) const {
   }
 }
 
+void Method::print_linkage_flags(outputStream* st) {
+  access_flags().print_on(st);
+  if (is_default_method()) {
+    st->print("default ");
+  }
+  if (is_overpass()) {
+    st->print("overpass ");
+  }
+}
 #endif //PRODUCT
 
 void Method::print_value_on(outputStream* st) const {

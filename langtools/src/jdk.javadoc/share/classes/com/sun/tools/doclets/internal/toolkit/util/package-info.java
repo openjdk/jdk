@@ -32,4 +32,5 @@
     This code and its internal interfaces are subject to change or
     deletion without notice.</b>
 */
+
 package com.sun.tools.doclets.internal.toolkit.util;

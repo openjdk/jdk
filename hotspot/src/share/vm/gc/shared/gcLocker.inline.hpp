@@ -27,7 +27,7 @@
 
 #include "gc/shared/gcLocker.hpp"
 
-inline void GC_locker::lock_critical(JavaThread* thread) {
+inline void GCLocker::lock_critical(JavaThread* thread) {
   if (!thread->in_critical()) {
     if (needs_gc()) {
       // jni_lock call calls enter_critical under the lock so that the
@@ -40,7 +40,7 @@ inline void GC_locker::lock_critical(JavaThread* thread) {
   thread->enter_critical();
 }
 
-inline void GC_locker::unlock_critical(JavaThread* thread) {
+inline void GCLocker::unlock_critical(JavaThread* thread) {
   if (thread->in_last_critical()) {
     if (needs_gc()) {
       // jni_unlock call calls exit_critical under the lock so that

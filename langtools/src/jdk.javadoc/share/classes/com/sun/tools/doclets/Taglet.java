@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,14 @@ import com.sun.javadoc.*;
 
 /**
  * The interface for a custom tag used by Doclets. A custom
- * tag must implement this interface.  To be loaded and used by
+ * tag must implement this interface.
+ *
+ * <p style="font-style: italic; font-size:larger">
+ * <b>Note:</b> This interface has been superseded by one
+ * in the new package {@code jdk.javadoc.doclet.taglet}.
+ * </p>
+ *
+ * To be loaded and used by
  * doclets at run-time, the taglet must have a static method called
  * <code>register</code> that accepts a {@link java.util.Map} as an
  * argument with the following signature:

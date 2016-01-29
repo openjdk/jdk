@@ -969,7 +969,7 @@ void ciEnv::register_method(ciMethod* target,
     // and invalidating our dependencies until we install this method.
     // No safepoints are allowed. Otherwise, class redefinition can occur in between.
     MutexLocker ml(Compile_lock);
-    No_Safepoint_Verifier nsv;
+    NoSafepointVerifier nsv;
 
     // Change in Jvmti state may invalidate compilation.
     if (!failing() && jvmti_state_changed()) {
