@@ -34,17 +34,6 @@ import jdk.vm.ci.meta.Assumptions.AssumptionResult;
  */
 public interface ResolvedJavaType extends JavaType, ModifiersProvider {
     /**
-     * Gets the runtime representation of the Java class object of this type.
-     */
-    JavaConstant getJavaClass();
-
-    /**
-     * Gets the runtime representation of the "hub" of this type--that is, the closest part of the
-     * type representation which is typically stored in the object header.
-     */
-    Constant getObjectHub();
-
-    /**
      * Checks whether this type has a finalizer method.
      *
      * @return {@code true} if this class has a finalizer

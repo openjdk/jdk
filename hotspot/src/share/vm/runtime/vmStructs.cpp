@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,7 +503,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* Generation and Space hierarchies                                               */                                               \
   /**********************************************************************************/                                               \
                                                                                                                                      \
-  unchecked_nonstatic_field(ageTable,          sizes,                                         sizeof(ageTable::sizes))               \
+  unchecked_nonstatic_field(AgeTable,          sizes,                                         sizeof(AgeTable::sizes))               \
                                                                                                                                      \
   nonstatic_field(BarrierSet,                  _fake_rtti,                                    BarrierSet::FakeRtti)                  \
                                                                                                                                      \
@@ -560,7 +560,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(DefNewGeneration,            _old_gen,                                      Generation*)                           \
   nonstatic_field(DefNewGeneration,            _tenuring_threshold,                           uint)                                  \
-  nonstatic_field(DefNewGeneration,            _age_table,                                    ageTable)                              \
+  nonstatic_field(DefNewGeneration,            _age_table,                                    AgeTable)                              \
   nonstatic_field(DefNewGeneration,            _eden_space,                                   ContiguousSpace*)                      \
   nonstatic_field(DefNewGeneration,            _from_space,                                   ContiguousSpace*)                      \
   nonstatic_field(DefNewGeneration,            _to_space,                                     ContiguousSpace*)                      \
@@ -706,7 +706,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(SystemDictionary,            WK_KLASS(WeakReference_klass),                 InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(FinalReference_klass),                InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(PhantomReference_klass),              InstanceKlass*)                        \
-     static_field(SystemDictionary,            WK_KLASS(Cleaner_klass),                       InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(Finalizer_klass),                     InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        InstanceKlass*)                        \
      static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   InstanceKlass*)                        \
@@ -862,6 +861,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(StubRoutines,                _dexp,                                         address)                               \
      static_field(StubRoutines,                _dlog,                                         address)                               \
      static_field(StubRoutines,                _dpow,                                         address)                               \
+     static_field(StubRoutines,                _dsin,                                         address)                               \
+     static_field(StubRoutines,                _dcos,                                         address)                               \
      static_field(StubRoutines,                _vectorizedMismatch,                           address)                               \
      static_field(StubRoutines,                _jbyte_arraycopy,                              address)                               \
      static_field(StubRoutines,                _jshort_arraycopy,                             address)                               \
@@ -1606,7 +1607,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   /* Miscellaneous other GC types */                                      \
                                                                           \
-  declare_toplevel_type(ageTable)                                         \
+  declare_toplevel_type(AgeTable)                                         \
   declare_toplevel_type(Generation::StatRecord)                           \
   declare_toplevel_type(GenerationSpec)                                   \
   declare_toplevel_type(HeapWord)                                         \
@@ -2056,8 +2057,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(NegNode, Node)                                          \
   declare_c2_type(NegFNode, NegNode)                                      \
   declare_c2_type(NegDNode, NegNode)                                      \
-  declare_c2_type(CosDNode, Node)                                         \
-  declare_c2_type(SinDNode, Node)                                         \
   declare_c2_type(TanDNode, Node)                                         \
   declare_c2_type(AtanDNode, Node)                                        \
   declare_c2_type(SqrtDNode, Node)                                        \
@@ -2315,7 +2314,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* Generation and Space Hierarchy Constants */                          \
   /********************************************/                          \
                                                                           \
-  declare_constant(ageTable::table_size)                                  \
+  declare_constant(AgeTable::table_size)                                  \
                                                                           \
   declare_constant(BarrierSet::ModRef)                                    \
   declare_constant(BarrierSet::CardTableModRef)                           \
@@ -2324,12 +2323,13 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(BarrierSet::G1SATBCT)                                  \
   declare_constant(BarrierSet::G1SATBCTLogging)                           \
                                                                           \
-  declare_constant(BlockOffsetSharedArray::LogN)                          \
-  declare_constant(BlockOffsetSharedArray::LogN_words)                    \
-  declare_constant(BlockOffsetSharedArray::N_bytes)                       \
-  declare_constant(BlockOffsetSharedArray::N_words)                       \
-                                                                          \
-  declare_constant(BlockOffsetArray::N_words)                             \
+  declare_constant(BOTConstants::LogN)                                    \
+  declare_constant(BOTConstants::LogN_words)                              \
+  declare_constant(BOTConstants::N_bytes)                                 \
+  declare_constant(BOTConstants::N_words)                                 \
+  declare_constant(BOTConstants::LogBase)                                 \
+  declare_constant(BOTConstants::Base)                                    \
+  declare_constant(BOTConstants::N_powers)                                \
                                                                           \
   declare_constant(CardTableModRefBS::clean_card)                         \
   declare_constant(CardTableModRefBS::last_card)                          \
@@ -2397,7 +2397,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(JVM_ACC_HAS_MIRANDA_METHODS)                           \
   declare_constant(JVM_ACC_HAS_VANILLA_CONSTRUCTOR)                       \
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
-  declare_constant(JVM_ACC_IS_CLONEABLE)                                  \
+  declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
   declare_constant(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE)                      \
   declare_constant(JVM_ACC_PROMOTED_FLAGS)                                \
   declare_constant(JVM_ACC_FIELD_ACCESS_WATCHED)                          \
@@ -3495,5 +3495,9 @@ void VMStructs::test() {
       }
     }
   }
+}
+
+void VMStructs_test() {
+  VMStructs::test();
 }
 #endif

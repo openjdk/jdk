@@ -45,11 +45,11 @@ public:
 
   // Handle algebraic identities here.  If we have an identity, return the Node
   // we are equivalent to.  We look for "add of zero" as an identity.
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   const Type* Value_common( PhaseTransform *phase ) const;
 
   // Supplied function returns the subtractend of the inputs.
@@ -97,7 +97,7 @@ class SubFPNode : public SubNode {
 protected:
   SubFPNode( Node *in1, Node *in2 ) : SubNode(in1,in2) {}
 public:
-  const Type *Value( PhaseTransform *phase ) const;
+  const Type* Value(PhaseGVN* phase) const;
 };
 
 // NOTE: SubFNode should be taken away and replaced by add and negate
@@ -135,7 +135,7 @@ public:
   CmpNode( Node *in1, Node *in2 ) : SubNode(in1,in2) {
     init_class_id(Class_Cmp);
   }
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   const Type *add_id() const { return TypeInt::ZERO; }
   const Type *bottom_type() const { return TypeInt::CC; }
   virtual uint ideal_reg() const { return Op_RegFlags; }
@@ -165,7 +165,7 @@ public:
   CmpUNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual const Type *sub( const Type *, const Type * ) const;
-  const Type *Value( PhaseTransform *phase ) const;
+  const Type* Value(PhaseGVN* phase) const;
   bool is_index_range_check() const;
 };
 
@@ -219,7 +219,7 @@ public:
   CmpFNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual const Type *sub( const Type *, const Type * ) const { ShouldNotReachHere(); return NULL; }
-  const Type *Value( PhaseTransform *phase ) const;
+  const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------CmpF3Node--------------------------------------
@@ -247,7 +247,7 @@ public:
   CmpDNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual const Type *sub( const Type *, const Type * ) const { ShouldNotReachHere(); return NULL; }
-  const Type *Value( PhaseTransform *phase ) const;
+  const Type* Value(PhaseGVN* phase) const;
   virtual Node  *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
@@ -309,7 +309,7 @@ public:
   BoolNode* negate(PhaseGVN* phase);
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
   uint match_edge(uint idx) const { return 0; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -408,35 +408,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-//------------------------------CosDNode---------------------------------------
-// Cosinus of a double
-class CosDNode : public Node {
-public:
-  CosDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
-    init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
-  }
-  virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::DOUBLE; }
-  virtual uint ideal_reg() const { return Op_RegD; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
-};
-
-//------------------------------CosDNode---------------------------------------
-// Sinus of a double
-class SinDNode : public Node {
-public:
-  SinDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
-    init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
-  }
-  virtual int Opcode() const;
-  const Type *bottom_type() const { return Type::DOUBLE; }
-  virtual uint ideal_reg() const { return Op_RegD; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
-};
-
-
 //------------------------------TanDNode---------------------------------------
 // tangens of a double
 class TanDNode : public Node {
@@ -448,7 +419,7 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 
@@ -474,7 +445,7 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------Log10DNode---------------------------------------
@@ -488,7 +459,7 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //-------------------------------ReverseBytesINode--------------------------------

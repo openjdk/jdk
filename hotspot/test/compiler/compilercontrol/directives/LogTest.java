@@ -26,7 +26,8 @@
  * @bug 8137167
  * @summary Tests directives to be able to turn on LogCompilation
  * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
- * @build LogTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
+ * @build compiler.compilercontrol.directives.LogTest
+ *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

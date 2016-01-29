@@ -28,6 +28,7 @@
 #include "ci/ciEnv.hpp"
 #include "ci/ciMethodData.hpp"
 #include "code/exceptionHandlerTable.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
 

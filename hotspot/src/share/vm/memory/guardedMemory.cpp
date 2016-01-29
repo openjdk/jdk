@@ -157,5 +157,9 @@ void GuardedMemory::test_guarded_memory() {
   assert(GuardedMemory::free_copy(no_data_copy), "Expected valid guards even for no data copy");
 }
 
+void GuardedMemory_test() {
+  GuardedMemory::test_guarded_memory();
+}
+
 #endif // !PRODUCT
 

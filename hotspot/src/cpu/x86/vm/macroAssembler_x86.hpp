@@ -522,6 +522,8 @@ class MacroAssembler: public Assembler {
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   Register tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case); // returns TLS address
+  void zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp);
+
   void incr_allocated_bytes(Register thread,
                             Register var_size_in_bytes, int con_size_in_bytes,
                             Register t1 = noreg);
@@ -865,6 +867,7 @@ class MacroAssembler: public Assembler {
 
   void andpd(XMMRegister dst, Address src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, AddressLiteral src);
+  void andpd(XMMRegister dst, XMMRegister src) { Assembler::andpd(dst, src); }
 
   void andps(XMMRegister dst, XMMRegister src) { Assembler::andps(dst, src); }
   void andps(XMMRegister dst, Address src) { Assembler::andps(dst, src); }
@@ -900,10 +903,6 @@ class MacroAssembler: public Assembler {
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src);
 
-  // compute pow(x,y) and exp(x) with x86 instructions. Don't cover
-  // all corner cases and may result in NaN and require fallback to a
-  // runtime call.
-  void fast_pow();
   void fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp);
@@ -911,10 +910,31 @@ class MacroAssembler: public Assembler {
   void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp1 LP64_ONLY(COMMA Register tmp2));
+
   void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
                 XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
                 Register rdx NOT_LP64(COMMA  Register tmp) LP64_ONLY(COMMA  Register tmp1)
                 LP64_ONLY(COMMA  Register tmp2) LP64_ONLY(COMMA  Register tmp3) LP64_ONLY(COMMA  Register tmp4));
+
+  void fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rbx LP64_ONLY(COMMA  Register rcx), Register rdx
+                LP64_ONLY(COMMA Register tmp1) LP64_ONLY(COMMA Register tmp2)
+                LP64_ONLY(COMMA Register tmp3) LP64_ONLY(COMMA Register tmp4));
+
+  void fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx NOT_LP64(COMMA Register tmp)
+                LP64_ONLY(COMMA Register r8) LP64_ONLY(COMMA Register r9)
+                LP64_ONLY(COMMA Register r10) LP64_ONLY(COMMA Register r11));
+
+#ifndef _LP64
+  void libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Register eax, Register ecx,
+                        Register edx, Register ebx, Register esi, Register edi,
+                        Register ebp, Register esp);
+  void libm_reduce_pi04l(Register eax, Register ecx, Register edx, Register ebx,
+                         Register esi, Register edi, Register ebp, Register esp);
+#endif
 
   void increase_precision();
   void restore_precision();
@@ -943,6 +963,10 @@ public:
   void addss(XMMRegister dst, XMMRegister src)    { Assembler::addss(dst, src); }
   void addss(XMMRegister dst, Address src)        { Assembler::addss(dst, src); }
   void addss(XMMRegister dst, AddressLiteral src);
+
+  void addpd(XMMRegister dst, XMMRegister src)    { Assembler::addpd(dst, src); }
+  void addpd(XMMRegister dst, Address src)        { Assembler::addpd(dst, src); }
+  void addpd(XMMRegister dst, AddressLiteral src);
 
   void divsd(XMMRegister dst, XMMRegister src)    { Assembler::divsd(dst, src); }
   void divsd(XMMRegister dst, Address src)        { Assembler::divsd(dst, src); }

@@ -451,7 +451,7 @@ class RuntimeHistogramElement : public HistogramElement {
 #define IRT_LEAF(result_type, header)                                \
   result_type header {                                               \
     VM_LEAF_BASE(result_type, header)                                \
-    debug_only(No_Safepoint_Verifier __nspv(true);)
+    debug_only(NoSafepointVerifier __nspv(true);)
 
 
 #define IRT_ENTRY_NO_ASYNC(result_type, header)                      \
@@ -475,7 +475,7 @@ class RuntimeHistogramElement : public HistogramElement {
 #define JRT_LEAF(result_type, header)                                \
   result_type header {                                               \
   VM_LEAF_BASE(result_type, header)                                  \
-  debug_only(JRT_Leaf_Verifier __jlv;)
+  debug_only(JRTLeafVerifier __jlv;)
 
 
 #define JRT_ENTRY_NO_ASYNC(result_type, header)                      \

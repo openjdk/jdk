@@ -105,15 +105,15 @@ public abstract class AbstractCommandBuilder
             Map<Executable, State> states = new HashMap<>();
             for (Pair<Executable, Callable<?>> pair : METHODS) {
                 Executable exec = pair.first;
-                State state = getState(commandList, states, exec);
+                State state = getState(commandList, exec);
                 states.put(exec, state);
             }
             return states;
         }
 
         private State getState(List<CompileCommand> commandList,
-                Map<Executable, State> states, Executable exec) {
-            State state = states.getOrDefault(exec, new State());
+                               Executable exec) {
+            State state = new State();
             MethodDescriptor execDesc = new MethodDescriptor(exec);
             for (CompileCommand compileCommand : commandList) {
                 if (compileCommand.isValid()) {
@@ -149,7 +149,8 @@ public abstract class AbstractCommandBuilder
                         && (compileCommand.command == Command.COMPILEONLY)) {
                     MethodDescriptor md = compileCommand.methodDescriptor;
                     if (!execDesc.getCanonicalString().matches(md.getRegexp())
-                            && (state.getCompilableOptional(
+                            // if compilation state wasn't set before
+                            && (!state.getCompilableOptional(
                                     // no matter C1, C2 or both
                                     Scenario.Compiler.C2).isPresent())) {
                         /* compileonly excludes only methods that haven't been

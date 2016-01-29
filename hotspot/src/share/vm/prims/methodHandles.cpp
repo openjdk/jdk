@@ -202,6 +202,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
     assert(m_klass->verify_itable_index(vmindex), "");
     flags |= IS_METHOD | (JVM_REF_invokeInterface << REFERENCE_KIND_SHIFT);
     if (TraceInvokeDynamic) {
+      ttyLocker ttyl;
       ResourceMark rm;
       tty->print_cr("memberName: invokeinterface method_holder::method: %s, itableindex: %d, access_flags:",
             Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
@@ -242,6 +243,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
       m_klass = m_klass_non_interface;
     }
     if (TraceInvokeDynamic) {
+      ttyLocker ttyl;
       ResourceMark rm;
       tty->print_cr("memberName: invokevirtual method_holder::method: %s, receiver: %s, vtableindex: %d, access_flags:",
             Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
@@ -994,7 +996,7 @@ void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
   int marked = 0;
   CallSiteDepChange changes(call_site(), target());
   {
-    No_Safepoint_Verifier nsv;
+    NoSafepointVerifier nsv;
     MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     oop context = java_lang_invoke_CallSite::context(call_site());
@@ -1352,7 +1354,7 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
 
     int marked = 0;
     {
-      No_Safepoint_Verifier nsv;
+      NoSafepointVerifier nsv;
       MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       assert(safe_to_expunge(), "removal is not safe");
       DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());

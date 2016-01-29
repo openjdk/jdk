@@ -1040,7 +1040,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           __ tlab_allocate(obj, obj_size, 0, t1, t2, slow_path);
 
-          __ initialize_object(obj, klass, obj_size, 0, t1, t2);
+          __ initialize_object(obj, klass, obj_size, 0, t1, t2, /* is_tlab_allocated */ true);
           __ verify_oop(obj);
           __ pop(rbx);
           __ pop(rdi);
@@ -1053,7 +1053,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ eden_allocate(obj, obj_size, 0, t1, slow_path);
           __ incr_allocated_bytes(thread, obj_size, 0);
 
-          __ initialize_object(obj, klass, obj_size, 0, t1, t2);
+          __ initialize_object(obj, klass, obj_size, 0, t1, t2, /* is_tlab_allocated */ false);
           __ verify_oop(obj);
           __ pop(rbx);
           __ pop(rdi);
@@ -1169,7 +1169,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ andptr(t1, Klass::_lh_header_size_mask);
           __ subptr(arr_size, t1);  // body length
           __ addptr(t1, obj);       // body start
-          __ initialize_body(t1, arr_size, 0, t2);
+          if (!ZeroTLAB) {
+            __ initialize_body(t1, arr_size, 0, t2);
+          }
           __ verify_oop(obj);
           __ ret(0);
 
