@@ -25,7 +25,7 @@
  * @test
  * @bug 8137167
  * @summary Tests CompileCommand=exclude
- * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
+ * @library /testlibrary /test/lib /compiler/testlibrary ../share /
  * @build compiler.compilercontrol.commandfile.ExcludeTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
