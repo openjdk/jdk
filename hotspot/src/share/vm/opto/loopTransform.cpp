@@ -2404,15 +2404,25 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   if (needs_guard) {
     // Check for an obvious zero trip guard.
     Node* inctrl = PhaseIdealLoop::skip_loop_predicates(cl->in(LoopNode::EntryControl));
-    if (inctrl->Opcode() == Op_IfTrue) {
+    if (inctrl->Opcode() == Op_IfTrue || inctrl->Opcode() == Op_IfFalse) {
+      bool maybe_swapped = (inctrl->Opcode() == Op_IfFalse);
       // The test should look like just the backedge of a CountedLoop
       Node* iff = inctrl->in(0);
       if (iff->is_If()) {
         Node* bol = iff->in(1);
-        if (bol->is_Bool() && bol->as_Bool()->_test._test == cl->loopexit()->test_trip()) {
-          Node* cmp = bol->in(1);
-          if (cmp->is_Cmp() && cmp->in(1) == cl->init_trip() && cmp->in(2) == cl->limit()) {
-            needs_guard = false;
+        if (bol->is_Bool()) {
+          BoolTest test = bol->as_Bool()->_test;
+          if (maybe_swapped) {
+            test._test = test.commute();
+            test._test = test.negate();
+          }
+          if (test._test == cl->loopexit()->test_trip()) {
+            Node* cmp = bol->in(1);
+            int init_idx = maybe_swapped ? 2 : 1;
+            int limit_idx = maybe_swapped ? 1 : 2;
+            if (cmp->is_Cmp() && cmp->in(init_idx) == cl->init_trip() && cmp->in(limit_idx) == cl->limit()) {
+              needs_guard = false;
+            }
           }
         }
       }
