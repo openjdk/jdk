@@ -86,6 +86,12 @@ TREEAPI_PKGS = com.sun.source.doctree \
 
 NASHORNAPI_PKGS = jdk.nashorn.api.scripting \
     jdk.nashorn.api.tree
+   
+DYNALINKAPI_PKGS = jdk.dynalink \
+    jdk.dynalink.beans \
+    jdk.dynalink.linker \
+    jdk.dynalink.linker.support \
+    jdk.dynalink.support
 
 SMARTCARDIO_PKGS = javax.smartcardio
 
