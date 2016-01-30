@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/timer.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class GCId;
 DEBUG_ONLY(class ResourceMark;)
@@ -249,7 +250,7 @@ class fdStream : public outputStream {
 class logStream : public outputStream {
 private:
   stringStream _current_line;
-  void (*_log_func)(const char* fmt, ...);
+  void (*_log_func)(const char* fmt, ...) ATTRIBUTE_PRINTF(1, 2);
 public:
   void write(const char* s, size_t len);
   logStream(void (*log_func)(const char* fmt, ...)) : _log_func(log_func) {}
