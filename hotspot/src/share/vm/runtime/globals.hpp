@@ -3260,7 +3260,7 @@ public:
                                                                             \
   product(size_t, MinTLABSize, 2*K,                                         \
           "Minimum allowed TLAB size (in bytes)")                           \
-          range(1, max_uintx)                                               \
+          range(1, max_uintx/2)                                             \
           constraint(MinTLABSizeConstraintFunc,AfterMemoryInit)             \
                                                                             \
   product(size_t, TLABSize, 0,                                              \
