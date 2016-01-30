@@ -43,7 +43,7 @@ int ArrayKlass::static_size(int header_size) {
   header_size = InstanceKlass::header_size();
   int vtable_len = Universe::base_vtable_size();
   int size = header_size + vtable_len;
-  return align_object_size(size);
+  return align_metadata_size(size);
 }
 
 

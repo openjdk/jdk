@@ -2909,10 +2909,10 @@ const char* InstanceKlass::internal_name() const {
 void InstanceKlass::collect_statistics(KlassSizeStats *sz) const {
   Klass::collect_statistics(sz);
 
-  sz->_inst_size  = HeapWordSize * size_helper();
-  sz->_vtab_bytes = HeapWordSize * vtable_length();
-  sz->_itab_bytes = HeapWordSize * itable_length();
-  sz->_nonstatic_oopmap_bytes = HeapWordSize * nonstatic_oop_map_size();
+  sz->_inst_size  = wordSize * size_helper();
+  sz->_vtab_bytes = wordSize * vtable_length();
+  sz->_itab_bytes = wordSize * itable_length();
+  sz->_nonstatic_oopmap_bytes = wordSize * nonstatic_oop_map_size();
 
   int n = 0;
   n += (sz->_methods_array_bytes         = sz->count_array(methods()));

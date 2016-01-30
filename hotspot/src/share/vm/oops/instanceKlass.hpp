@@ -94,10 +94,10 @@ class OopMapBlock VALUE_OBJ_CLASS_SPEC {
   uint count() const         { return _count; }
   void set_count(uint count) { _count = count; }
 
-  // sizeof(OopMapBlock) in HeapWords.
+  // sizeof(OopMapBlock) in words.
   static const int size_in_words() {
-    return align_size_up(int(sizeof(OopMapBlock)), HeapWordSize) >>
-      LogHeapWordSize;
+    return align_size_up(int(sizeof(OopMapBlock)), wordSize) >>
+      LogBytesPerWord;
   }
 
  private:
@@ -927,17 +927,17 @@ public:
   }
 
   // Sizing (in words)
-  static int header_size()            { return sizeof(InstanceKlass)/HeapWordSize; }
+  static int header_size()            { return sizeof(InstanceKlass)/wordSize; }
 
   static int size(int vtable_length, int itable_length,
                   int nonstatic_oop_map_size,
                   bool is_interface, bool is_anonymous) {
-    return align_object_size(header_size() +
+    return align_metadata_size(header_size() +
            vtable_length +
            itable_length +
            nonstatic_oop_map_size +
-           (is_interface ? (int)sizeof(Klass*)/HeapWordSize : 0) +
-           (is_anonymous ? (int)sizeof(Klass*)/HeapWordSize : 0));
+           (is_interface ? (int)sizeof(Klass*)/wordSize : 0) +
+           (is_anonymous ? (int)sizeof(Klass*)/wordSize : 0));
   }
   int size() const                    { return size(vtable_length(),
                                                itable_length(),

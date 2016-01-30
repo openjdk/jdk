@@ -242,8 +242,7 @@ public class InstanceKlass extends Klass {
   }
 
   public long getSize() {
-    return Oop.alignObjectSize(getHeaderSize() + getVtableLen() +
-                               getItableLen() + getNonstaticOopMapSize());
+    return alignSize(getHeaderSize() + getVtableLen() + getItableLen() + getNonstaticOopMapSize());
   }
 
   public static long getHeaderSize() { return headerSize; }
