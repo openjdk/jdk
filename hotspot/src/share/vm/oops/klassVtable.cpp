@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1331,7 +1331,7 @@ int klassItable::compute_itable_size(Array<Klass*>* transitive_interfaces) {
   int itable_size = calc_itable_size(cic.nof_interfaces() + 1, cic.nof_methods());
 
   // Statistics
-  update_stats(itable_size * HeapWordSize);
+  update_stats(itable_size * wordSize);
 
   return itable_size;
 }

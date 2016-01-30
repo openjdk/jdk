@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,7 +252,7 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
   }
 
   int size() {
-    return (int)Oop.alignObjectSize(VM.getVM().alignUp(sizeInBytes(), VM.getVM().getBytesPerWord())/VM.getVM().getBytesPerWord());
+    return (int)alignSize(VM.getVM().alignUp(sizeInBytes(), VM.getVM().getBytesPerWord())/VM.getVM().getBytesPerWord());
   }
 
   ParametersTypeData<Klass,Method> parametersTypeData() {

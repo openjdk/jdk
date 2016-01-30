@@ -170,12 +170,9 @@ class vtableEntry VALUE_OBJ_CLASS_SPEC {
 
  public:
   // size in words
-  static int size() {
-    return sizeof(vtableEntry) / sizeof(HeapWord);
-  }
-  static int size_in_bytes() {
-    return sizeof(vtableEntry);
-  }
+  static int size()          { return sizeof(vtableEntry) / wordSize; }
+  static int size_in_bytes() { return sizeof(vtableEntry); }
+
   static int method_offset_in_bytes() { return offset_of(vtableEntry, _method); }
   Method* method() const    { return _method; }
 
@@ -226,7 +223,7 @@ class itableOffsetEntry VALUE_OBJ_CLASS_SPEC {
   void initialize(Klass* interf, int offset) { _interface = interf; _offset = offset; }
 
   // Static size and offset accessors
-  static int size()                       { return sizeof(itableOffsetEntry) / HeapWordSize; }    // size in words
+  static int size()                       { return sizeof(itableOffsetEntry) / wordSize; }    // size in words
   static int interface_offset_in_bytes()  { return offset_of(itableOffsetEntry, _interface); }
   static int offset_offset_in_bytes()     { return offset_of(itableOffsetEntry, _offset); }
 
@@ -246,7 +243,7 @@ class itableMethodEntry VALUE_OBJ_CLASS_SPEC {
   void initialize(Method* method);
 
   // Static size and offset accessors
-  static int size()                         { return sizeof(itableMethodEntry) / HeapWordSize; }  // size in words
+  static int size()                         { return sizeof(itableMethodEntry) / wordSize; }  // size in words
   static int method_offset_in_bytes()       { return offset_of(itableMethodEntry, _method); }
 
   friend class klassItable;

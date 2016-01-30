@@ -133,7 +133,7 @@ class TypeArrayKlass : public ArrayKlass {
   static const char* external_name(BasicType type);
 
   // Sizing
-  static int header_size()  { return sizeof(TypeArrayKlass)/HeapWordSize; }
+  static int header_size()  { return sizeof(TypeArrayKlass)/wordSize; }
   int size() const          { return ArrayKlass::static_size(header_size()); }
 
   // Initialization (virtual from Klass)

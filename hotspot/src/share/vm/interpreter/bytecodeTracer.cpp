@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ bool BytecodePrinter::check_cp_cache_index(int i, int& cp_index, outputStream* s
     return true;
   }
   //climit = cache->length();  // %%% private!
-  size_t size = cache->size() * HeapWordSize;
+  size_t size = cache->size() * wordSize;
   size -= sizeof(ConstantPoolCache);
   size /= sizeof(ConstantPoolCacheEntry);
   climit = (int) size;

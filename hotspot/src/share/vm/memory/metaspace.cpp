@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3474,7 +3474,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
     }
 
     // Zero initialize.
-    Copy::fill_to_aligned_words((HeapWord*)result, word_size, 0);
+    Copy::fill_to_words((HeapWord*)result, word_size, 0);
 
     return result;
   }
@@ -3513,7 +3513,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   }
 
   // Zero initialize.
-  Copy::fill_to_aligned_words((HeapWord*)result, word_size, 0);
+  Copy::fill_to_words((HeapWord*)result, word_size, 0);
 
   return result;
 }
@@ -3583,7 +3583,7 @@ const char* Metaspace::metadata_type_name(Metaspace::MetadataType mdtype) {
 void Metaspace::record_allocation(void* ptr, MetaspaceObj::Type type, size_t word_size) {
   assert(DumpSharedSpaces, "sanity");
 
-  int byte_size = (int)word_size * HeapWordSize;
+  int byte_size = (int)word_size * wordSize;
   AllocRecord *rec = new AllocRecord((address)ptr, type, byte_size);
 
   if (_alloc_record_head == NULL) {
@@ -3623,7 +3623,7 @@ void Metaspace::record_deallocation(void* ptr, size_t word_size) {
 
   for (AllocRecord *rec = _alloc_record_head; rec; rec = rec->_next) {
     if (rec->_ptr == ptr) {
-      assert(rec->_byte_size == (int)word_size * HeapWordSize, "sanity");
+      assert(rec->_byte_size == (int)word_size * wordSize, "sanity");
       rec->_type = MetaspaceObj::DeallocatedType;
       return;
     }

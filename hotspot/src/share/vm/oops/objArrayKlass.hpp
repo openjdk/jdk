@@ -101,7 +101,7 @@ class ObjArrayKlass : public ArrayKlass {
   }
 
   // Sizing
-  static int header_size()                { return sizeof(ObjArrayKlass)/HeapWordSize; }
+  static int header_size()                { return sizeof(ObjArrayKlass)/wordSize; }
   int size() const                        { return ArrayKlass::static_size(header_size()); }
 
   // Initialization (virtual from Klass)

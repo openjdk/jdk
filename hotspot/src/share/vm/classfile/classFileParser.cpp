@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2705,7 +2705,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                                      ConstMethod::NORMAL,
                                      CHECK_NULL);
 
-  ClassLoadingService::add_class_method_size(m->size()*HeapWordSize);
+  ClassLoadingService::add_class_method_size(m->size()*wordSize);
 
   // Fill in information from fixed part (access_flags already set)
   m->set_constants(_cp);

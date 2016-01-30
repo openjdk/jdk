@@ -352,13 +352,13 @@ protected:
       |    (log2_esize << _lh_log2_element_size_shift);
   }
   static jint instance_layout_helper(jint size, bool slow_path_flag) {
-    return (size << LogHeapWordSize)
+    return (size << LogBytesPerWord)
       |    (slow_path_flag ? _lh_instance_slow_path_bit : 0);
   }
   static int layout_helper_to_size_helper(jint lh) {
     assert(lh > (jint)_lh_neutral_value, "must be instance");
     // Note that the following expression discards _lh_instance_slow_path_bit.
-    return lh >> LogHeapWordSize;
+    return lh >> LogBytesPerWord;
   }
   // Out-of-line version computes everything based on the etype:
   static jint array_layout_helper(BasicType etype);

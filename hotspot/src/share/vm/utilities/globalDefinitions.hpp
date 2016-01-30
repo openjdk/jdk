@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,6 @@ class HeapWord {
 // Analogous opaque struct for metadata allocated from
 // metaspaces.
 class MetaWord {
-  friend class VMStructs;
  private:
   char* i;
 };
@@ -486,7 +485,7 @@ inline intptr_t align_size_down(intptr_t size, intptr_t alignment) {
 
 #define is_size_aligned_(size, alignment) ((size) == (align_size_up_(size, alignment)))
 
-inline void* align_ptr_up(void* ptr, size_t alignment) {
+inline void* align_ptr_up(const void* ptr, size_t alignment) {
   return (void*)align_size_up((intptr_t)ptr, (intptr_t)alignment);
 }
 
@@ -494,10 +493,15 @@ inline void* align_ptr_down(void* ptr, size_t alignment) {
   return (void*)align_size_down((intptr_t)ptr, (intptr_t)alignment);
 }
 
-// Align objects by rounding up their size, in HeapWord units.
+// Align metaspace objects by rounding up to natural word boundary
 
-#define align_object_size_(size) align_size_up_(size, MinObjAlignment)
+inline intptr_t align_metadata_size(intptr_t size) {
+  return align_size_up(size, 1);
+}
 
+// Align objects in the Java Heap by rounding up their size, in HeapWord units.
+// Since the size is given in words this is somewhat of a nop, but
+// distinguishes it from align_object_size.
 inline intptr_t align_object_size(intptr_t size) {
   return align_size_up(size, MinObjAlignment);
 }
@@ -510,10 +514,6 @@ inline bool is_object_aligned(intptr_t addr) {
 
 inline intptr_t align_object_offset(intptr_t offset) {
   return align_size_up(offset, HeapWordsPerLong);
-}
-
-inline void* align_pointer_up(const void* addr, size_t size) {
-  return (void*) align_size_up_((uintptr_t)addr, size);
 }
 
 // Align down with a lower bound. If the aligning results in 0, return 'alignment'.
