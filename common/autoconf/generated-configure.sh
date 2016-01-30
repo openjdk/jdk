@@ -4839,7 +4839,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1453964370
+DATE_WHEN_GENERATED=1454145906
 
 ###############################################################################
 #
@@ -58547,6 +58547,10 @@ fi
         LLVM_LIBS="${LLVM_LIBS}${flag}"
       fi
     done
+
+    # Due to https://llvm.org/bugs/show_bug.cgi?id=16902, llvm does not
+    # always properly detect -ltinfo
+    LLVM_LIBS="${LLVM_LIBS} -ltinfo"
 
 
 
