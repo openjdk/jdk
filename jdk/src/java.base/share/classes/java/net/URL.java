@@ -669,13 +669,15 @@ public final class URL implements java.io.Serializable {
             throw new IllegalArgumentException("URI is not absolute");
         }
         String protocol = uri.getScheme();
-        if (!uri.isOpaque() && uri.getRawFragment() == null &&
-                !isOverrideable(protocol)) {
-            // non-opaque URIs will have already validated the components,
-            // so using the component-based URL constructor here is safe.
-            //
-            // All URL constructors will properly check if the scheme
-            // maps to a valid protocol handler
+
+        // In general we need to go via Handler.parseURL, but for the jrt
+        // protocol we enforce that the Handler is not overrideable and can
+        // optimize URI to URL conversion.
+        //
+        // Case-sensitive comparison for performance; malformed protocols will
+        // be handled correctly by the slow path.
+        if (protocol.equals("jrt") && !uri.isOpaque()
+                && uri.getRawFragment() == null) {
 
             String query = uri.getRawQuery();
             String path = uri.getRawPath();
@@ -689,7 +691,7 @@ public final class URL implements java.io.Serializable {
 
             int port = uri.getPort();
 
-            return new URL(protocol, host, port, file, null);
+            return new URL("jrt", host, port, file, null);
         } else {
             return new URL((URL)null, uri.toString(), null);
         }
