@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary flat-map operations
- * @bug 8044047
+ * @bug 8044047 8076458
  */
 
 package org.openjdk.tests.java.util.stream;
@@ -140,7 +140,10 @@ public class FlatMapOpTest extends OpTestCase {
 
         result = exerciseOps(data, s-> s.flatMap(e -> Stream.empty()));
         assertEquals(0, result.size());
+    }
 
+    @Test(dataProvider = "StreamTestData<Integer>.small", dataProviderClass = StreamTestDataProvider.class)
+    public void testOpsX(String name, TestData.OfRef<Integer> data) {
         exerciseOps(data, s -> s.flatMap(mfLt));
         exerciseOps(data, s -> s.flatMap(integerRangeMapper));
         exerciseOps(data, s -> s.flatMap((Integer e) -> IntStream.range(0, e).boxed().limit(10)));
@@ -156,7 +159,10 @@ public class FlatMapOpTest extends OpTestCase {
 
         result = exerciseOps(data, s -> s.flatMap(i -> IntStream.empty()));
         assertEquals(0, result.size());
+    }
 
+    @Test(dataProvider = "IntStreamTestData.small", dataProviderClass = IntStreamTestDataProvider.class)
+    public void testIntOpsX(String name, TestData.OfInt data) {
         exerciseOps(data, s -> s.flatMap(e -> IntStream.range(0, e)));
         exerciseOps(data, s -> s.flatMap(e -> IntStream.range(0, e).limit(10)));
     }
@@ -171,7 +177,10 @@ public class FlatMapOpTest extends OpTestCase {
 
         result = exerciseOps(data, s -> LongStream.empty());
         assertEquals(0, result.size());
+    }
 
+    @Test(dataProvider = "LongStreamTestData.small", dataProviderClass = LongStreamTestDataProvider.class)
+    public void testLongOpsX(String name, TestData.OfLong data) {
         exerciseOps(data, s -> s.flatMap(e -> LongStream.range(0, e)));
         exerciseOps(data, s -> s.flatMap(e -> LongStream.range(0, e).limit(10)));
     }
@@ -186,7 +195,10 @@ public class FlatMapOpTest extends OpTestCase {
 
         result = exerciseOps(data, s -> DoubleStream.empty());
         assertEquals(0, result.size());
+    }
 
+    @Test(dataProvider = "DoubleStreamTestData.small", dataProviderClass = DoubleStreamTestDataProvider.class)
+    public void testDoubleOpsX(String name, TestData.OfDouble data) {
         exerciseOps(data, s -> s.flatMap(e -> IntStream.range(0, (int) e).asDoubleStream()));
         exerciseOps(data, s -> s.flatMap(e -> IntStream.range(0, (int) e).limit(10).asDoubleStream()));
     }
