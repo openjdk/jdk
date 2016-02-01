@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,19 +28,21 @@
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @run main/othervm DESParity
+ * @run main/othervm DESParity sm
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
-import java.security.spec.*;
-
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.security.Provider;
+import java.util.Random;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.DESKeySpec;
+import javax.crypto.spec.DESedeKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class DESParity extends PKCS11Test {
 
+    @Override
     public void main(Provider p) throws Exception {
         if (p.getService("SecretKeyFactory", "DES") == null) {
             System.out.println("Not supported by provider, skipping");
@@ -73,7 +75,7 @@ public class DESParity extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new DESParity());
+        main(new DESParity(), args);
     }
 
 }

@@ -261,7 +261,7 @@ public class CheckResourceKeys {
                 if (cs.matches(".*\\.java"))
                     continue;
                 // ignore package and class names
-                if (cs.matches("(com|java|javax|sun)\\.[A-Za-z.]+"))
+                if (cs.matches("(com|java|javax|jdk|sun)\\.[A-Za-z.]+"))
                     continue;
                 // explicit known exceptions
                 if (noResourceRequired.contains(cs))

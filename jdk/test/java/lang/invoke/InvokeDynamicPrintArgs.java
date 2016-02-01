@@ -28,7 +28,7 @@
  * @compile InvokeDynamicPrintArgs.java
  * @run main/othervm
  *      indify.Indify
- *      --verify-specifier-count=3
+ *      --verify-specifier-count=8
  *      --expand-properties --classpath ${test.classes}
  *      --java test.java.lang.invoke.InvokeDynamicPrintArgs --check-output
  * @run main/othervm

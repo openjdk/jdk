@@ -26,9 +26,7 @@
 package com.sun.tools.javac.code;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import javax.lang.model.element.ElementVisitor;
 import javax.tools.JavaFileObject;
@@ -39,7 +37,6 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import com.sun.tools.javac.code.Symbol.OperatorSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -50,7 +47,6 @@ import com.sun.tools.javac.code.Type.JCPrimitiveType;
 import com.sun.tools.javac.code.Type.JCVoidType;
 import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Type.UnknownType;
-import com.sun.tools.javac.jvm.ByteCodes;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
@@ -65,7 +61,6 @@ import com.sun.tools.javac.util.Names;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
-import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 
 /** A class that defines all predefined constants and operators
@@ -193,6 +188,7 @@ public class Symtab {
     public final Type autoCloseableType;
     public final Type trustMeType;
     public final Type lambdaMetafactory;
+    public final Type stringConcatFactory;
     public final Type repeatableType;
     public final Type documentedType;
     public final Type elementTypeType;
@@ -472,6 +468,7 @@ public class Symtab {
         trustMeType = enterClass("java.lang.SafeVarargs");
         nativeHeaderType = enterClass("java.lang.annotation.Native");
         lambdaMetafactory = enterClass("java.lang.invoke.LambdaMetafactory");
+        stringConcatFactory = enterClass("java.lang.invoke.StringConcatFactory");
         functionalInterfaceType = enterClass("java.lang.FunctionalInterface");
 
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
@@ -479,6 +476,7 @@ public class Symtab {
         synthesizeEmptyInterfaceIfMissing(serializableType);
         synthesizeEmptyInterfaceIfMissing(lambdaMetafactory);
         synthesizeEmptyInterfaceIfMissing(serializedLambdaType);
+        synthesizeEmptyInterfaceIfMissing(stringConcatFactory);
         synthesizeBoxTypeIfMissing(doubleType);
         synthesizeBoxTypeIfMissing(floatType);
         synthesizeBoxTypeIfMissing(voidType);

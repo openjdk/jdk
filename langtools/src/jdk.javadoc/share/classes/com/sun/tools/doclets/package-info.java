@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,11 @@
  */
 
 /**
+<p style="font-style: italic; font-size:larger">
+<b>Note:</b> The declarations in this package have been superseded by those
+in the new package {@code jdk.javadoc.doclet}.
+</p>
+
     As of JDK version 1.5, replaced by
     {@code com.sun.tools.doclets.internal.toolkit.util}.
 
@@ -32,4 +37,5 @@
     This code and its internal interfaces are subject to change or
     deletion without notice.</b>
 */
+
 package com.sun.tools.doclets;

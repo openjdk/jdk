@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,24 @@
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @run main/othervm TestDSA
+ * @run main/othervm TestDSA sm
  */
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
 import java.math.BigInteger;
-
-import java.security.*;
-import java.security.spec.*;
+import java.security.KeyFactory;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.spec.DSAPrivateKeySpec;
+import java.security.spec.DSAPublicKeySpec;
+import java.util.Random;
 
 public class TestDSA extends PKCS11Test {
 
@@ -102,9 +112,10 @@ public class TestDSA extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestDSA());
+        main(new TestDSA(), args);
     }
 
+    @Override
     public void main(Provider provider) throws Exception {
         long start = System.currentTimeMillis();
 
@@ -115,9 +126,9 @@ public class TestDSA extends PKCS11Test {
          * when running SunPKCS11-Solaris (8044554)
          */
         if (provider.getName().equals("SunPKCS11-Solaris") &&
-            System.getProperty("os.name").equals("SunOS") &&
-            System.getProperty("os.arch").equals("sparcv9") &&
-            System.getProperty("os.version").compareTo("5.11") <= 0 &&
+            props.getProperty("os.name").equals("SunOS") &&
+            props.getProperty("os.arch").equals("sparcv9") &&
+            props.getProperty("os.version").compareTo("5.11") <= 0 &&
             getDistro().compareTo("11.2") < 0) {
 
             System.out.println("SunPKCS11-Solaris provider requires " +
