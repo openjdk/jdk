@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,21 @@
  * @library ..
  * @modules java.base/com.sun.net.ssl.internal.ssl
  * @run main/othervm TrustManagerTest
+ * @run main/othervm TrustManagerTest sm TrustManagerTest.policy
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
-import java.security.cert.*;
-
-import javax.net.ssl.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.Policy;
+import java.security.Provider;
+import java.security.Security;
+import java.security.URIParameter;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 // This test belongs more in JSSE than here, but the JSSE workspace does not
 // have the NSS test infrastructure. It will live here for the time being.
@@ -73,6 +79,12 @@ public class TrustManagerTest extends SecmodTest {
         X509Certificate ca = loadCertificate("certs/ca.cer");
         X509Certificate anchor = loadCertificate("certs/anchor.cer");
 
+        if (args.length > 1 && "sm".equals(args[0])) {
+            Policy.setPolicy(Policy.getInstance("JavaPolicy",
+                    new URIParameter(new File(BASE, args[1]).toURI())));
+            System.setSecurityManager(new SecurityManager());
+        }
+
         KeyStore trustStore = KeyStore.getInstance("JKS");
         trustStore.load(null, null);
         trustStore.setCertificateEntry("anchor", anchor);
@@ -90,11 +102,10 @@ public class TrustManagerTest extends SecmodTest {
     }
 
     private static X509Certificate loadCertificate(String name) throws Exception {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        InputStream in = new FileInputStream(BASE + SEP + name);
-        X509Certificate cert = (X509Certificate)cf.generateCertificate(in);
-        in.close();
-        return cert;
+        try (InputStream in = new FileInputStream(BASE + SEP + name)) {
+            return (X509Certificate) CertificateFactory.getInstance("X.509")
+                    .generateCertificate(in);
+        }
     }
 
 }

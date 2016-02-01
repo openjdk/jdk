@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,22 @@
  * @library ..
  * @library ../../../../java/security/testlibrary
  * @key randomness
+ * @run main/othervm TestECDSA
+ * @run main/othervm TestECDSA sm policy
  */
 
-import java.util.*;
-
-import java.security.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Random;
 
 public class TestECDSA extends PKCS11Test {
 
@@ -79,7 +88,8 @@ public class TestECDSA extends PKCS11Test {
     private final static byte[] data2Raw = {};
     private final static byte[] data2SHA = b("da:39:a3:ee:5e:6b:4b:0d:32:55:bf:ef:95:60:18:90:af:d8:07:09");
 
-    private static void verify(Provider provider, String alg, PublicKey key, byte[] data, byte[] sig, boolean result) throws Exception {
+    private static void verify(Provider provider, String alg, PublicKey key,
+            byte[] data, byte[] sig, boolean result) throws Exception {
         Signature s = Signature.getInstance(alg, provider);
         s.initVerify(key);
         boolean r;
@@ -105,9 +115,10 @@ public class TestECDSA extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestECDSA());
+        main(new TestECDSA(), args);
     }
 
+    @Override
     public void main(Provider provider) throws Exception {
         long start = System.currentTimeMillis();
 
@@ -116,25 +127,11 @@ public class TestECDSA extends PKCS11Test {
             return;
         }
 
-        if (isNSS(provider) && getNSSVersion() >= 3.11 &&
-                getNSSVersion() < 3.12) {
-            System.out.println("NSS 3.11 has a DER issue that recent " +
-                    "version do not.");
+        if (isBadNSSVersion(provider)) {
             return;
         }
 
-        /*
-         * Use Solaris SPARC 11.2 or later to avoid an intermittent failure
-         * when running SunPKCS11-Solaris (8044554)
-         */
-        if (provider.getName().equals("SunPKCS11-Solaris") &&
-            System.getProperty("os.name").equals("SunOS") &&
-            System.getProperty("os.arch").equals("sparcv9") &&
-            System.getProperty("os.version").compareTo("5.11") <= 0 &&
-            getDistro().compareTo("11.2") < 0) {
-
-            System.out.println("SunPKCS11-Solaris provider requires " +
-                "Solaris SPARC 11.2 or later, skipping");
+        if (isBadSolarisSparc(provider)) {
             return;
         }
 

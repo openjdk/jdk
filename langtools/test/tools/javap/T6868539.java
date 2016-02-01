@@ -58,10 +58,12 @@ public class T6868539
             throw new Error(errors + " found.");
     }
 
+    String notFound = " not found";
+
     void verify(String output, String... expects) {
         for (String expect: expects) {
             if (!output.matches("(?s).*" + expect + ".*"))
-                error(expect + " not found");
+                error(expect + notFound);
         }
     }
 
