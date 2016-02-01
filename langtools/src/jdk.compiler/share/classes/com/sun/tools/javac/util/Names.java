@@ -179,6 +179,10 @@ public class Names {
     public final Name altMetafactory;
     public final Name dollarThis;
 
+    // string concat
+    public final Name makeConcat;
+    public final Name makeConcatWithConstants;
+
     public final Name.Table table;
 
     public Names(Context context) {
@@ -316,6 +320,10 @@ public class Names {
         lambda = fromString("lambda$");
         metafactory = fromString("metafactory");
         altMetafactory = fromString("altMetafactory");
+
+        // string concat
+        makeConcat = fromString("makeConcat");
+        makeConcatWithConstants = fromString("makeConcatWithConstants");
     }
 
     protected Name.Table createTable(Options options) {

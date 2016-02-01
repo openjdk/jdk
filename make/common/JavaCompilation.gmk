@@ -345,7 +345,7 @@ define SetupJavaCompilationBody
 	  $$(eval $$(call ListPathsSafely,$1_SJAVAC_ARGS_STRING, $$($1_SJAVAC_ARGS_FILE)))
         endif
 	$(ECHO) Compiling $1
-	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch.log, $$($1_SAFE_NAME), \
+	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch, $$($1_SAFE_NAME), \
 	    $$($1_JVM) $$($1_SJAVAC) \
 	        $$($1_REMOTE) \
 	        -j 1 \
@@ -409,7 +409,7 @@ define SetupJavaCompilationBody
 	$(MKDIR) -p $$(@D)
 	$$(eval $$(call ListPathsSafely,$1_SRCS, $$@.tmp))
 	$(ECHO) Compiling `$(WC) $$@.tmp | $(TR) -s ' ' | $(CUT) -f 2 -d ' '` files for $1
-	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch.log, $$($1_SAFE_NAME), \
+	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch, $$($1_SAFE_NAME), \
 	    $$($1_JVM) $$($1_JAVAC_CMD) $$($1_FLAGS) \
 	        -implicit:none \
 		-d $$($1_BIN) $$($1_HEADERS_ARG) @$$@.tmp) && \

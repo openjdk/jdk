@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -702,7 +702,7 @@ public final class NativeObject {
             }
 
             if (!propList.isEmpty()) {
-                targetObj.addBoundProperties(sourceObj, propList.toArray(new Property[propList.size()]));
+                targetObj.addBoundProperties(sourceObj, propList.toArray(new Property[0]));
             }
         } else if (source instanceof ScriptObjectMirror) {
             // get enumerable, immediate properties of mirror
@@ -819,7 +819,7 @@ public final class NativeObject {
             }
         }
 
-        targetObj.addBoundProperties(source, properties.toArray(new AccessorProperty[properties.size()]));
+        targetObj.addBoundProperties(source, properties.toArray(new AccessorProperty[0]));
     }
 
     private static MethodHandle getBoundBeanMethodGetter(final Object source, final MethodHandle methodGetter) {

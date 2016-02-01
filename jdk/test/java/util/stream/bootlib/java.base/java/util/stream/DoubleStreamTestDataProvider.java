@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ public class DoubleStreamTestDataProvider {
     private static final double[] pseudoRandom;
 
     private static final Object[][] testData;
+    private static final Object[][] testSmallData;
     private static final Object[][] spliteratorTestData;
 
     static {
@@ -78,10 +79,14 @@ public class DoubleStreamTestDataProvider {
 
     static {
         {
-            List<Object[]> list = new ArrayList<>();
+            List<Object[]> listSmall = new ArrayList<>();
+            List<Object[]> list1000 = new ArrayList<>();
+            List<Object[]> list = null;
             for (Object[] data : arrays) {
                 final Object name = data[0];
                 final double[] doubles = (double[]) data[1];
+
+                list = doubles.length >= 1000 ? list1000 : listSmall;
 
                 list.add(new Object[]{"array:" + name,
                         TestData.Factory.ofArray("array:" + name, doubles)});
@@ -93,7 +98,9 @@ public class DoubleStreamTestDataProvider {
                 list.add(new Object[]{"SpinedList:" + name,
                         TestData.Factory.ofSpinedBuffer("SpinedList:" + name, isl)});
             }
-            testData = list.toArray(new Object[0][]);
+            testSmallData = listSmall.toArray(new Object[0][]);
+            list1000.addAll(listSmall);
+            testData = list1000.toArray(new Object[0][]);
         }
 
         {
@@ -134,6 +141,11 @@ public class DoubleStreamTestDataProvider {
     @DataProvider(name = "DoubleStreamTestData")
     public static Object[][] makeDoubleStreamTestData() {
         return testData;
+    }
+
+    @DataProvider(name = "DoubleStreamTestData.small")
+    public static Object[][] makeSmallDoubleStreamTestData() {
+        return testSmallData;
     }
 
     // returns an array of (String name, Supplier<PrimitiveSpliterator<Double>>)

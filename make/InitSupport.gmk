@@ -440,7 +440,10 @@ else # $(HAS_SPEC)=true
 	  $(PRINTF) "=== Output from failing command(s) repeated here ===\n" $(NEWLINE) \
 	  $(foreach logfile, $(sort $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*)), \
 	      $(PRINTF) "* For target $(notdir $(basename $(logfile))):\n" $(NEWLINE) \
-	      $(CAT) $(logfile) | $(GREP) -v -e "^Note: including file:" $(NEWLINE) \
+	      ($(GREP) -v -e "^Note: including file:" <  $(logfile) || true) | $(HEAD) -n 12 $(NEWLINE) \
+	      if test `$(WC) -l < $(logfile)` -gt 12; then \
+	        $(ECHO) "   ... (rest of output omitted)" ; \
+	      fi $(NEWLINE) \
 	  ) \
 	  $(PRINTF) "=== End of repeated output ===\n" \
 	)
@@ -485,6 +488,21 @@ else # $(HAS_SPEC)=true
 	[ -f $(SJAVAC_SERVER_DIR)/server.port ] && $(ECHO) Stopping sjavac server && \
 	    $(TOUCH) $(SJAVAC_SERVER_DIR)/server.port.stop; true
   endef
+
+  ifeq ($(OPENJDK_BUILD_OS), windows)
+    # On windows we need to synchronize with the javac server to be able to
+    # move or remove the build output directory. Since we have no proper
+    # synchronization process, wait for a while and hope it helps. This is only
+    # used by build comparisons.
+    define WaitForSmartJavacFinish
+	$(if $(SJAVAC_SERVER_DIR), \
+	  sleep 5\
+	)
+    endef
+  else
+    define WaitForSmartJavacFinish
+    endef
+  endif
 
   define StartGlobalTimer
 	$(RM) -r $(BUILDTIMESDIR) 2> /dev/null && \
