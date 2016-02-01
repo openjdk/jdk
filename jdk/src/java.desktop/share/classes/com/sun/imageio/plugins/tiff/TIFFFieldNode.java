@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javax.imageio.plugins.tiff.TIFFTagSet;
  */
 public class TIFFFieldNode extends IIOMetadataNode {
     private static String getNodeName(TIFFField f) {
-        return f.getData() instanceof TIFFDirectory ?
+        return (f.hasDirectory() || f.getData() instanceof TIFFDirectory) ?
             "TIFFIFD" : "TIFFField";
     }
 
@@ -52,7 +52,8 @@ public class TIFFFieldNode extends IIOMetadataNode {
     public TIFFFieldNode(TIFFField field) {
         super(getNodeName(field));
 
-        isIFD = field.getData() instanceof TIFFDirectory;
+        isIFD = field.hasDirectory() ||
+            field.getData() instanceof TIFFDirectory;
 
         this.field = field;
 
@@ -68,7 +69,8 @@ public class TIFFFieldNode extends IIOMetadataNode {
                 setAttribute("parentTagName", tagName);
             }
 
-            TIFFDirectory dir = (TIFFDirectory)field.getData();
+            TIFFDirectory dir = field.hasDirectory() ?
+                field.getDirectory() : (TIFFDirectory)field.getData();
             TIFFTagSet[] tagSets = dir.getTagSets();
             if(tagSets != null) {
                 StringBuilder tagSetNames = new StringBuilder();
@@ -90,7 +92,8 @@ public class TIFFFieldNode extends IIOMetadataNode {
         if(isInitialized) return;
 
         if(isIFD) {
-            TIFFDirectory dir = (TIFFDirectory)field.getData();
+            TIFFDirectory dir = field.hasDirectory() ?
+                field.getDirectory() : (TIFFDirectory)field.getData();
             TIFFField[] fields = dir.getTIFFFields();
             if(fields != null) {
                 TIFFTagSet[] tagSets = dir.getTagSets();

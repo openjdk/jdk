@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,11 +219,23 @@ public class TIFFDirectory implements Cloneable {
             TIFFField f = fields[i];
             TIFFTag tag = f.getTag();
             if(tag.isIFDPointer()) {
-                TIFFDirectory subIFD =
-                    getDirectoryAsIFD((TIFFDirectory)f.getData());
-                f = new TIFFField(tag, f.getType(), (long)f.getCount(), subIFD);
+                TIFFDirectory subDir = null;
+                if (f.hasDirectory()) {
+                    subDir = f.getDirectory();
+                } else if (f.getData() instanceof TIFFDirectory) {
+                    subDir = (TIFFDirectory)f.getData();
+                }
+                if (subDir != null) {
+                    TIFFDirectory subIFD = getDirectoryAsIFD(subDir);
+                    f = new TIFFField(tag, f.getType(), (long)f.getCount(),
+                                      subIFD);
+                } else {
+                    f = null;
+                }
             }
-            ifd.addTIFFField(f);
+            if (f != null) {
+                ifd.addTIFFField(f);
+            }
         }
 
         return ifd;
