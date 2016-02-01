@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public class GeoTIFFTagSet extends TIFFTagSet {
 
     static class GeoKeyDirectory extends TIFFTag {
         public GeoKeyDirectory() {
-            super("GeoKeyDirectory",
+            super("GeoKeyDirectoryTag",
                   TAG_GEO_KEY_DIRECTORY,
                   1 << TIFFTag.TIFF_SHORT);
         }
@@ -105,7 +105,7 @@ public class GeoTIFFTagSet extends TIFFTagSet {
 
     static class GeoDoubleParams extends TIFFTag {
         public GeoDoubleParams() {
-            super("GeoDoubleParams",
+            super("GeoDoubleParamsTag",
                   TAG_GEO_DOUBLE_PARAMS,
                   1 << TIFFTag.TIFF_DOUBLE);
         }
@@ -113,7 +113,7 @@ public class GeoTIFFTagSet extends TIFFTagSet {
 
     static class GeoAsciiParams extends TIFFTag {
         public GeoAsciiParams() {
-            super("GeoAsciiParams",
+            super("GeoAsciiParamsTag",
                   TAG_GEO_ASCII_PARAMS,
                   1 << TIFFTag.TIFF_ASCII);
         }

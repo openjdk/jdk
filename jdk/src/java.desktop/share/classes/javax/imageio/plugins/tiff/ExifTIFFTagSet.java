@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1256,7 +1256,7 @@ public class ExifTIFFTagSet extends TIFFTagSet {
     static class ExifVersion extends TIFFTag {
 
         public ExifVersion() {
-            super("Exifversion",
+            super("ExifVersion",
                   TAG_EXIF_VERSION,
                   1 << TIFFTag.TIFF_UNDEFINED,
                   4);
