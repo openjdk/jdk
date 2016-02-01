@@ -195,7 +195,7 @@ const char* PSParallelCompact::space_names[] = {
 };
 
 void PSParallelCompact::print_region_ranges() {
-  if (!develop_log_is_enabled(Trace, gc, compaction, phases)) {
+  if (!log_develop_is_enabled(Trace, gc, compaction, phases)) {
     return;
   }
   LogHandle(gc, compaction, phases) log;
@@ -265,7 +265,7 @@ void
 print_generic_summary_data(ParallelCompactData& summary_data,
                            SpaceInfo* space_info)
 {
-  if (!develop_log_is_enabled(Trace, gc, compaction, phases)) {
+  if (!log_develop_is_enabled(Trace, gc, compaction, phases)) {
     return;
   }
 
@@ -360,7 +360,7 @@ print_initial_summary_data(ParallelCompactData& summary_data,
 void
 print_initial_summary_data(ParallelCompactData& summary_data,
                            SpaceInfo* space_info) {
-  if (!develop_log_is_enabled(Trace, gc, compaction, phases)) {
+  if (!log_develop_is_enabled(Trace, gc, compaction, phases)) {
     return;
   }
 
@@ -641,7 +641,7 @@ ParallelCompactData::summarize_split_space(size_t src_region,
   *target_next = split_destination + partial_obj_size;
   HeapWord* const source_next = region_to_addr(split_region) + partial_obj_size;
 
-  if (develop_log_is_enabled(Trace, gc, compaction, phases)) {
+  if (log_develop_is_enabled(Trace, gc, compaction, phases)) {
     const char * split_type = partial_obj_size == 0 ? "easy" : "hard";
     log_develop_trace(gc, compaction, phases)("%s split:  src=" PTR_FORMAT " src_c=" SIZE_FORMAT " pos=" SIZE_FORMAT,
                                               split_type, p2i(source_next), split_region, partial_obj_size);
@@ -1535,7 +1535,7 @@ PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
     }
   }
 
-  if (develop_log_is_enabled(Trace, gc, compaction, phases)) {
+  if (log_develop_is_enabled(Trace, gc, compaction, phases)) {
     const size_t region_size = ParallelCompactData::RegionSize;
     HeapWord* const dense_prefix_end = _space_info[id].dense_prefix();
     const size_t dp_region = _summary_data.addr_to_region_idx(dense_prefix_end);
@@ -2190,7 +2190,7 @@ private:
   bool _enabled;
   size_t _total_regions;
 public:
-  FillableRegionLogger() : _next_index(0), _total_regions(0), _enabled(develop_log_is_enabled(Trace, gc, compaction)) { }
+  FillableRegionLogger() : _next_index(0), _total_regions(0), _enabled(log_develop_is_enabled(Trace, gc, compaction)) { }
   ~FillableRegionLogger() {
     log.trace(SIZE_FORMAT " initially fillable regions", _total_regions);
   }
@@ -2381,7 +2381,7 @@ void PSParallelCompact::enqueue_region_stealing_tasks(
 // region.
 void PSParallelCompact::write_block_fill_histogram()
 {
-  if (!develop_log_is_enabled(Trace, gc, compaction)) {
+  if (!log_develop_is_enabled(Trace, gc, compaction)) {
     return;
   }
 

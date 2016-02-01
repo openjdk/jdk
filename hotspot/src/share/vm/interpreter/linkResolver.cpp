@@ -816,7 +816,7 @@ methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info,
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  if (develop_log_is_enabled(Trace, itables)) {
+  if (log_develop_is_enabled(Trace, itables)) {
     trace_method_resolution("invokeinterface resolved method: caller-class",
                             link_info.current_klass(), resolved_klass,
                             resolved_method, true);
@@ -1064,7 +1064,7 @@ methodHandle LinkResolver::linktime_resolve_special_method(const LinkInfo& link_
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  if (develop_log_is_enabled(Trace, itables)) {
+  if (log_develop_is_enabled(Trace, itables)) {
     trace_method_resolution("invokespecial resolved method: caller-class:",
                             current_klass, resolved_klass, resolved_method, true);
   }
@@ -1135,7 +1135,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
                                                sel_method->signature()));
   }
 
-  if (develop_log_is_enabled(Trace, itables)) {
+  if (log_develop_is_enabled(Trace, itables)) {
     trace_method_resolution("invokespecial selected method: resolved-class:",
                             resolved_klass, resolved_klass, sel_method, true);
   }
@@ -1188,7 +1188,7 @@ methodHandle LinkResolver::linktime_resolve_virtual_method(const LinkInfo& link_
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  if (develop_log_is_enabled(Trace, vtables)) {
+  if (log_develop_is_enabled(Trace, vtables)) {
     trace_method_resolution("invokevirtual resolved method: caller-class:",
                             current_klass, resolved_klass, resolved_method, false);
   }
@@ -1264,7 +1264,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
                                                       selected_method->signature()));
   }
 
-  if (develop_log_is_enabled(Trace, vtables)) {
+  if (log_develop_is_enabled(Trace, vtables)) {
     trace_method_resolution("invokevirtual selected method: receiver-class:",
                             recv_klass, resolved_klass, selected_method,
                             false, vtable_index);
@@ -1363,7 +1363,7 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
                                                       sel_method->signature()));
   }
 
-  if (develop_log_is_enabled(Trace, itables)) {
+  if (log_develop_is_enabled(Trace, itables)) {
     trace_method_resolution("invokeinterface selected method: receiver-class",
                             recv_klass, resolved_klass, sel_method, true);
   }

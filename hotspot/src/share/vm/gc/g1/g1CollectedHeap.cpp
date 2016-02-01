@@ -3141,7 +3141,7 @@ void G1CollectedHeap::print_taskqueue_stats_hdr(outputStream* const st) {
 }
 
 void G1CollectedHeap::print_taskqueue_stats() const {
-  if (!develop_log_is_enabled(Trace, gc, task, stats)) {
+  if (!log_develop_is_enabled(Trace, gc, task, stats)) {
     return;
   }
   LogHandle(gc, task, stats) log;
