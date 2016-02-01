@@ -57,13 +57,13 @@
 #define log_develop_info(...)  (!log_is_enabled(Info, __VA_ARGS__))   ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Info>
 #define log_develop_debug(...) (!log_is_enabled(Debug, __VA_ARGS__)) ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Debug>
 #define log_develop_trace(...) (!log_is_enabled(Trace, __VA_ARGS__))  ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Trace>
-#define develop_log_is_enabled(level, ...)  log_is_enabled(level, __VA_ARGS__)
+#define log_develop_is_enabled(level, ...)  log_is_enabled(level, __VA_ARGS__)
 #else
 #define DUMMY_ARGUMENT_CONSUMER(...)
 #define log_develop_info(...)  DUMMY_ARGUMENT_CONSUMER
 #define log_develop_debug(...) DUMMY_ARGUMENT_CONSUMER
 #define log_develop_trace(...) DUMMY_ARGUMENT_CONSUMER
-#define develop_log_is_enabled(...)  false
+#define log_develop_is_enabled(...)  false
 #endif
 
 // Convenience macro to test if the logging is enabled on the specified level for given tags.
