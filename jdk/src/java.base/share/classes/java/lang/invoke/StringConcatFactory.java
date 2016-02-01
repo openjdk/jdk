@@ -96,6 +96,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * more than 200 argument slots. Users requiring more than 200 argument slots in
  * concatenation are expected to split the large concatenation in smaller
  * expressions.
+ *
+ * @since 9
  */
 public final class StringConcatFactory {
 
