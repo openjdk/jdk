@@ -4602,8 +4602,8 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
       }
     } else if (major_gte_15) {
       // Class file version in the interval [JAVA_1_5_VERSION, JAVA_8_VERSION)
-      if (!is_public || is_static || is_final || is_synchronized ||
-          is_native || !is_abstract || is_strict) {
+      if (!is_public || is_private || is_protected || is_static || is_final ||
+          is_synchronized || is_native || !is_abstract || is_strict) {
         is_illegal = true;
       }
     } else {
