@@ -38,6 +38,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
@@ -1250,6 +1251,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       TraceCollectorStats tcs(g1mm()->full_collection_counters());
       TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
 
+      G1HeapTransition heap_transition(this);
       g1_policy()->record_full_collection_start();
 
       // Note: When we have a more flexible GC logging framework that
@@ -1442,14 +1444,14 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       g1mm()->update_sizes();
 
       gc_epilogue(true);
+
+      heap_transition.print();
+
+      print_heap_after_gc();
+      trace_heap_after_gc(gc_tracer);
+
+      post_full_gc_dump(gc_timer);
     }
-
-    g1_policy()->print_detailed_heap_transition();
-
-    print_heap_after_gc();
-    trace_heap_after_gc(gc_tracer);
-
-    post_full_gc_dump(gc_timer);
 
     gc_timer->register_gc_end();
     gc_tracer->report_gc_end(gc_timer->gc_end(), gc_timer->time_partitions());
@@ -3169,17 +3171,6 @@ void G1CollectedHeap::reset_taskqueue_stats() {
 }
 #endif // TASKQUEUE_STATS
 
-void G1CollectedHeap::log_gc_footer() {
-  if (evacuation_failed()) {
-    log_info(gc)("To-space exhausted");
-  }
-
-  g1_policy()->print_phases();
-
-  g1_policy()->print_detailed_heap_transition();
-}
-
-
 void G1CollectedHeap::wait_for_root_region_scanning() {
   double scan_wait_start = os::elapsedTime();
   // We have to wait until the CM threads finish scanning the
@@ -3280,6 +3271,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     if (!G1StressConcRegionFreeing) {
       append_secondary_free_list_if_not_empty_with_lock();
     }
+
+    G1HeapTransition heap_transition(this);
+    size_t heap_used_bytes_before_gc = used();
 
     assert(check_young_list_well_formed(), "young list should be well formed");
 
@@ -3474,7 +3468,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         double sample_end_time_sec = os::elapsedTime();
         double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
         size_t total_cards_scanned = per_thread_states.total_cards_scanned();
-        g1_policy()->record_collection_pause_end(pause_time_ms, total_cards_scanned);
+        g1_policy()->record_collection_pause_end(pause_time_ms, total_cards_scanned, heap_used_bytes_before_gc);
 
         evacuation_info.set_collectionset_used_before(g1_policy()->collection_set_bytes_used_before());
         evacuation_info.set_bytes_copied(g1_policy()->bytes_copied_during_gc());
@@ -3527,7 +3521,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     }
 
     // Print the remainder of the GC log output.
-    log_gc_footer();
+    if (evacuation_failed()) {
+      log_info(gc)("To-space exhausted");
+    }
+
+    g1_policy()->print_phases();
+    heap_transition.print();
 
     // It is not yet to safe to tell the concurrent mark to
     // start as we have some optional output below. We don't want the

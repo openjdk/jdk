@@ -291,8 +291,6 @@ private:
                                                          size_t size,
                                                          size_t translation_factor);
 
-  void log_gc_footer();
-
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   void process_weak_jni_handles();
