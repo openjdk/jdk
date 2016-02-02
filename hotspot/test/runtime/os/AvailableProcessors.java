@@ -27,7 +27,7 @@ import java.util.ArrayList;
 
 /*
  * @test
- * @bug 6515172
+ * @bug 6515172 8148766
  * @summary Check that availableProcessors reports the correct value when running in a cpuset on linux
  * @requires os.family == "linux"
  * @library /testlibrary
@@ -93,7 +93,9 @@ public class AvailableProcessors {
 
     static void checkProcessors(int expected) {
         int available = Runtime.getRuntime().availableProcessors();
-        if (available != expected)
+        // available can dynamically drop below expected due to aggressive power management
+        // but we should never have more than expected, else taskset is broken
+        if (available <= 0 || available > expected)
             throw new Error("Expected " + expected + " processors, but found "
                             + available);
         else
