@@ -30,7 +30,7 @@ import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.vm.annotation.ForceInline;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.security.AccessController;
@@ -1497,7 +1497,7 @@ public final class StringConcatFactory {
             //
             // The method handle shape after all length and coder mixers is:
             //   (int, byte, <args>)String = ("index", "coder", <args>)
-            byte initialCoder = 0; // initial coder
+            byte initialCoder = INITIAL_CODER;
             int initialLen = 0;    // initial length, in characters
             for (RecipeElement el : recipe.getElements()) {
                 switch (el.getTag()) {
@@ -1630,11 +1630,14 @@ public final class StringConcatFactory {
         private static final ConcurrentMap<Class<?>, MethodHandle> LENGTH_MIXERS;
         private static final ConcurrentMap<Class<?>, MethodHandle> CODER_MIXERS;
         private static final Class<?> STRING_HELPER;
+        private static final byte INITIAL_CODER;
 
         static {
             try {
                 STRING_HELPER = Class.forName("java.lang.StringConcatHelper");
-            } catch (ClassNotFoundException e) {
+                MethodHandle initCoder = lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "initialCoder", byte.class);
+                INITIAL_CODER = (byte) initCoder.invoke();
+            } catch (Throwable e) {
                 throw new AssertionError(e);
             }
 
