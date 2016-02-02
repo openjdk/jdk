@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8076359 8133151
+ * @bug 8076359 8133151 8145344
  * @summary Test the value for new jdk.security.provider.preferred security property
  * @requires os.name == "SunOS"
  */
@@ -40,8 +40,9 @@ import javax.crypto.NoSuchPaddingException;
 public class PreferredProviderTest {
 
     private static final List<DataTuple> SPARC_DATA = Arrays.asList(
-            new DataTuple("SHA-256", "SUN"), new DataTuple("SHA-384", "SUN"),
-            new DataTuple("SHA-512", "SUN"));
+            new DataTuple("SHA1", "SUN"), new DataTuple("SHA-1", "SUN"),
+            new DataTuple("SHA-224", "SUN"), new DataTuple("SHA-256", "SUN"),
+            new DataTuple("SHA-384", "SUN"), new DataTuple("SHA-512", "SUN"));
     private static final List<DataTuple> X86_DATA = Arrays
             .asList(new DataTuple("RSA", "SunRsaSign"));
 
@@ -52,7 +53,7 @@ public class PreferredProviderTest {
         String actualProvider = null;
         if (type.equals("sparcv9")) {
             if (!preferredProvider.equals(
-                    "AES:SunJCE, SHA-256:SUN, SHA-384:SUN, SHA-512:SUN")) {
+                    "AES:SunJCE, SHA1:SUN, SHA-224:SUN, SHA-256:SUN, SHA-384:SUN, SHA-512:SUN")) {
                 throw new RuntimeException(
                         "Test Failed: wrong jdk.security.provider.preferred "
                                 + "value on solaris-sparcv9");
