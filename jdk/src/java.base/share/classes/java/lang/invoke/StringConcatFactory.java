@@ -957,6 +957,22 @@ public final class StringConcatFactory {
                     storage trimming, which defeats the purpose of exact strategies.
                  */
 
+                /*
+                   The logic for this check is as follows:
+
+                     Stack before:     Op:
+                      (SB)              dup, dup
+                      (SB, SB, SB)      capacity()
+                      (int, SB, SB)     swap
+                      (SB, int, SB)     toString()
+                      (S, int, SB)      length()
+                      (int, int, SB)    if_icmpeq
+                      (SB)              <end>
+
+                   Note that it leaves the same StringBuilder on exit, like the one on enter.
+                 */
+
+                mv.visitInsn(DUP);
                 mv.visitInsn(DUP);
 
                 mv.visitMethodInsn(
@@ -967,7 +983,7 @@ public final class StringConcatFactory {
                         false
                 );
 
-                mv.visitIntInsn(ISTORE, 0);
+                mv.visitInsn(SWAP);
 
                 mv.visitMethodInsn(
                         INVOKEVIRTUAL,
@@ -977,8 +993,6 @@ public final class StringConcatFactory {
                         false
                 );
 
-                mv.visitInsn(DUP);
-
                 mv.visitMethodInsn(
                         INVOKEVIRTUAL,
                         "java/lang/String",
@@ -986,8 +1000,6 @@ public final class StringConcatFactory {
                         "()I",
                         false
                 );
-
-                mv.visitIntInsn(ILOAD, 0);
 
                 Label l0 = new Label();
                 mv.visitJumpInsn(IF_ICMPEQ, l0);
@@ -1003,15 +1015,15 @@ public final class StringConcatFactory {
                 mv.visitInsn(ATHROW);
 
                 mv.visitLabel(l0);
-            } else {
-                mv.visitMethodInsn(
-                        INVOKEVIRTUAL,
-                        "java/lang/StringBuilder",
-                        "toString",
-                        "()Ljava/lang/String;",
-                        false
-                );
             }
+
+            mv.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    "java/lang/StringBuilder",
+                    "toString",
+                    "()Ljava/lang/String;",
+                    false
+            );
 
             mv.visitInsn(ARETURN);
 
