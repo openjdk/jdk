@@ -25,12 +25,11 @@
  * @test
  * @summary Tests a line number table attribute for language constructions in different containers.
  * @bug 8040131
- *
  * @library /tools/lib /tools/javac/lib ../lib
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.util
+ *          jdk.jdeps/com.sun.tools.classfile
  * @build ToolBox TestBase InMemoryFileManager LineNumberTestBase Container TestCase
  * @run main LineNumberTest
  */

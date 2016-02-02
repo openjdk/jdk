@@ -649,7 +649,7 @@ public interface Map<K, V> {
             try {
                 k = entry.getKey();
                 v = entry.getValue();
-            } catch(IllegalStateException ise) {
+            } catch (IllegalStateException ise) {
                 // this usually means the entry is no longer in the map.
                 throw new ConcurrentModificationException(ise);
             }
@@ -704,7 +704,7 @@ public interface Map<K, V> {
             try {
                 k = entry.getKey();
                 v = entry.getValue();
-            } catch(IllegalStateException ise) {
+            } catch (IllegalStateException ise) {
                 // this usually means the entry is no longer in the map.
                 throw new ConcurrentModificationException(ise);
             }
@@ -714,7 +714,7 @@ public interface Map<K, V> {
 
             try {
                 entry.setValue(v);
-            } catch(IllegalStateException ise) {
+            } catch (IllegalStateException ise) {
                 // this usually means the entry is no longer in the map.
                 throw new ConcurrentModificationException(ise);
             }
@@ -887,7 +887,7 @@ public interface Map<K, V> {
      * or atomicity properties of this method. Any implementation providing
      * atomicity guarantees must override this method and document its
      * concurrency properties.
-      *
+     *
      * @param key key with which the specified value is associated
      * @param value value to be associated with the specified key
      * @return the previous value associated with the specified key, or
@@ -984,6 +984,9 @@ public interface Map<K, V> {
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     * @throws IllegalArgumentException if some property of the specified key
+     *         or value prevents it from being stored in this map
+     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
     default V computeIfAbsent(K key,
@@ -1058,6 +1061,9 @@ public interface Map<K, V> {
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     * @throws IllegalArgumentException if some property of the specified key
+     *         or value prevents it from being stored in this map
+     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
     default V computeIfPresent(K key,
@@ -1103,7 +1109,7 @@ public interface Map<K, V> {
      * <pre> {@code
      * V oldValue = map.get(key);
      * V newValue = remappingFunction.apply(key, oldValue);
-     * if (oldValue != null ) {
+     * if (oldValue != null) {
      *    if (newValue != null)
      *       map.put(key, newValue);
      *    else
@@ -1146,6 +1152,9 @@ public interface Map<K, V> {
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
+     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     * @throws IllegalArgumentException if some property of the specified key
+     *         or value prevents it from being stored in this map
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @since 1.8
      */
@@ -1239,6 +1248,9 @@ public interface Map<K, V> {
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
+     * @throws IllegalArgumentException if some property of the specified key
+     *         or value prevents it from being stored in this map
+     *         (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified key is null and this map
      *         does not support null keys or the value or remappingFunction is
      *         null
@@ -1251,7 +1263,7 @@ public interface Map<K, V> {
         V oldValue = get(key);
         V newValue = (oldValue == null) ? value :
                    remappingFunction.apply(oldValue, value);
-        if(newValue == null) {
+        if (newValue == null) {
             remove(key);
         } else {
             put(key, newValue);

@@ -48,6 +48,7 @@ public class TestVerifyDuringStartup {
     Collections.addAll(vmOpts, new String[] {"-XX:-UseTLAB",
                                              "-XX:+UnlockDiagnosticVMOptions",
                                              "-XX:+VerifyDuringStartup",
+                                             "-Xlog:gc+verify=debug",
                                              "-version"});
 
     System.out.print("Testing:\n" + JDKToolFinder.getJDKTool("java"));
@@ -62,7 +63,7 @@ public class TestVerifyDuringStartup {
 
     System.out.println("Output:\n" + output.getOutput());
 
-    output.shouldContain("[Verifying");
+    output.shouldContain("Verifying");
     output.shouldHaveExitValue(0);
   }
 }

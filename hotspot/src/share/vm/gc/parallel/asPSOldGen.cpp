@@ -125,25 +125,21 @@ size_t ASPSOldGen::available_for_contraction() {
   size_t result = policy->promo_increment_aligned_down(max_contraction);
   // Also adjust for inter-generational alignment
   size_t result_aligned = align_size_down(result, gen_alignment);
-  if (PrintAdaptiveSizePolicy && Verbose) {
-    gclog_or_tty->print_cr("\nASPSOldGen::available_for_contraction:"
-      " " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, result_aligned/K, result_aligned);
-    gclog_or_tty->print_cr(" reserved().byte_size() " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
-      reserved().byte_size()/K, reserved().byte_size());
+
+  LogHandle(gc, ergo) log;
+  if (log.is_trace()) {
     size_t working_promoted = (size_t) policy->avg_promoted()->padded_average();
-    gclog_or_tty->print_cr(" padded promoted " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
-      working_promoted/K, working_promoted);
-    gclog_or_tty->print_cr(" used " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
-      used_in_bytes()/K, used_in_bytes());
-    gclog_or_tty->print_cr(" min_gen_size() " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
-      min_gen_size()/K, min_gen_size());
-    gclog_or_tty->print_cr(" max_contraction " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
-      max_contraction/K, max_contraction);
-    gclog_or_tty->print_cr("    without alignment " SIZE_FORMAT " K / " SIZE_FORMAT_HEX,
-      policy->promo_increment(max_contraction)/K,
-      policy->promo_increment(max_contraction));
-    gclog_or_tty->print_cr(" alignment " SIZE_FORMAT_HEX, gen_alignment);
+    size_t promo_increment = policy->promo_increment(max_contraction);
+    log.trace("ASPSOldGen::available_for_contraction: " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, result_aligned/K, result_aligned);
+    log.trace(" reserved().byte_size() " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, reserved().byte_size()/K, reserved().byte_size());
+    log.trace(" padded promoted " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, working_promoted/K, working_promoted);
+    log.trace(" used " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, used_in_bytes()/K, used_in_bytes());
+    log.trace(" min_gen_size() " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, min_gen_size()/K, min_gen_size());
+    log.trace(" max_contraction " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, max_contraction/K, max_contraction);
+    log.trace("    without alignment " SIZE_FORMAT " K / " SIZE_FORMAT_HEX, promo_increment/K, promo_increment);
+    log.trace(" alignment " SIZE_FORMAT_HEX, gen_alignment);
   }
+
   assert(result_aligned <= max_contraction, "arithmetic is wrong");
   return result_aligned;
 }

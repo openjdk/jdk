@@ -42,7 +42,7 @@ java.activation_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
 
 ################################################################################
 
-java.base_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*'
+java.base_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference '-Xdoclint/package:java.*,javax.*' -XDstringConcat=inline
 java.base_COPY := .icu .dat .spp content-types.properties hijrah-config-islamic-umalqura.properties
 java.base_CLEAN := intrinsic.properties
 
@@ -359,7 +359,7 @@ jdk.charsets_COPY := .dat
 
 ################################################################################
 
-jdk.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:-com.sun.tools.*'
+jdk.compiler_ADD_JAVAC_FLAGS := -Xdoclint:all/protected '-Xdoclint/package:-com.sun.tools.*' -XDstringConcat=inline
 jdk.compiler_COPY := javax.tools.JavaCompilerTool
 jdk.compiler_CLEAN_FILES := $(wildcard \
     $(patsubst %, $(JDK_TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
@@ -367,10 +367,6 @@ jdk.compiler_CLEAN_FILES := $(wildcard \
 
 ################################################################################
 
-jdk.hotspot.agent_SRC += \
-    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent \
-    $(HOTSPOT_TOPDIR)/agent/src/share/classes \
-    #
 jdk.hotspot.agent_ADD_JAVAC_FLAGS := $(DISABLE_WARNINGS),-overrides
 jdk.hotspot.agent_COPY := .png sa.js .properties
 
@@ -381,9 +377,9 @@ ifeq ($(MODULE), jdk.hotspot.agent)
   # These can't be handled by COPY to SetupJavaCompilation since they chop off
   # one directory level.
   $(eval $(call SetupCopyFiles, COPY_SA_IMAGES, \
-      SRC := $(HOTSPOT_TOPDIR)/agent/src/share/classes/images, \
+      SRC := $(HOTSPOT_TOPDIR)/src/jdk.hotspot.agent/share/classes/images, \
       DEST := $(JDK_OUTPUTDIR)/modules/$(MODULE), \
-      FILES := $(wildcard $(HOTSPOT_TOPDIR)/agent/src/share/classes/images/*/*/*.gif), \
+      FILES := $(wildcard $(HOTSPOT_TOPDIR)/src/jdk.hotspot.agent/share/classes/images/*/*/*.gif), \
   ))
   jdk.hotspot.agent: $(COPY_SA_IMAGES)
 endif

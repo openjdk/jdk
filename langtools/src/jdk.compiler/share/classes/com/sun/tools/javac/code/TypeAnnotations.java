@@ -1017,7 +1017,7 @@ public class TypeAnnotations {
                 case METHOD_INVOCATION: {
                     JCMethodInvocation invocation = (JCMethodInvocation)frame;
                     if (!invocation.typeargs.contains(tree)) {
-                        throw new AssertionError("{" + tree + "} is not an argument in the invocation: " + invocation);
+                        return TypeAnnotationPosition.unknown;
                     }
                     MethodSymbol exsym = (MethodSymbol) TreeInfo.symbol(invocation.getMethodSelect());
                     final int type_index = invocation.typeargs.indexOf(tree);

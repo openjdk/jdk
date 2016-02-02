@@ -24,9 +24,10 @@
 
 # All langtools tests are tier 1.
 tier1 = \
-    tools \
     com \
-    lib
+    jdk \
+    lib \
+    tools
 
 # No langtools tests are tier 2.
 tier2 = 

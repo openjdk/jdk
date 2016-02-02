@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,11 @@
  */
 
 /**
+<p style="font-style: italic; font-size:larger">
+<b>Note:</b> The declarations in this package have been superseded by those
+in the package {@code jdk.javadoc.doclet}.
+</p>
+
 The Doclet API (also called the Javadoc API) provides a mechanism
 for clients to inspect the source-level structure of programs and
 libraries, including javadoc comments embedded in the source.

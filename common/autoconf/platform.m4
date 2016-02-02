@@ -67,7 +67,7 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU_ENDIAN=big
       ;;
     powerpc64le)
-      VAR_CPU=ppc64
+      VAR_CPU=ppc64le
       VAR_CPU_ARCH=ppc
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little

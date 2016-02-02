@@ -28,7 +28,7 @@
 #include "gc/cms/vmCMSOperations.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
-#include "gc/shared/gcTraceTime.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
@@ -58,7 +58,7 @@ void VM_CMS_Operation::release_and_notify_pending_list_lock() {
 void VM_CMS_Operation::verify_before_gc() {
   if (VerifyBeforeGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    GCTraceTime tm("Verify Before", false, false, _collector->_gc_timer_cm);
+    GCTraceTime(Info, gc, verify) tm("Verify Before", _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
     MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
@@ -70,7 +70,7 @@ void VM_CMS_Operation::verify_before_gc() {
 void VM_CMS_Operation::verify_after_gc() {
   if (VerifyAfterGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    GCTraceTime tm("Verify After", false, false, _collector->_gc_timer_cm);
+    GCTraceTime(Info, gc, verify) tm("Verify After", _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
     MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);

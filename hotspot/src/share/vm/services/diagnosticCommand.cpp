@@ -73,7 +73,6 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RotateGCLogDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeListDCmd>(full_export, true, false));
@@ -565,6 +564,10 @@ JMXStartRemoteDCmd::JMXStartRemoteDCmd(outputStream *output, bool heap_allocated
   ("config.file",
    "set com.sun.management.config.file", "STRING", false),
 
+  _jmxremote_host
+  ("jmxremote.host",
+   "set com.sun.management.jmxremote.host", "STRING", false),
+
   _jmxremote_port
   ("jmxremote.port",
    "set com.sun.management.jmxremote.port", "STRING", false),
@@ -644,6 +647,7 @@ JMXStartRemoteDCmd::JMXStartRemoteDCmd(outputStream *output, bool heap_allocated
 
   {
     _dcmdparser.add_dcmd_option(&_config_file);
+    _dcmdparser.add_dcmd_option(&_jmxremote_host);
     _dcmdparser.add_dcmd_option(&_jmxremote_port);
     _dcmdparser.add_dcmd_option(&_jmxremote_rmi_port);
     _dcmdparser.add_dcmd_option(&_jmxremote_ssl);
@@ -719,6 +723,7 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
 
 
     PUT_OPTION(_config_file);
+    PUT_OPTION(_jmxremote_host);
     PUT_OPTION(_jmxremote_port);
     PUT_OPTION(_jmxremote_rmi_port);
     PUT_OPTION(_jmxremote_ssl);
@@ -824,15 +829,6 @@ VMDynamicLibrariesDCmd::VMDynamicLibrariesDCmd(outputStream *output, bool heap_a
 void VMDynamicLibrariesDCmd::execute(DCmdSource source, TRAPS) {
   os::print_dll_info(output());
   output()->cr();
-}
-
-void RotateGCLogDCmd::execute(DCmdSource source, TRAPS) {
-  if (UseGCLogFileRotation) {
-    VM_RotateGCLog rotateop(output());
-    VMThread::execute(&rotateop);
-  } else {
-    output()->print_cr("Target VM does not support GC log file rotation.");
-  }
 }
 
 void CompileQueueDCmd::execute(DCmdSource source, TRAPS) {

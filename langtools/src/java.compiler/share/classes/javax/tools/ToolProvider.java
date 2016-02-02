@@ -104,7 +104,7 @@ public class ToolProvider {
     }
 
     private static final String systemDocumentationToolName
-        = "com.sun.tools.javadoc.api.JavadocTool";
+        = "jdk.javadoc.internal.api.JavadocTool";
 
     /**
      * Returns the Java&trade; programming language documentation tool provided

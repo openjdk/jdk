@@ -26,10 +26,10 @@
  * @bug 8042261
  * @summary Checking that deprecated attribute does not apply to classes of deprecated package.
  * @library /tools/lib /tools/javac/lib ../lib
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.util
+ *          jdk.jdeps/com.sun.tools.classfile
  * @build  ToolBox TestBase TestResult InMemoryFileManager
  * @run main DeprecatedPackageTest
  */

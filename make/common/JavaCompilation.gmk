@@ -246,13 +246,6 @@ define SetupJavaCompilationBody
 
   $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
 
-  # Create the corresponding smart javac wrapper command line.
-  $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix /**,$$($1_EXCLUDES))) \
-      $$(addprefix -i ,$$(addsuffix /**,$$($1_INCLUDES))) \
-      $$(addprefix -x **,$$(strip $$($1_EXCLUDE_FILES) $$($1_SJAVAC_EXCLUDE_FILES))) \
-      $$(addprefix -i **,$$(strip $$($1_INCLUDE_FILES))) \
-      -src $$(call PathList, $$($1_SRC))
-
   # All files below META-INF are always copied.
   $1_ALL_COPIES := $$(filter $$(addsuffix /META-INF%,$$($1_SRC)),$$($1_ALL_SRCS))
   # Find all files to be copied from source to bin.
@@ -315,11 +308,32 @@ define SetupJavaCompilationBody
   ifeq ($$($1_DISABLE_SJAVAC)x$$(ENABLE_SJAVAC),xyes)
     # Using sjavac to compile.
 
+    # Create the sjavac wrapper command line. Sjavac doesn't handle patterns that
+    # match the absolute path, only the part inside each src dir. Instead -i and
+    # -x flags apply only to the next -src arg on the command line.
+    $1_EXCLUDE_FILES_ABS := $$(filter /%, $$($1_EXCLUDE_FILES)) $$($1_SJAVAC_EXCLUDE_FILES)
+    $1_EXCLUDE_FILES_REL := $$(filter-out /%, $$($1_EXCLUDE_FILES))
+    $1_SJAVAC_ARGS_STRING := $$(foreach s, $$(patsubst %/, %, $$($1_SRC)), \
+        $$(addprefix -x ,$$(addsuffix /**,$$($1_EXCLUDES))) \
+        $$(addprefix -i ,$$(addsuffix /**,$$($1_INCLUDES))) \
+        $$(addprefix -x **,$$(strip $$($1_EXCLUDE_FILES_REL))) \
+        $$(addprefix -i **,$$(strip $$($1_INCLUDE_FILES))) \
+        $$(addprefix -x , $$(strip $$(patsubst $$(s)/%, %, $$(filter $$(s)/%, $$($1_EXCLUDE_FILES_ABS))))) \
+        -src $$(s))
+
+    ifneq ($$(word 20, $$($1_SJAVAC_ARGS_STRING)), )
+      $1_SJAVAC_ARGS_FILE := $$($1_BIN)/_the.$1_args
+      $1_SJAVAC_ARGS := @$$($1_SJAVAC_ARGS_FILE)
+    else
+      $1_SJAVAC_ARGS := $$($1_SJAVAC_ARGS_STRING)
+    endif
+
+
     ifneq (,$$($1_HEADERS))
       $1_HEADERS_ARG := -h $$($1_HEADERS)
     endif
 
-    $1_VARDEPS := $$($1_JVM) $$($1_SJAVAC) $$($1_SJAVAC_ARGS) $$($1_FLAGS) \
+    $1_VARDEPS := $$($1_JVM) $$($1_SJAVAC) $$($1_SJAVAC_ARGS_STRING) $$($1_FLAGS) \
         $$($1_HEADERS_ARG) $$($1_BIN) $$($1_EXCLUDES) $$($1_INCLUDES) \
         $$($1_EXCLUDE_FILES) $$($1_INCLUDE_FILES)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_BIN)/_the.$1.vardeps)
@@ -327,8 +341,11 @@ define SetupJavaCompilationBody
     $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
 	$(MKDIR) -p $$(@D) $$(dir $$($1_SJAVAC_PORTFILE))
 	$$(eval $$(call ListPathsSafely,$1_SRCS, $$@.tmp))
+        ifneq ($$($1_SJAVAC_ARGS_FILE), )
+	  $$(eval $$(call ListPathsSafely,$1_SJAVAC_ARGS_STRING, $$($1_SJAVAC_ARGS_FILE)))
+        endif
 	$(ECHO) Compiling $1
-	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch.log, $$($1_SAFE_NAME), \
+	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch, $$($1_SAFE_NAME), \
 	    $$($1_JVM) $$($1_SJAVAC) \
 	        $$($1_REMOTE) \
 	        -j 1 \
@@ -392,7 +409,7 @@ define SetupJavaCompilationBody
 	$(MKDIR) -p $$(@D)
 	$$(eval $$(call ListPathsSafely,$1_SRCS, $$@.tmp))
 	$(ECHO) Compiling `$(WC) $$@.tmp | $(TR) -s ' ' | $(CUT) -f 2 -d ' '` files for $1
-	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch.log, $$($1_SAFE_NAME), \
+	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch, $$($1_SAFE_NAME), \
 	    $$($1_JVM) $$($1_JAVAC_CMD) $$($1_FLAGS) \
 	        -implicit:none \
 		-d $$($1_BIN) $$($1_HEADERS_ARG) @$$@.tmp) && \

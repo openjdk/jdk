@@ -37,7 +37,6 @@ import javax.crypto.*;
 import javax.crypto.spec.*;
 import java.math.*;
 import java.io.*;
-import com.sun.crypto.provider.*;
 
 import java.util.*;
 
