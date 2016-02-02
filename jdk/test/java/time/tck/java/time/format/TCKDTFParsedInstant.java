@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -194,7 +195,7 @@ public class TCKDTFParsedInstant {
 
     @Test(dataProvider="parseWithZoneWithoutOffset")
     public void testWithZoneWithoutOffset(String withZoneWithoutOffset, ZonedDateTime expectedZDT) {
-        dtFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm:ss uuuu VV");
+        dtFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm:ss uuuu VV").withLocale(Locale.ENGLISH);
         zdt1 = ZonedDateTime.parse(withZoneWithoutOffset, dtFormatter);
         assertEquals(expectedZDT, zdt1);
     }

@@ -519,9 +519,13 @@ public class ManagementFactory {
      * {@code MBeanServerConnection} where
      * {@link java.io.IOException IOException} may be thrown
      * when the communication problem occurs with the connector server.
-     * An application remotely accesses the platform MXBeans using
-     * proxy should prepare to catch {@code IOException} as if
-     * accessing with the {@code MBeanServerConnector} interface.</li>
+     * If thrown, {@link java.io.IOException IOException} will be wrappped in
+     * {@link java.lang.reflect.UndeclaredThrowableException UndeclaredThrowableException}.
+     * An application remotely accessing the platform MXBeans using
+     * proxy should prepare to catch {@code UndeclaredThrowableException} and
+     * handle its {@linkplain java.lang.reflect.UndeclaredThrowableException#getCause() cause}
+     * as if that cause had been thrown by the {@code MBeanServerConnection}
+     * interface.</li>
      *
      * <li>When a client application is designed to remotely access MXBeans
      * for a running virtual machine whose version is different than
@@ -530,7 +534,11 @@ public class ManagementFactory {
      * {@link java.io.InvalidObjectException InvalidObjectException}
      * which is thrown when an MXBean proxy receives a name of an
      * enum constant which is missing in the enum class loaded in
-     * the client application. </li>
+     * the client application.   If thrown,
+     * {@link java.io.InvalidObjectException InvalidObjectException} will be
+     * wrappped in
+     * {@link java.lang.reflect.UndeclaredThrowableException UndeclaredThrowableException}.
+     * </li>
      *
      * <li>{@link javax.management.MBeanServerInvocationHandler
      * MBeanServerInvocationHandler} or its
