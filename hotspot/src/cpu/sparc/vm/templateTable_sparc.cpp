@@ -37,7 +37,6 @@
 #include "runtime/synchronizer.hpp"
 #include "utilities/macros.hpp"
 
-#ifndef CC_INTERP
 #define __ _masm->
 
 // Misc helpers
@@ -3777,4 +3776,3 @@ void TemplateTable::multianewarray() {
      call_VM(Otos_i, CAST_FROM_FN_PTR(address, InterpreterRuntime::multianewarray), O1);
   __ add(  Lesp,     Lscratch,        Lesp); // pop all dimensions off the stack
 }
-#endif /* !CC_INTERP */

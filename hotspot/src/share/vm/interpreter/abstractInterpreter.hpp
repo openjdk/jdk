@@ -48,22 +48,13 @@
 //                                                      Also code for populating interpreter
 //                                                      frames created during deoptimization.
 //
-// For both template and c++ interpreter. There are common files for aspects of the interpreter
-// that are generic to both interpreters. This is the layout:
-//
-// abstractInterpreter.hpp: generic description of the interpreter.
-// interpreter*:            generic frame creation and handling.
-//
-
-//------------------------------------------------------------------------------------------------------------------------
-// The C++ interface to the bytecode interpreter(s).
 
 class InterpreterMacroAssembler;
 
 class AbstractInterpreter: AllStatic {
   friend class VMStructs;
-  friend class Interpreter;
   friend class CppInterpreterGenerator;
+  friend class TemplateInterpreterGenerator;
  public:
   enum MethodKind {
     zerolocals,                                                 // method needs locals initialization
@@ -128,7 +119,6 @@ class AbstractInterpreter: AllStatic {
   static address    _rethrow_exception_entry;                   // rethrows an activation in previous frame
 
   friend class      AbstractInterpreterGenerator;
-  friend class              InterpreterGenerator;
   friend class      InterpreterMacroAssembler;
 
  public:
@@ -212,6 +202,29 @@ class AbstractInterpreter: AllStatic {
   const static int stackElementWords   = 1;
   const static int stackElementSize    = stackElementWords * wordSize;
   const static int logStackElementSize = LogBytesPerWord;
+
+  static int expr_index_at(int i) {
+    return stackElementWords * i;
+  }
+
+  static int expr_offset_in_bytes(int i) {
+#if !defined(ZERO) && (defined(PPC) || defined(SPARC))
+    return stackElementSize * i + wordSize;  // both point to one word past TOS
+#else
+    return stackElementSize * i;
+#endif
+  }
+
+  static int local_index_at(int i) {
+    assert(i <= 0, "local direction already negated");
+    return stackElementWords * i;
+  }
+
+#if !defined(ZERO) && (defined(IA32) || defined(AMD64))
+  static Address::ScaleFactor stackElementScale() {
+    return NOT_LP64(Address::times_4) LP64_ONLY(Address::times_8);
+  }
+#endif
 
   // Local values relative to locals[n]
   static int  local_offset_in_bytes(int n) {

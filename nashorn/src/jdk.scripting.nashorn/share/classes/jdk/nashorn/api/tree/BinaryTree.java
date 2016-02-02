@@ -34,7 +34,7 @@ package jdk.nashorn.api.tree;
  *   <em>leftOperand</em> <em>operator</em> <em>rightOperand</em>
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface BinaryTree extends ExpressionTree {
     /**

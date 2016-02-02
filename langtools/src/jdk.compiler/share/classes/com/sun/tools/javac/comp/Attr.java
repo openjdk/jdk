@@ -42,6 +42,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.code.Types.FunctionDescriptorLookupError;
+import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
 import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
 import com.sun.tools.javac.comp.Infer.FreeTypeListener;
@@ -238,7 +239,7 @@ public class Attr extends JCTree.Visitor {
             //this means we are dealing with a partially inferred poly expression
             owntype = shouldCheck ? resultInfo.pt : found;
             if (resultInfo.checkMode.installPostInferenceHook()) {
-                inferenceContext.addFreeTypeListener(List.of(found, resultInfo.pt),
+                inferenceContext.addFreeTypeListener(List.of(found),
                         instantiatedContext -> {
                             ResultInfo pendingResult =
                                     resultInfo.dup(inferenceContext.asInstType(resultInfo.pt));
@@ -885,40 +886,46 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitClassDef(JCClassDecl tree) {
-        // Local and anonymous classes have not been entered yet, so we need to
-        // do it now.
-        if (env.info.scope.owner.kind.matches(KindSelector.VAL_MTH)) {
-            enter.classEnter(tree, env);
-        } else {
-            // If this class declaration is part of a class level annotation,
-            // as in @MyAnno(new Object() {}) class MyClass {}, enter it in
-            // order to simplify later steps and allow for sensible error
-            // messages.
-            if (env.tree.hasTag(NEWCLASS) && TreeInfo.isInAnnotation(env, tree))
+        Optional<ArgumentAttr.LocalCacheContext> localCacheContext =
+                Optional.ofNullable(env.info.isSpeculative ?
+                        argumentAttr.withLocalCacheContext() : null);
+        try {
+            // Local and anonymous classes have not been entered yet, so we need to
+            // do it now.
+            if (env.info.scope.owner.kind.matches(KindSelector.VAL_MTH)) {
                 enter.classEnter(tree, env);
-        }
-
-        ClassSymbol c = tree.sym;
-        if (c == null) {
-            // exit in case something drastic went wrong during enter.
-            result = null;
-        } else {
-            // make sure class has been completed:
-            c.complete();
-
-            // If this class appears as an anonymous class
-            // in a superclass constructor call where
-            // no explicit outer instance is given,
-            // disable implicit outer instance from being passed.
-            // (This would be an illegal access to "this before super").
-            if (env.info.isSelfCall &&
-                env.tree.hasTag(NEWCLASS) &&
-                ((JCNewClass) env.tree).encl == null)
-            {
-                c.flags_field |= NOOUTERTHIS;
+            } else {
+                // If this class declaration is part of a class level annotation,
+                // as in @MyAnno(new Object() {}) class MyClass {}, enter it in
+                // order to simplify later steps and allow for sensible error
+                // messages.
+                if (env.tree.hasTag(NEWCLASS) && TreeInfo.isInAnnotation(env, tree))
+                    enter.classEnter(tree, env);
             }
-            attribClass(tree.pos(), c);
-            result = tree.type = c.type;
+
+            ClassSymbol c = tree.sym;
+            if (c == null) {
+                // exit in case something drastic went wrong during enter.
+                result = null;
+            } else {
+                // make sure class has been completed:
+                c.complete();
+
+                // If this class appears as an anonymous class
+                // in a superclass constructor call where
+                // no explicit outer instance is given,
+                // disable implicit outer instance from being passed.
+                // (This would be an illegal access to "this before super").
+                if (env.info.isSelfCall &&
+                        env.tree.hasTag(NEWCLASS) &&
+                        ((JCNewClass)env.tree).encl == null) {
+                    c.flags_field |= NOOUTERTHIS;
+                }
+                attribClass(tree.pos(), c);
+                result = tree.type = c.type;
+            }
+        } finally {
+            localCacheContext.ifPresent(LocalCacheContext::leave);
         }
     }
 
@@ -3873,8 +3880,6 @@ public class Attr extends JCTree.Visitor {
                    v.name != names._class;
         }
 
-    Warner noteWarner = new Warner();
-
     /**
      * Check that method arguments conform to its instantiation.
      **/
@@ -3928,7 +3933,7 @@ public class Attr extends JCTree.Visitor {
         // For methods, we need to compute the instance type by
         // Resolve.instantiate from the symbol's type as well as
         // any type arguments and value arguments.
-        noteWarner.clear();
+        Warner noteWarner = new Warner();
         try {
             Type owntype = rs.checkMethod(
                     env,

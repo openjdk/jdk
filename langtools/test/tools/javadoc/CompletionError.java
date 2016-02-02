@@ -27,7 +27,7 @@
  * @summary Check that CompletionFailures for missing classes are not incorrectly passed to
  *          the javadoc API clients.
  * @library /tools/lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc com.sun.tools.javac.api
  * @run main CompletionError
  */
 

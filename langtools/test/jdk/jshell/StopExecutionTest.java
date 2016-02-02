@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Test JShell#stop
+ * @modules jdk.jshell/jdk.internal.jshell.tool
  * @build KullaTesting TestingInputStream
  * @run testng StopExecutionTest
  */

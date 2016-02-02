@@ -166,9 +166,9 @@ class InlineTableSizes : StackObj {
 #undef INLINE_TABLE_PARAM
 #undef INLINE_TABLE_DECLARE
 
-
 class ConstMethod : public MetaspaceObj {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 
 public:
   typedef enum { NORMAL, OVERPASS } MethodType;

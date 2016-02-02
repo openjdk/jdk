@@ -2,7 +2,7 @@
 
 <!--
 
-   Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
    DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
    This code is free software; you can redistribute it and/or modify it
@@ -237,6 +237,7 @@
       <to>jdk.charsets</to>
       <to>jdk.management.resource</to>
       <to>jdk.scripting.nashorn</to>
+      <to>jdk.vm.ci</to>
     </export>
     <export>
       <name>jdk.internal.perf</name>
@@ -398,6 +399,7 @@
       <to>java.xml.crypto</to>
       <to>jdk.crypto.ec</to>
       <to>jdk.crypto.pkcs11</to>
+      <to>jdk.crypto.ucrypto</to>
       <to>jdk.naming.dns</to>
     </export>
     <export>
@@ -1641,6 +1643,10 @@
       <to>jdk.javadoc</to>
       <to>jdk.jdeps</to>
     </export>
+    <export>
+      <name>com.sun.tools.javac.model</name>
+      <to>jdk.javadoc</to>
+    </export>
   </module>
   <module>
     <name>jdk.crypto.ec</name>
@@ -1742,6 +1748,10 @@
     </export>
   </module>
   <module>
+    <name>jdk.internal.opt</name>
+    <depend>java.base</depend>
+  </module>
+  <module>
     <name>jdk.jartool</name>
     <depend>java.base</depend>
     <export>
@@ -1765,6 +1775,12 @@
     </export>
     <export>
       <name>com.sun.tools.javadoc</name>
+    </export>
+    <export>
+      <name>jdk.javadoc.doclet</name>  
+    </export>
+    <export>
+      <name>jdk.javadoc.doclet.taglet</name>  
     </export>
   </module>
   <module>

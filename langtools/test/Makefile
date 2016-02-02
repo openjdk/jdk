@@ -278,7 +278,7 @@ jtreg-tests: check-jtreg FRC
 	@mkdir -p $(JTREG_OUTPUT_DIR)
 	JT_JAVA=$(JT_JAVA) $(JTREG) \
 	  -J-Xmx512m \
-	  -vmoption:-Xmx768m \
+	  -vmoption:-Xmx1024m \
 	  -a -ignore:quiet $(if $(JTREG_VERBOSE),-v:$(JTREG_VERBOSE)) \
           -r:$(JTREG_OUTPUT_DIR)/JTreport \
           -w:$(JTREG_OUTPUT_DIR)/JTwork \
@@ -412,7 +412,15 @@ jck-runtime-summary: FRC
 	fi
 
 # Check to make sure these directories exist
-check-jck: $(JCK_HOME) $(PRODUCT_HOME)
+check-jck:
+	if [ ! -d '$(JCK_HOME)' ]; then \
+	    echo "JCK_HOME $(JCK_HOME) missing" ; \
+	    $(EXIT) 1 ; \
+	fi
+	if [ ! -d '$(PRODUCT_HOME)' ]; then \
+	    echo "PRODUCT_HOME $(PRODUCT_HOME) missing" ; \
+	    $(EXIT) 1 ; \
+	fi
 
 all-summary: FRC
 	@if [ -n "`find $(TEST_OUTPUT_DIR) -name status.txt`" ]; then

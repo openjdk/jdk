@@ -77,6 +77,8 @@ jdk_lang = \
     sun/misc \
     sun/reflect \
     jdk/lambda \
+    jdk/internal/misc \
+    jdk/internal/ref \
     vm
 
 # All of the java.util package
@@ -144,7 +146,8 @@ jdk_stream = \
     java/util/stream
 
 jdk_math = \
-    java/math
+    java/math \
+    jdk/internal/math
 
 jdk_io = \
     java/io

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2996,8 +2996,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             // Copy values and labels to arrays.
             final int       size   = tree.size();
-            final Integer[] values = tree.keySet().toArray(new Integer[size]);
-            final Label[]   labels = tree.values().toArray(new Label[size]);
+            final Integer[] values = tree.keySet().toArray(new Integer[0]);
+            final Label[]   labels = tree.values().toArray(new Label[0]);
 
             // Discern low, high and range.
             final int lo    = values[0];
@@ -5203,7 +5203,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 }
             }
         }
-        return names.toArray(new String[names.size()]);
+        return names.toArray(new String[0]);
     }
 
     private static String commonPrefix(final String s1, final String s2) {

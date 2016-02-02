@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,6 +414,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _max_switch_depth = 0;
   _est_switch_depth = 0;
 #endif
+
+  if (parse_method->has_reserved_stack_access()) {
+    C->set_has_reserved_stack_access(true);
+  }
 
   _tf = TypeFunc::make(method());
   _iter.reset_to_method(method());
@@ -958,6 +962,14 @@ void Parse::do_exits() {
            PPC64_ONLY(wrote_volatile() ||)
            (AlwaysSafeConstructors && wrote_fields()))) {
     _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
+
+    // If Memory barrier is created for final fields write
+    // and allocation node does not escape the initialize method,
+    // then barrier introduced by allocation node can be removed.
+    if (DoEscapeAnalysis && alloc_with_final()) {
+      AllocateNode *alloc = AllocateNode::Ideal_allocation(alloc_with_final(), &_gvn);
+      alloc->compute_MemBar_redundancy(method());
+    }
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();
       tty->print_cr(" writes finals and needs a memory barrier");

@@ -25,12 +25,16 @@
  * @test
  * @bug 8130880
  * @library lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.parser
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  * @run main sampleapi.SampleApiDefaultRunner -o:out/src
  * @run main SampleApiTest
  */
 
 import com.sun.tools.javadoc.*;
-import java.nio.file.Paths;
 
 public class SampleApiTest {
 

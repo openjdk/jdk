@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public interface FileOwnerAttributeView
     /**
      * Read the file owner.
      *
-     * <p> It it implementation specific if the file owner can be a {@link
+     * <p> It is implementation specific if the file owner can be a {@link
      * GroupPrincipal group}.
      *
      * @return  the file owner
@@ -78,7 +78,7 @@ public interface FileOwnerAttributeView
     /**
      * Updates the file owner.
      *
-     * <p> It it implementation specific if the file owner can be a {@link
+     * <p> It is implementation specific if the file owner can be a {@link
      * GroupPrincipal group}. To ensure consistent and correct behavior
      * across platforms it is recommended that this method should only be used
      * to set the file owner to a user principal that is not a group.

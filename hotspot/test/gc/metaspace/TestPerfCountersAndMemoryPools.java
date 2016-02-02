@@ -64,14 +64,18 @@ public class TestPerfCountersAndMemoryPools {
         throws Exception {
         MemoryPoolMXBean pool = getMemoryPool(memoryPoolName);
 
+        // First, call all the methods to let them allocate their own slab of metadata
+        getMinCapacity(perfNS);
+        getCapacity(perfNS);
+        getUsed(perfNS);
+        pool.getUsage().getInit();
+        pool.getUsage().getUsed();
+        pool.getUsage().getCommitted();
+        assertEQ(1L, 1L);
+
         // Must do a GC to update performance counters
         System.gc();
         assertEQ(getMinCapacity(perfNS), pool.getUsage().getInit());
-
-        // Must do a second GC to update the perfomance counters again, since
-        // the call pool.getUsage().getInit() could have allocated some
-        // metadata.
-        System.gc();
         assertEQ(getUsed(perfNS), pool.getUsage().getUsed());
         assertEQ(getCapacity(perfNS), pool.getUsage().getCommitted());
     }

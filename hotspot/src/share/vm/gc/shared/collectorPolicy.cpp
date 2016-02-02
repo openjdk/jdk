@@ -32,6 +32,7 @@
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
@@ -137,11 +138,8 @@ void CollectorPolicy::initialize_flags() {
 }
 
 void CollectorPolicy::initialize_size_info() {
-  if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print_cr("Minimum heap " SIZE_FORMAT "  Initial heap "
-      SIZE_FORMAT "  Maximum heap " SIZE_FORMAT,
-      _min_heap_byte_size, _initial_heap_byte_size, _max_heap_byte_size);
-  }
+  log_debug(gc, heap)("Minimum heap " SIZE_FORMAT "  Initial heap " SIZE_FORMAT "  Maximum heap " SIZE_FORMAT,
+                      _min_heap_byte_size, _initial_heap_byte_size, _max_heap_byte_size);
 
   DEBUG_ONLY(CollectorPolicy::assert_size_info();)
 }
@@ -488,11 +486,8 @@ void GenCollectorPolicy::initialize_size_info() {
     }
   }
 
-  if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print_cr("1: Minimum young " SIZE_FORMAT "  Initial young "
-      SIZE_FORMAT "  Maximum young " SIZE_FORMAT,
-      _min_young_size, _initial_young_size, _max_young_size);
-  }
+  log_trace(gc, heap)("1: Minimum young " SIZE_FORMAT "  Initial young " SIZE_FORMAT "  Maximum young " SIZE_FORMAT,
+                      _min_young_size, _initial_young_size, _max_young_size);
 
   // At this point the minimum, initial and maximum sizes
   // of the overall heap and of the young generation have been determined.
@@ -558,11 +553,8 @@ void GenCollectorPolicy::initialize_size_info() {
       _initial_young_size = desired_young_size;
     }
 
-    if (PrintGCDetails && Verbose) {
-      gclog_or_tty->print_cr("2: Minimum young " SIZE_FORMAT "  Initial young "
-        SIZE_FORMAT "  Maximum young " SIZE_FORMAT,
-        _min_young_size, _initial_young_size, _max_young_size);
-    }
+    log_trace(gc, heap)("2: Minimum young " SIZE_FORMAT "  Initial young " SIZE_FORMAT "  Maximum young " SIZE_FORMAT,
+                    _min_young_size, _initial_young_size, _max_young_size);
   }
 
   // Write back to flags if necessary.
@@ -578,11 +570,8 @@ void GenCollectorPolicy::initialize_size_info() {
     FLAG_SET_ERGO(size_t, OldSize, _initial_old_size);
   }
 
-  if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print_cr("Minimum old " SIZE_FORMAT "  Initial old "
-      SIZE_FORMAT "  Maximum old " SIZE_FORMAT,
-      _min_old_size, _initial_old_size, _max_old_size);
-  }
+  log_trace(gc, heap)("Minimum old " SIZE_FORMAT "  Initial old " SIZE_FORMAT "  Maximum old " SIZE_FORMAT,
+                  _min_old_size, _initial_old_size, _max_old_size);
 
   DEBUG_ONLY(GenCollectorPolicy::assert_size_info();)
 }
@@ -620,10 +609,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
     uint gc_count_before;  // Read inside the Heap_lock locked region.
     {
       MutexLocker ml(Heap_lock);
-      if (PrintGC && Verbose) {
-        gclog_or_tty->print_cr("GenCollectorPolicy::mem_allocate_work:"
-                               " attempting locked slow path allocation");
-      }
+      log_trace(gc, alloc)("GenCollectorPolicy::mem_allocate_work: attempting locked slow path allocation");
       // Note that only large objects get a shot at being
       // allocated in later generations.
       bool first_only = ! should_try_older_generation_allocation(size);
@@ -757,9 +743,7 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
                        is_tlab,                   // is_tlab
                        GenCollectedHeap::OldGen); // max_generation
   } else {
-    if (Verbose && PrintGCDetails) {
-      gclog_or_tty->print(" :: Trying full because partial may fail :: ");
-    }
+    log_trace(gc)(" :: Trying full because partial may fail :: ");
     // Try a full collection; see delta for bug id 6266275
     // for the original code and why this has been simplified
     // with from-space allocation criteria modified and

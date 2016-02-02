@@ -284,7 +284,6 @@ class Arguments : AllStatic {
 
   // Option flags
   static bool   _has_profile;
-  static const char*  _gc_log_filename;
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
 
@@ -446,6 +445,7 @@ class Arguments : AllStatic {
   // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
   // Return NULL if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
+  static bool lookup_logging_aliases(const char* arg, char* buffer);
 
   static short  CompileOnlyClassesNum;
   static short  CompileOnlyClassesMax;
@@ -542,9 +542,6 @@ class Arguments : AllStatic {
   static bool sun_java_launcher_is_altjvm();
   // -Dsun.java.launcher.pid
   static int sun_java_launcher_pid()        { return _sun_java_launcher_pid; }
-
-  // -Xloggc:<file>, if not specified will be NULL
-  static const char* gc_log_filename()      { return _gc_log_filename; }
 
   // -Xprof
   static bool has_profile()                 { return _has_profile; }

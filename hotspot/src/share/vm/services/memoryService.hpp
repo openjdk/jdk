@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/generation.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
 #include "services/memoryUsage.hpp"
@@ -164,7 +165,7 @@ public:
 
   static void oops_do(OopClosure* f);
 
-  static bool get_verbose() { return PrintGC; }
+  static bool get_verbose() { return log_is_enabled(Info, gc); }
   static bool set_verbose(bool verbose);
 
   // Create an instance of java/lang/management/MemoryUsage

@@ -27,6 +27,7 @@
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/workgroup.hpp"
+#include "logging/log.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/ostream.hpp"
 elapsedTimer AdaptiveSizePolicy::_minor_timer;
@@ -166,14 +167,12 @@ uint AdaptiveSizePolicy::calc_default_active_workers(uintx total_workers,
       "Jiggled active workers too much");
   }
 
-  if (TraceDynamicGCThreads) {
-     gclog_or_tty->print_cr("GCTaskManager::calc_default_active_workers() : "
-       "active_workers(): " UINTX_FORMAT "  new_active_workers: " UINTX_FORMAT "  "
-       "prev_active_workers: " UINTX_FORMAT "\n"
-       " active_workers_by_JT: " UINTX_FORMAT "  active_workers_by_heap_size: " UINTX_FORMAT,
-       active_workers, new_active_workers, prev_active_workers,
-       active_workers_by_JT, active_workers_by_heap_size);
-  }
+   log_trace(gc, task)("GCTaskManager::calc_default_active_workers() : "
+     "active_workers(): " UINTX_FORMAT "  new_active_workers: " UINTX_FORMAT "  "
+     "prev_active_workers: " UINTX_FORMAT "\n"
+     " active_workers_by_JT: " UINTX_FORMAT "  active_workers_by_heap_size: " UINTX_FORMAT,
+     active_workers, new_active_workers, prev_active_workers,
+     active_workers_by_JT, active_workers_by_heap_size);
   assert(new_active_workers > 0, "Always need at least 1");
   return new_active_workers;
 }
@@ -275,14 +274,10 @@ void AdaptiveSizePolicy::minor_collection_end(GCCause::Cause gc_cause) {
     update_minor_pause_young_estimator(minor_pause_in_ms);
     update_minor_pause_old_estimator(minor_pause_in_ms);
 
-    if (PrintAdaptiveSizePolicy && Verbose) {
-      gclog_or_tty->print("AdaptiveSizePolicy::minor_collection_end: "
-                          "minor gc cost: %f  average: %f", collection_cost,
-                          _avg_minor_gc_cost->average());
-      gclog_or_tty->print_cr("  minor pause: %f minor period %f",
-                             minor_pause_in_ms,
-                             _latest_minor_mutator_interval_seconds * MILLIUNITS);
-    }
+    log_trace(gc, ergo)("AdaptiveSizePolicy::minor_collection_end: minor gc cost: %f  average: %f",
+                        collection_cost, _avg_minor_gc_cost->average());
+    log_trace(gc, ergo)("  minor pause: %f minor period %f",
+                        minor_pause_in_ms, _latest_minor_mutator_interval_seconds * MILLIUNITS);
 
     // Calculate variable used to estimate collection cost vs. gen sizes
     assert(collection_cost >= 0.0, "Expected to be non-negative");
@@ -388,13 +383,10 @@ double AdaptiveSizePolicy::decaying_gc_cost() const {
 
       // Decay using the time-since-last-major-gc
       decayed_major_gc_cost = decaying_major_gc_cost();
-      if (PrintGCDetails && Verbose) {
-        gclog_or_tty->print_cr("\ndecaying_gc_cost: major interval average:"
-          " %f  time since last major gc: %f",
-          avg_major_interval, time_since_last_major_gc);
-        gclog_or_tty->print_cr("  major gc cost: %f  decayed major gc cost: %f",
-          major_gc_cost(), decayed_major_gc_cost);
-      }
+      log_trace(gc, ergo)("decaying_gc_cost: major interval average: %f  time since last major gc: %f",
+                    avg_major_interval, time_since_last_major_gc);
+      log_trace(gc, ergo)("  major gc cost: %f  decayed major gc cost: %f",
+                    major_gc_cost(), decayed_major_gc_cost);
     }
   }
   double result = MIN2(1.0, decayed_major_gc_cost + minor_gc_cost());
@@ -461,21 +453,17 @@ void AdaptiveSizePolicy::check_gc_overhead_limit(
   promo_limit = MAX2(promo_limit, _promo_size);
 
 
-  if (PrintAdaptiveSizePolicy && (Verbose ||
-      (free_in_old_gen < (size_t) mem_free_old_limit &&
-       free_in_eden < (size_t) mem_free_eden_limit))) {
-    gclog_or_tty->print_cr(
-          "PSAdaptiveSizePolicy::check_gc_overhead_limit:"
-          " promo_limit: " SIZE_FORMAT
-          " max_eden_size: " SIZE_FORMAT
-          " total_free_limit: " SIZE_FORMAT
-          " max_old_gen_size: " SIZE_FORMAT
-          " max_eden_size: " SIZE_FORMAT
-          " mem_free_limit: " SIZE_FORMAT,
-          promo_limit, max_eden_size, total_free_limit,
-          max_old_gen_size, max_eden_size,
-          (size_t) mem_free_limit);
-  }
+  log_trace(gc, ergo)(
+        "PSAdaptiveSizePolicy::check_gc_overhead_limit:"
+        " promo_limit: " SIZE_FORMAT
+        " max_eden_size: " SIZE_FORMAT
+        " total_free_limit: " SIZE_FORMAT
+        " max_old_gen_size: " SIZE_FORMAT
+        " max_eden_size: " SIZE_FORMAT
+        " mem_free_limit: " SIZE_FORMAT,
+        promo_limit, max_eden_size, total_free_limit,
+        max_old_gen_size, max_eden_size,
+        (size_t) mem_free_limit);
 
   bool print_gc_overhead_limit_would_be_exceeded = false;
   if (is_full_gc) {
@@ -521,10 +509,7 @@ void AdaptiveSizePolicy::check_gc_overhead_limit(
           bool near_limit = gc_overhead_limit_near();
           if (near_limit) {
             collector_policy->set_should_clear_all_soft_refs(true);
-            if (PrintGCDetails && Verbose) {
-              gclog_or_tty->print_cr("  Nearing GC overhead limit, "
-                "will be clearing all SoftReference");
-            }
+            log_trace(gc, ergo)("Nearing GC overhead limit, will be clearing all SoftReference");
           }
         }
       }
@@ -540,26 +525,25 @@ void AdaptiveSizePolicy::check_gc_overhead_limit(
     }
   }
 
-  if (UseGCOverheadLimit && PrintGCDetails && Verbose) {
+  if (UseGCOverheadLimit) {
     if (gc_overhead_limit_exceeded()) {
-      gclog_or_tty->print_cr("      GC is exceeding overhead limit "
-        "of " UINTX_FORMAT "%%", GCTimeLimit);
+      log_trace(gc, ergo)("GC is exceeding overhead limit of " UINTX_FORMAT "%%", GCTimeLimit);
       reset_gc_overhead_limit_count();
     } else if (print_gc_overhead_limit_would_be_exceeded) {
       assert(gc_overhead_limit_count() > 0, "Should not be printing");
-      gclog_or_tty->print_cr("      GC would exceed overhead limit "
-        "of " UINTX_FORMAT "%% %d consecutive time(s)",
-        GCTimeLimit, gc_overhead_limit_count());
+      log_trace(gc, ergo)("GC would exceed overhead limit of " UINTX_FORMAT "%% %d consecutive time(s)",
+                          GCTimeLimit, gc_overhead_limit_count());
     }
   }
 }
 // Printing
 
-bool AdaptiveSizePolicy::print_adaptive_size_policy_on(outputStream* st) const {
+bool AdaptiveSizePolicy::print() const {
+  assert(UseAdaptiveSizePolicy, "UseAdaptiveSizePolicy need to be enabled.");
 
-  //  Should only be used with adaptive size policy turned on.
-  // Otherwise, there may be variables that are undefined.
-  if (!UseAdaptiveSizePolicy) return false;
+  if (!log_is_enabled(Debug, gc, ergo)) {
+    return false;
+  }
 
   // Print goal for which action is needed.
   char* action = NULL;
@@ -627,41 +611,24 @@ bool AdaptiveSizePolicy::print_adaptive_size_policy_on(outputStream* st) const {
     tenured_gen_action = shrink_msg;
   }
 
-  st->print_cr("    UseAdaptiveSizePolicy actions to meet %s", action);
-  st->print_cr("                       GC overhead (%%)");
-  st->print_cr("    Young generation:     %7.2f\t  %s",
-    100.0 * avg_minor_gc_cost()->average(),
-    young_gen_action);
-  st->print_cr("    Tenured generation:   %7.2f\t  %s",
-    100.0 * avg_major_gc_cost()->average(),
-    tenured_gen_action);
+  log_debug(gc, ergo)("UseAdaptiveSizePolicy actions to meet %s", action);
+  log_debug(gc, ergo)("                       GC overhead (%%)");
+  log_debug(gc, ergo)("    Young generation:     %7.2f\t  %s",
+                      100.0 * avg_minor_gc_cost()->average(), young_gen_action);
+  log_debug(gc, ergo)("    Tenured generation:   %7.2f\t  %s",
+                      100.0 * avg_major_gc_cost()->average(), tenured_gen_action);
   return true;
 }
 
-bool AdaptiveSizePolicy::print_adaptive_size_policy_on(
-                                            outputStream* st,
-                                            uint tenuring_threshold_arg) const {
-  if (!AdaptiveSizePolicy::print_adaptive_size_policy_on(st)) {
-    return false;
-  }
-
+void AdaptiveSizePolicy::print_tenuring_threshold( uint new_tenuring_threshold_arg) const {
   // Tenuring threshold
-  bool tenuring_threshold_changed = true;
   if (decrement_tenuring_threshold_for_survivor_limit()) {
-    st->print("    Tenuring threshold:    (attempted to decrease to avoid"
-              " survivor space overflow) = ");
+    log_debug(gc, ergo)("Tenuring threshold: (attempted to decrease to avoid survivor space overflow) = %u", new_tenuring_threshold_arg);
   } else if (decrement_tenuring_threshold_for_gc_cost()) {
-    st->print("    Tenuring threshold:    (attempted to decrease to balance"
-              " GC costs) = ");
+    log_debug(gc, ergo)("Tenuring threshold: (attempted to decrease to balance GC costs) = %u", new_tenuring_threshold_arg);
   } else if (increment_tenuring_threshold_for_gc_cost()) {
-    st->print("    Tenuring threshold:    (attempted to increase to balance"
-              " GC costs) = ");
+    log_debug(gc, ergo)("Tenuring threshold: (attempted to increase to balance GC costs) = %u", new_tenuring_threshold_arg);
   } else {
-    tenuring_threshold_changed = false;
     assert(!tenuring_threshold_change(), "(no change was attempted)");
   }
-  if (tenuring_threshold_changed) {
-    st->print_cr("%u", tenuring_threshold_arg);
-  }
-  return true;
 }

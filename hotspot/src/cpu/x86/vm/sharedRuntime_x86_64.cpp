@@ -189,7 +189,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       }
       // Save full ZMM registes(16..num_xmm_regs)
       base_addr = XSAVE_AREA_UPPERBANK;
-      int off = 0;
+      off = 0;
       int vector_len = Assembler::AVX_512bit;
       for (int n = 16; n < num_xmm_regs; n++) {
         __ evmovdqul(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n), vector_len);
@@ -199,7 +199,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     if (VM_Version::supports_evex()) {
       // Save upper bank of ZMM registers(16..31) for double/float usage
       int base_addr = XSAVE_AREA_UPPERBANK;
-      int off = 0;
+      off = 0;
       for (int n = 16; n < num_xmm_regs; n++) {
         __ movsd(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n));
       }
@@ -325,7 +325,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     assert(MaxVectorSize == 64, "only 512bit vectors are supported now");
   }
 #else
-  assert(!save_vectors, "vectors are generated only by C2");
+  assert(!restore_vectors, "vectors are generated only by C2");
 #endif
 
   // On EVEX enabled targets everything is handled in pop fpu state
@@ -2065,7 +2065,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Generate stack overflow check
 
   if (UseStackBanging) {
-    __ bang_stack_with_offset(StackShadowPages*os::vm_page_size());
+    __ bang_stack_with_offset((int)JavaThread::stack_shadow_zone_size());
   } else {
     // need a 5 byte instruction to allow MT safe patching to non-entrant
     __ fat_nop();
@@ -2499,7 +2499,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label reguard;
   Label reguard_done;
-  __ cmpl(Address(r15_thread, JavaThread::stack_guard_state_offset()), JavaThread::stack_guard_yellow_disabled);
+  __ cmpl(Address(r15_thread, JavaThread::stack_guard_state_offset()), JavaThread::stack_guard_yellow_reserved_disabled);
   __ jcc(Assembler::equal, reguard);
   __ bind(reguard_done);
 
@@ -3021,29 +3021,13 @@ void SharedRuntime::generate_deopt_blob() {
   Label loop;
   __ bind(loop);
   __ movptr(rbx, Address(rsi, 0));      // Load frame size
-#ifdef CC_INTERP
-  __ subptr(rbx, 4*wordSize);           // we'll push pc and ebp by hand and
-#ifdef ASSERT
-  __ push(0xDEADDEAD);                  // Make a recognizable pattern
-  __ push(0xDEADDEAD);
-#else /* ASSERT */
-  __ subptr(rsp, 2*wordSize);           // skip the "static long no_param"
-#endif /* ASSERT */
-#else
   __ subptr(rbx, 2*wordSize);           // We'll push pc and ebp by hand
-#endif // CC_INTERP
   __ pushptr(Address(rcx, 0));          // Save return address
   __ enter();                           // Save old & set new ebp
   __ subptr(rsp, rbx);                  // Prolog
-#ifdef CC_INTERP
-  __ movptr(Address(rbp,
-                  -(sizeof(BytecodeInterpreter)) + in_bytes(byte_offset_of(BytecodeInterpreter, _sender_sp))),
-            sender_sp); // Make it walkable
-#else /* CC_INTERP */
   // This value is corrected by layout_activation_impl
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD );
   __ movptr(Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize), sender_sp); // Make it walkable
-#endif /* CC_INTERP */
   __ mov(sender_sp, rsp);               // Pass sender_sp to next frame
   __ addptr(rsi, wordSize);             // Bump array pointer (sizes)
   __ addptr(rcx, wordSize);             // Bump array pointer (pcs)
@@ -3242,16 +3226,10 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ pushptr(Address(rcx, 0));     // Save return address
   __ enter();                      // Save old & set new rbp
   __ subptr(rsp, rbx);             // Prolog
-#ifdef CC_INTERP
-  __ movptr(Address(rbp,
-                  -(sizeof(BytecodeInterpreter)) + in_bytes(byte_offset_of(BytecodeInterpreter, _sender_sp))),
-            sender_sp); // Make it walkable
-#else // CC_INTERP
   __ movptr(Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize),
             sender_sp);            // Make it walkable
   // This value is corrected by layout_activation_impl
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD );
-#endif // CC_INTERP
   __ mov(sender_sp, rsp);          // Pass sender_sp to next frame
   __ addptr(rsi, wordSize);        // Bump array pointer (sizes)
   __ addptr(rcx, wordSize);        // Bump array pointer (pcs)

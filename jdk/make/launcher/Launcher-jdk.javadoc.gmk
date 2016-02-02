@@ -26,7 +26,7 @@
 include LauncherCommon.gmk
 
 $(eval $(call SetupBuildLauncher, javadoc, \
-    MAIN_CLASS := com.sun.tools.javadoc.Main, \
+    MAIN_CLASS := jdk.javadoc.internal.tool.Main, \
     CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS \
         -DNEVER_ACT_AS_SERVER_CLASS_MACHINE, \
 ))

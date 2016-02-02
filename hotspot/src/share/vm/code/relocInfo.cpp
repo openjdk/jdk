@@ -581,13 +581,14 @@ void virtual_call_Relocation::pack_data_to(CodeSection* dest) {
 
   normalize_address(_cached_value, dest);
   jint x0 = scaled_offset_null_special(_cached_value, point);
-  p = pack_1_int_to(p, x0);
+  p = pack_2_ints_to(p, x0, _method_index);
   dest->set_locs_end((relocInfo*) p);
 }
 
 
 void virtual_call_Relocation::unpack_data() {
-  jint x0 = unpack_1_int();
+  jint x0 = 0;
+  unpack_2_ints(x0, _method_index);
   address point = addr();
   _cached_value = x0==0? NULL: address_from_scaled_offset(x0, point);
 }
@@ -793,6 +794,12 @@ address virtual_call_Relocation::cached_value() {
   return _cached_value;
 }
 
+Method* virtual_call_Relocation::method_value() {
+  Metadata* m = code()->metadata_at(_method_index);
+  assert(m != NULL || _method_index == 0, "should be non-null for non-zero index");
+  assert(m == NULL || m->is_method(), "not a method");
+  return (Method*)m;
+}
 
 void virtual_call_Relocation::clear_inline_cache() {
   // No stubs for ICs
@@ -802,6 +809,23 @@ void virtual_call_Relocation::clear_inline_cache() {
   icache->set_to_clean();
 }
 
+
+void opt_virtual_call_Relocation::pack_data_to(CodeSection* dest) {
+  short* p = (short*) dest->locs_end();
+  p = pack_1_int_to(p, _method_index);
+  dest->set_locs_end((relocInfo*) p);
+}
+
+void opt_virtual_call_Relocation::unpack_data() {
+  _method_index = unpack_1_int();
+}
+
+Method* opt_virtual_call_Relocation::method_value() {
+  Metadata* m = code()->metadata_at(_method_index);
+  assert(m != NULL || _method_index == 0, "should be non-null for non-zero index");
+  assert(m == NULL || m->is_method(), "not a method");
+  return (Method*)m;
+}
 
 void opt_virtual_call_Relocation::clear_inline_cache() {
   // No stubs for ICs
@@ -827,6 +851,22 @@ address opt_virtual_call_Relocation::static_stub() {
   return NULL;
 }
 
+Method* static_call_Relocation::method_value() {
+  Metadata* m = code()->metadata_at(_method_index);
+  assert(m != NULL || _method_index == 0, "should be non-null for non-zero index");
+  assert(m == NULL || m->is_method(), "not a method");
+  return (Method*)m;
+}
+
+void static_call_Relocation::pack_data_to(CodeSection* dest) {
+  short* p = (short*) dest->locs_end();
+  p = pack_1_int_to(p, _method_index);
+  dest->set_locs_end((relocInfo*) p);
+}
+
+void static_call_Relocation::unpack_data() {
+  _method_index = unpack_1_int();
+}
 
 void static_call_Relocation::clear_inline_cache() {
   // Safe call site info
@@ -1014,6 +1054,12 @@ void RelocIterator::print_current() {
       break;
     }
   case relocInfo::static_call_type:
+    {
+      static_call_Relocation* r = (static_call_Relocation*) reloc();
+      tty->print(" | [destination=" INTPTR_FORMAT " metadata=" INTPTR_FORMAT "]",
+                 p2i(r->destination()), p2i(r->method_value()));
+      break;
+    }
   case relocInfo::runtime_call_type:
     {
       CallRelocation* r = (CallRelocation*) reloc();
@@ -1023,8 +1069,8 @@ void RelocIterator::print_current() {
   case relocInfo::virtual_call_type:
     {
       virtual_call_Relocation* r = (virtual_call_Relocation*) reloc();
-      tty->print(" | [destination=" INTPTR_FORMAT " cached_value=" INTPTR_FORMAT "]",
-                 p2i(r->destination()), p2i(r->cached_value()));
+      tty->print(" | [destination=" INTPTR_FORMAT " cached_value=" INTPTR_FORMAT " metadata=" INTPTR_FORMAT "]",
+                 p2i(r->destination()), p2i(r->cached_value()), p2i(r->method_value()));
       break;
     }
   case relocInfo::static_stub_type:
@@ -1037,6 +1083,13 @@ void RelocIterator::print_current() {
     {
       trampoline_stub_Relocation* r = (trampoline_stub_Relocation*) reloc();
       tty->print(" | [trampoline owner=" INTPTR_FORMAT "]", p2i(r->owner()));
+      break;
+    }
+  case relocInfo::opt_virtual_call_type:
+    {
+      opt_virtual_call_Relocation* r = (opt_virtual_call_Relocation*) reloc();
+      tty->print(" | [destination=" INTPTR_FORMAT " metadata=" INTPTR_FORMAT "]",
+                 p2i(r->destination()), p2i(r->method_value()));
       break;
     }
   }

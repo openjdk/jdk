@@ -39,7 +39,10 @@ class GCId : public AllStatic {
   static const uint current();
   // Same as current() but can return undefined() if no GC id is currently active
   static const uint current_raw();
+  // Returns the next expected GCId.
+  static const uint peek();
   static const uint undefined() { return UNDEFINED; }
+  static size_t print_prefix(char* buf, size_t len);
 };
 
 class GCIdMark : public StackObj {

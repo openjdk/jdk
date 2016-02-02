@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,6 @@ import java.nio.file.attribute.*;
 import com.sun.tools.sjavac.Main;
 
 public class SJavacTester {
-
-    static final String SERVER_ARG = "--server:"
-            + "portfile=testportfile,"
-            + "background=false";
 
     final ToolBox tb = new ToolBox();
     final Path TEST_ROOT = Paths.get(getClass().getSimpleName());
@@ -90,7 +86,6 @@ public class SJavacTester {
                 "--state-dir=" + BIN,
                 "-h", HEADERS.toString(),
                 "-j", "1",
-                SERVER_ARG,
                 "--log=debug");
     }
 

@@ -41,7 +41,7 @@ public class TestVMOptions {
         "-XX:+IgnoreUnrecognizedVMOptions",
         "-XX:+PrintFlagsInitial");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("bool PrintGCDetails");
+    output.shouldContain("bool UseSerialGC");
 
     pb = ProcessTools.createJavaProcessBuilder(
         "-XX:-PrintVMOptions", "-version");

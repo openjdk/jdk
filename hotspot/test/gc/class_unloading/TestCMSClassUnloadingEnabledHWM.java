@@ -59,9 +59,7 @@ public class TestCMSClassUnloadingEnabledHWM {
       "-Xmn" + YoungGenSize,
       "-XX:+UseConcMarkSweepGC",
       "-XX:" + (enableUnloading ? "+" : "-") + "CMSClassUnloadingEnabled",
-      "-XX:+PrintHeapAtGC",
-      "-XX:+PrintGCDetails",
-      "-XX:+PrintGCTimeStamps",
+      "-Xlog:gc",
       TestCMSClassUnloadingEnabledHWM.AllocateBeyondMetaspaceSize.class.getName(),
       "" + MetaspaceSize);
     return new OutputAnalyzer(pb.start());
@@ -79,16 +77,16 @@ public class TestCMSClassUnloadingEnabledHWM {
     // -XX:-CMSClassUnloadingEnabled is used, so we expect a full GC instead of a concurrent cycle.
     OutputAnalyzer out = runWithoutCMSClassUnloading();
 
-    out.shouldMatch(".*Full GC.*");
-    out.shouldNotMatch(".*CMS Initial Mark.*");
+    out.shouldMatch(".*Pause Full.*");
+    out.shouldNotMatch(".*Pause Initial Mark.*");
   }
 
   public static void testWithCMSClassUnloading() throws Exception {
     // -XX:+CMSClassUnloadingEnabled is used, so we expect a concurrent cycle instead of a full GC.
     OutputAnalyzer out = runWithCMSClassUnloading();
 
-    out.shouldMatch(".*CMS Initial Mark.*");
-    out.shouldNotMatch(".*Full GC.*");
+    out.shouldMatch(".*Pause Initial Mark.*");
+    out.shouldNotMatch(".*Pause Full.*");
   }
 
   public static void main(String args[]) throws Exception {

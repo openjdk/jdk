@@ -48,8 +48,6 @@ public class EnumMapBash {
         bash(Silly500.class);
     }
 
-    private static Enum[] ZERO_LENGTH_ENUM_ARRAY = new Enum[0];
-
     static <T extends Enum<T>> void bash(Class<T> enumClass) {
         Enum[] universe = enumClass.getEnumConstants();
 

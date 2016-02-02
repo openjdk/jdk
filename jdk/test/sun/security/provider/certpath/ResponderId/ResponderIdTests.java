@@ -25,6 +25,8 @@
  * @test
  * @bug 8046321
  * @summary OCSP Stapling for TLS (ResponderId tests)
+ * @modules java.base/sun.security.provider.certpath
+ *          java.base/sun.security.x509
  */
 
 import java.io.*;

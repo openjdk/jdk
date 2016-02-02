@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,6 @@
 
 
 #ifdef COMPILER2
-
-// SP adjustment (must use unextended SP) for method handle call sites
-// during exception handling.
-static intptr_t adjust_SP_for_methodhandle_callsite(JavaThread *thread) {
-  RegisterMap map(thread, false);
-  // The frame constructor will do the correction for us (see frame::adjust_unextended_SP).
-  frame mh_caller_frame = thread->last_frame().sender(&map);
-  assert(mh_caller_frame.is_compiled_frame(), "Only may reach here for compiled MH call sites");
-  return (intptr_t) mh_caller_frame.unextended_sp();
-}
 
 //------------------------------generate_exception_blob---------------------------
 // Creates exception blob at the end.
@@ -129,17 +119,10 @@ void OptoRuntime::generate_exception_blob() {
   OopMapSet* oop_maps = new OopMapSet();
   oop_maps->add_gc_map(calls_return_pc - start, map);
 
-  // Get unextended_sp for method handle call sites.
-  Label mh_callsite, mh_done; // Use a 2nd c call if it's a method handle call site.
-  __ lwa(R4_ARG2, in_bytes(JavaThread::is_method_handle_return_offset()), R16_thread);
-  __ cmpwi(CCR0, R4_ARG2, 0);
-  __ bne(CCR0, mh_callsite);
-
   __ mtctr(R3_RET); // Move address of exception handler to SR_CTR.
   __ reset_last_Java_frame();
   __ pop_frame();
 
-  __ bind(mh_done);
   // We have a handler in register SR_CTR (could be deopt blob).
 
   // Get the exception oop.
@@ -160,25 +143,6 @@ void OptoRuntime::generate_exception_blob() {
   // Move exception pc into SR_LR.
   __ mtlr(R4_ARG2);
   __ bctr();
-
-
-  // Same as above, but also set sp to unextended_sp.
-  __ bind(mh_callsite);
-  __ mr(R31, R3_RET); // Save branch address.
-  __ mr(R3_ARG1, R16_thread);
-#if defined(ABI_ELFv2)
-  __ call_c((address) adjust_SP_for_methodhandle_callsite, relocInfo::none);
-#else
-  __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, adjust_SP_for_methodhandle_callsite), relocInfo::none);
-#endif
-  // Returns unextended_sp in R3_RET.
-
-  __ mtctr(R31); // Move address of exception handler to SR_CTR.
-  __ reset_last_Java_frame();
-
-  __ mr(R1_SP, R3_RET); // Set sp to unextended_sp.
-  __ b(mh_done);
-
 
   // Make sure all code is generated.
   masm->flush();

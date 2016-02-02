@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.Map;
  *
  * JAXBContextFactory can be located using {@link java.util.ServiceLoader#load(Class)}
  *
- * @since 1.9, JAXB 2.3
+ * @since 9, JAXB 2.3
  */
 public interface JAXBContextFactory {
 
@@ -56,19 +56,12 @@ public interface JAXBContextFactory {
      *
      * @throws JAXBException
      *      if an error was encountered while creating the
-     *      {@code JAXBContext}, such as (but not limited to):
-     * <ol>
-     *  <li>Classes use JAXB annotations incorrectly
-     *  <li>Classes have colliding annotations (i.e., two classes with the same type name)
-     *  <li>The JAXB implementation was unable to locate
-     *      provider-specific out-of-band information (such as additional
-     *      files generated at the development time.)
-     * </ol>
+     *      {@code JAXBContext}. See {@link JAXBContext#newInstance(Class[], Map)} for details.
      *
      * @throws IllegalArgumentException
      *      if the parameter contains {@code null} (i.e., {@code newInstance(null,someMap);})
      *
-     * @since 1.9, JAXB 2.3
+     * @since 9, JAXB 2.3
      */
     JAXBContext createContext(Class<?>[] classesToBeBound,
                               Map<String, ?> properties ) throws JAXBException;
@@ -81,7 +74,7 @@ public interface JAXBContextFactory {
      * For semantics see {@link javax.xml.bind.JAXBContext#newInstance(String, ClassLoader, java.util.Map)}
      *
      * <p>
-     * The interpretation of properties is up to implementations. Implementations should
+     * The interpretation of properties is up to implementations. Implementations must
      * throw {@code JAXBException} if it finds properties that it doesn't understand.
      *
      * @param contextPath list of java package names that contain schema derived classes
@@ -93,14 +86,9 @@ public interface JAXBContextFactory {
      *
      * @return a new instance of a {@code JAXBContext}
      * @throws JAXBException if an error was encountered while creating the
-     *                       {@code JAXBContext} such as
-     * <ol>
-     *   <li>failure to locate either ObjectFactory.class or jaxb.index in the packages</li>
-     *   <li>an ambiguity among global elements contained in the contextPath</li>
-     *   <li>failure to locate a value for the context factory provider property</li>
-     *   <li>mixing schema derived packages from different providers on the same contextPath</li>
-     * </ol>
-     * @since 1.9, JAXB 2.3
+     *      {@code JAXBContext}. See {@link JAXBContext#newInstance(String, ClassLoader, Map)} for details.
+     *
+     * @since 9, JAXB 2.3
      */
     JAXBContext createContext(String contextPath,
                               ClassLoader classLoader,

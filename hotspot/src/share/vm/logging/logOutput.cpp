@@ -37,9 +37,6 @@ LogOutput::~LogOutput() {
 }
 
 void LogOutput::clear_config_string() {
-  assert(LogConfiguration_lock == NULL || LogConfiguration_lock->owned_by_self(),
-         "Must hold configuration lock to modify config string");
-
   os::free(_config_string);
   _config_string_buffer_size = InitialConfigBufferSize;
   _config_string = NEW_C_HEAP_ARRAY(char, _config_string_buffer_size, mtLogging);
@@ -47,18 +44,12 @@ void LogOutput::clear_config_string() {
 }
 
 void LogOutput::set_config_string(const char* string) {
-  assert(LogConfiguration_lock == NULL || LogConfiguration_lock->owned_by_self(),
-         "Must hold configuration lock to modify config string");
-
   os::free(_config_string);
   _config_string = os::strdup(string, mtLogging);
   _config_string_buffer_size = strlen(_config_string) + 1;
 }
 
 void LogOutput::add_to_config_string(const LogTagSet* ts, LogLevelType level) {
-  assert(LogConfiguration_lock == NULL || LogConfiguration_lock->owned_by_self(),
-         "Must hold configuration lock to modify config string");
-
   if (_config_string_buffer_size < InitialConfigBufferSize) {
     _config_string_buffer_size = InitialConfigBufferSize;
     _config_string = REALLOC_C_HEAP_ARRAY(char, _config_string, _config_string_buffer_size, mtLogging);
