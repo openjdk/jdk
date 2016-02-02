@@ -30,7 +30,7 @@ import java.lang.reflect.Field;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
-import sun.misc.Cleaner;
+import jdk.internal.ref.Cleaner;
 
 /**
  * The JVM interface for the method handles package is all here.
