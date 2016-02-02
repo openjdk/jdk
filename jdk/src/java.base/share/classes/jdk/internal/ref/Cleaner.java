@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.ref;
 
 import java.lang.ref.*;
 import java.security.AccessController;
@@ -58,6 +58,7 @@ import java.security.PrivilegedAction;
 
 public class Cleaner
     extends PhantomReference<Object>
+    implements Runnable
 {
 
     // Dummy reference queue, needed because the PhantomReference constructor
@@ -151,6 +152,13 @@ public class Cleaner
                         return null;
                     }});
         }
+    }
+
+    @Override public void run() {
+        SecurityManager security = System.getSecurityManager();
+        if (security != null)
+            security.checkPackageAccess("jdk.internal.ref");
+        this.clean();
     }
 
 }
