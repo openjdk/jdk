@@ -117,15 +117,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _rs_lengths_prediction(0),
   _max_survivor_regions(0),
 
-  _eden_used_bytes_before_gc(0),
-  _survivor_used_bytes_before_gc(0),
-  _old_used_bytes_before_gc(0),
-  _humongous_used_bytes_before_gc(0),
-  _heap_used_bytes_before_gc(0),
-  _metaspace_used_bytes_before_gc(0),
-  _eden_capacity_bytes_before_gc(0),
-  _heap_capacity_bytes_before_gc(0),
-
   _eden_cset_region_length(0),
   _survivor_cset_region_length(0),
   _old_cset_region_length(0),
@@ -809,7 +800,6 @@ G1CollectorPolicy::verify_young_ages(HeapRegion* head,
 
 void G1CollectorPolicy::record_full_collection_start() {
   _full_collection_start_sec = os::elapsedTime();
-  record_heap_size_info_at_start(true /* full */);
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_full_collection(true);
 }
@@ -870,8 +860,6 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
   double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
   _trace_young_gen_time_data.record_start_collection(s_w_t_ms);
   _stop_world_start = 0.0;
-
-  record_heap_size_info_at_start(false /* full */);
 
   phase_times()->record_cur_collection_start_sec(start_time_sec);
   _pending_cards = _g1->pending_card_num();
@@ -987,7 +975,7 @@ bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t cards_scanned) {
+void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t cards_scanned, size_t heap_used_bytes_before_gc) {
   double end_time_sec = os::elapsedTime();
 
   size_t cur_used_bytes = _g1->used();
@@ -1138,7 +1126,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     }
     _rs_length_diff_seq->add((double) rs_length_diff);
 
-    size_t freed_bytes = _heap_used_bytes_before_gc - cur_used_bytes;
+    size_t freed_bytes = heap_used_bytes_before_gc - cur_used_bytes;
     size_t copied_bytes = _collection_set_bytes_used_before - freed_bytes;
     double cost_per_byte_ms = 0.0;
 
@@ -1258,49 +1246,6 @@ void G1CollectorPolicy::update_ihop_prediction(double mutator_time_s,
 
 void G1CollectorPolicy::report_ihop_statistics() {
   _ihop_control->print();
-}
-
-#define EXT_SIZE_FORMAT "%.1f%s"
-#define EXT_SIZE_PARAMS(bytes)                                  \
-  byte_size_in_proper_unit((double)(bytes)),                    \
-  proper_unit_for_byte_size((bytes))
-
-void G1CollectorPolicy::record_heap_size_info_at_start(bool full) {
-  YoungList* young_list = _g1->young_list();
-  _eden_used_bytes_before_gc = young_list->eden_used_bytes();
-  _survivor_used_bytes_before_gc = young_list->survivor_used_bytes();
-  _heap_capacity_bytes_before_gc = _g1->capacity();
-  _old_used_bytes_before_gc = _g1->old_regions_count() * HeapRegion::GrainBytes;
-  _humongous_used_bytes_before_gc = _g1->humongous_regions_count() * HeapRegion::GrainBytes;
-  _heap_used_bytes_before_gc = _g1->used();
-  _eden_capacity_bytes_before_gc = (_young_list_target_length * HeapRegion::GrainBytes) - _survivor_used_bytes_before_gc;
-  _metaspace_used_bytes_before_gc = MetaspaceAux::used_bytes();
-}
-
-void G1CollectorPolicy::print_detailed_heap_transition() const {
-  YoungList* young_list = _g1->young_list();
-
-  size_t eden_used_bytes_after_gc = young_list->eden_used_bytes();
-  size_t survivor_used_bytes_after_gc = young_list->survivor_used_bytes();
-  size_t heap_used_bytes_after_gc = _g1->used();
-  size_t old_used_bytes_after_gc = _g1->old_regions_count() * HeapRegion::GrainBytes;
-  size_t humongous_used_bytes_after_gc = _g1->humongous_regions_count() * HeapRegion::GrainBytes;
-
-  size_t heap_capacity_bytes_after_gc = _g1->capacity();
-  size_t eden_capacity_bytes_after_gc =
-    (_young_list_target_length * HeapRegion::GrainBytes) - survivor_used_bytes_after_gc;
-  size_t survivor_capacity_bytes_after_gc = _max_survivor_regions * HeapRegion::GrainBytes;
-
-  log_info(gc, heap)("Eden: " SIZE_FORMAT "K->" SIZE_FORMAT "K("  SIZE_FORMAT "K)",
-                     _eden_used_bytes_before_gc / K, eden_used_bytes_after_gc /K, eden_capacity_bytes_after_gc /K);
-  log_info(gc, heap)("Survivor: " SIZE_FORMAT "K->" SIZE_FORMAT "K("  SIZE_FORMAT "K)",
-                     _survivor_used_bytes_before_gc / K, survivor_used_bytes_after_gc /K, survivor_capacity_bytes_after_gc /K);
-  log_info(gc, heap)("Old: " SIZE_FORMAT "K->" SIZE_FORMAT "K",
-                     _old_used_bytes_before_gc / K, old_used_bytes_after_gc /K);
-  log_info(gc, heap)("Humongous: " SIZE_FORMAT "K->" SIZE_FORMAT "K",
-                     _humongous_used_bytes_before_gc / K, humongous_used_bytes_after_gc /K);
-
-  MetaspaceAux::print_metaspace_change(_metaspace_used_bytes_before_gc);
 }
 
 void G1CollectorPolicy::print_phases() {
