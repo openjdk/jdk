@@ -45,7 +45,7 @@ public class TestDeprecatedPrintFlags {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("-XX:+PrintGC is deprecated. Will use -Xlog:gc instead.");
         output.shouldNotContain("PrintGCDetails");
-        output.stdoutShouldMatch("\\[info.*\\]\\[gc\\]");
+        output.stdoutShouldMatch("\\[info.*\\]\\[gc *\\]");
         output.stdoutShouldNotMatch("\\[info.*\\]\\[gc\\,");
         output.shouldHaveExitValue(0);
     }
@@ -55,7 +55,7 @@ public class TestDeprecatedPrintFlags {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("-XX:+PrintGCDetails is deprecated. Will use -Xlog:gc* instead.");
         output.shouldNotContain("PrintGC is deprecated");
-        output.stdoutShouldMatch("\\[info.*\\]\\[gc\\]");
+        output.stdoutShouldMatch("\\[info.*\\]\\[gc *\\]");
         output.stdoutShouldMatch("\\[info.*\\]\\[gc\\,");
         output.shouldHaveExitValue(0);
     }
@@ -67,13 +67,13 @@ public class TestDeprecatedPrintFlags {
         output.shouldContain("-Xloggc is deprecated. Will use -Xlog:gc:gc-test.log instead.");
         output.shouldNotContain("PrintGCDetails");
         output.shouldNotContain("PrintGC");
-        output.stdoutShouldNotMatch("\\[info.*\\]\\[gc\\]");
+        output.stdoutShouldNotMatch("\\[info.*\\]\\[gc *\\]");
         output.stdoutShouldNotMatch("\\[info.*\\]\\[gc\\,");
         output.shouldHaveExitValue(0);
         String lines = Files.lines(Paths.get(fileName)).collect(Collectors.joining());
         System.out.println("lines: " + lines);
         OutputAnalyzer outputLog = new OutputAnalyzer(lines, "");
-        outputLog.stdoutShouldMatch("\\[info.*\\]\\[gc\\]");
+        outputLog.stdoutShouldMatch("\\[info.*\\]\\[gc *\\]");
         outputLog.stdoutShouldNotMatch("\\[info.*\\]\\[gc\\,");
     }
 
@@ -84,12 +84,12 @@ public class TestDeprecatedPrintFlags {
         output.shouldContain("-XX:+PrintGCDetails is deprecated. Will use -Xlog:gc* instead.");
         output.shouldContain("-Xloggc is deprecated. Will use -Xlog:gc:gc-test.log instead.");
         output.shouldNotContain("PrintGC is deprecated");
-        output.stdoutShouldNotMatch("\\[info.*\\]\\[gc\\]");
+        output.stdoutShouldNotMatch("\\[info.*\\]\\[gc *\\]");
         output.stdoutShouldNotMatch("\\[info.*\\]\\[gc\\,");
         output.shouldHaveExitValue(0);
         String lines = Files.lines(Paths.get(fileName)).collect(Collectors.joining());
         OutputAnalyzer outputLog = new OutputAnalyzer(lines, "");
-        outputLog.stdoutShouldMatch("\\[info.*\\]\\[gc\\]");
+        outputLog.stdoutShouldMatch("\\[info.*\\]\\[gc *\\]");
         outputLog.stdoutShouldMatch("\\[info.*\\]\\[gc\\,");
     }
 
