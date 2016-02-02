@@ -315,6 +315,9 @@ javax/sound/midi/Gervill/SoftProvider/GetDevice.java            generic-all
 ############################################################################
 
 # jdk_imageio
+javax/imageio/plugins/shared/CanWriteSequence.java              generic-all
+javax/imageio/plugins/tiff/MultiPageTest/MultiPageTest.java     generic-all
+javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       generic-all
 
 ############################################################################
 
