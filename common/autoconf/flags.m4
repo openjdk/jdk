@@ -601,22 +601,22 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     esac
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
-	    if test "x$OPENJDK_TARGET_CPU" = xx86; then
-	      # Force compatibility with i586 on 32 bit intel platforms.
-	      COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
-	    fi
-	    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
-	        -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
-	    case $OPENJDK_TARGET_CPU_ARCH in
-	      ppc )
-	        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
-	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
-	        ;;
-	      * )
-	        COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
-	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
-	        ;;
-	    esac
+      if test "x$OPENJDK_TARGET_CPU" = xx86; then
+        # Force compatibility with i586 on 32 bit intel platforms.
+        COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
+      fi
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
+          -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
+      case $OPENJDK_TARGET_CPU_ARCH in
+        ppc )
+          # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+          CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+        * )
+          COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
+          CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+      esac
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"
