@@ -3169,13 +3169,12 @@ void G1CollectedHeap::reset_taskqueue_stats() {
 }
 #endif // TASKQUEUE_STATS
 
-void G1CollectedHeap::log_gc_footer(jlong pause_time_counter) {
+void G1CollectedHeap::log_gc_footer() {
   if (evacuation_failed()) {
     log_info(gc)("To-space exhausted");
   }
 
-  double pause_time_ms = TimeHelper::counter_to_millis(pause_time_counter);
-  g1_policy()->print_phases(pause_time_ms);
+  g1_policy()->print_phases();
 
   g1_policy()->print_detailed_heap_transition();
 }
@@ -3267,7 +3266,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     }
     GCTraceTime(Info, gc) tm(gc_string, NULL, gc_cause(), true);
 
-    jlong pause_start_counter = os::elapsed_counter();
     g1_policy()->note_gc_start(active_workers);
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
@@ -3529,7 +3527,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     }
 
     // Print the remainder of the GC log output.
-    log_gc_footer(os::elapsed_counter() - pause_start_counter);
+    log_gc_footer();
 
     // It is not yet to safe to tell the concurrent mark to
     // start as we have some optional output below. We don't want the
