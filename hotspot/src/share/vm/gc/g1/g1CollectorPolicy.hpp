@@ -636,7 +636,7 @@ public:
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
-  void record_collection_pause_end(double pause_time_ms, size_t cards_scanned);
+  void record_collection_pause_end(double pause_time_ms, size_t cards_scanned, size_t heap_used_bytes_before_gc);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
@@ -654,15 +654,7 @@ public:
   void record_concurrent_mark_cleanup_end();
   void record_concurrent_mark_cleanup_completed();
 
-  // Records the information about the heap size for reporting in
-  // print_detailed_heap_transition
-  void record_heap_size_info_at_start(bool full);
-
-  // Print heap sizing transition (with less and more detail).
-
-  void print_detailed_heap_transition() const;
-
-  virtual void print_phases(double pause_time_ms);
+  virtual void print_phases();
 
   void record_stop_world_start();
   void record_concurrent_pause();
@@ -825,16 +817,6 @@ private:
   // The value of _heap_bytes_before_gc is also used to calculate
   // the cost of copying.
 
-  size_t _eden_used_bytes_before_gc;         // Eden occupancy before GC
-  size_t _survivor_used_bytes_before_gc;     // Survivor occupancy before GC
-  size_t _old_used_bytes_before_gc;          // Old occupancy before GC
-  size_t _humongous_used_bytes_before_gc;    // Humongous occupancy before GC
-  size_t _heap_used_bytes_before_gc;         // Heap occupancy before GC
-  size_t _metaspace_used_bytes_before_gc;    // Metaspace occupancy before GC
-
-  size_t _eden_capacity_bytes_before_gc;     // Eden capacity before GC
-  size_t _heap_capacity_bytes_before_gc;     // Heap capacity before GC
-
   // The amount of survivor regions after a collection.
   uint _recorded_survivor_regions;
   // List of survivor regions.
@@ -845,6 +827,10 @@ private:
 
 public:
   uint tenuring_threshold() const { return _tenuring_threshold; }
+
+  uint max_survivor_regions() {
+    return _max_survivor_regions;
+  }
 
   static const uint REGIONS_UNLIMITED = (uint) -1;
 
