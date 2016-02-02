@@ -200,7 +200,8 @@ public class BasicInternalFrameUI extends InternalFrameUI
                 }
             }
 
-            public boolean isEnabled(Object sender){
+            @Override
+            public boolean accept(Object sender){
                 if (sender instanceof JInternalFrame) {
                     JInternalFrame iFrame = (JInternalFrame)sender;
                     if (iFrame.getUI() instanceof BasicInternalFrameUI) {
@@ -1708,6 +1709,12 @@ public class BasicInternalFrameUI extends InternalFrameUI
                     parentBounds = f.getParent().getBounds();
                 } else {
                     parentBounds = null;
+                }
+                if ((frame.getParent() != null) && frame.isIcon()) {
+                    Boolean value = (Boolean) frame.getClientProperty("wasIconOnce");
+                    if (Boolean.FALSE.equals(value)) {
+                        iconifyFrame(frame);
+                    }
                 }
                 if ((frame.getParent() != null) && !componentListenerAdded) {
                     f.getParent().addComponentListener(componentListener);

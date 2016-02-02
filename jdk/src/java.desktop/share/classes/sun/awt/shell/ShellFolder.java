@@ -62,9 +62,9 @@ public abstract class ShellFolder extends File {
 
     /**
      * This method must be implemented to make sure that no instances
-     * of <code>ShellFolder</code> are ever serialized. If <code>isFileSystem()</code> returns
-     * <code>true</code>, then the object should be representable with an instance of
-     * <code>java.io.File</code> instead. If not, then the object is most likely
+     * of {@code ShellFolder} are ever serialized. If {@code isFileSystem()} returns
+     * {@code true}, then the object should be representable with an instance of
+     * {@code java.io.File} instead. If not, then the object is most likely
      * depending on some internal (native) state and cannot be serialized.
      *
      * @return a java.io.File replacement object, or null
@@ -74,11 +74,11 @@ public abstract class ShellFolder extends File {
 
     /**
      * Returns the path for this object's parent,
-     * or <code>null</code> if this object does not name a parent
+     * or {@code null} if this object does not name a parent
      * folder.
      *
      * @return  the path as a String for this object's parent,
-     * or <code>null</code> if this object does not name a parent
+     * or {@code null} if this object does not name a parent
      * folder
      *
      * @see java.io.File#getParent()
@@ -97,11 +97,11 @@ public abstract class ShellFolder extends File {
 
     /**
      * Returns a File object representing this object's parent,
-     * or <code>null</code> if this object does not name a parent
+     * or {@code null} if this object does not name a parent
      * folder.
      *
      * @return  a File object representing this object's parent,
-     * or <code>null</code> if this object does not name a parent
+     * or {@code null} if this object does not name a parent
      * folder
      *
      * @see java.io.File#getParentFile()
@@ -250,8 +250,8 @@ public abstract class ShellFolder extends File {
     }
 
     /**
-     * @param key a <code>String</code>
-     * @return An Object matching the string <code>key</code>.
+     * @param key a {@code String}
+     * @return An Object matching the string {@code key}.
      * @see ShellFolderManager#get(String)
      */
     public static Object get(String key) {
@@ -259,7 +259,7 @@ public abstract class ShellFolder extends File {
     }
 
     /**
-     * Does <code>dir</code> represent a "computer" such as a node on the network, or
+     * Does {@code dir} represent a "computer" such as a node on the network, or
      * "My Computer" on the desktop.
      */
     public static boolean isComputerNode(File dir) {

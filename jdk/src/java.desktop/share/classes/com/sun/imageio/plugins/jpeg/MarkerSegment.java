@@ -51,8 +51,8 @@ class MarkerSegment implements Cloneable {
     boolean unknown = false; // Set to true if the tag is not recognized
 
     /**
-     * Constructor for creating <code>MarkerSegment</code>s by reading
-     * from an <code>ImageInputStream</code>.
+     * Constructor for creating {@code MarkerSegment}s by reading
+     * from an {@code ImageInputStream}.
      */
     MarkerSegment(JPEGBuffer buffer) throws IOException {
 

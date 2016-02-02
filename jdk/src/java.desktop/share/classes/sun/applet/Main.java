@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,7 @@ public class Main {
     private int run(String [] args) {
         // DECODE ARGS
         try {
+            System.out.println(lookup("deprecated"));
             if (args.length == 0) {
                 usage();
                 return 0;
@@ -229,7 +230,7 @@ public class Main {
      *
      * @param url  a string which represents either a relative or absolute URL.
      * @return     a URL when the passed in string can be interpreted according
-     *             to the RFC, <code>null</code> otherwise.
+     *             to the RFC, {@code null} otherwise.
      * @exception  ParseException
      *             Thrown when we are unable to construct a proper URL from the
      *             passed in string.
@@ -270,8 +271,8 @@ public class Main {
      * Invoke the debugger with the arguments passed in to appletviewer.
      *
      * @param args The arguments passed into the debugger.
-     * @return     <code>0</code> if the debugger is invoked successfully,
-     *             <code>1</code> otherwise.
+     * @return     {@code 0} if the debugger is invoked successfully,
+     *             {@code 1} otherwise.
      */
     private int invokeDebugger(String [] args) {
         // CONSTRUCT THE COMMAND LINE

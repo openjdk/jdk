@@ -102,18 +102,18 @@ public class ShortLookupTable extends LookupTable {
     /**
      * Returns an array of samples of a pixel, translated with the lookup
      * table. The source and destination array can be the same array.
-     * Array <code>dst</code> is returned.
+     * Array {@code dst} is returned.
      *
      * @param src the source array.
      * @param dst the destination array. This array must be at least as
-     *         long as <code>src</code>.  If <code>dst</code> is
-     *         <code>null</code>, a new array will be allocated having the
-     *         same length as <code>src</code>.
-     * @return the array <code>dst</code>, an <code>int</code> array of
+     *         long as {@code src}.  If {@code dst} is
+     *         {@code null}, a new array will be allocated having the
+     *         same length as {@code src}.
+     * @return the array {@code dst}, an {@code int} array of
      *         samples.
-     * @exception ArrayIndexOutOfBoundsException if <code>src</code> is
-     *            longer than <code>dst</code> or if for any element
-     *            <code>i</code> of <code>src</code>,
+     * @exception ArrayIndexOutOfBoundsException if {@code src} is
+     *            longer than {@code dst} or if for any element
+     *            {@code i} of {@code src},
      *            {@code (src[i]&0xffff)-offset} is either less than
      *            zero or greater than or equal to the length of the
      *            lookup table for any band.
@@ -153,18 +153,18 @@ public class ShortLookupTable extends LookupTable {
     /**
      * Returns an array of samples of a pixel, translated with the lookup
      * table. The source and destination array can be the same array.
-     * Array <code>dst</code> is returned.
+     * Array {@code dst} is returned.
      *
      * @param src the source array.
      * @param dst the destination array. This array must be at least as
-     *         long as <code>src</code>.  If <code>dst</code> is
-     *         <code>null</code>, a new array will be allocated having the
-     *         same length as <code>src</code>.
-     * @return the array <code>dst</code>, an <code>int</code> array of
+     *         long as {@code src}.  If {@code dst} is
+     *         {@code null}, a new array will be allocated having the
+     *         same length as {@code src}.
+     * @return the array {@code dst}, an {@code int} array of
      *         samples.
-     * @exception ArrayIndexOutOfBoundsException if <code>src</code> is
-     *            longer than <code>dst</code> or if for any element
-     *            <code>i</code> of <code>src</code>,
+     * @exception ArrayIndexOutOfBoundsException if {@code src} is
+     *            longer than {@code dst} or if for any element
+     *            {@code i} of {@code src},
      *            {@code (src[i]&0xffff)-offset} is either less than
      *            zero or greater than or equal to the length of the
      *            lookup table for any band.

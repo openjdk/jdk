@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,7 @@
 package com.sun.media.sound;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-
 import javax.sound.sampled.spi.FormatConversionProvider;
-
 
 /**
  * A codec can encode and/or decode audio data.  It provides an
@@ -73,23 +70,4 @@ abstract class SunCodec extends FormatConversionProvider {
         System.arraycopy(outputEncodings, 0, encodings, 0, outputEncodings.length);
         return encodings;
     }
-
-    /**
-     */
-    public abstract AudioFormat.Encoding[] getTargetEncodings(AudioFormat sourceFormat);
-
-
-    /**
-     */
-    public abstract AudioFormat[] getTargetFormats(AudioFormat.Encoding targetEncoding, AudioFormat sourceFormat);
-
-
-    /**
-     */
-    public abstract AudioInputStream getAudioInputStream(AudioFormat.Encoding targetEncoding, AudioInputStream sourceStream);
-    /**
-     */
-    public abstract AudioInputStream getAudioInputStream(AudioFormat targetFormat, AudioInputStream sourceStream);
-
-
 }

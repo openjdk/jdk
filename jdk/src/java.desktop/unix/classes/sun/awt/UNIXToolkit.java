@@ -118,8 +118,8 @@ public abstract class UNIXToolkit extends SunToolkit
      * Load a native Gtk stock icon.
      *
      * @param longname a desktop property name. This contains icon name, size
-     *        and orientation, e.g. <code>"gtk.icon.gtk-add.4.rtl"</code>
-     * @return an <code>Image</code> for the icon, or <code>null</code> if the
+     *        and orientation, e.g. {@code "gtk.icon.gtk-add.4.rtl"}
+     * @return an {@code Image} for the icon, or {@code null} if the
      *         icon could not be loaded
      */
     protected Object lazilyLoadGTKIcon(String longname) {

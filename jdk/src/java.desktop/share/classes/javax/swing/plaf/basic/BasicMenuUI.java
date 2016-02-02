@@ -312,7 +312,8 @@ public class BasicMenuUI extends BasicMenuItemUI
             }
         }
 
-        public boolean isEnabled(Object c) {
+        @Override
+        public boolean accept(Object c) {
             if (c instanceof JMenu) {
                 return ((JMenu)c).isEnabled();
             }

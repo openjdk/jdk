@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,14 +146,15 @@ void AwtLabel::DoPaint(HDC hDC, RECT& r)
 
         jint alignment = env->GetIntField(target, AwtLabel::alignmentID);
         switch (alignment) {
-           case java_awt_Label_LEFT:
-              x = r.left + 2;
-              break;
           case java_awt_Label_CENTER:
               x = (r.left + r.right - size.cx) / 2;
               break;
           case java_awt_Label_RIGHT:
               x = r.right - 2 - size.cx;
+              break;
+          case java_awt_Label_LEFT:
+          default:
+              x = r.left + 2;
               break;
         }
         /* draw string */

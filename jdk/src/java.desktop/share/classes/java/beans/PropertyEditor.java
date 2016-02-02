@@ -127,16 +127,16 @@ public interface PropertyEditor {
      * <p>
      * Example results are:
      * <ul>
-     * <li>Primitive expresssion: <code>2</code>
-     * <li>Class constructor: <code>new java.awt.Color(127,127,34)</code>
-     * <li>Static field: <code>java.awt.Color.orange</code>
-     * <li>Static method: <code>javax.swing.Box.createRigidArea(new
-     *                                   java.awt.Dimension(0, 5))</code>
+     * <li>Primitive expresssion: {@code 2}
+     * <li>Class constructor: {@code new java.awt.Color(127,127,34)}
+     * <li>Static field: {@code java.awt.Color.orange}
+     * <li>Static method: {@code javax.swing.Box.createRigidArea(new
+     *                                   java.awt.Dimension(0, 5))}
      * </ul>
      *
      * @return a fragment of Java code representing an initializer for the
      *         current value. It should not contain a semi-colon
-     *         ('<code>;</code>') to end the expression.
+     *         ('{@code ;}') to end the expression.
      */
     String getJavaInitializationString();
 

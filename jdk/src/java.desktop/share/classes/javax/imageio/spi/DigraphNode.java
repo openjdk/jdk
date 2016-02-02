@@ -32,9 +32,9 @@ import java.util.Set;
 
 /**
  * A node in a directed graph.  In addition to an arbitrary
- * <code>Object</code> containing user data associated with the node,
- * each node maintains a <code>Set</code>s of nodes which are pointed
- * to by the current node (available from <code>getOutNodes</code>).
+ * {@code Object} containing user data associated with the node,
+ * each node maintains a {@code Set}s of nodes which are pointed
+ * to by the current node (available from {@code getOutNodes}).
  * The in-degree of the node (that is, number of nodes that point to
  * the current node) may be queried.
  *
@@ -46,7 +46,7 @@ class DigraphNode<E> implements Cloneable, Serializable {
     protected E data;
 
     /**
-     * A <code>Set</code> of neighboring nodes pointed to by this
+     * A {@code Set} of neighboring nodes pointed to by this
      * node.
      */
     protected Set<DigraphNode<E>> outNodes = new HashSet<>();
@@ -55,7 +55,7 @@ class DigraphNode<E> implements Cloneable, Serializable {
     protected int inDegree = 0;
 
     /**
-     * A <code>Set</code> of neighboring nodes that point to this
+     * A {@code Set} of neighboring nodes that point to this
      * node.
      */
     private Set<DigraphNode<E>> inNodes = new HashSet<>();
@@ -64,13 +64,13 @@ class DigraphNode<E> implements Cloneable, Serializable {
         this.data = data;
     }
 
-    /** Returns the <code>Object</code> referenced by this node. */
+    /** Returns the {@code Object} referenced by this node. */
     public E getData() {
         return data;
     }
 
     /**
-     * Returns an <code>Iterator</code> containing the nodes pointed
+     * Returns an {@code Iterator} containing the nodes pointed
      * to by this node.
      */
     public Iterator<DigraphNode<E>> getOutNodes() {
@@ -81,9 +81,9 @@ class DigraphNode<E> implements Cloneable, Serializable {
      * Adds a directed edge to the graph.  The outNodes list of this
      * node is updated and the in-degree of the other node is incremented.
      *
-     * @param node a <code>DigraphNode</code>.
+     * @param node a {@code DigraphNode}.
      *
-     * @return <code>true</code> if the node was not previously the
+     * @return {@code true} if the node was not previously the
      * target of an edge.
      */
     public boolean addEdge(DigraphNode<E> node) {
@@ -98,12 +98,12 @@ class DigraphNode<E> implements Cloneable, Serializable {
     }
 
     /**
-     * Returns <code>true</code> if an edge exists between this node
+     * Returns {@code true} if an edge exists between this node
      * and the given node.
      *
-     * @param node a <code>DigraphNode</code>.
+     * @param node a {@code DigraphNode}.
      *
-     * @return <code>true</code> if the node is the target of an edge.
+     * @return {@code true} if the node is the target of an edge.
      */
     public boolean hasEdge(DigraphNode<E> node) {
         return outNodes.contains(node);
@@ -113,7 +113,7 @@ class DigraphNode<E> implements Cloneable, Serializable {
      * Removes a directed edge from the graph.  The outNodes list of this
      * node is updated and the in-degree of the other node is decremented.
      *
-     * @return <code>true</code> if the node was previously the target
+     * @return {@code true} if the node was previously the target
      * of an edge.
      */
     public boolean removeEdge(DigraphNode<E> node) {

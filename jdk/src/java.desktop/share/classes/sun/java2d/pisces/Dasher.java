@@ -28,9 +28,9 @@ package sun.java2d.pisces;
 import sun.awt.geom.PathConsumer2D;
 
 /**
- * The <code>Dasher</code> class takes a series of linear commands
- * (<code>moveTo</code>, <code>lineTo</code>, <code>close</code> and
- * <code>end</code>) and breaks them into smaller segments according to a
+ * The {@code Dasher} class takes a series of linear commands
+ * ({@code moveTo}, {@code lineTo}, {@code close} and
+ * {@code end}) and breaks them into smaller segments according to a
  * dash pattern array and a starting dash phase.
  *
  * <p> Issues: in J2Se, a zero length dash segment as drawn as a very
@@ -60,11 +60,11 @@ final class Dasher implements sun.awt.geom.PathConsumer2D {
     private float[] curCurvepts;
 
     /**
-     * Constructs a <code>Dasher</code>.
+     * Constructs a {@code Dasher}.
      *
-     * @param out an output <code>PathConsumer2D</code>.
-     * @param dash an array of <code>float</code>s containing the dash pattern
-     * @param phase a <code>float</code> containing the dash phase
+     * @param out an output {@code PathConsumer2D}.
+     * @param dash an array of {@code float}s containing the dash pattern
+     * @param phase a {@code float} containing the dash phase
      */
     public Dasher(PathConsumer2D out, float[] dash, float phase) {
         if (phase < 0) {

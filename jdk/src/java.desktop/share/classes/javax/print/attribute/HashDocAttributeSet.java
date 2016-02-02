@@ -55,7 +55,7 @@ public class HashDocAttributeSet extends HashAttributeSet
      * @param  attribute  Attribute value to add to the set.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>attribute</CODE> is null.
+     *     (unchecked exception) Thrown if {@code attribute} is null.
      */
     public HashDocAttributeSet(DocAttribute attribute) {
         super (attribute, DocAttribute.class);
@@ -65,7 +65,7 @@ public class HashDocAttributeSet extends HashAttributeSet
      * Construct a new hash doc attribute set,
      * initially populated with the values from the given array.
      * The new attribute set is populated by
-     * adding the elements of <CODE>attributes</CODE> array to the set in
+     * adding the elements of {@code attributes} array to the set in
      * sequence, starting at index 0. Thus, later array elements may replace
      * earlier array elements if the array contains duplicate attribute
      * values or attribute categories.
@@ -75,7 +75,7 @@ public class HashDocAttributeSet extends HashAttributeSet
      *
      * @exception  NullPointerException
      *  (unchecked exception)
-     * Thrown if any element of <CODE>attributes</CODE> is null.
+     * Thrown if any element of {@code attributes} is null.
      */
     public HashDocAttributeSet(DocAttribute[] attributes) {
         super (attributes, DocAttribute.class);
@@ -84,15 +84,15 @@ public class HashDocAttributeSet extends HashAttributeSet
     /**
      * Construct a new attribute set, initially populated with the
      * values from the  given set where the members of the attribute set
-     * are restricted to the <code>DocAttribute</code> interface.
+     * are restricted to the {@code DocAttribute} interface.
      *
      * @param  attributes set of attribute values to initialise the set. If
      *                    null, an empty attribute set is constructed.
      *
      * @exception  ClassCastException
      *     (unchecked exception) Thrown if any element of
-     * <CODE>attributes</CODE> is not an instance of
-     * <CODE>DocAttribute</CODE>.
+     * {@code attributes} is not an instance of
+     * {@code DocAttribute}.
      */
     public HashDocAttributeSet(DocAttributeSet attributes) {
         super(attributes, DocAttribute.class);

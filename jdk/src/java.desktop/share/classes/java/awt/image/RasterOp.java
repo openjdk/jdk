@@ -56,9 +56,9 @@ public interface RasterOp {
      * new Raster will be created.  The IllegalArgumentException may be thrown
      * if the source and/or destination Raster is incompatible with the types
      * of Rasters allowed by the class implementing this filter.
-     * @param src the source <code>Raster</code>
-     * @param dest the destination <code>WritableRaster</code>
-     * @return a <code>WritableRaster</code> that represents the result of
+     * @param src the source {@code Raster}
+     * @param dest the destination {@code WritableRaster}
+     * @return a {@code WritableRaster} that represents the result of
      *         the filtering operation.
      */
     public WritableRaster filter(Raster src, WritableRaster dest);
@@ -68,9 +68,9 @@ public interface RasterOp {
      * The IllegalArgumentException may be thrown if the source Raster
      * is incompatible with the types of Rasters allowed
      * by the class implementing this filter.
-     * @param src the source <code>Raster</code>
-     * @return a <code>Rectangle2D</code> that is the bounding box of
-     *         the <code>Raster</code> resulting from the filtering
+     * @param src the source {@code Raster}
+     * @return a {@code Rectangle2D} that is the bounding box of
+     *         the {@code Raster} resulting from the filtering
      *         operation.
      */
     public Rectangle2D getBounds2D(Raster src);
@@ -81,9 +81,9 @@ public interface RasterOp {
      * The IllegalArgumentException may be thrown if the source Raster
      * is incompatible with the types of Rasters allowed
      * by the class implementing this filter.
-     * @param src the source <code>Raster</code>
-     * @return a <code>WritableRaster</code> that is compatible with
-     *         <code>src</code>
+     * @param src the source {@code Raster}
+     * @return a {@code WritableRaster} that is compatible with
+     *         {@code src}
      */
     public WritableRaster createCompatibleDestRaster(Raster src);
 
@@ -91,8 +91,8 @@ public interface RasterOp {
      * Returns the location of the destination point given a
      * point in the source Raster.  If dstPt is non-null, it
      * will be used to hold the return value.
-     * @param srcPt the source <code>Point2D</code>
-     * @param dstPt the destination <code>Point2D</code>
+     * @param srcPt the source {@code Point2D}
+     * @param dstPt the destination {@code Point2D}
      * @return the location of the destination point.
      */
     public Point2D getPoint2D(Point2D srcPt, Point2D dstPt);
@@ -100,8 +100,8 @@ public interface RasterOp {
     /**
      * Returns the rendering hints for this RasterOp.  Returns
      * null if no hints have been set.
-     * @return the <code>RenderingHints</code> object of this
-     *         <code>RasterOp</code>.
+     * @return the {@code RenderingHints} object of this
+     *         {@code RasterOp}.
      */
     public RenderingHints getRenderingHints();
 }

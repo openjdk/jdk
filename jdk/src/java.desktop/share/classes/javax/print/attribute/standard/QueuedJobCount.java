@@ -34,7 +34,7 @@ import javax.print.attribute.PrintServiceAttribute;
  * PENDING, PENDING_HELD, PROCESSING, or PROCESSING_STOPPED.
  * <P>
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value.
- * The category name returned by <CODE>getName()</CODE> gives the IPP
+ * The category name returned by {@code getName()} gives the IPP
  * attribute name.
  *
  * @author  Alan Kaminsky
@@ -51,7 +51,7 @@ public final class QueuedJobCount extends IntegerSyntax
      * @param  value  Integer value.
      *
      * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if <CODE>value</CODE> is less than 0.
+     *   (Unchecked exception) Thrown if {@code value} is less than 0.
      */
     public QueuedJobCount(int value) {
         super (value, 0, Integer.MAX_VALUE);
@@ -63,17 +63,17 @@ public final class QueuedJobCount extends IntegerSyntax
      * mus  be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class QueuedJobCount.
+     * {@code object} is an instance of class QueuedJobCount.
      * <LI>
-     * This queued job count attribute's value and <CODE>object</CODE>'s
+     * This queued job count attribute's value and {@code object}'s
      * value are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this queued job
+     * @return  True if {@code object} is equivalent to this queued job
      *          count attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -99,7 +99,7 @@ public final class QueuedJobCount extends IntegerSyntax
      * instance.
      * <P>
      * For class QueuedJobCount, the
-     * category name is <CODE>"queued-job-count"</CODE>.
+     * category name is {@code "queued-job-count"}.
      *
      * @return  Attribute category name.
      */

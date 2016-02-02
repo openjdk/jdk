@@ -37,17 +37,17 @@ import java.awt.Point;
  * and institute a scroll operation in order to make obscured region(s)
  * visible to the user. This feature is known as autoscrolling.
  * <p>
- * If a GUI control is both an active <code>DropTarget</code>
+ * If a GUI control is both an active {@code DropTarget}
  * and is also scrollable, it
  * can receive notifications of autoscrolling gestures by the user from
  * the DnD system by implementing this interface.
  * <p>
  * An autoscrolling gesture is initiated by the user by keeping the drag
- * cursor motionless with a border region of the <code>Component</code>,
+ * cursor motionless with a border region of the {@code Component},
  * referred to as
  * the "autoscrolling region", for a predefined period of time, this will
- * result in repeated scroll requests to the <code>Component</code>
- * until the drag <code>Cursor</code> resumes its motion.
+ * result in repeated scroll requests to the {@code Component}
+ * until the drag {@code Cursor} resumes its motion.
  *
  * @since 1.2
  */
@@ -55,13 +55,13 @@ import java.awt.Point;
 public interface Autoscroll {
 
     /**
-     * This method returns the <code>Insets</code> describing
+     * This method returns the {@code Insets} describing
      * the autoscrolling region or border relative
      * to the geometry of the implementing Component.
      * <P>
-     * This value is read once by the <code>DropTarget</code>
-     * upon entry of the drag <code>Cursor</code>
-     * into the associated <code>Component</code>.
+     * This value is read once by the {@code DropTarget}
+     * upon entry of the drag {@code Cursor}
+     * into the associated {@code Component}.
      *
      * @return the Insets
      */
@@ -69,9 +69,9 @@ public interface Autoscroll {
     public Insets getAutoscrollInsets();
 
     /**
-     * notify the <code>Component</code> to autoscroll
+     * notify the {@code Component} to autoscroll
      *
-     * @param cursorLocn A <code>Point</code> indicating the
+     * @param cursorLocn A {@code Point} indicating the
      * location of the cursor that triggered this operation.
      */
 

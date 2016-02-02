@@ -265,7 +265,7 @@ public class EmptyNavigableMap {
                     navigableMap.subMap(last, true, first, false);
                 },
                 IllegalArgumentException.class, description
-                + ": Must throw IllegalArgumentException when fromElement is not less then then toElement.");
+                + ": Must throw IllegalArgumentException when fromElement is not less than toElement.");
 
         navigableMap.subMap(first, true, last, false);
     }

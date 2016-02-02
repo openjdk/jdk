@@ -942,7 +942,7 @@ public final class PageAttributes implements Cloneable {
      * @param   printerResolution an integer array of 3 elements. The first
      *          element must be greater than 0. The second element must be
      *          must be greater than 0. The third element must be either
-     *          <code>3</code> or <code>4</code>.
+     *          {@code 3} or {@code 4}.
      * @throws  IllegalArgumentException if one or more of the above
      *          conditions is violated.
      */
@@ -1095,14 +1095,14 @@ public final class PageAttributes implements Cloneable {
 
     /**
      * Specifies the print orientation for pages using these attributes.
-     * Specifying <code>3</code> denotes portrait. Specifying <code>4</code>
+     * Specifying {@code 3} denotes portrait. Specifying {@code 4}
      * denotes landscape. Specifying any other value will generate an
      * IllegalArgumentException. Not specifying the property is equivalent
      * to calling setOrientationRequested(OrientationRequestedType.PORTRAIT).
      *
-     * @param   orientationRequested <code>3</code> or <code>4</code>
+     * @param   orientationRequested {@code 3} or {@code 4}
      * @throws  IllegalArgumentException if orientationRequested is not
-     *          <code>3</code> or <code>4</code>
+     *          {@code 3} or {@code 4}
      */
     public void setOrientationRequested(int orientationRequested) {
         switch (orientationRequested) {
@@ -1189,15 +1189,15 @@ public final class PageAttributes implements Cloneable {
 
     /**
      * Specifies the print quality for pages using these attributes.
-     * Specifying <code>3</code> denotes draft. Specifying <code>4</code>
-     * denotes normal. Specifying <code>5</code> denotes high. Specifying
+     * Specifying {@code 3} denotes draft. Specifying {@code 4}
+     * denotes normal. Specifying {@code 5} denotes high. Specifying
      * any other value will generate an IllegalArgumentException. Not
      * specifying the property is equivalent to calling
      * setPrintQuality(PrintQualityType.NORMAL).
      *
-     * @param   printQuality <code>3</code>, <code>4</code>, or <code>5</code>
-     * @throws  IllegalArgumentException if printQuality is not <code>3
-     *          </code>, <code>4</code>, or <code>5</code>
+     * @param   printQuality {@code 3}, {@code 4}, or {@code 5}
+     * @throws  IllegalArgumentException if printQuality is not
+     *          {@code 3}, {@code 4}, or {@code 5}
      */
     public void setPrintQuality(int printQuality) {
         switch (printQuality) {
@@ -1231,13 +1231,13 @@ public final class PageAttributes implements Cloneable {
      * (typically the horizontal resolution). Index 1 of the array specifies
      * the feed direction resolution (typically the vertical resolution).
      * Index 2 of the array specifies whether the resolutions are in dots per
-     * inch or dots per centimeter. <code>3</code> denotes dots per inch.
-     * <code>4</code> denotes dots per centimeter.
+     * inch or dots per centimeter. {@code 3} denotes dots per inch.
+     * {@code 4} denotes dots per centimeter.
      *
      * @return  an integer array of 3 elements. The first
      *          element must be greater than 0. The second element must be
      *          must be greater than 0. The third element must be either
-     *          <code>3</code> or <code>4</code>.
+     *          {@code 3} or {@code 4}.
      */
     public int[] getPrinterResolution() {
         // Return a copy because otherwise client code could circumvent the
@@ -1258,7 +1258,7 @@ public final class PageAttributes implements Cloneable {
      * resolution). Index 1 of the array specifies the feed direction
      * resolution (typically the vertical resolution). Index 2 of the array
      * specifies whether the resolutions are in dots per inch or dots per
-     * centimeter. <code>3</code> denotes dots per inch. <code>4</code>
+     * centimeter. {@code 3} denotes dots per inch. {@code 4}
      * denotes dots per centimeter. Note that the 1.1 printing implementation
      * (Toolkit.getPrintJob) requires that the feed and cross feed resolutions
      * be the same. Not specifying the property is equivalent to calling
@@ -1267,7 +1267,7 @@ public final class PageAttributes implements Cloneable {
      * @param   printerResolution an integer array of 3 elements. The first
      *          element must be greater than 0. The second element must be
      *          must be greater than 0. The third element must be either
-     *          <code>3</code> or <code>4</code>.
+     *          {@code 3} or {@code 4}.
      * @throws  IllegalArgumentException if one or more of the above
      *          conditions is violated.
      */
@@ -1295,7 +1295,7 @@ public final class PageAttributes implements Cloneable {
      * inch for pages using these attributes. The same value is used for both
      * resolutions. The actual resolutions will be determined by the
      * limitations of the implementation and the target printer. Not
-     * specifying the property is equivalent to specifying <code>72</code>.
+     * specifying the property is equivalent to specifying {@code 72}.
      *
      * @param   printerResolution an integer greater than 0.
      * @throws  IllegalArgumentException if printerResolution is less than or

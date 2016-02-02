@@ -112,7 +112,7 @@ public abstract class LightweightFrame extends Frame {
      * frame. Peers should override this method if they are to implement
      * this functionality.
      *
-     * @param activate if <code>true</code>, activates the frame;
+     * @param activate if {@code true}, activates the frame;
      *                 otherwise, deactivates the frame
      */
     public void emulateActivation(boolean activate) {

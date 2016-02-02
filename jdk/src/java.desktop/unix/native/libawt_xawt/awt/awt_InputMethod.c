@@ -221,8 +221,10 @@ wcstombsdmp(wchar_t *wcs, int len)
     }
 
     /* TODO: check return values... Handle invalid characters properly...  */
-    if (wcstombs(mbs, wcs, n) == (size_t)-1)
+    if (wcstombs(mbs, wcs, n) == (size_t)-1) {
+        free(mbs);
         return NULL;
+    }
 
     return mbs;
 }

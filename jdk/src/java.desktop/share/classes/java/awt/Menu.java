@@ -34,7 +34,7 @@ import javax.accessibility.*;
 import sun.awt.AWTAccessor;
 
 /**
- * A <code>Menu</code> object is a pull-down menu component
+ * A {@code Menu} object is a pull-down menu component
  * that is deployed from a menu bar.
  * <p>
  * A menu can optionally be a <i>tear-off</i> menu. A tear-off menu
@@ -45,10 +45,10 @@ import sun.awt.AWTAccessor;
  * On platforms that do not support tear-off menus, the tear-off
  * property is ignored.
  * <p>
- * Each item in a menu must belong to the <code>MenuItem</code>
- * class. It can be an instance of <code>MenuItem</code>, a submenu
- * (an instance of <code>Menu</code>), or a check box (an instance of
- * <code>CheckboxMenuItem</code>).
+ * Each item in a menu must belong to the {@code MenuItem}
+ * class. It can be an instance of {@code MenuItem}, a submenu
+ * (an instance of {@code Menu}), or a check box (an instance of
+ * {@code CheckboxMenuItem}).
  *
  * @author Sami Shaio
  * @see     java.awt.MenuItem
@@ -83,8 +83,8 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     /**
      * This field indicates whether the menu has the
      * tear of property or not.  It will be set to
-     * <code>true</code> if the menu has the tear off
-     * property and it will be set to <code>false</code>
+     * {@code true} if the menu has the tear off
+     * property and it will be set to {@code false}
      * if it does not.
      * A torn off menu can be deleted by a user when
      * it is no longer needed.
@@ -95,10 +95,10 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     boolean             tearOff;
 
     /**
-     * This field will be set to <code>true</code>
+     * This field will be set to {@code true}
      * if the Menu in question is actually a help
-     * menu.  Otherwise it will be set to <code>
-     * false</code>.
+     * menu.  Otherwise it will be set to
+     * {@code false}.
      *
      * @serial
      */
@@ -146,7 +146,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * support tear-off menus, this value is silently ignored.
      * @param       label the menu's label in the menu bar, or in
      *                   another menu of which this menu is a submenu.
-     * @param       tearOff   if <code>true</code>, the menu
+     * @param       tearOff   if {@code true}, the menu
      *                   is a tear-off menu.
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
@@ -204,8 +204,8 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * Tear-off functionality may not be supported by all
      * implementations of AWT.  If a particular implementation doesn't
      * support tear-off menus, this value is silently ignored.
-     * @return      <code>true</code> if this is a tear-off menu;
-     *                         <code>false</code> otherwise.
+     * @return      {@code true} if this is a tear-off menu;
+     *                         {@code false} otherwise.
      */
     public boolean isTearOff() {
         return tearOff;
@@ -225,7 +225,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      *
      * @return the number of items in this menu
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>getItemCount()</code>.
+     * replaced by {@code getItemCount()}.
      */
     @Deprecated
     public int countItems() {
@@ -304,7 +304,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * @see           java.awt.Menu#add(java.lang.String)
      * @see           java.awt.Menu#add(java.awt.MenuItem)
      * @exception     IllegalArgumentException if the value of
-     *                    <code>index</code> is less than zero
+     *                    {@code index} is less than zero
      * @since         1.1
      */
 
@@ -340,7 +340,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     /**
      * Inserts a menu item with the specified label into this menu
      * at the specified position.  This is a convenience method for
-     * <code>insert(menuItem, index)</code>.
+     * {@code insert(menuItem, index)}.
      *
      * @param       label the text on the item
      * @param       index the position at which the menu item
@@ -348,7 +348,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * @see         java.awt.Menu#add(java.lang.String)
      * @see         java.awt.Menu#add(java.awt.MenuItem)
      * @exception     IllegalArgumentException if the value of
-     *                    <code>index</code> is less than zero
+     *                    {@code index} is less than zero
      * @since       1.1
      */
 
@@ -369,7 +369,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * @param       index the position at which the
      *                       menu separator should be inserted.
      * @exception   IllegalArgumentException if the value of
-     *                       <code>index</code> is less than 0.
+     *                       {@code index} is less than 0.
      * @see         java.awt.Menu#addSeparator
      * @since       1.1
      */
@@ -423,7 +423,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     /**
      * Removes the specified menu item from this menu.
      * @param  item the item to be removed from the menu.
-     *         If <code>item</code> is <code>null</code>
+     *         If {@code item} is {@code null}
      *         or is not in this menu, this method does
      *         nothing.
      */
@@ -519,7 +519,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     /**
      * Writes default serializable fields to stream.
      *
-     * @param s the <code>ObjectOutputStream</code> to write
+     * @param s the {@code ObjectOutputStream} to write
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see #readObject(ObjectInputStream)
      */
@@ -530,13 +530,13 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     }
 
     /**
-     * Reads the <code>ObjectInputStream</code>.
+     * Reads the {@code ObjectInputStream}.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the <code>ObjectInputStream</code> to read
+     * @param s the {@code ObjectInputStream} to read
      * @exception HeadlessException if
-     *   <code>GraphicsEnvironment.isHeadless</code> returns
-     *   <code>true</code>
+     *   {@code GraphicsEnvironment.isHeadless} returns
+     *   {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject(ObjectOutputStream)
      */
@@ -552,11 +552,11 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     }
 
     /**
-     * Returns a string representing the state of this <code>Menu</code>.
+     * Returns a string representing the state of this {@code Menu}.
      * This method is intended to be used only for debugging purposes, and the
      * content and format of the returned string may vary between
      * implementations. The returned string may be empty but may not be
-     * <code>null</code>.
+     * {@code null}.
      *
      * @return the parameter string of this menu
      */
@@ -606,7 +606,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * subclassed by menu component developers.
      * <p>
      * This class implements accessibility support for the
-     * <code>Menu</code> class.  It provides an implementation of the
+     * {@code Menu} class.  It provides an implementation of the
      * Java Accessibility API appropriate to menu user-interface elements.
      * @since 1.3
      */

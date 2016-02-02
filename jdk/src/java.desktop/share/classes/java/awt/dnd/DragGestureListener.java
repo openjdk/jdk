@@ -56,7 +56,7 @@ import java.util.EventListener;
      *
      * @see java.awt.dnd.DragGestureRecognizer
      * @see java.awt.dnd.DragGestureEvent
-     * @param dge the <code>DragGestureEvent</code> describing
+     * @param dge the {@code DragGestureEvent} describing
      * the gesture that has just occurred
      */
 
