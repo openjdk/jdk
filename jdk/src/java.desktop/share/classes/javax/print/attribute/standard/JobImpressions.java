@@ -63,7 +63,7 @@ import javax.print.attribute.PrintJobAttribute;
  * than a measure of the number of impressions to be produced by the job.
  * <P>
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value. The
- * category name returned by <CODE>getName()</CODE> gives the IPP attribute
+ * category name returned by {@code getName()} gives the IPP attribute
  * name.
  *
  * @see JobImpressionsSupported
@@ -85,7 +85,7 @@ public final class JobImpressions extends IntegerSyntax
      * @param  value  Integer value.
      *
      * @exception  IllegalArgumentException
-     *  (Unchecked exception) Thrown if <CODE>value</CODE> is less than 0.
+     *  (Unchecked exception) Thrown if {@code value} is less than 0.
      */
     public JobImpressions(int value) {
         super(value, 0, Integer.MAX_VALUE);
@@ -97,17 +97,17 @@ public final class JobImpressions extends IntegerSyntax
      * be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class JobImpressions.
+     * {@code object} is an instance of class JobImpressions.
      * <LI>
-     * This job impressions attribute's value and <CODE>object</CODE>'s value
+     * This job impressions attribute's value and {@code object}'s value
      * are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this job
+     * @return  True if {@code object} is equivalent to this job
      *          impressions attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -132,7 +132,7 @@ public final class JobImpressions extends IntegerSyntax
      * instance.
      * <P>
      * For class JobImpressions, the category name is
-     * <CODE>"job-impressions"</CODE>.
+     * {@code "job-impressions"}.
      *
      * @return  Attribute category name.
      */

@@ -52,9 +52,9 @@ public class PeekMetrics {
     private boolean mHasImages;
 
     /**
-     * Return <code>true</code> if the application
+     * Return {@code true} if the application
      * has done any drawing with a Paint that
-     * is not an instance of <code>Color</code>
+     * is not an instance of {@code Color}
      */
     public boolean hasNonSolidColors() {
         return mHasNonSolidColors;
@@ -119,7 +119,7 @@ public class PeekMetrics {
 
     /**
      * The application is drawing text
-     * defined by <code>TextLayout</code>
+     * defined by {@code TextLayout}
      * so record the needed information.
      */
     public void drawText(Graphics2D g, TextLayout textLayout) {
@@ -164,7 +164,7 @@ public class PeekMetrics {
 
     /**
      * Record information about drawing done
-     * with the supplied <code>Paint</code>.
+     * with the supplied {@code Paint}.
      */
     private void checkPaint(Paint paint) {
 
@@ -179,7 +179,7 @@ public class PeekMetrics {
 
     /**
      * Record information about drawing done
-     * with the supplied <code>Composite</code>.
+     * with the supplied {@code Composite}.
      */
     private void checkAlpha(Composite composite) {
 

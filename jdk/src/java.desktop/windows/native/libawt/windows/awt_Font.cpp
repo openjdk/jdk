@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,7 +270,7 @@ AwtFont* AwtFont::Create(JNIEnv *env, jobject font, jint angle, jfloat awScale)
             cfnum = 0;
         }
 
-        LPCWSTR wName;
+        LPCWSTR wName = NULL;
 
         awtFont = new AwtFont(cfnum, env, font);
 
@@ -1202,7 +1202,7 @@ void AwtFontCache::IncRefCount(HFONT hFont){
 }
 
 LONG AwtFontCache::IncRefCount(Item* item){
-    LONG    newVal;
+    LONG    newVal = 0;
 
     if(NULL != item){
         newVal = InterlockedIncrement((long*)&item->refCount);
@@ -1211,7 +1211,7 @@ LONG AwtFontCache::IncRefCount(Item* item){
 }
 
 LONG AwtFontCache::DecRefCount(Item* item){
-    LONG    newVal;
+    LONG    newVal = 0;
 
     if(NULL != item){
         newVal = InterlockedDecrement((long*)&item->refCount);

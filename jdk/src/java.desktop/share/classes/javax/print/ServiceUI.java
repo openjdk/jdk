@@ -136,8 +136,8 @@ public class ServiceUI {
      * @param x location of dialog including border in screen coordinates
      * @param y location of dialog including border in screen coordinates
      * @param services to be browsable, must be non-null.
-     * @param defaultService - initial PrintService to display.
-     * @param flavor - the flavor to be printed, or null.
+     * @param defaultService initial PrintService to display.
+     * @param flavor the flavor to be printed, or null.
      * @param attributes on input is the initial application supplied
      * preferences. This cannot be null but may be empty.
      * On output the attributes reflect changes made by the user.

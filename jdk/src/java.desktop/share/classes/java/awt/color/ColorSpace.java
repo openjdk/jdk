@@ -268,7 +268,7 @@ public abstract class ColorSpace implements java.io.Serializable {
     /**
      * Constructs a ColorSpace object given a color space type
      * and the number of components.
-     * @param type one of the <CODE>ColorSpace</CODE> type constants
+     * @param type one of the {@code ColorSpace} type constants
      * @param numcomponents the number of components in the color space
      */
     protected ColorSpace (int type, int numcomponents) {
@@ -283,7 +283,7 @@ public abstract class ColorSpace implements java.io.Serializable {
      * @param colorspace a specific color space identified by one of
      *        the predefined class constants (e.g. CS_sRGB, CS_LINEAR_RGB,
      *        CS_CIEXYZ, CS_GRAY, or CS_PYCC)
-     * @return the requested <CODE>ColorSpace</CODE> object
+     * @return the requested {@code ColorSpace} object
      */
     // NOTE: This method may be called by privileged threads.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
@@ -366,8 +366,8 @@ public abstract class ColorSpace implements java.io.Serializable {
 
     /**
      * Returns true if the ColorSpace is CS_sRGB.
-     * @return <CODE>true</CODE> if this is a <CODE>CS_sRGB</CODE> color
-     *         space, <code>false</code> if it is not
+     * @return {@code true} if this is a {@code CS_sRGB} color
+     *         space, {@code false} if it is not
      */
     public boolean isCS_sRGB () {
         /* REMIND - make sure we know sRGBspace exists already */
@@ -381,10 +381,10 @@ public abstract class ColorSpace implements java.io.Serializable {
      * This method transforms color values using algorithms designed
      * to produce the best perceptual match between input and output
      * colors.  In order to do colorimetric conversion of color values,
-     * you should use the <code>toCIEXYZ</code>
+     * you should use the {@code toCIEXYZ}
      * method of this color space to first convert from the input
      * color space to the CS_CIEXYZ color space, and then use the
-     * <code>fromCIEXYZ</code> method of the CS_sRGB color space to
+     * {@code fromCIEXYZ} method of the CS_sRGB color space to
      * convert from CS_CIEXYZ to the output color space.
      * See {@link #toCIEXYZ(float[]) toCIEXYZ} and
      * {@link #fromCIEXYZ(float[]) fromCIEXYZ} for further information.
@@ -405,10 +405,10 @@ public abstract class ColorSpace implements java.io.Serializable {
      * This method transforms color values using algorithms designed
      * to produce the best perceptual match between input and output
      * colors.  In order to do colorimetric conversion of color values,
-     * you should use the <code>toCIEXYZ</code>
+     * you should use the {@code toCIEXYZ}
      * method of the CS_sRGB color space to first convert from the input
      * color space to the CS_CIEXYZ color space, and then use the
-     * <code>fromCIEXYZ</code> method of this color space to
+     * {@code fromCIEXYZ} method of this color space to
      * convert from CS_CIEXYZ to the output color space.
      * See {@link #toCIEXYZ(float[]) toCIEXYZ} and
      * {@link #fromCIEXYZ(float[]) fromCIEXYZ} for further information.
@@ -438,7 +438,7 @@ public abstract class ColorSpace implements java.io.Serializable {
      * A further transformation is necessary to compute the XYZ values
      * that would be measured using current CIE recommended practices.
      * See the {@link ICC_ColorSpace#toCIEXYZ(float[]) toCIEXYZ} method of
-     * <code>ICC_ColorSpace</code> for further information.
+     * {@code ICC_ColorSpace} for further information.
      *
      * @param colorvalue a float array with length of at least the number
      *        of components in this ColorSpace
@@ -466,7 +466,7 @@ public abstract class ColorSpace implements java.io.Serializable {
      * current CIE recommended practices, they must be converted to D50
      * relative values before being passed to this method.
      * See the {@link ICC_ColorSpace#fromCIEXYZ(float[]) fromCIEXYZ} method of
-     * <code>ICC_ColorSpace</code> for further information.
+     * {@code ICC_ColorSpace} for further information.
      *
      * @param colorvalue a float array with length of at least 3
      * @return a float array with length equal to the number of
@@ -486,7 +486,7 @@ public abstract class ColorSpace implements java.io.Serializable {
      * primaries.
      *
      * @return the type constant that represents the type of this
-     *         <CODE>ColorSpace</CODE>
+     *         {@code ColorSpace}
      */
     public int getType() {
         return type;
@@ -494,7 +494,7 @@ public abstract class ColorSpace implements java.io.Serializable {
 
     /**
      * Returns the number of components of this ColorSpace.
-     * @return The number of components in this <CODE>ColorSpace</CODE>.
+     * @return The number of components in this {@code ColorSpace}.
      */
     public int getNumComponents() {
         return numComponents;
@@ -505,7 +505,7 @@ public abstract class ColorSpace implements java.io.Serializable {
      *
      * @param idx the component index
      * @return the name of the component at the specified index
-     * @throws IllegalArgumentException if <code>idx</code> is
+     * @throws IllegalArgumentException if {@code idx} is
      *         less than 0 or greater than numComponents - 1
      */
     public String getName (int idx) {

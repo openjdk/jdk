@@ -734,8 +734,8 @@ public class FileFontStrike extends PhysicalStrike {
            but if we eventually allow scalers to return NULL pointers
            this check might be actually useful. */
         if (ptr == 0L) {
-            result.x = (int) Math.floor(pt.x);
-            result.y = (int) Math.floor(pt.y);
+            result.x = (int) Math.floor(pt.x+0.5f);
+            result.y = (int) Math.floor(pt.y+0.5f);
             result.width = result.height = 0;
             return;
         }
@@ -743,8 +743,8 @@ public class FileFontStrike extends PhysicalStrike {
         topLeftX = StrikeCache.unsafe.getFloat(ptr+StrikeCache.topLeftXOffset);
         topLeftY = StrikeCache.unsafe.getFloat(ptr+StrikeCache.topLeftYOffset);
 
-        result.x = (int)Math.floor(pt.x + topLeftX);
-        result.y = (int)Math.floor(pt.y + topLeftY);
+        result.x = (int)Math.floor(pt.x + topLeftX + 0.5f);
+        result.y = (int)Math.floor(pt.y + topLeftY + 0.5f);
         result.width =
             StrikeCache.unsafe.getShort(ptr+StrikeCache.widthOffset)  &0x0ffff;
         result.height =

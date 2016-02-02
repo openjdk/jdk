@@ -35,7 +35,7 @@ import java.awt.geom.Point2D;
  * along the baseline, and an offset perpendicular to the baseline at
  * the advance.  Positive values along the perpendicular are in the
  * direction that is 90 degrees clockwise from the baseline vector.
- * Locations are represented as a <code>Point2D</code>, where x is the advance and
+ * Locations are represented as a {@code Point2D}, where x is the advance and
  * y is the offset.
  *
  * @since 1.6
@@ -49,7 +49,7 @@ public abstract class LayoutPath {
      * the location with the smallest advance is chosen.
      * @param point the point to convert.  If it is not the same
      * object as location, point will remain unmodified by this call.
-     * @param location a <code>Point2D</code> to hold the returned location.
+     * @param location a {@code Point2D} to hold the returned location.
      * It can be the same object as point.
      * @return true if the point is associated with the portion of the
      * path preceding the location, false if it is associated with
@@ -66,7 +66,7 @@ public abstract class LayoutPath {
      * the location's advance.  If this is the case, the value of
      * 'preceding' is used to disambiguate the portion of the path
      * whose location and slope is to be used to interpret the offset.
-     * @param location a <code>Point2D</code> representing the advance (in x) and
+     * @param location a {@code Point2D} representing the advance (in x) and
      * offset (in y) of a location relative to the path.  If location
      * is not the same object as point, location will remain
      * unmodified by this call.
@@ -74,7 +74,7 @@ public abstract class LayoutPath {
      * should be used, if false the portion after should be used.
      * This has no effect if the path does not break or bend sharply
      * at the advance.
-     * @param point a <code>Point2D</code> to hold the returned point.  It can be
+     * @param point a {@code Point2D} to hold the returned point.  It can be
      * the same object as location.
      * @throws NullPointerException if location or point is null
      * @since 1.6

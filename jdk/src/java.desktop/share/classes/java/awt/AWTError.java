@@ -38,7 +38,7 @@ public class AWTError extends Error {
      private static final long serialVersionUID = -1819846354050686206L;
 
     /**
-     * Constructs an instance of <code>AWTError</code> with the specified
+     * Constructs an instance of {@code AWTError} with the specified
      * detail message.
      * @param   msg   the detail message.
      * @since   1.0

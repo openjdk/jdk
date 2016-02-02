@@ -70,7 +70,7 @@ public class GIFImageWriter extends ImageWriter {
     GIFWritableImageMetadata.NATIVE_FORMAT_NAME;
 
     /**
-     * The <code>output</code> case to an <code>ImageOutputStream</code>.
+     * The {@code output} case to an {@code ImageOutputStream}.
      */
     private ImageOutputStream stream = null;
 
@@ -272,7 +272,7 @@ public class GIFImageWriter extends ImageWriter {
     }
 
     /**
-     * Merges <code>inData</code> into <code>outData</code>. The supplied
+     * Merges {@code inData} into {@code outData}. The supplied
      * metadata format name is attempted first and failing that the standard
      * metadata format name is attempted.
      */
@@ -554,8 +554,8 @@ public class GIFImageWriter extends ImageWriter {
      *
      * @param writeHeader Whether to write the header.
      * @param writeTrailer Whether to write the trailer.
-     * @param sm The stream metadata or <code>null</code> if
-     * <code>writeHeader</code> is <code>false</code>.
+     * @param sm The stream metadata or {@code null} if
+     * {@code writeHeader} is {@code false}.
      * @param iioimage The image and image metadata.
      * @param p The write parameters.
      *
@@ -564,10 +564,10 @@ public class GIFImageWriter extends ImageWriter {
      * greater than 8.
      * @throws IllegalArgumentException if the color component size is
      * greater than 8.
-     * @throws IllegalArgumentException if <code>writeHeader</code> is
-     * <code>true</code> and <code>sm</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>writeHeader</code> is
-     * <code>false</code> and a sequence is not being written.
+     * @throws IllegalArgumentException if {@code writeHeader} is
+     * {@code true} and {@code sm} is {@code null}.
+     * @throws IllegalArgumentException if {@code writeHeader} is
+     * {@code false} and a sequence is not being written.
      */
     private void write(boolean writeHeader,
                        boolean writeTrailer,

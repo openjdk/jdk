@@ -61,10 +61,10 @@ public abstract class TextSyntax implements Serializable, Cloneable {
      * @param  value   Text string.
      * @param  locale  Natural language of the text string. null
      * is interpreted to mean the default locale for as returned
-     * by <code>Locale.getDefault()</code>
+     * by {@code Locale.getDefault()}
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>value</CODE> is null.
+     *     (unchecked exception) Thrown if {@code value} is null.
      */
     protected TextSyntax(String value, Locale locale) {
         this.value = verify (value);
@@ -115,20 +115,20 @@ public abstract class TextSyntax implements Serializable, Cloneable {
      * object. To be equivalent, all of the following conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class TextSyntax.
+     * {@code object} is an instance of class TextSyntax.
      * <LI>
-     * This text attribute's underlying string and <CODE>object</CODE>'s
+     * This text attribute's underlying string and {@code object}'s
      * underlying string are equal.
      * <LI>
-     * This text attribute's locale and <CODE>object</CODE>'s locale are
+     * This text attribute's locale and {@code object}'s locale are
      * equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this text
+     * @return  True if {@code object} is equivalent to this text
      *          attribute, false otherwise.
      */
     public boolean equals(Object object) {

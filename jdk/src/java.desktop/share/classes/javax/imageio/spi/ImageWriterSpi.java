@@ -32,17 +32,17 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 
 /**
- * The service provider interface (SPI) for <code>ImageWriter</code>s.
+ * The service provider interface (SPI) for {@code ImageWriter}s.
  * For more information on service provider classes, see the class comment
- * for the <code>IIORegistry</code> class.
+ * for the {@code IIORegistry} class.
  *
- * <p> Each <code>ImageWriterSpi</code> provides several types of information
- * about the <code>ImageWriter</code> class with which it is associated.
+ * <p> Each {@code ImageWriterSpi} provides several types of information
+ * about the {@code ImageWriter} class with which it is associated.
  *
  * <p> The name of the vendor who defined the SPI class and a
  * brief description of the class are available via the
- * <code>getVendorName</code>, <code>getDescription</code>,
- * and <code>getVersion</code> methods.
+ * {@code getVendorName}, {@code getDescription},
+ * and {@code getVersion} methods.
  * These methods may be internationalized to provide locale-specific
  * output.  These methods are intended mainly to provide short,
  * human-writable information that might be used to organize a pop-up
@@ -50,20 +50,20 @@ import javax.imageio.stream.ImageOutputStream;
  *
  * <p> Lists of format names, file suffixes, and MIME types associated
  * with the service may be obtained by means of the
- * <code>getFormatNames</code>, <code>getFileSuffixes</code>, and
- * <code>getMIMEType</code> methods.  These methods may be used to
- * identify candidate <code>ImageWriter</code>s for writing a
+ * {@code getFormatNames}, {@code getFileSuffixes}, and
+ * {@code getMIMEType} methods.  These methods may be used to
+ * identify candidate {@code ImageWriter}s for writing a
  * particular file or stream based on manual format selection, file
  * naming, or MIME associations.
  *
- * <p> A more reliable way to determine which <code>ImageWriter</code>s
+ * <p> A more reliable way to determine which {@code ImageWriter}s
  * are likely to be able to parse a particular data stream is provided
- * by the <code>canEncodeImage</code> method.  This methods allows the
+ * by the {@code canEncodeImage} method.  This methods allows the
  * service provider to inspect the actual image contents.
  *
- * <p> Finally, an instance of the <code>ImageWriter</code> class
+ * <p> Finally, an instance of the {@code ImageWriter} class
  * associated with this service provider may be obtained by calling
- * the <code>createWriterInstance</code> method.  Any heavyweight
+ * the {@code createWriterInstance} method.  Any heavyweight
  * initialization, such as the loading of native libraries or creation
  * of large tables, should be deferred at least until the first
  * invocation of this method.
@@ -77,36 +77,36 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
 
     /**
      * A single-element array, initially containing
-     * <code>ImageOutputStream.class</code>, to be returned from
-     * <code>getOutputTypes</code>.
+     * {@code ImageOutputStream.class}, to be returned from
+     * {@code getOutputTypes}.
      * @deprecated Instead of using this field, directly create
-     * the equivalent array <code>{ ImageOutputStream.class }</code>.
+     * the equivalent array {@code { ImageOutputStream.class }}.
      */
     @Deprecated
     public static final Class<?>[] STANDARD_OUTPUT_TYPE =
         { ImageOutputStream.class };
 
     /**
-     * An array of <code>Class</code> objects to be returned from
-     * <code>getOutputTypes</code>, initially <code>null</code>.
+     * An array of {@code Class} objects to be returned from
+     * {@code getOutputTypes}, initially {@code null}.
      */
     protected Class<?>[] outputTypes = null;
 
     /**
      * An array of strings to be returned from
-     * <code>getImageReaderSpiNames</code>, initially
-     * <code>null</code>.
+     * {@code getImageReaderSpiNames}, initially
+     * {@code null}.
      */
     protected String[] readerSpiNames = null;
 
     /**
-     * The <code>Class</code> of the writer, initially
-     * <code>null</code>.
+     * The {@code Class} of the writer, initially
+     * {@code null}.
      */
     private Class<?> writerClass = null;
 
     /**
-     * Constructs a blank <code>ImageWriterSpi</code>.  It is up to
+     * Constructs a blank {@code ImageWriterSpi}.  It is up to
      * the subclass to initialize instance variables and/or override
      * method implementations in order to provide working versions of
      * all methods.
@@ -115,82 +115,82 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
     }
 
     /**
-     * Constructs an <code>ImageWriterSpi</code> with a given
+     * Constructs an {@code ImageWriterSpi} with a given
      * set of values.
      *
-     * @param vendorName the vendor name, as a non-<code>null</code>
-     * <code>String</code>.
-     * @param version a version identifier, as a non-<code>null</code>
-     * <code>String</code>.
-     * @param names a non-<code>null</code> array of
-     * <code>String</code>s indicating the format names.  At least one
+     * @param vendorName the vendor name, as a non-{@code null}
+     * {@code String}.
+     * @param version a version identifier, as a non-{@code null}
+     * {@code String}.
+     * @param names a non-{@code null} array of
+     * {@code String}s indicating the format names.  At least one
      * entry must be present.
-     * @param suffixes an array of <code>String</code>s indicating the
+     * @param suffixes an array of {@code String}s indicating the
      * common file suffixes.  If no suffixes are defined,
-     * <code>null</code> should be supplied.  An array of length 0
-     * will be normalized to <code>null</code>.
-     * @param MIMETypes an array of <code>String</code>s indicating
+     * {@code null} should be supplied.  An array of length 0
+     * will be normalized to {@code null}.
+     * @param MIMETypes an array of {@code String}s indicating
      * the format's MIME types.  If no suffixes are defined,
-     * <code>null</code> should be supplied.  An array of length 0
-     * will be normalized to <code>null</code>.
+     * {@code null} should be supplied.  An array of length 0
+     * will be normalized to {@code null}.
      * @param writerClassName the fully-qualified name of the
-     * associated <code>ImageWriterSpi</code> class, as a
-     * non-<code>null</code> <code>String</code>.
-     * @param outputTypes an array of <code>Class</code> objects of
+     * associated {@code ImageWriterSpi} class, as a
+     * non-{@code null String}.
+     * @param outputTypes an array of {@code Class} objects of
      * length at least 1 indicating the legal output types.
-     * @param readerSpiNames an array <code>String</code>s of length
+     * @param readerSpiNames an array {@code String}s of length
      * at least 1 naming the classes of all associated
-     * <code>ImageReader</code>s, or <code>null</code>.  An array of
-     * length 0 is normalized to <code>null</code>.
+     * {@code ImageReader}s, or {@code null}.  An array of
+     * length 0 is normalized to {@code null}.
      * @param supportsStandardStreamMetadataFormat a
-     * <code>boolean</code> that indicates whether a stream metadata
+     * {@code boolean} that indicates whether a stream metadata
      * object can use trees described by the standard metadata format.
      * @param nativeStreamMetadataFormatName a
-     * <code>String</code>, or <code>null</code>, to be returned from
-     * <code>getNativeStreamMetadataFormatName</code>.
+     * {@code String}, or {@code null}, to be returned from
+     * {@code getNativeStreamMetadataFormatName}.
      * @param nativeStreamMetadataFormatClassName a
-     * <code>String</code>, or <code>null</code>, to be used to instantiate
+     * {@code String}, or {@code null}, to be used to instantiate
      * a metadata format object to be returned from
-     * <code>getNativeStreamMetadataFormat</code>.
+     * {@code getNativeStreamMetadataFormat}.
      * @param extraStreamMetadataFormatNames an array of
-     * <code>String</code>s, or <code>null</code>, to be returned from
-     * <code>getExtraStreamMetadataFormatNames</code>.  An array of length
-     * 0 is normalized to <code>null</code>.
+     * {@code String}s, or {@code null}, to be returned from
+     * {@code getExtraStreamMetadataFormatNames}.  An array of length
+     * 0 is normalized to {@code null}.
      * @param extraStreamMetadataFormatClassNames an array of
-     * <code>String</code>s, or <code>null</code>, to be used to instantiate
+     * {@code String}s, or {@code null}, to be used to instantiate
      * a metadata format object to be returned from
-     * <code>getStreamMetadataFormat</code>.  An array of length
-     * 0 is normalized to <code>null</code>.
+     * {@code getStreamMetadataFormat}.  An array of length
+     * 0 is normalized to {@code null}.
      * @param supportsStandardImageMetadataFormat a
-     * <code>boolean</code> that indicates whether an image metadata
+     * {@code boolean} that indicates whether an image metadata
      * object can use trees described by the standard metadata format.
      * @param nativeImageMetadataFormatName a
-     * <code>String</code>, or <code>null</code>, to be returned from
-     * <code>getNativeImageMetadataFormatName</code>.
+     * {@code String}, or {@code null}, to be returned from
+     * {@code getNativeImageMetadataFormatName}.
      * @param nativeImageMetadataFormatClassName a
-     * <code>String</code>, or <code>null</code>, to be used to instantiate
+     * {@code String}, or {@code null}, to be used to instantiate
      * a metadata format object to be returned from
-     * <code>getNativeImageMetadataFormat</code>.
+     * {@code getNativeImageMetadataFormat}.
      * @param extraImageMetadataFormatNames an array of
-     * <code>String</code>s to be returned from
-     * <code>getExtraImageMetadataFormatNames</code>.  An array of length 0
-     * is normalized to <code>null</code>.
+     * {@code String}s to be returned from
+     * {@code getExtraImageMetadataFormatNames}.  An array of length 0
+     * is normalized to {@code null}.
      * @param extraImageMetadataFormatClassNames an array of
-     * <code>String</code>s, or <code>null</code>, to be used to instantiate
+     * {@code String}s, or {@code null}, to be used to instantiate
      * a metadata format object to be returned from
-     * <code>getImageMetadataFormat</code>.  An array of length
-     * 0 is normalized to <code>null</code>.
+     * {@code getImageMetadataFormat}.  An array of length
+     * 0 is normalized to {@code null}.
      *
-     * @exception IllegalArgumentException if <code>vendorName</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>version</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>names</code>
-     * is <code>null</code> or has length 0.
-     * @exception IllegalArgumentException if <code>writerClassName</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>outputTypes</code>
-     * is <code>null</code> or has length 0.
+     * @exception IllegalArgumentException if {@code vendorName}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code version}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code names}
+     * is {@code null} or has length 0.
+     * @exception IllegalArgumentException if {@code writerClassName}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code outputTypes}
+     * is {@code null} or has length 0.
      */
     public ImageWriterSpi(String vendorName,
                           String version,
@@ -243,11 +243,11 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
     }
 
     /**
-     * Returns <code>true</code> if the format that this writer
+     * Returns {@code true} if the format that this writer
      * outputs preserves pixel data bit-accurately.  The default
-     * implementation returns <code>true</code>.
+     * implementation returns {@code true}.
      *
-     * @return <code>true</code> if the format preserves full pixel
+     * @return {@code true} if the format preserves full pixel
      * accuracy.
      */
     public boolean isFormatLossless() {
@@ -255,31 +255,31 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
     }
 
     /**
-     * Returns an array of <code>Class</code> objects indicating what
+     * Returns an array of {@code Class} objects indicating what
      * types of objects may be used as arguments to the writer's
-     * <code>setOutput</code> method.
+     * {@code setOutput} method.
      *
      * <p> For most writers, which only output to an
-     * <code>ImageOutputStream</code>, a single-element array
-     * containing <code>ImageOutputStream.class</code> should be
+     * {@code ImageOutputStream}, a single-element array
+     * containing {@code ImageOutputStream.class} should be
      * returned.
      *
-     * @return a non-<code>null</code> array of
-     * <code>Class</code> objects of length at least 1.
+     * @return a non-{@code null} array of
+     * {@code Class} objects of length at least 1.
      */
     public Class<?>[] getOutputTypes() {
         return outputTypes.clone();
     }
 
     /**
-     * Returns <code>true</code> if the <code>ImageWriter</code>
+     * Returns {@code true} if the {@code ImageWriter}
      * implementation associated with this service provider is able to
      * encode an image with the given layout.  The layout
-     * (<i>i.e.</i>, the image's <code>SampleModel</code> and
-     * <code>ColorModel</code>) is described by an
-     * <code>ImageTypeSpecifier</code> object.
+     * (<i>i.e.</i>, the image's {@code SampleModel} and
+     * {@code ColorModel}) is described by an
+     * {@code ImageTypeSpecifier} object.
      *
-     * <p> A return value of <code>true</code> is not an absolute
+     * <p> A return value of {@code true} is not an absolute
      * guarantee of successful encoding; the encoding process may still
      * produce errors due to factors such as I/O errors, inconsistent
      * or malformed data structures, etc.  The intent is that a
@@ -287,61 +287,61 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
      * performed in order to determine if it is within the scope of
      * the encoding format.  For example, a service provider for a
      * format that can only encode greyscale would return
-     * <code>false</code> if handed an RGB <code>BufferedImage</code>.
+     * {@code false} if handed an RGB {@code BufferedImage}.
      * Similarly, a service provider for a format that can encode
      * 8-bit RGB imagery might refuse to encode an image with an
      * associated alpha channel.
      *
-     * <p> Different <code>ImageWriter</code>s, and thus service
+     * <p> Different {@code ImageWriter}s, and thus service
      * providers, may choose to be more or less strict.  For example,
      * they might accept an image with premultiplied alpha even though
      * it will have to be divided out of each pixel, at some loss of
      * precision, in order to be stored.
      *
-     * @param type an <code>ImageTypeSpecifier</code> specifying the
+     * @param type an {@code ImageTypeSpecifier} specifying the
      * layout of the image to be written.
      *
-     * @return <code>true</code> if this writer is likely to be able
+     * @return {@code true} if this writer is likely to be able
      * to encode images with the given layout.
      *
-     * @exception IllegalArgumentException if <code>type</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code type}
+     * is {@code null}.
      */
     public abstract boolean canEncodeImage(ImageTypeSpecifier type);
 
     /**
-     * Returns <code>true</code> if the <code>ImageWriter</code>
+     * Returns {@code true} if the {@code ImageWriter}
      * implementation associated with this service provider is able to
-     * encode the given <code>RenderedImage</code> instance.  Note
+     * encode the given {@code RenderedImage} instance.  Note
      * that this includes instances of
-     * <code>java.awt.image.BufferedImage</code>.
+     * {@code java.awt.image.BufferedImage}.
      *
      * <p> See the discussion for
-     * <code>canEncodeImage(ImageTypeSpecifier)</code> for information
+     * {@code canEncodeImage(ImageTypeSpecifier)} for information
      * on the semantics of this method.
      *
-     * @param im an instance of <code>RenderedImage</code> to be encoded.
+     * @param im an instance of {@code RenderedImage} to be encoded.
      *
-     * @return <code>true</code> if this writer is likely to be able
+     * @return {@code true} if this writer is likely to be able
      * to encode this image.
      *
-     * @exception IllegalArgumentException if <code>im</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code im}
+     * is {@code null}.
      */
     public boolean canEncodeImage(RenderedImage im) {
         return canEncodeImage(ImageTypeSpecifier.createFromRenderedImage(im));
     }
 
     /**
-     * Returns an instance of the <code>ImageWriter</code>
+     * Returns an instance of the {@code ImageWriter}
      * implementation associated with this service provider.
      * The returned object will initially be in an initial state as if
-     * its <code>reset</code> method had been called.
+     * its {@code reset} method had been called.
      *
      * <p> The default implementation simply returns
-     * <code>createWriterInstance(null)</code>.
+     * {@code createWriterInstance(null)}.
      *
-     * @return an <code>ImageWriter</code> instance.
+     * @return an {@code ImageWriter} instance.
      *
      * @exception IOException if an error occurs during loading,
      * or initialization of the writer class, or during instantiation
@@ -352,44 +352,44 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
     }
 
     /**
-     * Returns an instance of the <code>ImageWriter</code>
+     * Returns an instance of the {@code ImageWriter}
      * implementation associated with this service provider.
      * The returned object will initially be in an initial state
-     * as if its <code>reset</code> method had been called.
+     * as if its {@code reset} method had been called.
      *
-     * <p> An <code>Object</code> may be supplied to the plug-in at
+     * <p> An {@code Object} may be supplied to the plug-in at
      * construction time.  The nature of the object is entirely
      * plug-in specific.
      *
      * <p> Typically, a plug-in will implement this method using code
-     * such as <code>return new MyImageWriter(this)</code>.
+     * such as {@code return new MyImageWriter(this)}.
      *
      * @param extension a plug-in specific extension object, which may
-     * be <code>null</code>.
+     * be {@code null}.
      *
-     * @return an <code>ImageWriter</code> instance.
+     * @return an {@code ImageWriter} instance.
      *
      * @exception IOException if the attempt to instantiate
      * the writer fails.
      * @exception IllegalArgumentException if the
-     * <code>ImageWriter</code>'s constructor throws an
-     * <code>IllegalArgumentException</code> to indicate that the
+     * {@code ImageWriter}'s constructor throws an
+     * {@code IllegalArgumentException} to indicate that the
      * extension object is unsuitable.
      */
     public abstract ImageWriter createWriterInstance(Object extension)
         throws IOException;
 
     /**
-     * Returns <code>true</code> if the <code>ImageWriter</code> object
-     * passed in is an instance of the <code>ImageWriter</code>
+     * Returns {@code true} if the {@code ImageWriter} object
+     * passed in is an instance of the {@code ImageWriter}
      * associated with this service provider.
      *
-     * @param writer an <code>ImageWriter</code> instance.
+     * @param writer an {@code ImageWriter} instance.
      *
-     * @return <code>true</code> if <code>writer</code> is recognized
+     * @return {@code true} if {@code writer} is recognized
      *
-     * @exception IllegalArgumentException if <code>writer</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code writer} is
+     * {@code null}.
      */
     public boolean isOwnWriter(ImageWriter writer) {
         if (writer == null) {
@@ -400,35 +400,35 @@ public abstract class ImageWriterSpi extends ImageReaderWriterSpi {
     }
 
     /**
-     * Returns an array of <code>String</code>s containing all the
-     * fully qualified names of all the <code>ImageReaderSpi</code>
+     * Returns an array of {@code String}s containing all the
+     * fully qualified names of all the {@code ImageReaderSpi}
      * classes that can understand the internal metadata
-     * representation used by the <code>ImageWriter</code> associated
-     * with this service provider, or <code>null</code> if there are
-     * no such <code>ImageReaders</code> specified.  If a
-     * non-<code>null</code> value is returned, it must have non-zero
+     * representation used by the {@code ImageWriter} associated
+     * with this service provider, or {@code null} if there are
+     * no such {@code ImageReaders} specified.  If a
+     * non-{@code null} value is returned, it must have non-zero
      * length.
      *
      * <p> The first item in the array must be the name of the service
      * provider for the "preferred" reader, as it will be used to
-     * instantiate the <code>ImageReader</code> returned by
-     * <code>ImageIO.getImageReader(ImageWriter)</code>.
+     * instantiate the {@code ImageReader} returned by
+     * {@code ImageIO.getImageReader(ImageWriter)}.
      *
      * <p> This mechanism may be used to obtain
-     * <code>ImageReaders</code> that will generated non-pixel
-     * meta-data (see <code>IIOExtraDataInfo</code>) in a structure
-     * understood by an <code>ImageWriter</code>.  By reading the
+     * {@code ImageReaders} that will generated non-pixel
+     * meta-data (see {@code IIOExtraDataInfo}) in a structure
+     * understood by an {@code ImageWriter}.  By reading the
      * image and obtaining this data from one of the
-     * <code>ImageReaders</code> obtained with this method and passing
-     * it on to the <code>ImageWriter</code>, a client program can
+     * {@code ImageReaders} obtained with this method and passing
+     * it on to the {@code ImageWriter}, a client program can
      * read an image, modify it in some way, and write it back out
      * preserving all meta-data, without having to understand anything
      * about the internal structure of the meta-data, or even about
      * the image format.
      *
-     * @return an array of <code>String</code>s of length at least 1
-     * containing names of <code>ImageReaderSpi</code>s, or
-     * <code>null</code>.
+     * @return an array of {@code String}s of length at least 1
+     * containing names of {@code ImageReaderSpi}s, or
+     * {@code null}.
      *
      * @see javax.imageio.ImageIO#getImageReader(ImageWriter)
      * @see ImageReaderSpi#getImageWriterSpiNames()

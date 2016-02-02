@@ -44,13 +44,13 @@ import javax.print.attribute.PrintJobAttribute;
  * driver and this attribute would not be required. However, when printing an
  * archived document which has already been formatted, the end user may elect to
  * print just a subset of the pages contained in the document. In this case, if
- * a page range of <CODE>"<I>n</I>-<I>m</I>"</CODE> is specified, the first page
+ * a page range of <code>"<I>n</I>-<I>m</I>"</code> is specified, the first page
  * to be printed will be page <I>n.</I> All subsequent pages of the document
  * will be printed through and including page <I>m.</I>
  * <P>
  * If a PageRanges attribute is not specified for a print job, all pages of
  * the document will be printed. In other words, the default value for the
- * PageRanges attribute is always <CODE>{{1, Integer.MAX_VALUE}}</CODE>.
+ * PageRanges attribute is always {@code {{1, Integer.MAX_VALUE}}}.
  * <P>
  * The effect of a PageRanges attribute on a multidoc print job (a job with
  * multiple documents) depends on whether all the docs have the same page ranges
@@ -99,7 +99,7 @@ import javax.print.attribute.PrintJobAttribute;
  * and IPP "page-ranges" attribute. See class {@link
  * javax.print.attribute.SetOfIntegerSyntax SetOfIntegerSyntax} for an
  * explanation of canonical array form. The category name returned by
- * <CODE>getName()</CODE> gives the IPP attribute name.
+ * {@code getName()} gives the IPP attribute name.
  *
  * @author  David Mendenhall
  * @author  Alan Kaminsky
@@ -119,12 +119,12 @@ public final class PageRanges   extends SetOfIntegerSyntax
      * @param  members  Set members in array form.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>members</CODE> is null or
-     *     any element of <CODE>members</CODE> is null.
+     *     (unchecked exception) Thrown if {@code members} is null or
+     *     any element of {@code members} is null.
      * @exception  IllegalArgumentException
      *     (unchecked exception) Thrown if any element of
-     *   <CODE>members</CODE> is not a length-one or length-two array. Also
-     *     thrown if <CODE>members</CODE> is a zero-length array or if any
+     *   {@code members} is not a length-one or length-two array. Also
+     *     thrown if {@code members} is a zero-length array or if any
      *     member of the set is less than 1.
      */
     public PageRanges(int[][] members) {
@@ -144,10 +144,10 @@ public final class PageRanges   extends SetOfIntegerSyntax
      * @param  members  Set members in string form.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>members</CODE> is null or
-     *     any element of <CODE>members</CODE> is null.
+     *     (unchecked exception) Thrown if {@code members} is null or
+     *     any element of {@code members} is null.
      * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if <CODE>members</CODE> does not
+     *     (Unchecked exception) Thrown if {@code members} does not
      *    obey  the proper syntax.  Also
      *     thrown if the constructed set-of-integer is a
      *     zero-length array or if any
@@ -182,7 +182,7 @@ public final class PageRanges   extends SetOfIntegerSyntax
      * @param  member  Set member.
      *
      * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if <CODE>member</CODE> is less than
+     *     (Unchecked exception) Thrown if {@code member} is less than
      *     1.
      */
     public PageRanges(int member) {
@@ -201,7 +201,7 @@ public final class PageRanges   extends SetOfIntegerSyntax
      *
      * @exception  IllegalArgumentException
      *     (Unchecked exception) Thrown if a null range is specified or if a
-     *     non-null range is specified with <CODE>lowerBound</CODE> less than
+     *     non-null range is specified with {@code lowerBound} less than
      *     1.
      */
     public PageRanges(int lowerBound, int upperBound) {
@@ -219,17 +219,17 @@ public final class PageRanges   extends SetOfIntegerSyntax
      * true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class PageRanges.
+     * {@code object} is an instance of class PageRanges.
      * <LI>
-     * This page ranges attribute's members and <CODE>object</CODE>'s members
+     * This page ranges attribute's members and {@code object}'s members
      * are the same.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this page ranges
+     * @return  True if {@code object} is equivalent to this page ranges
      *          attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -253,7 +253,7 @@ public final class PageRanges   extends SetOfIntegerSyntax
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class PageRanges, the category name is <CODE>"page-ranges"</CODE>.
+     * For class PageRanges, the category name is {@code "page-ranges"}.
      *
      * @return  Attribute category name.
      */

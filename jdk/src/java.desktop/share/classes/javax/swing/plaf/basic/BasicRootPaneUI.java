@@ -256,7 +256,8 @@ public class BasicRootPaneUI extends RootPaneUI implements
             }
         }
 
-        public boolean isEnabled(Object sender) {
+        @Override
+        public boolean accept(Object sender) {
             String key = getName();
             if(key == POST_POPUP) {
                 MenuElement[] elems = MenuSelectionManager
@@ -278,7 +279,7 @@ public class BasicRootPaneUI extends RootPaneUI implements
                 return false;
             }
 
-            if (sender != null && sender instanceof JRootPane) {
+            if (sender instanceof JRootPane) {
                 JButton owner = ((JRootPane)sender).getDefaultButton();
                 return (owner != null && owner.getModel().isEnabled());
             }

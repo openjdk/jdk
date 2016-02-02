@@ -351,12 +351,16 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
             Container c = f.getParent();
             JDesktopPane d = f.getDesktopPane();
             boolean findNext = f.isSelected();
-
-            if (c == null) {
+            if (c == null || d == null) {
                 return;
             }
-
             desktopIcon = f.getDesktopIcon();
+            if (!wasIcon(f)) {
+                Rectangle r = getBoundsForIconOf(f);
+                desktopIcon.setBounds(r.x, r.y, r.width, r.height);
+                desktopIcon.revalidate();
+                setWasIcon(f, Boolean.TRUE);
+            }
 
             if (!f.isMaximum()) {
                 f.setNormalBounds(f.getBounds());

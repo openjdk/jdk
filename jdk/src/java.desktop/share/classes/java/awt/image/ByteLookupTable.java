@@ -59,8 +59,8 @@ public class ByteLookupTable extends LookupTable {
      *        before indexing into the arrays
      * @param data an array of byte arrays representing a lookup
      *        table for each band
-     * @throws IllegalArgumentException if <code>offset</code> is
-     *         is less than 0 or if the length of <code>data</code>
+     * @throws IllegalArgumentException if {@code offset} is
+     *         is less than 0 or if the length of {@code data}
      *         is less than 1
      */
     public ByteLookupTable(int offset, byte data[][]) {
@@ -83,8 +83,8 @@ public class ByteLookupTable extends LookupTable {
      * @param offset the value subtracted from the input values
      *        before indexing into the array
      * @param data an array of bytes
-     * @throws IllegalArgumentException if <code>offset</code> is
-     *         is less than 0 or if the length of <code>data</code>
+     * @throws IllegalArgumentException if {@code offset} is
+     *         is less than 0 or if the length of {@code data}
      *         is less than 1
      */
     public ByteLookupTable(int offset, byte data[]) {
@@ -99,7 +99,7 @@ public class ByteLookupTable extends LookupTable {
      * Returns the lookup table data by reference.  If this ByteLookupTable
      * was constructed using a single byte array, the length of the returned
      * array is one.
-     * @return the data array of this <code>ByteLookupTable</code>.
+     * @return the data array of this {@code ByteLookupTable}.
      */
     public final byte[][] getTable(){
         return data;
@@ -108,19 +108,19 @@ public class ByteLookupTable extends LookupTable {
     /**
      * Returns an array of samples of a pixel, translated with the lookup
      * table. The source and destination array can be the same array.
-     * Array <code>dst</code> is returned.
+     * Array {@code dst} is returned.
      *
      * @param src the source array.
      * @param dst the destination array. This array must be at least as
-     *         long as <code>src</code>.  If <code>dst</code> is
-     *         <code>null</code>, a new array will be allocated having the
-     *         same length as <code>src</code>.
-     * @return the array <code>dst</code>, an <code>int</code> array of
+     *         long as {@code src}.  If {@code dst} is
+     *         {@code null}, a new array will be allocated having the
+     *         same length as {@code src}.
+     * @return the array {@code dst}, an {@code int} array of
      *         samples.
-     * @exception ArrayIndexOutOfBoundsException if <code>src</code> is
-     *            longer than <code>dst</code> or if for any element
-     *            <code>i</code> of <code>src</code>,
-     *            <code>src[i]-offset</code> is either less than zero or
+     * @exception ArrayIndexOutOfBoundsException if {@code src} is
+     *            longer than {@code dst} or if for any element
+     *            {@code i} of {@code src},
+     *            {@code src[i]-offset} is either less than zero or
      *            greater than or equal to the length of the lookup table
      *            for any band.
      */
@@ -159,18 +159,18 @@ public class ByteLookupTable extends LookupTable {
     /**
      * Returns an array of samples of a pixel, translated with the lookup
      * table. The source and destination array can be the same array.
-     * Array <code>dst</code> is returned.
+     * Array {@code dst} is returned.
      *
      * @param src the source array.
      * @param dst the destination array. This array must be at least as
-     *         long as <code>src</code>.  If <code>dst</code> is
-     *         <code>null</code>, a new array will be allocated having the
-     *         same length as <code>src</code>.
-     * @return the array <code>dst</code>, an <code>int</code> array of
+     *         long as {@code src}.  If {@code dst} is
+     *         {@code null}, a new array will be allocated having the
+     *         same length as {@code src}.
+     * @return the array {@code dst}, an {@code int} array of
      *         samples.
-     * @exception ArrayIndexOutOfBoundsException if <code>src</code> is
-     *            longer than <code>dst</code> or if for any element
-     *            <code>i</code> of <code>src</code>,
+     * @exception ArrayIndexOutOfBoundsException if {@code src} is
+     *            longer than {@code dst} or if for any element
+     *            {@code i} of {@code src},
      *            {@code (src[i]&0xff)-offset} is either less than
      *            zero or greater than or equal to the length of the
      *            lookup table for any band.

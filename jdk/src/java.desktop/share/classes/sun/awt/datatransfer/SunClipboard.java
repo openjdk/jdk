@@ -68,8 +68,8 @@ public abstract class SunClipboard extends Clipboard
     private final Object CLIPBOARD_FLAVOR_LISTENER_KEY;
 
     /**
-     * A number of <code>FlavorListener</code>s currently registered
-     * on this clipboard across all <code>AppContext</code>s.
+     * A number of {@code FlavorListener}s currently registered
+     * on this clipboard across all {@code AppContext}s.
      */
     private volatile int numberOfFlavorListeners = 0;
 
@@ -262,11 +262,11 @@ public abstract class SunClipboard extends Clipboard
     /**
      * Clears the clipboard state (contents, owner and contents context) and
      * notifies the current owner that ownership is lost. Does nothing if the
-     * argument is not <code>null</code> and is not equal to the current
+     * argument is not {@code null} and is not equal to the current
      * contents context.
      *
      * @param disposedContext the AppContext that is disposed or
-     *        <code>null</code> if the ownership is lost because another
+     *        {@code null} if the ownership is lost because another
      *        application acquired ownership.
      */
     protected void lostOwnershipLater(final AppContext disposedContext) {
@@ -405,10 +405,10 @@ public abstract class SunClipboard extends Clipboard
     protected abstract void unregisterClipboardViewerChecked();
 
     /**
-     * Checks change of the <code>DataFlavor</code>s and, if necessary,
-     * posts notifications on <code>FlavorEvent</code>s to the
+     * Checks change of the {@code DataFlavor}s and, if necessary,
+     * posts notifications on {@code FlavorEvent}s to the
      * AppContexts' EDTs.
-     * The parameter <code>formats</code> is null iff we have just
+     * The parameter {@code formats} is null iff we have just
      * failed to get formats available on the clipboard.
      *
      * @param formats data formats that have just been retrieved from

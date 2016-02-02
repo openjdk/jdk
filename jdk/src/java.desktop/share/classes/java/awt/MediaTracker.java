@@ -31,13 +31,13 @@ import java.awt.image.ImageObserver;
 import sun.awt.image.MultiResolutionToolkitImage;
 
 /**
- * The <code>MediaTracker</code> class is a utility class to track
+ * The {@code MediaTracker} class is a utility class to track
  * the status of a number of media objects. Media objects could
  * include audio clips as well as images, though currently only
  * images are supported.
  * <p>
  * To use a media tracker, create an instance of
- * <code>MediaTracker</code> and call its <code>addImage</code>
+ * {@code MediaTracker} and call its {@code addImage}
  * method for each image to be tracked. In addition, each image can
  * be assigned a unique identifier. This identifier controls the
  * priority order in which the images are fetched. It can also be used
@@ -52,20 +52,20 @@ import sun.awt.image.MultiResolutionToolkitImage;
  * due to the multi-part nature of animated image
  * loading and painting,
  * but it is supported.
- * <code>MediaTracker</code> treats an animated image
+ * {@code MediaTracker} treats an animated image
  * as completely loaded
  * when the first frame is completely loaded.
- * At that point, the <code>MediaTracker</code>
+ * At that point, the {@code MediaTracker}
  * signals any waiters
  * that the image is completely loaded.
- * If no <code>ImageObserver</code>s are observing the image
+ * If no {@code ImageObserver}s are observing the image
  * when the first frame has finished loading,
  * the image might flush itself
  * to conserve resources
  * (see {@link Image#flush()}).
  *
  * <p>
- * Here is an example of using <code>MediaTracker</code>:
+ * Here is an example of using {@code MediaTracker}:
  *
  * <hr><blockquote><pre>{@code
  * import java.applet.Applet;
@@ -169,7 +169,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
 public class MediaTracker implements java.io.Serializable {
 
     /**
-     * A given <code>Component</code> that will be
+     * A given {@code Component} that will be
      * tracked by a media tracker where the image will
      * eventually be drawn.
      *
@@ -178,8 +178,8 @@ public class MediaTracker implements java.io.Serializable {
      */
     Component target;
     /**
-     * The head of the list of <code>Images</code> that is being
-     * tracked by the <code>MediaTracker</code>.
+     * The head of the list of {@code Images} that is being
+     * tracked by the {@code MediaTracker}.
      *
      * @serial
      * @see #addImage(Image, int)
@@ -277,11 +277,11 @@ public class MediaTracker implements java.io.Serializable {
      * <p>
      * If there is an error while loading or scaling an image, then that
      * image is considered to have finished loading. Use the
-     * <code>isErrorAny</code> or <code>isErrorID</code> methods to
+     * {@code isErrorAny} or {@code isErrorID} methods to
      * check for errors.
-     * @return      <code>true</code> if all images have finished loading,
+     * @return      {@code true} if all images have finished loading,
      *                       have been aborted, or have encountered
-     *                       an error; <code>false</code> otherwise
+     *                       an error; {@code false} otherwise
      * @see         java.awt.MediaTracker#checkAll(boolean)
      * @see         java.awt.MediaTracker#checkID
      * @see         java.awt.MediaTracker#isErrorAny
@@ -295,19 +295,19 @@ public class MediaTracker implements java.io.Serializable {
      * Checks to see if all images being tracked by this media tracker
      * have finished loading.
      * <p>
-     * If the value of the <code>load</code> flag is <code>true</code>,
+     * If the value of the {@code load} flag is {@code true},
      * then this method starts loading any images that are not yet
      * being loaded.
      * <p>
      * If there is an error while loading or scaling an image, that
      * image is considered to have finished loading. Use the
-     * <code>isErrorAny</code> and <code>isErrorID</code> methods to
+     * {@code isErrorAny} and {@code isErrorID} methods to
      * check for errors.
-     * @param       load   if <code>true</code>, start loading any
+     * @param       load   if {@code true}, start loading any
      *                       images that are not yet being loaded
-     * @return      <code>true</code> if all images have finished loading,
+     * @return      {@code true} if all images have finished loading,
      *                       have been aborted, or have encountered
-     *                       an error; <code>false</code> otherwise
+     *                       an error; {@code false} otherwise
      * @see         java.awt.MediaTracker#checkID
      * @see         java.awt.MediaTracker#checkAll()
      * @see         java.awt.MediaTracker#isErrorAny()
@@ -331,9 +331,9 @@ public class MediaTracker implements java.io.Serializable {
 
     /**
      * Checks the error status of all of the images.
-     * @return   <code>true</code> if any of the images tracked
+     * @return   {@code true} if any of the images tracked
      *                  by this media tracker had an error during
-     *                  loading; <code>false</code> otherwise
+     *                  loading; {@code false} otherwise
      * @see      java.awt.MediaTracker#isErrorID
      * @see      java.awt.MediaTracker#getErrorsAny
      */
@@ -352,7 +352,7 @@ public class MediaTracker implements java.io.Serializable {
      * Returns a list of all media that have encountered an error.
      * @return       an array of media objects tracked by this
      *                        media tracker that have encountered
-     *                        an error, or <code>null</code> if
+     *                        an error, or {@code null} if
      *                        there are none with errors
      * @see          java.awt.MediaTracker#isErrorAny
      * @see          java.awt.MediaTracker#getErrorsID
@@ -388,7 +388,7 @@ public class MediaTracker implements java.io.Serializable {
      * <p>
      * If there is an error while loading or scaling an image, then that
      * image is considered to have finished loading. Use the
-     * <code>isErrorAny</code> or <code>isErrorID</code> methods to
+     * {@code isErrorAny} or {@code isErrorID} methods to
      * check for errors.
      * @see         java.awt.MediaTracker#waitForID(int)
      * @see         java.awt.MediaTracker#waitForAll(long)
@@ -405,16 +405,16 @@ public class MediaTracker implements java.io.Serializable {
      * Starts loading all images tracked by this media tracker. This
      * method waits until all the images being tracked have finished
      * loading, or until the length of time specified in milliseconds
-     * by the <code>ms</code> argument has passed.
+     * by the {@code ms} argument has passed.
      * <p>
      * If there is an error while loading or scaling an image, then
      * that image is considered to have finished loading. Use the
-     * <code>isErrorAny</code> or <code>isErrorID</code> methods to
+     * {@code isErrorAny} or {@code isErrorID} methods to
      * check for errors.
      * @param       ms       the number of milliseconds to wait
      *                       for the loading to complete
-     * @return      <code>true</code> if all images were successfully
-     *                       loaded; <code>false</code> otherwise
+     * @return      {@code true} if all images were successfully
+     *                       loaded; {@code false} otherwise
      * @see         java.awt.MediaTracker#waitForID(int)
      * @see         java.awt.MediaTracker#waitForAll(long)
      * @see         java.awt.MediaTracker#isErrorAny
@@ -451,15 +451,15 @@ public class MediaTracker implements java.io.Serializable {
      * status of all media that are tracked by this media tracker.
      * <p>
      * Possible flags defined by the
-     * <code>MediaTracker</code> class are <code>LOADING</code>,
-     * <code>ABORTED</code>, <code>ERRORED</code>, and
-     * <code>COMPLETE</code>. An image that hasn't started
+     * {@code MediaTracker} class are {@code LOADING},
+     * {@code ABORTED}, {@code ERRORED}, and
+     * {@code COMPLETE}. An image that hasn't started
      * loading has zero as its status.
      * <p>
-     * If the value of <code>load</code> is <code>true</code>, then
+     * If the value of {@code load} is {@code true}, then
      * this method starts loading any images that are not yet being loaded.
      *
-     * @param        load   if <code>true</code>, start loading
+     * @param        load   if {@code true}, start loading
      *                            any images that are not yet being loaded
      * @return       the bitwise inclusive <b>OR</b> of the status of
      *                            all of the media being tracked
@@ -492,12 +492,12 @@ public class MediaTracker implements java.io.Serializable {
      * <p>
      * If there is an error while loading or scaling an image, then that
      * image is considered to have finished loading. Use the
-     * <code>isErrorAny</code> or <code>isErrorID</code> methods to
+     * {@code isErrorAny} or {@code isErrorID} methods to
      * check for errors.
      * @param       id   the identifier of the images to check
-     * @return      <code>true</code> if all images have finished loading,
+     * @return      {@code true} if all images have finished loading,
      *                       have been aborted, or have encountered
-     *                       an error; <code>false</code> otherwise
+     *                       an error; {@code false} otherwise
      * @see         java.awt.MediaTracker#checkID(int, boolean)
      * @see         java.awt.MediaTracker#checkAll()
      * @see         java.awt.MediaTracker#isErrorAny()
@@ -511,20 +511,20 @@ public class MediaTracker implements java.io.Serializable {
      * Checks to see if all images tracked by this media tracker that
      * are tagged with the specified identifier have finished loading.
      * <p>
-     * If the value of the <code>load</code> flag is <code>true</code>,
+     * If the value of the {@code load} flag is {@code true},
      * then this method starts loading any images that are not yet
      * being loaded.
      * <p>
      * If there is an error while loading or scaling an image, then that
      * image is considered to have finished loading. Use the
-     * <code>isErrorAny</code> or <code>isErrorID</code> methods to
+     * {@code isErrorAny} or {@code isErrorID} methods to
      * check for errors.
      * @param       id       the identifier of the images to check
-     * @param       load     if <code>true</code>, start loading any
+     * @param       load     if {@code true}, start loading any
      *                       images that are not yet being loaded
-     * @return      <code>true</code> if all images have finished loading,
+     * @return      {@code true} if all images have finished loading,
      *                       have been aborted, or have encountered
-     *                       an error; <code>false</code> otherwise
+     *                       an error; {@code false} otherwise
      * @see         java.awt.MediaTracker#checkID(int, boolean)
      * @see         java.awt.MediaTracker#checkAll()
      * @see         java.awt.MediaTracker#isErrorAny()
@@ -553,9 +553,9 @@ public class MediaTracker implements java.io.Serializable {
      * Checks the error status of all of the images tracked by this
      * media tracker with the specified identifier.
      * @param        id   the identifier of the images to check
-     * @return       <code>true</code> if any of the images with the
+     * @return       {@code true} if any of the images with the
      *                          specified identifier had an error during
-     *                          loading; <code>false</code> otherwise
+     *                          loading; {@code false} otherwise
      * @see          java.awt.MediaTracker#isErrorAny
      * @see          java.awt.MediaTracker#getErrorsID
      */
@@ -579,7 +579,7 @@ public class MediaTracker implements java.io.Serializable {
      * @return      an array of media objects tracked by this media
      *                       tracker with the specified identifier
      *                       that have encountered an error, or
-     *                       <code>null</code> if there are none with errors
+     *                       {@code null} if there are none with errors
      * @see         java.awt.MediaTracker#isErrorID
      * @see         java.awt.MediaTracker#isErrorAny
      * @see         java.awt.MediaTracker#getErrorsAny
@@ -619,7 +619,7 @@ public class MediaTracker implements java.io.Serializable {
      * <p>
      * If there is an error while loading or scaling an image, then that
      * image is considered to have finished loading. Use the
-     * <code>isErrorAny</code> and <code>isErrorID</code> methods to
+     * {@code isErrorAny} and {@code isErrorID} methods to
      * check for errors.
      * @param         id   the identifier of the images to check
      * @see           java.awt.MediaTracker#waitForAll
@@ -636,13 +636,13 @@ public class MediaTracker implements java.io.Serializable {
      * Starts loading all images tracked by this media tracker with the
      * specified identifier. This method waits until all the images with
      * the specified identifier have finished loading, or until the
-     * length of time specified in milliseconds by the <code>ms</code>
+     * length of time specified in milliseconds by the {@code ms}
      * argument has passed.
      * <p>
      * If there is an error while loading or scaling an image, then that
      * image is considered to have finished loading. Use the
-     * <code>statusID</code>, <code>isErrorID</code>, and
-     * <code>isErrorAny</code> methods to check for errors.
+     * {@code statusID}, {@code isErrorID}, and
+     * {@code isErrorAny} methods to check for errors.
      * @param  id the identifier of the images to check
      * @param  ms the length of time, in milliseconds, to wait
      *         for the loading to complete
@@ -686,15 +686,15 @@ public class MediaTracker implements java.io.Serializable {
      * tracked by this media tracker.
      * <p>
      * Possible flags defined by the
-     * <code>MediaTracker</code> class are <code>LOADING</code>,
-     * <code>ABORTED</code>, <code>ERRORED</code>, and
-     * <code>COMPLETE</code>. An image that hasn't started
+     * {@code MediaTracker} class are {@code LOADING},
+     * {@code ABORTED}, {@code ERRORED}, and
+     * {@code COMPLETE}. An image that hasn't started
      * loading has zero as its status.
      * <p>
-     * If the value of <code>load</code> is <code>true</code>, then
+     * If the value of {@code load} is {@code true}, then
      * this method starts loading any images that are not yet being loaded.
      * @param        id   the identifier of the images to check
-     * @param        load   if <code>true</code>, start loading
+     * @param        load   if {@code true}, start loading
      *                            any images that are not yet being loaded
      * @return       the bitwise inclusive <b>OR</b> of the status of
      *                            all of the media with the specified
@@ -761,7 +761,7 @@ public class MediaTracker implements java.io.Serializable {
     /**
      * Removes the specified image from the specified tracking
      * ID of this media tracker.
-     * All instances of <code>Image</code> being tracked
+     * All instances of {@code Image} being tracked
      * under the specified ID are removed regardless of scale.
      * @param      image the image to be removed
      * @param      id the tracking ID from which to remove the image

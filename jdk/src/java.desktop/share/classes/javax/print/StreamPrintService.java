@@ -37,17 +37,17 @@ import java.io.OutputStream;
  * The output format must be declared as a mime type.
  * This is equivalent to an output document flavor where the
  * representation class is always "java.io.OutputStream"
- * An instance of the <code>StreamPrintService</code> class is
+ * An instance of the {@code StreamPrintService} class is
  * obtained from a {@link StreamPrintServiceFactory} instance.
  * <p>
- * Note that a <code>StreamPrintService</code> is different from a
- * <code>PrintService</code>, which supports a
+ * Note that a {@code StreamPrintService} is different from a
+ * {@code PrintService}, which supports a
  * {@link javax.print.attribute.standard.Destination Destination}
- * attribute.  A <code>StreamPrintService</code> always requires an output
- * stream, whereas a <code>PrintService</code> optionally accepts a
- * <code>Destination</code>. A <code>StreamPrintService</code>
+ * attribute.  A {@code StreamPrintService} always requires an output
+ * stream, whereas a {@code PrintService} optionally accepts a
+ * {@code Destination}. A {@code StreamPrintService}
  * has no default destination for its formatted output.
- * Additionally a <code>StreamPrintService</code> is expected to generate
+ * Additionally a {@code StreamPrintService} is expected to generate
 output in
  * a format useful in other contexts.
  * StreamPrintService's are not expected to support the Destination attribute.
@@ -88,7 +88,7 @@ public abstract class StreamPrintService implements PrintService {
     public abstract String getOutputFormat();
 
     /**
-     * Disposes this <code>StreamPrintService</code>.
+     * Disposes this {@code StreamPrintService}.
      * If a stream service cannot be re-used, it must be disposed
      * to indicate this. Typically the client will call this method.
      * Services which write data which cannot meaningfully be appended to
@@ -100,12 +100,12 @@ public abstract class StreamPrintService implements PrintService {
     }
 
     /**
-     * Returns a <code>boolean</code> indicating whether or not
-     * this <code>StreamPrintService</code> has been disposed.
+     * Returns a {@code boolean} indicating whether or not
+     * this {@code StreamPrintService} has been disposed.
      * If this object has been disposed, will return true.
      * Used by services and client applications to recognize streams
      * to which no further data should be written.
-     * @return if this <code>StreamPrintService</code> has been disposed
+     * @return if this {@code StreamPrintService} has been disposed
      */
     public boolean isDisposed() {
         return disposed;

@@ -46,45 +46,25 @@ public final class AuFileReader extends SunFileReader {
     @Override
     public AudioFileFormat getAudioFileFormatImpl(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
-        boolean bigendian  = false;
-        int headerSize     = -1;
-        int dataSize       = -1;
-        int encoding_local = -1;
-        int sampleRate     = -1;
-        int frameRate      = -1;
-        int frameSize      = -1;
-        int channels       = -1;
-        final int sampleSizeInBits;
-        int length = 0;
-        int nread = 0;
-        AudioFormat.Encoding encoding = null;
+        final DataInputStream dis = new DataInputStream(stream);
+        final int magic = dis.readInt();
 
-        DataInputStream dis = new DataInputStream( stream );
-
-        final int magic = dis.readInt(); nread += 4;
-
-        if (! (magic == AuFileFormat.AU_SUN_MAGIC) || (magic == AuFileFormat.AU_DEC_MAGIC) ||
-            (magic == AuFileFormat.AU_SUN_INV_MAGIC) || (magic == AuFileFormat.AU_DEC_INV_MAGIC) ) {
-
+        if (magic != AuFileFormat.AU_SUN_MAGIC) {
             // not AU, throw exception
             throw new UnsupportedAudioFileException("not an AU file");
         }
 
-        if ((magic == AuFileFormat.AU_SUN_MAGIC) || (magic == AuFileFormat.AU_DEC_MAGIC)) {
-            bigendian = true;        // otherwise little-endian
-        }
-
-        headerSize     = (bigendian==true ? dis.readInt() : rllong(dis) );  nread += 4;
-        dataSize       = (bigendian==true ? dis.readInt() : rllong(dis) );  nread += 4;
-        encoding_local = (bigendian==true ? dis.readInt() : rllong(dis) );  nread += 4;
-        sampleRate     = (bigendian==true ? dis.readInt() : rllong(dis) );  nread += 4;
-        channels       = (bigendian==true ? dis.readInt() : rllong(dis) );  nread += 4;
+        final int headerSize = dis.readInt();
+        final int dataSize = dis.readInt();
+        final int encoding_local = dis.readInt();
+        final int sampleRate = dis.readInt();
+        final int channels = dis.readInt();
         if (channels <= 0) {
             throw new UnsupportedAudioFileException("Invalid number of channels");
         }
 
-        frameRate = sampleRate;
-
+        final int sampleSizeInBits;
+        final AudioFormat.Encoding encoding;
         switch (encoding_local) {
         case AuFileFormat.AU_ULAW_8:
             encoding = AudioFormat.Encoding.ULAW;
@@ -138,24 +118,24 @@ public final class AuFileReader extends SunFileReader {
                         break;
             */
         default:
-                // unsupported filetype, throw exception
-                throw new UnsupportedAudioFileException("not a valid AU file");
+            // unsupported filetype, throw exception
+            throw new UnsupportedAudioFileException("not a valid AU file");
         }
 
-        frameSize = calculatePCMFrameSize(sampleSizeInBits, channels);
+        final int frameSize = calculatePCMFrameSize(sampleSizeInBits, channels);
         //$$fb 2002-11-02: fix for 4629669: AU file reader: problems with empty files
-        if( dataSize < 0 ) {
+        final int length;
+        if (dataSize < 0) {
             length = AudioSystem.NOT_SPECIFIED;
         } else {
             //$$fb 2003-10-20: fix for 4940459: AudioInputStream.getFrameLength() returns 0 instead of NOT_SPECIFIED
             length = dataSize / frameSize;
         }
         // now seek past the header
-        dis.skipBytes(headerSize - nread);
-        AudioFormat format = new AudioFormat(encoding, sampleRate,
-                                             sampleSizeInBits, channels,
-                                             frameSize, (float) frameRate,
-                                             bigendian);
+        dis.skipBytes(headerSize - AuFileFormat.AU_HEADERSIZE);
+        final AudioFormat format = new AudioFormat(encoding, sampleRate,
+                                                   sampleSizeInBits, channels,
+                                                   frameSize, sampleRate, true);
         return new AuFileFormat(AudioFileFormat.Type.AU, dataSize + headerSize,
                                 format, length);
     }

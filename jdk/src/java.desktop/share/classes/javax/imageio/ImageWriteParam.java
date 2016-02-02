@@ -31,20 +31,20 @@ import java.util.Locale;
 /**
  * A class describing how a stream is to be encoded.  Instances of
  * this class or its subclasses are used to supply prescriptive
- * "how-to" information to instances of <code>ImageWriter</code>.
+ * "how-to" information to instances of {@code ImageWriter}.
  *
  * <p> A plug-in for a specific image format may define a subclass of
  * this class, and return objects of that class from the
- * <code>getDefaultWriteParam</code> method of its
- * <code>ImageWriter</code> implementation.  For example, the built-in
+ * {@code getDefaultWriteParam} method of its
+ * {@code ImageWriter} implementation.  For example, the built-in
  * JPEG writer plug-in will return instances of
- * <code>javax.imageio.plugins.jpeg.JPEGImageWriteParam</code>.
+ * {@code javax.imageio.plugins.jpeg.JPEGImageWriteParam}.
  *
  * <p> The region of the image to be written is determined by first
  * intersecting the actual bounds of the image with the rectangle
- * specified by <code>IIOParam.setSourceRegion</code>, if any.  If the
+ * specified by {@code IIOParam.setSourceRegion}, if any.  If the
  * resulting rectangle has a width or height of zero, the writer will
- * throw an <code>IIOException</code>. If the intersection is
+ * throw an {@code IIOException}. If the intersection is
  * non-empty, writing will commence with the first subsampled pixel
  * and include additional pixels within the intersected bounds
  * according to the horizontal and vertical subsampling factors
@@ -53,30 +53,30 @@ import java.util.Locale;
  *
  * <p> Individual features such as tiling, progressive encoding, and
  * compression may be set in one of four modes.
- * <code>MODE_DISABLED</code> disables the features;
- * <code>MODE_DEFAULT</code> enables the feature with
- * writer-controlled parameter values; <code>MODE_EXPLICIT</code>
- * enables the feature and allows the use of a <code>set</code> method
+ * {@code MODE_DISABLED} disables the features;
+ * {@code MODE_DEFAULT} enables the feature with
+ * writer-controlled parameter values; {@code MODE_EXPLICIT}
+ * enables the feature and allows the use of a {@code set} method
  * to provide additional parameters; and
- * <code>MODE_COPY_FROM_METADATA</code> copies relevant parameter
+ * {@code MODE_COPY_FROM_METADATA} copies relevant parameter
  * values from the stream and image metadata objects passed to the
  * writer.  The default for all features is
- * <code>MODE_COPY_FROM_METADATA</code>.  Non-standard features
+ * {@code MODE_COPY_FROM_METADATA}.  Non-standard features
  * supplied in subclasses are encouraged, but not required to use a
  * similar scheme.
  *
  * <p> Plug-in writers may extend the functionality of
- * <code>ImageWriteParam</code> by providing a subclass that implements
+ * {@code ImageWriteParam} by providing a subclass that implements
  * additional, plug-in specific interfaces.  It is up to the plug-in
  * to document what interfaces are available and how they are to be
  * used.  Writers will silently ignore any extended features of an
- * <code>ImageWriteParam</code> subclass of which they are not aware.
+ * {@code ImageWriteParam} subclass of which they are not aware.
  * Also, they may ignore any optional features that they normally
- * disable when creating their own <code>ImageWriteParam</code>
- * instances via <code>getDefaultWriteParam</code>.
+ * disable when creating their own {@code ImageWriteParam}
+ * instances via {@code getDefaultWriteParam}.
  *
  * <p> Note that unless a query method exists for a capability, it must
- * be supported by all <code>ImageWriter</code> implementations
+ * be supported by all {@code ImageWriter} implementations
  * (<i>e.g.</i> progressive encoding is optional, but subsampling must be
  * supported).
  *
@@ -87,12 +87,12 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * A constant value that may be passed into methods such as
-     * <code>setTilingMode</code>, <code>setProgressiveMode</code>,
-     * and <code>setCompressionMode</code> to disable a feature for
+     * {@code setTilingMode}, {@code setProgressiveMode},
+     * and {@code setCompressionMode} to disable a feature for
      * future writes.  That is, when this mode is set the stream will
      * <b>not</b> be tiled, progressive, or compressed, and the
      * relevant accessor methods will throw an
-     * <code>IllegalStateException</code>.
+     * {@code IllegalStateException}.
      *
      * @see #MODE_EXPLICIT
      * @see #MODE_COPY_FROM_METADATA
@@ -108,14 +108,14 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * A constant value that may be passed into methods such as
-     * <code>setTilingMode</code>,
-     * <code>setProgressiveMode</code>, and
-     * <code>setCompressionMode</code> to enable that feature for
+     * {@code setTilingMode},
+     * {@code setProgressiveMode}, and
+     * {@code setCompressionMode} to enable that feature for
      * future writes.  That is, when this mode is enabled the stream
      * will be tiled, progressive, or compressed according to a
      * sensible default chosen internally by the writer in a plug-in
      * dependent way, and the relevant accessor methods will
-     * throw an <code>IllegalStateException</code>.
+     * throw an {@code IllegalStateException}.
      *
      * @see #MODE_DISABLED
      * @see #MODE_EXPLICIT
@@ -131,12 +131,12 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * A constant value that may be passed into methods such as
-     * <code>setTilingMode</code> or <code>setCompressionMode</code>
+     * {@code setTilingMode} or {@code setCompressionMode}
      * to enable a feature for future writes. That is, when this mode
      * is set the stream will be tiled or compressed according to
      * additional information supplied to the corresponding
-     * <code>set</code> methods in this class and retrievable from the
-     * corresponding <code>get</code> methods.  Note that this mode is
+     * {@code set} methods in this class and retrievable from the
+     * corresponding {@code get} methods.  Note that this mode is
      * not supported for progressive output.
      *
      * @see #MODE_DISABLED
@@ -153,13 +153,13 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * A constant value that may be passed into methods such as
-     * <code>setTilingMode</code>, <code>setProgressiveMode</code>, or
-     * <code>setCompressionMode</code> to enable that feature for
+     * {@code setTilingMode}, {@code setProgressiveMode}, or
+     * {@code setCompressionMode} to enable that feature for
      * future writes.  That is, when this mode is enabled the stream
      * will be tiled, progressive, or compressed based on the contents
      * of stream and/or image metadata passed into the write
      * operation, and any relevant accessor methods will throw an
-     * <code>IllegalStateException</code>.
+     * {@code IllegalStateException}.
      *
      * <p> This is the default mode for all features, so that a read
      * including metadata followed by a write including metadata will
@@ -181,20 +181,20 @@ public class ImageWriteParam extends IIOParam {
     private static final int MAX_MODE = MODE_COPY_FROM_METADATA;
 
     /**
-     * A <code>boolean</code> that is <code>true</code> if this
-     * <code>ImageWriteParam</code> allows tile width and tile height
+     * A {@code boolean} that is {@code true} if this
+     * {@code ImageWriteParam} allows tile width and tile height
      * parameters to be set.  By default, the value is
-     * <code>false</code>.  Subclasses must set the value manually.
+     * {@code false}.  Subclasses must set the value manually.
      *
      * <p> Subclasses that do not support writing tiles should ensure
-     * that this value is set to <code>false</code>.
+     * that this value is set to {@code false}.
      */
     protected boolean canWriteTiles = false;
 
     /**
      * The mode controlling tiling settings, which Must be
-     * set to one of the four <code>MODE_*</code> values.  The default
-     * is <code>MODE_COPY_FROM_METADATA</code>.
+     * set to one of the four {@code MODE_*} values.  The default
+     * is {@code MODE_COPY_FROM_METADATA}.
      *
      * <p> Subclasses that do not writing tiles may ignore this value.
      *
@@ -209,8 +209,8 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * An array of preferred tile size range pairs.  The default value
-     * is <code>null</code>, which indicates that there are no
-     * preferred sizes.  If the value is non-<code>null</code>, it
+     * is {@code null}, which indicates that there are no
+     * preferred sizes.  If the value is non-{@code null}, it
      * must have an even length of at least two.
      *
      * <p> Subclasses that do not support writing tiles may ignore
@@ -221,7 +221,7 @@ public class ImageWriteParam extends IIOParam {
     protected Dimension[] preferredTileSizes = null;
 
     /**
-     * A <code>boolean</code> that is <code>true</code> if tiling
+     * A {@code boolean} that is {@code true} if tiling
      * parameters have been specified.
      *
      * <p> Subclasses that do not support writing tiles may ignore
@@ -239,7 +239,7 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * The height of each tile if tiling has been set, or 0 otherwise.
-     * The initial value is <code>0</code>.
+     * The initial value is {@code 0}.
      *
      * <p> Subclasses that do not support tiling may ignore this
      * value.
@@ -247,21 +247,21 @@ public class ImageWriteParam extends IIOParam {
     protected int tileHeight = 0;
 
     /**
-     * A <code>boolean</code> that is <code>true</code> if this
-     * <code>ImageWriteParam</code> allows tiling grid offset
+     * A {@code boolean} that is {@code true} if this
+     * {@code ImageWriteParam} allows tiling grid offset
      * parameters to be set.  By default, the value is
-     * <code>false</code>.  Subclasses must set the value manually.
+     * {@code false}.  Subclasses must set the value manually.
      *
      * <p> Subclasses that do not support writing tiles, or that
      * support writing but not offsetting tiles must ensure that this
-     * value is set to <code>false</code>.
+     * value is set to {@code false}.
      */
     protected boolean canOffsetTiles = false;
 
     /**
      * The amount by which the tile grid origin should be offset
      * horizontally from the image origin if tiling has been set,
-     * or 0 otherwise.  The initial value is <code>0</code>.
+     * or 0 otherwise.  The initial value is {@code 0}.
      *
      * <p> Subclasses that do not support offsetting tiles may ignore
      * this value.
@@ -271,7 +271,7 @@ public class ImageWriteParam extends IIOParam {
     /**
      * The amount by which the tile grid origin should be offset
      * vertically from the image origin if tiling has been set,
-     * or 0 otherwise.  The initial value is <code>0</code>.
+     * or 0 otherwise.  The initial value is {@code 0}.
      *
      * <p> Subclasses that do not support offsetting tiles may ignore
      * this value.
@@ -279,22 +279,22 @@ public class ImageWriteParam extends IIOParam {
     protected int tileGridYOffset = 0;
 
     /**
-     * A <code>boolean</code> that is <code>true</code> if this
-     * <code>ImageWriteParam</code> allows images to be written as a
+     * A {@code boolean} that is {@code true} if this
+     * {@code ImageWriteParam} allows images to be written as a
      * progressive sequence of increasing quality passes.  By default,
-     * the value is <code>false</code>.  Subclasses must set the value
+     * the value is {@code false}.  Subclasses must set the value
      * manually.
      *
      * <p> Subclasses that do not support progressive encoding must
-     * ensure that this value is set to <code>false</code>.
+     * ensure that this value is set to {@code false}.
      */
     protected boolean canWriteProgressive = false;
 
     /**
      * The mode controlling progressive encoding, which must be set to
-     * one of the four <code>MODE_*</code> values, except
-     * <code>MODE_EXPLICIT</code>.  The default is
-     * <code>MODE_COPY_FROM_METADATA</code>.
+     * one of the four {@code MODE_*} values, except
+     * {@code MODE_EXPLICIT}.  The default is
+     * {@code MODE_COPY_FROM_METADATA}.
      *
      * <p> Subclasses that do not support progressive encoding may
      * ignore this value.
@@ -309,19 +309,19 @@ public class ImageWriteParam extends IIOParam {
     protected int progressiveMode = MODE_COPY_FROM_METADATA;
 
     /**
-     * A <code>boolean</code> that is <code>true</code> if this writer
+     * A {@code boolean} that is {@code true} if this writer
      * can write images using compression. By default, the value is
-     * <code>false</code>.  Subclasses must set the value manually.
+     * {@code false}.  Subclasses must set the value manually.
      *
      * <p> Subclasses that do not support compression must ensure that
-     * this value is set to <code>false</code>.
+     * this value is set to {@code false}.
      */
     protected boolean canWriteCompressed = false;
 
     /**
      * The mode controlling compression settings, which must be set to
-     * one of the four <code>MODE_*</code> values.  The default is
-     * <code>MODE_COPY_FROM_METADATA</code>.
+     * one of the four {@code MODE_*} values.  The default is
+     * {@code MODE_COPY_FROM_METADATA}.
      *
      * <p> Subclasses that do not support compression may ignore this
      * value.
@@ -336,7 +336,7 @@ public class ImageWriteParam extends IIOParam {
     protected int compressionMode = MODE_COPY_FROM_METADATA;
 
     /**
-     * An array of <code>String</code>s containing the names of the
+     * An array of {@code String}s containing the names of the
      * available compression types.  Subclasses must set the value
      * manually.
      *
@@ -346,8 +346,8 @@ public class ImageWriteParam extends IIOParam {
     protected String[] compressionTypes = null;
 
     /**
-     * A <code>String</code> containing the name of the current
-     * compression type, or <code>null</code> if none is set.
+     * A {@code String} containing the name of the current
+     * compression type, or {@code null} if none is set.
      *
      * <p> Subclasses that do not support compression may ignore this
      * value.
@@ -355,8 +355,8 @@ public class ImageWriteParam extends IIOParam {
     protected String compressionType = null;
 
     /**
-     * A <code>float</code> containing the current compression quality
-     * setting.  The initial value is <code>1.0F</code>.
+     * A {@code float} containing the current compression quality
+     * setting.  The initial value is {@code 1.0F}.
      *
      * <p> Subclasses that do not support compression may ignore this
      * value.
@@ -364,26 +364,26 @@ public class ImageWriteParam extends IIOParam {
     protected float compressionQuality = 1.0F;
 
     /**
-     * A <code>Locale</code> to be used to localize compression type
-     * names and quality descriptions, or <code>null</code> to use a
-     * default <code>Locale</code>.  Subclasses must set the value
+     * A {@code Locale} to be used to localize compression type
+     * names and quality descriptions, or {@code null} to use a
+     * default {@code Locale}.  Subclasses must set the value
      * manually.
      */
     protected Locale locale = null;
 
     /**
-     * Constructs an empty <code>ImageWriteParam</code>.  It is up to
+     * Constructs an empty {@code ImageWriteParam}.  It is up to
      * the subclass to set up the instance variables properly.
      */
     protected ImageWriteParam() {}
 
     /**
-     * Constructs an <code>ImageWriteParam</code> set to use a
-     * given <code>Locale</code>.
+     * Constructs an {@code ImageWriteParam} set to use a
+     * given {@code Locale}.
      *
-     * @param locale a <code>Locale</code> to be used to localize
+     * @param locale a {@code Locale} to be used to localize
      * compression type names and quality descriptions, or
-     * <code>null</code>.
+     * {@code null}.
      */
     public ImageWriteParam(Locale locale) {
         this.locale = locale;
@@ -402,23 +402,23 @@ public class ImageWriteParam extends IIOParam {
     }
 
     /**
-     * Returns the currently set <code>Locale</code>, or
-     * <code>null</code> if only a default <code>Locale</code> is
+     * Returns the currently set {@code Locale}, or
+     * {@code null} if only a default {@code Locale} is
      * supported.
      *
-     * @return the current <code>Locale</code>, or <code>null</code>.
+     * @return the current {@code Locale}, or {@code null}.
      */
     public Locale getLocale() {
         return locale;
     }
 
     /**
-     * Returns <code>true</code> if the writer can perform tiling
-     * while writing.  If this method returns <code>false</code>, then
-     * <code>setTiling</code> will throw an
-     * <code>UnsupportedOperationException</code>.
+     * Returns {@code true} if the writer can perform tiling
+     * while writing.  If this method returns {@code false}, then
+     * {@code setTiling} will throw an
+     * {@code UnsupportedOperationException}.
      *
-     * @return <code>true</code> if the writer supports tiling.
+     * @return {@code true} if the writer supports tiling.
      *
      * @see #canOffsetTiles()
      * @see #setTiling(int, int, int, int)
@@ -428,15 +428,15 @@ public class ImageWriteParam extends IIOParam {
     }
 
     /**
-     * Returns <code>true</code> if the writer can perform tiling with
+     * Returns {@code true} if the writer can perform tiling with
      * non-zero grid offsets while writing.  If this method returns
-     * <code>false</code>, then <code>setTiling</code> will throw an
-     * <code>UnsupportedOperationException</code> if the grid offset
-     * arguments are not both zero.  If <code>canWriteTiles</code>
-     * returns <code>false</code>, this method will return
-     * <code>false</code> as well.
+     * {@code false}, then {@code setTiling} will throw an
+     * {@code UnsupportedOperationException} if the grid offset
+     * arguments are not both zero.  If {@code canWriteTiles}
+     * returns {@code false}, this method will return
+     * {@code false} as well.
      *
-     * @return <code>true</code> if the writer supports non-zero tile
+     * @return {@code true} if the writer supports non-zero tile
      * offsets.
      *
      * @see #canWriteTiles()
@@ -453,30 +453,30 @@ public class ImageWriteParam extends IIOParam {
      *
      * <ul>
      *
-     * <li><code>MODE_DISABLED</code> - The image will not be tiled.
-     * <code>setTiling</code> will throw an
-     * <code>IllegalStateException</code>.
+     * <li>{@code MODE_DISABLED} - The image will not be tiled.
+     * {@code setTiling} will throw an
+     * {@code IllegalStateException}.
      *
-     * <li><code>MODE_DEFAULT</code> - The image will be tiled using
-     * default parameters.  <code>setTiling</code> will throw an
-     * <code>IllegalStateException</code>.
+     * <li>{@code MODE_DEFAULT} - The image will be tiled using
+     * default parameters.  {@code setTiling} will throw an
+     * {@code IllegalStateException}.
      *
-     * <li><code>MODE_EXPLICIT</code> - The image will be tiled
+     * <li>{@code MODE_EXPLICIT} - The image will be tiled
      * according to parameters given in the {@link #setTiling setTiling}
      * method.  Any previously set tiling parameters are discarded.
      *
-     * <li><code>MODE_COPY_FROM_METADATA</code> - The image will
+     * <li>{@code MODE_COPY_FROM_METADATA} - The image will
      * conform to the metadata object passed in to a write.
-     * <code>setTiling</code> will throw an
-     * <code>IllegalStateException</code>.
+     * {@code setTiling} will throw an
+     * {@code IllegalStateException}.
      *
      * </ul>
      *
      * @param mode The mode to use for tiling.
      *
      * @exception UnsupportedOperationException if
-     * <code>canWriteTiles</code> returns <code>false</code>.
-     * @exception IllegalArgumentException if <code>mode</code> is not
+     * {@code canWriteTiles} returns {@code false}.
+     * @exception IllegalArgumentException if {@code mode} is not
      * one of the modes listed above.
      *
      * @see #setTiling
@@ -497,12 +497,12 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * Returns the current tiling mode, if tiling is supported.
-     * Otherwise throws an <code>UnsupportedOperationException</code>.
+     * Otherwise throws an {@code UnsupportedOperationException}.
      *
      * @return the current tiling mode.
      *
      * @exception UnsupportedOperationException if
-     * <code>canWriteTiles</code> returns <code>false</code>.
+     * {@code canWriteTiles} returns {@code false}.
      *
      * @see #setTilingMode
      */
@@ -514,7 +514,7 @@ public class ImageWriteParam extends IIOParam {
     }
 
     /**
-     * Returns an array of <code>Dimension</code>s indicating the
+     * Returns an array of {@code Dimension}s indicating the
      * legal size ranges for tiles as they will be encoded in the
      * output file or stream.  The returned array is a copy.
      *
@@ -524,17 +524,17 @@ public class ImageWriteParam extends IIOParam {
      * width and height.  Together, each pair defines a valid range of
      * sizes.  To specify a fixed size, use the same width and height
      * for both elements.  To specify an arbitrary range, a value of
-     * <code>null</code> is used in place of an actual array of
-     * <code>Dimension</code>s.
+     * {@code null} is used in place of an actual array of
+     * {@code Dimension}s.
      *
      * <p> If no array is specified on the constructor, but tiling is
-     * allowed, then this method returns <code>null</code>.
+     * allowed, then this method returns {@code null}.
      *
      * @exception UnsupportedOperationException if the plug-in does
      * not support tiling.
      *
-     * @return an array of <code>Dimension</code>s with an even length
-     * of at least two, or <code>null</code>.
+     * @return an array of {@code Dimension}s with an even length
+     * of at least two, or {@code null}.
      */
     public Dimension[] getPreferredTileSizes() {
         if (!canWriteTiles()) {
@@ -545,14 +545,14 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * Specifies that the image should be tiled in the output stream.
-     * The <code>tileWidth</code> and <code>tileHeight</code>
+     * The {@code tileWidth} and {@code tileHeight}
      * parameters specify the width and height of the tiles in the
      * file.  If the tile width or height is greater than the width or
      * height of the image, the image is not tiled in that dimension.
      *
-     * <p> If <code>canOffsetTiles</code> returns <code>false</code>,
-     * then the <code>tileGridXOffset</code> and
-     * <code>tileGridYOffset</code> parameters must be zero.
+     * <p> If {@code canOffsetTiles} returns {@code false},
+     * then the {@code tileGridXOffset} and
+     * {@code tileGridYOffset} parameters must be zero.
      *
      * @param tileWidth the width of each tile.
      * @param tileHeight the height of each tile.
@@ -562,14 +562,14 @@ public class ImageWriteParam extends IIOParam {
      * @exception UnsupportedOperationException if the plug-in does not
      * support tiling.
      * @exception IllegalStateException if the tiling mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception UnsupportedOperationException if the plug-in does not
      * support grid offsets, and the grid offsets are not both zero.
      * @exception IllegalArgumentException if the tile size is not
      * within one of the allowable ranges returned by
-     * <code>getPreferredTileSizes</code>.
-     * @exception IllegalArgumentException if <code>tileWidth</code>
-     * or <code>tileHeight</code> is less than or equal to 0.
+     * {@code getPreferredTileSizes}.
+     * @exception IllegalArgumentException if {@code tileWidth}
+     * or {@code tileHeight} is less than or equal to 0.
      *
      * @see #canWriteTiles
      * @see #canOffsetTiles
@@ -623,17 +623,17 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * Removes any previous tile grid parameters specified by calls to
-     * <code>setTiling</code>.
+     * {@code setTiling}.
      *
      * <p> The default implementation sets the instance variables
-     * <code>tileWidth</code>, <code>tileHeight</code>,
-     * <code>tileGridXOffset</code>, and
-     * <code>tileGridYOffset</code> to <code>0</code>.
+     * {@code tileWidth}, {@code tileHeight},
+     * {@code tileGridXOffset}, and
+     * {@code tileGridYOffset} to {@code 0}.
      *
      * @exception UnsupportedOperationException if the plug-in does not
      * support tiling.
      * @exception IllegalStateException if the tiling mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      *
      * @see #setTiling(int, int, int, int)
      */
@@ -654,14 +654,14 @@ public class ImageWriteParam extends IIOParam {
     /**
      * Returns the width of each tile in an image as it will be
      * written to the output stream.  If tiling parameters have not
-     * been set, an <code>IllegalStateException</code> is thrown.
+     * been set, an {@code IllegalStateException} is thrown.
      *
      * @return the tile width to be used for encoding.
      *
      * @exception UnsupportedOperationException if the plug-in does not
      * support tiling.
      * @exception IllegalStateException if the tiling mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception IllegalStateException if the tiling parameters have
      * not been set.
      *
@@ -684,14 +684,14 @@ public class ImageWriteParam extends IIOParam {
     /**
      * Returns the height of each tile in an image as it will be written to
      * the output stream.  If tiling parameters have not
-     * been set, an <code>IllegalStateException</code> is thrown.
+     * been set, an {@code IllegalStateException} is thrown.
      *
      * @return the tile height to be used for encoding.
      *
      * @exception UnsupportedOperationException if the plug-in does not
      * support tiling.
      * @exception IllegalStateException if the tiling mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception IllegalStateException if the tiling parameters have
      * not been set.
      *
@@ -714,14 +714,14 @@ public class ImageWriteParam extends IIOParam {
     /**
      * Returns the horizontal tile grid offset of an image as it will
      * be written to the output stream.  If tiling parameters have not
-     * been set, an <code>IllegalStateException</code> is thrown.
+     * been set, an {@code IllegalStateException} is thrown.
      *
      * @return the tile grid X offset to be used for encoding.
      *
      * @exception UnsupportedOperationException if the plug-in does not
      * support tiling.
      * @exception IllegalStateException if the tiling mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception IllegalStateException if the tiling parameters have
      * not been set.
      *
@@ -744,14 +744,14 @@ public class ImageWriteParam extends IIOParam {
     /**
      * Returns the vertical tile grid offset of an image as it will
      * be written to the output stream.  If tiling parameters have not
-     * been set, an <code>IllegalStateException</code> is thrown.
+     * been set, an {@code IllegalStateException} is thrown.
      *
      * @return the tile grid Y offset to be used for encoding.
      *
      * @exception UnsupportedOperationException if the plug-in does not
      * support tiling.
      * @exception IllegalStateException if the tiling mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception IllegalStateException if the tiling parameters have
      * not been set.
      *
@@ -772,10 +772,10 @@ public class ImageWriteParam extends IIOParam {
     }
 
     /**
-     * Returns <code>true</code> if the writer can write out images
+     * Returns {@code true} if the writer can write out images
      * as a series of passes of progressively increasing quality.
      *
-     * @return <code>true</code> if the writer supports progressive
+     * @return {@code true} if the writer supports progressive
      * encoding.
      *
      * @see #setProgressiveMode
@@ -789,38 +789,38 @@ public class ImageWriteParam extends IIOParam {
      * Specifies that the writer is to write the image out in a
      * progressive mode such that the stream will contain a series of
      * scans of increasing quality.  If progressive encoding is not
-     * supported, an <code>UnsupportedOperationException</code> will
+     * supported, an {@code UnsupportedOperationException} will
      * be thrown.
      *
      * <p>  The mode argument determines how
      * the progression parameters are chosen, and must be either
-     * <code>MODE_DISABLED</code>,
-     * <code>MODE_COPY_FROM_METADATA</code>, or
-     * <code>MODE_DEFAULT</code>.  Otherwise an
-     * <code>IllegalArgumentException</code> is thrown.
+     * {@code MODE_DISABLED},
+     * {@code MODE_COPY_FROM_METADATA}, or
+     * {@code MODE_DEFAULT}.  Otherwise an
+     * {@code IllegalArgumentException} is thrown.
      *
      * <p> The modes are interpreted as follows:
      *
      * <ul>
-     *   <li><code>MODE_DISABLED</code> - No progression.  Use this to
+     *   <li>{@code MODE_DISABLED} - No progression.  Use this to
      *   turn off progression.
      *
-     *   <li><code>MODE_COPY_FROM_METADATA</code> - The output image
+     *   <li>{@code MODE_COPY_FROM_METADATA} - The output image
      *   will use whatever progression parameters are found in the
      *   metadata objects passed into the writer.
      *
-     *   <li><code>MODE_DEFAULT</code> - The image will be written
+     *   <li>{@code MODE_DEFAULT} - The image will be written
      *   progressively, with parameters chosen by the writer.
      * </ul>
      *
-     * <p> The default is <code>MODE_COPY_FROM_METADATA</code>.
+     * <p> The default is {@code MODE_COPY_FROM_METADATA}.
      *
      * @param mode The mode for setting progression in the output
      * stream.
      *
      * @exception UnsupportedOperationException if the writer does not
      * support progressive encoding.
-     * @exception IllegalArgumentException if <code>mode</code> is not
+     * @exception IllegalArgumentException if {@code mode} is not
      * one of the modes listed above.
      *
      * @see #getProgressiveMode
@@ -860,9 +860,9 @@ public class ImageWriteParam extends IIOParam {
     }
 
     /**
-     * Returns <code>true</code> if this writer supports compression.
+     * Returns {@code true} if this writer supports compression.
      *
-     * @return <code>true</code> if the writer supports compression.
+     * @return {@code true} if the writer supports compression.
      */
     public boolean canWriteCompressed() {
         return canWriteCompressed;
@@ -870,41 +870,41 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * Specifies whether compression is to be performed, and if so how
-     * compression parameters are to be determined.  The <code>mode</code>
+     * compression parameters are to be determined.  The {@code mode}
      * argument must be one of the four modes, interpreted as follows:
      *
      * <ul>
-     *   <li><code>MODE_DISABLED</code> - If the mode is set to
-     *   <code>MODE_DISABLED</code>, methods that query or modify the
+     *   <li>{@code MODE_DISABLED} - If the mode is set to
+     *   {@code MODE_DISABLED}, methods that query or modify the
      *   compression type or parameters will throw an
-     *   <code>IllegalStateException</code> (if compression is
+     *   {@code IllegalStateException} (if compression is
      *   normally supported by the plug-in). Some writers, such as JPEG,
      *   do not normally offer uncompressed output. In this case, attempting
-     *   to set the mode to <code>MODE_DISABLED</code> will throw an
-     *   <code>UnsupportedOperationException</code> and the mode will not be
+     *   to set the mode to {@code MODE_DISABLED} will throw an
+     *   {@code UnsupportedOperationException} and the mode will not be
      *   changed.
      *
-     *   <li><code>MODE_EXPLICIT</code> - Compress using the
+     *   <li>{@code MODE_EXPLICIT} - Compress using the
      *   compression type and quality settings specified in this
-     *   <code>ImageWriteParam</code>.  Any previously set compression
+     *   {@code ImageWriteParam}.  Any previously set compression
      *   parameters are discarded.
      *
-     *   <li><code>MODE_COPY_FROM_METADATA</code> - Use whatever
+     *   <li>{@code MODE_COPY_FROM_METADATA} - Use whatever
      *   compression parameters are specified in metadata objects
      *   passed in to the writer.
      *
-     *   <li><code>MODE_DEFAULT</code> - Use default compression
+     *   <li>{@code MODE_DEFAULT} - Use default compression
      *   parameters.
      * </ul>
      *
-     * <p> The default is <code>MODE_COPY_FROM_METADATA</code>.
+     * <p> The default is {@code MODE_COPY_FROM_METADATA}.
      *
      * @param mode The mode for setting compression in the output
      * stream.
      *
      * @exception UnsupportedOperationException if the writer does not
      * support compression, or does not support the requested mode.
-     * @exception IllegalArgumentException if <code>mode</code> is not
+     * @exception IllegalArgumentException if {@code mode} is not
      * one of the modes listed above.
      *
      * @see #getCompressionMode
@@ -944,7 +944,7 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * Returns a list of available compression types, as an array or
-     * <code>String</code>s, or <code>null</code> if a compression
+     * {@code String}s, or {@code null} if a compression
      * type may not be chosen using these interfaces.  The array
      * returned is a copy.
      *
@@ -956,14 +956,14 @@ public class ImageWriteParam extends IIOParam {
      *
      * <p> The default implementation checks if compression is
      * supported and throws an
-     * <code>UnsupportedOperationException</code> if not.  Otherwise,
-     * it returns a clone of the <code>compressionTypes</code>
-     * instance variable if it is non-<code>null</code>, or else
-     * returns <code>null</code>.
+     * {@code UnsupportedOperationException} if not.  Otherwise,
+     * it returns a clone of the {@code compressionTypes}
+     * instance variable if it is non-{@code null}, or else
+     * returns {@code null}.
      *
-     * @return an array of <code>String</code>s containing the
+     * @return an array of {@code String}s containing the
      * (non-localized) names of available compression types, or
-     * <code>null</code>.
+     * {@code null}.
      *
      * @exception UnsupportedOperationException if the writer does not
      * support compression.
@@ -981,32 +981,32 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * Sets the compression type to one of the values indicated by
-     * <code>getCompressionTypes</code>.  If a value of
-     * <code>null</code> is passed in, any previous setting is
+     * {@code getCompressionTypes}.  If a value of
+     * {@code null} is passed in, any previous setting is
      * removed.
      *
      * <p> The default implementation checks whether compression is
      * supported and the compression mode is
-     * <code>MODE_EXPLICIT</code>.  If so, it calls
-     * <code>getCompressionTypes</code> and checks if
-     * <code>compressionType</code> is one of the legal values.  If it
-     * is, the <code>compressionType</code> instance variable is set.
-     * If <code>compressionType</code> is <code>null</code>, the
+     * {@code MODE_EXPLICIT}.  If so, it calls
+     * {@code getCompressionTypes} and checks if
+     * {@code compressionType} is one of the legal values.  If it
+     * is, the {@code compressionType} instance variable is set.
+     * If {@code compressionType} is {@code null}, the
      * instance variable is set without performing any checking.
      *
-     * @param compressionType one of the <code>String</code>s returned
-     * by <code>getCompressionTypes</code>, or <code>null</code> to
+     * @param compressionType one of the {@code String}s returned
+     * by {@code getCompressionTypes}, or {@code null} to
      * remove any previous setting.
      *
      * @exception UnsupportedOperationException if the writer does not
      * support compression.
      * @exception IllegalStateException if the compression mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception UnsupportedOperationException if there are no
      * settable compression types.
      * @exception IllegalArgumentException if
-     * <code>compressionType</code> is non-<code>null</code> but is not
-     * one of the values returned by <code>getCompressionTypes</code>.
+     * {@code compressionType} is non-{@code null} but is not
+     * one of the values returned by {@code getCompressionTypes}.
      *
      * @see #getCompressionTypes
      * @see #getCompressionType
@@ -1045,24 +1045,24 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * Returns the currently set compression type, or
-     * <code>null</code> if none has been set.  The type is returned
-     * as a <code>String</code> from among those returned by
-     * <code>getCompressionTypes</code>.
-     * If no compression type has been set, <code>null</code> is
+     * {@code null} if none has been set.  The type is returned
+     * as a {@code String} from among those returned by
+     * {@code getCompressionTypes}.
+     * If no compression type has been set, {@code null} is
      * returned.
      *
      * <p> The default implementation checks whether compression is
      * supported and the compression mode is
-     * <code>MODE_EXPLICIT</code>.  If so, it returns the value of the
-     * <code>compressionType</code> instance variable.
+     * {@code MODE_EXPLICIT}.  If so, it returns the value of the
+     * {@code compressionType} instance variable.
      *
-     * @return the current compression type as a <code>String</code>,
-     * or <code>null</code> if no type is set.
+     * @return the current compression type as a {@code String},
+     * or {@code null} if no type is set.
      *
      * @exception UnsupportedOperationException if the writer does not
      * support compression.
      * @exception IllegalStateException if the compression mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      *
      * @see #setCompressionType
      */
@@ -1082,14 +1082,14 @@ public class ImageWriteParam extends IIOParam {
      * Removes any previous compression type and quality settings.
      *
      * <p> The default implementation sets the instance variable
-     * <code>compressionType</code> to <code>null</code>, and the
-     * instance variable <code>compressionQuality</code> to
-     * <code>1.0F</code>.
+     * {@code compressionType} to {@code null}, and the
+     * instance variable {@code compressionQuality} to
+     * {@code 1.0F}.
      *
      * @exception UnsupportedOperationException if the plug-in does not
      * support compression.
      * @exception IllegalStateException if the compression mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      *
      * @see #setCompressionType
      * @see #setCompressionQuality
@@ -1109,23 +1109,23 @@ public class ImageWriteParam extends IIOParam {
 
     /**
      * Returns a localized version of the name of the current
-     * compression type, using the <code>Locale</code> returned by
-     * <code>getLocale</code>.
+     * compression type, using the {@code Locale} returned by
+     * {@code getLocale}.
      *
      * <p> The default implementation checks whether compression is
      * supported and the compression mode is
-     * <code>MODE_EXPLICIT</code>.  If so, if
-     * <code>compressionType</code> is <code>non-null</code> the value
-     * of <code>getCompressionType</code> is returned as a
+     * {@code MODE_EXPLICIT}.  If so, if
+     * {@code compressionType} is {@code non-null} the value
+     * of {@code getCompressionType} is returned as a
      * convenience.
      *
-     * @return a <code>String</code> containing a localized version of
+     * @return a {@code String} containing a localized version of
      * the name of the current compression type.
      *
      * @exception UnsupportedOperationException if the writer does not
      * support compression.
      * @exception IllegalStateException if the compression mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception IllegalStateException if no compression type is set.
      */
     public String getLocalizedCompressionTypeName() {
@@ -1144,31 +1144,31 @@ public class ImageWriteParam extends IIOParam {
     }
 
     /**
-     * Returns <code>true</code> if the current compression type
+     * Returns {@code true} if the current compression type
      * provides lossless compression.  If a plug-in provides only
      * one mandatory compression type, then this method may be
-     * called without calling <code>setCompressionType</code> first.
+     * called without calling {@code setCompressionType} first.
      *
      * <p> If there are multiple compression types but none has
-     * been set, an <code>IllegalStateException</code> is thrown.
+     * been set, an {@code IllegalStateException} is thrown.
      *
      * <p> The default implementation checks whether compression is
      * supported and the compression mode is
-     * <code>MODE_EXPLICIT</code>.  If so, if
-     * <code>getCompressionTypes()</code> is <code>null</code> or
-     * <code>getCompressionType()</code> is non-<code>null</code>
-     * <code>true</code> is returned as a convenience.
+     * {@code MODE_EXPLICIT}.  If so, if
+     * {@code getCompressionTypes()} is {@code null} or
+     * {@code getCompressionType()} is non-{@code null}
+     * {@code true} is returned as a convenience.
      *
-     * @return <code>true</code> if the current compression type is
+     * @return {@code true} if the current compression type is
      * lossless.
      *
      * @exception UnsupportedOperationException if the writer does not
      * support compression.
      * @exception IllegalStateException if the compression mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception IllegalStateException if the set of legal
-     * compression types is non-<code>null</code> and the current
-     * compression type is <code>null</code>.
+     * compression types is non-{@code null} and the current
+     * compression type is {@code null}.
      */
     public boolean isCompressionLossless() {
         if (!canWriteCompressed()) {
@@ -1187,10 +1187,10 @@ public class ImageWriteParam extends IIOParam {
     }
 
     /**
-     * Sets the compression quality to a value between <code>0</code>
-     * and <code>1</code>.  Only a single compression quality setting
+     * Sets the compression quality to a value between {@code 0}
+     * and {@code 1}.  Only a single compression quality setting
      * is supported by default; writers can provide extended versions
-     * of <code>ImageWriteParam</code> that offer more control.  For
+     * of {@code ImageWriteParam} that offer more control.  For
      * lossy compression schemes, the compression quality should
      * control the tradeoff between file size and image quality (for
      * example, by choosing quantization tables when writing JPEG
@@ -1206,27 +1206,27 @@ public class ImageWriteParam extends IIOParam {
      * important."
      *
      * <p> If there are multiple compression types but none has been
-     * set, an <code>IllegalStateException</code> is thrown.
+     * set, an {@code IllegalStateException} is thrown.
      *
      * <p> The default implementation checks that compression is
      * supported, and that the compression mode is
-     * <code>MODE_EXPLICIT</code>.  If so, if
-     * <code>getCompressionTypes()</code> returns <code>null</code> or
-     * <code>compressionType</code> is non-<code>null</code> it sets
-     * the <code>compressionQuality</code> instance variable.
+     * {@code MODE_EXPLICIT}.  If so, if
+     * {@code getCompressionTypes()} returns {@code null} or
+     * {@code compressionType} is non-{@code null} it sets
+     * the {@code compressionQuality} instance variable.
      *
-     * @param quality a <code>float</code> between <code>0</code>and
-     * <code>1</code> indicating the desired quality level.
+     * @param quality a {@code float} between {@code 0} and
+     * {@code 1} indicating the desired quality level.
      *
      * @exception UnsupportedOperationException if the writer does not
      * support compression.
      * @exception IllegalStateException if the compression mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception IllegalStateException if the set of legal
-     * compression types is non-<code>null</code> and the current
-     * compression type is <code>null</code>.
-     * @exception IllegalArgumentException if <code>quality</code> is
-     * not between <code>0</code>and <code>1</code>, inclusive.
+     * compression types is non-{@code null} and the current
+     * compression type is {@code null}.
+     * @exception IllegalArgumentException if {@code quality} is
+     * not between {@code 0} and {@code 1}, inclusive.
      *
      * @see #getCompressionQuality
      */
@@ -1252,14 +1252,14 @@ public class ImageWriteParam extends IIOParam {
      * Returns the current compression quality setting.
      *
      * <p> If there are multiple compression types but none has been
-     * set, an <code>IllegalStateException</code> is thrown.
+     * set, an {@code IllegalStateException} is thrown.
      *
      * <p> The default implementation checks that compression is
      * supported and that the compression mode is
-     * <code>MODE_EXPLICIT</code>.  If so, if
-     * <code>getCompressionTypes()</code> is <code>null</code> or
-     * <code>getCompressionType()</code> is non-<code>null</code>, it
-     * returns the value of the <code>compressionQuality</code>
+     * {@code MODE_EXPLICIT}.  If so, if
+     * {@code getCompressionTypes()} is {@code null} or
+     * {@code getCompressionType()} is non-{@code null}, it
+     * returns the value of the {@code compressionQuality}
      * instance variable.
      *
      * @return the current compression quality setting.
@@ -1267,10 +1267,10 @@ public class ImageWriteParam extends IIOParam {
      * @exception UnsupportedOperationException if the writer does not
      * support compression.
      * @exception IllegalStateException if the compression mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception IllegalStateException if the set of legal
-     * compression types is non-<code>null</code> and the current
-     * compression type is <code>null</code>.
+     * compression types is non-{@code null} and the current
+     * compression type is {@code null}.
      *
      * @see #setCompressionQuality
      */
@@ -1292,40 +1292,40 @@ public class ImageWriteParam extends IIOParam {
 
 
     /**
-     * Returns a <code>float</code> indicating an estimate of the
+     * Returns a {@code float} indicating an estimate of the
      * number of bits of output data for each bit of input image data
      * at the given quality level.  The value will typically lie
-     * between <code>0</code> and <code>1</code>, with smaller values
+     * between {@code 0} and {@code 1}, with smaller values
      * indicating more compression.  A special value of
-     * <code>-1.0F</code> is used to indicate that no estimate is
+     * {@code -1.0F} is used to indicate that no estimate is
      * available.
      *
      * <p> If there are multiple compression types but none has been set,
-     * an <code>IllegalStateException</code> is thrown.
+     * an {@code IllegalStateException} is thrown.
      *
      * <p> The default implementation checks that compression is
      * supported and the compression mode is
-     * <code>MODE_EXPLICIT</code>.  If so, if
-     * <code>getCompressionTypes()</code> is <code>null</code> or
-     * <code>getCompressionType()</code> is non-<code>null</code>, and
-     * <code>quality</code> is within bounds, it returns
-     * <code>-1.0</code>.
+     * {@code MODE_EXPLICIT}.  If so, if
+     * {@code getCompressionTypes()} is {@code null} or
+     * {@code getCompressionType()} is non-{@code null}, and
+     * {@code quality} is within bounds, it returns
+     * {@code -1.0}.
      *
      * @param quality the quality setting whose bit rate is to be
      * queried.
      *
      * @return an estimate of the compressed bit rate, or
-     * <code>-1.0F</code> if no estimate is available.
+     * {@code -1.0F} if no estimate is available.
      *
      * @exception UnsupportedOperationException if the writer does not
      * support compression.
      * @exception IllegalStateException if the compression mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception IllegalStateException if the set of legal
-     * compression types is non-<code>null</code> and the current
-     * compression type is <code>null</code>.
-     * @exception IllegalArgumentException if <code>quality</code> is
-     * not between <code>0</code>and <code>1</code>, inclusive.
+     * compression types is non-{@code null} and the current
+     * compression type is {@code null}.
+     * @exception IllegalArgumentException if {@code quality} is
+     * not between {@code 0} and {@code 1}, inclusive.
      */
     public float getBitRate(float quality) {
         if (!canWriteCompressed()) {
@@ -1347,55 +1347,55 @@ public class ImageWriteParam extends IIOParam {
     }
 
     /**
-     * Returns an array of <code>String</code>s that may be used along
-     * with <code>getCompressionQualityValues</code> as part of a user
+     * Returns an array of {@code String}s that may be used along
+     * with {@code getCompressionQualityValues} as part of a user
      * interface for setting or displaying the compression quality
-     * level.  The <code>String</code> with index <code>i</code>
+     * level.  The {@code String} with index {@code i}
      * provides a description of the range of quality levels between
-     * <code>getCompressionQualityValues[i]</code> and
-     * <code>getCompressionQualityValues[i + 1]</code>.  Note that the
+     * {@code getCompressionQualityValues[i]} and
+     * {@code getCompressionQualityValues[i + 1]}.  Note that the
      * length of the array returned from
-     * <code>getCompressionQualityValues</code> will always be one
+     * {@code getCompressionQualityValues} will always be one
      * greater than that returned from
-     * <code>getCompressionQualityDescriptions</code>.
+     * {@code getCompressionQualityDescriptions}.
      *
      * <p> As an example, the strings "Good", "Better", and "Best"
-     * could be associated with the ranges <code>[0, .33)</code>,
-     * <code>[.33, .66)</code>, and <code>[.66, 1.0]</code>.  In this
-     * case, <code>getCompressionQualityDescriptions</code> would
-     * return <code>{ "Good", "Better", "Best" }</code> and
-     * <code>getCompressionQualityValues</code> would return
-     * <code>{ 0.0F, .33F, .66F, 1.0F }</code>.
+     * could be associated with the ranges {@code [0, .33)},
+     * {@code [.33, .66)}, and {@code [.66, 1.0]}.  In this
+     * case, {@code getCompressionQualityDescriptions} would
+     * return {@code { "Good", "Better", "Best" }} and
+     * {@code getCompressionQualityValues} would return
+     * {@code { 0.0F, .33F, .66F, 1.0F }}.
      *
-     * <p> If no descriptions are available, <code>null</code> is
-     * returned.  If <code>null</code> is returned from
-     * <code>getCompressionQualityValues</code>, this method must also
-     * return <code>null</code>.
+     * <p> If no descriptions are available, {@code null} is
+     * returned.  If {@code null} is returned from
+     * {@code getCompressionQualityValues}, this method must also
+     * return {@code null}.
      *
      * <p> The descriptions should be localized for the
-     * <code>Locale</code> returned by <code>getLocale</code>, if it
-     * is non-<code>null</code>.
+     * {@code Locale} returned by {@code getLocale}, if it
+     * is non-{@code null}.
      *
      * <p> If there are multiple compression types but none has been set,
-     * an <code>IllegalStateException</code> is thrown.
+     * an {@code IllegalStateException} is thrown.
      *
      * <p> The default implementation checks that compression is
      * supported and that the compression mode is
-     * <code>MODE_EXPLICIT</code>.  If so, if
-     * <code>getCompressionTypes()</code> is <code>null</code> or
-     * <code>getCompressionType()</code> is non-<code>null</code>, it
-     * returns <code>null</code>.
+     * {@code MODE_EXPLICIT}.  If so, if
+     * {@code getCompressionTypes()} is {@code null} or
+     * {@code getCompressionType()} is non-{@code null}, it
+     * returns {@code null}.
      *
-     * @return an array of <code>String</code>s containing localized
+     * @return an array of {@code String}s containing localized
      * descriptions of the compression quality levels.
      *
      * @exception UnsupportedOperationException if the writer does not
      * support compression.
      * @exception IllegalStateException if the compression mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception IllegalStateException if the set of legal
-     * compression types is non-<code>null</code> and the current
-     * compression type is <code>null</code>.
+     * compression types is non-{@code null} and the current
+     * compression type is {@code null}.
      *
      * @see #getCompressionQualityValues
      */
@@ -1416,39 +1416,39 @@ public class ImageWriteParam extends IIOParam {
     }
 
     /**
-     * Returns an array of <code>float</code>s that may be used along
-     * with <code>getCompressionQualityDescriptions</code> as part of a user
+     * Returns an array of {@code float}s that may be used along
+     * with {@code getCompressionQualityDescriptions} as part of a user
      * interface for setting or displaying the compression quality
      * level.  See {@link #getCompressionQualityDescriptions
      * getCompressionQualityDescriptions} for more information.
      *
-     * <p> If no descriptions are available, <code>null</code> is
-     * returned.  If <code>null</code> is returned from
-     * <code>getCompressionQualityDescriptions</code>, this method
-     * must also return <code>null</code>.
+     * <p> If no descriptions are available, {@code null} is
+     * returned.  If {@code null} is returned from
+     * {@code getCompressionQualityDescriptions}, this method
+     * must also return {@code null}.
      *
      * <p> If there are multiple compression types but none has been set,
-     * an <code>IllegalStateException</code> is thrown.
+     * an {@code IllegalStateException} is thrown.
      *
      * <p> The default implementation checks that compression is
      * supported and that the compression mode is
-     * <code>MODE_EXPLICIT</code>.  If so, if
-     * <code>getCompressionTypes()</code> is <code>null</code> or
-     * <code>getCompressionType()</code> is non-<code>null</code>, it
-     * returns <code>null</code>.
+     * {@code MODE_EXPLICIT}.  If so, if
+     * {@code getCompressionTypes()} is {@code null} or
+     * {@code getCompressionType()} is non-{@code null}, it
+     * returns {@code null}.
      *
-     * @return an array of <code>float</code>s indicating the
+     * @return an array of {@code float}s indicating the
      * boundaries between the compression quality levels as described
-     * by the <code>String</code>s from
-     * <code>getCompressionQualityDescriptions</code>.
+     * by the {@code String}s from
+     * {@code getCompressionQualityDescriptions}.
      *
      * @exception UnsupportedOperationException if the writer does not
      * support compression.
      * @exception IllegalStateException if the compression mode is not
-     * <code>MODE_EXPLICIT</code>.
+     * {@code MODE_EXPLICIT}.
      * @exception IllegalStateException if the set of legal
-     * compression types is non-<code>null</code> and the current
-     * compression type is <code>null</code>.
+     * compression types is non-{@code null} and the current
+     * compression type is {@code null}.
      *
      * @see #getCompressionQualityDescriptions
      */

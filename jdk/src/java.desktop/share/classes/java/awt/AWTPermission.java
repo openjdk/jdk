@@ -29,7 +29,7 @@ import java.security.BasicPermission;
 
 /**
  * This class is for AWT permissions.
- * An <code>AWTPermission</code> contains a target name but
+ * An {@code AWTPermission} contains a target name but
  * no actions list; you either have the named permission
  * or you don't.
  *
@@ -39,7 +39,7 @@ import java.security.BasicPermission;
  * Also, an asterisk could be used to represent all AWT permissions.
  *
  * <P>
- * The following table lists all the possible <code>AWTPermission</code>
+ * The following table lists all the possible {@code AWTPermission}
  * target names, and for each provides a description of what the
  * permission allows and a discussion of the risks of granting code
  * the permission.
@@ -125,12 +125,12 @@ import java.security.BasicPermission;
  *
  * <tr>
  *   <td>replaceKeyboardFocusManager</td>
- *   <td>Sets the <code>KeyboardFocusManager</code> for
+ *   <td>Sets the {@code KeyboardFocusManager} for
  *       a particular thread.
- *   <td>When <code>SecurityManager</code> is installed, the invoking
+ *   <td>When {@code SecurityManager} is installed, the invoking
  *       thread must be granted this permission in order to replace
- *       the current <code>KeyboardFocusManager</code>.  If permission
- *       is not granted, a <code>SecurityException</code> will be thrown.
+ *       the current {@code KeyboardFocusManager}.  If permission
+ *       is not granted, a {@code SecurityException} will be thrown.
  * </tr>
  *
  * <tr>
@@ -201,15 +201,15 @@ public final class AWTPermission extends BasicPermission {
     private static final long serialVersionUID = 8890392402588814465L;
 
     /**
-     * Creates a new <code>AWTPermission</code> with the specified name.
-     * The name is the symbolic name of the <code>AWTPermission</code>,
+     * Creates a new {@code AWTPermission} with the specified name.
+     * The name is the symbolic name of the {@code AWTPermission},
      * such as "topLevelWindow", "systemClipboard", etc. An asterisk
      * may be used to indicate all AWT permissions.
      *
      * @param name the name of the AWTPermission
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
 
     public AWTPermission(String name)
@@ -218,15 +218,15 @@ public final class AWTPermission extends BasicPermission {
     }
 
     /**
-     * Creates a new <code>AWTPermission</code> object with the specified name.
-     * The name is the symbolic name of the <code>AWTPermission</code>, and the
-     * actions string is currently unused and should be <code>null</code>.
+     * Creates a new {@code AWTPermission} object with the specified name.
+     * The name is the symbolic name of the {@code AWTPermission}, and the
+     * actions string is currently unused and should be {@code null}.
      *
-     * @param name the name of the <code>AWTPermission</code>
-     * @param actions should be <code>null</code>
+     * @param name the name of the {@code AWTPermission}
+     * @param actions should be {@code null}
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @throws NullPointerException if {@code name} is {@code null}.
+     * @throws IllegalArgumentException if {@code name} is empty.
      */
 
     public AWTPermission(String name, String actions)
