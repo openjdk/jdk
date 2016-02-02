@@ -662,7 +662,7 @@ public:
 
   void print_detailed_heap_transition() const;
 
-  virtual void print_phases(double pause_time_ms);
+  virtual void print_phases();
 
   void record_stop_world_start();
   void record_concurrent_pause();

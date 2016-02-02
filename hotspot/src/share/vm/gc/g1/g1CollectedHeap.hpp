@@ -291,7 +291,7 @@ private:
                                                          size_t size,
                                                          size_t translation_factor);
 
-  void log_gc_footer(jlong pause_time_counter);
+  void log_gc_footer();
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
