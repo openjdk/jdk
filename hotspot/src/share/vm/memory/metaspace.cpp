@@ -1234,7 +1234,7 @@ void VirtualSpaceList::link_vs(VirtualSpaceNode* new_entry) {
 #ifdef ASSERT
   new_entry->mangle();
 #endif
-  if (log_develop_is_enabled(Trace, gc, metaspace)) {
+  if (log_is_enabled(Trace, gc, metaspace)) {
     LogHandle(gc, metaspace) log;
     VirtualSpaceNode* vsl = current_virtual_space();
     ResourceMark rm;
@@ -3051,7 +3051,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
 
   initialize_class_space(metaspace_rs);
 
-  if (log_develop_is_enabled(Trace, gc, metaspace)) {
+  if (log_is_enabled(Trace, gc, metaspace)) {
     LogHandle(gc, metaspace) log;
     ResourceMark rm;
     print_compressed_class_space(log.trace_stream(), requested_addr);
