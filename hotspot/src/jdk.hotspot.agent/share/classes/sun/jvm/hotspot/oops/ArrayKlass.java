@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ public class ArrayKlass extends Klass {
     dimension          = new CIntField(type.getCIntegerField("_dimension"), 0);
     higherDimension    = new MetadataField(type.getAddressField("_higher_dimension"), 0);
     lowerDimension     = new MetadataField(type.getAddressField("_lower_dimension"), 0);
-    vtableLen          = new CIntField(type.getCIntegerField("_vtable_len"), 0);
     javaLangCloneableName = null;
     javaLangObjectName = null;
     javaIoSerializableName = null;
@@ -61,7 +60,6 @@ public class ArrayKlass extends Klass {
   private static CIntField dimension;
   private static MetadataField  higherDimension;
   private static MetadataField  lowerDimension;
-  private static CIntField vtableLen;
 
   public Klass getJavaSuper() {
     SystemDictionary sysDict = VM.getVM().getSystemDictionary();
@@ -71,7 +69,6 @@ public class ArrayKlass extends Klass {
   public long  getDimension()       { return         dimension.getValue(this); }
   public Klass getHigherDimension() { return (Klass) higherDimension.getValue(this); }
   public Klass getLowerDimension()  { return (Klass) lowerDimension.getValue(this); }
-  public long  getVtableLen()       { return         vtableLen.getValue(this); }
 
   // constant class names - javaLangCloneable, javaIoSerializable, javaLangObject
   // Initialized lazily to avoid initialization ordering dependencies between ArrayKlass and SymbolTable
@@ -140,6 +137,5 @@ public class ArrayKlass extends Klass {
       visitor.doCInt(dimension, true);
     visitor.doMetadata(higherDimension, true);
     visitor.doMetadata(lowerDimension, true);
-      visitor.doCInt(vtableLen, true);
     }
   }

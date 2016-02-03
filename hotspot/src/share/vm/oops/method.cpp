@@ -295,7 +295,7 @@ int Method::size(bool is_native) {
   // If native, then include pointers for native_function and signature_handler
   int extra_bytes = (is_native) ? 2*sizeof(address*) : 0;
   int extra_words = align_size_up(extra_bytes, BytesPerWord) / BytesPerWord;
-  return align_object_size(header_size() + extra_words);
+  return align_metadata_size(header_size() + extra_words);
 }
 
 

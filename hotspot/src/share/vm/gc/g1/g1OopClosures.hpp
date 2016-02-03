@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,9 +206,9 @@ class G1Mux2Closure : public OopClosure {
   OopClosure* _c2;
 public:
   G1Mux2Closure(OopClosure *c1, OopClosure *c2);
-  template <class T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p)        { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
+  template <class T> inline void do_oop_work(T* p);
+  virtual inline void do_oop(oop* p);
+  virtual inline void do_oop(narrowOop* p);
 };
 
 // A closure that returns true if it is actually applied
@@ -219,9 +219,9 @@ class G1TriggerClosure : public OopClosure {
 public:
   G1TriggerClosure();
   bool triggered() const { return _triggered; }
-  template <class T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p)        { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
+  template <class T> inline void do_oop_work(T* p);
+  virtual inline void do_oop(oop* p);
+  virtual inline void do_oop(narrowOop* p);
 };
 
 // A closure which uses a triggering closure to determine
@@ -232,9 +232,9 @@ class G1InvokeIfNotTriggeredClosure: public OopClosure {
   OopClosure* _oop_cl;
 public:
   G1InvokeIfNotTriggeredClosure(G1TriggerClosure* t, OopClosure* oc);
-  template <class T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p)        { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
+  template <class T> inline void do_oop_work(T* p);
+  virtual inline void do_oop(oop* p);
+  virtual inline void do_oop(narrowOop* p);
 };
 
 class G1UpdateRSOrPushRefOopClosure: public OopClosure {
@@ -263,9 +263,9 @@ public:
     return result;
   }
 
-  template <class T> void do_oop_work(T* p);
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  template <class T> inline void do_oop_work(T* p);
+  virtual inline void do_oop(narrowOop* p);
+  virtual inline void do_oop(oop* p);
 };
 
 #endif // SHARE_VM_GC_G1_G1OOPCLOSURES_HPP

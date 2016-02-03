@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2705,7 +2705,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                                      ConstMethod::NORMAL,
                                      CHECK_NULL);
 
-  ClassLoadingService::add_class_method_size(m->size()*HeapWordSize);
+  ClassLoadingService::add_class_method_size(m->size()*wordSize);
 
   // Fill in information from fixed part (access_flags already set)
   m->set_constants(_cp);
@@ -4602,8 +4602,8 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
       }
     } else if (major_gte_15) {
       // Class file version in the interval [JAVA_1_5_VERSION, JAVA_8_VERSION)
-      if (!is_public || is_static || is_final || is_synchronized ||
-          is_native || !is_abstract || is_strict) {
+      if (!is_public || is_private || is_protected || is_static || is_final ||
+          is_synchronized || is_native || !is_abstract || is_strict) {
         is_illegal = true;
       }
     } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,7 +774,7 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
   // free memory should be here, especially if they are expensive. If this
   // attempt fails, an OOM exception will be thrown.
   {
-    UIntXFlagSetting flag_change(MarkSweepAlwaysCompactCount, 1); // Make sure the heap is fully compacted
+    UIntFlagSetting flag_change(MarkSweepAlwaysCompactCount, 1); // Make sure the heap is fully compacted
 
     gch->do_collection(true,                      // full
                        true,                      // clear_all_soft_refs

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,9 +211,9 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind) :
   _static_field_size(parser.static_field_size()),
   _nonstatic_oop_map_size(nonstatic_oop_map_size(parser.total_oop_map_count())),
-  _vtable_len(parser.vtable_size()),
   _itable_len(parser.itable_size()),
   _reference_type(parser.reference_type()) {
+    set_vtable_length(parser.vtable_size());
     set_kind(kind);
     set_access_flags(parser.access_flags());
     set_is_anonymous(parser.is_anonymous());
@@ -362,10 +362,6 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
 bool InstanceKlass::should_be_initialized() const {
   return !is_initialized();
-}
-
-klassVtable* InstanceKlass::vtable() const {
-  return new klassVtable(this, start_of_vtable(), vtable_length() / vtableEntry::size());
 }
 
 klassItable* InstanceKlass::itable() const {
@@ -2667,6 +2663,10 @@ static void print_vtable(intptr_t* start, int len, outputStream* st) {
   }
 }
 
+static void print_vtable(vtableEntry* start, int len, outputStream* st) {
+  return print_vtable(reinterpret_cast<intptr_t*>(start), len, st);
+}
+
 void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
@@ -2909,13 +2909,10 @@ const char* InstanceKlass::internal_name() const {
 void InstanceKlass::collect_statistics(KlassSizeStats *sz) const {
   Klass::collect_statistics(sz);
 
-  sz->_inst_size  = HeapWordSize * size_helper();
-  sz->_vtab_bytes = HeapWordSize * align_object_offset(vtable_length());
-  sz->_itab_bytes = HeapWordSize * align_object_offset(itable_length());
-  sz->_nonstatic_oopmap_bytes = HeapWordSize *
-        ((is_interface() || is_anonymous()) ?
-         align_object_offset(nonstatic_oop_map_size()) :
-         nonstatic_oop_map_size());
+  sz->_inst_size  = wordSize * size_helper();
+  sz->_vtab_bytes = wordSize * vtable_length();
+  sz->_itab_bytes = wordSize * itable_length();
+  sz->_nonstatic_oopmap_bytes = wordSize * nonstatic_oop_map_size();
 
   int n = 0;
   n += (sz->_methods_array_bytes         = sz->count_array(methods()));
