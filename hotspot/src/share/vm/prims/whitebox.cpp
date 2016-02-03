@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1407,7 +1407,7 @@ int WhiteBox::offset_for_field(const char* field_name, oop object,
   if (res == NULL) {
     tty->print_cr("Invalid layout of %s at %s", ik->external_name(),
         name_symbol->as_C_string());
-    vm_exit_during_initialization("Invalid layout of preloaded class: use -XX:+TraceClassLoading to see the origin of the problem class");
+    vm_exit_during_initialization("Invalid layout of preloaded class: use -Xlog:classload=info to see the origin of the problem class");
   }
 
   //fetch the field at the offset we've found

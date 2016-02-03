@@ -1302,14 +1302,13 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
       ik->restore_unshareable_info(loader_data, protection_domain, CHECK_(nh));
     }
 
-    if (TraceClassLoading) {
-      ResourceMark rm;
-      tty->print("[Loaded %s", ik->external_name());
-      tty->print(" from shared objects file");
-      if (class_loader.not_null()) {
-        tty->print(" by %s", loader_data->loader_name());
-      }
-      tty->print_cr("]");
+    if (log_is_enabled(Info, classload)) {
+      ik()->print_loading_log(LogLevel::Info, loader_data, NULL);
+    }
+    // No 'else' here as logging levels are not mutually exclusive
+
+    if (log_is_enabled(Debug, classload)) {
+      ik()->print_loading_log(LogLevel::Debug, loader_data, NULL);
     }
 
     if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
