@@ -205,6 +205,9 @@
       <name>javax.security.cert</name>
     </export>
     <export>
+      <name>jdk</name>
+    </export>
+    <export>
       <name>jdk.net</name>
     </export>
     <export>
