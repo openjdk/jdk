@@ -2413,20 +2413,11 @@ public:
   product(bool, TraceClassPaths, false,                                     \
           "Trace processing of class paths")                                \
                                                                             \
-  product_rw(bool, TraceClassLoading, false,                                \
-          "Trace all classes loaded")                                       \
-                                                                            \
   product(bool, TraceClassLoadingPreorder, false,                           \
           "Trace all classes loaded in order referenced (not loaded)")      \
                                                                             \
-  product_rw(bool, TraceClassUnloading, false,                              \
-          "Trace unloading of classes")                                     \
-                                                                            \
   product_rw(bool, TraceLoaderConstraints, false,                           \
           "Trace loader constraints")                                       \
-                                                                            \
-  develop(bool, TraceClassLoaderData, false,                                \
-          "Trace class loader loader_data lifetime")                        \
                                                                             \
   product(size_t, InitialBootClassLoaderMetaspaceSize,                      \
           NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
