@@ -28,7 +28,7 @@
  * @compile MethodHandleConstants.java
  * @run main/othervm
  *      indify.Indify
- *      --verify-specifier-count=0
+ *      --verify-specifier-count=4
  *      --expand-properties --classpath ${test.classes}
  *      --java test.java.lang.invoke.MethodHandleConstants --check-output
  * @run main/othervm

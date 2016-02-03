@@ -173,9 +173,9 @@ final class CounterMode extends FeedbackCipher {
      */
     private int crypt(byte[] in, int inOff, int len, byte[] out, int outOff) {
 
-        cryptBlockCheck(in, inOff, len);
-        cryptBlockCheck(out, outOff, len);
-        return implCrypt(in, inOff, len, out, outOff);
+      Objects.checkFromIndexSize(inOff, len, in.length);
+      Objects.checkFromIndexSize(outOff, len, out.length);
+      return implCrypt(in, inOff, len, out, outOff);
     }
 
     // Implementation of crpyt() method. Possibly replaced with a compiler intrinsic.
@@ -193,22 +193,4 @@ final class CounterMode extends FeedbackCipher {
         return result;
     }
 
-    // Used to perform all checks required by the Java semantics
-    // (i.e., null checks and bounds checks) on the input parameters to crypt().
-    // Normally, the Java Runtime performs these checks, however, as crypt() is
-    // possibly replaced with compiler intrinsic, the JDK performs the
-    // required checks instead.
-    // Does not check accesses to class-internal (private) arrays.
-    private static void cryptBlockCheck(byte[] array, int offset, int len) {
-        Objects.requireNonNull(array);
-
-        if (offset < 0 || len < 0 || offset >= array.length) {
-            throw new ArrayIndexOutOfBoundsException(offset);
-        }
-
-        int largestIndex = offset + len - 1;
-        if (largestIndex < 0 || largestIndex >= array.length) {
-            throw new ArrayIndexOutOfBoundsException(largestIndex);
-        }
-    }
 }
