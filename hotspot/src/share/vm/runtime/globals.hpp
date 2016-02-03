@@ -2388,6 +2388,14 @@ public:
           "will sleep while yielding before giving up and resuming GC")     \
           range(0, max_juint)                                               \
                                                                             \
+  product(bool, PrintGC, false,                                             \
+          "Print message at garbage collection. "                           \
+          "Deprecated, use -Xlog:gc instead.")                              \
+                                                                            \
+  product(bool, PrintGCDetails, false,                                      \
+          "Print more details at garbage collection. "                      \
+          "Deprecated, use -Xlog:gc* instead.")                             \
+                                                                            \
   develop(intx, ConcGCYieldTimeout, 0,                                      \
           "If non-zero, assert that GC threads yield within this "          \
           "number of milliseconds")                                         \
@@ -3249,7 +3257,7 @@ public:
                                                                             \
   product(size_t, MinTLABSize, 2*K,                                         \
           "Minimum allowed TLAB size (in bytes)")                           \
-          range(1, max_uintx)                                               \
+          range(1, max_uintx/2)                                             \
           constraint(MinTLABSizeConstraintFunc,AfterMemoryInit)             \
                                                                             \
   product(size_t, TLABSize, 0,                                              \
@@ -3392,10 +3400,10 @@ public:
           "also has a smaller default value; see arguments.cpp.")           \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, MarkSweepAlwaysCompactCount,     4,                        \
+  product(uint, MarkSweepAlwaysCompactCount,     4,                         \
           "How often should we fully compact the heap (ignoring the dead "  \
           "space parameters)")                                              \
-          range(1, max_uintx)                                               \
+          range(1, max_juint)                                               \
                                                                             \
   develop(uintx, GCExpandToAllocateDelayMillis, 0,                          \
           "Delay between expansion and allocation (in milliseconds)")       \

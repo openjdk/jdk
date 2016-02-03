@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,20 +51,20 @@ public class MonitorInflationTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:monitorinflation=debug", InnerClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:monitorinflation=debug",
+                                                                  InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+TraceMonitorInflation", InnerClass.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+TraceMonitorInflation",
+                                                   InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:monitorinflation=off", InnerClass.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:monitorinflation=off",
+                                                   InnerClass.class.getName());
         analyzeOutputOff(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:-TraceMonitorInflation", InnerClass.class.getName());
+        pb = ProcessTools.createJavaProcessBuilder("-XX:-TraceMonitorInflation",
+                                                   InnerClass.class.getName());
         analyzeOutputOff(pb);
     }
 

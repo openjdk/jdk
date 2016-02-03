@@ -294,6 +294,7 @@ class Arguments : AllStatic {
 
   // Option flags
   static bool   _has_profile;
+  static const char*  _gc_log_filename;
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
 
@@ -399,6 +400,8 @@ class Arguments : AllStatic {
                                           JavaVMInitArgs** args_out);
   static jint match_special_option_and_act(const JavaVMInitArgs* args,
                                            ScopedVMInitArgs* args_out);
+
+  static bool handle_deprecated_print_gc_flags();
 
   static jint parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,

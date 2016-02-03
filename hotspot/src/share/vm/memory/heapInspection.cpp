@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,14 @@
 #endif // INCLUDE_ALL_GCS
 
 // HeapInspection
+
+int KlassSizeStats::count(oop x) {
+  return (HeapWordSize * (((x) != NULL) ? (x)->size() : 0));
+}
+
+int KlassSizeStats::count_array(objArrayOop x) {
+  return (HeapWordSize * (((x) != NULL) ? (x)->size() : 0));
+}
 
 inline KlassInfoEntry::~KlassInfoEntry() {
   if (_subclasses != NULL) {

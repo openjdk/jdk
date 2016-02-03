@@ -82,6 +82,7 @@ class Ticks;
 class WorkGang;
 class G1Allocator;
 class G1ArchiveAllocator;
+class G1HeapVerifier;
 
 typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
@@ -118,6 +119,7 @@ class G1CollectedHeap : public CollectedHeap {
   friend class VMStructs;
   friend class MutatorAllocRegion;
   friend class G1GCAllocRegion;
+  friend class G1HeapVerifier;
 
   // Closures used in implementation.
   friend class G1ParScanThreadState;
@@ -180,6 +182,9 @@ private:
 
   // Manages all allocations with regions except humongous object allocations.
   G1Allocator* _allocator;
+
+  // Manages all heap verification.
+  G1HeapVerifier* _verifier;
 
   // Outside of GC pauses, the number of bytes used in all regions other
   // than the current allocation region(s).
@@ -285,12 +290,6 @@ private:
   static G1RegionToSpaceMapper* create_aux_memory_mapper(const char* description,
                                                          size_t size,
                                                          size_t translation_factor);
-
-  double verify(bool guard, const char* msg);
-  void verify_before_gc();
-  void verify_after_gc();
-
-  void log_gc_footer(jlong pause_time_counter);
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
@@ -525,6 +524,10 @@ public:
 
   G1Allocator* allocator() {
     return _allocator;
+  }
+
+  G1HeapVerifier* verifier() {
+    return _verifier;
   }
 
   G1MonitoringSupport* g1mm() {
@@ -1056,54 +1059,6 @@ public:
   // The number of regions that are not completely free.
   uint num_used_regions() const { return num_regions() - num_free_regions(); }
 
-  void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
-  void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
-  void verify_dirty_young_list(HeapRegion* head) PRODUCT_RETURN;
-  void verify_dirty_young_regions() PRODUCT_RETURN;
-
-#ifndef PRODUCT
-  // Make sure that the given bitmap has no marked objects in the
-  // range [from,limit). If it does, print an error message and return
-  // false. Otherwise, just return true. bitmap_name should be "prev"
-  // or "next".
-  bool verify_no_bits_over_tams(const char* bitmap_name, CMBitMapRO* bitmap,
-                                HeapWord* from, HeapWord* limit);
-
-  // Verify that the prev / next bitmap range [tams,end) for the given
-  // region has no marks. Return true if all is well, false if errors
-  // are detected.
-  bool verify_bitmaps(const char* caller, HeapRegion* hr);
-#endif // PRODUCT
-
-  // If G1VerifyBitmaps is set, verify that the marking bitmaps for
-  // the given region do not have any spurious marks. If errors are
-  // detected, print appropriate error messages and crash.
-  void check_bitmaps(const char* caller, HeapRegion* hr) PRODUCT_RETURN;
-
-  // If G1VerifyBitmaps is set, verify that the marking bitmaps do not
-  // have any spurious marks. If errors are detected, print
-  // appropriate error messages and crash.
-  void check_bitmaps(const char* caller) PRODUCT_RETURN;
-
-  // Do sanity check on the contents of the in-cset fast test table.
-  bool check_cset_fast_test() PRODUCT_RETURN_( return true; );
-
-  // verify_region_sets() performs verification over the region
-  // lists. It will be compiled in the product code to be used when
-  // necessary (i.e., during heap verification).
-  void verify_region_sets();
-
-  // verify_region_sets_optional() is planted in the code for
-  // list verification in non-product builds (and it can be enabled in
-  // product builds by defining HEAP_REGION_SET_FORCE_VERIFY to be 1).
-#if HEAP_REGION_SET_FORCE_VERIFY
-  void verify_region_sets_optional() {
-    verify_region_sets();
-  }
-#else // HEAP_REGION_SET_FORCE_VERIFY
-  void verify_region_sets_optional() { }
-#endif // HEAP_REGION_SET_FORCE_VERIFY
-
 #ifdef ASSERT
   bool is_on_master_free_list(HeapRegion* hr) {
     return _hrm.is_free(hr);
@@ -1424,11 +1379,6 @@ public:
   inline bool is_obj_dead(const oop obj) const;
 
   inline bool is_obj_ill(const oop obj) const;
-
-  bool allocated_since_marking(oop obj, HeapRegion* hr, VerifyOption vo);
-  HeapWord* top_at_mark_start(HeapRegion* hr, VerifyOption vo);
-  bool is_marked(oop obj, VerifyOption vo);
-  const char* top_at_mark_start_str(VerifyOption vo);
 
   ConcurrentMark* concurrent_mark() const { return _cm; }
 

@@ -81,7 +81,7 @@ private:
   // Accessing
   oop obj_at(int index) const;
 
-  void /*inline*/ obj_at_put(int index, oop value);
+  void inline obj_at_put(int index, oop value);
 
   oop atomic_compare_exchange_oop(int index, oop exchange_value, oop compare_value);
 
