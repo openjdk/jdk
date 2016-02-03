@@ -791,7 +791,7 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(s, d, count, rscratch1);
 
     Label again, large, small;
-    __ align(6);
+    __ align(CodeEntryAlignment);
     __ bind(start);
     __ cmp(count, 8);
     __ br(Assembler::LO, small);
@@ -836,7 +836,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
-    __ align(6);
+    __ align(CodeEntryAlignment);
     __ bind(large);
 
     // Fill 8 registers
