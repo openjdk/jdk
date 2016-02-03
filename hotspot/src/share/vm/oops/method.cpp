@@ -55,6 +55,7 @@
 #include "runtime/relocator.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stubRoutines.hpp"
 #include "utilities/quickSort.hpp"
 #include "utilities/xmlstream.hpp"
 
@@ -2098,23 +2099,29 @@ void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
 }
 
 bool Method::has_method_vptr(const void* ptr) {
-  Method m;
+  // Use SafeFetch to check if this is a valid pointer first
   // This assumes that the vtbl pointer is the first word of a C++ object.
-  // This assumption is also in universe.cpp patch_klass_vtble
-  void* vtbl2 = dereference_vptr((const void*)&m);
-  void* this_vtbl = dereference_vptr(ptr);
-  return vtbl2 == this_vtbl;
+  // This assumption is also in universe.cpp patch_klass_vtable
+  intptr_t this_vptr = SafeFetchN((intptr_t*)ptr, intptr_t(1));
+  if (this_vptr == 1) {
+    return false;
+  }
+  Method m;
+  return (intptr_t)dereference_vptr(&m) == this_vptr;
 }
 
 // Check that this pointer is valid by checking that the vtbl pointer matches
 bool Method::is_valid_method() const {
   if (this == NULL) {
     return false;
-  } else if (!is_metaspace_object()) {
-    return false;
-  } else {
-    return has_method_vptr((const void*)this);
   }
+
+  // Quick sanity check on pointer.
+  if ((intptr_t(this) & (wordSize-1)) != 0) {
+    return false;
+  }
+
+  return has_method_vptr(this);
 }
 
 #ifndef PRODUCT
