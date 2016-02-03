@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -735,22 +735,6 @@ void G1CollectorPolicy::update_rs_lengths_prediction(size_t prediction) {
     _rs_lengths_prediction = prediction;
   }
 }
-
-HeapWord* G1CollectorPolicy::mem_allocate_work(size_t size,
-                                               bool is_tlab,
-                                               bool* gc_overhead_limit_was_exceeded) {
-  guarantee(false, "Not using this policy feature yet.");
-  return NULL;
-}
-
-// This method controls how a collector handles one or more
-// of its generations being fully allocated.
-HeapWord* G1CollectorPolicy::satisfy_failed_allocation(size_t size,
-                                                       bool is_tlab) {
-  guarantee(false, "Not using this policy feature yet.");
-  return NULL;
-}
-
 
 #ifndef PRODUCT
 bool G1CollectorPolicy::verify_young_ages() {

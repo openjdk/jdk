@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -620,15 +620,6 @@ public:
 
   // Create jstat counters for the policy.
   virtual void initialize_gc_policy_counters();
-
-  virtual HeapWord* mem_allocate_work(size_t size,
-                                      bool is_tlab,
-                                      bool* gc_overhead_limit_was_exceeded);
-
-  // This method controls how a collector handles one or more
-  // of its generations being fully allocated.
-  virtual HeapWord* satisfy_failed_allocation(size_t size,
-                                              bool is_tlab);
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
