@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 6400879
-   @bug 7100140
-   @summary Tests that Start/Stop sequence doesn't hang
-   @author Alexey Menkov
-   @run main bug6400879
+/*
+ * @test
+ * @bug 6400879, 7100140
+ * @summary Tests that Start/Stop sequence doesn't hang
+ * @author Alexey Menkov
+ * @run main bug6400879
+ * @key intermittent
  */
 
 import javax.sound.sampled.*;
