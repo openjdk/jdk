@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,9 +289,9 @@ HeapWord* GenCollectedHeap::attempt_allocation(size_t size,
 
 HeapWord* GenCollectedHeap::mem_allocate(size_t size,
                                          bool* gc_overhead_limit_was_exceeded) {
-  return collector_policy()->mem_allocate_work(size,
-                                               false /* is_tlab */,
-                                               gc_overhead_limit_was_exceeded);
+  return gen_policy()->mem_allocate_work(size,
+                                         false /* is_tlab */,
+                                         gc_overhead_limit_was_exceeded);
 }
 
 bool GenCollectedHeap::must_clear_all_soft_refs() {
@@ -551,7 +551,7 @@ void GenCollectedHeap::do_collection(bool           full,
 }
 
 HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
-  return collector_policy()->satisfy_failed_allocation(size, is_tlab);
+  return gen_policy()->satisfy_failed_allocation(size, is_tlab);
 }
 
 #ifdef ASSERT
@@ -988,9 +988,9 @@ size_t GenCollectedHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 
 HeapWord* GenCollectedHeap::allocate_new_tlab(size_t size) {
   bool gc_overhead_limit_was_exceeded;
-  return collector_policy()->mem_allocate_work(size /* size */,
-                                               true /* is_tlab */,
-                                               &gc_overhead_limit_was_exceeded);
+  return gen_policy()->mem_allocate_work(size /* size */,
+                                         true /* is_tlab */,
+                                         &gc_overhead_limit_was_exceeded);
 }
 
 // Requires "*prev_ptr" to be non-NULL.  Deletes and a block of minimal size
