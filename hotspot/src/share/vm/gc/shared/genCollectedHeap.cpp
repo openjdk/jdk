@@ -458,7 +458,6 @@ void GenCollectedHeap::do_collection(bool           full,
         prepared_for_verification = true;
       }
 
-      assert(!_young_gen->performs_in_place_marking(), "No young generation do in place marking");
       collect_generation(_young_gen,
                          full,
                          size,
@@ -488,8 +487,6 @@ void GenCollectedHeap::do_collection(bool           full,
           VerifyGCLevel <= 1 && VerifyBeforeGC) {
         prepare_for_verify();
       }
-
-      assert(_old_gen->performs_in_place_marking(), "All old generations do in place marking");
 
       if (do_young_collection) {
         // We did a young GC. Need a new GC id for the old GC.
