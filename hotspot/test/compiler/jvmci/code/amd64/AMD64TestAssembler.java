@@ -63,6 +63,7 @@ public class AMD64TestAssembler extends TestAssembler {
         emitFatNop();
         code.emitByte(0x50 | AMD64.rbp.encoding);  // PUSH rbp
         emitMove(true, AMD64.rbp, AMD64.rsp);      // MOV rbp, rsp
+        setDeoptRescueSlot(newStackSlot(LIRKind.value(AMD64Kind.QWORD)));
     }
 
     @Override

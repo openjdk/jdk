@@ -68,6 +68,7 @@ public class SPARCTestAssembler extends TestAssembler {
     @Override
     public void emitPrologue() {
         emitOp3(0b10, SPARC.sp, 0b111100, SPARC.sp, -SPARC.REGISTER_SAFE_AREA_SIZE); // SAVE sp, -128, sp
+        setDeoptRescueSlot(newStackSlot(LIRKind.value(SPARCKind.XWORD)));
     }
 
     @Override
