@@ -2502,10 +2502,10 @@ run:
             // Same comments as invokevirtual apply here.
             oop rcvr = STACK_OBJECT(-parms);
             VERIFY_OOP(rcvr);
-            InstanceKlass* rcvrKlass = (InstanceKlass*)rcvr->klass();
-            callee = (Method*) rcvrKlass->start_of_vtable()[ cache->f2_as_index()];
+            Klass* rcvrKlass = rcvr->klass();
+            callee = (Method*) rcvrKlass->method_at_vtable(cache->f2_as_index());
             // Profile 'special case of invokeinterface' virtual call.
-            BI_PROFILE_UPDATE_VIRTUALCALL(rcvr->klass());
+            BI_PROFILE_UPDATE_VIRTUALCALL(rcvrKlass);
           }
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
@@ -2594,7 +2594,7 @@ run:
               // but this works
               oop rcvr = STACK_OBJECT(-parms);
               VERIFY_OOP(rcvr);
-              InstanceKlass* rcvrKlass = (InstanceKlass*)rcvr->klass();
+              Klass* rcvrKlass = rcvr->klass();
               /*
                 Executing this code in java.lang.String:
                     public String(char value[]) {
@@ -2611,9 +2611,9 @@ run:
                   However it seems to have a vtable in the right location. Huh?
                   Because vtables have the same offset for ArrayKlass and InstanceKlass.
               */
-              callee = (Method*) rcvrKlass->start_of_vtable()[ cache->f2_as_index()];
+              callee = (Method*) rcvrKlass->method_at_vtable(cache->f2_as_index());
               // Profile virtual call.
-              BI_PROFILE_UPDATE_VIRTUALCALL(rcvr->klass());
+              BI_PROFILE_UPDATE_VIRTUALCALL(rcvrKlass);
             }
           } else {
             if ((Bytecodes::Code)opcode == Bytecodes::_invokespecial) {
