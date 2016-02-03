@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classFileParser.hpp"
+#include "classfile/classFileStream.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
@@ -35,6 +36,7 @@
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
 #include "jvmtifiles/jvmti.h"
+#include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
@@ -2902,6 +2904,79 @@ void InstanceKlass::oop_print_value_on(oop obj, outputStream* st) {
 
 const char* InstanceKlass::internal_name() const {
   return external_name();
+}
+
+void InstanceKlass::print_loading_log(LogLevel::type type,
+                                      ClassLoaderData* loader_data,
+                                      const ClassFileStream* cfs) const {
+  ResourceMark rm;
+  outputStream* log;
+
+  assert(type == LogLevel::Info || type == LogLevel::Debug, "sanity");
+
+  if (type == LogLevel::Info) {
+    log = LogHandle(classload)::info_stream();
+  } else {
+    assert(type == LogLevel::Debug,
+           "print_loading_log supports only Debug and Info levels");
+    log = LogHandle(classload)::debug_stream();
+  }
+
+  // Name and class hierarchy info
+  log->print("%s", external_name());
+
+  // Source
+  if (cfs != NULL) {
+    if (cfs->source() != NULL) {
+      log->print(" source: %s", cfs->source());
+    } else if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
+      Thread* THREAD = Thread::current();
+      Klass* caller =
+            THREAD->is_Java_thread()
+                ? ((JavaThread*)THREAD)->security_get_caller_class(1)
+                : NULL;
+      // caller can be NULL, for example, during a JVMTI VM_Init hook
+      if (caller != NULL) {
+        log->print(" source: instance of %s", caller->external_name());
+      } else {
+        // source is unknown
+      }
+    } else {
+      Handle class_loader(loader_data->class_loader());
+      log->print(" source: %s", class_loader->klass()->external_name());
+    }
+  } else {
+    log->print(" source: shared objects file");
+  }
+
+  if (type == LogLevel::Debug) {
+    // Class hierarchy info
+    log->print(" klass: " INTPTR_FORMAT " super: " INTPTR_FORMAT,
+               p2i(this),  p2i(superklass()));
+
+    if (local_interfaces() != NULL && local_interfaces()->length() > 0) {
+      log->print(" interfaces:");
+      int length = local_interfaces()->length();
+      for (int i = 0; i < length; i++) {
+        log->print(" " INTPTR_FORMAT,
+                   p2i(InstanceKlass::cast(local_interfaces()->at(i))));
+      }
+    }
+
+    // Class loader
+    log->print(" loader: [");
+    loader_data->print_value_on(log);
+    log->print("]");
+
+    // Classfile checksum
+    if (cfs) {
+      log->print(" bytes: %d checksum: %08x",
+                 cfs->length(),
+                 ClassLoader::crc32(0, (const char*)cfs->buffer(),
+                 cfs->length()));
+    }
+  }
+  log->cr();
 }
 
 #if INCLUDE_SERVICES

@@ -402,10 +402,12 @@ static AliasedFlag const aliased_jvm_flags[] = {
 };
 
 static AliasedLoggingFlag const aliased_logging_flags[] = {
-  { "TraceClassResolution", LogLevel::Info, true, LogTag::_classresolve },
-  { "TraceExceptions", LogLevel::Info, true, LogTag::_exceptions },
-  { "TraceMonitorInflation", LogLevel::Debug, true, LogTag::_monitorinflation },
-  { NULL, LogLevel::Off, false, LogTag::__NO_TAG }
+  { "TraceClassLoading",         LogLevel::Info,  true,  LogTag::_classload },
+  { "TraceClassUnloading",       LogLevel::Info,  true,  LogTag::_classunload },
+  { "TraceClassResolution",      LogLevel::Info,  true,  LogTag::_classresolve },
+  { "TraceExceptions",           LogLevel::Info,  true,  LogTag::_exceptions },
+  { "TraceMonitorInflation",     LogLevel::Debug, true,  LogTag::_monitorinflation },
+  { NULL,                        LogLevel::Off,   false, LogTag::__NO_TAG }
 };
 
 // Return true if "v" is less than "other", where "other" may be "undefined".
@@ -2653,12 +2655,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -verbose:[class/gc/jni]
     if (match_option(option, "-verbose", &tail)) {
       if (!strcmp(tail, ":class") || !strcmp(tail, "")) {
-        if (FLAG_SET_CMDLINE(bool, TraceClassLoading, true) != Flag::SUCCESS) {
-          return JNI_EINVAL;
-        }
-        if (FLAG_SET_CMDLINE(bool, TraceClassUnloading, true) != Flag::SUCCESS) {
-          return JNI_EINVAL;
-        }
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(classload));
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(classunload));
       } else if (!strcmp(tail, ":gc")) {
         LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
       } else if (!strcmp(tail, ":jni")) {

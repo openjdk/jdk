@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/specialized_oop_closures.hpp"
+#include "logging/logLevel.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
@@ -1244,6 +1245,9 @@ public:
   void verify_on(outputStream* st);
 
   void oop_verify_on(oop obj, outputStream* st);
+
+  // Logging
+  void print_loading_log(LogLevel::type type, ClassLoaderData* loader_data, const ClassFileStream* cfs) const;
 };
 
 // for adding methods

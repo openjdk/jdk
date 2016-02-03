@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "classfile/verifier.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
@@ -5347,30 +5348,12 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
   ClassLoadingService::notify_class_loaded(ik, false /* not shared class */);
 
   if (!is_internal()) {
-    if (TraceClassLoading) {
-      ResourceMark rm;
-      // print in a single call to reduce interleaving of output
-      if (_stream->source() != NULL) {
-        tty->print("[Loaded %s from %s]\n",
-                   ik->external_name(),
-                   _stream->source());
-      } else if (_loader_data->class_loader() == NULL) {
-        const Klass* const caller =
-          THREAD->is_Java_thread()
-                ? ((JavaThread*)THREAD)->security_get_caller_class(1)
-                : NULL;
-        // caller can be NULL, for example, during a JVMTI VM_Init hook
-        if (caller != NULL) {
-          tty->print("[Loaded %s by instance of %s]\n",
-                     ik->external_name(),
-                     caller->external_name());
-        } else {
-          tty->print("[Loaded %s]\n", ik->external_name());
-        }
-      } else {
-        tty->print("[Loaded %s from %s]\n", ik->external_name(),
-                   _loader_data->class_loader()->klass()->external_name());
-      }
+    if (log_is_enabled(Info, classload)) {
+      ik->print_loading_log(LogLevel::Info, _loader_data, _stream);
+    }
+    // No 'else' here as logging levels are not mutually exclusive
+    if (log_is_enabled(Debug, classload)) {
+      ik->print_loading_log(LogLevel::Debug, _loader_data, _stream);
     }
 
     if (log_is_enabled(Info, classresolve))  {
