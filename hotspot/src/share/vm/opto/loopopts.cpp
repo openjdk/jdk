@@ -1020,108 +1020,193 @@ Node *PhaseIdealLoop::place_near_use( Node *useblock ) const {
 }
 
 
+bool PhaseIdealLoop::identical_backtoback_ifs(Node *n) {
+  if (!n->is_If()) {
+    return false;
+  }
+  if (!n->in(0)->is_Region()) {
+    return false;
+  }
+  Node* region = n->in(0);
+  Node* dom = idom(region);
+  if (!dom->is_If() || dom->in(1) != n->in(1)) {
+    return false;
+  }
+  IfNode* dom_if = dom->as_If();
+  Node* proj_true = dom_if->proj_out(1);
+  Node* proj_false = dom_if->proj_out(0);
+
+  for (uint i = 1; i < region->req(); i++) {
+    if (is_dominator(proj_true, region->in(i))) {
+      continue;
+    }
+    if (is_dominator(proj_false, region->in(i))) {
+      continue;
+    }
+    return false;
+  }
+
+  return true;
+}
+
+bool PhaseIdealLoop::can_split_if(Node *n_ctrl) {
+  if (C->live_nodes() > 35000) {
+    return false; // Method too big
+  }
+
+  // Do not do 'split-if' if irreducible loops are present.
+  if (_has_irreducible_loops) {
+    return false;
+  }
+
+  if (merge_point_too_heavy(C, n_ctrl)) {
+    return false;
+  }
+
+  // Do not do 'split-if' if some paths are dead.  First do dead code
+  // elimination and then see if its still profitable.
+  for (uint i = 1; i < n_ctrl->req(); i++) {
+    if (n_ctrl->in(i) == C->top()) {
+      return false;
+    }
+  }
+
+  // If trying to do a 'Split-If' at the loop head, it is only
+  // profitable if the cmp folds up on BOTH paths.  Otherwise we
+  // risk peeling a loop forever.
+
+  // CNC - Disabled for now.  Requires careful handling of loop
+  // body selection for the cloned code.  Also, make sure we check
+  // for any input path not being in the same loop as n_ctrl.  For
+  // irreducible loops we cannot check for 'n_ctrl->is_Loop()'
+  // because the alternative loop entry points won't be converted
+  // into LoopNodes.
+  IdealLoopTree *n_loop = get_loop(n_ctrl);
+  for (uint j = 1; j < n_ctrl->req(); j++) {
+    if (get_loop(n_ctrl->in(j)) != n_loop) {
+      return false;
+    }
+  }
+
+  // Check for safety of the merge point.
+  if (!merge_point_safe(n_ctrl)) {
+    return false;
+  }
+
+  return true;
+}
+
 //------------------------------split_if_with_blocks_post----------------------
 // Do the real work in a non-recursive function.  CFG hackery wants to be
 // in the post-order, so it can dirty the I-DOM info and not use the dirtied
 // info.
-void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
+void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
 
   // Cloning Cmp through Phi's involves the split-if transform.
   // FastLock is not used by an If
-  if( n->is_Cmp() && !n->is_FastLock() ) {
-    if( C->live_nodes() > 35000 ) return; // Method too big
-
-    // Do not do 'split-if' if irreducible loops are present.
-    if( _has_irreducible_loops )
-      return;
-
+  if (n->is_Cmp() && !n->is_FastLock()) {
     Node *n_ctrl = get_ctrl(n);
     // Determine if the Node has inputs from some local Phi.
     // Returns the block to clone thru.
-    Node *n_blk = has_local_phi_input( n );
-    if( n_blk != n_ctrl ) return;
-
-    if( merge_point_too_heavy(C, n_ctrl) )
+    Node *n_blk = has_local_phi_input(n);
+    if (n_blk != n_ctrl) {
       return;
+    }
 
-    if( n->outcnt() != 1 ) return; // Multiple bool's from 1 compare?
+    if (!can_split_if(n_ctrl)) {
+      return;
+    }
+
+    if (n->outcnt() != 1) {
+      return; // Multiple bool's from 1 compare?
+    }
     Node *bol = n->unique_out();
-    assert( bol->is_Bool(), "expect a bool here" );
-    if( bol->outcnt() != 1 ) return;// Multiple branches from 1 compare?
+    assert(bol->is_Bool(), "expect a bool here");
+    if (bol->outcnt() != 1) {
+      return;// Multiple branches from 1 compare?
+    }
     Node *iff = bol->unique_out();
 
     // Check some safety conditions
-    if( iff->is_If() ) {        // Classic split-if?
-      if( iff->in(0) != n_ctrl ) return; // Compare must be in same blk as if
+    if (iff->is_If()) {        // Classic split-if?
+      if (iff->in(0) != n_ctrl) {
+        return; // Compare must be in same blk as if
+      }
     } else if (iff->is_CMove()) { // Trying to split-up a CMOVE
       // Can't split CMove with different control edge.
-      if (iff->in(0) != NULL && iff->in(0) != n_ctrl ) return;
-      if( get_ctrl(iff->in(2)) == n_ctrl ||
-          get_ctrl(iff->in(3)) == n_ctrl )
+      if (iff->in(0) != NULL && iff->in(0) != n_ctrl ) {
+        return;
+      }
+      if (get_ctrl(iff->in(2)) == n_ctrl ||
+          get_ctrl(iff->in(3)) == n_ctrl) {
         return;                 // Inputs not yet split-up
-      if ( get_loop(n_ctrl) != get_loop(get_ctrl(iff)) ) {
+      }
+      if (get_loop(n_ctrl) != get_loop(get_ctrl(iff))) {
         return;                 // Loop-invar test gates loop-varying CMOVE
       }
     } else {
       return;  // some other kind of node, such as an Allocate
     }
 
-    // Do not do 'split-if' if some paths are dead.  First do dead code
-    // elimination and then see if its still profitable.
-    for( uint i = 1; i < n_ctrl->req(); i++ )
-      if( n_ctrl->in(i) == C->top() )
-        return;
-
     // When is split-if profitable?  Every 'win' on means some control flow
     // goes dead, so it's almost always a win.
     int policy = 0;
-    // If trying to do a 'Split-If' at the loop head, it is only
-    // profitable if the cmp folds up on BOTH paths.  Otherwise we
-    // risk peeling a loop forever.
-
-    // CNC - Disabled for now.  Requires careful handling of loop
-    // body selection for the cloned code.  Also, make sure we check
-    // for any input path not being in the same loop as n_ctrl.  For
-    // irreducible loops we cannot check for 'n_ctrl->is_Loop()'
-    // because the alternative loop entry points won't be converted
-    // into LoopNodes.
-    IdealLoopTree *n_loop = get_loop(n_ctrl);
-    for( uint j = 1; j < n_ctrl->req(); j++ )
-      if( get_loop(n_ctrl->in(j)) != n_loop )
-        return;
-
-    // Check for safety of the merge point.
-    if( !merge_point_safe(n_ctrl) ) {
+    // Split compare 'n' through the merge point if it is profitable
+    Node *phi = split_thru_phi( n, n_ctrl, policy);
+    if (!phi) {
       return;
     }
 
-    // Split compare 'n' through the merge point if it is profitable
-    Node *phi = split_thru_phi( n, n_ctrl, policy );
-    if( !phi ) return;
-
     // Found a Phi to split thru!
     // Replace 'n' with the new phi
-    _igvn.replace_node( n, phi );
+    _igvn.replace_node(n, phi);
 
     // Now split the bool up thru the phi
-    Node *bolphi = split_thru_phi( bol, n_ctrl, -1 );
+    Node *bolphi = split_thru_phi(bol, n_ctrl, -1);
     guarantee(bolphi != NULL, "null boolean phi node");
 
-    _igvn.replace_node( bol, bolphi );
-    assert( iff->in(1) == bolphi, "" );
+    _igvn.replace_node(bol, bolphi);
+    assert(iff->in(1) == bolphi, "");
 
-    if( bolphi->Value(&_igvn)->singleton() )
+    if (bolphi->Value(&_igvn)->singleton()) {
       return;
+    }
 
     // Conditional-move?  Must split up now
-    if( !iff->is_If() ) {
-      Node *cmovphi = split_thru_phi( iff, n_ctrl, -1 );
-      _igvn.replace_node( iff, cmovphi );
+    if (!iff->is_If()) {
+      Node *cmovphi = split_thru_phi(iff, n_ctrl, -1);
+      _igvn.replace_node(iff, cmovphi);
       return;
     }
 
     // Now split the IF
-    do_split_if( iff );
+    do_split_if(iff);
+    return;
+  }
+
+  // Two identical ifs back to back can be merged
+  if (identical_backtoback_ifs(n) && can_split_if(n->in(0))) {
+    Node *n_ctrl = n->in(0);
+    PhiNode* bolphi = PhiNode::make_blank(n_ctrl, n->in(1));
+    IfNode* dom_if = idom(n_ctrl)->as_If();
+    Node* proj_true = dom_if->proj_out(1);
+    Node* proj_false = dom_if->proj_out(0);
+    Node* con_true = _igvn.makecon(TypeInt::ONE);
+    Node* con_false = _igvn.makecon(TypeInt::ZERO);
+
+    for (uint i = 1; i < n_ctrl->req(); i++) {
+      if (is_dominator(proj_true, n_ctrl->in(i))) {
+        bolphi->init_req(i, con_true);
+      } else {
+        assert(is_dominator(proj_false, n_ctrl->in(i)), "bad if");
+        bolphi->init_req(i, con_false);
+      }
+    }
+    register_new_node(bolphi, n_ctrl);
+    _igvn.replace_input_of(n, 1, bolphi);
+
+    // Now split the IF
+    do_split_if(n);
     return;
   }
 
