@@ -2296,6 +2296,30 @@ void MacroAssembler::c_stub_prolog(int gp_arg_count, int fp_arg_count, int ret_t
 }
 #endif
 
+void MacroAssembler::push_call_clobbered_registers() {
+  push(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2), sp);
+
+  // Push v0-v7, v16-v31.
+  for (int i = 30; i >= 0; i -= 2) {
+    if (i <= v7->encoding() || i >= v16->encoding()) {
+        stpd(as_FloatRegister(i), as_FloatRegister(i+1),
+             Address(pre(sp, -2 * wordSize)));
+    }
+  }
+}
+
+void MacroAssembler::pop_call_clobbered_registers() {
+
+  for (int i = 0; i < 32; i += 2) {
+    if (i <= v7->encoding() || i >= v16->encoding()) {
+      ldpd(as_FloatRegister(i), as_FloatRegister(i+1),
+           Address(post(sp, 2 * wordSize)));
+    }
+  }
+
+  pop(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2), sp);
+}
+
 void MacroAssembler::push_CPU_state(bool save_vectors) {
   push(0x3fffffff, sp);         // integer registers except lr & sp
 
@@ -3094,12 +3118,7 @@ void MacroAssembler::store_check(Register obj) {
 
   assert(CardTableModRefBS::dirty_card_val() == 0, "must be");
 
-  {
-    ExternalAddress cardtable((address) ct->byte_map_base);
-    unsigned long offset;
-    adrp(rscratch1, cardtable, offset);
-    assert(offset == 0, "byte_map_base is misaligned");
-  }
+  load_byte_map_base(rscratch1);
 
   if (UseCondCardMark) {
     Label L_already_dirty;
@@ -3591,12 +3610,10 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
 
   lsr(card_addr, store_addr, CardTableModRefBS::card_shift);
 
-  unsigned long offset;
-  adrp(tmp2, cardtable, offset);
-
   // get the address of the card
+  load_byte_map_base(tmp2);
   add(card_addr, card_addr, tmp2);
-  ldrb(tmp2, Address(card_addr, offset));
+  ldrb(tmp2, Address(card_addr));
   cmpw(tmp2, (int)G1SATBCardTableModRefBS::g1_young_card_val());
   br(Assembler::EQ, done);
 
@@ -3604,13 +3621,13 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
 
   membar(Assembler::StoreLoad);
 
-  ldrb(tmp2, Address(card_addr, offset));
+  ldrb(tmp2, Address(card_addr));
   cbzw(tmp2, done);
 
   // storing a region crossing, non-NULL oop, card is clean.
   // dirty card and log.
 
-  strb(zr, Address(card_addr, offset));
+  strb(zr, Address(card_addr));
 
   ldr(rscratch1, queue_index);
   cbz(rscratch1, runtime);
@@ -3933,7 +3950,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down to and including i=StackShadowPages.
-  for (int i = 0; i < (JavaThread::stack_shadow_zone_size() / os::vm_page_size()) - 1; i++) {
+  for (int i = 0; i < (int)(JavaThread::stack_shadow_zone_size() / os::vm_page_size()) - 1; i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
     lea(tmp, Address(tmp, -os::vm_page_size()));
@@ -3966,6 +3983,9 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
   long offset_low = dest_page - low_page;
   long offset_high = dest_page - high_page;
 
+  assert(is_valid_AArch64_address(dest.target()), "bad address");
+  assert(dest.getMode() == Address::literal, "ADRP must be applied to a literal address");
+
   InstructionMark im(this);
   code_section()->relocate(inst_mark(), dest.rspec());
   // 8143067: Ensure that the adrp can reach the dest from anywhere within
@@ -3977,9 +3997,24 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
     long offset = dest_page - pc_page;
     offset = (offset & ((1<<20)-1)) << 12;
     _adrp(reg1, pc()+offset);
-    movk(reg1, ((unsigned long)dest.target() >> 32) & 0xffff, 32);
+    movk(reg1, (unsigned long)dest.target() >> 32, 32);
   }
   byte_offset = (unsigned long)dest.target() & 0xfff;
+}
+
+void MacroAssembler::load_byte_map_base(Register reg) {
+  jbyte *byte_map_base =
+    ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->byte_map_base;
+
+  if (is_valid_AArch64_address((address)byte_map_base)) {
+    // Strictly speaking the byte_map_base isn't an address at all,
+    // and it might even be negative.
+    unsigned long offset;
+    adrp(reg, ExternalAddress((address)byte_map_base), offset);
+    assert(offset == 0, "misaligned card table base");
+  } else {
+    mov(reg, (uint64_t)byte_map_base);
+  }
 }
 
 void MacroAssembler::build_frame(int framesize) {

@@ -36,6 +36,7 @@ import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
 import java.io.ObjectInputStream.GetField;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -405,7 +406,7 @@ public final class URL implements java.io.Serializable {
             }
         }
 
-        protocol = protocol.toLowerCase();
+        protocol = protocol.toLowerCase(Locale.ROOT);
         this.protocol = protocol;
         if (host != null) {
 
@@ -579,8 +580,7 @@ public final class URL implements java.io.Serializable {
             for (i = start ; !aRef && (i < limit) &&
                      ((c = spec.charAt(i)) != '/') ; i++) {
                 if (c == ':') {
-
-                    String s = spec.substring(start, i).toLowerCase();
+                    String s = spec.substring(start, i).toLowerCase(Locale.ROOT);
                     if (isValidProtocol(s)) {
                         newProtocol = s;
                         start = i + 1;
@@ -656,6 +656,44 @@ public final class URL implements java.io.Serializable {
             MalformedURLException exception = new MalformedURLException(e.getMessage());
             exception.initCause(e);
             throw exception;
+        }
+    }
+
+    /**
+     * Creates a URL from a URI, as if by invoking {@code uri.toURL()}.
+     *
+     * @see java.net.URI#toURL()
+     */
+    static URL fromURI(URI uri) throws MalformedURLException {
+        if (!uri.isAbsolute()) {
+            throw new IllegalArgumentException("URI is not absolute");
+        }
+        String protocol = uri.getScheme();
+
+        // In general we need to go via Handler.parseURL, but for the jrt
+        // protocol we enforce that the Handler is not overrideable and can
+        // optimize URI to URL conversion.
+        //
+        // Case-sensitive comparison for performance; malformed protocols will
+        // be handled correctly by the slow path.
+        if (protocol.equals("jrt") && !uri.isOpaque()
+                && uri.getRawFragment() == null) {
+
+            String query = uri.getRawQuery();
+            String path = uri.getRawPath();
+            String file = (query == null) ? path : path + "?" + query;
+
+            // URL represent undefined host as empty string while URI use null
+            String host = uri.getHost();
+            if (host == null) {
+                host = "";
+            }
+
+            int port = uri.getPort();
+
+            return new URL("jrt", host, port, file, null);
+        } else {
+            return new URL((URL)null, uri.toString(), null);
         }
     }
 
@@ -1275,11 +1313,28 @@ public final class URL implements java.io.Serializable {
         }
     }
 
-    private static final String[] NON_OVERRIDEABLE_PROTOCOLS = {"file", "jrt"};
-    private static boolean isOverrideable(String protocol) {
-        for (String p : NON_OVERRIDEABLE_PROTOCOLS)
-            if (protocol.equalsIgnoreCase(p))
+
+    /**
+     * Non-overrideable protocols: "jrt" and "file"
+     *
+     * Character-based comparison for performance reasons; also ensures
+     * case-insensitive comparison in a locale-independent fashion.
+     */
+    static boolean isOverrideable(String protocol) {
+        if (protocol.length() == 3) {
+            if ((Character.toLowerCase(protocol.charAt(0)) == 'j') &&
+                    (Character.toLowerCase(protocol.charAt(1)) == 'r') &&
+                    (Character.toLowerCase(protocol.charAt(2)) == 't')) {
                 return false;
+            }
+        } else if (protocol.length() == 4) {
+            if ((Character.toLowerCase(protocol.charAt(0)) == 'f') &&
+                    (Character.toLowerCase(protocol.charAt(1)) == 'i') &&
+                    (Character.toLowerCase(protocol.charAt(2)) == 'l') &&
+                    (Character.toLowerCase(protocol.charAt(3)) == 'e')) {
+                return false;
+            }
+        }
         return true;
     }
 

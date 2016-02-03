@@ -74,6 +74,8 @@
   static_field(CompilerToVM::Data,             cardtable_start_address,                jbyte*)                                       \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
+  static_field(CompilerToVM::Data,             vm_page_size,                           int)                                          \
+                                                                                                                                     \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
   nonstatic_field(Array<int>,                  _length,                                int)                                          \

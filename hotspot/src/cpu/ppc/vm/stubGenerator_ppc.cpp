@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2015 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1070,6 +1070,12 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  inline void assert_positive_int(Register count) {
+#ifdef ASSERT
+    __ srdi_(R0, count, 31);
+    __ asm_assert_eq("missing zero extend", 0xAFFE);
+#endif
+  }
 
   // Generate overlap test for array copy stubs.
   //
@@ -1082,10 +1088,7 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp1 = R6_ARG4;
     Register tmp2 = R7_ARG5;
 
-#ifdef ASSERT
-    __ srdi_(tmp2, R5_ARG3, 31);
-    __ asm_assert_eq("missing zero extend", 0xAFFE);
-#endif
+    assert_positive_int(R5_ARG3);
 
     __ subf(tmp1, R3_ARG1, R4_ARG2); // distance in bytes
     __ sldi(tmp2, R5_ARG3, log2_elem_size); // size in bytes
@@ -1125,14 +1128,15 @@ class StubGenerator: public StubCodeGenerator {
   address generate_disjoint_byte_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ function_entry();
+    assert_positive_int(R5_ARG3);
 
     Register tmp1 = R6_ARG4;
     Register tmp2 = R7_ARG5;
     Register tmp3 = R8_ARG6;
     Register tmp4 = R9_ARG7;
 
-
     Label l_1, l_2, l_3, l_4, l_5, l_6, l_7, l_8, l_9;
+
     // Don't try anything fancy if arrays don't have many elements.
     __ li(tmp3, 0);
     __ cmpwi(CCR0, R5_ARG3, 17);
@@ -1257,6 +1261,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_byte_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ function_entry();
+    assert_positive_int(R5_ARG3);
 
     Register tmp1 = R6_ARG4;
     Register tmp2 = R7_ARG5;
@@ -1349,8 +1354,10 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp4 = R9_ARG7;
 
     address start = __ function_entry();
+    assert_positive_int(R5_ARG3);
 
       Label l_1, l_2, l_3, l_4, l_5, l_6, l_7, l_8;
+
     // don't try anything fancy if arrays don't have many elements
     __ li(tmp3, 0);
     __ cmpwi(CCR0, R5_ARG3, 9);
@@ -1479,6 +1486,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_short_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ function_entry();
+    assert_positive_int(R5_ARG3);
 
     Register tmp1 = R6_ARG4;
     Register tmp2 = R7_ARG5;
@@ -1521,6 +1529,7 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp4 = R0;
 
     Label l_1, l_2, l_3, l_4, l_5, l_6;
+
     // for short arrays, just do single element copy
     __ li(tmp3, 0);
     __ cmpwi(CCR0, R5_ARG3, 5);
@@ -1603,6 +1612,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_disjoint_int_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ function_entry();
+    assert_positive_int(R5_ARG3);
     generate_disjoint_int_copy_core(aligned);
     __ li(R3_RET, 0); // return 0
     __ blr();
@@ -1688,7 +1698,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_int_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ function_entry();
-
+    assert_positive_int(R5_ARG3);
     address nooverlap_target = aligned ?
       STUB_ENTRY(arrayof_jint_disjoint_arraycopy) :
       STUB_ENTRY(jint_disjoint_arraycopy);
@@ -1775,6 +1785,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_disjoint_long_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ function_entry();
+    assert_positive_int(R5_ARG3);
     generate_disjoint_long_copy_core(aligned);
     __ li(R3_RET, 0); // return 0
     __ blr();
@@ -1858,7 +1869,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_conjoint_long_copy(bool aligned, const char * name) {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ function_entry();
-
+    assert_positive_int(R5_ARG3);
     address nooverlap_target = aligned ?
       STUB_ENTRY(arrayof_jlong_disjoint_arraycopy) :
       STUB_ENTRY(jlong_disjoint_arraycopy);
@@ -1885,7 +1896,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
 
     address start = __ function_entry();
-
+    assert_positive_int(R5_ARG3);
     address nooverlap_target = aligned ?
       STUB_ENTRY(arrayof_oop_disjoint_arraycopy) :
       STUB_ENTRY(oop_disjoint_arraycopy);
@@ -1922,7 +1933,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_disjoint_oop_copy(bool aligned, const char * name, bool dest_uninitialized) {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ function_entry();
-
+    assert_positive_int(R5_ARG3);
     gen_write_ref_array_pre_barrier(R3_ARG1, R4_ARG2, R5_ARG3, dest_uninitialized, R9_ARG7);
 
     // save some arguments, disjoint_long_copy_core destroys them.
@@ -1996,7 +2007,24 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ function_entry();
 
-    // TODO: Assert that int is 64 bit sign extended and arrays are not conjoint.
+    // Assert that int is 64 bit sign extended and arrays are not conjoint.
+#ifdef ASSERT
+    {
+    assert_positive_int(R5_ARG3);
+    const Register tmp1 = R11_scratch1, tmp2 = R12_scratch2;
+    Label no_overlap;
+    __ subf(tmp1, R3_ARG1, R4_ARG2); // distance in bytes
+    __ sldi(tmp2, R5_ARG3, LogBytesPerHeapOop); // size in bytes
+    __ cmpld(CCR0, R3_ARG1, R4_ARG2); // Use unsigned comparison!
+    __ cmpld(CCR1, tmp1, tmp2);
+    __ crnand(CCR0, Assembler::less, CCR1, Assembler::less);
+    // Overlaps if Src before dst and distance smaller than size.
+    // Branch to forward copy routine otherwise.
+    __ blt(CCR0, no_overlap);
+    __ stop("overlap in checkcast_copy", 0x9543);
+    __ bind(no_overlap);
+    }
+#endif
 
     gen_write_ref_array_pre_barrier(R3_from, R4_to, R5_count, dest_uninitialized, R12_tmp, /* preserve: */ R6_ckoff, R7_ckval);
 
@@ -2445,12 +2473,14 @@ class StubGenerator: public StubCodeGenerator {
                                                              STUB_ENTRY(checkcast_arraycopy));
 
     // fill routines
-    StubRoutines::_jbyte_fill          = generate_fill(T_BYTE,  false, "jbyte_fill");
-    StubRoutines::_jshort_fill         = generate_fill(T_SHORT, false, "jshort_fill");
-    StubRoutines::_jint_fill           = generate_fill(T_INT,   false, "jint_fill");
-    StubRoutines::_arrayof_jbyte_fill  = generate_fill(T_BYTE,  true, "arrayof_jbyte_fill");
-    StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
-    StubRoutines::_arrayof_jint_fill   = generate_fill(T_INT,   true, "arrayof_jint_fill");
+    if (OptimizeFill) {
+      StubRoutines::_jbyte_fill          = generate_fill(T_BYTE,  false, "jbyte_fill");
+      StubRoutines::_jshort_fill         = generate_fill(T_SHORT, false, "jshort_fill");
+      StubRoutines::_jint_fill           = generate_fill(T_INT,   false, "jint_fill");
+      StubRoutines::_arrayof_jbyte_fill  = generate_fill(T_BYTE,  true, "arrayof_jbyte_fill");
+      StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
+      StubRoutines::_arrayof_jint_fill   = generate_fill(T_INT,   true, "arrayof_jint_fill");
+    }
   }
 
   // Safefetch stubs.
@@ -2534,6 +2564,11 @@ class StubGenerator: public StubCodeGenerator {
     const Register tmp13 = R24;
 
     BLOCK_COMMENT("Entry:");
+
+    // C2 does not respect int to long conversion for stub calls.
+    __ clrldi(xlen, xlen, 32);
+    __ clrldi(ylen, ylen, 32);
+    __ clrldi(zlen, zlen, 32);
 
     // Save non-volatile regs (frameless).
     int current_offs = 8;

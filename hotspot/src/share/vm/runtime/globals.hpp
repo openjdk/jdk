@@ -826,9 +826,6 @@ public:
   notproduct(bool, StressCriticalJNINatives, false,                         \
           "Exercise register saving code in critical natives")              \
                                                                             \
-  product(bool, UseSSE42Intrinsics, false,                                  \
-          "SSE4.2 versions of intrinsics")                                  \
-                                                                            \
   product(bool, UseAESIntrinsics, false,                                    \
           "Use intrinsics for AES versions of crypto")                      \
                                                                             \

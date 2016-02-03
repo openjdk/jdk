@@ -1247,6 +1247,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
         } else {
           // debugging suppport
           if (PrintSignatureHandlers && (handler != Interpreter::slow_signature_handler())) {
+            ttyLocker ttyl;
             tty->cr();
             tty->print_cr("argument handler #%d for: %s %s (fingerprint = " UINT64_FORMAT ", %d bytes generated)",
                           _handlers->length(),

@@ -971,8 +971,10 @@ Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1_start, Node
                              str1_start, cnt1, str2_start, cnt2, ae);
     break;
   case Op_StrEquals:
+    // We already know that cnt1 == cnt2 here (checked in 'inline_string_equals').
+    // Use the constant length if there is one because optimized match rule may exist.
     result = new StrEqualsNode(control(), memory(TypeAryPtr::BYTES),
-                               str1_start, str2_start, cnt1, ae);
+                               str1_start, str2_start, cnt2->is_Con() ? cnt2 : cnt1, ae);
     break;
   default:
     ShouldNotReachHere();
@@ -1131,7 +1133,7 @@ bool LibraryCallKit::inline_objects_checkIndex() {
 
 //------------------------------inline_string_indexOf------------------------
 bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
-  if (!Matcher::has_match_rule(Op_StrIndexOf) || !UseSSE42Intrinsics) {
+  if (!Matcher::match_rule_supported(Op_StrIndexOf)) {
     return false;
   }
   Node* src = argument(0);
@@ -1175,7 +1177,7 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
   }
-  if (!Matcher::has_match_rule(Op_StrIndexOf) || !UseSSE42Intrinsics) {
+  if (!Matcher::match_rule_supported(Op_StrIndexOf)) {
     return false;
   }
   assert(callee()->signature()->size() == 5, "String.indexOf() has 5 arguments");
@@ -1260,7 +1262,7 @@ bool LibraryCallKit::inline_string_indexOfChar() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
   }
-  if (!Matcher::has_match_rule(Op_StrIndexOfChar) || !(UseSSE > 4)) {
+  if (!Matcher::match_rule_supported(Op_StrIndexOfChar)) {
     return false;
   }
   assert(callee()->signature()->size() == 4, "String.indexOfChar() has 4 arguments");
@@ -1359,9 +1361,9 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   // 'dst_start' points to dst array + scaled offset
   Node* count = NULL;
   if (compress) {
-    count = compress_string(src_start, dst_start, length);
+    count = compress_string(src_start, TypeAryPtr::get_array_body_type(src_elem), dst_start, length);
   } else {
-    inflate_string(src_start, dst_start, length);
+    inflate_string(src_start, dst_start, TypeAryPtr::get_array_body_type(dst_elem), length);
   }
 
   if (alloc != NULL) {
@@ -1587,7 +1589,7 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     (void) store_to_memory(control(), adr, ch, T_CHAR, TypeAryPtr::BYTES, MemNode::unordered,
                            false, false, true /* mismatched */);
   } else {
-    ch = make_load(control(), adr, TypeInt::CHAR, T_CHAR, MemNode::unordered,
+    ch = make_load(control(), adr, TypeInt::CHAR, T_CHAR, TypeAryPtr::BYTES, MemNode::unordered,
                    LoadNode::DependsOnlyOnTest, false, false, true /* mismatched */);
     set_result(ch);
   }
@@ -1628,8 +1630,6 @@ bool LibraryCallKit::inline_trig(vmIntrinsics::ID id) {
   Node* n = NULL;
 
   switch (id) {
-  case vmIntrinsics::_dsin:  n = new SinDNode(C, control(), arg);  break;
-  case vmIntrinsics::_dcos:  n = new CosDNode(C, control(), arg);  break;
   case vmIntrinsics::_dtan:  n = new TanDNode(C, control(), arg);  break;
   default:  fatal_unexpected_iid(id);  break;
   }
@@ -1692,16 +1692,6 @@ bool LibraryCallKit::inline_trig(vmIntrinsics::ID id) {
     // Slow path - non-blocking leaf call
     Node* call = NULL;
     switch (id) {
-    case vmIntrinsics::_dsin:
-      call = make_runtime_call(RC_LEAF, OptoRuntime::Math_D_D_Type(),
-                               CAST_FROM_FN_PTR(address, SharedRuntime::dsin),
-                               "Sin", NULL, arg, top());
-      break;
-    case vmIntrinsics::_dcos:
-      call = make_runtime_call(RC_LEAF, OptoRuntime::Math_D_D_Type(),
-                               CAST_FROM_FN_PTR(address, SharedRuntime::dcos),
-                               "Cos", NULL, arg, top());
-      break;
     case vmIntrinsics::_dtan:
       call = make_runtime_call(RC_LEAF, OptoRuntime::Math_D_D_Type(),
                                CAST_FROM_FN_PTR(address, SharedRuntime::dtan),
@@ -1752,17 +1742,21 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
 #define FN_PTR(f) CAST_FROM_FN_PTR(address, f)
   switch (id) {
     // These intrinsics are not properly supported on all hardware
-  case vmIntrinsics::_dcos:   return Matcher::has_match_rule(Op_CosD)   ? inline_trig(id) :
-    runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dcos),   "COS");
-  case vmIntrinsics::_dsin:   return Matcher::has_match_rule(Op_SinD)   ? inline_trig(id) :
-    runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dsin),   "SIN");
+  case vmIntrinsics::_dsin:
+    return StubRoutines::dsin() != NULL ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsin(), "dsin") :
+      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dsin),   "SIN");
+  case vmIntrinsics::_dcos:
+    return StubRoutines::dcos() != NULL ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcos(), "dcos") :
+      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dcos),   "COS");
   case vmIntrinsics::_dtan:   return Matcher::has_match_rule(Op_TanD)   ? inline_trig(id) :
     runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dtan),   "TAN");
 
   case vmIntrinsics::_dlog:
     return StubRoutines::dlog() != NULL ?
-    runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog") :
-    runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog),   "LOG");
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog") :
+      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog),   "LOG");
   case vmIntrinsics::_dlog10: return Matcher::has_match_rule(Op_Log10D) ? inline_math(id) :
     runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog10), "LOG10");
 
@@ -3085,7 +3079,7 @@ bool LibraryCallKit::inline_native_isInterrupted() {
   set_control( _gvn.transform(new IfTrueNode(iff_arg)));
 #else
   // To return true on Windows you must read the _interrupted field
-  // and check the the event state i.e. take the slow path.
+  // and check the event state i.e. take the slow path.
 #endif // TARGET_OS_FAMILY_windows
 
   // (d) Otherwise, go to the slow path.
@@ -3159,7 +3153,7 @@ Node* LibraryCallKit::load_klass_from_mirror_common(Node* mirror,
 }
 
 //--------------------(inline_native_Class_query helpers)---------------------
-// Use this for JVM_ACC_INTERFACE, JVM_ACC_IS_CLONEABLE, JVM_ACC_HAS_FINALIZER.
+// Use this for JVM_ACC_INTERFACE, JVM_ACC_IS_CLONEABLE_FAST, JVM_ACC_HAS_FINALIZER.
 // Fall through if (mods & mask) == bits, take the guard otherwise.
 Node* LibraryCallKit::generate_access_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region) {
   // Branch around if the given klass has the given modifier bit set.
@@ -4497,14 +4491,14 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
         generate_virtual_guard(obj_klass, slow_region);
       }
 
-      // The object must be cloneable and must not have a finalizer.
+      // The object must be easily cloneable and must not have a finalizer.
       // Both of these conditions may be checked in a single test.
-      // We could optimize the cloneable test further, but we don't care.
+      // We could optimize the test further, but we don't care.
       generate_access_flags_guard(obj_klass,
                                   // Test both conditions:
-                                  JVM_ACC_IS_CLONEABLE | JVM_ACC_HAS_FINALIZER,
+                                  JVM_ACC_IS_CLONEABLE_FAST | JVM_ACC_HAS_FINALIZER,
                                   // Must be cloneable but not finalizer:
-                                  JVM_ACC_IS_CLONEABLE,
+                                  JVM_ACC_IS_CLONEABLE_FAST,
                                   slow_region);
     }
 

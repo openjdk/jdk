@@ -306,6 +306,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
                    adapter->size_of_parameters());
 
   if (TraceInvokeDynamic) {
+    ttyLocker ttyl;
     tty->print_cr("set_method_handle bc=%d appendix=" PTR_FORMAT "%s method_type=" PTR_FORMAT "%s method=" PTR_FORMAT " ",
                   invoke_code,
                   p2i(appendix()),    (has_appendix    ? "" : " (unused)"),
@@ -357,6 +358,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   set_bytecode_1(invoke_code);
   NOT_PRODUCT(verify(tty));
   if (TraceInvokeDynamic) {
+    ttyLocker ttyl;
     this->print(tty, 0);
   }
 }

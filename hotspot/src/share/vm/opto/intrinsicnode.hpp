@@ -77,7 +77,7 @@ class StrIntrinsicNode: public Node {
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual const Type* Value(PhaseTransform* phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   ArgEncoding encoding() const { return _encoding; }
 };
 
@@ -177,7 +177,7 @@ class EncodeISOArrayNode: public Node {
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual const Type* Value(PhaseTransform* phase) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 #endif // SHARE_VM_OPTO_INTRINSICNODE_HPP

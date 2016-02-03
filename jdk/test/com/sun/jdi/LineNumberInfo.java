@@ -29,7 +29,7 @@
  *
  *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g LineNumberInfo.java ControlFlow.java
+ *  @run compile -XDstringConcat=inline -g LineNumberInfo.java ControlFlow.java
  *
  *  @run driver LineNumberInfo
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,29 +27,32 @@
  * @summary Verify that we can use ECGenParameterSpec
  * @author Andreas Sterbenz
  * @library ..
+ * @run main/othervm TestECGenSpec
+ * @run main/othervm TestECGenSpec sm
  */
 
-import java.util.*;
-
-import java.security.*;
-import java.security.spec.*;
+import java.security.AlgorithmParameters;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Provider;
 import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.ECParameterSpec;
 
 public class TestECGenSpec extends PKCS11Test {
 
     public static void main(String[] args) throws Exception {
-        main(new TestECGenSpec());
+        main(new TestECGenSpec(), args);
     }
 
+    @Override
     public void main(Provider p) throws Exception {
         if (p.getService("Signature", "SHA1withECDSA") == null) {
             System.out.println("Provider does not support ECDSA, skipping...");
             return;
         }
 
-        if (isNSS(p) && getNSSVersion() >= 3.11 && getNSSVersion() < 3.12) {
-            System.out.println("NSS 3.11 has a DER issue that recent " +
-                    "version do not.");
+        if (isBadNSSVersion(p)) {
             return;
         }
 

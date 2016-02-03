@@ -27,6 +27,8 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 
 import java.lang.reflect.Array;
 
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
@@ -41,11 +43,6 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * HotSpot implementation of {@link ConstantReflectionProvider}.
  */
 public class HotSpotConstantReflectionProvider implements ConstantReflectionProvider, HotSpotProxified {
-
-    /**
-     * Determines whether to treat {@code final} fields with default values as constant.
-     */
-    private static final boolean TrustFinalDefaultFields = HotSpotJVMCIRuntime.getBooleanProperty("TrustFinalDefaultFields", true);
 
     protected final HotSpotJVMCIRuntimeProvider runtime;
     protected final HotSpotMethodHandleAccessProvider methodHandleAccess;
@@ -249,14 +246,14 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
      * Determines if a value read from a {@code final} instance field is considered constant. The
      * implementation in {@link HotSpotConstantReflectionProvider} returns true if {@code value} is
      * not the {@link JavaConstant#isDefaultForKind default value} for its kind or if
-     * {@link #TrustFinalDefaultFields} is true.
+     * {@link Option#TrustFinalDefaultFields} is true.
      *
      * @param value a value read from a {@code final} instance field
      * @param receiverClass the {@link Object#getClass() class} of object from which the
      *            {@code value} was read
      */
     protected boolean isFinalInstanceFieldValueConstant(JavaConstant value, Class<?> receiverClass) {
-        return !value.isDefaultForKind() || TrustFinalDefaultFields;
+        return !value.isDefaultForKind() || Option.TrustFinalDefaultFields.getBoolean();
     }
 
     /**
@@ -358,5 +355,19 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
             dimensions++;
         }
         return dimensions;
+    }
+
+    @Override
+    public JavaConstant asJavaClass(ResolvedJavaType type) {
+        return HotSpotObjectConstantImpl.forObject(((HotSpotResolvedJavaType) type).mirror());
+    }
+
+    @Override
+    public Constant asObjectHub(ResolvedJavaType type) {
+        if (type instanceof HotSpotResolvedObjectType) {
+            return ((HotSpotResolvedObjectType) type).klass();
+        } else {
+            throw JVMCIError.unimplemented();
+        }
     }
 }

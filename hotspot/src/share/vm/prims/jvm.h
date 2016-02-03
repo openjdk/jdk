@@ -87,7 +87,7 @@ extern "C" {
  *    class.
  */
 
-#define JVM_INTERFACE_VERSION 4
+#define JVM_INTERFACE_VERSION 5
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetMethodParameters(JNIEnv *env, jobject method);
@@ -532,6 +532,15 @@ JNIEXPORT jobject JNICALL JVM_ConstantPoolGetFieldAtIfLoaded
 JNIEXPORT jobjectArray JNICALL JVM_ConstantPoolGetMemberRefInfoAt
 (JNIEnv *env, jobject obj, jobject unused, jint index);
 
+JNIEXPORT jobjectArray JNICALL JVM_ConstantPoolGetNameAndTypeRefInfoAt
+(JNIEnv *env, jobject obj, jobject unused, jint index);
+
+JNIEXPORT jint JNICALL JVM_ConstantPoolGetNameAndTypeRefIndexAt
+(JNIEnv *env, jobject obj, jobject unused, jint index);
+
+JNIEXPORT jint JNICALL JVM_ConstantPoolGetClassRefIndexAt
+(JNIEnv *env, jobject obj, jobject unused, jint index);
+
 JNIEXPORT jint JNICALL JVM_ConstantPoolGetIntAt
 (JNIEnv *env, jobject obj, jobject unused, jint index);
 
@@ -549,6 +558,9 @@ JNIEXPORT jstring JNICALL JVM_ConstantPoolGetStringAt
 
 JNIEXPORT jstring JNICALL JVM_ConstantPoolGetUTF8At
 (JNIEnv *env, jobject obj, jobject unused, jint index);
+
+JNIEXPORT jbyte JNICALL JVM_ConstantPoolGetTagAt
+(JNIEnv *env, jobject unused, jobject jcpool, jint index);
 
 /*
  * java.security.*

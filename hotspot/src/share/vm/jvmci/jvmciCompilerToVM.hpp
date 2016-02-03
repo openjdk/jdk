@@ -63,6 +63,8 @@ class CompilerToVM {
     static jbyte* cardtable_start_address;
     static int cardtable_shift;
 
+    static int vm_page_size;
+
    public:
     static void initialize();
   };

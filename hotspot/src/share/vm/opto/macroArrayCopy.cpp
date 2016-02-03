@@ -295,7 +295,7 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
   // out-edges of the dest, we need to avoid making derived pointers
   // from it until we have checked its uses.)
   if (ReduceBulkZeroing
-      && !ZeroTLAB              // pointless if already zeroed
+      && !(UseTLAB && ZeroTLAB) // pointless if already zeroed
       && basic_elem_type != T_CONFLICT // avoid corner case
       && !src->eqv_uncast(dest)
       && alloc != NULL

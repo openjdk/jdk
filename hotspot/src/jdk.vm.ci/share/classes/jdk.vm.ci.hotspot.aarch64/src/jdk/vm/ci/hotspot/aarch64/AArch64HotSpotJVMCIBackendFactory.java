@@ -41,9 +41,7 @@ import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.inittimer.InitTimer;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import jdk.vm.ci.service.ServiceProvider;
 
-@ServiceProvider(HotSpotJVMCIBackendFactory.class)
 public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
     protected EnumSet<AArch64.CPUFeature> computeFeatures(@SuppressWarnings("unused") HotSpotVMConfig config) {
@@ -124,8 +122,7 @@ public class AArch64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         }
     }
 
-    protected JVMCIBackend createBackend(HotSpotMetaAccessProvider metaAccess, HotSpotCodeCacheProvider codeCache, ConstantReflectionProvider constantReflection,
-                    StackIntrospection stackIntrospection) {
+    protected JVMCIBackend createBackend(HotSpotMetaAccessProvider metaAccess, HotSpotCodeCacheProvider codeCache, ConstantReflectionProvider constantReflection, StackIntrospection stackIntrospection) {
         return new JVMCIBackend(metaAccess, codeCache, constantReflection, stackIntrospection);
     }
 }
