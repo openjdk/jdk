@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6400879, 7100140
+ * @bug 6400879 7100140
  * @summary Tests that Start/Stop sequence doesn't hang
  * @author Alexey Menkov
  * @run main bug6400879
