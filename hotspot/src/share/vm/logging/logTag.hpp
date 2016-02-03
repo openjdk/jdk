@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,9 @@
   LOG_TAG(classhisto) \
   LOG_TAG(classresolve) \
   LOG_TAG(classinit) \
+  LOG_TAG(classload) /* Trace all classes loaded */ \
+  LOG_TAG(classloaderdata) /* class loader loader_data lifetime */ \
+  LOG_TAG(classunload) /* Trace unloading of classes */ \
   LOG_TAG(comp) \
   LOG_TAG(compaction) \
   LOG_TAG(cpu) \
