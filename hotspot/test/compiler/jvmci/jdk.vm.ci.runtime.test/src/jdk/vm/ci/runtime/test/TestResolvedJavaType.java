@@ -47,7 +47,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -845,23 +844,6 @@ public class TestResolvedJavaType extends TypeUniverse {
             assertFalse(enclc == null ^ enclt == null);
             if (enclc != null) {
                 assertEquals(enclt, metaAccess.lookupJavaType(enclc));
-            }
-        }
-    }
-
-    @Test
-    public void classFilePathTest() {
-        for (Class<?> c : classes) {
-            ResolvedJavaType type = metaAccess.lookupJavaType(c);
-            URL path = type.getClassFilePath();
-            if (type.isPrimitive() || type.isArray()) {
-                assertEquals(null, path);
-            } else {
-                assertNotNull(path);
-                String pathString = path.getPath();
-                if (type.isLocal() || type.isMember()) {
-                    assertTrue(pathString.indexOf('$') > 0);
-                }
             }
         }
     }
