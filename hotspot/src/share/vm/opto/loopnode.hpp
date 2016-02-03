@@ -1105,6 +1105,8 @@ private:
   Node *place_near_use( Node *useblock ) const;
   Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
   void try_move_store_after_loop(Node* n);
+  bool identical_backtoback_ifs(Node *n);
+  bool can_split_if(Node *n_ctrl);
 
   bool _created_loop_node;
 public:

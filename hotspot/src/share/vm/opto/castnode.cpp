@@ -37,7 +37,6 @@
 Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
   Node* dom = dominating_cast(phase);
   if (dom != NULL) {
-    assert(_carry_dependency, "only for casts that carry a dependency");
     return dom;
   }
   if (_carry_dependency) {
@@ -110,13 +109,16 @@ Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node *n, const Type *t,
 }
 
 TypeNode* ConstraintCastNode::dominating_cast(PhaseTransform *phase) const {
-  if (!carry_dependency()) {
-    return NULL;
-  }
   Node* val = in(1);
   Node* ctl = in(0);
   int opc = Opcode();
   if (ctl == NULL) {
+    return NULL;
+  }
+  // Range check CastIIs may all end up under a single range check and
+  // in that case only the narrower CastII would be kept by the code
+  // below which would be incorrect.
+  if (is_CastII() && as_CastII()->has_range_check()) {
     return NULL;
   }
   for (DUIterator_Fast imax, i = val->fast_outs(imax); i < imax; i++) {
@@ -300,7 +302,6 @@ void CastIINode::dump_spec(outputStream* st) const {
 Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
   Node* dom = dominating_cast(phase);
   if (dom != NULL) {
-    assert(_carry_dependency, "only for casts that carry a dependency");
     return dom;
   }
   if (_carry_dependency) {
