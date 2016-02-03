@@ -1079,6 +1079,7 @@ static void vec_stack_to_stack_helper(CodeBuffer *cbuf, int src_offset,
       __ vmovdqu(xmm0, Address(rsp, src_offset));
       __ vmovdqu(Address(rsp, dst_offset), xmm0);
       __ vmovdqu(xmm0, Address(rsp, -32));
+      break;
     case Op_VecZ:
       __ evmovdqul(Address(rsp, -64), xmm0, 2);
       __ evmovdqul(xmm0, Address(rsp, src_offset), 2);
@@ -9819,24 +9820,6 @@ instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
 %}
 
 // -----------Trig and Trancendental Instructions------------------------------
-instruct cosD_reg(regD dst) %{
-  match(Set dst (CosD dst));
-
-  format %{ "dcos   $dst\n\t" %}
-  opcode(0xD9, 0xFF);
-  ins_encode( Push_SrcXD(dst), OpcP, OpcS, Push_ResultXD(dst) );
-  ins_pipe( pipe_slow );
-%}
-
-instruct sinD_reg(regD dst) %{
-  match(Set dst (SinD dst));
-
-  format %{ "dsin   $dst\n\t" %}
-  opcode(0xD9, 0xFE);
-  ins_encode( Push_SrcXD(dst), OpcP, OpcS, Push_ResultXD(dst) );
-  ins_pipe( pipe_slow );
-%}
-
 instruct tanD_reg(regD dst) %{
   match(Set dst (TanD dst));
 

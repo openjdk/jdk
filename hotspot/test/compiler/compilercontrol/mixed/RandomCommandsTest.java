@@ -26,7 +26,8 @@
  * @bug 8137167
  * @summary Randomly generates commands with random types
  * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
- * @build RandomCommandsTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
+ * @build compiler.compilercontrol.mixed.RandomCommandsTest
+ *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

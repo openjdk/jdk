@@ -704,7 +704,6 @@ public:
 
   // printing support
   void print()                          const;
-  void print_code();
   void print_relocations()                        PRODUCT_RETURN;
   void print_pcs()                                PRODUCT_RETURN;
   void print_scopes()                             PRODUCT_RETURN;

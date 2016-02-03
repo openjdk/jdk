@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
  * @bug 8135068
  * @summary Tests CompilerCommand's method matcher
  * @library /testlibrary /test/lib /compiler/whitebox ../share /
- * @build MethodMatcherTest
+ * @build compiler.compilercontrol.matcher.MethodMatcherTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

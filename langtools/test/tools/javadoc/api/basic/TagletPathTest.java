@@ -81,7 +81,7 @@ public class TagletPathTest extends APITest {
             Iterable<String> options = Arrays.asList("-taglet", "UnderlineTaglet");
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            DocumentationTask t = tool.getTask(pw, fm, null, null, options, files);
+            DocumentationTask t = tool.getTask(pw, fm, null, com.sun.tools.doclets.standard.Standard.class, options, files);
             boolean ok = t.call();
             String out = sw.toString();
             System.err.println(">>" + out + "<<");

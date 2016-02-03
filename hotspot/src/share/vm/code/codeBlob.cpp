@@ -181,6 +181,11 @@ const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_addre
   return oop_maps()->find_map_at_offset((intptr_t) return_address - (intptr_t) code_begin());
 }
 
+void CodeBlob::print_code() {
+  HandleMark hm;
+  ResourceMark m;
+  Disassembler::decode(this, tty);
+}
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of BufferBlob

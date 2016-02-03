@@ -35,21 +35,7 @@ import sun.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 
 public class AllocateInstance {
-    public static void main(String args[]) throws Exception {
-        Unsafe unsafe = Utils.getUnsafe();
-
-        // allocateInstance() should not result in a call to the constructor
-        TestClass tc = (TestClass)unsafe.allocateInstance(TestClass.class);
-        assertFalse(tc.calledConstructor);
-
-        // allocateInstance() on an abstract class should result in an InstantiationException
-        try {
-            AbstractClass ac = (AbstractClass)unsafe.allocateInstance(AbstractClass.class);
-            throw new RuntimeException("Did not get expected InstantiationException");
-        } catch (InstantiationException e) {
-            // Expected
-        }
-    }
+    static final Unsafe UNSAFE = Utils.getUnsafe();
 
     class TestClass {
         public boolean calledConstructor = false;
@@ -59,7 +45,41 @@ public class AllocateInstance {
         }
     }
 
+    static void testConstructorCall() throws InstantiationException {
+        // allocateInstance() should not result in a call to the constructor
+        TestClass tc = (TestClass)UNSAFE.allocateInstance(TestClass.class);
+        assertFalse(tc.calledConstructor);
+    }
+
     abstract class AbstractClass {
         public AbstractClass() {}
+    }
+
+    static void testAbstractClass() {
+        try {
+            AbstractClass ac = (AbstractClass) UNSAFE.allocateInstance(AbstractClass.class);
+            throw new AssertionError("Should throw InstantiationException for an abstract class");
+        } catch (InstantiationException e) {
+            // Expected
+        }
+    }
+
+    interface AnInterface {}
+
+    static void testInterface() {
+        try {
+            AnInterface ai = (AnInterface) UNSAFE.allocateInstance(AnInterface.class);
+            throw new AssertionError("Should throw InstantiationException for an interface");
+        } catch (InstantiationException e) {
+            // Expected
+        }
+    }
+
+    public static void main(String args[]) throws Exception {
+        for (int i = 0; i < 20_000; i++) {
+            testConstructorCall();
+            testAbstractClass();
+            testInterface();
+        }
     }
 }

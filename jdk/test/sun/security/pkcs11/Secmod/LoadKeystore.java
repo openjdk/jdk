@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -35,6 +36,7 @@ import java.util.Collections;
  * @summary Checks that PKCS#11 keystore can't be loaded with wrong password
  * @library ../
  * @run main/othervm LoadKeystore
+ * @run main/othervm LoadKeystore sm policy
  */
 public class LoadKeystore extends SecmodTest {
 
@@ -49,6 +51,12 @@ public class LoadKeystore extends SecmodTest {
         System.out.println("Add provider " + p);
         System.out.println();
         Security.addProvider(p);
+
+        if (args.length > 1 && "sm".equals(args[0])) {
+            System.setProperty("java.security.policy",
+                    BASE + File.separator + args[1]);
+            System.setSecurityManager(new SecurityManager());
+        }
 
         try {
             System.out.println("Load keystore with wrong type");

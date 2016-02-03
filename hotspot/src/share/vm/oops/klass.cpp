@@ -45,6 +45,20 @@
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif // INCLUDE_ALL_GCS
 
+bool Klass::is_cloneable() const {
+  return _access_flags.is_cloneable_fast() ||
+         is_subtype_of(SystemDictionary::Cloneable_klass());
+}
+
+void Klass::set_is_cloneable() {
+  if (name() != vmSymbols::java_lang_invoke_MemberName()) {
+    _access_flags.set_is_cloneable_fast();
+  } else {
+    assert(is_final(), "no subclasses allowed");
+    // MemberName cloning should not be intrinsified and always happen in JVM_Clone.
+  }
+}
+
 void Klass::set_name(Symbol* n) {
   _name = n;
   if (_name != NULL) _name->increment_refcount();

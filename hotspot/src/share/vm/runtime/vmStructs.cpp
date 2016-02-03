@@ -860,6 +860,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(StubRoutines,                _dexp,                                         address)                               \
      static_field(StubRoutines,                _dlog,                                         address)                               \
      static_field(StubRoutines,                _dpow,                                         address)                               \
+     static_field(StubRoutines,                _dsin,                                         address)                               \
+     static_field(StubRoutines,                _dcos,                                         address)                               \
      static_field(StubRoutines,                _vectorizedMismatch,                           address)                               \
      static_field(StubRoutines,                _jbyte_arraycopy,                              address)                               \
      static_field(StubRoutines,                _jshort_arraycopy,                             address)                               \
@@ -2054,8 +2056,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(NegNode, Node)                                          \
   declare_c2_type(NegFNode, NegNode)                                      \
   declare_c2_type(NegDNode, NegNode)                                      \
-  declare_c2_type(CosDNode, Node)                                         \
-  declare_c2_type(SinDNode, Node)                                         \
   declare_c2_type(TanDNode, Node)                                         \
   declare_c2_type(AtanDNode, Node)                                        \
   declare_c2_type(SqrtDNode, Node)                                        \
@@ -2396,7 +2396,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(JVM_ACC_HAS_MIRANDA_METHODS)                           \
   declare_constant(JVM_ACC_HAS_VANILLA_CONSTRUCTOR)                       \
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
-  declare_constant(JVM_ACC_IS_CLONEABLE)                                  \
+  declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
   declare_constant(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE)                      \
   declare_constant(JVM_ACC_PROMOTED_FLAGS)                                \
   declare_constant(JVM_ACC_FIELD_ACCESS_WATCHED)                          \

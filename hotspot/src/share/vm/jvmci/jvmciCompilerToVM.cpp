@@ -150,6 +150,8 @@ HeapWord** CompilerToVM::Data::_heap_top_addr;
 jbyte* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
 
+int CompilerToVM::Data::vm_page_size;
+
 void CompilerToVM::Data::initialize() {
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
@@ -199,6 +201,8 @@ void CompilerToVM::Data::initialize() {
     ShouldNotReachHere();
     break;
   }
+
+  vm_page_size = os::vm_page_size();
 }
 
 /**
@@ -831,30 +835,6 @@ C2V_VMENTRY(jint, getMetadata, (JNIEnv *jniEnv, jobject, jobject target, jobject
   return result;
 C2V_END
 
-C2V_VMENTRY(void, notifyCompilationStatistics, (JNIEnv *jniEnv, jobject, jint id, jobject hotspot_method, jboolean osr, jint processedBytecodes, jlong time, jlong timeUnitsPerSecond, jobject installed_code))
-  JVMCICompiler* compiler = JVMCICompiler::instance(CHECK);
-  CompilerStatistics* stats = compiler->stats();
-
-  elapsedTimer timer = elapsedTimer(time, timeUnitsPerSecond);
-  if (osr) {
-    stats->_osr.update(timer, processedBytecodes);
-  } else {
-    stats->_standard.update(timer, processedBytecodes);
-  }
-  Handle installed_code_handle = JNIHandles::resolve(installed_code);
-  if (installed_code_handle->is_a(HotSpotInstalledCode::klass())) {
-    stats->_nmethods_size += HotSpotInstalledCode::size(installed_code_handle);
-    stats->_nmethods_code_size += HotSpotInstalledCode::codeSize(installed_code_handle);
-  }
-
-  if (CITimeEach) {
-    methodHandle method = CompilerToVM::asMethod(hotspot_method);
-    float bytes_per_sec = 1.0 * processedBytecodes / timer.seconds();
-    tty->print_cr("%3d   seconds: %f bytes/sec: %f (bytes %d)",
-                  id, timer.seconds(), bytes_per_sec, processedBytecodes);
-  }
-C2V_END
-
 C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv *jniEnv, jobject))
   JVMCICompiler* compiler = JVMCICompiler::instance(CHECK);
   CompilerStatistics* stats = compiler->stats();
@@ -894,10 +874,8 @@ C2V_VMENTRY(jobject, disassembleCodeBlob, (JNIEnv *jniEnv, jobject, jobject inst
     if (!nm->is_alive()) {
       return NULL;
     }
-    Disassembler::decode(nm, &st);
-  } else {
-    Disassembler::decode(cb, &st);
   }
+  Disassembler::decode(cb, &st);
   if (st.size() <= 0) {
     return NULL;
   }
@@ -1387,6 +1365,42 @@ C2V_VMENTRY(int, methodDataProfileDataSize, (JNIEnv*, jobject, jlong metaspace_m
   THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), err_msg("Invalid profile data position %d", position));
 C2V_END
 
+C2V_VMENTRY(int, interpreterFrameSize, (JNIEnv*, jobject, jobject bytecode_frame_handle))
+  if (bytecode_frame_handle == NULL) {
+    THROW_0(vmSymbols::java_lang_NullPointerException());
+  }
+
+  oop top_bytecode_frame = JNIHandles::resolve_non_null(bytecode_frame_handle);
+  oop bytecode_frame = top_bytecode_frame;
+  int size = 0;
+  int callee_parameters = 0;
+  int callee_locals = 0;
+  Method* method = getMethodFromHotSpotMethod(BytecodePosition::method(bytecode_frame));
+  int extra_args = method->max_stack() - BytecodeFrame::numStack(bytecode_frame);
+
+  while (bytecode_frame != NULL) {
+    int locks = BytecodeFrame::numLocks(bytecode_frame);
+    int temps = BytecodeFrame::numStack(bytecode_frame);
+    bool is_top_frame = (bytecode_frame == top_bytecode_frame);
+    Method* method = getMethodFromHotSpotMethod(BytecodePosition::method(bytecode_frame));
+
+    int frame_size = BytesPerWord * Interpreter::size_activation(method->max_stack(),
+                                                                 temps + callee_parameters,
+                                                                 extra_args,
+                                                                 locks,
+                                                                 callee_parameters,
+                                                                 callee_locals,
+                                                                 is_top_frame);
+    size += frame_size;
+
+    callee_parameters = method->size_of_parameters();
+    callee_locals = method->max_locals();
+    extra_args = 0;
+    bytecode_frame = BytecodePosition::caller(bytecode_frame);
+  }
+  return size + Deoptimization::last_frame_adjust(0, callee_locals) * BytesPerWord;
+C2V_END
+
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
@@ -1397,6 +1411,7 @@ C2V_END
 #define STACK_TRACE_ELEMENT   "Ljava/lang/StackTraceElement;"
 #define INSTALLED_CODE        "Ljdk/vm/ci/code/InstalledCode;"
 #define TARGET_DESCRIPTION    "Ljdk/vm/ci/code/TargetDescription;"
+#define BYTECODE_FRAME        "Ljdk/vm/ci/code/BytecodeFrame;"
 #define RESOLVED_METHOD       "Ljdk/vm/ci/meta/ResolvedJavaMethod;"
 #define HS_RESOLVED_METHOD    "Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;"
 #define HS_RESOLVED_KLASS     "Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;"
@@ -1446,7 +1461,6 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC"initializeConfiguration",                      CC"("HS_CONFIG")J",                                                               FN_PTR(initializeConfiguration)},
   {CC"installCode",                                  CC"("TARGET_DESCRIPTION HS_COMPILED_CODE INSTALLED_CODE HS_SPECULATION_LOG")I",   FN_PTR(installCode)},
   {CC"getMetadata",                                  CC"("TARGET_DESCRIPTION HS_COMPILED_CODE HS_METADATA")I",                         FN_PTR(getMetadata)},
-  {CC"notifyCompilationStatistics",                  CC"(I"HS_RESOLVED_METHOD"ZIJJ"INSTALLED_CODE")V",                                 FN_PTR(notifyCompilationStatistics)},
   {CC"resetCompilationStatistics",                   CC"()V",                                                                          FN_PTR(resetCompilationStatistics)},
   {CC"disassembleCodeBlob",                          CC"("INSTALLED_CODE")"STRING,                                                     FN_PTR(disassembleCodeBlob)},
   {CC"executeInstalledCode",                         CC"(["OBJECT INSTALLED_CODE")"OBJECT,                                             FN_PTR(executeInstalledCode)},
@@ -1467,6 +1481,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC"writeDebugOutput",                             CC"([BII)V",                                                                      FN_PTR(writeDebugOutput)},
   {CC"flushDebugOutput",                             CC"()V",                                                                          FN_PTR(flushDebugOutput)},
   {CC"methodDataProfileDataSize",                    CC"(JI)I",                                                                        FN_PTR(methodDataProfileDataSize)},
+  {CC"interpreterFrameSize",                         CC"("BYTECODE_FRAME")I",                                                          FN_PTR(interpreterFrameSize)},
 };
 
 int CompilerToVM::methods_count() {

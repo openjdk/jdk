@@ -253,11 +253,15 @@ class InstallSDE {
                 case 3:  // Integer
                 case 4:  // Float
                 case 12: // NameAndType
+                case 18: // InvokeDynamic
                     copy(4);
                     break;
                 case 5:  // Long
                 case 6:  // Double
                     copy(8);
+                    break;
+                case 15: // MethodHandle
+                    copy(3);
                     break;
                 case 1:  // Utf8
                     int len = readU2();

@@ -315,6 +315,7 @@ else # HAS_SPEC=true
 
     # Support targets for COMPARE_BUILD, used for makefile development
     pre-compare-build:
+	$(call WaitForSmartJavacFinish)
 	$(call PrepareCompareBuild)
 
     post-compare-build:

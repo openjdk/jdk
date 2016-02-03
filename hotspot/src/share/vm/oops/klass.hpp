@@ -538,12 +538,13 @@ protected:
   bool has_final_method() const         { return _access_flags.has_final_method(); }
   void set_has_finalizer()              { _access_flags.set_has_finalizer(); }
   void set_has_final_method()           { _access_flags.set_has_final_method(); }
-  bool is_cloneable() const             { return _access_flags.is_cloneable(); }
-  void set_is_cloneable()               { _access_flags.set_is_cloneable(); }
   bool has_vanilla_constructor() const  { return _access_flags.has_vanilla_constructor(); }
   void set_has_vanilla_constructor()    { _access_flags.set_has_vanilla_constructor(); }
   bool has_miranda_methods () const     { return access_flags().has_miranda_methods(); }
   void set_has_miranda_methods()        { _access_flags.set_has_miranda_methods(); }
+
+  bool is_cloneable() const;
+  void set_is_cloneable();
 
   // Biased locking support
   // Note: the prototype header is always set up to be at least the
