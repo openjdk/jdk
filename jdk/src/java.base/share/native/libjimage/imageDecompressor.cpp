@@ -190,8 +190,8 @@ void SharedStringDecompressor::decompress_resource(u1* data,
             { // String in Strings table
                 *uncompressed_resource = 1;
                 uncompressed_resource += 1;
-                int i = decompress_int(data);
-                const char * string = strings->get(i);
+                int k = decompress_int(data);
+                const char * string = strings->get(k);
                 int str_length = (int) strlen(string);
                 Endian::set_java(uncompressed_resource, str_length);
                 uncompressed_resource += 2;
