@@ -321,9 +321,12 @@ address ExceptionCache::test_address(address addr) {
 
 bool ExceptionCache::add_address_and_handler(address addr, address handler) {
   if (test_address(addr) == handler) return true;
-  if (count() < cache_size) {
-    set_pc_at(count(),addr);
-    set_handler_at(count(), handler);
+
+  int index = count();
+  if (index < cache_size) {
+    set_pc_at(index, addr);
+    set_handler_at(index, handler);
+    OrderAccess::storestore();
     increment_count();
     return true;
   }
