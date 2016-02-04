@@ -380,7 +380,7 @@ extern Mutex* tty_lock;
 char* get_datetime_string(char *buf, size_t len) {
   os::local_time_string(buf, len);
   int i = (int)strlen(buf);
-  while (i-- >= 0) {
+  while (--i >= 0) {
     if (buf[i] == ' ') buf[i] = '_';
     else if (buf[i] == ':') buf[i] = '-';
   }
