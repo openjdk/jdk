@@ -27,7 +27,7 @@
  * @summary C2 can not handle returns with inccompatible interface arrays
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/sun.misc
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

@@ -24,7 +24,7 @@
 /*
  * @test TestCompilerDirectivesCompatibilityBase
  * @bug 8137167
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management

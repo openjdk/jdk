@@ -72,7 +72,7 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NUL
 
   assert(ciObjectFactory::is_initialized(), "not a shared field");
 
-  assert(klass->get_instanceKlass()->is_linked(), "must be linked before using its constan-pool");
+  assert(klass->get_instanceKlass()->is_linked(), "must be linked before using its constant-pool");
 
   constantPoolHandle cpool(thread, klass->get_instanceKlass()->constants());
 
@@ -106,10 +106,31 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NUL
   // even though we may not need to.
   int holder_index = cpool->klass_ref_index_at(index);
   bool holder_is_accessible;
-  ciInstanceKlass* declared_holder =
-    ciEnv::current(thread)->get_klass_by_index(cpool, holder_index,
-                                               holder_is_accessible,
-                                               klass)->as_instance_klass();
+
+  ciKlass* generic_declared_holder = ciEnv::current(thread)->get_klass_by_index(cpool, holder_index,
+                                                                                holder_is_accessible,
+                                                                                klass);
+
+  if (generic_declared_holder->is_array_klass()) {
+    // If the declared holder of the field is an array class, assume that
+    // the canonical holder of that field is java.lang.Object. Arrays
+    // do not have fields; java.lang.Object is the only supertype of an
+    // array type that can declare fields and is therefore the canonical
+    // holder of the array type.
+    //
+    // Furthermore, the compilers assume that java.lang.Object does not
+    // have any fields. Therefore, the field is not looked up. Instead,
+    // the method returns partial information that will trigger special
+    // handling in ciField::will_link and will result in a
+    // java.lang.NoSuchFieldError exception being thrown by the compiled
+    // code (the expected behavior in this case).
+    _holder = ciEnv::current(thread)->Object_klass();
+    _offset = -1;
+    _is_constant = false;
+    return;
+  }
+
+  ciInstanceKlass* declared_holder = generic_declared_holder->as_instance_klass();
 
   // The declared holder of this field may not have been loaded.
   // Bail out with partial field information.
