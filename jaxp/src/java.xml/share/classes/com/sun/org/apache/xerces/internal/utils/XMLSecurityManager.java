@@ -27,6 +27,8 @@ package com.sun.org.apache.xerces.internal.utils;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.util.SecurityManager;
+import java.util.concurrent.CopyOnWriteArrayList;
+import org.xml.sax.SAXException;
 
 /**
  * This class manages standard and implementation-specific limitations.
@@ -494,6 +496,23 @@ public final class XMLSecurityManager {
             }
         }
 
+    }
+
+    // Array list to store printed warnings for each SAX parser used
+    private static final CopyOnWriteArrayList<String> printedWarnings = new CopyOnWriteArrayList<>();
+
+    /**
+     * Prints out warnings if a parser does not support the specified feature/property.
+     *
+     * @param parserClassName the name of the parser class
+     * @param propertyName the property name
+     * @param exception the exception thrown by the parser
+     */
+    public static void printWarning(String parserClassName, String propertyName, SAXException exception) {
+        String key = parserClassName+":"+propertyName;
+        if (printedWarnings.addIfAbsent(key)) {
+            System.err.println( "Warning: "+parserClassName+": "+exception.getMessage());
+        }
     }
 
     /**
