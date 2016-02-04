@@ -127,7 +127,10 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
                      Instruction_aarch64::extract(insn2, 4, 0)) {
         // movk #imm16<<32
         Instruction_aarch64::patch(branch + 4, 20, 5, (uint64_t)target >> 32);
-        offset &= (1<<20)-1;
+        long dest = ((long)target & 0xffffffffL) | ((long)branch & 0xffff00000000L);
+        long pc_page = (long)branch >> 12;
+        long adr_page = (long)dest >> 12;
+        offset = adr_page - pc_page;
         instructions = 2;
       }
     }
@@ -3998,11 +4001,12 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
   if (offset_high >= -(1<<20) && offset_low < (1<<20)) {
     _adrp(reg1, dest.target());
   } else {
-    unsigned long pc_page = (unsigned long)pc() >> 12;
-    long offset = dest_page - pc_page;
-    offset = (offset & ((1<<20)-1)) << 12;
-    _adrp(reg1, pc()+offset);
-    movk(reg1, (unsigned long)dest.target() >> 32, 32);
+    unsigned long target = (unsigned long)dest.target();
+    unsigned long adrp_target
+      = (target & 0xffffffffUL) | ((unsigned long)pc() & 0xffff00000000UL);
+
+    _adrp(reg1, (address)adrp_target);
+    movk(reg1, target >> 32, 32);
   }
   byte_offset = (unsigned long)dest.target() & 0xfff;
 }
