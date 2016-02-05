@@ -31,6 +31,7 @@ import java.util.Locale;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import jdk.jshell.MemoryFileManager.SourceMemoryJavaFileObject;
+import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 
 /**
  *
@@ -180,6 +181,22 @@ final class OuterWrap implements GeneralWrap {
                 }
             }
             return null;
+        }
+
+        @Override
+        boolean isResolutionError() {
+            if (!super.isResolutionError()) {
+                return false;
+            }
+            for (String line : diag.getMessage(PARSED_LOCALE).split("\\r?\\n")) {
+                if (line.trim().startsWith("location:")) {
+                    if (!line.contains(REPL_CLASS_PREFIX)) {
+                        // Resolution error must occur within a REPL class or it is not resolvable
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
 
         @Override
