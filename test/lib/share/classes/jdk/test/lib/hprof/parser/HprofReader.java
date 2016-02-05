@@ -354,7 +354,14 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
     }
 
     private void skipBytes(long length) throws IOException {
-        in.skipBytes((int)length);
+        while (length > 0) {
+            long skipped = in.skip(length);
+            if (skipped == 0) {
+                // EOF or other problem, throw exception
+                throw new EOFException("Couldn't skip enough bytes");
+            }
+            length -= skipped;
+        }
     }
 
     private int readVersionHeader() throws IOException {
@@ -486,12 +493,12 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
                     break;
                 }
                 case HPROF_GC_OBJ_ARRAY_DUMP: {
-                    int bytesRead = readArray(false);
+                    long bytesRead = readArray(false);
                     bytesLeft -= bytesRead;
                     break;
                 }
                 case HPROF_GC_PRIM_ARRAY_DUMP: {
-                    int bytesRead = readArray(true);
+                    long bytesRead = readArray(true);
                     bytesLeft -= bytesRead;
                     break;
                 }
@@ -743,12 +750,12 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
     // Handle a HPROF_GC_OBJ_ARRAY_DUMP or HPROF_GC_PRIM_ARRAY_DUMP
     // Return number of bytes read
     //
-    private int readArray(boolean isPrimitive) throws IOException {
+    private long readArray(boolean isPrimitive) throws IOException {
         long start = in.position();
         long id = readID();
         StackTrace stackTrace = getStackTraceFromSerial(in.readInt());
         int num = in.readInt();
-        int bytesRead = identifierSize + 8;
+        long bytesRead = identifierSize + 8;
         long elementClassID;
         if (isPrimitive) {
             elementClassID = in.readByte();
@@ -810,14 +817,14 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
             }
         }
         if (primitiveSignature != 0x00) {
-            int size = elSize * num;
+            long size = elSize * (long)num;
             bytesRead += size;
             JavaValueArray va = new JavaValueArray(primitiveSignature, start);
             skipBytes(size);
             snapshot.addHeapObject(id, va);
             snapshot.setSiteTrace(va, stackTrace);
         } else {
-            int sz = num * identifierSize;
+            long sz = (long)num * identifierSize;
             bytesRead += sz;
             JavaObjectArray arr = new JavaObjectArray(elementClassID, start);
             skipBytes(sz);
