@@ -26,6 +26,7 @@
  * @bug 8137167
  * @summary Tests jcmd to be able to add a directive to compile only specified methods
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
+ * @ignore 8140354
  * @build compiler.compilercontrol.jcmd.PrintDirectivesTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
