@@ -256,6 +256,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
 void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  ce->store_parameter(_trap_request, 0);
   __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::deoptimize_id)));
   ce->add_call_info_here(_info);
   DEBUG_ONLY(__ should_not_reach_here());

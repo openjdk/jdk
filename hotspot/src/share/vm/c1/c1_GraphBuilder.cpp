@@ -1748,10 +1748,6 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   const Bytecodes::Code bc_raw = stream()->cur_bc_raw();
   assert(declared_signature != NULL, "cannot be null");
 
-  if (!C1PatchInvokeDynamic && Bytecodes::has_optional_appendix(bc_raw) && !will_link) {
-    BAILOUT("unlinked call site (C1PatchInvokeDynamic is off)");
-  }
-
   // we have to make sure the argument size (incl. the receiver)
   // is correct for compilation (the call would fail later during
   // linkage anyway) - was bug (gri 7/28/99)
@@ -1803,8 +1799,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   // Push appendix argument (MethodType, CallSite, etc.), if one.
   bool patch_for_appendix = false;
   int patching_appendix_arg = 0;
-  if (C1PatchInvokeDynamic &&
-      (Bytecodes::has_optional_appendix(bc_raw) && (!will_link || PatchALot))) {
+  if (Bytecodes::has_optional_appendix(bc_raw) && (!will_link || PatchALot)) {
     Value arg = append(new Constant(new ObjectConstant(compilation()->env()->unloaded_ciinstance()), copy_state_before()));
     apush(arg);
     patch_for_appendix = true;

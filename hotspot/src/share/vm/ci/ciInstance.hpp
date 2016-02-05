@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ class ciInstance : public ciObject {
 
 protected:
   ciInstance(instanceHandle h_i) : ciObject(h_i) {
-    assert(h_i()->is_instance(), "wrong type");
+    assert(h_i()->is_instance_noinline(), "wrong type");
   }
 
   ciInstance(ciKlass* klass) : ciObject(klass) {}

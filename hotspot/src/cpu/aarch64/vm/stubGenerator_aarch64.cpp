@@ -744,7 +744,7 @@ class StubGenerator: public StubCodeGenerator {
            __ sub(end, end, start); // number of bytes to copy
 
           const Register count = end; // 'end' register contains bytes count now
-          __ mov(scratch, (address)ct->byte_map_base);
+          __ load_byte_map_base(scratch);
           __ add(start, start, scratch);
           if (UseConcMarkSweepGC) {
             __ membar(__ StoreStore);

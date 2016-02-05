@@ -91,6 +91,7 @@ void CompileTask::initialize(int compile_id,
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
+  JVMCI_ONLY(_jvmci_compiler_thread = NULL;)
   _comp_level = comp_level;
   _num_inlined_bytecodes = 0;
 

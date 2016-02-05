@@ -630,9 +630,9 @@ JvmtiEnv::SetVerboseFlag(jvmtiVerboseFlag flag, jboolean value) {
     break;
   case JVMTI_VERBOSE_GC:
     if (value == 0) {
-      LogConfiguration::parse_log_arguments("stdout", "gc=off", NULL, NULL, NULL);
+      LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(gc));
     } else {
-      LogConfiguration::parse_log_arguments("stdout", "gc", NULL, NULL, NULL);
+      LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
     }
     break;
   case JVMTI_VERBOSE_JNI:

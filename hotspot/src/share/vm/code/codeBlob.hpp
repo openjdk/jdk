@@ -196,6 +196,7 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   void print() const                             { print_on(tty); }
   virtual void print_on(outputStream* st) const;
   virtual void print_value_on(outputStream* st) const;
+  void print_code();
 
   // Deal with Disassembler, VTune, Forte, JvmtiExport, MemoryService.
   static void trace_new_stub(CodeBlob* blob, const char* name1, const char* name2 = "");

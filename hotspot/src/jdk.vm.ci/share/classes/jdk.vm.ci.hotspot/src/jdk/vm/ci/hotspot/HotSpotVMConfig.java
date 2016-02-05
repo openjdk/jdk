@@ -973,11 +973,12 @@ public class HotSpotVMConfig {
     @HotSpotVMFlag(name = "UseBlockZeroing", archs = {"sparc"}) @Stable public boolean useBlockZeroing;
     @HotSpotVMFlag(name = "BlockZeroingLowLimit", archs = {"sparc"}) @Stable public int blockZeroingLowLimit;
 
-    // offsets, ...
     @HotSpotVMFlag(name = "StackShadowPages") @Stable public int stackShadowPages;
     @HotSpotVMFlag(name = "UseStackBanging") @Stable public boolean useStackBanging;
     @HotSpotVMConstant(name = "STACK_BIAS") @Stable public int stackBias;
+    @HotSpotVMField(name = "CompilerToVM::Data::vm_page_size", type = "int", get = HotSpotVMField.Type.VALUE) @Stable public int vmPageSize;
 
+    // offsets, ...
     @HotSpotVMField(name = "oopDesc::_mark", type = "markOop", get = HotSpotVMField.Type.OFFSET) @Stable public int markOffset;
     @HotSpotVMField(name = "oopDesc::_metadata._klass", type = "Klass*", get = HotSpotVMField.Type.OFFSET) @Stable public int hubOffset;
 

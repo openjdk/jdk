@@ -437,6 +437,13 @@ public:
   void push(RegSet regs, Register stack) { if (regs.bits()) push(regs.bits(), stack); }
   void pop(RegSet regs, Register stack) { if (regs.bits()) pop(regs.bits(), stack); }
 
+  // Push and pop everything that might be clobbered by a native
+  // runtime call except rscratch1 and rscratch2.  (They are always
+  // scratch, so we don't have to protect them.)  Only save the lower
+  // 64 bits of each vector register.
+  void push_call_clobbered_registers();
+  void pop_call_clobbered_registers();
+
   // now mov instructions for loading absolute addresses and 32 or
   // 64 bit integers
 
@@ -1115,6 +1122,15 @@ public:
   // is up to you to ensure that the shift provided matches the size
   // of your data.
   Address form_address(Register Rd, Register base, long byte_offset, int shift);
+
+  // Return true iff an address is within the 48-bit AArch64 address
+  // space.
+  bool is_valid_AArch64_address(address a) {
+    return ((uint64_t)a >> 48) == 0;
+  }
+
+  // Load the base of the cardtable byte map into reg.
+  void load_byte_map_base(Register reg);
 
   // Prolog generator routines to support switch between x86 code and
   // generated ARM code

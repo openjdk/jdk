@@ -44,9 +44,9 @@ class DivINode : public Node {
 public:
   DivINode( Node *c, Node *dividend, Node *divisor ) : Node(c, dividend, divisor ) {}
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
@@ -57,9 +57,9 @@ class DivLNode : public Node {
 public:
   DivLNode( Node *c, Node *dividend, Node *divisor ) : Node(c, dividend, divisor ) {}
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
 };
@@ -70,9 +70,9 @@ class DivFNode : public Node {
 public:
   DivFNode( Node *c, Node *dividend, Node *divisor ) : Node(c, dividend, divisor) {}
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
 };
@@ -83,9 +83,9 @@ class DivDNode : public Node {
 public:
   DivDNode( Node *c, Node *dividend, Node *divisor ) : Node(c,dividend, divisor) {}
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
 };
@@ -96,7 +96,7 @@ class ModINode : public Node {
 public:
   ModINode( Node *c, Node *in1, Node *in2 ) : Node(c,in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -108,7 +108,7 @@ class ModLNode : public Node {
 public:
   ModLNode( Node *c, Node *in1, Node *in2 ) : Node(c,in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
@@ -120,7 +120,7 @@ class ModFNode : public Node {
 public:
   ModFNode( Node *c, Node *in1, Node *in2 ) : Node(c,in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
 };
@@ -131,7 +131,7 @@ class ModDNode : public Node {
 public:
   ModDNode( Node *c, Node *in1, Node *in2 ) : Node(c, in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
 };
@@ -147,9 +147,9 @@ public:
     mod_proj_num =  1       // remainder
   };
   virtual int Opcode() const;
-  virtual Node *Identity( PhaseTransform *phase ) { return this; }
+  virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape) { return NULL; }
-  virtual const Type *Value( PhaseTransform *phase ) const { return bottom_type(); }
+  virtual const Type* Value(PhaseGVN* phase)  const { return bottom_type(); }
   virtual uint hash() const { return Node::hash(); }
   virtual bool is_CFG() const  { return false; }
   virtual uint ideal_reg() const { return NotAMachineReg; }

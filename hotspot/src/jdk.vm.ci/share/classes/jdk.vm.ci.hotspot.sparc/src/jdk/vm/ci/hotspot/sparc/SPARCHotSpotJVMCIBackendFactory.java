@@ -39,11 +39,9 @@ import jdk.vm.ci.hotspot.HotSpotStackIntrospection;
 import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.inittimer.InitTimer;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import jdk.vm.ci.service.ServiceProvider;
 import jdk.vm.ci.sparc.SPARC;
 import jdk.vm.ci.sparc.SPARC.CPUFeature;
 
-@ServiceProvider(HotSpotJVMCIBackendFactory.class)
 public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
     protected TargetDescription createTarget(HotSpotVMConfig config) {
