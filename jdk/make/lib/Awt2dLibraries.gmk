@@ -235,6 +235,13 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
   LIBAWT_MAPFILE :=
 endif
 
+# Turn off all warnings for debug_mem.c This is needed because the specific warning
+# about initializing a declared 'extern' cannot be turned off individually. Only
+# applies to debug builds.
+ifeq ($(TOOLCHAIN_TYPE), gcc)
+  BUILD_LIBAWT_debug_mem.c_CFLAGS := -w
+endif
+
 $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
     LIBRARY := awt, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
@@ -248,7 +255,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
     DISABLED_WARNINGS_clang := logical-op-parentheses extern-initializer, \
     DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE, \
     DISABLED_WARNINGS_microsoft := 4297 4244 4267 4996, \
-    WARNINGS_AS_ERRORS_gcc := false, \
     ASFLAGS := $(LIBAWT_ASFLAGS), \
     MAPFILE := $(LIBAWT_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -343,6 +349,19 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
       LIBAWT_XAWT_LIBS += -lpthread
     endif
 
+    ifeq ($(TOOLCHAIN_TYPE), gcc)
+      # Turn off all warnings for the following files since they contain warnings
+      # that cannot be turned of individually.
+      # redefining a macro
+      BUILD_LIBAWT_XAWT_gtk2_interface.c_CFLAGS := -w
+      # comparison between pointer and integer
+      BUILD_LIBAWT_XAWT_awt_Font.c_CFLAGS := -w
+      # initializing a declared 'extern'
+      BUILD_LIBAWT_XAWT_debug_mem.c_CFLAGS := -w
+      # decimal constant is unsigned only in ISO C90 (JAVASE_EMBEDDED)
+      BUILD_LIBAWT_XAWT_XToolkit.c_CFLAGS := -w
+   endif
+
     $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_XAWT, \
         LIBRARY := awt_xawt, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
@@ -356,7 +375,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
             format-security int-to-pointer-cast parentheses, \
         DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE \
             E_ASSIGNMENT_TYPE_MISMATCH E_NON_CONST_INIT, \
-        WARNINGS_AS_ERRORS_gcc := false, \
         MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libawt_xawt/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN) \
@@ -658,8 +676,11 @@ endif
 
 LIBFONTMANAGER_CFLAGS += $(FONT_HEADERS) $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
 
-# Turn off aliasing with GCC for ExtensionSubtables.cpp
-ifeq ($(OPENJDK_TARGET_OS), linux)
+ifeq ($(TOOLCHAIN_TYPE), gcc)
+  # Turn off all warnings for sunFont.c. This is needed because the specific warning
+  # about discarding 'const' qualifier cannot be turned off individually.
+  BUILD_LIBFONTMANAGER_sunFont.c_CFLAGS := -w
+  # Turn off aliasing with GCC for ExtensionSubtables.cpp
   BUILD_LIBFONTMANAGER_ExtensionSubtables.cpp_CXXFLAGS := -fno-strict-aliasing
 endif
 
@@ -674,14 +695,20 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBFONTMANAGER_CFLAGS), \
     OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \
     CFLAGS_windows = -DCC_NOEX, \
-    DISABLED_WARNINGS_gcc := sign-compare int-to-pointer-cast reorder \
-        delete-non-virtual-dtor type-limits missing-field-initializers, \
+    DISABLED_WARNINGS_gcc := sign-compare int-to-pointer-cast \
+        type-limits missing-field-initializers, \
+    DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
+        maybe-uninitialized, \
     DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast, \
-    DISABLED_WARNINGS_solstudio := truncwarn, \
+    DISABLED_WARNINGS_C_solstudio = \
+        E_INTEGER_OVERFLOW_DETECTED \
+        E_ARG_INCOMPATIBLE_WITH_ARG_L \
+        E_ENUM_VAL_OVERFLOWS_INT_MAX, \
+    DISABLED_WARNINGS_CXX_solstudio := \
+        truncwarn wvarhidenmem wvarhidemem wbadlkginit identexpected \
+        hidevf w_novirtualdescr arrowrtn2, \
     DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146 4334, \
-    WARNINGS_AS_ERRORS_gcc := false, \
-    WARNINGS_AS_ERRORS_solstudio := false, \
     MAPFILE := $(BUILD_LIBFONTMANAGER_MAPFILE), \
     LDFLAGS := $(subst -Wl$(COMMA)-z$(COMMA)defs,,$(LDFLAGS_JDKLIB)) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
