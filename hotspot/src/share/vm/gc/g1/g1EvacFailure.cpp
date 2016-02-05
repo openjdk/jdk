@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/concurrentMark.inline.hpp"
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
@@ -62,7 +62,7 @@ public:
 class RemoveSelfForwardPtrObjClosure: public ObjectClosure {
 private:
   G1CollectedHeap* _g1;
-  ConcurrentMark* _cm;
+  G1ConcurrentMark* _cm;
   HeapRegion* _hr;
   size_t _marked_bytes;
   OopsInHeapRegionClosure *_update_rset_cl;

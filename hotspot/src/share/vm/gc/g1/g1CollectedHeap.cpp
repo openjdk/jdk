@@ -1417,13 +1417,13 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
 
       // Clear the previous marking bitmap, if needed for bitmap verification.
       // Note we cannot do this when we clear the next marking bitmap in
-      // ConcurrentMark::abort() above since VerifyDuringGC verifies the
+      // G1ConcurrentMark::abort() above since VerifyDuringGC verifies the
       // objects marked during a full GC against the previous bitmap.
       // But we need to clear it before calling check_bitmaps below since
       // the full GC has compacted objects and updated TAMS but not updated
       // the prev bitmap.
       if (G1VerifyBitmaps) {
-        ((CMBitMap*) concurrent_mark()->prevMarkBitMap())->clearAll();
+        ((G1CMBitMap*) concurrent_mark()->prevMarkBitMap())->clearAll();
       }
       _verifier->check_bitmaps("Full GC End");
 
@@ -1924,11 +1924,11 @@ jint G1CollectedHeap::initialize() {
                              G1CardCounts::compute_size(g1_rs.size() / HeapWordSize),
                              G1CardCounts::heap_map_factor());
 
-  size_t bitmap_size = CMBitMap::compute_size(g1_rs.size());
+  size_t bitmap_size = G1CMBitMap::compute_size(g1_rs.size());
   G1RegionToSpaceMapper* prev_bitmap_storage =
-    create_aux_memory_mapper("Prev Bitmap", bitmap_size, CMBitMap::heap_map_factor());
+    create_aux_memory_mapper("Prev Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
   G1RegionToSpaceMapper* next_bitmap_storage =
-    create_aux_memory_mapper("Next Bitmap", bitmap_size, CMBitMap::heap_map_factor());
+    create_aux_memory_mapper("Next Bitmap", bitmap_size, G1CMBitMap::heap_map_factor());
 
   _hrm.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
   g1_barrier_set()->initialize(cardtable_storage);
@@ -1960,11 +1960,11 @@ jint G1CollectedHeap::initialize() {
     _humongous_reclaim_candidates.initialize(start, end, granularity);
   }
 
-  // Create the ConcurrentMark data structure and thread.
+  // Create the G1ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
-  _cm = new ConcurrentMark(this, prev_bitmap_storage, next_bitmap_storage);
+  _cm = new G1ConcurrentMark(this, prev_bitmap_storage, next_bitmap_storage);
   if (_cm == NULL || !_cm->completed_initialization()) {
-    vm_shutdown_during_initialization("Could not create/initialize ConcurrentMark");
+    vm_shutdown_during_initialization("Could not create/initialize G1ConcurrentMark");
     return JNI_ENOMEM;
   }
   _cmThread = _cm->cmThread();
@@ -4992,7 +4992,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
     oop obj = (oop)r->bottom();
-    CMBitMap* next_bitmap = g1h->concurrent_mark()->nextMarkBitMap();
+    G1CMBitMap* next_bitmap = g1h->concurrent_mark()->nextMarkBitMap();
 
     // The following checks whether the humongous object is live are sufficient.
     // The main additional check (in addition to having a reference from the roots
