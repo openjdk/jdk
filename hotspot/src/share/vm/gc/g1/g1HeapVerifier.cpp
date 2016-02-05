@@ -591,7 +591,7 @@ void G1HeapVerifier::verify_dirty_young_regions() {
   verify_dirty_young_list(_g1h->young_list()->first_region());
 }
 
-bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, CMBitMapRO* bitmap,
+bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, G1CMBitMapRO* bitmap,
                                                HeapWord* tams, HeapWord* end) {
   guarantee(tams <= end,
             "tams: " PTR_FORMAT " end: " PTR_FORMAT, p2i(tams), p2i(end));
@@ -605,8 +605,8 @@ bool G1HeapVerifier::verify_no_bits_over_tams(const char* bitmap_name, CMBitMapR
 }
 
 bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
-  CMBitMapRO* prev_bitmap = _g1h->concurrent_mark()->prevMarkBitMap();
-  CMBitMapRO* next_bitmap = (CMBitMapRO*) _g1h->concurrent_mark()->nextMarkBitMap();
+  G1CMBitMapRO* prev_bitmap = _g1h->concurrent_mark()->prevMarkBitMap();
+  G1CMBitMapRO* next_bitmap = (G1CMBitMapRO*) _g1h->concurrent_mark()->nextMarkBitMap();
 
   HeapWord* bottom = hr->bottom();
   HeapWord* ptams  = hr->prev_top_at_mark_start();
