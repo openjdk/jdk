@@ -917,6 +917,7 @@ JVM_VARIANTS
 JVM_INTERPRETER
 JDK_VARIANT
 SET_OPENJDK
+USERNAME
 CANONICAL_TOPDIR
 ORIGINAL_TOPDIR
 TOPDIR
@@ -4835,7 +4836,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1454146111
+DATE_WHEN_GENERATED=1454436146
 
 ###############################################################################
 #
@@ -15652,6 +15653,11 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf
 
+  # Setup username (for use in adhoc version strings etc)
+  # Outer [ ] to quote m4.
+   USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'`
+
+
 
 # Check if it's a pure open build or if custom sources are to be used.
 
@@ -23429,9 +23435,8 @@ $as_echo "$as_me: WARNING: --with-version-opt value has been sanitized from '$wi
       # Default is to calculate a string like this <timestamp>.<username>.<base dir name>
       timestamp=`$DATE '+%Y-%m-%d-%H%M%S'`
       # Outer [ ] to quote m4.
-       username=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'`
        basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'`
-      VERSION_OPT="$timestamp.$username.$basedirname"
+      VERSION_OPT="$timestamp.$USERNAME.$basedirname"
     fi
   fi
 
@@ -46441,22 +46446,22 @@ $as_echo "$supports" >&6; }
     esac
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
-	    if test "x$OPENJDK_TARGET_CPU" = xx86; then
-	      # Force compatibility with i586 on 32 bit intel platforms.
-	      COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
-	    fi
-	    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
-	        -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
-	    case $OPENJDK_TARGET_CPU_ARCH in
-	      ppc )
-	        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
-	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
-	        ;;
-	      * )
-	        COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
-	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
-	        ;;
-	    esac
+      if test "x$OPENJDK_TARGET_CPU" = xx86; then
+        # Force compatibility with i586 on 32 bit intel platforms.
+        COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
+      fi
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
+          -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
+      case $OPENJDK_TARGET_CPU_ARCH in
+        ppc )
+          # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+          CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+        * )
+          COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
+          CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+      esac
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"
