@@ -80,7 +80,7 @@
 
 #define JAVA_CLASSFILE_MAGIC              0xCAFEBABE
 #define JAVA_MIN_SUPPORTED_VERSION        45
-#define JAVA_MAX_SUPPORTED_VERSION        52
+#define JAVA_MAX_SUPPORTED_VERSION        53
 #define JAVA_MAX_SUPPORTED_MINOR_VERSION  0
 
 // Used for two backward compatibility reasons:
@@ -100,6 +100,8 @@
 
 // Extension method support.
 #define JAVA_8_VERSION                    52
+
+#define JAVA_9_VERSION                    53
 
 enum { LegalClass, LegalField, LegalMethod }; // used to verify unqualified names
 
