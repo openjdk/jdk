@@ -481,8 +481,6 @@ void GenCollectedHeap::do_collection(bool           full,
         increment_total_full_collections();
       }
 
-      pre_full_gc_dump(NULL);    // do any pre full gc dumps
-
       if (!prepared_for_verification && run_verification &&
           VerifyGCLevel <= 1 && VerifyBeforeGC) {
         prepare_for_verify();
@@ -506,11 +504,6 @@ void GenCollectedHeap::do_collection(bool           full,
     // for instance, a promotion failure could have led to
     // a whole heap collection.
     complete = complete || collected_old;
-
-    if (complete) { // We did a full collection
-      // FIXME: See comment at pre_full_gc_dump call
-      post_full_gc_dump(NULL);   // do any post full gc dumps
-    }
 
     print_heap_change(young_prev_used, old_prev_used);
     MetaspaceAux::print_metaspace_change(metadata_prev_used);
