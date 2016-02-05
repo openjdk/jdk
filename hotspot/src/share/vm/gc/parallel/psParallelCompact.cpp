@@ -1746,8 +1746,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     heap->record_gen_tops_before_GC();
   }
 
-  heap->pre_full_gc_dump(&_gc_timer);
-
   // Make sure data structures are sane, make the heap parsable, and do other
   // miscellaneous bookkeeping.
   pre_compact();
@@ -1768,6 +1766,9 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     GCTraceCPUTime tcpu;
     GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause, true);
+
+    heap->pre_full_gc_dump(&_gc_timer);
+
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 
@@ -1902,6 +1903,8 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     MemoryService::track_memory_usage();
     heap->update_counters();
     gc_task_manager()->release_idle_workers();
+
+    heap->post_full_gc_dump(&_gc_timer);
   }
 
 #ifdef ASSERT
@@ -1939,8 +1942,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
                          marking_start.ticks(), compaction_start.ticks(),
                          collection_exit.ticks());
   gc_task_manager()->print_task_time_stamps();
-
-  heap->post_full_gc_dump(&_gc_timer);
 
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();

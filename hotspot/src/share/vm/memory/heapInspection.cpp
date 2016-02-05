@@ -226,9 +226,8 @@ int KlassInfoHisto::sort_helper(KlassInfoEntry** e1, KlassInfoEntry** e2) {
   return (*e1)->compare(*e1,*e2);
 }
 
-KlassInfoHisto::KlassInfoHisto(KlassInfoTable* cit, const char* title) :
-  _cit(cit),
-  _title(title) {
+KlassInfoHisto::KlassInfoHisto(KlassInfoTable* cit) :
+  _cit(cit) {
   _elements = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<KlassInfoEntry*>(_histo_initial_size, true);
 }
 
@@ -648,7 +647,8 @@ void KlassInfoHisto::print_histo_on(outputStream* st, bool print_stats,
   if (print_stats) {
     print_class_stats(st, csv_format, columns);
   } else {
-    st->print_cr("%s",title());
+    st->print_cr(" num     #instances         #bytes  class name");
+    st->print_cr("----------------------------------------------");
     print_elements(st);
   }
 }
@@ -729,10 +729,7 @@ void HeapInspection::heap_inspection(outputStream* st) {
     }
 
     // Sort and print klass instance info
-    const char *title = "\n"
-              " num     #instances         #bytes  class name\n"
-              "----------------------------------------------";
-    KlassInfoHisto histo(&cit, title);
+    KlassInfoHisto histo(&cit);
     HistoClosure hc(&histo);
 
     cit.iterate(&hc);

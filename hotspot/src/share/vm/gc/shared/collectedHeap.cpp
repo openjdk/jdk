@@ -572,19 +572,16 @@ void CollectedHeap::resize_all_tlabs() {
 }
 
 void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
+  assert(timer != NULL, "timer is null");
   if ((HeapDumpBeforeFullGC && before) || (HeapDumpAfterFullGC && !before)) {
-    GCIdMarkAndRestore gc_id_mark;
-    FormatBuffer<> title("Heap Dump (%s full gc)", before ? "before" : "after");
-    GCTraceTime(Info, gc) tm(title.buffer(), timer);
+    GCTraceTime(Info, gc) tm(before ? "Heap Dump (before full gc)" : "Heap Dump (after full gc)", timer);
     HeapDumper::dump_heap();
   }
+
   LogHandle(gc, classhisto) log;
   if (log.is_trace()) {
+    GCTraceTime(Trace, gc, classhisto) tm(before ? "Class Histogram (before full gc)" : "Class Histogram (after full gc)", timer);
     ResourceMark rm;
-    GCIdMarkAndRestore gc_id_mark;
-    FormatBuffer<> title("Class Histogram (%s full gc)",
-                         before ? "before" : "after");
-    GCTraceTime(Trace, gc, classhisto) tm(title.buffer(), timer);
     VM_GC_HeapInspection inspector(log.trace_stream(), false /* ! full gc */);
     inspector.doit();
   }
