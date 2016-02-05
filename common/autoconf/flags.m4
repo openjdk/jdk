@@ -80,8 +80,9 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
       if test "x$OPENJDK_TARGET_OS" = xsolaris; then
         # Solaris Studio does not have a concept of sysroot. Instead we must
         # make sure the default include and lib dirs are appended to each
-        # compile and link command line.
-        $1SYSROOT_CFLAGS="-I[$]$1SYSROOT/usr/include"
+        # compile and link command line. Must also add -I-xbuiltin to enable
+        # inlining of system functions and intrinsics.
+        $1SYSROOT_CFLAGS="-I-xbuiltin -I[$]$1SYSROOT/usr/include"
         $1SYSROOT_LDFLAGS="-L[$]$1SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L[$]$1SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L[$]$1SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"

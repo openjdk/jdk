@@ -4836,7 +4836,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1454436146
+DATE_WHEN_GENERATED=1454661656
 
 ###############################################################################
 #
@@ -29973,8 +29973,9 @@ fi
       if test "x$OPENJDK_TARGET_OS" = xsolaris; then
         # Solaris Studio does not have a concept of sysroot. Instead we must
         # make sure the default include and lib dirs are appended to each
-        # compile and link command line.
-        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
+        # compile and link command line. Must also add -I-xbuiltin to enable
+        # inlining of system functions and intrinsics.
+        SYSROOT_CFLAGS="-I-xbuiltin -I$SYSROOT/usr/include"
         SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
@@ -42366,8 +42367,9 @@ $as_echo "$BUILD_DEVKIT_ROOT" >&6; }
       if test "x$OPENJDK_TARGET_OS" = xsolaris; then
         # Solaris Studio does not have a concept of sysroot. Instead we must
         # make sure the default include and lib dirs are appended to each
-        # compile and link command line.
-        BUILD_SYSROOT_CFLAGS="-I$BUILD_SYSROOT/usr/include"
+        # compile and link command line. Must also add -I-xbuiltin to enable
+        # inlining of system functions and intrinsics.
+        BUILD_SYSROOT_CFLAGS="-I-xbuiltin -I$BUILD_SYSROOT/usr/include"
         BUILD_SYSROOT_LDFLAGS="-L$BUILD_SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$BUILD_SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$BUILD_SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
