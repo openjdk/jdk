@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,35 @@
  * questions.
  */
 
-//
+import java.io.Serializable;
+import java.lang.invoke.*;
+import java.util.concurrent.Callable;
 
-import sun.misc.*;
+/**
+ * @test
+ * @summary StringConcatFactory exactness check produces bad bytecode when a non-arg concat is requested
+ * @bug 8148787
+ *
+ * @compile StringConcatFactoryEmptyMethods.java
+ *
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true StringConcatFactoryEmptyMethods
+ *
+*/
+public class StringConcatFactoryEmptyMethods {
 
+    public static void main(String[] args) throws Throwable {
+        StringConcatFactory.makeConcat(
+            MethodHandles.lookup(),
+            "foo",
+            MethodType.methodType(String.class)
+        );
 
-public class ExitOnThrow {
-
-    public static void main(String[] args) throws Exception {
-        Cleaner.create(new Object(),
-                       new Runnable() {
-                               public void run() {
-                                   throw new RuntimeException("Foo!");
-                               }
-                           });
-        while (true) {
-            System.gc();
-            Thread.sleep(100);
-        }
+        StringConcatFactory.makeConcatWithConstants(
+            MethodHandles.lookup(),
+            "foo",
+            MethodType.methodType(String.class),
+            ""
+        );
     }
 
 }

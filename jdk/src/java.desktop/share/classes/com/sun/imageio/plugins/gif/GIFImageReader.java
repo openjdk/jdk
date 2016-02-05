@@ -1017,7 +1017,7 @@ public class GIFImageReader extends ImageReader {
 
     /**
      * Remove all settings including global settings such as
-     * <code>Locale</code>s and listeners, as well as stream settings.
+     * {@code Locale}s and listeners, as well as stream settings.
      */
     public void reset() {
         super.reset();

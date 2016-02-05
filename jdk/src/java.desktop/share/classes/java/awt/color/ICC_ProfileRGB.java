@@ -45,13 +45,13 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * that represents profiles which meet the following criteria:
  * <ul>
  * <li>The profile's color space type is RGB.</li>
- * <li>The profile includes the <code>redColorantTag</code>,
- * <code>greenColorantTag</code>, <code>blueColorantTag</code>,
- * <code>redTRCTag</code>, <code>greenTRCTag</code>,
- * <code>blueTRCTag</code>, and <code>mediaWhitePointTag</code> tags.</li>
+ * <li>The profile includes the {@code redColorantTag},
+ * {@code greenColorantTag}, {@code blueColorantTag},
+ * {@code redTRCTag}, {@code greenTRCTag},
+ * {@code blueTRCTag}, and {@code mediaWhitePointTag} tags.</li>
  * </ul>
- * The <code>ICC_Profile</code> <code>getInstance</code> method will
- * return an <code>ICC_ProfileRGB</code> object when these conditions are met.
+ * The {@code ICC_Profile getInstance} method will
+ * return an {@code ICC_ProfileRGB} object when these conditions are met.
  * Three-component, matrix-based input profiles and RGB display profiles are
  * examples of this type of profile.
  * <p>
@@ -109,7 +109,7 @@ extends ICC_Profile {
 
 
     /**
-     * Constructs an new <code>ICC_ProfileRGB</code> from a CMM ID.
+     * Constructs an new {@code ICC_ProfileRGB} from a CMM ID.
      *
      * @param p The CMM ID for the profile.
      *
@@ -119,7 +119,7 @@ extends ICC_Profile {
     }
 
     /**
-     * Constructs a new <code>ICC_ProfileRGB</code> from a
+     * Constructs a new {@code ICC_ProfileRGB} from a
      * ProfileDeferralInfo object.
      *
      * @param pdi
@@ -131,10 +131,10 @@ extends ICC_Profile {
 
     /**
      * Returns an array that contains the components of the profile's
-     * <CODE>mediaWhitePointTag</CODE>.
+     * {@code mediaWhitePointTag}.
      *
-     * @return A 3-element <CODE>float</CODE> array containing the x, y,
-     * and z components of the profile's <CODE>mediaWhitePointTag</CODE>.
+     * @return A 3-element {@code float} array containing the x, y,
+     * and z components of the profile's {@code mediaWhitePointTag}.
      */
     public float[] getMediaWhitePoint() {
         return super.getMediaWhitePoint();
@@ -142,17 +142,17 @@ extends ICC_Profile {
 
 
     /**
-     * Returns a 3x3 <CODE>float</CODE> matrix constructed from the
-     * X, Y, and Z components of the profile's <CODE>redColorantTag</CODE>,
-     * <CODE>greenColorantTag</CODE>, and <CODE>blueColorantTag</CODE>.
+     * Returns a 3x3 {@code float} matrix constructed from the
+     * X, Y, and Z components of the profile's {@code redColorantTag},
+     * {@code greenColorantTag}, and {@code blueColorantTag}.
      * <p>
      * This matrix can be used for color transforms in the forward
      * direction of the profile--from the profile color space
      * to the CIEXYZ PCS.
      *
-     * @return A 3x3 <CODE>float</CODE> array that contains the x, y, and z
-     * components of the profile's <CODE>redColorantTag</CODE>,
-     * <CODE>greenColorantTag</CODE>, and <CODE>blueColorantTag</CODE>.
+     * @return A 3x3 {@code float} array that contains the x, y, and z
+     * components of the profile's {@code redColorantTag},
+     * {@code greenColorantTag}, and {@code blueColorantTag}.
      */
     public float[][] getMatrix() {
         float[][] theMatrix = new float[3][3];
@@ -191,7 +191,7 @@ extends ICC_Profile {
      * &nbsp;        linearComponent = deviceComponent
      *
      *</pre>
-     * @param component The <CODE>ICC_ProfileRGB</CODE> constant that
+     * @param component The {@code ICC_ProfileRGB} constant that
      * represents the component whose TRC you want to retrieve
      * @return the gamma value as a float.
      * @exception ProfileDataException if the profile does not specify
@@ -225,8 +225,8 @@ extends ICC_Profile {
 
     /**
      * Returns the TRC for a particular component as an array.
-     * Component must be <code>REDCOMPONENT</code>,
-     * <code>GREENCOMPONENT</code>, or <code>BLUECOMPONENT</code>.
+     * Component must be {@code REDCOMPONENT},
+     * {@code GREENCOMPONENT}, or {@code BLUECOMPONENT}.
      * Otherwise the returned array
      * represents a lookup table where the input component value
      * is conceptually in the range [0.0, 1.0].  Value 0.0 maps
@@ -236,18 +236,18 @@ extends ICC_Profile {
      * array.  Output values also map linearly to the range [0.0, 1.0].
      * Value 0.0 is represented by an array value of 0x0000 and
      * value 1.0 by 0xFFFF.  In other words, the values are really unsigned
-     * <code>short</code> values even though they are returned in a
-     * <code>short</code> array.
+     * {@code short} values even though they are returned in a
+     * {@code short} array.
      *
      * If the profile has specified the corresponding TRC
      * as linear (gamma = 1.0) or as a simple gamma value, this method
      * throws an exception.  In this case, the {@link #getGamma(int)}
      * method should be used to get the gamma value.
      *
-     * @param component The <CODE>ICC_ProfileRGB</CODE> constant that
+     * @param component The {@code ICC_ProfileRGB} constant that
      * represents the component whose TRC you want to retrieve:
-     * <CODE>REDCOMPONENT</CODE>, <CODE>GREENCOMPONENT</CODE>, or
-     * <CODE>BLUECOMPONENT</CODE>.
+     * {@code REDCOMPONENT}, {@code GREENCOMPONENT}, or
+     * {@code BLUECOMPONENT}.
      *
      * @return a short array representing the TRC.
      * @exception ProfileDataException if the profile does not specify

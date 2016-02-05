@@ -43,9 +43,9 @@ public class BeanContextServiceAvailableEvent extends BeanContextEvent {
     private static final long serialVersionUID = -5333985775656400778L;
 
     /**
-     * Construct a <code>BeanContextAvailableServiceEvent</code>.
+     * Construct a {@code BeanContextAvailableServiceEvent}.
      * @param bcs The context in which the service has become available
-     * @param sc A <code>Class</code> reference to the newly available service
+     * @param sc A {@code Class} reference to the newly available service
      */
     public BeanContextServiceAvailableEvent(BeanContextServices bcs, Class<?> sc) {
         super((BeanContext)bcs);
@@ -54,7 +54,7 @@ public class BeanContextServiceAvailableEvent extends BeanContextEvent {
     }
 
     /**
-     * Gets the source as a reference of type <code>BeanContextServices</code>.
+     * Gets the source as a reference of type {@code BeanContextServices}.
      * @return The context in which the service has become available
      */
     public BeanContextServices getSourceAsBeanContextServices() {
@@ -63,7 +63,7 @@ public class BeanContextServiceAvailableEvent extends BeanContextEvent {
 
     /**
      * Gets the service class that is the subject of this notification.
-     * @return A <code>Class</code> reference to the newly available service
+     * @return A {@code Class} reference to the newly available service
      */
     public Class<?> getServiceClass() { return serviceClass; }
 
@@ -80,7 +80,7 @@ public class BeanContextServiceAvailableEvent extends BeanContextEvent {
      */
 
     /**
-     * A <code>Class</code> reference to the newly available service
+     * A {@code Class} reference to the newly available service
      */
     protected Class<?>                   serviceClass;
 }

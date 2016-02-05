@@ -43,10 +43,10 @@ import java.awt.Container;
 public interface BeanContextContainerProxy {
 
     /**
-     * Gets the <code>java.awt.Container</code> associated
-     * with this <code>BeanContext</code>.
-     * @return the <code>java.awt.Container</code> associated
-     * with this <code>BeanContext</code>.
+     * Gets the {@code java.awt.Container} associated
+     * with this {@code BeanContext}.
+     * @return the {@code java.awt.Container} associated
+     * with this {@code BeanContext}.
      */
     Container getContainer();
 }

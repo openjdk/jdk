@@ -170,7 +170,7 @@ public class XBaseWindow {
     }
 
     /**
-     * Creates window using parameters <code>params</code>
+     * Creates window using parameters {@code params}
      * If params contain flag DELAYED doesn't do anything.
      * Note: Descendants can call this method to create the window
      * at the time different to instance construction.
@@ -316,7 +316,7 @@ public class XBaseWindow {
     }
 
     /**
-     * Creates window with parameters specified by <code>params</code>
+     * Creates window with parameters specified by {@code params}
      * @see #init
      */
     private final void create(XCreateWindowParams params) {
@@ -691,7 +691,7 @@ public class XBaseWindow {
         XToolkit.awtLock();
         try {
             XAtom xa = XAtom.get(XAtom.XA_WM_CLASS);
-            xa.setProperty8(getWindow(), cl[0] + '\0' + cl[1]);
+            xa.setProperty8(getWindow(), cl[0] + '\0' + cl[1] + '\0');
         } finally {
             XToolkit.awtUnlock();
         }

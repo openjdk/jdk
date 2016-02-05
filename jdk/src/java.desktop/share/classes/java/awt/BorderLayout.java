@@ -33,8 +33,8 @@ import java.util.Hashtable;
  * north, south, east, west, and center.
  * Each region may contain no more than one component, and
  * is identified by a corresponding constant:
- * <code>NORTH</code>, <code>SOUTH</code>, <code>EAST</code>,
- * <code>WEST</code>, and <code>CENTER</code>.  When adding a
+ * {@code NORTH}, {@code SOUTH}, {@code EAST},
+ * {@code WEST}, and {@code CENTER}.  When adding a
  * component to a container with a border layout, use one of these
  * five constants, for example:
  * <pre>
@@ -42,55 +42,55 @@ import java.util.Hashtable;
  *    p.setLayout(new BorderLayout());
  *    p.add(new Button("Okay"), BorderLayout.SOUTH);
  * </pre>
- * As a convenience, <code>BorderLayout</code> interprets the
+ * As a convenience, {@code BorderLayout} interprets the
  * absence of a string specification the same as the constant
- * <code>CENTER</code>:
+ * {@code CENTER}:
  * <pre>
  *    Panel p2 = new Panel();
  *    p2.setLayout(new BorderLayout());
  *    p2.add(new TextArea());  // Same as p.add(new TextArea(), BorderLayout.CENTER);
  * </pre>
  * <p>
- * In addition, <code>BorderLayout</code> supports the relative
- * positioning constants, <code>PAGE_START</code>, <code>PAGE_END</code>,
- * <code>LINE_START</code>, and <code>LINE_END</code>.
- * In a container whose <code>ComponentOrientation</code> is set to
- * <code>ComponentOrientation.LEFT_TO_RIGHT</code>, these constants map to
- * <code>NORTH</code>, <code>SOUTH</code>, <code>WEST</code>, and
- * <code>EAST</code>, respectively.
+ * In addition, {@code BorderLayout} supports the relative
+ * positioning constants, {@code PAGE_START}, {@code PAGE_END},
+ * {@code LINE_START}, and {@code LINE_END}.
+ * In a container whose {@code ComponentOrientation} is set to
+ * {@code ComponentOrientation.LEFT_TO_RIGHT}, these constants map to
+ * {@code NORTH}, {@code SOUTH}, {@code WEST}, and
+ * {@code EAST}, respectively.
  * <p>
- * For compatibility with previous releases, <code>BorderLayout</code>
- * also includes the relative positioning constants <code>BEFORE_FIRST_LINE</code>,
- * <code>AFTER_LAST_LINE</code>, <code>BEFORE_LINE_BEGINS</code> and
- * <code>AFTER_LINE_ENDS</code>.  These are equivalent to
- * <code>PAGE_START</code>, <code>PAGE_END</code>, <code>LINE_START</code>
- * and <code>LINE_END</code> respectively.  For
+ * For compatibility with previous releases, {@code BorderLayout}
+ * also includes the relative positioning constants {@code BEFORE_FIRST_LINE},
+ * {@code AFTER_LAST_LINE}, {@code BEFORE_LINE_BEGINS} and
+ * {@code AFTER_LINE_ENDS}.  These are equivalent to
+ * {@code PAGE_START}, {@code PAGE_END}, {@code LINE_START}
+ * and {@code LINE_END} respectively.  For
  * consistency with the relative positioning constants used by other
  * components, the latter constants are preferred.
  * <p>
  * Mixing both absolute and relative positioning constants can lead to
  * unpredictable results.  If
  * you use both types, the relative constants will take precedence.
- * For example, if you add components using both the <code>NORTH</code>
- * and <code>PAGE_START</code> constants in a container whose
- * orientation is <code>LEFT_TO_RIGHT</code>, only the
- * <code>PAGE_START</code> will be laid out.
+ * For example, if you add components using both the {@code NORTH}
+ * and {@code PAGE_START} constants in a container whose
+ * orientation is {@code LEFT_TO_RIGHT}, only the
+ * {@code PAGE_START} will be laid out.
  * <p>
  * NOTE: Currently (in the Java 2 platform v1.2),
- * <code>BorderLayout</code> does not support vertical
- * orientations.  The <code>isVertical</code> setting on the container's
- * <code>ComponentOrientation</code> is not respected.
+ * {@code BorderLayout} does not support vertical
+ * orientations.  The {@code isVertical} setting on the container's
+ * {@code ComponentOrientation} is not respected.
  * <p>
  * The components are laid out according to their
  * preferred sizes and the constraints of the container's size.
- * The <code>NORTH</code> and <code>SOUTH</code> components may
- * be stretched horizontally; the <code>EAST</code> and
- * <code>WEST</code> components may be stretched vertically;
- * the <code>CENTER</code> component may stretch both horizontally
+ * The {@code NORTH} and {@code SOUTH} components may
+ * be stretched horizontally; the {@code EAST} and
+ * {@code WEST} components may be stretched vertically;
+ * the {@code CENTER} component may stretch both horizontally
  * and vertically to fill any space left over.
  * <p>
  * Here is an example of five buttons in an applet laid out using
- * the <code>BorderLayout</code> layout manager:
+ * the {@code BorderLayout} layout manager:
  * <p>
  * <img src="doc-files/BorderLayout-1.gif"
  * alt="Diagram of an applet demonstrating BorderLayout.
@@ -126,7 +126,7 @@ public class BorderLayout implements LayoutManager2,
     /**
      * Constructs a border layout with the horizontal gaps
      * between components.
-     * The horizontal gap is specified by <code>hgap</code>.
+     * The horizontal gap is specified by {@code hgap}.
      *
      * @see #getHgap()
      * @see #setHgap(int)
@@ -138,7 +138,7 @@ public class BorderLayout implements LayoutManager2,
     /**
      * Constructs a border layout with the vertical gaps
      * between components.
-     * The vertical gap is specified by <code>vgap</code>.
+     * The vertical gap is specified by {@code vgap}.
      *
      * @see #getVgap()
      * @see #setVgap(int)
@@ -208,10 +208,10 @@ public class BorderLayout implements LayoutManager2,
      * north, south, east, west or center.
      * mixing the two types of constants can lead to unpredictable results.  If
      * you use both types, the relative constants will take precedence.
-     * For example, if you add components using both the <code>NORTH</code>
-     * and <code>BEFORE_FIRST_LINE</code> constants in a container whose
-     * orientation is <code>LEFT_TO_RIGHT</code>, only the
-     * <code>BEFORE_FIRST_LINE</code> will be laid out.
+     * For example, if you add components using both the {@code NORTH}
+     * and {@code BEFORE_FIRST_LINE} constants in a container whose
+     * orientation is {@code LEFT_TO_RIGHT}, only the
+     * {@code BEFORE_FIRST_LINE} will be laid out.
      * This will be the same for lastLine, firstItem, lastItem.
      * @serial
      */
@@ -355,8 +355,8 @@ public class BorderLayout implements LayoutManager2,
     /**
      * Constructs a border layout with the specified gaps
      * between components.
-     * The horizontal gap is specified by <code>hgap</code>
-     * and the vertical gap is specified by <code>vgap</code>.
+     * The horizontal gap is specified by {@code hgap}
+     * and the vertical gap is specified by {@code vgap}.
      * @param   hgap   the horizontal gap.
      * @param   vgap   the vertical gap.
      */
@@ -408,13 +408,13 @@ public class BorderLayout implements LayoutManager2,
     /**
      * Adds the specified component to the layout, using the specified
      * constraint object.  For border layouts, the constraint must be
-     * one of the following constants:  <code>NORTH</code>,
-     * <code>SOUTH</code>, <code>EAST</code>,
-     * <code>WEST</code>, or <code>CENTER</code>.
+     * one of the following constants:  {@code NORTH},
+     * {@code SOUTH}, {@code EAST},
+     * {@code WEST}, or {@code CENTER}.
      * <p>
      * Most applications do not call this method directly. This method
      * is called when a component is added to a container using the
-     * <code>Container.add</code> method with the same argument types.
+     * {@code Container.add} method with the same argument types.
      * @param   comp         the component to be added.
      * @param   constraints  an object that specifies how and where
      *                       the component is added to the layout.
@@ -434,7 +434,7 @@ public class BorderLayout implements LayoutManager2,
     }
 
     /**
-     * @deprecated  replaced by <code>addLayoutComponent(Component, Object)</code>.
+     * @deprecated  replaced by {@code addLayoutComponent(Component, Object)}.
      */
     @Deprecated
     public void addLayoutComponent(String name, Component comp) {
@@ -472,8 +472,8 @@ public class BorderLayout implements LayoutManager2,
 
     /**
      * Removes the specified component from this border layout. This
-     * method is called when a container calls its <code>remove</code> or
-     * <code>removeAll</code> methods. Most applications do not call this
+     * method is called when a container calls its {@code remove} or
+     * {@code removeAll} methods. Most applications do not call this
      * method directly.
      * @param   comp   the component to be removed.
      * @see     java.awt.Container#remove(java.awt.Component)
@@ -507,12 +507,12 @@ public class BorderLayout implements LayoutManager2,
     /**
      * Gets the component that was added using the given constraint
      *
-     * @param   constraints  the desired constraint, one of <code>CENTER</code>,
-     *                       <code>NORTH</code>, <code>SOUTH</code>,
-     *                       <code>WEST</code>, <code>EAST</code>,
-     *                       <code>PAGE_START</code>, <code>PAGE_END</code>,
-     *                       <code>LINE_START</code>, <code>LINE_END</code>
-     * @return  the component at the given location, or <code>null</code> if
+     * @param   constraints  the desired constraint, one of {@code CENTER},
+     *                       {@code NORTH}, {@code SOUTH},
+     *                       {@code WEST}, {@code EAST},
+     *                       {@code PAGE_START}, {@code PAGE_END},
+     *                       {@code LINE_START}, {@code LINE_END}
+     * @return  the component at the given location, or {@code null} if
      *          the location is empty
      * @exception   IllegalArgumentException  if the constraint object is
      *              not one of the nine specified constants
@@ -546,21 +546,21 @@ public class BorderLayout implements LayoutManager2,
 
     /**
      * Returns the component that corresponds to the given constraint location
-     * based on the target <code>Container</code>'s component orientation.
-     * Components added with the relative constraints <code>PAGE_START</code>,
-     * <code>PAGE_END</code>, <code>LINE_START</code>, and <code>LINE_END</code>
+     * based on the target {@code Container}'s component orientation.
+     * Components added with the relative constraints {@code PAGE_START},
+     * {@code PAGE_END}, {@code LINE_START}, and {@code LINE_END}
      * take precedence over components added with the explicit constraints
-     * <code>NORTH</code>, <code>SOUTH</code>, <code>WEST</code>, and <code>EAST</code>.
-     * The <code>Container</code>'s component orientation is used to determine the location of components
-     * added with <code>LINE_START</code> and <code>LINE_END</code>.
+     * {@code NORTH}, {@code SOUTH}, {@code WEST}, and {@code EAST}.
+     * The {@code Container}'s component orientation is used to determine the location of components
+     * added with {@code LINE_START} and {@code LINE_END}.
      *
-     * @param   constraints     the desired absolute position, one of <code>CENTER</code>,
-     *                          <code>NORTH</code>, <code>SOUTH</code>,
-     *                          <code>EAST</code>, <code>WEST</code>
+     * @param   constraints     the desired absolute position, one of {@code CENTER},
+     *                          {@code NORTH}, {@code SOUTH},
+     *                          {@code EAST}, {@code WEST}
      * @param   target     the {@code Container} used to obtain
      *                     the constraint location based on the target
      *                     {@code Container}'s component orientation.
-     * @return  the component at the given location, or <code>null</code> if
+     * @return  the component at the given location, or {@code null} if
      *          the location is empty
      * @exception   IllegalArgumentException  if the constraint object is
      *              not one of the five specified constants
@@ -634,11 +634,11 @@ public class BorderLayout implements LayoutManager2,
     }
 
     /**
-     * Determines the minimum size of the <code>target</code> container
+     * Determines the minimum size of the {@code target} container
      * using this layout manager.
      * <p>
      * This method is called when a container calls its
-     * <code>getMinimumSize</code> method. Most applications do not call
+     * {@code getMinimumSize} method. Most applications do not call
      * this method directly.
      * @param   target   the container in which to do the layout.
      * @return  the minimum dimensions needed to lay out the subcomponents
@@ -689,12 +689,12 @@ public class BorderLayout implements LayoutManager2,
     }
 
     /**
-     * Determines the preferred size of the <code>target</code>
+     * Determines the preferred size of the {@code target}
      * container using this layout manager, based on the components
      * in the container.
      * <p>
      * Most applications do not call this method directly. This method
-     * is called when a container calls its <code>getPreferredSize</code>
+     * is called when a container calls its {@code getPreferredSize}
      * method.
      * @param   target   the container in which to do the layout.
      * @return  the preferred dimensions to lay out the subcomponents
@@ -790,16 +790,16 @@ public class BorderLayout implements LayoutManager2,
      * <p>
      * This method actually reshapes the components in the specified
      * container in order to satisfy the constraints of this
-     * <code>BorderLayout</code> object. The <code>NORTH</code>
-     * and <code>SOUTH</code> components, if any, are placed at
+     * {@code BorderLayout} object. The {@code NORTH}
+     * and {@code SOUTH} components, if any, are placed at
      * the top and bottom of the container, respectively. The
-     * <code>WEST</code> and <code>EAST</code> components are
+     * {@code WEST} and {@code EAST} components are
      * then placed on the left and right, respectively. Finally,
-     * the <code>CENTER</code> object is placed in any remaining
+     * the {@code CENTER} object is placed in any remaining
      * space in the middle.
      * <p>
      * Most applications do not call this method directly. This method
-     * is called when a container calls its <code>doLayout</code> method.
+     * is called when a container calls its {@code doLayout} method.
      * @param   target   the container in which to do the layout.
      * @see     java.awt.Container
      * @see     java.awt.Container#doLayout()

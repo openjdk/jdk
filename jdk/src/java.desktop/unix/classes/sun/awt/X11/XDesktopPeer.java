@@ -39,7 +39,7 @@ import java.util.List;
 
 
 /**
- * Concrete implementation of the interface <code>DesktopPeer</code> for
+ * Concrete implementation of the interface {@code DesktopPeer} for
  * the Gnome desktop on Linux and Unix platforms.
  *
  * @see DesktopPeer

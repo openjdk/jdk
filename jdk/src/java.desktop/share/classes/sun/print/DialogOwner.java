@@ -82,7 +82,7 @@ public final class DialogOwner
      * instance.
      * <P>
      * For class DialogOwner the category name is
-     * <CODE>"dialog-owner"</CODE>.
+     * {@code "dialog-owner"}.
      *
      * @return  Attribute category name.
      */

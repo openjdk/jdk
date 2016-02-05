@@ -28,14 +28,14 @@ import java.awt.event.*;
 import java.io.*;
 
 /**
- * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+ * <b>NOTE:</b> The {@code Event} class is obsolete and is
  * available only for backwards compatibility.  It has been replaced
- * by the <code>AWTEvent</code> class and its subclasses.
+ * by the {@code AWTEvent} class and its subclasses.
  * <p>
- * <code>Event</code> is a platform-independent class that
+ * {@code Event} is a platform-independent class that
  * encapsulates events from the platform's Graphical User
  * Interface in the Java&nbsp;1.0 event model. In Java&nbsp;1.1
- * and later versions, the <code>Event</code> class is maintained
+ * and later versions, the {@code Event} class is maintained
  * only for backwards compatibility. The information in this
  * class description is provided to assist programmers in
  * converting Java&nbsp;1.0 programs to the new event model.
@@ -43,18 +43,18 @@ import java.io.*;
  * In the Java&nbsp;1.0 event model, an event contains an
  * {@link Event#id} field
  * that indicates what type of event it is and which other
- * <code>Event</code> variables are relevant for the event.
+ * {@code Event} variables are relevant for the event.
  * <p>
  * For keyboard events, {@link Event#key}
  * contains a value indicating which key was activated, and
  * {@link Event#modifiers} contains the
  * modifiers for that event.  For the KEY_PRESS and KEY_RELEASE
- * event ids, the value of <code>key</code> is the unicode
+ * event ids, the value of {@code key} is the unicode
  * character code for the key. For KEY_ACTION and
- * KEY_ACTION_RELEASE, the value of <code>key</code> is
+ * KEY_ACTION_RELEASE, the value of {@code key} is
  * one of the defined action-key identifiers in the
- * <code>Event</code> class (<code>PGUP</code>,
- * <code>PGDN</code>, <code>F1</code>, <code>F2</code>, etc).
+ * {@code Event} class ({@code PGUP},
+ * {@code PGDN}, {@code F1}, {@code F2}, etc).
  *
  * @author     Sami Shaio
  * @since      1.0
@@ -293,7 +293,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * The user has pressed a non-ASCII <em>action</em> key.
-     * The <code>key</code> field contains a value that indicates
+     * The {@code key} field contains a value that indicates
      * that the event occurred on one of the action keys, which
      * comprise the 12 function keys, the arrow (cursor) keys,
      * Page Up, Page Down, Home, End, Print Screen, Scroll Lock,
@@ -303,7 +303,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * The user has released a non-ASCII <em>action</em> key.
-     * The <code>key</code> field contains a value that indicates
+     * The {@code key} field contains a value that indicates
      * that the event occurred on one of the action keys, which
      * comprise the 12 function keys, the arrow (cursor) keys,
      * Page Up, Page Down, Home, End, Print Screen, Scroll Lock,
@@ -315,9 +315,9 @@ public class Event implements java.io.Serializable {
     private static final int MOUSE_EVENT        = 500;
 
     /**
-     * The user has pressed the mouse button. The <code>ALT_MASK</code>
+     * The user has pressed the mouse button. The {@code ALT_MASK}
      * flag indicates that the middle button has been pressed.
-     * The <code>META_MASK</code>flag indicates that the
+     * The {@code META_MASK} flag indicates that the
      * right button has been pressed.
      * @see     java.awt.Event#ALT_MASK
      * @see     java.awt.Event#META_MASK
@@ -325,9 +325,9 @@ public class Event implements java.io.Serializable {
     public static final int MOUSE_DOWN          = 1 + MOUSE_EVENT;
 
     /**
-     * The user has released the mouse button. The <code>ALT_MASK</code>
+     * The user has released the mouse button. The {@code ALT_MASK}
      * flag indicates that the middle button has been released.
-     * The <code>META_MASK</code>flag indicates that the
+     * The {@code META_MASK} flag indicates that the
      * right button has been released.
      * @see     java.awt.Event#ALT_MASK
      * @see     java.awt.Event#META_MASK
@@ -351,8 +351,8 @@ public class Event implements java.io.Serializable {
 
     /**
      * The user has moved the mouse with a button pressed. The
-     * <code>ALT_MASK</code> flag indicates that the middle
-     * button is being pressed. The <code>META_MASK</code> flag indicates
+     * {@code ALT_MASK} flag indicates that the middle
+     * button is being pressed. The {@code META_MASK} flag indicates
      * that the right button is being pressed.
      * @see     java.awt.Event#ALT_MASK
      * @see     java.awt.Event#META_MASK
@@ -466,7 +466,7 @@ public class Event implements java.io.Serializable {
 
     /**
      * Indicates which type of event the event is, and which
-     * other <code>Event</code> variables are relevant for the event.
+     * other {@code Event} variables are relevant for the event.
      * This has been replaced by AWTEvent.getID()
      *
      * @serial
@@ -518,9 +518,9 @@ public class Event implements java.io.Serializable {
     public int modifiers;
 
     /**
-     * For <code>MOUSE_DOWN</code> events, this field indicates the
+     * For {@code MOUSE_DOWN} events, this field indicates the
      * number of consecutive clicks. For other events, its value is
-     * <code>0</code>.
+     * {@code 0}.
      * This field has been replaced by MouseEvent.getClickCount().
      *
      * @serial
@@ -531,7 +531,7 @@ public class Event implements java.io.Serializable {
     /**
      * An arbitrary argument of the event. The value of this field
      * depends on the type of event.
-     * <code>arg</code> has been replaced by event specific property.
+     * {@code arg} has been replaced by event specific property.
      *
      * @serial
      */
@@ -608,11 +608,11 @@ public class Event implements java.io.Serializable {
     private static native void initIDs();
 
     /**
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      * <p>
-     * Creates an instance of <code>Event</code> with the specified target
+     * Creates an instance of {@code Event} with the specified target
      * component, time stamp, event type, <i>x</i> and <i>y</i>
      * coordinates, keyboard key, state of the modifier keys, and
      * argument.
@@ -659,14 +659,14 @@ public class Event implements java.io.Serializable {
     }
 
     /**
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      * <p>
-     * Creates an instance of <code>Event</code>, with the specified target
+     * Creates an instance of {@code Event}, with the specified target
      * component, time stamp, event type, <i>x</i> and <i>y</i>
      * coordinates, keyboard key, state of the modifier keys, and an
-     * argument set to <code>null</code>.
+     * argument set to {@code null}.
      * @param     target     the target component.
      * @param     when       the time stamp.
      * @param     id         the event type.
@@ -680,11 +680,11 @@ public class Event implements java.io.Serializable {
     }
 
     /**
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      * <p>
-     * Creates an instance of <code>Event</code> with the specified
+     * Creates an instance of {@code Event} with the specified
      * target component, event type, and argument.
      * @param     target     the target component.
      * @param     id         the event type.
@@ -695,9 +695,9 @@ public class Event implements java.io.Serializable {
     }
 
     /**
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      * <p>
      * Translates this event so that its <i>x</i> and <i>y</i>
      * coordinates are increased by <i>dx</i> and <i>dy</i>,
@@ -716,13 +716,13 @@ public class Event implements java.io.Serializable {
     }
 
     /**
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      * <p>
      * Checks if the Shift key is down.
-     * @return    <code>true</code> if the key is down;
-     *            <code>false</code> otherwise.
+     * @return    {@code true} if the key is down;
+     *            {@code false} otherwise.
      * @see       java.awt.Event#modifiers
      * @see       java.awt.Event#controlDown
      * @see       java.awt.Event#metaDown
@@ -732,13 +732,13 @@ public class Event implements java.io.Serializable {
     }
 
     /**
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      * <p>
      * Checks if the Control key is down.
-     * @return    <code>true</code> if the key is down;
-     *            <code>false</code> otherwise.
+     * @return    {@code true} if the key is down;
+     *            {@code false} otherwise.
      * @see       java.awt.Event#modifiers
      * @see       java.awt.Event#shiftDown
      * @see       java.awt.Event#metaDown
@@ -748,14 +748,14 @@ public class Event implements java.io.Serializable {
     }
 
     /**
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      * <p>
      * Checks if the Meta key is down.
      *
-     * @return    <code>true</code> if the key is down;
-     *            <code>false</code> otherwise.
+     * @return    {@code true} if the key is down;
+     *            {@code false} otherwise.
      * @see       java.awt.Event#modifiers
      * @see       java.awt.Event#shiftDown
      * @see       java.awt.Event#controlDown
@@ -765,9 +765,9 @@ public class Event implements java.io.Serializable {
     }
 
     /**
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      */
     void consume() {
         switch(id) {
@@ -783,18 +783,18 @@ public class Event implements java.io.Serializable {
     }
 
     /**
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      */
     boolean isConsumed() {
         return consumed;
     }
 
     /*
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      * <p>
      * Returns the integer key-code associated with the key in this event,
      * as described in java.awt.Event.
@@ -810,9 +810,9 @@ public class Event implements java.io.Serializable {
     }
 
     /*
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      * <p>
      * Returns a new KeyEvent char which corresponds to the int key
      * of this old event.
@@ -827,15 +827,15 @@ public class Event implements java.io.Serializable {
     }
 
     /**
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      * <p>
-     * Returns a string representing the state of this <code>Event</code>.
+     * Returns a string representing the state of this {@code Event}.
      * This method is intended to be used only for debugging purposes, and the
      * content and format of the returned string may vary between
      * implementations. The returned string may be empty but may not be
-     * <code>null</code>.
+     * {@code null}.
      *
      * @return    the parameter string of this event
      */
@@ -863,9 +863,9 @@ public class Event implements java.io.Serializable {
     }
 
     /**
-     * <b>NOTE:</b> The <code>Event</code> class is obsolete and is
+     * <b>NOTE:</b> The {@code Event} class is obsolete and is
      * available only for backwards compatibility.  It has been replaced
-     * by the <code>AWTEvent</code> class and its subclasses.
+     * by the {@code AWTEvent} class and its subclasses.
      * <p>
      * Returns a representation of this event's values as a string.
      * @return    a string that represents the event and the values

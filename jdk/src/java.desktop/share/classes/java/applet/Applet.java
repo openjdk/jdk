@@ -38,9 +38,9 @@ import javax.accessibility.*;
  * An applet is a small program that is intended not to be run on
  * its own, but rather to be embedded inside another application.
  * <p>
- * The <code>Applet</code> class must be the superclass of any
+ * The {@code Applet} class must be the superclass of any
  * applet that is to be embedded in a Web page or viewed by the Java
- * Applet Viewer. The <code>Applet</code> class provides a standard
+ * Applet Viewer. The {@code Applet} class provides a standard
  * interface between applets and their environment.
  *
  * @author      Arthur van Hoff
@@ -52,10 +52,10 @@ public class Applet extends Panel {
     /**
      * Constructs a new Applet.
      * <p>
-     * Note: Many methods in <code>java.applet.Applet</code>
+     * Note: Many methods in {@code java.applet.Applet}
      * may be invoked by the applet only after the applet is
      * fully constructed; applet should avoid calling methods
-     * in <code>java.applet.Applet</code> in the constructor.
+     * in {@code java.applet.Applet} in the constructor.
      *
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true.
@@ -88,8 +88,8 @@ public class Applet extends Panel {
      * Read an applet from an object input stream.
      * @param  s  an object input stream.
      * @exception HeadlessException if
-     * <code>GraphicsEnvironment.isHeadless()</code> returns
-     * <code>true</code>
+     * {@code GraphicsEnvironment.isHeadless()} returns
+     * {@code true}
      * @serial
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since 1.4
@@ -104,9 +104,9 @@ public class Applet extends Panel {
 
     /**
      * Sets this applet's stub. This is done automatically by the system.
-     * <p>If there is a security manager, its <code> checkPermission </code>
+     * <p>If there is a security manager, its {@code checkPermission}
      * method is called with the
-     * <code>AWTPermission("setAppletStub")</code>
+     * {@code AWTPermission("setAppletStub")}
      * permission if a stub has already been set.
      * @param   stub   the new stub.
      * @exception SecurityException if the caller cannot set the stub
@@ -123,11 +123,11 @@ public class Applet extends Panel {
 
     /**
      * Determines if this applet is active. An applet is marked active
-     * just before its <code>start</code> method is called. It becomes
-     * inactive just before its <code>stop</code> method is called.
+     * just before its {@code start} method is called. It becomes
+     * inactive just before its {@code stop} method is called.
      *
-     * @return  <code>true</code> if the applet is active;
-     *          <code>false</code> otherwise.
+     * @return  {@code true} if the applet is active;
+     *          {@code false} otherwise.
      * @see     java.applet.Applet#start()
      * @see     java.applet.Applet#stop()
      */
@@ -179,14 +179,14 @@ public class Applet extends Panel {
      * &lt;/applet&gt;
      * </pre></blockquote>
      * <p>
-     * then a call to <code>getParameter("Color")</code> returns the
-     * value <code>"blue"</code>.
+     * then a call to {@code getParameter("Color")} returns the
+     * value {@code "blue"}.
      * <p>
-     * The <code>name</code> argument is case insensitive.
+     * The {@code name} argument is case insensitive.
      *
      * @param   name   a parameter name.
      * @return  the value of the named parameter,
-     *          or <code>null</code> if not set.
+     *          or {@code null} if not set.
      */
      public String getParameter(String name) {
          return stub.getParameter(name);
@@ -260,8 +260,8 @@ public class Applet extends Panel {
     }
 
     /**
-     * Returns an <code>Image</code> object that can then be painted on
-     * the screen. The <code>url</code> that is passed as an argument
+     * Returns an {@code Image} object that can then be painted on
+     * the screen. The {@code url} that is passed as an argument
      * must specify an absolute URL.
      * <p>
      * This method always returns immediately, whether or not the image
@@ -278,10 +278,10 @@ public class Applet extends Panel {
     }
 
     /**
-     * Returns an <code>Image</code> object that can then be painted on
-     * the screen. The <code>url</code> argument must specify an absolute
-     * URL. The <code>name</code> argument is a specifier that is
-     * relative to the <code>url</code> argument.
+     * Returns an {@code Image} object that can then be painted on
+     * the screen. The {@code url} argument must specify an absolute
+     * URL. The {@code name} argument is a specifier that is
+     * relative to the {@code url} argument.
      * <p>
      * This method always returns immediately, whether or not the image
      * exists. When this applet attempts to draw the image on the screen,
@@ -290,7 +290,7 @@ public class Applet extends Panel {
      *
      * @param   url    an absolute URL giving the base location of the image.
      * @param   name   the location of the image, relative to the
-     *                 <code>url</code> argument.
+     *                 {@code url} argument.
      * @return  the image at the specified URL.
      * @see     java.awt.Image
      */
@@ -315,8 +315,8 @@ public class Applet extends Panel {
     }
 
     /**
-     * Returns the <code>AudioClip</code> object specified by the
-     * <code>URL</code> argument.
+     * Returns the {@code AudioClip} object specified by the
+     * {@code URL} argument.
      * <p>
      * This method always returns immediately, whether or not the audio
      * clip exists. When this applet attempts to play the audio clip, the
@@ -331,8 +331,8 @@ public class Applet extends Panel {
     }
 
     /**
-     * Returns the <code>AudioClip</code> object specified by the
-     * <code>URL</code> and <code>name</code> arguments.
+     * Returns the {@code AudioClip} object specified by the
+     * {@code URL} and {@code name} arguments.
      * <p>
      * This method always returns immediately, whether or not the audio
      * clip exists. When this applet attempts to play the audio clip, the
@@ -341,7 +341,7 @@ public class Applet extends Panel {
      * @param   url    an absolute URL giving the base location of the
      *                 audio clip.
      * @param   name   the location of the audio clip, relative to the
-     *                 <code>url</code> argument.
+     *                 {@code url} argument.
      * @return  the audio clip at the specified URL.
      * @see     java.applet.AudioClip
      */
@@ -355,11 +355,11 @@ public class Applet extends Panel {
 
     /**
      * Returns information about this applet. An applet should override
-     * this method to return a <code>String</code> containing information
+     * this method to return a {@code String} containing information
      * about the author, version, and copyright of the applet.
      * <p>
      * The implementation of this method provided by the
-     * <code>Applet</code> class returns <code>null</code>.
+     * {@code Applet} class returns {@code null}.
      *
      * @return  a string containing information about the author, version, and
      *          copyright of the applet.
@@ -388,10 +388,10 @@ public class Applet extends Panel {
     /**
      * Returns information about the parameters that are understood by
      * this applet. An applet should override this method to return an
-     * array of <code>Strings</code> describing these parameters.
+     * array of {@code Strings} describing these parameters.
      * <p>
      * Each element of the array should be a set of three
-     * <code>Strings</code> containing the name, the type, and a
+     * {@code Strings} containing the name, the type, and a
      * description. For example:
      * <blockquote><pre>
      * String pinfo[][] = {
@@ -402,7 +402,7 @@ public class Applet extends Panel {
      * </pre></blockquote>
      * <p>
      * The implementation of this method provided by the
-     * <code>Applet</code> class returns <code>null</code>.
+     * {@code Applet} class returns {@code null}.
      *
      * @return  an array describing the parameters this applet looks for.
      */
@@ -430,7 +430,7 @@ public class Applet extends Panel {
      * @param   url    an absolute URL giving the base location of the
      *                 audio clip.
      * @param   name   the location of the audio clip, relative to the
-     *                 <code>url</code> argument.
+     *                 {@code url} argument.
      */
     public void play(URL url, String name) {
         AudioClip clip = getAudioClip(url, name);
@@ -442,16 +442,16 @@ public class Applet extends Panel {
     /**
      * Called by the browser or applet viewer to inform
      * this applet that it has been loaded into the system. It is always
-     * called before the first time that the <code>start</code> method is
+     * called before the first time that the {@code start} method is
      * called.
      * <p>
-     * A subclass of <code>Applet</code> should override this method if
+     * A subclass of {@code Applet} should override this method if
      * it has initialization to perform. For example, an applet with
-     * threads would use the <code>init</code> method to create the
-     * threads and the <code>destroy</code> method to kill them.
+     * threads would use the {@code init} method to create the
+     * threads and the {@code destroy} method to kill them.
      * <p>
      * The implementation of this method provided by the
-     * <code>Applet</code> class does nothing.
+     * {@code Applet} class does nothing.
      *
      * @see     java.applet.Applet#destroy()
      * @see     java.applet.Applet#start()
@@ -463,25 +463,25 @@ public class Applet extends Panel {
     /**
      * Called by the browser or applet viewer to inform
      * this applet that it should start its execution. It is called after
-     * the <code>init</code> method and each time the applet is revisited
+     * the {@code init} method and each time the applet is revisited
      * in a Web page.
      * <p>
-     * A subclass of <code>Applet</code> should override this method if
+     * A subclass of {@code Applet} should override this method if
      * it has any operation that it wants to perform each time the Web
      * page containing it is visited. For example, an applet with
-     * animation might want to use the <code>start</code> method to
-     * resume animation, and the <code>stop</code> method to suspend the
+     * animation might want to use the {@code start} method to
+     * resume animation, and the {@code stop} method to suspend the
      * animation.
      * <p>
-     * Note: some methods, such as <code>getLocationOnScreen</code>, can only
+     * Note: some methods, such as {@code getLocationOnScreen}, can only
      * provide meaningful results if the applet is showing.  Because
-     * <code>isShowing</code> returns <code>false</code> when the applet's
-     * <code>start</code> is first called, methods requiring
-     * <code>isShowing</code> to return <code>true</code> should be called from
-     * a <code>ComponentListener</code>.
+     * {@code isShowing} returns {@code false} when the applet's
+     * {@code start} is first called, methods requiring
+     * {@code isShowing} to return {@code true} should be called from
+     * a {@code ComponentListener}.
      * <p>
      * The implementation of this method provided by the
-     * <code>Applet</code> class does nothing.
+     * {@code Applet} class does nothing.
      *
      * @see     java.applet.Applet#destroy()
      * @see     java.applet.Applet#init()
@@ -498,15 +498,15 @@ public class Applet extends Panel {
      * the Web page that contains this applet has been replaced by
      * another page, and also just before the applet is to be destroyed.
      * <p>
-     * A subclass of <code>Applet</code> should override this method if
+     * A subclass of {@code Applet} should override this method if
      * it has any operation that it wants to perform each time the Web
      * page containing it is no longer visible. For example, an applet
-     * with animation might want to use the <code>start</code> method to
-     * resume animation, and the <code>stop</code> method to suspend the
+     * with animation might want to use the {@code start} method to
+     * resume animation, and the {@code stop} method to suspend the
      * animation.
      * <p>
      * The implementation of this method provided by the
-     * <code>Applet</code> class does nothing.
+     * {@code Applet} class does nothing.
      *
      * @see     java.applet.Applet#destroy()
      * @see     java.applet.Applet#init()
@@ -517,17 +517,17 @@ public class Applet extends Panel {
     /**
      * Called by the browser or applet viewer to inform
      * this applet that it is being reclaimed and that it should destroy
-     * any resources that it has allocated. The <code>stop</code> method
-     * will always be called before <code>destroy</code>.
+     * any resources that it has allocated. The {@code stop} method
+     * will always be called before {@code destroy}.
      * <p>
-     * A subclass of <code>Applet</code> should override this method if
+     * A subclass of {@code Applet} should override this method if
      * it has any operation that it wants to perform before it is
      * destroyed. For example, an applet with threads would use the
-     * <code>init</code> method to create the threads and the
-     * <code>destroy</code> method to kill them.
+     * {@code init} method to create the threads and the
+     * {@code destroy} method to kill them.
      * <p>
      * The implementation of this method provided by the
-     * <code>Applet</code> class does nothing.
+     * {@code Applet} class does nothing.
      *
      * @see     java.applet.Applet#init()
      * @see     java.applet.Applet#start()
@@ -561,7 +561,7 @@ public class Applet extends Panel {
 
     /**
      * This class implements accessibility support for the
-     * <code>Applet</code> class.  It provides an implementation of the
+     * {@code Applet} class.  It provides an implementation of the
      * Java Accessibility API appropriate to applet user-interface elements.
      * @since 1.3
      */

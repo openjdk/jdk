@@ -91,7 +91,7 @@ public interface PrintService {
     /**
      * Removes the print-service listener from this print service.
      * This means the listener is no longer interested in
-     * <code>PrintService</code> events.
+     * {@code PrintService} events.
      * @param listener  a PrintServiceAttributeListener object
      * @see #addPrintServiceAttributeListener
      */
@@ -103,10 +103,10 @@ public interface PrintService {
      * giving this Print Service's status. The returned attribute set object
      * is unmodifiable. The returned attribute set object is a "snapshot" of
      * this Print Service's attribute set at the time of the
-     * <CODE>getAttributes()</CODE> method call: that is, the returned
+     * {@code getAttributes()} method call: that is, the returned
      * attribute set's contents will <I>not</I> be updated if this print
      * service's attribute set's contents change in the future. To detect
-     * changes in attribute values, call <CODE>getAttributes()</CODE> again
+     * changes in attribute values, call {@code getAttributes()} again
      * and compare the new attribute set to the previous attribute set;
      * alternatively, register a listener for print service events.
      *
@@ -126,8 +126,8 @@ public interface PrintService {
      * attribute is not supported by this service.
      * @exception NullPointerException if the category is null.
      * @exception  IllegalArgumentException
-     *     (unchecked exception) if <CODE>category</CODE> is not a
-     *     <code>Class</code> that implements interface
+     *     (unchecked exception) if {@code category} is not a
+     *     {@code Class} that implements interface
      *{@link javax.print.attribute.PrintServiceAttribute PrintServiceAttribute}.
      */
     public <T extends PrintServiceAttribute>
@@ -135,13 +135,13 @@ public interface PrintService {
 
     /**
      * Determines the print data formats a client can specify when setting
-     * up a job for this <code>PrintService</code>. A print data format is
+     * up a job for this {@code PrintService}. A print data format is
      * designated by a "doc
      * flavor" (class {@link javax.print.DocFlavor DocFlavor})
      * consisting of a MIME type plus a print data representation class.
      * <P>
      * Note that some doc flavors may not be supported in combination
-     * with all attributes. Use <code>getUnsupportedAttributes(..)</code>
+     * with all attributes. Use {@code getUnsupportedAttributes(..)}
      * to validate specific combinations.
      *
      * @return  Array of supported doc flavors, should have at least
@@ -152,19 +152,19 @@ public interface PrintService {
 
     /**
      * Determines if this print service supports a specific
-     * <code>DocFlavor</code>.  This is a convenience method to determine
-     * if the <code>DocFlavor</code> would be a member of the result of
-     * <code>getSupportedDocFlavors()</code>.
+     * {@code DocFlavor}.  This is a convenience method to determine
+     * if the {@code DocFlavor} would be a member of the result of
+     * {@code getSupportedDocFlavors()}.
      * <p>
      * Note that some doc flavors may not be supported in combination
-     * with all attributes. Use <code>getUnsupportedAttributes(..)</code>
+     * with all attributes. Use {@code getUnsupportedAttributes(..)}
      * to validate specific combinations.
      *
-     * @param flavor the <code>DocFlavor</code>to query for support.
-     * @return  <code>true</code> if this print service supports the
-     * specified <code>DocFlavor</code>; <code>false</code> otherwise.
+     * @param flavor the {@code DocFlavor} to query for support.
+     * @return  {@code true} if this print service supports the
+     * specified {@code DocFlavor}; {@code false} otherwise.
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>flavor</CODE> is null.
+     *     (unchecked exception) Thrown if {@code flavor} is null.
      */
     public boolean isDocFlavorSupported(DocFlavor flavor);
 
@@ -173,7 +173,7 @@ public interface PrintService {
      * Determines the printing attribute categories a client can specify
      * when setting up a job for this print service.
      * A printing attribute category is
-     * designated by a <code>Class</code> that implements interface
+     * designated by a {@code Class} that implements interface
      * {@link javax.print.attribute.Attribute Attribute}. This method returns
      * just the attribute <I>categories</I> that are supported; it does not
      * return the particular attribute <I>values</I> that are supported.
@@ -181,10 +181,10 @@ public interface PrintService {
      * This method returns all the printing attribute
      * categories this print service supports for any possible job.
      * Some categories may not be supported in a particular context (ie
-     * for a particular <code>DocFlavor</code>).
-     * Use one of the methods that include a <code>DocFlavor</code> to
+     * for a particular {@code DocFlavor}).
+     * Use one of the methods that include a {@code DocFlavor} to
      * validate the request before submitting it, such as
-     * <code>getSupportedAttributeValues(..)</code>.
+     * {@code getSupportedAttributeValues(..)}.
      *
      * @return  Array of printing attribute categories that the client can
      *          specify as a doc-level or job-level attribute in a Print
@@ -198,37 +198,37 @@ public interface PrintService {
     /**
      * Determines whether a client can specify the given printing
      * attribute category when setting up a job for this print service. A
-     * printing attribute category is designated by a <code>Class</code>
+     * printing attribute category is designated by a {@code Class}
      * that implements interface {@link javax.print.attribute.Attribute
      * Attribute}. This method tells whether the attribute <I>category</I> is
      * supported; it does not tell whether a particular attribute <I>value</I>
      * is supported.
      * <p>
      * Some categories may not be supported in a particular context (ie
-     * for a particular <code>DocFlavor</code>).
-     * Use one of the methods which include a <code>DocFlavor</code> to
+     * for a particular {@code DocFlavor}).
+     * Use one of the methods which include a {@code DocFlavor} to
      * validate the request before submitting it, such as
-     * <code>getSupportedAttributeValues(..)</code>.
+     * {@code getSupportedAttributeValues(..)}.
      * <P>
      * This is a convenience method to determine if the category
      * would be a member of the result of
-     * <code>getSupportedAttributeCategories()</code>.
+     * {@code getSupportedAttributeCategories()}.
      *
      * @param  category    Printing attribute category to test. It must be a
-     *                        <code>Class</code> that implements
+     *                        {@code Class} that implements
      *                        interface
      *                {@link javax.print.attribute.Attribute Attribute}.
      *
-     * @return  <code>true</code> if this print service supports
+     * @return  {@code true} if this print service supports
      *          specifying a doc-level or
-     *          job-level attribute in <CODE>category</CODE> in a Print
-     *          Request; <code>false</code> if it doesn't.
+     *          job-level attribute in {@code category} in a Print
+     *          Request; {@code false} if it doesn't.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>category</CODE> is null.
+     *     (unchecked exception) Thrown if {@code category} is null.
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>category</CODE> is not a
-     *     <code>Class</code> that implements interface
+     *     (unchecked exception) Thrown if {@code category} is not a
+     *     {@code Class} that implements interface
      *     {@link javax.print.attribute.Attribute Attribute}.
      */
     public boolean
@@ -244,16 +244,16 @@ public interface PrintService {
      * default attribute value instead.
      * <p>
      * Some attributes may not be supported in a particular context (ie
-     * for a particular <code>DocFlavor</code>).
-     * Use one of the methods that include a <code>DocFlavor</code> to
+     * for a particular {@code DocFlavor}).
+     * Use one of the methods that include a {@code DocFlavor} to
      * validate the request before submitting it, such as
-     * <code>getSupportedAttributeValues(..)</code>.
+     * {@code getSupportedAttributeValues(..)}.
      * <P>
      * Not all attributes have a default value. For example the
-     * service will not have a defaultvalue for <code>RequestingUser</code>
+     * service will not have a defaultvalue for {@code RequestingUser}
      * i.e. a null return for a supported category means there is no
      * service default value for that category. Use the
-     * <code>isAttributeCategorySupported(Class)</code> method to
+     * {@code isAttributeCategorySupported(Class)} method to
      * distinguish these cases.
      *
      * @param  category    Printing attribute category for which the default
@@ -262,16 +262,16 @@ public interface PrintService {
      *                        {@link javax.print.attribute.Attribute
      *                        Attribute}.
      *
-     * @return  Default attribute value for <CODE>category</CODE>, or null
+     * @return  Default attribute value for {@code category}, or null
      *       if this Print Service does not support specifying a doc-level or
-     *          job-level attribute in <CODE>category</CODE> in a Print
+     *          job-level attribute in {@code category} in a Print
      *          Request, or the service does not have a default value
      *          for this attribute.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>category</CODE> is null.
+     *     (unchecked exception) Thrown if {@code category} is null.
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>category</CODE> is not a
+     *     (unchecked exception) Thrown if {@code category} is not a
      *     {@link java.lang.Class Class} that implements interface {@link
      *     javax.print.attribute.Attribute Attribute}.
      */
@@ -285,10 +285,10 @@ public interface PrintService {
      * attribute value is an instance of a class that implements interface
      * {@link javax.print.attribute.Attribute Attribute}.
      * <P>
-     * If <CODE>flavor</CODE> is null and <CODE>attributes</CODE> is null
+     * If {@code flavor} is null and {@code attributes} is null
      * or is an empty set, this method returns all the printing attribute
      * values this Print Service supports for any possible job. If
-     * <CODE>flavor</CODE> is not null or <CODE>attributes</CODE> is not
+     * {@code flavor} is not null or {@code attributes} is not
      * an empty set, this method returns just the printing attribute values
      * that are compatible with the given doc flavor and/or set of attributes.
      * That is, a null return value may indicate that specifying this attribute
@@ -296,12 +296,12 @@ public interface PrintService {
      * Also if DocFlavor is not null it must be a flavor supported by this
      * PrintService, else IllegalArgumentException will be thrown.
      * <P>
-     * If the <code>attributes</code> parameter contains an Attribute whose
-     * category is the same as the <code>category</code> parameter, the service
+     * If the {@code attributes} parameter contains an Attribute whose
+     * category is the same as the {@code category} parameter, the service
      * must ignore this attribute in the AttributeSet.
      * <p>
-     * <code>DocAttribute</code>s which are to be specified on the
-     * <code>Doc</code> must be included in this set to accurately
+     * {@code DocAttribute}s which are to be specified on the
+     * {@code Doc} must be included in this set to accurately
      * represent the context.
      * <p>
      * This method returns an Object because different printing attribute
@@ -321,7 +321,7 @@ public interface PrintService {
      * containing the legal values -- used, for example, by an attribute with
      * a list of enumerated values. The type of the array is an array of the
      * specified attribute category type as returned by its
-     * <code>getCategory(Class)</code>.
+     * {@code getCategory(Class)}.
      * <LI>
      * Return a single object (of some class other than the attribute category)
      * that indicates bounds on the legal values -- used, for example, by an
@@ -337,18 +337,18 @@ public interface PrintService {
      *                        (both job-level attributes and document-level
      *                        attributes), or null.
      *
-     * @return  Object indicating supported values for <CODE>category</CODE>,
+     * @return  Object indicating supported values for {@code category},
      *          or null if this Print Service does not support specifying a
-     *          doc-level or job-level attribute in <CODE>category</CODE> in
+     *          doc-level or job-level attribute in {@code category} in
      *          a Print Request.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>category</CODE> is null.
+     *     (unchecked exception) Thrown if {@code category} is null.
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>category</CODE> is not a
+     *     (unchecked exception) Thrown if {@code category} is not a
      *     {@link java.lang.Class Class} that implements interface {@link
      *     javax.print.attribute.Attribute Attribute}, or
-     *     <code>DocFlavor</code> is not supported by this service.
+     *     {@code DocFlavor} is not supported by this service.
      */
     public Object
         getSupportedAttributeValues(Class<? extends Attribute> category,
@@ -362,24 +362,24 @@ public interface PrintService {
      * attribute value is an instance of a class that implements interface
      *  {@link javax.print.attribute.Attribute Attribute}.
      * <P>
-     * If <CODE>flavor</CODE> is null and <CODE>attributes</CODE> is null or
+     * If {@code flavor} is null and {@code attributes} is null or
      * is an empty set, this method tells whether this Print Service supports
      * the given printing attribute value for some possible combination of doc
-     * flavor and set of attributes. If <CODE>flavor</CODE> is not null or
-     * <CODE>attributes</CODE> is not an empty set, this method tells whether
+     * flavor and set of attributes. If {@code flavor} is not null or
+     * {@code attributes} is not an empty set, this method tells whether
      * this Print Service supports the given printing attribute value in
      * combination with the given doc flavor and/or set of attributes.
      * <p>
      * Also if DocFlavor is not null it must be a flavor supported by this
      * PrintService, else IllegalArgumentException will be thrown.
      * <p>
-     * <code>DocAttribute</code>s which are to be specified on the
-     * <code>Doc</code> must be included in this set to accurately
+     * {@code DocAttribute}s which are to be specified on the
+     * {@code Doc} must be included in this set to accurately
      * represent the context.
      * <p>
      * This is a convenience method to determine if the value
      * would be a member of the result of
-     * <code>getSupportedAttributeValues(...)</code>.
+     * {@code getSupportedAttributeValues(...)}.
      *
      * @param  attrval       Printing attribute value to test.
      * @param  flavor      Doc flavor for a supposed job, or null.
@@ -388,11 +388,11 @@ public interface PrintService {
      *                        attributes), or null.
      *
      * @return  True if this Print Service supports specifying
-     *        <CODE>attrval</CODE> as a doc-level or job-level attribute in a
+     *        {@code attrval} as a doc-level or job-level attribute in a
      *          Print Request, false if it doesn't.
      *
      * @exception  NullPointerException
-     *     (unchecked exception)  if <CODE>attrval</CODE> is null.
+     *     (unchecked exception)  if {@code attrval} is null.
      * @exception  IllegalArgumentException if flavor is not supported by
      *      this PrintService.
      */
@@ -410,8 +410,8 @@ public interface PrintService {
      * IllegalArgumentException will be thrown. If the
      * return value from this method is null, all attributes are supported.
      * <p>
-     * <code>DocAttribute</code>s which are to be specified on the
-     * <code>Doc</code> must be included in this set to accurately
+     * {@code DocAttribute}s which are to be specified on the
+     * {@code Doc} must be included in this set to accurately
      * represent the context.
      * <p>
      * If the return value is non-null, all attributes in the returned
@@ -428,7 +428,7 @@ public interface PrintService {
      * to select the attribute(s) to be identified as the cause of the
      * conflict.
      * <p>
-     * Use <code>isDocFlavorSupported()</code> to verify that a DocFlavor
+     * Use {@code isDocFlavorSupported()} to verify that a DocFlavor
      * is supported before calling this method.
      *
      * @param  flavor      Doc flavor to test, or null
@@ -439,7 +439,7 @@ public interface PrintService {
      * @return  null if this Print Service supports the print request
      * specification, else the unsupported attributes.
      *
-     * @exception IllegalArgumentException if<CODE>flavor</CODE> is
+     * @exception IllegalArgumentException if {@code flavor} is
      *             not supported by this PrintService.
      */
     public AttributeSet getUnsupportedAttributes(DocFlavor flavor,
@@ -453,7 +453,7 @@ public interface PrintService {
      * an environment with no UI support should ensure that the factory
      * is not initialised unless the application calls this method to
      * obtain the factory.
-     * See <code>ServiceUIFactory</code> for more information.
+     * See {@code ServiceUIFactory} for more information.
      * @return null or a factory for UI components.
      */
     public ServiceUIFactory getServiceUIFactory();
@@ -480,7 +480,7 @@ public interface PrintService {
 
     /**
      * This method should be implemented consistently with
-     * <code>equals(Object)</code>.
+     * {@code equals(Object)}.
      * @return hash code of this object.
      */
     public int hashCode();

@@ -189,7 +189,7 @@ public class TrueTypeFont extends FileFont {
      * - reads the names (full, family).
      * - determines the style of the font.
      * - initializes the CMAP
-     * @throws FontFormatException - if the font can't be opened
+     * @throws FontFormatException if the font can't be opened
      * or fails verification,  or there's no usable cmap
      */
     public TrueTypeFont(String platname, Object nativeNames, int fIndex,

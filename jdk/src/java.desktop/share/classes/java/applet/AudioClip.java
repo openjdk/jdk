@@ -26,8 +26,8 @@
 package java.applet;
 
 /**
- * The <code>AudioClip</code> interface is a simple abstraction for
- * playing a sound clip. Multiple <code>AudioClip</code> items can be
+ * The {@code AudioClip} interface is a simple abstraction for
+ * playing a sound clip. Multiple {@code AudioClip} items can be
  * playing at the same time, and the resulting sound is mixed
  * together to produce a composite.
  *

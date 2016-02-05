@@ -145,7 +145,7 @@ public final class Chromaticity extends EnumSyntax
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class Chromaticity, the category name is <CODE>"chromaticity"</CODE>.
+     * For class Chromaticity, the category name is {@code "chromaticity"}.
      *
      * @return  Attribute category name.
      */

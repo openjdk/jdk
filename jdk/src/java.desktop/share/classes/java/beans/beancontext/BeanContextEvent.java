@@ -31,14 +31,14 @@ import java.beans.beancontext.BeanContext;
 
 /**
  * <p>
- * <code>BeanContextEvent</code> is the abstract root event class
+ * {@code BeanContextEvent} is the abstract root event class
  * for all events emitted
- * from, and pertaining to the semantics of, a <code>BeanContext</code>.
+ * from, and pertaining to the semantics of, a {@code BeanContext}.
  * This class introduces a mechanism to allow the propagation of
- * <code>BeanContextEvent</code> subclasses through a hierarchy of
- * <code>BeanContext</code>s. The <code>setPropagatedFrom()</code>
- * and <code>getPropagatedFrom()</code> methods allow a
- * <code>BeanContext</code> to identify itself as the source
+ * {@code BeanContextEvent} subclasses through a hierarchy of
+ * {@code BeanContext}s. The {@code setPropagatedFrom()}
+ * and {@code getPropagatedFrom()} methods allow a
+ * {@code BeanContext} to identify itself as the source
  * of a propagated event.
  * </p>
  *
@@ -60,14 +60,14 @@ public abstract class BeanContextEvent extends EventObject {
     }
 
     /**
-     * Gets the <code>BeanContext</code> associated with this event.
-     * @return the <code>BeanContext</code> associated with this event.
+     * Gets the {@code BeanContext} associated with this event.
+     * @return the {@code BeanContext} associated with this event.
      */
     public BeanContext getBeanContext() { return (BeanContext)getSource(); }
 
     /**
-     * Sets the <code>BeanContext</code> from which this event was propagated.
-     * @param bc the <code>BeanContext</code> from which this event
+     * Sets the {@code BeanContext} from which this event was propagated.
+     * @param bc the {@code BeanContext} from which this event
      * was propagated
      */
     public synchronized void setPropagatedFrom(BeanContext bc) {
@@ -75,8 +75,8 @@ public abstract class BeanContextEvent extends EventObject {
     }
 
     /**
-     * Gets the <code>BeanContext</code> from which this event was propagated.
-     * @return the <code>BeanContext</code> from which this
+     * Gets the {@code BeanContext} from which this event was propagated.
+     * @return the {@code BeanContext} from which this
      * event was propagated
      */
     public synchronized BeanContext getPropagatedFrom() {
@@ -85,8 +85,8 @@ public abstract class BeanContextEvent extends EventObject {
 
     /**
      * Reports whether or not this event is
-     * propagated from some other <code>BeanContext</code>.
-     * @return <code>true</code> if propagated, <code>false</code>
+     * propagated from some other {@code BeanContext}.
+     * @return {@code true} if propagated, {@code false}
      * if not
      */
     public synchronized boolean isPropagated() {
@@ -98,7 +98,7 @@ public abstract class BeanContextEvent extends EventObject {
      */
 
     /**
-     * The <code>BeanContext</code> from which this event was propagated
+     * The {@code BeanContext} from which this event was propagated
      */
     protected BeanContext propagatedFrom;
 }

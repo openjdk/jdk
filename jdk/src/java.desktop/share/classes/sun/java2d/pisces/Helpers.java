@@ -239,18 +239,18 @@ final class Helpers {
     // QuadCurve2D don't provide them.
     /**
      * Subdivides the cubic curve specified by the coordinates
-     * stored in the <code>src</code> array at indices <code>srcoff</code>
-     * through (<code>srcoff</code>&nbsp;+&nbsp;7) and stores the
+     * stored in the {@code src} array at indices {@code srcoff}
+     * through ({@code srcoff}&nbsp;+&nbsp;7) and stores the
      * resulting two subdivided curves into the two result arrays at the
      * corresponding indices.
-     * Either or both of the <code>left</code> and <code>right</code>
-     * arrays may be <code>null</code> or a reference to the same array
-     * as the <code>src</code> array.
+     * Either or both of the {@code left} and {@code right}
+     * arrays may be {@code null} or a reference to the same array
+     * as the {@code src} array.
      * Note that the last point in the first subdivided curve is the
      * same as the first point in the second subdivided curve. Thus,
-     * it is possible to pass the same array for <code>left</code>
-     * and <code>right</code> and to use offsets, such as <code>rightoff</code>
-     * equals (<code>leftoff</code> + 6), in order
+     * it is possible to pass the same array for {@code left}
+     * and {@code right} and to use offsets, such as {@code rightoff}
+     * equals ({@code leftoff} + 6), in order
      * to avoid allocating extra storage for this common point.
      * @param src the array holding the coordinates for the source curve
      * @param srcoff the offset into the array of the beginning of the

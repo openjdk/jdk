@@ -70,19 +70,19 @@ public class PaletteBuilder {
 
     /**
      * Creates an image representing given image
-     * <code>src</code> using <code>IndexColorModel</code>.
+     * {@code src} using {@code IndexColorModel}.
      *
      * Lossless conversion is not always possible (e.g. if number
      * of colors in the  given image exceeds maximum palette size).
      * Result image then is an approximation constructed by octree
      * quantization method.
      *
-     * @exception IllegalArgumentException if <code>src</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code src} is
+     * {@code null}.
      *
      * @exception UnsupportedOperationException if implemented method
-     * is unable to create approximation of <code>src</code>
-     * and <code>canCreatePalette</code> returns <code>false</code>.
+     * is unable to create approximation of {@code src}
+     * and {@code canCreatePalette} returns {@code false}.
      *
      * @see createIndexColorModel
      *
@@ -97,15 +97,15 @@ public class PaletteBuilder {
 
     /**
      * Creates an palette representing colors from given image
-     * <code>img</code>. If number of colors in the given image exceeds
+     * {@code img}. If number of colors in the given image exceeds
      * maximum palette size closest colors would be merged.
      *
-     * @exception IllegalArgumentException if <code>img</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code img} is
+     * {@code null}.
      *
      * @exception UnsupportedOperationException if implemented method
-     * is unable to create approximation of <code>img</code>
-     * and <code>canCreatePalette</code> returns <code>false</code>.
+     * is unable to create approximation of {@code img}
+     * and {@code canCreatePalette} returns {@code false}.
      *
      * @see createIndexedImage
      *
@@ -119,17 +119,17 @@ public class PaletteBuilder {
     }
 
     /**
-     * Returns <code>true</code> if PaletteBuilder is able to create
+     * Returns {@code true} if PaletteBuilder is able to create
      * palette for given image type.
      *
-     * @param type an instance of <code>ImageTypeSpecifier</code> to be
+     * @param type an instance of {@code ImageTypeSpecifier} to be
      * indexed.
      *
-     * @return <code>true</code> if the <code>PaletteBuilder</code>
+     * @return {@code true} if the {@code PaletteBuilder}
      * is likely to be able to create palette for this image type.
      *
-     * @exception IllegalArgumentException if <code>type</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code type}
+     * is {@code null}.
      */
     public static boolean canCreatePalette(ImageTypeSpecifier type) {
         if (type == null) {
@@ -139,17 +139,17 @@ public class PaletteBuilder {
     }
 
     /**
-     * Returns <code>true</code> if PaletteBuilder is able to create
+     * Returns {@code true} if PaletteBuilder is able to create
      * palette for given rendered image.
      *
-     * @param image an instance of <code>RenderedImage</code> to be
+     * @param image an instance of {@code RenderedImage} to be
      * indexed.
      *
-     * @return <code>true</code> if the <code>PaletteBuilder</code>
+     * @return {@code true} if the {@code PaletteBuilder}
      * is likely to be able to create palette for this image type.
      *
-     * @exception IllegalArgumentException if <code>image</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code image}
+     * is {@code null}.
      */
     public static boolean canCreatePalette(RenderedImage image) {
         if (image == null) {

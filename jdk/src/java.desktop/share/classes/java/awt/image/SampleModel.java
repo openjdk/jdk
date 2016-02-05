@@ -111,12 +111,12 @@ public abstract class SampleModel
      * @param w         The width (in pixels) of the region of image data.
      * @param h         The height (in pixels) of the region of image data.
      * @param numBands  The number of bands of the image data.
-     * @throws IllegalArgumentException if <code>w</code> or <code>h</code>
+     * @throws IllegalArgumentException if {@code w} or {@code h}
      *         is not greater than 0
-     * @throws IllegalArgumentException if the product of <code>w</code>
-     *         and <code>h</code> is greater than
-     *         <code>Integer.MAX_VALUE</code>
-     * @throws IllegalArgumentException if <code>dataType</code> is not
+     * @throws IllegalArgumentException if the product of {@code w}
+     *         and {@code h} is greater than
+     *         {@code Integer.MAX_VALUE}
+     * @throws IllegalArgumentException if {@code dataType} is not
      *         one of the supported data types
      */
     public SampleModel(int dataType, int w, int h, int numBands)
@@ -151,7 +151,7 @@ public abstract class SampleModel
 
     /** Returns the width in pixels.
      *  @return the width in pixels of the region of image data
-     *          that this <code>SampleModel</code> describes.
+     *          that this {@code SampleModel} describes.
      */
     public final int getWidth() {
          return width;
@@ -159,7 +159,7 @@ public abstract class SampleModel
 
     /** Returns the height in pixels.
      *  @return the height in pixels of the region of image data
-     *          that this <code>SampleModel</code> describes.
+     *          that this {@code SampleModel} describes.
      */
     public final int getHeight() {
          return height;
@@ -167,7 +167,7 @@ public abstract class SampleModel
 
     /** Returns the total number of bands of image data.
      *  @return the number of bands of image data that this
-     *          <code>SampleModel</code> describes.
+     *          {@code SampleModel} describes.
      */
     public final int getNumBands() {
          return numBands;
@@ -261,9 +261,9 @@ public abstract class SampleModel
      * automatically and will be of the right primitive data type.
      * <p>
      * The following code illustrates transferring data for one pixel from
-     * DataBuffer <code>db1</code>, whose storage layout is described by
-     * SampleModel <code>sm1</code>, to DataBuffer <code>db2</code>, whose
-     * storage layout is described by SampleModel <code>sm2</code>.
+     * DataBuffer {@code db1}, whose storage layout is described by
+     * SampleModel {@code sm1}, to DataBuffer {@code db2}, whose
+     * storage layout is described by SampleModel {@code sm2}.
      * The transfer will generally be more efficient than using
      * getPixel/setPixel.
      * <pre>
@@ -312,9 +312,9 @@ public abstract class SampleModel
      * <p>
      * The following code illustrates transferring data for a rectangular
      * region of pixels from
-     * DataBuffer <code>db1</code>, whose storage layout is described by
-     * SampleModel <code>sm1</code>, to DataBuffer <code>db2</code>, whose
-     * storage layout is described by SampleModel <code>sm2</code>.
+     * DataBuffer {@code db1}, whose storage layout is described by
+     * SampleModel {@code sm1}, to DataBuffer {@code db2}, whose
+     * storage layout is described by SampleModel {@code sm2}.
      * The transfer will generally be more efficient than using
      * getPixels/setPixels.
      * <pre>
@@ -498,9 +498,9 @@ public abstract class SampleModel
      * transfers.
      * <p>
      * The following code illustrates transferring data for one pixel from
-     * DataBuffer <code>db1</code>, whose storage layout is described by
-     * SampleModel <code>sm1</code>, to DataBuffer <code>db2</code>, whose
-     * storage layout is described by SampleModel <code>sm2</code>.
+     * DataBuffer {@code db1}, whose storage layout is described by
+     * SampleModel {@code sm1}, to DataBuffer {@code db2}, whose
+     * storage layout is described by SampleModel {@code sm2}.
      * The transfer will generally be more efficient than using
      * getPixel/setPixel.
      * <pre>
@@ -545,9 +545,9 @@ public abstract class SampleModel
      * <p>
      * The following code illustrates transferring data for a rectangular
      * region of pixels from
-     * DataBuffer <code>db1</code>, whose storage layout is described by
-     * SampleModel <code>sm1</code>, to DataBuffer <code>db2</code>, whose
-     * storage layout is described by SampleModel <code>sm2</code>.
+     * DataBuffer {@code db1}, whose storage layout is described by
+     * SampleModel {@code sm1}, to DataBuffer {@code db2}, whose
+     * storage layout is described by SampleModel {@code sm2}.
      * The transfer will generally be more efficient than using
      * getPixels/setPixels.
      * <pre>
@@ -1298,7 +1298,7 @@ public abstract class SampleModel
      * in the DataBuffer using a float for input.
      * The default implementation of this method casts the input
      * float sample to an int and then calls the
-     * <code>setSample(int, int, int, DataBuffer)</code> method using
+     * {@code setSample(int, int, int, DataBuffer)} method using
      * that int value.
      * ArrayIndexOutOfBoundsException may be thrown if the coordinates are
      * not in bounds.
@@ -1326,7 +1326,7 @@ public abstract class SampleModel
      * in the DataBuffer using a double for input.
      * The default implementation of this method casts the input
      * double sample to an int and then calls the
-     * <code>setSample(int, int, int, DataBuffer)</code> method using
+     * {@code setSample(int, int, int, DataBuffer)} method using
      * that int value.
      * ArrayIndexOutOfBoundsException may be thrown if the coordinates are
      * not in bounds.
@@ -1469,8 +1469,8 @@ public abstract class SampleModel
      *  format, but with a different width and height.
      *  @param w the width of the image data
      *  @param h the height of the image data
-     *  @return a <code>SampleModel</code> describing the same image
-     *          data as this <code>SampleModel</code>, but with a
+     *  @return a {@code SampleModel} describing the same image
+     *          data as this {@code SampleModel}, but with a
      *          different size.
      */
     public abstract SampleModel createCompatibleSampleModel(int w, int h);
@@ -1479,17 +1479,17 @@ public abstract class SampleModel
      * Creates a new SampleModel
      * with a subset of the bands of this
      * SampleModel.
-     * @param bands the subset of bands of this <code>SampleModel</code>
-     * @return a <code>SampleModel</code> with a subset of bands of this
-     *         <code>SampleModel</code>.
+     * @param bands the subset of bands of this {@code SampleModel}
+     * @return a {@code SampleModel} with a subset of bands of this
+     *         {@code SampleModel}.
      */
     public abstract SampleModel createSubsetSampleModel(int bands[]);
 
     /**
      * Creates a DataBuffer that corresponds to this SampleModel.
      * The DataBuffer's width and height will match this SampleModel's.
-     * @return a <code>DataBuffer</code> corresponding to this
-     *         <code>SampleModel</code>.
+     * @return a {@code DataBuffer} corresponding to this
+     *         {@code SampleModel}.
      */
     public abstract DataBuffer createDataBuffer();
 

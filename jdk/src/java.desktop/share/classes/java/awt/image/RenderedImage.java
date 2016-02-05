@@ -53,7 +53,7 @@ public interface RenderedImage {
      * the RenderedImage object has no information about its immediate
      * sources.  It returns an empty Vector if the RenderedImage object has
      * no immediate sources.
-     * @return a Vector of <code>RenderedImage</code> objects.
+     * @return a Vector of {@code RenderedImage} objects.
      */
     Vector<RenderedImage> getSources();
 
@@ -72,10 +72,10 @@ public interface RenderedImage {
     /**
       * Returns an array of names recognized by
       * {@link #getProperty(String) getProperty(String)}
-      * or <code>null</code>, if no property names are recognized.
-      * @return a <code>String</code> array containing all of the
-      * property names that <code>getProperty(String)</code> recognizes;
-      * or <code>null</code> if no property names are recognized.
+      * or {@code null}, if no property names are recognized.
+      * @return a {@code String} array containing all of the
+      * property names that {@code getProperty(String)} recognizes;
+      * or {@code null} if no property names are recognized.
       */
     String[] getPropertyNames();
 
@@ -83,38 +83,38 @@ public interface RenderedImage {
      * Returns the ColorModel associated with this image.  All Rasters
      * returned from this image will have this as their ColorModel.  This
      * can return null.
-     * @return the <code>ColorModel</code> of this image.
+     * @return the {@code ColorModel} of this image.
      */
     ColorModel getColorModel();
 
     /**
      * Returns the SampleModel associated with this image.  All Rasters
      * returned from this image will have this as their SampleModel.
-     * @return the <code>SampleModel</code> of this image.
+     * @return the {@code SampleModel} of this image.
      */
     SampleModel getSampleModel();
 
     /**
      * Returns the width of the RenderedImage.
-     * @return the width of this <code>RenderedImage</code>.
+     * @return the width of this {@code RenderedImage}.
      */
     int getWidth();
 
     /**
      * Returns the height of the RenderedImage.
-     * @return the height of this <code>RenderedImage</code>.
+     * @return the height of this {@code RenderedImage}.
      */
     int getHeight();
 
     /**
      * Returns the minimum X coordinate (inclusive) of the RenderedImage.
-     * @return the X coordinate of this <code>RenderedImage</code>.
+     * @return the X coordinate of this {@code RenderedImage}.
      */
     int getMinX();
 
     /**
      * Returns the minimum Y coordinate (inclusive) of the RenderedImage.
-     * @return the Y coordinate of this <code>RenderedImage</code>.
+     * @return the Y coordinate of this {@code RenderedImage}.
      */
     int getMinY();
 
@@ -197,8 +197,8 @@ public interface RenderedImage {
      * The Raster returned is a copy of the image data and will not
      * be updated if the image is changed.
      * @param rect the region of the RenderedImage to be returned.
-     * @return the region of the <code>RenderedImage</code>
-     * indicated by the specified <code>Rectangle</code>.
+     * @return the region of the {@code RenderedImage}
+     * indicated by the specified {@code Rectangle}.
      */
     Raster getData(Rectangle rect);
 

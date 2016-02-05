@@ -32,20 +32,20 @@ import java.io.IOException;
  * and writing operations.
  *
  * <p> In addition to a message string, a reference to another
- * <code>Throwable</code> (<code>Error</code> or
- * <code>Exception</code>) is maintained.  This reference, if
- * non-<code>null</code>, refers to the event that caused this
- * exception to occur.  For example, an <code>IOException</code> while
- * reading from a <code>File</code> would be stored there.
+ * {@code Throwable} ({@code Error} or
+ * {@code Exception}) is maintained.  This reference, if
+ * non-{@code null}, refers to the event that caused this
+ * exception to occur.  For example, an {@code IOException} while
+ * reading from a {@code File} would be stored there.
  *
  */
 public class IIOException extends IOException {
     private static final long serialVersionUID = -3216210718638985251L;
 
     /**
-     * Constructs an <code>IIOException</code> with a given message
-     * <code>String</code>.  No underlying cause is set;
-     * <code>getCause</code> will return <code>null</code>.
+     * Constructs an {@code IIOException} with a given message
+     * {@code String}.  No underlying cause is set;
+     * {@code getCause} will return {@code null}.
      *
      * @param message the error message.
      *
@@ -56,13 +56,13 @@ public class IIOException extends IOException {
     }
 
     /**
-     * Constructs an <code>IIOException</code> with a given message
-     * <code>String</code> and a <code>Throwable</code> that was its
+     * Constructs an {@code IIOException} with a given message
+     * {@code String} and a {@code Throwable} that was its
      * underlying cause.
      *
      * @param message the error message.
-     * @param cause the <code>Throwable</code> (<code>Error</code> or
-     * <code>Exception</code>) that caused this exception to occur.
+     * @param cause the {@code Throwable} ({@code Error} or
+     * {@code Exception}) that caused this exception to occur.
      *
      * @see #getCause
      * @see #getMessage

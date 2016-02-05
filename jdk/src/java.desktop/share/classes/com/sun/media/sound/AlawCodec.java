@@ -135,45 +135,48 @@ public final class AlawCodec extends SunCodec {
         AudioFormat sourceFormat = sourceStream.getFormat();
         AudioFormat.Encoding sourceEncoding = sourceFormat.getEncoding();
 
+        if( !isConversionSupported(targetEncoding,sourceStream.getFormat()) ) {
+            throw new IllegalArgumentException("Unsupported conversion: " + sourceStream.getFormat().toString() + " to " + targetEncoding.toString());
+        }
         if( sourceEncoding.equals( targetEncoding ) ) {
             return sourceStream;
-        } else {
-            AudioFormat targetFormat = null;
-            if( !isConversionSupported(targetEncoding,sourceStream.getFormat()) ) {
-                throw new IllegalArgumentException("Unsupported conversion: " + sourceStream.getFormat().toString() + " to " + targetEncoding.toString());
-            }
-            if( sourceEncoding.equals( AudioFormat.Encoding.ALAW ) &&
-                targetEncoding.equals( AudioFormat.Encoding.PCM_SIGNED ) ) {
-
-                targetFormat = new AudioFormat( targetEncoding,
-                                                sourceFormat.getSampleRate(),
-                                                16,
-                                                sourceFormat.getChannels(),
-                                                2*sourceFormat.getChannels(),
-                                                sourceFormat.getSampleRate(),
-                                                sourceFormat.isBigEndian());
-
-            } else if( sourceEncoding.equals( AudioFormat.Encoding.PCM_SIGNED ) &&
-                       targetEncoding.equals( AudioFormat.Encoding.ALAW ) ) {
-
-                targetFormat = new AudioFormat( targetEncoding,
-                                                sourceFormat.getSampleRate(),
-                                                8,
-                                                sourceFormat.getChannels(),
-                                                sourceFormat.getChannels(),
-                                                sourceFormat.getSampleRate(),
-                                                false);
-            } else {
-                throw new IllegalArgumentException("Unsupported conversion: " + sourceStream.getFormat().toString() + " to " + targetEncoding.toString());
-            }
-            return getAudioInputStream( targetFormat, sourceStream );
         }
+        AudioFormat targetFormat = null;
+        if( sourceEncoding.equals( AudioFormat.Encoding.ALAW ) &&
+            targetEncoding.equals( AudioFormat.Encoding.PCM_SIGNED ) ) {
+
+            targetFormat = new AudioFormat( targetEncoding,
+                                            sourceFormat.getSampleRate(),
+                                            16,
+                                            sourceFormat.getChannels(),
+                                            2*sourceFormat.getChannels(),
+                                            sourceFormat.getSampleRate(),
+                                            sourceFormat.isBigEndian());
+
+        } else if( sourceEncoding.equals( AudioFormat.Encoding.PCM_SIGNED ) &&
+                   targetEncoding.equals( AudioFormat.Encoding.ALAW ) ) {
+
+            targetFormat = new AudioFormat( targetEncoding,
+                                            sourceFormat.getSampleRate(),
+                                            8,
+                                            sourceFormat.getChannels(),
+                                            sourceFormat.getChannels(),
+                                            sourceFormat.getSampleRate(),
+                                            false);
+        } else {
+            throw new IllegalArgumentException("Unsupported conversion: " + sourceStream.getFormat().toString() + " to " + targetEncoding.toString());
+        }
+        return getConvertedStream(targetFormat, sourceStream);
     }
 
     /**
      * use old code...
      */
     public AudioInputStream getAudioInputStream(AudioFormat targetFormat, AudioInputStream sourceStream){
+        if (!isConversionSupported(targetFormat, sourceStream.getFormat()))
+            throw new IllegalArgumentException("Unsupported conversion: "
+                                               + sourceStream.getFormat().toString() + " to "
+                                               + targetFormat.toString());
         return getConvertedStream( targetFormat, sourceStream );
     }
 
@@ -218,33 +221,28 @@ public final class AlawCodec extends SunCodec {
         Vector<AudioFormat> formats = new Vector<>();
         AudioFormat format;
 
-        if ( AudioFormat.Encoding.PCM_SIGNED.equals(inputFormat.getEncoding())) {
+        if (inputFormat.getSampleSizeInBits() == 16
+                && AudioFormat.Encoding.PCM_SIGNED.equals(inputFormat.getEncoding())) {
             format = new AudioFormat(AudioFormat.Encoding.ALAW,
-                                     inputFormat.getSampleRate(),
-                                     8,
+                                     inputFormat.getSampleRate(), 8,
                                      inputFormat.getChannels(),
                                      inputFormat.getChannels(),
-                                     inputFormat.getSampleRate(),
-                                     false );
+                                     inputFormat.getSampleRate(), false);
             formats.addElement(format);
         }
-
-        if (AudioFormat.Encoding.ALAW.equals(inputFormat.getEncoding())) {
+        if (inputFormat.getSampleSizeInBits() == 8
+                && AudioFormat.Encoding.ALAW.equals(inputFormat.getEncoding())) {
             format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED,
-                                     inputFormat.getSampleRate(),
-                                     16,
+                                     inputFormat.getSampleRate(), 16,
                                      inputFormat.getChannels(),
-                                     inputFormat.getChannels()*2,
-                                     inputFormat.getSampleRate(),
-                                     false );
+                                     inputFormat.getChannels() * 2,
+                                     inputFormat.getSampleRate(), false);
             formats.addElement(format);
             format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED,
-                                     inputFormat.getSampleRate(),
-                                     16,
+                                     inputFormat.getSampleRate(), 16,
                                      inputFormat.getChannels(),
-                                     inputFormat.getChannels()*2,
-                                     inputFormat.getSampleRate(),
-                                     true );
+                                     inputFormat.getChannels() * 2,
+                                     inputFormat.getSampleRate(), true);
             formats.addElement(format);
         }
 
@@ -256,7 +254,7 @@ public final class AlawCodec extends SunCodec {
     }
 
 
-    final class AlawCodecStream extends AudioInputStream {
+    private final class AlawCodecStream extends AudioInputStream {
 
         // tempBuffer required only for encoding (when encode is true)
         private static final int tempBufferSize = 64;
@@ -445,6 +443,13 @@ public final class AlawCodec extends SunCodec {
 
                 return (i - off);
             }
+        }
+
+        @Override
+        public long skip(final long n) throws IOException {
+            // Implementation of this method assumes that we support
+            // encoding/decoding from/to 8/16 bits only
+            return encode ? super.skip(n * 2) / 2 : super.skip(n / 2) * 2;
         }
     } // end class AlawCodecStream
 } // end class ALAW

@@ -119,6 +119,8 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -2384,5 +2386,205 @@ public class TCKLocalDate extends AbstractDateTimeTest {
         IsoEra isoEra = LocalDate.MAX.getEra();
         assertSame(isoEra,IsoEra.CE);
         assertSame(LocalDate.MIN.getEra(),IsoEra.BCE);
+    }
+
+    //-----------------------------------------------------------------
+    // datesUntil()
+    // ----------------------------------------------------------------
+    @Test
+    public void test_datesUntil() {
+        assertEquals(
+                date(2015, 9, 29).datesUntil(date(2015, 10, 3)).collect(
+                        Collectors.toList()), Arrays.asList(date(2015, 9, 29),
+                        date(2015, 9, 30), date(2015, 10, 1), date(2015, 10, 2)));
+        assertEquals(date(2015, 9, 29).datesUntil(date(2015, 10, 3), Period.ofDays(2))
+                .collect(Collectors.toList()), Arrays.asList(date(2015, 9, 29),
+                date(2015, 10, 1)));
+        assertEquals(date(2015, 1, 31).datesUntil(date(2015, 6, 1), Period.ofMonths(1))
+                .collect(Collectors.toList()), Arrays.asList(date(2015, 1, 31),
+                date(2015, 2, 28), date(2015, 3, 31), date(2015, 4, 30),
+                date(2015, 5, 31)));
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_datesUntil_nullEnd() {
+        LocalDate date = date(2015, 1, 31);
+        date.datesUntil(null);
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_datesUntil_nullEndStep() {
+        LocalDate date = date(2015, 1, 31);
+        date.datesUntil(null, Period.ofDays(1));
+    }
+
+    @Test(expectedExceptions=NullPointerException.class)
+    public void test_datesUntil_nullStep() {
+        LocalDate date = date(2015, 1, 31);
+        date.datesUntil(date, null);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void test_datesUntil_endBeforeStart() {
+        date(2015, 1, 31).datesUntil(date(2015, 1, 30));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void test_datesUntil_endBeforeStartPositiveStep() {
+        date(2015, 1, 31).datesUntil(date(2015, 1, 30), Period.of(1, 0, 0));
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void test_datesUntil_endAfterStartNegativeStep() {
+        date(2015, 1, 30).datesUntil(date(2015, 1, 31), Period.of(0, -1, -1));
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_datesUntil_zeroStep() {
+        LocalDate date = date(2015, 1, 31);
+        date.datesUntil(date, Period.ZERO);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_datesUntil_oppositeSign() {
+        LocalDate date = date(2015, 1, 31);
+        date.datesUntil(date, Period.of(1, 0, -1));
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_datesUntil_oppositeSign2() {
+        LocalDate date = date(2015, 1, 31);
+        date.datesUntil(date, Period.of(0, -1, 1));
+    }
+
+    @DataProvider(name="datesUntil")
+    public Object[][] provider_datesUntil() {
+        return new Object[][] {
+                {MIN_DATE, MIN_DATE},
+                {MIN_DATE, MAX_DATE},
+                {MAX_DATE, MAX_DATE},
+                {date(2015,10,1), date(2015,10,2)},
+                {date(2015,10,1), date(2015,11,1)},
+                {date(2015,10,31), date(2015,11,1)},
+                {date(2015,10,1), MAX_DATE},
+                {MIN_DATE, date(2015,10,1)}
+        };
+    }
+
+    @Test(dataProvider = "datesUntil")
+    public void test_datesUntil_count(LocalDate start, LocalDate end) {
+        assertEquals(start.datesUntil(end).count(), start.until(end, ChronoUnit.DAYS));
+        assertEquals(start.datesUntil(end, Period.ofDays(1)).count(),
+                start.until(end, ChronoUnit.DAYS));
+    }
+
+    @DataProvider(name="datesUntilSteps")
+    public Object[][] provider_datesUntil_steps() {
+        List<Object[]> data = new ArrayList<>(Arrays.asList(new Object[][] {
+            {MIN_DATE, MAX_DATE, Period.ofYears(Year.MAX_VALUE)},
+            {MIN_DATE, MAX_DATE, Period.ofDays(2)},
+            {MIN_DATE, MAX_DATE, Period.of(1,2,3)},
+            {MIN_DATE, MAX_DATE, Period.of(1,2,1000000)},
+            {MIN_DATE, MAX_DATE, Period.of(1,1000000,3)},
+            {MIN_DATE, MAX_DATE, Period.of(1000000,2,3)},
+            {MIN_DATE, MIN_DATE.plusMonths(1), Period.ofMonths(1)},
+            {MIN_DATE, date(Year.MIN_VALUE, 2, 2), Period.ofMonths(1)},
+            {MIN_DATE, date(Year.MIN_VALUE, 8, 9), Period.of(0, 1, 1)},
+            {MIN_DATE, MAX_DATE.minusYears(1), Period.ofYears(Year.MAX_VALUE)},
+            {MAX_DATE.minusMonths(1), MAX_DATE, Period.ofMonths(1)},
+            {date(Year.MAX_VALUE, 2, 20), MAX_DATE, Period.of(0, 1, 1)},
+            {date(2015,1,1), date(2016,1,1), Period.ofYears(1)},
+            {date(2015,1,1), date(2016,1,1), Period.ofDays(365)},
+            {date(2015,1,1), date(2016,1,1), Period.ofDays(366)},
+            {date(2015,1,1), date(2016,1,1), Period.ofDays(4)},
+            {date(2015,1,1), date(2016,1,1), Period.of(0,1,2)},
+            {date(2015,1,1), date(2016,1,1), Period.ofMonths(1)},
+            {date(2015,1,1), date(2016,1,1), Period.ofMonths(12)},
+            {date(2015,1,1), date(2016,1,2), Period.ofMonths(12)},
+            {date(2015,1,1), date(2016,1,1), Period.of(0, 11, 30)},
+            {date(2015,1,1), date(2015,12,31), Period.of(0, 11, 30)},
+            {date(2015,1,31), date(2015,12,31), Period.ofMonths(2)},
+            {date(2015,1,31), date(2015,12,1), Period.ofMonths(2)},
+            {date(2015,1,31), date(2015,11,30), Period.ofMonths(2)},
+            {date(2015,1,31), date(2030,11,30), Period.of(1,30,365)},
+            {date(2015,1,31), date(2043,1,31), Period.of(4,0,0)},
+            {date(2015,1,31), date(2043,2,1), Period.of(4,0,0)},
+            {date(2015,1,31), date(2043,1,31), Period.of(3,11,30)},
+            {date(2015,1,31), date(2043,2,1), Period.of(3,11,30)},
+            {date(2015,1,31), date(2043,1,31), Period.of(0,0,1460)},
+            {date(2015,1,31), date(2043,1,31), Period.of(0,0,1461)},
+            {date(2015,1,31), date(2043,2,1), Period.of(0,0,1461)},
+            {date(2015,1,31), MAX_DATE, Period.of(10,100,1000)},
+            {date(2015,1,31), MAX_DATE, Period.of(1000000,10000,100000)},
+            {date(2015,1,31), MAX_DATE, Period.ofDays(10000000)},
+            {date(2015,1,31), MAX_DATE, Period.ofDays(Integer.MAX_VALUE)},
+            {date(2015,1,31), MAX_DATE, Period.ofMonths(Integer.MAX_VALUE)},
+            {date(2015,1,31), MAX_DATE, Period.ofYears(Integer.MAX_VALUE)}
+        }));
+        LocalDate start = date(2014, 1, 15);
+        LocalDate end = date(2015, 3, 4);
+        for (int months : new int[] { 0, 1, 2, 3, 5, 7, 12, 13 }) {
+            for (int days : new int[] { 0, 1, 2, 3, 5, 10, 17, 27, 28, 29, 30, 31, 32, 57, 58, 59,
+                    60, 61, 62, 70, 80, 90 }) {
+                if (months > 0 || days > 0)
+                    data.add(new Object[] { start, end, Period.of(0, months, days) });
+            }
+        }
+        for (int days = 27; days < 100; days++) {
+            data.add(new Object[] { start, start.plusDays(days), Period.ofMonths(1) });
+        }
+        return data.toArray(new Object[data.size()][]);
+    }
+
+    @Test(dataProvider="datesUntilSteps")
+    public void test_datesUntil_step(LocalDate start, LocalDate end, Period step) {
+        assertEquals(start.datesUntil(start, step).count(), 0);
+        long count = start.datesUntil(end, step).count();
+        assertTrue(count > 0);
+        // the last value must be before the end date
+        assertTrue(start.plusMonths(step.toTotalMonths()*(count-1)).plusDays(step.getDays()*(count-1)).isBefore(end));
+        try {
+            // the next after the last value must be either invalid or not before the end date
+            assertFalse(start.plusMonths(step.toTotalMonths()*count).plusDays(step.getDays()*count).isBefore(end));
+        } catch (ArithmeticException | DateTimeException e) {
+            // ignore: possible overflow for the next value is ok
+        }
+        if(count < 1000) {
+            assertTrue(start.datesUntil(end, step).allMatch(date -> !date.isBefore(start) && date.isBefore(end)));
+            List<LocalDate> list = new ArrayList<>();
+            for(long i=0; i<count; i++) {
+                list.add(start.plusMonths(step.toTotalMonths()*i).plusDays(step.getDays()*i));
+            }
+            assertEquals(start.datesUntil(end, step).collect(Collectors.toList()), list);
+        }
+
+        // swap end and start and negate the Period
+        count = end.datesUntil(start, step.negated()).count();
+        assertTrue(count > 0);
+        // the last value must be after the start date
+        assertTrue(end.minusMonths(step.toTotalMonths()*(count-1)).minusDays(step.getDays()*(count-1)).isAfter(start));
+        try {
+            // the next after the last value must be either invalid or not after the start date
+            assertFalse(end.minusMonths(step.toTotalMonths()*count).minusDays(step.getDays()*count).isAfter(start));
+        } catch (ArithmeticException | DateTimeException e) {
+            // ignore: possible overflow for the next value is ok
+        }
+        if(count < 1000) {
+            assertTrue(end.datesUntil(start, step.negated()).allMatch(date -> date.isAfter(start) && !date.isAfter(end)));
+            List<LocalDate> list = new ArrayList<>();
+            for(long i=0; i<count; i++) {
+                list.add(end.minusMonths(step.toTotalMonths()*i).minusDays(step.getDays()*i));
+            }
+            assertEquals(end.datesUntil(start, step.negated()).collect(Collectors.toList()), list);
+        }
+    }
+
+    @Test
+    public void test_datesUntil_staticType() {
+        // Test the types of the Stream and elements of the stream
+        LocalDate date = date(2015, 2, 10);
+        Stream<LocalDate> stream = date.datesUntil(date.plusDays(5));
+        long sum = stream.mapToInt(LocalDate::getDayOfMonth).sum();
+        assertEquals(sum, 60, "sum of 10, 11, 12, 13, 14 is wrong");
     }
 }

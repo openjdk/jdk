@@ -90,11 +90,11 @@ public class AccessibleRole extends AccessibleBundle {
             = new AccessibleRole("desktopicon");
 
     /**
-     * An object containing a collection of <code>Accessibles</code> that
-     * together represents <code>HTML</code> content.  The child
-     * <code>Accessibles</code> would include objects implementing
-     * <code>AccessibleText</code>, <code>AccessibleHypertext</code>,
-     * <code>AccessibleIcon</code>, and other interfaces.
+     * An object containing a collection of {@code Accessibles} that
+     * together represents {@code HTML} content.  The child
+     * {@code Accessibles} would include objects implementing
+     * {@code AccessibleText}, {@code AccessibleHypertext},
+     * {@code AccessibleIcon}, and other interfaces.
      * @see #HYPERLINK
      * @see AccessibleText
      * @see AccessibleHypertext

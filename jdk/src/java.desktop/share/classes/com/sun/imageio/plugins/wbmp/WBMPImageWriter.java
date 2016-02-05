@@ -57,7 +57,7 @@ import com.sun.imageio.plugins.common.I18N;
  * a WBMP format.
  *
  * The encoding process may clip, subsample using the parameters
- * specified in the <code>ImageWriteParam</code>.
+ * specified in the {@code ImageWriteParam}.
  *
  * @see com.sun.media.imageio.plugins.WBMPImageWriteParam
  */
@@ -92,8 +92,8 @@ public class WBMPImageWriter extends ImageWriter {
         return multiBytes;
     }
 
-    /** Constructs <code>WBMPImageWriter</code> based on the provided
-     *  <code>ImageWriterSpi</code>.
+    /** Constructs {@code WBMPImageWriter} based on the provided
+     *  {@code ImageWriterSpi}.
      */
     public WBMPImageWriter(ImageWriterSpi originator) {
         super(originator);

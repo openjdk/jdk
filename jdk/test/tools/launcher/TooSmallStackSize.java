@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 6762191
- * @ignore 8146751
  * @summary Setting stack size to 16K causes segmentation fault
  * @compile TooSmallStackSize.java
  * @run main TooSmallStackSize

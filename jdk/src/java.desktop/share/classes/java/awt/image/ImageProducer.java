@@ -38,74 +38,74 @@ package java.awt.image;
  */
 public interface ImageProducer {
     /**
-     * Registers an <code>ImageConsumer</code> with the
-     * <code>ImageProducer</code> for access to the image data
-     * during a later reconstruction of the <code>Image</code>.
-     * The <code>ImageProducer</code> may, at its discretion,
+     * Registers an {@code ImageConsumer} with the
+     * {@code ImageProducer} for access to the image data
+     * during a later reconstruction of the {@code Image}.
+     * The {@code ImageProducer} may, at its discretion,
      * start delivering the image data to the consumer
-     * using the <code>ImageConsumer</code> interface immediately,
+     * using the {@code ImageConsumer} interface immediately,
      * or when the next available image reconstruction is triggered
-     * by a call to the <code>startProduction</code> method.
-     * @param ic the specified <code>ImageConsumer</code>
+     * by a call to the {@code startProduction} method.
+     * @param ic the specified {@code ImageConsumer}
      * @see #startProduction
      */
     public void addConsumer(ImageConsumer ic);
 
     /**
-     * Determines if a specified <code>ImageConsumer</code>
+     * Determines if a specified {@code ImageConsumer}
      * object is currently registered with this
-     * <code>ImageProducer</code> as one of its consumers.
-     * @param ic the specified <code>ImageConsumer</code>
-     * @return <code>true</code> if the specified
-     *         <code>ImageConsumer</code> is registered with
-     *         this <code>ImageProducer</code>;
-     *         <code>false</code> otherwise.
+     * {@code ImageProducer} as one of its consumers.
+     * @param ic the specified {@code ImageConsumer}
+     * @return {@code true} if the specified
+     *         {@code ImageConsumer} is registered with
+     *         this {@code ImageProducer};
+     *         {@code false} otherwise.
      */
     public boolean isConsumer(ImageConsumer ic);
 
     /**
-     * Removes the specified <code>ImageConsumer</code> object
+     * Removes the specified {@code ImageConsumer} object
      * from the list of consumers currently registered to
      * receive image data.  It is not considered an error
      * to remove a consumer that is not currently registered.
-     * The <code>ImageProducer</code> should stop sending data
+     * The {@code ImageProducer} should stop sending data
      * to this consumer as soon as is feasible.
-     * @param ic the specified <code>ImageConsumer</code>
+     * @param ic the specified {@code ImageConsumer}
      */
     public void removeConsumer(ImageConsumer ic);
 
     /**
-     * Registers the specified <code>ImageConsumer</code> object
+     * Registers the specified {@code ImageConsumer} object
      * as a consumer and starts an immediate reconstruction of
      * the image data which will then be delivered to this
      * consumer and any other consumer which might have already
      * been registered with the producer.  This method differs
      * from the addConsumer method in that a reproduction of
      * the image data should be triggered as soon as possible.
-     * @param ic the specified <code>ImageConsumer</code>
+     * @param ic the specified {@code ImageConsumer}
      * @see #addConsumer
      */
     public void startProduction(ImageConsumer ic);
 
     /**
-     * Requests, on behalf of the <code>ImageConsumer</code>,
-     * that the <code>ImageProducer</code> attempt to resend
+     * Requests, on behalf of the {@code ImageConsumer},
+     * that the {@code ImageProducer} attempt to resend
      * the image data one more time in TOPDOWNLEFTRIGHT order
      * so that higher quality conversion algorithms which
      * depend on receiving pixels in order can be used to
      * produce a better output version of the image.  The
-     * <code>ImageProducer</code> is free to
+     * {@code ImageProducer} is free to
      * ignore this call if it cannot resend the data in that
      * order.  If the data can be resent, the
-     * <code>ImageProducer</code> should respond by executing
-     * the following minimum set of <code>ImageConsumer</code>
+     * {@code ImageProducer} should respond by executing
+     * the following minimum set of {@code ImageConsumer}
      * method calls:
      * <pre>{@code
      *  ic.setHints(TOPDOWNLEFTRIGHT | < otherhints >);
      *  ic.setPixels(...);      // As many times as needed
      *  ic.imageComplete();
      * }</pre>
-     * @param ic the specified <code>ImageConsumer</code>
+     * @param ic the specified {@code ImageConsumer}
      * @see ImageConsumer#setHints
      */
     public void requestTopDownLeftRightResend(ImageConsumer ic);

@@ -40,41 +40,41 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
- * The <code>DragGestureRecognizer</code> is an
+ * The {@code DragGestureRecognizer} is an
  * abstract base class for the specification
  * of a platform-dependent listener that can be associated with a particular
- * <code>Component</code> in order to
+ * {@code Component} in order to
  * identify platform-dependent drag initiating gestures.
  * <p>
- * The appropriate <code>DragGestureRecognizer</code>
+ * The appropriate {@code DragGestureRecognizer}
  * subclass instance is obtained from the
  * {@link DragSource} associated with
- * a particular <code>Component</code>, or from the <code>Toolkit</code> object via its
+ * a particular {@code Component}, or from the {@code Toolkit} object via its
  * {@link java.awt.Toolkit#createDragGestureRecognizer createDragGestureRecognizer()}
  * method.
  * <p>
- * Once the <code>DragGestureRecognizer</code>
- * is associated with a particular <code>Component</code>
+ * Once the {@code DragGestureRecognizer}
+ * is associated with a particular {@code Component}
  * it will register the appropriate listener interfaces on that
- * <code>Component</code>
- * in order to track the input events delivered to the <code>Component</code>.
+ * {@code Component}
+ * in order to track the input events delivered to the {@code Component}.
  * <p>
- * Once the <code>DragGestureRecognizer</code> identifies a sequence of events
- * on the <code>Component</code> as a drag initiating gesture, it will notify
- * its unicast <code>DragGestureListener</code> by
+ * Once the {@code DragGestureRecognizer} identifies a sequence of events
+ * on the {@code Component} as a drag initiating gesture, it will notify
+ * its unicast {@code DragGestureListener} by
  * invoking its
  * {@link java.awt.dnd.DragGestureListener#dragGestureRecognized gestureRecognized()}
  * method.
  * <P>
- * When a concrete <code>DragGestureRecognizer</code>
+ * When a concrete {@code DragGestureRecognizer}
  * instance detects a drag initiating
- * gesture on the <code>Component</code> it is associated with,
+ * gesture on the {@code Component} it is associated with,
  * it fires a {@link DragGestureEvent} to
- * the <code>DragGestureListener</code> registered on
- * its unicast event source for <code>DragGestureListener</code>
- * events. This <code>DragGestureListener</code> is responsible
+ * the {@code DragGestureListener} registered on
+ * its unicast event source for {@code DragGestureListener}
+ * events. This {@code DragGestureListener} is responsible
  * for causing the associated
- * <code>DragSource</code> to start the Drag and Drop operation (if
+ * {@code DragSource} to start the Drag and Drop operation (if
  * appropriate).
  *
  * @author Laurence P. G. Cable
@@ -88,36 +88,36 @@ public abstract class DragGestureRecognizer implements Serializable {
     private static final long serialVersionUID = 8996673345831063337L;
 
     /**
-     * Construct a new <code>DragGestureRecognizer</code>
-     * given the <code>DragSource</code> to be used
-     * in this Drag and Drop operation, the <code>Component</code>
-     * this <code>DragGestureRecognizer</code> should "observe"
+     * Construct a new {@code DragGestureRecognizer}
+     * given the {@code DragSource} to be used
+     * in this Drag and Drop operation, the {@code Component}
+     * this {@code DragGestureRecognizer} should "observe"
      * for drag initiating gestures, the action(s) supported
      * for this Drag and Drop operation, and the
-     * <code>DragGestureListener</code> to notify
+     * {@code DragGestureListener} to notify
      * once a drag initiating gesture has been detected.
      *
-     * @param ds  the <code>DragSource</code> this
-     * <code>DragGestureRecognizer</code>
+     * @param ds  the {@code DragSource} this
+     * {@code DragGestureRecognizer}
      * will use to process the Drag and Drop operation
      *
-     * @param c the <code>Component</code>
-     * this <code>DragGestureRecognizer</code>
+     * @param c the {@code Component}
+     * this {@code DragGestureRecognizer}
      * should "observe" the event stream to,
      * in order to detect a drag initiating gesture.
-     * If this value is <code>null</code>, the
-     * <code>DragGestureRecognizer</code>
-     * is not associated with any <code>Component</code>.
+     * If this value is {@code null}, the
+     * {@code DragGestureRecognizer}
+     * is not associated with any {@code Component}.
      *
      * @param sa  the set (logical OR) of the
-     * <code>DnDConstants</code>
+     * {@code DnDConstants}
      * that this Drag and Drop operation will support
      *
-     * @param dgl the <code>DragGestureRecognizer</code>
+     * @param dgl the {@code DragGestureRecognizer}
      * to notify when a drag gesture is detected
      *
      * @throws IllegalArgumentException
-     * if ds is <code>null</code>.
+     * if ds is {@code null}.
      */
 
     protected DragGestureRecognizer(DragSource ds, Component c, int sa, DragGestureListener dgl) {
@@ -137,30 +137,30 @@ public abstract class DragGestureRecognizer implements Serializable {
     }
 
     /**
-     * Construct a new <code>DragGestureRecognizer</code>
-     * given the <code>DragSource</code> to be used in this
+     * Construct a new {@code DragGestureRecognizer}
+     * given the {@code DragSource} to be used in this
      * Drag and Drop
-     * operation, the <code>Component</code> this
-     * <code>DragGestureRecognizer</code> should "observe"
+     * operation, the {@code Component} this
+     * {@code DragGestureRecognizer} should "observe"
      * for drag initiating gestures, and the action(s)
      * supported for this Drag and Drop operation.
      *
-     * @param ds  the <code>DragSource</code> this
-     * <code>DragGestureRecognizer</code> will use to
+     * @param ds  the {@code DragSource} this
+     * {@code DragGestureRecognizer} will use to
      * process the Drag and Drop operation
      *
-     * @param c   the <code>Component</code> this
-     * <code>DragGestureRecognizer</code> should "observe" the event
+     * @param c   the {@code Component} this
+     * {@code DragGestureRecognizer} should "observe" the event
      * stream to, in order to detect a drag initiating gesture.
-     * If this value is <code>null</code>, the
-     * <code>DragGestureRecognizer</code>
-     * is not associated with any <code>Component</code>.
+     * If this value is {@code null}, the
+     * {@code DragGestureRecognizer}
+     * is not associated with any {@code Component}.
      *
-     * @param sa the set (logical OR) of the <code>DnDConstants</code>
+     * @param sa the set (logical OR) of the {@code DnDConstants}
      * that this Drag and Drop operation will support
      *
      * @throws IllegalArgumentException
-     * if ds is <code>null</code>.
+     * if ds is {@code null}.
      */
 
     protected DragGestureRecognizer(DragSource ds, Component c, int sa) {
@@ -168,27 +168,27 @@ public abstract class DragGestureRecognizer implements Serializable {
     }
 
     /**
-     * Construct a new <code>DragGestureRecognizer</code>
-     * given the <code>DragSource</code> to be used
+     * Construct a new {@code DragGestureRecognizer}
+     * given the {@code DragSource} to be used
      * in this Drag and Drop operation, and
-     * the <code>Component</code> this
-     * <code>DragGestureRecognizer</code>
+     * the {@code Component} this
+     * {@code DragGestureRecognizer}
      * should "observe" for drag initiating gestures.
      *
-     * @param ds the <code>DragSource</code> this
-     * <code>DragGestureRecognizer</code>
+     * @param ds the {@code DragSource} this
+     * {@code DragGestureRecognizer}
      * will use to process the Drag and Drop operation
      *
-     * @param c the <code>Component</code>
-     * this <code>DragGestureRecognizer</code>
+     * @param c the {@code Component}
+     * this {@code DragGestureRecognizer}
      * should "observe" the event stream to,
      * in order to detect a drag initiating gesture.
-     * If this value is <code>null</code>,
-     * the <code>DragGestureRecognizer</code>
-     * is not associated with any <code>Component</code>.
+     * If this value is {@code null},
+     * the {@code DragGestureRecognizer}
+     * is not associated with any {@code Component}.
      *
      * @throws IllegalArgumentException
-     * if ds is <code>null</code>.
+     * if ds is {@code null}.
      */
 
     protected DragGestureRecognizer(DragSource ds, Component c) {
@@ -196,16 +196,16 @@ public abstract class DragGestureRecognizer implements Serializable {
     }
 
     /**
-     * Construct a new <code>DragGestureRecognizer</code>
-     * given the <code>DragSource</code> to be used in this
+     * Construct a new {@code DragGestureRecognizer}
+     * given the {@code DragSource} to be used in this
      * Drag and Drop operation.
      *
-     * @param ds the <code>DragSource</code> this
-     * <code>DragGestureRecognizer</code> will
+     * @param ds the {@code DragSource} this
+     * {@code DragGestureRecognizer} will
      * use to process the Drag and Drop operation
      *
      * @throws IllegalArgumentException
-     * if ds is <code>null</code>.
+     * if ds is {@code null}.
      */
 
     protected DragGestureRecognizer(DragSource ds) {
@@ -229,8 +229,8 @@ public abstract class DragGestureRecognizer implements Serializable {
     protected abstract void unregisterListeners();
 
     /**
-     * This method returns the <code>DragSource</code>
-     * this <code>DragGestureRecognizer</code>
+     * This method returns the {@code DragSource}
+     * this {@code DragGestureRecognizer}
      * will use in order to process the Drag and Drop
      * operation.
      *
@@ -240,9 +240,9 @@ public abstract class DragGestureRecognizer implements Serializable {
     public DragSource getDragSource() { return dragSource; }
 
     /**
-     * This method returns the <code>Component</code>
+     * This method returns the {@code Component}
      * that is to be "observed" by the
-     * <code>DragGestureRecognizer</code>
+     * {@code DragGestureRecognizer}
      * for drag initiating gestures.
      *
      * @return The Component this DragGestureRecognizer
@@ -257,7 +257,7 @@ public abstract class DragGestureRecognizer implements Serializable {
      * registerListeners() and unregisterListeners() are called as a side
      * effect as appropriate.
      *
-     * @param c The <code>Component</code> or <code>null</code>
+     * @param c The {@code Component} or {@code null}
      */
 
     public synchronized void setComponent(Component c) {
@@ -309,13 +309,13 @@ public abstract class DragGestureRecognizer implements Serializable {
     public void resetRecognizer() { events.clear(); }
 
     /**
-     * Register a new <code>DragGestureListener</code>.
+     * Register a new {@code DragGestureListener}.
      *
-     * @param dgl the <code>DragGestureListener</code> to register
-     * with this <code>DragGestureRecognizer</code>.
+     * @param dgl the {@code DragGestureListener} to register
+     * with this {@code DragGestureRecognizer}.
      *
      * @throws java.util.TooManyListenersException if a
-     * <code>DragGestureListener</code> has already been added.
+     * {@code DragGestureListener} has already been added.
      */
 
     public synchronized void addDragGestureListener(DragGestureListener dgl) throws TooManyListenersException {
@@ -331,11 +331,11 @@ public abstract class DragGestureRecognizer implements Serializable {
     /**
      * unregister the current DragGestureListener
      *
-     * @param dgl the <code>DragGestureListener</code> to unregister
-     * from this <code>DragGestureRecognizer</code>
+     * @param dgl the {@code DragGestureListener} to unregister
+     * from this {@code DragGestureRecognizer}
      *
      * @throws IllegalArgumentException if
-     * dgl is not (equal to) the currently registered <code>DragGestureListener</code>.
+     * dgl is not (equal to) the currently registered {@code DragGestureListener}.
      */
 
     public synchronized void removeDragGestureListener(DragGestureListener dgl) {
@@ -370,16 +370,16 @@ public abstract class DragGestureRecognizer implements Serializable {
      * all Events that are recognized as part of the series of Events that go
      * to comprise a Drag and Drop initiating gesture via this API.
      * <P>
-     * This method is used by a <code>DragGestureRecognizer</code>
-     * implementation to add an <code>InputEvent</code>
+     * This method is used by a {@code DragGestureRecognizer}
+     * implementation to add an {@code InputEvent}
      * subclass (that it believes is one in a series
      * of events that comprise a Drag and Drop operation)
      * to the array of events that this
-     * <code>DragGestureRecognizer</code> maintains internally.
+     * {@code DragGestureRecognizer} maintains internally.
      *
-     * @param awtie the <code>InputEvent</code>
-     * to add to this <code>DragGestureRecognizer</code>'s
-     * internal array of events. Note that <code>null</code>
+     * @param awtie the {@code InputEvent}
+     * to add to this {@code DragGestureRecognizer}'s
+     * internal array of events. Note that {@code null}
      * is not a valid value, and will be ignored.
      */
 
@@ -388,14 +388,14 @@ public abstract class DragGestureRecognizer implements Serializable {
     }
 
     /**
-     * Serializes this <code>DragGestureRecognizer</code>. This method first
+     * Serializes this {@code DragGestureRecognizer}. This method first
      * performs default serialization. Then, this object's
-     * <code>DragGestureListener</code> is written out if and only if it can be
-     * serialized. If not, <code>null</code> is written instead.
+     * {@code DragGestureListener} is written out if and only if it can be
+     * serialized. If not, {@code null} is written instead.
      *
      * @serialData The default serializable fields, in alphabetical order,
-     *             followed by either a <code>DragGestureListener</code>, or
-     *             <code>null</code>.
+     *             followed by either a {@code DragGestureListener}, or
+     *             {@code null}.
      * @since 1.4
      */
     private void writeObject(ObjectOutputStream s) throws IOException {
@@ -406,9 +406,9 @@ public abstract class DragGestureRecognizer implements Serializable {
     }
 
     /**
-     * Deserializes this <code>DragGestureRecognizer</code>. This method first
-     * performs default deserialization for all non-<code>transient</code>
-     * fields. This object's <code>DragGestureListener</code> is then
+     * Deserializes this {@code DragGestureRecognizer}. This method first
+     * performs default deserialization for all non-{@code transient}
+     * fields. This object's {@code DragGestureListener} is then
      * deserialized as well by using the next object in the stream.
      *
      * @since 1.4
@@ -437,30 +437,30 @@ public abstract class DragGestureRecognizer implements Serializable {
      */
 
     /**
-     * The <code>DragSource</code>
+     * The {@code DragSource}
      * associated with this
-     * <code>DragGestureRecognizer</code>.
+     * {@code DragGestureRecognizer}.
      *
      * @serial
      */
     protected DragSource          dragSource;
 
     /**
-     * The <code>Component</code>
-     * associated with this <code>DragGestureRecognizer</code>.
+     * The {@code Component}
+     * associated with this {@code DragGestureRecognizer}.
      *
      * @serial
      */
     protected Component           component;
 
     /**
-     * The <code>DragGestureListener</code>
-     * associated with this <code>DragGestureRecognizer</code>.
+     * The {@code DragGestureListener}
+     * associated with this {@code DragGestureRecognizer}.
      */
     protected transient DragGestureListener dragGestureListener;
 
   /**
-   * An <code>int</code> representing
+   * An {@code int} representing
    * the type(s) of action(s) used
    * in this Drag and Drop operation.
    *
@@ -470,7 +470,7 @@ public abstract class DragGestureRecognizer implements Serializable {
 
    /**
     * The list of events (in order) that
-    * the <code>DragGestureRecognizer</code>
+    * the {@code DragGestureRecognizer}
     * "recognized" as a "gesture" that triggers a drag.
     *
     * @serial

@@ -526,13 +526,15 @@ public class MouseEvent extends InputEvent {
      * {@link java.awt.MouseInfo#getNumberOfButtons() MouseInfo.getNumberOfButtons()}
      * if the mouse has more than three buttons.
      * </ul>
-     * @throws IllegalArgumentException if {@code button} is less then zero
+     * @throws IllegalArgumentException if {@code button} is less than zero
      * @throws IllegalArgumentException if {@code source} is null
-     * @throws IllegalArgumentException if {@code button} is greater then BUTTON3 and the support for extended mouse buttons is
+     * @throws IllegalArgumentException if {@code button} is greater than BUTTON3
+     *                                  and the support for extended mouse buttons is
      *                                  {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
-     * @throws IllegalArgumentException if {@code button} is greater then the
-     *                                  {@link java.awt.MouseInfo#getNumberOfButtons() current number of buttons} and the support
-     *                                  for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled}
+     * @throws IllegalArgumentException if {@code button} is greater than the
+     *                                  {@link java.awt.MouseInfo#getNumberOfButtons() current number of buttons}
+     *                                  and the support for extended mouse buttons is
+     *                                  {@link Toolkit#areExtraMouseButtonsEnabled() enabled}
      *                                  by Java
      * @throws IllegalArgumentException if an invalid {@code button}
      *            value is passed in
@@ -701,12 +703,14 @@ public class MouseEvent extends InputEvent {
      * {@link java.awt.MouseInfo#getNumberOfButtons() MouseInfo.getNumberOfButtons()}
      * if the mouse has more than three buttons.
      * </ul>
-     * @throws IllegalArgumentException if {@code button} is less then zero
+     * @throws IllegalArgumentException if {@code button} is less than zero
      * @throws IllegalArgumentException if {@code source} is null
-     * @throws IllegalArgumentException if {@code button} is greater then BUTTON3 and the support for extended mouse buttons is
+     * @throws IllegalArgumentException if {@code button} is greater than BUTTON3
+     *                                  and the support for extended mouse buttons is
      *                                  {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
-     * @throws IllegalArgumentException if {@code button} is greater then the
-     *                                  {@link java.awt.MouseInfo#getNumberOfButtons() current number of buttons} and the support
+     * @throws IllegalArgumentException if {@code button} is greater than the
+     *                                  {@link java.awt.MouseInfo#getNumberOfButtons()
+     *                                  current number of buttons} and the support
      *                                  for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled}
      *                                  by Java
      * @throws IllegalArgumentException if an invalid {@code button}
@@ -865,7 +869,8 @@ public class MouseEvent extends InputEvent {
      * <li> 2 ({@code BUTTON2})
      * <li> 3 ({@code BUTTON3})
      * </ul>
-     * Button numbers greater then {@code BUTTON3} have no constant identifier. So if a mouse with five buttons is
+     * Button numbers greater than {@code BUTTON3} have no constant identifier.
+     * So if a mouse with five buttons is
      * installed, this method may return the following values:
      * <ul>
      * <li> 0 ({@code NOBUTTON})

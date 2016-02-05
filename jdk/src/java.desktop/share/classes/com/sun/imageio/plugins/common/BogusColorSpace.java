@@ -28,7 +28,7 @@ package com.sun.imageio.plugins.common;
 import java.awt.color.ColorSpace;
 
 /**
- * A dummy <code>ColorSpace</code> to enable <code>ColorModel</code>
+ * A dummy {@code ColorSpace} to enable {@code ColorModel}
  * for image data which do not have an innate color representation.
  */
 @SuppressWarnings("serial") // JDK-implementation class
@@ -37,8 +37,8 @@ public class BogusColorSpace extends ColorSpace {
      * Return the type given the number of components.
      *
      * @param numComponents The number of components in the
-     * <code>ColorSpace</code>.
-     * @exception IllegalArgumentException if <code>numComponents</code>
+     * {@code ColorSpace}.
+     * @exception IllegalArgumentException if {@code numComponents}
      * is less than 1.
      */
     private static int getType(int numComponents) {
@@ -62,11 +62,11 @@ public class BogusColorSpace extends ColorSpace {
     }
 
     /**
-     * Constructs a bogus <code>ColorSpace</code>.
+     * Constructs a bogus {@code ColorSpace}.
      *
      * @param numComponents The number of components in the
-     * <code>ColorSpace</code>.
-     * @exception IllegalArgumentException if <code>numComponents</code>
+     * {@code ColorSpace}.
+     * @exception IllegalArgumentException if {@code numComponents}
      * is less than 1.
      */
     public BogusColorSpace(int numComponents) {

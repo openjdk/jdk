@@ -26,13 +26,13 @@ package java.awt;
 
 /**
  * Defines the interface for classes that know how to lay out
- * <code>Container</code>s.
+ * {@code Container}s.
  * <p>
  * Swing's painting architecture assumes the children of a
- * <code>JComponent</code> do not overlap.  If a
- * <code>JComponent</code>'s <code>LayoutManager</code> allows
- * children to overlap, the <code>JComponent</code> must override
- * <code>isOptimizedDrawingEnabled</code> to return false.
+ * {@code JComponent} do not overlap.  If a
+ * {@code JComponent}'s {@code LayoutManager} allows
+ * children to overlap, the {@code JComponent} must override
+ * {@code isOptimizedDrawingEnabled} to return false.
  *
  * @see Container
  * @see javax.swing.JComponent#isOptimizedDrawingEnabled
@@ -43,9 +43,9 @@ package java.awt;
 public interface LayoutManager {
     /**
      * If the layout manager uses a per-component string,
-     * adds the component <code>comp</code> to the layout,
+     * adds the component {@code comp} to the layout,
      * associating it
-     * with the string specified by <code>name</code>.
+     * with the string specified by {@code name}.
      *
      * @param name the string to be associated with the component
      * @param comp the component to be added

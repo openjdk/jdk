@@ -38,9 +38,9 @@ public class AWTException extends Exception {
      private static final long serialVersionUID = -1900414231151323879L;
 
     /**
-     * Constructs an instance of <code>AWTException</code> with the
+     * Constructs an instance of {@code AWTException} with the
      * specified detail message. A detail message is an
-     * instance of <code>String</code> that describes this particular
+     * instance of {@code String} that describes this particular
      * exception.
      * @param   msg     the detail message
      * @since   1.0

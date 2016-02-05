@@ -77,7 +77,7 @@ import javax.print.attribute.PrintJobAttribute;
  * converted to one of the standard IPP keywords with some loss of precision;
  * for example, a JobHoldUntil value with today's date and 9:00pm local time
  * might be converted to the standard IPP keyword "night". The category name
- * returned by <CODE>getName()</CODE> gives the IPP attribute name.
+ * returned by {@code getName()} gives the IPP attribute name.
  *
  * @author  Alan Kaminsky
  */
@@ -94,7 +94,7 @@ public final class JobHoldUntil extends DateTimeSyntax
      * @param  dateTime  {@link java.util.Date Date} value.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>dateTime</CODE> is null.
+     *     (unchecked exception) Thrown if {@code dateTime} is null.
      */
     public JobHoldUntil(Date dateTime) {
         super (dateTime);
@@ -106,17 +106,17 @@ public final class JobHoldUntil extends DateTimeSyntax
      * must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class JobHoldUntil.
+     * {@code object} is an instance of class JobHoldUntil.
      * <LI>
      * This job hold until attribute's {@link java.util.Date Date} value and
-     * <CODE>object</CODE>'s {@link java.util.Date Date} value are equal.
+     * {@code object}'s {@link java.util.Date Date} value are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this job hold
+     * @return  True if {@code object} is equivalent to this job hold
      *          until attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -141,7 +141,7 @@ public final class JobHoldUntil extends DateTimeSyntax
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class JobHoldUntil, the category name is <CODE>"job-hold-until"</CODE>.
+     * For class JobHoldUntil, the category name is {@code "job-hold-until"}.
      *
      * @return  Attribute category name.
      */
