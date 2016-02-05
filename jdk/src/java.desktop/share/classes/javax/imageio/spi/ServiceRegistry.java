@@ -46,7 +46,7 @@ import java.util.ServiceLoader;
  *
  * <p> Service providers are stored in one or more <i>categories</i>,
  * each of which is defined by a class of interface (described by a
- * <code>Class</code> object) that all of its members must implement.
+ * {@code Class} object) that all of its members must implement.
  *
  * <p>The set of categories supported is limited
  * to the following standard Image I/O service types:
@@ -65,26 +65,26 @@ import java.util.ServiceLoader;
  * {@link java.util.ServiceLoader ServiceLoader}.
  *
  * <p> Only a single instance of a given leaf class (that is, the
- * actual class returned by <code>getClass()</code>, as opposed to any
+ * actual class returned by {@code getClass()}, as opposed to any
  * inherited classes or interfaces) may be registered.  That is,
  * suppose that the
- * <code>com.mycompany.mypkg.GreenImageReaderProvider</code> class
- * is a subclass of <code>javax.imageio.spi.ImageReaderSpi</code>.
- * If a <code>GreenImageReaderProvider</code> instance is
+ * {@code com.mycompany.mypkg.GreenImageReaderProvider} class
+ * is a subclass of {@code javax.imageio.spi.ImageReaderSpi}.
+ * If a {@code GreenImageReaderProvider} instance is
  * registered, it will be stored in the category defined by the
- * <code>ImageReaderSpi</code> class.  If a new instance of
- * <code>GreenImageReaderProvider</code> is registered, it will replace
+ * {@code ImageReaderSpi} class.  If a new instance of
+ * {@code GreenImageReaderProvider} is registered, it will replace
  * the previous instance.  In practice, service provider objects are
  * usually singletons so this behavior is appropriate.
  *
- * <p> To declare a service provider, a <code>services</code>
- * subdirectory is placed within the <code>META-INF</code> directory
+ * <p> To declare a service provider, a {@code services}
+ * subdirectory is placed within the {@code META-INF} directory
  * that is present in every JAR file.  This directory contains a file
  * for each service provider interface that has one or more
  * implementation classes present in the JAR file.  For example, if
  * the JAR file contained a class named
- * <code>com.mycompany.mypkg.GreenImageReaderProvider</code> which implements the
- * <code>javax.imageio.spi.ImageReaderSpi</code> interface, the JAR file
+ * {@code com.mycompany.mypkg.GreenImageReaderProvider} which implements the
+ * {@code javax.imageio.spi.ImageReaderSpi} interface, the JAR file
  * would contain a file named: <pre>
  * META-INF/services/javax.imageio.spi.ImageReaderSpi</pre>
  *
@@ -117,16 +117,16 @@ public class ServiceRegistry {
     private Map<Class<?>, SubRegistry> categoryMap = new HashMap<>();
 
     /**
-     * Constructs a <code>ServiceRegistry</code> instance with a
-     * set of categories taken from the <code>categories</code>
+     * Constructs a {@code ServiceRegistry} instance with a
+     * set of categories taken from the {@code categories}
      * argument. The categories must all be members of the set
      * of service types listed in the class specification.
      *
-     * @param categories an <code>Iterator</code> containing
-     * <code>Class</code> objects to be used to define categories.
+     * @param categories an {@code Iterator} containing
+     * {@code Class} objects to be used to define categories.
      *
      * @exception IllegalArgumentException if
-     * <code>categories</code> is <code>null</code>, or if
+     * {@code categories} is {@code null}, or if
      * one of the categories is not an allowed service type.
      */
     public ServiceRegistry(Iterator<Class<?>> categories) {
@@ -151,7 +151,7 @@ public class ServiceRegistry {
      *
      * <p> This method transforms the name of the given service class
      * into a provider-configuration filename as described in the
-     * class comment and then uses the <code>getResources</code>
+     * class comment and then uses the {@code getResources}
      * method of the given class loader to find all available files
      * with that name.  These files are then read and parsed to
      * produce a list of provider-class names.  The iterator that is
@@ -162,24 +162,24 @@ public class ServiceRegistry {
      * a running Java virtual machine, this method may return
      * different results each time it is invoked.
      *
-     * @param providerClass a <code>Class</code>object indicating the
+     * @param providerClass a {@code Class} object indicating the
      * class or interface of the service providers being detected.
      *
      * @param loader the class loader to be used to load
      * provider-configuration files and instantiate provider classes,
-     * or <code>null</code> if the system class loader (or, failing that
+     * or {@code null} if the system class loader (or, failing that
      * the bootstrap class loader) is to be used.
      *
      * @param <T> the type of the providerClass.
      *
-     * @return An <code>Iterator</code> that yields provider objects
+     * @return An {@code Iterator} that yields provider objects
      * for the given service, in some arbitrary order.  The iterator
-     * will throw an <code>Error</code> if a provider-configuration
+     * will throw an {@code Error} if a provider-configuration
      * file violates the specified format or if a provider class
      * cannot be found and instantiated.
      *
      * @exception IllegalArgumentException if
-     * <code>providerClass</code> is <code>null</code>, or if it is
+     * {@code providerClass} is {@code null}, or if it is
      * not one of the allowed service types.
      */
     public static <T> Iterator<T> lookupProviders(Class<T> providerClass,
@@ -206,19 +206,19 @@ public class ServiceRegistry {
      * in the class specification. If it is not, {@code IllegalArgumentException}
      * will be thrown.
      *
-     * @param providerClass a <code>Class</code>object indicating the
+     * @param providerClass a {@code Class} object indicating the
      * class or interface of the service providers being detected.
      *
      * @param <T> the type of the providerClass.
      *
-     * @return An <code>Iterator</code> that yields provider objects
+     * @return An {@code Iterator} that yields provider objects
      * for the given service, in some arbitrary order.  The iterator
-     * will throw an <code>Error</code> if a provider-configuration
+     * will throw an {@code Error} if a provider-configuration
      * file violates the specified format or if a provider class
      * cannot be found and instantiated.
      *
      * @exception IllegalArgumentException if
-     * <code>providerClass</code> is <code>null</code>, or if it is
+     * {@code providerClass} is {@code null}, or if it is
      * not one of the allowed service types.
      */
     public static <T> Iterator<T> lookupProviders(Class<T> providerClass) {
@@ -230,12 +230,12 @@ public class ServiceRegistry {
     }
 
     /**
-     * Returns an <code>Iterator</code> of <code>Class</code> objects
+     * Returns an {@code Iterator} of {@code Class} objects
      * indicating the current set of categories.  The iterator will be
      * empty if no categories exist.
      *
-     * @return an <code>Iterator</code> containing
-     * <code>Class</code>objects.
+     * @return an {@code Iterator} containing
+     * {@code Class} objects.
      */
     public Iterator<Class<?>> getCategories() {
         Set<Class<?>> keySet = categoryMap.keySet();
@@ -262,10 +262,10 @@ public class ServiceRegistry {
      * Adds a service provider object to the registry.  The provider
      * is associated with the given category.
      *
-     * <p> If <code>provider</code> implements the
-     * <code>RegisterableService</code> interface, its
-     * <code>onRegistration</code> method will be called.  Its
-     * <code>onDeregistration</code> method will be called each time
+     * <p> If {@code provider} implements the
+     * {@code RegisterableService} interface, its
+     * {@code onRegistration} method will be called.  Its
+     * {@code onDeregistration} method will be called each time
      * it is deregistered from a category, for example if a
      * category is removed or the registry is garbage collected.
      *
@@ -277,12 +277,12 @@ public class ServiceRegistry {
      * @return true if no provider of the same class was previously
      * registered in the same category category.
      *
-     * @exception IllegalArgumentException if <code>provider</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code provider} is
+     * {@code null}.
      * @exception IllegalArgumentException if there is no category
-     * corresponding to <code>category</code>.
+     * corresponding to {@code category}.
      * @exception ClassCastException if provider does not implement
-     * the <code>Class</code> defined by <code>category</code>.
+     * the {@code Class} defined by {@code category}.
      */
     public <T> boolean registerServiceProvider(T provider,
                                                Class<T> category) {
@@ -303,20 +303,20 @@ public class ServiceRegistry {
     /**
      * Adds a service provider object to the registry.  The provider
      * is associated within each category present in the registry
-     * whose <code>Class</code> it implements.
+     * whose {@code Class} it implements.
      *
-     * <p> If <code>provider</code> implements the
-     * <code>RegisterableService</code> interface, its
-     * <code>onRegistration</code> method will be called once for each
+     * <p> If {@code provider} implements the
+     * {@code RegisterableService} interface, its
+     * {@code onRegistration} method will be called once for each
      * category it is registered under.  Its
-     * <code>onDeregistration</code> method will be called each time
+     * {@code onDeregistration} method will be called each time
      * it is deregistered from a category or when the registry is
      * finalized.
      *
      * @param provider the service provider object to be registered.
      *
      * @exception IllegalArgumentException if
-     * <code>provider</code> is <code>null</code>.
+     * {@code provider} is {@code null}.
      */
     public void registerServiceProvider(Object provider) {
         if (provider == null) {
@@ -331,23 +331,23 @@ public class ServiceRegistry {
 
     /**
      * Adds a set of service provider objects, taken from an
-     * <code>Iterator</code> to the registry.  Each provider is
+     * {@code Iterator} to the registry.  Each provider is
      * associated within each category present in the registry whose
-     * <code>Class</code> it implements.
+     * {@code Class} it implements.
      *
-     * <p> For each entry of <code>providers</code> that implements
-     * the <code>RegisterableService</code> interface, its
-     * <code>onRegistration</code> method will be called once for each
+     * <p> For each entry of {@code providers} that implements
+     * the {@code RegisterableService} interface, its
+     * {@code onRegistration} method will be called once for each
      * category it is registered under.  Its
-     * <code>onDeregistration</code> method will be called each time
+     * {@code onDeregistration} method will be called each time
      * it is deregistered from a category or when the registry is
      * finalized.
      *
      * @param providers an Iterator containing service provider
      * objects to be registered.
      *
-     * @exception IllegalArgumentException if <code>providers</code>
-     * is <code>null</code> or contains a <code>null</code> entry.
+     * @exception IllegalArgumentException if {@code providers}
+     * is {@code null} or contains a {@code null} entry.
      */
     public void registerServiceProviders(Iterator<?> providers) {
         if (providers == null) {
@@ -361,31 +361,31 @@ public class ServiceRegistry {
     /**
      * Removes a service provider object from the given category.  If
      * the provider was not previously registered, nothing happens and
-     * <code>false</code> is returned.  Otherwise, <code>true</code>
+     * {@code false} is returned.  Otherwise, {@code true}
      * is returned.  If an object of the same class as
-     * <code>provider</code> but not equal (using <code>==</code>) to
-     * <code>provider</code> is registered, it will not be
+     * {@code provider} but not equal (using {@code ==}) to
+     * {@code provider} is registered, it will not be
      * deregistered.
      *
-     * <p> If <code>provider</code> implements the
-     * <code>RegisterableService</code> interface, its
-     * <code>onDeregistration</code> method will be called.
+     * <p> If {@code provider} implements the
+     * {@code RegisterableService} interface, its
+     * {@code onDeregistration} method will be called.
      *
      * @param provider the service provider object to be deregistered.
      * @param category the category from which to deregister the
      * provider.
      * @param <T> the type of the provider.
      *
-     * @return <code>true</code> if the provider was previously
+     * @return {@code true} if the provider was previously
      * registered in the same category category,
-     * <code>false</code> otherwise.
+     * {@code false} otherwise.
      *
-     * @exception IllegalArgumentException if <code>provider</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code provider} is
+     * {@code null}.
      * @exception IllegalArgumentException if there is no category
-     * corresponding to <code>category</code>.
+     * corresponding to {@code category}.
      * @exception ClassCastException if provider does not implement
-     * the class defined by <code>category</code>.
+     * the class defined by {@code category}.
      */
     public <T> boolean deregisterServiceProvider(T provider,
                                                  Class<T> category) {
@@ -408,8 +408,8 @@ public class ServiceRegistry {
      *
      * @param provider the service provider object to be deregistered.
      *
-     * @exception IllegalArgumentException if <code>provider</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code provider} is
+     * {@code null}.
      */
     public void deregisterServiceProvider(Object provider) {
         if (provider == null) {
@@ -423,16 +423,16 @@ public class ServiceRegistry {
     }
 
     /**
-     * Returns <code>true</code> if <code>provider</code> is currently
+     * Returns {@code true} if {@code provider} is currently
      * registered.
      *
      * @param provider the service provider object to be queried.
      *
-     * @return <code>true</code> if the given provider has been
+     * @return {@code true} if the given provider has been
      * registered.
      *
-     * @exception IllegalArgumentException if <code>provider</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code provider} is
+     * {@code null}.
      */
     public boolean contains(Object provider) {
         if (provider == null) {
@@ -450,9 +450,9 @@ public class ServiceRegistry {
     }
 
     /**
-     * Returns an <code>Iterator</code> containing all registered
+     * Returns an {@code Iterator} containing all registered
      * service providers in the given category.  If
-     * <code>useOrdering</code> is <code>false</code>, the iterator
+     * {@code useOrdering} is {@code false}, the iterator
      * will return all of the server provider objects in an arbitrary
      * order.  Otherwise, the ordering will respect any pairwise
      * orderings that have been set.  If the graph of pairwise
@@ -460,15 +460,15 @@ public class ServiceRegistry {
      * will not be returned.
      *
      * @param category the category to be retrieved from.
-     * @param useOrdering <code>true</code> if pairwise orderings
+     * @param useOrdering {@code true} if pairwise orderings
      * should be taken account in ordering the returned objects.
      * @param <T> the type of the category.
      *
-     * @return an <code>Iterator</code> containing service provider
+     * @return an {@code Iterator} containing service provider
      * objects from the given category, possibly in order.
      *
      * @exception IllegalArgumentException if there is no category
-     * corresponding to <code>category</code>.
+     * corresponding to {@code category}.
      */
     public <T> Iterator<T> getServiceProviders(Class<T> category,
                                                boolean useOrdering) {
@@ -483,22 +483,22 @@ public class ServiceRegistry {
 
     /**
      * A simple filter interface used by
-     * <code>ServiceRegistry.getServiceProviders</code> to select
+     * {@code ServiceRegistry.getServiceProviders} to select
      * providers matching an arbitrary criterion.  Classes that
      * implement this interface should be defined in order to make use
-     * of the <code>getServiceProviders</code> method of
-     * <code>ServiceRegistry</code> that takes a <code>Filter</code>.
+     * of the {@code getServiceProviders} method of
+     * {@code ServiceRegistry} that takes a {@code Filter}.
      *
      * @see ServiceRegistry#getServiceProviders(Class, ServiceRegistry.Filter, boolean)
      */
     public interface Filter {
 
         /**
-         * Returns <code>true</code> if the given
-         * <code>provider</code> object matches the criterion defined
-         * by this <code>Filter</code>.
+         * Returns {@code true} if the given
+         * {@code provider} object matches the criterion defined
+         * by this {@code Filter}.
          *
-         * @param provider a service provider <code>Object</code>.
+         * @param provider a service provider {@code Object}.
          *
          * @return true if the provider matches the criterion.
          */
@@ -506,27 +506,27 @@ public class ServiceRegistry {
     }
 
     /**
-     * Returns an <code>Iterator</code> containing service provider
+     * Returns an {@code Iterator} containing service provider
      * objects within a given category that satisfy a criterion
-     * imposed by the supplied <code>ServiceRegistry.Filter</code>
-     * object's <code>filter</code> method.
+     * imposed by the supplied {@code ServiceRegistry.Filter}
+     * object's {@code filter} method.
      *
-     * <p> The <code>useOrdering</code> argument controls the
+     * <p> The {@code useOrdering} argument controls the
      * ordering of the results using the same rules as
-     * <code>getServiceProviders(Class, boolean)</code>.
+     * {@code getServiceProviders(Class, boolean)}.
      *
      * @param category the category to be retrieved from.
-     * @param filter an instance of <code>ServiceRegistry.Filter</code>
-     * whose <code>filter</code> method will be invoked.
-     * @param useOrdering <code>true</code> if pairwise orderings
+     * @param filter an instance of {@code ServiceRegistry.Filter}
+     * whose {@code filter} method will be invoked.
+     * @param useOrdering {@code true} if pairwise orderings
      * should be taken account in ordering the returned objects.
      * @param <T> the type of the category.
      *
-     * @return an <code>Iterator</code> containing service provider
+     * @return an {@code Iterator} containing service provider
      * objects from the given category, possibly in order.
      *
      * @exception IllegalArgumentException if there is no category
-     * corresponding to <code>category</code>.
+     * corresponding to {@code category}.
      */
     public <T> Iterator<T> getServiceProviders(Class<T> category,
                                                Filter filter,
@@ -543,19 +543,19 @@ public class ServiceRegistry {
      * Returns the currently registered service provider object that
      * is of the given class type.  At most one object of a given
      * class is allowed to be registered at any given time.  If no
-     * registered object has the desired class type, <code>null</code>
+     * registered object has the desired class type, {@code null}
      * is returned.
      *
-     * @param providerClass the <code>Class</code> of the desired
+     * @param providerClass the {@code Class} of the desired
      * service provider object.
      * @param <T> the type of the provider.
      *
      * @return a currently registered service provider object with the
-     * desired <code>Class</code>type, or <code>null</code> is none is
+     * desired {@code Class} type, or {@code null} is none is
      * present.
      *
-     * @exception IllegalArgumentException if <code>providerClass</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code providerClass} is
+     * {@code null}.
      */
     public <T> T getServiceProviderByClass(Class<T> providerClass) {
         if (providerClass == null) {
@@ -580,28 +580,28 @@ public class ServiceRegistry {
      * within a given category.  If one or both objects are not
      * currently registered within the given category, or if the
      * desired ordering is already set, nothing happens and
-     * <code>false</code> is returned.  If the providers previously
+     * {@code false} is returned.  If the providers previously
      * were ordered in the reverse direction, that ordering is
      * removed.
      *
      * <p> The ordering will be used by the
-     * <code>getServiceProviders</code> methods when their
-     * <code>useOrdering</code> argument is <code>true</code>.
+     * {@code getServiceProviders} methods when their
+     * {@code useOrdering} argument is {@code true}.
      *
-     * @param category a <code>Class</code> object indicating the
+     * @param category a {@code Class} object indicating the
      * category under which the preference is to be established.
      * @param firstProvider the preferred provider.
      * @param secondProvider the provider to which
-     * <code>firstProvider</code> is preferred.
+     * {@code firstProvider} is preferred.
      * @param <T> the type of the category.
      *
-     * @return <code>true</code> if a previously unset ordering
+     * @return {@code true} if a previously unset ordering
      * was established.
      *
      * @exception IllegalArgumentException if either provider is
-     * <code>null</code> or they are the same object.
+     * {@code null} or they are the same object.
      * @exception IllegalArgumentException if there is no category
-     * corresponding to <code>category</code>.
+     * corresponding to {@code category}.
      */
     public <T> boolean setOrdering(Class<T> category,
                                    T firstProvider,
@@ -628,26 +628,26 @@ public class ServiceRegistry {
      * within a given category.  If one or both objects are not
      * currently registered within the given category, or if no
      * ordering is currently set between them, nothing happens
-     * and <code>false</code> is returned.
+     * and {@code false} is returned.
      *
      * <p> The ordering will be used by the
-     * <code>getServiceProviders</code> methods when their
-     * <code>useOrdering</code> argument is <code>true</code>.
+     * {@code getServiceProviders} methods when their
+     * {@code useOrdering} argument is {@code true}.
      *
-     * @param category a <code>Class</code> object indicating the
+     * @param category a {@code Class} object indicating the
      * category under which the preference is to be disestablished.
      * @param firstProvider the formerly preferred provider.
      * @param secondProvider the provider to which
-     * <code>firstProvider</code> was formerly preferred.
+     * {@code firstProvider} was formerly preferred.
      * @param <T> the type of the category.
      *
-     * @return <code>true</code> if a previously set ordering was
+     * @return {@code true} if a previously set ordering was
      * disestablished.
      *
      * @exception IllegalArgumentException if either provider is
-     * <code>null</code> or they are the same object.
+     * {@code null} or they are the same object.
      * @exception IllegalArgumentException if there is no category
-     * corresponding to <code>category</code>.
+     * corresponding to {@code category}.
      */
     public <T> boolean unsetOrdering(Class<T> category,
                                      T firstProvider,
@@ -676,7 +676,7 @@ public class ServiceRegistry {
      * @param category the category to be emptied.
      *
      * @exception IllegalArgumentException if there is no category
-     * corresponding to <code>category</code>.
+     * corresponding to {@code category}.
      */
     public void deregisterAll(Class<?> category) {
         SubRegistry reg = categoryMap.get(category);
@@ -700,7 +700,7 @@ public class ServiceRegistry {
 
     /**
      * Finalizes this object prior to garbage collection.  The
-     * <code>deregisterAll</code> method is called to deregister all
+     * {@code deregisterAll} method is called to deregister all
      * currently registered service providers.  This method should not
      * be called from application code.
      *
@@ -846,7 +846,7 @@ class SubRegistry {
 
 
 /**
- * A class for wrapping <code>Iterators</code> with a filter function.
+ * A class for wrapping {@code Iterators} with a filter function.
  * This provides an iterator for a subset without duplication.
  */
 class FilterIterator<T> implements Iterator<T> {

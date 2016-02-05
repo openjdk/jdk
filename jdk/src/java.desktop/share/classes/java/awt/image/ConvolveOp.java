@@ -90,9 +90,9 @@ public class ConvolveOp implements BufferedImageOp, RasterOp {
     /**
      * Constructs a ConvolveOp given a Kernel, an edge condition, and a
      * RenderingHints object (which may be null).
-     * @param kernel the specified <code>Kernel</code>
+     * @param kernel the specified {@code Kernel}
      * @param edgeCondition the specified edge condition
-     * @param hints the specified <code>RenderingHints</code> object
+     * @param hints the specified {@code RenderingHints} object
      * @see Kernel
      * @see #EDGE_NO_OP
      * @see #EDGE_ZERO_FILL
@@ -107,7 +107,7 @@ public class ConvolveOp implements BufferedImageOp, RasterOp {
     /**
      * Constructs a ConvolveOp given a Kernel.  The edge condition
      * will be EDGE_ZERO_FILL.
-     * @param kernel the specified <code>Kernel</code>
+     * @param kernel the specified {@code Kernel}
      * @see Kernel
      * @see #EDGE_ZERO_FILL
      */
@@ -118,7 +118,7 @@ public class ConvolveOp implements BufferedImageOp, RasterOp {
 
     /**
      * Returns the edge condition.
-     * @return the edge condition of this <code>ConvolveOp</code>.
+     * @return the edge condition of this {@code ConvolveOp}.
      * @see #EDGE_NO_OP
      * @see #EDGE_ZERO_FILL
      */
@@ -128,7 +128,7 @@ public class ConvolveOp implements BufferedImageOp, RasterOp {
 
     /**
      * Returns the Kernel.
-     * @return the <code>Kernel</code> of this <code>ConvolveOp</code>.
+     * @return the {@code Kernel} of this {@code ConvolveOp}.
      */
     public final Kernel getKernel() {
         return (Kernel) kernel.clone();
@@ -144,14 +144,14 @@ public class ConvolveOp implements BufferedImageOp, RasterOp {
      * a BufferedImage will be created with the source ColorModel.
      * The IllegalArgumentException may be thrown if the source is the
      * same as the destination.
-     * @param src the source <code>BufferedImage</code> to filter
-     * @param dst the destination <code>BufferedImage</code> for the
-     *        filtered <code>src</code>
-     * @return the filtered <code>BufferedImage</code>
-     * @throws NullPointerException if <code>src</code> is <code>null</code>
-     * @throws IllegalArgumentException if <code>src</code> equals
-     *         <code>dst</code>
-     * @throws ImagingOpException if <code>src</code> cannot be filtered
+     * @param src the source {@code BufferedImage} to filter
+     * @param dst the destination {@code BufferedImage} for the
+     *        filtered {@code src}
+     * @return the filtered {@code BufferedImage}
+     * @throws NullPointerException if {@code src} is {@code null}
+     * @throws IllegalArgumentException if {@code src} equals
+     *         {@code dst}
+     * @throws ImagingOpException if {@code src} cannot be filtered
      */
     public final BufferedImage filter (BufferedImage src, BufferedImage dst) {
         if (src == null) {
@@ -221,16 +221,16 @@ public class ConvolveOp implements BufferedImageOp, RasterOp {
      * If the destination Raster is null, a new Raster will be created.
      * The IllegalArgumentException may be thrown if the source is
      * the same as the destination.
-     * @param src the source <code>Raster</code> to filter
-     * @param dst the destination <code>WritableRaster</code> for the
-     *        filtered <code>src</code>
-     * @return the filtered <code>WritableRaster</code>
-     * @throws NullPointerException if <code>src</code> is <code>null</code>
-     * @throws ImagingOpException if <code>src</code> and <code>dst</code>
+     * @param src the source {@code Raster} to filter
+     * @param dst the destination {@code WritableRaster} for the
+     *        filtered {@code src}
+     * @return the filtered {@code WritableRaster}
+     * @throws NullPointerException if {@code src} is {@code null}
+     * @throws ImagingOpException if {@code src} and {@code dst}
      *         do not have the same number of bands
-     * @throws ImagingOpException if <code>src</code> cannot be filtered
-     * @throws IllegalArgumentException if <code>src</code> equals
-     *         <code>dst</code>
+     * @throws ImagingOpException if {@code src} cannot be filtered
+     * @throws IllegalArgumentException if {@code src} equals
+     *         {@code dst}
      */
     public final WritableRaster filter (Raster src, WritableRaster dst) {
         if (dst == null) {
@@ -257,7 +257,7 @@ public class ConvolveOp implements BufferedImageOp, RasterOp {
      * of bands.  If destCM is null, an appropriate ColorModel will be used.
      * @param src       Source image for the filter operation.
      * @param destCM    ColorModel of the destination.  Can be null.
-     * @return a destination <code>BufferedImage</code> with the correct
+     * @return a destination {@code BufferedImage} with the correct
      *         size and number of bands.
      */
     public BufferedImage createCompatibleDestImage(BufferedImage src,

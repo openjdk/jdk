@@ -922,8 +922,8 @@ public abstract class SurfaceData
     }
 
     /**
-     * Returns the type of this <code>Transparency</code>.
-     * @return the field type of this <code>Transparency</code>, which is
+     * Returns the type of this {@code Transparency}.
+     * @return the field type of this {@code Transparency}, which is
      *          either OPAQUE, BITMASK or TRANSLUCENT.
      */
     public int getTransparency() {

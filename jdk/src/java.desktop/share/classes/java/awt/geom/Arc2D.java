@@ -28,10 +28,10 @@ package java.awt.geom;
 import java.io.Serializable;
 
 /**
- * <CODE>Arc2D</CODE> is the abstract superclass for all objects that
+ * {@code Arc2D} is the abstract superclass for all objects that
  * store a 2D arc defined by a framing rectangle,
  * start angle, angular extent (length of the arc), and a closure type
- * (<CODE>OPEN</CODE>, <CODE>CHORD</CODE>, or <CODE>PIE</CODE>).
+ * ({@code OPEN}, {@code CHORD}, or {@code PIE}).
  * <p>
  * <a name="inscribes">
  * The arc is a partial section of a full ellipse which
@@ -326,15 +326,15 @@ public abstract class Arc2D extends RectangularShape {
 
         /**
          * Writes the default serializable fields to the
-         * <code>ObjectOutputStream</code> followed by a byte
-         * indicating the arc type of this <code>Arc2D</code>
+         * {@code ObjectOutputStream} followed by a byte
+         * indicating the arc type of this {@code Arc2D}
          * instance.
          *
          * @serialData
          * <ol>
          * <li>The default serializable fields.
          * <li>
-         * followed by a <code>byte</code> indicating the arc type
+         * followed by a {@code byte} indicating the arc type
          * {@link #OPEN}, {@link #CHORD}, or {@link #PIE}.
          * </ol>
          */
@@ -348,15 +348,15 @@ public abstract class Arc2D extends RectangularShape {
 
         /**
          * Reads the default serializable fields from the
-         * <code>ObjectInputStream</code> followed by a byte
-         * indicating the arc type of this <code>Arc2D</code>
+         * {@code ObjectInputStream} followed by a byte
+         * indicating the arc type of this {@code Arc2D}
          * instance.
          *
          * @serialData
          * <ol>
          * <li>The default serializable fields.
          * <li>
-         * followed by a <code>byte</code> indicating the arc type
+         * followed by a {@code byte} indicating the arc type
          * {@link #OPEN}, {@link #CHORD}, or {@link #PIE}.
          * </ol>
          */
@@ -618,15 +618,15 @@ public abstract class Arc2D extends RectangularShape {
 
         /**
          * Writes the default serializable fields to the
-         * <code>ObjectOutputStream</code> followed by a byte
-         * indicating the arc type of this <code>Arc2D</code>
+         * {@code ObjectOutputStream} followed by a byte
+         * indicating the arc type of this {@code Arc2D}
          * instance.
          *
          * @serialData
          * <ol>
          * <li>The default serializable fields.
          * <li>
-         * followed by a <code>byte</code> indicating the arc type
+         * followed by a {@code byte} indicating the arc type
          * {@link #OPEN}, {@link #CHORD}, or {@link #PIE}.
          * </ol>
          */
@@ -640,15 +640,15 @@ public abstract class Arc2D extends RectangularShape {
 
         /**
          * Reads the default serializable fields from the
-         * <code>ObjectInputStream</code> followed by a byte
-         * indicating the arc type of this <code>Arc2D</code>
+         * {@code ObjectInputStream} followed by a byte
+         * indicating the arc type of this {@code Arc2D}
          * instance.
          *
          * @serialData
          * <ol>
          * <li>The default serializable fields.
          * <li>
-         * followed by a <code>byte</code> indicating the arc type
+         * followed by a {@code byte} indicating the arc type
          * {@link #OPEN}, {@link #CHORD}, or {@link #PIE}.
          * </ol>
          */
@@ -739,7 +739,7 @@ public abstract class Arc2D extends RectangularShape {
      * intersection of the ray from the center defined by the
      * starting angle and the elliptical boundary of the arc.
      *
-     * @return A <CODE>Point2D</CODE> object representing the
+     * @return A {@code Point2D} object representing the
      * x,y coordinates of the starting point of the arc.
      * @since 1.2
      */
@@ -756,7 +756,7 @@ public abstract class Arc2D extends RectangularShape {
      * starting angle plus the angular extent of the arc and the
      * elliptical boundary of the arc.
      *
-     * @return A <CODE>Point2D</CODE> object representing the
+     * @return A {@code Point2D} object representing the
      * x,y coordinates  of the ending point of the arc.
      * @since 1.2
      */
@@ -790,9 +790,9 @@ public abstract class Arc2D extends RectangularShape {
      * Sets the location, size, angular extents, and closure type of
      * this arc to the specified values.
      *
-     * @param loc The <CODE>Point2D</CODE> representing the coordinates of
+     * @param loc The {@code Point2D} representing the coordinates of
      * the upper-left corner of the arc.
-     * @param size The <CODE>Dimension2D</CODE> representing the width
+     * @param size The {@code Dimension2D} representing the width
      * and height of the full ellipse of which this arc is
      * a partial section.
      * @param angSt The starting angle of the arc in degrees.
@@ -829,7 +829,7 @@ public abstract class Arc2D extends RectangularShape {
     /**
      * Sets this arc to be the same as the specified arc.
      *
-     * @param a The <CODE>Arc2D</CODE> to use to set the arc's values.
+     * @param a The {@code Arc2D} to use to set the arc's values.
      * @since 1.2
      */
     public void setArc(Arc2D a) {
@@ -936,7 +936,7 @@ public abstract class Arc2D extends RectangularShape {
      * specified point defines relative to the center of this arc.
      * The angular extent of the arc will remain the same.
      *
-     * @param p The <CODE>Point2D</CODE> that defines the starting angle.
+     * @param p The {@code Point2D} that defines the starting angle.
      * @see #getAngleStart
      * @since 1.2
      */
@@ -989,9 +989,9 @@ public abstract class Arc2D extends RectangularShape {
      * The arc will always be non-empty and extend counterclockwise
      * from the first point around to the second point.
      *
-     * @param p1 The <CODE>Point2D</CODE> that defines the arc's
+     * @param p1 The {@code Point2D} that defines the arc's
      * starting point.
-     * @param p2 The <CODE>Point2D</CODE> that defines the arc's
+     * @param p2 The {@code Point2D} that defines the arc's
      * ending point.
      * @since 1.2
      */
@@ -1001,13 +1001,13 @@ public abstract class Arc2D extends RectangularShape {
 
     /**
      * Sets the closure type of this arc to the specified value:
-     * <CODE>OPEN</CODE>, <CODE>CHORD</CODE>, or <CODE>PIE</CODE>.
+     * {@code OPEN}, {@code CHORD}, or {@code PIE}.
      *
      * @param type The integer constant that represents the closure
      * type of this arc: {@link #OPEN}, {@link #CHORD}, or
      * {@link #PIE}.
      *
-     * @throws IllegalArgumentException if <code>type</code> is not
+     * @throws IllegalArgumentException if {@code type} is not
      * 0, 1, or 2.+
      * @see #getArcType
      * @since 1.2
@@ -1033,17 +1033,17 @@ public abstract class Arc2D extends RectangularShape {
 
     /**
      * Returns the high-precision framing rectangle of the arc.  The framing
-     * rectangle contains only the part of this <code>Arc2D</code> that is
+     * rectangle contains only the part of this {@code Arc2D} that is
      * in between the starting and ending angles and contains the pie
-     * wedge, if this <code>Arc2D</code> has a <code>PIE</code> closure type.
+     * wedge, if this {@code Arc2D} has a {@code PIE} closure type.
      * <p>
      * This method differs from the
      * {@link RectangularShape#getBounds() getBounds} in that the
-     * <code>getBounds</code> method only returns the bounds of the
-     * enclosing ellipse of this <code>Arc2D</code> without considering
-     * the starting and ending angles of this <code>Arc2D</code>.
+     * {@code getBounds} method only returns the bounds of the
+     * enclosing ellipse of this {@code Arc2D} without considering
+     * the starting and ending angles of this {@code Arc2D}.
      *
-     * @return the <CODE>Rectangle2D</CODE> that represents the arc's
+     * @return the {@code Rectangle2D} that represents the arc's
      * framing rectangle.
      * @since 1.2
      */
@@ -1091,7 +1091,7 @@ public abstract class Arc2D extends RectangularShape {
     }
 
     /**
-     * Constructs a <code>Rectangle2D</code> of the appropriate precision
+     * Constructs a {@code Rectangle2D} of the appropriate precision
      * to hold the parameters calculated to be the framing rectangle
      * of this arc.
      *
@@ -1101,7 +1101,7 @@ public abstract class Arc2D extends RectangularShape {
      * framing rectangle.
      * @param w The width of the framing rectangle.
      * @param h The height of the framing rectangle.
-     * @return a <code>Rectangle2D</code> that is the framing rectangle
+     * @return a {@code Rectangle2D} that is the framing rectangle
      *     of this arc.
      * @since 1.2
      */
@@ -1142,8 +1142,8 @@ public abstract class Arc2D extends RectangularShape {
      *
      * @param angle The angle to test.
      *
-     * @return <CODE>true</CODE> if the arc contains the angle,
-     * <CODE>false</CODE> if the arc doesn't contain the angle.
+     * @return {@code true} if the arc contains the angle,
+     * {@code false} if the arc doesn't contain the angle.
      * @since 1.2
      */
     public boolean containsAngle(double angle) {
@@ -1174,8 +1174,8 @@ public abstract class Arc2D extends RectangularShape {
      * @param x The X coordinate of the point to test.
      * @param y The Y coordinate of the point to test.
      *
-     * @return <CODE>true</CODE> if the point lies within the bound of
-     * the arc, <CODE>false</CODE> if the point lies outside of the
+     * @return {@code true} if the point lies within the bound of
+     * the arc, {@code false} if the point lies outside of the
      * arc's bounds.
      * @since 1.2
      */
@@ -1239,8 +1239,8 @@ public abstract class Arc2D extends RectangularShape {
      * @param w The width of the rectangle.
      * @param h The height of the rectangle.
      *
-     * @return <CODE>true</CODE> if the arc intersects the rectangle,
-     * <CODE>false</CODE> if the arc doesn't intersect the rectangle.
+     * @return {@code true} if the arc intersects the rectangle,
+     * {@code false} if the arc doesn't intersect the rectangle.
      * @since 1.2
      */
     public boolean intersects(double x, double y, double w, double h) {
@@ -1344,8 +1344,8 @@ public abstract class Arc2D extends RectangularShape {
      * @param w The width of the rectangle.
      * @param h The height of the rectangle.
      *
-     * @return <CODE>true</CODE> if the arc contains the rectangle,
-     * <CODE>false</CODE> if the arc doesn't contain the rectangle.
+     * @return {@code true} if the arc contains the rectangle,
+     * {@code false} if the arc doesn't contain the rectangle.
      * @since 1.2
      */
     public boolean contains(double x, double y, double w, double h) {
@@ -1356,10 +1356,10 @@ public abstract class Arc2D extends RectangularShape {
      * Determines whether or not the interior of the arc entirely contains
      * the specified rectangle.
      *
-     * @param r The <CODE>Rectangle2D</CODE> to test.
+     * @param r The {@code Rectangle2D} to test.
      *
-     * @return <CODE>true</CODE> if the arc contains the rectangle,
-     * <CODE>false</CODE> if the arc doesn't contain the rectangle.
+     * @return {@code true} if the arc contains the rectangle,
+     * {@code false} if the arc doesn't contain the rectangle.
      * @since 1.2
      */
     public boolean contains(Rectangle2D r) {
@@ -1409,16 +1409,16 @@ public abstract class Arc2D extends RectangularShape {
      * Returns an iteration object that defines the boundary of the
      * arc.
      * This iterator is multithread safe.
-     * <code>Arc2D</code> guarantees that
+     * {@code Arc2D} guarantees that
      * modifications to the geometry of the arc
      * do not affect any iterations of that geometry that
      * are already in process.
      *
-     * @param at an optional <CODE>AffineTransform</CODE> to be applied
+     * @param at an optional {@code AffineTransform} to be applied
      * to the coordinates as they are returned in the iteration, or null
      * if the untransformed coordinates are desired.
      *
-     * @return A <CODE>PathIterator</CODE> that defines the arc's boundary.
+     * @return A {@code PathIterator} that defines the arc's boundary.
      * @since 1.2
      */
     public PathIterator getPathIterator(AffineTransform at) {
@@ -1426,8 +1426,8 @@ public abstract class Arc2D extends RectangularShape {
     }
 
     /**
-     * Returns the hashcode for this <code>Arc2D</code>.
-     * @return the hashcode for this <code>Arc2D</code>.
+     * Returns the hashcode for this {@code Arc2D}.
+     * @return the hashcode for this {@code Arc2D}.
      * @since 1.6
      */
     public int hashCode() {
@@ -1442,17 +1442,17 @@ public abstract class Arc2D extends RectangularShape {
     }
 
     /**
-     * Determines whether or not the specified <code>Object</code> is
-     * equal to this <code>Arc2D</code>.  The specified
-     * <code>Object</code> is equal to this <code>Arc2D</code>
-     * if it is an instance of <code>Arc2D</code> and if its
+     * Determines whether or not the specified {@code Object} is
+     * equal to this {@code Arc2D}.  The specified
+     * {@code Object} is equal to this {@code Arc2D}
+     * if it is an instance of {@code Arc2D} and if its
      * location, size, arc extents and type are the same as this
-     * <code>Arc2D</code>.
-     * @param obj  an <code>Object</code> to be compared with this
-     *             <code>Arc2D</code>.
-     * @return  <code>true</code> if <code>obj</code> is an instance
-     *          of <code>Arc2D</code> and has the same values;
-     *          <code>false</code> otherwise.
+     * {@code Arc2D}.
+     * @param obj  an {@code Object} to be compared with this
+     *             {@code Arc2D}.
+     * @return  {@code true} if {@code obj} is an instance
+     *          of {@code Arc2D} and has the same values;
+     *          {@code false} otherwise.
      * @since 1.6
      */
     public boolean equals(Object obj) {

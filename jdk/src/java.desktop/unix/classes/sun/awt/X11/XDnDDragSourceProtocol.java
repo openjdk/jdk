@@ -55,7 +55,7 @@ class XDnDDragSourceProtocol extends XDragSourceProtocol {
     /**
      * Creates an instance associated with the specified listener.
      *
-     * @throws NullPointerException if listener is <code>null</code>.
+     * @throws NullPointerException if listener is {@code null}.
      */
     static XDragSourceProtocol createInstance(XDragSourceProtocolListener listener) {
         return new XDnDDragSourceProtocol(listener);

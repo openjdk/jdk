@@ -28,19 +28,19 @@ package java.awt.dnd;
 import java.awt.event.InputEvent;
 
 /**
- * The <code>DragSourceDragEvent</code> is
- * delivered from the <code>DragSourceContextPeer</code>,
- * via the <code>DragSourceContext</code>, to the <code>DragSourceListener</code>
- * registered with that <code>DragSourceContext</code> and with its associated
- * <code>DragSource</code>.
+ * The {@code DragSourceDragEvent} is
+ * delivered from the {@code DragSourceContextPeer},
+ * via the {@code DragSourceContext}, to the {@code DragSourceListener}
+ * registered with that {@code DragSourceContext} and with its associated
+ * {@code DragSource}.
  * <p>
- * The <code>DragSourceDragEvent</code> reports the <i>target drop action</i>
+ * The {@code DragSourceDragEvent} reports the <i>target drop action</i>
  * and the <i>user drop action</i> that reflect the current state of
  * the drag operation.
  * <p>
- * <i>Target drop action</i> is one of <code>DnDConstants</code> that represents
+ * <i>Target drop action</i> is one of {@code DnDConstants} that represents
  * the drop action selected by the current drop target if this drop action is
- * supported by the drag source or <code>DnDConstants.ACTION_NONE</code> if this
+ * supported by the drag source or {@code DnDConstants.ACTION_NONE} if this
  * drop action is not supported by the drag source.
  * <p>
  * <i>User drop action</i> depends on the drop actions supported by the drag
@@ -52,18 +52,18 @@ import java.awt.event.InputEvent;
  *   Shift        -&gt; ACTION_MOVE
  * </pre>
  * If the user selects a drop action, the <i>user drop action</i> is one of
- * <code>DnDConstants</code> that represents the selected drop action if this
+ * {@code DnDConstants} that represents the selected drop action if this
  * drop action is supported by the drag source or
- * <code>DnDConstants.ACTION_NONE</code> if this drop action is not supported
+ * {@code DnDConstants.ACTION_NONE} if this drop action is not supported
  * by the drag source.
  * <p>
  * If the user doesn't select a drop action, the set of
- * <code>DnDConstants</code> that represents the set of drop actions supported
- * by the drag source is searched for <code>DnDConstants.ACTION_MOVE</code>,
- * then for <code>DnDConstants.ACTION_COPY</code>, then for
- * <code>DnDConstants.ACTION_LINK</code> and the <i>user drop action</i> is the
+ * {@code DnDConstants} that represents the set of drop actions supported
+ * by the drag source is searched for {@code DnDConstants.ACTION_MOVE},
+ * then for {@code DnDConstants.ACTION_COPY}, then for
+ * {@code DnDConstants.ACTION_LINK} and the <i>user drop action</i> is the
  * first constant found. If no constant is found the <i>user drop action</i>
- * is <code>DnDConstants.ACTION_NONE</code>.
+ * is {@code DnDConstants.ACTION_NONE}.
  *
  * @since 1.2
  *
@@ -74,25 +74,25 @@ public class DragSourceDragEvent extends DragSourceEvent {
     private static final long serialVersionUID = 481346297933902471L;
 
     /**
-     * Constructs a <code>DragSourceDragEvent</code>.
+     * Constructs a {@code DragSourceDragEvent}.
      * This class is typically
-     * instantiated by the <code>DragSourceContextPeer</code>
+     * instantiated by the {@code DragSourceContextPeer}
      * rather than directly
      * by client code.
-     * The coordinates for this <code>DragSourceDragEvent</code>
-     * are not specified, so <code>getLocation</code> will return
-     * <code>null</code> for this event.
+     * The coordinates for this {@code DragSourceDragEvent}
+     * are not specified, so {@code getLocation} will return
+     * {@code null} for this event.
      * <p>
-     * The arguments <code>dropAction</code> and <code>action</code> should
-     * be one of <code>DnDConstants</code> that represents a single action.
-     * The argument <code>modifiers</code> should be either a bitwise mask
-     * of old <code>java.awt.event.InputEvent.*_MASK</code> constants or a
-     * bitwise mask of extended <code>java.awt.event.InputEvent.*_DOWN_MASK</code>
+     * The arguments {@code dropAction} and {@code action} should
+     * be one of {@code DnDConstants} that represents a single action.
+     * The argument {@code modifiers} should be either a bitwise mask
+     * of old {@code java.awt.event.InputEvent.*_MASK} constants or a
+     * bitwise mask of extended {@code java.awt.event.InputEvent.*_DOWN_MASK}
      * constants.
-     * This constructor does not throw any exception for invalid <code>dropAction</code>,
-     * <code>action</code> and <code>modifiers</code>.
+     * This constructor does not throw any exception for invalid {@code dropAction},
+     * {@code action} and {@code modifiers}.
      *
-     * @param dsc the <code>DragSourceContext</code> that is to manage
+     * @param dsc the {@code DragSourceContext} that is to manage
      *            notifications for this event.
      * @param dropAction the user drop action.
      * @param action the target drop action.
@@ -103,7 +103,7 @@ public class DragSourceDragEvent extends DragSourceEvent {
      *        in one event. Use of the extended modifiers is
      *        preferred.
      *
-     * @throws IllegalArgumentException if <code>dsc</code> is <code>null</code>.
+     * @throws IllegalArgumentException if {@code dsc} is {@code null}.
      *
      * @see java.awt.event.InputEvent
      * @see DragSourceEvent#getLocation
@@ -128,20 +128,20 @@ public class DragSourceDragEvent extends DragSourceEvent {
     }
 
     /**
-     * Constructs a <code>DragSourceDragEvent</code> given the specified
-     * <code>DragSourceContext</code>, user drop action, target drop action,
+     * Constructs a {@code DragSourceDragEvent} given the specified
+     * {@code DragSourceContext}, user drop action, target drop action,
      * modifiers and coordinates.
      * <p>
-     * The arguments <code>dropAction</code> and <code>action</code> should
-     * be one of <code>DnDConstants</code> that represents a single action.
-     * The argument <code>modifiers</code> should be either a bitwise mask
-     * of old <code>java.awt.event.InputEvent.*_MASK</code> constants or a
-     * bitwise mask of extended <code>java.awt.event.InputEvent.*_DOWN_MASK</code>
+     * The arguments {@code dropAction} and {@code action} should
+     * be one of {@code DnDConstants} that represents a single action.
+     * The argument {@code modifiers} should be either a bitwise mask
+     * of old {@code java.awt.event.InputEvent.*_MASK} constants or a
+     * bitwise mask of extended {@code java.awt.event.InputEvent.*_DOWN_MASK}
      * constants.
-     * This constructor does not throw any exception for invalid <code>dropAction</code>,
-     * <code>action</code> and <code>modifiers</code>.
+     * This constructor does not throw any exception for invalid {@code dropAction},
+     * {@code action} and {@code modifiers}.
      *
-     * @param dsc the <code>DragSourceContext</code> associated with this
+     * @param dsc the {@code DragSourceContext} associated with this
      *        event.
      * @param dropAction the user drop action.
      * @param action the target drop action.
@@ -154,7 +154,7 @@ public class DragSourceDragEvent extends DragSourceEvent {
      * @param x   the horizontal coordinate for the cursor location
      * @param y   the vertical coordinate for the cursor location
      *
-     * @throws IllegalArgumentException if <code>dsc</code> is <code>null</code>.
+     * @throws IllegalArgumentException if {@code dsc} is {@code null}.
      *
      * @see java.awt.event.InputEvent
      * @since 1.4
@@ -192,12 +192,12 @@ public class DragSourceDragEvent extends DragSourceEvent {
             ((InputEvent.ALT_GRAPH_DOWN_MASK << 1) - 1) & ~JDK_1_3_MODIFIERS;
 
     /**
-     * This method returns an <code>int</code> representing
+     * This method returns an {@code int} representing
      * the current state of the input device modifiers
      * associated with the user's gesture. Typically these
      * would be mouse buttons or keyboard modifiers.
      * <P>
-     * If the <code>modifiers</code> passed to the constructor
+     * If the {@code modifiers} passed to the constructor
      * are invalid, this method returns them unchanged.
      *
      * @return the current state of the input device modifiers
@@ -208,12 +208,12 @@ public class DragSourceDragEvent extends DragSourceEvent {
     }
 
     /**
-     * This method returns an <code>int</code> representing
+     * This method returns an {@code int} representing
      * the current state of the input device extended modifiers
      * associated with the user's gesture.
      * See {@link InputEvent#getModifiersEx}
      * <P>
-     * If the <code>modifiers</code> passed to the constructor
+     * If the {@code modifiers} passed to the constructor
      * are invalid, this method returns them unchanged.
      *
      * @return the current state of the input device extended modifiers
@@ -270,7 +270,7 @@ public class DragSourceDragEvent extends DragSourceEvent {
     private int     gestureModifiers = 0;
 
     /**
-     * Indicates whether the <code>gestureModifiers</code> are invalid.
+     * Indicates whether the {@code gestureModifiers} are invalid.
      *
      * @serial
      */

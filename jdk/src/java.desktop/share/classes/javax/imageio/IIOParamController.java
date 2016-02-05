@@ -27,34 +27,34 @@ package javax.imageio;
 
 /**
  * An interface to be implemented by objects that can determine the
- * settings of an <code>IIOParam</code> object, either by putting up a
+ * settings of an {@code IIOParam} object, either by putting up a
  * GUI to obtain values from a user, or by other means.  This
- * interface merely specifies a generic <code>activate</code> method
+ * interface merely specifies a generic {@code activate} method
  * that invokes the controller, without regard for how the controller
  * obtains values (<i>i.e.</i>, whether the controller puts up a GUI
  * or merely computes a set of values is irrelevant to this
  * interface).
  *
- * <p> Within the <code>activate</code> method, a controller obtains
- * initial values by querying the <code>IIOParam</code> object's
- * <code>get</code> methods, modifies values by whatever means, then
- * invokes the <code>IIOParam</code> object's <code>set</code> methods
+ * <p> Within the {@code activate} method, a controller obtains
+ * initial values by querying the {@code IIOParam} object's
+ * {@code get} methods, modifies values by whatever means, then
+ * invokes the {@code IIOParam} object's {@code set} methods
  * to modify the appropriate settings.  Normally, these
- * <code>set</code> methods will be invoked all at once at a final
+ * {@code set} methods will be invoked all at once at a final
  * commit in order that a cancel operation not disturb existing
  * values.  In general, applications may expect that when the
- * <code>activate</code> method returns <code>true</code>, the
- * <code>IIOParam</code> object is ready for use in a read or write
+ * {@code activate} method returns {@code true}, the
+ * {@code IIOParam} object is ready for use in a read or write
  * operation.
  *
  * <p> Vendors may choose to provide GUIs for the
- * <code>IIOParam</code> subclasses they define for a particular
+ * {@code IIOParam} subclasses they define for a particular
  * plug-in.  These can be set up as default controllers in the
- * corresponding <code>IIOParam</code> subclasses.
+ * corresponding {@code IIOParam} subclasses.
  *
  * <p> Applications may override any default GUIs and provide their
  * own controllers embedded in their own framework.  All that is
- * required is that the<code>activate</code> method behave modally
+ * required is that the {@code activate} method behave modally
  * (not returning until either cancelled or committed), though it need
  * not put up an explicitly modal dialog.  Such a non-modal GUI
  * component would be coded roughly as follows:
@@ -85,9 +85,9 @@ package javax.imageio;
  *
  * <p> Alternatively, an algorithmic process such as a database lookup
  * or the parsing of a command line could be used as a controller, in
- * which case the <code>activate</code> method would simply look up or
- * compute the settings, call the <code>IIOParam.setXXX</code>
- * methods, and return <code>true</code>.
+ * which case the {@code activate} method would simply look up or
+ * compute the settings, call the {@code IIOParam.setXXX}
+ * methods, and return {@code true}.
  *
  * @see IIOParam#setController
  * @see IIOParam#getController
@@ -99,20 +99,20 @@ package javax.imageio;
 public interface IIOParamController {
 
     /**
-     * Activates the controller.  If <code>true</code> is returned,
-     * all settings in the <code>IIOParam</code> object should be
+     * Activates the controller.  If {@code true} is returned,
+     * all settings in the {@code IIOParam} object should be
      * ready for use in a read or write operation.  If
-     * <code>false</code> is returned, no settings in the
-     * <code>IIOParam</code> object will be disturbed (<i>i.e.</i>,
+     * {@code false} is returned, no settings in the
+     * {@code IIOParam} object will be disturbed (<i>i.e.</i>,
      * the user canceled the operation).
      *
-     * @param param the <code>IIOParam</code> object to be modified.
+     * @param param the {@code IIOParam} object to be modified.
      *
-     * @return <code>true</code> if the <code>IIOParam</code> has been
-     * modified, <code>false</code> otherwise.
+     * @return {@code true} if the {@code IIOParam} has been
+     * modified, {@code false} otherwise.
      *
-     * @exception IllegalArgumentException if <code>param</code> is
-     * <code>null</code> or is not an instance of the correct class.
+     * @exception IllegalArgumentException if {@code param} is
+     * {@code null} or is not an instance of the correct class.
      */
     boolean activate(IIOParam param);
 }

@@ -71,7 +71,7 @@ import java.util.function.Supplier;
  *
  * For example, here we have a Foo service, with its pre-AppContext
  * code:<p>
- * <code><pre>
+ * <pre>{@code
  *    public class Foo {
  *        private static Foo defaultFoo = new Foo();
  *
@@ -80,7 +80,8 @@ import java.util.function.Supplier;
  *        }
  *
  *    ... Foo service methods
- *    }</pre></code><p>
+ *    }
+ * }</pre><p>
  *
  * The problem with the above is that the Foo service is global in scope,
  * so that applets and other untrusted code can execute methods on the
@@ -90,7 +91,7 @@ import java.util.function.Supplier;
  * executes it.<p>
  *
  * Here's the Foo class written to use the AppContext:<p>
- * <code><pre>
+ * <pre>{@code
  *    public class Foo {
  *        public static Foo getDefaultFoo() {
  *            Foo foo = (Foo)AppContext.getAppContext().get(Foo.class);
@@ -102,7 +103,8 @@ import java.util.function.Supplier;
  *        }
  *
  *    ... Foo service methods
- *    }</pre></code><p>
+ *    }
+ * }</pre><p>
  *
  * Since a separate AppContext can exist for each ThreadGroup, trusted
  * and untrusted code have access to different Foo instances.  This allows
@@ -159,7 +161,7 @@ public final class AppContext {
             Collections.synchronizedMap(new IdentityHashMap<ThreadGroup, AppContext>());
 
     /**
-     * Returns a set containing all <code>AppContext</code>s.
+     * Returns a set containing all {@code AppContext}s.
      */
     public static Set<AppContext> getAppContexts() {
         synchronized (threadGroup2appContext) {
@@ -187,8 +189,8 @@ public final class AppContext {
     private final ThreadGroup threadGroup;
 
     /**
-     * If any <code>PropertyChangeListeners</code> have been registered,
-     * the <code>changeSupport</code> field describes them.
+     * If any {@code PropertyChangeListeners} have been registered,
+     * the {@code changeSupport} field describes them.
      *
      * @see #addPropertyChangeListener
      * @see #removePropertyChangeListener
@@ -633,7 +635,7 @@ public final class AppContext {
      *
      * @param   key   a key in the AppContext.
      * @return  the value to which the key is mapped in this AppContext;
-     *          <code>null</code> if the key is not mapped to any value.
+     *          {@code null} if the key is not mapped to any value.
      * @see     #put(Object, Object)
      * @since   1.2
      */
@@ -670,19 +672,19 @@ public final class AppContext {
     }
 
     /**
-     * Maps the specified <code>key</code> to the specified
-     * <code>value</code> in this AppContext.  Neither the key nor the
-     * value can be <code>null</code>.
+     * Maps the specified {@code key} to the specified
+     * {@code value} in this AppContext.  Neither the key nor the
+     * value can be {@code null}.
      * <p>
-     * The value can be retrieved by calling the <code>get</code> method
+     * The value can be retrieved by calling the {@code get} method
      * with a key that is equal to the original key.
      *
      * @param      key     the AppContext key.
      * @param      value   the value.
      * @return     the previous value of the specified key in this
-     *             AppContext, or <code>null</code> if it did not have one.
+     *             AppContext, or {@code null} if it did not have one.
      * @exception  NullPointerException  if the key or value is
-     *               <code>null</code>.
+     *               {@code null}.
      * @see     #get(Object)
      * @since   1.2
      */
@@ -702,7 +704,7 @@ public final class AppContext {
      *
      * @param   key   the key that needs to be removed.
      * @return  the value to which the key had been mapped in this AppContext,
-     *          or <code>null</code> if the key did not have a mapping.
+     *          or {@code null} if the key did not have a mapping.
      * @since   1.2
      */
     public Object remove(Object key) {
@@ -746,7 +748,7 @@ public final class AppContext {
      * Returns an array of all the property change listeners
      * registered on this component.
      *
-     * @return all of this component's <code>PropertyChangeListener</code>s
+     * @return all of this component's {@code PropertyChangeListener}s
      *         or an empty array if no property change
      *         listeners are currently registered
      *
@@ -825,7 +827,7 @@ public final class AppContext {
      * Returns an array of all the listeners which have been associated
      * with the named property.
      *
-     * @return all of the <code>PropertyChangeListeners</code> associated with
+     * @return all of the {@code PropertyChangeListeners} associated with
      *         the named property or an empty array if no listeners have
      *         been added
      *

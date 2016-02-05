@@ -80,7 +80,7 @@ public abstract class FileFont extends PhysicalFont {
     protected NativeFont[] nativeFonts;
     protected char[] glyphToCharMap;
     /*
-     * @throws FontFormatException - if the font can't be opened
+     * @throws FontFormatException if the font can't be opened
      */
     FileFont(String platname, Object nativeNames)
         throws FontFormatException {

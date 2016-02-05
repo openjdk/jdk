@@ -69,7 +69,7 @@ import com.sun.imageio.plugins.common.I18N;
  * a BMP format.
  *
  * The encoding process may clip, subsample using the parameters
- * specified in the <code>ImageWriteParam</code>.
+ * specified in the {@code ImageWriteParam}.
  *
  * @see javax.imageio.plugins.bmp.BMPImageWriteParam
  */
@@ -88,8 +88,8 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
     private short[] spixels;
     private int[] ipixels;
 
-    /** Constructs <code>BMPImageWriter</code> based on the provided
-     *  <code>ImageWriterSpi</code>.
+    /** Constructs {@code BMPImageWriter} based on the provided
+     *  {@code ImageWriterSpi}.
      */
     public BMPImageWriter(ImageWriterSpi originator) {
         super(originator);

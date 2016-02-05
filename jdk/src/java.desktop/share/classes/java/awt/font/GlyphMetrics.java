@@ -43,12 +43,12 @@ package java.awt.font;
 import java.awt.geom.Rectangle2D;
 
 /**
- * The <code>GlyphMetrics</code> class represents information for a
+ * The {@code GlyphMetrics} class represents information for a
  * single glyph.   A glyph is the visual representation of one or more
  * characters.  Many different glyphs can be used to represent a single
- * character or combination of characters.  <code>GlyphMetrics</code>
+ * character or combination of characters.  {@code GlyphMetrics}
  * instances are produced by {@link java.awt.Font Font} and are applicable
- * to a specific glyph in a particular <code>Font</code>.
+ * to a specific glyph in a particular {@code Font}.
  * <p>
  * Glyphs are either STANDARD, LIGATURE, COMBINING, or COMPONENT.
  * <ul>
@@ -61,18 +61,18 @@ import java.awt.geom.Rectangle2D;
  * as accent marks.  Carets do not appear before COMBINING glyphs.
  * </ul>
  * <p>
- * Other metrics available through <code>GlyphMetrics</code> are the
+ * Other metrics available through {@code GlyphMetrics} are the
  * components of the advance, the visual bounds, and the left and right
  * side bearings.
  * <p>
- * Glyphs for a rotated font, or obtained from a <code>GlyphVector</code>
+ * Glyphs for a rotated font, or obtained from a {@code GlyphVector}
  * which has applied a rotation to the glyph, can have advances that
  * contain both X and Y components.  Usually the advance only has one
  * component.
  * <p>
  * The advance of a glyph is the distance from the glyph's origin to the
  * origin of the next glyph along the baseline, which is either vertical
- * or horizontal.  Note that, in a <code>GlyphVector</code>,
+ * or horizontal.  Note that, in a {@code GlyphVector},
  * the distance from a glyph to its following glyph might not be the
  * glyph's advance, because of kerning or other positioning adjustments.
  * <p>
@@ -88,13 +88,13 @@ import java.awt.geom.Rectangle2D;
  * affected when rendering the glyph, because of rasterization and pixel
  * adjustment effects.
  * <p>
- * Although instances of <code>GlyphMetrics</code> can be directly
+ * Although instances of {@code GlyphMetrics} can be directly
  * constructed, they are almost always obtained from a
- * <code>GlyphVector</code>.  Once constructed, <code>GlyphMetrics</code>
+ * {@code GlyphVector}.  Once constructed, {@code GlyphMetrics}
  * objects are immutable.
  * <p>
  * <strong>Example</strong>:<p>
- * Querying a <code>Font</code> for glyph information
+ * Querying a {@code Font} for glyph information
  * <blockquote><pre>
  * Font font = ...;
  * int glyphIndex = ...;
@@ -171,7 +171,7 @@ public final class GlyphMetrics {
     public static final byte WHITESPACE = 4;
 
     /**
-     * Constructs a <code>GlyphMetrics</code> object.
+     * Constructs a {@code GlyphMetrics} object.
      * @param advance the advance width of the glyph
      * @param bounds the black box bounds of the glyph
      * @param glyphType the type of the glyph
@@ -186,7 +186,7 @@ public final class GlyphMetrics {
     }
 
     /**
-     * Constructs a <code>GlyphMetrics</code> object.
+     * Constructs a {@code GlyphMetrics} object.
      * @param horizontal if true, metrics are for a horizontal baseline,
      *   otherwise they are for a vertical baseline
      * @param advanceX the X-component of the glyph's advance
@@ -278,45 +278,45 @@ public final class GlyphMetrics {
     }
 
     /**
-     * Returns <code>true</code> if this is a standard glyph.
-     * @return <code>true</code> if this is a standard glyph;
-     *          <code>false</code> otherwise.
+     * Returns {@code true} if this is a standard glyph.
+     * @return {@code true} if this is a standard glyph;
+     *          {@code false} otherwise.
      */
     public boolean isStandard() {
         return (glyphType & 0x3) == STANDARD;
     }
 
     /**
-     * Returns <code>true</code> if this is a ligature glyph.
-     * @return <code>true</code> if this is a ligature glyph;
-     *          <code>false</code> otherwise.
+     * Returns {@code true} if this is a ligature glyph.
+     * @return {@code true} if this is a ligature glyph;
+     *          {@code false} otherwise.
      */
     public boolean isLigature() {
         return (glyphType & 0x3) == LIGATURE;
     }
 
     /**
-     * Returns <code>true</code> if this is a combining glyph.
-     * @return <code>true</code> if this is a combining glyph;
-     *          <code>false</code> otherwise.
+     * Returns {@code true} if this is a combining glyph.
+     * @return {@code true} if this is a combining glyph;
+     *          {@code false} otherwise.
      */
     public boolean isCombining() {
         return (glyphType & 0x3) == COMBINING;
     }
 
     /**
-     * Returns <code>true</code> if this is a component glyph.
-     * @return <code>true</code> if this is a component glyph;
-     *          <code>false</code> otherwise.
+     * Returns {@code true} if this is a component glyph.
+     * @return {@code true} if this is a component glyph;
+     *          {@code false} otherwise.
      */
     public boolean isComponent() {
         return (glyphType & 0x3) == COMPONENT;
     }
 
     /**
-     * Returns <code>true</code> if this is a whitespace glyph.
-     * @return <code>true</code> if this is a whitespace glyph;
-     *          <code>false</code> otherwise.
+     * Returns {@code true} if this is a whitespace glyph.
+     * @return {@code true} if this is a whitespace glyph;
+     *          {@code false} otherwise.
      */
     public boolean isWhitespace() {
         return (glyphType & 0x4) == WHITESPACE;

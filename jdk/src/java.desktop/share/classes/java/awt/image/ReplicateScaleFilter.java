@@ -71,19 +71,19 @@ public class ReplicateScaleFilter extends ImageFilter {
     protected int destHeight;
 
     /**
-     * An <code>int</code> array containing information about a
+     * An {@code int} array containing information about a
      * row of pixels.
      */
     protected int srcrows[];
 
     /**
-     * An <code>int</code> array containing information about a
+     * An {@code int} array containing information about a
      * column of pixels.
      */
     protected int srccols[];
 
     /**
-     * A <code>byte</code> array initialized with a size of
+     * A {@code byte} array initialized with a size of
      * {@link #destWidth} and used to deliver a row of pixel
      * data to the {@link ImageConsumer}.
      */
@@ -94,8 +94,8 @@ public class ReplicateScaleFilter extends ImageFilter {
      * its source Image as specified by the width and height parameters.
      * @param width the target width to scale the image
      * @param height the target height to scale the image
-     * @throws IllegalArgumentException if <code>width</code> equals
-     *         zero or <code>height</code> equals zero
+     * @throws IllegalArgumentException if {@code width} equals
+     *         zero or {@code height} equals zero
      */
     public ReplicateScaleFilter(int width, int height) {
         if (width == 0 || height == 0) {
@@ -110,11 +110,11 @@ public class ReplicateScaleFilter extends ImageFilter {
     /**
      * Passes along the properties from the source object after adding a
      * property indicating the scale applied.
-     * This method invokes <code>super.setProperties</code>,
+     * This method invokes {@code super.setProperties},
      * which might result in additional properties being added.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose pixels
+     * {@code ImageProducer} of the {@code Image} whose pixels
      * are being filtered. Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
@@ -138,7 +138,7 @@ public class ReplicateScaleFilter extends ImageFilter {
      * of the new scaled size to the ImageConsumer.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose pixels
+     * {@code ImageProducer} of the {@code Image} whose pixels
      * are being filtered. Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
@@ -178,7 +178,7 @@ public class ReplicateScaleFilter extends ImageFilter {
      * those rows and columns that are needed, replicated as necessary.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose pixels
+     * {@code ImageProducer} of the {@code Image} whose pixels
      * are being filtered. Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
@@ -219,7 +219,7 @@ public class ReplicateScaleFilter extends ImageFilter {
      * those rows and columns that are needed, replicated as necessary.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose pixels
+     * {@code ImageProducer} of the {@code Image} whose pixels
      * are being filtered. Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere

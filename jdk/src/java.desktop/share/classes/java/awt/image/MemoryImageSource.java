@@ -121,7 +121,7 @@ public class MemoryImageSource implements ImageProducer {
      * to produce data for an Image object.
      * @param w the width of the rectangle of pixels
      * @param h the height of the rectangle of pixels
-     * @param cm the specified <code>ColorModel</code>
+     * @param cm the specified {@code ColorModel}
      * @param pix an array of pixels
      * @param off the offset into the array of where to store the
      *        first pixel
@@ -139,13 +139,13 @@ public class MemoryImageSource implements ImageProducer {
      * to produce data for an Image object.
      * @param w the width of the rectangle of pixels
      * @param h the height of the rectangle of pixels
-     * @param cm the specified <code>ColorModel</code>
+     * @param cm the specified {@code ColorModel}
      * @param pix an array of pixels
      * @param off the offset into the array of where to store the
      *        first pixel
      * @param scan the distance from one row of pixels to the next in
      *        the array
-     * @param props a list of properties that the <code>ImageProducer</code>
+     * @param props a list of properties that the {@code ImageProducer}
      *        uses to process an image
      * @see java.awt.Component#createImage
      */
@@ -161,7 +161,7 @@ public class MemoryImageSource implements ImageProducer {
      * to produce data for an Image object.
      * @param w the width of the rectangle of pixels
      * @param h the height of the rectangle of pixels
-     * @param cm the specified <code>ColorModel</code>
+     * @param cm the specified {@code ColorModel}
      * @param pix an array of pixels
      * @param off the offset into the array of where to store the
      *        first pixel
@@ -179,13 +179,13 @@ public class MemoryImageSource implements ImageProducer {
      * to produce data for an Image object.
      * @param w the width of the rectangle of pixels
      * @param h the height of the rectangle of pixels
-     * @param cm the specified <code>ColorModel</code>
+     * @param cm the specified {@code ColorModel}
      * @param pix an array of pixels
      * @param off the offset into the array of where to store the
      *        first pixel
      * @param scan the distance from one row of pixels to the next in
      *        the array
-     * @param props a list of properties that the <code>ImageProducer</code>
+     * @param props a list of properties that the {@code ImageProducer}
      *        uses to process an image
      * @see java.awt.Component#createImage
      */
@@ -238,7 +238,7 @@ public class MemoryImageSource implements ImageProducer {
      *        first pixel
      * @param scan the distance from one row of pixels to the next in
      *        the array
-     * @param props a list of properties that the <code>ImageProducer</code>
+     * @param props a list of properties that the {@code ImageProducer}
      *        uses to process an image
      * @see java.awt.Component#createImage
      * @see ColorModel#getRGBdefault
@@ -253,9 +253,9 @@ public class MemoryImageSource implements ImageProducer {
     /**
      * Adds an ImageConsumer to the list of consumers interested in
      * data for this image.
-     * @param ic the specified <code>ImageConsumer</code>
+     * @param ic the specified {@code ImageConsumer}
      * @throws NullPointerException if the specified
-     *           <code>ImageConsumer</code> is null
+     *           {@code ImageConsumer} is null
      * @see ImageConsumer
      */
     public synchronized void addConsumer(ImageConsumer ic) {
@@ -285,9 +285,9 @@ public class MemoryImageSource implements ImageProducer {
     /**
      * Determines if an ImageConsumer is on the list of consumers currently
      * interested in data for this image.
-     * @param ic the specified <code>ImageConsumer</code>
-     * @return <code>true</code> if the <code>ImageConsumer</code>
-     * is on the list; <code>false</code> otherwise.
+     * @param ic the specified {@code ImageConsumer}
+     * @return {@code true} if the {@code ImageConsumer}
+     * is on the list; {@code false} otherwise.
      * @see ImageConsumer
      */
     public synchronized boolean isConsumer(ImageConsumer ic) {
@@ -297,7 +297,7 @@ public class MemoryImageSource implements ImageProducer {
     /**
      * Removes an ImageConsumer from the list of consumers interested in
      * data for this image.
-     * @param ic the specified <code>ImageConsumer</code>
+     * @param ic the specified {@code ImageConsumer}
      * @see ImageConsumer
      */
     public synchronized void removeConsumer(ImageConsumer ic) {
@@ -308,7 +308,7 @@ public class MemoryImageSource implements ImageProducer {
      * Adds an ImageConsumer to the list of consumers interested in
      * data for this image and immediately starts delivery of the
      * image data through the ImageConsumer interface.
-     * @param ic the specified <code>ImageConsumer</code>
+     * @param ic the specified {@code ImageConsumer}
      * image data through the ImageConsumer interface.
      * @see ImageConsumer
      */
@@ -319,7 +319,7 @@ public class MemoryImageSource implements ImageProducer {
     /**
      * Requests that a given ImageConsumer have the image data delivered
      * one more time in top-down, left-right order.
-     * @param ic the specified <code>ImageConsumer</code>
+     * @param ic the specified {@code ImageConsumer}
      * @see ImageConsumer
      */
     public void requestTopDownLeftRightResend(ImageConsumer ic) {
@@ -337,7 +337,7 @@ public class MemoryImageSource implements ImageProducer {
      * is added to this ImageProducer before this flag is set then
      * that ImageConsumer will see only a snapshot of the pixel
      * data that was available when it connected.
-     * @param animated <code>true</code> if the image is a
+     * @param animated {@code true} if the image is a
      *       multi-frame animation
      */
     public synchronized void setAnimated(boolean animated) {
@@ -365,7 +365,7 @@ public class MemoryImageSource implements ImageProducer {
      * MemoryImageSource is constructed and before an image is
      * created with it to ensure that all ImageConsumers will
      * receive the correct pixel delivery hints.
-     * @param fullbuffers <code>true</code> if the complete pixel
+     * @param fullbuffers {@code true} if the complete pixel
      *             buffer should always
      * be sent
      * @see #setAnimated
@@ -442,7 +442,7 @@ public class MemoryImageSource implements ImageProducer {
      * of pixels to be sent
      * @param w the width of the rectangle of pixels to be sent
      * @param h the height of the rectangle of pixels to be sent
-     * @param framenotify <code>true</code> if the consumers should be sent a
+     * @param framenotify {@code true} if the consumers should be sent a
      * {@link ImageConsumer#SINGLEFRAMEDONE SINGLEFRAMEDONE} notification
      * @see ImageConsumer
      * @see #setAnimated
@@ -494,7 +494,7 @@ public class MemoryImageSource implements ImageProducer {
      * ImageConsumers that are currently interested in the data for
      * this image.
      * @param newpix the new pixel array
-     * @param newmodel the specified <code>ColorModel</code>
+     * @param newmodel the specified {@code ColorModel}
      * @param offset the offset into the array
      * @param scansize the distance from one row of pixels to the next in
      * the array
@@ -517,7 +517,7 @@ public class MemoryImageSource implements ImageProducer {
      * ImageConsumers that are currently interested in the data for
      * this image.
      * @param newpix the new pixel array
-     * @param newmodel the specified <code>ColorModel</code>
+     * @param newmodel the specified {@code ColorModel}
      * @param offset the offset into the array
      * @param scansize the distance from one row of pixels to the next in
      * the array

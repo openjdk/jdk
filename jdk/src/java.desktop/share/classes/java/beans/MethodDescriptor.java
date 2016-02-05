@@ -49,8 +49,8 @@ public class MethodDescriptor extends FeatureDescriptor {
     private ParameterDescriptor parameterDescriptors[];
 
     /**
-     * Constructs a <code>MethodDescriptor</code> from a
-     * <code>Method</code>.
+     * Constructs a {@code MethodDescriptor} from a
+     * {@code Method}.
      *
      * @param method    The low-level method information.
      */
@@ -60,8 +60,8 @@ public class MethodDescriptor extends FeatureDescriptor {
 
 
     /**
-     * Constructs a <code>MethodDescriptor</code> from a
-     * <code>Method</code> providing descriptive information for each
+     * Constructs a {@code MethodDescriptor} from a
+     * {@code Method} providing descriptive information for each
      * of the method's parameters.
      *
      * @param method    The low-level method information.

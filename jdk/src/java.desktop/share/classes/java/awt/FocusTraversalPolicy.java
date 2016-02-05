@@ -147,7 +147,7 @@ public abstract class FocusTraversalPolicy {
     /**
      * Returns the Component that should receive the focus when a Window is
      * made visible for the first time. Once the Window has been made visible
-     * by a call to <code>show()</code> or <code>setVisible(true)</code>, the
+     * by a call to {@code show()} or {@code setVisible(true)}, the
      * initial Component will not be used again. Instead, if the Window loses
      * and subsequently regains focus, or is made invisible or undisplayable
      * and subsequently made visible and displayable, the Window's most

@@ -37,28 +37,28 @@ public final class DnDConstants {
     private DnDConstants() {} // define null private constructor.
 
     /**
-     * An <code>int</code> representing no action.
+     * An {@code int} representing no action.
      */
     @Native public static final int ACTION_NONE         = 0x0;
 
     /**
-     * An <code>int</code> representing a &quot;copy&quot; action.
+     * An {@code int} representing a "copy" action.
      */
     @Native public static final int ACTION_COPY         = 0x1;
 
     /**
-     * An <code>int</code> representing a &quot;move&quot; action.
+     * An {@code int} representing a "move" action.
      */
     @Native public static final int ACTION_MOVE         = 0x2;
 
     /**
-     * An <code>int</code> representing a &quot;copy&quot; or
-     * &quot;move&quot; action.
+     * An {@code int} representing a "copy" or
+     * "move" action.
      */
     @Native public static final int ACTION_COPY_OR_MOVE = ACTION_COPY | ACTION_MOVE;
 
     /**
-     * An <code>int</code> representing a &quot;link&quot; action.
+     * An {@code int} representing a "link" action.
      *
      * The link verb is found in many, if not all native DnD platforms, and the
      * actual interpretation of LINK semantics is both platform
@@ -76,7 +76,7 @@ public final class DnDConstants {
     @Native public static final int ACTION_LINK         = 0x40000000;
 
     /**
-     * An <code>int</code> representing a &quot;reference&quot;
+     * An {@code int} representing a "reference"
      * action (synonym for ACTION_LINK).
      */
     @Native public static final int ACTION_REFERENCE    = ACTION_LINK;

@@ -45,7 +45,7 @@ public interface DocPrintJob {
      * Determines the {@link PrintService} object to which this print job
      * object is bound.
      *
-     * @return  <code>PrintService</code> object.
+     * @return  {@code PrintService} object.
      *
      */
     public PrintService getPrintService();
@@ -58,7 +58,7 @@ public interface DocPrintJob {
      * call; that is, the returned attribute set's object's contents will
      * not be updated if this Print Job's attribute set's contents change
      * in the future. To detect changes in attribute values, call
-     * <code>getAttributes()</code> again and compare the new attribute
+     * {@code getAttributes()} again and compare the new attribute
      * set to the previous attribute set; alternatively, register a
      * listener for print job events.
      * The returned value may be an empty set but should not be null.
@@ -96,7 +96,7 @@ public interface DocPrintJob {
      * If listener is null, no exception is thrown and no action is
      * performed.
      * To determine the attribute updates that may be reported by this job,
-     * a client can call <code>getAttributes()</code> and identify the
+     * a client can call {@code getAttributes()} and identify the
      * subset that are interesting and likely to be reported to the
      * listener. Clients expecting to be updated about changes in a
      * specific job attribute should verify it is in that set, but
@@ -152,7 +152,7 @@ public interface DocPrintJob {
      * Print service implementors should close any print data streams (ie
      * Reader or InputStream implementations) that they obtain
      * from the client doc. Robust clients may still wish to verify this.
-     * An exception is always generated if a <code>DocFlavor</code> cannot
+     * An exception is always generated if a {@code DocFlavor} cannot
      * be printed.
      *
      * @param doc       The document to be printed. If must be a flavor

@@ -82,7 +82,7 @@ public class AreaAveragingScaleFilter extends ReplicateScaleFilter {
      * to allow the averaging algorithm to do its work.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose
+     * {@code ImageProducer} of the {@code Image} whose
      * pixels are being filtered.  Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
@@ -236,7 +236,7 @@ public class AreaAveragingScaleFilter extends ReplicateScaleFilter {
      * the delivery hints.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code>
+     * {@code ImageProducer} of the {@code Image}
      * whose pixels are being filtered.  Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
@@ -262,7 +262,7 @@ public class AreaAveragingScaleFilter extends ReplicateScaleFilter {
      * the delivery hints.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code>
+     * {@code ImageProducer} of the {@code Image}
      * whose pixels are being filtered.  Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
