@@ -81,7 +81,7 @@ public:
   virtual const Type *bottom_type() const;
   virtual const TypePtr *adr_type() const;
   virtual bool pinned() const;
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual uint ideal_reg() const;
   virtual const RegMask &out_RegMask() const;
 

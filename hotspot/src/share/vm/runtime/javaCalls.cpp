@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,7 +385,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
     return;
   } else {
     // Touch pages checked if the OS needs them to be touched to be mapped.
-    os::bang_stack_shadow_pages();
+    os::map_stack_shadow_pages();
   }
 
 #if INCLUDE_JVMCI

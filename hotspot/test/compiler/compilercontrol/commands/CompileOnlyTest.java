@@ -26,7 +26,8 @@
  * @bug 8137167
  * @summary Tests CompileCommand=compileonly
  * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
- * @build CompileOnlyTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
+ * @build compiler.compilercontrol.commands.CompileOnlyTest
+ *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

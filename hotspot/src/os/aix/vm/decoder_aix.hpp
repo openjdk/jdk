@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,15 @@ class AIXDecoder: public AbstractDecoder {
 
   virtual bool can_decode_C_frame_in_vm() const { return true; }
 
-  virtual bool demangle(const char* symbol, char* buf, int buflen) { return false; } // demangled by getFuncName
+  virtual bool demangle(const char* symbol, char* buf, int buflen) { return false; } // use AixSymbols::get_function_name to demangle
 
   virtual bool decode(address addr, char* buf, int buflen, int* offset, const char* modulepath, bool demangle) {
-    return (::getFuncName((codeptr_t)addr, buf, buflen, offset, 0, 0, 0, demangle) == 0);
+    return AixSymbols::get_function_name(addr, buf, buflen, offset, 0, demangle);
   }
   virtual bool decode(address addr, char *buf, int buflen, int* offset, const void *base) {
     ShouldNotReachHere();
     return false;
   }
+
 };
+

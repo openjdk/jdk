@@ -819,19 +819,19 @@ static OSThread* create_os_thread(Thread* thread, thread_t thread_id) {
 void os::Solaris::hotspot_sigmask(Thread* thread) {
   //Save caller's signal mask
   sigset_t sigmask;
-  thr_sigsetmask(SIG_SETMASK, NULL, &sigmask);
+  pthread_sigmask(SIG_SETMASK, NULL, &sigmask);
   OSThread *osthread = thread->osthread();
   osthread->set_caller_sigmask(sigmask);
 
-  thr_sigsetmask(SIG_UNBLOCK, os::Solaris::unblocked_signals(), NULL);
+  pthread_sigmask(SIG_UNBLOCK, os::Solaris::unblocked_signals(), NULL);
   if (!ReduceSignalUsage) {
     if (thread->is_VM_thread()) {
       // Only the VM thread handles BREAK_SIGNAL ...
-      thr_sigsetmask(SIG_UNBLOCK, vm_signals(), NULL);
+      pthread_sigmask(SIG_UNBLOCK, vm_signals(), NULL);
     } else {
       // ... all other threads block BREAK_SIGNAL
       assert(!sigismember(vm_signals(), SIGINT), "SIGINT should not be blocked");
-      thr_sigsetmask(SIG_BLOCK, vm_signals(), NULL);
+      pthread_sigmask(SIG_BLOCK, vm_signals(), NULL);
     }
   }
 }
@@ -1188,7 +1188,7 @@ void os::free_thread(OSThread* osthread) {
   if (Thread::current()->osthread() == osthread) {
     // Restore caller's signal mask
     sigset_t sigmask = osthread->caller_sigmask();
-    thr_sigsetmask(SIG_SETMASK, &sigmask, NULL);
+    pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
   }
   delete osthread;
 }
@@ -3561,7 +3561,7 @@ void os::Solaris::SR_handler(Thread* thread, ucontext_t* uc) {
       sigset_t suspend_set;  // signals for sigsuspend()
 
       // get current set of blocked signals and unblock resume signal
-      thr_sigsetmask(SIG_BLOCK, NULL, &suspend_set);
+      pthread_sigmask(SIG_BLOCK, NULL, &suspend_set);
       sigdelset(&suspend_set, os::Solaris::SIGasync());
 
       sr_semaphore.signal();
@@ -3838,7 +3838,7 @@ static bool call_chained_handler(struct sigaction *actp, int sig,
 
     // try to honor the signal mask
     sigset_t oset;
-    thr_sigsetmask(SIG_SETMASK, &(actp->sa_mask), &oset);
+    pthread_sigmask(SIG_SETMASK, &(actp->sa_mask), &oset);
 
     // call into the chained handler
     if (siginfo_flag_set) {
@@ -3848,7 +3848,7 @@ static bool call_chained_handler(struct sigaction *actp, int sig,
     }
 
     // restore the signal mask
-    thr_sigsetmask(SIG_SETMASK, &oset, 0);
+    pthread_sigmask(SIG_SETMASK, &oset, 0);
   }
   // Tell jvm's signal handler the signal is taken care of.
   return true;
@@ -4415,7 +4415,7 @@ jint os::init_2(void) {
   os::Solaris::min_stack_allowed = MAX2(os::Solaris::min_stack_allowed,
                                         JavaThread::stack_guard_zone_size() +
                                         JavaThread::stack_shadow_zone_size() +
-                                        2*BytesPerWord COMPILER2_PRESENT(+1) * page_size);
+                                        (2*BytesPerWord COMPILER2_PRESENT(+1)) * page_size);
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&
@@ -5492,7 +5492,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   // (This allows a debugger to break into the running thread.)
   sigset_t oldsigs;
   sigset_t* allowdebug_blocked = os::Solaris::allowdebug_blocked_signals();
-  thr_sigsetmask(SIG_BLOCK, allowdebug_blocked, &oldsigs);
+  pthread_sigmask(SIG_BLOCK, allowdebug_blocked, &oldsigs);
 #endif
 
   OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
@@ -5519,7 +5519,7 @@ void Parker::park(bool isAbsolute, jlong time) {
                 status, "cond_timedwait");
 
 #ifdef ASSERT
-  thr_sigsetmask(SIG_SETMASK, &oldsigs, NULL);
+  pthread_sigmask(SIG_SETMASK, &oldsigs, NULL);
 #endif
   _counter = 0;
   status = os::Solaris::mutex_unlock(_mutex);
@@ -5667,8 +5667,6 @@ bool os::is_headless_jre() {
 
 size_t os::write(int fd, const void *buf, unsigned int nBytes) {
   size_t res;
-  assert(((JavaThread*)Thread::current())->thread_state() == _thread_in_native,
-         "Assumed _thread_in_native");
   RESTARTABLE((size_t) ::write(fd, buf, (size_t) nBytes), res);
   return res;
 }

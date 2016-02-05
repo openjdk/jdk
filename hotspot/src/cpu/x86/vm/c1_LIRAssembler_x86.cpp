@@ -2368,15 +2368,6 @@ void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr unused, L
       case lir_log10 : __ flog10() ; break;
       case lir_abs   : __ fabs() ; break;
       case lir_sqrt  : __ fsqrt(); break;
-      case lir_sin   :
-        // Should consider not saving rbx, if not necessary
-        __ trigfunc('s', op->as_Op2()->fpu_stack_size());
-        break;
-      case lir_cos :
-        // Should consider not saving rbx, if not necessary
-        assert(op->as_Op2()->fpu_stack_size() <= 6, "sin and cos need two free stack slots");
-        __ trigfunc('c', op->as_Op2()->fpu_stack_size());
-        break;
       case lir_tan :
         // Should consider not saving rbx, if not necessary
         __ trigfunc('t', op->as_Op2()->fpu_stack_size());

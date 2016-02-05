@@ -49,11 +49,11 @@ class ParScanWithBarrierClosure;
 class ParScanWithoutBarrierClosure;
 // CMS
 class MarkRefsIntoAndScanClosure;
-class Par_MarkRefsIntoAndScanClosure;
+class ParMarkRefsIntoAndScanClosure;
 class PushAndMarkClosure;
-class Par_PushAndMarkClosure;
+class ParPushAndMarkClosure;
 class PushOrMarkClosure;
-class Par_PushOrMarkClosure;
+class ParPushOrMarkClosure;
 class CMSKeepAliveClosure;
 class CMSInnerParMarkAndPushClosure;
 // Misc
@@ -95,11 +95,11 @@ class NoHeaderExtendedOopClosure;
 #if INCLUDE_ALL_GCS
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_CMS(f)     \
   f(MarkRefsIntoAndScanClosure,_nv)                     \
-  f(Par_MarkRefsIntoAndScanClosure,_nv)                 \
+  f(ParMarkRefsIntoAndScanClosure,_nv)                  \
   f(PushAndMarkClosure,_nv)                             \
-  f(Par_PushAndMarkClosure,_nv)                         \
+  f(ParPushAndMarkClosure,_nv)                          \
   f(PushOrMarkClosure,_nv)                              \
-  f(Par_PushOrMarkClosure,_nv)                          \
+  f(ParPushOrMarkClosure,_nv)                           \
   f(CMSKeepAliveClosure,_nv)                            \
   f(CMSInnerParMarkAndPushClosure,_nv)
 #endif
@@ -136,8 +136,8 @@ class NoHeaderExtendedOopClosure;
 #define SPECIALIZED_PAR_OOP_ITERATE_CLOSURES(f)        \
   f(MarkRefsIntoAndScanClosure,_nv)                    \
   f(PushAndMarkClosure,_nv)                            \
-  f(Par_MarkRefsIntoAndScanClosure,_nv)                \
-  f(Par_PushAndMarkClosure,_nv)
+  f(ParMarkRefsIntoAndScanClosure,_nv)                 \
+  f(ParPushAndMarkClosure,_nv)
 
 #define ALL_PAR_OOP_ITERATE_CLOSURES(f)                \
   f(ExtendedOopClosure,_v)                             \

@@ -37,7 +37,7 @@ class CMSBitMap;
 class CMSMarkStack;
 class CMSCollector;
 class MarkFromRootsClosure;
-class Par_MarkFromRootsClosure;
+class ParMarkFromRootsClosure;
 
 // Decode the oop and call do_oop on it.
 #define DO_OOP_WORK_DEFN \
@@ -82,14 +82,14 @@ class MarkRefsIntoClosure: public MetadataAwareOopsInGenClosure {
   virtual void do_oop(narrowOop* p);
 };
 
-class Par_MarkRefsIntoClosure: public MetadataAwareOopsInGenClosure {
+class ParMarkRefsIntoClosure: public MetadataAwareOopsInGenClosure {
  private:
   const MemRegion _span;
   CMSBitMap*      _bitMap;
  protected:
   DO_OOP_WORK_DEFN
  public:
-  Par_MarkRefsIntoClosure(MemRegion span, CMSBitMap* bitMap);
+  ParMarkRefsIntoClosure(MemRegion span, CMSBitMap* bitMap);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
 };
@@ -141,7 +141,7 @@ class PushAndMarkClosure: public MetadataAwareOopClosure {
 // synchronization (for instance, via CAS). The marking stack
 // used in the non-parallel case above is here replaced with
 // an OopTaskQueue structure to allow efficient work stealing.
-class Par_PushAndMarkClosure: public MetadataAwareOopClosure {
+class ParPushAndMarkClosure: public MetadataAwareOopClosure {
  private:
   CMSCollector* _collector;
   MemRegion     _span;
@@ -150,15 +150,15 @@ class Par_PushAndMarkClosure: public MetadataAwareOopClosure {
  protected:
   DO_OOP_WORK_DEFN
  public:
-  Par_PushAndMarkClosure(CMSCollector* collector,
-                         MemRegion span,
-                         ReferenceProcessor* rp,
-                         CMSBitMap* bit_map,
-                         OopTaskQueue* work_queue);
+  ParPushAndMarkClosure(CMSCollector* collector,
+                        MemRegion span,
+                        ReferenceProcessor* rp,
+                        CMSBitMap* bit_map,
+                        OopTaskQueue* work_queue);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-  inline void do_oop_nv(oop* p)       { Par_PushAndMarkClosure::do_oop_work(p); }
-  inline void do_oop_nv(narrowOop* p) { Par_PushAndMarkClosure::do_oop_work(p); }
+  inline void do_oop_nv(oop* p)       { ParPushAndMarkClosure::do_oop_work(p); }
+  inline void do_oop_nv(narrowOop* p) { ParPushAndMarkClosure::do_oop_work(p); }
 };
 
 // The non-parallel version (the parallel version appears further below).
@@ -203,25 +203,25 @@ class MarkRefsIntoAndScanClosure: public MetadataAwareOopsInGenClosure {
 // stack and the bitMap are shared, so access needs to be suitably
 // synchronized. An OopTaskQueue structure, supporting efficient
 // work stealing, replaces a CMSMarkStack for storing grey objects.
-class Par_MarkRefsIntoAndScanClosure: public MetadataAwareOopsInGenClosure {
+class ParMarkRefsIntoAndScanClosure: public MetadataAwareOopsInGenClosure {
  private:
-  MemRegion              _span;
-  CMSBitMap*             _bit_map;
-  OopTaskQueue*          _work_queue;
-  const uint             _low_water_mark;
-  Par_PushAndMarkClosure _par_pushAndMarkClosure;
+  MemRegion             _span;
+  CMSBitMap*            _bit_map;
+  OopTaskQueue*         _work_queue;
+  const uint            _low_water_mark;
+  ParPushAndMarkClosure _parPushAndMarkClosure;
  protected:
   DO_OOP_WORK_DEFN
  public:
-  Par_MarkRefsIntoAndScanClosure(CMSCollector* collector,
+  ParMarkRefsIntoAndScanClosure(CMSCollector* collector,
                                  MemRegion span,
                                  ReferenceProcessor* rp,
                                  CMSBitMap* bit_map,
                                  OopTaskQueue* work_queue);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-  inline void do_oop_nv(oop* p)       { Par_MarkRefsIntoAndScanClosure::do_oop_work(p); }
-  inline void do_oop_nv(narrowOop* p) { Par_MarkRefsIntoAndScanClosure::do_oop_work(p); }
+  inline void do_oop_nv(oop* p)       { ParMarkRefsIntoAndScanClosure::do_oop_work(p); }
+  inline void do_oop_nv(narrowOop* p) { ParMarkRefsIntoAndScanClosure::do_oop_work(p); }
 
   void trim_queue(uint size);
 };
@@ -261,8 +261,8 @@ class PushOrMarkClosure: public MetadataAwareOopClosure {
 // A parallel (MT) version of the above.
 // This closure is used during the concurrent marking phase
 // following the first checkpoint. Its use is buried in
-// the closure Par_MarkFromRootsClosure.
-class Par_PushOrMarkClosure: public MetadataAwareOopClosure {
+// the closure ParMarkFromRootsClosure.
+class ParPushOrMarkClosure: public MetadataAwareOopClosure {
  private:
   CMSCollector*    _collector;
   MemRegion        _whole_span;
@@ -272,23 +272,23 @@ class Par_PushOrMarkClosure: public MetadataAwareOopClosure {
   CMSMarkStack*    _overflow_stack;
   HeapWord*  const _finger;
   HeapWord** const _global_finger_addr;
-  Par_MarkFromRootsClosure* const
+  ParMarkFromRootsClosure* const
                    _parent;
  protected:
   DO_OOP_WORK_DEFN
  public:
-  Par_PushOrMarkClosure(CMSCollector* cms_collector,
-                        MemRegion span,
-                        CMSBitMap* bit_map,
-                        OopTaskQueue* work_queue,
-                        CMSMarkStack* mark_stack,
-                        HeapWord* finger,
-                        HeapWord** global_finger_addr,
-                        Par_MarkFromRootsClosure* parent);
+  ParPushOrMarkClosure(CMSCollector* cms_collector,
+                       MemRegion span,
+                       CMSBitMap* bit_map,
+                       OopTaskQueue* work_queue,
+                       CMSMarkStack* mark_stack,
+                       HeapWord* finger,
+                       HeapWord** global_finger_addr,
+                       ParMarkFromRootsClosure* parent);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-  inline void do_oop_nv(oop* p)       { Par_PushOrMarkClosure::do_oop_work(p); }
-  inline void do_oop_nv(narrowOop* p) { Par_PushOrMarkClosure::do_oop_work(p); }
+  inline void do_oop_nv(oop* p)       { ParPushOrMarkClosure::do_oop_work(p); }
+  inline void do_oop_nv(narrowOop* p) { ParPushOrMarkClosure::do_oop_work(p); }
 
   // Deal with a stack overflow condition
   void handle_stack_overflow(HeapWord* lost);
