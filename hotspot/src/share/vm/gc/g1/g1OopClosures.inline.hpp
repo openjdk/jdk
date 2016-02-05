@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_GC_G1_G1OOPCLOSURES_INLINE_HPP
 #define SHARE_VM_GC_G1_G1OOPCLOSURES_INLINE_HPP
 
-#include "gc/g1/concurrentMark.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 #ifndef SHARE_VM_GC_G1_G1COLLECTEDHEAP_HPP
 #define SHARE_VM_GC_G1_G1COLLECTEDHEAP_HPP
 
-#include "gc/g1/concurrentMark.hpp"
 #include "gc/g1/evacuationInfo.hpp"
 #include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
@@ -68,7 +68,7 @@ class Space;
 class G1CollectorPolicy;
 class G1RemSet;
 class HeapRegionRemSetIterator;
-class ConcurrentMark;
+class G1ConcurrentMark;
 class ConcurrentMarkThread;
 class ConcurrentG1Refine;
 class ConcurrentGCTimer;
@@ -771,7 +771,7 @@ protected:
   void abandon_collection_set(HeapRegion* cs_head);
 
   // The concurrent marker (and the thread it runs in.)
-  ConcurrentMark* _cm;
+  G1ConcurrentMark* _cm;
   ConcurrentMarkThread* _cmThread;
 
   // The concurrent refiner.
@@ -1380,7 +1380,7 @@ public:
 
   inline bool is_obj_ill(const oop obj) const;
 
-  ConcurrentMark* concurrent_mark() const { return _cm; }
+  G1ConcurrentMark* concurrent_mark() const { return _cm; }
 
   // Refinement
 
