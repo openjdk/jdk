@@ -82,7 +82,7 @@ public:
   // range [from,limit). If it does, print an error message and return
   // false. Otherwise, just return true. bitmap_name should be "prev"
   // or "next".
-  bool verify_no_bits_over_tams(const char* bitmap_name, CMBitMapRO* bitmap,
+  bool verify_no_bits_over_tams(const char* bitmap_name, G1CMBitMapRO* bitmap,
                                 HeapWord* from, HeapWord* limit);
 
   // Verify that the prev / next bitmap range [tams,end) for the given

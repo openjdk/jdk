@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@
 SurrogateLockerThread*
      ConcurrentMarkThread::_slt = NULL;
 
-ConcurrentMarkThread::ConcurrentMarkThread(ConcurrentMark* cm) :
+ConcurrentMarkThread::ConcurrentMarkThread(G1ConcurrentMark* cm) :
   ConcurrentGCThread(),
   _cm(cm),
   _state(Idle),
@@ -56,10 +56,10 @@ ConcurrentMarkThread::ConcurrentMarkThread(ConcurrentMark* cm) :
 
 class CMCheckpointRootsFinalClosure: public VoidClosure {
 
-  ConcurrentMark* _cm;
+  G1ConcurrentMark* _cm;
 public:
 
-  CMCheckpointRootsFinalClosure(ConcurrentMark* cm) :
+  CMCheckpointRootsFinalClosure(G1ConcurrentMark* cm) :
     _cm(cm) {}
 
   void do_void(){
@@ -68,10 +68,10 @@ public:
 };
 
 class CMCleanUp: public VoidClosure {
-  ConcurrentMark* _cm;
+  G1ConcurrentMark* _cm;
 public:
 
-  CMCleanUp(ConcurrentMark* cm) :
+  CMCleanUp(G1ConcurrentMark* cm) :
     _cm(cm) {}
 
   void do_void(){
@@ -92,10 +92,10 @@ void ConcurrentMarkThread::delay_to_keep_mmu(G1CollectorPolicy* g1_policy, bool 
 }
 
 class GCConcPhaseTimer : StackObj {
-  ConcurrentMark* _cm;
+  G1ConcurrentMark* _cm;
 
  public:
-  GCConcPhaseTimer(ConcurrentMark* cm, const char* title) : _cm(cm) {
+  GCConcPhaseTimer(G1ConcurrentMark* cm, const char* title) : _cm(cm) {
     _cm->register_concurrent_phase_start(title);
   }
 

@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/concurrentG1Refine.hpp"
-#include "gc/g1/concurrentMark.hpp"
 #include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
