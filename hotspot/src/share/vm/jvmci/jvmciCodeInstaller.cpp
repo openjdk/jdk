@@ -737,7 +737,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer,
         TRACE_jvmci_4("safepoint at %i", pc_offset);
         site_Safepoint(buffer, pc_offset, site, CHECK_OK);
         if (_orig_pc_offset < 0) {
-          JVMCI_ERROR_OK("method contains safepoint, but has not deopt rescue slot");
+          JVMCI_ERROR_OK("method contains safepoint, but has no deopt rescue slot");
         }
       } else {
         TRACE_jvmci_4("infopoint at %i", pc_offset);
