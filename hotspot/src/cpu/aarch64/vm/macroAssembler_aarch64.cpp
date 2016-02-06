@@ -4561,6 +4561,82 @@ void MacroAssembler::string_equals(Register str1, Register str2,
   BLOCK_COMMENT("} string_equals");
 }
 
+
+void MacroAssembler::byte_arrays_equals(Register ary1, Register ary2,
+                                        Register result, Register tmp1)
+{
+  Register cnt1 = rscratch1;
+  Register cnt2 = rscratch2;
+  Register tmp2 = rscratch2;
+
+  Label SAME, DIFFER, NEXT, TAIL07, TAIL03, TAIL01;
+
+  int length_offset  = arrayOopDesc::length_offset_in_bytes();
+  int base_offset    = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+
+  BLOCK_COMMENT("byte_arrays_equals  {");
+
+    // different until proven equal
+    mov(result, false);
+
+    // same array?
+    cmp(ary1, ary2);
+    br(Assembler::EQ, SAME);
+
+    // ne if either null
+    cbz(ary1, DIFFER);
+    cbz(ary2, DIFFER);
+
+    // lengths ne?
+    ldrw(cnt1, Address(ary1, length_offset));
+    ldrw(cnt2, Address(ary2, length_offset));
+    cmp(cnt1, cnt2);
+    br(Assembler::NE, DIFFER);
+
+    lea(ary1, Address(ary1, base_offset));
+    lea(ary2, Address(ary2, base_offset));
+
+    subs(cnt1, cnt1, 8);
+    br(LT, TAIL07);
+
+  BIND(NEXT);
+    ldr(tmp1, Address(post(ary1, 8)));
+    ldr(tmp2, Address(post(ary2, 8)));
+    subs(cnt1, cnt1, 8);
+    eor(tmp1, tmp1, tmp2);
+    cbnz(tmp1, DIFFER);
+    br(GE, NEXT);
+
+  BIND(TAIL07);  // 0-7 bytes left, cnt1 = #bytes left - 4
+    tst(cnt1, 0b100);
+    br(EQ, TAIL03);
+    ldrw(tmp1, Address(post(ary1, 4)));
+    ldrw(tmp2, Address(post(ary2, 4)));
+    cmp(tmp1, tmp2);
+    br(NE, DIFFER);
+
+  BIND(TAIL03);  // 0-3 bytes left, cnt1 = #bytes left - 4
+    tst(cnt1, 0b10);
+    br(EQ, TAIL01);
+    ldrh(tmp1, Address(post(ary1, 2)));
+    ldrh(tmp2, Address(post(ary2, 2)));
+    cmp(tmp1, tmp2);
+    br(NE, DIFFER);
+  BIND(TAIL01);  // 0-1 byte left
+    tst(cnt1, 0b01);
+    br(EQ, SAME);
+    ldrb(tmp1, ary1);
+    ldrb(tmp2, ary2);
+    cmp(tmp1, tmp2);
+    br(NE, DIFFER);
+
+  BIND(SAME);
+    mov(result, true);
+  BIND(DIFFER); // result already set
+
+  BLOCK_COMMENT("} byte_arrays_equals");
+}
+
 // Compare char[] arrays aligned to 4 bytes
 void MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
                                         Register result, Register tmp1)
