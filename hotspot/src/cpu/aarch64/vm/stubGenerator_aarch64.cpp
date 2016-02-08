@@ -786,6 +786,7 @@ class StubGenerator: public StubCodeGenerator {
     int offset;
     const Register t0 = r3, t1 = r4, t2 = r5, t3 = r6,
       t4 = r7, t5 = r10, t6 = r11, t7 = r12;
+    const Register stride = r13;
 
     assert_different_registers(rscratch1, t0, t1, t2, t3, t4, t5, t6, t7);
     assert_different_registers(s, d, count, rscratch1);
@@ -845,10 +846,18 @@ class StubGenerator: public StubCodeGenerator {
     __ ldp(t4, t5, Address(s, 6 * unit));
     __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
 
+    int prefetch = PrefetchCopyIntervalInBytes;
+    bool use_stride = false;
+    if (direction == copy_backwards) {
+       use_stride = prefetch > 256;
+       prefetch = -prefetch;
+       if (use_stride) __ mov(stride, prefetch);
+    }
+
     __ bind(again);
 
-    if (direction == copy_forwards && PrefetchCopyIntervalInBytes > 0)
-      __ prfm(Address(s, PrefetchCopyIntervalInBytes), PLDL1KEEP);
+    if (PrefetchCopyIntervalInBytes > 0)
+      __ prfm(use_stride ? Address(s, stride) : Address(s, prefetch), PLDL1KEEP);
 
     __ stp(t0, t1, Address(d, 2 * unit));
     __ ldp(t0, t1, Address(s, 2 * unit));
