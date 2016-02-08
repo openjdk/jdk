@@ -23,14 +23,13 @@
 
 /*
  * @test IntxTest
- * @bug 8028756
- * @ignore 8148758
+ * @bug 8038756
  * @library /testlibrary /test/lib
  * @modules java.management/sun.management
  * @build IntxTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-ProfileInterpreter IntxTest
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xint -XX:-ProfileInterpreter IntxTest
  * @summary testing of WB::set/getIntxVMFlag()
  * @author igor.ignatyev@oracle.com
  */
