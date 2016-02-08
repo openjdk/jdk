@@ -545,7 +545,7 @@ void CompileBroker::compilation_init(TRAPS) {
         c1_count = JVMCIHostThreads;
       }
 
-      if (!UseInterpreter) {
+      if (!UseInterpreter || !BackgroundCompilation) {
         // Force initialization of JVMCI compiler otherwise JVMCI
         // compilations will not block until JVMCI is initialized
         ResourceMark rm;
@@ -1346,49 +1346,55 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
 }
 
 #if INCLUDE_JVMCI
-// The number of milliseconds to wait before checking if the
-// JVMCI compiler thread is blocked.
-static const long BLOCKING_JVMCI_COMPILATION_WAIT_TIMESLICE = 500;
+// The number of milliseconds to wait before checking if
+// JVMCI compilation has made progress.
+static const long JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE = 500;
 
-// The number of successive times the above check is allowed to
-// see a blocked JVMCI compiler thread before unblocking the
-// thread waiting for the compilation to finish.
-static const int BLOCKING_JVMCI_COMPILATION_WAIT_TO_UNBLOCK_ATTEMPTS = 5;
+// The number of JVMCI compilation progress checks that must fail
+// before unblocking a thread waiting for a blocking compilation.
+static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 5;
 
 /**
  * Waits for a JVMCI compiler to complete a given task. This thread
- * waits until either the task completes or it sees the JVMCI compiler
- * thread is blocked for N consecutive milliseconds where N is
- * BLOCKING_JVMCI_COMPILATION_WAIT_TIMESLICE *
- * BLOCKING_JVMCI_COMPILATION_WAIT_TO_UNBLOCK_ATTEMPTS.
+ * waits until either the task completes or it sees no JVMCI compilation
+ * progress for N consecutive milliseconds where N is
+ * JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE *
+ * JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS.
  *
  * @return true if this thread needs to free/recycle the task
  */
-bool CompileBroker::wait_for_jvmci_completion(CompileTask* task, JavaThread* thread) {
+bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask* task, JavaThread* thread) {
   MutexLocker waiter(task->lock(), thread);
-  int consecutively_blocked = 0;
-  while (task->lock()->wait(!Mutex::_no_safepoint_check_flag, BLOCKING_JVMCI_COMPILATION_WAIT_TIMESLICE)) {
+  int progress_wait_attempts = 0;
+  int methods_compiled = jvmci->methods_compiled();
+  while (!task->is_complete() && !is_compilation_disabled_forever() &&
+         task->lock()->wait(!Mutex::_no_safepoint_check_flag, JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE)) {
     CompilerThread* jvmci_compiler_thread = task->jvmci_compiler_thread();
+
+    bool progress;
     if (jvmci_compiler_thread != NULL) {
-      JavaThreadState state;
-      {
-        // A JVMCI compiler thread should not disappear at this point
-        // but let's be extra safe.
-        MutexLocker mu(Threads_lock, thread);
-        state = jvmci_compiler_thread->thread_state();
-      }
-      if (state == _thread_blocked) {
-        if (++consecutively_blocked == BLOCKING_JVMCI_COMPILATION_WAIT_TO_UNBLOCK_ATTEMPTS) {
-          if (PrintCompilation) {
-            task->print(tty, "wait for blocking compilation timed out");
-          }
-          break;
+      // If the JVMCI compiler thread is not blocked, we deem it to be making progress.
+      progress = jvmci_compiler_thread->thread_state() != _thread_blocked;
+    } else {
+      // Still waiting on JVMCI compiler queue. This thread may be holding a lock
+      // that all JVMCI compiler threads are blocked on. We use the counter for
+      // successful JVMCI compilations to determine whether JVMCI compilation
+      // is still making progress through the JVMCI compiler queue.
+      progress = jvmci->methods_compiled() != methods_compiled;
+    }
+
+    if (!progress) {
+      if (++progress_wait_attempts == JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS) {
+        if (PrintCompilation) {
+          task->print(tty, "wait for blocking compilation timed out");
         }
-      } else {
-        consecutively_blocked = 0;
+        break;
       }
     } else {
-      // Still waiting on JVMCI compiler queue
+      progress_wait_attempts = 0;
+      if (jvmci_compiler_thread == NULL) {
+        methods_compiled = jvmci->methods_compiled();
+      }
     }
   }
   task->clear_waiter();
@@ -1413,8 +1419,9 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   methodHandle method(thread, task->method());
   bool free_task;
 #if INCLUDE_JVMCI
-  if (compiler(task->comp_level())->is_jvmci()) {
-    free_task = wait_for_jvmci_completion(task, thread);
+  AbstractCompiler* comp = compiler(task->comp_level());
+  if (comp->is_jvmci()) {
+    free_task = wait_for_jvmci_completion((JVMCICompiler*) comp, task, thread);
   } else
 #endif
   {
