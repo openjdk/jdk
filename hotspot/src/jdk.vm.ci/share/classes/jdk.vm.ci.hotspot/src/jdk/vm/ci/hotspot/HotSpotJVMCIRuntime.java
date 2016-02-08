@@ -43,6 +43,7 @@ import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.inittimer.InitTimer;
+import jdk.vm.ci.inittimer.SuppressFBWarnings;
 import jdk.vm.ci.meta.JVMCIMetaAccessContext;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
@@ -115,7 +116,7 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
         private boolean isDefault;
         private final String help;
 
-        private Option(Class<?> type, Object defaultValue, String help) {
+        Option(Class<?> type, Object defaultValue, String help) {
             assert Character.isUpperCase(name().charAt(0)) : "Option name must start with upper-case letter: " + name();
             this.type = type;
             this.value = UNINITIALIZED;
@@ -123,6 +124,7 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
             this.help = help;
         }
 
+        @SuppressFBWarnings(value = "ES_COMPARING_STRINGS_WITH_EQ", justification = "sentinel must be String since it's a static final in an enum")
         private Object getValue() {
             if (value == UNINITIALIZED) {
                 String propertyValue = VM.getSavedProperty(JVMCI_OPTION_PROPERTY_PREFIX + name());
