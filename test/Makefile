@@ -40,8 +40,7 @@ HOTSPOT_DIR=$(TOPDIR)/hotspot
 define SUBDIR_TEST # subdirectory target
 if [ -d $1 ] ; then \
   if [ -r $1/test/Makefile ] ; then \
-    echo "$(MAKE) -k -C $1/test $2" ; \
-    $(MAKE) -k -C $1/test $2 ; \
+    $(MAKE) --no-print-directory -k -C $1/test $2 ; \
   else \
     echo "ERROR: File does not exist: $1/test/Makefile"; \
     exit 1; \
