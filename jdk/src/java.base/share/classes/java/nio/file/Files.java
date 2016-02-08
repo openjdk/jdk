@@ -1898,7 +1898,7 @@ public final class Files {
      * many file systems.
      *
      * <p> The <i>attribute-list</i> component is a comma separated list of
-     * zero or more names of attributes to read. If the list contains the value
+     * one or more names of attributes to read. If the list contains the value
      * {@code "*"} then all attributes are read. Attributes that are not supported
      * are ignored and will not be present in the returned map. It is
      * implementation specific if all attributes are read as an atomic operation
@@ -1948,7 +1948,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if the attribute view is not available
      * @throws  IllegalArgumentException
-     *          if no attributes are specified or an unrecognized attributes is
+     *          if no attributes are specified or an unrecognized attribute is
      *          specified
      * @throws  IOException
      *          if an I/O error occurs
