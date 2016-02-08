@@ -342,4 +342,12 @@ final class StringConcatHelper {
         return new String(buf, coder);
     }
 
+    /**
+     * Provides the initial coder for the String.
+     * @return initial coder
+     */
+    static byte initialCoder() {
+        return String.COMPACT_STRINGS ? String.LATIN1 : String.UTF16;
+    }
+
 }
