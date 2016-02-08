@@ -32,7 +32,9 @@ import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
 import jdk.vm.ci.hotspot.HotSpotConstant;
+import jdk.vm.ci.hotspot.HotSpotForeignCallTarget;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.VMConstant;
@@ -69,6 +71,14 @@ public class SPARCTestAssembler extends TestAssembler {
     public void emitPrologue() {
         emitOp3(0b10, SPARC.sp, 0b111100, SPARC.sp, -SPARC.REGISTER_SAFE_AREA_SIZE); // SAVE sp, -128, sp
         setDeoptRescueSlot(newStackSlot(LIRKind.value(SPARCKind.XWORD)));
+    }
+
+    @Override
+    public void emitEpilogue() {
+        HotSpotVMConfig config = HotSpotVMConfig.config();
+        recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
+        recordCall(new HotSpotForeignCallTarget(config.handleDeoptStub), 4, true, null);
+        code.emitInt(1 << 30); // CALL
     }
 
     @Override
