@@ -553,7 +553,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
          *
          * @param index index to the fields array
          */
-        public FieldInfo(int index) {
+        FieldInfo(int index) {
             HotSpotVMConfig config = config();
             // Get Klass::_fields
             final long metaspaceFields = UNSAFE.getAddress(getMetaspaceKlass() + config.instanceKlassFieldsOffset);
