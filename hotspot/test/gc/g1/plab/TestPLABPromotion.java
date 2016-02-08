@@ -26,6 +26,7 @@
  * @bug 8141278
  * @summary Test PLAB promotion
  * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.opt.FlightRecorder != true
  * @library /testlibrary /../../test/lib /
  * @modules java.management
  * @build ClassFileInstaller
@@ -35,7 +36,7 @@
  *        gc.g1.plab.lib.AppPLABPromotion
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main gc.g1.plab.TestPLABPromotion
+ * @run main/timeout=240 gc.g1.plab.TestPLABPromotion
  */
 package gc.g1.plab;
 
@@ -62,9 +63,8 @@ public class TestPLABPromotion {
     // GC ID with old PLAB statistics
     private final static long GC_ID_OLD_STATS = 2l;
 
-    // Threshold to determine whether the correct amount of objects were promoted.
-    // This is only an approximate threshold for these checks.
-    private final static long MEM_CONSUMPTION_THRESHOLD = 256l * 1024l;
+    // Allowable difference for memory consumption (percentage)
+    private final static long MEM_DIFFERENCE_PCT = 5;
 
     private static final int PLAB_SIZE_SMALL = 1024;
     private static final int PLAB_SIZE_MEDIUM = 4096;
@@ -147,11 +147,11 @@ public class TestPLABPromotion {
         // Unreachable objects case
         if (testCase.isDeadObjectCase()) {
             // No dead objects should be promoted
-            if (plabAllocatedSurvivor > MEM_CONSUMPTION_THRESHOLD || directAllocatedSurvivor > MEM_CONSUMPTION_THRESHOLD) {
+            if (!(checkRatio(plabAllocatedSurvivor, memAllocated) && checkRatio(directAllocatedSurvivor, memAllocated))) {
                 System.out.println(output);
                 throw new RuntimeException("Unreachable objects should not be allocated using PLAB or direct allocated to Survivor");
             }
-            if (plabAllocatedOld > MEM_CONSUMPTION_THRESHOLD || directAllocatedOld > MEM_CONSUMPTION_THRESHOLD) {
+            if (!(checkRatio(plabAllocatedOld, memAllocated) && checkRatio(directAllocatedOld, memAllocated))) {
                 System.out.println(output);
                 throw new RuntimeException("Unreachable objects should not be allocated using PLAB or direct allocated to Old");
             }
@@ -159,37 +159,61 @@ public class TestPLABPromotion {
             // Live objects case
             if (testCase.isPromotedByPLAB()) {
                 // All live small objects should be promoted using PLAB
-                if (Math.abs(plabAllocatedSurvivor - memAllocated) > MEM_CONSUMPTION_THRESHOLD) {
+                if (!checkDifferenceRatio(plabAllocatedSurvivor, memAllocated)) {
                     System.out.println(output);
                     throw new RuntimeException("Expect that Survivor PLAB allocation are similar to all mem consumed");
                 }
-                if (Math.abs(plabAllocatedOld - memAllocated) > MEM_CONSUMPTION_THRESHOLD) {
+                if (!checkDifferenceRatio(plabAllocatedOld, memAllocated)) {
                     System.out.println(output);
                     throw new RuntimeException("Expect that Old PLAB allocation are similar to all mem consumed");
                 }
             } else {
                 // All big objects should be directly allocated
-                if (Math.abs(directAllocatedSurvivor - memAllocated) > MEM_CONSUMPTION_THRESHOLD) {
+                if (!checkDifferenceRatio(directAllocatedSurvivor, memAllocated)) {
                     System.out.println(output);
                     throw new RuntimeException("Test fails. Expect that Survivor direct allocation are similar to all mem consumed");
                 }
-                if (Math.abs(directAllocatedOld - memAllocated) > MEM_CONSUMPTION_THRESHOLD) {
+                if (!checkDifferenceRatio(directAllocatedOld, memAllocated)) {
                     System.out.println(output);
                     throw new RuntimeException("Test fails. Expect that Old direct allocation are similar to all mem consumed");
                 }
             }
 
             // All promoted objects size should be similar to all consumed memory
-            if (Math.abs(plabAllocatedSurvivor + directAllocatedSurvivor - memAllocated) > MEM_CONSUMPTION_THRESHOLD) {
+            if (!checkDifferenceRatio(plabAllocatedSurvivor + directAllocatedSurvivor, memAllocated)) {
                 System.out.println(output);
                 throw new RuntimeException("Test fails. Expect that Survivor gen total allocation are similar to all mem consumed");
             }
-            if (Math.abs(plabAllocatedOld + directAllocatedOld - memAllocated) > MEM_CONSUMPTION_THRESHOLD) {
+            if (!checkDifferenceRatio(plabAllocatedOld + directAllocatedOld, memAllocated)) {
                 System.out.println(output);
                 throw new RuntimeException("Test fails. Expect that Old gen total allocation are similar to all mem consumed");
             }
         }
         System.out.println("Test passed!");
+    }
+
+    /**
+     * Returns true if checkedValue is less than MEM_DIFFERENCE_PCT percent of controlValue.
+     *
+     * @param checkedValue - checked value
+     * @param controlValue - referent value
+     * @return true if checkedValue is less than MEM_DIFFERENCE_PCT percent of controlValue
+     */
+    private static boolean checkRatio(long checkedValue, long controlValue) {
+        return (Math.abs(checkedValue) / controlValue) * 100L < MEM_DIFFERENCE_PCT;
+    }
+
+    /**
+     * Returns true if difference of checkedValue and controlValue is less than
+     * MEM_DIFFERENCE_PCT percent of controlValue.
+     *
+     * @param checkedValue - checked value
+     * @param controlValue - referent value
+     * @return true if difference of checkedValue and controlValue is less than
+     * MEM_DIFFERENCE_PCT percent of controlValue
+     */
+    private static boolean checkDifferenceRatio(long checkedValue, long controlValue) {
+        return (Math.abs(checkedValue - controlValue) / controlValue) * 100L < MEM_DIFFERENCE_PCT;
     }
 
     private static Map<String, Long> getPlabStats(LogParser logParser, LogParser.ReportType type, long gc_id) {

@@ -41,6 +41,7 @@ public class PLABUtils {
         "-XX:G1HeapRegionSize=1m",
         "-XX:OldSize=64m",
         "-XX:-UseAdaptiveSizePolicy",
+        "-XX:MaxTenuringThreshold=1",
         "-XX:-UseTLAB",
         "-XX:SurvivorRatio=1"
     };
