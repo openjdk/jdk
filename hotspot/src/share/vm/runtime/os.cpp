@@ -1490,7 +1490,7 @@ bool os::is_server_class_machine() {
     if (logical_processors > 1) {
       const unsigned int physical_packages =
         os::active_processor_count() / logical_processors;
-      if (physical_packages > server_processors) {
+      if (physical_packages >= server_processors) {
         result = true;
       }
     } else {
