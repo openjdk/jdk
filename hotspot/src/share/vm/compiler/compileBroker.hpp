@@ -32,6 +32,9 @@
 #include "runtime/perfData.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/stack.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciCompiler.hpp"
+#endif
 
 class nmethod;
 class nmethodLocker;
@@ -234,7 +237,7 @@ class CompileBroker: AllStatic {
                                           bool                blocking);
   static void wait_for_completion(CompileTask* task);
 #if INCLUDE_JVMCI
-  static bool wait_for_jvmci_completion(CompileTask* task, JavaThread* thread);
+  static bool wait_for_jvmci_completion(JVMCICompiler* comp, CompileTask* task, JavaThread* thread);
 #endif
 
   static void invoke_compiler_on_method(CompileTask* task);
