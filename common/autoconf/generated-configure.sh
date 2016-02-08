@@ -3835,7 +3835,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4836,7 +4836,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1454661656
+DATE_WHEN_GENERATED=1454926898
 
 ###############################################################################
 #
@@ -46198,12 +46198,12 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
 
     # Execute function body
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"" >&5
-$as_echo_n "checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"" >&5
+$as_echo_n "checking if compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"... " >&6; }
   supports=yes
 
   saved_cflags="$CFLAGS"
-  CFLAGS="$CFLAGS $STACK_PROTECTOR_CFLAG"
+  CFLAGS="$CFLAGS $STACK_PROTECTOR_CFLAG -Werror"
   ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -46229,7 +46229,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   CFLAGS="$saved_cflags"
 
   saved_cxxflags="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAG $STACK_PROTECTOR_CFLAG"
+  CXXFLAGS="$CXXFLAG $STACK_PROTECTOR_CFLAG -Werror"
   ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
