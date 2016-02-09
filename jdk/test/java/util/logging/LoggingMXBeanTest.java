@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
  *
  * @summary Basic Test for LoggingMXBean via MBeanServer
  * @author  Ron Mann
- *
+ * @modules java.logging
+ *          java.management
  * @build LoggingMXBeanTest
  * @run main LoggingMXBeanTest
  */
