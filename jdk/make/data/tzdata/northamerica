@@ -348,6 +348,16 @@ Zone America/New_York	-4:56:02 -	LMT	1883 Nov 18 12:03:58
 # Statue 175 closer in synch with the US Congress' intent....
 # http://www.legis.state.wi.us/2007/data/acts/07Act3.pdf
 
+# From an email administrator of the City of Fort Pierre, SD (2015-12-21):
+# Fort Pierre is technically located in the Mountain time zone as is
+# the rest of Stanley County.  Most of Stanley County and Fort Pierre
+# uses the Central time zone due to doing most of their business in
+# Pierre so it simplifies schedules.  I have lived in Stanley County
+# all my life and it has been that way since I can remember.  (43 years!)
+#
+# From Paul Eggert (2015-12-25):
+# Assume this practice predates 1970, so Fort Pierre can use America/Chicago.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
 Rule	Chicago	1920	only	-	Jun	13	2:00	1:00	D
 Rule	Chicago	1920	1921	-	Oct	lastSun	2:00	0	S
@@ -504,6 +514,12 @@ Zone America/Los_Angeles -7:52:58 -	LMT	1883 Nov 18 12:07:02
 # For lack of better information, assume that Metlakatla's
 # abandonment of use of daylight saving resulted from the 1983 vote.
 
+# From Steffen Thorsen (2015-11-09):
+# It seems Metlakatla did go off PST on Sunday, November 1, changing
+# their time to AKST and are going to follow Alaska's DST, switching
+# between AKST and AKDT from now on....
+# http://www.krbd.org/2015/10/30/annette-island-times-they-are-a-changing/
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Juneau	 15:02:19 -	LMT	1867 Oct 18
 			 -8:57:41 -	LMT	1900 Aug 20 12:00
@@ -529,7 +545,8 @@ Zone America/Metlakatla	 15:13:42 -	LMT	1867 Oct 18
 			 -8:00	US	P%sT	1946
 			 -8:00	-	PST	1969
 			 -8:00	US	P%sT	1983 Oct 30  2:00
-			 -8:00	-	PST
+			 -8:00	-	PST	2015 Nov  1  2:00
+			 -9:00	US	AK%sT
 Zone America/Yakutat	 14:41:05 -	LMT	1867 Oct 18
 			 -9:18:55 -	LMT	1900 Aug 20 12:00
 			 -9:00	-	YST	1942
@@ -2610,25 +2627,6 @@ Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  0:11:56
 			-8:00	US	P%sT	2002 Feb 20
 			-8:00	Mexico	P%sT	2010
 			-8:00	US	P%sT
-# Baja California (away from US border)
-Zone America/Santa_Isabel	-7:39:28 -	LMT	1922 Jan  1  0:20:32
-			-7:00	-	MST	1924
-			-8:00	-	PST	1927 Jun 10 23:00
-			-7:00	-	MST	1930 Nov 15
-			-8:00	-	PST	1931 Apr  1
-			-8:00	1:00	PDT	1931 Sep 30
-			-8:00	-	PST	1942 Apr 24
-			-8:00	1:00	PWT	1945 Aug 14 23:00u
-			-8:00	1:00	PPT	1945 Nov 12 # Peace
-			-8:00	-	PST	1948 Apr  5
-			-8:00	1:00	PDT	1949 Jan 14
-			-8:00	-	PST	1954
-			-8:00	CA	P%sT	1961
-			-8:00	-	PST	1976
-			-8:00	US	P%sT	1996
-			-8:00	Mexico	P%sT	2001
-			-8:00	US	P%sT	2002 Feb 20
-			-8:00	Mexico	P%sT
 # From Paul Eggert (2006-03-22):
 # Formerly there was an America/Ensenada zone, which differed from
 # America/Tijuana only in that it did not observe DST from 1976
@@ -2640,6 +2638,13 @@ Zone America/Santa_Isabel	-7:39:28 -	LMT	1922 Jan  1  0:20:32
 # data after 1970 so most likely there should be at least one Zone
 # other than America/Tijuana for Baja, but it's not clear yet what its
 # name or contents should be.
+#
+# From Paul Eggert (2015-10-08):
+# Formerly there was an America/Santa_Isabel zone, but this appears to
+# have come from a misreading of
+# http://dof.gob.mx/nota_detalle.php?codigo=5127480&fecha=06/01/2010
+# It has been moved to the 'backward' file.
+#
 #
 # Revillagigedo Is
 # no information
@@ -2715,17 +2720,7 @@ Zone Atlantic/Bermuda	-4:19:18 -	LMT	1930 Jan  1  2:00 # Hamilton
 			-4:00	US	A%sT
 
 # Cayman Is
-
-# From Paul Eggert (2015-05-15):
-# The Cayman government has decided to introduce DST in 2016, the idea being
-# to keep in sync with New York.  The legislation hasn't passed but the change
-# seems quite likely.  See: Meade B. Cayman 27.
-# http://www.cayman27.com.ky/2015/05/15/clock-ticks-toward-daylight-saving-time-in-cayman
-
-Zone	America/Cayman	-5:25:32 -	LMT	1890     # Georgetown
-			-5:07:11 -	KMT	1912 Feb # Kingston Mean Time
-			-5:00	-	EST	2016
-			-5:00	US	E%sT
+# See America/Panama.
 
 # Costa Rica
 
@@ -3248,6 +3243,7 @@ Zone	America/Managua	-5:45:08 -	LMT	1890
 Zone	America/Panama	-5:18:08 -	LMT	1890
 			-5:19:36 -	CMT	1908 Apr 22 # Colón Mean Time
 			-5:00	-	EST
+Link America/Panama America/Cayman
 
 # Puerto Rico
 # There are too many San Juans elsewhere, so we'll use 'Puerto_Rico'.
