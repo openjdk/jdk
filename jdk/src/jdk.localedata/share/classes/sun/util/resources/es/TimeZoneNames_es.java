@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,6 +276,9 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
         String XJT[] = new String[] {"Hora est\u00e1ndar de China", "XJT",
                                      "Hora de verano de China", "XJDT",
                                      "Hora de China", "XJT"};
+        String YAKT[] = new String[] {"Hora de Yakutsk", "YAKT",
+                                      "Hora de verano de Yakutsk", "YAKST",
+                                      "Hora de Yakutsk", "YAKT"};
 
         return new Object[][] {
             {"America/Los_Angeles", PST},
@@ -487,7 +490,7 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"America/Mendoza", AGT},
             {"America/Menominee", CST},
             {"America/Merida", CST},
-            {"America/Metlakatla", PST},
+            {"America/Metlakatla", AKST},
             {"America/Mexico_City", CST},
             {"America/Miquelon", new String[] {"Hora est\u00e1ndar de Pierre & Miquelon", "PMST",
                                                "Hora de verano de Pierre & Miquelon", "PMDT",
@@ -608,7 +611,7 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
                                           "Hora de verano de Brunei", "BNST",
                                           "Hora de Brunei", "BNT"}},
             {"Asia/Calcutta", IST},
-            {"Asia/Chita", IRKT},
+            {"Asia/Chita", YAKT},
             {"Asia/Choibalsan", new String[] {"Hora de Choibalsan", "CHOT",
                                               "Hora de verano de Choibalsan", "CHOST",
                                               "Hora de Choibalsan", "CHOT"}},
@@ -649,9 +652,7 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"Asia/Kashgar", XJT},
             {"Asia/Kathmandu", NPT},
             {"Asia/Katmandu", NPT},
-            {"Asia/Khandyga", new String[] {"Hora de Khandyga", "YAKT",
-                                            "Hora de verano de Khandyga", "YAKST",
-                                            "Hora de Khandyga", "YAKT"}},
+            {"Asia/Khandyga", YAKT},
             {"Asia/Kolkata", IST},
             {"Asia/Krasnoyarsk", KRAT},
             {"Asia/Kuala_Lumpur", MYT},
@@ -717,9 +718,7 @@ public final class TimeZoneNames_es extends TimeZoneNamesBundle {
             {"Asia/Vladivostok", new String[] {"Hora de Vladivostok", "VLAT",
                                                "Hora de verano de Vladivostok", "VLAST",
                                                "Hora de Vladivostok", "VLAT"}},
-            {"Asia/Yakutsk", new String[] {"Hora de Yakutsk", "YAKT",
-                                           "Hora de verano de Yakutsk", "YAKST",
-                                           "Hora de Yakutsk", "YAKT"}},
+            {"Asia/Yakutsk", YAKT},
             {"Asia/Yekaterinburg", new String[] {"Hora de Ekaterinburgo", "YEKT",
                                                  "Hora de verano de Ekaterinburgo", "YEKST",
                                                  "Hora de Ekaterinburgo", "YEKT"}},
