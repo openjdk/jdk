@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import sun.tools.attach.HotSpotVirtualMachine;
  * @summary Check for WeakReference leak in Logger and anonymous Logger objects
  * @library /lib/testlibrary
  * @modules jdk.attach/sun.tools.attach
+ *          java.logging
  * @build jdk.testlibrary.ProcessTools
  * @run main/othervm TestLoggerWeakRefLeak Logger
  * @run main/othervm TestLoggerWeakRefLeak AnonymousLogger
