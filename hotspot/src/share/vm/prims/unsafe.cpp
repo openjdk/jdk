@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -660,6 +660,36 @@ UNSAFE_ENTRY(void, Unsafe_CopyMemory(JNIEnv *env, jobject unsafe, jobject srcObj
   Copy::conjoint_memory_atomic(src, dst, sz);
 UNSAFE_END
 
+// This function is a leaf since if the source and destination are both in native memory
+// the copy may potentially be very large, and we don't want to disable GC if we can avoid it.
+// If either source or destination (or both) are on the heap, the function will enter VM using
+// JVM_ENTRY_FROM_LEAF
+JVM_LEAF(void, Unsafe_CopySwapMemory0(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size, jlong elemSize)) {
+  UnsafeWrapper("Unsafe_CopySwapMemory0");
+
+  size_t sz = (size_t)size;
+  size_t esz = (size_t)elemSize;
+
+  if (srcObj == NULL && dstObj == NULL) {
+    // Both src & dst are in native memory
+    address src = (address)srcOffset;
+    address dst = (address)dstOffset;
+
+    Copy::conjoint_swap(src, dst, sz, esz);
+  } else {
+    // At least one of src/dst are on heap, transition to VM to access raw pointers
+
+    JVM_ENTRY_FROM_LEAF(env, void, Unsafe_CopySwapMemory0) {
+      oop srcp = JNIHandles::resolve(srcObj);
+      oop dstp = JNIHandles::resolve(dstObj);
+
+      address src = (address)index_oop_from_field_offset_long(srcp, srcOffset);
+      address dst = (address)index_oop_from_field_offset_long(dstp, dstOffset);
+
+      Copy::conjoint_swap(src, dst, sz, esz);
+    } JVM_END
+  }
+} JVM_END
 
 ////// Random queries
 
@@ -1363,6 +1393,7 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
     {CC "getLoadAverage",     CC "([DI)I",               FN_PTR(Unsafe_Loadavg)},
 
     {CC "copyMemory",         CC "(" OBJ "J" OBJ "JJ)V", FN_PTR(Unsafe_CopyMemory)},
+    {CC "copySwapMemory0",    CC "(" OBJ "J" OBJ "JJJ)V", FN_PTR(Unsafe_CopySwapMemory0)},
     {CC "setMemory",          CC "(" OBJ "JJB)V",        FN_PTR(Unsafe_SetMemory)},
 
     {CC "defineAnonymousClass", CC "(" DAC_Args ")" CLS, FN_PTR(Unsafe_DefineAnonymousClass)},
