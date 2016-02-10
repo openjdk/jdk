@@ -519,6 +519,11 @@ public class TIFFField implements Cloneable {
      * @throws IllegalArgumentException if <code>type</code> is an unacceptable
      * data type for the supplied <code>TIFFTag</code>.
      * @throws IllegalArgumentException if <code>count&nbsp;&lt;&nbsp;0</code>.
+     * @throws IllegalArgumentException if <code>count&nbsp;&lt;&nbsp;1</code>
+     * and <code>type</code> is <code>TIFF_RATIONAL</code> or
+     * <code>TIFF_SRATIONAL</code>.
+     * @throws IllegalArgumentException if <code>count&nbsp;&ne;&nbsp;1</code>
+     * and <code>type</code> is <code>TIFF_IFD_POINTER</code>.
      * @throws NullPointerException if <code>data&nbsp;==&nbsp;null</code>.
      * @throws IllegalArgumentException if <code>data</code> is an instance of
      * a class incompatible with the specified type.
@@ -534,6 +539,14 @@ public class TIFFField implements Cloneable {
                 + " for " + tag.getName() + " tag");
         } else if(count < 0) {
             throw new IllegalArgumentException("count < 0!");
+        } else if((type == TIFFTag.TIFF_RATIONAL
+                   || type == TIFFTag.TIFF_SRATIONAL)
+                  && count < 1) {
+            throw new IllegalArgumentException
+                ("Type is TIFF_RATIONAL or TIFF_SRATIONAL and count < 1");
+        } else if (type == TIFFTag.TIFF_IFD_POINTER && count != 1) {
+            throw new IllegalArgumentException
+                ("Type is TIFF_IFD_POINTER count != 1");
         } else if(data == null) {
             throw new NullPointerException("data == null!");
         }
