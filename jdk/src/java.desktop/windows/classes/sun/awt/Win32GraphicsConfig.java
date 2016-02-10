@@ -94,7 +94,7 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
 
     /**
      * @deprecated as of JDK version 1.3
-     * replaced by <code>getConfig()</code>
+     * replaced by {@code getConfig()}
      */
     @Deprecated
     public Win32GraphicsConfig(GraphicsDevice device, int visualnum) {

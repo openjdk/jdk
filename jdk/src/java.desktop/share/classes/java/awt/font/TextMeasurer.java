@@ -61,32 +61,32 @@ import sun.font.TextLabelFactory;
 import sun.font.FontResolver;
 
 /**
- * The <code>TextMeasurer</code> class provides the primitive operations
+ * The {@code TextMeasurer} class provides the primitive operations
  * needed for line break: measuring up to a given advance, determining the
  * advance of a range of characters, and generating a
- * <code>TextLayout</code> for a range of characters. It also provides
+ * {@code TextLayout} for a range of characters. It also provides
  * methods for incremental editing of paragraphs.
  * <p>
- * A <code>TextMeasurer</code> object is constructed with an
+ * A {@code TextMeasurer} object is constructed with an
  * {@link java.text.AttributedCharacterIterator AttributedCharacterIterator}
  * representing a single paragraph of text.  The value returned by the
  * {@link AttributedCharacterIterator#getBeginIndex() getBeginIndex}
- * method of <code>AttributedCharacterIterator</code>
+ * method of {@code AttributedCharacterIterator}
  * defines the absolute index of the first character.  The value
  * returned by the
  * {@link AttributedCharacterIterator#getEndIndex() getEndIndex}
- * method of <code>AttributedCharacterIterator</code> defines the index
+ * method of {@code AttributedCharacterIterator} defines the index
  * past the last character.  These values define the range of indexes to
- * use in calls to the <code>TextMeasurer</code>.  For example, calls to
+ * use in calls to the {@code TextMeasurer}.  For example, calls to
  * get the advance of a range of text or the line break of a range of text
  * must use indexes between the beginning and end index values.  Calls to
  * {@link #insertChar(java.text.AttributedCharacterIterator, int) insertChar}
  * and
  * {@link #deleteChar(java.text.AttributedCharacterIterator, int) deleteChar}
- * reset the <code>TextMeasurer</code> to use the beginning index and end
- * index of the <code>AttributedCharacterIterator</code> passed in those calls.
+ * reset the {@code TextMeasurer} to use the beginning index and end
+ * index of the {@code AttributedCharacterIterator} passed in those calls.
  * <p>
- * Most clients will use the more convenient <code>LineBreakMeasurer</code>,
+ * Most clients will use the more convenient {@code LineBreakMeasurer},
  * which implements the standard line break policy (placing as many words
  * as will fit on each line).
  *
@@ -156,7 +156,7 @@ public final class TextMeasurer implements Cloneable {
     private float fJustifyRatio = 1;
 
     /**
-     * Constructs a <code>TextMeasurer</code> from the source text.
+     * Constructs a {@code TextMeasurer} from the source text.
      * The source text should be a single entire paragraph.
      * @param text the source paragraph.  Cannot be null.
      * @param frc the information about a graphics device which is needed
@@ -540,17 +540,17 @@ public final class TextMeasurer implements Cloneable {
 
     /**
      * Returns the index of the first character which will not fit on
-     * on a line beginning at <code>start</code> and possible
-     * measuring up to <code>maxAdvance</code> in graphical width.
+     * on a line beginning at {@code start} and possible
+     * measuring up to {@code maxAdvance} in graphical width.
      *
      * @param start the character index at which to start measuring.
-     *  <code>start</code> is an absolute index, not relative to the
+     *  {@code start} is an absolute index, not relative to the
      *  start of the paragraph
      * @param maxAdvance the graphical width in which the line must fit
      * @return the index after the last character that will fit
-     *  on a line beginning at <code>start</code>, which is not longer
-     *  than <code>maxAdvance</code> in graphical width
-     * @throws IllegalArgumentException if <code>start</code> is
+     *  on a line beginning at {@code start}, which is not longer
+     *  than {@code maxAdvance} in graphical width
+     * @throws IllegalArgumentException if {@code start} is
      *          less than the beginning of the paragraph.
      */
     public int getLineBreakIndex(int start, float maxAdvance) {
@@ -567,19 +567,19 @@ public final class TextMeasurer implements Cloneable {
     }
 
     /**
-     * Returns the graphical width of a line beginning at <code>start</code>
-     * and including characters up to <code>limit</code>.
-     * <code>start</code> and <code>limit</code> are absolute indices,
+     * Returns the graphical width of a line beginning at {@code start}
+     * and including characters up to {@code limit}.
+     * {@code start} and {@code limit} are absolute indices,
      * not relative to the start of the paragraph.
      *
      * @param start the character index at which to start measuring
      * @param limit the character index at which to stop measuring
-     * @return the graphical width of a line beginning at <code>start</code>
-     *   and including characters up to <code>limit</code>
-     * @throws IndexOutOfBoundsException if <code>limit</code> is less
-     *         than <code>start</code>
-     * @throws IllegalArgumentException if <code>start</code> or
-     *          <code>limit</code> is not between the beginning of
+     * @return the graphical width of a line beginning at {@code start}
+     *   and including characters up to {@code limit}
+     * @throws IndexOutOfBoundsException if {@code limit} is less
+     *         than {@code start}
+     * @throws IllegalArgumentException if {@code start} or
+     *          {@code limit} is not between the beginning of
      *          the paragraph and the end of the paragraph.
      */
     public float getAdvanceBetween(int start, int limit) {
@@ -594,17 +594,17 @@ public final class TextMeasurer implements Cloneable {
     }
 
     /**
-     * Returns a <code>TextLayout</code> on the given character range.
+     * Returns a {@code TextLayout} on the given character range.
      *
      * @param start the index of the first character
      * @param limit the index after the last character.  Must be greater
-     *   than <code>start</code>
-     * @return a <code>TextLayout</code> for the characters beginning at
-     *  <code>start</code> up to (but not including) <code>limit</code>
-     * @throws IndexOutOfBoundsException if <code>limit</code> is less
-     *         than <code>start</code>
-     * @throws IllegalArgumentException if <code>start</code> or
-     *          <code>limit</code> is not between the beginning of
+     *   than {@code start}
+     * @return a {@code TextLayout} for the characters beginning at
+     *  {@code start} up to (but not including) {@code limit}
+     * @throws IndexOutOfBoundsException if {@code limit} is less
+     *         than {@code start}
+     * @throws IllegalArgumentException if {@code start} or
+     *          {@code limit} is not between the beginning of
      *          the paragraph and the end of the paragraph.
      */
     public TextLayout getLayout(int start, int limit) {
@@ -637,26 +637,26 @@ public final class TextMeasurer implements Cloneable {
     }
 
     /**
-     * Updates the <code>TextMeasurer</code> after a single character has
+     * Updates the {@code TextMeasurer} after a single character has
      * been inserted
      * into the paragraph currently represented by this
-     * <code>TextMeasurer</code>.  After this call, this
-     * <code>TextMeasurer</code> is equivalent to a new
-     * <code>TextMeasurer</code> created from the text;  however, it will
+     * {@code TextMeasurer}.  After this call, this
+     * {@code TextMeasurer} is equivalent to a new
+     * {@code TextMeasurer} created from the text;  however, it will
      * usually be more efficient to update an existing
-     * <code>TextMeasurer</code> than to create a new one from scratch.
+     * {@code TextMeasurer} than to create a new one from scratch.
      *
      * @param newParagraph the text of the paragraph after performing
      * the insertion.  Cannot be null.
      * @param insertPos the position in the text where the character was
      * inserted.  Must not be less than the start of
-     * <code>newParagraph</code>, and must be less than the end of
-     * <code>newParagraph</code>.
-     * @throws IndexOutOfBoundsException if <code>insertPos</code> is less
-     *         than the start of <code>newParagraph</code> or greater than
-     *         or equal to the end of <code>newParagraph</code>
-     * @throws NullPointerException if <code>newParagraph</code> is
-     *         <code>null</code>
+     * {@code newParagraph}, and must be less than the end of
+     * {@code newParagraph}.
+     * @throws IndexOutOfBoundsException if {@code insertPos} is less
+     *         than the start of {@code newParagraph} or greater than
+     *         or equal to the end of {@code newParagraph}
+     * @throws NullPointerException if {@code newParagraph} is
+     *         {@code null}
      */
     public void insertChar(AttributedCharacterIterator newParagraph, int insertPos) {
 
@@ -703,26 +703,26 @@ public final class TextMeasurer implements Cloneable {
     }
 
     /**
-     * Updates the <code>TextMeasurer</code> after a single character has
+     * Updates the {@code TextMeasurer} after a single character has
      * been deleted
      * from the paragraph currently represented by this
-     * <code>TextMeasurer</code>.  After this call, this
-     * <code>TextMeasurer</code> is equivalent to a new <code>TextMeasurer</code>
+     * {@code TextMeasurer}.  After this call, this
+     * {@code TextMeasurer} is equivalent to a new {@code TextMeasurer}
      * created from the text;  however, it will usually be more efficient
-     * to update an existing <code>TextMeasurer</code> than to create a new one
+     * to update an existing {@code TextMeasurer} than to create a new one
      * from scratch.
      *
      * @param newParagraph the text of the paragraph after performing
      * the deletion.  Cannot be null.
      * @param deletePos the position in the text where the character was removed.
      * Must not be less than
-     * the start of <code>newParagraph</code>, and must not be greater than the
-     * end of <code>newParagraph</code>.
-     * @throws IndexOutOfBoundsException if <code>deletePos</code> is
-     *         less than the start of <code>newParagraph</code> or greater
-     *         than the end of <code>newParagraph</code>
-     * @throws NullPointerException if <code>newParagraph</code> is
-     *         <code>null</code>
+     * the start of {@code newParagraph}, and must not be greater than the
+     * end of {@code newParagraph}.
+     * @throws IndexOutOfBoundsException if {@code deletePos} is
+     *         less than the start of {@code newParagraph} or greater
+     *         than the end of {@code newParagraph}
+     * @throws NullPointerException if {@code newParagraph} is
+     *         {@code null}
      */
     public void deleteChar(AttributedCharacterIterator newParagraph, int deletePos) {
 

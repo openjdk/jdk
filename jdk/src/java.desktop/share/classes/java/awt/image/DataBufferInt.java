@@ -38,7 +38,7 @@ package java.awt.image;
 import static sun.java2d.StateTrackable.State.*;
 
 /**
- * This class extends <CODE>DataBuffer</CODE> and stores data internally
+ * This class extends {@code DataBuffer} and stores data internally
  * as integers.
  * <p>
  * <a name="optimizations">
@@ -65,10 +65,10 @@ public final class DataBufferInt extends DataBuffer
     int bankdata[][];
 
     /**
-     * Constructs an integer-based <CODE>DataBuffer</CODE> with a single bank
+     * Constructs an integer-based {@code DataBuffer} with a single bank
      * and the specified size.
      *
-     * @param size The size of the <CODE>DataBuffer</CODE>.
+     * @param size The size of the {@code DataBuffer}.
      */
     public DataBufferInt(int size) {
         super(STABLE, TYPE_INT, size);
@@ -78,11 +78,11 @@ public final class DataBufferInt extends DataBuffer
     }
 
     /**
-     * Constructs an integer-based <CODE>DataBuffer</CODE> with the specified number of
+     * Constructs an integer-based {@code DataBuffer} with the specified number of
      * banks, all of which are the specified size.
      *
-     * @param size The size of the banks in the <CODE>DataBuffer</CODE>.
-     * @param numBanks The number of banks in the a<CODE>DataBuffer</CODE>.
+     * @param size The size of the banks in the {@code DataBuffer}.
+     * @param numBanks The number of banks in the a {@code DataBuffer}.
      */
     public DataBufferInt(int size, int numBanks) {
         super(STABLE, TYPE_INT, size, numBanks);
@@ -94,19 +94,19 @@ public final class DataBufferInt extends DataBuffer
     }
 
     /**
-     * Constructs an integer-based <CODE>DataBuffer</CODE> with a single bank using the
+     * Constructs an integer-based {@code DataBuffer} with a single bank using the
      * specified array.
-     * Only the first <CODE>size</CODE> elements should be used by accessors of
-     * this <CODE>DataBuffer</CODE>.  <CODE>dataArray</CODE> must be large enough to
-     * hold <CODE>size</CODE> elements.
+     * Only the first {@code size} elements should be used by accessors of
+     * this {@code DataBuffer}.  {@code dataArray} must be large enough to
+     * hold {@code size} elements.
      * <p>
      * Note that {@code DataBuffer} objects created by this constructor
      * may be incompatible with <a href="#optimizations">performance
      * optimizations</a> used by some implementations (such as caching
      * an associated image in video memory).
      *
-     * @param dataArray The integer array for the <CODE>DataBuffer</CODE>.
-     * @param size The size of the <CODE>DataBuffer</CODE> bank.
+     * @param dataArray The integer array for the {@code DataBuffer}.
+     * @param size The size of the {@code DataBuffer} bank.
      */
     public DataBufferInt(int dataArray[], int size) {
         super(UNTRACKABLE, TYPE_INT, size);
@@ -116,20 +116,20 @@ public final class DataBufferInt extends DataBuffer
     }
 
     /**
-     * Constructs an integer-based <CODE>DataBuffer</CODE> with a single bank using the
-     * specified array, size, and offset.  <CODE>dataArray</CODE> must have at least
-     * <CODE>offset</CODE> + <CODE>size</CODE> elements.  Only elements <CODE>offset</CODE>
-     * through <CODE>offset</CODE> + <CODE>size</CODE> - 1
-     * should be used by accessors of this <CODE>DataBuffer</CODE>.
+     * Constructs an integer-based {@code DataBuffer} with a single bank using the
+     * specified array, size, and offset.  {@code dataArray} must have at least
+     * {@code offset} + {@code size} elements.  Only elements {@code offset}
+     * through {@code offset} + {@code size} - 1
+     * should be used by accessors of this {@code DataBuffer}.
      * <p>
      * Note that {@code DataBuffer} objects created by this constructor
      * may be incompatible with <a href="#optimizations">performance
      * optimizations</a> used by some implementations (such as caching
      * an associated image in video memory).
      *
-     * @param dataArray The integer array for the <CODE>DataBuffer</CODE>.
-     * @param size The size of the <CODE>DataBuffer</CODE> bank.
-     * @param offset The offset into the <CODE>dataArray</CODE>.
+     * @param dataArray The integer array for the {@code DataBuffer}.
+     * @param size The size of the {@code DataBuffer} bank.
+     * @param offset The offset into the {@code dataArray}.
      */
     public DataBufferInt(int dataArray[], int size, int offset) {
         super(UNTRACKABLE, TYPE_INT, size, 1, offset);
@@ -139,18 +139,18 @@ public final class DataBufferInt extends DataBuffer
     }
 
     /**
-     * Constructs an integer-based <CODE>DataBuffer</CODE> with the specified arrays.
-     * The number of banks will be equal to <CODE>dataArray.length</CODE>.
-     * Only the first <CODE>size</CODE> elements of each array should be used by
-     * accessors of this <CODE>DataBuffer</CODE>.
+     * Constructs an integer-based {@code DataBuffer} with the specified arrays.
+     * The number of banks will be equal to {@code dataArray.length}.
+     * Only the first {@code size} elements of each array should be used by
+     * accessors of this {@code DataBuffer}.
      * <p>
      * Note that {@code DataBuffer} objects created by this constructor
      * may be incompatible with <a href="#optimizations">performance
      * optimizations</a> used by some implementations (such as caching
      * an associated image in video memory).
      *
-     * @param dataArray The integer arrays for the <CODE>DataBuffer</CODE>.
-     * @param size The size of the banks in the <CODE>DataBuffer</CODE>.
+     * @param dataArray The integer arrays for the {@code DataBuffer}.
+     * @param size The size of the banks in the {@code DataBuffer}.
      */
     public DataBufferInt(int dataArray[][], int size) {
         super(UNTRACKABLE, TYPE_INT, size, dataArray.length);
@@ -159,22 +159,22 @@ public final class DataBufferInt extends DataBuffer
     }
 
     /**
-     * Constructs an integer-based <CODE>DataBuffer</CODE> with the specified arrays, size,
+     * Constructs an integer-based {@code DataBuffer} with the specified arrays, size,
      * and offsets.
-     * The number of banks is equal to <CODE>dataArray.length</CODE>.  Each array must
-     * be at least as large as <CODE>size</CODE> + the corresponding offset.   There must
-     * be an entry in the offset array for each <CODE>dataArray</CODE> entry.  For each
-     * bank, only elements <CODE>offset</CODE> through
-     * <CODE>offset</CODE> + <CODE>size</CODE> - 1 should be
-     * used by accessors of this <CODE>DataBuffer</CODE>.
+     * The number of banks is equal to {@code dataArray.length}.  Each array must
+     * be at least as large as {@code size} + the corresponding offset.   There must
+     * be an entry in the offset array for each {@code dataArray} entry.  For each
+     * bank, only elements {@code offset} through
+     * {@code offset} + {@code size} - 1 should be
+     * used by accessors of this {@code DataBuffer}.
      * <p>
      * Note that {@code DataBuffer} objects created by this constructor
      * may be incompatible with <a href="#optimizations">performance
      * optimizations</a> used by some implementations (such as caching
      * an associated image in video memory).
      *
-     * @param dataArray The integer arrays for the <CODE>DataBuffer</CODE>.
-     * @param size The size of the banks in the <CODE>DataBuffer</CODE>.
+     * @param dataArray The integer arrays for the {@code DataBuffer}.
+     * @param size The size of the banks in the {@code DataBuffer}.
      * @param offsets The offsets into each array.
      */
     public DataBufferInt(int dataArray[][], int size, int offsets[]) {
@@ -184,7 +184,7 @@ public final class DataBufferInt extends DataBuffer
     }
 
     /**
-     * Returns the default (first) int data array in <CODE>DataBuffer</CODE>.
+     * Returns the default (first) int data array in {@code DataBuffer}.
      * <p>
      * Note that calling this method may cause this {@code DataBuffer}
      * object to be incompatible with <a href="#optimizations">performance
@@ -270,7 +270,7 @@ public final class DataBufferInt extends DataBuffer
 
     /**
      * Sets the requested data array element in the specified bank
-     * to the integer value <CODE>i</CODE>.
+     * to the integer value {@code i}.
      * @param bank The bank in which you want to set the data array element.
      * @param i The data array element you want to set.
      * @param val The integer value to which you want to set the specified data array element.

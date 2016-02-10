@@ -82,9 +82,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     }
 
     /**
-     * Returns true if the <code>LookAndFeel</code> returned
-     * <code>RootPaneUI</code> instances support providing Window decorations
-     * in a <code>JRootPane</code>.
+     * Returns true if the {@code LookAndFeel} returned
+     * {@code RootPaneUI} instances support providing Window decorations
+     * in a {@code JRootPane}.
      * <p>
      * The default implementation returns false, subclasses that support
      * Window decorations should override this and return true.
@@ -174,20 +174,20 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
     }
 
     /**
-     * Returns an <code>ActionMap</code>.
+     * Returns an {@code ActionMap}.
      * <P>
-     * This <code>ActionMap</code> contains <code>Actions</code> that
+     * This {@code ActionMap} contains {@code Actions} that
      * embody the ability to render an auditory cue. These auditory
      * cues map onto user and system activities that may be useful
      * for an end user to know about (such as a dialog box appearing).
      * <P>
-     * At the appropriate time in a <code>JComponent</code> UI's lifecycle,
+     * At the appropriate time in a {@code JComponent} UI's lifecycle,
      * the ComponentUI is responsible for getting the appropriate
-     * <code>Action</code> out of the <code>ActionMap</code> and passing
-     * it on to <code>playSound</code>.
+     * {@code Action} out of the {@code ActionMap} and passing
+     * it on to {@code playSound}.
      * <P>
-     * The <code>Actions</code> in this <code>ActionMap</code> are
-     * created by the <code>createAudioAction</code> method.
+     * The {@code Actions} in this {@code ActionMap} are
+     * created by the {@code createAudioAction} method.
      *
      * @return      an ActionMap containing Actions
      *              responsible for rendering auditory cues

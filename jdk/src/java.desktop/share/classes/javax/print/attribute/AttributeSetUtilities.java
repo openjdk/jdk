@@ -206,10 +206,10 @@ public final class AttributeSetUtilities {
      *
      * @param  attributeSet  Underlying attribute set.
      *
-     * @return  Unmodifiable view of <CODE>attributeSet</CODE>.
+     * @return  Unmodifiable view of {@code attributeSet}.
      *
      * @exception  NullPointerException
-     *     Thrown if <CODE>attributeSet</CODE> is null. Null is never a
+     *     Thrown if {@code attributeSet} is null. Null is never a
      */
     public static AttributeSet unmodifiableView(AttributeSet attributeSet) {
         if (attributeSet == null) {
@@ -224,10 +224,10 @@ public final class AttributeSetUtilities {
      *
      * @param  attributeSet  Underlying doc attribute set.
      *
-     * @return  Unmodifiable view of <CODE>attributeSet</CODE>.
+     * @return  Unmodifiable view of {@code attributeSet}.
      *
      * @exception  NullPointerException
-     *     Thrown if <CODE>attributeSet</CODE> is null.
+     *     Thrown if {@code attributeSet} is null.
      */
     public static DocAttributeSet unmodifiableView
         (DocAttributeSet attributeSet) {
@@ -242,10 +242,10 @@ public final class AttributeSetUtilities {
      *
      * @param  attributeSet  Underlying print request attribute set.
      *
-     * @return  Unmodifiable view of <CODE>attributeSet</CODE>.
+     * @return  Unmodifiable view of {@code attributeSet}.
      *
      * @exception  NullPointerException
-     *     Thrown if <CODE>attributeSet</CODE> is null.
+     *     Thrown if {@code attributeSet} is null.
      */
     public static PrintRequestAttributeSet
         unmodifiableView(PrintRequestAttributeSet attributeSet) {
@@ -260,10 +260,10 @@ public final class AttributeSetUtilities {
      *
      * @param  attributeSet  Underlying print job attribute set.
      *
-     * @return  Unmodifiable view of <CODE>attributeSet</CODE>.
+     * @return  Unmodifiable view of {@code attributeSet}.
      *
      * @exception  NullPointerException
-     *     Thrown if <CODE>attributeSet</CODE> is null.
+     *     Thrown if {@code attributeSet} is null.
      */
     public static PrintJobAttributeSet
         unmodifiableView(PrintJobAttributeSet attributeSet) {
@@ -278,10 +278,10 @@ public final class AttributeSetUtilities {
      *
      * @param  attributeSet  Underlying print service attribute set.
      *
-     * @return  Unmodifiable view of <CODE>attributeSet</CODE>.
+     * @return  Unmodifiable view of {@code attributeSet}.
      *
      * @exception  NullPointerException
-     *     Thrown if <CODE>attributeSet</CODE> is null.
+     *     Thrown if {@code attributeSet} is null.
      */
     public static PrintServiceAttributeSet
         unmodifiableView(PrintServiceAttributeSet attributeSet) {
@@ -417,10 +417,10 @@ public final class AttributeSetUtilities {
      *
      * @param  attributeSet  Underlying attribute set.
      *
-     * @return  Synchronized view of <CODE>attributeSet</CODE>.
+     * @return  Synchronized view of {@code attributeSet}.
      *
      * @exception  NullPointerException
-     *     Thrown if <CODE>attributeSet</CODE> is null.
+     *     Thrown if {@code attributeSet} is null.
      */
     public static AttributeSet synchronizedView
         (AttributeSet attributeSet) {
@@ -435,10 +435,10 @@ public final class AttributeSetUtilities {
      *
      * @param  attributeSet  Underlying doc attribute set.
      *
-     * @return  Synchronized view of <CODE>attributeSet</CODE>.
+     * @return  Synchronized view of {@code attributeSet}.
      *
      * @exception  NullPointerException
-     *     Thrown if <CODE>attributeSet</CODE> is null.
+     *     Thrown if {@code attributeSet} is null.
      */
     public static DocAttributeSet
         synchronizedView(DocAttributeSet attributeSet) {
@@ -453,10 +453,10 @@ public final class AttributeSetUtilities {
      *
      * @param  attributeSet  Underlying print request attribute set.
      *
-     * @return  Synchronized view of <CODE>attributeSet</CODE>.
+     * @return  Synchronized view of {@code attributeSet}.
      *
      * @exception  NullPointerException
-     *     Thrown if <CODE>attributeSet</CODE> is null.
+     *     Thrown if {@code attributeSet} is null.
      */
     public static PrintRequestAttributeSet
         synchronizedView(PrintRequestAttributeSet attributeSet) {
@@ -471,10 +471,10 @@ public final class AttributeSetUtilities {
      *
      * @param  attributeSet  Underlying print job attribute set.
      *
-     * @return  Synchronized view of <CODE>attributeSet</CODE>.
+     * @return  Synchronized view of {@code attributeSet}.
      *
      * @exception  NullPointerException
-     *     Thrown if <CODE>attributeSet</CODE> is null.
+     *     Thrown if {@code attributeSet} is null.
      */
     public static PrintJobAttributeSet
         synchronizedView(PrintJobAttributeSet attributeSet) {
@@ -489,7 +489,7 @@ public final class AttributeSetUtilities {
      *
      * @param  attributeSet  Underlying print service attribute set.
      *
-     * @return  Synchronized view of <CODE>attributeSet</CODE>.
+     * @return  Synchronized view of {@code attributeSet}.
      */
     public static PrintServiceAttributeSet
         synchronizedView(PrintServiceAttributeSet attributeSet) {
@@ -508,17 +508,17 @@ public final class AttributeSetUtilities {
      * @param  object     Object to test.
      * @param  interfaceName  Interface the object must implement.
      *
-     * @return  If <CODE>object</CODE> is a {@link java.lang.Class Class}
-     *          that implements <CODE>interfaceName</CODE>,
-     *          <CODE>object</CODE> is returned downcast to type {@link
+     * @return  If {@code object} is a {@link java.lang.Class Class}
+     *          that implements {@code interfaceName},
+     *          {@code object} is returned downcast to type {@link
      *          java.lang.Class Class}; otherwise an exception is thrown.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>object</CODE> is null.
+     *     (unchecked exception) Thrown if {@code object} is null.
      * @exception  ClassCastException
-     *     (unchecked exception) Thrown if <CODE>object</CODE> is not a
+     *     (unchecked exception) Thrown if {@code object} is not a
      *     {@link java.lang.Class Class} that implements
-     *     <CODE>interfaceName</CODE>.
+     *     {@code interfaceName}.
      */
     public static Class<?>
         verifyAttributeCategory(Object object, Class<?> interfaceName) {
@@ -540,16 +540,16 @@ public final class AttributeSetUtilities {
      * @param  object     Object to test.
      * @param  interfaceName  Interface of which the object must be an instance.
      *
-     * @return  If <CODE>object</CODE> is an instance of
-     *          <CODE>interfaceName</CODE>, <CODE>object</CODE> is returned
+     * @return  If {@code object} is an instance of
+     *          {@code interfaceName}, {@code object} is returned
      *          downcast to type {@link Attribute Attribute}; otherwise an
      *          exception is thrown.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>object</CODE> is null.
+     *     (unchecked exception) Thrown if {@code object} is null.
      * @exception  ClassCastException
-     *     (unchecked exception) Thrown if <CODE>object</CODE> is not an
-     *     instance of <CODE>interfaceName</CODE>.
+     *     (unchecked exception) Thrown if {@code object} is not an
+     *     instance of {@code interfaceName}.
      */
     public static Attribute
         verifyAttributeValue(Object object, Class<?> interfaceName) {
@@ -573,11 +573,11 @@ public final class AttributeSetUtilities {
      * @param  attribute  Attribute value to test.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if the <CODE>category</CODE> is
-     *     null or if the <CODE>attribute</CODE> is null.
+     *     (unchecked exception) Thrown if the {@code category} is
+     *     null or if the {@code attribute} is null.
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if the <CODE>category</CODE> is not
-     *     equal to the category of the <CODE>attribute</CODE>.
+     *     (unchecked exception) Thrown if the {@code category} is not
+     *     equal to the category of the {@code attribute}.
      */
     public static void
         verifyCategoryForValue(Class<?> category, Attribute attribute) {

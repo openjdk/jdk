@@ -41,7 +41,7 @@ class IntrospectionException extends Exception {
     private static final long serialVersionUID = -3728150539969542619L;
 
     /**
-     * Constructs an <code>IntrospectionException</code> with a
+     * Constructs an {@code IntrospectionException} with a
      * detailed message.
      *
      * @param mess Descriptive message

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public class SequentialOpTest extends OpTestCase {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    @Test(dataProvider = "StreamTestData<Integer>.mini", dataProviderClass = StreamTestDataProvider.class)
     public void testMixedSeqPar(String name, TestData.OfRef<Integer> data) {
         Function<Integer, Integer> id = LambdaTestHelpers.identity();
         UnaryOperator<Stream<Integer>>[] changers

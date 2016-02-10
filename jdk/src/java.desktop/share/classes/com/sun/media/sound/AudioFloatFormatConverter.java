@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.IOException;
@@ -475,6 +476,11 @@ public final class AudioFloatFormatConverter extends FormatConversionProvider {
 
     public AudioInputStream getAudioInputStream(Encoding targetEncoding,
             AudioInputStream sourceStream) {
+        if (!isConversionSupported(targetEncoding, sourceStream.getFormat())) {
+            throw new IllegalArgumentException(
+                    "Unsupported conversion: " + sourceStream.getFormat()
+                            .toString() + " to " + targetEncoding.toString());
+        }
         if (sourceStream.getFormat().getEncoding().equals(targetEncoding))
             return sourceStream;
         AudioFormat format = sourceStream.getFormat();

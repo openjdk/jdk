@@ -100,6 +100,8 @@ import java.time.temporal.ValueRange;
 import java.time.zone.ZoneOffsetTransition;
 import java.time.zone.ZoneRules;
 import java.util.Objects;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 /**
  * A date without a time-zone in the ISO-8601 calendar system,
@@ -1713,6 +1715,89 @@ public final class LocalDate
         long years = totalMonths / 12;  // safe
         int months = (int) (totalMonths % 12);  // safe
         return Period.of(Math.toIntExact(years), months, days);
+    }
+
+    /**
+     * Returns a sequential ordered stream of dates. The returned stream starts from this date
+     * (inclusive) and goes to {@code endExclusive} (exclusive) by an incremental step of 1 day.
+     * <p>
+     * This method is equivalent to {@code datesUntil(endExclusive, Period.ofDays(1))}.
+     *
+     * @param endExclusive  the end date, exclusive, not null
+     * @return a sequential {@code Stream} for the range of {@code LocalDate} values
+     * @throws IllegalArgumentException if end date is before this date
+     * @since 9
+     */
+    public Stream<LocalDate> datesUntil(LocalDate endExclusive) {
+        long end = endExclusive.toEpochDay();
+        long start = toEpochDay();
+        if (end < start) {
+            throw new IllegalArgumentException(endExclusive + " < " + this);
+        }
+        return LongStream.range(start, end).mapToObj(LocalDate::ofEpochDay);
+    }
+
+    /**
+     * Returns a sequential ordered stream of dates by given incremental step. The returned stream
+     * starts from this date (inclusive) and goes to {@code endExclusive} (exclusive).
+     * <p>
+     * The n-th date which appears in the stream is equal to {@code this.plus(step.multipliedBy(n))}
+     * (but the result of step multiplication never overflows). For example, if this date is
+     * {@code 2015-01-31}, the end date is {@code 2015-05-01} and the step is 1 month, then the
+     * stream contains {@code 2015-01-31}, {@code 2015-02-28}, {@code 2015-03-31}, and
+     * {@code 2015-04-30}.
+     *
+     * @param endExclusive  the end date, exclusive, not null
+     * @param step  the non-zero, non-negative {@code Period} which represents the step.
+     * @return a sequential {@code Stream} for the range of {@code LocalDate} values
+     * @throws IllegalArgumentException if step is zero, or {@code step.getDays()} and
+     *             {@code step.toTotalMonths()} have opposite sign, or end date is before this date
+     *             and step is positive, or end date is after this date and step is negative
+     * @since 9
+     */
+    public Stream<LocalDate> datesUntil(LocalDate endExclusive, Period step) {
+        if (step.isZero()) {
+            throw new IllegalArgumentException("step is zero");
+        }
+        long end = endExclusive.toEpochDay();
+        long start = toEpochDay();
+        long until = end - start;
+        long months = step.toTotalMonths();
+        long days = step.getDays();
+        if ((months < 0 && days > 0) || (months > 0 && days < 0)) {
+            throw new IllegalArgumentException("period months and days are of opposite sign");
+        }
+        if (until == 0) {
+            return Stream.empty();
+        }
+        int sign = months > 0 || days > 0 ? 1 : -1;
+        if (sign < 0 ^ until < 0) {
+            throw new IllegalArgumentException(endExclusive + (sign < 0 ? " > " : " < ") + this);
+        }
+        if (months == 0) {
+            long steps = (until - sign) / days; // non-negative
+            return LongStream.rangeClosed(0, steps).mapToObj(
+                    n -> LocalDate.ofEpochDay(start + n * days));
+        }
+        // 48699/1600 = 365.2425/12, no overflow, non-negative result
+        long steps = until * 1600 / (months * 48699 + days * 1600) + 1;
+        long addMonths = months * steps;
+        long addDays = days * steps;
+        long maxAddMonths = months > 0 ? MAX.getProlepticMonth() - getProlepticMonth()
+                : getProlepticMonth() - MIN.getProlepticMonth();
+        // adjust steps estimation
+        if (addMonths * sign > maxAddMonths
+                || (plusMonths(addMonths).toEpochDay() + addDays) * sign >= end * sign) {
+            steps--;
+            addMonths -= months;
+            addDays -= days;
+            if (addMonths * sign > maxAddMonths
+                    || (plusMonths(addMonths).toEpochDay() + addDays) * sign >= end * sign) {
+                steps--;
+            }
+        }
+        return LongStream.rangeClosed(0, steps).mapToObj(
+                n -> this.plusMonths(months * n).plusDays(days * n));
     }
 
     /**

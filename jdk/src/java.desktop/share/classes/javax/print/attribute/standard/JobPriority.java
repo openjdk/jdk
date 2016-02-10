@@ -52,7 +52,7 @@ import javax.print.attribute.PrintJobAttribute;
  * among the available job priority levels.
  * <P>
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value. The
- * category name returned by <CODE>getName()</CODE> gives the IPP attribute
+ * category name returned by {@code getName()} gives the IPP attribute
  * name.
  *
  * @author  Alan Kaminsky
@@ -68,7 +68,7 @@ public final class JobPriority extends IntegerSyntax
      * @param  value  Integer value.
      *
      * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if <CODE>value</CODE> is less than 1
+     *     (Unchecked exception) Thrown if {@code value} is less than 1
      *     or greater than 100.
      */
     public JobPriority(int value) {
@@ -81,17 +81,17 @@ public final class JobPriority extends IntegerSyntax
      * true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class JobPriority.
+     * {@code object} is an instance of class JobPriority.
      * <LI>
-     * This job priority attribute's value and <CODE>object</CODE>'s value
+     * This job priority attribute's value and {@code object}'s value
      * are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this job
+     * @return  True if {@code object} is equivalent to this job
      *          priority attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -115,7 +115,7 @@ public final class JobPriority extends IntegerSyntax
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class JobPriority, the category name is <CODE>"job-priority"</CODE>.
+     * For class JobPriority, the category name is {@code "job-priority"}.
      *
      * @return  Attribute category name.
      */

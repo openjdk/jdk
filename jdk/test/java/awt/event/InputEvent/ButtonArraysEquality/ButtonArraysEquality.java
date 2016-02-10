@@ -72,7 +72,7 @@ public class ButtonArraysEquality {
 
         //check lengths: array shouldn't contain less elements then the number of buttons on a mouse
         if (buttonDownMasks.length < buttonDownMasksAPI.length){
-            throw new RuntimeException("Test failed. The lengths array is less then the number of buttons");
+            throw new RuntimeException("Test failed. The lengths array is less than the number of buttons");
         }
 
         // verify values for first three buttons

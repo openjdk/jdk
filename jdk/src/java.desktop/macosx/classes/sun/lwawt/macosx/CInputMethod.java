@@ -101,7 +101,7 @@ public class CInputMethod extends InputMethodAdapter {
      * method.
      *
      * @param context the input method context for this input method
-     * @exception NullPointerException if <code>context</code> is null
+     * @exception NullPointerException if {@code context} is null
      */
     public void setInputMethodContext(InputMethodContext context) {
         fIMContext = context;
@@ -124,7 +124,7 @@ public class CInputMethod extends InputMethodAdapter {
      *
      * @param lang locale to input
      * @return whether the specified locale is supported
-     * @exception NullPointerException if <code>locale</code> is null
+     * @exception NullPointerException if {@code locale} is null
      */
     public boolean setLocale(Locale lang) {
         return setLocale(lang, false);
@@ -205,7 +205,7 @@ public class CInputMethod extends InputMethodAdapter {
      * are dispatched to the current input method for this component before
      * they are dispatched to the component's methods or event listeners.
      * The input method decides whether it needs to handle the event. If it
-     * does, it also calls the event's <code>consume</code> method; this
+     * does, it also calls the event's {@code consume} method; this
      * causes the event to not get dispatched to the component's event
      * processing methods or event listeners.
      * <p>
@@ -216,7 +216,7 @@ public class CInputMethod extends InputMethodAdapter {
      * This method is called by {@link java.awt.im.InputContext#dispatchEvent InputContext.dispatchEvent}.
      *
      * @param event the event being dispatched to the input method
-     * @exception NullPointerException if <code>event</code> is null
+     * @exception NullPointerException if {@code event} is null
      */
     public void dispatchEvent(final AWTEvent event) {
         // No-op for Mac OS X.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ final class FindOps {
      */
     private static final class FindOp<T, O> implements TerminalOp<T, O> {
         private final StreamShape shape;
-        final boolean mustFindFirst;
+        final int opFlags;
         final O emptyValue;
         final Predicate<O> presentPredicate;
         final Supplier<TerminalSink<T, O>> sinkSupplier;
@@ -129,7 +129,7 @@ final class FindOps {
                        O emptyValue,
                        Predicate<O> presentPredicate,
                        Supplier<TerminalSink<T, O>> sinkSupplier) {
-            this.mustFindFirst = mustFindFirst;
+            this.opFlags = StreamOpFlag.IS_SHORT_CIRCUIT | (mustFindFirst ? 0 : StreamOpFlag.NOT_ORDERED);
             this.shape = shape;
             this.emptyValue = emptyValue;
             this.presentPredicate = presentPredicate;
@@ -138,7 +138,7 @@ final class FindOps {
 
         @Override
         public int getOpFlags() {
-            return StreamOpFlag.IS_SHORT_CIRCUIT | (mustFindFirst ? 0 : StreamOpFlag.NOT_ORDERED);
+            return opFlags;
         }
 
         @Override
@@ -156,7 +156,10 @@ final class FindOps {
         @Override
         public <P_IN> O evaluateParallel(PipelineHelper<T> helper,
                                          Spliterator<P_IN> spliterator) {
-            return new FindTask<>(this, helper, spliterator).invoke();
+            // This takes into account the upstream ops flags and the terminal
+            // op flags and therefore takes into account findFirst or findAny
+            boolean mustFindFirst = StreamOpFlag.ORDERED.isKnown(helper.getStreamAndOpFlags());
+            return new FindTask<>(this, mustFindFirst, helper, spliterator).invoke();
         }
     }
 
@@ -250,16 +253,20 @@ final class FindOps {
     private static final class FindTask<P_IN, P_OUT, O>
             extends AbstractShortCircuitTask<P_IN, P_OUT, O, FindTask<P_IN, P_OUT, O>> {
         private final FindOp<P_OUT, O> op;
+        private final boolean mustFindFirst;
 
         FindTask(FindOp<P_OUT, O> op,
+                 boolean mustFindFirst,
                  PipelineHelper<P_OUT> helper,
                  Spliterator<P_IN> spliterator) {
             super(helper, spliterator);
+            this.mustFindFirst = mustFindFirst;
             this.op = op;
         }
 
         FindTask(FindTask<P_IN, P_OUT, O> parent, Spliterator<P_IN> spliterator) {
             super(parent, spliterator);
+            this.mustFindFirst = parent.mustFindFirst;
             this.op = parent.op;
         }
 
@@ -283,7 +290,7 @@ final class FindOps {
         @Override
         protected O doLeaf() {
             O result = helper.wrapAndCopyInto(op.sinkSupplier.get(), spliterator).get();
-            if (!op.mustFindFirst) {
+            if (!mustFindFirst) {
                 if (result != null)
                     shortCircuit(result);
                 return null;
@@ -300,7 +307,7 @@ final class FindOps {
 
         @Override
         public void onCompletion(CountedCompleter<?> caller) {
-            if (op.mustFindFirst) {
+            if (mustFindFirst) {
                     for (FindTask<P_IN, P_OUT, O> child = leftChild, p = null; child != p;
                          p = child, child = rightChild) {
                     O result = child.getLocalResult();

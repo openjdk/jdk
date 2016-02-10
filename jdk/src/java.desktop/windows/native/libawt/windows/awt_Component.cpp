@@ -2605,6 +2605,9 @@ AwtComponent::GetJavaModifiers()
     if (HIBYTE(::GetKeyState(VK_MENU)) != 0) {
         modifiers |= java_awt_event_InputEvent_ALT_DOWN_MASK;
     }
+    if (HIBYTE(::GetKeyState(VK_RMENU)) != 0) {
+        modifiers |= java_awt_event_InputEvent_ALT_GRAPH_DOWN_MASK;
+    }
     if (HIBYTE(::GetKeyState(VK_MBUTTON)) != 0) {
        modifiers |= java_awt_event_InputEvent_BUTTON2_DOWN_MASK;
     }
@@ -5231,6 +5234,8 @@ void AwtComponent::SynthesizeMouseMessage(JNIEnv *env, jobject mouseEvent)
                 message = WM_MBUTTONDOWN; break;
             case java_awt_event_MouseEvent_BUTTON2:
                 message = WM_RBUTTONDOWN; break;
+            default:
+                return;
           }
           break;
       }
@@ -5242,6 +5247,8 @@ void AwtComponent::SynthesizeMouseMessage(JNIEnv *env, jobject mouseEvent)
                 message = WM_MBUTTONUP; break;
             case java_awt_event_MouseEvent_BUTTON2:
                 message = WM_RBUTTONUP; break;
+            default:
+                return;
           }
           break;
       }

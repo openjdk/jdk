@@ -37,7 +37,7 @@ import java.beans.Transient;
  */
 public class Point extends Point2D implements java.io.Serializable {
     /**
-     * The X coordinate of this <code>Point</code>.
+     * The X coordinate of this {@code Point}.
      * If no X coordinate is set it will default to 0.
      *
      * @serial
@@ -48,7 +48,7 @@ public class Point extends Point2D implements java.io.Serializable {
     public int x;
 
     /**
-     * The Y coordinate of this <code>Point</code>.
+     * The Y coordinate of this {@code Point}.
      * If no Y coordinate is set it will default to 0.
      *
      * @serial
@@ -74,7 +74,7 @@ public class Point extends Point2D implements java.io.Serializable {
 
     /**
      * Constructs and initializes a point with the same location as
-     * the specified <code>Point</code> object.
+     * the specified {@code Point} object.
      * @param       p a point
      * @since       1.1
      */
@@ -85,8 +85,8 @@ public class Point extends Point2D implements java.io.Serializable {
     /**
      * Constructs and initializes a point at the specified
      * {@code (x,y)} location in the coordinate space.
-     * @param x the X coordinate of the newly constructed <code>Point</code>
-     * @param y the Y coordinate of the newly constructed <code>Point</code>
+     * @param x the X coordinate of the newly constructed {@code Point}
+     * @param y the Y coordinate of the newly constructed {@code Point}
      * @since 1.0
      */
     public Point(int x, int y) {
@@ -113,7 +113,7 @@ public class Point extends Point2D implements java.io.Serializable {
     /**
      * Returns the location of this point.
      * This method is included for completeness, to parallel the
-     * <code>getLocation</code> method of <code>Component</code>.
+     * {@code getLocation} method of {@code Component}.
      * @return      a copy of this point, at the same location
      * @see         java.awt.Component#getLocation
      * @see         java.awt.Point#setLocation(java.awt.Point)
@@ -128,7 +128,7 @@ public class Point extends Point2D implements java.io.Serializable {
     /**
      * Sets the location of the point to the specified location.
      * This method is included for completeness, to parallel the
-     * <code>setLocation</code> method of <code>Component</code>.
+     * {@code setLocation} method of {@code Component}.
      * @param       p  a point, the new location for this point
      * @see         java.awt.Component#setLocation(java.awt.Point)
      * @see         java.awt.Point#getLocation
@@ -142,7 +142,7 @@ public class Point extends Point2D implements java.io.Serializable {
      * Changes the point to have the specified location.
      * <p>
      * This method is included for completeness, to parallel the
-     * <code>setLocation</code> method of <code>Component</code>.
+     * {@code setLocation} method of {@code Component}.
      * Its behavior is identical with <code>move(int,&nbsp;int)</code>.
      * @param       x the X coordinate of the new location
      * @param       y the Y coordinate of the new location
@@ -158,10 +158,10 @@ public class Point extends Point2D implements java.io.Serializable {
     /**
      * Sets the location of this point to the specified double coordinates.
      * The double values will be rounded to integer values.
-     * Any number smaller than <code>Integer.MIN_VALUE</code>
-     * will be reset to <code>MIN_VALUE</code>, and any number
-     * larger than <code>Integer.MAX_VALUE</code> will be
-     * reset to <code>MAX_VALUE</code>.
+     * Any number smaller than {@code Integer.MIN_VALUE}
+     * will be reset to {@code MIN_VALUE}, and any number
+     * larger than {@code Integer.MAX_VALUE} will be
+     * reset to {@code MAX_VALUE}.
      *
      * @param x the X coordinate of the new location
      * @param y the Y coordinate of the new location
@@ -203,13 +203,13 @@ public class Point extends Point2D implements java.io.Serializable {
 
     /**
      * Determines whether or not two points are equal. Two instances of
-     * <code>Point2D</code> are equal if the values of their
-     * <code>x</code> and <code>y</code> member fields, representing
+     * {@code Point2D} are equal if the values of their
+     * {@code x} and {@code y} member fields, representing
      * their position in the coordinate space, are the same.
-     * @param obj an object to be compared with this <code>Point2D</code>
-     * @return <code>true</code> if the object to be compared is
-     *         an instance of <code>Point2D</code> and has
-     *         the same values; <code>false</code> otherwise.
+     * @param obj an object to be compared with this {@code Point2D}
+     * @return {@code true} if the object to be compared is
+     *         an instance of {@code Point2D} and has
+     *         the same values; {@code false} otherwise.
      */
     public boolean equals(Object obj) {
         if (obj instanceof Point) {
@@ -224,7 +224,7 @@ public class Point extends Point2D implements java.io.Serializable {
      * in the {@code (x,y)} coordinate space. This method is
      * intended to be used only for debugging purposes, and the content
      * and format of the returned string may vary between implementations.
-     * The returned string may be empty but may not be <code>null</code>.
+     * The returned string may be empty but may not be {@code null}.
      *
      * @return  a string representation of this point
      */

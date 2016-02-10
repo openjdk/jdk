@@ -260,17 +260,17 @@ class AppletSecurity extends AWTSecurityManager {
 
 
     /**
-     * Throws a <code>SecurityException</code> if the
+     * Throws a {@code SecurityException} if the
      * calling thread is not allowed to access the package specified by
      * the argument.
      * <p>
-     * This method is used by the <code>loadClass</code> method of class
+     * This method is used by the {@code loadClass} method of class
      * loaders.
      * <p>
-     * The <code>checkPackageAccess</code> method for class
-     * <code>SecurityManager</code>  calls
-     * <code>checkPermission</code> with the
-     * <code>RuntimePermission("accessClassInPackage."+ pkgname)</code>
+     * The {@code checkPackageAccess} method for class
+     * {@code SecurityManager}  calls
+     * {@code checkPermission} with the
+     * {@code RuntimePermission("accessClassInPackage."+ pkgname)}
      * permission.
      *
      * @param      pkgname   the package name.
@@ -302,8 +302,8 @@ class AppletSecurity extends AWTSecurityManager {
     /**
      * Tests if a client can get access to the AWT event queue.
      * <p>
-     * This method calls <code>checkPermission</code> with the
-     * <code>AWTPermission("accessEventQueue")</code> permission.
+     * This method calls {@code checkPermission} with the
+     * {@code AWTPermission("accessEventQueue")} permission.
      *
      * @since   1.1
      * @exception  SecurityException  if the caller does not have

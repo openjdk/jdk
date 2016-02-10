@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,9 @@ public final class WaveFloatFileReader extends SunFileReader {
                 fmt_found = true;
 
                 int format = chunk.readUnsignedShort();
-                if (format != 3) // WAVE_FORMAT_IEEE_FLOAT only
+                if (format != WaveFileFormat.WAVE_FORMAT_IEEE_FLOAT) {
                     throw new UnsupportedAudioFileException();
+                }
                 channels = chunk.readUnsignedShort();
                 samplerate = chunk.readUnsignedInt();
                 /* framerate = */chunk.readUnsignedInt();

@@ -73,7 +73,7 @@ class CRobot implements RobotPeer {
      * Presses one or more mouse buttons.
      *
      * @param buttons the button mask (combination of
-     * <code>InputEvent.BUTTON1/2/3_MASK</code>)
+     * {@code InputEvent.BUTTON1/2/3_MASK})
      */
     @Override
     public void mousePress(int buttons) {
@@ -87,7 +87,7 @@ class CRobot implements RobotPeer {
      * Releases one or more mouse buttons.
      *
      * @param buttons the button mask (combination of
-     * <code>InputEvent.BUTTON1/2/3_MASK</code>)
+     * {@code InputEvent.BUTTON1/2/3_MASK})
      */
     @Override
     public void mouseRelease(int buttons) {
@@ -133,14 +133,14 @@ class CRobot implements RobotPeer {
      * Presses a given key.
      * <p>
      * Key codes that have more than one physical key associated with them
-     * (e.g. <code>KeyEvent.VK_SHIFT</code> could mean either the
+     * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
      * left or right shift key) will map to the left key.
      * <p>
      * Assumes that the
      * peer implementations will throw an exception for other bogus
      * values e.g. -1, 999999
      *
-     * @param keycode the key to press (e.g. <code>KeyEvent.VK_A</code>)
+     * @param keycode the key to press (e.g. {@code KeyEvent.VK_A})
      */
     @Override
     public void keyPress(final int keycode) {
@@ -151,14 +151,14 @@ class CRobot implements RobotPeer {
      * Releases a given key.
      * <p>
      * Key codes that have more than one physical key associated with them
-     * (e.g. <code>KeyEvent.VK_SHIFT</code> could mean either the
+     * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
      * left or right shift key) will map to the left key.
      * <p>
      * Assumes that the
      * peer implementations will throw an exception for other bogus
      * values e.g. -1, 999999
      *
-     * @param keycode the key to release (e.g. <code>KeyEvent.VK_A</code>)
+     * @param keycode the key to release (e.g. {@code KeyEvent.VK_A})
      */
     @Override
     public void keyRelease(final int keycode) {

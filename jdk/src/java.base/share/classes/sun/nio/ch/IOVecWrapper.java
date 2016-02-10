@@ -26,7 +26,7 @@
 package sun.nio.ch;
 
 import java.nio.ByteBuffer;
-import sun.misc.*;
+import jdk.internal.ref.Cleaner;
 
 
 /**

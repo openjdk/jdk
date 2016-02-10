@@ -284,7 +284,7 @@ public class EmptyNavigableSet {
                     navigableSet.subSet(last, true, first, false);
                 },
                 IllegalArgumentException.class, description
-                + ": Must throw IllegalArgumentException when fromElement is not less then then toElement.");
+                + ": Must throw IllegalArgumentException when fromElement is not less than toElement.");
 
         navigableSet.subSet(first, true, last, false);
     }

@@ -26,6 +26,7 @@
 package com.apple.laf;
 
 
+import java.awt.ComponentOrientation;
 import java.beans.*;
 import java.io.File;
 import java.util.*;
@@ -85,6 +86,15 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
         } else if (prop == JFileChooser.FILE_SELECTION_MODE_CHANGED_PROPERTY) {
             invalidateFileCache();
             validateFileCache();
+        } else if (prop.equals("componentOrientation")) {
+            ComponentOrientation o = (ComponentOrientation) e.getNewValue();
+            JFileChooser cc = (JFileChooser) e.getSource();
+            if (o != e.getOldValue()) {
+                cc.applyComponentOrientation(o);
+            }
+            fFileList.setComponentOrientation(o);
+            fFileList.getParent().getParent().setComponentOrientation(o);
+
         }
         if (prop == SORT_BY_CHANGED) {// $ Ought to just resort
             fSortNames = (((Integer)e.getNewValue()).intValue() == 0);

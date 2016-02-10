@@ -27,7 +27,7 @@ package java.awt.image;
 
 
 /**
- * The <code>Kernel</code> class defines a matrix that describes how a
+ * The {@code Kernel} class defines a matrix that describes how a
  * specified pixel and its surrounding pixels affect the value
  * computed for the pixel's position in the output image of a filtering
  * operation.  The X origin and Y origin indicate the kernel matrix element
@@ -50,18 +50,18 @@ public class Kernel implements Cloneable {
     }
 
     /**
-     * Constructs a <code>Kernel</code> object from an array of floats.
-     * The first <code>width</code>*<code>height</code> elements of
-     * the <code>data</code> array are copied.
-     * If the length of the <code>data</code> array is less
-     * than width*height, an <code>IllegalArgumentException</code> is thrown.
+     * Constructs a {@code Kernel} object from an array of floats.
+     * The first {@code width}*{@code height} elements of
+     * the {@code data} array are copied.
+     * If the length of the {@code data} array is less
+     * than width*height, an {@code IllegalArgumentException} is thrown.
      * The X origin is (width-1)/2 and the Y origin is (height-1)/2.
      * @param width         width of the kernel
      * @param height        height of the kernel
      * @param data          kernel data in row major order
-     * @throws IllegalArgumentException if the length of <code>data</code>
-     *         is less than the product of <code>width</code> and
-     *         <code>height</code>
+     * @throws IllegalArgumentException if the length of {@code data}
+     *         is less than the product of {@code width} and
+     *         {@code height}
      */
     public Kernel(int width, int height, float data[]) {
         this.width  = width;
@@ -80,7 +80,7 @@ public class Kernel implements Cloneable {
     }
 
     /**
-     * Returns the X origin of this <code>Kernel</code>.
+     * Returns the X origin of this {@code Kernel}.
      * @return the X origin.
      */
     public final int getXOrigin(){
@@ -88,7 +88,7 @@ public class Kernel implements Cloneable {
     }
 
     /**
-     * Returns the Y origin of this <code>Kernel</code>.
+     * Returns the Y origin of this {@code Kernel}.
      * @return the Y origin.
      */
     public final int getYOrigin() {
@@ -96,16 +96,16 @@ public class Kernel implements Cloneable {
     }
 
     /**
-     * Returns the width of this <code>Kernel</code>.
-     * @return the width of this <code>Kernel</code>.
+     * Returns the width of this {@code Kernel}.
+     * @return the width of this {@code Kernel}.
      */
     public final int getWidth() {
         return width;
     }
 
     /**
-     * Returns the height of this <code>Kernel</code>.
-     * @return the height of this <code>Kernel</code>.
+     * Returns the height of this {@code Kernel}.
+     * @return the height of this {@code Kernel}.
      */
     public final int getHeight() {
         return height;
@@ -113,15 +113,15 @@ public class Kernel implements Cloneable {
 
     /**
      * Returns the kernel data in row major order.
-     * The <code>data</code> array is returned.  If <code>data</code>
-     * is <code>null</code>, a new array is allocated.
+     * The {@code data} array is returned.  If {@code data}
+     * is {@code null}, a new array is allocated.
      * @param data  if non-null, contains the returned kernel data
-     * @return the <code>data</code> array containing the kernel data
-     *         in row major order or, if <code>data</code> is
-     *         <code>null</code>, a newly allocated array containing
+     * @return the {@code data} array containing the kernel data
+     *         in row major order or, if {@code data} is
+     *         {@code null}, a newly allocated array containing
      *         the kernel data in row major order
-     * @throws IllegalArgumentException if <code>data</code> is less
-     *         than the size of this <code>Kernel</code>
+     * @throws IllegalArgumentException if {@code data} is less
+     *         than the size of this {@code Kernel}
      */
     public final float[] getKernelData(float[] data) {
         if (data == null) {

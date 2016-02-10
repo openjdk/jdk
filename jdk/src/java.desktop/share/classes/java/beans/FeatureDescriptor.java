@@ -56,7 +56,7 @@ public class FeatureDescriptor {
     private Reference<? extends Class<?>> classRef;
 
     /**
-     * Constructs a <code>FeatureDescriptor</code>.
+     * Constructs a {@code FeatureDescriptor}.
      */
     public FeatureDescriptor() {
     }
@@ -334,7 +334,7 @@ public class FeatureDescriptor {
     /**
      * Creates a new soft reference that refers to the given object.
      *
-     * @return a new soft reference or <code>null</code> if object is <code>null</code>
+     * @return a new soft reference or {@code null} if object is {@code null}
      *
      * @see SoftReference
      */
@@ -347,7 +347,7 @@ public class FeatureDescriptor {
     /**
      * Creates a new weak reference that refers to the given object.
      *
-     * @return a new weak reference or <code>null</code> if object is <code>null</code>
+     * @return a new weak reference or {@code null} if object is {@code null}
      *
      * @see WeakReference
      */

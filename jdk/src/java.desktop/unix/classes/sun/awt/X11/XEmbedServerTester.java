@@ -570,7 +570,7 @@ public class XEmbedServerTester implements XEventDispatcher {
         }
     }
     /**
-     * Checks if the <code>event</code> is already in a list at position >= <code>position</code>
+     * Checks if the {@code event} is already in a list at position >= {@code position}
      */
     private int checkEventList(int position, int event) {
         if (position == -1) {

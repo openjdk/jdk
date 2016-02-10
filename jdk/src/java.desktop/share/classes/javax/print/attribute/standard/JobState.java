@@ -39,8 +39,8 @@ import javax.print.attribute.PrintJobAttribute;
  * detailed information about the job in the given job state.
  * <P>
  * <B>IPP Compatibility:</B> The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author  Alan Kaminsky
@@ -225,7 +225,7 @@ public class JobState extends EnumSyntax implements PrintJobAttribute {
      * instance.
      * <P>
      * For class JobState and any vendor-defined subclasses, the category
-     * name is <CODE>"job-state"</CODE>.
+     * name is {@code "job-state"}.
      *
      * @return  Attribute category name.
      */

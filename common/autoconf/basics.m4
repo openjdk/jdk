@@ -573,6 +573,11 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf
+
+  # Setup username (for use in adhoc version strings etc)
+  # Outer [ ] to quote m4.
+  [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
+  AC_SUBST(USERNAME)
 ])
 
 # Evaluates platform specific overrides for devkit variables.

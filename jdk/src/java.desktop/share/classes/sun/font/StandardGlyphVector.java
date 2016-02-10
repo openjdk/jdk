@@ -1261,20 +1261,20 @@ public class StandardGlyphVector extends GlyphVector {
     // internal use only for possible future extension
 
     /**
-     * A flag used with getLayoutFlags that indicates whether this <code>GlyphVector</code> uses
+     * A flag used with getLayoutFlags that indicates whether this {@code GlyphVector} uses
      * a vertical baseline.
      */
     public static final int FLAG_USES_VERTICAL_BASELINE = 128;
 
     /**
-     * A flag used with getLayoutFlags that indicates whether this <code>GlyphVector</code> uses
-     * vertical glyph metrics.  A <code>GlyphVector</code> can use vertical metrics on a
+     * A flag used with getLayoutFlags that indicates whether this {@code GlyphVector} uses
+     * vertical glyph metrics.  A {@code GlyphVector} can use vertical metrics on a
      * horizontal line, or vice versa.
      */
     public static final int FLAG_USES_VERTICAL_METRICS = 256;
 
     /**
-     * A flag used with getLayoutFlags that indicates whether this <code>GlyphVector</code> uses
+     * A flag used with getLayoutFlags that indicates whether this {@code GlyphVector} uses
      * the 'alternate orientation.'  Glyphs have a default orientation given a
      * particular baseline and metrics orientation, this is the orientation appropriate
      * for left-to-right text.  For example, the letter 'A' can have four orientations,

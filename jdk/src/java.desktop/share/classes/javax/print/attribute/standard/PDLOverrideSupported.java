@@ -35,8 +35,8 @@ import javax.print.attribute.PrintServiceAttribute;
  * specified as attributes outside the print data.
  * <P>
  * <B>IPP Compatibility:</B> The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author  Alan Kaminsky
@@ -116,7 +116,7 @@ public class PDLOverrideSupported extends EnumSyntax
      * instance.
      * <P>
      * For class PDLOverrideSupported and any vendor-defined subclasses, the
-     * category name is <CODE>"pdl-override-supported"</CODE>.
+     * category name is {@code "pdl-override-supported"}.
      *
      * @return  Attribute category name.
      */

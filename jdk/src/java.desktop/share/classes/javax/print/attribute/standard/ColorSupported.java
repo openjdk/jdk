@@ -49,8 +49,8 @@ import javax.print.attribute.PrintServiceAttribute;
  * <P>
  * <B>IPP Compatibility:</B> The IPP boolean value is "true" for SUPPORTED and
  * "false" for NOT_SUPPORTED. The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author  Alan Kaminsky
@@ -118,7 +118,7 @@ public final class ColorSupported extends EnumSyntax
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class ColorSupported, the category name is <CODE>"color-supported"</CODE>.
+     * For class ColorSupported, the category name is {@code "color-supported"}.
      *
      * @return  Attribute category name.
      */

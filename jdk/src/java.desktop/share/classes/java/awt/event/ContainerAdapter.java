@@ -30,17 +30,17 @@ package java.awt.event;
  * The methods in this class are empty. This class exists as
  * convenience for creating listener objects.
  * <P>
- * Extend this class to create a <code>ContainerEvent</code> listener
+ * Extend this class to create a {@code ContainerEvent} listener
  * and override the methods for the events of interest. (If you implement the
- * <code>ContainerListener</code> interface, you have to define all of
+ * {@code ContainerListener} interface, you have to define all of
  * the methods in it. This abstract class defines null methods for them
  * all, so you can only have to define methods for events you care about.)
  * <P>
  * Create a listener object using the extended class and then register it with
- * a component using the component's <code>addContainerListener</code>
+ * a component using the component's {@code addContainerListener}
  * method. When the container's contents change because a component has
  * been added or removed, the relevant method in the listener object is invoked,
- * and the <code>ContainerEvent</code> is passed to it.
+ * and the {@code ContainerEvent} is passed to it.
  *
  * @see ContainerEvent
  * @see ContainerListener

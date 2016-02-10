@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,14 +81,11 @@ public abstract class ArrayData {
         }
 
         private ArrayData toRealArrayData() {
-            return toRealArrayData(0);
+            return new IntArrayData(0);
         }
 
         private ArrayData toRealArrayData(final int index) {
             final IntArrayData newData = new IntArrayData(index + 1);
-            if (index == 0) {
-                return newData;
-            }
             return new DeletedRangeArrayFilter(newData, 0, index);
         }
 
@@ -122,7 +119,7 @@ public abstract class ArrayData {
 
         @Override
         public ArrayData convert(final Class<?> type) {
-            return toRealArrayData(0).convert(type);
+            return toRealArrayData().convert(type);
         }
 
         @Override

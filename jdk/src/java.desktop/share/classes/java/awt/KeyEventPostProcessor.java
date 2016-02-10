@@ -68,17 +68,17 @@ public interface KeyEventPostProcessor {
      * will be used to implement features which require global KeyEvent
      * post-handling, such as menu shortcuts. Note that if a
      * KeyEventPostProcessor wishes to dispatch the KeyEvent, it must use
-     * <code>redispatchEvent</code> to prevent the AWT from recursively
+     * {@code redispatchEvent} to prevent the AWT from recursively
      * requesting that this KeyEventPostProcessor perform post-processing
      * of the event again.
      * <p>
-     * If an implementation of this method returns <code>false</code>, then the
+     * If an implementation of this method returns {@code false}, then the
      * KeyEvent is passed to the next KeyEventPostProcessor in the chain,
      * ending with the current KeyboardFocusManager. If an implementation
-     * returns <code>true</code>, the KeyEvent is assumed to have been fully
+     * returns {@code true}, the KeyEvent is assumed to have been fully
      * handled (although this need not be the case), and the AWT will take no
      * further action with regard to the KeyEvent. If an implementation
-     * consumes the KeyEvent but returns <code>false</code>, the consumed
+     * consumes the KeyEvent but returns {@code false}, the consumed
      * event will still be passed to the next KeyEventPostProcessor in the
      * chain. It is important for developers to check whether the KeyEvent has
      * been consumed before performing any post-processing of the KeyEvent. By
@@ -86,8 +86,8 @@ public interface KeyEventPostProcessor {
      * processing in response to a consumed KeyEvent.
      *
      * @param e the KeyEvent to post-process
-     * @return <code>true</code> if the AWT should take no further action with
-     *         regard to the KeyEvent; <code>false</code> otherwise
+     * @return {@code true} if the AWT should take no further action with
+     *         regard to the KeyEvent; {@code false} otherwise
      * @see KeyboardFocusManager#redispatchEvent
      */
     boolean postProcessKeyEvent(KeyEvent e);
