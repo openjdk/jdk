@@ -2459,8 +2459,6 @@ public final class Global extends Scope {
 
         final String execName = ScriptingFunctions.EXEC_NAME;
         value = ScriptFunction.createBuiltin(execName, ScriptingFunctions.EXEC);
-        value.addOwnProperty(ScriptingFunctions.THROW_ON_ERROR_NAME, Attribute.NOT_ENUMERABLE, false);
-
         addOwnProperty(execName, Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.echo (scripting-mode-only)
@@ -2474,10 +2472,10 @@ public final class Global extends Scope {
         addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, options);
 
         // Nashorn extension: global.$ENV (scripting-mode-only)
+        final ScriptObject env = newObject();
         if (System.getSecurityManager() == null) {
             // do not fill $ENV if we have a security manager around
             // Retrieve current state of ENV variables.
-            final ScriptObject env = newObject();
             env.putAll(System.getenv(), scriptEnv._strict);
 
             // Some platforms, e.g., Windows, do not define the PWD environment
@@ -2486,11 +2484,8 @@ public final class Global extends Scope {
             if (!env.containsKey(ScriptingFunctions.PWD_NAME)) {
                 env.put(ScriptingFunctions.PWD_NAME, System.getProperty("user.dir"), scriptEnv._strict);
             }
-
-            addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, env);
-        } else {
-            addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
         }
+        addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, env);
 
         // add other special properties for exec support
         addOwnProperty(ScriptingFunctions.OUT_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
