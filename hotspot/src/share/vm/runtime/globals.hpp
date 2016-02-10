@@ -1279,10 +1279,6 @@ public:
   experimental(intx, hashCode, 5,                                           \
                "(Unstable) select hashCode generation algorithm")           \
                                                                             \
-  experimental(intx, WorkAroundNPTLTimedWaitHang, 0,                        \
-               "(Unstable, Linux-specific) "                                \
-               "avoid NPTL-FUTEX hang pthread_cond_timedwait")              \
-                                                                            \
   product(bool, FilterSpuriousWakeups, true,                                \
           "When true prevents OS-level spurious, or premature, wakeups "    \
           "from Object.wait (Ignored for Windows)")                         \
