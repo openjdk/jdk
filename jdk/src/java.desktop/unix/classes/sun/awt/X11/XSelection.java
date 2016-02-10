@@ -110,7 +110,7 @@ final class XSelection {
 
     /*
      * Returns the XSelection object for the specified selection atom or
-     * <code>null</code> if none exists.
+     * {@code null} if none exists.
      */
     static XSelection getSelection(XAtom atom) {
         return table.get(atom);

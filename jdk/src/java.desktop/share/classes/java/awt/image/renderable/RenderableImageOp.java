@@ -133,9 +133,9 @@ public class RenderableImageOp implements RenderableImage {
      * may produce different results.  This method may be used to
      * determine whether an existing rendering may be cached and
      * reused.  The CRIF's isDynamic method will be called.
-     * @return <code>true</code> if successive renderings with the
+     * @return {@code true} if successive renderings with the
      *         same arguments might produce different results;
-     *         <code>false</code> otherwise.
+     *         {@code false} otherwise.
      */
     public boolean isDynamic() {
         return myCRIF.isDynamic();
@@ -206,8 +206,8 @@ public class RenderableImageOp implements RenderableImage {
 
     /**
      * Returns a reference to the current parameter block.
-     * @return the <code>ParameterBlock</code> of this
-     *         <code>RenderableImageOp</code>.
+     * @return the {@code ParameterBlock} of this
+     *         {@code RenderableImageOp}.
      * @see #setParameterBlock(ParameterBlock)
      */
     public ParameterBlock getParameterBlock() {

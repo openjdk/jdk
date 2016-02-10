@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,8 +207,18 @@ public class LinkerCallSite extends ChainedCallSite {
         public void setTarget(final MethodHandle newTarget) {
             final MethodType type   = type();
             final boolean    isVoid = type.returnType() == void.class;
+            final Class<?> newSelfType = newTarget.type().parameterType(0);
 
-            MethodHandle methodHandle = MH.filterArguments(newTarget, 0, MH.bindTo(PROFILEENTRY, this));
+            MethodHandle selfFilter = MH.bindTo(PROFILEENTRY, this);
+            if (newSelfType != Object.class) {
+                // new target uses a more precise 'self' type than Object.class. We need to
+                // convert the filter type. Note that the profileEntry method returns "self"
+                // argument "as is" and so the cast introduced will succeed for any type.
+                MethodType selfFilterType = MethodType.methodType(newSelfType, newSelfType);
+                selfFilter = selfFilter.asType(selfFilterType);
+            }
+
+            MethodHandle methodHandle = MH.filterArguments(newTarget, 0, selfFilter);
 
             if (isVoid) {
                 methodHandle = MH.filterReturnValue(methodHandle, MH.bindTo(PROFILEVOIDEXIT, this));

@@ -42,32 +42,32 @@ package java.awt.font;
 import java.lang.String;
 
 /**
- * The <code>TextHitInfo</code> class represents a character position in a
+ * The {@code TextHitInfo} class represents a character position in a
  * text model, and a <b>bias</b>, or "side," of the character.  Biases are
  * either <EM>leading</EM> (the left edge, for a left-to-right character)
  * or <EM>trailing</EM> (the right edge, for a left-to-right character).
- * Instances of <code>TextHitInfo</code> are used to specify caret and
+ * Instances of {@code TextHitInfo} are used to specify caret and
  * insertion positions within text.
  * <p>
  * For example, consider the text "abc".  TextHitInfo.trailing(1)
  * corresponds to the right side of the 'b' in the text.
  * <p>
- * <code>TextHitInfo</code> is used primarily by {@link TextLayout} and
- * clients of <code>TextLayout</code>.  Clients of <code>TextLayout</code>
- * query <code>TextHitInfo</code> instances for an insertion offset, where
+ * {@code TextHitInfo} is used primarily by {@link TextLayout} and
+ * clients of {@code TextLayout}.  Clients of {@code TextLayout}
+ * query {@code TextHitInfo} instances for an insertion offset, where
  * new text is inserted into the text model.  The insertion offset is equal
- * to the character position in the <code>TextHitInfo</code> if the bias
+ * to the character position in the {@code TextHitInfo} if the bias
  * is leading, and one character after if the bias is trailing.  The
  * insertion offset for TextHitInfo.trailing(1) is 2.
  * <p>
- * Sometimes it is convenient to construct a <code>TextHitInfo</code> with
+ * Sometimes it is convenient to construct a {@code TextHitInfo} with
  * the same insertion offset as an existing one, but on the opposite
- * character.  The <code>getOtherHit</code> method constructs a new
- * <code>TextHitInfo</code> with the same insertion offset as an existing
+ * character.  The {@code getOtherHit} method constructs a new
+ * {@code TextHitInfo} with the same insertion offset as an existing
  * one, with a hit on the character on the other side of the insertion offset.
- * Calling <code>getOtherHit</code> on trailing(1) would return leading(2).
- * In general, <code>getOtherHit</code> for trailing(n) returns
- * leading(n+1) and <code>getOtherHit</code> for leading(n)
+ * Calling {@code getOtherHit} on trailing(1) would return leading(2).
+ * In general, {@code getOtherHit} for trailing(n) returns
+ * leading(n+1) and {@code getOtherHit} for leading(n)
  * returns trailing(n-1).
  * <p>
  * <strong>Example</strong>:<p>
@@ -90,9 +90,9 @@ public final class TextHitInfo {
     private boolean isLeadingEdge;
 
     /**
-     * Constructs a new <code>TextHitInfo</code>.
+     * Constructs a new {@code TextHitInfo}.
      * @param charIndex the index of the character hit
-     * @param isLeadingEdge <code>true</code> if the leading edge of the
+     * @param isLeadingEdge {@code true} if the leading edge of the
      * character was hit
      */
     private TextHitInfo(int charIndex, boolean isLeadingEdge) {
@@ -109,10 +109,10 @@ public final class TextHitInfo {
     }
 
     /**
-     * Returns <code>true</code> if the leading edge of the character was
+     * Returns {@code true} if the leading edge of the character was
      * hit.
-     * @return <code>true</code> if the leading edge of the character was
-     * hit; <code>false</code> otherwise.
+     * @return {@code true} if the leading edge of the character was
+     * hit; {@code false} otherwise.
      */
     public boolean isLeadingEdge() {
         return isLeadingEdge;
@@ -130,33 +130,33 @@ public final class TextHitInfo {
 
     /**
      * Returns the hash code.
-     * @return the hash code of this <code>TextHitInfo</code>, which is
-     * also the <code>charIndex</code> of this <code>TextHitInfo</code>.
+     * @return the hash code of this {@code TextHitInfo}, which is
+     * also the {@code charIndex} of this {@code TextHitInfo}.
      */
     public int hashCode() {
         return charIndex;
     }
 
     /**
-     * Returns <code>true</code> if the specified <code>Object</code> is a
-     * <code>TextHitInfo</code> and equals this <code>TextHitInfo</code>.
-     * @param obj the <code>Object</code> to test for equality
-     * @return <code>true</code> if the specified <code>Object</code>
-     * equals this <code>TextHitInfo</code>; <code>false</code> otherwise.
+     * Returns {@code true} if the specified {@code Object} is a
+     * {@code TextHitInfo} and equals this {@code TextHitInfo}.
+     * @param obj the {@code Object} to test for equality
+     * @return {@code true} if the specified {@code Object}
+     * equals this {@code TextHitInfo}; {@code false} otherwise.
      */
     public boolean equals(Object obj) {
         return (obj instanceof TextHitInfo) && equals((TextHitInfo)obj);
     }
 
     /**
-     * Returns <code>true</code> if the specified <code>TextHitInfo</code>
-     * has the same <code>charIndex</code> and <code>isLeadingEdge</code>
-     * as this <code>TextHitInfo</code>.  This is not the same as having
+     * Returns {@code true} if the specified {@code TextHitInfo}
+     * has the same {@code charIndex} and {@code isLeadingEdge}
+     * as this {@code TextHitInfo}.  This is not the same as having
      * the same insertion offset.
-     * @param hitInfo a specified <code>TextHitInfo</code>
-     * @return <code>true</code> if the specified <code>TextHitInfo</code>
-     * has the same <code>charIndex</code> and <code>isLeadingEdge</code>
-     * as this <code>TextHitInfo</code>.
+     * @param hitInfo a specified {@code TextHitInfo}
+     * @return {@code true} if the specified {@code TextHitInfo}
+     * has the same {@code charIndex} and {@code isLeadingEdge}
+     * as this {@code TextHitInfo}.
      */
     public boolean equals(TextHitInfo hitInfo) {
         return hitInfo != null && charIndex == hitInfo.charIndex &&
@@ -164,21 +164,21 @@ public final class TextHitInfo {
     }
 
     /**
-     * Returns a <code>String</code> representing the hit for debugging
+     * Returns a {@code String} representing the hit for debugging
      * use only.
-     * @return a <code>String</code> representing this
-     * <code>TextHitInfo</code>.
+     * @return a {@code String} representing this
+     * {@code TextHitInfo}.
      */
     public String toString() {
         return "TextHitInfo[" + charIndex + (isLeadingEdge ? "L" : "T")+"]";
     }
 
     /**
-     * Creates a <code>TextHitInfo</code> on the leading edge of the
-     * character at the specified <code>charIndex</code>.
+     * Creates a {@code TextHitInfo} on the leading edge of the
+     * character at the specified {@code charIndex}.
      * @param charIndex the index of the character hit
-     * @return a <code>TextHitInfo</code> on the leading edge of the
-     * character at the specified <code>charIndex</code>.
+     * @return a {@code TextHitInfo} on the leading edge of the
+     * character at the specified {@code charIndex}.
      */
     public static TextHitInfo leading(int charIndex) {
         return new TextHitInfo(charIndex, true);
@@ -186,41 +186,41 @@ public final class TextHitInfo {
 
     /**
      * Creates a hit on the trailing edge of the character at
-     * the specified <code>charIndex</code>.
+     * the specified {@code charIndex}.
      * @param charIndex the index of the character hit
-     * @return a <code>TextHitInfo</code> on the trailing edge of the
-     * character at the specified <code>charIndex</code>.
+     * @return a {@code TextHitInfo} on the trailing edge of the
+     * character at the specified {@code charIndex}.
      */
     public static TextHitInfo trailing(int charIndex) {
         return new TextHitInfo(charIndex, false);
     }
 
     /**
-     * Creates a <code>TextHitInfo</code> at the specified offset,
+     * Creates a {@code TextHitInfo} at the specified offset,
      * associated with the character before the offset.
      * @param offset an offset associated with the character before
      * the offset
-     * @return a <code>TextHitInfo</code> at the specified offset.
+     * @return a {@code TextHitInfo} at the specified offset.
      */
     public static TextHitInfo beforeOffset(int offset) {
         return new TextHitInfo(offset-1, false);
     }
 
     /**
-     * Creates a <code>TextHitInfo</code> at the specified offset,
+     * Creates a {@code TextHitInfo} at the specified offset,
      * associated with the character after the offset.
      * @param offset an offset associated with the character after
      * the offset
-     * @return a <code>TextHitInfo</code> at the specified offset.
+     * @return a {@code TextHitInfo} at the specified offset.
      */
     public static TextHitInfo afterOffset(int offset) {
         return new TextHitInfo(offset, true);
     }
 
     /**
-     * Creates a <code>TextHitInfo</code> on the other side of the
-     * insertion point.  This <code>TextHitInfo</code> remains unchanged.
-     * @return a <code>TextHitInfo</code> on the other side of the
+     * Creates a {@code TextHitInfo} on the other side of the
+     * insertion point.  This {@code TextHitInfo} remains unchanged.
+     * @return a {@code TextHitInfo} on the other side of the
      * insertion point.
      */
     public TextHitInfo getOtherHit() {
@@ -232,14 +232,14 @@ public final class TextHitInfo {
     }
 
     /**
-     * Creates a <code>TextHitInfo</code> whose character index is offset
-     * by <code>delta</code> from the <code>charIndex</code> of this
-     * <code>TextHitInfo</code>. This <code>TextHitInfo</code> remains
+     * Creates a {@code TextHitInfo} whose character index is offset
+     * by {@code delta} from the {@code charIndex} of this
+     * {@code TextHitInfo}. This {@code TextHitInfo} remains
      * unchanged.
-     * @param delta the value to offset this <code>charIndex</code>
-     * @return a <code>TextHitInfo</code> whose <code>charIndex</code> is
-     * offset by <code>delta</code> from the <code>charIndex</code> of
-     * this <code>TextHitInfo</code>.
+     * @param delta the value to offset this {@code charIndex}
+     * @return a {@code TextHitInfo} whose {@code charIndex} is
+     * offset by {@code delta} from the {@code charIndex} of
+     * this {@code TextHitInfo}.
      */
     public TextHitInfo getOffsetHit(int delta) {
         return new TextHitInfo(charIndex + delta, isLeadingEdge);

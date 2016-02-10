@@ -70,7 +70,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
     /**
      * Creates an instance associated with the specified listener.
      *
-     * @throws NullPointerException if listener is <code>null</code>.
+     * @throws NullPointerException if listener is {@code null}.
      */
     static XDropTargetProtocol createInstance(XDropTargetProtocolListener listener) {
         return new XDnDDropTargetProtocol(listener);

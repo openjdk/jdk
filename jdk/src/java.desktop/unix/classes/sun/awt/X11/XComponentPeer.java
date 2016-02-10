@@ -680,7 +680,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
      * Gets the font metrics for the specified font.
      * @param font the font for which font metrics is to be
      *      obtained
-     * @return the font metrics for <code>font</code>
+     * @return the font metrics for {@code font}
      * @see       #getFont
      * @see       java.awt.peer.ComponentPeer#getFontMetrics(Font)
      * @see       Toolkit#getFontMetrics(Font)
@@ -724,8 +724,8 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 
     /*
      * The method changes the cursor.
-     * @param cursor - a new cursor to change to.
-     * @param ignoreSubComponents - if {@code true} is passed then
+     * @param cursor  a new cursor to change to.
+     * @param ignoreSubComponents   if {@code true} is passed then
      *                              the new cursor will be installed on window.
      *                              if {@code false} is passed then
      *                              subsequent components will try to handle

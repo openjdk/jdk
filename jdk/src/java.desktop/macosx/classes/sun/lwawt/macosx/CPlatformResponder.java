@@ -75,8 +75,7 @@ final class CPlatformResponder {
             jclickCount = clickCount;
         }
 
-        int jmodifiers = NSEvent.nsToJavaMouseModifiers(buttonNumber,
-                                                        modifierFlags);
+        int jmodifiers = NSEvent.nsToJavaModifiers(modifierFlags);
         boolean jpopupTrigger = NSEvent.isPopupTrigger(jmodifiers);
 
         eventNotifier.notifyMouseEvent(jeventType, System.currentTimeMillis(), jbuttonNumber,
@@ -90,9 +89,7 @@ final class CPlatformResponder {
     void handleScrollEvent(final int x, final int y, final int absX,
                            final int absY, final int modifierFlags,
                            final double deltaX, final double deltaY) {
-        final int buttonNumber = CocoaConstants.kCGMouseButtonCenter;
-        int jmodifiers = NSEvent.nsToJavaMouseModifiers(buttonNumber,
-                                                        modifierFlags);
+        int jmodifiers = NSEvent.nsToJavaModifiers(modifierFlags);
         final boolean isShift = (jmodifiers & InputEvent.SHIFT_DOWN_MASK) != 0;
 
         // Vertical scroll.
@@ -187,8 +184,7 @@ final class CPlatformResponder {
             postsTyped = false;
         }
 
-
-        int jmodifiers = NSEvent.nsToJavaKeyModifiers(modifierFlags);
+        int jmodifiers = NSEvent.nsToJavaModifiers(modifierFlags);
         long when = System.currentTimeMillis();
 
         if (jeventType == KeyEvent.KEY_PRESSED) {

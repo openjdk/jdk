@@ -38,13 +38,13 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 
 /**
- * The abstract class <code>MenuComponent</code> is the superclass
+ * The abstract class {@code MenuComponent} is the superclass
  * of all menu-related components. In this respect, the class
- * <code>MenuComponent</code> is analogous to the abstract superclass
- * <code>Component</code> for AWT components.
+ * {@code MenuComponent} is analogous to the abstract superclass
+ * {@code Component} for AWT components.
  * <p>
  * Menu components receive and process AWT events, just as components do,
- * through the method <code>processEvent</code>.
+ * through the method {@code processEvent}.
  *
  * @author      Arthur van Hoff
  * @since       1.0
@@ -63,15 +63,15 @@ public abstract class MenuComponent implements java.io.Serializable {
     transient MenuContainer parent;
 
     /**
-     * The <code>AppContext</code> of the <code>MenuComponent</code>.
+     * The {@code AppContext} of the {@code MenuComponent}.
      * This is set in the constructor and never changes.
      */
     transient AppContext appContext;
 
     /**
      * The menu component's font. This value can be
-     * <code>null</code> at which point a default will be used.
-     * This defaults to <code>null</code>.
+     * {@code null} at which point a default will be used.
+     * This defaults to {@code null}.
      *
      * @serial
      * @see #setFont(Font)
@@ -80,7 +80,7 @@ public abstract class MenuComponent implements java.io.Serializable {
     volatile Font font;
 
     /**
-     * The menu component's name, which defaults to <code>null</code>.
+     * The menu component's name, which defaults to {@code null}.
      * @serial
      * @see #getName()
      * @see #setName(String)
@@ -89,15 +89,15 @@ public abstract class MenuComponent implements java.io.Serializable {
 
     /**
      * A variable to indicate whether a name is explicitly set.
-     * If <code>true</code> the name will be set explicitly.
-     * This defaults to <code>false</code>.
+     * If {@code true} the name will be set explicitly.
+     * This defaults to {@code false}.
      * @serial
      * @see #setName(String)
      */
     private boolean nameExplicitlySet = false;
 
     /**
-     * Defaults to <code>false</code>.
+     * Defaults to {@code false}.
      * @serial
      * @see #dispatchEvent(AWTEvent)
      */
@@ -164,10 +164,10 @@ public abstract class MenuComponent implements java.io.Serializable {
     }
 
     /**
-     * Creates a <code>MenuComponent</code>.
+     * Creates a {@code MenuComponent}.
      * @exception HeadlessException if
-     *    <code>GraphicsEnvironment.isHeadless</code>
-     *    returns <code>true</code>
+     *    {@code GraphicsEnvironment.isHeadless}
+     *    returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     public MenuComponent() throws HeadlessException {
@@ -176,9 +176,9 @@ public abstract class MenuComponent implements java.io.Serializable {
     }
 
     /**
-     * Constructs a name for this <code>MenuComponent</code>.
-     * Called by <code>getName</code> when the name is <code>null</code>.
-     * @return a name for this <code>MenuComponent</code>
+     * Constructs a name for this {@code MenuComponent}.
+     * Called by {@code getName} when the name is {@code null}.
+     * @return a name for this {@code MenuComponent}
      */
     String constructComponentName() {
         return null; // For strict compliance with prior platform versions, a MenuComponent
@@ -226,7 +226,7 @@ public abstract class MenuComponent implements java.io.Serializable {
     /**
      * Returns the parent container for this menu component.
      * @return    the menu component containing this menu component,
-     *                 or <code>null</code> if this menu component
+     *                 or {@code null} if this menu component
      *                 is the outermost component, the menu bar itself
      */
     public MenuContainer getParent() {
@@ -243,7 +243,7 @@ public abstract class MenuComponent implements java.io.Serializable {
     /**
      * Gets the font used for this menu component.
      * @return   the font used in this menu component, if there is one;
-     *                  <code>null</code> otherwise
+     *                  {@code null} otherwise
      * @see     java.awt.MenuComponent#setFont
      */
     public Font getFont() {
@@ -290,7 +290,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * component, unless those subcomponents specify a different font.
      * <p>
      * Some platforms may not support setting of all font attributes
-     * of a menu component; in such cases, calling <code>setFont</code>
+     * of a menu component; in such cases, calling {@code setFont}
      * will have no effect on the unsupported font attributes of this
      * menu component.  Unless subcomponents of this menu component
      * specify a different font, this font will be used by those
@@ -385,7 +385,7 @@ public abstract class MenuComponent implements java.io.Serializable {
     }
     /**
      * Processes events occurring on this menu component.
-     * <p>Note that if the event parameter is <code>null</code>
+     * <p>Note that if the event parameter is {@code null}
      * the behavior is unspecified and may result in an
      * exception.
      *
@@ -397,10 +397,10 @@ public abstract class MenuComponent implements java.io.Serializable {
 
     /**
      * Returns a string representing the state of this
-     * <code>MenuComponent</code>. This method is intended to be used
+     * {@code MenuComponent}. This method is intended to be used
      * only for debugging purposes, and the content and format of the
      * returned string may vary between implementations. The returned
-     * string may be empty but may not be <code>null</code>.
+     * string may be empty but may not be {@code null}.
      *
      * @return     the parameter string of this menu component
      */
@@ -430,10 +430,10 @@ public abstract class MenuComponent implements java.io.Serializable {
     /**
      * Reads the menu component from an object input stream.
      *
-     * @param s the <code>ObjectInputStream</code> to read
+     * @param s the {@code ObjectInputStream} to read
      * @exception HeadlessException if
-     *   <code>GraphicsEnvironment.isHeadless</code> returns
-     *   <code>true</code>
+     *   {@code GraphicsEnvironment.isHeadless} returns
+     *   {@code true}
      * @serial
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
@@ -466,16 +466,16 @@ public abstract class MenuComponent implements java.io.Serializable {
     AccessibleContext accessibleContext = null;
 
     /**
-     * Gets the <code>AccessibleContext</code> associated with
-     * this <code>MenuComponent</code>.
+     * Gets the {@code AccessibleContext} associated with
+     * this {@code MenuComponent}.
      *
-     * The method implemented by this base class returns <code>null</code>.
-     * Classes that extend <code>MenuComponent</code>
+     * The method implemented by this base class returns {@code null}.
+     * Classes that extend {@code MenuComponent}
      * should implement this method to return the
-     * <code>AccessibleContext</code> associated with the subclass.
+     * {@code AccessibleContext} associated with the subclass.
      *
-     * @return the <code>AccessibleContext</code> of this
-     *     <code>MenuComponent</code>
+     * @return the {@code AccessibleContext} of this
+     *     {@code MenuComponent}
      * @since 1.3
      */
     public AccessibleContext getAccessibleContext() {
@@ -483,7 +483,7 @@ public abstract class MenuComponent implements java.io.Serializable {
     }
 
     /**
-     * Inner class of <code>MenuComponent</code> used to provide
+     * Inner class of {@code MenuComponent} used to provide
      * default support for accessibility.  This class is not meant
      * to be used directly by application developers, but is instead
      * meant only to be subclassed by menu component developers.
@@ -512,11 +512,11 @@ public abstract class MenuComponent implements java.io.Serializable {
         //
 
         /**
-         * Gets the <code>AccessibleSelection</code> associated with this
-         * object which allows its <code>Accessible</code> children to be selected.
+         * Gets the {@code AccessibleSelection} associated with this
+         * object which allows its {@code Accessible} children to be selected.
          *
-         * @return <code>AccessibleSelection</code> if supported by object;
-         *      else return <code>null</code>
+         * @return {@code AccessibleSelection} if supported by object;
+         *      else return {@code null}
          * @see AccessibleSelection
          */
         public AccessibleSelection getAccessibleSelection() {
@@ -525,14 +525,14 @@ public abstract class MenuComponent implements java.io.Serializable {
 
         /**
          * Gets the accessible name of this object.  This should almost never
-         * return <code>java.awt.MenuComponent.getName</code>, as that
+         * return {@code java.awt.MenuComponent.getName}, as that
          * generally isn't a localized name, and doesn't have meaning for the
          * user.  If the object is fundamentally a text object (e.g. a menu item), the
          * accessible name should be the text of the object (e.g. "save").
          * If the object has a tooltip, the tooltip text may also be an
          * appropriate String to return.
          *
-         * @return the localized name of the object -- can be <code>null</code>
+         * @return the localized name of the object -- can be {@code null}
          *         if this object does not have a name
          * @see AccessibleContext#setAccessibleName
          */
@@ -552,7 +552,7 @@ public abstract class MenuComponent implements java.io.Serializable {
          * text document" instead).
          *
          * @return the localized description of the object -- can be
-         *     <code>null</code> if this object does not have a description
+         *     {@code null} if this object does not have a description
          * @see AccessibleContext#setAccessibleDescription
          */
         public String getAccessibleDescription() {
@@ -562,7 +562,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         /**
          * Gets the role of this object.
          *
-         * @return an instance of <code>AccessibleRole</code>
+         * @return an instance of {@code AccessibleRole}
          *     describing the role of the object
          * @see AccessibleRole
          */
@@ -573,7 +573,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         /**
          * Gets the state of this object.
          *
-         * @return an instance of <code>AccessibleStateSet</code>
+         * @return an instance of {@code AccessibleStateSet}
          *     containing the current state set of the object
          * @see AccessibleState
          */
@@ -582,13 +582,13 @@ public abstract class MenuComponent implements java.io.Serializable {
         }
 
         /**
-         * Gets the <code>Accessible</code> parent of this object.
-         * If the parent of this object implements <code>Accessible</code>,
-         * this method should simply return <code>getParent</code>.
+         * Gets the {@code Accessible} parent of this object.
+         * If the parent of this object implements {@code Accessible},
+         * this method should simply return {@code getParent}.
          *
-         * @return the <code>Accessible</code> parent of this object -- can
-         *    be <code>null</code> if this object does not have an
-         *    <code>Accessible</code> parent
+         * @return the {@code Accessible} parent of this object -- can
+         *    be {@code null} if this object does not have an
+         *    {@code Accessible} parent
          */
         public Accessible getAccessibleParent() {
             if (accessibleParent != null) {
@@ -615,7 +615,7 @@ public abstract class MenuComponent implements java.io.Serializable {
 
         /**
          * Returns the number of accessible children in the object.  If all
-         * of the children of this object implement <code>Accessible</code>,
+         * of the children of this object implement {@code Accessible},
          * then this method should return the number of children of this object.
          *
          * @return the number of accessible children in the object
@@ -625,7 +625,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         }
 
         /**
-         * Returns the nth <code>Accessible</code> child of the object.
+         * Returns the nth {@code Accessible} child of the object.
          *
          * @param i zero-based index of child
          * @return the nth Accessible child of the object
@@ -648,8 +648,8 @@ public abstract class MenuComponent implements java.io.Serializable {
         }
 
         /**
-         * Gets the <code>AccessibleComponent</code> associated with
-         * this object if one exists.  Otherwise return <code>null</code>.
+         * Gets the {@code AccessibleComponent} associated with
+         * this object if one exists.  Otherwise return {@code null}.
          *
          * @return the component
          */
@@ -664,7 +664,7 @@ public abstract class MenuComponent implements java.io.Serializable {
          * Gets the background color of this object.
          *
          * @return the background color, if supported, of the object;
-         *     otherwise, <code>null</code>
+         *     otherwise, {@code null}
          */
         public Color getBackground() {
             return null; // Not supported for MenuComponents
@@ -672,9 +672,9 @@ public abstract class MenuComponent implements java.io.Serializable {
 
         /**
          * Sets the background color of this object.
-         * (For transparency, see <code>isOpaque</code>.)
+         * (For transparency, see {@code isOpaque}.)
          *
-         * @param c the new <code>Color</code> for the background
+         * @param c the new {@code Color} for the background
          * @see Component#isOpaque
          */
         public void setBackground(Color c) {
@@ -685,7 +685,7 @@ public abstract class MenuComponent implements java.io.Serializable {
          * Gets the foreground color of this object.
          *
          * @return the foreground color, if supported, of the object;
-         *     otherwise, <code>null</code>
+         *     otherwise, {@code null}
          */
         public Color getForeground() {
             return null; // Not supported for MenuComponents
@@ -694,59 +694,59 @@ public abstract class MenuComponent implements java.io.Serializable {
         /**
          * Sets the foreground color of this object.
          *
-         * @param c the new <code>Color</code> for the foreground
+         * @param c the new {@code Color} for the foreground
          */
         public void setForeground(Color c) {
             // Not supported for MenuComponents
         }
 
         /**
-         * Gets the <code>Cursor</code> of this object.
+         * Gets the {@code Cursor} of this object.
          *
-         * @return the <code>Cursor</code>, if supported, of the object;
-         *     otherwise, <code>null</code>
+         * @return the {@code Cursor}, if supported, of the object;
+         *     otherwise, {@code null}
          */
         public Cursor getCursor() {
             return null; // Not supported for MenuComponents
         }
 
         /**
-         * Sets the <code>Cursor</code> of this object.
+         * Sets the {@code Cursor} of this object.
          * <p>
          * The method may have no visual effect if the Java platform
          * implementation and/or the native system do not support
          * changing the mouse cursor shape.
-         * @param cursor the new <code>Cursor</code> for the object
+         * @param cursor the new {@code Cursor} for the object
          */
         public void setCursor(Cursor cursor) {
             // Not supported for MenuComponents
         }
 
         /**
-         * Gets the <code>Font</code> of this object.
+         * Gets the {@code Font} of this object.
          *
-         * @return the <code>Font</code>,if supported, for the object;
-         *     otherwise, <code>null</code>
+         * @return the {@code Font},if supported, for the object;
+         *     otherwise, {@code null}
          */
         public Font getFont() {
             return MenuComponent.this.getFont();
         }
 
         /**
-         * Sets the <code>Font</code> of this object.
+         * Sets the {@code Font} of this object.
          *
-         * @param f the new <code>Font</code> for the object
+         * @param f the new {@code Font} for the object
          */
         public void setFont(Font f) {
             MenuComponent.this.setFont(f);
         }
 
         /**
-         * Gets the <code>FontMetrics</code> of this object.
+         * Gets the {@code FontMetrics} of this object.
          *
-         * @param f the <code>Font</code>
+         * @param f the {@code Font}
          * @return the FontMetrics, if supported, the object;
-         *              otherwise, <code>null</code>
+         *              otherwise, {@code null}
          * @see #getFont
          */
         public FontMetrics getFontMetrics(Font f) {
@@ -776,7 +776,7 @@ public abstract class MenuComponent implements java.io.Serializable {
          * object intends to be visible; however, it may not in fact be
          * showing on the screen because one of the objects that this object
          * is contained by is not visible.  To determine if an object is
-         * showing on the screen, use <code>isShowing</code>.
+         * showing on the screen, use {@code isShowing}.
          *
          * @return true if object is visible; otherwise, false
          */
@@ -811,9 +811,9 @@ public abstract class MenuComponent implements java.io.Serializable {
          * where the point's x and y coordinates are defined to be relative to
          * the coordinate system of the object.
          *
-         * @param p the <code>Point</code> relative to the coordinate
+         * @param p the {@code Point} relative to the coordinate
          *     system of the object
-         * @return true if object contains <code>Point</code>; otherwise false
+         * @return true if object contains {@code Point}; otherwise false
          */
         public boolean contains(Point p) {
             return false; // Not supported for MenuComponents
@@ -822,7 +822,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         /**
          * Returns the location of the object on the screen.
          *
-         * @return location of object on screen -- can be <code>null</code>
+         * @return location of object on screen -- can be {@code null}
          *     if this object is not on the screen
          */
         public Point getLocationOnScreen() {
@@ -834,9 +834,9 @@ public abstract class MenuComponent implements java.io.Serializable {
          * of a point specifying the object's top-left corner in the screen's
          * coordinate space.
          *
-         * @return an instance of <code>Point</code> representing the
+         * @return an instance of {@code Point} representing the
          *    top-left corner of the object's bounds in the coordinate
-         *    space of the screen; <code>null</code> if
+         *    space of the screen; {@code null} if
          *    this object or its parent are not on the screen
          */
         public Point getLocation() {
@@ -852,12 +852,12 @@ public abstract class MenuComponent implements java.io.Serializable {
 
         /**
          * Gets the bounds of this object in the form of a
-         * <code>Rectangle</code> object.
+         * {@code Rectangle} object.
          * The bounds specify this object's width, height, and location
          * relative to its parent.
          *
          * @return a rectangle indicating this component's bounds;
-         *     <code>null</code> if this object is not on the screen
+         *     {@code null} if this object is not on the screen
          */
         public Rectangle getBounds() {
             return null; // Not supported for MenuComponents
@@ -865,7 +865,7 @@ public abstract class MenuComponent implements java.io.Serializable {
 
         /**
          * Sets the bounds of this object in the form of a
-         * <code>Rectangle</code> object.
+         * {@code Rectangle} object.
          * The bounds specify this object's width, height, and location
          * relative to its parent.
          *
@@ -877,13 +877,13 @@ public abstract class MenuComponent implements java.io.Serializable {
 
         /**
          * Returns the size of this object in the form of a
-         * <code>Dimension</code> object. The height field of
-         * the <code>Dimension</code> object contains this object's
-         * height, and the width field of the <code>Dimension</code>
+         * {@code Dimension} object. The height field of
+         * the {@code Dimension} object contains this object's
+         * height, and the width field of the {@code Dimension}
          * object contains this object's width.
          *
-         * @return a <code>Dimension</code> object that indicates the
-         *         size of this component; <code>null</code>
+         * @return a {@code Dimension} object that indicates the
+         *         size of this component; {@code null}
          *         if this object is not on the screen
          */
         public Dimension getSize() {
@@ -893,7 +893,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         /**
          * Resizes this object.
          *
-         * @param d - the <code>Dimension</code> specifying the
+         * @param d the {@code Dimension} specifying the
          *    new size of the object
          */
         public void setSize(Dimension d) {
@@ -901,16 +901,16 @@ public abstract class MenuComponent implements java.io.Serializable {
         }
 
         /**
-         * Returns the <code>Accessible</code> child, if one exists,
-         * contained at the local coordinate <code>Point</code>.
-         * If there is no <code>Accessible</code> child, <code>null</code>
+         * Returns the {@code Accessible} child, if one exists,
+         * contained at the local coordinate {@code Point}.
+         * If there is no {@code Accessible} child, {@code null}
          * is returned.
          *
          * @param p the point defining the top-left corner of the
-         *    <code>Accessible</code>, given in the coordinate space
+         *    {@code Accessible}, given in the coordinate space
          *    of the object's parent
-         * @return the <code>Accessible</code>, if it exists,
-         *    at the specified location; else <code>null</code>
+         * @return the {@code Accessible}, if it exists,
+         *    at the specified location; else {@code null}
          */
         public Accessible getAccessibleAt(Point p) {
             return null; // MenuComponents don't have children
@@ -956,7 +956,7 @@ public abstract class MenuComponent implements java.io.Serializable {
         //
 
         /**
-         * Returns the number of <code>Accessible</code> children currently selected.
+         * Returns the number of {@code Accessible} children currently selected.
          * If no children are selected, the return value will be 0.
          *
          * @return the number of items currently selected
@@ -966,10 +966,10 @@ public abstract class MenuComponent implements java.io.Serializable {
          }
 
         /**
-         * Returns an <code>Accessible</code> representing the specified
+         * Returns an {@code Accessible} representing the specified
          * selected child in the object.  If there isn't a selection, or there are
          * fewer children selected than the integer passed in, the return
-         * value will be <code>null</code>.
+         * value will be {@code null}.
          * <p>Note that the index represents the i-th selected child, which
          * is different from the i-th child.
          *
@@ -987,7 +987,7 @@ public abstract class MenuComponent implements java.io.Serializable {
          * @return true if the current child of this object is selected;
          *    else false
          * @param i the zero-based index of the child in this
-         *      <code>Accessible</code> object
+         *      {@code Accessible} object
          * @see AccessibleContext#getAccessibleChild
          */
          public boolean isAccessibleChildSelected(int i) {
@@ -995,7 +995,7 @@ public abstract class MenuComponent implements java.io.Serializable {
          }
 
         /**
-         * Adds the specified <code>Accessible</code> child of the object
+         * Adds the specified {@code Accessible} child of the object
          * to the object's selection.  If the object supports multiple selections,
          * the specified child is added to any existing selection, otherwise
          * it replaces any existing selection in the object.  If the
@@ -1068,7 +1068,7 @@ public abstract class MenuComponent implements java.io.Serializable {
     /**
      * Gets the state of this object.
      *
-     * @return an instance of <code>AccessibleStateSet</code>
+     * @return an instance of {@code AccessibleStateSet}
      *     containing the current state set of the object
      * @see AccessibleState
      */

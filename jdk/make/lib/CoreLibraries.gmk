@@ -247,6 +247,13 @@ ifeq ($(OPENJDK_TARGET_OS), aix)
   LIBJIMAGE_TOOLCHAIN := TOOLCHAIN_LINK_CXX
 endif # OPENJDK_TARGET_OS aix
 
+JIMAGELIB_CPPFLAGS := \
+    -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
+    -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
+    -I$(JDK_TOPDIR)/src/java.base/share/native/libjimage \
+    -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
+    #
+
 $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
     LIBRARY := jimage, \
     TOOLCHAIN := $(LIBJIMAGE_TOOLCHAIN), \
@@ -255,12 +262,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
     SRC := $(JDK_TOPDIR)/src/java.base/share/native/libjimage \
         $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjimage, \
     EXCLUDES := $(LIBJIMAGE_EXCLUDES), \
-    CFLAGS := $(CFLAGS_JDKLIB) \
-        $(JIMAGELIB_CPPFLAGS) \
-        -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
-        -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
-        -I$(JDK_TOPDIR)/src/java.base/share/native/libjimage \
-        -I$(SUPPORT_OUTPUTDIR)/headers/java.base, \
+    CFLAGS := $(CFLAGS_JDKLIB) $(JIMAGELIB_CPPFLAGS), \
+    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JIMAGELIB_CPPFLAGS), \
     CFLAGS_unix := -UDEBUG, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjimage/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \

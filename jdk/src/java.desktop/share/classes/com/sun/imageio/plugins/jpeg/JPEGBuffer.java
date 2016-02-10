@@ -75,12 +75,12 @@ class JPEGBuffer {
     }
 
     /**
-     * Ensures that there are at least <code>count</code> bytes available
+     * Ensures that there are at least {@code count} bytes available
      * in the buffer, loading more data and moving any remaining
      * bytes to the front.  A count of 0 means to just fill the buffer.
      * If the count is larger than the buffer size, just fills the buffer.
      * If the end of the stream is encountered before a non-0 count can
-     * be satisfied, an <code>IIOException</code> is thrown with the
+     * be satisfied, an {@code IIOException} is thrown with the
      * message "Image Format Error".
      */
     void loadBuf(int count) throws IOException {
@@ -122,7 +122,7 @@ class JPEGBuffer {
      * the buffer and then reading directly from the stream
      * if necessary.  The buffer is left in an appropriate
      * state.  If the end of the stream is encountered, an
-     * <code>IIOException</code> is thrown with the
+     * {@code IIOException} is thrown with the
      * message "Image Format Error".
      */
     void readData(byte [] data) throws IOException {
@@ -149,9 +149,9 @@ class JPEGBuffer {
     }
 
     /**
-     * Skips <code>count</code> bytes, leaving the buffer
+     * Skips {@code count} bytes, leaving the buffer
      * in an appropriate state.  If the end of the stream is
-     * encountered, an <code>IIOException</code> is thrown with the
+     * encountered, an {@code IIOException} is thrown with the
      * message "Image Format Error".
      */
     void skipData(int count) throws IOException {
@@ -195,8 +195,8 @@ class JPEGBuffer {
      * the buffer as necessary.  The buffer position is left
      * pointing to the first non-0xff byte after a run of
      * 0xff bytes.  If the end of the stream is encountered,
-     * an EOI marker is inserted into the buffer and <code>true</code>
-     * is returned.  Otherwise returns <code>false</code>.
+     * an EOI marker is inserted into the buffer and {@code true}
+     * is returned.  Otherwise returns {@code false}.
      */
     boolean scanForFF(JPEGImageReader reader) throws IOException {
         boolean retval = false;

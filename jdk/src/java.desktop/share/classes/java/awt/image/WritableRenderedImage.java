@@ -72,7 +72,7 @@ public interface WritableRenderedImage extends RenderedImage
   /**
    * Adds an observer.  If the observer is already present,
    * it will receive multiple notifications.
-   * @param to the specified <code>TileObserver</code>
+   * @param to the specified {@code TileObserver}
    */
   public void addTileObserver(TileObserver to);
 
@@ -80,7 +80,7 @@ public interface WritableRenderedImage extends RenderedImage
    * Removes an observer.  If the observer was not registered,
    * nothing happens.  If the observer was registered for multiple
    * notifications, it will now be registered for one fewer.
-   * @param to the specified <code>TileObserver</code>
+   * @param to the specified {@code TileObserver}
    */
   public void removeTileObserver(TileObserver to);
 
@@ -118,8 +118,8 @@ public interface WritableRenderedImage extends RenderedImage
    *
    * @param tileX the X index of the tile.
    * @param tileY the Y index of the tile.
-   * @return <code>true</code> if specified tile is checked out
-   *         for writing; <code>false</code> otherwise.
+   * @return {@code true} if specified tile is checked out
+   *         for writing; {@code false} otherwise.
    */
   public boolean isTileWritable(int tileX, int tileY);
 
@@ -135,8 +135,8 @@ public interface WritableRenderedImage extends RenderedImage
   /**
    * Returns whether any tile is checked out for writing.
    * Semantically equivalent to (getWritableTileIndices() != null).
-   * @return <code>true</code> if any tiles are checked out for
-   *         writing; <code>false</code> otherwise.
+   * @return {@code true} if any tiles are checked out for
+   *         writing; {@code false} otherwise.
    */
   public boolean hasTileWriters();
 
@@ -144,7 +144,7 @@ public interface WritableRenderedImage extends RenderedImage
    * Sets a rect of the image to the contents of the Raster r, which is
    * assumed to be in the same coordinate space as the WritableRenderedImage.
    * The operation is clipped to the bounds of the WritableRenderedImage.
-   * @param r the specified <code>Raster</code>
+   * @param r the specified {@code Raster}
    */
   public void setData(Raster r);
 

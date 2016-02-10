@@ -67,16 +67,16 @@ import java.awt.image.ColorModel;
 public abstract class RGBImageFilter extends ImageFilter {
 
     /**
-     * The <code>ColorModel</code> to be replaced by
-     * <code>newmodel</code> when the user calls
+     * The {@code ColorModel} to be replaced by
+     * {@code newmodel} when the user calls
      * {@link #substituteColorModel(ColorModel, ColorModel) substituteColorModel}.
      */
     protected ColorModel origmodel;
 
     /**
-     * The <code>ColorModel</code> with which to
-     * replace <code>origmodel</code> when the user calls
-     * <code>substituteColorModel</code>.
+     * The {@code ColorModel} with which to
+     * replace {@code origmodel} when the user calls
+     * {@code substituteColorModel}.
      */
     protected ColorModel newmodel;
 
@@ -103,7 +103,7 @@ public abstract class RGBImageFilter extends ImageFilter {
      * specifies the default RGB ColorModel instead.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose pixels
+     * {@code ImageProducer} of the {@code Image} whose pixels
      * are being filtered. Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
@@ -141,7 +141,7 @@ public abstract class RGBImageFilter extends ImageFilter {
      * a color table entry is being filtered rather than an actual
      * pixel value.
      * @param icm the IndexColorModel object to be filtered
-     * @exception NullPointerException if <code>icm</code> is null
+     * @exception NullPointerException if {@code icm} is null
      * @return a new IndexColorModel representing the filtered colors
      */
     public IndexColorModel filterIndexColorModel(IndexColorModel icm) {
@@ -185,7 +185,7 @@ public abstract class RGBImageFilter extends ImageFilter {
      * @param w the width of the region of pixels
      * @param h the height of the region of pixels
      * @param pixels the array of pixels
-     * @param off the offset into the <code>pixels</code> array
+     * @param off the offset into the {@code pixels} array
      * @param scansize the distance from one row of pixels to the next
      *        in the array
      * @see ColorModel#getRGBdefault
@@ -213,7 +213,7 @@ public abstract class RGBImageFilter extends ImageFilter {
      * buffer to the filterRGBPixels method to be converted one by one.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose pixels
+     * {@code ImageProducer} of the {@code Image} whose pixels
      * are being filtered. Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
@@ -250,7 +250,7 @@ public abstract class RGBImageFilter extends ImageFilter {
      * and passes the converted buffer to the filterRGBPixels method.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose pixels
+     * {@code ImageProducer} of the {@code Image} whose pixels
      * are being filtered. Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere

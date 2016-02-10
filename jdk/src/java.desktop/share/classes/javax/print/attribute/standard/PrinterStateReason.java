@@ -56,10 +56,10 @@ import javax.print.attribute.Attribute;
  * <P>
  * <B>IPP Compatibility:</B>
  * The string values returned by each individual {@link PrinterStateReason} and
- * associated {@link Severity} object's <CODE>toString()</CODE>
- * methods, concatenated together with a hyphen (<CODE>"-"</CODE>) in
+ * associated {@link Severity} object's {@code toString()}
+ * methods, concatenated together with a hyphen ({@code "-"}) in
  * between, gives the IPP keyword value for a {@link PrinterStateReasons}.
- * The category name returned by <CODE>getName()</CODE> gives the IPP
+ * The category name returned by {@code getName()} gives the IPP
  * attribute name.
  *
  * @author  Alan Kaminsky
@@ -432,7 +432,7 @@ public class PrinterStateReason extends EnumSyntax implements Attribute {
      * instance.
      * <P>
      * For class PrinterStateReason and any vendor-defined subclasses, the
-     * category name is <CODE>"printer-state-reason"</CODE>.
+     * category name is {@code "printer-state-reason"}.
      *
      * @return  Attribute category name.
      */

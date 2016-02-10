@@ -45,8 +45,8 @@ public class PrintJobAttributeEvent extends PrintEvent {
      * Constructs a PrintJobAttributeEvent object.
      * @param source the print job generating  this event
      * @param attributes the attribute changes being reported
-     * @throws IllegalArgumentException if <code>source</code> is
-     *         <code>null</code>.
+     * @throws IllegalArgumentException if {@code source} is
+     *         {@code null}.
      */
     public PrintJobAttributeEvent (DocPrintJob source,
                                    PrintJobAttributeSet attributes)  {

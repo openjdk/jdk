@@ -31,14 +31,14 @@ import java.util.EventListener;
  * The listener interface for receiving window events.
  * The class that is interested in processing a window event
  * either implements this interface (and all the methods it
- * contains) or extends the abstract <code>WindowAdapter</code> class
+ * contains) or extends the abstract {@code WindowAdapter} class
  * (overriding only the methods of interest).
  * The listener object created from that class is then registered with a
- * Window using the window's <code>addWindowListener</code>
+ * Window using the window's {@code addWindowListener}
  * method. When the window's status changes by virtue of being opened,
  * closed, activated or deactivated, iconified or deiconified,
  * the relevant method in the listener object is invoked, and the
- * <code>WindowEvent</code> is passed to it.
+ * {@code WindowEvent} is passed to it.
  *
  * @author Carl Quinn
  *

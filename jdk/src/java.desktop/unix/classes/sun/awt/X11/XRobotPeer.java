@@ -31,6 +31,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 import sun.awt.UNIXToolkit;
 import sun.awt.X11GraphicsConfig;
+import sun.awt.X11GraphicsEnvironment;
 
 class XRobotPeer implements RobotPeer {
 
@@ -64,7 +65,14 @@ class XRobotPeer implements RobotPeer {
 
     @Override
     public void mouseMove(int x, int y) {
-        mouseMoveImpl(xgc, xgc.scaleUp(x), xgc.scaleUp(y));
+        X11GraphicsEnvironment x11ge = (X11GraphicsEnvironment)
+                GraphicsEnvironment.getLocalGraphicsEnvironment();
+        if(x11ge.runningXinerama()) {
+            Rectangle sb = xgc.getBounds();
+            mouseMoveImpl(xgc, xgc.scaleUp(x + sb.x), xgc.scaleUp(y + sb.y));
+        } else {
+            mouseMoveImpl(xgc, xgc.scaleUp(x), xgc.scaleUp(y));
+        }
     }
 
     @Override

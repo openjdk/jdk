@@ -520,7 +520,7 @@
                 <package-root>${root}/build/bootstrap/jdk.jshell/gensrc</package-root>
                 <package-root>${root}/../jdk/src/jdk.internal.le/share/classes</package-root>
                 <package-root>${root}/../jdk/src/jdk.jdi/share/classes</package-root>
-                <classpath mode="compile">${root}/build/java.compiler/classes:${root}/build/jdk.compiler/classes:${root}/build/jdk.internal.le/aux:${root}/build/jdk.jdi/aux:${root}/build/jdk.internal.le/classes:${root}/build/jdk.jdi/classes</classpath>
+                <classpath mode="compile">${root}/build/java.compiler/classes:${root}/build/jdk.compiler/classes:${root}/build/jdk.internal.le/classes:${root}/build/jdk.jdi/classes</classpath>
                 <built-to>${root}/build/jdk.jshell/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>

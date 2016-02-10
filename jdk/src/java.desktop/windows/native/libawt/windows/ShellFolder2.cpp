@@ -686,6 +686,9 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_getLinkLocation
       case STRRET_WSTR :
         wstr = strret.pOleStr;
         break;
+
+      default:
+        return NULL;
     }
 
     IShellLinkW* psl;
