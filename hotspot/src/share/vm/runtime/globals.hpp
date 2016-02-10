@@ -2012,11 +2012,15 @@ public:
           range(min_intx, 100)                                              \
                                                                             \
   product(uintx, InitiatingHeapOccupancyPercent, 45,                        \
-          "Percentage of the (entire) heap occupancy to start a "           \
-          "concurrent GC cycle. It is used by GCs that trigger a "          \
-          "concurrent GC cycle based on the occupancy of the entire heap, " \
-          "not just one of the generations (e.g., G1). A value of 0 "       \
-          "denotes 'do constant GC cycles'.")                               \
+          "The percent occupancy (IHOP) of the current old generation "     \
+          "capacity above which a concurrent mark cycle will be initiated " \
+          "Its value may change over time if adaptive IHOP is enabled, "    \
+          "otherwise the value remains constant. "                          \
+          "In the latter case a value of 0 will result as frequent as "     \
+          "possible concurrent marking cycles. A value of 100 disables "    \
+          "concurrent marking. "                                            \
+          "Fragmentation waste in the old generation is not considered "    \
+          "free space in this calculation. (G1 collector only)")            \
           range(0, 100)                                                     \
                                                                             \
   manageable(intx, CMSTriggerInterval, -1,                                  \
