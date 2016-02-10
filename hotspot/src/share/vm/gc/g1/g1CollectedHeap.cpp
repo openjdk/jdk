@@ -1290,8 +1290,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       ref_processor_cm()->verify_no_references_recorded();
 
       // Abandon current iterations of concurrent marking and concurrent
-      // refinement, if any are in progress. We have to do this before
-      // wait_until_scan_finished() below.
+      // refinement, if any are in progress.
       concurrent_mark()->abort();
 
       // Make sure we'll choose a new allocation region afterwards.
