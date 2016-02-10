@@ -182,22 +182,30 @@ public final class StringConcatFactory {
 
     private static final ConcurrentMap<Key, MethodHandle> CACHE;
 
+    /**
+     * Dump generated classes to disk, for debugging purposes.
+     */
+    private static final ProxyClassesDumper DUMPER;
+
     static {
         // Poke the privileged block once, taking everything we need:
-        final Object[] values = new Object[3];
+        final Object[] values = new Object[4];
         AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
             values[0] = System.getProperty("java.lang.invoke.stringConcat");
             values[1] = Boolean.getBoolean("java.lang.invoke.stringConcat.cache");
             values[2] = Boolean.getBoolean("java.lang.invoke.stringConcat.debug");
+            values[3] = System.getProperty("java.lang.invoke.stringConcat.dumpClasses");
             return null;
         });
 
         final String strategy = (String)  values[0];
         CACHE_ENABLE          = (Boolean) values[1];
         DEBUG                 = (Boolean) values[2];
+        final String dumpPath = (String)  values[3];
 
         STRATEGY = (strategy == null) ? DEFAULT_STRATEGY : Strategy.valueOf(strategy);
         CACHE = CACHE_ENABLE ? new ConcurrentHashMap<>() : null;
+        DUMPER = (dumpPath == null) ? null : ProxyClassesDumper.getInstance(dumpPath);
     }
 
     private static final class Key {
@@ -550,6 +558,12 @@ public final class StringConcatFactory {
 
         for (Object o : constants) {
             Objects.requireNonNull(o, "Cannot accept null constants");
+        }
+
+        if ((lookup.lookupModes() & MethodHandles.Lookup.PRIVATE) == 0) {
+            throw new StringConcatException(String.format(
+                    "Invalid caller: %s",
+                    lookup.lookupClass().getName()));
         }
 
         int cCount = 0;
@@ -1034,6 +1048,10 @@ public final class StringConcatFactory {
             Class<?> targetClass = lookup.lookupClass();
             final byte[] classBytes = cw.toByteArray();
             final Class<?> innerClass = UNSAFE.defineAnonymousClass(targetClass, classBytes, null);
+
+            if (DUMPER != null) {
+                DUMPER.dumpClass(innerClass.getName(), classBytes);
+            }
 
             try {
                 UNSAFE.ensureClassInitialized(innerClass);
