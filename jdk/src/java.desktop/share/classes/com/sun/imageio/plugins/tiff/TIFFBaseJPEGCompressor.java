@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,16 +86,16 @@ public abstract class TIFFBaseJPEGCompressor extends TIFFCompressor {
 
     /**
      * Whether to write abbreviated JPEG streams (default == false).
-     * A subclass which sets this to <code>true</code> should also
+     * A subclass which sets this to {@code true} should also
      * initialized {@link #JPEGStreamMetadata}.
      */
     protected boolean writeAbbreviatedStream = false;
 
     /**
      * Stream metadata equivalent to a tables-only stream such as in
-     * the <code>JPEGTables</code>. Default value is <code>null</code>.
+     * the {@code JPEGTables}. Default value is {@code null}.
      * This should be set by any subclass which sets
-     * {@link writeAbbreviatedStream} to <code>true</code>.
+     * {@link writeAbbreviatedStream} to {@code true}.
      */
     protected IIOMetadata JPEGStreamMetadata = null;
 
@@ -108,15 +108,15 @@ public abstract class TIFFBaseJPEGCompressor extends TIFFCompressor {
     /**
      * Removes nonessential nodes from a JPEG native image metadata tree.
      * All nodes derived from JPEG marker segments other than DHT, DQT,
-     * SOF, SOS segments are removed unless <code>pruneTables</code> is
-     * <code>true</code> in which case the nodes derived from the DHT and
+     * SOF, SOS segments are removed unless {@code pruneTables} is
+     * {@code true} in which case the nodes derived from the DHT and
      * DQT marker segments are also removed.
      *
      * @param tree A <tt>javax_imageio_jpeg_image_1.0</tt> tree.
      * @param pruneTables Whether to prune Huffman and quantization tables.
-     * @throws NullPointerException if <code>tree</code> is
-     * <code>null</code>.
-     * @throws IllegalArgumentException if <code>tree</code> is not the root
+     * @throws NullPointerException if {@code tree} is
+     * {@code null}.
+     * @throws IllegalArgumentException if {@code tree} is not the root
      * of a JPEG native image metadata tree.
      */
     private static void pruneNodes(Node tree, boolean pruneTables) {
@@ -182,8 +182,8 @@ public abstract class TIFFBaseJPEGCompressor extends TIFFCompressor {
     }
 
     /**
-     * A <code>ByteArrayOutputStream</code> which allows writing to an
-     * <code>ImageOutputStream</code>.
+     * A {@code ByteArrayOutputStream} which allows writing to an
+     * {@code ImageOutputStream}.
      */
     private static class IIOByteArrayOutputStream extends ByteArrayOutputStream {
         IIOByteArrayOutputStream() {

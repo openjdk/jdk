@@ -41,58 +41,58 @@ import com.sun.imageio.plugins.tiff.TIFFImageMetadata;
  * image metadata. A TIFF image metadata tree represents an Image File
  * Directory (IFD) from a TIFF 6.0 stream. An IFD consists of a number of
  * IFD Entries each of which associates an identifying tag number with
- * a compatible value. A <code>TIFFDirectory</code> instance corresponds
+ * a compatible value. A {@code TIFFDirectory} instance corresponds
  * to an IFD and contains a set of {@link TIFFField}s each of which
  * corresponds to an IFD Entry in the IFD.
  *
- * <p>When reading, a <code>TIFFDirectory</code> may be created by passing
+ * <p>When reading, a {@code TIFFDirectory} may be created by passing
  * the value returned by {@link javax.imageio.ImageReader#getImageMetadata
  * ImageReader.getImageMetadata()} to {@link #createFromMetadata
  * createFromMetadata()}. The {@link TIFFField}s in the directory may then
  * be obtained using the accessor methods provided in this class.</p>
  *
  * <p>When writing, an {@link IIOMetadata} object for use by one of the
- * <code>write()</code> methods of {@link javax.imageio.ImageWriter} may be
- * created from a <code>TIFFDirectory</code> by {@link #getAsMetadata()}.
- * The <code>TIFFDirectory</code> itself may be created by construction or
- * from the <code>IIOMetadata</code> object returned by
+ * {@code write()} methods of {@link javax.imageio.ImageWriter} may be
+ * created from a {@code TIFFDirectory} by {@link #getAsMetadata()}.
+ * The {@code TIFFDirectory} itself may be created by construction or
+ * from the {@code IIOMetadata} object returned by
  * {@link javax.imageio.ImageWriter#getDefaultImageMetadata
- * ImageWriter.getDefaultImageMetadata()}. The <code>TIFFField</code>s in the
+ * ImageWriter.getDefaultImageMetadata()}. The {@code TIFFField}s in the
  * directory may be set using the mutator methods provided in this class.</p>
  *
- * <p>A <code>TIFFDirectory</code> is aware of the tag numbers in the
+ * <p>A {@code TIFFDirectory} is aware of the tag numbers in the
  * group of {@link TIFFTagSet}s associated with it. When
- * a <code>TIFFDirectory</code> is created from a native image metadata
+ * a {@code TIFFDirectory} is created from a native image metadata
  * object, these tag sets are derived from the <tt>tagSets</tt> attribute
  * of the <tt>TIFFIFD</tt> node.</p>
  *
- * <p>A <code>TIFFDirectory</code> might also have a parent {@link TIFFTag}.
+ * <p>A {@code TIFFDirectory} might also have a parent {@link TIFFTag}.
  * This will occur if the directory represents an IFD other than the root
  * IFD of the image. The parent tag is the tag of the IFD Entry which is a
- * pointer to the IFD represented by this <code>TIFFDirectory</code>. The
- * {@link TIFFTag#isIFDPointer} method of this parent <code>TIFFTag</code>
- * must return <code>true</code>.  When a <code>TIFFDirectory</code> is
+ * pointer to the IFD represented by this {@code TIFFDirectory}. The
+ * {@link TIFFTag#isIFDPointer} method of this parent {@code TIFFTag}
+ * must return {@code true}.  When a {@code TIFFDirectory} is
  * created from a native image metadata object, the parent tag set is set
  * from the <tt>parentTagName</tt> attribute of the corresponding
- * <tt>TIFFIFD</tt> node. Note that a <code>TIFFDirectory</code> instance
- * which has a non-<code>null</code> parent tag will be contained in the
- * data field of a <code>TIFFField</code> instance which has a tag field
+ * <tt>TIFFIFD</tt> node. Note that a {@code TIFFDirectory} instance
+ * which has a non-{@code null} parent tag will be contained in the
+ * data field of a {@code TIFFField} instance which has a tag field
  * equal to the contained directory's parent tag.</p>
  *
- * <p>As an example consider an Exif image. The <code>TIFFDirectory</code>
+ * <p>As an example consider an Exif image. The {@code TIFFDirectory}
  * instance corresponding to the Exif IFD in the Exif stream would have parent
  * tag {@link ExifParentTIFFTagSet#TAG_EXIF_IFD_POINTER TAG_EXIF_IFD_POINTER}
  * and would include {@link ExifTIFFTagSet} in its group of known tag sets.
- * The <code>TIFFDirectory</code> corresponding to this Exif IFD will be
- * contained in the data field of a <code>TIFFField</code> which will in turn
- * be contained in the <code>TIFFDirectory</code> corresponding to the primary
- * IFD of the Exif image which will itself have a <code>null</code>-valued
+ * The {@code TIFFDirectory} corresponding to this Exif IFD will be
+ * contained in the data field of a {@code TIFFField} which will in turn
+ * be contained in the {@code TIFFDirectory} corresponding to the primary
+ * IFD of the Exif image which will itself have a {@code null}-valued
  * parent tag.</p>
  *
  * <p><b>Note that this implementation is not synchronized. </b>If multiple
- * threads use a <code>TIFFDirectory</code> instance concurrently, and at
+ * threads use a {@code TIFFDirectory} instance concurrently, and at
  * least one of the threads modifies the directory, for example, by adding
- * or removing <code>TIFFField</code>s or <code>TIFFTagSet</code>s, it
+ * or removing {@code TIFFField}s or {@code TIFFTagSet}s, it
  * <i>must</i> be synchronized externally.</p>
  *
  * @since 9
@@ -107,10 +107,10 @@ public class TIFFDirectory implements Cloneable {
     private static final int MAX_LOW_FIELD_TAG_NUM =
         BaselineTIFFTagSet.TAG_REFERENCE_BLACK_WHITE;
 
-    /** The <code>TIFFTagSets</code> associated with this directory. */
+    /** The {@code TIFFTagSets} associated with this directory. */
     private List<TIFFTagSet> tagSets;
 
-    /** The parent <code>TIFFTag</code> of this directory. */
+    /** The parent {@code TIFFTag} of this directory. */
     private TIFFTag parentTag;
 
     /**
@@ -123,13 +123,13 @@ public class TIFFDirectory implements Cloneable {
     private int numLowFields = 0;
 
     /**
-     * A mapping of <code>Integer</code> tag numbers to <code>TIFFField</code>s
+     * A mapping of {@code Integer} tag numbers to {@code TIFFField}s
      * for fields which are not low tag numbered.
      */
     private Map<Integer,TIFFField> highFields = new TreeMap<Integer,TIFFField>();
 
     /**
-     * Creates a <code>TIFFDirectory</code> instance from the contents of
+     * Creates a {@code TIFFDirectory} instance from the contents of
      * an image metadata object. The supplied object must support an image
      * metadata format supported by the TIFF {@link javax.imageio.ImageWriter}
      * plug-in. This will usually be either the TIFF native image metadata
@@ -139,12 +139,12 @@ public class TIFFDirectory implements Cloneable {
      * @param tiffImageMetadata A metadata object which supports a compatible
      * image metadata format.
      *
-     * @return A <code>TIFFDirectory</code> populated from the contents of
+     * @return A {@code TIFFDirectory} populated from the contents of
      * the supplied metadata object.
      *
-     * @throws NullPointerException if <code>tiffImageMetadata</code>
-     * is <code>null</code>.
-     * @throws IllegalArgumentException if <code>tiffImageMetadata</code>
+     * @throws NullPointerException if {@code tiffImageMetadata}
+     * is {@code null}.
+     * @throws IllegalArgumentException if {@code tiffImageMetadata}
      * does not support a compatible image metadata format.
      * @throws IIOInvalidTreeException if the supplied metadata object
      * cannot be parsed.
@@ -204,7 +204,7 @@ public class TIFFDirectory implements Cloneable {
     }
 
     /**
-     * Converts a <code>TIFFDirectory</code> to a <code>TIFFIFD</code>.
+     * Converts a {@code TIFFDirectory} to a {@code TIFFIFD}.
      */
     private static TIFFIFD getDirectoryAsIFD(TIFFDirectory dir) {
         if(dir instanceof TIFFIFD) {
@@ -242,16 +242,16 @@ public class TIFFDirectory implements Cloneable {
     }
 
     /**
-     * Constructs a <code>TIFFDirectory</code> which is aware of a given
+     * Constructs a {@code TIFFDirectory} which is aware of a given
      * group of {@link TIFFTagSet}s. An optional parent {@link TIFFTag}
      * may also be specified.
      *
-     * @param tagSets The <code>TIFFTagSets</code> associated with this
+     * @param tagSets The {@code TIFFTagSets} associated with this
      * directory.
-     * @param parentTag The parent <code>TIFFTag</code> of this directory;
-     * may be <code>null</code>.
-     * @throws NullPointerException if <code>tagSets</code> is
-     * <code>null</code>.
+     * @param parentTag The parent {@code TIFFTag} of this directory;
+     * may be {@code null}.
+     * @throws NullPointerException if {@code tagSets} is
+     * {@code null}.
      */
     public TIFFDirectory(TIFFTagSet[] tagSets, TIFFTag parentTag) {
         if(tagSets == null) {
@@ -268,8 +268,8 @@ public class TIFFDirectory implements Cloneable {
     /**
      * Returns the {@link TIFFTagSet}s of which this directory is aware.
      *
-     * @return The <code>TIFFTagSet</code>s associated with this
-     * <code>TIFFDirectory</code>.
+     * @return The {@code TIFFTagSet}s associated with this
+     * {@code TIFFDirectory}.
      */
     public TIFFTagSet[] getTagSets() {
         return tagSets.toArray(new TIFFTagSet[tagSets.size()]);
@@ -279,9 +279,9 @@ public class TIFFDirectory implements Cloneable {
      * Adds an element to the group of {@link TIFFTagSet}s of which this
      * directory is aware.
      *
-     * @param tagSet The <code>TIFFTagSet</code> to add.
-     * @throws NullPointerException if <code>tagSet</code> is
-     * <code>null</code>.
+     * @param tagSet The {@code TIFFTagSet} to add.
+     * @throws NullPointerException if {@code tagSet} is
+     * {@code null}.
      */
     public void addTagSet(TIFFTagSet tagSet) {
         if(tagSet == null) {
@@ -297,9 +297,9 @@ public class TIFFDirectory implements Cloneable {
      * Removes an element from the group of {@link TIFFTagSet}s of which this
      * directory is aware.
      *
-     * @param tagSet The <code>TIFFTagSet</code> to remove.
-     * @throws NullPointerException if <code>tagSet</code> is
-     * <code>null</code>.
+     * @param tagSet The {@code TIFFTagSet} to remove.
+     * @throws NullPointerException if {@code tagSet} is
+     * {@code null}.
      */
     public void removeTagSet(TIFFTagSet tagSet) {
         if(tagSet == null) {
@@ -313,10 +313,10 @@ public class TIFFDirectory implements Cloneable {
 
     /**
      * Returns the parent {@link TIFFTag} of this directory if one
-     * has been defined or <code>null</code> otherwise.
+     * has been defined or {@code null} otherwise.
      *
-     * @return The parent <code>TIFFTag</code> of this
-     * <code>TIFFDiectory</code> or <code>null</code>.
+     * @return The parent {@code TIFFTag} of this
+     * {@code TIFFDiectory} or {@code null}.
      */
     public TIFFTag getParentTag() {
         return parentTag;
@@ -324,12 +324,12 @@ public class TIFFDirectory implements Cloneable {
 
     /**
      * Returns the {@link TIFFTag} which has tag number equal to
-     * <code>tagNumber</code> or <code>null</code> if no such tag
+     * {@code tagNumber} or {@code null} if no such tag
      * exists in the {@link TIFFTagSet}s associated with this
      * directory.
      *
      * @param tagNumber The tag number of interest.
-     * @return The corresponding <code>TIFFTag</code> or <code>null</code>.
+     * @return The corresponding {@code TIFFTag} or {@code null}.
      */
     public TIFFTag getTag(int tagNumber) {
         return TIFFIFD.getTag(tagNumber, tagSets);
@@ -338,8 +338,8 @@ public class TIFFDirectory implements Cloneable {
     /**
      * Returns the number of {@link TIFFField}s in this directory.
      *
-     * @return The number of <code>TIFFField</code>s in this
-     * <code>TIFFDirectory</code>.
+     * @return The number of {@code TIFFField}s in this
+     * {@code TIFFDirectory}.
      */
     public int getNumTIFFFields() {
         return numLowFields + highFields.size();
@@ -351,7 +351,7 @@ public class TIFFDirectory implements Cloneable {
      *
      * @param tagNumber The tag number.
      * @return Whether a {@link TIFFTag} with tag number equal to
-     * <code>tagNumber</code> is present in this <code>TIFFDirectory</code>.
+     * {@code tagNumber} is present in this {@code TIFFDirectory}.
      */
     public boolean containsTIFFField(int tagNumber) {
         return (tagNumber >= 0 && tagNumber <= MAX_LOW_FIELD_TAG_NUM &&
@@ -363,7 +363,7 @@ public class TIFFDirectory implements Cloneable {
      * Adds a TIFF field to the directory.
      *
      * @param f The field to add.
-     * @throws NullPointerException if <code>f</code> is <code>null</code>.
+     * @throws NullPointerException if {@code f} is {@code null}.
      */
     public void addTIFFField(TIFFField f) {
         if(f == null) {
@@ -384,8 +384,8 @@ public class TIFFDirectory implements Cloneable {
      * Retrieves a TIFF field from the directory.
      *
      * @param tagNumber The tag number of the tag associated with the field.
-     * @return A <code>TIFFField</code> with the requested tag number of
-     * <code>null</code> if no such field is present.
+     * @return A {@code TIFFField} with the requested tag number of
+     * {@code null} if no such field is present.
      */
     public TIFFField getTIFFField(int tagNumber) {
         TIFFField f;
@@ -456,7 +456,7 @@ public class TIFFDirectory implements Cloneable {
      * Converts the directory to a metadata object.
      *
      * @return A metadata instance initialized from the contents of this
-     * <code>TIFFDirectory</code>.
+     * {@code TIFFDirectory}.
      */
     public IIOMetadata getAsMetadata() {
         return new TIFFImageMetadata(getDirectoryAsIFD(this));
@@ -465,7 +465,7 @@ public class TIFFDirectory implements Cloneable {
     /**
      * Clones the directory and all the fields contained therein.
      *
-     * @return A clone of this <code>TIFFDirectory</code>.
+     * @return A clone of this {@code TIFFDirectory}.
      * @throws CloneNotSupportedException if the instance cannot be cloned.
      */
     @Override
