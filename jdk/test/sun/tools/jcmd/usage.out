@@ -7,7 +7,7 @@ Usage: jcmd <pid | main class> <command ...|PerfCounter.print|-f file>
   If the pid is 0, commands will be sent to all Java processes.   
   The main class argument will be used to match (either partially 
   or fully) the class used to start Java.                         
-  If no options are given, lists Java processes (same as -p).     
+  If no options are given, lists Java processes (same as -l).     
                                                                   
   PerfCounter.print display the counters exposed by this process  
   -f  read and execute commands from the file                     

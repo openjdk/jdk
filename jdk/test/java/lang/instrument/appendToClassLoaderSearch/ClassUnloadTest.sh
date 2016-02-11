@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -80,5 +80,5 @@ $JAR ${TESTTOOLVMOPTS} -cfm "${TESTCLASSES}"/ClassUnloadTest.jar "${MANIFEST}" \
 
 # Finally we run the test
 (cd "${TESTCLASSES}"; \
-  $JAVA ${TESTVMOPTS} -Xverify:none -XX:+TraceClassUnloading \
+  $JAVA ${TESTVMOPTS} -Xverify:none -Xlog:classunload \
     -javaagent:ClassUnloadTest.jar ClassUnloadTest "${OTHERDIR}" Bar.jar)
