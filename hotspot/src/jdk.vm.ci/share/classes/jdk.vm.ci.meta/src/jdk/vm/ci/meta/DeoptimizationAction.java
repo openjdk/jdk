@@ -59,7 +59,7 @@ public enum DeoptimizationAction {
 
     private final boolean invalidatesCompilation;
 
-    private DeoptimizationAction(boolean invalidatesCompilation) {
+    DeoptimizationAction(boolean invalidatesCompilation) {
         this.invalidatesCompilation = invalidatesCompilation;
     }
 

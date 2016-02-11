@@ -360,7 +360,7 @@ public class HotSpotVMConfig {
 
         private final long address;
 
-        public VMFields(long address) {
+        VMFields(long address) {
             this.address = address;
         }
 
@@ -477,7 +477,7 @@ public class HotSpotVMConfig {
 
         private final long address;
 
-        public VMTypes(long address) {
+        VMTypes(long address) {
             this.address = address;
         }
 
@@ -580,7 +580,7 @@ public class HotSpotVMConfig {
 
         private final long address;
 
-        public VMIntConstants(long address) {
+        VMIntConstants(long address) {
             this.address = address;
         }
 
@@ -639,7 +639,7 @@ public class HotSpotVMConfig {
 
         private final long address;
 
-        public VMLongConstants(long address) {
+        VMLongConstants(long address) {
             this.address = address;
         }
 
@@ -698,7 +698,7 @@ public class HotSpotVMConfig {
 
         private final long address;
 
-        public VMAddresses(long address) {
+        VMAddresses(long address) {
             this.address = address;
         }
 
@@ -753,7 +753,7 @@ public class HotSpotVMConfig {
         private final long nameOffset;
         private final long addrOffset;
 
-        public Flags(HashMap<String, VMFields.Field> vmStructs, HashMap<String, VMTypes.Type> vmTypes) {
+        Flags(HashMap<String, VMFields.Field> vmStructs, HashMap<String, VMTypes.Type> vmTypes) {
             address = vmStructs.get("Flag::flags").getValue();
             entrySize = vmTypes.get("Flag").getSize();
             typeOffset = vmStructs.get("Flag::_type").getOffset();
