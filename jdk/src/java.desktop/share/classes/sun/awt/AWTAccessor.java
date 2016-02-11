@@ -85,7 +85,7 @@ public final class AWTAccessor {
         /*
          *
          * Gets the bounds of this component in the form of a
-         * <code>Rectangle</code> object. The bounds specify this
+         * {@code Rectangle} object. The bounds specify this
          * component's width, height, and location relative to
          * its parent.
          */

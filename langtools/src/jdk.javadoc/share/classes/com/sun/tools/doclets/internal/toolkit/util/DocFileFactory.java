@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
-import java.util.Map;
-import java.util.WeakHashMap;
-
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardJavaFileManager;
@@ -45,15 +42,13 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  *
  * @since 1.8
  */
-abstract class DocFileFactory {
-    private static final Map<Configuration, DocFileFactory> factories = new WeakHashMap<>();
-
+public abstract class DocFileFactory {
     /**
      * Get the appropriate factory, based on the file manager given in the
      * configuration.
      */
     static synchronized DocFileFactory getFactory(Configuration configuration) {
-        DocFileFactory f = factories.get(configuration);
+        DocFileFactory f = configuration.docFileFactory;
         if (f == null) {
             JavaFileManager fm = configuration.getFileManager();
             if (fm instanceof StandardJavaFileManager) {
@@ -61,7 +56,7 @@ abstract class DocFileFactory {
             } else {
                 throw new IllegalStateException();
             }
-            factories.put(configuration, f);
+            configuration.docFileFactory = f;
         }
         return f;
     }

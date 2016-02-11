@@ -44,13 +44,13 @@ public class XSettings {
 
 
     /**
-     * Update these settings with <code>data</code> obtained from
+     * Update these settings with {@code data} obtained from
      * XSETTINGS manager.
      *
      * @param data settings data obtained from
-     *     <code>_XSETTINGS_SETTINGS</code> window property of the
+     *     {@code _XSETTINGS_SETTINGS} window property of the
      *     settings manager.
-     * @return a <code>Map</code> of changed settings.
+     * @return a {@code Map} of changed settings.
      */
     public Map<String, Object> update(byte[] data) {
         return (new Update(data)).update();
@@ -84,10 +84,10 @@ public class XSettings {
 
         /**
          * Construct an Update object for the data read from
-         * <code>_XSETTINGS_SETTINGS</code> property of the XSETTINGS
+         * {@code _XSETTINGS_SETTINGS} property of the XSETTINGS
          * selection owner.
          *
-         * @param data <code>_XSETTINGS_SETTINGS</code> contents.
+         * @param data {@code _XSETTINGS_SETTINGS} contents.
          */
         Update(byte[] data) {
             this.data = data;

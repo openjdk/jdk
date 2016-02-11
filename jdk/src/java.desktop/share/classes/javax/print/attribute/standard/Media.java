@@ -49,8 +49,8 @@ import javax.print.attribute.PrintJobAttribute;
  * one of the ways in which the Media attribute can be specified.
  * <p>
  * <B>IPP Compatibility:</B>  The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author Phil Race
@@ -74,16 +74,16 @@ public abstract class Media extends EnumSyntax
      * object. To be equivalent, all of the following conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is of the same subclass of Media as this object.
+     * {@code object} is of the same subclass of Media as this object.
      * <LI>
      * The values are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this media
+     * @return  True if {@code object} is equivalent to this media
      *          attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -111,7 +111,7 @@ public abstract class Media extends EnumSyntax
      * instance.
      * <P>
      * For class Media and any vendor-defined subclasses, the category name is
-     * <CODE>"media"</CODE>.
+     * {@code "media"}.
      *
      * @return  Attribute category name.
      */

@@ -23,7 +23,7 @@
 
  /*
   test
-  @bug 5039416 6404008
+  @bug 5039416 6404008 7087869
   @summary REGRESSION: Extra mouse click dispatched after press-drag- release sequence.
   @library ../../regtesthelpers
   @build Util
@@ -32,8 +32,16 @@
  */
 
 import java.applet.Applet;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Frame;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import test.java.awt.regtesthelpers.Util;
 
 //**
@@ -141,7 +149,12 @@ public class ExtraMouseClick extends Applet
                 smallWin32Drag(dragWidth, dragHeight);
                 clearFlags();
             }
-        }else{
+        } else if ("sun.lwawt.macosx.LWCToolkit".equals(sToolkit)) {
+            // On MacOS X every mouse move event is MOUSE_DRAGGED event and
+            // MOUSE_DRAGGED is sent back form the Native code to the java code
+            // for every mouse move. Therefore 'smallDrag test should be
+            // disabled for toolkit 'sun.lwawt.macosx.LWCToolkit'.
+        } else {
             for (int i = 0; i< TRIALS; i++){
                 smallDrag(SMUDGE_WIDTH - 1, SMUDGE_HEIGHT - 1); //on Motif and XAWT SMUDGE area is 4-pixels wide
                 clearFlags();
@@ -157,8 +170,10 @@ public class ExtraMouseClick extends Applet
         for (int i = 1; i<pixels;i++){
             robot.mouseMove(fp.x + frame.getWidth()/2 + i, fp.y + frame.getHeight()/2 );
         }
+        robot.waitForIdle();
         robot.mouseRelease(InputEvent.BUTTON1_MASK );
-        robot.delay(1000);
+        robot.waitForIdle();
+
         if (dragged && clicked){
             throw new RuntimeException("Test failed. Clicked event follows by Dragged. Dragged = "+dragged +". Clicked = "+clicked + " : distance = "+pixels);
         }

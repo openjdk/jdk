@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 import sun.java2d.marlin.ArrayCache;
 
-/**
+/*
  * @test
  * @bug 8144445
  * @summary Check the ArrayCache getNewLargeSize() method
  * @run main ArrayCacheSizeTest
+ * @modules java.desktop/sun.java2d.marlin
  */
 public class ArrayCacheSizeTest {
 

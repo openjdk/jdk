@@ -81,7 +81,7 @@ class OGLUtilities {
      *
      * In order to avoid deadlock, it is important that the given Runnable
      * does not attempt to acquire the AWT lock, as that will be handled
-     * automatically as part of the <code>rq.flushAndInvokeNow()</code> step.
+     * automatically as part of the {@code rq.flushAndInvokeNow()} step.
      *
      * @param g the Graphics object for the corresponding destination surface;
      * if null, the step making a context current to the destination surface
@@ -134,7 +134,7 @@ class OGLUtilities {
      *
      * In order to avoid deadlock, it is important that the given Runnable
      * does not attempt to acquire the AWT lock, as that will be handled
-     * automatically as part of the <code>rq.flushAndInvokeNow()</code> step.
+     * automatically as part of the {@code rq.flushAndInvokeNow()} step.
      *
      * @param config the GraphicsConfiguration object whose "shared"
      * context will be made current during this operation; if this value is
@@ -297,7 +297,7 @@ class OGLUtilities {
      * @return a constant that describes the surface associated with the
      * given Graphics object; if the given Graphics object is invalid (i.e.
      * is not associated with an OpenGL surface) this method will return
-     * <code>OGLUtilities.UNDEFINED</code>
+     * {@code OGLUtilities.UNDEFINED}
      */
     public static int getOGLSurfaceType(Graphics g) {
         if (!(g instanceof SunGraphics2D)) {

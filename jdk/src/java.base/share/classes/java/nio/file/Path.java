@@ -150,7 +150,7 @@ public interface Path
      * #normalize normalize} method, to eliminate redundant names, for cases where
      * <em>shell-like</em> navigation is required.
      *
-     * <p> If this path has one or more elements, and no root component, then
+     * <p> If this path has more than one element, and no root component, then
      * this method is equivalent to evaluating the expression:
      * <blockquote><pre>
      * subpath(0,&nbsp;getNameCount()-1);

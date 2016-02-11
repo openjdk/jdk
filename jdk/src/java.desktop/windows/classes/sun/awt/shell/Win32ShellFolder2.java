@@ -350,12 +350,12 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     /**
      * This method is implemented to make sure that no instances
-     * of <code>ShellFolder</code> are ever serialized. If <code>isFileSystem()</code> returns
-     * <code>true</code>, then the object is representable with an instance of
-     * <code>java.io.File</code> instead. If not, then the object depends
+     * of {@code ShellFolder} are ever serialized. If {@code isFileSystem()} returns
+     * {@code true}, then the object is representable with an instance of
+     * {@code java.io.File} instead. If not, then the object depends
      * on native PIDL state and should not be serialized.
      *
-     * @return a <code>java.io.File</code> replacement object. If the folder
+     * @return a {@code java.io.File} replacement object. If the folder
      * is a not a normal directory, then returns the first non-removable
      * drive (normally "C:\").
      */
@@ -718,7 +718,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * @return An array of shell folders that are children of this shell folder
      *         object. The array will be empty if the folder is empty.  Returns
-     *         <code>null</code> if this shellfolder does not denote a directory.
+     *         {@code null} if this shellfolder does not denote a directory.
      */
     public File[] listFiles(final boolean includeHiddenFiles) {
         SecurityManager security = System.getSecurityManager();
@@ -1091,7 +1091,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     /**
-     * Gets an icon from the Windows system icon list as an <code>Image</code>
+     * Gets an icon from the Windows system icon list as an {@code Image}
      */
     static Image getSystemIcon(SystemIcon iconType) {
         long hIcon = getSystemIcon(iconType.getIconID());
@@ -1101,7 +1101,7 @@ final class Win32ShellFolder2 extends ShellFolder {
     }
 
     /**
-     * Gets an icon from the Windows system icon list as an <code>Image</code>
+     * Gets an icon from the Windows system icon list as an {@code Image}
      */
     static Image getShell32Icon(int iconID, boolean getLargeIcon) {
         boolean useVGAColors = true; // Will be ignored on XP and later

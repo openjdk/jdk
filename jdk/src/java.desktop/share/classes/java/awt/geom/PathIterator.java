@@ -28,7 +28,7 @@ package java.awt.geom;
 import java.lang.annotation.Native;
 
 /**
- * The <code>PathIterator</code> interface provides the mechanism
+ * The {@code PathIterator} interface provides the mechanism
  * for objects that implement the {@link java.awt.Shape Shape}
  * interface to return the geometry of their boundary by allowing
  * a caller to retrieve the path of that boundary a segment at a
@@ -98,7 +98,7 @@ public interface PathIterator {
      * a quadratic parametric curve to be drawn from the most recently
      * specified point.
      * The curve is interpolated by solving the parametric control
-     * equation in the range <code>(t=[0..1])</code> using
+     * equation in the range {@code (t=[0..1])} using
      * the most recently specified (current) point (CP),
      * the first control point (P1),
      * and the final interpolated control point (P2).
@@ -120,7 +120,7 @@ public interface PathIterator {
      * a cubic parametric curve to be drawn from the most recently
      * specified point.
      * The curve is interpolated by solving the parametric control
-     * equation in the range <code>(t=[0..1])</code> using
+     * equation in the range {@code (t=[0..1])} using
      * the most recently specified (current) point (CP),
      * the first control point (P1),
      * the second control point (P2),
@@ -157,8 +157,8 @@ public interface PathIterator {
 
     /**
      * Tests if the iteration is complete.
-     * @return <code>true</code> if all the segments have
-     * been read; <code>false</code> otherwise.
+     * @return {@code true} if all the segments have
+     * been read; {@code false} otherwise.
      */
     public boolean isDone();
 

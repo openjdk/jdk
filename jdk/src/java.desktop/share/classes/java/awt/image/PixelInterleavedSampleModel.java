@@ -67,16 +67,16 @@ public class PixelInterleavedSampleModel extends ComponentSampleModel
      * @param pixelStride The pixel stride of the image data.
      * @param scanlineStride The line stride of the image data.
      * @param bandOffsets The offsets of all bands.
-     * @throws IllegalArgumentException if <code>w</code> or
-     *         <code>h</code> is not greater than 0
+     * @throws IllegalArgumentException if {@code w} or
+     *         {@code h} is not greater than 0
      * @throws IllegalArgumentException if any offset between bands is
      *         greater than the scanline stride
      * @throws IllegalArgumentException if the product of
-     *         <code>pixelStride</code> and <code>w</code> is greater
-     *         than <code>scanlineStride</code>
-     * @throws IllegalArgumentException if <code>pixelStride</code> is
+     *         {@code pixelStride} and {@code w} is greater
+     *         than {@code scanlineStride}
+     * @throws IllegalArgumentException if {@code pixelStride} is
      *         less than any offset between bands
-     * @throws IllegalArgumentException if <code>dataType</code> is not
+     * @throws IllegalArgumentException if {@code dataType} is not
      *         one of the supported data types
      */
     public PixelInterleavedSampleModel(int dataType,
@@ -116,12 +116,12 @@ public class PixelInterleavedSampleModel extends ComponentSampleModel
      * same number of bands, storage data type, and pixel stride
      * as this PixelInterleavedSampleModel.  The band offsets may be
      * compressed such that the minimum of all of the band offsets is zero.
-     * @param w the width of the resulting <code>SampleModel</code>
-     * @param h the height of the resulting <code>SampleModel</code>
-     * @return a new <code>SampleModel</code> with the specified width
+     * @param w the width of the resulting {@code SampleModel}
+     * @param h the height of the resulting {@code SampleModel}
+     * @return a new {@code SampleModel} with the specified width
      *         and height.
-     * @throws IllegalArgumentException if <code>w</code> or
-     *         <code>h</code> is not greater than 0
+     * @throws IllegalArgumentException if {@code w} or
+     *         {@code h} is not greater than 0
      */
     public SampleModel createCompatibleSampleModel(int w, int h) {
         int minBandoff=bandOffsets[0];

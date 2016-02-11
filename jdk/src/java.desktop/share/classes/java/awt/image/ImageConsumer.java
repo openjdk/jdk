@@ -67,7 +67,7 @@ public interface ImageConsumer {
      * pixels can be sent on untouched, using the original ColorModel,
      * or whether the pixels should be modified (filtered) and passed
      * on using a ColorModel more convenient for the filtering process.
-     * @param model the specified <code>ColorModel</code>
+     * @param model the specified {@code ColorModel}
      * @see ColorModel
      */
     void setColorModel(ColorModel model);
@@ -150,11 +150,11 @@ public interface ImageConsumer {
      *        area of pixels to be set
      * @param w the width of the area of pixels
      * @param h the height of the area of pixels
-     * @param model the specified <code>ColorModel</code>
+     * @param model the specified {@code ColorModel}
      * @param pixels the array of pixels
-     * @param off the offset into the <code>pixels</code> array
+     * @param off the offset into the {@code pixels} array
      * @param scansize the distance from one row of pixels to the next in
-     * the <code>pixels</code> array
+     * the {@code pixels} array
      * @see ColorModel
      */
     void setPixels(int x, int y, int w, int h,
@@ -176,11 +176,11 @@ public interface ImageConsumer {
      *        area of pixels to be set
      * @param w the width of the area of pixels
      * @param h the height of the area of pixels
-     * @param model the specified <code>ColorModel</code>
+     * @param model the specified {@code ColorModel}
      * @param pixels the array of pixels
-     * @param off the offset into the <code>pixels</code> array
+     * @param off the offset into the {@code pixels} array
      * @param scansize the distance from one row of pixels to the next in
-     * the <code>pixels</code> array
+     * the {@code pixels} array
      * @see ColorModel
      */
     void setPixels(int x, int y, int w, int h,

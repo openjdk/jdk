@@ -55,8 +55,8 @@ import java.util.Arrays;
  *  element of the samples representing the bands of the pixel.
  * <p>
  * The following code illustrates extracting the bits of the sample
- * representing band <code>b</code> for pixel <code>x,y</code>
- * from DataBuffer <code>data</code>:
+ * representing band {@code b} for pixel {@code x,y}
+ * from DataBuffer {@code data}:
  * <pre>{@code
  *      int sample = data.getElem(y * scanlineStride + x);
  *      sample = (sample & bitMasks[b]) >>> bitOffsets[b];
@@ -100,10 +100,10 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * @param h         The height (in pixels) of the region of the
      *                  image data described.
      * @param bitMasks  The bit masks for all bands.
-     * @throws IllegalArgumentException if <code>dataType</code> is not
-     *         either <code>DataBuffer.TYPE_BYTE</code>,
-     *         <code>DataBuffer.TYPE_USHORT</code>, or
-     *         <code>DataBuffer.TYPE_INT</code>
+     * @throws IllegalArgumentException if {@code dataType} is not
+     *         either {@code DataBuffer.TYPE_BYTE},
+     *         {@code DataBuffer.TYPE_USHORT}, or
+     *         {@code DataBuffer.TYPE_INT}
      */
     public SinglePixelPackedSampleModel(int dataType, int w, int h,
                                    int bitMasks[]) {
@@ -130,14 +130,14 @@ public class SinglePixelPackedSampleModel extends SampleModel
      *                  image data described.
      * @param scanlineStride The line stride of the image data.
      * @param bitMasks The bit masks for all bands.
-     * @throws IllegalArgumentException if <code>w</code> or
-     *         <code>h</code> is not greater than 0
+     * @throws IllegalArgumentException if {@code w} or
+     *         {@code h} is not greater than 0
      * @throws IllegalArgumentException if any mask in
-     *         <code>bitMask</code> is not contiguous
-     * @throws IllegalArgumentException if <code>dataType</code> is not
-     *         either <code>DataBuffer.TYPE_BYTE</code>,
-     *         <code>DataBuffer.TYPE_USHORT</code>, or
-     *         <code>DataBuffer.TYPE_INT</code>
+     *         {@code bitMask} is not contiguous
+     * @throws IllegalArgumentException if {@code dataType} is not
+     *         either {@code DataBuffer.TYPE_BYTE},
+     *         {@code DataBuffer.TYPE_USHORT}, or
+     *         {@code DataBuffer.TYPE_INT}
      */
     public SinglePixelPackedSampleModel(int dataType, int w, int h,
                                    int scanlineStride, int bitMasks[]) {
@@ -208,12 +208,12 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * width and height.  The new SinglePixelPackedSampleModel will have the
      * same storage data type and bit masks as this
      * SinglePixelPackedSampleModel.
-     * @param w the width of the resulting <code>SampleModel</code>
-     * @param h the height of the resulting <code>SampleModel</code>
-     * @return a <code>SinglePixelPackedSampleModel</code> with the
+     * @param w the width of the resulting {@code SampleModel}
+     * @param h the height of the resulting {@code SampleModel}
+     * @return a {@code SinglePixelPackedSampleModel} with the
      *         specified width and height.
-     * @throws IllegalArgumentException if <code>w</code> or
-     *         <code>h</code> is not greater than 0
+     * @throws IllegalArgumentException if {@code w} or
+     *         {@code h} is not greater than 0
      */
     public SampleModel createCompatibleSampleModel(int w, int h) {
       SampleModel sampleModel = new SinglePixelPackedSampleModel(dataType, w, h,
@@ -256,9 +256,9 @@ public class SinglePixelPackedSampleModel extends SampleModel
     }
 
     /** Returns the offset (in data array elements) of pixel (x,y).
-     *  The data element containing pixel <code>x,y</code>
-     *  can be retrieved from a DataBuffer <code>data</code> with a
-     *  SinglePixelPackedSampleModel <code>sppsm</code> as:
+     *  The data element containing pixel {@code x,y}
+     *  can be retrieved from a DataBuffer {@code data} with a
+     *  SinglePixelPackedSampleModel {@code sppsm} as:
      * <pre>
      *        data.getElem(sppsm.getOffset(x, y));
      * </pre>
@@ -288,7 +288,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
 
     /** Returns the scanline stride of this SinglePixelPackedSampleModel.
      *  @return the scanline stride of this
-     *          <code>SinglePixelPackedSampleModel</code>.
+     *          {@code SinglePixelPackedSampleModel}.
      */
     public int getScanlineStride() {
       return scanlineStride;
@@ -328,10 +328,10 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * automatically and will be of the right primitive data type.
      * <p>
      * The following code illustrates transferring data for one pixel from
-     * DataBuffer <code>db1</code>, whose storage layout is described by
-     * SinglePixelPackedSampleModel <code>sppsm1</code>, to
-     * DataBuffer <code>db2</code>, whose storage layout is described by
-     * SinglePixelPackedSampleModel <code>sppsm2</code>.
+     * DataBuffer {@code db1}, whose storage layout is described by
+     * SinglePixelPackedSampleModel {@code sppsm1}, to
+     * DataBuffer {@code db2}, whose storage layout is described by
+     * SinglePixelPackedSampleModel {@code sppsm2}.
      * The transfer will generally be more efficient than using
      * getPixel/setPixel.
      * <pre>
@@ -566,10 +566,10 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * the storage data type of the SinglePixelPackedSampleModel.
      * <p>
      * The following code illustrates transferring data for one pixel from
-     * DataBuffer <code>db1</code>, whose storage layout is described by
-     * SinglePixelPackedSampleModel <code>sppsm1</code>,
-     * to DataBuffer <code>db2</code>, whose storage layout is described by
-     * SinglePixelPackedSampleModel <code>sppsm2</code>.
+     * DataBuffer {@code db1}, whose storage layout is described by
+     * SinglePixelPackedSampleModel {@code sppsm1},
+     * to DataBuffer {@code db2}, whose storage layout is described by
+     * SinglePixelPackedSampleModel {@code sppsm2}.
      * The transfer will generally be more efficient than using
      * getPixel/setPixel.
      * <pre>

@@ -122,9 +122,9 @@ public class AWTEventMulticaster implements
 
     /**
      * Creates an event multicaster instance which chains listener-a
-     * with listener-b. Input parameters <code>a</code> and <code>b</code>
-     * should not be <code>null</code>, though implementations may vary in
-     * choosing whether or not to throw <code>NullPointerException</code>
+     * with listener-b. Input parameters {@code a} and {@code b}
+     * should not be {@code null}, though implementations may vary in
+     * choosing whether or not to throw {@code NullPointerException}
      * in that case.
      * @param a listener-a
      * @param b listener-b
@@ -1078,30 +1078,30 @@ public class AWTEventMulticaster implements
     /**
      * Returns an array of all the objects chained as
      * <code><em>Foo</em>Listener</code>s by the specified
-     * <code>java.util.EventListener</code>.
+     * {@code java.util.EventListener}.
      * <code><em>Foo</em>Listener</code>s are chained by the
-     * <code>AWTEventMulticaster</code> using the
+     * {@code AWTEventMulticaster} using the
      * <code>add<em>Foo</em>Listener</code> method.
-     * If a <code>null</code> listener is specified, this method returns an
+     * If a {@code null} listener is specified, this method returns an
      * empty array. If the specified listener is not an instance of
-     * <code>AWTEventMulticaster</code>, this method returns an array which
+     * {@code AWTEventMulticaster}, this method returns an array which
      * contains only the specified listener. If no such listeners are chained,
      * this method returns an empty array.
      *
      * @param <T> the listener type
-     * @param l the specified <code>java.util.EventListener</code>
+     * @param l the specified {@code java.util.EventListener}
      * @param listenerType the type of listeners requested; this parameter
      *          should specify an interface that descends from
-     *          <code>java.util.EventListener</code>
+     *          {@code java.util.EventListener}
      * @return an array of all objects chained as
      *          <code><em>Foo</em>Listener</code>s by the specified multicast
      *          listener, or an empty array if no such listeners have been
      *          chained by the specified multicast listener
      * @exception NullPointerException if the specified
      *             {@code listenertype} parameter is {@code null}
-     * @exception ClassCastException if <code>listenerType</code>
+     * @exception ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
-     *          <code>java.util.EventListener</code>
+     *          {@code java.util.EventListener}
      *
      * @since 1.4
      */

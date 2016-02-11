@@ -30,7 +30,7 @@ import java.awt.color.ColorSpace;
 import java.math.BigInteger;
 
 /**
- * The <code>IndexColorModel</code> class is a <code>ColorModel</code>
+ * The {@code IndexColorModel} class is a {@code ColorModel}
  * class that works with pixel values consisting of a
  * single sample that is an index into a fixed colormap in the default
  * sRGB color space.  The colormap specifies red, green, blue, and
@@ -38,7 +38,7 @@ import java.math.BigInteger;
  * are represented in the colormap as 8-bit unsigned integral values.
  * Some constructors allow the caller to specify "holes" in the colormap
  * by indicating which colormap entries are valid and which represent
- * unusable colors via the bits set in a <code>BigInteger</code> object.
+ * unusable colors via the bits set in a {@code BigInteger} object.
  * This color model is similar to an X11 PseudoColor visual.
  * <p>
  * Some constructors provide a means to specify an alpha component
@@ -51,38 +51,38 @@ import java.math.BigInteger;
  * pixel to be made completely transparent, regardless of any alpha
  * component supplied or assumed for that pixel value.
  * Note that the color components in the colormap of an
- * <code>IndexColorModel</code> objects are never pre-multiplied with
+ * {@code IndexColorModel} objects are never pre-multiplied with
  * the alpha components.
  * <p>
  * <a name="transparency">
- * The transparency of an <code>IndexColorModel</code> object is
+ * The transparency of an {@code IndexColorModel} object is
  * determined by examining the alpha components of the colors in the
  * colormap and choosing the most specific value after considering
  * the optional alpha values and any transparent index specified.
- * The transparency value is <code>Transparency.OPAQUE</code>
+ * The transparency value is {@code Transparency.OPAQUE}
  * only if all valid colors in
  * the colormap are opaque and there is no valid transparent pixel.
  * If all valid colors
  * in the colormap are either completely opaque (alpha = 1.0) or
  * completely transparent (alpha = 0.0), which typically occurs when
  * a valid transparent pixel is specified,
- * the value is <code>Transparency.BITMASK</code>.
- * Otherwise, the value is <code>Transparency.TRANSLUCENT</code>, indicating
+ * the value is {@code Transparency.BITMASK}.
+ * Otherwise, the value is {@code Transparency.TRANSLUCENT}, indicating
  * that some valid color has an alpha component that is
  * neither completely transparent nor completely opaque
  * (0.0 &lt; alpha &lt; 1.0).
  * </a>
  *
  * <p>
- * If an <code>IndexColorModel</code> object has
- * a transparency value of <code>Transparency.OPAQUE</code>,
- * then the <code>hasAlpha</code>
- * and <code>getNumComponents</code> methods
- * (both inherited from <code>ColorModel</code>)
+ * If an {@code IndexColorModel} object has
+ * a transparency value of {@code Transparency.OPAQUE},
+ * then the {@code hasAlpha}
+ * and {@code getNumComponents} methods
+ * (both inherited from {@code ColorModel})
  * return false and 3, respectively.
  * For any other transparency value,
- * <code>hasAlpha</code> returns true
- * and <code>getNumComponents</code> returns 4.
+ * {@code hasAlpha} returns true
+ * and {@code getNumComponents} returns 4.
  *
  * <p>
  * <a name="index_values">
@@ -101,13 +101,13 @@ import java.math.BigInteger;
  * </a>
  * <p>
  * For those methods that use a primitive array pixel representation of
- * type <code>transferType</code>, the array length is always one.
- * The transfer types supported are <code>DataBuffer.TYPE_BYTE</code> and
- * <code>DataBuffer.TYPE_USHORT</code>.  A single int pixel
+ * type {@code transferType}, the array length is always one.
+ * The transfer types supported are {@code DataBuffer.TYPE_BYTE} and
+ * {@code DataBuffer.TYPE_USHORT}.  A single int pixel
  * representation is valid for all objects of this class, since it is
  * always possible to represent pixel values used with this class in a
  * single int.  Therefore, methods that use this representation do
- * not throw an <code>IllegalArgumentException</code> due to an invalid
+ * not throw an {@code IllegalArgumentException} due to an invalid
  * pixel value.
  * <p>
  * Many of the methods in this class are final.  The reason for
@@ -141,26 +141,26 @@ public class IndexColorModel extends ColorModel {
         initIDs();
     }
     /**
-     * Constructs an <code>IndexColorModel</code> from the specified
+     * Constructs an {@code IndexColorModel} from the specified
      * arrays of red, green, and blue components.  Pixels described
      * by this color model all have alpha components of 255
      * unnormalized (1.0&nbsp;normalized), which means they
      * are fully opaque.  All of the arrays specifying the color
      * components must have at least the specified number of entries.
-     * The <code>ColorSpace</code> is the default sRGB space.
+     * The {@code ColorSpace} is the default sRGB space.
      * Since there is no alpha information in any of the arguments
      * to this constructor, the transparency value is always
-     * <code>Transparency.OPAQUE</code>.
-     * The transfer type is the smallest of <code>DataBuffer.TYPE_BYTE</code>
-     * or <code>DataBuffer.TYPE_USHORT</code> that can hold a single pixel.
+     * {@code Transparency.OPAQUE}.
+     * The transfer type is the smallest of {@code DataBuffer.TYPE_BYTE}
+     * or {@code DataBuffer.TYPE_USHORT} that can hold a single pixel.
      * @param bits      the number of bits each pixel occupies
      * @param size      the size of the color component arrays
      * @param r         the array of red color components
      * @param g         the array of green color components
      * @param b         the array of blue color components
-     * @throws IllegalArgumentException if <code>bits</code> is less
+     * @throws IllegalArgumentException if {@code bits} is less
      *         than 1 or greater than 16
-     * @throws IllegalArgumentException if <code>size</code> is less
+     * @throws IllegalArgumentException if {@code size} is less
      *         than 1
      */
     public IndexColorModel(int bits, int size,
@@ -178,19 +178,19 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Constructs an <code>IndexColorModel</code> from the given arrays
+     * Constructs an {@code IndexColorModel} from the given arrays
      * of red, green, and blue components.  Pixels described by this color
      * model all have alpha components of 255 unnormalized
      * (1.0&nbsp;normalized), which means they are fully opaque, except
      * for the indicated pixel to be made transparent.  All of the arrays
      * specifying the color components must have at least the specified
      * number of entries.
-     * The <code>ColorSpace</code> is the default sRGB space.
-     * The transparency value may be <code>Transparency.OPAQUE</code> or
-     * <code>Transparency.BITMASK</code> depending on the arguments, as
+     * The {@code ColorSpace} is the default sRGB space.
+     * The transparency value may be {@code Transparency.OPAQUE} or
+     * {@code Transparency.BITMASK} depending on the arguments, as
      * specified in the <a href="#transparency">class description</a> above.
-     * The transfer type is the smallest of <code>DataBuffer.TYPE_BYTE</code>
-     * or <code>DataBuffer.TYPE_USHORT</code> that can hold a
+     * The transfer type is the smallest of {@code DataBuffer.TYPE_BYTE}
+     * or {@code DataBuffer.TYPE_USHORT} that can hold a
      * single pixel.
      * @param bits      the number of bits each pixel occupies
      * @param size      the size of the color component arrays
@@ -198,9 +198,9 @@ public class IndexColorModel extends ColorModel {
      * @param g         the array of green color components
      * @param b         the array of blue color components
      * @param trans     the index of the transparent pixel
-     * @throws IllegalArgumentException if <code>bits</code> is less than
+     * @throws IllegalArgumentException if {@code bits} is less than
      *          1 or greater than 16
-     * @throws IllegalArgumentException if <code>size</code> is less than
+     * @throws IllegalArgumentException if {@code size} is less than
      *          1
      */
     public IndexColorModel(int bits, int size,
@@ -219,27 +219,27 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Constructs an <code>IndexColorModel</code> from the given
+     * Constructs an {@code IndexColorModel} from the given
      * arrays of red, green, blue and alpha components.  All of the
      * arrays specifying the components must have at least the specified
      * number of entries.
-     * The <code>ColorSpace</code> is the default sRGB space.
-     * The transparency value may be any of <code>Transparency.OPAQUE</code>,
-     * <code>Transparency.BITMASK</code>,
-     * or <code>Transparency.TRANSLUCENT</code>
+     * The {@code ColorSpace} is the default sRGB space.
+     * The transparency value may be any of {@code Transparency.OPAQUE},
+     * {@code Transparency.BITMASK},
+     * or {@code Transparency.TRANSLUCENT}
      * depending on the arguments, as specified
      * in the <a href="#transparency">class description</a> above.
-     * The transfer type is the smallest of <code>DataBuffer.TYPE_BYTE</code>
-     * or <code>DataBuffer.TYPE_USHORT</code> that can hold a single pixel.
+     * The transfer type is the smallest of {@code DataBuffer.TYPE_BYTE}
+     * or {@code DataBuffer.TYPE_USHORT} that can hold a single pixel.
      * @param bits      the number of bits each pixel occupies
      * @param size      the size of the color component arrays
      * @param r         the array of red color components
      * @param g         the array of green color components
      * @param b         the array of blue color components
      * @param a         the array of alpha value components
-     * @throws IllegalArgumentException if <code>bits</code> is less
+     * @throws IllegalArgumentException if {@code bits} is less
      *           than 1 or greater than 16
-     * @throws IllegalArgumentException if <code>size</code> is less
+     * @throws IllegalArgumentException if {@code size} is less
      *           than 1
      */
     public IndexColorModel(int bits, int size,
@@ -257,18 +257,18 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Constructs an <code>IndexColorModel</code> from a single
+     * Constructs an {@code IndexColorModel} from a single
      * array of interleaved red, green, blue and optional alpha
      * components.  The array must have enough values in it to
      * fill all of the needed component arrays of the specified
-     * size.  The <code>ColorSpace</code> is the default sRGB space.
-     * The transparency value may be any of <code>Transparency.OPAQUE</code>,
-     * <code>Transparency.BITMASK</code>,
-     * or <code>Transparency.TRANSLUCENT</code>
+     * size.  The {@code ColorSpace} is the default sRGB space.
+     * The transparency value may be any of {@code Transparency.OPAQUE},
+     * {@code Transparency.BITMASK},
+     * or {@code Transparency.TRANSLUCENT}
      * depending on the arguments, as specified
      * in the <a href="#transparency">class description</a> above.
      * The transfer type is the smallest of
-     * <code>DataBuffer.TYPE_BYTE</code> or <code>DataBuffer.TYPE_USHORT</code>
+     * {@code DataBuffer.TYPE_BYTE} or {@code DataBuffer.TYPE_USHORT}
      * that can hold a single pixel.
      *
      * @param bits      the number of bits each pixel occupies
@@ -276,10 +276,10 @@ public class IndexColorModel extends ColorModel {
      * @param cmap      the array of color components
      * @param start     the starting offset of the first color component
      * @param hasalpha  indicates whether alpha values are contained in
-     *                  the <code>cmap</code> array
-     * @throws IllegalArgumentException if <code>bits</code> is less
+     *                  the {@code cmap} array
+     * @throws IllegalArgumentException if {@code bits} is less
      *           than 1 or greater than 16
-     * @throws IllegalArgumentException if <code>size</code> is less
+     * @throws IllegalArgumentException if {@code size} is less
      *           than 1
      */
     public IndexColorModel(int bits, int size, byte cmap[], int start,
@@ -292,31 +292,31 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Constructs an <code>IndexColorModel</code> from a single array of
+     * Constructs an {@code IndexColorModel} from a single array of
      * interleaved red, green, blue and optional alpha components.  The
      * specified transparent index represents a pixel that is made
      * entirely transparent regardless of any alpha value specified
      * for it.  The array must have enough values in it to fill all
      * of the needed component arrays of the specified size.
-     * The <code>ColorSpace</code> is the default sRGB space.
-     * The transparency value may be any of <code>Transparency.OPAQUE</code>,
-     * <code>Transparency.BITMASK</code>,
-     * or <code>Transparency.TRANSLUCENT</code>
+     * The {@code ColorSpace} is the default sRGB space.
+     * The transparency value may be any of {@code Transparency.OPAQUE},
+     * {@code Transparency.BITMASK},
+     * or {@code Transparency.TRANSLUCENT}
      * depending on the arguments, as specified
      * in the <a href="#transparency">class description</a> above.
      * The transfer type is the smallest of
-     * <code>DataBuffer.TYPE_BYTE</code> or <code>DataBuffer.TYPE_USHORT</code>
+     * {@code DataBuffer.TYPE_BYTE} or {@code DataBuffer.TYPE_USHORT}
      * that can hold a single pixel.
      * @param bits      the number of bits each pixel occupies
      * @param size      the size of the color component arrays
      * @param cmap      the array of color components
      * @param start     the starting offset of the first color component
      * @param hasalpha  indicates whether alpha values are contained in
-     *                  the <code>cmap</code> array
+     *                  the {@code cmap} array
      * @param trans     the index of the fully transparent pixel
-     * @throws IllegalArgumentException if <code>bits</code> is less than
+     * @throws IllegalArgumentException if {@code bits} is less than
      *               1 or greater than 16
-     * @throws IllegalArgumentException if <code>size</code> is less than
+     * @throws IllegalArgumentException if {@code size} is less than
      *               1
      */
     public IndexColorModel(int bits, int size, byte cmap[], int start,
@@ -371,17 +371,17 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Constructs an <code>IndexColorModel</code> from an array of
+     * Constructs an {@code IndexColorModel} from an array of
      * ints where each int is comprised of red, green, blue, and
      * optional alpha components in the default RGB color model format.
      * The specified transparent index represents a pixel that is made
      * entirely transparent regardless of any alpha value specified
      * for it.  The array must have enough values in it to fill all
      * of the needed component arrays of the specified size.
-     * The <code>ColorSpace</code> is the default sRGB space.
-     * The transparency value may be any of <code>Transparency.OPAQUE</code>,
-     * <code>Transparency.BITMASK</code>,
-     * or <code>Transparency.TRANSLUCENT</code>
+     * The {@code ColorSpace} is the default sRGB space.
+     * The transparency value may be any of {@code Transparency.OPAQUE},
+     * {@code Transparency.BITMASK},
+     * or {@code Transparency.TRANSLUCENT}
      * depending on the arguments, as specified
      * in the <a href="#transparency">class description</a> above.
      * @param bits      the number of bits each pixel occupies
@@ -389,19 +389,19 @@ public class IndexColorModel extends ColorModel {
      * @param cmap      the array of color components
      * @param start     the starting offset of the first color component
      * @param hasalpha  indicates whether alpha values are contained in
-     *                  the <code>cmap</code> array
+     *                  the {@code cmap} array
      * @param trans     the index of the fully transparent pixel
      * @param transferType the data type of the array used to represent
      *           pixel values.  The data type must be either
-     *           <code>DataBuffer.TYPE_BYTE</code> or
-     *           <code>DataBuffer.TYPE_USHORT</code>.
-     * @throws IllegalArgumentException if <code>bits</code> is less
+     *           {@code DataBuffer.TYPE_BYTE} or
+     *           {@code DataBuffer.TYPE_USHORT}.
+     * @throws IllegalArgumentException if {@code bits} is less
      *           than 1 or greater than 16
-     * @throws IllegalArgumentException if <code>size</code> is less
+     * @throws IllegalArgumentException if {@code size} is less
      *           than 1
-     * @throws IllegalArgumentException if <code>transferType</code> is not
-     *           one of <code>DataBuffer.TYPE_BYTE</code> or
-     *           <code>DataBuffer.TYPE_USHORT</code>
+     * @throws IllegalArgumentException if {@code transferType} is not
+     *           one of {@code DataBuffer.TYPE_BYTE} or
+     *           {@code DataBuffer.TYPE_USHORT}
      */
     public IndexColorModel(int bits, int size,
                            int cmap[], int start,
@@ -432,41 +432,41 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Constructs an <code>IndexColorModel</code> from an
-     * <code>int</code> array where each <code>int</code> is
+     * Constructs an {@code IndexColorModel} from an
+     * {@code int} array where each {@code int} is
      * comprised of red, green, blue, and alpha
      * components in the default RGB color model format.
      * The array must have enough values in it to fill all
      * of the needed component arrays of the specified size.
-     * The <code>ColorSpace</code> is the default sRGB space.
-     * The transparency value may be any of <code>Transparency.OPAQUE</code>,
-     * <code>Transparency.BITMASK</code>,
-     * or <code>Transparency.TRANSLUCENT</code>
+     * The {@code ColorSpace} is the default sRGB space.
+     * The transparency value may be any of {@code Transparency.OPAQUE},
+     * {@code Transparency.BITMASK},
+     * or {@code Transparency.TRANSLUCENT}
      * depending on the arguments, as specified
      * in the <a href="#transparency">class description</a> above.
-     * The transfer type must be one of <code>DataBuffer.TYPE_BYTE</code>
-     * <code>DataBuffer.TYPE_USHORT</code>.
-     * The <code>BigInteger</code> object specifies the valid/invalid pixels
-     * in the <code>cmap</code> array.  A pixel is valid if the
-     * <code>BigInteger</code> value at that index is set, and is invalid
-     * if the <code>BigInteger</code> bit  at that index is not set.
+     * The transfer type must be one of {@code DataBuffer.TYPE_BYTE}
+     * {@code DataBuffer.TYPE_USHORT}.
+     * The {@code BigInteger} object specifies the valid/invalid pixels
+     * in the {@code cmap} array.  A pixel is valid if the
+     * {@code BigInteger} value at that index is set, and is invalid
+     * if the {@code BigInteger} bit  at that index is not set.
      * @param bits the number of bits each pixel occupies
      * @param size the size of the color component array
      * @param cmap the array of color components
      * @param start the starting offset of the first color component
      * @param transferType the specified data type
-     * @param validBits a <code>BigInteger</code> object.  If a bit is
+     * @param validBits a {@code BigInteger} object.  If a bit is
      *    set in the BigInteger, the pixel at that index is valid.
      *    If a bit is not set, the pixel at that index
      *    is considered invalid.  If null, all pixels are valid.
      *    Only bits from 0 to the map size are considered.
-     * @throws IllegalArgumentException if <code>bits</code> is less
+     * @throws IllegalArgumentException if {@code bits} is less
      *           than 1 or greater than 16
-     * @throws IllegalArgumentException if <code>size</code> is less
+     * @throws IllegalArgumentException if {@code size} is less
      *           than 1
-     * @throws IllegalArgumentException if <code>transferType</code> is not
-     *           one of <code>DataBuffer.TYPE_BYTE</code> or
-     *           <code>DataBuffer.TYPE_USHORT</code>
+     * @throws IllegalArgumentException if {@code transferType} is not
+     *           one of {@code DataBuffer.TYPE_BYTE} or
+     *           {@code DataBuffer.TYPE_USHORT}
      *
      * @since 1.3
      */
@@ -599,7 +599,7 @@ public class IndexColorModel extends ColorModel {
     /**
      * Returns the transparency.  Returns either OPAQUE, BITMASK,
      * or TRANSLUCENT
-     * @return the transparency of this <code>IndexColorModel</code>
+     * @return the transparency of this {@code IndexColorModel}
      * @see Transparency#OPAQUE
      * @see Transparency#BITMASK
      * @see Transparency#TRANSLUCENT
@@ -613,7 +613,7 @@ public class IndexColorModel extends ColorModel {
      * The array contains the color components in the order red, green,
      * blue, followed by the alpha component, if present.
      * @return an array containing the number of bits of each color
-     *         and alpha component of this <code>IndexColorModel</code>
+     *         and alpha component of this {@code IndexColorModel}
      */
     public int[] getComponentSize() {
         if (nBits == null) {
@@ -631,7 +631,7 @@ public class IndexColorModel extends ColorModel {
 
     /**
      * Returns the size of the color/alpha component arrays in this
-     * <code>IndexColorModel</code>.
+     * {@code IndexColorModel}.
      * @return the size of the color and alpha component arrays.
      */
     public final int getMapSize() {
@@ -640,14 +640,14 @@ public class IndexColorModel extends ColorModel {
 
     /**
      * Returns the index of a transparent pixel in this
-     * <code>IndexColorModel</code> or -1 if there is no pixel
+     * {@code IndexColorModel} or -1 if there is no pixel
      * with an alpha value of 0.  If a transparent pixel was
      * explicitly specified in one of the constructors by its
      * index, then that index will be preferred, otherwise,
      * the index of any pixel which happens to be fully transparent
      * may be returned.
      * @return the index of a transparent pixel in this
-     *         <code>IndexColorModel</code> object, or -1 if there
+     *         {@code IndexColorModel} object, or -1 if there
      *         is no such pixel
      */
     public final int getTransparentPixel() {
@@ -670,7 +670,7 @@ public class IndexColorModel extends ColorModel {
     /**
      * Copies the array of green color components into the specified array.
      * Only the initial entries of the array as specified by
-     * <code>getMapSize</code> are written.
+     * {@code getMapSize} are written.
      * @param g the specified array into which the elements of the
      *      array of green color components are copied
      */
@@ -683,7 +683,7 @@ public class IndexColorModel extends ColorModel {
     /**
      * Copies the array of blue color components into the specified array.
      * Only the initial entries of the array as specified by
-     * <code>getMapSize</code> are written.
+     * {@code getMapSize} are written.
      * @param b the specified array into which the elements of the
      *      array of blue color components are copied
      */
@@ -696,7 +696,7 @@ public class IndexColorModel extends ColorModel {
     /**
      * Copies the array of alpha transparency components into the
      * specified array.  Only the initial entries of the array as specified
-     * by <code>getMapSize</code> are written.
+     * by {@code getMapSize} are written.
      * @param a the specified array into which the elements of the
      *      array of alpha components are copied
      */
@@ -711,7 +711,7 @@ public class IndexColorModel extends ColorModel {
      * arrays to an int in the default RGB ColorModel format and copies
      * the resulting 32-bit ARGB values into the specified array.  Only
      * the initial entries of the array as specified by
-     * <code>getMapSize</code> are
+     * {@code getMapSize} are
      * written.
      * @param rgb the specified array into which the converted ARGB
      *        values from this array of color and alpha components
@@ -847,30 +847,30 @@ public class IndexColorModel extends ColorModel {
      * default RGB color model.  This array can then be passed to the
      * {@link WritableRaster#setDataElements(int, int, java.lang.Object) setDataElements}
      * method of a {@link WritableRaster} object.  If the pixel variable is
-     * <code>null</code>, a new array is allocated.  If <code>pixel</code>
-     * is not <code>null</code>, it must be
-     * a primitive array of type <code>transferType</code>; otherwise, a
-     * <code>ClassCastException</code> is thrown.  An
-     * <code>ArrayIndexOutOfBoundsException</code> is
-     * thrown if <code>pixel</code> is not large enough to hold a pixel
-     * value for this <code>ColorModel</code>.  The pixel array is returned.
+     * {@code null}, a new array is allocated.  If {@code pixel}
+     * is not {@code null}, it must be
+     * a primitive array of type {@code transferType}; otherwise, a
+     * {@code ClassCastException} is thrown.  An
+     * {@code ArrayIndexOutOfBoundsException} is
+     * thrown if {@code pixel} is not large enough to hold a pixel
+     * value for this {@code ColorModel}.  The pixel array is returned.
      * <p>
-     * Since <code>IndexColorModel</code> can be subclassed, subclasses
+     * Since {@code IndexColorModel} can be subclassed, subclasses
      * inherit the implementation of this method and if they don't
      * override it then they throw an exception if they use an
-     * unsupported <code>transferType</code>.
+     * unsupported {@code transferType}.
      *
      * @param rgb the integer pixel representation in the default RGB
      * color model
      * @param pixel the specified pixel
      * @return an array representation of the specified pixel in this
-     *  <code>IndexColorModel</code>.
-     * @throws ClassCastException if <code>pixel</code>
-     *  is not a primitive array of type <code>transferType</code>
+     *  {@code IndexColorModel}.
+     * @throws ClassCastException if {@code pixel}
+     *  is not a primitive array of type {@code transferType}
      * @throws ArrayIndexOutOfBoundsException if
-     *  <code>pixel</code> is not large enough to hold a pixel value
-     *  for this <code>ColorModel</code>
-     * @throws UnsupportedOperationException if <code>transferType</code>
+     *  {@code pixel} is not large enough to hold a pixel value
+     *  for this {@code ColorModel}
+     * @throws UnsupportedOperationException if {@code transferType}
      *         is invalid
      * @see WritableRaster#setDataElements
      * @see SampleModel#setDataElements
@@ -1067,23 +1067,23 @@ public class IndexColorModel extends ColorModel {
 
     /**
      * Returns an array of unnormalized color/alpha components for a
-     * specified pixel in this <code>ColorModel</code>.  The pixel value
-     * is specified as an int.  If the <code>components</code> array is <code>null</code>,
+     * specified pixel in this {@code ColorModel}.  The pixel value
+     * is specified as an int.  If the {@code components} array is {@code null},
      * a new array is allocated that contains
-     * <code>offset + getNumComponents()</code> elements.
-     * The <code>components</code> array is returned,
+     * {@code offset + getNumComponents()} elements.
+     * The {@code components} array is returned,
      * with the alpha component included
-     * only if <code>hasAlpha</code> returns true.
-     * Color/alpha components are stored in the <code>components</code> array starting
-     * at <code>offset</code> even if the array is allocated by this method.
-     * An <code>ArrayIndexOutOfBoundsException</code>
-     * is thrown if  the <code>components</code> array is not <code>null</code> and is
+     * only if {@code hasAlpha} returns true.
+     * Color/alpha components are stored in the {@code components} array starting
+     * at {@code offset} even if the array is allocated by this method.
+     * An {@code ArrayIndexOutOfBoundsException}
+     * is thrown if  the {@code components} array is not {@code null} and is
      * not large enough to hold all the color and alpha components
-     * starting at <code>offset</code>.
+     * starting at {@code offset}.
      * @param pixel the specified pixel
      * @param components the array to receive the color and alpha
      * components of the specified pixel
-     * @param offset the offset into the <code>components</code> array at
+     * @param offset the offset into the {@code components} array at
      * which to start storing the color and alpha components
      * @return an array containing the color and alpha components of the
      * specified pixel starting at the specified offset.
@@ -1108,50 +1108,50 @@ public class IndexColorModel extends ColorModel {
 
     /**
      * Returns an array of unnormalized color/alpha components for
-     * a specified pixel in this <code>ColorModel</code>.  The pixel
+     * a specified pixel in this {@code ColorModel}.  The pixel
      * value is specified by an array of data elements of type
-     * <code>transferType</code> passed in as an object reference.
-     * If <code>pixel</code> is not a primitive array of type
-     * <code>transferType</code>, a <code>ClassCastException</code>
-     * is thrown.  An <code>ArrayIndexOutOfBoundsException</code>
-     * is thrown if <code>pixel</code> is not large enough to hold
-     * a pixel value for this <code>ColorModel</code>.  If the
-     * <code>components</code> array is <code>null</code>, a new array
+     * {@code transferType} passed in as an object reference.
+     * If {@code pixel} is not a primitive array of type
+     * {@code transferType}, a {@code ClassCastException}
+     * is thrown.  An {@code ArrayIndexOutOfBoundsException}
+     * is thrown if {@code pixel} is not large enough to hold
+     * a pixel value for this {@code ColorModel}.  If the
+     * {@code components} array is {@code null}, a new array
      * is allocated that contains
-     * <code>offset + getNumComponents()</code> elements.
-     * The <code>components</code> array is returned,
+     * {@code offset + getNumComponents()} elements.
+     * The {@code components} array is returned,
      * with the alpha component included
-     * only if <code>hasAlpha</code> returns true.
-     * Color/alpha components are stored in the <code>components</code>
-     * array starting at <code>offset</code> even if the array is
+     * only if {@code hasAlpha} returns true.
+     * Color/alpha components are stored in the {@code components}
+     * array starting at {@code offset} even if the array is
      * allocated by this method.  An
-     * <code>ArrayIndexOutOfBoundsException</code> is also
-     * thrown if  the <code>components</code> array is not
-     * <code>null</code> and is not large enough to hold all the color
-     * and alpha components starting at <code>offset</code>.
+     * {@code ArrayIndexOutOfBoundsException} is also
+     * thrown if  the {@code components} array is not
+     * {@code null} and is not large enough to hold all the color
+     * and alpha components starting at {@code offset}.
      * <p>
-     * Since <code>IndexColorModel</code> can be subclassed, subclasses
+     * Since {@code IndexColorModel} can be subclassed, subclasses
      * inherit the implementation of this method and if they don't
      * override it then they throw an exception if they use an
-     * unsupported <code>transferType</code>.
+     * unsupported {@code transferType}.
      *
      * @param pixel the specified pixel
      * @param components an array that receives the color and alpha
      * components of the specified pixel
-     * @param offset the index into the <code>components</code> array at
+     * @param offset the index into the {@code components} array at
      * which to begin storing the color and alpha components of the
      * specified pixel
      * @return an array containing the color and alpha components of the
      * specified pixel starting at the specified offset.
-     * @throws ArrayIndexOutOfBoundsException if <code>pixel</code>
+     * @throws ArrayIndexOutOfBoundsException if {@code pixel}
      *            is not large enough to hold a pixel value for this
-     *            <code>ColorModel</code> or if the
-     *            <code>components</code> array is not <code>null</code>
+     *            {@code ColorModel} or if the
+     *            {@code components} array is not {@code null}
      *            and is not large enough to hold all the color
-     *            and alpha components starting at <code>offset</code>
-     * @throws ClassCastException if <code>pixel</code> is not a
-     *            primitive array of type <code>transferType</code>
-     * @throws UnsupportedOperationException if <code>transferType</code>
+     *            and alpha components starting at {@code offset}
+     * @throws ClassCastException if {@code pixel} is not a
+     *            primitive array of type {@code transferType}
+     * @throws UnsupportedOperationException if {@code transferType}
      *         is not one of the supported transfer types
      * @see ColorModel#hasAlpha
      * @see ColorModel#getNumComponents
@@ -1180,26 +1180,26 @@ public class IndexColorModel extends ColorModel {
 
     /**
      * Returns a pixel value represented as an int in this
-     * <code>ColorModel</code> given an array of unnormalized
+     * {@code ColorModel} given an array of unnormalized
      * color/alpha components.  An
-     * <code>ArrayIndexOutOfBoundsException</code>
-     * is thrown if the <code>components</code> array is not large
+     * {@code ArrayIndexOutOfBoundsException}
+     * is thrown if the {@code components} array is not large
      * enough to hold all of the color and alpha components starting
-     * at <code>offset</code>.  Since
-     * <code>ColorModel</code> can be subclassed, subclasses inherit the
+     * at {@code offset}.  Since
+     * {@code ColorModel} can be subclassed, subclasses inherit the
      * implementation of this method and if they don't override it then
      * they throw an exception if they use an unsupported transferType.
      * @param components an array of unnormalized color and alpha
      * components
-     * @param offset the index into <code>components</code> at which to
+     * @param offset the index into {@code components} at which to
      * begin retrieving the color and alpha components
-     * @return an <code>int</code> pixel value in this
-     * <code>ColorModel</code> corresponding to the specified components.
+     * @return an {@code int} pixel value in this
+     * {@code ColorModel} corresponding to the specified components.
      * @throws ArrayIndexOutOfBoundsException if
-     *  the <code>components</code> array is not large enough to
+     *  the {@code components} array is not large enough to
      *  hold all of the color and alpha components starting at
-     *  <code>offset</code>
-     * @throws UnsupportedOperationException if <code>transferType</code>
+     *  {@code offset}
+     * @throws UnsupportedOperationException if {@code transferType}
      *         is invalid
      */
     public int getDataElement(int[] components, int offset) {
@@ -1235,42 +1235,42 @@ public class IndexColorModel extends ColorModel {
 
     /**
      * Returns a data element array representation of a pixel in this
-     * <code>ColorModel</code> given an array of unnormalized color/alpha
+     * {@code ColorModel} given an array of unnormalized color/alpha
      * components.  This array can then be passed to the
-     * <code>setDataElements</code> method of a <code>WritableRaster</code>
-     * object.  An <code>ArrayIndexOutOfBoundsException</code> is
+     * {@code setDataElements} method of a {@code WritableRaster}
+     * object.  An {@code ArrayIndexOutOfBoundsException} is
      * thrown if the
-     * <code>components</code> array is not large enough to hold all of the
-     * color and alpha components starting at <code>offset</code>.
-     * If the pixel variable is <code>null</code>, a new array
-     * is allocated.  If <code>pixel</code> is not <code>null</code>,
-     * it must be a primitive array of type <code>transferType</code>;
-     * otherwise, a <code>ClassCastException</code> is thrown.
-     * An <code>ArrayIndexOutOfBoundsException</code> is thrown if pixel
+     * {@code components} array is not large enough to hold all of the
+     * color and alpha components starting at {@code offset}.
+     * If the pixel variable is {@code null}, a new array
+     * is allocated.  If {@code pixel} is not {@code null},
+     * it must be a primitive array of type {@code transferType};
+     * otherwise, a {@code ClassCastException} is thrown.
+     * An {@code ArrayIndexOutOfBoundsException} is thrown if pixel
      * is not large enough to hold a pixel value for this
-     * <code>ColorModel</code>.
+     * {@code ColorModel}.
      * <p>
-     * Since <code>IndexColorModel</code> can be subclassed, subclasses
+     * Since {@code IndexColorModel} can be subclassed, subclasses
      * inherit the implementation of this method and if they don't
      * override it then they throw an exception if they use an
-     * unsupported <code>transferType</code>
+     * unsupported {@code transferType}
      *
      * @param components an array of unnormalized color and alpha
      * components
-     * @param offset the index into <code>components</code> at which to
+     * @param offset the index into {@code components} at which to
      * begin retrieving color and alpha components
-     * @param pixel the <code>Object</code> representing an array of color
+     * @param pixel the {@code Object} representing an array of color
      * and alpha components
-     * @return an <code>Object</code> representing an array of color and
+     * @return an {@code Object} representing an array of color and
      * alpha components.
-     * @throws ClassCastException if <code>pixel</code>
-     *  is not a primitive array of type <code>transferType</code>
+     * @throws ClassCastException if {@code pixel}
+     *  is not a primitive array of type {@code transferType}
      * @throws ArrayIndexOutOfBoundsException if
-     *  <code>pixel</code> is not large enough to hold a pixel value
-     *  for this <code>ColorModel</code> or the <code>components</code>
+     *  {@code pixel} is not large enough to hold a pixel value
+     *  for this {@code ColorModel} or the {@code components}
      *  array is not large enough to hold all of the color and alpha
-     *  components starting at <code>offset</code>
-     * @throws UnsupportedOperationException if <code>transferType</code>
+     *  components starting at {@code offset}
+     * @throws UnsupportedOperationException if {@code transferType}
      *         is not one of the supported transfer types
      * @see WritableRaster#setDataElements
      * @see SampleModel#setDataElements
@@ -1288,18 +1288,18 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Creates a <code>WritableRaster</code> with the specified width
-     * and height that has a data layout (<code>SampleModel</code>)
-     * compatible with this <code>ColorModel</code>.  This method
+     * Creates a {@code WritableRaster} with the specified width
+     * and height that has a data layout ({@code SampleModel})
+     * compatible with this {@code ColorModel}.  This method
      * only works for color models with 16 or fewer bits per pixel.
      * <p>
-     * Since <code>IndexColorModel</code> can be subclassed, any
+     * Since {@code IndexColorModel} can be subclassed, any
      * subclass that supports greater than 16 bits per pixel must
      * override this method.
      *
-     * @param w the width to apply to the new <code>WritableRaster</code>
-     * @param h the height to apply to the new <code>WritableRaster</code>
-     * @return a <code>WritableRaster</code> object with the specified
+     * @param w the width to apply to the new {@code WritableRaster}
+     * @param h the height to apply to the new {@code WritableRaster}
+     * @return a {@code WritableRaster} object with the specified
      * width and height.
      * @throws UnsupportedOperationException if the number of bits in a
      *         pixel is greater than 16
@@ -1331,12 +1331,12 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-      * Returns <code>true</code> if <code>raster</code> is compatible
-      * with this <code>ColorModel</code> or <code>false</code> if it
-      * is not compatible with this <code>ColorModel</code>.
+      * Returns {@code true} if {@code raster} is compatible
+      * with this {@code ColorModel} or {@code false} if it
+      * is not compatible with this {@code ColorModel}.
       * @param raster the {@link Raster} object to test for compatibility
-      * @return <code>true</code> if <code>raster</code> is compatible
-      * with this <code>ColorModel</code>; <code>false</code> otherwise.
+      * @return {@code true} if {@code raster} is compatible
+      * with this {@code ColorModel}; {@code false} otherwise.
       *
       */
     public boolean isCompatibleRaster(Raster raster) {
@@ -1347,15 +1347,15 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Creates a <code>SampleModel</code> with the specified
+     * Creates a {@code SampleModel} with the specified
      * width and height that has a data layout compatible with
-     * this <code>ColorModel</code>.
-     * @param w the width to apply to the new <code>SampleModel</code>
-     * @param h the height to apply to the new <code>SampleModel</code>
-     * @return a <code>SampleModel</code> object with the specified
+     * this {@code ColorModel}.
+     * @param w the width to apply to the new {@code SampleModel}
+     * @param h the height to apply to the new {@code SampleModel}
+     * @return a {@code SampleModel} object with the specified
      * width and height.
-     * @throws IllegalArgumentException if <code>w</code> or
-     *         <code>h</code> is not greater than 0
+     * @throws IllegalArgumentException if {@code w} or
+     *         {@code h} is not greater than 0
      * @see SampleModel
      */
     public SampleModel createCompatibleSampleModel(int w, int h) {
@@ -1372,13 +1372,13 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Checks if the specified <code>SampleModel</code> is compatible
-     * with this <code>ColorModel</code>.  If <code>sm</code> is
-     * <code>null</code>, this method returns <code>false</code>.
-     * @param sm the specified <code>SampleModel</code>,
-     *           or <code>null</code>
-     * @return <code>true</code> if the specified <code>SampleModel</code>
-     * is compatible with this <code>ColorModel</code>; <code>false</code>
+     * Checks if the specified {@code SampleModel} is compatible
+     * with this {@code ColorModel}.  If {@code sm} is
+     * {@code null}, this method returns {@code false}.
+     * @param sm the specified {@code SampleModel},
+     *           or {@code null}
+     * @return {@code true} if the specified {@code SampleModel}
+     * is compatible with this {@code ColorModel}; {@code false}
      * otherwise.
      * @see SampleModel
      */
@@ -1402,23 +1402,23 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Returns a new <code>BufferedImage</code> of TYPE_INT_ARGB or
-     * TYPE_INT_RGB that has a <code>Raster</code> with pixel data
-     * computed by expanding the indices in the source <code>Raster</code>
-     * using the color/alpha component arrays of this <code>ColorModel</code>.
+     * Returns a new {@code BufferedImage} of TYPE_INT_ARGB or
+     * TYPE_INT_RGB that has a {@code Raster} with pixel data
+     * computed by expanding the indices in the source {@code Raster}
+     * using the color/alpha component arrays of this {@code ColorModel}.
      * Only the lower <em>n</em> bits of each index value in the source
-     * <code>Raster</code>, as specified in the
+     * {@code Raster}, as specified in the
      * <a href="#index_values">class description</a> above, are used to
      * compute the color/alpha values in the returned image.
-     * If <code>forceARGB</code> is <code>true</code>, a TYPE_INT_ARGB image is
-     * returned regardless of whether or not this <code>ColorModel</code>
+     * If {@code forceARGB} is {@code true}, a TYPE_INT_ARGB image is
+     * returned regardless of whether or not this {@code ColorModel}
      * has an alpha component array or a transparent pixel.
-     * @param raster the specified <code>Raster</code>
-     * @param forceARGB if <code>true</code>, the returned
-     *     <code>BufferedImage</code> is TYPE_INT_ARGB; otherwise it is
+     * @param raster the specified {@code Raster}
+     * @param forceARGB if {@code true}, the returned
+     *     {@code BufferedImage} is TYPE_INT_ARGB; otherwise it is
      *     TYPE_INT_RGB
-     * @return a <code>BufferedImage</code> created with the specified
-     *     <code>Raster</code>
+     * @return a {@code BufferedImage} created with the specified
+     *     {@code Raster}
      * @throws IllegalArgumentException if the raster argument is not
      *           compatible with this IndexColorModel
      */
@@ -1470,8 +1470,8 @@ public class IndexColorModel extends ColorModel {
     /**
      * Returns whether or not the pixel is valid.
      * @param pixel the specified pixel value
-     * @return <code>true</code> if <code>pixel</code>
-     * is valid; <code>false</code> otherwise.
+     * @return {@code true} if {@code pixel}
+     * is valid; {@code false} otherwise.
      * @since 1.3
      */
     public boolean isValid(int pixel) {
@@ -1481,8 +1481,8 @@ public class IndexColorModel extends ColorModel {
 
     /**
      * Returns whether or not all of the pixels are valid.
-     * @return <code>true</code> if all pixels are valid;
-     * <code>false</code> otherwise.
+     * @return {@code true} if all pixels are valid;
+     * {@code false} otherwise.
      * @since 1.3
      */
     public boolean isValid() {
@@ -1490,13 +1490,13 @@ public class IndexColorModel extends ColorModel {
     }
 
     /**
-     * Returns a <code>BigInteger</code> that indicates the valid/invalid
+     * Returns a {@code BigInteger} that indicates the valid/invalid
      * pixels in the colormap.  A bit is valid if the
-     * <code>BigInteger</code> value at that index is set, and is invalid
-     * if the <code>BigInteger</code> value at that index is not set.
-     * The only valid ranges to query in the <code>BigInteger</code> are
+     * {@code BigInteger} value at that index is set, and is invalid
+     * if the {@code BigInteger} value at that index is not set.
+     * The only valid ranges to query in the {@code BigInteger} are
      * between 0 and the map size.
-     * @return a <code>BigInteger</code> indicating the valid/invalid pixels.
+     * @return a {@code BigInteger} indicating the valid/invalid pixels.
      * @since 1.3
      */
     public BigInteger getValidPixels() {
@@ -1510,17 +1510,17 @@ public class IndexColorModel extends ColorModel {
 
     /**
      * Disposes of system resources associated with this
-     * <code>ColorModel</code> once this <code>ColorModel</code> is no
+     * {@code ColorModel} once this {@code ColorModel} is no
      * longer referenced.
      */
     public void finalize() {
     }
 
     /**
-     * Returns the <code>String</code> representation of the contents of
-     * this <code>ColorModel</code>object.
-     * @return a <code>String</code> representing the contents of this
-     * <code>ColorModel</code> object.
+     * Returns the {@code String} representation of the contents of
+     * this {@code ColorModel} object.
+     * @return a {@code String} representing the contents of this
+     * {@code ColorModel} object.
      */
     public String toString() {
        return new String("IndexColorModel: #pixelBits = "+pixel_bits

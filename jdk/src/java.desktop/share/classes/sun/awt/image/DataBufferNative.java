@@ -31,7 +31,7 @@ import sun.java2d.SurfaceData;
 import java.awt.Rectangle;
 
 /**
- * This class extends <CODE>DataBuffer</CODE> and allows access to
+ * This class extends {@code DataBuffer} and allows access to
  * native data via the DataBuffer methods.  Note that, unlike other
  * DataBuffer classes, the data is not stored in this class but
  * has been created and stored elsewhere and this class is used

@@ -31,13 +31,13 @@ import javax.imageio.ImageReadParam;
  * This class adds the ability to set JPEG quantization and Huffman
  * tables when using the built-in JPEG reader plug-in.  An instance of
  * this class will be returned from the
- * <code>getDefaultImageReadParam</code> methods of the built-in JPEG
- * <code>ImageReader</code>.
+ * {@code getDefaultImageReadParam} methods of the built-in JPEG
+ * {@code ImageReader}.
  *
  * <p> The sole purpose of these additions is to allow the
  * specification of tables for use in decoding abbreviated streams.
  * The built-in JPEG reader will also accept an ordinary
- * <code>ImageReadParam</code>, which is sufficient for decoding
+ * {@code ImageReadParam}, which is sufficient for decoding
  * non-abbreviated streams.
  *
  * <p> While tables for abbreviated streams are often obtained by
@@ -45,19 +45,19 @@ import javax.imageio.ImageReadParam;
  * tables, in some applications the tables are fixed ahead of time.
  * This class allows the tables to be specified directly from client
  * code.  If no tables are specified either in the stream or in a
- * <code>JPEGImageReadParam</code>, then the stream is presumed to use
+ * {@code JPEGImageReadParam}, then the stream is presumed to use
  * the "standard" visually lossless tables.  See {@link JPEGQTable JPEGQTable}
  * and {@link JPEGHuffmanTable JPEGHuffmanTable} for more information
  *  on the default tables.
  *
- * <p> The default <code>JPEGImageReadParam</code> returned by the
- * <code>getDefaultReadParam</code> method of the builtin JPEG reader
+ * <p> The default {@code JPEGImageReadParam} returned by the
+ * {@code getDefaultReadParam} method of the builtin JPEG reader
  * contains no tables.  Default tables may be obtained from the table
  * classes {@link JPEGQTable JPEGQTable} and
  * {@link JPEGHuffmanTable JPEGHuffmanTable}.
  *
  * <p> If a stream does contain tables, the tables given in a
- * <code>JPEGImageReadParam</code> are ignored.  Furthermore, if the
+ * {@code JPEGImageReadParam} are ignored.  Furthermore, if the
  * first image in a stream does contain tables and subsequent ones do
  * not, then the tables given in the first image are used for all the
  * abbreviated images.  Once tables have been read from a stream, they
@@ -83,16 +83,16 @@ public class JPEGImageReadParam extends ImageReadParam {
     private JPEGHuffmanTable[] ACHuffmanTables = null;
 
     /**
-     * Constructs a <code>JPEGImageReadParam</code>.
+     * Constructs a {@code JPEGImageReadParam}.
      */
     public JPEGImageReadParam() {
         super();
     }
 
     /**
-     * Returns <code>true</code> if tables are currently set.
+     * Returns {@code true} if tables are currently set.
      *
-     * @return <code>true</code> if tables are present.
+     * @return {@code true} if tables are present.
      */
     public boolean areTablesSet() {
         return (qTables != null);
@@ -103,7 +103,7 @@ public class JPEGImageReadParam extends ImageReadParam {
      * abbreviated streams.  There may be a maximum of 4 tables of
      * each type.  These tables are ignored once tables are
      * encountered in the stream.  All arguments must be
-     * non-<code>null</code>.  The two arrays of Huffman tables must
+     * non-{@code null}.  The two arrays of Huffman tables must
      * have the same number of elements.  The table specifiers in the
      * frame and scan headers in the stream are assumed to be
      * equivalent to indices into these arrays.  The argument arrays
@@ -114,7 +114,7 @@ public class JPEGImageReadParam extends ImageReadParam {
      * @param ACHuffmanTables an array of Huffman table objects.
      *
      * @exception IllegalArgumentException if any of the arguments
-     * is <code>null</code>, has more than 4 elements, or if the
+     * is {@code null}, has more than 4 elements, or if the
      * numbers of DC and AC tables differ.
      *
      * @see #unsetDecodeTables
@@ -151,11 +151,11 @@ public class JPEGImageReadParam extends ImageReadParam {
 
     /**
      * Returns a copy of the array of quantization tables set on the
-     * most recent call to <code>setDecodeTables</code>, or
-     * <code>null</code> if tables are not currently set.
+     * most recent call to {@code setDecodeTables}, or
+     * {@code null} if tables are not currently set.
      *
-     * @return an array of <code>JPEGQTable</code> objects, or
-     * <code>null</code>.
+     * @return an array of {@code JPEGQTable} objects, or
+     * {@code null}.
      *
      * @see #setDecodeTables
      */
@@ -165,11 +165,11 @@ public class JPEGImageReadParam extends ImageReadParam {
 
     /**
      * Returns a copy of the array of DC Huffman tables set on the
-     * most recent call to <code>setDecodeTables</code>, or
-     * <code>null</code> if tables are not currently set.
+     * most recent call to {@code setDecodeTables}, or
+     * {@code null} if tables are not currently set.
      *
-     * @return an array of <code>JPEGHuffmanTable</code> objects, or
-     * <code>null</code>.
+     * @return an array of {@code JPEGHuffmanTable} objects, or
+     * {@code null}.
      *
      * @see #setDecodeTables
      */
@@ -181,11 +181,11 @@ public class JPEGImageReadParam extends ImageReadParam {
 
     /**
      * Returns a copy of the array of AC Huffman tables set on the
-     * most recent call to <code>setDecodeTables</code>, or
-     * <code>null</code> if tables are not currently set.
+     * most recent call to {@code setDecodeTables}, or
+     * {@code null} if tables are not currently set.
      *
-     * @return an array of <code>JPEGHuffmanTable</code> objects, or
-     * <code>null</code>.
+     * @return an array of {@code JPEGHuffmanTable} objects, or
+     * {@code null}.
      *
      * @see #setDecodeTables
      */

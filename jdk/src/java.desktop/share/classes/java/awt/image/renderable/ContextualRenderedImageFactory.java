@@ -70,7 +70,7 @@ public interface ContextualRenderedImageFactory extends RenderedImageFactory {
      * @param paramBlock a ParameterBlock containing the operation's
      *        sources and parameters.
      * @param image the RenderableImage being rendered.
-     * @return a <code>RenderContext</code> for
+     * @return a {@code RenderContext} for
      *         the source at the specified index of the parameters
      *         Vector contained in the specified ParameterBlock.
      */
@@ -91,7 +91,7 @@ public interface ContextualRenderedImageFactory extends RenderedImageFactory {
      * @param renderContext The RenderContext specifying the rendering
      * @param paramBlock a ParameterBlock containing the operation's
      *        sources and parameters
-     * @return a <code>RenderedImage</code> from the sources and parameters
+     * @return a {@code RenderedImage} from the sources and parameters
      *         in the specified ParameterBlock and according to the
      *         rendering instructions in the specified RenderContext.
      */
@@ -135,9 +135,9 @@ public interface ContextualRenderedImageFactory extends RenderedImageFactory {
      * may produce different results.  This method may be used to
      * determine whether an existing rendering may be cached and
      * reused.  It is always safe to return true.
-     * @return <code>true</code> if successive renderings with the
+     * @return {@code true} if successive renderings with the
      *         same arguments might produce different results;
-     *         <code>false</code> otherwise.
+     *         {@code false} otherwise.
      */
     boolean isDynamic();
 }

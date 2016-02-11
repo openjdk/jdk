@@ -161,9 +161,9 @@ public class RenderingHints
         /**
          * Returns true if the specified object is a valid value
          * for this Key.
-         * @param val the <code>Object</code> to test for validity
-         * @return <code>true</code> if <code>val</code> is valid;
-         *         <code>false</code> otherwise.
+         * @param val the {@code Object} to test for validity
+         * @return {@code true} if {@code val} is valid;
+         *         {@code false} otherwise.
          */
         public abstract boolean isCompatibleValue(Object val);
 
@@ -519,7 +519,7 @@ public class RenderingHints
 
     /**
      * LCD text contrast rendering hint key.
-     * The value is an <code>Integer</code> object which is used as a text
+     * The value is an {@code Integer} object which is used as a text
      * contrast adjustment when used in conjunction with an LCD text
      * anti-aliasing hint such as
      * {@link #VALUE_TEXT_ANTIALIAS_LCD_HRGB}.
@@ -1028,7 +1028,7 @@ public class RenderingHints
      * Constructs a new object with the specified key/value pair.
      * @param key the key of the particular hint property
      * @param value the value of the hint property specified with
-     * <code>key</code>
+     * {@code key}
      */
     public RenderingHints(Key key, Object value) {
         hintmap.put(key, value);
@@ -1036,21 +1036,21 @@ public class RenderingHints
 
     /**
      * Returns the number of key-value mappings in this
-     * <code>RenderingHints</code>.
+     * {@code RenderingHints}.
      *
      * @return the number of key-value mappings in this
-     * <code>RenderingHints</code>.
+     * {@code RenderingHints}.
      */
     public int size() {
         return hintmap.size();
     }
 
     /**
-     * Returns <code>true</code> if this
-     * <code>RenderingHints</code> contains no key-value mappings.
+     * Returns {@code true} if this
+     * {@code RenderingHints} contains no key-value mappings.
      *
-     * @return <code>true</code> if this
-     * <code>RenderingHints</code> contains no key-value mappings.
+     * @return {@code true} if this
+     * {@code RenderingHints} contains no key-value mappings.
      */
     public boolean isEmpty() {
         return hintmap.isEmpty();
@@ -1074,19 +1074,19 @@ public class RenderingHints
     /**
      * Returns true if this RenderingHints maps one or more keys to the
      * specified value.
-     * More formally, returns <code>true</code> if and only
-     * if this <code>RenderingHints</code>
-     * contains at least one mapping to a value <code>v</code> such that
+     * More formally, returns {@code true} if and only
+     * if this {@code RenderingHints}
+     * contains at least one mapping to a value {@code v} such that
      * <pre>
      * (value==null ? v==null : value.equals(v))
      * </pre>.
      * This operation will probably require time linear in the
-     * <code>RenderingHints</code> size for most implementations
-     * of <code>RenderingHints</code>.
+     * {@code RenderingHints} size for most implementations
+     * of {@code RenderingHints}.
      *
      * @param value value whose presence in this
-     *          <code>RenderingHints</code> is to be tested.
-     * @return <code>true</code> if this <code>RenderingHints</code>
+     *          {@code RenderingHints} is to be tested.
+     * @return {@code true} if this {@code RenderingHints}
      *           maps one or more keys to the specified value.
      */
     public boolean containsValue(Object value) {
@@ -1139,19 +1139,19 @@ public class RenderingHints
 
     /**
      * Adds all of the keys and corresponding values from the specified
-     * <code>RenderingHints</code> object to this
-     * <code>RenderingHints</code> object. Keys that are present in
-     * this <code>RenderingHints</code> object, but not in the specified
-     * <code>RenderingHints</code> object are not affected.
+     * {@code RenderingHints} object to this
+     * {@code RenderingHints} object. Keys that are present in
+     * this {@code RenderingHints} object, but not in the specified
+     * {@code RenderingHints} object are not affected.
      * @param hints the set of key/value pairs to be added to this
-     * <code>RenderingHints</code> object
+     * {@code RenderingHints} object
      */
     public void add(RenderingHints hints) {
         hintmap.putAll(hints.hintmap);
     }
 
     /**
-     * Clears this <code>RenderingHints</code> object of all key/value
+     * Clears this {@code RenderingHints} object of all key/value
      * pairs.
      */
     public void clear() {
@@ -1202,93 +1202,93 @@ public class RenderingHints
     }
 
     /**
-     * Returns a <code>Set</code> view of the Keys contained in this
-     * <code>RenderingHints</code>.  The Set is backed by the
-     * <code>RenderingHints</code>, so changes to the
-     * <code>RenderingHints</code> are reflected in the <code>Set</code>,
-     * and vice-versa.  If the <code>RenderingHints</code> is modified
-     * while an iteration over the <code>Set</code> is in progress,
-     * the results of the iteration are undefined.  The <code>Set</code>
+     * Returns a {@code Set} view of the Keys contained in this
+     * {@code RenderingHints}.  The Set is backed by the
+     * {@code RenderingHints}, so changes to the
+     * {@code RenderingHints} are reflected in the {@code Set},
+     * and vice-versa.  If the {@code RenderingHints} is modified
+     * while an iteration over the {@code Set} is in progress,
+     * the results of the iteration are undefined.  The {@code Set}
      * supports element removal, which removes the corresponding
-     * mapping from the <code>RenderingHints</code>, via the
-     * <code>Iterator.remove</code>, <code>Set.remove</code>,
-     * <code>removeAll</code> <code>retainAll</code>, and
-     * <code>clear</code> operations.  It does not support
-     * the <code>add</code> or <code>addAll</code> operations.
+     * mapping from the {@code RenderingHints}, via the
+     * {@code Iterator.remove}, {@code Set.remove},
+     * {@code removeAll retainAll}, and
+     * {@code clear} operations.  It does not support
+     * the {@code add} or {@code addAll} operations.
      *
-     * @return a <code>Set</code> view of the keys contained
-     * in this <code>RenderingHints</code>.
+     * @return a {@code Set} view of the keys contained
+     * in this {@code RenderingHints}.
      */
     public Set<Object> keySet() {
         return hintmap.keySet();
     }
 
     /**
-     * Returns a <code>Collection</code> view of the values
-     * contained in this <code>RenderingHints</code>.
-     * The <code>Collection</code> is backed by the
-     * <code>RenderingHints</code>, so changes to
-     * the <code>RenderingHints</code> are reflected in
-     * the <code>Collection</code>, and vice-versa.
-     * If the <code>RenderingHints</code> is modified while
-     * an iteration over the <code>Collection</code> is
+     * Returns a {@code Collection} view of the values
+     * contained in this {@code RenderingHints}.
+     * The {@code Collection} is backed by the
+     * {@code RenderingHints}, so changes to
+     * the {@code RenderingHints} are reflected in
+     * the {@code Collection}, and vice-versa.
+     * If the {@code RenderingHints} is modified while
+     * an iteration over the {@code Collection} is
      * in progress, the results of the iteration are undefined.
-     * The <code>Collection</code> supports element removal,
+     * The {@code Collection} supports element removal,
      * which removes the corresponding mapping from the
-     * <code>RenderingHints</code>, via the
-     * <code>Iterator.remove</code>,
-     * <code>Collection.remove</code>, <code>removeAll</code>,
-     * <code>retainAll</code> and <code>clear</code> operations.
-     * It does not support the <code>add</code> or
-     * <code>addAll</code> operations.
+     * {@code RenderingHints}, via the
+     * {@code Iterator.remove},
+     * {@code Collection.remove}, {@code removeAll},
+     * {@code retainAll} and {@code clear} operations.
+     * It does not support the {@code add} or
+     * {@code addAll} operations.
      *
-     * @return a <code>Collection</code> view of the values
-     *          contained in this <code>RenderingHints</code>.
+     * @return a {@code Collection} view of the values
+     *          contained in this {@code RenderingHints}.
      */
     public Collection<Object> values() {
         return hintmap.values();
     }
 
     /**
-     * Returns a <code>Set</code> view of the mappings contained
-     * in this <code>RenderingHints</code>.  Each element in the
-     * returned <code>Set</code> is a <code>Map.Entry</code>.
-     * The <code>Set</code> is backed by the <code>RenderingHints</code>,
-     * so changes to the <code>RenderingHints</code> are reflected
-     * in the <code>Set</code>, and vice-versa.  If the
-     * <code>RenderingHints</code> is modified while
-     * while an iteration over the <code>Set</code> is in progress,
+     * Returns a {@code Set} view of the mappings contained
+     * in this {@code RenderingHints}.  Each element in the
+     * returned {@code Set} is a {@code Map.Entry}.
+     * The {@code Set} is backed by the {@code RenderingHints},
+     * so changes to the {@code RenderingHints} are reflected
+     * in the {@code Set}, and vice-versa.  If the
+     * {@code RenderingHints} is modified while
+     * while an iteration over the {@code Set} is in progress,
      * the results of the iteration are undefined.
      * <p>
-     * The entrySet returned from a <code>RenderingHints</code> object
+     * The entrySet returned from a {@code RenderingHints} object
      * is not modifiable.
      *
-     * @return a <code>Set</code> view of the mappings contained in
-     * this <code>RenderingHints</code>.
+     * @return a {@code Set} view of the mappings contained in
+     * this {@code RenderingHints}.
      */
     public Set<Map.Entry<Object,Object>> entrySet() {
         return Collections.unmodifiableMap(hintmap).entrySet();
     }
 
     /**
-     * Compares the specified <code>Object</code> with this
-     * <code>RenderingHints</code> for equality.
-     * Returns <code>true</code> if the specified object is also a
-     * <code>Map</code> and the two <code>Map</code> objects represent
-     * the same mappings.  More formally, two <code>Map</code> objects
-     * <code>t1</code> and <code>t2</code> represent the same mappings
-     * if <code>t1.keySet().equals(t2.keySet())</code> and for every
-     * key <code>k</code> in <code>t1.keySet()</code>,
+     * Compares the specified {@code Object} with this
+     * {@code RenderingHints} for equality.
+     * Returns {@code true} if the specified object is also a
+     * {@code Map} and the two {@code Map} objects represent
+     * the same mappings.  More formally, two {@code Map} objects
+     * {@code t1} and {@code t2} represent the same mappings
+     * if {@code t1.keySet().equals(t2.keySet())} and for every
+     * key {@code k} in {@code t1.keySet()},
      * <pre>
      * (t1.get(k)==null ? t2.get(k)==null : t1.get(k).equals(t2.get(k)))
      * </pre>.
-     * This ensures that the <code>equals</code> method works properly across
-     * different implementations of the <code>Map</code> interface.
+     * This ensures that the {@code equals} method works properly across
+     * different implementations of the {@code Map} interface.
      *
-     * @param o <code>Object</code> to be compared for equality with
-     * this <code>RenderingHints</code>.
-     * @return <code>true</code> if the specified <code>Object</code>
-     * is equal to this <code>RenderingHints</code>.
+     * @param o {@code Object} to be compared for equality with
+     * this {@code RenderingHints}.
+     * @return {@code true} if the specified {@code Object}
+     * is equal to this {@code RenderingHints}.
      */
     public boolean equals(Object o) {
         if (o instanceof RenderingHints) {
@@ -1300,16 +1300,16 @@ public class RenderingHints
     }
 
     /**
-     * Returns the hash code value for this <code>RenderingHints</code>.
-     * The hash code of a <code>RenderingHints</code> is defined to be
-     * the sum of the hashCodes of each <code>Entry</code> in the
-     * <code>RenderingHints</code> object's entrySet view.  This ensures that
-     * <code>t1.equals(t2)</code> implies that
-     * <code>t1.hashCode()==t2.hashCode()</code> for any two <code>Map</code>
-     * objects <code>t1</code> and <code>t2</code>, as required by the general
-     * contract of <code>Object.hashCode</code>.
+     * Returns the hash code value for this {@code RenderingHints}.
+     * The hash code of a {@code RenderingHints} is defined to be
+     * the sum of the hashCodes of each {@code Entry} in the
+     * {@code RenderingHints} object's entrySet view.  This ensures that
+     * {@code t1.equals(t2)} implies that
+     * {@code t1.hashCode()==t2.hashCode()} for any two {@code Map}
+     * objects {@code t1} and {@code t2}, as required by the general
+     * contract of {@code Object.hashCode}.
      *
-     * @return the hash code value for this <code>RenderingHints</code>.
+     * @return the hash code value for this {@code RenderingHints}.
      * @see java.util.Map.Entry#hashCode()
      * @see Object#hashCode()
      * @see Object#equals(Object)
@@ -1320,8 +1320,8 @@ public class RenderingHints
     }
 
     /**
-     * Creates a clone of this <code>RenderingHints</code> object
-     * that has the same contents as this <code>RenderingHints</code>
+     * Creates a clone of this {@code RenderingHints} object
+     * that has the same contents as this {@code RenderingHints}
      * object.
      * @return a clone of this instance.
      */
@@ -1344,7 +1344,7 @@ public class RenderingHints
     /**
      * Returns a rather long string representation of the hashmap
      * which contains the mappings of keys to values for this
-     * <code>RenderingHints</code> object.
+     * {@code RenderingHints} object.
      * @return  a string representation of this object.
      */
     public String toString() {

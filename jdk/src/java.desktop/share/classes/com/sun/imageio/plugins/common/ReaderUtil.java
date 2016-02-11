@@ -134,25 +134,25 @@ public class ReaderUtil {
      * pixels that will be written during a particular decoding pass.
      * The intent is to simplify the work done by readers in combining
      * the source region, source subsampling, and destination offset
-     * information obtained from the <code>ImageReadParam</code> with
+     * information obtained from the {@code ImageReadParam} with
      * the offsets and periods of a progressive or interlaced decoding
      * pass.
      *
-     * @param sourceRegion a <code>Rectangle</code> containing the
+     * @param sourceRegion a {@code Rectangle} containing the
      * source region being read, offset by the source subsampling
      * offsets, and clipped against the source bounds, as returned by
-     * the <code>getSourceRegion</code> method.
-     * @param destinationOffset a <code>Point</code> containing the
+     * the {@code getSourceRegion} method.
+     * @param destinationOffset a {@code Point} containing the
      * coordinates of the upper-left pixel to be written in the
      * destination.
      * @param dstMinX the smallest X coordinate (inclusive) of the
-     * destination <code>Raster</code>.
+     * destination {@code Raster}.
      * @param dstMinY the smallest Y coordinate (inclusive) of the
-     * destination <code>Raster</code>.
+     * destination {@code Raster}.
      * @param dstMaxX the largest X coordinate (inclusive) of the destination
-     * <code>Raster</code>.
+     * {@code Raster}.
      * @param dstMaxY the largest Y coordinate (inclusive) of the destination
-     * <code>Raster</code>.
+     * {@code Raster}.
      * @param sourceXSubsampling the X subsampling factor.
      * @param sourceYSubsampling the Y subsampling factor.
      * @param passXStart the smallest source X coordinate (inclusive)
@@ -168,7 +168,7 @@ public class ReaderUtil {
      * @param passPeriodY the Y period (vertical spacing between
      * pixels) of the current progressive pass.
      *
-     * @return an array of 6 <code>int</code>s containing the
+     * @return an array of 6 {@code int}s containing the
      * destination min X, min Y, width, height, X period and Y period
      * of the region that will be updated.
      */

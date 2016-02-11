@@ -156,7 +156,7 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
 
     PDATA pData;
     HWND hwndParent = NULL;
-    AwtFrame* frame;
+    AwtFrame* frame = NULL;
     jclass cls = NULL;
     jclass inputMethodWindowCls = NULL;
     jobject target = NULL;
@@ -993,7 +993,9 @@ MsgRouting AwtFrame::WmActivate(UINT nState, BOOL fMinimized, HWND opposite)
         AwtComponent::SetFocusedWindow(GetHWnd());
 
     } else {
-        if (!::IsWindow(AwtWindow::GetModalBlocker(opposite))) {
+        if (::IsWindow(AwtWindow::GetModalBlocker(opposite))) {
+            return mrConsume;
+        } else {
             // If deactivation happens because of press on grabbing
             // window - this is nonsense, since grabbing window is
             // assumed to have focus and watch for deactivation.  But
