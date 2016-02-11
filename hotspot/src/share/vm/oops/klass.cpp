@@ -28,6 +28,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
@@ -400,9 +401,9 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive, bool clean_alive
     Klass* sub = current->subklass();
     while (sub != NULL && !sub->is_loader_alive(is_alive)) {
 #ifndef PRODUCT
-      if (TraceClassUnloading && WizardMode) {
+      if (log_is_enabled(Trace, classunload)) {
         ResourceMark rm;
-        tty->print_cr("[Unlinking class (subclass) %s]", sub->external_name());
+        log_trace(classunload)("unlinking class (subclass): %s", sub->external_name());
       }
 #endif
       sub = sub->next_sibling();
@@ -415,9 +416,9 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive, bool clean_alive
     // Find and set the first alive sibling
     Klass* sibling = current->next_sibling();
     while (sibling != NULL && !sibling->is_loader_alive(is_alive)) {
-      if (TraceClassUnloading && WizardMode) {
+      if (log_is_enabled(Trace, classunload)) {
         ResourceMark rm;
-        tty->print_cr("[Unlinking class (sibling) %s]", sibling->external_name());
+        log_trace(classunload)("[Unlinking class (sibling) %s]", sibling->external_name());
       }
       sibling = sibling->next_sibling();
     }
@@ -671,6 +672,28 @@ void Klass::verify_on(outputStream* st) {
 void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->is_oop(),  "should be oop");
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
+}
+
+klassVtable* Klass::vtable() const {
+  return new klassVtable(this, start_of_vtable(), vtable_length() / vtableEntry::size());
+}
+
+vtableEntry* Klass::start_of_vtable() const {
+  return (vtableEntry*) ((address)this + in_bytes(vtable_start_offset()));
+}
+
+Method* Klass::method_at_vtable(int index)  {
+#ifndef PRODUCT
+  assert(index >= 0, "valid vtable index");
+  if (DebugVtables) {
+    verify_vtable_index(index);
+  }
+#endif
+  return start_of_vtable()[index].method();
+}
+
+ByteSize Klass::vtable_start_offset() {
+  return in_ByteSize(InstanceKlass::header_size() * wordSize);
 }
 
 #ifndef PRODUCT

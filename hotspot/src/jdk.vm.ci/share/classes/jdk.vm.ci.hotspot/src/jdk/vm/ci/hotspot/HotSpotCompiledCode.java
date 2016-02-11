@@ -24,6 +24,7 @@ package jdk.vm.ci.hotspot;
 
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.CompiledCode;
+import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.Infopoint;
 import jdk.vm.ci.code.site.Site;
@@ -99,9 +100,9 @@ public class HotSpotCompiledCode implements CompiledCode {
     protected final int totalFrameSize;
 
     /**
-     * Offset in bytes for the custom stack area (relative to sp).
+     * The deopt rescue slot. Must be non-null if there is a safepoint in the method.
      */
-    protected final int customStackAreaOffset;
+    protected final StackSlot deoptRescueSlot;
 
     public static class Comment {
 
@@ -115,7 +116,7 @@ public class HotSpotCompiledCode implements CompiledCode {
     }
 
     public HotSpotCompiledCode(String name, byte[] targetCode, int targetCodeSize, Site[] sites, Assumption[] assumptions, ResolvedJavaMethod[] methods, Comment[] comments, byte[] dataSection,
-                    int dataSectionAlignment, DataPatch[] dataSectionPatches, boolean isImmutablePIC, int totalFrameSize, int customStackAreaOffset) {
+                    int dataSectionAlignment, DataPatch[] dataSectionPatches, boolean isImmutablePIC, int totalFrameSize, StackSlot deoptRescueSlot) {
         this.name = name;
         this.targetCode = targetCode;
         this.targetCodeSize = targetCodeSize;
@@ -129,7 +130,7 @@ public class HotSpotCompiledCode implements CompiledCode {
         this.dataSectionPatches = dataSectionPatches;
         this.isImmutablePIC = isImmutablePIC;
         this.totalFrameSize = totalFrameSize;
-        this.customStackAreaOffset = customStackAreaOffset;
+        this.deoptRescueSlot = deoptRescueSlot;
 
         assert validateFrames();
     }

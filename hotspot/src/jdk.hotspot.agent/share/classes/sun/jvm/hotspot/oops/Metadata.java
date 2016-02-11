@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,11 @@ abstract public class Metadata extends VMObject {
 
   public Metadata(Address addr) {
     super(addr);
+  }
+
+  public static long alignSize(long size) {
+    // natural word size.
+    return VM.getVM().alignUp(size, VM.getVM().getBytesPerWord());
   }
 
   private static VirtualBaseConstructor<Metadata> metadataConstructor;

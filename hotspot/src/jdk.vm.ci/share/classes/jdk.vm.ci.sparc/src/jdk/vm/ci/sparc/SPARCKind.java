@@ -47,13 +47,13 @@ public enum SPARCKind implements PlatformKind {
     private final SPARCKind scalar;
     private final EnumKey<SPARCKind> key = new EnumKey<>(this);
 
-    private SPARCKind(int size) {
+    SPARCKind(int size) {
         this.size = size;
         this.scalar = this;
         this.vectorLength = 1;
     }
 
-    private SPARCKind(int size, SPARCKind scalar) {
+    SPARCKind(int size, SPARCKind scalar) {
         this.size = size;
         this.scalar = scalar;
 

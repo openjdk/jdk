@@ -35,7 +35,7 @@ public interface MethodHandleAccessProvider {
      * Identification for methods defined on the class {@link MethodHandle} that are processed by
      * the {@link MethodHandleAccessProvider}.
      */
-    public enum IntrinsicMethod {
+    enum IntrinsicMethod {
         /** The method {@code MethodHandle.invokeBasic}. */
         INVOKE_BASIC,
         /** The method {@code MethodHandle.linkToStatic}. */

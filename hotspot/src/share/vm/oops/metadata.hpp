@@ -58,13 +58,13 @@ class Metadata : public MetaspaceObj {
     if (this == NULL)
       st->print("NULL");
     else
-      print_on(tty);
+      print_on(st);
   }
   void print_value_on_maybe_null(outputStream* st) const {
     if (this == NULL)
       st->print("NULL");
     else
-      print_value_on(tty);
+      print_value_on(st);
   }
 
   virtual void print_on(outputStream* st) const;       // First level print
