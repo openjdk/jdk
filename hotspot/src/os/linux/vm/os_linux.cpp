@@ -4771,6 +4771,25 @@ void os::make_polling_page_readable(void) {
   }
 }
 
+// older glibc versions don't have this macro (which expands to
+// an optimized bit-counting function) so we have to roll our own
+#ifndef CPU_COUNT
+
+static int _cpu_count(const cpu_set_t* cpus) {
+  int count = 0;
+  // only look up to the number of configured processors
+  for (int i = 0; i < os::processor_count(); i++) {
+    if (CPU_ISSET(i, cpus)) {
+      count++;
+    }
+  }
+  return count;
+}
+
+#define CPU_COUNT(cpus) _cpu_count(cpus)
+
+#endif // CPU_COUNT
+
 // Get the current number of available processors for this process.
 // This value can change at any time during a process's lifetime.
 // sched_getaffinity gives an accurate answer as it accounts for cpusets.
@@ -4785,6 +4804,9 @@ int os::active_processor_count() {
 
   int configured_cpus = processor_count();  // upper bound on available cpus
   int cpu_count = 0;
+
+// old build platforms may not support dynamic cpu sets
+#ifdef CPU_ALLOC
 
   // To enable easy testing of the dynamic path on different platforms we
   // introduce a diagnostic flag: UseCpuAllocPath
@@ -4814,10 +4836,18 @@ int os::active_processor_count() {
     log_trace(os)("active_processor_count: using static path - configured processors: %d",
                   configured_cpus);
   }
+#else // CPU_ALLOC
+// these stubs won't be executed
+#define CPU_COUNT_S(size, cpus) -1
+#define CPU_FREE(cpus)
+
+  log_trace(os)("active_processor_count: only static path available - configured processors: %d",
+                configured_cpus);
+#endif // CPU_ALLOC
 
   // pid 0 means the current thread - which we have to assume represents the process
   if (sched_getaffinity(0, cpus_size, cpus_p) == 0) {
-    if (cpus_p != &cpus) {
+    if (cpus_p != &cpus) { // can only be true when CPU_ALLOC used
       cpu_count = CPU_COUNT_S(cpus_size, cpus_p);
     }
     else {
@@ -4831,7 +4861,7 @@ int os::active_processor_count() {
             "which may exceed available processors", strerror(errno), cpu_count);
   }
 
-  if (cpus_p != &cpus) {
+  if (cpus_p != &cpus) { // can only be true when CPU_ALLOC used
     CPU_FREE(cpus_p);
   }
 
