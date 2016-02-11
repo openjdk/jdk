@@ -758,7 +758,7 @@ G1CollectorPolicy::verify_young_ages(HeapRegion* head,
        curr = curr->get_next_young_region()) {
     SurvRateGroup* group = curr->surv_rate_group();
     if (group == NULL && !curr->is_survivor()) {
-      log_info(gc, verify)("## %s: encountered NULL surv_rate_group", name);
+      log_error(gc, verify)("## %s: encountered NULL surv_rate_group", name);
       ret = false;
     }
 
@@ -766,12 +766,12 @@ G1CollectorPolicy::verify_young_ages(HeapRegion* head,
       int age = curr->age_in_surv_rate_group();
 
       if (age < 0) {
-        log_info(gc, verify)("## %s: encountered negative age", name);
+        log_error(gc, verify)("## %s: encountered negative age", name);
         ret = false;
       }
 
       if (age <= prev_age) {
-        log_info(gc, verify)("## %s: region ages are not strictly increasing (%d, %d)", name, age, prev_age);
+        log_error(gc, verify)("## %s: region ages are not strictly increasing (%d, %d)", name, age, prev_age);
         ret = false;
       }
       prev_age = age;

@@ -221,13 +221,13 @@ void SATBMarkQueueSet::handle_zero_index_for_thread(JavaThread* t) {
 
 #ifdef ASSERT
 void SATBMarkQueueSet::dump_active_states(bool expected_active) {
-  log_info(gc, verify)("Expected SATB active state: %s", expected_active ? "ACTIVE" : "INACTIVE");
-  log_info(gc, verify)("Actual SATB active states:");
-  log_info(gc, verify)("  Queue set: %s", is_active() ? "ACTIVE" : "INACTIVE");
+  log_error(gc, verify)("Expected SATB active state: %s", expected_active ? "ACTIVE" : "INACTIVE");
+  log_error(gc, verify)("Actual SATB active states:");
+  log_error(gc, verify)("  Queue set: %s", is_active() ? "ACTIVE" : "INACTIVE");
   for (JavaThread* t = Threads::first(); t; t = t->next()) {
-    log_info(gc, verify)("  Thread \"%s\" queue: %s", t->name(), t->satb_mark_queue().is_active() ? "ACTIVE" : "INACTIVE");
+    log_error(gc, verify)("  Thread \"%s\" queue: %s", t->name(), t->satb_mark_queue().is_active() ? "ACTIVE" : "INACTIVE");
   }
-  log_info(gc, verify)("  Shared queue: %s", shared_satb_queue()->is_active() ? "ACTIVE" : "INACTIVE");
+  log_error(gc, verify)("  Shared queue: %s", shared_satb_queue()->is_active() ? "ACTIVE" : "INACTIVE");
 }
 
 void SATBMarkQueueSet::verify_active_states(bool expected_active) {

@@ -2147,8 +2147,8 @@ public:
   virtual bool doHeapRegion(HeapRegion* hr) {
     unsigned region_gc_time_stamp = hr->get_gc_time_stamp();
     if (_gc_time_stamp != region_gc_time_stamp) {
-      log_info(gc, verify)("Region " HR_FORMAT " has GC time stamp = %d, expected %d", HR_FORMAT_PARAMS(hr),
-                           region_gc_time_stamp, _gc_time_stamp);
+      log_error(gc, verify)("Region " HR_FORMAT " has GC time stamp = %d, expected %d", HR_FORMAT_PARAMS(hr),
+                            region_gc_time_stamp, _gc_time_stamp);
       _failures = true;
     }
     return false;
@@ -5185,8 +5185,8 @@ public:
   NoYoungRegionsClosure() : _success(true) { }
   bool doHeapRegion(HeapRegion* r) {
     if (r->is_young()) {
-      log_info(gc, verify)("Region [" PTR_FORMAT ", " PTR_FORMAT ") tagged as young",
-                           p2i(r->bottom()), p2i(r->end()));
+      log_error(gc, verify)("Region [" PTR_FORMAT ", " PTR_FORMAT ") tagged as young",
+                            p2i(r->bottom()), p2i(r->end()));
       _success = false;
     }
     return false;
