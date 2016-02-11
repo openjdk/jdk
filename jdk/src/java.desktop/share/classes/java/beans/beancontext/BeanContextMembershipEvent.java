@@ -35,18 +35,18 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * A <code>BeanContextMembershipEvent</code> encapsulates
+ * A {@code BeanContextMembershipEvent} encapsulates
  * the list of children added to, or removed from,
- * the membership of a particular <code>BeanContext</code>.
+ * the membership of a particular {@code BeanContext}.
  * An instance of this event is fired whenever a successful
  * add(), remove(), retainAll(), removeAll(), or clear() is
- * invoked on a given <code>BeanContext</code> instance.
+ * invoked on a given {@code BeanContext} instance.
  * Objects interested in receiving events of this type must
- * implement the <code>BeanContextMembershipListener</code>
+ * implement the {@code BeanContextMembershipListener}
  * interface, and must register their intent via the
- * <code>BeanContext</code>'s
- * <code>addBeanContextMembershipListener(BeanContextMembershipListener bcml)
- * </code> method.
+ * {@code BeanContext}'s
+ * {@code addBeanContextMembershipListener(BeanContextMembershipListener bcml)}
+ * method.
  *
  * @author      Laurence P. G. Cable
  * @since       1.2
@@ -62,7 +62,7 @@ public class BeanContextMembershipEvent extends BeanContextEvent {
      *
      * @param bc        The BeanContext source
      * @param changes   The Children affected
-     * @throws NullPointerException if <CODE>changes</CODE> is <CODE>null</CODE>
+     * @throws NullPointerException if {@code changes} is {@code null}
      */
 
     @SuppressWarnings("rawtypes")
@@ -101,7 +101,7 @@ public class BeanContextMembershipEvent extends BeanContextEvent {
 
     /**
      * Is the child specified affected by the event?
-     * @return <code>true</code> if affected, <code>false</code>
+     * @return {@code true} if affected, {@code false}
      * if not
      * @param child the object to check for being affected
      */

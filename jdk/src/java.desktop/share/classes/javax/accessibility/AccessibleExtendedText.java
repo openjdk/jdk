@@ -83,13 +83,13 @@ public interface AccessibleExtendedText {
     public String getTextRange(int startIndex, int endIndex);
 
     /**
-     * Returns the <code>AccessibleTextSequence</code> at a given index.
+     * Returns the {@code AccessibleTextSequence} at a given index.
      *
-     * @param part the <code>CHARACTER</code>, <code>WORD</code>,
-     * <code>SENTENCE</code>, <code>LINE</code> or <code>ATTRIBUTE_RUN</code>
+     * @param part the {@code CHARACTER}, {@code WORD},
+     * {@code SENTENCE}, {@code LINE} or {@code ATTRIBUTE_RUN}
      * to retrieve
      * @param index an index within the text
-     * @return an <code>AccessibleTextSequence</code> specifying the text
+     * @return an {@code AccessibleTextSequence} specifying the text
      * if part and index are valid.  Otherwise, null is returned.
      *
      * @see AccessibleText#CHARACTER
@@ -99,13 +99,13 @@ public interface AccessibleExtendedText {
     public AccessibleTextSequence getTextSequenceAt(int part, int index);
 
     /**
-     * Returns the <code>AccessibleTextSequence</code> after a given index.
+     * Returns the {@code AccessibleTextSequence} after a given index.
      *
-     * @param part the <code>CHARACTER</code>, <code>WORD</code>,
-     * <code>SENTENCE</code>, <code>LINE</code> or <code>ATTRIBUTE_RUN</code>
+     * @param part the {@code CHARACTER}, {@code WORD},
+     * {@code SENTENCE}, {@code LINE} or {@code ATTRIBUTE_RUN}
      * to retrieve
      * @param index an index within the text
-     * @return an <code>AccessibleTextSequence</code> specifying the text
+     * @return an {@code AccessibleTextSequence} specifying the text
      * if part and index are valid.  Otherwise, null is returned.
      *
      * @see AccessibleText#CHARACTER
@@ -115,13 +115,13 @@ public interface AccessibleExtendedText {
     public AccessibleTextSequence getTextSequenceAfter(int part, int index);
 
     /**
-     * Returns the <code>AccessibleTextSequence</code> before a given index.
+     * Returns the {@code AccessibleTextSequence} before a given index.
      *
-     * @param part the <code>CHARACTER</code>, <code>WORD</code>,
-     * <code>SENTENCE</code>, <code>LINE</code> or <code>ATTRIBUTE_RUN</code>
+     * @param part the {@code CHARACTER}, {@code WORD},
+     * {@code SENTENCE}, {@code LINE} or {@code ATTRIBUTE_RUN}
      * to retrieve
      * @param index an index within the text
-     * @return an <code>AccessibleTextSequence</code> specifying the text
+     * @return an {@code AccessibleTextSequence} specifying the text
      * if part and index are valid.  Otherwise, null is returned.
      *
      * @see AccessibleText#CHARACTER

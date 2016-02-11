@@ -38,7 +38,7 @@ import java.beans.*;
 public class PropertyEditorSupport implements PropertyEditor {
 
     /**
-     * Constructs a <code>PropertyEditorSupport</code> object.
+     * Constructs a {@code PropertyEditorSupport} object.
      *
      * @since 1.5
      */
@@ -47,7 +47,7 @@ public class PropertyEditorSupport implements PropertyEditor {
     }
 
     /**
-     * Constructs a <code>PropertyEditorSupport</code> object.
+     * Constructs a {@code PropertyEditorSupport} object.
      *
      * @param source the source used for event firing
      * @since 1.5
@@ -63,7 +63,7 @@ public class PropertyEditorSupport implements PropertyEditor {
      * Returns the bean that is used as the
      * source of events. If the source has not
      * been explicitly set then this instance of
-     * <code>PropertyEditorSupport</code> is returned.
+     * {@code PropertyEditorSupport} is returned.
      *
      * @return the source object or this instance
      * @since 1.5

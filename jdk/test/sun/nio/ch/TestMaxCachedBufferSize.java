@@ -42,13 +42,13 @@ import java.util.Random;
 
 /*
  * @test
+ * @requires sun.arch.data.model == "64"
  * @build TestMaxCachedBufferSize
  * @run main/othervm TestMaxCachedBufferSize
  * @run main/othervm -Djdk.nio.maxCachedBufferSize=0 TestMaxCachedBufferSize
  * @run main/othervm -Djdk.nio.maxCachedBufferSize=2000 TestMaxCachedBufferSize
  * @run main/othervm -Djdk.nio.maxCachedBufferSize=100000 TestMaxCachedBufferSize
  * @run main/othervm -Djdk.nio.maxCachedBufferSize=10000000 TestMaxCachedBufferSize
- *
  * @summary Test the implementation of the jdk.nio.maxCachedBufferSize property.
  */
 public class TestMaxCachedBufferSize {

@@ -59,10 +59,10 @@ import sun.misc.InnocuousThread;
 import sun.misc.ManagedLocalsThread;
 
 /**
- * <code>InputMethodManager</code> is an abstract class that manages the input
- * method environment of JVM. There is only one <code>InputMethodManager</code>
+ * {@code InputMethodManager} is an abstract class that manages the input
+ * method environment of JVM. There is only one {@code InputMethodManager}
  * instance in JVM that is executed under a separate daemon thread.
- * <code>InputMethodManager</code> performs the following:
+ * {@code InputMethodManager} performs the following:
  * <UL>
  * <LI>
  * Keeps track of the current input context.</LI>
@@ -87,7 +87,7 @@ import sun.misc.ManagedLocalsThread;
  * When more than one input method descriptor can be found or the only input
  * method descriptor found supports multiple locales, a menu item
  * is added to the window (manager) menu. This item label is obtained invoking
- * <code>getTriggerMenuString()</code>. If null is returned by this method, it
+ * {@code getTriggerMenuString()}. If null is returned by this method, it
  * means that there is only input method or none in the environment. Frame and Dialog
  * invoke this method.</LI>
  *
@@ -97,15 +97,15 @@ import sun.misc.ManagedLocalsThread;
  *
  * <LI>
  * When the menu item of the window (manager) menu has been selected by the
- * user, Frame/Dialog invokes <code>notifyChangeRequest()</code> to notify
- * <code>InputMethodManager</code> that the user wants to switch input methods.</LI>
+ * user, Frame/Dialog invokes {@code notifyChangeRequest()} to notify
+ * {@code InputMethodManager} that the user wants to switch input methods.</LI>
  *
  * <LI>
- * <code>InputMethodManager</code> displays a pop-up menu to choose an input method.</LI>
+ * {@code InputMethodManager} displays a pop-up menu to choose an input method.</LI>
  *
  * <LI>
- * <code>InputMethodManager</code> notifies the current <code>InputContext</code> of
- * the selected <code>InputMethod</code>.</LI>
+ * {@code InputMethodManager} notifies the current {@code InputContext} of
+ * the selected {@code InputMethod}.</LI>
  * </UL>
  *
  * <UL>
@@ -116,8 +116,8 @@ import sun.misc.ManagedLocalsThread;
  *
  * <LI>
  * When the hot key combination is typed by the user, the component which has the input
- * focus invokes <code>notifyChangeRequestByHotKey()</code> to notify
- * <code>InputMethodManager</code> that the user wants to switch input methods.</LI>
+ * focus invokes {@code notifyChangeRequestByHotKey()} to notify
+ * {@code InputMethodManager} that the user wants to switch input methods.</LI>
  *
  * <LI>
  * This results in a popup menu and notification to the current input context,

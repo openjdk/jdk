@@ -1704,9 +1704,9 @@ public class SwingUtilities implements SwingConstants
     }
 
     /**
-     * Invokes <code>actionPerformed</code> on <code>action</code> if
-     * <code>action</code> is enabled (and non-{@code null}). The command for the
-     * ActionEvent is determined by:
+     * Invokes {@code actionPerformed} on {@code action} if {@code action}
+     * is non-{@code null} and accepts the sender object.
+     * The command for the ActionEvent is determined by:
      * <ol>
      *   <li>If the action was registered via
      *       <code>registerKeyboardAction</code>, then the command string
@@ -1725,23 +1725,18 @@ public class SwingUtilities implements SwingConstants
      * @param modifiers action modifiers
      * @return {@code true} if {@code action} is non-{@code null} and
      *         actionPerformed is invoked on it.
+     * @see javax.swing.Action#accept
      *
      * @since 1.3
      */
     public static boolean notifyAction(Action action, KeyStroke ks,
                                        KeyEvent event, Object sender,
                                        int modifiers) {
-        if (action == null) {
+
+        if (action == null || !action.accept(sender)) {
             return false;
         }
-        if (action instanceof UIAction) {
-            if (!((UIAction)action).isEnabled(sender)) {
-                return false;
-            }
-        }
-        else if (!action.isEnabled()) {
-            return false;
-        }
+
         Object commandO;
         boolean stayNull;
 

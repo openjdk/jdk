@@ -33,15 +33,15 @@ import java.awt.datatransfer.Transferable;
 import java.util.List;
 
 /**
- * The <code>DropTargetDragEvent</code> is delivered to a
- * <code>DropTargetListener</code> via its
+ * The {@code DropTargetDragEvent} is delivered to a
+ * {@code DropTargetListener} via its
  * dragEnter() and dragOver() methods.
  * <p>
- * The <code>DropTargetDragEvent</code> reports the <i>source drop actions</i>
+ * The {@code DropTargetDragEvent} reports the <i>source drop actions</i>
  * and the <i>user drop action</i> that reflect the current state of
  * the drag operation.
  * <p>
- * <i>Source drop actions</i> is a bitwise mask of <code>DnDConstants</code>
+ * <i>Source drop actions</i> is a bitwise mask of {@code DnDConstants}
  * that represents the set of drop actions supported by the drag source for
  * this drag operation.
  * <p>
@@ -54,18 +54,18 @@ import java.util.List;
  *   Shift        -&gt; ACTION_MOVE
  * </pre>
  * If the user selects a drop action, the <i>user drop action</i> is one of
- * <code>DnDConstants</code> that represents the selected drop action if this
+ * {@code DnDConstants} that represents the selected drop action if this
  * drop action is supported by the drag source or
- * <code>DnDConstants.ACTION_NONE</code> if this drop action is not supported
+ * {@code DnDConstants.ACTION_NONE} if this drop action is not supported
  * by the drag source.
  * <p>
  * If the user doesn't select a drop action, the set of
- * <code>DnDConstants</code> that represents the set of drop actions supported
- * by the drag source is searched for <code>DnDConstants.ACTION_MOVE</code>,
- * then for <code>DnDConstants.ACTION_COPY</code>, then for
- * <code>DnDConstants.ACTION_LINK</code> and the <i>user drop action</i> is the
+ * {@code DnDConstants} that represents the set of drop actions supported
+ * by the drag source is searched for {@code DnDConstants.ACTION_MOVE},
+ * then for {@code DnDConstants.ACTION_COPY}, then for
+ * {@code DnDConstants.ACTION_LINK} and the <i>user drop action</i> is the
  * first constant found. If no constant is found the <i>user drop action</i>
- * is <code>DnDConstants.ACTION_NONE</code>.
+ * is {@code DnDConstants.ACTION_NONE}.
  *
  * @since 1.2
  */
@@ -75,10 +75,10 @@ public class DropTargetDragEvent extends DropTargetEvent {
     private static final long serialVersionUID = -8422265619058953682L;
 
     /**
-     * Construct a <code>DropTargetDragEvent</code> given the
-     * <code>DropTargetContext</code> for this operation,
-     * the location of the "Drag" <code>Cursor</code>'s hotspot
-     * in the <code>Component</code>'s coordinates, the
+     * Construct a {@code DropTargetDragEvent} given the
+     * {@code DropTargetContext} for this operation,
+     * the location of the "Drag" {@code Cursor}'s hotspot
+     * in the {@code Component}'s coordinates, the
      * user drop action, and the source drop actions.
      *
      * @param dtc        The DropTargetContext for this operation
@@ -89,10 +89,10 @@ public class DropTargetDragEvent extends DropTargetEvent {
      *
      * @throws NullPointerException if cursorLocn is null
      * @throws IllegalArgumentException if dropAction is not one of
-     *         <code>DnDConstants</code>.
+     *         {@code DnDConstants}.
      * @throws IllegalArgumentException if srcActions is not
-     *         a bitwise mask of <code>DnDConstants</code>.
-     * @throws IllegalArgumentException if dtc is <code>null</code>.
+     *         a bitwise mask of {@code DnDConstants}.
+     * @throws IllegalArgumentException if dtc is {@code null}.
      */
 
     public DropTargetDragEvent(DropTargetContext dtc, Point cursorLocn, int dropAction, int srcActions)  {
@@ -114,13 +114,13 @@ public class DropTargetDragEvent extends DropTargetEvent {
     }
 
     /**
-     * This method returns a <code>Point</code>
-     * indicating the <code>Cursor</code>'s current
-     * location within the <code>Component'</code>s
+     * This method returns a {@code Point}
+     * indicating the {@code Cursor}'s current
+     * location within the {@code Component'}s
      * coordinates.
      *
      * @return the current cursor location in
-     * <code>Component</code>'s coords.
+     * {@code Component}'s coords.
      */
 
     public Point getLocation() {
@@ -129,8 +129,8 @@ public class DropTargetDragEvent extends DropTargetEvent {
 
 
     /**
-     * This method returns the current <code>DataFlavor</code>s from the
-     * <code>DropTargetContext</code>.
+     * This method returns the current {@code DataFlavor}s from the
+     * {@code DropTargetContext}.
      *
      * @return current DataFlavors from the DropTargetContext
      */
@@ -140,10 +140,10 @@ public class DropTargetDragEvent extends DropTargetEvent {
     }
 
     /**
-     * This method returns the current <code>DataFlavor</code>s
-     * as a <code>java.util.List</code>
+     * This method returns the current {@code DataFlavor}s
+     * as a {@code java.util.List}
      *
-     * @return a <code>java.util.List</code> of the Current <code>DataFlavor</code>s
+     * @return a {@code java.util.List} of the Current {@code DataFlavor}s
      */
 
     public List<DataFlavor> getCurrentDataFlavorsAsList() {
@@ -151,10 +151,10 @@ public class DropTargetDragEvent extends DropTargetEvent {
     }
 
     /**
-     * This method returns a <code>boolean</code> indicating
-     * if the specified <code>DataFlavor</code> is supported.
+     * This method returns a {@code boolean} indicating
+     * if the specified {@code DataFlavor} is supported.
      *
-     * @param df the <code>DataFlavor</code> to test
+     * @param df the {@code DataFlavor} to test
      *
      * @return if a particular DataFlavor is supported
      */
@@ -195,11 +195,11 @@ public class DropTargetDragEvent extends DropTargetEvent {
      * Accepts the drag.
      *
      * This method should be called from a
-     * <code>DropTargetListeners</code> <code>dragEnter</code>,
-     * <code>dragOver</code>, and <code>dropActionChanged</code>
+     * {@code DropTargetListeners dragEnter},
+     * {@code dragOver}, and {@code dropActionChanged}
      * methods if the implementation wishes to accept an operation
      * from the srcActions other than the one selected by
-     * the user as represented by the <code>dropAction</code>.
+     * the user as represented by the {@code dropAction}.
      *
      * @param dragOperation the operation accepted by the target
      */
@@ -209,7 +209,7 @@ public class DropTargetDragEvent extends DropTargetEvent {
 
     /**
      * Rejects the drag as a result of examining either the
-     * <code>dropAction</code> or the available <code>DataFlavor</code>
+     * {@code dropAction} or the available {@code DataFlavor}
      * types.
      */
     public void rejectDrag() {

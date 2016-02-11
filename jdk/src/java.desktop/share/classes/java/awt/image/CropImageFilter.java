@@ -68,11 +68,11 @@ public class CropImageFilter extends ImageFilter {
     /**
      * Passes along  the properties from the source object after adding a
      * property indicating the cropped region.
-     * This method invokes <code>super.setProperties</code>,
+     * This method invokes {@code super.setProperties},
      * which might result in additional properties being added.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose pixels
+     * {@code ImageProducer} of the {@code Image} whose pixels
      * are being filtered. Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
@@ -90,7 +90,7 @@ public class CropImageFilter extends ImageFilter {
      * of the rectangular cropped region to the ImageConsumer.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose
+     * {@code ImageProducer} of the {@code Image} whose
      * pixels are being filtered. Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
@@ -107,7 +107,7 @@ public class CropImageFilter extends ImageFilter {
      * appear in the output region.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose
+     * {@code ImageProducer} of the {@code Image} whose
      * pixels are being filtered. Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
@@ -147,7 +147,7 @@ public class CropImageFilter extends ImageFilter {
      * appear in the output region.
      * <p>
      * Note: This method is intended to be called by the
-     * <code>ImageProducer</code> of the <code>Image</code> whose
+     * {@code ImageProducer} of the {@code Image} whose
      * pixels are being filtered. Developers using
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere

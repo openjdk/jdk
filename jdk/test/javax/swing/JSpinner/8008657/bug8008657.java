@@ -32,6 +32,8 @@ import javax.swing.SpinnerDateModel;
 import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 /**
  * @test
@@ -44,18 +46,28 @@ public class bug8008657 {
 
     private static Robot robot;
     private static JSpinner spinner;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
 
         robot = new Robot();
+        UIManager.LookAndFeelInfo[] lookAndFeelArray
+                = UIManager.getInstalledLookAndFeels();
+        for (UIManager.LookAndFeelInfo lookAndFeelItem : lookAndFeelArray) {
+            executeCase(lookAndFeelItem.getClassName());
+        }
 
-        SwingUtilities.invokeAndWait(() -> {
+    }
+    static void executeCase(String lookAndFeelString) throws Exception {
+         if (tryLookAndFeel(lookAndFeelString)) {
+         SwingUtilities.invokeAndWait(() -> {
             createDateSpinner();
             createAndShowUI();
         });
 
         robot.waitForIdle();
         testSpinner(false);
+        cleanUp();
 
         SwingUtilities.invokeAndWait(() -> {
             createNumberSpinner();
@@ -64,14 +76,16 @@ public class bug8008657 {
 
         robot.waitForIdle();
         testSpinner(true);
+        cleanUp();
+         }
     }
-
     static void testSpinner(boolean checkHorizontalAligment)
             throws Exception {
 
         SwingUtilities.invokeAndWait(() -> {
             spinner.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-        });
+
+                                     });
         robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(() -> {
@@ -145,10 +159,34 @@ public class bug8008657 {
     }
 
     static void createAndShowUI() {
-        JFrame frame = new JFrame("Test");
+        frame = new JFrame("Test");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(300, 100);
         frame.getContentPane().add(spinner);
         frame.setVisible(true);
+    }
+
+    private static void cleanUp() throws Exception {
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                frame.dispose();
+            }
+        });
+    }
+
+    private static boolean tryLookAndFeel(String lookAndFeelString)
+            throws Exception {
+        try {
+            UIManager.setLookAndFeel(
+                    lookAndFeelString);
+
+        } catch (UnsupportedLookAndFeelException
+                | ClassNotFoundException
+                | InstantiationException
+                | IllegalAccessException e) {
+            return false;
+        }
+        return true;
     }
 }

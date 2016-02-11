@@ -128,7 +128,7 @@ public class InputContext {
      * the currently selected native input method or keyboard layout, and to
      * select a native input method or keyboard layout by locale.
      * For host operating systems that don't provide such API,
-     * <code>selectInputMethod</code> assumes that native input methods or
+     * {@code selectInputMethod} assumes that native input methods or
      * keyboard layouts provided by the host operating system support only the
      * system's default locale.
      *
@@ -140,7 +140,7 @@ public class InputContext {
      * @param locale The desired new locale.
      * @return true if the input method or keyboard layout that's active after
      *         this call supports the desired locale.
-     * @exception NullPointerException if <code>locale</code> is null
+     * @exception NullPointerException if {@code locale} is null
      */
     public boolean selectInputMethod(Locale locale) {
         // real implementation is in sun.awt.im.InputContext
@@ -158,7 +158,7 @@ public class InputContext {
      * Not all host operating systems provide API to determine the locale of
      * the currently selected native input method or keyboard layout.
      * For host operating systems that don't provide such API,
-     * <code>getLocale</code> assumes that the current locale of all native
+     * {@code getLocale} assumes that the current locale of all native
      * input methods or keyboard layouts provided by the host operating system
      * is the system's default locale.
      *
@@ -189,7 +189,7 @@ public class InputContext {
 
     /**
      * Enables or disables the current input method for composition,
-     * depending on the value of the parameter <code>enable</code>.
+     * depending on the value of the parameter {@code enable}.
      * <p>
      * An input method that is enabled for composition interprets incoming
      * events for both composition and control purposes, while a
@@ -223,8 +223,8 @@ public class InputContext {
      * events for both composition and control purposes, while a
      * disabled input method does not interpret events for composition.
      *
-     * @return <code>true</code> if the current input method is enabled for
-     * composition; <code>false</code> otherwise
+     * @return {@code true} if the current input method is enabled for
+     * composition; {@code false} otherwise
      * @throws UnsupportedOperationException if there is no current input
      * method available or the current input method does not support
      * checking whether it is enabled for composition
@@ -242,13 +242,13 @@ public class InputContext {
      * current client component. The input method obtains the text to
      * be reconverted from the client component using the
      * {@link InputMethodRequests#getSelectedText InputMethodRequests.getSelectedText}
-     * method. The other <code>InputMethodRequests</code> methods
+     * method. The other {@code InputMethodRequests} methods
      * must be prepared to deal with further information requests by
      * the input method. The composed and/or committed text will be
      * sent to the client component as a sequence of
-     * <code>InputMethodEvent</code>s. If the input method cannot
+     * {@code InputMethodEvent}s. If the input method cannot
      * reconvert the given text, the text is returned as committed
-     * text in an <code>InputMethodEvent</code>.
+     * text in an {@code InputMethodEvent}.
      *
      * @throws UnsupportedOperationException if there is no current input
      * method available or the current input method does not support
@@ -265,7 +265,7 @@ public class InputContext {
      * If no input method is available, then the event will never be consumed.
      *
      * @param event The event
-     * @exception NullPointerException if <code>event</code> is null
+     * @exception NullPointerException if {@code event} is null
      */
     public void dispatchEvent(AWTEvent event) {
         // real implementation is in sun.awt.im.InputContext
@@ -282,7 +282,7 @@ public class InputContext {
      * If no input methods are available, then this method has no effect.
      *
      * @param client Client component
-     * @exception NullPointerException if <code>client</code> is null
+     * @exception NullPointerException if {@code client} is null
      */
     public void removeNotify(Component client) {
         // real implementation is in sun.awt.im.InputContext

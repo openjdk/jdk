@@ -37,8 +37,8 @@ public class BufferedImageDevice extends GraphicsDevice
     }
 
     /**
-     * Returns the type of this <code>GraphicsDevice</code>.
-     * @return the type of this <code>GraphicsDevice</code>, which can
+     * Returns the type of this {@code GraphicsDevice}.
+     * @return the type of this {@code GraphicsDevice}, which can
      * either be TYPE_RASTER_SCREEN, TYPE_PRINTER or TYPE_IMAGE_BUFFER.
      * @see #TYPE_RASTER_SCREEN
      * @see #TYPE_PRINTER
@@ -50,30 +50,30 @@ public class BufferedImageDevice extends GraphicsDevice
 
     /**
      * Returns the identification string associated with this
-     * <code>GraphicsDevice</code>.
-     * @return a <code>String</code> that is the identification
-     * of this <code>GraphicsDevice</code>.
+     * {@code GraphicsDevice}.
+     * @return a {@code String} that is the identification
+     * of this {@code GraphicsDevice}.
      */
     public String getIDstring() {
         return ("BufferedImage");
     }
 
     /**
-     * Returns all of the <code>GraphicsConfiguration</code>
-     * objects associated with this <code>GraphicsDevice</code>.
-     * @return an array of <code>GraphicsConfiguration</code>
+     * Returns all of the {@code GraphicsConfiguration}
+     * objects associated with this {@code GraphicsDevice}.
+     * @return an array of {@code GraphicsConfiguration}
      * objects that are associated with this
-     * <code>GraphicsDevice</code>.
+     * {@code GraphicsDevice}.
      */
     public GraphicsConfiguration[] getConfigurations() {
         return new GraphicsConfiguration[] { gc };
     }
 
     /**
-     * Returns the default <code>GraphicsConfiguration</code>
-     * associated with this <code>GraphicsDevice</code>.
-     * @return the default <code>GraphicsConfiguration</code>
-     * of this <code>GraphicsDevice</code>.
+     * Returns the default {@code GraphicsConfiguration}
+     * associated with this {@code GraphicsDevice}.
+     * @return the default {@code GraphicsConfiguration}
+     * of this {@code GraphicsDevice}.
      */
     public GraphicsConfiguration getDefaultConfiguration() {
         return gc;

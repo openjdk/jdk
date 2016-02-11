@@ -93,7 +93,11 @@
         <macrodef name="resolve-main-class">
           <attribute name="tool.name"/>
           <sequential>
-            <property name="langtools.main.class" value="${tool.@{tool.name}.main.class}"/>
+            <condition property="langtools.main.class"
+                    value="jdk.javadoc.internal.tool.Main"
+                    else="${tool.@{tool.name}.main.class}">
+                <equals arg1="${langtools.tool.name}" arg2="javadoc"/>
+            </condition>
           </sequential>
         </macrodef>
     </target>

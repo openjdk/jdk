@@ -29,7 +29,7 @@ import sun.awt.AWTPermissions;
 import sun.awt.ComponentFactory;
 
 /**
- * <code>MouseInfo</code>  provides methods for getting information about the mouse,
+ * {@code MouseInfo}  provides methods for getting information about the mouse,
  * such as mouse pointer location and the number of mouse buttons.
  *
  * @author     Roman Poborchiy
@@ -45,26 +45,26 @@ public class MouseInfo {
     }
 
     /**
-     * Returns a <code>PointerInfo</code> instance that represents the current
+     * Returns a {@code PointerInfo} instance that represents the current
      * location of the mouse pointer.
-     * The <code>GraphicsDevice</code> stored in this <code>PointerInfo</code>
+     * The {@code GraphicsDevice} stored in this {@code PointerInfo}
      * contains the mouse pointer. The coordinate system used for the mouse position
-     * depends on whether or not the <code>GraphicsDevice</code> is part of a virtual
+     * depends on whether or not the {@code GraphicsDevice} is part of a virtual
      * screen device.
      * For virtual screen devices, the coordinates are given in the virtual
      * coordinate system, otherwise they are returned in the coordinate system
-     * of the <code>GraphicsDevice</code>. See {@link GraphicsConfiguration}
+     * of the {@code GraphicsDevice}. See {@link GraphicsConfiguration}
      * for more information about the virtual screen devices.
-     * On systems without a mouse, returns <code>null</code>.
+     * On systems without a mouse, returns {@code null}.
      * <p>
-     * If there is a security manager, its <code>checkPermission</code> method
-     * is called with an <code>AWTPermission("watchMousePointer")</code>
-     * permission before creating and returning a <code>PointerInfo</code>
-     * object. This may result in a <code>SecurityException</code>.
+     * If there is a security manager, its {@code checkPermission} method
+     * is called with an {@code AWTPermission("watchMousePointer")}
+     * permission before creating and returning a {@code PointerInfo}
+     * object. This may result in a {@code SecurityException}.
      *
      * @exception HeadlessException if GraphicsEnvironment.isHeadless() returns true
      * @exception SecurityException if a security manager exists and its
-     *            <code>checkPermission</code> method doesn't allow the operation
+     *            {@code checkPermission} method doesn't allow the operation
      * @see       GraphicsConfiguration
      * @see       SecurityManager#checkPermission
      * @see       java.awt.AWTPermission
@@ -118,7 +118,7 @@ public class MouseInfo {
 
     /**
      * Returns the number of buttons on the mouse.
-     * On systems without a mouse, returns <code>-1</code>.
+     * On systems without a mouse, returns {@code -1}.
      * The number of buttons is obtained from the AWT Toolkit
      * by requesting the {@code "awt.mouse.numButtons"} desktop property
      * which is set by the underlying native platform.

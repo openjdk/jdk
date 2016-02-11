@@ -35,7 +35,7 @@ import javax.accessibility.*;
 
 /**
  * A check box is a graphical component that can be in either an
- * "on" (<code>true</code>) or "off" (<code>false</code>) state.
+ * "on" ({@code true}) or "off" ({@code false}) state.
  * Clicking on a check box changes its state from
  * "on" to "off," or from "off" to "on."
  * <p>
@@ -55,14 +55,14 @@ import javax.accessibility.*;
  * <img src="doc-files/Checkbox-1.gif" alt="The following context describes the graphic."
  * style="float:center; margin: 7px 10px;">
  * <p>
- * The button labeled <code>one</code> is in the "on" state, and the
+ * The button labeled {@code one} is in the "on" state, and the
  * other two are in the "off" state. In this example, which uses the
- * <code>GridLayout</code> class, the states of the three check
+ * {@code GridLayout} class, the states of the three check
  * boxes are set independently.
  * <p>
  * Alternatively, several check boxes can be grouped together under
  * the control of a single object, using the
- * <code>CheckboxGroup</code> class.
+ * {@code CheckboxGroup} class.
  * In a check box group, at most one button can be in the "on"
  * state at any given time. Clicking on a check box to turn it on
  * forces any other check box in the same group that is on
@@ -93,7 +93,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
     String label;
 
     /**
-     * The state of the <code>Checkbox</code>.
+     * The state of the {@code Checkbox}.
      * @serial
      * @see #getState()
      * @see #setState(boolean)
@@ -150,10 +150,10 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * any check box group.
      *
      * @param     label   a string label for this check box,
-     *                        or <code>null</code> for no label.
+     *                        or {@code null} for no label.
      * @exception HeadlessException if
-     *      <code>GraphicsEnvironment.isHeadless</code>
-     *      returns <code>true</code>
+     *      {@code GraphicsEnvironment.isHeadless}
+     *      returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     public Checkbox(String label) throws HeadlessException {
@@ -166,11 +166,11 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * This check box is not part of any check box group.
      *
      * @param     label   a string label for this check box,
-     *                        or <code>null</code> for no label
+     *                        or {@code null} for no label
      * @param     state    the initial state of this check box
      * @exception HeadlessException if
-     *     <code>GraphicsEnvironment.isHeadless</code>
-     *     returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless}
+     *     returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     public Checkbox(String label, boolean state) throws HeadlessException {
@@ -182,13 +182,13 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * specified state, and in the specified check box group.
      *
      * @param     label   a string label for this check box,
-     *                        or <code>null</code> for no label.
+     *                        or {@code null} for no label.
      * @param     state   the initial state of this check box.
      * @param     group   a check box group for this check box,
-     *                           or <code>null</code> for no group.
+     *                           or {@code null} for no group.
      * @exception HeadlessException if
-     *     <code>GraphicsEnvironment.isHeadless</code>
-     *     returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless}
+     *     returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.1
      */
@@ -208,13 +208,13 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * check box group, and set to the specified state.
      *
      * @param     label   a string label for this check box,
-     *                        or <code>null</code> for no label.
+     *                        or {@code null} for no label.
      * @param     group   a check box group for this check box,
-     *                           or <code>null</code> for no group.
+     *                           or {@code null} for no group.
      * @param     state   the initial state of this check box.
      * @exception HeadlessException if
-     *    <code>GraphicsEnvironment.isHeadless</code>
-     *    returns <code>true</code>
+     *    {@code GraphicsEnvironment.isHeadless}
+     *    returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.1
      */
@@ -225,7 +225,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
 
     /**
      * Constructs a name for this component.  Called by
-     * <code>getName</code> when the name is <code>null</code>.
+     * {@code getName} when the name is {@code null}.
      *
      * @return a name for this component
      */
@@ -252,7 +252,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
     /**
      * Gets the label of this check box.
      *
-     * @return   the label of this check box, or <code>null</code>
+     * @return   the label of this check box, or {@code null}
      *                  if this check box has no label.
      * @see      #setLabel(String)
      */
@@ -264,7 +264,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * Sets this check box's label to be the string argument.
      *
      * @param    label   a string to set as the new label, or
-     *                        <code>null</code> for no label.
+     *                        {@code null} for no label.
      * @see      #getLabel
      */
     public void setLabel(String label) {
@@ -290,8 +290,8 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
 
     /**
      * Determines whether this check box is in the "on" or "off" state.
-     * The boolean value <code>true</code> indicates the "on" state,
-     * and <code>false</code> indicates the "off" state.
+     * The boolean value {@code true} indicates the "on" state,
+     * and {@code false} indicates the "off" state.
      *
      * @return    the state of this check box, as a boolean value
      * @see       #setState
@@ -302,14 +302,14 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
 
     /**
      * Sets the state of this check box to the specified state.
-     * The boolean value <code>true</code> indicates the "on" state,
-     * and <code>false</code> indicates the "off" state.
+     * The boolean value {@code true} indicates the "on" state,
+     * and {@code false} indicates the "off" state.
      *
      * <p>Note that this method should be primarily used to
      * initialize the state of the checkbox.  Programmatically
      * setting the state of the checkbox will <i>not</i> trigger
-     * an <code>ItemEvent</code>.  The only way to trigger an
-     * <code>ItemEvent</code> is by user interaction.
+     * an {@code ItemEvent}.  The only way to trigger an
+     * {@code ItemEvent} is by user interaction.
      *
      * @param     state   the boolean state of the check box
      * @see       #getState
@@ -343,7 +343,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
 
     /**
      * Determines this check box's group.
-     * @return     this check box's group, or <code>null</code>
+     * @return     this check box's group, or {@code null}
      *               if the check box is not part of a check box group.
      * @see        #setCheckboxGroup(CheckboxGroup)
      */
@@ -356,14 +356,14 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * If this check box is already in a different check box group,
      * it is first taken out of that group.
      * <p>
-     * If the state of this check box is <code>true</code> and the new
+     * If the state of this check box is {@code true} and the new
      * group already has a check box selected, this check box's state
-     * is changed to <code>false</code>.  If the state of this check
-     * box is <code>true</code> and the new group has no check box
+     * is changed to {@code false}.  If the state of this check
+     * box is {@code true} and the new group has no check box
      * selected, this check box becomes the selected checkbox for
-     * the new group and its state is <code>true</code>.
+     * the new group and its state is {@code true}.
      *
-     * @param     g   the new check box group, or <code>null</code>
+     * @param     g   the new check box group, or {@code null}
      *                to remove this check box from any check box group
      * @see       #getCheckboxGroup
      */
@@ -458,7 +458,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      * Returns an array of all the item listeners
      * registered on this checkbox.
      *
-     * @return all of this checkbox's <code>ItemListener</code>s
+     * @return all of this checkbox's {@code ItemListener}s
      *         or an empty array if no item
      *         listeners are currently registered
      *
@@ -475,16 +475,16 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
     /**
      * Returns an array of all the objects currently registered
      * as <code><em>Foo</em>Listener</code>s
-     * upon this <code>Checkbox</code>.
+     * upon this {@code Checkbox}.
      * <code><em>Foo</em>Listener</code>s are registered using the
      * <code>add<em>Foo</em>Listener</code> method.
      *
      * <p>
-     * You can specify the <code>listenerType</code> argument
+     * You can specify the {@code listenerType} argument
      * with a class literal, such as
      * <code><em>Foo</em>Listener.class</code>.
      * For example, you can query a
-     * <code>Checkbox</code> <code>c</code>
+     * {@code Checkbox c}
      * for its item listeners with the following code:
      *
      * <pre>ItemListener[] ils = (ItemListener[])(c.getListeners(ItemListener.class));</pre>
@@ -493,14 +493,14 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
      *
      * @param listenerType the type of listeners requested; this parameter
      *          should specify an interface that descends from
-     *          <code>java.util.EventListener</code>
+     *          {@code java.util.EventListener}
      * @return an array of all objects registered as
      *          <code><em>Foo</em>Listener</code>s on this checkbox,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code>
+     * @exception ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
-     *          <code>java.util.EventListener</code>
+     *          {@code java.util.EventListener}
      *
      * @see #getItemListeners
      * @since 1.3
@@ -529,10 +529,10 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
 
     /**
      * Processes events on this check box.
-     * If the event is an instance of <code>ItemEvent</code>,
-     * this method invokes the <code>processItemEvent</code> method.
-     * Otherwise, it calls its superclass's <code>processEvent</code> method.
-     * <p>Note that if the event parameter is <code>null</code>
+     * If the event is an instance of {@code ItemEvent},
+     * this method invokes the {@code processItemEvent} method.
+     * Otherwise, it calls its superclass's {@code processEvent} method.
+     * <p>Note that if the event parameter is {@code null}
      * the behavior is unspecified and may result in an
      * exception.
      *
@@ -552,17 +552,17 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
     /**
      * Processes item events occurring on this check box by
      * dispatching them to any registered
-     * <code>ItemListener</code> objects.
+     * {@code ItemListener} objects.
      * <p>
      * This method is not called unless item events are
      * enabled for this component. Item events are enabled
      * when one of the following occurs:
      * <ul>
-     * <li>An <code>ItemListener</code> object is registered
-     * via <code>addItemListener</code>.
-     * <li>Item events are enabled via <code>enableEvents</code>.
+     * <li>An {@code ItemListener} object is registered
+     * via {@code addItemListener}.
+     * <li>Item events are enabled via {@code enableEvents}.
      * </ul>
-     * <p>Note that if the event parameter is <code>null</code>
+     * <p>Note that if the event parameter is {@code null}
      * the behavior is unspecified and may result in an
      * exception.
      *
@@ -581,11 +581,11 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
     }
 
     /**
-     * Returns a string representing the state of this <code>Checkbox</code>.
+     * Returns a string representing the state of this {@code Checkbox}.
      * This method is intended to be used only for debugging purposes, and the
      * content and format of the returned string may vary between
      * implementations. The returned string may be empty but may not be
-     * <code>null</code>.
+     * {@code null}.
      *
      * @return    the parameter string of this check box
      */
@@ -610,18 +610,18 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
 
     /**
      * Writes default serializable fields to stream.  Writes
-     * a list of serializable <code>ItemListeners</code>
+     * a list of serializable {@code ItemListeners}
      * as optional data.  The non-serializable
-     * <code>ItemListeners</code> are detected and
+     * {@code ItemListeners} are detected and
      * no attempt is made to serialize them.
      *
-     * @param s the <code>ObjectOutputStream</code> to write
-     * @serialData <code>null</code> terminated sequence of 0
-     *   or more pairs; the pair consists of a <code>String</code>
-     *   and an <code>Object</code>; the <code>String</code> indicates
+     * @param s the {@code ObjectOutputStream} to write
+     * @serialData {@code null} terminated sequence of 0
+     *   or more pairs; the pair consists of a {@code String}
+     *   and an {@code Object}; the {@code String} indicates
      *   the type of object and is one of the following:
-     *   <code>itemListenerK</code> indicating an
-     *     <code>ItemListener</code> object
+     *   {@code itemListenerK} indicating an
+     *     {@code ItemListener} object
      *
      * @see AWTEventMulticaster#save(ObjectOutputStream, String, EventListener)
      * @see java.awt.Component#itemListenerK
@@ -637,15 +637,15 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
     }
 
     /**
-     * Reads the <code>ObjectInputStream</code> and if it
-     * isn't <code>null</code> adds a listener to receive
-     * item events fired by the <code>Checkbox</code>.
+     * Reads the {@code ObjectInputStream} and if it
+     * isn't {@code null} adds a listener to receive
+     * item events fired by the {@code Checkbox}.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the <code>ObjectInputStream</code> to read
+     * @param s the {@code ObjectInputStream} to read
      * @exception HeadlessException if
-     *   <code>GraphicsEnvironment.isHeadless</code> returns
-     *   <code>true</code>
+     *   {@code GraphicsEnvironment.isHeadless} returns
+     *   {@code true}
      * @serial
      * @see #removeItemListener(ItemListener)
      * @see #addItemListener(ItemListener)
@@ -700,7 +700,7 @@ public class Checkbox extends Component implements ItemSelectable, Accessible {
 
     /**
      * This class implements accessibility support for the
-     * <code>Checkbox</code> class.  It provides an implementation of the
+     * {@code Checkbox} class.  It provides an implementation of the
      * Java Accessibility API appropriate to checkbox user-interface elements.
      * @since 1.3
      */

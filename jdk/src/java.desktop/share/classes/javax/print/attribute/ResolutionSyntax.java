@@ -150,13 +150,13 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      * @param  dphi
      *     Value (dphi) to convert.
      * @param  units
-     *     Unit conversion factor, e.g. {@link #DPI <CODE>DPI</CODE>} or
-     * {@link     #DPCM <CODE>DPCM</CODE>}.
+     *     Unit conversion factor, e.g. {@link #DPI DPI} or
+     *     {@link #DPCM DPCM}.
      *
-     * @return  The value of <CODE>dphi</CODE> converted to the desired units.
+     * @return  The value of {@code dphi} converted to the desired units.
      *
      * @exception  IllegalArgumentException
-     *     (unchecked exception) Thrown if <CODE>units</CODE> < 1.
+     *     (unchecked exception) Thrown if {@code units} < 1.
      */
     private static int convertFromDphi(int dphi, int units) {
         if (units < 1) {
@@ -222,7 +222,7 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
 
     /**
      * Returns a string version of this resolution attribute in the given units.
-     * The string takes the form <CODE>"<I>C</I>x<I>F</I> <I>U</I>"</CODE>,
+     * The string takes the form <code>"<I>C</I>x<I>F</I> <I>U</I>"</code>,
      * where <I>C</I> is the cross feed direction resolution, <I>F</I> is the
      * feed direction resolution, and <I>U</I> is the units name. The values are
      * rounded to the nearest integer.
@@ -231,7 +231,7 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      *     Unit conversion factor, e.g. {@link #DPI CODE>DPI} or {@link
      *     #DPCM DPCM}.
      * @param  unitsName
-     *     Units name string, e.g. <CODE>"dpi"</CODE> or <CODE>"dpcm"</CODE>. If
+     *     Units name string, e.g. {@code "dpi"} or {@code "dpcm"}. If
      *     null, no units name is appended to the result.
      *
      * @return  String version of this resolution attribute.
@@ -259,19 +259,19 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      * <UL>
      * <LI>
      * This attribute's cross feed direction resolution is less than or equal to
-     * the <CODE>other</CODE> attribute's cross feed direction resolution.
+     * the {@code other} attribute's cross feed direction resolution.
      * <LI>
      * This attribute's feed direction resolution is less than or equal to the
-     * <CODE>other</CODE> attribute's feed direction resolution.
+     * {@code other} attribute's feed direction resolution.
      * </UL>
      *
      * @param  other  Resolution attribute to compare with.
      *
      * @return  True if this resolution attribute is less than or equal to the
-     *          <CODE>other</CODE> resolution attribute, false otherwise.
+     *          {@code other} resolution attribute, false otherwise.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>other</CODE> is null.
+     *     (unchecked exception) Thrown if {@code other} is null.
      */
     public boolean lessThanOrEquals(ResolutionSyntax other) {
         return (this.crossFeedResolution <= other.crossFeedResolution &&
@@ -284,20 +284,20 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      * object. To be equivalent, all of the following conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class ResolutionSyntax.
+     * {@code object} is an instance of class ResolutionSyntax.
      * <LI>
      * This attribute's cross feed direction resolution is equal to
-     * <CODE>object</CODE>'s cross feed direction resolution.
+     * {@code object}'s cross feed direction resolution.
      * <LI>
      * This attribute's feed direction resolution is equal to
-     * <CODE>object</CODE>'s feed direction resolution.
+     * {@code object}'s feed direction resolution.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this resolution
+     * @return  True if {@code object} is equivalent to this resolution
      *          attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -320,7 +320,7 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
 
     /**
      * Returns a string version of this resolution attribute. The string takes
-     * the form <CODE>"<I>C</I>x<I>F</I> dphi"</CODE>, where <I>C</I> is the
+     * the form <code>"<I>C</I>x<I>F</I> dphi"</code>, where <I>C</I> is the
      * cross feed direction resolution and <I>F</I> is the feed direction
      * resolution. The values are reported in the internal units of dphi.
      */

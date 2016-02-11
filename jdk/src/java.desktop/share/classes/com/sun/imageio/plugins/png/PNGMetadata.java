@@ -254,7 +254,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
 
     /**
      * Sets the IHDR_bitDepth and IHDR_colorType variables.
-     * The <code>numBands</code> parameter is necessary since
+     * The {@code numBands} parameter is necessary since
      * we may only be writing a subset of the image bands.
      */
     public void initialize(ImageTypeSpecifier imageType, int numBands) {

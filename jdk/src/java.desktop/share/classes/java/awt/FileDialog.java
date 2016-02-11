@@ -32,11 +32,11 @@ import java.io.File;
 import sun.awt.AWTAccessor;
 
 /**
- * The <code>FileDialog</code> class displays a dialog window
+ * The {@code FileDialog} class displays a dialog window
  * from which the user can select a file.
  * <p>
  * Since it is a modal dialog, when the application calls
- * its <code>show</code> method to display the dialog,
+ * its {@code show} method to display the dialog,
  * it blocks the rest of the application until the user has
  * chosen a file.
  *
@@ -61,10 +61,10 @@ public class FileDialog extends Dialog {
     public static final int SAVE = 1;
 
     /*
-     * There are two <code>FileDialog</code> modes: <code>LOAD</code> and
-     * <code>SAVE</code>.
+     * There are two {@code FileDialog} modes: {@code LOAD} and
+     * {@code SAVE}.
      * This integer will represent one or the other.
-     * If the mode is not specified it will default to <code>LOAD</code>.
+     * If the mode is not specified it will default to {@code LOAD}.
      *
      * @serial
      * @see getMode()
@@ -76,7 +76,7 @@ public class FileDialog extends Dialog {
 
     /*
      * The string specifying the directory to display
-     * in the file dialog.  This variable may be <code>null</code>.
+     * in the file dialog.  This variable may be {@code null}.
      *
      * @serial
      * @see getDirectory()
@@ -87,7 +87,7 @@ public class FileDialog extends Dialog {
     /*
      * The string specifying the initial value of the
      * filename text field in the file dialog.
-     * This variable may be <code>null</code>.
+     * This variable may be {@code null}.
      *
      * @serial
      * @see getFile()
@@ -118,7 +118,7 @@ public class FileDialog extends Dialog {
      * The filter used as the file dialog's filename filter.
      * The file dialog will only be displaying files whose
      * names are accepted by this filter.
-     * This variable may be <code>null</code>.
+     * This variable may be {@code null}.
      *
      * @serial
      * @see #getFilenameFilter()
@@ -173,7 +173,7 @@ public class FileDialog extends Dialog {
     /**
      * Creates a file dialog for loading a file.  The title of the
      * file dialog is initially empty.  This is a convenience method for
-     * <code>FileDialog(parent, "", LOAD)</code>.
+     * {@code FileDialog(parent, "", LOAD)}.
      * <p>
      * <strong>Note:</strong> Some platforms may not support
      * showing the user-specified title in a file dialog.
@@ -192,7 +192,7 @@ public class FileDialog extends Dialog {
      * Creates a file dialog window with the specified title for loading
      * a file. The files shown are those in the current directory.
      * This is a convenience method for
-     * <code>FileDialog(parent, title, LOAD)</code>.
+     * {@code FileDialog(parent, title, LOAD)}.
      * <p>
      * <strong>Note:</strong> Some platforms may not support
      * showing the user-specified title in a file dialog.
@@ -211,10 +211,10 @@ public class FileDialog extends Dialog {
      * Creates a file dialog window with the specified title for loading
      * or saving a file.
      * <p>
-     * If the value of <code>mode</code> is <code>LOAD</code>, then the
+     * If the value of {@code mode} is {@code LOAD}, then the
      * file dialog is finding a file to read, and the files shown are those
      * in the current directory.   If the value of
-     * <code>mode</code> is <code>SAVE</code>, the file dialog is finding
+     * {@code mode} is {@code SAVE}, the file dialog is finding
      * a place to write a file.
      * <p>
      * <strong>Note:</strong> Some platforms may not support
@@ -226,7 +226,7 @@ public class FileDialog extends Dialog {
      * @param     parent   the owner of the dialog
      * @param     title   the title of the dialog
      * @param     mode   the mode of the dialog; either
-     *          <code>FileDialog.LOAD</code> or <code>FileDialog.SAVE</code>
+     *            {@code FileDialog.LOAD} or {@code FileDialog.SAVE}
      * @exception  IllegalArgumentException if an illegal file
      *                 dialog mode is supplied
      * @see       java.awt.FileDialog#LOAD
@@ -241,7 +241,7 @@ public class FileDialog extends Dialog {
     /**
      * Creates a file dialog for loading a file.  The title of the
      * file dialog is initially empty.  This is a convenience method for
-     * <code>FileDialog(parent, "", LOAD)</code>.
+     * {@code FileDialog(parent, "", LOAD)}.
      * <p>
      * <strong>Note:</strong> Some platforms may not support
      * showing the user-specified title in a file dialog.
@@ -250,13 +250,13 @@ public class FileDialog extends Dialog {
      * displayed.
      *
      * @param     parent   the owner of the dialog
-     * @exception java.lang.IllegalArgumentException if the <code>parent</code>'s
-     *            <code>GraphicsConfiguration</code>
+     * @exception java.lang.IllegalArgumentException if the {@code parent}'s
+     *            {@code GraphicsConfiguration}
      *            is not from a screen device;
-     * @exception java.lang.IllegalArgumentException if <code>parent</code>
-     *            is <code>null</code>; this exception is always thrown when
-     *            <code>GraphicsEnvironment.isHeadless</code>
-     *            returns <code>true</code>
+     * @exception java.lang.IllegalArgumentException if {@code parent}
+     *            is {@code null}; this exception is always thrown when
+     *            {@code GraphicsEnvironment.isHeadless}
+     *            returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since 1.5
      */
@@ -268,7 +268,7 @@ public class FileDialog extends Dialog {
      * Creates a file dialog window with the specified title for loading
      * a file. The files shown are those in the current directory.
      * This is a convenience method for
-     * <code>FileDialog(parent, title, LOAD)</code>.
+     * {@code FileDialog(parent, title, LOAD)}.
      * <p>
      * <strong>Note:</strong> Some platforms may not support
      * showing the user-specified title in a file dialog.
@@ -277,16 +277,16 @@ public class FileDialog extends Dialog {
      * displayed.
      *
      * @param     parent   the owner of the dialog
-     * @param     title    the title of the dialog; a <code>null</code> value
+     * @param     title    the title of the dialog; a {@code null} value
      *                     will be accepted without causing a
-     *                     <code>NullPointerException</code> to be thrown
-     * @exception java.lang.IllegalArgumentException if the <code>parent</code>'s
-     *            <code>GraphicsConfiguration</code>
+     *                     {@code NullPointerException} to be thrown
+     * @exception java.lang.IllegalArgumentException if the {@code parent}'s
+     *            {@code GraphicsConfiguration}
      *            is not from a screen device;
-     * @exception java.lang.IllegalArgumentException if <code>parent</code>
-     *            is <code>null</code>; this exception is always thrown when
-     *            <code>GraphicsEnvironment.isHeadless</code>
-     *            returns <code>true</code>
+     * @exception java.lang.IllegalArgumentException if {@code parent}
+     *            is {@code null}; this exception is always thrown when
+     *            {@code GraphicsEnvironment.isHeadless}
+     *            returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since     1.5
      */
@@ -298,10 +298,10 @@ public class FileDialog extends Dialog {
      * Creates a file dialog window with the specified title for loading
      * or saving a file.
      * <p>
-     * If the value of <code>mode</code> is <code>LOAD</code>, then the
+     * If the value of {@code mode} is {@code LOAD}, then the
      * file dialog is finding a file to read, and the files shown are those
      * in the current directory.   If the value of
-     * <code>mode</code> is <code>SAVE</code>, the file dialog is finding
+     * {@code mode} is {@code SAVE}, the file dialog is finding
      * a place to write a file.
      * <p>
      * <strong>Note:</strong> Some platforms may not support
@@ -311,20 +311,20 @@ public class FileDialog extends Dialog {
      * displayed.
      *
      * @param     parent   the owner of the dialog
-     * @param     title    the title of the dialog; a <code>null</code> value
+     * @param     title    the title of the dialog; a {@code null} value
      *                     will be accepted without causing a
-     *                     <code>NullPointerException</code> to be thrown
+     *                     {@code NullPointerException} to be thrown
      * @param     mode     the mode of the dialog; either
-     *                     <code>FileDialog.LOAD</code> or <code>FileDialog.SAVE</code>
+     *                     {@code FileDialog.LOAD} or {@code FileDialog.SAVE}
      * @exception java.lang.IllegalArgumentException if an illegal
      *            file dialog mode is supplied;
-     * @exception java.lang.IllegalArgumentException if the <code>parent</code>'s
-     *            <code>GraphicsConfiguration</code>
+     * @exception java.lang.IllegalArgumentException if the {@code parent}'s
+     *            {@code GraphicsConfiguration}
      *            is not from a screen device;
-     * @exception java.lang.IllegalArgumentException if <code>parent</code>
-     *            is <code>null</code>; this exception is always thrown when
-     *            <code>GraphicsEnvironment.isHeadless</code>
-     *            returns <code>true</code>
+     * @exception java.lang.IllegalArgumentException if {@code parent}
+     *            is {@code null}; this exception is always thrown when
+     *            {@code GraphicsEnvironment.isHeadless}
+     *            returns {@code true}
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @see       java.awt.FileDialog#LOAD
      * @see       java.awt.FileDialog#SAVE
@@ -353,8 +353,8 @@ public class FileDialog extends Dialog {
 
 
     /**
-     * Constructs a name for this component. Called by <code>getName()</code>
-     * when the name is <code>null</code>.
+     * Constructs a name for this component. Called by {@code getName()}
+     * when the name is {@code null}.
      */
     String constructComponentName() {
         synchronized (FileDialog.class) {
@@ -382,8 +382,8 @@ public class FileDialog extends Dialog {
      * or for saving to a file.
      *
      * @return   the mode of this file dialog window, either
-     *               <code>FileDialog.LOAD</code> or
-     *               <code>FileDialog.SAVE</code>
+     *               {@code FileDialog.LOAD} or
+     *               {@code FileDialog.SAVE}
      * @see      java.awt.FileDialog#LOAD
      * @see      java.awt.FileDialog#SAVE
      * @see      java.awt.FileDialog#setMode
@@ -393,13 +393,13 @@ public class FileDialog extends Dialog {
     }
 
     /**
-     * Sets the mode of the file dialog.  If <code>mode</code> is not
-     * a legal value, an exception will be thrown and <code>mode</code>
+     * Sets the mode of the file dialog.  If {@code mode} is not
+     * a legal value, an exception will be thrown and {@code mode}
      * will not be set.
      *
      * @param      mode  the mode for this file dialog, either
-     *                 <code>FileDialog.LOAD</code> or
-     *                 <code>FileDialog.SAVE</code>
+     *                 {@code FileDialog.LOAD} or
+     *                 {@code FileDialog.SAVE}
      * @see        java.awt.FileDialog#LOAD
      * @see        java.awt.FileDialog#SAVE
      * @see        java.awt.FileDialog#getMode
@@ -421,8 +421,8 @@ public class FileDialog extends Dialog {
     /**
      * Gets the directory of this file dialog.
      *
-     * @return  the (potentially <code>null</code> or invalid)
-     *          directory of this <code>FileDialog</code>
+     * @return  the (potentially {@code null} or invalid)
+     *          directory of this {@code FileDialog}
      * @see       java.awt.FileDialog#setDirectory
      */
     public String getDirectory() {
@@ -431,14 +431,14 @@ public class FileDialog extends Dialog {
 
     /**
      * Sets the directory of this file dialog window to be the
-     * specified directory. Specifying a <code>null</code> or an
+     * specified directory. Specifying a {@code null} or an
      * invalid directory implies an implementation-defined default.
      * This default will not be realized, however, until the user
-     * has selected a file. Until this point, <code>getDirectory()</code>
+     * has selected a file. Until this point, {@code getDirectory()}
      * will return the value passed into this method.
      * <p>
      * Specifying "" as the directory is exactly equivalent to
-     * specifying <code>null</code> as the directory.
+     * specifying {@code null} as the directory.
      *
      * @param     dir   the specified directory
      * @see       java.awt.FileDialog#getDirectory
@@ -453,10 +453,10 @@ public class FileDialog extends Dialog {
 
     /**
      * Gets the selected file of this file dialog.  If the user
-     * selected <code>CANCEL</code>, the returned file is <code>null</code>.
+     * selected {@code CANCEL}, the returned file is {@code null}.
      *
      * @return    the currently selected file of this file dialog window,
-     *                or <code>null</code> if none is selected
+     *                or {@code null} if none is selected
      * @see       java.awt.FileDialog#setFile
      */
     public String getFile() {
@@ -592,12 +592,12 @@ public class FileDialog extends Dialog {
     }
 
     /**
-     * Reads the <code>ObjectInputStream</code> and performs
+     * Reads the {@code ObjectInputStream} and performs
      * a backwards compatibility check by converting
-     * either a <code>dir</code> or a <code>file</code>
-     * equal to an empty string to <code>null</code>.
+     * either a {@code dir} or a {@code file}
+     * equal to an empty string to {@code null}.
      *
-     * @param s the <code>ObjectInputStream</code> to read
+     * @param s the {@code ObjectInputStream} to read
      */
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
@@ -614,11 +614,11 @@ public class FileDialog extends Dialog {
     }
 
     /**
-     * Returns a string representing the state of this <code>FileDialog</code>
+     * Returns a string representing the state of this {@code FileDialog}
      * window. This method is intended to be used only for debugging purposes,
      * and the content and format of the returned string may vary between
      * implementations. The returned string may be empty but may not be
-     * <code>null</code>.
+     * {@code null}.
      *
      * @return  the parameter string of this file dialog window
      */

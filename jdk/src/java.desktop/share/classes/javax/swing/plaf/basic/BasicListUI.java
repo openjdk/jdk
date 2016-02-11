@@ -2060,7 +2060,8 @@ public class BasicListUI extends ListUI
             }
         }
 
-        public boolean isEnabled(Object c) {
+        @Override
+        public boolean accept(Object c) {
             Object name = getName();
             if (name == SELECT_PREVIOUS_COLUMN_CHANGE_LEAD ||
                     name == SELECT_NEXT_COLUMN_CHANGE_LEAD ||

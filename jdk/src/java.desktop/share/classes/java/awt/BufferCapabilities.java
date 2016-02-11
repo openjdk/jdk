@@ -42,13 +42,13 @@ public class BufferCapabilities implements Cloneable {
     /**
      * Creates a new object for specifying buffering capabilities
      * @param frontCaps the capabilities of the front buffer; cannot be
-     * <code>null</code>
+     * {@code null}
      * @param backCaps the capabilities of the back and intermediate buffers;
-     * cannot be <code>null</code>
+     * cannot be {@code null}
      * @param flipContents the contents of the back buffer after page-flipping,
-     * <code>null</code> if page flipping is not used (implies blitting)
+     * {@code null} if page flipping is not used (implies blitting)
      * @exception IllegalArgumentException if frontCaps or backCaps are
-     * <code>null</code>
+     * {@code null}
      */
     public BufferCapabilities(ImageCapabilities frontCaps,
         ImageCapabilities backCaps, FlipContents flipContents) {
@@ -83,8 +83,8 @@ public class BufferCapabilities implements Cloneable {
      * more back buffers by switching the video pointer (or by copying memory
      * internally).  A non-flipping set of
      * buffers uses blitting to copy the contents from one buffer to
-     * another; when this is the case, <code>getFlipContents</code> returns
-     * <code>null</code>
+     * another; when this is the case, {@code getFlipContents} returns
+     * {@code null}
      */
     public boolean isPageFlipping() {
         return (getFlipContents() != null);
@@ -92,12 +92,12 @@ public class BufferCapabilities implements Cloneable {
 
     /**
      * @return the resulting contents of the back buffer after page-flipping.
-     * This value is <code>null</code> when the <code>isPageFlipping</code>
-     * returns <code>false</code>, implying blitting.  It can be one of
-     * <code>FlipContents.UNDEFINED</code>
-     * (the assumed default), <code>FlipContents.BACKGROUND</code>,
-     * <code>FlipContents.PRIOR</code>, or
-     * <code>FlipContents.COPIED</code>.
+     * This value is {@code null} when the {@code isPageFlipping}
+     * returns {@code false}, implying blitting.  It can be one of
+     * {@code FlipContents.UNDEFINED}
+     * (the assumed default), {@code FlipContents.BACKGROUND},
+     * {@code FlipContents.PRIOR}, or
+     * {@code FlipContents.COPIED}.
      * @see #isPageFlipping
      * @see FlipContents#UNDEFINED
      * @see FlipContents#BACKGROUND
@@ -110,7 +110,7 @@ public class BufferCapabilities implements Cloneable {
 
     /**
      * @return whether page flipping is only available in full-screen mode.  If this
-     * is <code>true</code>, full-screen exclusive mode is required for
+     * is {@code true}, full-screen exclusive mode is required for
      * page-flipping.
      * @see #isPageFlipping
      * @see GraphicsDevice#setFullScreenWindow
@@ -158,7 +158,7 @@ public class BufferCapabilities implements Cloneable {
             { "undefined", "background", "prior", "copied" };
 
         /**
-         * When flip contents are <code>UNDEFINED</code>, the
+         * When flip contents are {@code UNDEFINED}, the
          * contents of the back buffer are undefined after flipping.
          * @see #isPageFlipping
          * @see #getFlipContents
@@ -170,7 +170,7 @@ public class BufferCapabilities implements Cloneable {
             new FlipContents(I_UNDEFINED);
 
         /**
-         * When flip contents are <code>BACKGROUND</code>, the
+         * When flip contents are {@code BACKGROUND}, the
          * contents of the back buffer are cleared with the background color after
          * flipping.
          * @see #isPageFlipping
@@ -183,7 +183,7 @@ public class BufferCapabilities implements Cloneable {
             new FlipContents(I_BACKGROUND);
 
         /**
-         * When flip contents are <code>PRIOR</code>, the
+         * When flip contents are {@code PRIOR}, the
          * contents of the back buffer are the prior contents of the front buffer
          * (a true page flip).
          * @see #isPageFlipping
@@ -196,7 +196,7 @@ public class BufferCapabilities implements Cloneable {
             new FlipContents(I_PRIOR);
 
         /**
-         * When flip contents are <code>COPIED</code>, the
+         * When flip contents are {@code COPIED}, the
          * contents of the back buffer are copied to the front buffer when
          * flipping.
          * @see #isPageFlipping

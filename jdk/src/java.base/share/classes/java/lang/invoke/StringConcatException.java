@@ -26,6 +26,8 @@ package java.lang.invoke;
 /**
  * StringConcatException is thrown by {@link StringConcatFactory} when linkage
  * invariants are violated.
+ *
+ * @since 9
  */
 public class StringConcatException extends Exception {
     private static final long serialVersionUID = 292L + 9L;

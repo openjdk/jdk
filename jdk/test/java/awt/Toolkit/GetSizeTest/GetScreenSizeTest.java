@@ -23,12 +23,12 @@
 
 /*
   @test
-  @bug 8144074
+  @bug 8144074 8145785
   @summary Crash while getting screen size during Toolkit initialisation
-  @run main/othervm GetScreenSize
+  @run main/othervm GetScreenSizeTest
 */
 
-public class GetScreenSize {
+public class GetScreenSizeTest {
     public static void main(String[] args) {
         java.awt.Toolkit.getDefaultToolkit().getScreenSize();
     }

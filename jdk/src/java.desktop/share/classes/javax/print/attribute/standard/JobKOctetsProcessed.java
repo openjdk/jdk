@@ -57,7 +57,7 @@ import javax.print.attribute.PrintJobAttribute;
  * JobKOctets} attribute.
  * <P>
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value. The
- * category name returned by <CODE>getName()</CODE> gives the IPP attribute
+ * category name returned by {@code getName()} gives the IPP attribute
  * name.
  *
  * @see JobKOctets
@@ -79,7 +79,7 @@ public final class JobKOctetsProcessed extends IntegerSyntax
      * @param  value  Integer value.
      *
      * @exception  IllegalArgumentException
-     *  (Unchecked exception) Thrown if <CODE>value</CODE> is less than 0.
+     *  (Unchecked exception) Thrown if {@code value} is less than 0.
      */
     public JobKOctetsProcessed(int value) {
         super (value, 0, Integer.MAX_VALUE);
@@ -91,17 +91,17 @@ public final class JobKOctetsProcessed extends IntegerSyntax
      * must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class JobKOctetsProcessed.
+     * {@code object} is an instance of class JobKOctetsProcessed.
      * <LI>
      * This job K octets processed attribute's value and
-     * <CODE>object</CODE>'s value are equal.
+     * {@code object}'s value are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this job K
+     * @return  True if {@code object} is equivalent to this job K
      *          octets processed attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -128,7 +128,7 @@ public final class JobKOctetsProcessed extends IntegerSyntax
      * instance.
      * <P>
      * For class JobKOctetsProcessed, the category name is
-     * <CODE>"job-k-octets-processed"</CODE>.
+     * {@code "job-k-octets-processed"}.
      *
      * @return  Attribute category name.
      */

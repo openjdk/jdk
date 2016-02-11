@@ -46,22 +46,22 @@ import java.security.AccessControlException;
  *
  * The size of the dialog includes any area designated for the
  * border.  The dimensions of the border area can be obtained
- * using the <code>getInsets</code> method, however, since
+ * using the {@code getInsets} method, however, since
  * these dimensions are platform-dependent, a valid insets
  * value cannot be obtained until the dialog is made displayable
- * by either calling <code>pack</code> or <code>show</code>.
+ * by either calling {@code pack} or {@code show}.
  * Since the border area is included in the overall size of the
  * dialog, the border effectively obscures a portion of the dialog,
  * constraining the area available for rendering and/or displaying
  * subcomponents to the rectangle which has an upper-left corner
- * location of <code>(insets.left, insets.top)</code>, and has a size of
- * <code>width - (insets.left + insets.right)</code> by
- * <code>height - (insets.top + insets.bottom)</code>.
+ * location of {@code (insets.left, insets.top)}, and has a size of
+ * {@code width - (insets.left + insets.right)} by
+ * {@code height - (insets.top + insets.bottom)}.
  * <p>
- * The default layout for a dialog is <code>BorderLayout</code>.
+ * The default layout for a dialog is {@code BorderLayout}.
  * <p>
  * A dialog may have its native decorations (i.e. Frame &amp; Titlebar) turned off
- * with <code>setUndecorated</code>.  This can only be done while the dialog
+ * with {@code setUndecorated}.  This can only be done while the dialog
  * is not {@link Component#isDisplayable() displayable}.
  * <p>
  * A dialog may have another window as its owner when it's constructed.  When
@@ -69,7 +69,7 @@ import java.security.AccessControlException;
  * automatically be hidden from the user. When the owner window is subsequently
  * restored, the dialog is made visible to the user again.
  * <p>
- * In a multi-screen environment, you can create a <code>Dialog</code>
+ * In a multi-screen environment, you can create a {@code Dialog}
  * on a different screen device than its owner.  See {@link java.awt.Frame} for
  * more information.
  * <p>
@@ -80,11 +80,11 @@ import java.security.AccessControlException;
  * specification for details.
  * <p>
  * Dialogs are capable of generating the following
- * <code>WindowEvents</code>:
- * <code>WindowOpened</code>, <code>WindowClosing</code>,
- * <code>WindowClosed</code>, <code>WindowActivated</code>,
- * <code>WindowDeactivated</code>, <code>WindowGainedFocus</code>,
- * <code>WindowLostFocus</code>.
+ * {@code WindowEvents}:
+ * {@code WindowOpened}, {@code WindowClosing},
+ * {@code WindowClosed}, {@code WindowActivated},
+ * {@code WindowDeactivated}, {@code WindowGainedFocus},
+ * {@code WindowLostFocus}.
  *
  * @see WindowEvent
  * @see Window#addWindowListener
@@ -117,7 +117,7 @@ public class Dialog extends Window {
     /**
      * This field indicates whether the dialog is undecorated.
      * This property can only be changed while the dialog is not displayable.
-     * <code>undecorated</code> will be true if the dialog is
+     * {@code undecorated} will be true if the dialog is
      * undecorated, otherwise it will be false.
      *
      * @serial
@@ -134,7 +134,7 @@ public class Dialog extends Window {
      * Modal dialogs block all input to some top-level windows.
      * Whether a particular window is blocked depends on dialog's type
      * of modality; this is called the "scope of blocking". The
-     * <code>ModalityType</code> enum specifies modal types and their
+     * {@code ModalityType} enum specifies modal types and their
      * associated scopes.
      *
      * @see Dialog#getModalityType
@@ -145,11 +145,11 @@ public class Dialog extends Window {
      */
     public static enum ModalityType {
         /**
-         * <code>MODELESS</code> dialog doesn't block any top-level windows.
+         * {@code MODELESS} dialog doesn't block any top-level windows.
          */
         MODELESS,
         /**
-         * A <code>DOCUMENT_MODAL</code> dialog blocks input to all top-level windows
+         * A {@code DOCUMENT_MODAL} dialog blocks input to all top-level windows
          * from the same document except those from its own child hierarchy.
          * A document is a top-level window without an owner. It may contain child
          * windows that, together with the top-level window are treated as a single
@@ -158,7 +158,7 @@ public class Dialog extends Window {
          */
         DOCUMENT_MODAL,
         /**
-         * An <code>APPLICATION_MODAL</code> dialog blocks all top-level windows
+         * An {@code APPLICATION_MODAL} dialog blocks all top-level windows
          * from the same Java application except those from its own child hierarchy.
          * If there are several applets launched in a browser, they can be
          * treated either as separate applications or a single one. This behavior
@@ -166,18 +166,18 @@ public class Dialog extends Window {
          */
         APPLICATION_MODAL,
         /**
-         * A <code>TOOLKIT_MODAL</code> dialog blocks all top-level windows run
+         * A {@code TOOLKIT_MODAL} dialog blocks all top-level windows run
          * from the same toolkit except those from its own child hierarchy. If there
          * are several applets launched in a browser, all of them run with the same
          * toolkit; thus, a toolkit-modal dialog displayed by an applet may affect
          * other applets and all windows of the browser instance which embeds the
          * Java runtime environment for this toolkit.
-         * Special <code>AWTPermission</code> "toolkitModality" must be granted to use
-         * toolkit-modal dialogs. If a <code>TOOLKIT_MODAL</code> dialog is being created
-         * and this permission is not granted, a <code>SecurityException</code> will be
+         * Special {@code AWTPermission} "toolkitModality" must be granted to use
+         * toolkit-modal dialogs. If a {@code TOOLKIT_MODAL} dialog is being created
+         * and this permission is not granted, a {@code SecurityException} will be
          * thrown, and no dialog will be created. If a modality type is being changed
-         * to <code>TOOLKIT_MODAL</code> and this permission is not granted, a
-         * <code>SecurityException</code> will be thrown, and the modality type will
+         * to {@code TOOLKIT_MODAL} and this permission is not granted, a
+         * {@code SecurityException} will be thrown, and the modality type will
          * be left unchanged.
          */
         TOOLKIT_MODAL
@@ -185,8 +185,8 @@ public class Dialog extends Window {
 
     /**
      * Default modality type for modal dialogs. The default modality type is
-     * <code>APPLICATION_MODAL</code>. Calling the oldstyle <code>setModal(true)</code>
-     * is equal to <code>setModalityType(DEFAULT_MODALITY_TYPE)</code>.
+     * {@code APPLICATION_MODAL}. Calling the oldstyle {@code setModal(true)}
+     * is equal to {@code setModalityType(DEFAULT_MODALITY_TYPE)}.
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -245,20 +245,20 @@ public class Dialog extends Window {
          */
         NO_EXCLUDE,
         /**
-         * <code>APPLICATION_EXCLUDE</code> indicates that a top-level window
+         * {@code APPLICATION_EXCLUDE} indicates that a top-level window
          * won't be blocked by any application-modal dialogs. Also, it isn't
          * blocked by document-modal dialogs from outside of its child hierarchy.
          */
         APPLICATION_EXCLUDE,
         /**
-         * <code>TOOLKIT_EXCLUDE</code> indicates that a top-level window
+         * {@code TOOLKIT_EXCLUDE} indicates that a top-level window
          * won't be blocked by  application-modal or toolkit-modal dialogs. Also,
          * it isn't blocked by document-modal dialogs from outside of its
          * child hierarchy.
-         * The "toolkitModality" <code>AWTPermission</code> must be granted
+         * The "toolkitModality" {@code AWTPermission} must be granted
          * for this exclusion. If an exclusion property is being changed to
-         * <code>TOOLKIT_EXCLUDE</code> and this permission is not granted, a
-         * <code>SecurityException</code> will be thrown, and the exclusion
+         * {@code TOOLKIT_EXCLUDE} and this permission is not granted, a
+         * {@code SecurityException} will be thrown, and the exclusion
          * property will be left unchanged.
          */
         TOOLKIT_EXCLUDE
@@ -313,15 +313,15 @@ public class Dialog extends Window {
     private static final long serialVersionUID = 5920926903803293709L;
 
     /**
-     * Constructs an initially invisible, modeless <code>Dialog</code> with
-     * the specified owner <code>Frame</code> and an empty title.
+     * Constructs an initially invisible, modeless {@code Dialog} with
+     * the specified owner {@code Frame} and an empty title.
      *
-     * @param owner the owner of the dialog or <code>null</code> if
+     * @param owner the owner of the dialog or {@code null} if
      *     this dialog has no owner
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>'s
-     *    <code>GraphicsConfiguration</code> is not from a screen device
+     * @exception java.lang.IllegalArgumentException if the {@code owner}'s
+     *    {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *    <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *    {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see Component#setSize
@@ -332,19 +332,19 @@ public class Dialog extends Window {
      }
 
     /**
-     * Constructs an initially invisible <code>Dialog</code> with the specified
-     * owner <code>Frame</code> and modality and an empty title.
+     * Constructs an initially invisible {@code Dialog} with the specified
+     * owner {@code Frame} and modality and an empty title.
      *
-     * @param owner the owner of the dialog or <code>null</code> if
+     * @param owner the owner of the dialog or {@code null} if
      *     this dialog has no owner
      * @param modal specifies whether dialog blocks user input to other top-level
-     *     windows when shown. If <code>false</code>, the dialog is <code>MODELESS</code>;
-     *     if <code>true</code>, the modality type property is set to
-     *     <code>DEFAULT_MODALITY_TYPE</code>
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>'s
-     *    <code>GraphicsConfiguration</code> is not from a screen device
+     *     windows when shown. If {@code false}, the dialog is {@code MODELESS};
+     *     if {@code true}, the modality type property is set to
+     *     {@code DEFAULT_MODALITY_TYPE}
+     * @exception java.lang.IllegalArgumentException if the {@code owner}'s
+     *    {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog.ModalityType#MODELESS
@@ -358,17 +358,17 @@ public class Dialog extends Window {
      }
 
     /**
-     * Constructs an initially invisible, modeless <code>Dialog</code> with
-     * the specified owner <code>Frame</code> and title.
+     * Constructs an initially invisible, modeless {@code Dialog} with
+     * the specified owner {@code Frame} and title.
      *
-     * @param owner the owner of the dialog or <code>null</code> if
+     * @param owner the owner of the dialog or {@code null} if
      *     this dialog has no owner
-     * @param title the title of the dialog or <code>null</code> if this dialog
+     * @param title the title of the dialog or {@code null} if this dialog
      *     has no title
-     * @exception IllegalArgumentException if the <code>owner</code>'s
-     *     <code>GraphicsConfiguration</code> is not from a screen device
+     * @exception IllegalArgumentException if the {@code owner}'s
+     *     {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see Component#setSize
@@ -379,21 +379,21 @@ public class Dialog extends Window {
      }
 
     /**
-     * Constructs an initially invisible <code>Dialog</code> with the
-     * specified owner <code>Frame</code>, title and modality.
+     * Constructs an initially invisible {@code Dialog} with the
+     * specified owner {@code Frame}, title and modality.
      *
-     * @param owner the owner of the dialog or <code>null</code> if
+     * @param owner the owner of the dialog or {@code null} if
      *     this dialog has no owner
-     * @param title the title of the dialog or <code>null</code> if this dialog
+     * @param title the title of the dialog or {@code null} if this dialog
      *     has no title
      * @param modal specifies whether dialog blocks user input to other top-level
-     *     windows when shown. If <code>false</code>, the dialog is <code>MODELESS</code>;
-     *     if <code>true</code>, the modality type property is set to
-     *     <code>DEFAULT_MODALITY_TYPE</code>
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>'s
-     *    <code>GraphicsConfiguration</code> is not from a screen device
+     *     windows when shown. If {@code false}, the dialog is {@code MODELESS};
+     *     if {@code true}, the modality type property is set to
+     *     {@code DEFAULT_MODALITY_TYPE}
+     * @exception java.lang.IllegalArgumentException if the {@code owner}'s
+     *    {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *    <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *    {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog.ModalityType#MODELESS
@@ -409,23 +409,23 @@ public class Dialog extends Window {
      }
 
     /**
-     * Constructs an initially invisible <code>Dialog</code> with the specified owner
-     * <code>Frame</code>, title, modality, and <code>GraphicsConfiguration</code>.
-     * @param owner the owner of the dialog or <code>null</code> if this dialog
+     * Constructs an initially invisible {@code Dialog} with the specified owner
+     * {@code Frame}, title, modality, and {@code GraphicsConfiguration}.
+     * @param owner the owner of the dialog or {@code null} if this dialog
      *     has no owner
-     * @param title the title of the dialog or <code>null</code> if this dialog
+     * @param title the title of the dialog or {@code null} if this dialog
      *     has no title
      * @param modal specifies whether dialog blocks user input to other top-level
-     *     windows when shown. If <code>false</code>, the dialog is <code>MODELESS</code>;
-     *     if <code>true</code>, the modality type property is set to
-     *     <code>DEFAULT_MODALITY_TYPE</code>
-     * @param gc the <code>GraphicsConfiguration</code> of the target screen device;
-     *     if <code>null</code>, the default system <code>GraphicsConfiguration</code>
+     *     windows when shown. If {@code false}, the dialog is {@code MODELESS};
+     *     if {@code true}, the modality type property is set to
+     *     {@code DEFAULT_MODALITY_TYPE}
+     * @param gc the {@code GraphicsConfiguration} of the target screen device;
+     *     if {@code null}, the default system {@code GraphicsConfiguration}
      *     is assumed
-     * @exception java.lang.IllegalArgumentException if <code>gc</code>
+     * @exception java.lang.IllegalArgumentException if {@code gc}
      *     is not from a screen device
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog.ModalityType#MODELESS
@@ -443,15 +443,15 @@ public class Dialog extends Window {
      }
 
     /**
-     * Constructs an initially invisible, modeless <code>Dialog</code> with
-     * the specified owner <code>Dialog</code> and an empty title.
+     * Constructs an initially invisible, modeless {@code Dialog} with
+     * the specified owner {@code Dialog} and an empty title.
      *
-     * @param owner the owner of the dialog or <code>null</code> if this
+     * @param owner the owner of the dialog or {@code null} if this
      *     dialog has no owner
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>'s
-     *     <code>GraphicsConfiguration</code> is not from a screen device
+     * @exception java.lang.IllegalArgumentException if the {@code owner}'s
+     *     {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since 1.2
      */
@@ -460,17 +460,17 @@ public class Dialog extends Window {
      }
 
     /**
-     * Constructs an initially invisible, modeless <code>Dialog</code>
-     * with the specified owner <code>Dialog</code> and title.
+     * Constructs an initially invisible, modeless {@code Dialog}
+     * with the specified owner {@code Dialog} and title.
      *
-     * @param owner the owner of the dialog or <code>null</code> if this
+     * @param owner the owner of the dialog or {@code null} if this
      *     has no owner
-     * @param title the title of the dialog or <code>null</code> if this dialog
+     * @param title the title of the dialog or {@code null} if this dialog
      *     has no title
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>'s
-     *     <code>GraphicsConfiguration</code> is not from a screen device
+     * @exception java.lang.IllegalArgumentException if the {@code owner}'s
+     *     {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since 1.2
@@ -480,21 +480,21 @@ public class Dialog extends Window {
      }
 
     /**
-     * Constructs an initially invisible <code>Dialog</code> with the
-     * specified owner <code>Dialog</code>, title, and modality.
+     * Constructs an initially invisible {@code Dialog} with the
+     * specified owner {@code Dialog}, title, and modality.
      *
-     * @param owner the owner of the dialog or <code>null</code> if this
+     * @param owner the owner of the dialog or {@code null} if this
      *     dialog has no owner
-     * @param title the title of the dialog or <code>null</code> if this
+     * @param title the title of the dialog or {@code null} if this
      *     dialog has no title
      * @param modal specifies whether dialog blocks user input to other top-level
-     *     windows when shown. If <code>false</code>, the dialog is <code>MODELESS</code>;
-     *     if <code>true</code>, the modality type property is set to
-     *     <code>DEFAULT_MODALITY_TYPE</code>
-     * @exception IllegalArgumentException if the <code>owner</code>'s
-     *    <code>GraphicsConfiguration</code> is not from a screen device
+     *     windows when shown. If {@code false}, the dialog is {@code MODELESS};
+     *     if {@code true}, the modality type property is set to
+     *     {@code DEFAULT_MODALITY_TYPE}
+     * @exception IllegalArgumentException if the {@code owner}'s
+     *    {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *    <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *    {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog.ModalityType#MODELESS
@@ -510,25 +510,25 @@ public class Dialog extends Window {
      }
 
     /**
-     * Constructs an initially invisible <code>Dialog</code> with the
-     * specified owner <code>Dialog</code>, title, modality and
-     * <code>GraphicsConfiguration</code>.
+     * Constructs an initially invisible {@code Dialog} with the
+     * specified owner {@code Dialog}, title, modality and
+     * {@code GraphicsConfiguration}.
      *
-     * @param owner the owner of the dialog or <code>null</code> if this
+     * @param owner the owner of the dialog or {@code null} if this
      *     dialog has no owner
-     * @param title the title of the dialog or <code>null</code> if this
+     * @param title the title of the dialog or {@code null} if this
      *     dialog has no title
      * @param modal specifies whether dialog blocks user input to other top-level
-     *     windows when shown. If <code>false</code>, the dialog is <code>MODELESS</code>;
-     *     if <code>true</code>, the modality type property is set to
-     *     <code>DEFAULT_MODALITY_TYPE</code>
-     * @param gc the <code>GraphicsConfiguration</code> of the target screen device;
-     *     if <code>null</code>, the default system <code>GraphicsConfiguration</code>
+     *     windows when shown. If {@code false}, the dialog is {@code MODELESS};
+     *     if {@code true}, the modality type property is set to
+     *     {@code DEFAULT_MODALITY_TYPE}
+     * @param gc the {@code GraphicsConfiguration} of the target screen device;
+     *     if {@code null}, the default system {@code GraphicsConfiguration}
      *     is assumed
-     * @exception java.lang.IllegalArgumentException if <code>gc</code>
+     * @exception java.lang.IllegalArgumentException if {@code gc}
      *    is not from a screen device
      * @exception HeadlessException when
-     *    <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *    {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog.ModalityType#MODELESS
@@ -547,20 +547,20 @@ public class Dialog extends Window {
      }
 
     /**
-     * Constructs an initially invisible, modeless <code>Dialog</code> with the
-     * specified owner <code>Window</code> and an empty title.
+     * Constructs an initially invisible, modeless {@code Dialog} with the
+     * specified owner {@code Window} and an empty title.
      *
      * @param owner the owner of the dialog. The owner must be an instance of
      *     {@link java.awt.Dialog Dialog}, {@link java.awt.Frame Frame}, any
-     *     of their descendants or <code>null</code>
+     *     of their descendants or {@code null}
      *
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>
+     * @exception java.lang.IllegalArgumentException if the {@code owner}
      *     is not an instance of {@link java.awt.Dialog Dialog} or {@link
      *     java.awt.Frame Frame}
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>'s
-     *     <code>GraphicsConfiguration</code> is not from a screen device
+     * @exception java.lang.IllegalArgumentException if the {@code owner}'s
+     *     {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
      *
@@ -571,22 +571,22 @@ public class Dialog extends Window {
     }
 
     /**
-     * Constructs an initially invisible, modeless <code>Dialog</code> with
-     * the specified owner <code>Window</code> and title.
+     * Constructs an initially invisible, modeless {@code Dialog} with
+     * the specified owner {@code Window} and title.
      *
      * @param owner the owner of the dialog. The owner must be an instance of
      *    {@link java.awt.Dialog Dialog}, {@link java.awt.Frame Frame}, any
-     *    of their descendants or <code>null</code>
-     * @param title the title of the dialog or <code>null</code> if this dialog
+     *    of their descendants or {@code null}
+     * @param title the title of the dialog or {@code null} if this dialog
      *    has no title
      *
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>
+     * @exception java.lang.IllegalArgumentException if the {@code owner}
      *    is not an instance of {@link java.awt.Dialog Dialog} or {@link
      *    java.awt.Frame Frame}
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>'s
-     *    <code>GraphicsConfiguration</code> is not from a screen device
+     * @exception java.lang.IllegalArgumentException if the {@code owner}'s
+     *    {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *    <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *    {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
      *
@@ -597,25 +597,25 @@ public class Dialog extends Window {
     }
 
     /**
-     * Constructs an initially invisible <code>Dialog</code> with the
-     * specified owner <code>Window</code> and modality and an empty title.
+     * Constructs an initially invisible {@code Dialog} with the
+     * specified owner {@code Window} and modality and an empty title.
      *
      * @param owner the owner of the dialog. The owner must be an instance of
      *    {@link java.awt.Dialog Dialog}, {@link java.awt.Frame Frame}, any
-     *    of their descendants or <code>null</code>
+     *    of their descendants or {@code null}
      * @param modalityType specifies whether dialog blocks input to other
-     *    windows when shown. <code>null</code> value and unsupported modality
-     *    types are equivalent to <code>MODELESS</code>
+     *    windows when shown. {@code null} value and unsupported modality
+     *    types are equivalent to {@code MODELESS}
      *
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>
+     * @exception java.lang.IllegalArgumentException if the {@code owner}
      *    is not an instance of {@link java.awt.Dialog Dialog} or {@link
      *    java.awt.Frame Frame}
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>'s
-     *    <code>GraphicsConfiguration</code> is not from a screen device
+     * @exception java.lang.IllegalArgumentException if the {@code owner}'s
+     *    {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *    <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *    {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      * @exception SecurityException if the calling thread does not have permission
-     *    to create modal dialogs with the given <code>modalityType</code>
+     *    to create modal dialogs with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -630,27 +630,27 @@ public class Dialog extends Window {
     }
 
     /**
-     * Constructs an initially invisible <code>Dialog</code> with the
-     * specified owner <code>Window</code>, title and modality.
+     * Constructs an initially invisible {@code Dialog} with the
+     * specified owner {@code Window}, title and modality.
      *
      * @param owner the owner of the dialog. The owner must be an instance of
      *     {@link java.awt.Dialog Dialog}, {@link java.awt.Frame Frame}, any
-     *     of their descendants or <code>null</code>
-     * @param title the title of the dialog or <code>null</code> if this dialog
+     *     of their descendants or {@code null}
+     * @param title the title of the dialog or {@code null} if this dialog
      *     has no title
      * @param modalityType specifies whether dialog blocks input to other
-     *    windows when shown. <code>null</code> value and unsupported modality
-     *    types are equivalent to <code>MODELESS</code>
+     *    windows when shown. {@code null} value and unsupported modality
+     *    types are equivalent to {@code MODELESS}
      *
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>
+     * @exception java.lang.IllegalArgumentException if the {@code owner}
      *     is not an instance of {@link java.awt.Dialog Dialog} or {@link
      *     java.awt.Frame Frame}
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>'s
-     *     <code>GraphicsConfiguration</code> is not from a screen device
+     * @exception java.lang.IllegalArgumentException if the {@code owner}'s
+     *     {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      * @exception SecurityException if the calling thread does not have permission
-     *     to create modal dialogs with the given <code>modalityType</code>
+     *     to create modal dialogs with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -677,31 +677,31 @@ public class Dialog extends Window {
     }
 
     /**
-     * Constructs an initially invisible <code>Dialog</code> with the
-     * specified owner <code>Window</code>, title, modality and
-     * <code>GraphicsConfiguration</code>.
+     * Constructs an initially invisible {@code Dialog} with the
+     * specified owner {@code Window}, title, modality and
+     * {@code GraphicsConfiguration}.
      *
      * @param owner the owner of the dialog. The owner must be an instance of
      *     {@link java.awt.Dialog Dialog}, {@link java.awt.Frame Frame}, any
-     *     of their descendants or <code>null</code>
-     * @param title the title of the dialog or <code>null</code> if this dialog
+     *     of their descendants or {@code null}
+     * @param title the title of the dialog or {@code null} if this dialog
      *     has no title
      * @param modalityType specifies whether dialog blocks input to other
-     *    windows when shown. <code>null</code> value and unsupported modality
-     *    types are equivalent to <code>MODELESS</code>
-     * @param gc the <code>GraphicsConfiguration</code> of the target screen device;
-     *     if <code>null</code>, the default system <code>GraphicsConfiguration</code>
+     *    windows when shown. {@code null} value and unsupported modality
+     *    types are equivalent to {@code MODELESS}
+     * @param gc the {@code GraphicsConfiguration} of the target screen device;
+     *     if {@code null}, the default system {@code GraphicsConfiguration}
      *     is assumed
      *
-     * @exception java.lang.IllegalArgumentException if the <code>owner</code>
+     * @exception java.lang.IllegalArgumentException if the {@code owner}
      *     is not an instance of {@link java.awt.Dialog Dialog} or {@link
      *     java.awt.Frame Frame}
-     * @exception java.lang.IllegalArgumentException if <code>gc</code>
+     * @exception java.lang.IllegalArgumentException if {@code gc}
      *     is not from a screen device
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      * @exception SecurityException if the calling thread does not have permission
-     *     to create modal dialogs with the given <code>modalityType</code>
+     *     to create modal dialogs with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -766,8 +766,8 @@ public class Dialog extends Window {
      * This method is obsolete and is kept for backwards compatibility only.
      * Use {@link #getModalityType getModalityType()} instead.
      *
-     * @return    <code>true</code> if this dialog window is modal;
-     *            <code>false</code> otherwise
+     * @return    {@code true} if this dialog window is modal;
+     *            {@code false} otherwise
      *
      * @see       java.awt.Dialog#DEFAULT_MODALITY_TYPE
      * @see       java.awt.Dialog.ModalityType#MODELESS
@@ -792,10 +792,10 @@ public class Dialog extends Window {
      * until it is hidden and then shown again.
      *
      * @param modal specifies whether dialog blocks input to other windows
-     *     when shown; calling to <code>setModal(true)</code> is equivalent to
-     *     <code>setModalityType(Dialog.DEFAULT_MODALITY_TYPE)</code>, and
-     *     calling to <code>setModal(false)</code> is equivalent to
-     *     <code>setModalityType(Dialog.ModalityType.MODELESS)</code>
+     *     when shown; calling to {@code setModal(true)} is equivalent to
+     *     {@code setModalityType(Dialog.DEFAULT_MODALITY_TYPE)}, and
+     *     calling to {@code setModal(false)} is equivalent to
+     *     {@code setModalityType(Dialog.ModalityType.MODELESS)}
      *
      * @see       java.awt.Dialog#DEFAULT_MODALITY_TYPE
      * @see       java.awt.Dialog.ModalityType#MODELESS
@@ -827,18 +827,18 @@ public class Dialog extends Window {
      * Sets the modality type for this dialog. See {@link
      * java.awt.Dialog.ModalityType ModalityType} for possible modality types.
      * <p>
-     * If the given modality type is not supported, <code>MODELESS</code>
-     * is used. You may want to call <code>getModalityType()</code> after calling
+     * If the given modality type is not supported, {@code MODELESS}
+     * is used. You may want to call {@code getModalityType()} after calling
      * this method to ensure that the modality type has been set.
      * <p>
      * Note: changing modality of the visible dialog may have no effect
      * until it is hidden and then shown again.
      *
      * @param type specifies whether dialog blocks input to other
-     *     windows when shown. <code>null</code> value and unsupported modality
-     *     types are equivalent to <code>MODELESS</code>
+     *     windows when shown. {@code null} value and unsupported modality
+     *     types are equivalent to {@code MODELESS}
      * @exception SecurityException if the calling thread does not have permission
-     *     to create modal dialogs with the given <code>modalityType</code>
+     *     to create modal dialogs with the given {@code modalityType}
      *
      * @see       java.awt.Dialog#getModalityType
      * @see       java.awt.Toolkit#isModalityTypeSupported
@@ -866,7 +866,7 @@ public class Dialog extends Window {
      * Gets the title of the dialog. The title is displayed in the
      * dialog's border.
      * @return    the title of this dialog window. The title may be
-     *            <code>null</code>.
+     *            {@code null}.
      * @see       java.awt.Dialog#setTitle
      */
     public String getTitle() {
@@ -1193,8 +1193,8 @@ public class Dialog extends Window {
     /**
      * Indicates whether this dialog is resizable by the user.
      * By default, all dialogs are initially resizable.
-     * @return    <code>true</code> if the user can resize the dialog;
-     *            <code>false</code> otherwise.
+     * @return    {@code true} if the user can resize the dialog;
+     *            {@code false} otherwise.
      * @see       java.awt.Dialog#setResizable
      */
     public boolean isResizable() {
@@ -1203,8 +1203,8 @@ public class Dialog extends Window {
 
     /**
      * Sets whether this dialog is resizable by the user.
-     * @param     resizable <code>true</code> if the user can
-     *                 resize this dialog; <code>false</code> otherwise.
+     * @param     resizable {@code true} if the user can
+     *                 resize this dialog; {@code false} otherwise.
      * @see       java.awt.Dialog#isResizable
      */
     public void setResizable(boolean resizable) {
@@ -1283,8 +1283,8 @@ public class Dialog extends Window {
     /**
      * Indicates whether this dialog is undecorated.
      * By default, all dialogs are initially decorated.
-     * @return    <code>true</code> if dialog is undecorated;
-     *                        <code>false</code> otherwise.
+     * @return    {@code true} if dialog is undecorated;
+     *                        {@code false} otherwise.
      * @see       java.awt.Dialog#setUndecorated
      * @since 1.4
      */
@@ -1336,7 +1336,7 @@ public class Dialog extends Window {
      * method is intended to be used only for debugging purposes, and the
      * content and format of the returned string may vary between
      * implementations. The returned string may be empty but may not be
-     * <code>null</code>.
+     * {@code null}.
      *
      * @return    the parameter string of this dialog window.
      */
@@ -1647,7 +1647,7 @@ public class Dialog extends Window {
 
     /**
      * This class implements accessibility support for the
-     * <code>Dialog</code> class.  It provides an implementation of the
+     * {@code Dialog} class.  It provides an implementation of the
      * Java Accessibility API appropriate to dialog user-interface elements.
      * @since 1.3
      */

@@ -65,9 +65,9 @@ public class ImageFilter implements ImageConsumer, Cloneable {
      * this class to filter pixels from an image should avoid calling
      * this method directly since that operation could interfere
      * with the filtering operation.
-     * @param ic the specified <code>ImageConsumer</code>
-     * @return an <code>ImageFilter</code> used to perform the
-     *         filtering for the specified <code>ImageConsumer</code>.
+     * @param ic the specified {@code ImageConsumer}
+     * @return an {@code ImageFilter} used to perform the
+     *         filtering for the specified {@code ImageConsumer}.
      */
     public ImageFilter getFilterInstance(ImageConsumer ic) {
         ImageFilter instance = (ImageFilter) clone();
@@ -101,7 +101,7 @@ public class ImageFilter implements ImageConsumer, Cloneable {
      * with the filtering operation.
      *
      * @param props the properties from the source object
-     * @exception NullPointerException if <code>props</code> is null
+     * @exception NullPointerException if {@code props} is null
      */
     public void setProperties(Hashtable<?,?> props) {
         @SuppressWarnings("unchecked")
@@ -196,16 +196,16 @@ public class ImageFilter implements ImageConsumer, Cloneable {
 
     /**
      * Responds to a request for a TopDownLeftRight (TDLR) ordered resend
-     * of the pixel data from an <code>ImageConsumer</code>.
-     * When an <code>ImageConsumer</code> being fed
-     * by an instance of this <code>ImageFilter</code>
+     * of the pixel data from an {@code ImageConsumer}.
+     * When an {@code ImageConsumer} being fed
+     * by an instance of this {@code ImageFilter}
      * requests a resend of the data in TDLR order,
-     * the <code>FilteredImageSource</code>
-     * invokes this method of the <code>ImageFilter</code>.
+     * the {@code FilteredImageSource}
+     * invokes this method of the {@code ImageFilter}.
      *
      * <p>
      *
-     * An <code>ImageFilter</code> subclass might override this method or not,
+     * An {@code ImageFilter} subclass might override this method or not,
      * depending on if and how it can send data in TDLR order.
      * Three possibilities exist:
      *
@@ -215,8 +215,8 @@ public class ImageFilter implements ImageConsumer, Cloneable {
      * This makes the subclass use the default implementation,
      * which is to
      * forward the request
-     * to the indicated <code>ImageProducer</code>
-     * using this filter as the requesting <code>ImageConsumer</code>.
+     * to the indicated {@code ImageProducer}
+     * using this filter as the requesting {@code ImageConsumer}.
      * This behavior
      * is appropriate if the filter can determine
      * that it will forward the pixels
@@ -239,7 +239,7 @@ public class ImageFilter implements ImageConsumer, Cloneable {
      * @param ip the ImageProducer that is feeding this instance of
      * the filter - also the ImageProducer that the request should be
      * forwarded to if necessary
-     * @exception NullPointerException if <code>ip</code> is null
+     * @exception NullPointerException if {@code ip} is null
      */
     public void resendTopDownLeftRight(ImageProducer ip) {
         ip.requestTopDownLeftRightResend(this);

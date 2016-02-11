@@ -49,7 +49,7 @@ import java.awt.geom.Rectangle2D;
 /**
  * This class is used with the CHAR_REPLACEMENT attribute.
  * <p>
- * The <code>GraphicAttribute</code> class represents a graphic embedded
+ * The {@code GraphicAttribute} class represents a graphic embedded
  * in text. Clients subclass this class to implement their own char
  * replacement graphics.  Clients wishing to embed shapes and images in
  * text need not subclass this class.  Instead, clients can use the
@@ -57,9 +57,9 @@ import java.awt.geom.Rectangle2D;
  * classes.
  * <p>
  * Subclasses must ensure that their objects are immutable once they
- * are constructed.  Mutating a <code>GraphicAttribute</code> that
+ * are constructed.  Mutating a {@code GraphicAttribute} that
  * is used in a {@link TextLayout} results in undefined behavior from the
- * <code>TextLayout</code>.
+ * {@code TextLayout}.
  */
 public abstract class GraphicAttribute {
 
@@ -91,10 +91,10 @@ public abstract class GraphicAttribute {
     public static final int HANGING_BASELINE = Font.HANGING_BASELINE;
 
     /**
-     * Constructs a <code>GraphicAttribute</code>.
+     * Constructs a {@code GraphicAttribute}.
      * Subclasses use this to define the alignment of the graphic.
      * @param alignment an int representing one of the
-     * <code>GraphicAttribute</code> alignment fields
+     * {@code GraphicAttribute} alignment fields
      * @throws IllegalArgumentException if alignment is not one of the
      * five defined values.
      */
@@ -106,43 +106,43 @@ public abstract class GraphicAttribute {
     }
 
     /**
-     * Returns the ascent of this <code>GraphicAttribute</code>.  A
+     * Returns the ascent of this {@code GraphicAttribute}.  A
      * graphic can be rendered above its ascent.
-     * @return the ascent of this <code>GraphicAttribute</code>.
+     * @return the ascent of this {@code GraphicAttribute}.
      * @see #getBounds()
      */
     public abstract float getAscent();
 
 
     /**
-     * Returns the descent of this <code>GraphicAttribute</code>.  A
+     * Returns the descent of this {@code GraphicAttribute}.  A
      * graphic can be rendered below its descent.
-     * @return the descent of this <code>GraphicAttribute</code>.
+     * @return the descent of this {@code GraphicAttribute}.
      * @see #getBounds()
      */
     public abstract float getDescent();
 
     /**
-     * Returns the advance of this <code>GraphicAttribute</code>.  The
-     * <code>GraphicAttribute</code> object's advance is the distance
+     * Returns the advance of this {@code GraphicAttribute}.  The
+     * {@code GraphicAttribute} object's advance is the distance
      * from the point at which the graphic is rendered and the point where
      * the next character or graphic is rendered.  A graphic can be
      * rendered beyond its advance
-     * @return the advance of this <code>GraphicAttribute</code>.
+     * @return the advance of this {@code GraphicAttribute}.
      * @see #getBounds()
      */
     public abstract float getAdvance();
 
     /**
      * Returns a {@link Rectangle2D} that encloses all of the
-     * bits drawn by this <code>GraphicAttribute</code> relative to the
+     * bits drawn by this {@code GraphicAttribute} relative to the
      * rendering position.
      * A graphic may be rendered beyond its origin, ascent, descent,
      * or advance;  but if it is, this method's implementation must
      * indicate where the graphic is rendered.
      * Default bounds is the rectangle (0, -ascent, advance, ascent+descent).
-     * @return a <code>Rectangle2D</code> that encloses all of the bits
-     * rendered by this <code>GraphicAttribute</code>.
+     * @return a {@code Rectangle2D} that encloses all of the bits
+     * rendered by this {@code GraphicAttribute}.
      */
     public Rectangle2D getBounds() {
         float ascent = getAscent();
@@ -152,16 +152,16 @@ public abstract class GraphicAttribute {
 
     /**
      * Return a {@link java.awt.Shape} that represents the region that
-     * this <code>GraphicAttribute</code> renders.  This is used when a
+     * this {@code GraphicAttribute} renders.  This is used when a
      * {@link TextLayout} is requested to return the outline of the text.
      * The (untransformed) shape must not extend outside the rectangular
-     * bounds returned by <code>getBounds</code>.
+     * bounds returned by {@code getBounds}.
      * The default implementation returns the rectangle returned by
      * {@link #getBounds}, transformed by the provided {@link AffineTransform}
      * if present.
      * @param tx an optional {@link AffineTransform} to apply to the
-     *   outline of this <code>GraphicAttribute</code>. This can be null.
-     * @return a <code>Shape</code> representing this graphic attribute,
+     *   outline of this {@code GraphicAttribute}. This can be null.
+     * @return a {@code Shape} representing this graphic attribute,
      *   suitable for stroking or filling.
      * @since 1.6
      */
@@ -174,7 +174,7 @@ public abstract class GraphicAttribute {
     }
 
     /**
-     * Renders this <code>GraphicAttribute</code> at the specified
+     * Renders this {@code GraphicAttribute} at the specified
      * location.
      * @param graphics the {@link Graphics2D} into which to render the
      * graphic
@@ -184,10 +184,10 @@ public abstract class GraphicAttribute {
     public abstract void draw(Graphics2D graphics, float x, float y);
 
     /**
-     * Returns the alignment of this <code>GraphicAttribute</code>.
+     * Returns the alignment of this {@code GraphicAttribute}.
      * Alignment can be to a particular baseline, or to the absolute top
      * or bottom of a line.
-     * @return the alignment of this <code>GraphicAttribute</code>.
+     * @return the alignment of this {@code GraphicAttribute}.
      */
     public final int getAlignment() {
 
@@ -196,11 +196,11 @@ public abstract class GraphicAttribute {
 
     /**
      * Returns the justification information for this
-     * <code>GraphicAttribute</code>.  Subclasses
+     * {@code GraphicAttribute}.  Subclasses
      * can override this method to provide different justification
      * information.
      * @return a {@link GlyphJustificationInfo} object that contains the
-     * justification information for this <code>GraphicAttribute</code>.
+     * justification information for this {@code GraphicAttribute}.
      */
     public GlyphJustificationInfo getJustificationInfo() {
 

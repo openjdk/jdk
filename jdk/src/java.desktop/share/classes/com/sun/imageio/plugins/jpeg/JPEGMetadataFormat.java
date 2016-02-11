@@ -133,12 +133,12 @@ abstract class JPEGMetadataFormat extends IIOMetadataFormatImpl {
     }
 
     /**
-     * Returns <code>true</code> if the named element occurs in the
+     * Returns {@code true} if the named element occurs in the
      * subtree of the format starting with the node named by
-     * <code>subtreeName</code>, including the node
-     * itself.  <code>subtreeName</code> may be any node in
+     * {@code subtreeName}, including the node
+     * itself.  {@code subtreeName} may be any node in
      * the format.  If it is not, an
-     * <code>IllegalArgumentException</code> is thrown.
+     * {@code IllegalArgumentException} is thrown.
      */
     protected boolean isInSubtree(String elementName,
                                   String subtreeName) {
