@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.TreeSet;
  * specification itself).
  *
  * <p> This class and its subclasses are responsible for mapping
- * between raw tag numbers and <code>TIFFTag</code> objects, which
+ * between raw tag numbers and {@code TIFFTag} objects, which
  * contain additional information about each tag, such as the tag's
  * name, legal data types, and mnemonic names for some or all of ts
  * data values.
@@ -59,15 +59,15 @@ public class TIFFTagSet {
     private TIFFTagSet() {}
 
     /**
-     * Constructs a <code>TIFFTagSet</code>, given a <code>List</code>
-     * of <code>TIFFTag</code> objects.
+     * Constructs a {@code TIFFTagSet}, given a {@code List}
+     * of {@code TIFFTag} objects.
      *
-     * @param tags a <code>List</code> object containing
-     * <code>TIFFTag</code> objects to be added to this tag set.
+     * @param tags a {@code List} object containing
+     * {@code TIFFTag} objects to be added to this tag set.
      *
-     * @throws IllegalArgumentException if <code>tags</code> is
-     * <code>null</code>, or contains objects that are not instances
-     * of the <code>TIFFTag</code> class.
+     * @throws IllegalArgumentException if {@code tags} is
+     * {@code null}, or contains objects that are not instances
+     * of the {@code TIFFTag} class.
      */
     public TIFFTagSet(List<TIFFTag> tags) {
         if (tags == null) {
@@ -88,29 +88,29 @@ public class TIFFTagSet {
     }
 
     /**
-     * Returns the <code>TIFFTag</code> from this set that is
-     * associated with the given tag number, or <code>null</code> if
+     * Returns the {@code TIFFTag} from this set that is
+     * associated with the given tag number, or {@code null} if
      * no tag exists for that number.
      *
      * @param tagNumber the number of the tag to be retrieved.
      *
-     * @return the numbered <code>TIFFTag</code>, or <code>null</code>.
+     * @return the numbered {@code TIFFTag}, or {@code null}.
      */
     public TIFFTag getTag(int tagNumber) {
         return allowedTagsByNumber.get(Integer.valueOf(tagNumber));
     }
 
     /**
-     * Returns the <code>TIFFTag</code> having the given tag name, or
-     * <code>null</code> if the named tag does not belong to this tag set.
+     * Returns the {@code TIFFTag} having the given tag name, or
+     * {@code null} if the named tag does not belong to this tag set.
      *
      * @param tagName the name of the tag to be retrieved, as a
-     * <code>String</code>.
+     * {@code String}.
      *
-     * @return the named <code>TIFFTag</code>, or <code>null</code>.
+     * @return the named {@code TIFFTag}, or {@code null}.
      *
-     * @throws IllegalArgumentException if <code>tagName</code> is
-     * <code>null</code>.
+     * @throws IllegalArgumentException if {@code tagName} is
+     * {@code null}.
      */
     public TIFFTag getTag(String tagName) {
         if (tagName == null) {
@@ -123,7 +123,7 @@ public class TIFFTagSet {
      * Retrieves an unmodifiable numerically increasing set of tag numbers.
      *
      * <p>The returned object is unmodifiable and contains the tag
-     * numbers of all <code>TIFFTag</code>s in this <code>TIFFTagSet</code>
+     * numbers of all {@code TIFFTag}s in this {@code TIFFTagSet}
      * sorted into ascending order according to
      * {@link Integer#compareTo(Object)}.</p>
      *
@@ -145,7 +145,7 @@ public class TIFFTagSet {
      * Retrieves an unmodifiable lexicographically increasing set of tag names.
      *
      * <p>The returned object is unmodifiable and contains the tag
-     * names of all <code>TIFFTag</code>s in this <code>TIFFTagSet</code>
+     * names of all {@code TIFFTag}s in this {@code TIFFTagSet}
      * sorted into ascending order according to
      * {@link String#compareTo(Object)}.</p>
      *

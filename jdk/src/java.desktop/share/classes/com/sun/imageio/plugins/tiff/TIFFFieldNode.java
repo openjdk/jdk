@@ -34,7 +34,7 @@ import javax.imageio.plugins.tiff.TIFFTag;
 import javax.imageio.plugins.tiff.TIFFTagSet;
 
 /**
- * The <code>Node</code> representation of a <code>TIFFField</code>
+ * The {@code Node} representation of a {@code TIFFField}
  * wherein the child node is procedural rather than buffered.
  */
 public class TIFFFieldNode extends IIOMetadataNode {

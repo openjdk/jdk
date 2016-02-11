@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  *
  * <p> A field in a TIFF Image File Directory (IFD) is defined as a
  * tag number accompanied by a sequence of values of identical data type.
- * TIFF 6.0 defines 12 data types; a 13th type <code>IFD</code> is
+ * TIFF 6.0 defines 12 data types; a 13th type {@code IFD} is
  * defined in TIFF Tech Note 1 of TIFF Specification Supplement 1. These
  * TIFF data types are referred to by Java constants and mapped internally
  * onto Java language data types and type names as follows:
@@ -68,10 +68,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_BYTE}
  * </td>
  * <td>
- * <code>byte</code>
+ * {@code byte}
  * </td>
  * <td>
- * <code>"Byte"</code>
+ * {@code "Byte"}
  * </td>
  * </tr>
  *
@@ -83,10 +83,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_ASCII}
  * </td>
  * <td>
- * <code>String</code>
+ * {@code String}
  * </td>
  * <td>
- * <code>"Ascii"</code>
+ * {@code "Ascii"}
  * </td>
  * </tr>
  *
@@ -98,10 +98,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_SHORT}
  * </td>
  * <td>
- * <code>char</code>
+ * {@code char}
  * </td>
  * <td>
- * <code>"Short"</code>
+ * {@code "Short"}
  * </td>
  * </tr>
  *
@@ -113,10 +113,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_LONG}
  * </td>
  * <td>
- * <code>long</code>
+ * {@code long}
  * </td>
  * <td>
- * <code>"Long"</code>
+ * {@code "Long"}
  * </td>
  * </tr>
  *
@@ -128,10 +128,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_RATIONAL}
  * </td>
  * <td>
- * <code>long[2]</code> {numerator, denominator}
+ * {@code long[2]} {numerator, denominator}
  * </td>
  * <td>
- * <code>"Rational"</code>
+ * {@code "Rational"}
  * </td>
  * </tr>
  *
@@ -143,10 +143,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_SBYTE}
  * </td>
  * <td>
- * <code>byte</code>
+ * {@code byte}
  * </td>
  * <td>
- * <code>"SByte"</code>
+ * {@code "SByte"}
  * </td>
  * </tr>
  *
@@ -158,10 +158,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_UNDEFINED}
  * </td>
  * <td>
- * <code>byte</code>
+ * {@code byte}
  * </td>
  * <td>
- * <code>"Undefined"</code>
+ * {@code "Undefined"}
  * </td>
  * </tr>
  *
@@ -173,10 +173,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_SSHORT}
  * </td>
  * <td>
- * <code>short</code>
+ * {@code short}
  * </td>
  * <td>
- * <code>"SShort"</code>
+ * {@code "SShort"}
  * </td>
  * </tr>
  *
@@ -188,10 +188,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_SLONG}
  * </td>
  * <td>
- * <code>int</code>
+ * {@code int}
  * </td>
  * <td>
- * <code>"SLong"</code>
+ * {@code "SLong"}
  * </td>
  * </tr>
  *
@@ -203,10 +203,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_SRATIONAL}
  * </td>
  * <td>
- * <code>int[2]</code> {numerator, denominator}
+ * {@code int[2]} {numerator, denominator}
  * </td>
  * <td>
- * <code>"SRational"</code>
+ * {@code "SRational"}
  * </td>
  * </tr>
  *
@@ -218,10 +218,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_FLOAT}
  * </td>
  * <td>
- * <code>float</code>
+ * {@code float}
  * </td>
  * <td>
- * <code>"Float"</code>
+ * {@code "Float"}
  * </td>
  * </tr>
  *
@@ -233,10 +233,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_DOUBLE}
  * </td>
  * <td>
- * <code>double</code>
+ * {@code double}
  * </td>
  * <td>
- * <code>"Double"</code>
+ * {@code "Double"}
  * </td>
  * </tr>
  *
@@ -248,10 +248,10 @@ import com.sun.imageio.plugins.tiff.TIFFIFD;
  * {@link TIFFTag#TIFF_IFD_POINTER}
  * </td>
  * <td>
- * <code>long</code>
+ * {@code long}
  * </td>
  * <td>
- * <code>"IFDPointer"</code>
+ * {@code "IFDPointer"}
  * </td>
  * </tr>
  *
@@ -411,19 +411,19 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Creates a <code>TIFFField</code> from a TIFF native image
+     * Creates a {@code TIFFField} from a TIFF native image
      * metadata node. If the value of the <tt>"tagNumber"</tt> attribute
-     * of the node is not found in <code>tagSet</code> then a new
-     * <code>TIFFTag</code> with name <code>TIFFTag.UNKNOWN_TAG_NAME</code>
+     * of the node is not found in {@code tagSet} then a new
+     * {@code TIFFTag} with name {@code TIFFTag.UNKNOWN_TAG_NAME}
      * will be created and assigned to the field.
      *
-     * @param tagSet The <code>TIFFTagSet</code> to which the
-     * <code>TIFFTag</code> of the field belongs.
-     * @param node A native TIFF image metadata <code>TIFFField</code> node.
-     * @throws NullPointerException if <code>node</code> is
-     * <code>null</code>.
+     * @param tagSet The {@code TIFFTagSet} to which the
+     * {@code TIFFTag} of the field belongs.
+     * @param node A native TIFF image metadata {@code TIFFField} node.
+     * @throws NullPointerException if {@code node} is
+     * {@code null}.
      * @throws IllegalArgumentException if the name of the node is not
-     * <code>"TIFFField"</code>.
+     * {@code "TIFFField"}.
      * @return A new {@code TIFFField}.
      */
     public static TIFFField createFromMetadataNode(TIFFTagSet tagSet,
@@ -487,14 +487,14 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Constructs a <code>TIFFField</code> with arbitrary data. The
-     * <code>type</code> parameter must be a value for which
+     * Constructs a {@code TIFFField} with arbitrary data. The
+     * {@code type} parameter must be a value for which
      * {@link TIFFTag#isDataTypeOK tag.isDataTypeOK()}
-     * returns <code>true</code>. The <code>data</code> parameter must
+     * returns {@code true}. The {@code data} parameter must
      * be an array of a Java type appropriate for the type of the TIFF
      * field.
      *
-     * <p>Note that the value (data) of the <code>TIFFField</code>
+     * <p>Note that the value (data) of the {@code TIFFField}
      * will always be the actual field value regardless of the number of
      * bytes required for that value. This is the case despite the fact
      * that the TIFF <i>IFD Entry</i> corresponding to the field may
@@ -503,29 +503,29 @@ public class TIFFField implements Cloneable {
      * value fits into 4 bytes). In other words, the value of the
      * field will already have been read from the TIFF stream. (An exception
      * to this case may occur when the field represents the contents of a
-     * non-baseline IFD. In that case the data will be a <code>long[]</code>
-     * containing the offset to the IFD and the <code>TIFFDirectory</code>
+     * non-baseline IFD. In that case the data will be a {@code long[]}
+     * containing the offset to the IFD and the {@code TIFFDirectory}
      * returned by {@link #getDirectory()} will be its contents.)
      *
      * @param tag The tag to associated with this field.
-     * @param type One of the <code>TIFFTag.TIFF_*</code> constants
+     * @param type One of the {@code TIFFTag.TIFF_*} constants
      * indicating the data type of the field as written to the TIFF stream.
      * @param count The number of data values.
      * @param data The actual data content of the field.
      *
-     * @throws NullPointerException if <code>tag&nbsp;==&nbsp;null</code>.
-     * @throws IllegalArgumentException if <code>type</code> is not
-     * one of the <code>TIFFTag.TIFF_*</code> data type constants.
-     * @throws IllegalArgumentException if <code>type</code> is an unacceptable
-     * data type for the supplied <code>TIFFTag</code>.
-     * @throws IllegalArgumentException if <code>count&nbsp;&lt;&nbsp;0</code>.
-     * @throws IllegalArgumentException if <code>count&nbsp;&lt;&nbsp;1</code>
-     * and <code>type</code> is <code>TIFF_RATIONAL</code> or
-     * <code>TIFF_SRATIONAL</code>.
-     * @throws IllegalArgumentException if <code>count&nbsp;&ne;&nbsp;1</code>
-     * and <code>type</code> is <code>TIFF_IFD_POINTER</code>.
-     * @throws NullPointerException if <code>data&nbsp;==&nbsp;null</code>.
-     * @throws IllegalArgumentException if <code>data</code> is an instance of
+     * @throws NullPointerException if {@code tag&nbsp;==&nbsp;null}.
+     * @throws IllegalArgumentException if {@code type} is not
+     * one of the {@code TIFFTag.TIFF_*} data type constants.
+     * @throws IllegalArgumentException if {@code type} is an unacceptable
+     * data type for the supplied {@code TIFFTag}.
+     * @throws IllegalArgumentException if {@code count&nbsp;&lt;&nbsp;0}.
+     * @throws IllegalArgumentException if {@code count&nbsp;&lt;&nbsp;1}
+     * and {@code type} is {@code TIFF_RATIONAL} or
+     * {@code TIFF_SRATIONAL}.
+     * @throws IllegalArgumentException if {@code count&nbsp;&ne;&nbsp;1}
+     * and {@code type} is {@code TIFF_IFD_POINTER}.
+     * @throws NullPointerException if {@code data&nbsp;==&nbsp;null}.
+     * @throws IllegalArgumentException if {@code data} is an instance of
      * a class incompatible with the specified type.
      * @throws IllegalArgumentException if the size of the data array is wrong.
      */
@@ -625,15 +625,15 @@ public class TIFFField implements Cloneable {
      * parameters and the created array.
      *
      * @param tag The tag to associated with this field.
-     * @param type One of the <code>TIFFTag.TIFF_*</code> constants
+     * @param type One of the {@code TIFFTag.TIFF_*} constants
      * indicating the data type of the field as written to the TIFF stream.
      * @param count The number of data values.
-     * @throws NullPointerException if <code>tag&nbsp;==&nbsp;null</code>.
-     * @throws IllegalArgumentException if <code>type</code> is not
-     * one of the <code>TIFFTag.TIFF_*</code> data type constants.
-     * @throws IllegalArgumentException if <code>type</code> is an unacceptable
-     * data type for the supplied <code>TIFFTag</code>.
-     * @throws IllegalArgumentException if <code>count&nbsp;&lt;&nbsp;0</code>.
+     * @throws NullPointerException if {@code tag&nbsp;==&nbsp;null}.
+     * @throws IllegalArgumentException if {@code type} is not
+     * one of the {@code TIFFTag.TIFF_*} data type constants.
+     * @throws IllegalArgumentException if {@code type} is an unacceptable
+     * data type for the supplied {@code TIFFTag}.
+     * @throws IllegalArgumentException if {@code count&nbsp;&lt;&nbsp;0}.
      * @see #TIFFField(TIFFTag,int,int,Object)
      */
     public TIFFField(TIFFTag tag, int type, int count) {
@@ -641,20 +641,20 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Constructs a <code>TIFFField</code> with a single non-negative integral
+     * Constructs a {@code TIFFField} with a single non-negative integral
      * value.
      * The field will have type
      * {@link TIFFTag#TIFF_SHORT  TIFF_SHORT} if
-     * <code>val&nbsp;&lt;&nbsp;65536</code> and type
+     * {@code val&nbsp;&lt;&nbsp;65536} and type
      * {@link TIFFTag#TIFF_LONG TIFF_LONG} otherwise.  The count
      * of the field will be unity.
      *
      * @param tag The tag to associate with this field.
      * @param value The value to associate with this field.
-     * @throws NullPointerException if <code>tag&nbsp;==&nbsp;null</code>.
+     * @throws NullPointerException if {@code tag&nbsp;==&nbsp;null}.
      * @throws IllegalArgumentException if the derived type is unacceptable
-     * for the supplied <code>TIFFTag</code>.
-     * @throws IllegalArgumentException if <code>value&nbsp;&lt;&nbsp;0</code>.
+     * for the supplied {@code TIFFTag}.
+     * @throws IllegalArgumentException if {@code value&nbsp;&lt;&nbsp;0}.
      */
     public TIFFField(TIFFTag tag, int value) {
         if(tag == null) {
@@ -690,24 +690,24 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Constructs a <code>TIFFField</code> with an IFD offset and contents.
+     * Constructs a {@code TIFFField} with an IFD offset and contents.
      * The offset will be stored as the data of this field as
-     * <code>long[] {offset}</code>. The directory will not be cloned. The count
+     * {@code long[] {offset}}. The directory will not be cloned. The count
      * of the field will be unity.
      *
      * @param tag The tag to associated with this field.
-     * @param type One of the constants <code>TIFFTag.TIFF_LONG</code> or
-     * <code>TIFFTag.TIFF_IFD_POINTER</code>.
+     * @param type One of the constants {@code TIFFTag.TIFF_LONG} or
+     * {@code TIFFTag.TIFF_IFD_POINTER}.
      * @param offset The IFD offset.
      * @param dir The directory.
      *
-     * @throws NullPointerException if <code>tag&nbsp;==&nbsp;null</code>.
-     * @throws IllegalArgumentException if <code>type</code> is neither
-     * <code>TIFFTag.TIFF_LONG</code> nor <code>TIFFTag.TIFF_IFD_POINTER</code>.
-     * @throws IllegalArgumentException if <code>type</code> is an unacceptable
-     * data type for the supplied <code>TIFFTag</code>.
-     * @throws IllegalArgumentException if <code>offset</code> is non-positive.
-     * @throws NullPointerException if <code>dir&nbsp;==&nbsp;null</code>.
+     * @throws NullPointerException if {@code tag&nbsp;==&nbsp;null}.
+     * @throws IllegalArgumentException if {@code type} is neither
+     * {@code TIFFTag.TIFF_LONG} nor {@code TIFFTag.TIFF_IFD_POINTER}.
+     * @throws IllegalArgumentException if {@code type} is an unacceptable
+     * data type for the supplied {@code TIFFTag}.
+     * @throws IllegalArgumentException if {@code offset} is non-positive.
+     * @throws NullPointerException if {@code dir&nbsp;==&nbsp;null}.
      *
      * @see #TIFFField(TIFFTag,int,int,Object)
      */
@@ -728,14 +728,14 @@ public class TIFFField implements Cloneable {
     /**
      * Retrieves the tag associated with this field.
      *
-     * @return The associated <code>TIFFTag</code>.
+     * @return The associated {@code TIFFTag}.
      */
     public TIFFTag getTag() {
         return tag;
     }
 
     /**
-     * Retrieves the tag number in the range <code>[0,&nbsp;65535]</code>.
+     * Retrieves the tag number in the range {@code [0,&nbsp;65535]}.
      *
      * @return The tag number.
      */
@@ -745,7 +745,7 @@ public class TIFFField implements Cloneable {
 
     /**
      * Returns the type of the data stored in the field.  For a TIFF 6.0
-     * stream, the value will equal one of the <code>TIFFTag.TIFF_*</code>
+     * stream, the value will equal one of the {@code TIFFTag.TIFF_*}
      * constants. For future revisions of TIFF, higher values are possible.
      *
      * @return The data type of the field value.
@@ -757,11 +757,11 @@ public class TIFFField implements Cloneable {
     /**
      * Returns the name of the supplied data type constant.
      *
-     * @param dataType One of the <code>TIFFTag.TIFF_*</code> constants
+     * @param dataType One of the {@code TIFFTag.TIFF_*} constants
      * indicating the data type of the field as written to the TIFF stream.
      * @return The type name corresponding to the supplied type constant.
-     * @throws IllegalArgumentException if <code>dataType</code> is not
-     * one of the <code>TIFFTag.TIFF_*</code> data type constants.
+     * @throws IllegalArgumentException if {@code dataType} is not
+     * one of the {@code TIFFTag.TIFF_*} data type constants.
      */
     public static String getTypeName(int dataType) {
         if (dataType < TIFFTag.MIN_DATATYPE ||
@@ -774,11 +774,11 @@ public class TIFFField implements Cloneable {
 
     /**
      * Returns the data type constant corresponding to the supplied data
-     * type name. If the name is unknown <code>-1</code> will be returned.
+     * type name. If the name is unknown {@code -1} will be returned.
      *
      * @param typeName The type name.
-     * @return One of the <code>TIFFTag.TIFF_*</code> constants or
-     * <code>-1</code> if the name is not recognized.
+     * @return One of the {@code TIFFTag.TIFF_*} constants or
+     * {@code -1} if the name is not recognized.
      */
     public static int getTypeByName(String typeName) {
         for (int i = TIFFTag.MIN_DATATYPE; i <= TIFFTag.MAX_DATATYPE; i++) {
@@ -793,14 +793,14 @@ public class TIFFField implements Cloneable {
     /**
      * Creates an array appropriate for the indicated data type.
      *
-     * @param dataType One of the <code>TIFFTag.TIFF_*</code> data type
+     * @param dataType One of the {@code TIFFTag.TIFF_*} data type
      * constants.
      * @param count The number of values in the array.
      * @return An array appropriate for the specified data type.
      *
-     * @throws IllegalArgumentException if <code>dataType</code> is not
-     * one of the <code>TIFFTag.TIFF_*</code> data type constants.
-     * @throws IllegalArgumentException if <code>count&nbsp;&lt;&nbsp;0</code>.
+     * @throws IllegalArgumentException if {@code dataType} is not
+     * one of the {@code TIFFTag.TIFF_*} data type constants.
+     * @throws IllegalArgumentException if {@code count&nbsp;&lt;&nbsp;0}.
      */
     public static Object createArrayForType(int dataType, int count) {
         if(count < 0) {
@@ -836,15 +836,15 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns the <code>TIFFField</code> as a node named either
+     * Returns the {@code TIFFField} as a node named either
      * <tt>"TIFFField"</tt> or <tt>"TIFFIFD"</tt> as described in the
      * TIFF native image metadata specification. The node will be named
      * <tt>"TIFFIFD"</tt> if and only if the field's data object is an
      * instance of {@link TIFFDirectory} or equivalently
      * {@link TIFFTag#isIFDPointer getTag.isIFDPointer()} returns
-     * <code>true</code>.
+     * {@code true}.
      *
-     * @return a <code>Node</code> named <tt>"TIFFField"</tt> or
+     * @return a {@code Node} named <tt>"TIFFField"</tt> or
      * <tt>"TIFFIFD"</tt>.
      */
     public Node getAsNativeNode() {
@@ -863,8 +863,8 @@ public class TIFFField implements Cloneable {
 
     /**
      * Returns the number of data items present in the field.  For
-     * <code>TIFFTag.TIFF_ASCII</code> fields, the value returned is the
-     * number of <code>String</code>s, not the total length of the
+     * {@code TIFFTag.TIFF_ASCII} fields, the value returned is the
+     * number of {@code String}s, not the total length of the
      * data as in the file representation.
      *
      * @return The number of data items present in the field.
@@ -884,17 +884,17 @@ public class TIFFField implements Cloneable {
 
     /**
      * Returns the data as an uninterpreted array of
-     * <code>byte</code>s.  The type of the field must be one of
-     * <code>TIFFTag.TIFF_BYTE</code>, <code>TIFF_SBYTE</code>, or
-     * <code>TIFF_UNDEFINED</code>.
+     * {@code byte}s.  The type of the field must be one of
+     * {@code TIFFTag.TIFF_BYTE}, {@code TIFF_SBYTE}, or
+     * {@code TIFF_UNDEFINED}.
      *
-     * <p> For data in <code>TIFFTag.TIFF_BYTE</code> format, the application
+     * <p> For data in {@code TIFFTag.TIFF_BYTE} format, the application
      * must take care when promoting the data to longer integral types
      * to avoid sign extension.
      *
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_BYTE</code>, <code>TIFF_SBYTE</code>, or
-     * <code>TIFF_UNDEFINED</code>.
+     * {@code TIFF_BYTE}, {@code TIFF_SBYTE}, or
+     * {@code TIFF_UNDEFINED}.
      * @return The data as an uninterpreted array of bytes.
      */
     public byte[] getAsBytes() {
@@ -902,11 +902,11 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns <code>TIFFTag.TIFF_SHORT</code> data as an array of
-     * <code>char</code>s (unsigned 16-bit integers).
+     * Returns {@code TIFFTag.TIFF_SHORT} data as an array of
+     * {@code char}s (unsigned 16-bit integers).
      *
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_SHORT</code>.
+     * {@code TIFF_SHORT}.
      * @return The data as an array of {@code char}s.
      */
     public char[] getAsChars() {
@@ -914,11 +914,11 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns <code>TIFFTag.TIFF_SSHORT</code> data as an array of
-     * <code>short</code>s (signed 16-bit integers).
+     * Returns {@code TIFFTag.TIFF_SSHORT} data as an array of
+     * {@code short}s (signed 16-bit integers).
      *
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_SSHORT</code>.
+     * {@code TIFF_SSHORT}.
      * @return The data as an array of {@code short}s.
      */
     public short[] getAsShorts() {
@@ -926,12 +926,12 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns <code>TIFFTag.TIFF_SLONG</code> data as an array of
-     * <code>int</code>s (signed 32-bit integers).
+     * Returns {@code TIFFTag.TIFF_SLONG} data as an array of
+     * {@code int}s (signed 32-bit integers).
      *
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_SHORT</code>, <code>TIFF_SSHORT</code>, or
-     * <code>TIFF_SLONG</code>.
+     * {@code TIFF_SHORT}, {@code TIFF_SSHORT}, or
+     * {@code TIFF_SLONG}.
      * @return The data as an array of {@code int}s.
      */
     public int[] getAsInts() {
@@ -957,12 +957,12 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns <code>TIFFTag.TIFF_LONG</code> or
-     * <code>TIFF_IFD_POINTER</code> data as an array of
-     * <code>long</code>s (signed 64-bit integers).
+     * Returns {@code TIFFTag.TIFF_LONG} or
+     * {@code TIFF_IFD_POINTER} data as an array of
+     * {@code long}s (signed 64-bit integers).
      *
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_LONG</code> or <code>TIFF_IFD_POINTER</code>.
+     * {@code TIFF_LONG} or {@code TIFF_IFD_POINTER}.
      * @return The data as an array of {@code long}s.
      */
     public long[] getAsLongs() {
@@ -970,11 +970,11 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns <code>TIFFTag.TIFF_FLOAT</code> data as an array of
-     * <code>float</code>s (32-bit floating-point values).
+     * Returns {@code TIFFTag.TIFF_FLOAT} data as an array of
+     * {@code float}s (32-bit floating-point values).
      *
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_FLOAT</code>.
+     * {@code TIFF_FLOAT}.
      * @return The data as an array of {@code float}s.
      */
     public float[] getAsFloats() {
@@ -982,11 +982,11 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns <code>TIFFTag.TIFF_DOUBLE</code> data as an array of
-     * <code>double</code>s (64-bit floating-point values).
+     * Returns {@code TIFFTag.TIFF_DOUBLE} data as an array of
+     * {@code double}s (64-bit floating-point values).
      *
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_DOUBLE</code>.
+     * {@code TIFF_DOUBLE}.
      * @return The data as an array of {@code double}s.
      */
     public double[] getAsDoubles() {
@@ -994,11 +994,11 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns <code>TIFFTag.TIFF_SRATIONAL</code> data as an array of
-     * 2-element arrays of <code>int</code>s.
+     * Returns {@code TIFFTag.TIFF_SRATIONAL} data as an array of
+     * 2-element arrays of {@code int}s.
      *
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_SRATIONAL</code>.
+     * {@code TIFF_SRATIONAL}.
      * @return The data as an array of signed rationals.
      */
     public int[][] getAsSRationals() {
@@ -1006,11 +1006,11 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns <code>TIFFTag.TIFF_RATIONAL</code> data as an array of
-     * 2-element arrays of <code>long</code>s.
+     * Returns {@code TIFFTag.TIFF_RATIONAL} data as an array of
+     * 2-element arrays of {@code long}s.
      *
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_RATIONAL</code>.
+     * {@code TIFF_RATIONAL}.
      * @return The data as an array of unsigned rationals.
      */
     public long[][] getAsRationals() {
@@ -1018,30 +1018,30 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns data in any format as an <code>int</code>.
+     * Returns data in any format as an {@code int}.
      *
-     * <p> <code>TIFFTag.TIFF_BYTE</code> values are treated as unsigned; that
+     * <p> {@code TIFFTag.TIFF_BYTE} values are treated as unsigned; that
      * is, no sign extension will take place and the returned value
-     * will be in the range [0, 255].  <code>TIFF_SBYTE</code> data
+     * will be in the range [0, 255].  {@code TIFF_SBYTE} data
      * will be returned in the range [-128, 127].
      *
-     * <p> A <code>TIFF_UNDEFINED</code> value is treated as though
-     * it were a <code>TIFF_BYTE</code>.
+     * <p> A {@code TIFF_UNDEFINED} value is treated as though
+     * it were a {@code TIFF_BYTE}.
      *
-     * <p> Data in <code>TIFF_SLONG</code>, <code>TIFF_LONG</code>,
-     * <code>TIFF_FLOAT</code>, <code>TIFF_DOUBLE</code> or
-     * <code>TIFF_IFD_POINTER</code> format are simply cast to
-     * <code>int</code> and may suffer from truncation.
+     * <p> Data in {@code TIFF_SLONG}, {@code TIFF_LONG},
+     * {@code TIFF_FLOAT}, {@code TIFF_DOUBLE} or
+     * {@code TIFF_IFD_POINTER} format are simply cast to
+     * {@code int} and may suffer from truncation.
      *
-     * <p> Data in <code>TIFF_SRATIONAL</code> or
-     * <code>TIFF_RATIONAL</code> format are evaluated by dividing the
+     * <p> Data in {@code TIFF_SRATIONAL} or
+     * {@code TIFF_RATIONAL} format are evaluated by dividing the
      * numerator into the denominator using double-precision
-     * arithmetic and then casting to <code>int</code>.  Loss of
+     * arithmetic and then casting to {@code int}.  Loss of
      * precision and truncation may occur.
      *
-     * <p> Data in <code>TIFF_ASCII</code> format will be parsed as by
-     * the <code>Double.parseDouble</code> method, with the result
-     * case to <code>int</code>.
+     * <p> Data in {@code TIFF_ASCII} format will be parsed as by
+     * the {@code Double.parseDouble} method, with the result
+     * case to {@code int}.
      *
      * @param index The index of the data.
      * @return The data at the given index as an {@code int}.
@@ -1081,17 +1081,17 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns data in any format as a <code>long</code>.
+     * Returns data in any format as a {@code long}.
      *
-     * <p> <code>TIFFTag.TIFF_BYTE</code> and <code>TIFF_UNDEFINED</code> data
+     * <p> {@code TIFFTag.TIFF_BYTE} and {@code TIFF_UNDEFINED} data
      * are treated as unsigned; that is, no sign extension will take
      * place and the returned value will be in the range [0, 255].
-     * <code>TIFF_SBYTE</code> data will be returned in the range
+     * {@code TIFF_SBYTE} data will be returned in the range
      * [-128, 127].
      *
-     * <p> Data in <code>TIFF_ASCII</code> format will be parsed as by
-     * the <code>Double.parseDouble</code> method, with the result
-     * cast to <code>long</code>.
+     * <p> Data in {@code TIFF_ASCII} format will be parsed as by
+     * the {@code Double.parseDouble} method, with the result
+     * cast to {@code long}.
      *
      * @param index The index of the data.
      * @return The data at the given index as a {@code long}.
@@ -1127,27 +1127,27 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns data in any format as a <code>float</code>.
+     * Returns data in any format as a {@code float}.
      *
-     * <p> <code>TIFFTag.TIFF_BYTE</code> and <code>TIFF_UNDEFINED</code> data
+     * <p> {@code TIFFTag.TIFF_BYTE} and {@code TIFF_UNDEFINED} data
      * are treated as unsigned; that is, no sign extension will take
      * place and the returned value will be in the range [0, 255].
-     * <code>TIFF_SBYTE</code> data will be returned in the range
+     * {@code TIFF_SBYTE} data will be returned in the range
      * [-128, 127].
      *
-     * <p> Data in <code>TIFF_SLONG</code>, <code>TIFF_LONG</code>,
-     * <code>TIFF_DOUBLE</code>, or <code>TIFF_IFD_POINTER</code> format are
-     * simply cast to <code>float</code> and may suffer from
+     * <p> Data in {@code TIFF_SLONG}, {@code TIFF_LONG},
+     * {@code TIFF_DOUBLE}, or {@code TIFF_IFD_POINTER} format are
+     * simply cast to {@code float} and may suffer from
      * truncation.
      *
-     * <p> Data in <code>TIFF_SRATIONAL</code> or
-     * <code>TIFF_RATIONAL</code> format are evaluated by dividing the
+     * <p> Data in {@code TIFF_SRATIONAL} or
+     * {@code TIFF_RATIONAL} format are evaluated by dividing the
      * numerator into the denominator using double-precision
-     * arithmetic and then casting to <code>float</code>.
+     * arithmetic and then casting to {@code float}.
      *
-     * <p> Data in <code>TIFF_ASCII</code> format will be parsed as by
-     * the <code>Double.parseDouble</code> method, with the result
-     * cast to <code>float</code>.
+     * <p> Data in {@code TIFF_ASCII} format will be parsed as by
+     * the {@code Double.parseDouble} method, with the result
+     * cast to {@code float}.
      *
      * @param index The index of the data.
      * @return The data at the given index as a {@code float}.
@@ -1187,21 +1187,21 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns data in any format as a <code>double</code>.
+     * Returns data in any format as a {@code double}.
      *
-     * <p> <code>TIFFTag.TIFF_BYTE</code> and <code>TIFF_UNDEFINED</code> data
+     * <p> {@code TIFFTag.TIFF_BYTE} and {@code TIFF_UNDEFINED} data
      * are treated as unsigned; that is, no sign extension will take
      * place and the returned value will be in the range [0, 255].
-     * <code>TIFF_SBYTE</code> data will be returned in the range
+     * {@code TIFF_SBYTE} data will be returned in the range
      * [-128, 127].
      *
-     * <p> Data in <code>TIFF_SRATIONAL</code> or
-     * <code>TIFF_RATIONAL</code> format are evaluated by dividing the
+     * <p> Data in {@code TIFF_SRATIONAL} or
+     * {@code TIFF_RATIONAL} format are evaluated by dividing the
      * numerator into the denominator using double-precision
      * arithmetic.
      *
-     * <p> Data in <code>TIFF_ASCII</code> format will be parsed as by
-     * the <code>Double.parseDouble</code> method.
+     * <p> Data in {@code TIFF_ASCII} format will be parsed as by
+     * the {@code Double.parseDouble} method.
      *
      * @param index The index of the data.
      * @return The data at the given index as a {@code double}.
@@ -1241,11 +1241,11 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns a <code>TIFFTag.TIFF_ASCII</code> value as a
-     * <code>String</code>.
+     * Returns a {@code TIFFTag.TIFF_ASCII} value as a
+     * {@code String}.
      *
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_ASCII</code>.
+     * {@code TIFF_ASCII}.
      *
      * @param index The index of the data.
      * @return The data at the given index as a {@code String}.
@@ -1255,13 +1255,13 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns a <code>TIFFTag.TIFF_SRATIONAL</code> data item as a
-     * two-element array of <code>int</code>s.
+     * Returns a {@code TIFFTag.TIFF_SRATIONAL} data item as a
+     * two-element array of {@code int}s.
      *
      * @param index The index of the data.
      * @return The data at the given index as a signed rational.
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_SRATIONAL</code>.
+     * {@code TIFF_SRATIONAL}.
      */
     public int[] getAsSRational(int index) {
         return ((int[][])data)[index];
@@ -1274,7 +1274,7 @@ public class TIFFField implements Cloneable {
      * @param index The index of the data.
      * @return The data at the given index as an unsigned rational.
      * @throws ClassCastException if the field is not of type
-     * <code>TIFF_RATIONAL</code>.
+     * {@code TIFF_RATIONAL}.
      */
     public long[] getAsRational(int index) {
         return ((long[][])data)[index];
@@ -1282,11 +1282,11 @@ public class TIFFField implements Cloneable {
 
 
     /**
-     * Returns a <code>String</code> containing a human-readable
+     * Returns a {@code String} containing a human-readable
      * version of the data item.  Data of type
-     * <code>TIFFTag.TIFF_RATIONAL</code> or <code>TIFF_SRATIONAL</code> are
+     * {@code TIFFTag.TIFF_RATIONAL} or {@code TIFF_SRATIONAL} are
      * represented as a pair of integers separated by a
-     * <code>'/'</code> character.
+     * {@code '/'} character.
      *
      * @param index The index of the data.
      * @return The data at the given index as a {@code String}.
@@ -1355,7 +1355,7 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns whether the field has a <code>TIFFDirectory</code>.
+     * Returns whether the field has a {@code TIFFDirectory}.
      *
      * @return true if and only if getDirectory() returns non-null.
      */
@@ -1364,8 +1364,8 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Returns the associated <code>TIFFDirectory</code>, if available. If no
-     * directory is set, then <code>null</code> will be returned.
+     * Returns the associated {@code TIFFDirectory}, if available. If no
+     * directory is set, then {@code null} will be returned.
      *
      * @return the TIFFDirectory instance or null.
      */
@@ -1376,7 +1376,7 @@ public class TIFFField implements Cloneable {
     /**
      * Clones the field and all the information contained therein.
      *
-     * @return A clone of this <code>TIFFField</code>.
+     * @return A clone of this {@code TIFFField}.
      * @throws CloneNotSupportedException if the instance cannot be cloned.
      */
     @Override
