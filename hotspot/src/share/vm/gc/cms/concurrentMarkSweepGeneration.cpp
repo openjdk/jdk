@@ -2224,8 +2224,8 @@ class VerifyMarkedClosure: public BitMapClosure {
     if (!_marks->isMarked(addr)) {
       LogHandle(gc, verify) log;
       ResourceMark rm;
-      oop(addr)->print_on(log.info_stream());
-      log.info(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
+      oop(addr)->print_on(log.error_stream());
+      log.error(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
       _failed = true;
     }
     return true;
@@ -2350,9 +2350,9 @@ void CMSCollector::verify_after_remark_work_1() {
   verification_mark_bm()->iterate(&vcl);
   if (vcl.failed()) {
     LogHandle(gc, verify) log;
-    log.info("Verification failed");
+    log.error("Failed marking verification after remark");
     ResourceMark rm;
-    gch->print_on(log.info_stream());
+    gch->print_on(log.error_stream());
     fatal("CMS: failed marking verification after remark");
   }
 }
@@ -5880,8 +5880,8 @@ void MarkRefsIntoVerifyClosure::do_oop(oop obj) {
     if (!_cms_bm->isMarked(addr)) {
       LogHandle(gc, verify) log;
       ResourceMark rm;
-      oop(addr)->print_on(log.info_stream());
-      log.info(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
+      oop(addr)->print_on(log.error_stream());
+      log.error(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
       fatal("... aborting");
     }
   }
@@ -6661,8 +6661,8 @@ void PushAndMarkVerifyClosure::do_oop(oop obj) {
     if (!_cms_bm->isMarked(addr)) {
       LogHandle(gc, verify) log;
       ResourceMark rm;
-      oop(addr)->print_on(log.info_stream());
-      log.info(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
+      oop(addr)->print_on(log.error_stream());
+      log.error(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
       fatal("... aborting");
     }
 
