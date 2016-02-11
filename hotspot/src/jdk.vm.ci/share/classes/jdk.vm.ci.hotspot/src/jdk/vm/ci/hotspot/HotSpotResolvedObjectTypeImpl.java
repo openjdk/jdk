@@ -33,7 +33,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,7 +48,6 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ModifiersProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -555,7 +553,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
          *
          * @param index index to the fields array
          */
-        public FieldInfo(int index) {
+        FieldInfo(int index) {
             HotSpotVMConfig config = config();
             // Get Klass::_fields
             final long metaspaceFields = UNSAFE.getAddress(getMetaspaceKlass() + config.instanceKlassFieldsOffset);
@@ -836,12 +834,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             // @formatter:on
         }
         return null;
-    }
-
-    @Override
-    public URL getClassFilePath() {
-        Class<?> cls = mirror();
-        return cls.getResource(MetaUtil.getSimpleName(cls, true).replace('.', '$') + ".class");
     }
 
     @Override

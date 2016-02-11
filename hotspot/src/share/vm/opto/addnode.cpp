@@ -61,7 +61,7 @@ Node* AddNode::Identity(PhaseGVN* phase) {
 
 //------------------------------commute----------------------------------------
 // Commute operands to move loads and constants to the right.
-static bool commute( Node *add, int con_left, int con_right ) {
+static bool commute(Node *add, bool con_left, bool con_right) {
   Node *in1 = add->in(1);
   Node *in2 = add->in(2);
 
@@ -110,8 +110,8 @@ static bool commute( Node *add, int con_left, int con_right ) {
 Node *AddNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
-  int con_left  = t1->singleton();
-  int con_right = t2->singleton();
+  bool con_left  = t1->singleton();
+  bool con_right = t2->singleton();
 
   // Check for commutative operation desired
   if( commute(this,con_left,con_right) ) return this;

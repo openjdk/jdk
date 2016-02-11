@@ -38,7 +38,7 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, Ho
 
     protected final HotSpotJVMCIRuntimeProvider runtime;
 
-    public HotSpotMemoryAccessProviderImpl(HotSpotJVMCIRuntimeProvider runtime) {
+    HotSpotMemoryAccessProviderImpl(HotSpotJVMCIRuntimeProvider runtime) {
         this.runtime = runtime;
     }
 

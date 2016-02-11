@@ -27,7 +27,7 @@ import jdk.test.lib.ProcessTools;
 
 /*
  * @test
- * @library /testlibrary /../../test/lib /compiler/whitebox
+ * @library /testlibrary /test/lib /compiler/whitebox
  *          /compiler/testlibrary /compiler/codegen/7184394
  * @modules java.base/sun.misc
  *          java.management

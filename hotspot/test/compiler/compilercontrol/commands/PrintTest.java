@@ -25,7 +25,8 @@
  * @test
  * @bug 8137167
  * @summary Tests CompileCommand=print
- * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
+ * @library /testlibrary /test/lib /compiler/testlibrary ../share /
+ * @ignore 8140354
  * @build compiler.compilercontrol.commands.PrintTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*

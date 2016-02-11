@@ -472,7 +472,7 @@ void PhaseIdealLoop::do_split_if( Node *iff ) {
 
     // Replace in the graph with lazy-update mechanism
     new_iff->set_req(0, new_iff); // hook self so it does not go dead
-    lazy_replace_proj( ifp, ifpx );
+    lazy_replace(ifp, ifpx);
     new_iff->set_req(0, region);
 
     // Record bits for later xforms

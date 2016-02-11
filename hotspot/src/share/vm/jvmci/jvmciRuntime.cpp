@@ -634,6 +634,7 @@ Handle JVMCIRuntime::callStatic(const char* className, const char* methodName, c
 
 void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
   if (JNIHandles::resolve(_HotSpotJVMCIRuntime_instance) == NULL) {
+    ResourceMark rm;
 #ifdef ASSERT
     // This should only be called in the context of the JVMCI class being initialized
     TempNewSymbol name = SymbolTable::new_symbol("jdk/vm/ci/runtime/JVMCI", CHECK);
