@@ -828,6 +828,8 @@ void HeapRegion::verify(VerifyOption vo,
     oop obj = oop(this->humongous_start_region()->bottom());
     if ((HeapWord*)obj > bottom() || (HeapWord*)obj + obj->size() < bottom()) {
       log_error(gc, verify)("this humongous region is not part of its' humongous object " PTR_FORMAT, p2i(obj));
+      *failures = true;
+      return;
     }
   }
 
