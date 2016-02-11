@@ -5349,61 +5349,6 @@ void os::pause() {
 //        could have been signaled after a wait started
 //    1 : signaled - thread is running or ready
 //
-// Beware -- Some versions of NPTL embody a flaw where pthread_cond_timedwait() can
-// hang indefinitely.  For instance NPTL 0.60 on 2.4.21-4ELsmp is vulnerable.
-// For specifics regarding the bug see GLIBC BUGID 261237 :
-//    http://www.mail-archive.com/debian-glibc@lists.debian.org/msg10837.html.
-// Briefly, pthread_cond_timedwait() calls with an expiry time that's not in the future
-// will either hang or corrupt the condvar, resulting in subsequent hangs if the condvar
-// is used.  (The simple C test-case provided in the GLIBC bug report manifests the
-// hang).  The JVM is vulernable via sleep(), Object.wait(timo), LockSupport.parkNanos()
-// and monitorenter when we're using 1-0 locking.  All those operations may result in
-// calls to pthread_cond_timedwait().  Using LD_ASSUME_KERNEL to use an older version
-// of libpthread avoids the problem, but isn't practical.
-//
-// Possible remedies:
-//
-// 1.   Establish a minimum relative wait time.  50 to 100 msecs seems to work.
-//      This is palliative and probabilistic, however.  If the thread is preempted
-//      between the call to compute_abstime() and pthread_cond_timedwait(), more
-//      than the minimum period may have passed, and the abstime may be stale (in the
-//      past) resultin in a hang.   Using this technique reduces the odds of a hang
-//      but the JVM is still vulnerable, particularly on heavily loaded systems.
-//
-// 2.   Modify park-unpark to use per-thread (per ParkEvent) pipe-pairs instead
-//      of the usual flag-condvar-mutex idiom.  The write side of the pipe is set
-//      NDELAY. unpark() reduces to write(), park() reduces to read() and park(timo)
-//      reduces to poll()+read().  This works well, but consumes 2 FDs per extant
-//      thread.
-//
-// 3.   Embargo pthread_cond_timedwait() and implement a native "chron" thread
-//      that manages timeouts.  We'd emulate pthread_cond_timedwait() by enqueuing
-//      a timeout request to the chron thread and then blocking via pthread_cond_wait().
-//      This also works well.  In fact it avoids kernel-level scalability impediments
-//      on certain platforms that don't handle lots of active pthread_cond_timedwait()
-//      timers in a graceful fashion.
-//
-// 4.   When the abstime value is in the past it appears that control returns
-//      correctly from pthread_cond_timedwait(), but the condvar is left corrupt.
-//      Subsequent timedwait/wait calls may hang indefinitely.  Given that, we
-//      can avoid the problem by reinitializing the condvar -- by cond_destroy()
-//      followed by cond_init() -- after all calls to pthread_cond_timedwait().
-//      It may be possible to avoid reinitialization by checking the return
-//      value from pthread_cond_timedwait().  In addition to reinitializing the
-//      condvar we must establish the invariant that cond_signal() is only called
-//      within critical sections protected by the adjunct mutex.  This prevents
-//      cond_signal() from "seeing" a condvar that's in the midst of being
-//      reinitialized or that is corrupt.  Sadly, this invariant obviates the
-//      desirable signal-after-unlock optimization that avoids futile context switching.
-//
-//      I'm also concerned that some versions of NTPL might allocate an auxilliary
-//      structure when a condvar is used or initialized.  cond_destroy()  would
-//      release the helper structure.  Our reinitialize-after-timedwait fix
-//      put excessive stress on malloc/free and locks protecting the c-heap.
-//
-// We currently use (4).  See the WorkAroundNTPLTimedWaitHang flag.
-// It may be possible to refine (4) by checking the kernel and NTPL verisons
-// and only enabling the work-around for vulnerable environments.
 
 // utility to compute the abstime argument to timedwait:
 // millis is the relative timeout time
@@ -5529,10 +5474,6 @@ int os::PlatformEvent::park(jlong millis) {
 
   while (_Event < 0) {
     status = pthread_cond_timedwait(_cond, _mutex, &abst);
-    if (status != 0 && WorkAroundNPTLTimedWaitHang) {
-      pthread_cond_destroy(_cond);
-      pthread_cond_init(_cond, os::Linux::condAttr());
-    }
     assert_status(status == 0 || status == EINTR ||
                   status == ETIME || status == ETIMEDOUT,
                   status, "cond_timedwait");
@@ -5576,10 +5517,6 @@ void os::PlatformEvent::unpark() {
   assert_status(status == 0, status, "mutex_lock");
   int AnyWaiters = _nParked;
   assert(AnyWaiters == 0 || AnyWaiters == 1, "invariant");
-  if (AnyWaiters != 0 && WorkAroundNPTLTimedWaitHang) {
-    AnyWaiters = 0;
-    pthread_cond_signal(_cond);
-  }
   status = pthread_mutex_unlock(_mutex);
   assert_status(status == 0, status, "mutex_unlock");
   if (AnyWaiters != 0) {
@@ -5731,7 +5668,7 @@ void Parker::park(bool isAbsolute, jlong time) {
   if (_counter > 0)  { // no wait needed
     _counter = 0;
     status = pthread_mutex_unlock(_mutex);
-    assert(status == 0, "invariant");
+    assert_status(status == 0, status, "invariant");
     // Paranoia to ensure our locked and lock-free paths interact
     // correctly with each other and Java-level accesses.
     OrderAccess::fence();
@@ -5757,10 +5694,6 @@ void Parker::park(bool isAbsolute, jlong time) {
   } else {
     _cur_index = isAbsolute ? ABS_INDEX : REL_INDEX;
     status = pthread_cond_timedwait(&_cond[_cur_index], _mutex, &absTime);
-    if (status != 0 && WorkAroundNPTLTimedWaitHang) {
-      pthread_cond_destroy(&_cond[_cur_index]);
-      pthread_cond_init(&_cond[_cur_index], isAbsolute ? NULL : os::Linux::condAttr());
-    }
   }
   _cur_index = -1;
   assert_status(status == 0 || status == EINTR ||
@@ -5786,33 +5719,17 @@ void Parker::park(bool isAbsolute, jlong time) {
 
 void Parker::unpark() {
   int status = pthread_mutex_lock(_mutex);
-  assert(status == 0, "invariant");
+  assert_status(status == 0, status, "invariant");
   const int s = _counter;
   _counter = 1;
-  if (s < 1) {
-    // thread might be parked
-    if (_cur_index != -1) {
-      // thread is definitely parked
-      if (WorkAroundNPTLTimedWaitHang) {
-        status = pthread_cond_signal(&_cond[_cur_index]);
-        assert(status == 0, "invariant");
-        status = pthread_mutex_unlock(_mutex);
-        assert(status == 0, "invariant");
-      } else {
-        // must capture correct index before unlocking
-        int index = _cur_index;
-        status = pthread_mutex_unlock(_mutex);
-        assert(status == 0, "invariant");
-        status = pthread_cond_signal(&_cond[index]);
-        assert(status == 0, "invariant");
-      }
-    } else {
-      pthread_mutex_unlock(_mutex);
-      assert(status == 0, "invariant");
-    }
-  } else {
-    pthread_mutex_unlock(_mutex);
-    assert(status == 0, "invariant");
+  // must capture correct index before unlocking
+  int index = _cur_index;
+  status = pthread_mutex_unlock(_mutex);
+  assert_status(status == 0, status, "invariant");
+  if (s < 1 && _cur_index != -1) {
+    // thread is definitely parked
+    status = pthread_cond_signal(&_cond[index]);
+    assert_status(status == 0, status, "invariant");
   }
 }
 
