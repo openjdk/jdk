@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,24 @@
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 
+inline bool PSParallelCompact::mark_obj(oop obj) {
+  const int obj_size = obj->size();
+  if (mark_bitmap()->mark_obj(obj, obj_size)) {
+    _summary_data.add_obj(obj, obj_size);
+    return true;
+  } else {
+    return false;
+  }
+}
+
 template <class T>
-inline void PSParallelCompact::adjust_pointer(T* p) {
+inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop)) {
     oop obj     = oopDesc::decode_heap_oop_not_null(heap_oop);
     assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
-    oop new_obj = (oop)summary_data().calc_new_pointer(obj);
+    oop new_obj = (oop)summary_data().calc_new_pointer(obj, cm);
     assert(new_obj != NULL,                    // is forwarding ptr?
            "should be forwarded");
     // Just always do the update unconditionally?
@@ -52,7 +62,7 @@ inline void PSParallelCompact::adjust_pointer(T* p) {
 
 template <typename T>
 void PSParallelCompact::AdjustPointerClosure::do_oop_nv(T* p) {
-  adjust_pointer(p);
+  adjust_pointer(p, _cm);
 }
 
 inline void PSParallelCompact::AdjustPointerClosure::do_oop(oop* p)       { do_oop_nv(p); }

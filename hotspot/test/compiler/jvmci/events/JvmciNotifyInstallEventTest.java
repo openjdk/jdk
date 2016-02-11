@@ -109,7 +109,7 @@ public class JvmciNotifyInstallEventTest implements HotSpotVMEventListener {
                 .getResolvedMethod(SimpleClass.class, testMethod);
         HotSpotCompiledCode compiledCode = new HotSpotCompiledCode(METHOD_NAME, new byte[0], 0, new Site[0],
                 new Assumption[0], new ResolvedJavaMethod[]{method}, new Comment[0], new byte[0], 16,
-                new DataPatch[0], false, 0, 0);
+                new DataPatch[0], false, 0, null);
         codeCache.installCode(method, compiledCode, /* installedCode = */ null, /* speculationLog = */ null,
                 /* isDefault = */ false);
         Asserts.assertEQ(gotInstallNotification, 1,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,6 +180,9 @@ static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {
 
 typedef void (*_zero_Fn)(HeapWord* to, size_t count);
 
+// Only used for heap objects, so align_object_offset.
+// All other platforms pd_fill_to_aligned_words simply calls pd_fill_to_words, don't
+// know why this one is different.
 static void pd_fill_to_aligned_words(HeapWord* tohw, size_t count, juint value) {
   assert(MinObjAlignmentInBytes >= BytesPerLong, "need alternate implementation");
 

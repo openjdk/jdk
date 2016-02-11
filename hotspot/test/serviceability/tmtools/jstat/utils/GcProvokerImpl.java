@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class GcProvokerImpl implements GcProvoker {
             long edenSize = Pools.getEdenCommittedSize();
             long heapSize = Pools.getHeapCommittedSize();
             float targetPercent = ((float) edenSize) / (heapSize);
-            if ((targetPercent <= 0) || (targetPercent > 1.0)) {
+            if ((targetPercent < 0) || (targetPercent > 1.0)) {
                 throw new RuntimeException("Error in the percent calculation" + " (eden size: " + edenSize + ", heap size: " + heapSize + ", calculated eden percent: " + targetPercent + ")");
             }
             eatHeapMemory(targetPercent);
