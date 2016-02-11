@@ -5756,7 +5756,7 @@ void Parker::unpark() {
   int index = _cur_index;
   status = pthread_mutex_unlock(_mutex);
   assert_status(status == 0, status, "invariant");
-  if (s < 1 && _cur_index != -1) {
+  if (s < 1 && index != -1) {
     // thread is definitely parked
     status = pthread_cond_signal(&_cond[index]);
     assert_status(status == 0, status, "invariant");
