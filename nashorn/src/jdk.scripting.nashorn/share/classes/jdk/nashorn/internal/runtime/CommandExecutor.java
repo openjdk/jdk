@@ -339,7 +339,7 @@ class CommandExecutor {
      * @param deflt value to return if not found
      * @return value of the environment variable
      */
-    private String envVarValue(String key, String deflt) {
+    private String envVarValue(final String key, final String deflt) {
         return environment.getOrDefault(key, deflt);
     }
 
@@ -349,7 +349,7 @@ class CommandExecutor {
      * @param key name of environment variable
      * @return long value of the environment variable
      */
-    private long envVarLongValue(String key) {
+    private long envVarLongValue(final String key) {
         try {
             return Long.parseLong(envVarValue(key, "0"));
         } catch (NumberFormatException ex) {
@@ -363,7 +363,7 @@ class CommandExecutor {
      * @param key name of environment variable
      * @return boolean value of the environment variable
      */
-    private boolean envVarBooleanValue(String key) {
+    private boolean envVarBooleanValue(final String key) {
         return envVarLongValue(key) != 0;
     }
 
@@ -373,7 +373,7 @@ class CommandExecutor {
      * @param token token to strip
      * @return stripped token
      */
-    private String stripQuotes(String token) {
+    private static String stripQuotes(String token) {
         if ((token.startsWith("\"") && token.endsWith("\"")) ||
              token.startsWith("\'") && token.endsWith("\'")) {
             token = token.substring(1, token.length() - 1);
@@ -387,7 +387,7 @@ class CommandExecutor {
      * @param fileName name of file or directory
      * @return resolved Path to file
      */
-    private static Path resolvePath(String cwd, String fileName) {
+    private static Path resolvePath(final String cwd, final String fileName) {
         return Paths.get(cwd).resolve(fileName).normalize();
     }
 
@@ -403,12 +403,12 @@ class CommandExecutor {
             // Set current working directory.
             case "cd":
                 // If zero args then use home dirrectory as cwd else use first arg.
-                String newCWD = cmd.size() < 2 ? HOME_DIRECTORY : cmd.get(1);
+                final String newCWD = cmd.size() < 2 ? HOME_DIRECTORY : cmd.get(1);
                 // Normalize the cwd
-                Path cwdPath = resolvePath(cwd, newCWD);
+                final Path cwdPath = resolvePath(cwd, newCWD);
 
                 // Check if is a directory.
-                File file = cwdPath.toFile();
+                final File file = cwdPath.toFile();
                 if (!file.exists()) {
                     reportError("file.not.exist", file.toString());
                     return true;
@@ -424,8 +424,8 @@ class CommandExecutor {
             // Set an environment variable.
             case "setenv":
                 if (3 <= cmd.size()) {
-                    String key = cmd.get(1);
-                    String value = cmd.get(2);
+                    final String key = cmd.get(1);
+                    final String value = cmd.get(2);
                     environment.put(key, value);
                 }
 
@@ -434,7 +434,7 @@ class CommandExecutor {
             // Unset an environment variable.
             case "unsetenv":
                 if (2 <= cmd.size()) {
-                    String key = cmd.get(1);
+                    final String key = cmd.get(1);
                     environment.remove(key);
                 }
 
@@ -454,10 +454,10 @@ class CommandExecutor {
     private List<String>  preprocessCommand(final List<String> tokens,
             final String cwd, final RedirectInfo redirectInfo) {
         // Tokens remaining for actual command.
-        List<String> command = new ArrayList<>();
+        final List<String> command = new ArrayList<>();
 
         // iterate through all tokens.
-        Iterator<String> iterator = tokens.iterator();
+        final Iterator<String> iterator = tokens.iterator();
         while (iterator.hasNext()) {
             String token = iterator.next();
 
@@ -483,12 +483,12 @@ class CommandExecutor {
     private void createProcessBuilder(final List<String> command,
             final String cwd, final RedirectInfo redirectInfo) {
         // Create new ProcessBuilder.
-        ProcessBuilder pb = new ProcessBuilder(command);
+        final ProcessBuilder pb = new ProcessBuilder(command);
         // Set current working directory.
         pb.directory(new File(cwd));
 
         // Map environment variables.
-        Map<String, String> processEnvironment = pb.environment();
+        final Map<String, String> processEnvironment = pb.environment();
         processEnvironment.clear();
         processEnvironment.putAll(environment);
 
@@ -510,10 +510,10 @@ class CommandExecutor {
         }
 
         // Get the current working directory.
-        String cwd = envVarValue("PWD", HOME_DIRECTORY);
+        final String cwd = envVarValue("PWD", HOME_DIRECTORY);
         // Preprocess the command for redirects.
-        RedirectInfo redirectInfo = new RedirectInfo();
-        List<String> command = preprocessCommand(tokens, cwd, redirectInfo);
+        final RedirectInfo redirectInfo = new RedirectInfo();
+        final List<String> command = preprocessCommand(tokens, cwd, redirectInfo);
 
         // Skip if empty or a built in.
         if (command.isEmpty() || builtIn(command, cwd)) {
@@ -529,8 +529,8 @@ class CommandExecutor {
         }
 
         // Fetch first and last ProcessBuilder.
-        ProcessBuilder firstProcessBuilder = processBuilders.get(0);
-        ProcessBuilder lastProcessBuilder = processBuilders.get(processBuilders.size() - 1);
+        final ProcessBuilder firstProcessBuilder = processBuilders.get(0);
+        final ProcessBuilder lastProcessBuilder = processBuilders.get(processBuilders.size() - 1);
 
         // Determine which streams have not be redirected from pipes.
         boolean inputIsPipe = firstProcessBuilder.redirectInput() == Redirect.PIPE;
@@ -560,7 +560,7 @@ class CommandExecutor {
         }
 
         // Start the processes.
-        List<Process> processes = new ArrayList<>();
+        final List<Process> processes = new ArrayList<>();
         for (ProcessBuilder pb : processBuilders) {
             try {
                 processes.add(pb.start());
@@ -574,8 +574,8 @@ class CommandExecutor {
         processBuilders.clear();
 
         // Get first and last process.
-        Process firstProcess = processes.get(0);
-        Process lastProcess = processes.get(processes.size() - 1);
+        final Process firstProcess = processes.get(0);
+        final Process lastProcess = processes.get(processes.size() - 1);
 
         // Prepare for string based i/o if no redirection or provided streams.
         ByteArrayOutputStream byteOutputStream = null;
@@ -589,7 +589,6 @@ class CommandExecutor {
                 new Piper(inputStream, firstProcess.getOutputStream()).start();
             } else {
                 // Otherwise assume an input string has been provided.
-                ByteArrayInputStream byteInputStream = new ByteArrayInputStream(inputString.getBytes());
                 new Piper(new ByteArrayInputStream(inputString.getBytes()), firstProcess.getOutputStream()).start();
             }
         }
@@ -621,8 +620,8 @@ class CommandExecutor {
 
         // Pipe commands in between.
         for (int i = 0, n = processes.size() - 1; i < n; i++) {
-            Process prev = processes.get(i);
-            Process next = processes.get(i + 1);
+            final Process prev = processes.get(i);
+            final Process next = processes.get(i + 1);
             new Piper(prev.getInputStream(), next.getOutputStream()).start();
         }
 
@@ -671,7 +670,7 @@ class CommandExecutor {
      * @param script command script to parsed
      * @return StreamTokenizer for command script
      */
-    private StreamTokenizer createTokenizer(final String script) {
+    private static StreamTokenizer createTokenizer(final String script) {
         final StreamTokenizer tokenizer = new StreamTokenizer(new StringReader(script));
         tokenizer.resetSyntax();
         // Default all characters to word.
@@ -702,9 +701,9 @@ class CommandExecutor {
         final StreamTokenizer tokenizer = createTokenizer(script);
 
         // Prepare to accumulate command tokens.
-        List<String> command = new ArrayList<>();
+        final List<String> command = new ArrayList<>();
         // Prepare to acumulate partial tokens joined with "\ ".
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
 
         try {
             // Fetch next token until end of script.
@@ -768,12 +767,12 @@ class CommandExecutor {
      * process - process a command array of strings
      * @param script command script to be processed
      */
-    void process(List<String> tokens) {
+    void process(final List<String> tokens) {
         // Prepare to accumulate command tokens.
-        List<String> command = new ArrayList<>();
+        final List<String> command = new ArrayList<>();
 
         // Iterate through tokens.
-        Iterator<String> iterator = tokens.iterator();
+        final Iterator<String> iterator = tokens.iterator();
         while (iterator.hasNext() && exitCode == EXIT_SUCCESS) {
             // Next word token.
             String token = iterator.next();
@@ -806,7 +805,7 @@ class CommandExecutor {
         command(command, false);
     }
 
-    void reportError(String msg, String object) {
+    void reportError(final String msg, final String object) {
         errorString += ECMAErrors.getMessage("range.error.exec." + msg, object);
         exitCode = EXIT_FAILURE;
     }

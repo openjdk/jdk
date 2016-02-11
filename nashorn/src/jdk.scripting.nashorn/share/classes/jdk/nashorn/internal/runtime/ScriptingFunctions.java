@@ -136,11 +136,8 @@ public final class ScriptingFunctions {
      *               4. Array scriptTokens, InputStream input, OutputStream output, OutputStream error
      *
      * @return output string from the request if in form of 1. or 3., empty string otherwise
-     *
-     * @throws IOException           if any stream access fails
-     * @throws InterruptedException  if execution is interrupted
      */
-    public static Object exec(final Object self, final Object... args) throws IOException, InterruptedException {
+    public static Object exec(final Object self, final Object... args) {
         final Object arg0 = args.length > 0 ? args[0] : UNDEFINED;
         final Object arg1 = args.length > 1 ? args[1] : UNDEFINED;
         final Object arg2 = args.length > 2 ? args[2] : UNDEFINED;
@@ -179,7 +176,7 @@ public final class ScriptingFunctions {
         final ScriptObject global = Context.getGlobal();
 
         // Capture ENV property state.
-        Map<String, String> environment = new HashMap<>();
+        final Map<String, String> environment = new HashMap<>();
         final Object env = global.get(ENV_NAME);
 
         if (env instanceof ScriptObject) {
