@@ -47,6 +47,14 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
     return NULL;
   }
 
+  // Splitting range check CastIIs through a loop induction Phi can
+  // cause new Phis to be created that are left unrelated to the loop
+  // induction Phi and prevent optimizations (vectorization)
+  if (n->Opcode() == Op_CastII && n->as_CastII()->has_range_check() &&
+      region->is_CountedLoop() && n->in(1) == region->as_CountedLoop()->phi()) {
+    return NULL;
+  }
+
   int wins = 0;
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
