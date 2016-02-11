@@ -283,6 +283,7 @@ Declares a structure type that can be used in other events.
       <value type="BYTES64" field="edenUsedSize" label="Eden Used Size" />
       <value type="BYTES64" field="edenTotalSize" label="Eden Total Size" />
       <value type="BYTES64" field="survivorUsedSize" label="Survivor Used Size" />
+      <value type="UINT" field="numberOfRegions" label="Number of Regions" />
     </event>
 
     <event id="GCGarbageCollection" path="vm/gc/collector/garbage_collection" label="Garbage Collection"
