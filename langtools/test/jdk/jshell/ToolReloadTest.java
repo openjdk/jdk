@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8081845
+ * @bug 8081845 8147898
  * @summary Tests for /reload in JShell tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -103,6 +103,23 @@ public class ToolReloadTest extends ReplToolTesting {
                         "-: /drop b\n" +
                         "-: class A {}\n" +
                         "-: /drop A\n"),
+                a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
+                a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
+                a -> assertCommandCheckOutput(a, "/classes", assertClasses()),
+                a -> assertCommandCheckOutput(a, "/imports", assertImports())
+        );
+    }
+
+    public void testReloadQuiet() {
+        test(false, new String[]{"-nostartup"},
+                a -> assertVariable(a, "int", "a"),
+                a -> dropVariable(a, "/dr 1", "int a = 0"),
+                a -> assertMethod(a, "int b() { return 0; }", "()I", "b"),
+                a -> dropMethod(a, "/drop b", "b ()I"),
+                a -> assertClass(a, "class A {}", "class", "A"),
+                a -> dropClass(a, "/dr A", "class A"),
+                a -> assertCommand(a, "/reload quiet",
+                        "|  Restarting and restoring state.\n"),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
                 a -> assertCommandCheckOutput(a, "/classes", assertClasses()),
