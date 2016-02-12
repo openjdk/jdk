@@ -41,7 +41,7 @@ import java.util.*;
  * but it is recommended that it normally be used with UTF-8.  The
  * character encoding can be set on the output Handler.
  *
- * @implSpec Since JDK 1.9, instances of {@linkplain LogRecord} contain
+ * @implSpec Since JDK 9, instances of {@linkplain LogRecord} contain
  * an {@link LogRecord#getInstant() Instant} which can have nanoseconds below
  * the millisecond resolution.
  * The DTD specification has been updated to allow for an optional
@@ -84,7 +84,7 @@ public class XMLFormatter extends Formatter {
      * Creates a new instance of XMLFormatter.
      *
      * @implSpec
-     *    Since JDK 1.9, the XMLFormatter will print out the record {@linkplain
+     *    Since JDK 9, the XMLFormatter will print out the record {@linkplain
      *    LogRecord#getInstant() event time} as an Instant. This instant
      *    has the best resolution available on the system. The {@code <date>}
      *    element will contain the instant as formatted by the {@link
