@@ -2654,9 +2654,9 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   eliminate_macro_nodes();
 
   // Make sure expansion will not cause node limit to be exceeded.
-  // Worst case is a macro node gets expanded into about 50 nodes.
+  // Worst case is a macro node gets expanded into about 200 nodes.
   // Allow 50% more for optimization.
-  if (C->check_node_count(C->macro_count() * 75, "out of nodes before macro expansion" ) )
+  if (C->check_node_count(C->macro_count() * 300, "out of nodes before macro expansion" ) )
     return true;
 
   // Eliminate Opaque and LoopLimit nodes. Do it after all loop optimizations.
