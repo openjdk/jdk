@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,12 @@
 include NativeCompilation.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
+  DISABLE_MAPFILES := true
   ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN)
 else
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    DISABLE_MAPFILES := true
+  endif
   ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN,/../lib$(OPENJDK_TARGET_CPU_LIBDIR)/jli)
 
   # Applications expect to be able to link against libjawt without invoking
