@@ -26,11 +26,13 @@
 #include "code/nmethod.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionBounds.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionTracer.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/liveRange.hpp"
 #include "gc/shared/space.inline.hpp"
@@ -212,10 +214,41 @@ void HeapRegion::calc_gc_efficiency() {
   _gc_efficiency = (double) reclaimable_bytes() / region_elapsed_time_ms;
 }
 
+void HeapRegion::set_free() {
+  report_region_type_change(G1HeapRegionTraceType::Free);
+  _type.set_free();
+}
+
+void HeapRegion::set_eden() {
+  report_region_type_change(G1HeapRegionTraceType::Eden);
+  _type.set_eden();
+}
+
+void HeapRegion::set_eden_pre_gc() {
+  report_region_type_change(G1HeapRegionTraceType::Eden);
+  _type.set_eden_pre_gc();
+}
+
+void HeapRegion::set_survivor() {
+  report_region_type_change(G1HeapRegionTraceType::Survivor);
+  _type.set_survivor();
+}
+
+void HeapRegion::set_old() {
+  report_region_type_change(G1HeapRegionTraceType::Old);
+  _type.set_old();
+}
+
+void HeapRegion::set_archive() {
+  report_region_type_change(G1HeapRegionTraceType::Archive);
+  _type.set_archive();
+}
+
 void HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   assert(!is_humongous(), "sanity / pre-condition");
   assert(top() == bottom(), "should be empty");
 
+  report_region_type_change(G1HeapRegionTraceType::StartsHumongous);
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
@@ -227,6 +260,7 @@ void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
   assert(top() == bottom(), "should be empty");
   assert(first_hr->is_starts_humongous(), "pre-condition");
 
+  report_region_type_change(G1HeapRegionTraceType::ContinuesHumongous);
   _type.set_continues_humongous();
   _humongous_start_region = first_hr;
 }
@@ -270,6 +304,15 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
   hr_clear(false /*par*/, false /*clear_space*/);
   set_top(bottom());
   record_timestamp();
+}
+
+void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
+  HeapRegionTracer::send_region_type_change(_hrm_index,
+                                            get_trace_type(),
+                                            to,
+                                            (uintptr_t)bottom(),
+                                            used(),
+                                            (uint)allocation_context());
 }
 
 CompactibleSpace* HeapRegion::next_compaction_space() const {
