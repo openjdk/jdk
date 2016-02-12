@@ -35,637 +35,579 @@ fi
 ##########################################################################################
 # Diff exceptions
 
-if [ "$OPENJDK_TARGET_OS" = "linux" ] && [ "$OPENJDK_TARGET_CPU" = "x86" ]; then
+if [ "$OPENJDK_TARGET_OS" = "linux" ]; then
 
-STRIP_BEFORE_COMPARE="
-./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-./demo/jvmti/gctest/lib/libgctest.so
-./demo/jvmti/heapTracker/lib/libheapTracker.so
-./demo/jvmti/heapViewer/lib/libheapViewer.so
-./demo/jvmti/minst/lib/libminst.so
-./demo/jvmti/mtrace/lib/libmtrace.so
-./demo/jvmti/versionCheck/lib/libversionCheck.so
-./demo/jvmti/waiters/lib/libwaiters.so
-"
+  STRIP_BEFORE_COMPARE="
+      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
+      ./demo/jvmti/gctest/lib/libgctest.so
+      ./demo/jvmti/heapTracker/lib/libheapTracker.so
+      ./demo/jvmti/heapViewer/lib/libheapViewer.so
+      ./demo/jvmti/minst/lib/libminst.so
+      ./demo/jvmti/mtrace/lib/libmtrace.so
+      ./demo/jvmti/versionCheck/lib/libversionCheck.so
+      ./demo/jvmti/waiters/lib/libwaiters.so
+      "
 
-ACCEPTED_BIN_DIFF="
-./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-./demo/jvmti/gctest/lib/libgctest.so
-./demo/jvmti/heapTracker/lib/libheapTracker.so
-./demo/jvmti/heapViewer/lib/libheapViewer.so
-./demo/jvmti/minst/lib/libminst.so
-./demo/jvmti/mtrace/lib/libmtrace.so
-./demo/jvmti/versionCheck/lib/libversionCheck.so
-./demo/jvmti/waiters/lib/libwaiters.so
-./lib/i386/client/libjsig.so
-./lib/i386/client/libjvm.so
-./lib/i386/libattach.so
-./lib/i386/libdt_socket.so
-./lib/i386/libinstrument.so
-./lib/i386/libjsdt.so
-./lib/i386/libjsig.so
-./lib/i386/libmanagement.so
-./lib/i386/libnet.so
-./lib/i386/libnpt.so
-./lib/i386/libverify.so
-./lib/i386/server/libjsig.so
-./lib/i386/server/libjvm.so
-./bin/appletviewer
-./bin/idlj
-./bin/jar
-./bin/jarsigner
-./bin/java
-./bin/javac
-./bin/javadoc
-./bin/javah
-./bin/javap
-./bin/jdeps
-./bin/jcmd
-./bin/jconsole
-./bin/jdb
-./bin/jimage
-./bin/jinfo
-./bin/jjs
-./bin/jmap
-./bin/jps
-./bin/jrunscript
-./bin/jsadebugd
-./bin/jstack
-./bin/jstat
-./bin/jstatd
-./bin/keytool
-./bin/orbd
-./bin/pack200
-./bin/policytool
-./bin/rmic
-./bin/rmid
-./bin/rmiregistry
-./bin/schemagen
-./bin/serialver
-./bin/servertool
-./bin/tnameserv
-./bin/wsgen
-./bin/wsimport
-./bin/xjc
-"
+  ACCEPTED_BIN_DIFF="
+      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
+      ./demo/jvmti/gctest/lib/libgctest.so
+      ./demo/jvmti/heapTracker/lib/libheapTracker.so
+      ./demo/jvmti/heapViewer/lib/libheapViewer.so
+      ./demo/jvmti/minst/lib/libminst.so
+      ./demo/jvmti/mtrace/lib/libmtrace.so
+      ./demo/jvmti/versionCheck/lib/libversionCheck.so
+      ./demo/jvmti/waiters/lib/libwaiters.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/client/libjsig.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/client/libjvm.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libattach.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libdt_socket.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libinstrument.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libjsdt.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libjsig.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libmanagement.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libnet.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libnpt.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/libverify.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjsig.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/server/libjsig.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/server/libjvm.so
+      ./bin/appletviewer
+      ./bin/idlj
+      ./bin/jar
+      ./bin/jarsigner
+      ./bin/java
+      ./bin/javac
+      ./bin/javadoc
+      ./bin/javah
+      ./bin/javap
+      ./bin/jdeps
+      ./bin/jcmd
+      ./bin/jconsole
+      ./bin/jdb
+      ./bin/jhsdb
+      ./bin/jimage
+      ./bin/jinfo
+      ./bin/jjs
+      ./bin/jmap
+      ./bin/jps
+      ./bin/jrunscript
+      ./bin/jsadebugd
+      ./bin/jshell
+      ./bin/jstack
+      ./bin/jstat
+      ./bin/jstatd
+      ./bin/keytool
+      ./bin/orbd
+      ./bin/pack200
+      ./bin/policytool
+      ./bin/rmic
+      ./bin/rmid
+      ./bin/rmiregistry
+      ./bin/schemagen
+      ./bin/serialver
+      ./bin/servertool
+      ./bin/tnameserv
+      ./bin/wsgen
+      ./bin/wsimport
+      ./bin/xjc
+      "
 
-# Issue with __FILE__ usage in generated header files prevent clean fulldump diff of
-# server jvm with old hotspot build.
-KNOWN_FULLDUMP_DIFF="
-./lib/i386/server/libjvm.so
-"
-KNOWN_DIS_DIFF="
-./lib/i386/server/libjvm.so
-"
-DIS_DIFF_FILTER="$SED \
-  -e 's/\(:\t\)\([0-9a-z]\{2,2\} \)\{1,7\}/\1<hex>/g' \
-  -e 's/0x[0-9a-z]\{2,9\}/<hex>/g'"
-fi
+  # Issue with __FILE__ usage in generated header files prevent clean fulldump diff of
+  # server jvm with old hotspot build.
+  KNOWN_FULLDUMP_DIFF="
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/client/libjvm.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/server/libjvm.so
+      ./lib$OPENJDK_TARGET_CPU_LIBDIR/minimal/libjvm.so
+      "
 
-if [ "$OPENJDK_TARGET_OS" = "linux" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
-
-STRIP_BEFORE_COMPARE="
-./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-./demo/jvmti/gctest/lib/libgctest.so
-./demo/jvmti/heapTracker/lib/libheapTracker.so
-./demo/jvmti/heapViewer/lib/libheapViewer.so
-./demo/jvmti/minst/lib/libminst.so
-./demo/jvmti/mtrace/lib/libmtrace.so
-./demo/jvmti/versionCheck/lib/libversionCheck.so
-./demo/jvmti/waiters/lib/libwaiters.so
-"
-
-ACCEPTED_BIN_DIFF="
-./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-./demo/jvmti/gctest/lib/libgctest.so
-./demo/jvmti/heapTracker/lib/libheapTracker.so
-./demo/jvmti/heapViewer/lib/libheapViewer.so
-./demo/jvmti/minst/lib/libminst.so
-./demo/jvmti/mtrace/lib/libmtrace.so
-./demo/jvmti/versionCheck/lib/libversionCheck.so
-./demo/jvmti/waiters/lib/libwaiters.so
-./lib/amd64/libattach.so
-./lib/amd64/libdt_socket.so
-./lib/amd64/libinstrument.so
-./lib/amd64/libjsdt.so
-./lib/amd64/libjsig.so
-./lib/amd64/libmanagement.so
-./lib/amd64/libnet.so
-./lib/amd64/libnpt.so
-./lib/amd64/libsaproc.so
-./lib/amd64/libverify.so
-./lib/amd64/server/libjsig.so
-./lib/amd64/server/libjvm.so
-./bin/appletviewer
-./bin/idlj
-./bin/jar
-./bin/jarsigner
-./bin/java
-./bin/javac
-./bin/javadoc
-./bin/javah
-./bin/javap
-./bin/jdeps
-./bin/jcmd
-./bin/jconsole
-./bin/jdb
-./bin/jimage
-./bin/jinfo
-./bin/jjs
-./bin/jmap
-./bin/jps
-./bin/jrunscript
-./bin/jsadebugd
-./bin/jstack
-./bin/jstat
-./bin/jstatd
-./bin/keytool
-./bin/orbd
-./bin/pack200
-./bin/policytool
-./bin/rmic
-./bin/rmid
-./bin/rmiregistry
-./bin/schemagen
-./bin/serialver
-./bin/servertool
-./bin/tnameserv
-./bin/wsgen
-./bin/wsimport
-./bin/xjc
-"
-
-# Issue with __FILE__ usage in generated header files prevent clean fulldump diff of
-# server jvm with old hotspot build.
-KNOWN_FULLDUMP_DIFF="
-./lib/amd64/server/libjvm.so
-"
-
+  if [ "$OPENJDK_TARGET_CPU" = "x86" ]; then
+    KNOWN_DIS_DIFF="
+        ./lib$OPENJDK_TARGET_CPU_LIBDIR/server/libjvm.so
+        "
+    DIS_DIFF_FILTER="$SED \
+        -e 's/\(:\t\)\([0-9a-z]\{2,2\} \)\{1,7\}/\1<hex>/g' \
+        -e 's/0x[0-9a-z]\{2,9\}/<hex>/g'"
+  fi
 fi
 
 if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
 
-STRIP_BEFORE_COMPARE="
-./demo/jni/Poller/lib/libPoller.so
-./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-./demo/jvmti/gctest/lib/libgctest.so
-./demo/jvmti/heapTracker/lib/libheapTracker.so
-./demo/jvmti/heapViewer/lib/libheapViewer.so
-./demo/jvmti/minst/lib/libminst.so
-./demo/jvmti/mtrace/lib/libmtrace.so
-./demo/jvmti/versionCheck/lib/libversionCheck.so
-./demo/jvmti/waiters/lib/libwaiters.so
-"
+  STRIP_BEFORE_COMPARE="
+      ./demo/jni/Poller/lib/libPoller.so
+      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
+      ./demo/jvmti/gctest/lib/libgctest.so
+      ./demo/jvmti/heapTracker/lib/libheapTracker.so
+      ./demo/jvmti/heapViewer/lib/libheapViewer.so
+      ./demo/jvmti/minst/lib/libminst.so
+      ./demo/jvmti/mtrace/lib/libmtrace.so
+      ./demo/jvmti/versionCheck/lib/libversionCheck.so
+      ./demo/jvmti/waiters/lib/libwaiters.so
+      "
 
-SORT_SYMBOLS="
-./lib/amd64/server/libjvm.so
-./lib/amd64/libsaproc.so
-"
+  SORT_SYMBOLS="
+      ./lib/amd64/server/libjvm.so
+      ./lib/amd64/libfontmanager.so
+      ./lib/amd64/libjimage.so
+      ./lib/amd64/libsaproc.so
+      ./lib/amd64/libunpack.so
+      ./bin/unpack200
+      "
 
-SKIP_BIN_DIFF="true"
+  SKIP_BIN_DIFF="true"
 
-ACCEPTED_SMALL_SIZE_DIFF="
-./demo/jni/Poller/lib/libPoller.so
-./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-./demo/jvmti/gctest/lib/libgctest.so
-./demo/jvmti/heapTracker/lib/libheapTracker.so
-./demo/jvmti/heapViewer/lib/libheapViewer.so
-./demo/jvmti/minst/lib/libminst.so
-./demo/jvmti/mtrace/lib/libmtrace.so
-./demo/jvmti/versionCheck/lib/libversionCheck.so
-./demo/jvmti/waiters/lib/libwaiters.so
-./lib/amd64/jli/libjli.so
-./lib/amd64/jspawnhelper
-./lib/amd64/libJdbcOdbc.so
-./lib/amd64/libattach.so
-./lib/amd64/libawt.so
-./lib/amd64/libawt_headless.so
-./lib/amd64/libawt_xawt.so
-./lib/amd64/libdcpr.so
-./lib/amd64/libdt_socket.so
-./lib/amd64/libfontmanager.so
-./lib/amd64/libinstrument.so
-./lib/amd64/libj2gss.so
-./lib/amd64/libj2pcsc.so
-./lib/amd64/libj2pkcs11.so
-./lib/amd64/libj2ucrypto.so
-./lib/amd64/libjaas_unix.so
-./lib/amd64/libjava.so
-./lib/amd64/libjawt.so
-./lib/amd64/libjdwp.so
-./lib/amd64/libjfr.so
-./lib/amd64/libjpeg.so
-./lib/amd64/libjsdt.so
-./lib/amd64/libjsound.so
-./lib/amd64/libkcms.so
-./lib/amd64/liblcms.so
-./lib/amd64/libmanagement.so
-./lib/amd64/libmlib_image.so
-./lib/amd64/libnet.so
-./lib/amd64/libnio.so
-./lib/amd64/libnpt.so
-./lib/amd64/libsctp.so
-./lib/amd64/libsplashscreen.so
-./lib/amd64/libsunec.so
-./lib/amd64/libsunwjdga.so
-./lib/amd64/libt2k.so
-./lib/amd64/libunpack.so
-./lib/amd64/libverify.so
-./lib/amd64/libzip.so
-./lib/amd64/server/64/libjvm_db.so
-./lib/amd64/server/64/libjvm_dtrace.so
-./lib/amd64/server/libjvm.so
-./lib/amd64/server/libjvm_db.so
-./lib/amd64/server/libjvm_dtrace.so
-./bin/appletviewer
-./bin/idlj
-./bin/jar
-./bin/jarsigner
-./bin/java
-./bin/javac
-./bin/javadoc
-./bin/javah
-./bin/javap
-./bin/jdeps
-./bin/jcmd
-./bin/jconsole
-./bin/jdb
-./bin/jimage
-./bin/jinfo
-./bin/jjs
-./bin/jmap
-./bin/jps
-./bin/jrunscript
-./bin/jsadebugd
-./bin/jstack
-./bin/jstat
-./bin/jstatd
-./bin/keytool
-./bin/orbd
-./bin/pack200
-./bin/policytool
-./bin/rmic
-./bin/rmid
-./bin/rmiregistry
-./bin/schemagen
-./bin/serialver
-./bin/servertool
-./bin/tnameserv
-./bin/unpack200
-./bin/wsgen
-./bin/wsimport
-./bin/xjc
-"
+  ACCEPTED_SMALL_SIZE_DIFF="
+      ./demo/jni/Poller/lib/libPoller.so
+      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
+      ./demo/jvmti/gctest/lib/libgctest.so
+      ./demo/jvmti/heapTracker/lib/libheapTracker.so
+      ./demo/jvmti/heapViewer/lib/libheapViewer.so
+      ./demo/jvmti/minst/lib/libminst.so
+      ./demo/jvmti/mtrace/lib/libmtrace.so
+      ./demo/jvmti/versionCheck/lib/libversionCheck.so
+      ./demo/jvmti/waiters/lib/libwaiters.so
+      ./lib/amd64/jli/libjli.so
+      ./lib/amd64/jspawnhelper
+      ./lib/amd64/libJdbcOdbc.so
+      ./lib/amd64/libattach.so
+      ./lib/amd64/libawt.so
+      ./lib/amd64/libawt_headless.so
+      ./lib/amd64/libawt_xawt.so
+      ./lib/amd64/libdcpr.so
+      ./lib/amd64/libdt_socket.so
+      ./lib/amd64/libfontmanager.so
+      ./lib/amd64/libinstrument.so
+      ./lib/amd64/libj2gss.so
+      ./lib/amd64/libj2pcsc.so
+      ./lib/amd64/libj2pkcs11.so
+      ./lib/amd64/libj2ucrypto.so
+      ./lib/amd64/libjaas_unix.so
+      ./lib/amd64/libjava.so
+      ./lib/amd64/libjawt.so
+      ./lib/amd64/libjdwp.so
+      ./lib/amd64/libjfr.so
+      ./lib/amd64/libjpeg.so
+      ./lib/amd64/libjsdt.so
+      ./lib/amd64/libjsound.so
+      ./lib/amd64/libkcms.so
+      ./lib/amd64/liblcms.so
+      ./lib/amd64/libmanagement.so
+      ./lib/amd64/libmlib_image.so
+      ./lib/amd64/libnet.so
+      ./lib/amd64/libnio.so
+      ./lib/amd64/libnpt.so
+      ./lib/amd64/libsctp.so
+      ./lib/amd64/libsplashscreen.so
+      ./lib/amd64/libsunec.so
+      ./lib/amd64/libsunwjdga.so
+      ./lib/amd64/libt2k.so
+      ./lib/amd64/libunpack.so
+      ./lib/amd64/libverify.so
+      ./lib/amd64/libzip.so
+      ./lib/amd64/server/64/libjvm_db.so
+      ./lib/amd64/server/64/libjvm_dtrace.so
+      ./lib/amd64/server/libjvm.so
+      ./lib/amd64/server/libjvm_db.so
+      ./lib/amd64/server/libjvm_dtrace.so
+      ./bin/appletviewer
+      ./bin/idlj
+      ./bin/jar
+      ./bin/jarsigner
+      ./bin/java
+      ./bin/javac
+      ./bin/javadoc
+      ./bin/javah
+      ./bin/javap
+      ./bin/jdeps
+      ./bin/jcmd
+      ./bin/jconsole
+      ./bin/jdb
+      ./bin/jimage
+      ./bin/jinfo
+      ./bin/jjs
+      ./bin/jmap
+      ./bin/jps
+      ./bin/jrunscript
+      ./bin/jsadebugd
+      ./bin/jstack
+      ./bin/jstat
+      ./bin/jstatd
+      ./bin/keytool
+      ./bin/orbd
+      ./bin/pack200
+      ./bin/policytool
+      ./bin/rmic
+      ./bin/rmid
+      ./bin/rmiregistry
+      ./bin/schemagen
+      ./bin/serialver
+      ./bin/servertool
+      ./bin/tnameserv
+      ./bin/unpack200
+      ./bin/wsgen
+      ./bin/wsimport
+      ./bin/xjc
+      "
 
-SKIP_FULLDUMP_DIFF="true"
+  SKIP_FULLDUMP_DIFF="true"
 
-# Filter random C++ symbol strings.
-# Some numbers differ randomly.
-DIS_DIFF_FILTER="$SED \
-    -e 's/\.[a-zA-Z0-9_\$]\{15\}/<SYM>/g' \
-    -e 's/\(\# \)[0-9a-f]*\( <\)/\1<HEX>\2/g' \
-    -e 's/0x[0-9a-f]*$/<HEX>/g' \
-    -e 's/0x[0-9a-f]*\([,(>]\)/<HEX>\1/g' \
-    -e 's/:	[0-9a-f][0-9a-f]\( [0-9a-f][0-9a-f]\)\{2,10\}/:	<NUMS>/g' \
-    -e 's/     [\.A-Za-z0-9%@]\{16\}$/     <BIN>/g'"
+  # Filter random C++ symbol strings.
+  # Some numbers differ randomly.
+  DIS_DIFF_FILTER="$SED \
+      -e 's/\.[a-zA-Z0-9_\$]\{15\}/<SYM>/g' \
+      -e 's/\(\# \)[0-9a-f]*\( <\)/\1<HEX>\2/g' \
+      -e 's/0x[0-9a-f]*$/<HEX>/g' \
+      -e 's/0x[0-9a-f]*\([,(>]\)/<HEX>\1/g' \
+      -e 's/:	[0-9a-f][0-9a-f]\( [0-9a-f][0-9a-f]\)\{2,10\}/:	<NUMS>/g' \
+      -e 's/     [\.A-Za-z0-9%@]\{16\}$/     <BIN>/g'"
 
 fi
 
 if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]; then
 
-STRIP_BEFORE_COMPARE="
-./demo/jni/Poller/lib/libPoller.so
-./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-./demo/jvmti/gctest/lib/libgctest.so
-./demo/jvmti/heapTracker/lib/libheapTracker.so
-./demo/jvmti/heapViewer/lib/libheapViewer.so
-./demo/jvmti/minst/lib/libminst.so
-./demo/jvmti/mtrace/lib/libmtrace.so
-./demo/jvmti/versionCheck/lib/libversionCheck.so
-./demo/jvmti/waiters/lib/libwaiters.so
-"
+  STRIP_BEFORE_COMPARE="
+      ./demo/jni/Poller/lib/libPoller.so
+      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
+      ./demo/jvmti/gctest/lib/libgctest.so
+      ./demo/jvmti/heapTracker/lib/libheapTracker.so
+      ./demo/jvmti/heapViewer/lib/libheapViewer.so
+      ./demo/jvmti/minst/lib/libminst.so
+      ./demo/jvmti/mtrace/lib/libmtrace.so
+      ./demo/jvmti/versionCheck/lib/libversionCheck.so
+      ./demo/jvmti/waiters/lib/libwaiters.so
+      "
 
-SORT_SYMBOLS="
-./demo/jvmti/waiters/lib/libwaiters.so
-./lib/sparcv9/libjsig.so
-./lib/sparcv9/libsaproc.so
-./lib/sparcv9/server/libjvm.so
-./lib/sparcv9/server/libjvm_dtrace.so
-"
+  SORT_SYMBOLS="
+      ./demo/jvmti/waiters/lib/libwaiters.so
+      ./lib/sparcv9/libjsig.so
+      ./lib/sparcv9/libfontmanager.so
+      ./lib/sparcv9/libjimage.so
+      ./lib/sparcv9/libsaproc.so
+      ./lib/sparcv9/libunpack.so
+      ./lib/sparcv9/server/libjvm.so
+      ./lib/sparcv9/server/libjvm_dtrace.so
+      ./bin/unpack200
+      "
 
-SKIP_BIN_DIFF="true"
+  SKIP_BIN_DIFF="true"
 
-ACCEPTED_SMALL_SIZE_DIFF="
-./demo/jni/Poller/lib/libPoller.so
-./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
-./demo/jvmti/gctest/lib/libgctest.so
-./demo/jvmti/heapTracker/lib/libheapTracker.so
-./demo/jvmti/heapViewer/lib/libheapViewer.so
-./demo/jvmti/minst/lib/libminst.so
-./demo/jvmti/mtrace/lib/libmtrace.so
-./demo/jvmti/versionCheck/lib/libversionCheck.so
-./demo/jvmti/waiters/lib/libwaiters.so
-./lib/sparcv9/client/libjvm.so
-./lib/sparcv9/jli/libjli.so
-./lib/sparcv9/jspawnhelper
-./lib/sparcv9/libJdbcOdbc.so
-./lib/sparcv9/libattach.so
-./lib/sparcv9/libawt.so
-./lib/sparcv9/libawt_headless.so
-./lib/sparcv9/libawt_xawt.so
-./lib/sparcv9/libdcpr.so
-./lib/sparcv9/libdt_socket.so
-./lib/sparcv9/libfontmanager.so
-./lib/sparcv9/libinstrument.so
-./lib/sparcv9/libj2gss.so
-./lib/sparcv9/libj2pcsc.so
-./lib/sparcv9/libj2pkcs11.so
-./lib/sparcv9/libj2ucrypto.so
-./lib/sparcv9/libjaas_unix.so
-./lib/sparcv9/libjava.so
-./lib/sparcv9/libjawt.so
-./lib/sparcv9/libjdwp.so
-./lib/sparcv9/libjfr.so
-./lib/sparcv9/libjpeg.so
-./lib/sparcv9/libjsdt.so
-./lib/sparcv9/libjsound.so
-./lib/sparcv9/libkcms.so
-./lib/sparcv9/liblcms.so
-./lib/sparcv9/libmanagement.so
-./lib/sparcv9/libmlib_image.so
-./lib/sparcv9/libmlib_image_v.so
-./lib/sparcv9/libnet.so
-./lib/sparcv9/libnio.so
-./lib/sparcv9/libnpt.so
-./lib/sparcv9/libsctp.so
-./lib/sparcv9/libsplashscreen.so
-./lib/sparcv9/libsunec.so
-./lib/sparcv9/libsunwjdga.so
-./lib/sparcv9/libt2k.so
-./lib/sparcv9/libunpack.so
-./lib/sparcv9/libverify.so
-./lib/sparcv9/libzip.so
-./lib/sparcv9/server/libjvm.so
-./bin/appletviewer
-./bin/idlj
-./bin/jar
-./bin/jarsigner
-./bin/java
-./bin/javac
-./bin/javadoc
-./bin/javah
-./bin/javap
-./bin/jdeps
-./bin/jcmd
-./bin/jconsole
-./bin/jdb
-./bin/jimage
-./bin/jinfo
-./bin/jjs
-./bin/jmap
-./bin/jps
-./bin/jrunscript
-./bin/jsadebugd
-./bin/jstack
-./bin/jstat
-./bin/jstatd
-./bin/keytool
-./bin/orbd
-./bin/pack200
-./bin/policytool
-./bin/rmic
-./bin/rmid
-./bin/rmiregistry
-./bin/schemagen
-./bin/serialver
-./bin/servertool
-./bin/tnameserv
-./bin/unpack200
-./bin/wsgen
-./bin/wsimport
-./bin/xjc
-"
+  ACCEPTED_SMALL_SIZE_DIFF="
+      ./demo/jni/Poller/lib/libPoller.so
+      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.so
+      ./demo/jvmti/gctest/lib/libgctest.so
+      ./demo/jvmti/heapTracker/lib/libheapTracker.so
+      ./demo/jvmti/heapViewer/lib/libheapViewer.so
+      ./demo/jvmti/minst/lib/libminst.so
+      ./demo/jvmti/mtrace/lib/libmtrace.so
+      ./demo/jvmti/versionCheck/lib/libversionCheck.so
+      ./demo/jvmti/waiters/lib/libwaiters.so
+      ./lib/sparcv9/client/libjvm.so
+      ./lib/sparcv9/jli/libjli.so
+      ./lib/sparcv9/jspawnhelper
+      ./lib/sparcv9/libJdbcOdbc.so
+      ./lib/sparcv9/libattach.so
+      ./lib/sparcv9/libawt.so
+      ./lib/sparcv9/libawt_headless.so
+      ./lib/sparcv9/libawt_xawt.so
+      ./lib/sparcv9/libdcpr.so
+      ./lib/sparcv9/libdt_socket.so
+      ./lib/sparcv9/libfontmanager.so
+      ./lib/sparcv9/libinstrument.so
+      ./lib/sparcv9/libj2gss.so
+      ./lib/sparcv9/libj2pcsc.so
+      ./lib/sparcv9/libj2pkcs11.so
+      ./lib/sparcv9/libj2ucrypto.so
+      ./lib/sparcv9/libjaas_unix.so
+      ./lib/sparcv9/libjava.so
+      ./lib/sparcv9/libjawt.so
+      ./lib/sparcv9/libjdwp.so
+      ./lib/sparcv9/libjfr.so
+      ./lib/sparcv9/libjpeg.so
+      ./lib/sparcv9/libjsdt.so
+      ./lib/sparcv9/libjsound.so
+      ./lib/sparcv9/libkcms.so
+      ./lib/sparcv9/liblcms.so
+      ./lib/sparcv9/libmanagement.so
+      ./lib/sparcv9/libmlib_image.so
+      ./lib/sparcv9/libmlib_image_v.so
+      ./lib/sparcv9/libnet.so
+      ./lib/sparcv9/libnio.so
+      ./lib/sparcv9/libnpt.so
+      ./lib/sparcv9/libsctp.so
+      ./lib/sparcv9/libsplashscreen.so
+      ./lib/sparcv9/libsunec.so
+      ./lib/sparcv9/libsunwjdga.so
+      ./lib/sparcv9/libt2k.so
+      ./lib/sparcv9/libunpack.so
+      ./lib/sparcv9/libverify.so
+      ./lib/sparcv9/libzip.so
+      ./lib/sparcv9/server/libjvm.so
+      ./bin/appletviewer
+      ./bin/idlj
+      ./bin/jar
+      ./bin/jarsigner
+      ./bin/java
+      ./bin/javac
+      ./bin/javadoc
+      ./bin/javah
+      ./bin/javap
+      ./bin/jdeps
+      ./bin/jcmd
+      ./bin/jconsole
+      ./bin/jdb
+      ./bin/jimage
+      ./bin/jinfo
+      ./bin/jjs
+      ./bin/jmap
+      ./bin/jps
+      ./bin/jrunscript
+      ./bin/jsadebugd
+      ./bin/jstack
+      ./bin/jstat
+      ./bin/jstatd
+      ./bin/keytool
+      ./bin/orbd
+      ./bin/pack200
+      ./bin/policytool
+      ./bin/rmic
+      ./bin/rmid
+      ./bin/rmiregistry
+      ./bin/schemagen
+      ./bin/serialver
+      ./bin/servertool
+      ./bin/tnameserv
+      ./bin/unpack200
+      ./bin/wsgen
+      ./bin/wsimport
+      ./bin/xjc
+      "
 
-# Some numbers differ randomly.
-DIS_DIFF_FILTER="$SED \
-    -e 's/\$[a-zA-Z0-9_\$]\{15\}/<SYM>/g' \
-    -e 's/:	[0-9a-f][0-9a-f]\( [0-9a-f][0-9a-f]\)\{2,10\}/:	<NUMS>/g' \
-    -e 's/, [0-9a-fx\-]\{1,8\}/, <CONST>/g' \
-    -e 's/call  [0-9a-f]\{7\}/call  <ADDR>/g' \
-    -e 's/0x[0-9a-f]\{1,8\}/<HEX>/g' \
-    -e 's/\! [0-9a-f]\{1,8\} /! <ADDR> /g'"
+  # Some numbers differ randomly.
+  DIS_DIFF_FILTER="$SED \
+      -e 's/\$[a-zA-Z0-9_\$]\{15\}/<SYM>/g' \
+      -e 's/:	[0-9a-f][0-9a-f]\( [0-9a-f][0-9a-f]\)\{2,10\}/:	<NUMS>/g' \
+      -e 's/, [0-9a-fx\-]\{1,8\}/, <CONST>/g' \
+      -e 's/call  [0-9a-f]\{7\}/call  <ADDR>/g' \
+      -e 's/0x[0-9a-f]\{1,8\}/<HEX>/g' \
+      -e 's/\! [0-9a-f]\{1,8\} /! <ADDR> /g'"
 
-# libjvm.so
-# __FILE__ macro usage in debug.hpp causes differences between old and new
-# hotspot builds in ad_sparc.o and ad_sparc_clone.o. The .o files compare
-# equal when stripped, but at link time differences appear. Removing
-# __FILE__ from ShouldNotCallThis() and ShouldNotReachHere() removes
-# the differences.
-KNOWN_DIS_DIFF="
-./lib/sparcv9/server/libjvm.so
-"
+  # libjvm.so
+  # __FILE__ macro usage in debug.hpp causes differences between old and new
+  # hotspot builds in ad_sparc.o and ad_sparc_clone.o. The .o files compare
+  # equal when stripped, but at link time differences appear. Removing
+  # __FILE__ from ShouldNotCallThis() and ShouldNotReachHere() removes
+  # the differences.
+  KNOWN_DIS_DIFF="
+      ./lib/sparcv9/server/libjvm.so
+      ./lib/sparcv9/libsaproc.so
+  "
 
-SKIP_FULLDUMP_DIFF="true"
+  SKIP_FULLDUMP_DIFF="true"
 
 fi
 
 
 if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
 
-ACCEPTED_JARZIP_CONTENTS="
-/modules_libs/java.security.jgss/w2k_lsa_auth.diz
-/modules_libs/java.security.jgss/w2k_lsa_auth.dll
-"
+  ACCEPTED_JARZIP_CONTENTS="
+      /modules_libs/java.security.jgss/w2k_lsa_auth.diz
+      /modules_libs/java.security.jgss/w2k_lsa_auth.dll
+      "
 
-# Probably should add all libs here
-ACCEPTED_SMALL_SIZE_DIFF="
-./demo/jvmti/gctest/lib/gctest.dll
-./demo/jvmti/heapTracker/lib/heapTracker.dll
-./demo/jvmti/minst/lib/minst.dll
-./bin/attach.dll
-./bin/jsoundds.dll
-./bin/server/jvm.dll
-./bin/appletviewer.exe
-./bin/idlj.exe
-./bin/jar.exe
-./bin/jarsigner.exe
-./bin/java-rmi.exe
-./bin/java.exe
-./bin/javac.exe
-./bin/javadoc.exe
-./bin/javah.exe
-./bin/javap.exe
-./bin/jdeps.exe
-./bin/javaw.exe
-./bin/jcmd.exe
-./bin/jconsole.exe
-./bin/jdb.exe
-./bin/jimage.exe
-./bin/jinfo.exe
-./bin/jjs.exe
-./bin/jmap.exe
-./bin/jps.exe
-./bin/jrunscript.exe
-./bin/jsadebugd.exe
-./bin/jstack.exe
-./bin/jstat.exe
-./bin/jstatd.exe
-./bin/keytool.exe
-./bin/kinit.exe
-./bin/klist.exe
-./bin/ktab.exe
-./bin/orbd.exe
-./bin/pack200.exe
-./bin/policytool.exe
-./bin/rmic.exe
-./bin/rmid.exe
-./bin/rmiregistry.exe
-./bin/schemagen.exe
-./bin/serialver.exe
-./bin/servertool.exe
-./bin/tnameserv.exe
-./bin/unpack200.exe
-./bin/wsgen.exe
-./bin/wsimport.exe
-./bin/xjc.exe
-"
+  # Probably should add all libs here
+  ACCEPTED_SMALL_SIZE_DIFF="
+      ./demo/jvmti/gctest/lib/gctest.dll
+      ./demo/jvmti/heapTracker/lib/heapTracker.dll
+      ./demo/jvmti/minst/lib/minst.dll
+      ./bin/attach.dll
+      ./bin/jsoundds.dll
+      ./bin/server/jvm.dll
+      ./bin/appletviewer.exe
+      ./bin/idlj.exe
+      ./bin/jar.exe
+      ./bin/jarsigner.exe
+      ./bin/java-rmi.exe
+      ./bin/java.exe
+      ./bin/javac.exe
+      ./bin/javadoc.exe
+      ./bin/javah.exe
+      ./bin/javap.exe
+      ./bin/jdeps.exe
+      ./bin/javaw.exe
+      ./bin/jcmd.exe
+      ./bin/jconsole.exe
+      ./bin/jdb.exe
+      ./bin/jimage.exe
+      ./bin/jinfo.exe
+      ./bin/jjs.exe
+      ./bin/jmap.exe
+      ./bin/jps.exe
+      ./bin/jrunscript.exe
+      ./bin/jsadebugd.exe
+      ./bin/jstack.exe
+      ./bin/jstat.exe
+      ./bin/jstatd.exe
+      ./bin/keytool.exe
+      ./bin/kinit.exe
+      ./bin/klist.exe
+      ./bin/ktab.exe
+      ./bin/orbd.exe
+      ./bin/pack200.exe
+      ./bin/policytool.exe
+      ./bin/rmic.exe
+      ./bin/rmid.exe
+      ./bin/rmiregistry.exe
+      ./bin/schemagen.exe
+      ./bin/serialver.exe
+      ./bin/servertool.exe
+      ./bin/tnameserv.exe
+      ./bin/unpack200.exe
+      ./bin/wsgen.exe
+      ./bin/wsimport.exe
+      ./bin/xjc.exe
+      "
 
-# jabswitch.exe is compiled and linked with incremental turned on in the old
-# build. This makes no sense, so it's turned off in the new build.
-ACCEPTED_SIZE_DIFF="
-./bin/jabswitch.exe
-"
-ACCEPTED_DIS_DIFF="
-./bin/jabswitch.exe
-"
+  ACCEPTED_DIS_DIFF="
+      ./bin/jabswitch.exe
+      "
 
-# On windows, there are unavoidable allignment issues making
-# a perfect disasm diff impossible. Filter out the following:
-# * Random parts of C++ symbols (this is a bit greedy, but does the trick)
-#   @XXXXX
-# * Hexadecimal addresses that are sometimes alligned differently.
-# * Dates in version strings XXXX_XX_XX.
-DIS_DIFF_FILTER="$SED \
-    -e 's/^  [0-9A-F]\{16\}: //g' \
-    -e 's/[@?][A-Za-z0-9_]\{1,25\}/<SYM>/g' \
-    -e 's/\([\[+]\)[0-9A-F]\{4,16\}h\]/\1<HEXSTR>]/g' \
-    -e 's/_[0-9]\{4\}_[0-9]\{2\}_[0-9]\{2\}/_<DATE>/g'"
-#DIS_DIFF_FILTER="$CAT"
+  # On windows, there are unavoidable allignment issues making
+  # a perfect disasm diff impossible. Filter out the following:
+  # * Random parts of C++ symbols (this is a bit greedy, but does the trick)
+  #   @XXXXX
+  # * Hexadecimal addresses that are sometimes alligned differently.
+  # * Dates in version strings XXXX_XX_XX.
+  DIS_DIFF_FILTER="$SED \
+      -e 's/^  [0-9A-F]\{16\}: //g' \
+      -e 's/[@?][A-Za-z0-9_]\{1,25\}/<SYM>/g' \
+      -e 's/\([\[+]\)[0-9A-F]\{4,16\}h\]/\1<HEXSTR>]/g' \
+      -e 's/_[0-9]\{4\}_[0-9]\{2\}_[0-9]\{2\}/_<DATE>/g'"
+  #DIS_DIFF_FILTER="$CAT"
 
-SKIP_BIN_DIFF="true"
-SKIP_FULLDUMP_DIFF="true"
+  SKIP_BIN_DIFF="true"
+  SKIP_FULLDUMP_DIFF="true"
 
 fi
 
 
 if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
-ACCEPTED_JARZIP_CONTENTS="
-/META-INF/INDEX.LIST
-"
 
-ACCEPTED_BIN_DIFF="
-./bin/appletviewer
-./bin/idlj
-./bin/jar
-./bin/jarsigner
-./bin/java
-./bin/javac
-./bin/javadoc
-./bin/javah
-./bin/javap
-./bin/javaws
-./bin/jdeps
-./bin/jcmd
-./bin/jconsole
-./bin/jdb
-./bin/jimage
-./bin/jinfo
-./bin/jjs
-./bin/jmap
-./bin/jps
-./bin/jrunscript
-./bin/jsadebugd
-./bin/jstack
-./bin/jstat
-./bin/jstatd
-./bin/keytool
-./bin/orbd
-./bin/pack200
-./bin/policytool
-./bin/rmic
-./bin/rmid
-./bin/rmiregistry
-./bin/schemagen
-./bin/serialver
-./bin/servertool
-./bin/tnameserv
-./bin/wsgen
-./bin/wsimport
-./bin/xjc
-./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.dylib
-./demo/jvmti/gctest/lib/libgctest.dylib
-./demo/jvmti/heapTracker/lib/libheapTracker.dylib
-./demo/jvmti/heapViewer/lib/libheapViewer.dylib
-./demo/jvmti/minst/lib/libminst.dylib
-./demo/jvmti/mtrace/lib/libmtrace.dylib
-./demo/jvmti/versionCheck/lib/libversionCheck.dylib
-./demo/jvmti/waiters/lib/libwaiters.dylib
-./Contents/Home/bin/_javaws
-./Contents/Home/bin/idlj
-./Contents/Home/bin/servertool
-./Contents/Home/lib/shortcuts/JavaWSApplicationStub
-./Contents/Home/lib/jli/libjli.dylib
-./Contents/Home/lib/libAppleScriptEngine.dylib
-./Contents/Home/lib/libattach.dylib
-./Contents/Home/lib/libawt_lwawt.dylib
-./Contents/Home/lib/libdeploy.dylib
-./Contents/Home/lib/libdt_socket.dylib
-./Contents/Home/lib/libinstrument.dylib
-./Contents/Home/lib/libjdwp.dylib
-./Contents/Home/lib/libjsdt.dylib
-./Contents/Home/lib/libjsig.dylib
-./Contents/Home/lib/libmanagement.dylib
-./Contents/Home/lib/libnpjp2.dylib
-./Contents/Home/lib/libosx.dylib
-./Contents/Home/lib/libosxapp.dylib
-./Contents/Home/lib/libverify.dylib
-./Contents/Home/lib/libsaproc.dylib
-./Contents/Home/lib/libsplashscreen.dylib
-./Contents/Home/lib/server/libjvm.dylib
-./Contents/Home/lib/deploy/JavaControlPanel.prefPane/Contents/MacOS/JavaControlPanel
-./Contents/Resources/JavaControlPanelHelper
-./Contents/Resources/JavaUpdater.app/Contents/MacOS/JavaUpdater
-./lib/shortcuts/JavaWSApplicationStub
-./lib/jli/libjli.dylib
-./lib/libAppleScriptEngine.dylib
-./lib/libattach.dylib
-./lib/libawt_lwawt.dylib
-./lib/libdeploy.dylib
-./lib/libdt_socket.dylib
-./lib/libinstrument.dylib
-./lib/libjdwp.dylib
-./lib/libjsdt.dylib
-./lib/libjsig.dylib
-./lib/libmanagement.dylib
-./lib/libnpjp2.dylib
-./lib/libosx.dylib
-./lib/libosxapp.dylib
-./lib/libverify.dylib
-./lib/libsaproc.dylib
-./lib/libsplashscreen.dylib
-./lib/server/libjvm.dylib
-./lib/deploy/JavaControlPanel.prefPane/Contents/MacOS/JavaControlPanel
-"
+  ACCEPTED_JARZIP_CONTENTS="
+      /META-INF/INDEX.LIST
+      "
 
-SORT_SYMBOLS="
-./Contents/Home/lib/libsaproc.dylib
-./lib/libsaproc.dylib
-./lib/libjsig.dylib
-"
+  ACCEPTED_BIN_DIFF="
+      ./bin/appletviewer
+      ./bin/idlj
+      ./bin/jar
+      ./bin/jarsigner
+      ./bin/java
+      ./bin/javac
+      ./bin/javadoc
+      ./bin/javah
+      ./bin/javap
+      ./bin/javaws
+      ./bin/jdeps
+      ./bin/jcmd
+      ./bin/jconsole
+      ./bin/jdb
+      ./bin/jimage
+      ./bin/jinfo
+      ./bin/jjs
+      ./bin/jmap
+      ./bin/jps
+      ./bin/jrunscript
+      ./bin/jsadebugd
+      ./bin/jstack
+      ./bin/jstat
+      ./bin/jstatd
+      ./bin/keytool
+      ./bin/orbd
+      ./bin/pack200
+      ./bin/policytool
+      ./bin/rmic
+      ./bin/rmid
+      ./bin/rmiregistry
+      ./bin/schemagen
+      ./bin/serialver
+      ./bin/servertool
+      ./bin/tnameserv
+      ./bin/wsgen
+      ./bin/wsimport
+      ./bin/xjc
+      ./demo/jvmti/compiledMethodLoad/lib/libcompiledMethodLoad.dylib
+      ./demo/jvmti/gctest/lib/libgctest.dylib
+      ./demo/jvmti/heapTracker/lib/libheapTracker.dylib
+      ./demo/jvmti/heapViewer/lib/libheapViewer.dylib
+      ./demo/jvmti/minst/lib/libminst.dylib
+      ./demo/jvmti/mtrace/lib/libmtrace.dylib
+      ./demo/jvmti/versionCheck/lib/libversionCheck.dylib
+      ./demo/jvmti/waiters/lib/libwaiters.dylib
+      ./Contents/Home/bin/_javaws
+      ./Contents/Home/bin/javaws
+      ./Contents/Home/bin/idlj
+      ./Contents/Home/bin/servertool
+      ./Contents/Home/lib/shortcuts/JavaWSApplicationStub
+      ./Contents/Home/lib/jli/libjli.dylib
+      ./Contents/Home/lib/jspawnhelper
+      ./Contents/Home/lib/libAppleScriptEngine.dylib
+      ./Contents/Home/lib/libattach.dylib
+      ./Contents/Home/lib/libawt_lwawt.dylib
+      ./Contents/Home/lib/libdeploy.dylib
+      ./Contents/Home/lib/libdt_socket.dylib
+      ./Contents/Home/lib/libinstrument.dylib
+      ./Contents/Home/lib/libjdwp.dylib
+      ./Contents/Home/lib/libjsdt.dylib
+      ./Contents/Home/lib/libjsig.dylib
+      ./Contents/Home/lib/libmanagement.dylib
+      ./Contents/Home/lib/libnpjp2.dylib
+      ./Contents/Home/lib/libosx.dylib
+      ./Contents/Home/lib/libosxapp.dylib
+      ./Contents/Home/lib/libverify.dylib
+      ./Contents/Home/lib/libsaproc.dylib
+      ./Contents/Home/lib/libsplashscreen.dylib
+      ./Contents/Home/lib/server/libjvm.dylib
+      ./Contents/Home/lib/deploy/JavaControlPanel.prefPane/Contents/MacOS/JavaControlPanel
+      ./Contents/Resources/JavaControlPanelHelper
+      ./Contents/Resources/JavaUpdater.app/Contents/MacOS/JavaUpdater
+      ./Contents/Resources/JavawsLauncher.app/Contents/MacOS/JavawsLauncher
+      ./lib/shortcuts/JavaWSApplicationStub
+      ./lib/jli/libjli.dylib
+      ./lib/jspawnhelper
+      ./lib/libAppleScriptEngine.dylib
+      ./lib/libattach.dylib
+      ./lib/libawt_lwawt.dylib
+      ./lib/libdeploy.dylib
+      ./lib/libdt_socket.dylib
+      ./lib/libinstrument.dylib
+      ./lib/libjdwp.dylib
+      ./lib/libjsdt.dylib
+      ./lib/libjsig.dylib
+      ./lib/libmanagement.dylib
+      ./lib/libnpjp2.dylib
+      ./lib/libosx.dylib
+      ./lib/libosxapp.dylib
+      ./lib/libosxui.dylib
+      ./lib/libverify.dylib
+      ./lib/libsaproc.dylib
+      ./lib/libsplashscreen.dylib
+      ./lib/server/libjvm.dylib
+      ./lib/deploy/JavaControlPanel.prefPane/Contents/MacOS/JavaControlPanel
+      ./Versions/A/Resources/finish_installation.app/Contents/MacOS/finish_installation
+      ./Versions/A/Sparkle
+      "
 
-ACCEPTED_SMALL_SIZE_DIFF="$ACCEPTED_BIN_DIFF"
+  SORT_SYMBOLS="
+      ./Contents/Home/lib/libsaproc.dylib
+      ./lib/libsaproc.dylib
+      ./lib/libjsig.dylib
+      "
 
-DIS_DIFF_FILTER="LANG=C $SED \
-    -e 's/0x[0-9a-f]\{3,16\}/<HEXSTR>/g' -e 's/^[0-9a-f]\{12,20\}/<ADDR>/'"
+  ACCEPTED_SMALL_SIZE_DIFF="$ACCEPTED_BIN_DIFF"
+
+  DIS_DIFF_FILTER="LANG=C $SED \
+      -e 's/0x[0-9a-f]\{3,16\}/<HEXSTR>/g' -e 's/^[0-9a-f]\{12,20\}/<ADDR>/' \
+      -e 's/## literal pool for: .Java HotSpot(TM) 64-Bit Server VM.*/<COMMENT>/g'
+      "
 
 fi
