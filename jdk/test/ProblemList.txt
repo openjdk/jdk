@@ -165,6 +165,9 @@ javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java			generi
 # 8147985
 sun/management/jmxremote/bootstrap/JMXInterfaceBindingTest.java generic-all
 
+# 8145919
+sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh       generic-all
+
 ############################################################################
 
 # jdk_net
