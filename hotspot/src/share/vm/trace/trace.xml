@@ -479,6 +479,13 @@ Declares a structure type that can be used in other events.
       <value type="BYTES64" field="size" label="Allocation Size" />
     </event>
 
+    <event id="TenuringDistribution" path="vm/gc/detailed/tenuring_distribution" label="Tenuring Distribution"
+           is_instant="true">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="UINT" field="age" label="Age" />
+      <value type="BYTES64" field="size" label="Size" />
+    </event>
+
     <!-- Compiler events -->
 
     <event id="Compilation" path="vm/compiler/compilation" label="Compilation"
