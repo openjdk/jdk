@@ -784,6 +784,8 @@ LDCXX
 LD
 CXXCPP
 CPP
+CXX_VERSION_NUMBER
+CC_VERSION_NUMBER
 ac_ct_CXX
 CXXFLAGS
 CXX
@@ -860,6 +862,7 @@ LAUNCHER_NAME
 TEST_IN_BUILD
 COPYRIGHT_YEAR
 COMPRESS_JARS
+INCLUDE_SA
 UNLIMITED_CRYPTO
 CACERTS_FILE
 BUILD_HEADLESS
@@ -906,7 +909,6 @@ FASTDEBUG
 VARIANT
 DEBUG_LEVEL
 MACOSX_UNIVERSAL
-INCLUDE_SA
 JVM_VARIANT_CORE
 JVM_VARIANT_ZEROSHARK
 JVM_VARIANT_ZERO
@@ -1926,7 +1928,7 @@ Optional Packages:
   --with-jvm-variants     JVM variants (separated by commas) to build (server,
                           client, minimal1, zero, zeroshark, core) [server]
   --with-debug-level      set the debug level (release, fastdebug, slowdebug,
-                          optimized (HotSpot build only)) [release]
+                          optimized) [release]
   --with-devkit           use this devkit for compilers, tools and resources
   --with-sys-root         alias for --with-sysroot for backwards compatability
   --with-sysroot          use this directory as sysroot
@@ -2008,7 +2010,7 @@ Optional Packages:
   --with-jtreg            Regression Test Harness [probed]
   --with-native-debug-symbols
                           set the native debug symbol configuration (none,
-                          internal, external, zipped) [zipped]
+                          internal, external, zipped) [varying]
   --with-stdc++lib=<static>,<dynamic>,<default>
                           force linking of the C++ runtime on Linux to either
                           static or dynamic, default is static with dynamic as
@@ -3424,7 +3426,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 # Include these first...
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3461,11 +3463,11 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # "ARG_FOO".
 #
 # The generated function can be called like this:
-# MYFUNC(FOO: [foo-val], BAR:
-#     [
+# MYFUNC(FOO: [foo-val],
+#     BAR: [
 #         $ECHO hello world
 #     ])
-#
+# Note that the argument value must start on the same line as the argument name.
 #
 # Argument 1: Name of the function to define
 # Argument 2: List of legal named arguments, with a * prefix for required arguments
@@ -3774,7 +3776,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3927,7 +3929,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4059,7 +4061,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4117,7 +4119,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4625,7 +4627,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4675,6 +4677,28 @@ TOOLCHAIN_DESCRIPTION_gcc="GNU Compiler Collection"
 TOOLCHAIN_DESCRIPTION_microsoft="Microsoft Visual Studio"
 TOOLCHAIN_DESCRIPTION_solstudio="Oracle Solaris Studio"
 TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
+
+# Minimum supported versions, empty means unspecified
+TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
+TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
+TOOLCHAIN_MINIMUM_VERSION_microsoft=""
+TOOLCHAIN_MINIMUM_VERSION_solstudio="5.12"
+TOOLCHAIN_MINIMUM_VERSION_xlc=""
+
+# Prepare the system so that TOOLCHAIN_CHECK_COMPILER_VERSION can be called.
+# Must have CC_VERSION_NUMBER and CXX_VERSION_NUMBER.
+
+
+# Check if the configured compiler (C and C++) is of a specific version or
+# newer. TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS must have been called before.
+#
+# Arguments:
+#   VERSION:   The version string to check against the found version
+#   IF_AT_LEAST:   block to run if the compiler is at least this version (>=)
+#   IF_OLDER_THAN:   block to run if the compiler is older than this version (<)
+
+
+
 
 # Setup a number of variables describing how native output files are
 # named on this platform/toolchain.
@@ -4836,7 +4860,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1454994410
+DATE_WHEN_GENERATED=1455271513
 
 ###############################################################################
 #
@@ -4850,7 +4874,9 @@ DATE_WHEN_GENERATED=1454994410
 # If we are requested to print additional help, do that and then exit.
 # This must be the very first call.
 
-  if test "x$CONFIGURE_PRINT_TOOLCHAIN_LIST" != x; then
+  if test "x$CONFIGURE_PRINT_ADDITIONAL_HELP" != x; then
+
+    # Print available toolchains
     $PRINTF "The following toolchains are available as arguments to --with-toolchain-type.\n"
     $PRINTF "Which are valid to use depends on the build platform.\n"
     for toolchain in $VALID_TOOLCHAINS_all; do
@@ -15826,21 +15852,6 @@ $as_echo "$with_jvm_variants" >&6; }
 
 
 
-  INCLUDE_SA=true
-  if test "x$JVM_VARIANT_ZERO" = xtrue ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$OPENJDK_TARGET_OS" = xaix ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
-    INCLUDE_SA=false
-  fi
-
-
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     MACOSX_UNIVERSAL="true"
   fi
@@ -15880,7 +15891,7 @@ $as_echo "$DEBUG_LEVEL" >&6; }
       test "x$DEBUG_LEVEL" != xoptimized && \
       test "x$DEBUG_LEVEL" != xfastdebug && \
       test "x$DEBUG_LEVEL" != xslowdebug; then
-    as_fn_error $? "Allowed debug levels are: release, fastdebug and slowdebug" "$LINENO" 5
+    as_fn_error $? "Allowed debug levels are: release, fastdebug, slowdebug and optimized" "$LINENO" 5
   fi
 
 
@@ -23244,6 +23255,22 @@ fi
   fi
 
 
+  # Should we build the serviceability agent (SA)?
+  INCLUDE_SA=true
+  if test "x$JVM_VARIANT_ZERO" = xtrue ; then
+    INCLUDE_SA=false
+  fi
+  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+    INCLUDE_SA=false
+  fi
+  if test "x$OPENJDK_TARGET_OS" = xaix ; then
+    INCLUDE_SA=false
+  fi
+  if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+    INCLUDE_SA=false
+  fi
+
+
   # Compress jars
   COMPRESS_JARS=false
 
@@ -29850,6 +29877,8 @@ $as_echo "$as_me: Valid toolchains: $VALID_TOOLCHAINS." >&6;}
   # Use indirect variable referencing
   toolchain_var_name=TOOLCHAIN_DESCRIPTION_$TOOLCHAIN_TYPE
   TOOLCHAIN_DESCRIPTION=${!toolchain_var_name}
+  toolchain_var_name=TOOLCHAIN_MINIMUM_VERSION_$TOOLCHAIN_TYPE
+  TOOLCHAIN_MINIMUM_VERSION=${!toolchain_var_name}
   toolchain_var_name=TOOLCHAIN_CC_BINARY_$TOOLCHAIN_TYPE
   TOOLCHAIN_CC_BINARY=${!toolchain_var_name}
   toolchain_var_name=TOOLCHAIN_CXX_BINARY_$TOOLCHAIN_TYPE
@@ -31483,8 +31512,14 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     export INCLUDE="$VS_INCLUDE"
     export LIB="$VS_LIB"
   else
-    # Currently we do not define this for other toolchains. This might change as the need arise.
-    TOOLCHAIN_VERSION=
+    if test "x$XCODE_VERSION_OUTPUT" != x; then
+      # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
+      TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
+      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode"
+    else
+      # Currently we do not define this for other toolchains. This might change as the need arise.
+      TOOLCHAIN_VERSION=
+    fi
   fi
 
 
@@ -32191,7 +32226,7 @@ $as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSIO
     # Collapse compiler output into a single line
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.*clang version \([1-9][0-9.]*\).*$/\1/'`
+        $SED -e 's/^.* version \([1-9][0-9.]*\).*$/\1/'`
   else
       as_fn_error $? "Unknown toolchain type $TOOLCHAIN_TYPE." "$LINENO" 5
   fi
@@ -33488,7 +33523,7 @@ $as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSIO
     # Collapse compiler output into a single line
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.*clang version \([1-9][0-9.]*\).*$/\1/'`
+        $SED -e 's/^.* version \([1-9][0-9.]*\).*$/\1/'`
   else
       as_fn_error $? "Unknown toolchain type $TOOLCHAIN_TYPE." "$LINENO" 5
   fi
@@ -33759,6 +33794,116 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
+
+  # This is the compiler version number on the form X.Y[.Z]
+
+
+
+
+  if test "x$CC_VERSION_NUMBER" != "x$CXX_VERSION_NUMBER"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C and C++ compiler has different version numbers, $CC_VERSION_NUMBER vs $CXX_VERSION_NUMBER." >&5
+$as_echo "$as_me: WARNING: C and C++ compiler has different version numbers, $CC_VERSION_NUMBER vs $CXX_VERSION_NUMBER." >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: This typically indicates a broken setup, and is not supported" >&5
+$as_echo "$as_me: WARNING: This typically indicates a broken setup, and is not supported" >&2;}
+  fi
+
+  # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
+  if  [[ "$CC_VERSION_NUMBER" =~ (.*\.){3} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  fi
+
+  if  [[  "$CC_VERSION_NUMBER" =~ [0-9]{6} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  fi
+
+  COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$CC_VERSION_NUMBER"`
+
+
+  if test "x$TOOLCHAIN_MINIMUM_VERSION" != x; then
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  # Need to assign to a variable since m4 is blocked from modifying parts in [].
+  REFERENCE_VERSION=$TOOLCHAIN_MINIMUM_VERSION
+
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
+    as_fn_error $? "Internal errror: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  fi
+
+  if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
+    as_fn_error $? "Internal errror: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only parts < 99999 is supported" "$LINENO" 5
+  fi
+
+  # Version comparison method inspired by http://stackoverflow.com/a/24067243
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+
+  if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
+    :
+
+  else
+    :
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: You are using $TOOLCHAIN_TYPE older than $TOOLCHAIN_MINIMUM_VERSION. This is not a supported configuration." >&5
+$as_echo "$as_me: WARNING: You are using $TOOLCHAIN_TYPE older than $TOOLCHAIN_MINIMUM_VERSION. This is not a supported configuration." >&2;}
+
+
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+  fi
 
   #
   # Setup the preprocessor (CPP and CXXCPP)
@@ -45332,7 +45477,7 @@ $as_echo "no" >&6; }
   # On Windows, we need to set RC flags.
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     RC_FLAGS="-nologo -l0x409"
-    if test "x$VARIANT" = xOPT; then
+    if test "x$DEBUG_LEVEL" = xrelease; then
       RC_FLAGS="$RC_FLAGS -DNDEBUG"
     fi
 
@@ -45357,8 +45502,6 @@ $as_echo "no" >&6; }
     COMMON_CCXXFLAGS="$COMMON_CCXXFLAGS -nologo"
   fi
 
-
-# FIXME: Currently we must test this after toolchain but before flags. Fix!
 
 # Now we can test some aspects on the target using configure macros.
 
@@ -46015,7 +46158,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/$1'
-      SET_SHARED_LIBRARY_MAPFILE=''
+      SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,$1'
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
@@ -46035,7 +46178,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/$1'
-      SET_SHARED_LIBRARY_MAPFILE=''
+      SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,$1'
     else
       # Default works for linux, might work on other platforms as well.
       PICFLAG='-fPIC'
@@ -46071,7 +46214,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     SET_EXECUTABLE_ORIGIN=''
     SET_SHARED_LIBRARY_ORIGIN=''
     SET_SHARED_LIBRARY_NAME=''
-    SET_SHARED_LIBRARY_MAPFILE=''
+    SET_SHARED_LIBRARY_MAPFILE='-def:$1'
   fi
 
 
@@ -46151,6 +46294,10 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # no adjustment
       ;;
     slowdebug )
+      # FIXME: By adding this to C(XX)FLAGS_DEBUG_OPTIONS it
+      # get's added conditionally on whether we produce debug symbols or not.
+      # This is most likely not really correct.
+
       # Add runtime stack smashing and undefined behavior checks.
       # Not all versions of gcc support -fstack-protector
       STACK_PROTECTOR_CFLAG="-fstack-protector-all"
@@ -46311,7 +46458,7 @@ $as_echo "$supports" >&6; }
       CXX_O_FLAG_HIGHEST="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0 $CC_HIGHEST -xprefetch=auto,explicit -xchip=ultra"
       CXX_O_FLAG_HI="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
       CXX_O_FLAG_NORM="-xO2 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
-      C_O_FLAG_DEBUG=""
+      CXX_O_FLAG_DEBUG=""
       CXX_O_FLAG_NONE=""
     fi
   else
@@ -46492,8 +46639,8 @@ $as_echo "$supports" >&6; }
     # avoid bundling msvcpNNN.dll. Doesn't work with newer versions of visual
     # studio.
     if test "x$TOOLCHAIN_VERSION" = "x2010"; then
-      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
-          -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB"
+      STATIC_CPPLIB_FLAGS="-D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB"
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK $STATIC_CPPLIB_FLAGS"
     fi
   fi
 
@@ -46561,9 +46708,6 @@ $as_echo "$supports" >&6; }
   # Set some additional per-OS defines.
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
-  elif test "x$OPENJDK_TARGET_OS" = xaix; then
-    # FIXME: PPC64 should not be here.
-    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DPPC64"
   elif test "x$OPENJDK_TARGET_OS" = xbsd; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
   fi
@@ -46621,36 +46765,34 @@ $as_echo "$supports" >&6; }
   # Setup LDFLAGS et al.
   #
 
-  # Now this is odd. The JDK native libraries have to link against libjvm.so
-  # On 32-bit machines there is normally two distinct libjvm.so:s, client and server.
-  # Which should we link to? Are we lucky enough that the binary api to the libjvm.so library
-  # is identical for client and server? Yes. Which is picked at runtime (client or server)?
-  # Neither, since the chosen libjvm.so has already been loaded by the launcher, all the following
-  # libraries will link to whatever is in memory. Yuck.
-  #
-  # Thus we offer the compiler to find libjvm.so first in server then in client. It works. Ugh.
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    LDFLAGS_JDK="$LDFLAGS_JDK -nologo -opt:ref -incremental:no"
+    LDFLAGS_MICROSOFT="-nologo -opt:ref"
+    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_MICROSOFT -incremental:no"
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
-      LDFLAGS_JDK="$LDFLAGS_JDK -safeseh"
+      LDFLAGS_SAFESH="-safeseh"
+      LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SAFESH"
     fi
     # TODO: make -debug optional "--disable-full-debug-symbols"
-    LDFLAGS_JDK="$LDFLAGS_JDK -debug"
+    LDFLAGS_MICROSOFT_DEBUG="-debug"
+    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_MICROSOFT_DEBUG"
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     # We have previously set HAS_GNU_HASH if this is the case
     if test -n "$HAS_GNU_HASH"; then
-      LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,--hash-style=both"
+      LDFLAGS_HASH_STYLE="-Wl,--hash-style=both"
+      LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_HASH_STYLE"
     fi
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       # And since we now know that the linker is gnu, then add -z defs, to forbid
       # undefined symbols in object files.
-      LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,-z,defs"
+      LDFLAGS_NO_UNDEF_SYM="-Wl,-z,defs"
+      LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_NO_UNDEF_SYM"
       case $DEBUG_LEVEL in
         release )
           # tell linker to optimize libraries.
           # Should this be supplied to the OSS linker as well?
-          LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,-O1"
+          LDFLAGS_DEBUGLEVEL_release="-Wl,-O1"
+          LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_DEBUGLEVEL_release"
           ;;
         slowdebug )
           if test "x$HAS_LINKER_NOW" = "xtrue"; then
@@ -46677,10 +46819,13 @@ $as_echo "$supports" >&6; }
         esac
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    LDFLAGS_JDK="$LDFLAGS_JDK -Wl,-z,defs -xildoff -ztext"
-    LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
+    LDFLAGS_SOLSTUDIO="-Wl,-z,defs"
+    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SOLSTUDIO -xildoff -ztext"
+    LDFLAGS_CXX_SOLSTUDIO="-norunpath"
+    LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LDFLAGS_CXX_SOLSTUDIO -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LDFLAGS_JDK="${LDFLAGS_JDK} -brtl -bnolibpath -bexpall -bernotok"
+    LDFLAGS_XLC="-brtl -bnolibpath -bexpall -bernotok"
+    LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_XLC"
   fi
 
   # Customize LDFLAGS for executables
@@ -47324,6 +47469,10 @@ $as_echo "$supports" >&6; }
       DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
       ;;
+    xlc)
+      DISABLE_WARNING_PREFIX="-qsuppress="
+      CFLAGS_WARNINGS_ARE_ERRORS="-qhalt=w"
+      ;;
   esac
 
 
@@ -47353,7 +47502,11 @@ else
           # AIX doesn't support 'zipped' so use 'internal' as default
           with_native_debug_symbols="internal"
         else
-          with_native_debug_symbols="zipped"
+          if test "x$STATIC_BUILD" = xtrue; then
+            with_native_debug_symbols="none"
+          else
+            with_native_debug_symbols="zipped"
+          fi
         fi
 
 fi
@@ -58739,7 +58892,7 @@ $as_echo_n "checking for memory size... " >&6; }
     FOUND_MEM=yes
   elif test -x /usr/sbin/prtconf; then
     # Looks like a Solaris or AIX system
-    MEMORY_SIZE=`/usr/sbin/prtconf | grep "^Memory [Ss]ize" | awk '{ print $3 }'`
+    MEMORY_SIZE=`/usr/sbin/prtconf 2> /dev/null | grep "^Memory [Ss]ize" | awk '{ print $3 }'`
     FOUND_MEM=yes
   elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
@@ -59567,9 +59720,9 @@ $as_echo "$tool_specified" >&6; }
     fi
     if test "x${TOOLCHAIN_TYPE}" = "xgcc"; then
 
-  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+  ( cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
       && ${ICECC_CREATE_ENV} ${icecc_gcc_arg} ${CC} ${CXX} > \
-          ${icecc_create_env_log} 2>&1
+          ${icecc_create_env_log} 2>&1 )
   if test "$?" != "0"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
 $as_echo "$as_me: icecc-create-env output:" >&6;}
@@ -59786,8 +59939,8 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-      && ${ICECC_CREATE_ENV} --clang ${CC} ${ICECC_WRAPPER} > ${icecc_create_env_log} 2>&1
+  ( cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} --clang ${CC} ${ICECC_WRAPPER} > ${icecc_create_env_log} 2>&1 )
   if test "$?" != "0"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
 $as_echo "$as_me: icecc-create-env output:" >&6;}
@@ -59818,9 +59971,9 @@ $as_echo "${ICECC_ENV_BUNDLE}" >&6; }
       icecc_create_env_log_build="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/icecc_create_env_build.log"
       if test "x${BUILD_CC##*/}" = "xgcc" ||  test "x${BUILD_CC##*/}" = "xcc"; then
 
-  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+  ( cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
       && ${ICECC_CREATE_ENV} ${icecc_gcc_arg} ${BUILD_CC} ${BUILD_CXX} > \
-            ${icecc_create_env_log_build} 2>&1
+            ${icecc_create_env_log_build} 2>&1 )
   if test "$?" != "0"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
 $as_echo "$as_me: icecc-create-env output:" >&6;}
@@ -59831,8 +59984,8 @@ $as_echo "$as_me: icecc-create-env output:" >&6;}
 
       elif test "x${BUILD_CC##*/}" = "xclang"; then
 
-  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-      && ${ICECC_CREATE_ENV} --clang ${BUILD_CC} ${ICECC_WRAPPER} > ${icecc_create_env_log_build} 2>&1
+  ( cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} --clang ${BUILD_CC} ${ICECC_WRAPPER} > ${icecc_create_env_log_build} 2>&1 )
   if test "$?" != "0"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
 $as_echo "$as_me: icecc-create-env output:" >&6;}

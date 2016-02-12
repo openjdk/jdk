@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -746,6 +746,9 @@ compare_bin_file() {
     elif [ "$OPENJDK_TARGET_OS" = "aix" ]; then
         $OBJDUMP -T $ORIG_OTHER_FILE 2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.other
         $OBJDUMP -T $ORIG_THIS_FILE  2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.this
+    elif [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
+        $NM -j $ORIG_OTHER_FILE 2> /dev/null | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.other
+        $NM -j $ORIG_THIS_FILE  2> /dev/null | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.this
     else
         $NM -a $ORIG_OTHER_FILE 2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.other
         $NM -a $ORIG_THIS_FILE  2> /dev/null | $GREP -v $NAME | $AWK '{print $2, $3, $4, $5}' | $SYM_SORT_CMD > $WORK_FILE_BASE.symbols.this
@@ -1020,14 +1023,6 @@ compare_all_execs() {
 ################################################################################
 # Initiate configuration
 
-COMPARE_ROOT=/tmp/cimages.$USER
-$MKDIR -p $COMPARE_ROOT
-if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-    if [ "$(uname -o)" = "Cygwin" ]; then
-        COMPARE_ROOT=$(cygpath -msa $COMPARE_ROOT)
-    fi
-fi
-
 THIS="$SCRIPT_DIR"
 echo "$THIS"
 THIS_SCRIPT="$0"
@@ -1050,6 +1045,7 @@ if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "-?" ] || [ "$1" = "/h" ] || [ "$1
     echo ""
     echo "--sort-symbols      Sort all symbols before comparing"
     echo "--strip             Strip all binaries before comparing"
+    echo "--clean             Clean all previous comparison results first"
     echo ""
     echo "[FILTER]            List filenames in the image to compare, works for jars, zips, libs and execs"
     echo "Example:"
@@ -1149,6 +1145,9 @@ while [ -n "$1" ]; do
         --strip)
             STRIP_ALL=true
             ;;
+        --clean)
+            CLEAN_OUTPUT=true
+            ;;
         *)
             CMP_NAMES=false
             CMP_PERMS=false
@@ -1166,6 +1165,23 @@ while [ -n "$1" ]; do
     esac
     shift
 done
+
+if [ "$STRIP_ALL" = "true" ] && [ -z "$STRIP" ]; then
+  echo Warning: Not stripping even with --strip, since strip is missing on this platform
+  STRIP_ALL=false
+fi
+
+COMPARE_ROOT=/tmp/cimages.$USER
+if [ "$CLEAN_OUTPUT" = "true" ]; then
+    echo Cleaning old output in $COMPARE_ROOT.
+    $RM -rf $COMPARE_ROOT
+fi
+$MKDIR -p $COMPARE_ROOT
+if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
+    if [ "$(uname -o)" = "Cygwin" ]; then
+        COMPARE_ROOT=$(cygpath -msa $COMPARE_ROOT)
+    fi
+fi
 
 if [ "$CMP_2_ZIPS" = "true" ]; then
     THIS_DIR="$(dirname $THIS_FILE)"
