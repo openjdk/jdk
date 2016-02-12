@@ -49,8 +49,6 @@ compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
 compiler.misc.bad.signature                             # bad class file
 compiler.misc.bad.type.annotation.value
 compiler.misc.base.membership                           # UNUSED
-compiler.misc.ccf.found.later.version
-compiler.misc.ccf.unrecognized.attribute
 compiler.misc.class.file.not.found                      # ClassReader
 compiler.misc.class.file.wrong.class
 compiler.misc.fatal.err.cant.locate.ctor                # Resolve, from Lower
