@@ -353,14 +353,17 @@ else # $(HAS_SPEC)=true
   # Parse COMPARE_BUILD into COMPARE_BUILD_*
   # Syntax: COMPARE_BUILD=CONF=<configure options>:PATCH=<patch file>:
   #         MAKE=<make targets>:COMP_OPTS=<compare script options>:
-  #         COMP_DIR=<compare script base dir>|<default>
+  #         COMP_DIR=<compare script base dir>|<default>:
+  #         FAIL=<bool>
   # If neither CONF or PATCH is given, assume <default> means CONF if it
   # begins with "--", otherwise assume it means PATCH.
   # MAKE and COMP_OPTS can only be used with CONF and/or PATCH specified.
   # If any value contains "+", it will be replaced by space.
+  # FAIL can be set to false to have the return value of compare be ignored.
   define ParseCompareBuild
     ifneq ($$(COMPARE_BUILD), )
       COMPARE_BUILD_OUTPUT_ROOT := $(TOPDIR)/build/compare-build/$(CONF_NAME)
+      COMPARE_BUILD_FAIL := true
 
       ifneq ($$(findstring :, $$(COMPARE_BUILD)), )
         $$(foreach part, $$(subst :, , $$(COMPARE_BUILD)), \
@@ -378,6 +381,9 @@ else # $(HAS_SPEC)=true
           ) \
           $$(if $$(filter COMP_DIR=%, $$(part)), \
             $$(eval COMPARE_BUILD_COMP_DIR=$$(strip $$(subst +, , $$(patsubst COMP_DIR=%, %, $$(part))))) \
+          ) \
+          $$(if $$(filter FAIL=%, $$(part)), \
+            $$(eval COMPARE_BUILD_FAIL=$$(strip $$(subst +, , $$(patsubst FAIL=%, %, $$(part))))) \
           ) \
         )
       else
@@ -401,6 +407,9 @@ else # $(HAS_SPEC)=true
         else ifeq ($$(wildcard $$(COMPARE_BUILD_PATCH)), )
           $$(error Patch file $$(COMPARE_BUILD_PATCH) does not exist)
         endif
+      endif
+      ifneq ($$(COMPARE_BUILD_FAIL), true)
+        COMPARE_BUILD_IGNORE_RESULT := || true
       endif
     endif
   endef
@@ -443,9 +452,10 @@ else # $(HAS_SPEC)=true
 	$(ECHO) "Comparing between comparison rebuild (this/new) and baseline (other/old)"
 	$(if $(COMPARE_BUILD_COMP_DIR), \
 	  +(cd $(COMPARE_BUILD_OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) \
-	      -2dirs $(COMPARE_BUILD_OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) $(OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) || true), \
+	      -2dirs $(COMPARE_BUILD_OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) \
+	      $(OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) $(COMPARE_BUILD_IGNORE_RESULT)), \
 	  +(cd $(COMPARE_BUILD_OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) \
-	      -o $(OUTPUT_ROOT) || true) \
+	      -o $(OUTPUT_ROOT) $(COMPARE_BUILD_IGNORE_RESULT)) \
 	)
   endef
 
