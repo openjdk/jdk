@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -188,8 +188,6 @@ TOOLCHAIN_MISC_CHECKS
 TOOLCHAIN_SETUP_JTREG
 
 FLAGS_SETUP_INIT_FLAGS
-
-# FIXME: Currently we must test this after toolchain but before flags. Fix!
 
 # Now we can test some aspects on the target using configure macros.
 PLATFORM_SETUP_OPENJDK_TARGET_BITS
