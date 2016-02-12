@@ -37,6 +37,7 @@
  * @key intermittent
  * @summary Basic tests for Phaser
  * @author Chris Hegarty
+ * @modules java.management
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
