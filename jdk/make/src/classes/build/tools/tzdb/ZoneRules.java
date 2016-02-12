@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ final class ZoneRules {
     static void writeRule(ZoneOffsetTransitionRule rule, DataOutput out) throws IOException {
         int month = rule.getMonth().getValue();
         byte dom = (byte)rule.getDayOfMonthIndicator();
-        int dow = rule.getDayOfWeek().getValue();
+        int dow = (rule.getDayOfWeek() == null ? -1 : rule.getDayOfWeek().getValue());
         LocalTime time = rule.getLocalTime();
         boolean timeEndOfDay = rule.isMidnightEndOfDay();
         TimeDefinition timeDefinition = rule.getTimeDefinition();

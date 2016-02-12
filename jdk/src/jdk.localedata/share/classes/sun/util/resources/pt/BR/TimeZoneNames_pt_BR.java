@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,6 +276,9 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
         String XJT[] = new String[] {"Fuso hor\u00e1rio padr\u00e3o da China", "XJT",
                                      "Hor\u00e1rio de luz natural da China", "XJDT",
                                      "Hor\u00E1rio da China", "XJT"};
+        String YAKT[] = new String[] {"Fuso hor\u00e1rio de Yakutsk", "YAKT",
+                                      "Fuso hor\u00e1rio de ver\u00e3o de Yakutsk", "YAKST",
+                                      "Hor\u00E1rio de Yakutsk", "YAKT"};
 
         return new Object[][] {
             {"America/Los_Angeles", PST},
@@ -487,7 +490,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"America/Mendoza", AGT},
             {"America/Menominee", CST},
             {"America/Merida", CST},
-            {"America/Metlakatla", PST},
+            {"America/Metlakatla", AKST},
             {"America/Mexico_City", CST},
             {"America/Miquelon", new String[] {"Fuso hor\u00e1rio padr\u00e3o de S\u00e3o Pedro e Miquelon", "PMST",
                                                "Hor\u00e1rio de luz natural de S\u00e3o Pedro e Miquelon", "PMDT",
@@ -608,7 +611,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
                                           "Fuso hor\u00e1rio de ver\u00e3o de Brunei", "BNST",
                                           "Hor\u00E1rio de Brunei", "BNT"}},
             {"Asia/Calcutta", IST},
-            {"Asia/Chita", IRKT},
+            {"Asia/Chita", YAKT},
             {"Asia/Choibalsan", new String[] {"Fuso hor\u00e1rio de Choibalsan", "CHOT",
                                               "Fuso hor\u00e1rio de ver\u00e3o de Choibalsan", "CHOST",
                                               "Hor\u00E1rio de Choibalsan", "CHOT"}},
@@ -649,9 +652,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Asia/Kashgar", XJT},
             {"Asia/Kathmandu", NPT},
             {"Asia/Katmandu", NPT},
-            {"Asia/Khandyga", new String[] {"Hor\u00E1rio de Khandyga", "YAKT",
-                                            "Hor\u00E1rio de Ver\u00E3o de Khandyga", "YAKST",
-                                            "Hor\u00E1rio de Khandyga", "YAKT"}},
+            {"Asia/Khandyga", YAKT},
             {"Asia/Kolkata", IST},
             {"Asia/Krasnoyarsk", KRAT},
             {"Asia/Kuala_Lumpur", MYT},
@@ -717,9 +718,7 @@ public final class TimeZoneNames_pt_BR extends TimeZoneNamesBundle {
             {"Asia/Vladivostok", new String[] {"Fuso hor\u00e1rio de Vladivostok", "VLAT",
                                                "Fuso hor\u00e1rio de ver\u00e3o de Vladivostok", "VLAST",
                                                "Hor\u00E1rio de Vladivostok", "VLAT"}},
-            {"Asia/Yakutsk", new String[] {"Fuso hor\u00e1rio de Yakutsk", "YAKT",
-                                           "Fuso hor\u00e1rio de ver\u00e3o de Yakutsk", "YAKST",
-                                           "Hor\u00E1rio de Yakutsk", "YAKT"}},
+            {"Asia/Yakutsk", YAKT},
             {"Asia/Yekaterinburg", new String[] {"Fuso hor\u00e1rio de Yekaterinburgo", "YEKT",
                                                  "Fuso hor\u00e1rio de ver\u00e3o de Yekaterinburgo", "YEKST",
                                                  "Hor\u00E1rio de Yekaterinburg", "YEKT"}},
