@@ -486,6 +486,16 @@ Declares a structure type that can be used in other events.
       <value type="BYTES64" field="size" label="Size" />
     </event>
 
+    <event id="G1HeapRegionTypeChange" path="vm/gc/detailed/g1_heap_region_type_change" label="G1 Heap Region Type Change"
+           description="Information about a G1 heap region type change." is_instant="true">
+      <value type="UINT" field="index" label="Index" />
+      <value type="G1HEAPREGIONTYPE" field="from" label="From Type" />
+      <value type="G1HEAPREGIONTYPE" field="to" label="To Type" />
+      <value type="ADDRESS" field="start" label="Start" />
+      <value type="BYTES64" field="used" label="Used" />
+      <value type="UINT" field="allocContext" label="Allocation Context" />
+    </event>
+
     <!-- Compiler events -->
 
     <event id="Compilation" path="vm/compiler/compilation" label="Compilation"
