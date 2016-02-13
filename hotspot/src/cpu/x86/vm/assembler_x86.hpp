@@ -2044,11 +2044,11 @@ private:
 class InstructionAttr {
 public:
   InstructionAttr(
-    int vector_len,
-    bool rex_vex_w,
-    bool legacy_mode,
-    bool no_reg_mask,
-    bool uses_vl)
+    int vector_len,     // The length of vector to be applied in encoding - for both AVX and EVEX
+    bool rex_vex_w,     // Width of data: if 32-bits or less, false, else if 64-bit or specially defined, true
+    bool legacy_mode,   // Details if either this instruction is conditionally encoded to AVX or earlier if true else possibly EVEX
+    bool no_reg_mask,   // when true, k0 is used when EVEX encoding is chosen, else k1 is used under the same condition
+    bool uses_vl)       // This instruction may have legacy constraints based on vector length for EVEX
     :
       _avx_vector_len(vector_len),
       _rex_vex_w(rex_vex_w),
