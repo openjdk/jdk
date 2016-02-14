@@ -142,7 +142,7 @@ public class GraphemeTest {
     private static boolean[][] rules;
     static {
         rules = new boolean[LAST_TYPE + 1][LAST_TYPE + 1];
-        // default, any ÷ any
+        // default, any + any
         for (int i = FIRST_TYPE; i <= LAST_TYPE; i++)
             for (int j = FIRST_TYPE; j <= LAST_TYPE; j++)
                 rules[i][j] = true;
@@ -169,8 +169,8 @@ public class GraphemeTest {
             rules[i][SPACINGMARK] = false;
             rules[PREPEND][i] = false;
         }
-        // GB 4  (Control | CR | LF) ÷
-        // GB 5  ÷ (Control | CR | LF)
+        // GB 4  (Control | CR | LF) +
+        // GB 5  + (Control | CR | LF)
         for (int i = FIRST_TYPE; i <= LAST_TYPE; i++)
             for (int j = CR; j <= CONTROL; j++) {
                 rules[i][j] = true;
@@ -178,7 +178,7 @@ public class GraphemeTest {
             }
         // GB 3 CR x LF
         rules[CR][LF] = false;
-        // GB 10 Any ÷ Any  -> default
+        // GB 10 Any + Any  -> default
     }
 
     // Hangul syllables
