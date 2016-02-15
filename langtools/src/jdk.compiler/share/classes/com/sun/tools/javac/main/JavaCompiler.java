@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,7 +373,6 @@ public class JavaCompiler {
                 throw new Abort();
         }
         source = Source.instance(context);
-        Target target = Target.instance(context);
         attr = Attr.instance(context);
         chk = Check.instance(context);
         gen = Gen.instance(context);
@@ -393,7 +392,6 @@ public class JavaCompiler {
         stubOutput    = options.isSet("-stubs");
         relax         = options.isSet("-relax");
         printFlat     = options.isSet("-printflat");
-        attrParseOnly = options.isSet("-attrparseonly");
         encoding      = options.get(ENCODING);
         lineDebugInfo = options.isUnset(G_CUSTOM) ||
                         options.isSet(G_CUSTOM, "lines");
@@ -405,7 +403,8 @@ public class JavaCompiler {
 
         verboseCompilePolicy = options.isSet("verboseCompilePolicy");
 
-        if (attrParseOnly)
+        if (options.isSet("shouldStopPolicy") &&
+            CompileState.valueOf(options.get("shouldStopPolicy")) == CompileState.ATTR)
             compilePolicy = CompilePolicy.ATTR_ONLY;
         else
             compilePolicy = CompilePolicy.decode(options.get("compilePolicy"));
@@ -451,10 +450,6 @@ public class JavaCompiler {
     /** Emit stub source files rather than class files.
      */
     public boolean stubOutput;
-
-    /** Generate attributed parse tree only.
-     */
-    public boolean attrParseOnly;
 
     /** Switch: relax some constraints for producing the jsr14 prototype.
      */

@@ -33,7 +33,7 @@ import java.security.PrivilegedAction;
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 
-import sun.misc.InnocuousThread;
+import jdk.internal.misc.InnocuousThread;
 
 /**
  * CleanerImpl manages a set of object references and corresponding cleaning actions.
