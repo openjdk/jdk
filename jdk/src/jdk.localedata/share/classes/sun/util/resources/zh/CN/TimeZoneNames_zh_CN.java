@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,6 +276,9 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
         String XJT[] = new String[] {"\u4e2d\u56fd\u6807\u51c6\u65f6\u95f4", "XJT",
                                      "\u4e2d\u56fd\u590f\u4ee4\u65f6", "XJDT",
                                      "\u4E2D\u56FD\u65F6\u95F4", "XJT"};
+        String YAKT[] = new String[] {"\u4e9a\u5e93\u6b21\u514b\u65f6\u95f4", "YAKT",
+                                      "\u4e9a\u5e93\u6b21\u514b\u590f\u4ee4\u65f6", "YAKST",
+                                      "\u4E9A\u5E93\u6B21\u514B\u65F6\u95F4", "YAKT"};
 
         return new Object[][] {
             {"America/Los_Angeles", PST},
@@ -487,7 +490,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
             {"America/Mendoza", AGT},
             {"America/Menominee", CST},
             {"America/Merida", CST},
-            {"America/Metlakatla", PST},
+            {"America/Metlakatla", AKST},
             {"America/Mexico_City", CST},
             {"America/Miquelon", new String[] {"\u76ae\u57c3\u5c14\u5c9b\u53ca\u5bc6\u514b\u9686\u5c9b\u6807\u51c6\u65f6\u95f4", "PMST",
                                                "\u76ae\u57c3\u5c14\u5c9b\u53ca\u5bc6\u514b\u9686\u5c9b\u590f\u4ee4\u65f6", "PMDT",
@@ -608,7 +611,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
                                           "\u6587\u83b1\u590f\u4ee4\u65f6", "BNST",
                                           "\u6587\u83B1\u65F6\u95F4", "BNT"}},
             {"Asia/Calcutta", IST},
-            {"Asia/Chita", IRKT},
+            {"Asia/Chita", YAKT},
             {"Asia/Choibalsan", new String[] {"Choibalsan \u65f6\u95f4", "CHOT",
                                               "Choibalsan \u590f\u4ee4\u65f6", "CHOST",
                                               "Choibalsan \u65F6\u95F4", "CHOT"}},
@@ -649,9 +652,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
             {"Asia/Kashgar", XJT},
             {"Asia/Kathmandu", NPT},
             {"Asia/Katmandu", NPT},
-            {"Asia/Khandyga", new String[] {"\u6C49\u5FB7\u52A0\u65F6\u95F4", "YAKT",
-                                            "\u6C49\u5FB7\u52A0\u590F\u4EE4\u65F6", "YAKST",
-                                            "\u6C49\u5FB7\u52A0\u65F6\u95F4", "YAKT"}},
+            {"Asia/Khandyga", YAKT},
             {"Asia/Kolkata", IST},
             {"Asia/Krasnoyarsk", KRAT},
             {"Asia/Kuala_Lumpur", MYT},
@@ -717,9 +718,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
             {"Asia/Vladivostok", new String[] {"\u6d77\u53c2\u5d34\u65f6\u95f4", "VLAT",
                                                "\u6d77\u53c2\u5d34\u590f\u4ee4\u65f6", "VLAST",
                                                "\u6D77\u53C2\u5D34\u65F6\u95F4", "VLAT"}},
-            {"Asia/Yakutsk", new String[] {"\u4e9a\u5e93\u6b21\u514b\u65f6\u95f4", "YAKT",
-                                           "\u4e9a\u5e93\u6b21\u514b\u590f\u4ee4\u65f6", "YAKST",
-                                           "\u4E9A\u5E93\u6B21\u514B\u65F6\u95F4", "YAKT"}},
+            {"Asia/Yakutsk", YAKT},
             {"Asia/Yekaterinburg", new String[] {"Yekaterinburg \u65f6\u95f4", "YEKT",
                                                  "Yekaterinburg \u590f\u4ee4\u65f6", "YEKST",
                                                  "Yekaterinburg \u65F6\u95F4", "YEKT"}},

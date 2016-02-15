@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ import jdk.internal.misc.SharedSecrets;
  * @summary check that when LogManager is initialized, a deadlock similar
  *          to that described in 8065709 will not occur.
  * @modules java.base/jdk.internal.misc
+ *          java.logging
+ *          java.management
  * @run main/othervm LogManagerAppContextDeadlock UNSECURE
  * @run main/othervm LogManagerAppContextDeadlock SECURE
  *
