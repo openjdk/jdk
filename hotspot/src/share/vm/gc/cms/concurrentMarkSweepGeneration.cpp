@@ -2923,7 +2923,7 @@ bool CMSCollector::markFromRoots() {
 
   CMSTokenSyncWithLocks ts(true, bitMapLock());
   GCTraceCPUTime tcpu;
-  CMSPhaseAccounting pa(this, "Concrurrent Mark");
+  CMSPhaseAccounting pa(this, "Concurrent Mark");
   bool res = markFromRootsWork();
   if (res) {
     _collectorState = Precleaning;
