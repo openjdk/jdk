@@ -26,6 +26,7 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 
 import java.lang.reflect.Array;
+import java.util.Objects;
 
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
@@ -70,7 +71,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         } else if (x instanceof HotSpotObjectConstantImpl) {
             return y instanceof HotSpotObjectConstantImpl && ((HotSpotObjectConstantImpl) x).object() == ((HotSpotObjectConstantImpl) y).object();
         } else {
-            return x.equals(y);
+            return Objects.equals(x, y);
         }
     }
 
