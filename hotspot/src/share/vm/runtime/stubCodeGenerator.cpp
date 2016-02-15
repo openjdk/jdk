@@ -37,7 +37,7 @@
 
 StubCodeDesc* StubCodeDesc::_list = NULL;
 int           StubCodeDesc::_count = 0;
-
+bool          StubCodeDesc::_frozen = false;
 
 StubCodeDesc* StubCodeDesc::desc_for(address pc) {
   StubCodeDesc* p = _list;
@@ -46,19 +46,22 @@ StubCodeDesc* StubCodeDesc::desc_for(address pc) {
   return p;
 }
 
-
 StubCodeDesc* StubCodeDesc::desc_for_index(int index) {
   StubCodeDesc* p = _list;
   while (p != NULL && p->index() != index) p = p->_next;
   return p;
 }
 
-
 const char* StubCodeDesc::name_for(address pc) {
   StubCodeDesc* p = desc_for(pc);
   return p == NULL ? NULL : p->name();
 }
 
+
+void StubCodeDesc::freeze() {
+  assert(!_frozen, "repeated freeze operation");
+  _frozen = true;
+}
 
 void StubCodeDesc::print_on(outputStream* st) const {
   st->print("%s", group());
@@ -110,11 +113,9 @@ StubCodeGenerator::~StubCodeGenerator() {
   }
 }
 
-
 void StubCodeGenerator::stub_prolog(StubCodeDesc* cdesc) {
   // default implementation - do nothing
 }
-
 
 void StubCodeGenerator::stub_epilog(StubCodeDesc* cdesc) {
   // default implementation - record the cdesc
