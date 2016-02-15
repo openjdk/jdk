@@ -37,7 +37,7 @@ import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
 
 /**
- * A <code>StreamPrintServiceFactory</code> is the factory for
+ * A {@code StreamPrintServiceFactory} is the factory for
  * {@link StreamPrintService} instances,
  * which can print to an output stream in a particular
  * document format described as a mime type.
@@ -51,8 +51,8 @@ import java.util.ServiceConfigurationError;
  * Applications locate instances of this class by calling the
  * {@link #lookupStreamPrintServiceFactories(DocFlavor, String)} method.
  * <p>
- * Applications can use a <code>StreamPrintService</code> obtained from a
- * factory in place of a <code>PrintService</code> which represents a
+ * Applications can use a {@code StreamPrintService} obtained from a
+ * factory in place of a {@code PrintService} which represents a
  * physical printer device.
  */
 
@@ -101,7 +101,7 @@ public abstract class StreamPrintServiceFactory {
      * @param outputMimeType representing the required output format, used to
      * identify suitable stream printer factories. A value of null means
      * match all formats.
-     * @return - matching factories for stream print service instance,
+     * @return   matching factories for stream print service instance,
      *           empty if no suitable factories could be located.
      */
      public static StreamPrintServiceFactory[]
@@ -127,25 +127,25 @@ public abstract class StreamPrintServiceFactory {
     public abstract DocFlavor[] getSupportedDocFlavors();
 
     /**
-     * Returns a <code>StreamPrintService</code> that can print to
+     * Returns a {@code StreamPrintService} that can print to
      * the specified output stream.
      * The output stream is created and managed by the application.
      * It is the application's responsibility to close the stream and
      * to ensure that this Printer is not reused.
      * The application should not close this stream until any print job
      * created from the printer is complete. Doing so earlier may generate
-     * a <code>PrinterException</code> and an event indicating that the
+     * a {@code PrinterException} and an event indicating that the
      * job failed.
      * <p>
-     * Whereas a <code>PrintService</code> connected to a physical printer
+     * Whereas a {@code PrintService} connected to a physical printer
      * can be reused,
-     * a <code>StreamPrintService</code> connected to a stream cannot.
-     * The underlying <code>StreamPrintService</code> may be disposed by
+     * a {@code StreamPrintService} connected to a stream cannot.
+     * The underlying {@code StreamPrintService} may be disposed by
      * the print system with
      * the {@link StreamPrintService#dispose() dispose} method
      * before returning from the
      * {@link DocPrintJob#print(Doc, javax.print.attribute.PrintRequestAttributeSet) print}
-     * method of <code>DocPrintJob</code> so that the print system knows
+     * method of {@code DocPrintJob} so that the print system knows
      * this printer is no longer usable.
      * This is equivalent to a physical printer going offline - permanently.
      * Applications may supply a null print stream to create a queryable

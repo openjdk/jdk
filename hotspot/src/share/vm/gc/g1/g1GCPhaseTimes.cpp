@@ -30,6 +30,7 @@
 #include "gc/g1/workerDataArray.inline.hpp"
 #include "memory/allocation.hpp"
 #include "logging/log.hpp"
+#include "runtime/timer.hpp"
 #include "runtime/os.hpp"
 
 // Helper class for avoiding interleaved logging
@@ -125,7 +126,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[StringDedupQueueFixup] = new WorkerDataArray<double>(max_gc_threads, "Queue Fixup:", true, 2);
   _gc_par_phases[StringDedupTableFixup] = new WorkerDataArray<double>(max_gc_threads, "Table Fixup:", true, 2);
 
-  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>(max_gc_threads, "Parallel Redirty", true, 3);
+  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>(max_gc_threads, "Parallel Redirty:", true, 3);
   _redirtied_cards = new WorkerDataArray<size_t>(max_gc_threads, "Redirtied Cards:", true, 3);
   _gc_par_phases[RedirtyCards]->link_thread_work_items(_redirtied_cards);
 }
@@ -133,6 +134,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
 void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
   assert(active_gc_threads > 0, "The number of threads must be > 0");
   assert(active_gc_threads <= _max_gc_threads, "The number of active threads must be <= the max number of threads");
+  _gc_start_counter = os::elapsed_counter();
   _active_gc_threads = active_gc_threads;
   _cur_expand_heap_time_ms = 0.0;
   _external_accounted_time_ms = 0.0;
@@ -146,6 +148,7 @@ void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
 }
 
 void G1GCPhaseTimes::note_gc_end() {
+  _gc_pause_time_ms = TimeHelper::counter_to_millis(os::elapsed_counter() - _gc_start_counter);
   for (uint i = 0; i < _active_gc_threads; i++) {
     double worker_time = _gc_par_phases[GCWorkerEnd]->get(i) - _gc_par_phases[GCWorkerStart]->get(i);
     record_time_secs(GCWorkerTotal, i , worker_time);
@@ -349,7 +352,7 @@ class G1GCParPhasePrinter : public StackObj {
   }
 };
 
-void G1GCPhaseTimes::print(double pause_time_ms) {
+void G1GCPhaseTimes::print() {
   note_gc_end();
 
   G1GCParPhasePrinter par_phase_printer(this);
@@ -373,7 +376,7 @@ void G1GCPhaseTimes::print(double pause_time_ms) {
   }
   print_stats(Indents[1], "Clear CT", _cur_clear_ct_time_ms);
   print_stats(Indents[1], "Expand Heap After Collection", _cur_expand_heap_time_ms);
-  double misc_time_ms = pause_time_ms - accounted_time_ms();
+  double misc_time_ms = _gc_pause_time_ms - accounted_time_ms();
   print_stats(Indents[1], "Other", misc_time_ms);
   if (_cur_verify_before_time_ms > 0.0) {
     print_stats(Indents[2], "Verify Before", _cur_verify_before_time_ms);

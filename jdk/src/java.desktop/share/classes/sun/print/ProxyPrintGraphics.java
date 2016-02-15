@@ -54,8 +54,8 @@ public class ProxyPrintGraphics extends ProxyGraphics
     }
 
    /**
-     * Creates a new <code>Graphics</code> object that is
-     * a copy of this <code>Graphics</code> object.
+     * Creates a new {@code Graphics} object that is
+     * a copy of this {@code Graphics} object.
      * @return     a new graphics context that is a copy of
      *                       this graphics context.
      */
@@ -65,8 +65,8 @@ public class ProxyPrintGraphics extends ProxyGraphics
 
 
     /**
-     * Creates a new <code>Graphics</code> object based on this
-     * <code>Graphics</code> object, but with a new translation and
+     * Creates a new {@code Graphics} object based on this
+     * {@code Graphics} object, but with a new translation and
      * clip area.
      * Refer to
      * {@link sun.print.ProxyGraphics#create(int, int, int, int)}

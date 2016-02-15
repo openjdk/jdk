@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,18 @@
 
 package com.sun.media.sound;
 
-
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
-
 
 /**
  * AU file format.
  *
  * @author Jan Borgersen
  */
-
 final class AuFileFormat extends AudioFileFormat {
 
     // magic numbers
-    static final int AU_SUN_MAGIC =     0x2e736e64;
-    static final int AU_SUN_INV_MAGIC = 0x646e732e;
-    static final int AU_DEC_MAGIC =         0x2e736400;
-    static final int AU_DEC_INV_MAGIC = 0x0064732e;
+    static final int AU_SUN_MAGIC = 0x2e736e64; // ".snd"
 
     // encodings
     static final int AU_ULAW_8       = 1;  /* 8-bit ISDN u-law */
@@ -61,11 +55,6 @@ final class AuFileFormat extends AudioFileFormat {
     static final int AU_HEADERSIZE       = 24;
 
     private int auType;
-
-    AuFileFormat( AudioFileFormat aff ) {
-
-        this( aff.getType(), aff.getByteLength(), aff.getFormat(), aff.getFrameLength() );
-    }
 
     AuFileFormat(AudioFileFormat.Type type, int lengthInBytes, AudioFormat format, int lengthInFrames) {
 
@@ -94,12 +83,9 @@ final class AuFileFormat extends AudioFileFormat {
                 auType = AU_LINEAR_32;
             }
         }
-
     }
 
     public int getAuType() {
-
         return auType;
     }
-
 }

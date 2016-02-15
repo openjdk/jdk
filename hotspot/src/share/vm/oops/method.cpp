@@ -295,7 +295,7 @@ int Method::size(bool is_native) {
   // If native, then include pointers for native_function and signature_handler
   int extra_bytes = (is_native) ? 2*sizeof(address*) : 0;
   int extra_words = align_size_up(extra_bytes, BytesPerWord) / BytesPerWord;
-  return align_object_size(header_size() + extra_words);
+  return align_metadata_size(header_size() + extra_words);
 }
 
 
@@ -2101,14 +2101,15 @@ bool Method::has_method_vptr(const void* ptr) {
   Method m;
   // This assumes that the vtbl pointer is the first word of a C++ object.
   // This assumption is also in universe.cpp patch_klass_vtble
-  void* vtbl2 = dereference_vptr((const void*)&m);
-  void* this_vtbl = dereference_vptr(ptr);
-  return vtbl2 == this_vtbl;
+  return dereference_vptr(&m) == dereference_vptr(ptr);
 }
 
 // Check that this pointer is valid by checking that the vtbl pointer matches
 bool Method::is_valid_method() const {
   if (this == NULL) {
+    return false;
+  } else if ((intptr_t(this) & (wordSize-1)) != 0) {
+    // Quick sanity check on pointer.
     return false;
   } else if (!is_metaspace_object()) {
     return false;

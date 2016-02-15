@@ -28,8 +28,8 @@ package java.awt.image;
 import static sun.java2d.StateTrackable.State.*;
 
 /**
- * This class extends <code>DataBuffer</code> and stores data internally
- * in <code>double</code> form.
+ * This class extends {@code DataBuffer} and stores data internally
+ * in {@code double} form.
  * <p>
  * <a name="optimizations">
  * Note that some implementations may function more efficiently
@@ -58,10 +58,10 @@ public final class DataBufferDouble extends DataBuffer {
     double data[];
 
     /**
-     * Constructs a <code>double</code>-based <code>DataBuffer</code>
+     * Constructs a {@code double}-based {@code DataBuffer}
      * with a specified size.
      *
-     * @param size The number of elements in the <code>DataBuffer</code>.
+     * @param size The number of elements in the {@code DataBuffer}.
      */
     public DataBufferDouble(int size) {
         super(STABLE, TYPE_DOUBLE, size);
@@ -71,13 +71,13 @@ public final class DataBufferDouble extends DataBuffer {
     }
 
     /**
-     * Constructs a <code>double</code>-based <code>DataBuffer</code>
+     * Constructs a {@code double}-based {@code DataBuffer}
      * with a specified number of banks, all of which are of a
      * specified size.
      *
      * @param size The number of elements in each bank of the
-     *        <code>DataBuffer</code>.
-     * @param numBanks The number of banks in the <code>DataBuffer</code>.
+     *        {@code DataBuffer}.
+     * @param numBanks The number of banks in the {@code DataBuffer}.
      */
     public DataBufferDouble(int size, int numBanks) {
         super(STABLE, TYPE_DOUBLE, size, numBanks);
@@ -89,19 +89,19 @@ public final class DataBufferDouble extends DataBuffer {
     }
 
     /**
-     * Constructs a <code>double</code>-based <code>DataBuffer</code>
+     * Constructs a {@code double}-based {@code DataBuffer}
      * with the specified data array.  Only the first
-     * <code>size</code> elements are available for use by this
-     * <code>DataBuffer</code>.  The array must be large enough to
-     * hold <code>size</code> elements.
+     * {@code size} elements are available for use by this
+     * {@code DataBuffer}.  The array must be large enough to
+     * hold {@code size} elements.
      * <p>
      * Note that {@code DataBuffer} objects created by this constructor
      * may be incompatible with <a href="#optimizations">performance
      * optimizations</a> used by some implementations (such as caching
      * an associated image in video memory).
      *
-     * @param dataArray An array of <code>double</code>s to be used as the
-     *                  first and only bank of this <code>DataBuffer</code>.
+     * @param dataArray An array of {@code double}s to be used as the
+     *                  first and only bank of this {@code DataBuffer}.
      * @param size The number of elements of the array to be used.
      */
     public DataBufferDouble(double dataArray[], int size) {
@@ -112,19 +112,19 @@ public final class DataBufferDouble extends DataBuffer {
     }
 
     /**
-     * Constructs a <code>double</code>-based <code>DataBuffer</code>
+     * Constructs a {@code double}-based {@code DataBuffer}
      * with the specified data array.  Only the elements between
-     * <code>offset</code> and <code>offset + size - 1</code> are
-     * available for use by this <code>DataBuffer</code>.  The array
-     * must be large enough to hold <code>offset + size</code> elements.
+     * {@code offset} and {@code offset + size - 1} are
+     * available for use by this {@code DataBuffer}.  The array
+     * must be large enough to hold {@code offset + size} elements.
      * <p>
      * Note that {@code DataBuffer} objects created by this constructor
      * may be incompatible with <a href="#optimizations">performance
      * optimizations</a> used by some implementations (such as caching
      * an associated image in video memory).
      *
-     * @param dataArray An array of <code>double</code>s to be used as the
-     *                  first and only bank of this <code>DataBuffer</code>.
+     * @param dataArray An array of {@code double}s to be used as the
+     *                  first and only bank of this {@code DataBuffer}.
      * @param size The number of elements of the array to be used.
      * @param offset The offset of the first element of the array
      *               that will be used.
@@ -137,19 +137,19 @@ public final class DataBufferDouble extends DataBuffer {
     }
 
     /**
-     * Constructs a <code>double</code>-based <code>DataBuffer</code>
+     * Constructs a {@code double}-based {@code DataBuffer}
      * with the specified data arrays.  Only the first
-     * <code>size</code> elements of each array are available for use
-     * by this <code>DataBuffer</code>.  The number of banks will be
-     * equal <code>to dataArray.length</code>.
+     * {@code size} elements of each array are available for use
+     * by this {@code DataBuffer}.  The number of banks will be
+     * equal {@code to dataArray.length}.
      * <p>
      * Note that {@code DataBuffer} objects created by this constructor
      * may be incompatible with <a href="#optimizations">performance
      * optimizations</a> used by some implementations (such as caching
      * an associated image in video memory).
      *
-     * @param dataArray An array of arrays of <code>double</code>s to be
-     *        used as the banks of this <code>DataBuffer</code>.
+     * @param dataArray An array of arrays of {@code double}s to be
+     *        used as the banks of this {@code DataBuffer}.
      * @param size The number of elements of each array to be used.
      */
     public DataBufferDouble(double dataArray[][], int size) {
@@ -159,20 +159,20 @@ public final class DataBufferDouble extends DataBuffer {
     }
 
     /**
-     * Constructs a <code>double</code>-based <code>DataBuffer</code>
+     * Constructs a {@code double}-based {@code DataBuffer}
      * with the specified data arrays, size, and per-bank offsets.
      * The number of banks is equal to dataArray.length.  Each array
-     * must be at least as large as <code>size</code> plus the
+     * must be at least as large as {@code size} plus the
      * corresponding offset.  There must be an entry in the
-     * <code>offsets</code> array for each data array.
+     * {@code offsets} array for each data array.
      * <p>
      * Note that {@code DataBuffer} objects created by this constructor
      * may be incompatible with <a href="#optimizations">performance
      * optimizations</a> used by some implementations (such as caching
      * an associated image in video memory).
      *
-     * @param dataArray An array of arrays of <code>double</code>s to be
-     *        used as the banks of this <code>DataBuffer</code>.
+     * @param dataArray An array of arrays of {@code double}s to be
+     *        used as the banks of this {@code DataBuffer}.
      * @param size The number of elements of each array to be used.
      * @param offsets An array of integer offsets, one for each bank.
      */
@@ -183,7 +183,7 @@ public final class DataBufferDouble extends DataBuffer {
     }
 
     /**
-     * Returns the default (first) <code>double</code> data array.
+     * Returns the default (first) {@code double} data array.
      * <p>
      * Note that calling this method may cause this {@code DataBuffer}
      * object to be incompatible with <a href="#optimizations">performance
@@ -206,7 +206,7 @@ public final class DataBufferDouble extends DataBuffer {
      * an associated image in video memory).
      *
      * @param bank the data array
-     * @return the data array specified by <code>bank</code>.
+     * @return the data array specified by {@code bank}.
      */
     public double[] getData(int bank) {
         theTrackable.setUntrackable();
@@ -230,10 +230,10 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Returns the requested data array element from the first
-     * (default) bank as an <code>int</code>.
+     * (default) bank as an {@code int}.
      *
      * @param i The desired data array element.
-     * @return The data entry as an <code>int</code>.
+     * @return The data entry as an {@code int}.
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
      */
@@ -243,12 +243,12 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Returns the requested data array element from the specified
-     * bank as an <code>int</code>.
+     * bank as an {@code int}.
      *
      * @param bank The bank number.
      * @param i The desired data array element.
      *
-     * @return The data entry as an <code>int</code>.
+     * @return The data entry as an {@code int}.
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
      */
@@ -258,7 +258,7 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Sets the requested data array element in the first (default)
-     * bank to the given <code>int</code>.
+     * bank to the given {@code int}.
      *
      * @param i The desired data array element.
      * @param val The value to be set.
@@ -272,7 +272,7 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Sets the requested data array element in the specified bank
-     * to the given <code>int</code>.
+     * to the given {@code int}.
      *
      * @param bank The bank number.
      * @param i The desired data array element.
@@ -287,11 +287,11 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Returns the requested data array element from the first
-     * (default) bank as a <code>float</code>.
+     * (default) bank as a {@code float}.
      *
      * @param i The desired data array element.
      *
-     * @return The data entry as a <code>float</code>.
+     * @return The data entry as a {@code float}.
      * @see #setElemFloat(int, float)
      * @see #setElemFloat(int, int, float)
      */
@@ -301,12 +301,12 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Returns the requested data array element from the specified
-     * bank as a <code>float</code>.
+     * bank as a {@code float}.
      *
      * @param bank The bank number.
      * @param i The desired data array element.
      *
-     * @return The data entry as a <code>float</code>.
+     * @return The data entry as a {@code float}.
      * @see #setElemFloat(int, float)
      * @see #setElemFloat(int, int, float)
      */
@@ -316,7 +316,7 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Sets the requested data array element in the first (default)
-     * bank to the given <code>float</code>.
+     * bank to the given {@code float}.
      *
      * @param i The desired data array element.
      * @param val The value to be set.
@@ -330,7 +330,7 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Sets the requested data array element in the specified bank to
-     * the given <code>float</code>.
+     * the given {@code float}.
      *
      * @param bank The bank number.
      * @param i The desired data array element.
@@ -345,11 +345,11 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Returns the requested data array element from the first
-     * (default) bank as a <code>double</code>.
+     * (default) bank as a {@code double}.
      *
      * @param i The desired data array element.
      *
-     * @return The data entry as a <code>double</code>.
+     * @return The data entry as a {@code double}.
      * @see #setElemDouble(int, double)
      * @see #setElemDouble(int, int, double)
      */
@@ -359,12 +359,12 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Returns the requested data array element from the specified
-     * bank as a <code>double</code>.
+     * bank as a {@code double}.
      *
      * @param bank The bank number.
      * @param i The desired data array element.
      *
-     * @return The data entry as a <code>double</code>.
+     * @return The data entry as a {@code double}.
      * @see #setElemDouble(int, double)
      * @see #setElemDouble(int, int, double)
      */
@@ -374,7 +374,7 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Sets the requested data array element in the first (default)
-     * bank to the given <code>double</code>.
+     * bank to the given {@code double}.
      *
      * @param i The desired data array element.
      * @param val The value to be set.
@@ -388,7 +388,7 @@ public final class DataBufferDouble extends DataBuffer {
 
     /**
      * Sets the requested data array element in the specified bank to
-     * the given <code>double</code>.
+     * the given {@code double}.
      *
      * @param bank The bank number.
      * @param i The desired data array element.

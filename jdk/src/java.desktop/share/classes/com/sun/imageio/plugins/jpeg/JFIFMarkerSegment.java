@@ -90,7 +90,7 @@ class JFIFMarkerSegment extends MarkerSegment {
     private final boolean debug = false;
 
     /**
-     * Set to <code>true</code> when reading the chunks of an
+     * Set to {@code true} when reading the chunks of an
      * ICC profile.  All chunks are consolidated to create a single
      * "segment" containing all the chunks.  This flag is a state
      * variable identifying whether to construct a new segment or
@@ -594,10 +594,10 @@ class JFIFMarkerSegment extends MarkerSegment {
 
     /**
      * Writes out a default JFIF marker segment to the given
-     * output stream.  If <code>thumbnails</code> is not <code>null</code>,
+     * output stream.  If {@code thumbnails} is not {@code null},
      * writes out the set of thumbnail images as JFXX marker segments, or
      * incorporated into the JFIF segment if appropriate.
-     * If <code>iccProfile</code> is not <code>null</code>,
+     * If {@code iccProfile} is not {@code null},
      * writes out the profile after the JFIF segment using as many APP2
      * marker segments as necessary.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,10 @@ private:
 
   Action _action;
 
+  HeapWord* _last_query_beg;
+  oop _last_query_obj;
+  size_t _last_query_ret;
+
   static PSOldGen* old_gen()             { return _old_gen; }
   static ObjectStartArray* start_array() { return _start_array; }
   static OopTaskQueueSet* stack_array()  { return _stack_array; }
@@ -127,8 +131,25 @@ private:
   // marking stack and overflow stack directly.
 
  public:
+  void reset_bitmap_query_cache() {
+    _last_query_beg = NULL;
+    _last_query_obj = NULL;
+    _last_query_ret = 0;
+  }
+
   Action action() { return _action; }
   void set_action(Action v) { _action = v; }
+
+  // Bitmap query support, cache last query and result
+  HeapWord* last_query_begin() { return _last_query_beg; }
+  oop last_query_object() { return _last_query_obj; }
+  size_t last_query_return() { return _last_query_ret; }
+
+  void set_last_query_begin(HeapWord *new_beg) { _last_query_beg = new_beg; }
+  void set_last_query_object(oop new_obj) { _last_query_obj = new_obj; }
+  void set_last_query_return(size_t new_ret) { _last_query_ret = new_ret; }
+
+  static void reset_all_bitmap_query_caches();
 
   RegionTaskQueue* region_stack()                { return _region_stack; }
   void set_region_stack(RegionTaskQueue* v)       { _region_stack = v; }

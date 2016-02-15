@@ -35,27 +35,27 @@ import sun.awt.geom.Crossings;
 import sun.awt.geom.AreaOp;
 
 /**
- * An <code>Area</code> object stores and manipulates a
+ * An {@code Area} object stores and manipulates a
  * resolution-independent description of an enclosed area of
  * 2-dimensional space.
- * <code>Area</code> objects can be transformed and can perform
+ * {@code Area} objects can be transformed and can perform
  * various Constructive Area Geometry (CAG) operations when combined
- * with other <code>Area</code> objects.
+ * with other {@code Area} objects.
  * The CAG operations include area
  * {@link #add addition}, {@link #subtract subtraction},
  * {@link #intersect intersection}, and {@link #exclusiveOr exclusive or}.
  * See the linked method documentation for examples of the various
  * operations.
  * <p>
- * The <code>Area</code> class implements the <code>Shape</code>
+ * The {@code Area} class implements the {@code Shape}
  * interface and provides full support for all of its hit-testing
- * and path iteration facilities, but an <code>Area</code> is more
+ * and path iteration facilities, but an {@code Area} is more
  * specific than a generalized path in a number of ways:
  * <ul>
  * <li>Only closed paths and sub-paths are stored.
- *     <code>Area</code> objects constructed from unclosed paths
+ *     {@code Area} objects constructed from unclosed paths
  *     are implicitly closed during construction as if those paths
- *     had been filled by the <code>Graphics2D.fill</code> method.
+ *     had been filled by the {@code Graphics2D.fill} method.
  * <li>The interiors of the individual stored sub-paths are all
  *     non-empty and non-overlapping.  Paths are decomposed during
  *     construction into separate component non-overlapping parts,
@@ -65,31 +65,31 @@ import sun.awt.geom.AreaOp;
  *     component sub-paths may touch each other, as long as they
  *     do not cross so that their enclosed areas overlap.
  * <li>The geometry of the path describing the outline of the
- *     <code>Area</code> resembles the path from which it was
+ *     {@code Area} resembles the path from which it was
  *     constructed only in that it describes the same enclosed
  *     2-dimensional area, but may use entirely different types
  *     and ordering of the path segments to do so.
  * </ul>
  * Interesting issues which are not always obvious when using
- * the <code>Area</code> include:
+ * the {@code Area} include:
  * <ul>
- * <li>Creating an <code>Area</code> from an unclosed (open)
- *     <code>Shape</code> results in a closed outline in the
- *     <code>Area</code> object.
- * <li>Creating an <code>Area</code> from a <code>Shape</code>
+ * <li>Creating an {@code Area} from an unclosed (open)
+ *     {@code Shape} results in a closed outline in the
+ *     {@code Area} object.
+ * <li>Creating an {@code Area} from a {@code Shape}
  *     which encloses no area (even when "closed") produces an
- *     empty <code>Area</code>.  A common example of this issue
- *     is that producing an <code>Area</code> from a line will
+ *     empty {@code Area}.  A common example of this issue
+ *     is that producing an {@code Area} from a line will
  *     be empty since the line encloses no area.  An empty
- *     <code>Area</code> will iterate no geometry in its
- *     <code>PathIterator</code> objects.
- * <li>A self-intersecting <code>Shape</code> may be split into
+ *     {@code Area} will iterate no geometry in its
+ *     {@code PathIterator} objects.
+ * <li>A self-intersecting {@code Shape} may be split into
  *     two (or more) sub-paths each enclosing one of the
  *     non-intersecting portions of the original path.
- * <li>An <code>Area</code> may take more path segments to
+ * <li>An {@code Area} may take more path segments to
  *     describe the same geometry even when the original
  *     outline is simple and obvious.  The analysis that the
- *     <code>Area</code> class must perform on the path may
+ *     {@code Area} class must perform on the path may
  *     not reflect the same concepts of "simple and obvious"
  *     as a human being perceives.
  * </ul>
@@ -110,13 +110,13 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * The <code>Area</code> class creates an area geometry from the
+     * The {@code Area} class creates an area geometry from the
      * specified {@link Shape} object.  The geometry is explicitly
-     * closed, if the <code>Shape</code> is not already closed.  The
+     * closed, if the {@code Shape} is not already closed.  The
      * fill rule (even-odd or winding) specified by the geometry of the
-     * <code>Shape</code> is used to determine the resulting enclosed area.
-     * @param s  the <code>Shape</code> from which the area is constructed
-     * @throws NullPointerException if <code>s</code> is null
+     * {@code Shape} is used to determine the resulting enclosed area.
+     * @param s  the {@code Shape} from which the area is constructed
+     * @throws NullPointerException if {@code s} is null
      * @since 1.2
      */
     public Area(Shape s) {
@@ -196,11 +196,11 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Adds the shape of the specified <code>Area</code> to the
-     * shape of this <code>Area</code>.
-     * The resulting shape of this <code>Area</code> will include
+     * Adds the shape of the specified {@code Area} to the
+     * shape of this {@code Area}.
+     * The resulting shape of this {@code Area} will include
      * the union of both shapes, or all areas that were contained
-     * in either this or the specified <code>Area</code>.
+     * in either this or the specified {@code Area}.
      * <pre>
      *     // Example:
      *     Area a1 = new Area([triangle 0,0 =&gt; 8,0 =&gt; 0,8]);
@@ -218,9 +218,9 @@ public class Area implements Shape, Cloneable {
      *     ####                             ####     ####        ####
      *     ##                                 ##     ##            ##
      * </pre>
-     * @param   rhs  the <code>Area</code> to be added to the
+     * @param   rhs  the {@code Area} to be added to the
      *          current shape
-     * @throws NullPointerException if <code>rhs</code> is null
+     * @throws NullPointerException if {@code rhs} is null
      * @since 1.2
      */
     public void add(Area rhs) {
@@ -229,11 +229,11 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Subtracts the shape of the specified <code>Area</code> from the
-     * shape of this <code>Area</code>.
-     * The resulting shape of this <code>Area</code> will include
-     * areas that were contained only in this <code>Area</code>
-     * and not in the specified <code>Area</code>.
+     * Subtracts the shape of the specified {@code Area} from the
+     * shape of this {@code Area}.
+     * The resulting shape of this {@code Area} will include
+     * areas that were contained only in this {@code Area}
+     * and not in the specified {@code Area}.
      * <pre>
      *     // Example:
      *     Area a1 = new Area([triangle 0,0 =&gt; 8,0 =&gt; 0,8]);
@@ -251,9 +251,9 @@ public class Area implements Shape, Cloneable {
      *     ####                             ####     ####
      *     ##                                 ##     ##
      * </pre>
-     * @param   rhs  the <code>Area</code> to be subtracted from the
+     * @param   rhs  the {@code Area} to be subtracted from the
      *          current shape
-     * @throws NullPointerException if <code>rhs</code> is null
+     * @throws NullPointerException if {@code rhs} is null
      * @since 1.2
      */
     public void subtract(Area rhs) {
@@ -262,11 +262,11 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Sets the shape of this <code>Area</code> to the intersection of
-     * its current shape and the shape of the specified <code>Area</code>.
-     * The resulting shape of this <code>Area</code> will include
-     * only areas that were contained in both this <code>Area</code>
-     * and also in the specified <code>Area</code>.
+     * Sets the shape of this {@code Area} to the intersection of
+     * its current shape and the shape of the specified {@code Area}.
+     * The resulting shape of this {@code Area} will include
+     * only areas that were contained in both this {@code Area}
+     * and also in the specified {@code Area}.
      * <pre>
      *     // Example:
      *     Area a1 = new Area([triangle 0,0 =&gt; 8,0 =&gt; 0,8]);
@@ -284,9 +284,9 @@ public class Area implements Shape, Cloneable {
      *     ####                             ####
      *     ##                                 ##
      * </pre>
-     * @param   rhs  the <code>Area</code> to be intersected with this
-     *          <code>Area</code>
-     * @throws NullPointerException if <code>rhs</code> is null
+     * @param   rhs  the {@code Area} to be intersected with this
+     *          {@code Area}
+     * @throws NullPointerException if {@code rhs} is null
      * @since 1.2
      */
     public void intersect(Area rhs) {
@@ -295,12 +295,12 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Sets the shape of this <code>Area</code> to be the combined area
-     * of its current shape and the shape of the specified <code>Area</code>,
+     * Sets the shape of this {@code Area} to be the combined area
+     * of its current shape and the shape of the specified {@code Area},
      * minus their intersection.
-     * The resulting shape of this <code>Area</code> will include
-     * only areas that were contained in either this <code>Area</code>
-     * or in the specified <code>Area</code>, but not in both.
+     * The resulting shape of this {@code Area} will include
+     * only areas that were contained in either this {@code Area}
+     * or in the specified {@code Area}, but not in both.
      * <pre>
      *     // Example:
      *     Area a1 = new Area([triangle 0,0 =&gt; 8,0 =&gt; 0,8]);
@@ -318,9 +318,9 @@ public class Area implements Shape, Cloneable {
      *     ####                             ####     ####        ####
      *     ##                                 ##     ##            ##
      * </pre>
-     * @param   rhs  the <code>Area</code> to be exclusive ORed with this
-     *          <code>Area</code>.
-     * @throws NullPointerException if <code>rhs</code> is null
+     * @param   rhs  the {@code Area} to be exclusive ORed with this
+     *          {@code Area}.
+     * @throws NullPointerException if {@code rhs} is null
      * @since 1.2
      */
     public void exclusiveOr(Area rhs) {
@@ -329,7 +329,7 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Removes all of the geometry from this <code>Area</code> and
+     * Removes all of the geometry from this {@code Area} and
      * restores it to an empty area.
      * @since 1.2
      */
@@ -339,9 +339,9 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Tests whether this <code>Area</code> object encloses any area.
-     * @return    <code>true</code> if this <code>Area</code> object
-     * represents an empty area; <code>false</code> otherwise.
+     * Tests whether this {@code Area} object encloses any area.
+     * @return    {@code true} if this {@code Area} object
+     * represents an empty area; {@code false} otherwise.
      * @since 1.2
      */
     public boolean isEmpty() {
@@ -349,11 +349,11 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Tests whether this <code>Area</code> consists entirely of
+     * Tests whether this {@code Area} consists entirely of
      * straight edged polygonal geometry.
-     * @return    <code>true</code> if the geometry of this
-     * <code>Area</code> consists entirely of line segments;
-     * <code>false</code> otherwise.
+     * @return    {@code true} if the geometry of this
+     * {@code Area} consists entirely of line segments;
+     * {@code false} otherwise.
      * @since 1.2
      */
     public boolean isPolygonal() {
@@ -367,9 +367,9 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Tests whether this <code>Area</code> is rectangular in shape.
-     * @return    <code>true</code> if the geometry of this
-     * <code>Area</code> is rectangular in shape; <code>false</code>
+     * Tests whether this {@code Area} is rectangular in shape.
+     * @return    {@code true} if the geometry of this
+     * {@code Area} is rectangular in shape; {@code false}
      * otherwise.
      * @since 1.2
      */
@@ -397,14 +397,14 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Tests whether this <code>Area</code> is comprised of a single
-     * closed subpath.  This method returns <code>true</code> if the
-     * path contains 0 or 1 subpaths, or <code>false</code> if the path
+     * Tests whether this {@code Area} is comprised of a single
+     * closed subpath.  This method returns {@code true} if the
+     * path contains 0 or 1 subpaths, or {@code false} if the path
      * contains more than 1 subpath.  The subpaths are counted by the
      * number of {@link PathIterator#SEG_MOVETO SEG_MOVETO}  segments
      * that appear in the path.
-     * @return    <code>true</code> if the <code>Area</code> is comprised
-     * of a single basic geometry; <code>false</code> otherwise.
+     * @return    {@code true} if the {@code Area} is comprised
+     * of a single basic geometry; {@code false} otherwise.
      * @since 1.2
      */
     public boolean isSingular() {
@@ -443,15 +443,15 @@ public class Area implements Shape, Cloneable {
 
     /**
      * Returns a high precision bounding {@link Rectangle2D} that
-     * completely encloses this <code>Area</code>.
+     * completely encloses this {@code Area}.
      * <p>
      * The Area class will attempt to return the tightest bounding
      * box possible for the Shape.  The bounding box will not be
      * padded to include the control points of curves in the outline
      * of the Shape, but should tightly fit the actual geometry of
      * the outline itself.
-     * @return    the bounding <code>Rectangle2D</code> for the
-     * <code>Area</code>.
+     * @return    the bounding {@code Rectangle2D} for the
+     * {@code Area}.
      * @since 1.2
      */
     public Rectangle2D getBounds2D() {
@@ -460,7 +460,7 @@ public class Area implements Shape, Cloneable {
 
     /**
      * Returns a bounding {@link Rectangle} that completely encloses
-     * this <code>Area</code>.
+     * this {@code Area}.
      * <p>
      * The Area class will attempt to return the tightest bounding
      * box possible for the Shape.  The bounding box will not be
@@ -470,8 +470,8 @@ public class Area implements Shape, Cloneable {
      * the bounding box with integers, the bounding box can only be
      * as tight as the nearest integer coordinates that encompass
      * the geometry of the Shape.
-     * @return    the bounding <code>Rectangle</code> for the
-     * <code>Area</code>.
+     * @return    the bounding {@code Rectangle} for the
+     * {@code Area}.
      * @since 1.2
      */
     public Rectangle getBounds() {
@@ -479,7 +479,7 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Returns an exact copy of this <code>Area</code> object.
+     * Returns an exact copy of this {@code Area} object.
      * @return    Created clone object
      * @since 1.2
      */
@@ -488,13 +488,13 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Tests whether the geometries of the two <code>Area</code> objects
+     * Tests whether the geometries of the two {@code Area} objects
      * are equal.
      * This method will return false if the argument is null.
-     * @param   other  the <code>Area</code> to be compared to this
-     *          <code>Area</code>
-     * @return  <code>true</code> if the two geometries are equal;
-     *          <code>false</code> otherwise.
+     * @param   other  the {@code Area} to be compared to this
+     *          {@code Area}
+     * @return  {@code true} if the two geometries are equal;
+     *          {@code false} otherwise.
      * @since 1.2
      */
     public boolean equals(Area other) {
@@ -512,11 +512,11 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Transforms the geometry of this <code>Area</code> using the specified
+     * Transforms the geometry of this {@code Area} using the specified
      * {@link AffineTransform}.  The geometry is transformed in place, which
      * permanently changes the enclosed area defined by this object.
      * @param t  the transformation used to transform the area
-     * @throws NullPointerException if <code>t</code> is null
+     * @throws NullPointerException if {@code t} is null
      * @since 1.2
      */
     public void transform(AffineTransform t) {
@@ -530,14 +530,14 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Creates a new <code>Area</code> object that contains the same
-     * geometry as this <code>Area</code> transformed by the specified
-     * <code>AffineTransform</code>.  This <code>Area</code> object
+     * Creates a new {@code Area} object that contains the same
+     * geometry as this {@code Area} transformed by the specified
+     * {@code AffineTransform}.  This {@code Area} object
      * is unchanged.
-     * @param t  the specified <code>AffineTransform</code> used to transform
-     *           the new <code>Area</code>
-     * @throws NullPointerException if <code>t</code> is null
-     * @return   a new <code>Area</code> object representing the transformed
+     * @param t  the specified {@code AffineTransform} used to transform
+     *           the new {@code Area}
+     * @throws NullPointerException if {@code t} is null
+     * @return   a new {@code Area} object representing the transformed
      *           geometry.
      * @since 1.2
      */
@@ -620,12 +620,12 @@ public class Area implements Shape, Cloneable {
 
     /**
      * Creates a {@link PathIterator} for the outline of this
-     * <code>Area</code> object.  This <code>Area</code> object is unchanged.
-     * @param at an optional <code>AffineTransform</code> to be applied to
+     * {@code Area} object.  This {@code Area} object is unchanged.
+     * @param at an optional {@code AffineTransform} to be applied to
      * the coordinates as they are returned in the iteration, or
-     * <code>null</code> if untransformed coordinates are desired
-     * @return    the <code>PathIterator</code> object that returns the
-     *          geometry of the outline of this <code>Area</code>, one
+     * {@code null} if untransformed coordinates are desired
+     * @return    the {@code PathIterator} object that returns the
+     *          geometry of the outline of this {@code Area}, one
      *          segment at a time.
      * @since 1.2
      */
@@ -634,20 +634,20 @@ public class Area implements Shape, Cloneable {
     }
 
     /**
-     * Creates a <code>PathIterator</code> for the flattened outline of
-     * this <code>Area</code> object.  Only uncurved path segments
+     * Creates a {@code PathIterator} for the flattened outline of
+     * this {@code Area} object.  Only uncurved path segments
      * represented by the SEG_MOVETO, SEG_LINETO, and SEG_CLOSE point
-     * types are returned by the iterator.  This <code>Area</code>
+     * types are returned by the iterator.  This {@code Area}
      * object is unchanged.
-     * @param at an optional <code>AffineTransform</code> to be
+     * @param at an optional {@code AffineTransform} to be
      * applied to the coordinates as they are returned in the
-     * iteration, or <code>null</code> if untransformed coordinates
+     * iteration, or {@code null} if untransformed coordinates
      * are desired
      * @param flatness the maximum amount that the control points
      * for a given curve can vary from colinear before a subdivided
      * curve is replaced by a straight line connecting the end points
-     * @return    the <code>PathIterator</code> object that returns the
-     * geometry of the outline of this <code>Area</code>, one segment
+     * @return    the {@code PathIterator} object that returns the
+     * geometry of the outline of this {@code Area}, one segment
      * at a time.
      * @since 1.2
      */

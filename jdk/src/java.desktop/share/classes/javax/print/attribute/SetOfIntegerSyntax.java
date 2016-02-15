@@ -38,19 +38,18 @@ import java.util.Vector;
  * You can construct an instance of SetOfIntegerSyntax by giving it in "string
  * form." The string consists of zero or more comma-separated integer groups.
  * Each integer group consists of either one integer, two integers separated by
- * a hyphen (<CODE>-</CODE>), or two integers separated by a colon
- * (<CODE>:</CODE>). Each integer consists of one or more decimal digits
- * (<CODE>0</CODE> through <CODE>9</CODE>). Whitespace characters cannot
+ * a hyphen ({@code -}), or two integers separated by a colon
+ * ({@code :}). Each integer consists of one or more decimal digits
+ * ({@code 0} through {@code 9}). Whitespace characters cannot
  * appear within an integer but are otherwise ignored. For example:
- * <CODE>""</CODE>, <CODE>"1"</CODE>, <CODE>"5-10"</CODE>, <CODE>"1:2,
- * 4"</CODE>.
+ * {@code ""}, {@code "1"}, {@code "5-10"}, {@code "1:2, 4"}.
  * <P>
  * You can also construct an instance of SetOfIntegerSyntax by giving it in
  * "array form." Array form consists of an array of zero or more integer groups
  * where each integer group is a length-1 or length-2 array of
- * <CODE>int</CODE>s; for example, <CODE>int[0][]</CODE>,
- * <CODE>int[][]{{1}}</CODE>, <CODE>int[][]{{5,10}}</CODE>,
- * <CODE>int[][]{{1,2},{4}}</CODE>.
+ * {@code int}s; for example, {@code int[0][]},
+ * {@code int[][]{{1}}}, {@code int[][]{{5,10}}},
+ * {@code int[][]{{1,2},{4}}}.
  * <P>
  * In both string form and array form, each successive integer group gives a
  * range of integers to be included in the set. The first integer in each group
@@ -68,7 +67,7 @@ import java.util.Vector;
  * array form." This is the same as array form, except there are no null ranges;
  * the members of the set are represented in as few ranges as possible (i.e.,
  * overlapping ranges are coalesced); the ranges appear in ascending order; and
- * each range is always represented as a length-two array of <CODE>int</CODE>s
+ * each range is always represented as a length-two array of {@code int}s
  * in the form {lower bound, upper bound}. An empty set is represented as a
  * zero-length array.
  * <P>
@@ -98,7 +97,7 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      *                     constructed.
      *
      * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if <CODE>members</CODE> does not
+     *     (Unchecked exception) Thrown if {@code members} does not
      *    obey  the proper syntax.
      */
     protected SetOfIntegerSyntax(String members) {
@@ -305,11 +304,11 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      *
      * @exception  NullPointerException
      *     (Unchecked exception) Thrown if any element of
-     *     <CODE>members</CODE> is null.
+     *     {@code members} is null.
      * @exception  IllegalArgumentException
      *     (Unchecked exception) Thrown if any element of
-     *     <CODE>members</CODE> is not a length-one or length-two array or if
-     *     any non-null range in <CODE>members</CODE> has a lower bound less
+     *     {@code members} is not a length-one or length-two array or if
+     *     any non-null range in {@code members} has a lower bound less
      *     than zero.
      */
     protected SetOfIntegerSyntax(int[][] members) {
@@ -357,7 +356,7 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * @param  member  Set member.
      *
      * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if <CODE>member</CODE> is less than
+     *     (Unchecked exception) Thrown if {@code member} is less than
      *     zero.
      */
     protected SetOfIntegerSyntax(int member) {
@@ -377,7 +376,7 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      *
      * @exception  IllegalArgumentException
      *     (Unchecked exception) Thrown if the range is non-null and
-     *     <CODE>lowerBound</CODE> is less than zero.
+     *     {@code lowerBound} is less than zero.
      */
     protected SetOfIntegerSyntax(int lowerBound, int upperBound) {
         if (lowerBound <= upperBound && lowerBound < 0) {
@@ -411,7 +410,7 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * @param  x  Integer value.
      *
      * @return  True if this set-of-integer attribute contains the value
-     *          <CODE>x</CODE>, false otherwise.
+     *          {@code x}, false otherwise.
      */
     public boolean contains(int x) {
         // Do a linear search to find the range that contains x, if any.
@@ -433,7 +432,7 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * @param  attribute  Integer attribute.
      *
      * @return  True if this set-of-integer attribute contains
-     *          <CODE>theAttribute</CODE>'s value, false otherwise.
+     *          {@code theAttribute}'s value, false otherwise.
      */
     public boolean contains(IntegerSyntax attribute) {
         return contains (attribute.getValue());
@@ -442,10 +441,10 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
     /**
      * Determine the smallest integer in this set-of-integer attribute that is
      * greater than the given value. If there are no integers in this
-     * set-of-integer attribute greater than the given value, <CODE>-1</CODE> is
+     * set-of-integer attribute greater than the given value, {@code -1} is
      * returned. (Since a set-of-integer attribute can only contain nonnegative
-     * values, <CODE>-1</CODE> will never appear in the set.) You can use the
-     * <CODE>next()</CODE> method to iterate through the integer values in a
+     * values, {@code -1} will never appear in the set.) You can use the
+     * {@code next()} method to iterate through the integer values in a
      * set-of-integer attribute in ascending order, like this:
      * <PRE>
      *     SetOfIntegerSyntax attribute = . . .;
@@ -459,8 +458,8 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * @param  x  Integer value.
      *
      * @return  The smallest integer in this set-of-integer attribute that is
-     *          greater than <CODE>x</CODE>, or <CODE>-1</CODE> if no integer in
-     *          this set-of-integer attribute is greater than <CODE>x</CODE>.
+     *          greater than {@code x}, or {@code -1} if no integer in
+     *          this set-of-integer attribute is greater than {@code x}.
      */
     public int next(int x) {
         // Do a linear search to find the range that contains x, if any.
@@ -481,17 +480,17 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class SetOfIntegerSyntax.
+     * {@code object} is an instance of class SetOfIntegerSyntax.
      * <LI>
-     * This set-of-integer attribute's members and <CODE>object</CODE>'s
+     * This set-of-integer attribute's members and {@code object}'s
      * members are the same.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this
+     * @return  True if {@code object} is equivalent to this
      *          set-of-integer attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -534,9 +533,9 @@ public abstract class SetOfIntegerSyntax implements Serializable, Cloneable {
      * Returns a string value corresponding to this set-of-integer attribute.
      * The string value is a zero-length string if this set is empty. Otherwise,
      * the string value is a comma-separated list of the ranges in the canonical
-     * array form, where each range is represented as <CODE>"<I>i</I>"</CODE> if
+     * array form, where each range is represented as <code>"<I>i</I>"</code> if
      * the lower bound equals the upper bound or
-     * <CODE>"<I>i</I>-<I>j</I>"</CODE> otherwise.
+     * <code>"<I>i</I>-<I>j</I>"</code> otherwise.
      */
     public String toString() {
         StringBuilder result = new StringBuilder();

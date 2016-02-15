@@ -578,15 +578,14 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
         }
       }
     }
-    if (TraceClassLoading || TraceClassPaths) {
+    if (TraceClassPaths) {
       tty->print_cr("[Opened %s]", path);
     }
+    log_info(classload)("opened: %s", path);
   } else {
     // Directory
     new_entry = new ClassPathDirEntry(path);
-    if (TraceClassLoading) {
-      tty->print_cr("[Path %s]", path);
-    }
+    log_info(classload)("path: %s", path);
   }
   return new_entry;
 }

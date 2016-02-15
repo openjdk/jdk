@@ -27,12 +27,12 @@ package java.awt;
 import javax.accessibility.*;
 
 /**
- * <code>Panel</code> is the simplest container class. A panel
+ * {@code Panel} is the simplest container class. A panel
  * provides space in which an application can attach any other
  * component, including other panels.
  * <p>
  * The default layout manager for a panel is the
- * <code>FlowLayout</code> layout manager.
+ * {@code FlowLayout} layout manager.
  *
  * @author      Sami Shaio
  * @see     java.awt.FlowLayout
@@ -50,7 +50,7 @@ public class Panel extends Container implements Accessible {
     /**
      * Creates a new panel using the default layout manager.
      * The default layout manager for all panels is the
-     * <code>FlowLayout</code> class.
+     * {@code FlowLayout} class.
      */
     public Panel() {
         this(new FlowLayout());
@@ -111,7 +111,7 @@ public class Panel extends Container implements Accessible {
 
     /**
      * This class implements accessibility support for the
-     * <code>Panel</code> class.  It provides an implementation of the
+     * {@code Panel} class.  It provides an implementation of the
      * Java Accessibility API appropriate to panel user-interface elements.
      * @since 1.3
      */

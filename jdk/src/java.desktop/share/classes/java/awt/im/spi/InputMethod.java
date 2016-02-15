@@ -59,7 +59,7 @@ public interface InputMethod {
      * method.
      *
      * @param context the input method context for this input method
-     * @exception NullPointerException if <code>context</code> is null
+     * @exception NullPointerException if {@code context} is null
      */
     public void setInputMethodContext(InputMethodContext context);
 
@@ -80,7 +80,7 @@ public interface InputMethod {
      *
      * @param locale locale to input
      * @return whether the specified locale is supported
-     * @exception NullPointerException if <code>locale</code> is null
+     * @exception NullPointerException if {@code locale} is null
      */
     public boolean setLocale(Locale locale);
 
@@ -117,7 +117,7 @@ public interface InputMethod {
 
     /**
      * Enables or disables this input method for composition,
-     * depending on the value of the parameter <code>enable</code>.
+     * depending on the value of the parameter {@code enable}.
      * <p>
      * An input method that is enabled for composition interprets incoming
      * events for both composition and control purposes, while a
@@ -166,8 +166,8 @@ public interface InputMethod {
      *     {@link java.awt.im.InputContext#selectInputMethod InputContext.selectInputMethod}.
      * </ul>
      *
-     * @return <code>true</code> if this input method is enabled for
-     * composition; <code>false</code> otherwise.
+     * @return {@code true} if this input method is enabled for
+     * composition; {@code false} otherwise.
      * @throws UnsupportedOperationException if this input method does not
      * support checking whether it is enabled for composition
      * @see #setCompositionEnabled
@@ -178,11 +178,11 @@ public interface InputMethod {
      * Starts the reconversion operation. The input method obtains the
      * text to be reconverted from the current client component using the
      * {@link java.awt.im.InputMethodRequests#getSelectedText InputMethodRequests.getSelectedText}
-     * method. It can use other <code>InputMethodRequests</code>
+     * method. It can use other {@code InputMethodRequests}
      * methods to request additional information required for the
      * reconversion operation. The composed and committed text
      * produced by the operation is sent to the client component as a
-     * sequence of <code>InputMethodEvent</code>s. If the given text
+     * sequence of {@code InputMethodEvent}s. If the given text
      * cannot be reconverted, the same text should be sent to the
      * client component as committed text.
      * <p>
@@ -200,7 +200,7 @@ public interface InputMethod {
      * are dispatched to the current input method for this component before
      * they are dispatched to the component's methods or event listeners.
      * The input method decides whether it needs to handle the event. If it
-     * does, it also calls the event's <code>consume</code> method; this
+     * does, it also calls the event's {@code consume} method; this
      * causes the event to not get dispatched to the component's event
      * processing methods or event listeners.
      * <p>
@@ -211,7 +211,7 @@ public interface InputMethod {
      * This method is called by {@link java.awt.im.InputContext#dispatchEvent InputContext.dispatchEvent}.
      *
      * @param event the event being dispatched to the input method
-     * @exception NullPointerException if <code>event</code> is null
+     * @exception NullPointerException if {@code event} is null
      */
     public void dispatchEvent(AWTEvent event);
 
@@ -233,13 +233,13 @@ public interface InputMethod {
      * in location, size, visibility, iconification state, or when the
      * window is closed.</li>
      * <li>
-     * from <code> enableClientWindowNotification(inputMethod,
-     * true)</code> if the current client component exists,</li>
+     * from {@code enableClientWindowNotification(inputMethod, true)}
+     * if the current client component exists,</li>
      * <li>
      * when activating the input method for the first time after it
      * called
-     * <code>enableClientWindowNotification(inputMethod,
-     * true)</code> if during the call no current client component was
+     * {@code enableClientWindowNotification(inputMethod, true)}
+     * if during the call no current client component was
      * available,</li>
      * <li>
      * when activating the input method for a new client component

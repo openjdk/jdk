@@ -146,7 +146,7 @@ public class Cursor implements java.io.Serializable {
 
     /**
      * The chosen cursor type initially set to
-     * the <code>DEFAULT_CURSOR</code>.
+     * the {@code DEFAULT_CURSOR}.
      *
      * @serial
      * @see #getType()
@@ -283,7 +283,7 @@ public class Cursor implements java.io.Serializable {
      * @param name a string describing the desired system-specific custom cursor
      * @return the system specific custom cursor named
      * @exception HeadlessException if
-     * <code>GraphicsEnvironment.isHeadless</code> returns true
+     * {@code GraphicsEnvironment.isHeadless} returns true
      * @exception AWTException in case of erroneous retrieving of the cursor
      */
     public static Cursor getSystemCustomCursor(final String name)

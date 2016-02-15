@@ -35,8 +35,8 @@ import javax.print.attribute.PrintJobAttribute;
  * that specifies the print quality that the printer uses for the job.
  * <P>
  * <B>IPP Compatibility:</B> The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author  David Mendenhall
@@ -123,7 +123,7 @@ public class PrintQuality extends EnumSyntax
      * instance.
      * <P>
      * For class PrintQuality and any vendor-defined subclasses, the category
-     * name is <CODE>"print-quality"</CODE>.
+     * name is {@code "print-quality"}.
      *
      * @return  Attribute category name.
      */

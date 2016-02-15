@@ -76,7 +76,7 @@ public interface MultiResolutionImage {
      * The list must be nonempty and contain at least one resolution variant.
      * <p>
      * Note that many implementations might return an unmodifiable list.
-     * <p>
+     *
      * @return list of resolution variants.
      * @since 9
      */

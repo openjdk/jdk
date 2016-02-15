@@ -410,11 +410,11 @@ public abstract class AWTEvent extends EventObject {
     }
 
     /**
-     * Returns a string representing the state of this <code>Event</code>.
+     * Returns a string representing the state of this {@code Event}.
      * This method is intended to be used only for debugging purposes, and the
      * content and format of the returned string may vary between
      * implementations. The returned string may be empty but may not be
-     * <code>null</code>.
+     * {@code null}.
      *
      * @return  a string representation of this event
      */

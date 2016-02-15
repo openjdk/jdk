@@ -62,53 +62,53 @@ import javax.print.attribute.PrintJobAttribute;
  * specify two variations of this possibility.
  * </UL>
  * <P>
- * In the detailed explanations below, if "<CODE>a</CODE>" represents an
+ * In the detailed explanations below, if "{@code a}" represents an
  * instance of document data, then the result of processing the data in
- * document "<CODE>a</CODE>" is a sequence of media sheets represented by
- * "<CODE>a(*)</CODE>".
+ * document "{@code a}" is a sequence of media sheets represented by
+ * "{@code a(*)}".
  * <P>
  * The standard MultipleDocumentHandling values are:
  * <UL>
  * <LI>
  * <a NAME="sdfi"></a>{@link #SINGLE_DOCUMENT
  * <B>SINGLE_DOCUMENT</B>}. If a print job has multiple
- * documents -- say, the document data is called <CODE>a</CODE> and
- * <CODE>b</CODE> -- then the result of processing all the document data
- * (<CODE>a</CODE> and then <CODE>b</CODE>) must be treated as a single sequence
+ * documents -- say, the document data is called {@code a} and
+ * {@code b} -- then the result of processing all the document data
+ * ({@code a} and then {@code b}) must be treated as a single sequence
  * of media sheets for finishing operations; that is, finishing would be
- * performed on the concatenation of the sequences <CODE>a(*),b(*)</CODE>. The
+ * performed on the concatenation of the sequences {@code a(*),b(*)}. The
  * printer must not force the data in each document instance to be formatted
  * onto a new print-stream page, nor to start a new impression on a new media
  * sheet. If more than one copy is made, the ordering of the sets of media
  * sheets resulting from processing the document data must be
- * <CODE>a(*),b(*),a(*),b(*),...</CODE>, and the printer object must force
- * each copy (<CODE>a(*),b(*)</CODE>) to start on a new media sheet.
+ * {@code a(*),b(*),a(*),b(*),...}, and the printer object must force
+ * each copy ({@code a(*),b(*)}) to start on a new media sheet.
  *
  * <LI>
  * <a NAME="sducfi"></a>{@link #SEPARATE_DOCUMENTS_UNCOLLATED_COPIES
  * <B>SEPARATE_DOCUMENTS_UNCOLLATED_COPIES</B>}. If a print job
- * has multiple documents -- say, the document data is called <CODE>a</CODE> and
- * <CODE>b</CODE> -- then the result of processing the data in each document
+ * has multiple documents -- say, the document data is called {@code a} and
+ * {@code b} -- then the result of processing the data in each document
  * instance must be treated as a single sequence of media sheets for finishing
- * operations; that is, the sets <CODE>a(*)</CODE> and <CODE>b(*)</CODE> would
+ * operations; that is, the sets {@code a(*)} and {@code b(*)} would
  * each be finished separately. The printer must force each copy of the result
  * of processing the data in a single document to start on a new media sheet.
  * If more than one copy is made, the ordering of the sets of media sheets
  * resulting from processing the document data must be
- * <CODE>a(*),a(*),...,b(*),b(*)...</CODE>.
+ * {@code a(*),a(*),...,b(*),b(*)...}.
  *
  * <LI>
  * <a NAME="sdccfi"></a>{@link #SEPARATE_DOCUMENTS_COLLATED_COPIES
  * <B>SEPARATE_DOCUMENTS_COLLATED_COPIES</B>}. If a print job
- * has multiple documents -- say, the document data is called <CODE>a</CODE> and
- * <CODE>b</CODE> -- then the result of processing the data in each document
+ * has multiple documents -- say, the document data is called {@code a} and
+ * {@code b} -- then the result of processing the data in each document
  * instance must be treated as a single sequence of media sheets for finishing
- * operations; that is, the sets <CODE>a(*)</CODE> and <CODE>b(*)</CODE> would
+ * operations; that is, the sets {@code a(*)} and {@code b(*)} would
  * each be finished separately. The printer must force each copy of the result
  * of processing the data in a single document to start on a new media sheet.
  * If more than one copy is made, the ordering of the sets of media sheets
  * resulting from processing the document data must be
- * <CODE>a(*),b(*),a(*),b(*),...</CODE>.
+ * {@code a(*),b(*),a(*),b(*),...}.
  *
  * <LI>
  * <a NAME="sdnsfi"></a>{@link #SINGLE_DOCUMENT_NEW_SHEET
@@ -130,18 +130,18 @@ import javax.print.attribute.PrintJobAttribute;
  * {@link Finishings#STAPLE STAPLE} is specified, then:
  * <UL>
  * <LI>
- * With SINGLE_DOCUMENT, documents <CODE>a</CODE> and <CODE>b</CODE> are
+ * With SINGLE_DOCUMENT, documents {@code a} and {@code b} are
  * stapled together as a single document with no regard to new sheets.
  *
  * <LI>
- * With SINGLE_DOCUMENT_NEW_SHEET, documents <CODE>a</CODE> and <CODE>b</CODE>
- * are stapled together as a single document, but document <CODE>b</CODE>
+ * With SINGLE_DOCUMENT_NEW_SHEET, documents {@code a} and {@code b}
+ * are stapled together as a single document, but document {@code b}
  * starts on a new sheet.
  *
  * <LI>
  * With SEPARATE_DOCUMENTS_UNCOLLATED_COPIES and
- * SEPARATE_DOCUMENTS_COLLATED_COPIES, documents <CODE>a</CODE> and
- * <CODE>b</CODE> are stapled separately.
+ * SEPARATE_DOCUMENTS_COLLATED_COPIES, documents {@code a} and
+ * {@code b} are stapled separately.
  * </UL>
  * <P>
  * <I>Note:</I> None of these values provide means to produce uncollated
@@ -150,8 +150,8 @@ import javax.print.attribute.PrintJobAttribute;
  * To specify that, see the {@link SheetCollate SheetCollate} attribute.
  * <P>
  * <B>IPP Compatibility:</B> The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @see  Copies
@@ -256,7 +256,7 @@ public class MultipleDocumentHandling extends EnumSyntax
      * instance.
      * <P>
      * For class MultipleDocumentHandling and any vendor-defined subclasses,
-     * the category name is <CODE>"multiple-document-handling"</CODE>.
+     * the category name is {@code "multiple-document-handling"}.
      *
      * @return  Attribute category name.
      */

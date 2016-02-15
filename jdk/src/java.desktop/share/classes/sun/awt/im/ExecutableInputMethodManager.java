@@ -57,11 +57,11 @@ import sun.awt.InputMethodSupport;
 import sun.awt.SunToolkit;
 
 /**
- * <code>ExecutableInputMethodManager</code> is the implementation of the
- * <code>InputMethodManager</code> class. It is runnable as a separate
+ * {@code ExecutableInputMethodManager} is the implementation of the
+ * {@code InputMethodManager} class. It is runnable as a separate
  * thread in the AWT environment.&nbsp;
- * <code>InputMethodManager.getInstance()</code> creates an instance of
- * <code>ExecutableInputMethodManager</code> and executes it as a deamon
+ * {@code InputMethodManager.getInstance()} creates an instance of
+ * {@code ExecutableInputMethodManager} and executes it as a deamon
  * thread.
  *
  * @see InputMethodManager

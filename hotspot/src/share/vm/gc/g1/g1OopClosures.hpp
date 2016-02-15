@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,12 @@
 class HeapRegion;
 class G1CollectedHeap;
 class G1RemSet;
-class ConcurrentMark;
+class G1ConcurrentMark;
 class DirtyCardToOopClosure;
-class CMBitMap;
-class CMMarkStack;
+class G1CMBitMap;
+class G1CMMarkStack;
 class G1ParScanThreadState;
-class CMTask;
+class G1CMTask;
 class ReferenceProcessor;
 
 // A class that scans oops in a given heap region (much as OopsInGenClosure
@@ -92,7 +92,7 @@ protected:
   G1ParScanThreadState* _par_scan_state;
   uint _worker_id;              // Cache value from par_scan_state.
   Klass* _scanned_klass;
-  ConcurrentMark* _cm;
+  G1ConcurrentMark* _cm;
 
   // Mark the object if it's not already marked. This is used to mark
   // objects pointed to by roots that are guaranteed not to move
@@ -170,12 +170,12 @@ public:
 // Closure for iterating over object fields during concurrent marking
 class G1CMOopClosure : public MetadataAwareOopClosure {
 protected:
-  ConcurrentMark*    _cm;
+  G1ConcurrentMark*  _cm;
 private:
   G1CollectedHeap*   _g1h;
-  CMTask*            _task;
+  G1CMTask*          _task;
 public:
-  G1CMOopClosure(G1CollectedHeap* g1h, ConcurrentMark* cm, CMTask* task);
+  G1CMOopClosure(G1CollectedHeap* g1h, G1ConcurrentMark* cm, G1CMTask* task);
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(      oop* p) { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
@@ -185,10 +185,10 @@ public:
 class G1RootRegionScanClosure : public MetadataAwareOopClosure {
 private:
   G1CollectedHeap* _g1h;
-  ConcurrentMark*  _cm;
+  G1ConcurrentMark* _cm;
   uint _worker_id;
 public:
-  G1RootRegionScanClosure(G1CollectedHeap* g1h, ConcurrentMark* cm,
+  G1RootRegionScanClosure(G1CollectedHeap* g1h, G1ConcurrentMark* cm,
                           uint worker_id) :
     _g1h(g1h), _cm(cm), _worker_id(worker_id) { }
   template <class T> void do_oop_nv(T* p);
@@ -206,9 +206,9 @@ class G1Mux2Closure : public OopClosure {
   OopClosure* _c2;
 public:
   G1Mux2Closure(OopClosure *c1, OopClosure *c2);
-  template <class T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p)        { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
+  template <class T> inline void do_oop_work(T* p);
+  virtual inline void do_oop(oop* p);
+  virtual inline void do_oop(narrowOop* p);
 };
 
 // A closure that returns true if it is actually applied
@@ -219,9 +219,9 @@ class G1TriggerClosure : public OopClosure {
 public:
   G1TriggerClosure();
   bool triggered() const { return _triggered; }
-  template <class T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p)        { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
+  template <class T> inline void do_oop_work(T* p);
+  virtual inline void do_oop(oop* p);
+  virtual inline void do_oop(narrowOop* p);
 };
 
 // A closure which uses a triggering closure to determine
@@ -232,9 +232,9 @@ class G1InvokeIfNotTriggeredClosure: public OopClosure {
   OopClosure* _oop_cl;
 public:
   G1InvokeIfNotTriggeredClosure(G1TriggerClosure* t, OopClosure* oc);
-  template <class T> void do_oop_work(T* p);
-  virtual void do_oop(oop* p)        { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
+  template <class T> inline void do_oop_work(T* p);
+  virtual inline void do_oop(oop* p);
+  virtual inline void do_oop(narrowOop* p);
 };
 
 class G1UpdateRSOrPushRefOopClosure: public OopClosure {
@@ -263,9 +263,9 @@ public:
     return result;
   }
 
-  template <class T> void do_oop_work(T* p);
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  template <class T> inline void do_oop_work(T* p);
+  virtual inline void do_oop(narrowOop* p);
+  virtual inline void do_oop(oop* p);
 };
 
 #endif // SHARE_VM_GC_G1_G1OOPCLOSURES_HPP

@@ -22,9 +22,11 @@
  */
 
 /* @test
- * @bug 4173528 5068772
+ * @bug 4173528 5068772 8148936
  * @summary Unit tests for java.util.UUID
  * @key randomness
+ * @run main/othervm -XX:+CompactStrings UUIDTest
+ * @run main/othervm -XX:-CompactStrings UUIDTest
  */
 
 import java.util.*;

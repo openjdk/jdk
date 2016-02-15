@@ -33,19 +33,19 @@ import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
 /**
- * The <code>GraphicsDevice</code> class describes the graphics devices
+ * The {@code GraphicsDevice} class describes the graphics devices
  * that might be available in a particular graphics environment.  These
  * include screen and printer devices. Note that there can be many screens
  * and many printers in an instance of {@link GraphicsEnvironment}. Each
  * graphics device has one or more {@link GraphicsConfiguration} objects
  * associated with it.  These objects specify the different configurations
- * in which the <code>GraphicsDevice</code> can be used.
+ * in which the {@code GraphicsDevice} can be used.
  * <p>
- * In a multi-screen environment, the <code>GraphicsConfiguration</code>
+ * In a multi-screen environment, the {@code GraphicsConfiguration}
  * objects can be used to render components on multiple screens.  The
- * following code sample demonstrates how to create a <code>JFrame</code>
- * object for each <code>GraphicsConfiguration</code> on each screen
- * device in the <code>GraphicsEnvironment</code>:
+ * following code sample demonstrates how to create a {@code JFrame}
+ * object for each {@code GraphicsConfiguration} on each screen
+ * device in the {@code GraphicsEnvironment}:
  * <pre>{@code
  *   GraphicsEnvironment ge = GraphicsEnvironment.
  *   getLocalGraphicsEnvironment();
@@ -142,8 +142,8 @@ public abstract class GraphicsDevice {
     }
 
     /**
-     * Returns the type of this <code>GraphicsDevice</code>.
-     * @return the type of this <code>GraphicsDevice</code>, which can
+     * Returns the type of this {@code GraphicsDevice}.
+     * @return the type of this {@code GraphicsDevice}, which can
      * either be TYPE_RASTER_SCREEN, TYPE_PRINTER or TYPE_IMAGE_BUFFER.
      * @see #TYPE_RASTER_SCREEN
      * @see #TYPE_PRINTER
@@ -153,52 +153,52 @@ public abstract class GraphicsDevice {
 
     /**
      * Returns the identification string associated with this
-     * <code>GraphicsDevice</code>.
+     * {@code GraphicsDevice}.
      * <p>
      * A particular program might use more than one
-     * <code>GraphicsDevice</code> in a <code>GraphicsEnvironment</code>.
-     * This method returns a <code>String</code> identifying a
-     * particular <code>GraphicsDevice</code> in the local
-     * <code>GraphicsEnvironment</code>.  Although there is
-     * no public method to set this <code>String</code>, a programmer can
-     * use the <code>String</code> for debugging purposes.  Vendors of
+     * {@code GraphicsDevice} in a {@code GraphicsEnvironment}.
+     * This method returns a {@code String} identifying a
+     * particular {@code GraphicsDevice} in the local
+     * {@code GraphicsEnvironment}.  Although there is
+     * no public method to set this {@code String}, a programmer can
+     * use the {@code String} for debugging purposes.  Vendors of
      * the Java&trade; Runtime Environment can
-     * format the return value of the <code>String</code>.  To determine
-     * how to interpret the value of the <code>String</code>, contact the
+     * format the return value of the {@code String}.  To determine
+     * how to interpret the value of the {@code String}, contact the
      * vendor of your Java Runtime.  To find out who the vendor is, from
      * your program, call the
      * {@link System#getProperty(String) getProperty} method of the
      * System class with "java.vendor".
-     * @return a <code>String</code> that is the identification
-     * of this <code>GraphicsDevice</code>.
+     * @return a {@code String} that is the identification
+     * of this {@code GraphicsDevice}.
      */
     public abstract String getIDstring();
 
     /**
-     * Returns all of the <code>GraphicsConfiguration</code>
-     * objects associated with this <code>GraphicsDevice</code>.
-     * @return an array of <code>GraphicsConfiguration</code>
+     * Returns all of the {@code GraphicsConfiguration}
+     * objects associated with this {@code GraphicsDevice}.
+     * @return an array of {@code GraphicsConfiguration}
      * objects that are associated with this
-     * <code>GraphicsDevice</code>.
+     * {@code GraphicsDevice}.
      */
     public abstract GraphicsConfiguration[] getConfigurations();
 
     /**
-     * Returns the default <code>GraphicsConfiguration</code>
-     * associated with this <code>GraphicsDevice</code>.
-     * @return the default <code>GraphicsConfiguration</code>
-     * of this <code>GraphicsDevice</code>.
+     * Returns the default {@code GraphicsConfiguration}
+     * associated with this {@code GraphicsDevice}.
+     * @return the default {@code GraphicsConfiguration}
+     * of this {@code GraphicsDevice}.
      */
     public abstract GraphicsConfiguration getDefaultConfiguration();
 
     /**
      * Returns the "best" configuration possible that passes the
      * criteria defined in the {@link GraphicsConfigTemplate}.
-     * @param gct the <code>GraphicsConfigTemplate</code> object
-     * used to obtain a valid <code>GraphicsConfiguration</code>
-     * @return a <code>GraphicsConfiguration</code> that passes
+     * @param gct the {@code GraphicsConfigTemplate} object
+     * used to obtain a valid {@code GraphicsConfiguration}
+     * @return a {@code GraphicsConfiguration} that passes
      * the criteria defined in the specified
-     * <code>GraphicsConfigTemplate</code>.
+     * {@code GraphicsConfigTemplate}.
      * @see GraphicsConfigTemplate
      */
     public GraphicsConfiguration
@@ -208,12 +208,12 @@ public abstract class GraphicsDevice {
     }
 
     /**
-     * Returns <code>true</code> if this <code>GraphicsDevice</code>
+     * Returns {@code true} if this {@code GraphicsDevice}
      * supports full-screen exclusive mode.
      * If a SecurityManager is installed, its
-     * <code>checkPermission</code> method will be called
-     * with <code>AWTPermission("fullScreenExclusive")</code>.
-     * <code>isFullScreenSupported</code> returns true only if
+     * {@code checkPermission} method will be called
+     * with {@code AWTPermission("fullScreenExclusive")}.
+     * {@code isFullScreenSupported} returns true only if
      * that permission is granted.
      * @return whether full-screen exclusive mode is available for
      * this graphics device
@@ -227,8 +227,8 @@ public abstract class GraphicsDevice {
     /**
      * Enter full-screen mode, or return to windowed mode.  The entered
      * full-screen mode may be either exclusive or simulated.  Exclusive
-     * mode is only available if <code>isFullScreenSupported</code>
-     * returns <code>true</code>.
+     * mode is only available if {@code isFullScreenSupported}
+     * returns {@code true}.
      * <p>
      * Exclusive mode implies:
      * <ul>
@@ -239,7 +239,7 @@ public abstract class GraphicsDevice {
      * will cause the existing full-screen window to
      * return to windowed mode.
      * <li>Input method windows are disabled.  It is advisable to call
-     * <code>Component.enableInputMethods(false)</code> to make a component
+     * {@code Component.enableInputMethods(false)} to make a component
      * a non-client of the input method framework.
      * </ul>
      * <p>
@@ -341,10 +341,10 @@ public abstract class GraphicsDevice {
     }
 
     /**
-     * Returns the <code>Window</code> object representing the
+     * Returns the {@code Window} object representing the
      * full-screen window if the device is in full-screen mode.
      *
-     * @return the full-screen window, or <code>null</code> if the device is
+     * @return the full-screen window, or {@code null} if the device is
      * not in full-screen mode.
      * @see #setFullScreenWindow(Window)
      * @since 1.4
@@ -362,7 +362,7 @@ public abstract class GraphicsDevice {
     }
 
     /**
-     * Returns <code>true</code> if this <code>GraphicsDevice</code>
+     * Returns {@code true} if this {@code GraphicsDevice}
      * supports low-level display changes.
      * On some platforms low-level display changes may only be allowed in
      * full-screen exclusive mode (i.e., if {@link #isFullScreenSupported()}
@@ -420,11 +420,11 @@ public abstract class GraphicsDevice {
      * </code></pre>
      *
      * @param dm The new display mode of this graphics device.
-     * @exception IllegalArgumentException if the <code>DisplayMode</code>
-     * supplied is <code>null</code>, or is not available in the array returned
-     * by <code>getDisplayModes</code>
+     * @exception IllegalArgumentException if the {@code DisplayMode}
+     * supplied is {@code null}, or is not available in the array returned
+     * by {@code getDisplayModes}
      * @exception UnsupportedOperationException if
-     * <code>isDisplayChangeSupported</code> returns <code>false</code>
+     * {@code isDisplayChangeSupported} returns {@code false}
      * @see #getDisplayMode
      * @see #getDisplayModes
      * @see #isDisplayChangeSupported
@@ -436,7 +436,7 @@ public abstract class GraphicsDevice {
 
     /**
      * Returns the current display mode of this
-     * <code>GraphicsDevice</code>.
+     * {@code GraphicsDevice}.
      * The returned display mode is allowed to have a refresh rate
      * {@link DisplayMode#REFRESH_RATE_UNKNOWN} if it is indeterminate.
      * Likewise, the returned display mode is allowed to have a bit depth
@@ -455,7 +455,7 @@ public abstract class GraphicsDevice {
 
     /**
      * Returns all display modes available for this
-     * <code>GraphicsDevice</code>.
+     * {@code GraphicsDevice}.
      * The returned display modes are allowed to have a refresh rate
      * {@link DisplayMode#REFRESH_RATE_UNKNOWN} if it is indeterminate.
      * Likewise, the returned display modes are allowed to have a bit depth
