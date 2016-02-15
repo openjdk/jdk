@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,16 @@ package com.sun.tools.doclets.internal.toolkit.util;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -63,37 +66,37 @@ import com.sun.tools.javac.util.Assert;
  */
 class StandardDocFileFactory extends DocFileFactory {
     private final StandardJavaFileManager fileManager;
-    private File destDir;
+    private Path destDir;
 
     public StandardDocFileFactory(Configuration configuration) {
         super(configuration);
         fileManager = (StandardJavaFileManager) configuration.getFileManager();
     }
 
-    private File getDestDir() {
+    private Path getDestDir() {
         if (destDir == null) {
             if (!configuration.destDirName.isEmpty()
                     || !fileManager.hasLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT)) {
                 try {
                     String dirName = configuration.destDirName.isEmpty() ? "." : configuration.destDirName;
-                    File dir = new File(dirName);
-                    fileManager.setLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(dir));
+                    Path dir = Paths.get(dirName);
+                    fileManager.setLocationFromPaths(DocumentationTool.Location.DOCUMENTATION_OUTPUT, Arrays.asList(dir));
                 } catch (IOException e) {
                     throw new DocletAbortException(e);
                 }
             }
 
-            destDir = fileManager.getLocation(DocumentationTool.Location.DOCUMENTATION_OUTPUT).iterator().next();
+            destDir = fileManager.getLocationAsPaths(DocumentationTool.Location.DOCUMENTATION_OUTPUT).iterator().next();
         }
         return destDir;
     }
 
     public DocFile createFileForDirectory(String file) {
-        return new StandardDocFile(new File(file));
+        return new StandardDocFile(Paths.get(file));
     }
 
     public DocFile createFileForInput(String file) {
-        return new StandardDocFile(new File(file));
+        return new StandardDocFile(Paths.get(file));
     }
 
     public DocFile createFileForOutput(DocPath path) {
@@ -108,26 +111,25 @@ class StandardDocFileFactory extends DocFileFactory {
         Set<DocFile> files = new LinkedHashSet<>();
         Location l = fileManager.hasLocation(StandardLocation.SOURCE_PATH)
                 ? StandardLocation.SOURCE_PATH : StandardLocation.CLASS_PATH;
-        for (File f: fileManager.getLocation(l)) {
-            if (f.isDirectory()) {
-                f = new File(f, path.getPath());
-                if (f.exists())
+        for (Path f: fileManager.getLocationAsPaths(l)) {
+            if (Files.isDirectory(f)) {
+                f = f.resolve(path.getPath());
+                if (Files.exists(f))
                     files.add(new StandardDocFile(f));
             }
         }
         return files;
     }
 
-    private static File newFile(File dir, String path) {
-        return (dir == null) ? new File(path) : new File(dir, path);
+    private static Path newFile(Path dir, String path) {
+        return (dir == null) ? Paths.get(path) : dir.resolve(path);
     }
 
     class StandardDocFile extends DocFile {
-        private File file;
-
+        private Path file;
 
         /** Create a StandardDocFile for a given file. */
-        private StandardDocFile(File file) {
+        private StandardDocFile(Path file) {
             super(configuration);
             this.file = file;
         }
@@ -178,27 +180,27 @@ class StandardDocFileFactory extends DocFileFactory {
 
         /** Return true if the file can be read. */
         public boolean canRead() {
-            return file.canRead();
+            return Files.isReadable(file);
         }
 
         /** Return true if the file can be written. */
         public boolean canWrite() {
-            return file.canWrite();
+            return Files.isWritable(file);
         }
 
         /** Return true if the file exists. */
         public boolean exists() {
-            return file.exists();
+            return Files.exists(file);
         }
 
         /** Return the base name (last component) of the file name. */
         public String getName() {
-            return file.getName();
+            return file.getFileName().toString();
         }
 
         /** Return the file system path for this file. */
         public String getPath() {
-            return file.getPath();
+            return file.toString();
         }
 
         /** Return true is file has an absolute path name. */
@@ -208,12 +210,12 @@ class StandardDocFileFactory extends DocFileFactory {
 
         /** Return true is file identifies a directory. */
         public boolean isDirectory() {
-            return file.isDirectory();
+            return Files.isDirectory(file);
         }
 
         /** Return true is file identifies a file. */
         public boolean isFile() {
-            return file.isFile();
+            return Files.isRegularFile(file);
         }
 
         /** Return true if this file is the same as another. */
@@ -222,25 +224,31 @@ class StandardDocFileFactory extends DocFileFactory {
                 return false;
 
             try {
-                return file.exists()
-                        && file.getCanonicalFile().equals(((StandardDocFile) other).file.getCanonicalFile());
+                return Files.isSameFile(file, ((StandardDocFile) other).file);
             } catch (IOException e) {
                 return false;
             }
         }
 
         /** If the file is a directory, list its contents. */
-        public Iterable<DocFile> list() {
-            List<DocFile> files = new ArrayList<>();
-            for (File f: file.listFiles()) {
-                files.add(new StandardDocFile(f));
+        public Iterable<DocFile> list() throws IOException {
+            List<DocFile> files = new ArrayList<DocFile>();
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(file)) {
+                for (Path f: ds) {
+                    files.add(new StandardDocFile(f));
+                }
             }
             return files;
         }
 
         /** Create the file as a directory, including any parent directories. */
         public boolean mkdirs() {
-            return file.mkdirs();
+            try {
+                Files.createDirectories(file);
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
         }
 
         /**
@@ -261,7 +269,7 @@ class StandardDocFileFactory extends DocFileFactory {
          */
         public DocFile resolve(String p) {
             if (location == null && path == null) {
-                return new StandardDocFile(new File(file, p));
+                return new StandardDocFile(file.resolve(p));
             } else {
                 return new StandardDocFile(location, path.resolve(p));
             }
@@ -270,12 +278,12 @@ class StandardDocFileFactory extends DocFileFactory {
         /**
          * Resolve a relative file against the given output location.
          * @param locn Currently, only
-         * {@link DocumentationTool.Location#DOCUMENTATION_OUTPUT} is supported.
+         * {@link DocumentationTool.Location.DOCUMENTATION_OUTPUT} is supported.
          */
         public DocFile resolveAgainst(Location locn) {
             if (locn != DocumentationTool.Location.DOCUMENTATION_OUTPUT)
                 throw new IllegalArgumentException();
-            return new StandardDocFile(newFile(getDestDir(), file.getPath()));
+            return new StandardDocFile(getDestDir().resolve(file));
         }
 
         /** Return a string to identify the contents of this object,
@@ -284,7 +292,7 @@ class StandardDocFileFactory extends DocFileFactory {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("StandardDocFile[");
+            sb.append("PathDocFile[");
             if (location != null)
                 sb.append("locn:").append(location).append(",");
             if (path != null)
@@ -294,7 +302,7 @@ class StandardDocFileFactory extends DocFileFactory {
             return sb.toString();
         }
 
-        private JavaFileObject getJavaFileObjectForInput(File file) {
+        private JavaFileObject getJavaFileObjectForInput(Path file) {
             return fileManager.getJavaFileObjects(file).iterator().next();
         }
 
