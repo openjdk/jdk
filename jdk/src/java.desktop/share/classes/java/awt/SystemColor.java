@@ -36,15 +36,15 @@ import java.lang.annotation.Native;
  * update of the system colors (when the user changes the colors)
  * the actual RGB values of these symbolic colors will also change
  * dynamically.  In order to compare the "current" RGB value of a
- * <code>SystemColor</code> object with a non-symbolic Color object,
- * <code>getRGB</code> should be used rather than <code>equals</code>.
+ * {@code SystemColor} object with a non-symbolic Color object,
+ * {@code getRGB} should be used rather than {@code equals}.
  * <p>
  * Note that the way in which these system colors are applied to GUI objects
  * may vary slightly from platform to platform since GUI objects may be
  * rendered differently on each platform.
  * <p>
- * System color values may also be available through the <code>getDesktopProperty</code>
- * method on <code>java.awt.Toolkit</code>.
+ * System color values may also be available through the {@code getDesktopProperty}
+ * method on {@code java.awt.Toolkit}.
  *
  * @see Toolkit#getDesktopProperty
  *
@@ -380,28 +380,28 @@ public final class SystemColor extends Color implements java.io.Serializable {
 
     /**
      * The color rendered for light areas of 3D control objects, such as pushbuttons.
-     * This color is typically derived from the <code>control</code> background color
+     * This color is typically derived from the {@code control} background color
      * to provide a 3D effect.
      */
     public static final SystemColor controlHighlight = new SystemColor((byte)CONTROL_HIGHLIGHT);
 
     /**
      * The color rendered for highlight areas of 3D control objects, such as pushbuttons.
-     * This color is typically derived from the <code>control</code> background color
+     * This color is typically derived from the {@code control} background color
      * to provide a 3D effect.
      */
     public static final SystemColor controlLtHighlight = new SystemColor((byte)CONTROL_LT_HIGHLIGHT);
 
     /**
      * The color rendered for shadow areas of 3D control objects, such as pushbuttons.
-     * This color is typically derived from the <code>control</code> background color
+     * This color is typically derived from the {@code control} background color
      * to provide a 3D effect.
      */
     public static final SystemColor controlShadow = new SystemColor((byte)CONTROL_SHADOW);
 
     /**
      * The color rendered for dark shadow areas on 3D control objects, such as pushbuttons.
-     * This color is typically derived from the <code>control</code> background color
+     * This color is typically derived from the {@code control} background color
      * to provide a 3D effect.
      */
     public static final SystemColor controlDkShadow = new SystemColor((byte)CONTROL_DK_SHADOW);
@@ -487,13 +487,13 @@ public final class SystemColor extends Color implements java.io.Serializable {
     }
 
     /**
-     * Returns a string representation of this <code>Color</code>'s values.
+     * Returns a string representation of this {@code Color}'s values.
      * This method is intended to be used only for debugging purposes,
      * and the content and format of the returned string may vary between
      * implementations.
-     * The returned string may be empty but may not be <code>null</code>.
+     * The returned string may be empty but may not be {@code null}.
      *
-     * @return  a string representation of this <code>Color</code>
+     * @return  a string representation of this {@code Color}
      */
     public String toString() {
         return getClass().getName() + "[i=" + (index) + "]";

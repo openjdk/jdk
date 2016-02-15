@@ -50,13 +50,13 @@ import javax.print.attribute.Attribute;
  * {@link PrinterState PrinterState} also changed.
  * <P>
  * <B>IPP Compatibility:</B>
- * <code>Severity.toString()</code> returns either "error", "warning", or
+ * {@code Severity.toString()} returns either "error", "warning", or
  * "report".  The string values returned by
  * each individual {@link PrinterStateReason} and
- * associated {@link Severity} object's <CODE>toString()</CODE>
- * methods, concatenated together with a hyphen (<CODE>"-"</CODE>) in
+ * associated {@link Severity} object's {@code toString()}
+ * methods, concatenated together with a hyphen ({@code "-"}) in
  * between, gives the IPP keyword value for a {@link PrinterStateReasons}.
- * The category name returned by <CODE>getName()</CODE> gives the IPP
+ * The category name returned by {@code getName()} gives the IPP
  * attribute name.
  *
  * @author  Alan Kaminsky
@@ -146,7 +146,7 @@ public final class Severity extends EnumSyntax implements Attribute {
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class Severit, the category name is <CODE>"severity"</CODE>.
+     * For class Severit, the category name is {@code "severity"}.
      *
      * @return  Attribute category name.
      */

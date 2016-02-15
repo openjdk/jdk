@@ -416,12 +416,12 @@ public class Beans {
      * <p>Note that this method is security checked
      * and is not available to (for example) untrusted applets.
      * More specifically, if there is a security manager,
-     * its <code>checkPropertiesAccess</code>
+     * its {@code checkPropertiesAccess}
      * method is called. This could result in a SecurityException.
      *
      * @param isDesignTime  True if we're in an application builder tool.
      * @exception  SecurityException  if a security manager exists and its
-     *             <code>checkPropertiesAccess</code> method doesn't allow setting
+     *             {@code checkPropertiesAccess} method doesn't allow setting
      *              of system properties.
      * @see SecurityManager#checkPropertiesAccess
      */
@@ -442,12 +442,12 @@ public class Beans {
      * <p>Note that this method is security checked
      * and is not available to (for example) untrusted applets.
      * More specifically, if there is a security manager,
-     * its <code>checkPropertiesAccess</code>
+     * its {@code checkPropertiesAccess}
      * method is called. This could result in a SecurityException.
      *
      * @param isGuiAvailable  True if GUI interaction is available.
      * @exception  SecurityException  if a security manager exists and its
-     *             <code>checkPropertiesAccess</code> method doesn't allow setting
+     *             {@code checkPropertiesAccess} method doesn't allow setting
      *              of system properties.
      * @see SecurityManager#checkPropertiesAccess
      */

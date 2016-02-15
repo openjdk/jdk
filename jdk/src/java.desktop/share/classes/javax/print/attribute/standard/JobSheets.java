@@ -44,9 +44,9 @@ import javax.print.attribute.PrintJobAttribute;
  * particular JobSheets value.
  * <P>
  * <B>IPP Compatibility:</B>  The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The
+ * {@code getName()} is the IPP attribute name.  The
  * enumeration's integer value is the IPP enum value.  The
- * <code>toString()</code> method returns the IPP string representation of
+ * {@code toString()} method returns the IPP string representation of
  * the attribute value. For a subclass, the attribute value must be
  * localized to give the IPP name and natural language values.
  *
@@ -122,7 +122,7 @@ public class JobSheets extends EnumSyntax
      * instance.
      * <P>
      * For class JobSheets and any vendor-defined subclasses, the category
-     * name is <CODE>"job-sheets"</CODE>.
+     * name is {@code "job-sheets"}.
      *
      * @return  Attribute category name.
      */

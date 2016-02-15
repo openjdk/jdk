@@ -32,14 +32,14 @@ import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
 /**
- * An implementation of <code>ImageInputStream</code> that gets its
- * input from a regular <code>InputStream</code>.  A memory buffer is
+ * An implementation of {@code ImageInputStream} that gets its
+ * input from a regular {@code InputStream}.  A memory buffer is
  * used to cache at least the data between the discard position and
  * the current read position.
  *
  * <p> In general, it is preferable to use a
- * <code>FileCacheImageInputStream</code> when reading from a regular
- * <code>InputStream</code>.  This class is provided for cases where
+ * {@code FileCacheImageInputStream} when reading from a regular
+ * {@code InputStream}.  This class is provided for cases where
  * it is not possible to create a writable temporary file.
  *
  */
@@ -56,13 +56,13 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
     private final DisposerRecord disposerRecord;
 
     /**
-     * Constructs a <code>MemoryCacheImageInputStream</code> that will read
-     * from a given <code>InputStream</code>.
+     * Constructs a {@code MemoryCacheImageInputStream} that will read
+     * from a given {@code InputStream}.
      *
-     * @param stream an <code>InputStream</code> to read from.
+     * @param stream an {@code InputStream} to read from.
      *
-     * @exception IllegalArgumentException if <code>stream</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code stream} is
+     * {@code null}.
      */
     public MemoryCacheImageInputStream(InputStream stream) {
         if (stream == null) {
@@ -126,11 +126,11 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
     }
 
     /**
-     * Returns <code>true</code> since this
-     * <code>ImageInputStream</code> caches data in order to allow
+     * Returns {@code true} since this
+     * {@code ImageInputStream} caches data in order to allow
      * seeking backwards.
      *
-     * @return <code>true</code>.
+     * @return {@code true}.
      *
      * @see #isCachedMemory
      * @see #isCachedFile
@@ -140,10 +140,10 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
     }
 
     /**
-     * Returns <code>false</code> since this
-     * <code>ImageInputStream</code> does not maintain a file cache.
+     * Returns {@code false} since this
+     * {@code ImageInputStream} does not maintain a file cache.
      *
-     * @return <code>false</code>.
+     * @return {@code false}.
      *
      * @see #isCached
      * @see #isCachedMemory
@@ -153,10 +153,10 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
     }
 
     /**
-     * Returns <code>true</code> since this
-     * <code>ImageInputStream</code> maintains a main memory cache.
+     * Returns {@code true} since this
+     * {@code ImageInputStream} maintains a main memory cache.
      *
-     * @return <code>true</code>.
+     * @return {@code true}.
      *
      * @see #isCached
      * @see #isCachedFile
@@ -166,8 +166,8 @@ public class MemoryCacheImageInputStream extends ImageInputStreamImpl {
     }
 
     /**
-     * Closes this <code>MemoryCacheImageInputStream</code>, freeing
-     * the cache.  The source <code>InputStream</code> is not closed.
+     * Closes this {@code MemoryCacheImageInputStream}, freeing
+     * the cache.  The source {@code InputStream} is not closed.
      */
     public void close() throws IOException {
         super.close();

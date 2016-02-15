@@ -25,9 +25,9 @@
 package java.awt;
 
 /**
- * The <code>GridBagConstraints</code> class specifies constraints
+ * The {@code GridBagConstraints} class specifies constraints
  * for components that are laid out using the
- * <code>GridBagLayout</code> class.
+ * {@code GridBagLayout} class.
  *
  * @author Doug Stein
  * @author Bill Spitzak (orignial NeWS &amp; OLIT implementation)
@@ -38,9 +38,9 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
 
     /**
      * Specifies that this component is the next-to-last component in its
-     * column or row (<code>gridwidth</code>, <code>gridheight</code>),
+     * column or row ({@code gridwidth}, {@code gridheight}),
      * or that this component be placed next to the previously added
-     * component (<code>gridx</code>, <code>gridy</code>).
+     * component ({@code gridx}, {@code gridy}).
      * @see      java.awt.GridBagConstraints#gridwidth
      * @see      java.awt.GridBagConstraints#gridheight
      * @see      java.awt.GridBagConstraints#gridx
@@ -194,7 +194,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     public static final int LAST_LINE_END = 26;
 
     /**
-     * Possible value for the <code>anchor</code> field.  Specifies
+     * Possible value for the {@code anchor} field.  Specifies
      * that the component should be horizontally centered and
      * vertically aligned along the baseline of the prevailing row.
      * If the component does not have a baseline it will be vertically
@@ -205,7 +205,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     public static final int BASELINE = 0x100;
 
     /**
-     * Possible value for the <code>anchor</code> field.  Specifies
+     * Possible value for the {@code anchor} field.  Specifies
      * that the component should be horizontally placed along the
      * leading edge.  For components with a left-to-right orientation,
      * the leading edge is the left edge.  Vertically the component is
@@ -218,7 +218,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     public static final int BASELINE_LEADING = 0x200;
 
     /**
-     * Possible value for the <code>anchor</code> field.  Specifies
+     * Possible value for the {@code anchor} field.  Specifies
      * that the component should be horizontally placed along the
      * trailing edge.  For components with a left-to-right
      * orientation, the trailing edge is the right edge.  Vertically
@@ -231,7 +231,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     public static final int BASELINE_TRAILING = 0x300;
 
     /**
-     * Possible value for the <code>anchor</code> field.  Specifies
+     * Possible value for the {@code anchor} field.  Specifies
      * that the component should be horizontally centered.  Vertically
      * the component is positioned so that its bottom edge touches
      * the baseline of the starting row.  If the starting row does not
@@ -242,7 +242,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     public static final int ABOVE_BASELINE = 0x400;
 
     /**
-     * Possible value for the <code>anchor</code> field.  Specifies
+     * Possible value for the {@code anchor} field.  Specifies
      * that the component should be horizontally placed along the
      * leading edge.  For components with a left-to-right orientation,
      * the leading edge is the left edge.  Vertically the component is
@@ -255,7 +255,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     public static final int ABOVE_BASELINE_LEADING = 0x500;
 
     /**
-     * Possible value for the <code>anchor</code> field.  Specifies
+     * Possible value for the {@code anchor} field.  Specifies
      * that the component should be horizontally placed along the
      * trailing edge.  For components with a left-to-right
      * orientation, the trailing edge is the right edge.  Vertically
@@ -268,7 +268,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     public static final int ABOVE_BASELINE_TRAILING = 0x600;
 
     /**
-     * Possible value for the <code>anchor</code> field.  Specifies
+     * Possible value for the {@code anchor} field.  Specifies
      * that the component should be horizontally centered.  Vertically
      * the component is positioned so that its top edge touches the
      * baseline of the starting row.  If the starting row does not
@@ -279,7 +279,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     public static final int BELOW_BASELINE = 0x700;
 
     /**
-     * Possible value for the <code>anchor</code> field.  Specifies
+     * Possible value for the {@code anchor} field.  Specifies
      * that the component should be horizontally placed along the
      * leading edge.  For components with a left-to-right orientation,
      * the leading edge is the left edge.  Vertically the component is
@@ -292,7 +292,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     public static final int BELOW_BASELINE_LEADING = 0x800;
 
     /**
-     * Possible value for the <code>anchor</code> field.  Specifies
+     * Possible value for the {@code anchor} field.  Specifies
      * that the component should be horizontally placed along the
      * trailing edge.  For components with a left-to-right
      * orientation, the trailing edge is the right edge.  Vertically
@@ -306,17 +306,17 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
 
     /**
      * Specifies the cell containing the leading edge of the component's
-     * display area, where the first cell in a row has <code>gridx=0</code>.
+     * display area, where the first cell in a row has {@code gridx=0}.
      * The leading edge of a component's display area is its left edge for
      * a horizontal, left-to-right container and its right edge for a
      * horizontal, right-to-left container.
      * The value
-     * <code>RELATIVE</code> specifies that the component be placed
+     * {@code RELATIVE} specifies that the component be placed
      * immediately following the component that was added to the container
      * just before this component was added.
      * <p>
-     * The default value is <code>RELATIVE</code>.
-     * <code>gridx</code> should be a non-negative value.
+     * The default value is {@code RELATIVE}.
+     * {@code gridx} should be a non-negative value.
      * @serial
      * @see #clone()
      * @see java.awt.GridBagConstraints#gridy
@@ -326,13 +326,13 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
 
     /**
      * Specifies the cell at the top of the component's display area,
-     * where the topmost cell has <code>gridy=0</code>. The value
-     * <code>RELATIVE</code> specifies that the component be placed just
+     * where the topmost cell has {@code gridy=0}. The value
+     * {@code RELATIVE} specifies that the component be placed just
      * below the component that was added to the container just before
      * this component was added.
      * <p>
-     * The default value is <code>RELATIVE</code>.
-     * <code>gridy</code> should be a non-negative value.
+     * The default value is {@code RELATIVE}.
+     * {@code gridy} should be a non-negative value.
      * @serial
      * @see #clone()
      * @see java.awt.GridBagConstraints#gridx
@@ -343,14 +343,14 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * Specifies the number of cells in a row for the component's
      * display area.
      * <p>
-     * Use <code>REMAINDER</code> to specify that the component's
-     * display area will be from <code>gridx</code> to the last
+     * Use {@code REMAINDER} to specify that the component's
+     * display area will be from {@code gridx} to the last
      * cell in the row.
-     * Use <code>RELATIVE</code> to specify that the component's
-     * display area will be from <code>gridx</code> to the next
+     * Use {@code RELATIVE} to specify that the component's
+     * display area will be from {@code gridx} to the next
      * to the last one in its row.
      * <p>
-     * <code>gridwidth</code> should be non-negative and the default
+     * {@code gridwidth} should be non-negative and the default
      * value is 1.
      * @serial
      * @see #clone()
@@ -362,14 +362,14 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * Specifies the number of cells in a column for the component's
      * display area.
      * <p>
-     * Use <code>REMAINDER</code> to specify that the component's
-     * display area will be from <code>gridy</code> to the last
+     * Use {@code REMAINDER} to specify that the component's
+     * display area will be from {@code gridy} to the last
      * cell in the column.
-     * Use <code>RELATIVE</code> to specify that the component's
-     * display area will be from <code>gridy</code> to the next
+     * Use {@code RELATIVE} to specify that the component's
+     * display area will be from {@code gridy} to the next
      * to the last one in its column.
      * <p>
-     * <code>gridheight</code> should be a non-negative value and the
+     * {@code gridheight} should be a non-negative value and the
      * default value is 1.
      * @serial
      * @see #clone()
@@ -381,7 +381,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * Specifies how to distribute extra horizontal space.
      * <p>
      * The grid bag layout manager calculates the weight of a column to
-     * be the maximum <code>weightx</code> of all the components in a
+     * be the maximum {@code weightx} of all the components in a
      * column. If the resulting layout is smaller horizontally than the area
      * it needs to fill, the extra space is distributed to each column in
      * proportion to its weight. A column that has a weight of zero receives
@@ -390,8 +390,8 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * If all the weights are zero, all the extra space appears between
      * the grids of the cell and the left and right edges.
      * <p>
-     * The default value of this field is <code>0</code>.
-     * <code>weightx</code> should be a non-negative value.
+     * The default value of this field is {@code 0}.
+     * {@code weightx} should be a non-negative value.
      * @serial
      * @see #clone()
      * @see java.awt.GridBagConstraints#weighty
@@ -402,7 +402,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * Specifies how to distribute extra vertical space.
      * <p>
      * The grid bag layout manager calculates the weight of a row to be
-     * the maximum <code>weighty</code> of all the components in a row.
+     * the maximum {@code weighty} of all the components in a row.
      * If the resulting layout is smaller vertically than the area it
      * needs to fill, the extra space is distributed to each row in
      * proportion to its weight. A row that has a weight of zero receives no
@@ -411,8 +411,8 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * If all the weights are zero, all the extra space appears between
      * the grids of the cell and the top and bottom edges.
      * <p>
-     * The default value of this field is <code>0</code>.
-     * <code>weighty</code> should be a non-negative value.
+     * The default value of this field is {@code 0}.
+     * {@code weighty} should be a non-negative value.
      * @serial
      * @see #clone()
      * @see java.awt.GridBagConstraints#weightx
@@ -429,22 +429,22 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * orientation property, baseline relative values are interpreted
      * relative to the baseline and absolute values are not.  The
      * absolute values are:
-     * <code>CENTER</code>, <code>NORTH</code>, <code>NORTHEAST</code>,
-     * <code>EAST</code>, <code>SOUTHEAST</code>, <code>SOUTH</code>,
-     * <code>SOUTHWEST</code>, <code>WEST</code>, and <code>NORTHWEST</code>.
-     * The orientation relative values are: <code>PAGE_START</code>,
-     * <code>PAGE_END</code>,
-     * <code>LINE_START</code>, <code>LINE_END</code>,
-     * <code>FIRST_LINE_START</code>, <code>FIRST_LINE_END</code>,
-     * <code>LAST_LINE_START</code> and <code>LAST_LINE_END</code>.  The
+     * {@code CENTER}, {@code NORTH}, {@code NORTHEAST},
+     * {@code EAST}, {@code SOUTHEAST}, {@code SOUTH},
+     * {@code SOUTHWEST}, {@code WEST}, and {@code NORTHWEST}.
+     * The orientation relative values are: {@code PAGE_START},
+     * {@code PAGE_END},
+     * {@code LINE_START}, {@code LINE_END},
+     * {@code FIRST_LINE_START}, {@code FIRST_LINE_END},
+     * {@code LAST_LINE_START} and {@code LAST_LINE_END}.  The
      * baseline relative values are:
-     * <code>BASELINE</code>, <code>BASELINE_LEADING</code>,
-     * <code>BASELINE_TRAILING</code>,
-     * <code>ABOVE_BASELINE</code>, <code>ABOVE_BASELINE_LEADING</code>,
-     * <code>ABOVE_BASELINE_TRAILING</code>,
-     * <code>BELOW_BASELINE</code>, <code>BELOW_BASELINE_LEADING</code>,
-     * and <code>BELOW_BASELINE_TRAILING</code>.
-     * The default value is <code>CENTER</code>.
+     * {@code BASELINE}, {@code BASELINE_LEADING},
+     * {@code BASELINE_TRAILING},
+     * {@code ABOVE_BASELINE}, {@code ABOVE_BASELINE_LEADING},
+     * {@code ABOVE_BASELINE_TRAILING},
+     * {@code BELOW_BASELINE}, {@code BELOW_BASELINE_LEADING},
+     * and {@code BELOW_BASELINE_TRAILING}.
+     * The default value is {@code CENTER}.
      * @serial
      * @see #clone()
      * @see java.awt.ComponentOrientation
@@ -456,23 +456,23 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * than the component's requested size. It determines whether to
      * resize the component, and if so, how.
      * <p>
-     * The following values are valid for <code>fill</code>:
+     * The following values are valid for {@code fill}:
      *
      * <ul>
      * <li>
-     * <code>NONE</code>: Do not resize the component.
+     * {@code NONE}: Do not resize the component.
      * <li>
-     * <code>HORIZONTAL</code>: Make the component wide enough to fill
+     * {@code HORIZONTAL}: Make the component wide enough to fill
      *         its display area horizontally, but do not change its height.
      * <li>
-     * <code>VERTICAL</code>: Make the component tall enough to fill its
+     * {@code VERTICAL}: Make the component tall enough to fill its
      *         display area vertically, but do not change its width.
      * <li>
-     * <code>BOTH</code>: Make the component fill its display area
+     * {@code BOTH}: Make the component fill its display area
      *         entirely.
      * </ul>
      * <p>
-     * The default value is <code>NONE</code>.
+     * The default value is {@code NONE}.
      * @serial
      * @see #clone()
      */
@@ -483,7 +483,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * minimum amount of space between the component and the edges of its
      * display area.
      * <p>
-     * The default value is <code>new Insets(0, 0, 0, 0)</code>.
+     * The default value is {@code new Insets(0, 0, 0, 0)}.
      * @serial
      * @see #clone()
      */
@@ -493,9 +493,9 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * This field specifies the internal padding of the component, how much
      * space to add to the minimum width of the component. The width of
      * the component is at least its minimum width plus
-     * <code>ipadx</code> pixels.
+     * {@code ipadx} pixels.
      * <p>
-     * The default value is <code>0</code>.
+     * The default value is {@code 0}.
      * @serial
      * @see #clone()
      * @see java.awt.GridBagConstraints#ipady
@@ -506,7 +506,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * This field specifies the internal padding, that is, how much
      * space to add to the minimum height of the component. The height of
      * the component is at least its minimum height plus
-     * <code>ipady</code> pixels.
+     * {@code ipady} pixels.
      * <p>
      * The default value is 0.
      * @serial
@@ -537,14 +537,14 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     int tempHeight;
     /**
      * The minimum width of the component.  It is used to calculate
-     * <code>ipady</code>, where the default will be 0.
+     * {@code ipady}, where the default will be 0.
      * @serial
      * @see #ipady
      */
     int minWidth;
     /**
      * The minimum height of the component. It is used to calculate
-     * <code>ipadx</code>, where the default will be 0.
+     * {@code ipadx}, where the default will be 0.
      * @serial
      * @see #ipadx
      */
@@ -571,7 +571,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     private static final long serialVersionUID = -1000070633030801713L;
 
     /**
-     * Creates a <code>GridBagConstraint</code> object with
+     * Creates a {@code GridBagConstraint} object with
      * all of its fields set to their default value.
      */
     public GridBagConstraints () {
@@ -591,7 +591,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     }
 
     /**
-     * Creates a <code>GridBagConstraints</code> object with
+     * Creates a {@code GridBagConstraints} object with
      * all of its fields set to the passed-in arguments.
      *
      * Note: Because the use of this constructor hinders readability

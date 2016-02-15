@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,21 @@
  * questions.
  */
 
-//
+/**
+ * JDK-8149334: JSON.parse(JSON.stringify([])).push(10) creates an array containing two elements
+ *
+ * @test
+ * @run
+ */
 
-import sun.misc.*;
+var a = JSON.parse(JSON.stringify([]))
+print(a.length)
+a.push(10)
+print(a.length)
+print(a)
 
-
-public class ExitOnThrow {
-
-    public static void main(String[] args) throws Exception {
-        Cleaner.create(new Object(),
-                       new Runnable() {
-                               public void run() {
-                                   throw new RuntimeException("Foo!");
-                               }
-                           });
-        while (true) {
-            System.gc();
-            Thread.sleep(100);
-        }
-    }
-
-}
+var b = JSON.parse(JSON.stringify([]))
+print(b.length)
+b.push('ieps')
+print(b.length)
+print(b)

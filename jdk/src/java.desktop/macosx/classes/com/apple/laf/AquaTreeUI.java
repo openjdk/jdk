@@ -179,8 +179,8 @@ public class AquaTreeUI extends BasicTreeUI {
     }
 
     /**
-     * Paints the expand (toggle) part of a row. The receiver should NOT modify <code>clipBounds</code>, or
-     * <code>insets</code>.
+     * Paints the expand (toggle) part of a row. The receiver should NOT modify {@code clipBounds}, or
+     * {@code insets}.
      */
     protected void paintExpandControl(final Graphics g, final Rectangle clipBounds, final Insets insets, final Rectangle bounds, final TreePath path, final int row, final boolean isExpanded, final boolean hasBeenExpanded, final boolean isLeaf) {
         final Object value = path.getLastPathComponent();

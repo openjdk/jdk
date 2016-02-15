@@ -46,25 +46,25 @@ import java.util.Hashtable;
 
 /**
  * A class that allows the format of an image (in particular, its
- * <code>SampleModel</code> and <code>ColorModel</code>) to be
+ * {@code SampleModel} and {@code ColorModel}) to be
  * specified in a convenient manner.
  *
  */
 public class ImageTypeSpecifier {
 
     /**
-     * The <code>ColorModel</code> to be used as a prototype.
+     * The {@code ColorModel} to be used as a prototype.
      */
     protected ColorModel colorModel;
 
     /**
-     * A <code>SampleModel</code> to be used as a prototype.
+     * A {@code SampleModel} to be used as a prototype.
      */
     protected SampleModel sampleModel;
 
     /**
      * Cached specifiers for all of the standard
-     * <code>BufferedImage</code> types.
+     * {@code BufferedImage} types.
      */
     private static ImageTypeSpecifier[] BISpecifier;
     private static ColorSpace sRGB;
@@ -82,18 +82,18 @@ public class ImageTypeSpecifier {
     private ImageTypeSpecifier() {}
 
     /**
-     * Constructs an <code>ImageTypeSpecifier</code> directly
-     * from a <code>ColorModel</code> and a <code>SampleModel</code>.
+     * Constructs an {@code ImageTypeSpecifier} directly
+     * from a {@code ColorModel} and a {@code SampleModel}.
      * It is the caller's responsibility to supply compatible
      * parameters.
      *
-     * @param colorModel a <code>ColorModel</code>.
-     * @param sampleModel a <code>SampleModel</code>.
+     * @param colorModel a {@code ColorModel}.
+     * @param sampleModel a {@code SampleModel}.
      *
      * @exception IllegalArgumentException if either parameter is
-     * <code>null</code>.
-     * @exception IllegalArgumentException if <code>sampleModel</code>
-     * is not compatible with <code>colorModel</code>.
+     * {@code null}.
+     * @exception IllegalArgumentException if {@code sampleModel}
+     * is not compatible with {@code colorModel}.
      */
     public ImageTypeSpecifier(ColorModel colorModel, SampleModel sampleModel) {
         if (colorModel == null) {
@@ -111,17 +111,17 @@ public class ImageTypeSpecifier {
     }
 
     /**
-     * Constructs an <code>ImageTypeSpecifier</code> from a
-     * <code>RenderedImage</code>.  If a <code>BufferedImage</code> is
+     * Constructs an {@code ImageTypeSpecifier} from a
+     * {@code RenderedImage}.  If a {@code BufferedImage} is
      * being used, one of the factory methods
-     * <code>createFromRenderedImage</code> or
-     * <code>createFromBufferedImageType</code> should be used instead in
+     * {@code createFromRenderedImage} or
+     * {@code createFromBufferedImageType} should be used instead in
      * order to get a more accurate result.
      *
-     * @param image a <code>RenderedImage</code>.
+     * @param image a {@code RenderedImage}.
      *
      * @exception IllegalArgumentException if the argument is
-     * <code>null</code>.
+     * {@code null}.
      */
     public ImageTypeSpecifier(RenderedImage image) {
         if (image == null) {
@@ -188,11 +188,11 @@ public class ImageTypeSpecifier {
 
     /**
      * Returns a specifier for a packed image format that will use a
-     * <code>DirectColorModel</code> and a packed
-     * <code>SampleModel</code> to store each pixel packed into in a
+     * {@code DirectColorModel} and a packed
+     * {@code SampleModel} to store each pixel packed into in a
      * single byte, short, or int.
      *
-     * @param colorSpace the desired <code>ColorSpace</code>.
+     * @param colorSpace the desired {@code ColorSpace}.
      * @param redMask a contiguous mask indicated the position of the
      * red channel.
      * @param greenMask a contiguous mask indicated the position of the
@@ -201,24 +201,24 @@ public class ImageTypeSpecifier {
      * blue channel.
      * @param alphaMask a contiguous mask indicated the position of the
      * alpha channel.
-     * @param transferType the desired <code>SampleModel</code> transfer type.
-     * @param isAlphaPremultiplied <code>true</code> if the color channels
+     * @param transferType the desired {@code SampleModel} transfer type.
+     * @param isAlphaPremultiplied {@code true} if the color channels
      * will be premultipled by the alpha channel.
      *
-     * @return an <code>ImageTypeSpecifier</code> with the desired
+     * @return an {@code ImageTypeSpecifier} with the desired
      * characteristics.
      *
-     * @exception IllegalArgumentException if <code>colorSpace</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>colorSpace</code>
-     * is not of type <code>TYPE_RGB</code>.
+     * @exception IllegalArgumentException if {@code colorSpace}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code colorSpace}
+     * is not of type {@code TYPE_RGB}.
      * @exception IllegalArgumentException if no mask has at least 1
      * bit set.
      * @exception IllegalArgumentException if
-     * <code>transferType</code> if not one of
-     * <code>DataBuffer.TYPE_BYTE</code>,
-     * <code>DataBuffer.TYPE_USHORT</code>, or
-     * <code>DataBuffer.TYPE_INT</code>.
+     * {@code transferType} if not one of
+     * {@code DataBuffer.TYPE_BYTE},
+     * {@code DataBuffer.TYPE_USHORT}, or
+     * {@code DataBuffer.TYPE_INT}.
      */
     public static ImageTypeSpecifier
         createPacked(ColorSpace colorSpace,
@@ -363,32 +363,32 @@ public class ImageTypeSpecifier {
 
     /**
      * Returns a specifier for an interleaved image format that will
-     * use a <code>ComponentColorModel</code> and a
-     * <code>PixelInterleavedSampleModel</code> to store each pixel
+     * use a {@code ComponentColorModel} and a
+     * {@code PixelInterleavedSampleModel} to store each pixel
      * component in a separate byte, short, or int.
      *
-     * @param colorSpace the desired <code>ColorSpace</code>.
-     * @param bandOffsets an array of <code>int</code>s indicating the
+     * @param colorSpace the desired {@code ColorSpace}.
+     * @param bandOffsets an array of {@code int}s indicating the
      * offsets for each band.
      * @param dataType the desired data type, as one of the enumerations
-     * from the <code>DataBuffer</code> class.
-     * @param hasAlpha <code>true</code> if an alpha channel is desired.
-     * @param isAlphaPremultiplied <code>true</code> if the color channels
+     * from the {@code DataBuffer} class.
+     * @param hasAlpha {@code true} if an alpha channel is desired.
+     * @param isAlphaPremultiplied {@code true} if the color channels
      * will be premultipled by the alpha channel.
      *
-     * @return an <code>ImageTypeSpecifier</code> with the desired
+     * @return an {@code ImageTypeSpecifier} with the desired
      * characteristics.
      *
-     * @exception IllegalArgumentException if <code>colorSpace</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>bandOffsets</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>dataType</code> is
-     * not one of the legal <code>DataBuffer.TYPE_*</code> constants.
+     * @exception IllegalArgumentException if {@code colorSpace}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code bandOffsets}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code dataType} is
+     * not one of the legal {@code DataBuffer.TYPE_*} constants.
      * @exception IllegalArgumentException if
-     * <code>bandOffsets.length</code> does not equal the number of
-     * color space components, plus 1 if <code>hasAlpha</code> is
-     * <code>true</code>.
+     * {@code bandOffsets.length} does not equal the number of
+     * color space components, plus 1 if {@code hasAlpha} is
+     * {@code true}.
      */
     public static ImageTypeSpecifier
         createInterleaved(ColorSpace colorSpace,
@@ -515,38 +515,38 @@ public class ImageTypeSpecifier {
 
     /**
      * Returns a specifier for a banded image format that will use a
-     * <code>ComponentColorModel</code> and a
-     * <code>BandedSampleModel</code> to store each channel in a
+     * {@code ComponentColorModel} and a
+     * {@code BandedSampleModel} to store each channel in a
      * separate array.
      *
-     * @param colorSpace the desired <code>ColorSpace</code>.
-     * @param bankIndices an array of <code>int</code>s indicating the
+     * @param colorSpace the desired {@code ColorSpace}.
+     * @param bankIndices an array of {@code int}s indicating the
      * bank in which each band will be stored.
-     * @param bandOffsets an array of <code>int</code>s indicating the
+     * @param bandOffsets an array of {@code int}s indicating the
      * starting offset of each band within its bank.
      * @param dataType the desired data type, as one of the enumerations
-     * from the <code>DataBuffer</code> class.
-     * @param hasAlpha <code>true</code> if an alpha channel is desired.
-     * @param isAlphaPremultiplied <code>true</code> if the color channels
+     * from the {@code DataBuffer} class.
+     * @param hasAlpha {@code true} if an alpha channel is desired.
+     * @param isAlphaPremultiplied {@code true} if the color channels
      * will be premultipled by the alpha channel.
      *
-     * @return an <code>ImageTypeSpecifier</code> with the desired
+     * @return an {@code ImageTypeSpecifier} with the desired
      * characteristics.
      *
-     * @exception IllegalArgumentException if <code>colorSpace</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>bankIndices</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>bandOffsets</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code colorSpace}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code bankIndices}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code bandOffsets}
+     * is {@code null}.
      * @exception IllegalArgumentException if the lengths of
-     * <code>bankIndices</code> and <code>bandOffsets</code> differ.
+     * {@code bankIndices} and {@code bandOffsets} differ.
      * @exception IllegalArgumentException if
-     * <code>bandOffsets.length</code> does not equal the number of
-     * color space components, plus 1 if <code>hasAlpha</code> is
-     * <code>true</code>.
-     * @exception IllegalArgumentException if <code>dataType</code> is
-     * not one of the legal <code>DataBuffer.TYPE_*</code> constants.
+     * {@code bandOffsets.length} does not equal the number of
+     * color space components, plus 1 if {@code hasAlpha} is
+     * {@code true}.
+     * @exception IllegalArgumentException if {@code dataType} is
+     * not one of the legal {@code DataBuffer.TYPE_*} constants.
      */
     public static ImageTypeSpecifier
         createBanded(ColorSpace colorSpace,
@@ -662,21 +662,21 @@ public class ImageTypeSpecifier {
      *
      * @param bits the number of bits per gray value (1, 2, 4, 8, or 16).
      * @param dataType the desired data type, as one of the enumerations
-     * from the <code>DataBuffer</code> class.
-     * @param isSigned <code>true</code> if negative values are to
+     * from the {@code DataBuffer} class.
+     * @param isSigned {@code true} if negative values are to
      * be represented.
      *
-     * @return an <code>ImageTypeSpecifier</code> with the desired
+     * @return an {@code ImageTypeSpecifier} with the desired
      * characteristics.
      *
-     * @exception IllegalArgumentException if <code>bits</code> is
+     * @exception IllegalArgumentException if {@code bits} is
      * not one of 1, 2, 4, 8, or 16.
-     * @exception IllegalArgumentException if <code>dataType</code> is
-     * not one of <code>DataBuffer.TYPE_BYTE</code>,
-     * <code>DataBuffer.TYPE_SHORT</code>, or
-     * <code>DataBuffer.TYPE_USHORT</code>.
-     * @exception IllegalArgumentException if <code>bits</code> is
-     * larger than the bit size of the given <code>dataType</code>.
+     * @exception IllegalArgumentException if {@code dataType} is
+     * not one of {@code DataBuffer.TYPE_BYTE},
+     * {@code DataBuffer.TYPE_SHORT}, or
+     * {@code DataBuffer.TYPE_USHORT}.
+     * @exception IllegalArgumentException if {@code bits} is
+     * larger than the bit size of the given {@code dataType}.
      */
     public static ImageTypeSpecifier
         createGrayscale(int bits,
@@ -696,23 +696,23 @@ public class ImageTypeSpecifier {
      *
      * @param bits the number of bits per gray value (1, 2, 4, 8, or 16).
      * @param dataType the desired data type, as one of the enumerations
-     * from the <code>DataBuffer</code> class.
-     * @param isSigned <code>true</code> if negative values are to
+     * from the {@code DataBuffer} class.
+     * @param isSigned {@code true} if negative values are to
      * be represented.
-     * @param isAlphaPremultiplied <code>true</code> if the luminance channel
+     * @param isAlphaPremultiplied {@code true} if the luminance channel
      * will be premultipled by the alpha channel.
      *
-     * @return an <code>ImageTypeSpecifier</code> with the desired
+     * @return an {@code ImageTypeSpecifier} with the desired
      * characteristics.
      *
-     * @exception IllegalArgumentException if <code>bits</code> is
+     * @exception IllegalArgumentException if {@code bits} is
      * not one of 1, 2, 4, 8, or 16.
-     * @exception IllegalArgumentException if <code>dataType</code> is
-     * not one of <code>DataBuffer.TYPE_BYTE</code>,
-     * <code>DataBuffer.TYPE_SHORT</code>, or
-     * <code>DataBuffer.TYPE_USHORT</code>.
-     * @exception IllegalArgumentException if <code>bits</code> is
-     * larger than the bit size of the given <code>dataType</code>.
+     * @exception IllegalArgumentException if {@code dataType} is
+     * not one of {@code DataBuffer.TYPE_BYTE},
+     * {@code DataBuffer.TYPE_SHORT}, or
+     * {@code DataBuffer.TYPE_USHORT}.
+     * @exception IllegalArgumentException if {@code bits} is
+     * larger than the bit size of the given {@code dataType}.
      */
     public static ImageTypeSpecifier
         createGrayscale(int bits,
@@ -814,40 +814,40 @@ public class ImageTypeSpecifier {
      * index values of the given bit depth into array elements of
      * the specified data type.
      *
-     * @param redLUT an array of <code>byte</code>s containing
+     * @param redLUT an array of {@code byte}s containing
      * the red values for each index.
-     * @param greenLUT an array of <code>byte</code>s containing * the
+     * @param greenLUT an array of {@code byte}s containing * the
      *  green values for each index.
-     * @param blueLUT an array of <code>byte</code>s containing the
+     * @param blueLUT an array of {@code byte}s containing the
      * blue values for each index.
-     * @param alphaLUT an array of <code>byte</code>s containing the
-     * alpha values for each index, or <code>null</code> to create a
+     * @param alphaLUT an array of {@code byte}s containing the
+     * alpha values for each index, or {@code null} to create a
      * fully opaque LUT.
      * @param bits the number of bits in each index.
      * @param dataType the desired output type, as one of the enumerations
-     * from the <code>DataBuffer</code> class.
+     * from the {@code DataBuffer} class.
      *
-     * @return an <code>ImageTypeSpecifier</code> with the desired
+     * @return an {@code ImageTypeSpecifier} with the desired
      * characteristics.
      *
-     * @exception IllegalArgumentException if <code>redLUT</code> is
-     * <code>null</code>.
-     * @exception IllegalArgumentException if <code>greenLUT</code> is
-     * <code>null</code>.
-     * @exception IllegalArgumentException if <code>blueLUT</code> is
-     * <code>null</code>.
-     * @exception IllegalArgumentException if <code>bits</code> is
+     * @exception IllegalArgumentException if {@code redLUT} is
+     * {@code null}.
+     * @exception IllegalArgumentException if {@code greenLUT} is
+     * {@code null}.
+     * @exception IllegalArgumentException if {@code blueLUT} is
+     * {@code null}.
+     * @exception IllegalArgumentException if {@code bits} is
      * not one of 1, 2, 4, 8, or 16.
      * @exception IllegalArgumentException if the
-     * non-<code>null</code> LUT parameters do not have lengths of
+     * non-{@code null} LUT parameters do not have lengths of
      * exactly {@code 1 << bits}.
-     * @exception IllegalArgumentException if <code>dataType</code> is
-     * not one of <code>DataBuffer.TYPE_BYTE</code>,
-     * <code>DataBuffer.TYPE_SHORT</code>,
-     * <code>DataBuffer.TYPE_USHORT</code>,
-     * or <code>DataBuffer.TYPE_INT</code>.
-     * @exception IllegalArgumentException if <code>bits</code> is
-     * larger than the bit size of the given <code>dataType</code>.
+     * @exception IllegalArgumentException if {@code dataType} is
+     * not one of {@code DataBuffer.TYPE_BYTE},
+     * {@code DataBuffer.TYPE_SHORT},
+     * {@code DataBuffer.TYPE_USHORT},
+     * or {@code DataBuffer.TYPE_INT}.
+     * @exception IllegalArgumentException if {@code bits} is
+     * larger than the bit size of the given {@code dataType}.
      */
     public static ImageTypeSpecifier
         createIndexed(byte[] redLUT,
@@ -865,19 +865,19 @@ public class ImageTypeSpecifier {
     }
 
     /**
-     * Returns an <code>ImageTypeSpecifier</code> that encodes
-     * one of the standard <code>BufferedImage</code> types
-     * (other than <code>TYPE_CUSTOM</code>).
+     * Returns an {@code ImageTypeSpecifier} that encodes
+     * one of the standard {@code BufferedImage} types
+     * (other than {@code TYPE_CUSTOM}).
      *
      * @param bufferedImageType an int representing one of the standard
-     * <code>BufferedImage</code> types.
+     * {@code BufferedImage} types.
      *
-     * @return an <code>ImageTypeSpecifier</code> with the desired
+     * @return an {@code ImageTypeSpecifier} with the desired
      * characteristics.
      *
      * @exception IllegalArgumentException if
-     * <code>bufferedImageType</code> is not one of the standard
-     * types, or is equal to <code>TYPE_CUSTOM</code>.
+     * {@code bufferedImageType} is not one of the standard
+     * types, or is equal to {@code TYPE_CUSTOM}.
      *
      * @see java.awt.image.BufferedImage
      * @see java.awt.image.BufferedImage#TYPE_INT_RGB
@@ -907,17 +907,17 @@ public class ImageTypeSpecifier {
     }
 
     /**
-     * Returns an <code>ImageTypeSpecifier</code> that encodes the
-     * layout of a <code>RenderedImage</code> (which may be a
-     * <code>BufferedImage</code>).
+     * Returns an {@code ImageTypeSpecifier} that encodes the
+     * layout of a {@code RenderedImage} (which may be a
+     * {@code BufferedImage}).
      *
-     * @param image a <code>RenderedImage</code>.
+     * @param image a {@code RenderedImage}.
      *
-     * @return an <code>ImageTypeSpecifier</code> with the desired
+     * @return an {@code ImageTypeSpecifier} with the desired
      * characteristics.
      *
-     * @exception IllegalArgumentException if <code>image</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code image} is
+     * {@code null}.
      */
     public static
         ImageTypeSpecifier createFromRenderedImage(RenderedImage image) {
@@ -937,10 +937,10 @@ public class ImageTypeSpecifier {
 
     /**
      * Returns an int containing one of the enumerated constant values
-     * describing image formats from <code>BufferedImage</code>.
+     * describing image formats from {@code BufferedImage}.
      *
-     * @return an <code>int</code> representing a
-     * <code>BufferedImage</code> type.
+     * @return an {@code int} representing a
+     * {@code BufferedImage} type.
      *
      * @see java.awt.image.BufferedImage
      * @see java.awt.image.BufferedImage#TYPE_CUSTOM
@@ -966,7 +966,7 @@ public class ImageTypeSpecifier {
     /**
      * Return the number of color components
      * specified by this object.  This is the same value as returned by
-     * <code>ColorModel.getNumComponents</code>
+     * {@code ColorModel.getNumComponents}
      *
      * @return the number of components in the image.
      */
@@ -977,7 +977,7 @@ public class ImageTypeSpecifier {
     /**
      * Return the number of bands
      * specified by this object.  This is the same value as returned by
-     * <code>SampleModel.getNumBands</code>
+     * {@code SampleModel.getNumBands}
      *
      * @return the number of bands in the image.
      */
@@ -993,7 +993,7 @@ public class ImageTypeSpecifier {
      *
      * @return an int specifying a number of bits.
      *
-     * @exception IllegalArgumentException if <code>band</code> is
+     * @exception IllegalArgumentException if {@code band} is
      * negative or greater than the largest band index.
      */
     public int getBitsPerBand(int band) {
@@ -1004,32 +1004,32 @@ public class ImageTypeSpecifier {
     }
 
     /**
-     * Returns a <code>SampleModel</code> based on the settings
+     * Returns a {@code SampleModel} based on the settings
      * encapsulated within this object.  The width and height of the
-     * <code>SampleModel</code> will be set to arbitrary values.
+     * {@code SampleModel} will be set to arbitrary values.
      *
-     * @return a <code>SampleModel</code> with arbitrary dimensions.
+     * @return a {@code SampleModel} with arbitrary dimensions.
      */
     public SampleModel getSampleModel() {
         return sampleModel;
     }
 
     /**
-     * Returns a <code>SampleModel</code> based on the settings
+     * Returns a {@code SampleModel} based on the settings
      * encapsulated within this object.  The width and height of the
-     * <code>SampleModel</code> will be set to the supplied values.
+     * {@code SampleModel} will be set to the supplied values.
      *
-     * @param width the desired width of the returned <code>SampleModel</code>.
+     * @param width the desired width of the returned {@code SampleModel}.
      * @param height the desired height of the returned
-     * <code>SampleModel</code>.
+     * {@code SampleModel}.
      *
-     * @return a <code>SampleModel</code> with the given dimensions.
+     * @return a {@code SampleModel} with the given dimensions.
      *
-     * @exception IllegalArgumentException if either <code>width</code> or
-     * <code>height</code> are negative or zero.
+     * @exception IllegalArgumentException if either {@code width} or
+     * {@code height} are negative or zero.
      * @exception IllegalArgumentException if the product of
-     * <code>width</code> and <code>height</code> is greater than
-     * <code>Integer.MAX_VALUE</code>
+     * {@code width} and {@code height} is greater than
+     * {@code Integer.MAX_VALUE}
      */
     public SampleModel getSampleModel(int width, int height) {
         if ((long)width*height > Integer.MAX_VALUE) {
@@ -1040,32 +1040,32 @@ public class ImageTypeSpecifier {
     }
 
     /**
-     * Returns the <code>ColorModel</code> specified by this object.
+     * Returns the {@code ColorModel} specified by this object.
      *
-     * @return a <code>ColorModel</code>.
+     * @return a {@code ColorModel}.
      */
     public ColorModel getColorModel() {
         return colorModel;
     }
 
     /**
-     * Creates a <code>BufferedImage</code> with a given width and
+     * Creates a {@code BufferedImage} with a given width and
      * height according to the specification embodied in this object.
      *
      * @param width the desired width of the returned
-     * <code>BufferedImage</code>.
+     * {@code BufferedImage}.
      * @param height the desired height of the returned
-     * <code>BufferedImage</code>.
+     * {@code BufferedImage}.
      *
-     * @return a new <code>BufferedImage</code>
+     * @return a new {@code BufferedImage}
      *
-     * @exception IllegalArgumentException if either <code>width</code> or
-     * <code>height</code> are negative or zero.
+     * @exception IllegalArgumentException if either {@code width} or
+     * {@code height} are negative or zero.
      * @exception IllegalArgumentException if the product of
-     * <code>width</code> and <code>height</code> is greater than
-     * <code>Integer.MAX_VALUE</code>, or if the number of array
+     * {@code width} and {@code height} is greater than
+     * {@code Integer.MAX_VALUE}, or if the number of array
      * elements needed to store the image is greater than
-     * <code>Integer.MAX_VALUE</code>.
+     * {@code Integer.MAX_VALUE}.
      */
     public BufferedImage createBufferedImage(int width, int height) {
         try {
@@ -1084,15 +1084,15 @@ public class ImageTypeSpecifier {
     }
 
     /**
-     * Returns <code>true</code> if the given <code>Object</code> is
-     * an <code>ImageTypeSpecifier</code> and has a
-     * <code>SampleModel</code> and <code>ColorModel</code> that are
+     * Returns {@code true} if the given {@code Object} is
+     * an {@code ImageTypeSpecifier} and has a
+     * {@code SampleModel} and {@code ColorModel} that are
      * equal to those of this object.
      *
-     * @param o the <code>Object</code> to be compared for equality.
+     * @param o the {@code Object} to be compared for equality.
      *
-     * @return <code>true</code> if the given object is an equivalent
-     * <code>ImageTypeSpecifier</code>.
+     * @return {@code true} if the given object is an equivalent
+     * {@code ImageTypeSpecifier}.
      */
     public boolean equals(Object o) {
         if ((o == null) || !(o instanceof ImageTypeSpecifier)) {

@@ -40,9 +40,9 @@ import com.sun.beans.finder.MethodFinder;
 import sun.reflect.misc.MethodUtil;
 
 /**
- * A <code>Statement</code> object represents a primitive statement
+ * A {@code Statement} object represents a primitive statement
  * in which a single method is applied to a target and
- * a set of arguments - as in <code>"a.setFoo(b)"</code>.
+ * a set of arguments - as in {@code "a.setFoo(b)"}.
  * Note that where this example uses names
  * to denote the target and its argument, a statement
  * object does not require a name space and is constructed with

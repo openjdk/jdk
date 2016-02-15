@@ -41,14 +41,17 @@ import jdk.internal.ref.CleanerFactory;
 
 import sun.hotspot.WhiteBox;
 
+import jdk.test.lib.Utils;
+
 import org.testng.Assert;
 import org.testng.TestNG;
 import org.testng.annotations.Test;
 
 /*
  * @test
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib/share/classes /lib/testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
+ * @build jdk.test.lib.Utils
  * @modules java.base/jdk.internal.misc java.base/jdk.internal.ref
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm
@@ -88,8 +91,7 @@ public class CleanerTest {
 
         CleanableCase s = setupPhantom(COMMON, cleaner);
         cleaner = null;
-        Assert.assertTrue(checkCleaned(s.getSemaphore()),
-                "Cleaner cleanup should have occurred");
+        checkCleaned(s.getSemaphore(), true, "Cleaner was cleaned:");
     }
 
     /**
@@ -124,8 +126,7 @@ public class CleanerTest {
 
         CleanableCase s = setupPhantom(COMMON, cleaner);
         cleaner = null;
-        Assert.assertTrue(checkCleaned(s.getSemaphore()),
-                "Cleaner cleanup should have occurred");
+        checkCleaned(s.getSemaphore(), true, "Cleaner was cleaned:");
     }
 
     /**
@@ -213,16 +214,11 @@ public class CleanerTest {
         CleanableCase cc = setupPhantom(COMMON, test.getCleanable());
         test.clearCleanable();        // release this hard reference
 
-        boolean result = checkCleaned(test.getSemaphore());
-        if (result) {
-            Assert.assertEquals(r, CleanableCase.EV_CLEAN,
-                    "cleaned; but not expected");
-        } else {
-            Assert.assertNotEquals(r, CleanableCase.EV_CLEAN,
-                    "not cleaned; expected cleaning");
-        }
-        Assert.assertTrue(checkCleaned(cc.getSemaphore()),
-                "The reference to the Cleanable should have been freed");
+        checkCleaned(test.getSemaphore(),
+                r == CleanableCase.EV_CLEAN,
+                "Cleanable was cleaned:");
+        checkCleaned(cc.getSemaphore(), true,
+                "The reference to the Cleanable was freed:");
     }
 
     /**
@@ -278,27 +274,32 @@ public class CleanerTest {
      * Check a semaphore having been released by cleanup handler.
      * Force a number of GC cycles to give the GC a chance to process
      * the Reference and for the cleanup action to be run.
+     * Use a larger number of cycles to wait for an expected cleaning to occur.
      *
      * @param semaphore a Semaphore
-     * @return true if the semaphores has 1 permit, false otherwise.
+     * @param expectCleaned true if cleaning should occur
+     * @param msg a message to explain the error
      */
-    static boolean checkCleaned(Semaphore semaphore) {
-        int cycle = 0;
-        for (; cycle < 3; cycle++) {
+    static void checkCleaned(Semaphore semaphore, boolean expectCleaned,
+                             String msg) {
+        long max_cycles = expectCleaned ? 10 : 3;
+        long cycle = 0;
+        for (; cycle < max_cycles; cycle++) {
+            // Force GC
+            whitebox.fullGC();
+
             try {
-                if (semaphore.tryAcquire(10L, TimeUnit.MILLISECONDS)) {
+                if (semaphore.tryAcquire(Utils.adjustTimeout(10L), TimeUnit.MILLISECONDS)) {
                     System.out.printf(" Cleanable cleaned in cycle: %d%n", cycle);
-                    return true;
+                    Assert.assertEquals(true, expectCleaned, msg);
+                    return;
                 }
             } catch (InterruptedException ie) {
                 // retry in outer loop
             }
-            // Force GC
-            whitebox.fullGC();
         }
         // Object has not been cleaned
-        System.out.printf(" Cleanable not cleaned%n");
-        return false;   // Failing result
+        Assert.assertEquals(false, expectCleaned, msg);
     }
 
     /**
@@ -622,7 +623,7 @@ public class CleanerTest {
         System.gc();
         Assert.assertNotEquals(map.get(k2), data, "value should not be found in the map");
 
-        final int CYCLE_MAX = 30;
+        final long CYCLE_MAX = Utils.adjustTimeout(30L);
         for (int i = 1; map.size() > 0 && i < CYCLE_MAX; i++) {
             map.forEach( (k, v) -> System.out.printf("    k: %s, v: %s%n", k, v));
             try {
@@ -699,7 +700,7 @@ public class CleanerTest {
         }
 
         obj = null;
-        Assert.assertTrue(checkCleaned(s1), "reference should be cleaned;");
+        checkCleaned(s1, true, "reference was cleaned:");
         cleaner = null;
     }
 
@@ -713,7 +714,7 @@ public class CleanerTest {
         Object obj = new Object();
         CleanableCase s = setupPhantom(cleaner, obj);
         obj = null;
-        Assert.assertTrue(checkCleaned(s.getSemaphore()),
-                "Object cleaning should have occurred using CleanerFactor.cleaner()");
+        checkCleaned(s.getSemaphore(), true,
+                "Object was cleaned using CleanerFactor.cleaner():");
     }
 }

@@ -140,8 +140,8 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * method returns GDI surface (we don't want to have two swap chains)
      * @param isResize whether this surface is being created in response to
      * a component resize event. This determines whether a repaint event will
-     * be issued after a surface is created: it will be if <code>isResize</code>
-     * is <code>true</code>.
+     * be issued after a surface is created: it will be if {@code isResize}
+     * is {@code true}.
      * @return surface data to be use for onscreen rendering
      */
     @Override

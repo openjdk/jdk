@@ -1926,7 +1926,7 @@ public class Window extends Container implements Accessible {
      * with a class literal, such as
      * <code><em>Foo</em>Listener.class</code>.
      * For example, you can query a
-     * {@code Window} {@code w}
+     * {@code Window w}
      * for its window listeners with the following code:
      *
      * <pre>WindowListener[] wls = (WindowListener[])(w.getListeners(WindowListener.class));</pre>

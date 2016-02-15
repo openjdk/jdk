@@ -32,7 +32,7 @@ import java.awt.geom.Rectangle2D;
 import java.lang.annotation.Native;
 
 /**
- * The <code>PageFormat</code> class describes the size and
+ * The {@code PageFormat} class describes the size and
  * orientation of a page to be printed.
  */
 public class PageFormat implements Cloneable
@@ -80,7 +80,7 @@ public class PageFormat implements Cloneable
 
     /**
      * Creates a default, portrait-oriented
-     * <code>PageFormat</code>.
+     * {@code PageFormat}.
      */
     public PageFormat()
     {
@@ -90,9 +90,9 @@ public class PageFormat implements Cloneable
  /* Instance Methods */
 
     /**
-     * Makes a copy of this <code>PageFormat</code> with the same
-     * contents as this <code>PageFormat</code>.
-     * @return a copy of this <code>PageFormat</code>.
+     * Makes a copy of this {@code PageFormat} with the same
+     * contents as this {@code PageFormat}.
+     * @return a copy of this {@code PageFormat}.
      */
     public Object clone() {
         PageFormat newPage;
@@ -150,13 +150,13 @@ public class PageFormat implements Cloneable
 
     /**
      * Returns the x coordinate of the upper left point of the
-     * imageable area of the <code>Paper</code> object
-     * associated with this <code>PageFormat</code>.
+     * imageable area of the {@code Paper} object
+     * associated with this {@code PageFormat}.
      * This method takes into account the
      * orientation of the page.
      * @return the x coordinate of the upper left point of the
-     * imageable area of the <code>Paper</code> object
-     * associated with this <code>PageFormat</code>.
+     * imageable area of the {@code Paper} object
+     * associated with this {@code PageFormat}.
      */
     public double getImageableX() {
         double x;
@@ -189,13 +189,13 @@ public class PageFormat implements Cloneable
 
     /**
      * Returns the y coordinate of the upper left point of the
-     * imageable area of the <code>Paper</code> object
-     * associated with this <code>PageFormat</code>.
+     * imageable area of the {@code Paper} object
+     * associated with this {@code PageFormat}.
      * This method takes into account the
      * orientation of the page.
      * @return the y coordinate of the upper left point of the
-     * imageable area of the <code>Paper</code> object
-     * associated with this <code>PageFormat</code>.
+     * imageable area of the {@code Paper} object
+     * associated with this {@code PageFormat}.
      */
     public double getImageableY() {
         double y;
@@ -265,16 +265,16 @@ public class PageFormat implements Cloneable
 
     /**
      * Returns a copy of the {@link Paper} object associated
-     * with this <code>PageFormat</code>.  Changes made to the
-     * <code>Paper</code> object returned from this method do not
-     * affect the <code>Paper</code> object of this
-     * <code>PageFormat</code>.  To update the <code>Paper</code>
-     * object of this <code>PageFormat</code>, create a new
-     * <code>Paper</code> object and set it into this
-     * <code>PageFormat</code> by using the {@link #setPaper(Paper)}
+     * with this {@code PageFormat}.  Changes made to the
+     * {@code Paper} object returned from this method do not
+     * affect the {@code Paper} object of this
+     * {@code PageFormat}.  To update the {@code Paper}
+     * object of this {@code PageFormat}, create a new
+     * {@code Paper} object and set it into this
+     * {@code PageFormat} by using the {@link #setPaper(Paper)}
      * method.
-     * @return a copy of the <code>Paper</code> object associated
-     *          with this <code>PageFormat</code>.
+     * @return a copy of the {@code Paper} object associated
+     *          with this {@code PageFormat}.
      * @see #setPaper
      */
     public Paper getPaper() {
@@ -282,10 +282,10 @@ public class PageFormat implements Cloneable
     }
 
     /**
-     * Sets the <code>Paper</code> object for this
-     * <code>PageFormat</code>.
-     * @param paper the <code>Paper</code> object to which to set
-     * the <code>Paper</code> object for this <code>PageFormat</code>.
+     * Sets the {@code Paper} object for this
+     * {@code PageFormat}.
+     * @param paper the {@code Paper} object to which to set
+     * the {@code Paper} object for this {@code PageFormat}.
      * @exception NullPointerException
      *              a null paper instance was passed as a parameter.
      * @see #getPaper
@@ -295,7 +295,7 @@ public class PageFormat implements Cloneable
      }
 
     /**
-     * Sets the page orientation. <code>orientation</code> must be
+     * Sets the page orientation. {@code orientation} must be
      * one of the constants: PORTRAIT, LANDSCAPE,
      * or REVERSE_LANDSCAPE.
      * @param orientation the new orientation for the page
@@ -313,8 +313,8 @@ public class PageFormat implements Cloneable
     }
 
     /**
-     * Returns the orientation of this <code>PageFormat</code>.
-     * @return this <code>PageFormat</code> object's orientation.
+     * Returns the orientation of this {@code PageFormat}.
+     * @return this {@code PageFormat} object's orientation.
      * @see #setOrientation
      */
     public int getOrientation() {

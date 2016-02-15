@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,24 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package sun.awt;
+#ifndef SHARE_VM_GC_G1_G1HEAPTRANSITION_HPP
+#define SHARE_VM_GC_G1_G1HEAPTRANSITION_HPP
 
-import java.awt.Point;
-import java.awt.Window;
-import java.awt.peer.MouseInfoPeer;
+#include "gc/shared/plab.hpp"
 
-public final class DefaultMouseInfoPeer implements MouseInfoPeer {
+class G1CollectedHeap;
 
-    /**
-     * Package-private constructor to prevent instantiation.
-     */
-    DefaultMouseInfoPeer() {
-    }
+class G1HeapTransition {
+  struct Data {
+    size_t _eden_length;
+    size_t _survivor_length;
+    size_t _old_length;
+    size_t _humongous_length;
+    size_t _metaspace_used_bytes;
 
-    public native int fillPointWithCoords(Point point);
+    Data(G1CollectedHeap* g1_heap);
+  };
 
-    public native boolean isWindowUnderMouse(Window w);
+  G1CollectedHeap* _g1_heap;
+  Data _before;
 
-}
+public:
+  G1HeapTransition(G1CollectedHeap* g1_heap);
+
+  void print();
+};
+
+#endif // SHARE_VM_GC_G1_G1HEAPTRANSITION_HPP

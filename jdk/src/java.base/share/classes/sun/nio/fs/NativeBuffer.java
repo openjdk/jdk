@@ -26,7 +26,7 @@
 package sun.nio.fs;
 
 import jdk.internal.misc.Unsafe;
-import sun.misc.Cleaner;
+import jdk.internal.ref.Cleaner;
 
 /**
  * A light-weight buffer in native memory.

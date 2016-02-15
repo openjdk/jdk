@@ -1622,7 +1622,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      * @param transientForWindow the top-level window
      * @param updateChain specifies if next/prevTransientFor fields are
      *  to be updated
-     * @param allStates if set to <code>true</code> then TRANSIENT_FOR hint
+     * @param allStates if set to {@code true} then TRANSIENT_FOR hint
      *  is set regardless of the state of window and transientForWindow,
      *  otherwise it is set only if both are in the same state
      */

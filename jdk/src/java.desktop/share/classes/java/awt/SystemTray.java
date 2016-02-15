@@ -36,7 +36,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.AWTPermissions;
 
 /**
- * The <code>SystemTray</code> class represents the system tray for a
+ * The {@code SystemTray} class represents the system tray for a
  * desktop.  On Microsoft Windows it is referred to as the "Taskbar
  * Status Area", on Gnome it is referred to as the "Notification
  * Area", on KDE it is referred to as the "System Tray".  The system
@@ -47,19 +47,19 @@ import sun.awt.AWTPermissions;
  * throws {@link UnsupportedOperationException}.  To detect whether the
  * system tray is supported, use {@link SystemTray#isSupported}.
  *
- * <p>The <code>SystemTray</code> may contain one or more {@link
+ * <p>The {@code SystemTray} may contain one or more {@link
  * TrayIcon TrayIcons}, which are added to the tray using the {@link
  * #add} method, and removed when no longer needed, using the
- * {@link #remove}.  <code>TrayIcon</code> consists of an
+ * {@link #remove}.  {@code TrayIcon} consists of an
  * image, a popup menu and a set of associated listeners.  Please see
  * the {@link TrayIcon} class for details.
  *
- * <p>Every Java application has a single <code>SystemTray</code>
+ * <p>Every Java application has a single {@code SystemTray}
  * instance that allows the app to interface with the system tray of
- * the desktop while the app is running.  The <code>SystemTray</code>
+ * the desktop while the app is running.  The {@code SystemTray}
  * instance can be obtained from the {@link #getSystemTray} method.
  * An application may not create its own instance of
- * <code>SystemTray</code>.
+ * {@code SystemTray}.
  *
  * <p>The following code snippet demonstrates how to access
  * and customize the system tray:
@@ -141,7 +141,7 @@ public class SystemTray {
     }
 
     /**
-     * Private <code>SystemTray</code> constructor.
+     * Private {@code SystemTray} constructor.
      *
      */
     private SystemTray() {
@@ -149,7 +149,7 @@ public class SystemTray {
     }
 
     /**
-     * Gets the <code>SystemTray</code> instance that represents the
+     * Gets the {@code SystemTray} instance that represents the
      * desktop's tray area.  This always returns the same instance per
      * application.  On some platforms the system tray may not be
      * supported.  You may use the {@link #isSupported} method to
@@ -160,12 +160,12 @@ public class SystemTray {
      * {@code SystemTray} instance. Otherwise this method will throw a
      * SecurityException.
      *
-     * @return the <code>SystemTray</code> instance that represents
+     * @return the {@code SystemTray} instance that represents
      * the desktop's tray area
      * @throws UnsupportedOperationException if the system tray isn't
      * supported by the current platform
      * @throws HeadlessException if
-     * <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     * {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      * @throws SecurityException if {@code accessSystemTray} permission
      * is not granted
      * @see #add(TrayIcon)
@@ -203,15 +203,15 @@ public class SystemTray {
      * both the action listener and the popup menu.  See the {@link
      * SystemTray example} for an example of how to do this.
      *
-     * <p><b>Note</b>: When implementing <code>SystemTray</code> and
-     * <code>TrayIcon</code> it is <em>strongly recommended</em> that
+     * <p><b>Note</b>: When implementing {@code SystemTray} and
+     * {@code TrayIcon} it is <em>strongly recommended</em> that
      * you assign different gestures to the popup menu and an action
      * event.  Overloading a gesture for both purposes is confusing
      * and may prevent the user from accessing one or the other.
      *
      * @see #getSystemTray
-     * @return <code>false</code> if no system tray access is supported; this
-     * method returns <code>true</code> if the minimal system tray access is
+     * @return {@code false} if no system tray access is supported; this
+     * method returns {@code true} if the minimal system tray access is
      * supported but does not guarantee that all system tray
      * functionality is supported for the current platform
      */
@@ -231,20 +231,20 @@ public class SystemTray {
     }
 
     /**
-     * Adds a <code>TrayIcon</code> to the <code>SystemTray</code>.
+     * Adds a {@code TrayIcon} to the {@code SystemTray}.
      * The tray icon becomes visible in the system tray once it is
      * added.  The order in which icons are displayed in a tray is not
      * specified - it is platform and implementation-dependent.
      *
      * <p> All icons added by the application are automatically
-     * removed from the <code>SystemTray</code> upon application exit
+     * removed from the {@code SystemTray} upon application exit
      * and also when the desktop system tray becomes unavailable.
      *
-     * @param trayIcon the <code>TrayIcon</code> to be added
-     * @throws NullPointerException if <code>trayIcon</code> is
-     * <code>null</code>
+     * @param trayIcon the {@code TrayIcon} to be added
+     * @throws NullPointerException if {@code trayIcon} is
+     * {@code null}
      * @throws IllegalArgumentException if the same instance of
-     * a <code>TrayIcon</code> is added more than once
+     * a {@code TrayIcon} is added more than once
      * @throws AWTException if the desktop system tray is missing
      * @see #remove(TrayIcon)
      * @see #getSystemTray
@@ -284,18 +284,18 @@ public class SystemTray {
     }
 
     /**
-     * Removes the specified <code>TrayIcon</code> from the
-     * <code>SystemTray</code>.
+     * Removes the specified {@code TrayIcon} from the
+     * {@code SystemTray}.
      *
      * <p> All icons added by the application are automatically
-     * removed from the <code>SystemTray</code> upon application exit
+     * removed from the {@code SystemTray} upon application exit
      * and also when the desktop system tray becomes unavailable.
      *
-     * <p> If <code>trayIcon</code> is <code>null</code> or was not
+     * <p> If {@code trayIcon} is {@code null} or was not
      * added to the system tray, no exception is thrown and no action
      * is performed.
      *
-     * @param trayIcon the <code>TrayIcon</code> to be removed
+     * @param trayIcon the {@code TrayIcon} to be removed
      * @see #add(TrayIcon)
      * @see TrayIcon
      */
@@ -328,8 +328,8 @@ public class SystemTray {
      *
      * <p> The returned array is a copy of the actual array and may be
      * modified in any way without affecting the system tray.  To
-     * remove a <code>TrayIcon</code> from the
-     * <code>SystemTray</code>, use the {@link
+     * remove a {@code TrayIcon} from the
+     * {@code SystemTray}, use the {@link
      * #remove(TrayIcon)} method.
      *
      * @return an array of all tray icons added to this tray, or an
@@ -351,7 +351,7 @@ public class SystemTray {
      * occupy in the system tray.  Developers may use this methods to
      * acquire the preferred size for the image property of a tray icon
      * before it is created.  For convenience, there is a similar
-     * method {@link TrayIcon#getSize} in the <code>TrayIcon</code> class.
+     * method {@link TrayIcon#getSize} in the {@code TrayIcon} class.
      *
      * @return the default size of a tray icon, in pixels
      * @see TrayIcon#setImageAutoSize(boolean)
@@ -383,7 +383,7 @@ public class SystemTray {
      * <tr>
      *    <td>{@code systemTray}</td>
      *    <td>This property contains {@code SystemTray} instance when the system tray
-     *        is available or <code>null</code> otherwise.<br> This property is changed
+     *        is available or {@code null} otherwise.<br> This property is changed
      *        when the system tray becomes available or unavailable on the desktop.<br>
      *        The property is accessed by the {@link #getSystemTray} method.</td>
      * </tr>

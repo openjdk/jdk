@@ -309,13 +309,6 @@ class Generation: public CHeapObj<mtGC> {
   // do nothing.
   virtual void par_oop_since_save_marks_iterate_done(int thread_num) {}
 
-  // This generation does in-place marking, meaning that mark words
-  // are mutated during the marking phase and presumably reinitialized
-  // to a canonical value after the GC. This is currently used by the
-  // biased locking implementation to determine whether additional
-  // work is required during the GC prologue and epilogue.
-  virtual bool performs_in_place_marking() const { return true; }
-
   // Returns "true" iff collect() should subsequently be called on this
   // this generation. See comment below.
   // This is a generic implementation which can be overridden.

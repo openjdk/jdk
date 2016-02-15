@@ -47,6 +47,7 @@ public class StreamTestDataProvider {
 
     private static final Object[][] testData;
     private static final Object[][] testSmallData;
+    private static final Object[][] testMiniData;
     private static final Object[][] withNullTestData;
     private static final Object[][] spliteratorTestData;
 
@@ -85,6 +86,7 @@ public class StreamTestDataProvider {
 
     static {
         {
+            List<Object[]> listMini = new ArrayList<>();
             List<Object[]> listSmall = new ArrayList<>();
             List<Object[]> list1000 = new ArrayList<>();
             List<Object[]> list = null;
@@ -93,7 +95,7 @@ public class StreamTestDataProvider {
                 final Integer[] ints = (Integer[])data[1];
                 final List<Integer> intsAsList = Arrays.asList(ints);
 
-                list = ints.length >= 1000 ? list1000 : listSmall;
+                list = ints.length >= 1000 ? list1000 : (ints.length >= 100 ? listSmall : listMini);
 
                 list.add(arrayDataDescr("array:" + name, ints));
                 list.add(collectionDataDescr("ArrayList.asList:" + name, intsAsList));
@@ -119,6 +121,8 @@ public class StreamTestDataProvider {
 
                 // @@@ Add more
             }
+            testMiniData = listMini.toArray(new Object[0][]);
+            listSmall.addAll(listMini);
             testSmallData = listSmall.toArray(new Object[0][]);
             list1000.addAll(listSmall);
             testData = list1000.toArray(new Object[0][]);
@@ -202,6 +206,11 @@ public class StreamTestDataProvider {
     @DataProvider(name = "StreamTestData<Integer>.small")
     public static Object[][] makeSmallStreamTestData() {
         return testSmallData;
+    }
+
+    @DataProvider(name = "StreamTestData<Integer>.mini")
+    public static Object[][] makeMiniStreamTestData() {
+        return testMiniData;
     }
 
     @DataProvider(name = "withNull:StreamTestData<Integer>")

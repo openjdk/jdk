@@ -48,7 +48,7 @@ public interface FwDispatcher {
 
     /**
      * Forwards a runnable to the delegate, which executes it on an appropriate thread.
-     * @param r - a runnable calling {@link EventQueue#dispatchEventImpl(java.awt.AWTEvent, Object)}
+     * @param r a runnable calling {@link EventQueue#dispatchEventImpl(java.awt.AWTEvent, Object)}
      */
     void scheduleDispatch(Runnable r);
 

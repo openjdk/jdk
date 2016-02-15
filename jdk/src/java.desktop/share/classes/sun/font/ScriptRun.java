@@ -35,10 +35,10 @@
 package sun.font;
 
 /**
- * <code>ScriptRun</code> is used to find runs of characters in
- * the same script, as defined in the <code>Script</code> class.
+ * {@code ScriptRun} is used to find runs of characters in
+ * the same script, as defined in the {@code Script} class.
  * It implements a simple iterator over an array of characters.
- * The iterator will assign <code>COMMON</code> and <code>INHERITED</code>
+ * The iterator will assign {@code COMMON} and {@code INHERITED}
  * characters to the same script as the preceding characters. If the
  * COMMON and INHERITED characters are first, they will be assigned to
  * the same script as the following characters.
@@ -88,7 +88,7 @@ public final class ScriptRun
     }
 
     /**
-     * Construct a <code>ScriptRun</code> object which iterates over a subrange
+     * Construct a {@code ScriptRun} object which iterates over a subrange
      * of the given characetrs.
      *
      * @param chars the array of characters over which to iterate.
@@ -145,10 +145,10 @@ public final class ScriptRun
     }
 
     /**
-     * Find the next script run. Returns <code>false</code> if there
-     * isn't another run, returns <code>true</code> if there is.
+     * Find the next script run. Returns {@code false} if there
+     * isn't another run, returns {@code true} if there is.
      *
-     * @return <code>false</code> if there isn't another run, <code>true</code> if there is.
+     * @return {@code false} if there isn't another run, {@code true} if there is.
      */
     public boolean next() {
         int startSP  = parenSP;  // used to find the first new open character
@@ -273,7 +273,7 @@ public final class ScriptRun
      *
      * @param scriptOne one of the script codes.
      * @param scriptTwo the other script code.
-     * @return <code>true</code> if the two scripts are the same.
+     * @return {@code true} if the two scripts are the same.
      * @see Script
      */
     private static boolean sameScript(int scriptOne, int scriptTwo) {

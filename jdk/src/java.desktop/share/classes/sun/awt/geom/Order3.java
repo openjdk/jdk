@@ -123,7 +123,7 @@ final class Order3 extends Curve {
     /*
      * Return the count of the number of horizontal sections of the
      * specified cubic Bezier curve.  Put the parameters for the
-     * horizontal sections into the specified <code>ret</code> array.
+     * horizontal sections into the specified {@code ret} array.
      * <p>
      * If we examine the parametric equation in t, we have:
      *   Py(t) = C0(1-t)^3 + 3CP0 t(1-t)^2 + 3CP1 t^2(1-t) + C1 t^3

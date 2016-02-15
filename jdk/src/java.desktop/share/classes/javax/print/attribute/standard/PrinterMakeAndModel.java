@@ -35,7 +35,7 @@ import javax.print.attribute.PrintServiceAttribute;
  * <P>
  * <B>IPP Compatibility:</B> The string value gives the IPP name value. The
  * locale gives the IPP natural language. The category name returned by
- * <CODE>getName()</CODE> gives the IPP attribute name.
+ * {@code getName()} gives the IPP attribute name.
  *
  * @author  Alan Kaminsky
  */
@@ -51,10 +51,10 @@ public final class PrinterMakeAndModel extends TextSyntax
      * @param  makeAndModel  Printer make and model string.
      * @param  locale        Natural language of the text string. null
      * is interpreted to mean the default locale as returned
-     * by <code>Locale.getDefault()</code>
+     * by {@code Locale.getDefault()}
      *
      * @exception  NullPointerException
-     *    (unchecked exception) Thrown if <CODE>makeAndModel</CODE> is null.
+     *    (unchecked exception) Thrown if {@code makeAndModel} is null.
      */
     public PrinterMakeAndModel(String makeAndModel, Locale locale) {
         super (makeAndModel, locale);
@@ -66,20 +66,20 @@ public final class PrinterMakeAndModel extends TextSyntax
      * must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class PrinterMakeAndModel.
+     * {@code object} is an instance of class PrinterMakeAndModel.
      * <LI>
      * This printer make and model attribute's underlying string and
-     * <CODE>object</CODE>'s underlying string are equal.
+     * {@code object}'s underlying string are equal.
      * <LI>
      * This printer make and model attribute's locale and
-     * <CODE>object</CODE>'s locale are equal.
+     * {@code object}'s locale are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this printer
+     * @return  True if {@code object} is equivalent to this printer
      *          make and model attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -106,7 +106,7 @@ public final class PrinterMakeAndModel extends TextSyntax
      * instance.
      * <P>
      * For class PrinterMakeAndModel, the
-     * category name is <CODE>"printer-make-and-model"</CODE>.
+     * category name is {@code "printer-make-and-model"}.
      *
      * @return  Attribute category name.
      */

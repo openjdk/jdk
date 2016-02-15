@@ -46,8 +46,8 @@ import javax.print.attribute.PrintServiceAttribute;
  * about this general kind of printer rather than this specific printer.
  * <P>
  * <B>IPP Compatibility:</B> The string form returned by
- * <CODE>toString()</CODE>  gives the IPP uri value.
- * The category name returned by <CODE>getName()</CODE>
+ * {@code toString()}  gives the IPP uri value.
+ * The category name returned by {@code getName()}
  * gives the IPP attribute name.
  *
  * @author  Alan Kaminsky
@@ -63,7 +63,7 @@ public final class PrinterMoreInfo extends URISyntax
      * @param  uri  URI.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>uri</CODE> is null.
+     *     (unchecked exception) Thrown if {@code uri} is null.
      */
     public PrinterMoreInfo(URI uri) {
         super (uri);
@@ -75,17 +75,17 @@ public final class PrinterMoreInfo extends URISyntax
      * must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class PrinterMoreInfo.
+     * {@code object} is an instance of class PrinterMoreInfo.
      * <LI>
-     * This printer more info attribute's URI and <CODE>object</CODE>'s URI
+     * This printer more info attribute's URI and {@code object}'s URI
      * are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this printer
+     * @return  True if {@code object} is equivalent to this printer
      *          more info attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -111,7 +111,7 @@ public final class PrinterMoreInfo extends URISyntax
      * instance.
      * <P>
      * For class PrinterMoreInfo, the
-     * category name is <CODE>"printer-more-info"</CODE>.
+     * category name is {@code "printer-more-info"}.
      *
      * @return  Attribute category name.
      */

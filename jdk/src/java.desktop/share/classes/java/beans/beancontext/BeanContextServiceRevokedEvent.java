@@ -32,7 +32,7 @@ import java.beans.beancontext.BeanContextServices;
 /**
  * <p>
  * This event type is used by the
- * <code>BeanContextServiceRevokedListener</code> in order to
+ * {@code BeanContextServiceRevokedListener} in order to
  * identify the service being revoked.
  * </p>
  */
@@ -40,11 +40,11 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
     private static final long serialVersionUID = -1295543154724961754L;
 
     /**
-     * Construct a <code>BeanContextServiceEvent</code>.
-     * @param bcs the <code>BeanContextServices</code>
+     * Construct a {@code BeanContextServiceEvent}.
+     * @param bcs the {@code BeanContextServices}
      * from which this service is being revoked
      * @param sc the service that is being revoked
-     * @param invalidate <code>true</code> for immediate revocation
+     * @param invalidate {@code true} for immediate revocation
      */
     public BeanContextServiceRevokedEvent(BeanContextServices bcs, Class<?> sc, boolean invalidate) {
         super((BeanContext)bcs);
@@ -54,8 +54,8 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
     }
 
     /**
-     * Gets the source as a reference of type <code>BeanContextServices</code>
-     * @return the <code>BeanContextServices</code> from which
+     * Gets the source as a reference of type {@code BeanContextServices}
+     * @return the {@code BeanContextServices} from which
      * this service is being revoked
      */
     public BeanContextServices getSourceAsBeanContextServices() {
@@ -64,7 +64,7 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
 
     /**
      * Gets the service class that is the subject of this notification
-     * @return A <code>Class</code> reference to the
+     * @return A {@code Class} reference to the
      * service that is being revoked
      */
     public Class<?> getServiceClass() { return serviceClass; }
@@ -73,7 +73,7 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
      * Checks this event to determine whether or not
      * the service being revoked is of a particular class.
      * @param service the service of interest (should be non-null)
-     * @return <code>true</code> if the service being revoked is of the
+     * @return {@code true} if the service being revoked is of the
      * same class as the specified service
      */
     public boolean isServiceClass(Class<?> service) {
@@ -83,7 +83,7 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
     /**
      * Reports if the current service is being forcibly revoked,
      * in which case the references are now invalidated and unusable.
-     * @return <code>true</code> if current service is being forcibly revoked
+     * @return {@code true} if current service is being forcibly revoked
      */
     public boolean isCurrentServiceInvalidNow() { return invalidateRefs; }
 
@@ -92,7 +92,7 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
      */
 
     /**
-     * A <code>Class</code> reference to the service that is being revoked.
+     * A {@code Class} reference to the service that is being revoked.
      */
     protected Class<?>                   serviceClass;
     private   boolean                    invalidateRefs;

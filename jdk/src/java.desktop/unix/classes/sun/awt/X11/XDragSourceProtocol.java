@@ -74,7 +74,7 @@ abstract class XDragSourceProtocol {
      * Initializes a drag operation with the specified supported drop actions,
      * contents and data formats.
      *
-     * @param actions a bitwise mask of <code>DnDConstants</code> that represent
+     * @param actions a bitwise mask of {@code DnDConstants} that represent
      *                the supported drop actions.
      * @param contents the contents for the drag operation.
      * @param formats an array of Atoms that represent the supported data formats.

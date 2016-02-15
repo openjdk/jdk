@@ -36,12 +36,12 @@ import sun.awt.SunToolkit;
  * activated, deactivated, iconified, or deiconified, or when focus is
  * transferred into or out of the Window.
  * <P>
- * The event is passed to every <code>WindowListener</code>
- * or <code>WindowAdapter</code> object which registered to receive such
- * events using the window's <code>addWindowListener</code> method.
- * (<code>WindowAdapter</code> objects implement the
- * <code>WindowListener</code> interface.) Each such listener object
- * gets this <code>WindowEvent</code> when the event occurs.
+ * The event is passed to every {@code WindowListener}
+ * or {@code WindowAdapter} object which registered to receive such
+ * events using the window's {@code addWindowListener} method.
+ * ({@code WindowAdapter} objects implement the
+ * {@code WindowListener} interface.) Each such listener object
+ * gets this {@code WindowEvent} when the event occurs.
  * <p>
  * An unspecified behavior will be caused if the {@code id} parameter
  * of any particular {@code WindowEvent} instance is not
@@ -176,23 +176,23 @@ public class WindowEvent extends ComponentEvent {
 
 
     /**
-     * Constructs a <code>WindowEvent</code> object.
+     * Constructs a {@code WindowEvent} object.
      * <p>This method throws an
-     * <code>IllegalArgumentException</code> if <code>source</code>
-     * is <code>null</code>.
+     * {@code IllegalArgumentException} if {@code source}
+     * is {@code null}.
      *
-     * @param source    The <code>Window</code> object
+     * @param source    The {@code Window} object
      *                    that originated the event
      * @param id        An integer indicating the type of event.
      *                     For information on allowable values, see
      *                     the class description for {@link WindowEvent}
      * @param opposite  The other window involved in the focus or activation
-     *                      change, or <code>null</code>
+     *                      change, or {@code null}
      * @param oldState  Previous state of the window for window state change event.
      *                  See {@code #getOldState()} for allowable values
      * @param newState  New state of the window for window state change event.
      *                  See {@code #getNewState()} for allowable values
-     * @throws IllegalArgumentException if <code>source</code> is null
+     * @throws IllegalArgumentException if {@code source} is null
      * @see #getWindow()
      * @see #getID()
      * @see #getOppositeWindow()
@@ -210,24 +210,24 @@ public class WindowEvent extends ComponentEvent {
     }
 
     /**
-     * Constructs a <code>WindowEvent</code> object with the
-     * specified opposite <code>Window</code>. The opposite
-     * <code>Window</code> is the other <code>Window</code>
+     * Constructs a {@code WindowEvent} object with the
+     * specified opposite {@code Window}. The opposite
+     * {@code Window} is the other {@code Window}
      * involved in this focus or activation change.
-     * For a <code>WINDOW_ACTIVATED</code> or
-     * <code>WINDOW_GAINED_FOCUS</code> event, this is the
-     * <code>Window</code> that lost activation or focus.
-     * For a <code>WINDOW_DEACTIVATED</code> or
-     * <code>WINDOW_LOST_FOCUS</code> event, this is the
-     * <code>Window</code> that gained activation or focus.
+     * For a {@code WINDOW_ACTIVATED} or
+     * {@code WINDOW_GAINED_FOCUS} event, this is the
+     * {@code Window} that lost activation or focus.
+     * For a {@code WINDOW_DEACTIVATED} or
+     * {@code WINDOW_LOST_FOCUS} event, this is the
+     * {@code Window} that gained activation or focus.
      * If this focus change occurs with a native application, with a
      * Java application in a different VM, or with no other
-     * <code>Window</code>, then the opposite Window is <code>null</code>.
+     * {@code Window}, then the opposite Window is {@code null}.
      * <p>This method throws an
-     * <code>IllegalArgumentException</code> if <code>source</code>
-     * is <code>null</code>.
+     * {@code IllegalArgumentException} if {@code source}
+     * is {@code null}.
      *
-     * @param source     The <code>Window</code> object that
+     * @param source     The {@code Window} object that
      *                   originated the event
      * @param id        An integer indicating the type of event.
      *                     For information on allowable values, see
@@ -237,11 +237,11 @@ public class WindowEvent extends ComponentEvent {
      *                  {@code WINDOW_ACTIVATED},{@code WINDOW_DEACTIVATED},
      *                  {@code WINDOW_GAINED_FOCUS}, or {@code WINDOW_LOST_FOCUS}.
      *                  {@code WindowEvent} types,
-     *                  because the opposite <code>Window</code> of other event types
+     *                  because the opposite {@code Window} of other event types
      *                  will always be {@code null}.
-     * @param opposite   The other <code>Window</code> involved in the
-     *                   focus or activation change, or <code>null</code>
-     * @throws IllegalArgumentException if <code>source</code> is null
+     * @param opposite   The other {@code Window} involved in the
+     *                   focus or activation change, or {@code null}
+     * @throws IllegalArgumentException if {@code source} is null
      * @see #getWindow()
      * @see #getID()
      * @see #getOppositeWindow()
@@ -252,13 +252,13 @@ public class WindowEvent extends ComponentEvent {
     }
 
     /**
-     * Constructs a <code>WindowEvent</code> object with the specified
+     * Constructs a {@code WindowEvent} object with the specified
      * previous and new window states.
      * <p>This method throws an
-     * <code>IllegalArgumentException</code> if <code>source</code>
-     * is <code>null</code>.
+     * {@code IllegalArgumentException} if {@code source}
+     * is {@code null}.
      *
-     * @param source    The <code>Window</code> object
+     * @param source    The {@code Window} object
      *                  that originated the event
      * @param id        An integer indicating the type of event.
      *                     For information on allowable values, see
@@ -273,7 +273,7 @@ public class WindowEvent extends ComponentEvent {
      *                  See {@code #getOldState()} for allowable values
      * @param newState  An integer representing the new window state.
      *                  See {@code #getNewState()} for allowable values
-     * @throws IllegalArgumentException if <code>source</code> is null
+     * @throws IllegalArgumentException if {@code source} is null
      * @see #getWindow()
      * @see #getID()
      * @see #getOldState()
@@ -285,16 +285,16 @@ public class WindowEvent extends ComponentEvent {
     }
 
     /**
-     * Constructs a <code>WindowEvent</code> object.
+     * Constructs a {@code WindowEvent} object.
      * <p>This method throws an
-     * <code>IllegalArgumentException</code> if <code>source</code>
-     * is <code>null</code>.
+     * {@code IllegalArgumentException} if {@code source}
+     * is {@code null}.
      *
-     * @param source The <code>Window</code> object that originated the event
+     * @param source The {@code Window} object that originated the event
      * @param id     An integer indicating the type of event.
      *                     For information on allowable values, see
      *                     the class description for {@link WindowEvent}.
-     * @throws IllegalArgumentException if <code>source</code> is null
+     * @throws IllegalArgumentException if {@code source} is null
      * @see #getWindow()
      * @see #getID()
      */
@@ -336,18 +336,18 @@ public class WindowEvent extends ComponentEvent {
     }
 
     /**
-     * For <code>WINDOW_STATE_CHANGED</code> events returns the
+     * For {@code WINDOW_STATE_CHANGED} events returns the
      * previous state of the window. The state is
      * represented as a bitwise mask.
      * <ul>
-     * <li><code>NORMAL</code>
+     * <li>{@code NORMAL}
      * <br>Indicates that no state bits are set.
-     * <li><code>ICONIFIED</code>
-     * <li><code>MAXIMIZED_HORIZ</code>
-     * <li><code>MAXIMIZED_VERT</code>
-     * <li><code>MAXIMIZED_BOTH</code>
-     * <br>Concatenates <code>MAXIMIZED_HORIZ</code>
-     * and <code>MAXIMIZED_VERT</code>.
+     * <li>{@code ICONIFIED}
+     * <li>{@code MAXIMIZED_HORIZ}
+     * <li>{@code MAXIMIZED_VERT}
+     * <li>{@code MAXIMIZED_BOTH}
+     * <br>Concatenates {@code MAXIMIZED_HORIZ}
+     * and {@code MAXIMIZED_VERT}.
      * </ul>
      *
      * @return a bitwise mask of the previous window state
@@ -359,18 +359,18 @@ public class WindowEvent extends ComponentEvent {
     }
 
     /**
-     * For <code>WINDOW_STATE_CHANGED</code> events returns the
+     * For {@code WINDOW_STATE_CHANGED} events returns the
      * new state of the window. The state is
      * represented as a bitwise mask.
      * <ul>
-     * <li><code>NORMAL</code>
+     * <li>{@code NORMAL}
      * <br>Indicates that no state bits are set.
-     * <li><code>ICONIFIED</code>
-     * <li><code>MAXIMIZED_HORIZ</code>
-     * <li><code>MAXIMIZED_VERT</code>
-     * <li><code>MAXIMIZED_BOTH</code>
-     * <br>Concatenates <code>MAXIMIZED_HORIZ</code>
-     * and <code>MAXIMIZED_VERT</code>.
+     * <li>{@code ICONIFIED}
+     * <li>{@code MAXIMIZED_HORIZ}
+     * <li>{@code MAXIMIZED_VERT}
+     * <li>{@code MAXIMIZED_BOTH}
+     * <br>Concatenates {@code MAXIMIZED_HORIZ}
+     * and {@code MAXIMIZED_VERT}.
      * </ul>
      *
      * @return a bitwise mask of the new window state

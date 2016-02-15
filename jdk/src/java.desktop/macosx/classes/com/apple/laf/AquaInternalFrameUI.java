@@ -295,9 +295,9 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
     }
 
     /**
-     * Installs necessary mouse handlers on <code>newPane</code>
+     * Installs necessary mouse handlers on {@code newPane}
      * and adds it to the frame.
-     * Reverse process for the <code>currentPane</code>.
+     * Reverse process for the {@code currentPane}.
      */
     @Override
     protected void replacePane(final JComponent currentPane, final JComponent newPane) {

@@ -26,16 +26,16 @@
 package java.beans;
 
 /**
- * An <code>Expression</code> object represents a primitive expression
+ * An {@code Expression} object represents a primitive expression
  * in which a single method is applied to a target and a set of
- * arguments to return a result - as in <code>"a.getFoo()"</code>.
+ * arguments to return a result - as in {@code "a.getFoo()"}.
  * <p>
  * In addition to the properties of the super class, the
- * <code>Expression</code> object provides a <em>value</em> which
+ * {@code Expression} object provides a <em>value</em> which
  * is the object returned when this expression is evaluated.
  * The return value is typically not provided by the caller and
  * is instead computed by dynamically finding the method and invoking
- * it when the first call to <code>getValue</code> is made.
+ * it when the first call to {@code getValue} is made.
  *
  * @see #getValue
  * @see #setValue
@@ -127,19 +127,19 @@ public class Expression extends Statement {
      * methodName on this target with these arguments and calls it.
      * The result of the method invocation is first copied
      * into the value property of this expression and then returned
-     * as the result of <code>getValue</code>. If the value property
-     * was already set, either by a call to <code>setValue</code>
-     * or a previous call to <code>getValue</code> then the value
+     * as the result of {@code getValue}. If the value property
+     * was already set, either by a call to {@code setValue}
+     * or a previous call to {@code getValue} then the value
      * property is returned without either looking up or calling the method.
      * <p>
-     * The value property of an <code>Expression</code> is set to
-     * a unique private (non-<code>null</code>) value by default and
+     * The value property of an {@code Expression} is set to
+     * a unique private (non-{@code null}) value by default and
      * this value is used as an internal indication that the method
-     * has not yet been called. A return value of <code>null</code>
+     * has not yet been called. A return value of {@code null}
      * replaces this default value in the same way that any other value
      * would, ensuring that expressions are never evaluated more than once.
      * <p>
-     * See the <code>execute</code> method for details on how
+     * See the {@code execute} method for details on how
      * methods are chosen using the dynamic types of the target
      * and arguments.
      *
@@ -158,7 +158,7 @@ public class Expression extends Statement {
     }
 
     /**
-     * Sets the value of this expression to <code>value</code>.
+     * Sets the value of this expression to {@code value}.
      * This value will be returned by the getValue method
      * without calling the method associated with this
      * expression.

@@ -917,6 +917,7 @@ JVM_VARIANTS
 JVM_INTERPRETER
 JDK_VARIANT
 SET_OPENJDK
+USERNAME
 CANONICAL_TOPDIR
 ORIGINAL_TOPDIR
 TOPDIR
@@ -3834,7 +3835,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4835,7 +4836,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1454146111
+DATE_WHEN_GENERATED=1454926898
 
 ###############################################################################
 #
@@ -15652,6 +15653,11 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf
 
+  # Setup username (for use in adhoc version strings etc)
+  # Outer [ ] to quote m4.
+   USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'`
+
+
 
 # Check if it's a pure open build or if custom sources are to be used.
 
@@ -23429,9 +23435,8 @@ $as_echo "$as_me: WARNING: --with-version-opt value has been sanitized from '$wi
       # Default is to calculate a string like this <timestamp>.<username>.<base dir name>
       timestamp=`$DATE '+%Y-%m-%d-%H%M%S'`
       # Outer [ ] to quote m4.
-       username=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'`
        basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'`
-      VERSION_OPT="$timestamp.$username.$basedirname"
+      VERSION_OPT="$timestamp.$USERNAME.$basedirname"
     fi
   fi
 
@@ -29968,8 +29973,9 @@ fi
       if test "x$OPENJDK_TARGET_OS" = xsolaris; then
         # Solaris Studio does not have a concept of sysroot. Instead we must
         # make sure the default include and lib dirs are appended to each
-        # compile and link command line.
-        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
+        # compile and link command line. Must also add -I-xbuiltin to enable
+        # inlining of system functions and intrinsics.
+        SYSROOT_CFLAGS="-I-xbuiltin -I$SYSROOT/usr/include"
         SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
@@ -42361,8 +42367,9 @@ $as_echo "$BUILD_DEVKIT_ROOT" >&6; }
       if test "x$OPENJDK_TARGET_OS" = xsolaris; then
         # Solaris Studio does not have a concept of sysroot. Instead we must
         # make sure the default include and lib dirs are appended to each
-        # compile and link command line.
-        BUILD_SYSROOT_CFLAGS="-I$BUILD_SYSROOT/usr/include"
+        # compile and link command line. Must also add -I-xbuiltin to enable
+        # inlining of system functions and intrinsics.
+        BUILD_SYSROOT_CFLAGS="-I-xbuiltin -I$BUILD_SYSROOT/usr/include"
         BUILD_SYSROOT_LDFLAGS="-L$BUILD_SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$BUILD_SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$BUILD_SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
@@ -46191,12 +46198,12 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
 
     # Execute function body
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"" >&5
-$as_echo_n "checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"" >&5
+$as_echo_n "checking if compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"... " >&6; }
   supports=yes
 
   saved_cflags="$CFLAGS"
-  CFLAGS="$CFLAGS $STACK_PROTECTOR_CFLAG"
+  CFLAGS="$CFLAGS $STACK_PROTECTOR_CFLAG -Werror"
   ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -46222,7 +46229,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   CFLAGS="$saved_cflags"
 
   saved_cxxflags="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAG $STACK_PROTECTOR_CFLAG"
+  CXXFLAGS="$CXXFLAG $STACK_PROTECTOR_CFLAG -Werror"
   ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -46441,22 +46448,22 @@ $as_echo "$supports" >&6; }
     esac
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
-	    if test "x$OPENJDK_TARGET_CPU" = xx86; then
-	      # Force compatibility with i586 on 32 bit intel platforms.
-	      COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
-	    fi
-	    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
-	        -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
-	    case $OPENJDK_TARGET_CPU_ARCH in
-	      ppc )
-	        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
-	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
-	        ;;
-	      * )
-	        COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
-	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
-	        ;;
-	    esac
+      if test "x$OPENJDK_TARGET_CPU" = xx86; then
+        # Force compatibility with i586 on 32 bit intel platforms.
+        COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
+      fi
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
+          -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
+      case $OPENJDK_TARGET_CPU_ARCH in
+        ppc )
+          # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+          CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+        * )
+          COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
+          CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+      esac
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"

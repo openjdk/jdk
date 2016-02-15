@@ -78,7 +78,7 @@ public final class BandedSampleModel extends ComponentSampleModel
      * @param h         The height (in pixels) of the region of image
      *                  data described.
      * @param numBands  The number of bands for the image data.
-     * @throws IllegalArgumentException if <code>dataType</code> is not
+     * @throws IllegalArgumentException if {@code dataType} is not
      *         one of the supported data types
      */
     public BandedSampleModel(int dataType, int w, int h, int numBands) {
@@ -100,7 +100,7 @@ public final class BandedSampleModel extends ComponentSampleModel
      * @param scanlineStride The line stride of the of the image data.
      * @param bankIndices The bank index for each band.
      * @param bandOffsets The band offset for each band.
-     * @throws IllegalArgumentException if <code>dataType</code> is not
+     * @throws IllegalArgumentException if {@code dataType} is not
      *         one of the supported data types
      */
     public BandedSampleModel(int dataType,
@@ -119,15 +119,15 @@ public final class BandedSampleModel extends ComponentSampleModel
      * as this BandedSampleModel.  The band offsets will be compressed
      * such that the offset between bands will be w*pixelStride and
      * the minimum of all of the band offsets is zero.
-     * @param w the width of the resulting <code>BandedSampleModel</code>
-     * @param h the height of the resulting <code>BandedSampleModel</code>
-     * @return a new <code>BandedSampleModel</code> with the specified
+     * @param w the width of the resulting {@code BandedSampleModel}
+     * @param h the height of the resulting {@code BandedSampleModel}
+     * @return a new {@code BandedSampleModel} with the specified
      *         width and height.
-     * @throws IllegalArgumentException if <code>w</code> or
-     *         <code>h</code> equals either
-     *         <code>Integer.MAX_VALUE</code> or
-     *         <code>Integer.MIN_VALUE</code>
-     * @throws IllegalArgumentException if <code>dataType</code> is not
+     * @throws IllegalArgumentException if {@code w} or
+     *         {@code h} equals either
+     *         {@code Integer.MAX_VALUE} or
+     *         {@code Integer.MIN_VALUE}
+     * @throws IllegalArgumentException if {@code dataType} is not
      *         one of the supported data types
      */
     public SampleModel createCompatibleSampleModel(int w, int h) {
@@ -154,7 +154,7 @@ public final class BandedSampleModel extends ComponentSampleModel
      * of the original BandedSampleModel/DataBuffer combination.
      * @throws RasterFormatException if the number of bands is greater than
      *                               the number of banks in this sample model.
-     * @throws IllegalArgumentException if <code>dataType</code> is not
+     * @throws IllegalArgumentException if {@code dataType} is not
      *         one of the supported data types
      */
     public SampleModel createSubsetSampleModel(int bands[]) {
@@ -179,7 +179,7 @@ public final class BandedSampleModel extends ComponentSampleModel
      * Creates a DataBuffer that corresponds to this BandedSampleModel,
      * The DataBuffer's data type, number of banks, and size
      * will be consistent with this BandedSampleModel.
-     * @throws IllegalArgumentException if <code>dataType</code> is not
+     * @throws IllegalArgumentException if {@code dataType} is not
      *         one of the supported types.
      */
     public DataBuffer createDataBuffer() {
@@ -223,10 +223,10 @@ public final class BandedSampleModel extends ComponentSampleModel
      * automatically and will be of the right primitive data type.
      * <p>
      * The following code illustrates transferring data for one pixel from
-     * DataBuffer <code>db1</code>, whose storage layout is described by
-     * BandedSampleModel <code>bsm1</code>, to DataBuffer <code>db2</code>,
+     * DataBuffer {@code db1}, whose storage layout is described by
+     * BandedSampleModel {@code bsm1}, to DataBuffer {@code db2},
      * whose storage layout is described by
-     * BandedSampleModel <code>bsm2</code>.
+     * BandedSampleModel {@code bsm2}.
      * The transfer will generally be more efficient than using
      * getPixel/setPixel.
      * <pre>
@@ -565,10 +565,10 @@ public final class BandedSampleModel extends ComponentSampleModel
      * one per array element.
      * <p>
      * The following code illustrates transferring data for one pixel from
-     * DataBuffer <code>db1</code>, whose storage layout is described by
-     * BandedSampleModel <code>bsm1</code>, to DataBuffer <code>db2</code>,
+     * DataBuffer {@code db1}, whose storage layout is described by
+     * BandedSampleModel {@code bsm1}, to DataBuffer {@code db2},
      * whose storage layout is described by
-     * BandedSampleModel <code>bsm2</code>.
+     * BandedSampleModel {@code bsm2}.
      * The transfer will generally be more efficient than using
      * getPixel/setPixel.
      * <pre>

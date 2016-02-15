@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1031,18 +1031,11 @@ public class HotSpotVMConfig {
     @HotSpotVMField(name = "InstanceKlass::_init_state", type = "u1", get = HotSpotVMField.Type.OFFSET) @Stable public int instanceKlassInitStateOffset;
     @HotSpotVMField(name = "InstanceKlass::_constants", type = "ConstantPool*", get = HotSpotVMField.Type.OFFSET) @Stable public int instanceKlassConstantsOffset;
     @HotSpotVMField(name = "InstanceKlass::_fields", type = "Array<u2>*", get = HotSpotVMField.Type.OFFSET) @Stable public int instanceKlassFieldsOffset;
-    @HotSpotVMField(name = "CompilerToVM::Data::InstanceKlass_vtable_start_offset", type = "int", get = HotSpotVMField.Type.VALUE) @Stable public int instanceKlassVtableStartOffset;
-    @HotSpotVMField(name = "CompilerToVM::Data::InstanceKlass_vtable_length_offset", type = "int", get = HotSpotVMField.Type.VALUE) @Stable public int instanceKlassVtableLengthOffset;
+    @HotSpotVMField(name = "CompilerToVM::Data::Klass_vtable_start_offset", type = "int", get = HotSpotVMField.Type.VALUE) @Stable public int klassVtableStartOffset;
+    @HotSpotVMField(name = "CompilerToVM::Data::Klass_vtable_length_offset", type = "int", get = HotSpotVMField.Type.VALUE) @Stable public int klassVtableLengthOffset;
 
     @HotSpotVMConstant(name = "InstanceKlass::linked") @Stable public int instanceKlassStateLinked;
     @HotSpotVMConstant(name = "InstanceKlass::fully_initialized") @Stable public int instanceKlassStateFullyInitialized;
-
-    /**
-     * See {@code InstanceKlass::vtable_start_offset()}.
-     */
-    public final int instanceKlassVtableStartOffset() {
-        return instanceKlassVtableStartOffset * heapWordSize;
-    }
 
     @HotSpotVMType(name = "arrayOopDesc", get = HotSpotVMType.Type.SIZE) @Stable public int arrayOopDescSize;
 
