@@ -1239,9 +1239,8 @@ public:
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
                                                                             \
-  product_pd(bool, ConvertSleepToYield,                                     \
-          "Convert sleep(0) to thread yield "                               \
-          "(may be off for Solaris to improve GUI)")                        \
+  product(bool, ConvertSleepToYield, true,                                  \
+          "Convert sleep(0) to thread yield ")                              \
                                                                             \
   product(bool, ConvertYieldToSleep, false,                                 \
           "Convert yield to a sleep of MinSleepInterval to simulate Win32 " \
