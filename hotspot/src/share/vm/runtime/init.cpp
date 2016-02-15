@@ -145,6 +145,7 @@ jint init_globals() {
   }
   javaClasses_init();   // must happen after vtable initialization
   stubRoutines_init2(); // note: StubRoutines need 2-phase init
+  MethodHandles::generate_adapters();
   CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::StubRoutines2);
 
 #if INCLUDE_NMT
