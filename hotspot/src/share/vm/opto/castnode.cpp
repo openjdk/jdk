@@ -124,6 +124,7 @@ TypeNode* ConstraintCastNode::dominating_cast(PhaseTransform *phase) const {
   for (DUIterator_Fast imax, i = val->fast_outs(imax); i < imax; i++) {
     Node* u = val->fast_out(i);
     if (u != this &&
+        u->outcnt() > 0 &&
         u->Opcode() == opc &&
         u->in(0) != NULL &&
         u->bottom_type()->higher_equal(type())) {
