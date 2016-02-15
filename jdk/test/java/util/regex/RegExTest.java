@@ -32,7 +32,7 @@
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
  * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647 6559590
- * 8027645 8035076 8039124 8035975 8074678 6854417 8143854
+ * 8027645 8035076 8039124 8035975 8074678 6854417 8143854 8147531 7071819
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
  * @run main RegExTest
@@ -42,7 +42,9 @@
 import java.util.function.Function;
 import java.util.regex.*;
 import java.util.Random;
+import java.util.Scanner;
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import java.nio.CharBuffer;
 import java.util.function.Predicate;
@@ -151,6 +153,7 @@ public class RegExTest {
         unicodePropertiesTest();
         unicodeHexNotationTest();
         unicodeClassesTest();
+        unicodeCharacterNameTest();
         horizontalAndVerticalWSTest();
         linebreakTest();
         branchTest();
@@ -158,6 +161,7 @@ public class RegExTest {
         groupCurlyBackoffTest();
         patternAsPredicate();
         invalidFlags();
+        grapheme();
 
         if (failure) {
             throw new
@@ -4372,6 +4376,65 @@ public class RegExTest {
         report("unicodePredefinedClasses");
     }
 
+    private static void unicodeCharacterNameTest() throws Exception {
+
+        for (int cp = 0; cp < Character.MAX_CODE_POINT; cp++) {
+            if (!Character.isValidCodePoint(cp) ||
+                Character.getType(cp) == Character.UNASSIGNED)
+                continue;
+            String str = new String(Character.toChars(cp));
+            // single
+            String p = "\\N{" + Character.getName(cp) + "}";
+            if (!Pattern.compile(p).matcher(str).matches()) {
+                failCount++;
+            }
+            // class[c]
+            p = "[\\N{" + Character.getName(cp) + "}]";
+            if (!Pattern.compile(p).matcher(str).matches()) {
+                failCount++;
+            }
+        }
+
+        // range
+        for (int i = 0; i < 10; i++) {
+            int start = generator.nextInt(20);
+            int end = start + generator.nextInt(200);
+            String p = "[\\N{" + Character.getName(start) + "}-\\N{" + Character.getName(end) + "}]";
+            String str;
+            for (int cp = start; cp < end; cp++) {
+                str = new String(Character.toChars(cp));
+                if (!Pattern.compile(p).matcher(str).matches()) {
+                    failCount++;
+                }
+            }
+            str = new String(Character.toChars(end + 10));
+            if (Pattern.compile(p).matcher(str).matches()) {
+                failCount++;
+            }
+        }
+
+        // slice
+        for (int i = 0; i < 10; i++) {
+            int n = generator.nextInt(256);
+            int[] buf = new int[n];
+            StringBuffer sb = new StringBuffer(1024);
+            for (int j = 0; j < n; j++) {
+                int cp = generator.nextInt(1000);
+                if (!Character.isValidCodePoint(cp) ||
+                    Character.getType(cp) == Character.UNASSIGNED)
+                    cp = 0x4e00;    // just use 4e00
+                sb.append("\\N{" + Character.getName(cp) + "}");
+                buf[j] = cp;
+            }
+            String p = sb.toString();
+            String str = new String(buf, 0, buf.length);
+            if (!Pattern.compile(p).matcher(str).matches()) {
+                failCount++;
+            }
+        }
+        report("unicodeCharacterName");
+    }
+
     private static void horizontalAndVerticalWSTest() throws Exception {
         String hws = new String (new char[] {
                                      0x09, 0x20, 0xa0, 0x1680, 0x180e,
@@ -4544,5 +4607,59 @@ public class RegExTest {
             }
         }
         report("Invalid compile flags");
+    }
+
+    private static void grapheme() throws Exception {
+        Files.lines(Paths.get(System.getProperty("test.src", "."),
+                              "GraphemeBreakTest.txt"))
+            .filter( ln -> ln.length() != 0 && !ln.startsWith("#") )
+            .forEach( ln -> {
+                    ln = ln.replaceAll("\\s+|\\([a-zA-Z]+\\)|\\[[a-zA-Z]]+\\]|#.*", "");
+                    // System.out.println(str);
+                    String[] strs = ln.split("\u00f7|\u00d7");
+                    StringBuilder src = new StringBuilder();
+                    ArrayList<String> graphemes = new ArrayList<>();
+                    StringBuilder buf = new StringBuilder();
+                    int offBk = 0;
+                    for (String str : strs) {
+                        if (str.length() == 0)  // first empty str
+                            continue;
+                        int cp = Integer.parseInt(str, 16);
+                        src.appendCodePoint(cp);
+                        buf.appendCodePoint(cp);
+                        offBk += (str.length() + 1);
+                        if (ln.charAt(offBk) == '\u00f7') {    // DIV
+                            graphemes.add(buf.toString());
+                            buf = new StringBuilder();
+                        }
+                    }
+                    Pattern p = Pattern.compile("\\X");
+                    Matcher m = p.matcher(src.toString());
+                    Scanner s = new Scanner(src.toString()).useDelimiter("\\b{g}");
+                    for (String g : graphemes) {
+                        // System.out.printf("     grapheme:=[%s]%n", g);
+                        // (1) test \\X directly
+                        if (!m.find() || !m.group().equals(g)) {
+                            System.out.println("Failed \\X [" + ln + "] : " + g);
+                            failCount++;
+                        }
+                        // (2) test \\b{g} + \\X  via Scanner
+                        boolean hasNext = s.hasNext(p);
+                        // if (!s.hasNext() || !s.next().equals(next)) {
+                        if (!s.hasNext(p) || !s.next(p).equals(g)) {
+                            System.out.println("Failed b{g} [" + ln + "] : " + g);
+                            failCount++;
+                        }
+                    }
+                });
+        // some sanity checks
+        if (!Pattern.compile("\\X{10}").matcher("abcdefghij").matches() ||
+            !Pattern.compile("\\b{g}(?:\\X\\b{g}){5}\\b{g}").matcher("abcde").matches() ||
+            !Pattern.compile("(?:\\X\\b{g}){2}").matcher("\ud800\udc00\ud801\udc02").matches())
+            failCount++;
+        // make sure "\b{n}" still works
+        if (!Pattern.compile("\\b{1}hello\\b{1} \\b{1}world\\b{1}").matcher("hello world").matches())
+            failCount++;
+        report("Unicode extended grapheme cluster");
     }
 }

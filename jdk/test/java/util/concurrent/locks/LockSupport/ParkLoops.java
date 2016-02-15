@@ -35,6 +35,7 @@
  * @test
  * @bug 8074773
  * @summary Stress test looks for lost unparks
+ * @modules java.management
  * @run main/timeout=1200 ParkLoops
  */
 

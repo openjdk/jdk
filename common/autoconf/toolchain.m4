@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,67 @@ TOOLCHAIN_DESCRIPTION_gcc="GNU Compiler Collection"
 TOOLCHAIN_DESCRIPTION_microsoft="Microsoft Visual Studio"
 TOOLCHAIN_DESCRIPTION_solstudio="Oracle Solaris Studio"
 TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
+
+# Minimum supported versions, empty means unspecified
+TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
+TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
+TOOLCHAIN_MINIMUM_VERSION_microsoft=""
+TOOLCHAIN_MINIMUM_VERSION_solstudio="5.12"
+TOOLCHAIN_MINIMUM_VERSION_xlc=""
+
+# Prepare the system so that TOOLCHAIN_CHECK_COMPILER_VERSION can be called.
+# Must have CC_VERSION_NUMBER and CXX_VERSION_NUMBER.
+AC_DEFUN([TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS],
+[
+  if test "x$CC_VERSION_NUMBER" != "x$CXX_VERSION_NUMBER"; then
+    AC_MSG_WARN([C and C++ compiler has different version numbers, $CC_VERSION_NUMBER vs $CXX_VERSION_NUMBER.])
+    AC_MSG_WARN([This typically indicates a broken setup, and is not supported])
+  fi
+
+  # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
+  if [ [[ "$CC_VERSION_NUMBER" =~ (.*\.){3} ]] ]; then
+    AC_MSG_WARN([C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong.])
+  fi
+
+  if [ [[  "$CC_VERSION_NUMBER" =~ [0-9]{6} ]] ]; then
+    AC_MSG_WARN([C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong.])
+  fi
+
+  COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", [$]1, [$]2, [$]3) }' <<< "$CC_VERSION_NUMBER"`
+])
+
+# Check if the configured compiler (C and C++) is of a specific version or
+# newer. TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS must have been called before.
+#
+# Arguments:
+#   VERSION:   The version string to check against the found version
+#   IF_AT_LEAST:   block to run if the compiler is at least this version (>=)
+#   IF_OLDER_THAN:   block to run if the compiler is older than this version (<)
+BASIC_DEFUN_NAMED([TOOLCHAIN_CHECK_COMPILER_VERSION],
+    [*VERSION IF_AT_LEAST IF_OLDER_THAN], [$@],
+[
+  # Need to assign to a variable since m4 is blocked from modifying parts in [].
+  REFERENCE_VERSION=ARG_VERSION
+
+  if [ [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ]; then
+    AC_MSG_ERROR([Internal errror: Cannot compare to ARG_VERSION, only three parts (X.Y.Z) is supported])
+  fi
+
+  if [ [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ]; then
+    AC_MSG_ERROR([Internal errror: Cannot compare to ARG_VERSION, only parts < 99999 is supported])
+  fi
+
+  # Version comparison method inspired by http://stackoverflow.com/a/24067243
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", [$]1, [$]2, [$]3) }' <<< "$REFERENCE_VERSION"`
+
+  if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
+    :
+    ARG_IF_AT_LEAST
+  else
+    :
+    ARG_IF_OLDER_THAN
+  fi
+])
 
 # Setup a number of variables describing how native output files are
 # named on this platform/toolchain.
@@ -175,6 +236,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   # Use indirect variable referencing
   toolchain_var_name=TOOLCHAIN_DESCRIPTION_$TOOLCHAIN_TYPE
   TOOLCHAIN_DESCRIPTION=${!toolchain_var_name}
+  toolchain_var_name=TOOLCHAIN_MINIMUM_VERSION_$TOOLCHAIN_TYPE
+  TOOLCHAIN_MINIMUM_VERSION=${!toolchain_var_name}
   toolchain_var_name=TOOLCHAIN_CC_BINARY_$TOOLCHAIN_TYPE
   TOOLCHAIN_CC_BINARY=${!toolchain_var_name}
   toolchain_var_name=TOOLCHAIN_CXX_BINARY_$TOOLCHAIN_TYPE
@@ -217,8 +280,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     export INCLUDE="$VS_INCLUDE"
     export LIB="$VS_LIB"
   else
-    # Currently we do not define this for other toolchains. This might change as the need arise.
-    TOOLCHAIN_VERSION=
+    if test "x$XCODE_VERSION_OUTPUT" != x; then
+      # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
+      TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
+      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode"
+    else
+      # Currently we do not define this for other toolchains. This might change as the need arise.
+      TOOLCHAIN_VERSION=
+    fi
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
 
@@ -257,7 +326,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
 #
 # $1 = compiler to test (CC or CXX)
 # $2 = human readable name of compiler (C or C++)
-AC_DEFUN([TOOLCHAIN_CHECK_COMPILER_VERSION],
+AC_DEFUN([TOOLCHAIN_EXTRACT_COMPILER_VERSION],
 [
   COMPILER=[$]$1
   COMPILER_NAME=$2
@@ -354,7 +423,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_COMPILER_VERSION],
     # Collapse compiler output into a single line
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.*clang version \(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
+        $SED -e 's/^.* version \(@<:@1-9@:>@@<:@0-9.@:>@*\).*$/\1/'`
   else
       AC_MSG_ERROR([Unknown toolchain type $TOOLCHAIN_TYPE.])
   fi
@@ -451,7 +520,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     fi
   fi
 
-  TOOLCHAIN_CHECK_COMPILER_VERSION([$1], [$COMPILER_NAME])
+  TOOLCHAIN_EXTRACT_COMPILER_VERSION([$1], [$COMPILER_NAME])
 ])
 
 # Detect the core components of the toolchain, i.e. the compilers (CC and CXX),
@@ -470,6 +539,20 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   TOOLCHAIN_FIND_COMPILER([CXX], [C++], $TOOLCHAIN_CXX_BINARY)
   # Now that we have resolved CXX ourself, let autoconf have its go at it
   AC_PROG_CXX([$CXX])
+
+  # This is the compiler version number on the form X.Y[.Z]
+  AC_SUBST(CC_VERSION_NUMBER)
+  AC_SUBST(CXX_VERSION_NUMBER)
+
+  TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS
+
+  if test "x$TOOLCHAIN_MINIMUM_VERSION" != x; then
+    TOOLCHAIN_CHECK_COMPILER_VERSION(VERSION: $TOOLCHAIN_MINIMUM_VERSION,
+        IF_OLDER_THAN: [
+          AC_MSG_WARN([You are using $TOOLCHAIN_TYPE older than $TOOLCHAIN_MINIMUM_VERSION. This is not a supported configuration.])
+        ]
+    )
+  fi
 
   #
   # Setup the preprocessor (CPP and CXXCPP)

@@ -297,7 +297,6 @@
       <to>java.security.jgss</to>
       <to>java.security.sasl</to>
       <to>java.xml</to>
-      <to>java.xml.ws</to>
       <to>jdk.charsets</to>
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.deploy.osx</to>

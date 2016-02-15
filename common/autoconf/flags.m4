@@ -206,7 +206,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
   # On Windows, we need to set RC flags.
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     RC_FLAGS="-nologo -l0x409"
-    if test "x$VARIANT" = xOPT; then
+    if test "x$DEBUG_LEVEL" = xrelease; then
       RC_FLAGS="$RC_FLAGS -DNDEBUG"
     fi
 
@@ -254,7 +254,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
       SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/[$]1'
-      SET_SHARED_LIBRARY_MAPFILE=''
+      SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,[$]1'
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
@@ -274,7 +274,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
       SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/[$]1'
-      SET_SHARED_LIBRARY_MAPFILE=''
+      SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,[$]1'
     else
       # Default works for linux, might work on other platforms as well.
       PICFLAG='-fPIC'
@@ -310,7 +310,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
     SET_EXECUTABLE_ORIGIN=''
     SET_SHARED_LIBRARY_ORIGIN=''
     SET_SHARED_LIBRARY_NAME=''
-    SET_SHARED_LIBRARY_MAPFILE=''
+    SET_SHARED_LIBRARY_MAPFILE='-def:[$]1'
   fi
 
   AC_SUBST(C_FLAG_REORDER)
@@ -423,6 +423,10 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
       # no adjustment
       ;;
     slowdebug )
+      # FIXME: By adding this to C(XX)FLAGS_DEBUG_OPTIONS it
+      # get's added conditionally on whether we produce debug symbols or not.
+      # This is most likely not really correct.
+
       # Add runtime stack smashing and undefined behavior checks.
       # Not all versions of gcc support -fstack-protector
       STACK_PROTECTOR_CFLAG="-fstack-protector-all"
@@ -463,7 +467,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
       CXX_O_FLAG_HIGHEST="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0 $CC_HIGHEST -xprefetch=auto,explicit -xchip=ultra"
       CXX_O_FLAG_HI="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
       CXX_O_FLAG_NORM="-xO2 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
-      C_O_FLAG_DEBUG=""
+      CXX_O_FLAG_DEBUG=""
       CXX_O_FLAG_NONE=""
     fi
   else
@@ -646,8 +650,8 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     # avoid bundling msvcpNNN.dll. Doesn't work with newer versions of visual
     # studio.
     if test "x$TOOLCHAIN_VERSION" = "x2010"; then
-      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
-          -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB"
+      STATIC_CPPLIB_FLAGS="-D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB"
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK $STATIC_CPPLIB_FLAGS"
     fi
   fi
 
@@ -715,9 +719,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   # Set some additional per-OS defines.
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
-  elif test "x$OPENJDK_TARGET_OS" = xaix; then
-    # FIXME: PPC64 should not be here.
-    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DPPC64"
   elif test "x$OPENJDK_TARGET_OS" = xbsd; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
   fi
@@ -775,36 +776,34 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   # Setup LDFLAGS et al.
   #
 
-  # Now this is odd. The JDK native libraries have to link against libjvm.so
-  # On 32-bit machines there is normally two distinct libjvm.so:s, client and server.
-  # Which should we link to? Are we lucky enough that the binary api to the libjvm.so library
-  # is identical for client and server? Yes. Which is picked at runtime (client or server)?
-  # Neither, since the chosen libjvm.so has already been loaded by the launcher, all the following
-  # libraries will link to whatever is in memory. Yuck.
-  #
-  # Thus we offer the compiler to find libjvm.so first in server then in client. It works. Ugh.
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    LDFLAGS_JDK="$LDFLAGS_JDK -nologo -opt:ref -incremental:no"
+    LDFLAGS_MICROSOFT="-nologo -opt:ref"
+    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_MICROSOFT -incremental:no"
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
-      LDFLAGS_JDK="$LDFLAGS_JDK -safeseh"
+      LDFLAGS_SAFESH="-safeseh"
+      LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SAFESH"
     fi
     # TODO: make -debug optional "--disable-full-debug-symbols"
-    LDFLAGS_JDK="$LDFLAGS_JDK -debug"
+    LDFLAGS_MICROSOFT_DEBUG="-debug"
+    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_MICROSOFT_DEBUG"
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     # We have previously set HAS_GNU_HASH if this is the case
     if test -n "$HAS_GNU_HASH"; then
-      LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,--hash-style=both"
+      LDFLAGS_HASH_STYLE="-Wl,--hash-style=both"
+      LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_HASH_STYLE"
     fi
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       # And since we now know that the linker is gnu, then add -z defs, to forbid
       # undefined symbols in object files.
-      LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,-z,defs"
+      LDFLAGS_NO_UNDEF_SYM="-Wl,-z,defs"
+      LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_NO_UNDEF_SYM"
       case $DEBUG_LEVEL in
         release )
           # tell linker to optimize libraries.
           # Should this be supplied to the OSS linker as well?
-          LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,-O1"
+          LDFLAGS_DEBUGLEVEL_release="-Wl,-O1"
+          LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_DEBUGLEVEL_release"
           ;;
         slowdebug )
           if test "x$HAS_LINKER_NOW" = "xtrue"; then
@@ -831,10 +830,13 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
         esac
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    LDFLAGS_JDK="$LDFLAGS_JDK -Wl,-z,defs -xildoff -ztext"
-    LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
+    LDFLAGS_SOLSTUDIO="-Wl,-z,defs"
+    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SOLSTUDIO -xildoff -ztext"
+    LDFLAGS_CXX_SOLSTUDIO="-norunpath"
+    LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LDFLAGS_CXX_SOLSTUDIO -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LDFLAGS_JDK="${LDFLAGS_JDK} -brtl -bnolibpath -bexpall -bernotok"
+    LDFLAGS_XLC="-brtl -bnolibpath -bexpall -bernotok"
+    LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_XLC"
   fi
 
   # Customize LDFLAGS for executables
@@ -1047,6 +1049,10 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
     clang)
       DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+      ;;
+    xlc)
+      DISABLE_WARNING_PREFIX="-qsuppress="
+      CFLAGS_WARNINGS_ARE_ERRORS="-qhalt=w"
       ;;
   esac
   AC_SUBST(DISABLE_WARNING_PREFIX)

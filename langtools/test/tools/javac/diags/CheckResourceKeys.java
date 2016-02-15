@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ public class CheckResourceKeys {
      * have a significant recognizable substring to look for.
      */
     private boolean isMandatoryWarningString(String s) {
-        String[] bases = { "deprecated", "unchecked", "varargs", "sunapi" };
+        String[] bases = { "deprecated", "unchecked", "varargs" };
         String[] tails = { ".filename", ".filename.additional", ".plural", ".plural.additional", ".recompile" };
         for (String b: bases) {
             if (s.startsWith(b)) {
@@ -229,7 +229,6 @@ public class CheckResourceKeys {
         "compiler.err.signature.doesnt.match.supertype",    // UNUSED
         "compiler.err.type.var.more.than.once",             // UNUSED
         "compiler.err.type.var.more.than.once.in.result",   // UNUSED
-        "compiler.misc.ccf.found.later.version",            // UNUSED
         "compiler.misc.non.denotable.type",                 // UNUSED
         "compiler.misc.unnamed.package",                    // should be required, CR 6964147
         "compiler.misc.verbose.retro",                      // UNUSED
@@ -289,6 +288,7 @@ public class CheckResourceKeys {
             // -XD option names
             "process.packages",
             "ignore.symbol.file",
+            "fileManager.deferClose",
             // prefix/embedded strings
             "compiler.",
             "compiler.misc.",

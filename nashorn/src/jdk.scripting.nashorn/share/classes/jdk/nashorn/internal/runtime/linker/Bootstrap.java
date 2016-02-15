@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -200,6 +201,42 @@ public final class Bootstrap {
      */
     public static CallSite bootstrap(final Lookup lookup, final String opDesc, final MethodType type, final int flags) {
         return Context.getDynamicLinker(lookup.lookupClass()).link(LinkerCallSite.newLinkerCallSite(lookup, opDesc, type, flags));
+    }
+
+    /**
+     * Boostrapper for math calls that may overflow
+     * @param lookup         lookup
+     * @param name           name of operation
+     * @param type           method type
+     * @param programPoint   program point to bind to callsite
+     *
+     * @return callsite for a math intrinsic node
+     */
+    public static CallSite mathBootstrap(final Lookup lookup, final String name, final MethodType type, final int programPoint) {
+        final MethodHandle mh;
+        switch (name) {
+        case "iadd":
+            mh = JSType.ADD_EXACT.methodHandle();
+            break;
+        case "isub":
+            mh = JSType.SUB_EXACT.methodHandle();
+            break;
+        case "imul":
+            mh = JSType.MUL_EXACT.methodHandle();
+            break;
+        case "idiv":
+            mh = JSType.DIV_EXACT.methodHandle();
+            break;
+        case "irem":
+            mh = JSType.REM_EXACT.methodHandle();
+            break;
+        case "ineg":
+            mh = JSType.NEGATE_EXACT.methodHandle();
+            break;
+        default:
+            throw new AssertionError("unsupported math intrinsic");
+        }
+        return new ConstantCallSite(MH.insertArguments(mh, mh.type().parameterCount() - 1, programPoint));
     }
 
     /**
