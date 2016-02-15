@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
 import java.security.AccessControlContext;
 import java.security.AccessController;
