@@ -614,13 +614,20 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
         //REVISIT: one more case needs to be included: external PE and standalone is no
         boolean isVC = fHasExternalDTD && !fStandalone;
 
-        // REVISIT: it seems that this function should not take attributes, and length
-        scanAttributeValue(
-            this.fTempString,
-            fTempString2,
-            fAttributeQName.rawname,
-            isVC,
-            fCurrentElement.rawname);
+        /**
+         * Determine whether this is a namespace declaration that will be subject
+         * to the name limit check in the scanAttributeValue operation.
+         * Namespace declaration format: xmlns="..." or xmlns:prefix="..."
+         * Note that prefix:xmlns="..." isn't a namespace.
+         */
+        String localpart = fAttributeQName.localpart;
+        String prefix = fAttributeQName.prefix != null
+                ? fAttributeQName.prefix : XMLSymbols.EMPTY_STRING;
+        boolean isNSDecl = fBindNamespaces & (prefix == XMLSymbols.PREFIX_XMLNS ||
+                    prefix == XMLSymbols.EMPTY_STRING && localpart == XMLSymbols.PREFIX_XMLNS);
+
+        scanAttributeValue(this.fTempString, fTempString2, fAttributeQName.rawname,
+            isVC, fCurrentElement.rawname, isNSDecl);
         String value = fTempString.toString();
         attributes.setValue(attrIndex, value);
         attributes.setNonNormalizedValue(attrIndex, fTempString2.toString());
@@ -628,17 +635,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
 
         // record namespace declarations if any.
         if (fBindNamespaces) {
-
-            String localpart = fAttributeQName.localpart;
-            String prefix =
-                fAttributeQName.prefix != null
-                    ? fAttributeQName.prefix
-                    : XMLSymbols.EMPTY_STRING;
-            // when it's of form xmlns="..." or xmlns:prefix="...",
-            // it's a namespace declaration. but prefix:xmlns="..." isn't.
-            if (prefix == XMLSymbols.PREFIX_XMLNS
-                || prefix == XMLSymbols.EMPTY_STRING
-                && localpart == XMLSymbols.PREFIX_XMLNS) {
+            if (isNSDecl) {
                 if (value.length() > fXMLNameLimit) {
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                             "MaxXMLNameLimit",
