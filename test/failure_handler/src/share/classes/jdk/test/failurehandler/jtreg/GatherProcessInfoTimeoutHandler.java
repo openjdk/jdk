@@ -39,12 +39,16 @@ import java.nio.file.Path;
  * process and its children.
  */
 public class GatherProcessInfoTimeoutHandler extends TimeoutHandler {
+    private static final boolean HAS_NATIVE_LIBRARY;
     static {
+        boolean value = true;
         try {
             System.loadLibrary("timeoutHandler");
         } catch (UnsatisfiedLinkError ignore) {
             // not all os need timeoutHandler native-library
+            value = false;
         }
+        HAS_NATIVE_LIBRARY = value;
     }
     private static final String LOG_FILENAME = "processes.log";
     private static final String OUTPUT_FILENAME = "processes.html";
@@ -105,7 +109,7 @@ public class GatherProcessInfoTimeoutHandler extends TimeoutHandler {
         if (result == 0L) {
             /* jtreg didn't find pid, most probably we are on JDK < 9
                there is no Process::getPid */
-            if ("windows".equals(OS.current().family)) {
+            if (HAS_NATIVE_LIBRARY && "windows".equals(OS.current().family)) {
                 try {
                     Field field = process.getClass().getDeclaredField("handle");
                     boolean old = field.isAccessible();
