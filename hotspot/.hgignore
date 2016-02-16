@@ -10,7 +10,6 @@
 .igv.log
 ^.hgtip
 .DS_Store
-\.class$
 ^\.mx.jvmci/env
 ^\.mx.jvmci/.*\.pyc
 ^\.mx.jvmci/eclipse-launches/.*
