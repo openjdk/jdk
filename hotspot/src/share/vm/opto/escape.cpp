@@ -810,6 +810,7 @@ void ConnectionGraph::add_call_node(CallNode* call) {
       if (cik->is_subclass_of(_compile->env()->Thread_klass()) ||
           cik->is_subclass_of(_compile->env()->Reference_klass()) ||
          !cik->is_instance_klass() || // StressReflectiveCode
+         !cik->as_instance_klass()->can_be_instantiated() ||
           cik->as_instance_klass()->has_finalizer()) {
         es = PointsToNode::GlobalEscape;
       }

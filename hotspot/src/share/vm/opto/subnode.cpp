@@ -46,7 +46,7 @@
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If right input is a constant 0, return the left input.
-Node *SubNode::Identity( PhaseTransform *phase ) {
+Node* SubNode::Identity(PhaseGVN* phase) {
   assert(in(1) != this, "Must already have called Value");
   assert(in(2) != this, "Must already have called Value");
 
@@ -100,7 +100,7 @@ const Type* SubNode::Value_common(PhaseTransform *phase) const {
   return NULL;
 }
 
-const Type* SubNode::Value(PhaseTransform *phase) const {
+const Type* SubNode::Value(PhaseGVN* phase) const {
   const Type* t = Value_common(phase);
   if (t != NULL) {
     return t;
@@ -378,7 +378,7 @@ const Type *SubLNode::sub( const Type *t1, const Type *t2 ) const {
 //=============================================================================
 //------------------------------Value------------------------------------------
 // A subtract node differences its two inputs.
-const Type *SubFPNode::Value( PhaseTransform *phase ) const {
+const Type* SubFPNode::Value(PhaseGVN* phase) const {
   const Node* in1 = in(1);
   const Node* in2 = in(2);
   // Either input is TOP ==> the result is TOP
@@ -494,7 +494,7 @@ const Type *SubDNode::sub( const Type *t1, const Type *t2 ) const {
 // Unlike SubNodes, compare must still flatten return value to the
 // range -1, 0, 1.
 // And optimizations like those for (X + Y) - X fail if overflow happens.
-Node *CmpNode::Identity( PhaseTransform *phase ) {
+Node* CmpNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
@@ -611,7 +611,7 @@ const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
   return TypeInt::CC;                   // else use worst case results
 }
 
-const Type* CmpUNode::Value(PhaseTransform *phase) const {
+const Type* CmpUNode::Value(PhaseGVN* phase) const {
   const Type* t = SubNode::Value_common(phase);
   if (t != NULL) {
     return t;
@@ -1053,7 +1053,7 @@ Node *CmpNNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
 //------------------------------Value------------------------------------------
 // Simplify an CmpF (compare 2 floats ) node, based on local information.
 // If both inputs are constants, compare them.
-const Type *CmpFNode::Value( PhaseTransform *phase ) const {
+const Type* CmpFNode::Value(PhaseGVN* phase) const {
   const Node* in1 = in(1);
   const Node* in2 = in(2);
   // Either input is TOP ==> the result is TOP
@@ -1083,7 +1083,7 @@ const Type *CmpFNode::Value( PhaseTransform *phase ) const {
 //------------------------------Value------------------------------------------
 // Simplify an CmpD (compare 2 doubles ) node, based on local information.
 // If both inputs are constants, compare them.
-const Type *CmpDNode::Value( PhaseTransform *phase ) const {
+const Type* CmpDNode::Value(PhaseGVN* phase) const {
   const Node* in1 = in(1);
   const Node* in2 = in(2);
   // Either input is TOP ==> the result is TOP
@@ -1334,6 +1334,65 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new BoolNode( ncmp, _test.negate() );
   }
 
+  // Change ((x & m) u<= m) or ((m & x) u<= m) to always true
+  // Same with ((x & m) u< m+1) and ((m & x) u< m+1)
+  if (cop == Op_CmpU &&
+      cmp1->Opcode() == Op_AndI) {
+    Node* bound = NULL;
+    if (_test._test == BoolTest::le) {
+      bound = cmp2;
+    } else if (_test._test == BoolTest::lt &&
+               cmp2->Opcode() == Op_AddI &&
+               cmp2->in(2)->find_int_con(0) == 1) {
+      bound = cmp2->in(1);
+    }
+    if (cmp1->in(2) == bound || cmp1->in(1) == bound) {
+      return ConINode::make(1);
+    }
+  }
+
+  // Change ((x & (m - 1)) u< m) into (m > 0)
+  // This is the off-by-one variant of the above
+  if (cop == Op_CmpU &&
+      _test._test == BoolTest::lt &&
+      cmp1->Opcode() == Op_AndI) {
+    Node* l = cmp1->in(1);
+    Node* r = cmp1->in(2);
+    for (int repeat = 0; repeat < 2; repeat++) {
+      bool match = r->Opcode() == Op_AddI && r->in(2)->find_int_con(0) == -1 &&
+                   r->in(1) == cmp2;
+      if (match) {
+        // arraylength known to be non-negative, so a (arraylength != 0) is sufficient,
+        // but to be compatible with the array range check pattern, use (arraylength u> 0)
+        Node* ncmp = cmp2->Opcode() == Op_LoadRange
+                     ? phase->transform(new CmpUNode(cmp2, phase->intcon(0)))
+                     : phase->transform(new CmpINode(cmp2, phase->intcon(0)));
+        return new BoolNode(ncmp, BoolTest::gt);
+      } else {
+        // commute and try again
+        l = cmp1->in(2);
+        r = cmp1->in(1);
+      }
+    }
+  }
+
+  // Change (arraylength <= 0) or (arraylength == 0)
+  //   into (arraylength u<= 0)
+  // Also change (arraylength != 0) into (arraylength u> 0)
+  // The latter version matches the code pattern generated for
+  // array range checks, which will more likely be optimized later.
+  if (cop == Op_CmpI &&
+      cmp1->Opcode() == Op_LoadRange &&
+      cmp2->find_int_con(-1) == 0) {
+    if (_test._test == BoolTest::le || _test._test == BoolTest::eq) {
+      Node* ncmp = phase->transform(new CmpUNode(cmp1, cmp2));
+      return new BoolNode(ncmp, BoolTest::le);
+    } else if (_test._test == BoolTest::ne) {
+      Node* ncmp = phase->transform(new CmpUNode(cmp1, cmp2));
+      return new BoolNode(ncmp, BoolTest::gt);
+    }
+  }
+
   // Change "bool eq/ne (cmp (Conv2B X) 0)" into "bool eq/ne (cmp X 0)".
   // This is a standard idiom for branching on a boolean value.
   Node *c2b = cmp1;
@@ -1423,7 +1482,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //------------------------------Value------------------------------------------
 // Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
 // based on local information.   If the input is constant, do it.
-const Type *BoolNode::Value( PhaseTransform *phase ) const {
+const Type* BoolNode::Value(PhaseGVN* phase) const {
   return _test.cc2logical( phase->type( in(1) ) );
 }
 
@@ -1466,7 +1525,7 @@ bool BoolNode::is_counted_loop_exit_test() {
 //=============================================================================
 //------------------------------Value------------------------------------------
 // Compute sqrt
-const Type *SqrtDNode::Value( PhaseTransform *phase ) const {
+const Type* SqrtDNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   if( t1 == Type::TOP ) return Type::TOP;
   if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
@@ -1477,30 +1536,8 @@ const Type *SqrtDNode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-// Compute cos
-const Type *CosDNode::Value( PhaseTransform *phase ) const {
-  const Type *t1 = phase->type( in(1) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
-  double d = t1->getd();
-  return TypeD::make( StubRoutines::intrinsic_cos( d ) );
-}
-
-//=============================================================================
-//------------------------------Value------------------------------------------
-// Compute sin
-const Type *SinDNode::Value( PhaseTransform *phase ) const {
-  const Type *t1 = phase->type( in(1) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
-  double d = t1->getd();
-  return TypeD::make( StubRoutines::intrinsic_sin( d ) );
-}
-
-//=============================================================================
-//------------------------------Value------------------------------------------
 // Compute tan
-const Type *TanDNode::Value( PhaseTransform *phase ) const {
+const Type* TanDNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   if( t1 == Type::TOP ) return Type::TOP;
   if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
@@ -1511,11 +1548,10 @@ const Type *TanDNode::Value( PhaseTransform *phase ) const {
 //=============================================================================
 //------------------------------Value------------------------------------------
 // Compute log10
-const Type *Log10DNode::Value( PhaseTransform *phase ) const {
+const Type* Log10DNode::Value(PhaseGVN* phase) const {
   const Type *t1 = phase->type( in(1) );
   if( t1 == Type::TOP ) return Type::TOP;
   if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
   double d = t1->getd();
   return TypeD::make( StubRoutines::intrinsic_log10( d ) );
 }
-

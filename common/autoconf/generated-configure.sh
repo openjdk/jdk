@@ -784,6 +784,8 @@ LDCXX
 LD
 CXXCPP
 CPP
+CXX_VERSION_NUMBER
+CC_VERSION_NUMBER
 ac_ct_CXX
 CXXFLAGS
 CXX
@@ -860,6 +862,7 @@ LAUNCHER_NAME
 TEST_IN_BUILD
 COPYRIGHT_YEAR
 COMPRESS_JARS
+INCLUDE_SA
 UNLIMITED_CRYPTO
 CACERTS_FILE
 BUILD_HEADLESS
@@ -906,7 +909,6 @@ FASTDEBUG
 VARIANT
 DEBUG_LEVEL
 MACOSX_UNIVERSAL
-INCLUDE_SA
 JVM_VARIANT_CORE
 JVM_VARIANT_ZEROSHARK
 JVM_VARIANT_ZERO
@@ -917,6 +919,7 @@ JVM_VARIANTS
 JVM_INTERPRETER
 JDK_VARIANT
 SET_OPENJDK
+USERNAME
 CANONICAL_TOPDIR
 ORIGINAL_TOPDIR
 TOPDIR
@@ -1925,7 +1928,7 @@ Optional Packages:
   --with-jvm-variants     JVM variants (separated by commas) to build (server,
                           client, minimal1, zero, zeroshark, core) [server]
   --with-debug-level      set the debug level (release, fastdebug, slowdebug,
-                          optimized (HotSpot build only)) [release]
+                          optimized) [release]
   --with-devkit           use this devkit for compilers, tools and resources
   --with-sys-root         alias for --with-sysroot for backwards compatability
   --with-sysroot          use this directory as sysroot
@@ -2007,7 +2010,7 @@ Optional Packages:
   --with-jtreg            Regression Test Harness [probed]
   --with-native-debug-symbols
                           set the native debug symbol configuration (none,
-                          internal, external, zipped) [zipped]
+                          internal, external, zipped) [varying]
   --with-stdc++lib=<static>,<dynamic>,<default>
                           force linking of the C++ runtime on Linux to either
                           static or dynamic, default is static with dynamic as
@@ -3423,7 +3426,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 # Include these first...
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3460,11 +3463,11 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # "ARG_FOO".
 #
 # The generated function can be called like this:
-# MYFUNC(FOO: [foo-val], BAR:
-#     [
+# MYFUNC(FOO: [foo-val],
+#     BAR: [
 #         $ECHO hello world
 #     ])
-#
+# Note that the argument value must start on the same line as the argument name.
 #
 # Argument 1: Name of the function to define
 # Argument 2: List of legal named arguments, with a * prefix for required arguments
@@ -3773,7 +3776,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3834,7 +3837,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3926,7 +3929,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4058,7 +4061,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4116,7 +4119,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4624,7 +4627,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4674,6 +4677,28 @@ TOOLCHAIN_DESCRIPTION_gcc="GNU Compiler Collection"
 TOOLCHAIN_DESCRIPTION_microsoft="Microsoft Visual Studio"
 TOOLCHAIN_DESCRIPTION_solstudio="Oracle Solaris Studio"
 TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
+
+# Minimum supported versions, empty means unspecified
+TOOLCHAIN_MINIMUM_VERSION_clang="3.2"
+TOOLCHAIN_MINIMUM_VERSION_gcc="4.3"
+TOOLCHAIN_MINIMUM_VERSION_microsoft=""
+TOOLCHAIN_MINIMUM_VERSION_solstudio="5.12"
+TOOLCHAIN_MINIMUM_VERSION_xlc=""
+
+# Prepare the system so that TOOLCHAIN_CHECK_COMPILER_VERSION can be called.
+# Must have CC_VERSION_NUMBER and CXX_VERSION_NUMBER.
+
+
+# Check if the configured compiler (C and C++) is of a specific version or
+# newer. TOOLCHAIN_PREPARE_FOR_VERSION_COMPARISONS must have been called before.
+#
+# Arguments:
+#   VERSION:   The version string to check against the found version
+#   IF_AT_LEAST:   block to run if the compiler is at least this version (>=)
+#   IF_OLDER_THAN:   block to run if the compiler is older than this version (<)
+
+
+
 
 # Setup a number of variables describing how native output files are
 # named on this platform/toolchain.
@@ -4835,7 +4860,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1454146111
+DATE_WHEN_GENERATED=1455271513
 
 ###############################################################################
 #
@@ -4849,7 +4874,9 @@ DATE_WHEN_GENERATED=1454146111
 # If we are requested to print additional help, do that and then exit.
 # This must be the very first call.
 
-  if test "x$CONFIGURE_PRINT_TOOLCHAIN_LIST" != x; then
+  if test "x$CONFIGURE_PRINT_ADDITIONAL_HELP" != x; then
+
+    # Print available toolchains
     $PRINTF "The following toolchains are available as arguments to --with-toolchain-type.\n"
     $PRINTF "Which are valid to use depends on the build platform.\n"
     for toolchain in $VALID_TOOLCHAINS_all; do
@@ -15652,6 +15679,11 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf
 
+  # Setup username (for use in adhoc version strings etc)
+  # Outer [ ] to quote m4.
+   USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'`
+
+
 
 # Check if it's a pure open build or if custom sources are to be used.
 
@@ -15820,21 +15852,6 @@ $as_echo "$with_jvm_variants" >&6; }
 
 
 
-  INCLUDE_SA=true
-  if test "x$JVM_VARIANT_ZERO" = xtrue ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$OPENJDK_TARGET_OS" = xaix ; then
-    INCLUDE_SA=false
-  fi
-  if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
-    INCLUDE_SA=false
-  fi
-
-
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     MACOSX_UNIVERSAL="true"
   fi
@@ -15874,7 +15891,7 @@ $as_echo "$DEBUG_LEVEL" >&6; }
       test "x$DEBUG_LEVEL" != xoptimized && \
       test "x$DEBUG_LEVEL" != xfastdebug && \
       test "x$DEBUG_LEVEL" != xslowdebug; then
-    as_fn_error $? "Allowed debug levels are: release, fastdebug and slowdebug" "$LINENO" 5
+    as_fn_error $? "Allowed debug levels are: release, fastdebug, slowdebug and optimized" "$LINENO" 5
   fi
 
 
@@ -23238,6 +23255,22 @@ fi
   fi
 
 
+  # Should we build the serviceability agent (SA)?
+  INCLUDE_SA=true
+  if test "x$JVM_VARIANT_ZERO" = xtrue ; then
+    INCLUDE_SA=false
+  fi
+  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
+    INCLUDE_SA=false
+  fi
+  if test "x$OPENJDK_TARGET_OS" = xaix ; then
+    INCLUDE_SA=false
+  fi
+  if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
+    INCLUDE_SA=false
+  fi
+
+
   # Compress jars
   COMPRESS_JARS=false
 
@@ -23429,9 +23462,8 @@ $as_echo "$as_me: WARNING: --with-version-opt value has been sanitized from '$wi
       # Default is to calculate a string like this <timestamp>.<username>.<base dir name>
       timestamp=`$DATE '+%Y-%m-%d-%H%M%S'`
       # Outer [ ] to quote m4.
-       username=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'`
        basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'`
-      VERSION_OPT="$timestamp.$username.$basedirname"
+      VERSION_OPT="$timestamp.$USERNAME.$basedirname"
     fi
   fi
 
@@ -29845,6 +29877,8 @@ $as_echo "$as_me: Valid toolchains: $VALID_TOOLCHAINS." >&6;}
   # Use indirect variable referencing
   toolchain_var_name=TOOLCHAIN_DESCRIPTION_$TOOLCHAIN_TYPE
   TOOLCHAIN_DESCRIPTION=${!toolchain_var_name}
+  toolchain_var_name=TOOLCHAIN_MINIMUM_VERSION_$TOOLCHAIN_TYPE
+  TOOLCHAIN_MINIMUM_VERSION=${!toolchain_var_name}
   toolchain_var_name=TOOLCHAIN_CC_BINARY_$TOOLCHAIN_TYPE
   TOOLCHAIN_CC_BINARY=${!toolchain_var_name}
   toolchain_var_name=TOOLCHAIN_CXX_BINARY_$TOOLCHAIN_TYPE
@@ -29968,8 +30002,9 @@ fi
       if test "x$OPENJDK_TARGET_OS" = xsolaris; then
         # Solaris Studio does not have a concept of sysroot. Instead we must
         # make sure the default include and lib dirs are appended to each
-        # compile and link command line.
-        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
+        # compile and link command line. Must also add -I-xbuiltin to enable
+        # inlining of system functions and intrinsics.
+        SYSROOT_CFLAGS="-I-xbuiltin -I$SYSROOT/usr/include"
         SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
@@ -31477,8 +31512,14 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     export INCLUDE="$VS_INCLUDE"
     export LIB="$VS_LIB"
   else
-    # Currently we do not define this for other toolchains. This might change as the need arise.
-    TOOLCHAIN_VERSION=
+    if test "x$XCODE_VERSION_OUTPUT" != x; then
+      # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
+      TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
+      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode"
+    else
+      # Currently we do not define this for other toolchains. This might change as the need arise.
+      TOOLCHAIN_VERSION=
+    fi
   fi
 
 
@@ -32185,7 +32226,7 @@ $as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSIO
     # Collapse compiler output into a single line
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.*clang version \([1-9][0-9.]*\).*$/\1/'`
+        $SED -e 's/^.* version \([1-9][0-9.]*\).*$/\1/'`
   else
       as_fn_error $? "Unknown toolchain type $TOOLCHAIN_TYPE." "$LINENO" 5
   fi
@@ -33482,7 +33523,7 @@ $as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSIO
     # Collapse compiler output into a single line
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.*clang version \([1-9][0-9.]*\).*$/\1/'`
+        $SED -e 's/^.* version \([1-9][0-9.]*\).*$/\1/'`
   else
       as_fn_error $? "Unknown toolchain type $TOOLCHAIN_TYPE." "$LINENO" 5
   fi
@@ -33753,6 +33794,116 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
+
+  # This is the compiler version number on the form X.Y[.Z]
+
+
+
+
+  if test "x$CC_VERSION_NUMBER" != "x$CXX_VERSION_NUMBER"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C and C++ compiler has different version numbers, $CC_VERSION_NUMBER vs $CXX_VERSION_NUMBER." >&5
+$as_echo "$as_me: WARNING: C and C++ compiler has different version numbers, $CC_VERSION_NUMBER vs $CXX_VERSION_NUMBER." >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: This typically indicates a broken setup, and is not supported" >&5
+$as_echo "$as_me: WARNING: This typically indicates a broken setup, and is not supported" >&2;}
+  fi
+
+  # We only check CC_VERSION_NUMBER since we assume CXX_VERSION_NUMBER is equal.
+  if  [[ "$CC_VERSION_NUMBER" =~ (.*\.){3} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has more than three parts (X.Y.Z): $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  fi
+
+  if  [[  "$CC_VERSION_NUMBER" =~ [0-9]{6} ]] ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong." >&5
+$as_echo "$as_me: WARNING: C compiler version number has a part larger than 99999: $CC_VERSION_NUMBER. Comparisons might be wrong." >&2;}
+  fi
+
+  COMPARABLE_ACTUAL_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$CC_VERSION_NUMBER"`
+
+
+  if test "x$TOOLCHAIN_MINIMUM_VERSION" != x; then
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  # Need to assign to a variable since m4 is blocked from modifying parts in [].
+  REFERENCE_VERSION=$TOOLCHAIN_MINIMUM_VERSION
+
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
+    as_fn_error $? "Internal errror: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  fi
+
+  if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
+    as_fn_error $? "Internal errror: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only parts < 99999 is supported" "$LINENO" 5
+  fi
+
+  # Version comparison method inspired by http://stackoverflow.com/a/24067243
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+
+  if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
+    :
+
+  else
+    :
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: You are using $TOOLCHAIN_TYPE older than $TOOLCHAIN_MINIMUM_VERSION. This is not a supported configuration." >&5
+$as_echo "$as_me: WARNING: You are using $TOOLCHAIN_TYPE older than $TOOLCHAIN_MINIMUM_VERSION. This is not a supported configuration." >&2;}
+
+
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+  fi
 
   #
   # Setup the preprocessor (CPP and CXXCPP)
@@ -42361,8 +42512,9 @@ $as_echo "$BUILD_DEVKIT_ROOT" >&6; }
       if test "x$OPENJDK_TARGET_OS" = xsolaris; then
         # Solaris Studio does not have a concept of sysroot. Instead we must
         # make sure the default include and lib dirs are appended to each
-        # compile and link command line.
-        BUILD_SYSROOT_CFLAGS="-I$BUILD_SYSROOT/usr/include"
+        # compile and link command line. Must also add -I-xbuiltin to enable
+        # inlining of system functions and intrinsics.
+        BUILD_SYSROOT_CFLAGS="-I-xbuiltin -I$BUILD_SYSROOT/usr/include"
         BUILD_SYSROOT_LDFLAGS="-L$BUILD_SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$BUILD_SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$BUILD_SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
@@ -45325,7 +45477,7 @@ $as_echo "no" >&6; }
   # On Windows, we need to set RC flags.
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     RC_FLAGS="-nologo -l0x409"
-    if test "x$VARIANT" = xOPT; then
+    if test "x$DEBUG_LEVEL" = xrelease; then
       RC_FLAGS="$RC_FLAGS -DNDEBUG"
     fi
 
@@ -45350,8 +45502,6 @@ $as_echo "no" >&6; }
     COMMON_CCXXFLAGS="$COMMON_CCXXFLAGS -nologo"
   fi
 
-
-# FIXME: Currently we must test this after toolchain but before flags. Fix!
 
 # Now we can test some aspects on the target using configure macros.
 
@@ -46008,7 +46158,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/$1'
-      SET_SHARED_LIBRARY_MAPFILE=''
+      SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,$1'
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
@@ -46028,7 +46178,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/$1'
-      SET_SHARED_LIBRARY_MAPFILE=''
+      SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,$1'
     else
       # Default works for linux, might work on other platforms as well.
       PICFLAG='-fPIC'
@@ -46064,7 +46214,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     SET_EXECUTABLE_ORIGIN=''
     SET_SHARED_LIBRARY_ORIGIN=''
     SET_SHARED_LIBRARY_NAME=''
-    SET_SHARED_LIBRARY_MAPFILE=''
+    SET_SHARED_LIBRARY_MAPFILE='-def:$1'
   fi
 
 
@@ -46144,6 +46294,10 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # no adjustment
       ;;
     slowdebug )
+      # FIXME: By adding this to C(XX)FLAGS_DEBUG_OPTIONS it
+      # get's added conditionally on whether we produce debug symbols or not.
+      # This is most likely not really correct.
+
       # Add runtime stack smashing and undefined behavior checks.
       # Not all versions of gcc support -fstack-protector
       STACK_PROTECTOR_CFLAG="-fstack-protector-all"
@@ -46191,12 +46345,12 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
 
     # Execute function body
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"" >&5
-$as_echo_n "checking if compiler supports \"$STACK_PROTECTOR_CFLAG\"... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"" >&5
+$as_echo_n "checking if compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"... " >&6; }
   supports=yes
 
   saved_cflags="$CFLAGS"
-  CFLAGS="$CFLAGS $STACK_PROTECTOR_CFLAG"
+  CFLAGS="$CFLAGS $STACK_PROTECTOR_CFLAG -Werror"
   ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -46222,7 +46376,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
   CFLAGS="$saved_cflags"
 
   saved_cxxflags="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAG $STACK_PROTECTOR_CFLAG"
+  CXXFLAGS="$CXXFLAG $STACK_PROTECTOR_CFLAG -Werror"
   ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -46304,7 +46458,7 @@ $as_echo "$supports" >&6; }
       CXX_O_FLAG_HIGHEST="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0 $CC_HIGHEST -xprefetch=auto,explicit -xchip=ultra"
       CXX_O_FLAG_HI="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
       CXX_O_FLAG_NORM="-xO2 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
-      C_O_FLAG_DEBUG=""
+      CXX_O_FLAG_DEBUG=""
       CXX_O_FLAG_NONE=""
     fi
   else
@@ -46441,22 +46595,22 @@ $as_echo "$supports" >&6; }
     esac
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
-	    if test "x$OPENJDK_TARGET_CPU" = xx86; then
-	      # Force compatibility with i586 on 32 bit intel platforms.
-	      COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
-	    fi
-	    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
-	        -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
-	    case $OPENJDK_TARGET_CPU_ARCH in
-	      ppc )
-	        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
-	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
-	        ;;
-	      * )
-	        COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
-	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
-	        ;;
-	    esac
+      if test "x$OPENJDK_TARGET_CPU" = xx86; then
+        # Force compatibility with i586 on 32 bit intel platforms.
+        COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
+      fi
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
+          -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
+      case $OPENJDK_TARGET_CPU_ARCH in
+        ppc )
+          # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+          CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+        * )
+          COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
+          CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+      esac
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"
@@ -46485,8 +46639,8 @@ $as_echo "$supports" >&6; }
     # avoid bundling msvcpNNN.dll. Doesn't work with newer versions of visual
     # studio.
     if test "x$TOOLCHAIN_VERSION" = "x2010"; then
-      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
-          -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB"
+      STATIC_CPPLIB_FLAGS="-D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB"
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK $STATIC_CPPLIB_FLAGS"
     fi
   fi
 
@@ -46554,9 +46708,6 @@ $as_echo "$supports" >&6; }
   # Set some additional per-OS defines.
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
-  elif test "x$OPENJDK_TARGET_OS" = xaix; then
-    # FIXME: PPC64 should not be here.
-    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DPPC64"
   elif test "x$OPENJDK_TARGET_OS" = xbsd; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
   fi
@@ -46614,36 +46765,34 @@ $as_echo "$supports" >&6; }
   # Setup LDFLAGS et al.
   #
 
-  # Now this is odd. The JDK native libraries have to link against libjvm.so
-  # On 32-bit machines there is normally two distinct libjvm.so:s, client and server.
-  # Which should we link to? Are we lucky enough that the binary api to the libjvm.so library
-  # is identical for client and server? Yes. Which is picked at runtime (client or server)?
-  # Neither, since the chosen libjvm.so has already been loaded by the launcher, all the following
-  # libraries will link to whatever is in memory. Yuck.
-  #
-  # Thus we offer the compiler to find libjvm.so first in server then in client. It works. Ugh.
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    LDFLAGS_JDK="$LDFLAGS_JDK -nologo -opt:ref -incremental:no"
+    LDFLAGS_MICROSOFT="-nologo -opt:ref"
+    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_MICROSOFT -incremental:no"
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
-      LDFLAGS_JDK="$LDFLAGS_JDK -safeseh"
+      LDFLAGS_SAFESH="-safeseh"
+      LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SAFESH"
     fi
     # TODO: make -debug optional "--disable-full-debug-symbols"
-    LDFLAGS_JDK="$LDFLAGS_JDK -debug"
+    LDFLAGS_MICROSOFT_DEBUG="-debug"
+    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_MICROSOFT_DEBUG"
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     # We have previously set HAS_GNU_HASH if this is the case
     if test -n "$HAS_GNU_HASH"; then
-      LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,--hash-style=both"
+      LDFLAGS_HASH_STYLE="-Wl,--hash-style=both"
+      LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_HASH_STYLE"
     fi
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       # And since we now know that the linker is gnu, then add -z defs, to forbid
       # undefined symbols in object files.
-      LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,-z,defs"
+      LDFLAGS_NO_UNDEF_SYM="-Wl,-z,defs"
+      LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_NO_UNDEF_SYM"
       case $DEBUG_LEVEL in
         release )
           # tell linker to optimize libraries.
           # Should this be supplied to the OSS linker as well?
-          LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,-O1"
+          LDFLAGS_DEBUGLEVEL_release="-Wl,-O1"
+          LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_DEBUGLEVEL_release"
           ;;
         slowdebug )
           if test "x$HAS_LINKER_NOW" = "xtrue"; then
@@ -46670,10 +46819,13 @@ $as_echo "$supports" >&6; }
         esac
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    LDFLAGS_JDK="$LDFLAGS_JDK -Wl,-z,defs -xildoff -ztext"
-    LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
+    LDFLAGS_SOLSTUDIO="-Wl,-z,defs"
+    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SOLSTUDIO -xildoff -ztext"
+    LDFLAGS_CXX_SOLSTUDIO="-norunpath"
+    LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LDFLAGS_CXX_SOLSTUDIO -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LDFLAGS_JDK="${LDFLAGS_JDK} -brtl -bnolibpath -bexpall -bernotok"
+    LDFLAGS_XLC="-brtl -bnolibpath -bexpall -bernotok"
+    LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_XLC"
   fi
 
   # Customize LDFLAGS for executables
@@ -47317,6 +47469,10 @@ $as_echo "$supports" >&6; }
       DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
       ;;
+    xlc)
+      DISABLE_WARNING_PREFIX="-qsuppress="
+      CFLAGS_WARNINGS_ARE_ERRORS="-qhalt=w"
+      ;;
   esac
 
 
@@ -47346,7 +47502,11 @@ else
           # AIX doesn't support 'zipped' so use 'internal' as default
           with_native_debug_symbols="internal"
         else
-          with_native_debug_symbols="zipped"
+          if test "x$STATIC_BUILD" = xtrue; then
+            with_native_debug_symbols="none"
+          else
+            with_native_debug_symbols="zipped"
+          fi
         fi
 
 fi
@@ -55346,6 +55506,349 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
 
           fi
 
+          if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+            if test "x$FOUND_FREETYPE" != xyes; then
+              # Due to changes in OSX 10.11 XQuartz now installs to /opt/X11
+              FREETYPE_BASE_DIR="$SYSROOT/opt/X11"
+
+  POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_BASE_DIR/include"
+  POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib"
+  METHOD="well-known location"
+
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
+$as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
+
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+    if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
+        FOUND_FREETYPE=no
+      fi
+    else
+      if test "x$OPENJDK_TARGET_OS" = xwindows; then
+        # On Windows, we will need both .lib and .dll file.
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
+          FOUND_FREETYPE=no
+        fi
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
+      fi
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_INCLUDE_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+    fi
+  fi
+
+
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_LIB_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+    fi
+  fi
+
+
+    FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype includes" >&5
+$as_echo_n "checking for freetype includes... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_INCLUDE_PATH" >&5
+$as_echo "$FREETYPE_INCLUDE_PATH" >&6; }
+    FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype libraries" >&5
+$as_echo_n "checking for freetype libraries... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_LIB_PATH" >&5
+$as_echo "$FREETYPE_LIB_PATH" >&6; }
+  fi
+
+            fi
+          fi
+
           if test "x$FOUND_FREETYPE" != xyes; then
             FREETYPE_BASE_DIR="$SYSROOT/usr/sfw"
 
@@ -58389,7 +58892,7 @@ $as_echo_n "checking for memory size... " >&6; }
     FOUND_MEM=yes
   elif test -x /usr/sbin/prtconf; then
     # Looks like a Solaris or AIX system
-    MEMORY_SIZE=`/usr/sbin/prtconf | grep "^Memory [Ss]ize" | awk '{ print $3 }'`
+    MEMORY_SIZE=`/usr/sbin/prtconf 2> /dev/null | grep "^Memory [Ss]ize" | awk '{ print $3 }'`
     FOUND_MEM=yes
   elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
@@ -59217,9 +59720,9 @@ $as_echo "$tool_specified" >&6; }
     fi
     if test "x${TOOLCHAIN_TYPE}" = "xgcc"; then
 
-  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+  ( cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
       && ${ICECC_CREATE_ENV} ${icecc_gcc_arg} ${CC} ${CXX} > \
-          ${icecc_create_env_log} 2>&1
+          ${icecc_create_env_log} 2>&1 )
   if test "$?" != "0"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
 $as_echo "$as_me: icecc-create-env output:" >&6;}
@@ -59436,8 +59939,8 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-      && ${ICECC_CREATE_ENV} --clang ${CC} ${ICECC_WRAPPER} > ${icecc_create_env_log} 2>&1
+  ( cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} --clang ${CC} ${ICECC_WRAPPER} > ${icecc_create_env_log} 2>&1 )
   if test "$?" != "0"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
 $as_echo "$as_me: icecc-create-env output:" >&6;}
@@ -59468,9 +59971,9 @@ $as_echo "${ICECC_ENV_BUNDLE}" >&6; }
       icecc_create_env_log_build="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/icecc_create_env_build.log"
       if test "x${BUILD_CC##*/}" = "xgcc" ||  test "x${BUILD_CC##*/}" = "xcc"; then
 
-  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+  ( cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
       && ${ICECC_CREATE_ENV} ${icecc_gcc_arg} ${BUILD_CC} ${BUILD_CXX} > \
-            ${icecc_create_env_log_build} 2>&1
+            ${icecc_create_env_log_build} 2>&1 )
   if test "$?" != "0"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
 $as_echo "$as_me: icecc-create-env output:" >&6;}
@@ -59481,8 +59984,8 @@ $as_echo "$as_me: icecc-create-env output:" >&6;}
 
       elif test "x${BUILD_CC##*/}" = "xclang"; then
 
-  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-      && ${ICECC_CREATE_ENV} --clang ${BUILD_CC} ${ICECC_WRAPPER} > ${icecc_create_env_log_build} 2>&1
+  ( cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} --clang ${BUILD_CC} ${ICECC_WRAPPER} > ${icecc_create_env_log_build} 2>&1 )
   if test "$?" != "0"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: icecc-create-env output:" >&5
 $as_echo "$as_me: icecc-create-env output:" >&6;}

@@ -121,6 +121,23 @@ ifeq ($(HAS_SPEC),)
     endif
   endef
 
+  # Look for a given option in the LOG variable, and if found, set a variable
+  # and remove the option from the LOG variable
+  # $1: The option to look for
+  # $2: The option to set to "true" if the option is found
+  define ParseLogOption
+    ifneq ($$(findstring $1, $$(LOG)),)
+      $2 := true
+      # COMMA is defined in spec.gmk, but that is not included yet
+      COMMA := ,
+      # First try to remove ",<option>" if it exists, otherwise just remove "<option>"
+      LOG_STRIPPED := $$(subst $1,, $$(subst $$(COMMA)$(strip $1),, $$(LOG)))
+      # We might have ended up with a leading comma. Remove it. Need override
+      # since LOG is set from the command line.
+      override LOG := $$(strip $$(patsubst $$(COMMA)%, %, $$(LOG_STRIPPED)))
+    endif
+  endef
+
   define ParseLogLevel
     # Catch old-style VERBOSE= command lines.
     ifneq ($$(origin VERBOSE), undefined)
@@ -131,17 +148,12 @@ ifeq ($(HAS_SPEC),)
     # Setup logging according to LOG
 
     # If the "nofile" argument is given, act on it and strip it away
-    ifneq ($$(findstring nofile, $$(LOG)),)
-      LOG_NOFILE := true
-      # COMMA is defined in spec.gmk, but that is not included yet
-      COMMA := ,
-      # First try to remove ",nofile" if it exists, otherwise just remove "nofile"
-      LOG_STRIPPED := $$(subst nofile,, $$(subst $$(COMMA)nofile,, $$(LOG)))
-      # We might have ended up with a leading comma. Remove it
-      LOG_LEVEL := $$(strip $$(patsubst $$(COMMA)%, %, $$(LOG_STRIPPED)))
-    else
-      LOG_LEVEL := $$(LOG)
-    endif
+    $$(eval $$(call ParseLogOption, nofile, LOG_NOFILE))
+
+    # If the "cmdline" argument is given, act on it and strip it away
+    $$(eval $$(call ParseLogOption, cmdlines, LOG_CMDLINES))
+
+    LOG_LEVEL := $$(LOG)
 
     ifeq ($$(LOG_LEVEL),)
       # Set LOG to "warn" as default if not set
@@ -157,7 +169,9 @@ ifeq ($(HAS_SPEC),)
     else ifeq ($$(LOG_LEVEL), trace)
       MAKE_LOG_FLAGS :=
     else
-      $$(info Error: LOG must be one of: warn, info, debug or trace.)
+      $$(info Error: LOG contains unknown option or log level: $$(LOG).)
+      $$(info LOG can be <level>[,<opt>[...]] where <opt> is nofile | cmdlines)
+      $$(info and <level> is warn | info | debug | trace)
       $$(error Cannot continue)
     endif
   endef
@@ -339,14 +353,17 @@ else # $(HAS_SPEC)=true
   # Parse COMPARE_BUILD into COMPARE_BUILD_*
   # Syntax: COMPARE_BUILD=CONF=<configure options>:PATCH=<patch file>:
   #         MAKE=<make targets>:COMP_OPTS=<compare script options>:
-  #         COMP_DIR=<compare script base dir>|<default>
+  #         COMP_DIR=<compare script base dir>|<default>:
+  #         FAIL=<bool>
   # If neither CONF or PATCH is given, assume <default> means CONF if it
   # begins with "--", otherwise assume it means PATCH.
   # MAKE and COMP_OPTS can only be used with CONF and/or PATCH specified.
   # If any value contains "+", it will be replaced by space.
+  # FAIL can be set to false to have the return value of compare be ignored.
   define ParseCompareBuild
     ifneq ($$(COMPARE_BUILD), )
       COMPARE_BUILD_OUTPUT_ROOT := $(TOPDIR)/build/compare-build/$(CONF_NAME)
+      COMPARE_BUILD_FAIL := true
 
       ifneq ($$(findstring :, $$(COMPARE_BUILD)), )
         $$(foreach part, $$(subst :, , $$(COMPARE_BUILD)), \
@@ -364,6 +381,9 @@ else # $(HAS_SPEC)=true
           ) \
           $$(if $$(filter COMP_DIR=%, $$(part)), \
             $$(eval COMPARE_BUILD_COMP_DIR=$$(strip $$(subst +, , $$(patsubst COMP_DIR=%, %, $$(part))))) \
+          ) \
+          $$(if $$(filter FAIL=%, $$(part)), \
+            $$(eval COMPARE_BUILD_FAIL=$$(strip $$(subst +, , $$(patsubst FAIL=%, %, $$(part))))) \
           ) \
         )
       else
@@ -387,6 +407,9 @@ else # $(HAS_SPEC)=true
         else ifeq ($$(wildcard $$(COMPARE_BUILD_PATCH)), )
           $$(error Patch file $$(COMPARE_BUILD_PATCH) does not exist)
         endif
+      endif
+      ifneq ($$(COMPARE_BUILD_FAIL), true)
+        COMPARE_BUILD_IGNORE_RESULT := || true
       endif
     endif
   endef
@@ -429,9 +452,10 @@ else # $(HAS_SPEC)=true
 	$(ECHO) "Comparing between comparison rebuild (this/new) and baseline (other/old)"
 	$(if $(COMPARE_BUILD_COMP_DIR), \
 	  +(cd $(COMPARE_BUILD_OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) \
-	      -2dirs $(COMPARE_BUILD_OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) $(OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) || true), \
+	      -2dirs $(COMPARE_BUILD_OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) \
+	      $(OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) $(COMPARE_BUILD_IGNORE_RESULT)), \
 	  +(cd $(COMPARE_BUILD_OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) \
-	      -o $(OUTPUT_ROOT) || true) \
+	      -o $(OUTPUT_ROOT) $(COMPARE_BUILD_IGNORE_RESULT)) \
 	)
   endef
 

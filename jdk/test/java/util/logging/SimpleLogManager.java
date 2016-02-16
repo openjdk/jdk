@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import sun.util.logging.PlatformLogger;
  *          logger (see the subclassing information in the Logger class specification)
  *
  * @modules java.base/sun.util.logging
+ *          java.logging
  * @compile -XDignore.symbol.file CustomLogManager.java SimpleLogManager.java
  * @run main/othervm -Djava.util.logging.manager=SimpleLogManager SimpleLogManager
  */

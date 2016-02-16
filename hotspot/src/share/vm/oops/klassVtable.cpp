@@ -26,6 +26,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -58,7 +59,7 @@ void klassVtable::compute_vtable_size_and_num_mirandas(
     Array<Method*>* methods, AccessFlags class_flags,
     Handle classloader, Symbol* classname, Array<Klass*>* local_interfaces,
     TRAPS) {
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
 
   // set up default result values
   int vtable_length = 0;
@@ -134,12 +135,12 @@ int klassVtable::initialize_from_super(KlassHandle super) {
     superVtable->verify(tty, true);
 #endif
     superVtable->copy_vtable_to(table());
-#ifndef PRODUCT
-    if (PrintVtables && Verbose) {
+    if (develop_log_is_enabled(Trace, vtables)) {
       ResourceMark rm;
-      tty->print_cr("copy vtable from %s to %s size %d", super->internal_name(), klass()->internal_name(), _length);
+      log_develop_trace(vtables)("copy vtable from %s to %s size %d",
+                                 super->internal_name(), klass()->internal_name(),
+                                 _length);
     }
-#endif
     return superVtable->length();
   }
 }
@@ -152,9 +153,9 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
   KlassHandle super (THREAD, klass()->java_super());
   int nofNewEntries = 0;
 
-  if (PrintVtables && !klass()->is_array_klass()) {
+  if (!klass()->is_array_klass()) {
     ResourceMark rm(THREAD);
-    tty->print_cr("Initializing: %s", _klass->name()->as_C_string());
+    log_develop_debug(vtables)("Initializing: %s", _klass->name()->as_C_string());
   }
 
 #ifdef ASSERT
@@ -271,24 +272,19 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
       assert(super_method->name() == name && super_method->signature() == signature, "vtable entry name/sig mismatch");
 #endif
       if (supersuperklass->is_override(super_method, target_loader, target_classname, THREAD)) {
-#ifndef PRODUCT
-        if (PrintVtables && Verbose) {
+        if (develop_log_is_enabled(Trace, vtables)) {
           ResourceMark rm(THREAD);
+          outputStream* logst = LogHandle(vtables)::trace_stream();
           char* sig = target_method()->name_and_sig_as_C_string();
-          tty->print("transitive overriding superclass %s with %s::%s index %d, original flags: ",
-           supersuperklass->internal_name(),
-           _klass->internal_name(), sig, vtable_index);
-           super_method->access_flags().print_on(tty);
-           if (super_method->is_default_method()) {
-             tty->print("default ");
-           }
-           tty->print("overriders flags: ");
-           target_method->access_flags().print_on(tty);
-           if (target_method->is_default_method()) {
-             tty->print("default ");
-           }
+          logst->print("transitive overriding superclass %s with %s::%s index %d, original flags: ",
+                       supersuperklass->internal_name(),
+                       _klass->internal_name(), sig, vtable_index);
+          super_method->print_linkage_flags(logst);
+          logst->print("overriders flags: ");
+          target_method->print_linkage_flags(logst);
+          logst->cr();
         }
-#endif /*PRODUCT*/
+
         break; // return found superk
       }
     } else  {
@@ -301,6 +297,29 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
   }
 
   return superk;
+}
+
+static void log_vtables(int i, bool overrides, methodHandle target_method,
+                        KlassHandle target_klass, Method* super_method,
+                        Thread* thread) {
+#ifndef PRODUCT
+  if (develop_log_is_enabled(Trace, vtables)) {
+    ResourceMark rm(thread);
+    outputStream* logst = LogHandle(vtables)::trace_stream();
+    char* sig = target_method()->name_and_sig_as_C_string();
+    if (overrides) {
+      logst->print("overriding with %s::%s index %d, original flags: ",
+                   target_klass->internal_name(), sig, i);
+    } else {
+      logst->print("NOT overriding with %s::%s index %d, original flags: ",
+                   target_klass->internal_name(), sig, i);
+    }
+    super_method->print_linkage_flags(logst);
+    logst->print("overriders flags: ");
+    target_method->print_linkage_flags(logst);
+    logst->cr();
+  }
+#endif
 }
 
 // Update child's copy of super vtable for overrides
@@ -396,6 +415,9 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
       // get super_klass for method_holder for the found method
       InstanceKlass* super_klass =  super_method->method_holder();
 
+      // Whether the method is being overridden
+      bool overrides = false;
+
       // private methods are also never overridden
       if (!super_method->is_private() &&
           (is_default
@@ -446,95 +468,39 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
               THROW_MSG_(vmSymbols::java_lang_LinkageError(), buf, false);
             }
           }
-       }
-
-       put_method_at(target_method(), i);
-       if (!is_default) {
-         target_method()->set_vtable_index(i);
-       } else {
-         if (def_vtable_indices != NULL) {
-           def_vtable_indices->at_put(default_index, i);
-         }
-         assert(super_method->is_default_method() || super_method->is_overpass()
-                || super_method->is_abstract(), "default override error");
-       }
-
-
-#ifndef PRODUCT
-        if (PrintVtables && Verbose) {
-          ResourceMark rm(THREAD);
-          char* sig = target_method()->name_and_sig_as_C_string();
-          tty->print("overriding with %s::%s index %d, original flags: ",
-           target_klass->internal_name(), sig, i);
-           super_method->access_flags().print_on(tty);
-           if (super_method->is_default_method()) {
-             tty->print("default ");
-           }
-           if (super_method->is_overpass()) {
-             tty->print("overpass");
-           }
-           tty->print("overriders flags: ");
-           target_method->access_flags().print_on(tty);
-           if (target_method->is_default_method()) {
-             tty->print("default ");
-           }
-           if (target_method->is_overpass()) {
-             tty->print("overpass");
-           }
-           tty->cr();
         }
-#endif /*PRODUCT*/
+
+        put_method_at(target_method(), i);
+        overrides = true;
+        if (!is_default) {
+          target_method()->set_vtable_index(i);
+        } else {
+          if (def_vtable_indices != NULL) {
+            def_vtable_indices->at_put(default_index, i);
+          }
+          assert(super_method->is_default_method() || super_method->is_overpass()
+                 || super_method->is_abstract(), "default override error");
+        }
       } else {
-        // allocate_new = true; default. We might override one entry,
-        // but not override another. Once we override one, not need new
-#ifndef PRODUCT
-        if (PrintVtables && Verbose) {
-          ResourceMark rm(THREAD);
-          char* sig = target_method()->name_and_sig_as_C_string();
-          tty->print("NOT overriding with %s::%s index %d, original flags: ",
-           target_klass->internal_name(), sig,i);
-           super_method->access_flags().print_on(tty);
-           if (super_method->is_default_method()) {
-             tty->print("default ");
-           }
-           if (super_method->is_overpass()) {
-             tty->print("overpass");
-           }
-           tty->print("overriders flags: ");
-           target_method->access_flags().print_on(tty);
-           if (target_method->is_default_method()) {
-             tty->print("default ");
-           }
-           if (target_method->is_overpass()) {
-             tty->print("overpass");
-           }
-           tty->cr();
-        }
-#endif /*PRODUCT*/
+        overrides = false;
       }
+      log_vtables(i, overrides, target_method, target_klass, super_method, THREAD);
     }
   }
   return allocate_new;
 }
 
 void klassVtable::put_method_at(Method* m, int index) {
-#ifndef PRODUCT
-  if (PrintVtables && Verbose) {
+  if (develop_log_is_enabled(Trace, vtables)) {
     ResourceMark rm;
+    outputStream* logst = LogHandle(vtables)::trace_stream();
     const char* sig = (m != NULL) ? m->name_and_sig_as_C_string() : "<NULL>";
-    tty->print("adding %s at index %d, flags: ", sig, index);
+    logst->print("adding %s at index %d, flags: ", sig, index);
     if (m != NULL) {
-      m->access_flags().print_on(tty);
-      if (m->is_default_method()) {
-        tty->print("default ");
-      }
-      if (m->is_overpass()) {
-        tty->print("overpass");
-      }
+      m->print_linkage_flags(logst);
     }
-    tty->cr();
+    logst->cr();
   }
-#endif
   table()[index].set(m);
 }
 
@@ -852,18 +818,16 @@ int klassVtable::fill_in_mirandas(int initialized) {
   get_mirandas(&mirandas, NULL, ik()->super(), ik()->methods(),
                ik()->default_methods(), ik()->local_interfaces());
   for (int i = 0; i < mirandas.length(); i++) {
-    if (PrintVtables && Verbose) {
+    if (develop_log_is_enabled(Trace, vtables)) {
       Method* meth = mirandas.at(i);
       ResourceMark rm(Thread::current());
+      outputStream* logst = LogHandle(vtables)::trace_stream();
       if (meth != NULL) {
         char* sig = meth->name_and_sig_as_C_string();
-        tty->print("fill in mirandas with %s index %d, flags: ",
-          sig, initialized);
-        meth->access_flags().print_on(tty);
-        if (meth->is_default_method()) {
-          tty->print("default ");
-        }
-        tty->cr();
+        logst->print("fill in mirandas with %s index %d, flags: ",
+                     sig, initialized);
+        meth->print_linkage_flags(logst);
+        logst->cr();
       }
     }
     put_method_at(mirandas.at(i), initialized);
@@ -1036,8 +1000,8 @@ void klassItable::initialize_itable(bool checkconstraints, TRAPS) {
   guarantee(size_offset_table() >= 1, "too small");
   int num_interfaces = size_offset_table() - 1;
   if (num_interfaces > 0) {
-    if (TraceItables) tty->print_cr("%3d: Initializing itables for %s", ++initialize_count,
-                                    _klass->name()->as_C_string());
+    log_develop_debug(itables)("%3d: Initializing itables for %s", ++initialize_count,
+                       _klass->name()->as_C_string());
 
 
     // Iterate through all interfaces
@@ -1069,8 +1033,8 @@ inline bool interface_method_needs_itable_index(Method* m) {
 
 int klassItable::assign_itable_indices_for_interface(Klass* klass) {
   // an interface does not have an itable, but its methods need to be numbered
-  if (TraceItables) tty->print_cr("%3d: Initializing itable indices for interface %s", ++initialize_count,
-                                  klass->name()->as_C_string());
+  log_develop_debug(itables)("%3d: Initializing itable indices for interface %s",
+                             ++initialize_count, klass->name()->as_C_string());
   Array<Method*>* methods = InstanceKlass::cast(klass)->methods();
   int nof_methods = methods->length();
   int ime_num = 0;
@@ -1079,24 +1043,18 @@ int klassItable::assign_itable_indices_for_interface(Klass* klass) {
     if (interface_method_needs_itable_index(m)) {
       assert(!m->is_final_method(), "no final interface methods");
       // If m is already assigned a vtable index, do not disturb it.
-      if (TraceItables && Verbose) {
+      if (develop_log_is_enabled(Trace, itables)) {
         ResourceMark rm;
-        const char* sig = (m != NULL) ? m->name_and_sig_as_C_string() : "<NULL>";
+        outputStream* logst = LogHandle(itables)::trace_stream();
+        assert(m != NULL, "methods can never be null");
+        const char* sig = m->name_and_sig_as_C_string();
         if (m->has_vtable_index()) {
-          tty->print("vtable index %d for method: %s, flags: ", m->vtable_index(), sig);
+          logst->print("vtable index %d for method: %s, flags: ", m->vtable_index(), sig);
         } else {
-          tty->print("itable index %d for method: %s, flags: ", ime_num, sig);
+          logst->print("itable index %d for method: %s, flags: ", ime_num, sig);
         }
-        if (m != NULL) {
-          m->access_flags().print_on(tty);
-          if (m->is_default_method()) {
-            tty->print("default ");
-          }
-          if (m->is_overpass()) {
-            tty->print("overpass");
-          }
-        }
-        tty->cr();
+        m->print_linkage_flags(logst);
+        logst->cr();
       }
       if (!m->has_vtable_index()) {
         assert(m->vtable_index() == Method::pending_itable_index, "set by initialize_vtable");
@@ -1200,19 +1158,17 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
       int ime_num = m->itable_index();
       assert(ime_num < ime_count, "oob");
       itableOffsetEntry::method_entry(_klass(), method_table_offset)[ime_num].initialize(target());
-      if (TraceItables && Verbose) {
+      if (develop_log_is_enabled(Trace, itables)) {
         ResourceMark rm(THREAD);
         if (target() != NULL) {
+          outputStream* logst = LogHandle(itables)::trace_stream();
           char* sig = target()->name_and_sig_as_C_string();
-          tty->print("interface: %s, ime_num: %d, target: %s, method_holder: %s ",
-                    interf_h()->internal_name(), ime_num, sig,
-                    target()->method_holder()->internal_name());
-          tty->print("target_method flags: ");
-          target()->access_flags().print_on(tty);
-          if (target()->is_default_method()) {
-            tty->print("default ");
-          }
-          tty->cr();
+          logst->print("interface: %s, ime_num: %d, target: %s, method_holder: %s ",
+                       interf_h()->internal_name(), ime_num, sig,
+                       target()->method_holder()->internal_name());
+          logst->print("target_method flags: ");
+          target()->print_linkage_flags(logst);
+          logst->cr();
         }
       }
     }

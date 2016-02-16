@@ -388,7 +388,7 @@ public:
   }
 };
 
-void GCTimerAllTest::all() {
+void GCTimer_test() {
   GCTimerTest::all();
   TimePartitionPhasesIteratorTest::all();
 }

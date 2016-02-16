@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,12 @@ CONFIGURE_COMMAND_LINE:=@CONFIGURE_COMMAND_LINE@
 # A self-referential reference to this file.
 SPEC:=@SPEC@
 
-# SPACE is defined in MakeBase.gmk, but it is also used in := rules here for some
-# toolchains, and is needed if MakeBase.gmk is not included before this file.
+# SPACE and COMMA are defined in MakeBase.gmk, but they are also used in
+# some definitions here, and are needed if MakeBase.gmk is not included before
+# this file.
 X:=
 SPACE:=$(X) $(X)
+COMMA:=,
 
 # What make to use for main processing, after bootstrapping top-level Makefile.
 MAKE := @MAKE@
@@ -184,6 +186,7 @@ JDK_RC_PLATFORM_NAME:=@JDK_RC_PLATFORM_NAME@
 COMPANY_NAME:=@COMPANY_NAME@
 MACOSX_BUNDLE_NAME_BASE=@MACOSX_BUNDLE_NAME_BASE@
 MACOSX_BUNDLE_ID_BASE=@MACOSX_BUNDLE_ID_BASE@
+USERNAME:=@USERNAME@
 
 # Different naming strings generated from the above information.
 RUNTIME_NAME=$(PRODUCT_NAME) $(PRODUCT_SUFFIX)
@@ -349,10 +352,8 @@ CFLAGS_JDKEXE:=@CFLAGS_JDKEXE@
 CXXFLAGS_JDKEXE:=@CXXFLAGS_JDKEXE@
 
 CXX:=@FIXPATH@ @CCACHE@ @ICECC@ @CXX@
-#CXXFLAGS:=@CXXFLAGS@
 
 CPP:=@FIXPATH@ @CPP@
-#CPPFLAGS:=@CPPFLAGS@
 
 # The linker can be gcc or ld on unix systems, or link.exe on windows systems.
 LD:=@FIXPATH@ @LD@
@@ -500,7 +501,7 @@ JAVAC_FLAGS?=@JAVAC_FLAGS@
 INTERIM_LANGTOOLS_JAR = $(BUILDTOOLS_OUTPUTDIR)/interim_langtools.jar
 INTERIM_LANGTOOLS_ARGS = "-Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR)" -cp $(INTERIM_LANGTOOLS_JAR)
 NEW_JAVAC   = $(INTERIM_LANGTOOLS_ARGS) com.sun.tools.javac.Main
-NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) jdk.javadoc.internal.tool.Main 
+NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) jdk.javadoc.internal.tool.Main
 
 # Base flags for RC
 # Guarding this against resetting value. Legacy make files include spec multiple

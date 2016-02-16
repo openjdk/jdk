@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,7 @@ class Abstract_VM_Version: AllStatic {
   static const char* internal_vm_info_string();
   static const char* jre_release_version();
   static const char* jdk_debug_level();
+  static const char* printable_jdk_debug_level();
 
   static uint64_t features() {
     return _features;

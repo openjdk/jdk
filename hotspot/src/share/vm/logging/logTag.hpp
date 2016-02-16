@@ -52,6 +52,7 @@
   LOG_TAG(heap) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
+  LOG_TAG(itables) \
   LOG_TAG(jni) \
   LOG_TAG(liveness) \
   LOG_TAG(logging) \
@@ -80,7 +81,8 @@
   LOG_TAG(tlab) \
   LOG_TAG(time) \
   LOG_TAG(verify) \
-  LOG_TAG(vmoperation)
+  LOG_TAG(vmoperation) \
+  LOG_TAG(vtables)
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)
 

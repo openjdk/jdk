@@ -36,7 +36,6 @@
 // Some parts of traceEvent.hpp are used outside of
 // INCLUDE_TRACE
 
-#include "memory/resourceArea.hpp"
 #include "tracefiles/traceTypes.hpp"
 #include "trace/traceEvent.hpp"
 #include "utilities/macros.hpp"
@@ -136,7 +135,6 @@ public:
 </xsl:text>
   <xsl:value-of select="concat('  Event', @id, '(EventStartTime timing=TIMED) : TraceEvent&lt;Event', @id, '&gt;(timing) {}', $newline)"/>
   void writeEvent(void) {
-    ResourceMark rm;
     if (UseLockedTracing) {
       ttyLocker lock;
       writeEventContent();

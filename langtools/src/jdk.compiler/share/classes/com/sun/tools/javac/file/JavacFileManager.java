@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -525,8 +525,16 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      */
     @Override @DefinedBy(Api.COMPILER)
     public void close() throws IOException {
-        for (FileSystem fs: fileSystems.values())
+        if (deferredCloseTimeout > 0) {
+            deferredClose();
+            return;
+        }
+
+        for (FileSystem fs: fileSystems.values()) {
             fs.close();
+        }
+        fileSystems.clear();
+        contentCache.clear();
     }
 
     @Override @DefinedBy(Api.COMPILER)

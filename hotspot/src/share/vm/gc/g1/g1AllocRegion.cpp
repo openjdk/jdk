@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,7 +277,7 @@ HeapRegion* OldGCAllocRegion::release() {
     // Determine how far we are from the next card boundary. If it is smaller than
     // the minimum object size we can allocate into, expand into the next card.
     HeapWord* top = cur->top();
-    HeapWord* aligned_top = (HeapWord*)align_ptr_up(top, G1BlockOffsetSharedArray::N_bytes);
+    HeapWord* aligned_top = (HeapWord*)align_ptr_up(top, BOTConstants::N_bytes);
 
     size_t to_allocate_words = pointer_delta(aligned_top, top, HeapWordSize);
 

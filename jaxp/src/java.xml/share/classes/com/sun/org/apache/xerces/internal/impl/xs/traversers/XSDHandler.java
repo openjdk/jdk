@@ -2249,8 +2249,8 @@ public class XSDHandler {
                     try {
                         parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, fAccessExternalDTD);
                     } catch (SAXNotRecognizedException exc) {
-                        System.err.println("Warning: " + parser.getClass().getName() + ": " +
-                                exc.getMessage());
+                        XMLSecurityManager.printWarning(parser.getClass().getName(),
+                                XMLConstants.ACCESS_EXTERNAL_DTD, exc);
                     }
                 }
                 // If XML names and Namespace URIs are already internalized we

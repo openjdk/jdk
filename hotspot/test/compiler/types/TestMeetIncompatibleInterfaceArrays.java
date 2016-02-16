@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 SAP AG.  All Rights Reserved.
+ * Copyright (c) 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary C2 can not handle returns with inccompatible interface arrays
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/sun.misc
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

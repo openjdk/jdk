@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,23 +40,12 @@ import javax.smartcardio.CardTerminal;
 public class TestConnect extends Utils {
 
     public static void main(String[] args) throws Exception {
-        TerminalFactory factory = TerminalFactory.getInstance("PC/SC", null, "SunPCSC");
-        System.out.println(factory);
-
-        List<CardTerminal> terminals = factory.terminals().list();
-        System.out.println("Terminals: " + terminals);
-        if (terminals.isEmpty()) {
-            throw new Exception("No card terminals available");
+        CardTerminal terminal = getTerminal(args, "SunPCSC");
+        if (terminal == null) {
+            System.out.println("Skipping the test: " +
+                    "no card terminals available");
+            return;
         }
-        CardTerminal terminal = terminals.get(0);
-
-        if (terminal.isCardPresent() == false) {
-            System.out.println("*** Insert card");
-            if (terminal.waitForCardPresent(20 * 1000) == false) {
-                throw new Exception("no card available");
-            }
-        }
-        System.out.println("card present: " + terminal.isCardPresent());
 
         Card card = terminal.connect("*");
         System.out.println("card: " + card);

@@ -160,4 +160,15 @@ public interface ConstantReflectionProvider {
      * Gets raw memory access.
      */
     MemoryAccessProvider getMemoryAccessProvider();
+
+    /**
+     * Gets the runtime representation of the {@link Class} object of this type.
+     */
+    JavaConstant asJavaClass(ResolvedJavaType type);
+
+    /**
+     * Gets the runtime representation of the "hub" of this type--that is, the closest part of the
+     * type representation which is typically stored in the object header.
+     */
+    Constant asObjectHub(ResolvedJavaType type);
 }

@@ -349,6 +349,14 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
             LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])
           fi
 
+          if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+            if test "x$FOUND_FREETYPE" != xyes; then
+              # Due to changes in OSX 10.11 XQuartz now installs to /opt/X11
+              FREETYPE_BASE_DIR="$SYSROOT/opt/X11"
+              LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])
+            fi
+          fi
+
           if test "x$FOUND_FREETYPE" != xyes; then
             FREETYPE_BASE_DIR="$SYSROOT/usr/sfw"
             LIB_CHECK_POTENTIAL_FREETYPE([$FREETYPE_BASE_DIR/include], [$FREETYPE_BASE_DIR/lib], [well-known location])

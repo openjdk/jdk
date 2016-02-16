@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,6 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
-#include "interp_masm_zero.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -33,8 +32,6 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiExport.hpp"
-#include "prims/jvmtiThreadState.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -66,6 +63,42 @@ const char *BytecodeInterpreter::name_of_field_at_address(address addr) {
   if (addr > (address) &_result && addr < (address) (&_result + 1))
     return "_result)";
   return NULL;
+}
+
+void BytecodeInterpreter::layout_interpreterState(interpreterState istate,
+                                                  frame*    caller,
+                                                  frame*    current,
+                                                  Method* method,
+                                                  intptr_t* locals,
+                                                  intptr_t* stack,
+                                                  intptr_t* stack_base,
+                                                  intptr_t* monitor_base,
+                                                  intptr_t* frame_bottom,
+                                                  bool      is_top_frame) {
+  istate->set_locals(locals);
+  istate->set_method(method);
+  istate->set_self_link(istate);
+  istate->set_prev_link(NULL);
+  // thread will be set by a hacky repurposing of frame::patch_pc()
+  // bcp will be set by vframeArrayElement::unpack_on_stack()
+  istate->set_constants(method->constants()->cache());
+  istate->set_msg(BytecodeInterpreter::method_resume);
+  istate->set_bcp_advance(0);
+  istate->set_oop_temp(NULL);
+  istate->set_mdx(NULL);
+  if (caller->is_interpreted_frame()) {
+    interpreterState prev = caller->get_interpreterState();
+    prev->set_callee(method);
+    if (*prev->bcp() == Bytecodes::_invokeinterface)
+      prev->set_bcp_advance(5);
+    else
+      prev->set_bcp_advance(3);
+  }
+  istate->set_callee(NULL);
+  istate->set_monitor_base((BasicObjectLock *) monitor_base);
+  istate->set_stack_base(stack_base);
+  istate->set_stack(stack);
+  istate->set_stack_limit(stack_base - method->max_stack() - 1);
 }
 
 #endif // CC_INTERP

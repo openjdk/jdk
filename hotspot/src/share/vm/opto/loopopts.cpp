@@ -25,7 +25,9 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
@@ -900,6 +902,14 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   Node *m = remix_address_expressions( n );
   if( m ) return m;
 
+  if (n->is_ConstraintCast()) {
+    Node* dom_cast = n->as_ConstraintCast()->dominating_cast(this);
+    if (dom_cast != NULL) {
+      _igvn.replace_node(n, dom_cast);
+      return dom_cast;
+    }
+  }
+
   // Determine if the Node has inputs from some local Phi.
   // Returns the block to clone thru.
   Node *n_blk = has_local_phi_input( n );
@@ -988,6 +998,9 @@ static bool merge_point_safe(Node* region) {
 #ifdef _LP64
         if (m->Opcode() == Op_ConvI2L)
           return false;
+        if (m->is_CastII() && m->isa_CastII()->has_range_check()) {
+          return false;
+        }
 #endif
       }
     }

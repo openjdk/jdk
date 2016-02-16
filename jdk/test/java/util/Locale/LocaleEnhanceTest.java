@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.Set;
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
  *    7044019 8008577
  * @summary test API changes to Locale
+ * @modules jdk.localedata
  * @compile LocaleEnhanceTest.java
  * @run main/othervm -Djava.locale.providers=JRE,SPI -esa LocaleEnhanceTest
  */

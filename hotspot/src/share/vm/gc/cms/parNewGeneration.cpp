@@ -455,7 +455,7 @@ void ParScanThreadStateSet::flush() {
 
     // Every thread has its own age table.  We need to merge
     // them all into one.
-    ageTable *local_table = par_scan_state.age_table();
+    AgeTable *local_table = par_scan_state.age_table();
     _young_gen.age_table()->merge(local_table);
 
     // Inform old gen that we're done.
@@ -469,7 +469,7 @@ void ParScanThreadStateSet::flush() {
     // to avoid this by reorganizing the code a bit, I am loathe
     // to do that unless we find cases where ergo leads to bad
     // performance.
-    CFLS_LAB::compute_desired_plab_size();
+    CompactibleFreeListSpaceLAB::compute_desired_plab_size();
   }
 }
 

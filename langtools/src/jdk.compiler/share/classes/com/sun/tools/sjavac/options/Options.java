@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.StringJoiner;
 
 import com.sun.tools.sjavac.Transformer;
 import com.sun.tools.sjavac.Util;
@@ -225,10 +226,7 @@ public class Options {
             }
 
             String getResult() {
-                String result = "";
-                for (String s : args)
-                    result += s + " ";
-                return result.trim();
+                return String.join(" ", args);
             }
 
             public void addAll(Collection<String> toAdd) {
@@ -337,10 +335,11 @@ public class Options {
     // Helper method to join a list of source locations separated by
     // File.pathSeparator
     private static String concatenateSourceLocations(List<SourceLocation> locs) {
-        String s = "";
-        for (SourceLocation loc : locs)
-            s += (s.isEmpty() ? "" : java.io.File.pathSeparator) + loc.getPath();
-        return s;
+        StringJoiner joiner = new StringJoiner(java.io.File.pathSeparator);
+        for (SourceLocation loc : locs) {
+            joiner.add(loc.getPath().toString());
+        }
+        return joiner.toString();
     }
 
     // OptionHelper that records the traversed options in this Options instance.

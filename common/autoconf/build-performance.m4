@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ AC_DEFUN([BPERF_CHECK_MEMORY_SIZE],
     FOUND_MEM=yes
   elif test -x /usr/sbin/prtconf; then
     # Looks like a Solaris or AIX system
-    MEMORY_SIZE=`/usr/sbin/prtconf | grep "^Memory [[Ss]]ize" | awk '{ print [$]3 }'`
+    MEMORY_SIZE=`/usr/sbin/prtconf 2> /dev/null | grep "^Memory [[Ss]]ize" | awk '{ print [$]3 }'`
     FOUND_MEM=yes
   elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
@@ -260,8 +260,8 @@ AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
 #
 AC_DEFUN([BPERF_RUN_ICECC_CREATE_ENV],
 [
-  cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
-      && ${ICECC_CREATE_ENV} $1 > $2 2>&1
+  ( cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+      && ${ICECC_CREATE_ENV} $1 > $2 2>&1 )
   if test "$?" != "0"; then
     AC_MSG_NOTICE([icecc-create-env output:])
     cat $2

@@ -25,8 +25,9 @@
  * @test
  * @bug 8137167
  * @summary Tests CompileCommand=log
- * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
- * @build LogTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
+ * @library /testlibrary /test/lib /compiler/testlibrary ../share /
+ * @build compiler.compilercontrol.commands.LogTest
+ *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
