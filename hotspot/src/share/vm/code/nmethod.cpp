@@ -33,6 +33,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecode.hpp"
 #include "oops/methodData.hpp"
@@ -965,6 +966,12 @@ void nmethod::print_on(outputStream* st, const char* msg) const {
   }
 }
 
+void nmethod::maybe_print_nmethod(DirectiveSet* directive) {
+  bool printnmethods = directive->PrintAssemblyOption || directive->PrintNMethodsOption;
+  if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
+    print_nmethod(printnmethods);
+  }
+}
 
 void nmethod::print_nmethod(bool printmethod) {
   ttyLocker ttyl;  // keep the following output all in one block
