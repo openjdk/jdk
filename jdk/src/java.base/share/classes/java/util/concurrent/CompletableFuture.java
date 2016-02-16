@@ -234,14 +234,13 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * Without precautions, CompletableFutures would be prone to
      * garbage accumulation as chains of Completions build up, each
      * pointing back to its sources. So we null out fields as soon as
-     * possible (see especially method Completion.detach). The
-     * screening checks needed anyway harmlessly ignore null arguments
-     * that may have been obtained during races with threads nulling
-     * out fields.  We also try to unlink fired Completions from
-     * stacks that might never be popped (see method postFire).
-     * Completion fields need not be declared as final or volatile
-     * because they are only visible to other threads upon safe
-     * publication.
+     * possible.  The screening checks needed anyway harmlessly ignore
+     * null arguments that may have been obtained during races with
+     * threads nulling out fields.  We also try to unlink fired
+     * Completions from stacks that might never be popped (see method
+     * postFire).  Completion fields need not be declared as final or
+     * volatile because they are only visible to other threads upon
+     * safe publication.
      */
 
     volatile Object result;       // Either the result or boxed AltResult
@@ -800,6 +799,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
             } catch (Throwable ex) {
                 if (x == null)
                     x = ex;
+                else if (x != ex)
+                    x.addSuppressed(ex);
             }
             completeThrowable(x, r);
         }
