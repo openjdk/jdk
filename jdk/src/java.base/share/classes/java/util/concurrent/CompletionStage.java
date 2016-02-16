@@ -46,16 +46,25 @@ import java.util.function.Function;
  * A stage completes upon termination of its computation, but this may
  * in turn trigger other dependent stages.  The functionality defined
  * in this interface takes only a few basic forms, which expand out to
- * a larger set of methods to capture a range of usage styles: <ul>
+ * a larger set of methods to capture a range of usage styles:
+ *
+ * <ul>
  *
  * <li>The computation performed by a stage may be expressed as a
  * Function, Consumer, or Runnable (using methods with names including
  * <em>apply</em>, <em>accept</em>, or <em>run</em>, respectively)
  * depending on whether it requires arguments and/or produces results.
- * For example, {@code stage.thenApply(x -> square(x)).thenAccept(x ->
- * System.out.print(x)).thenRun(() -> System.out.println())}. An
- * additional form (<em>compose</em>) applies functions of stages
- * themselves, rather than their results.
+ * For example:
+ * <pre> {@code
+ * stage.thenApply(x -> square(x))
+ *      .thenAccept(x -> System.out.print(x))
+ *      .thenRun(() -> System.out.println());}</pre>
+ *
+ * An additional form (<em>compose</em>) allows the construction of
+ * computation pipelines from functions returning completion stages.
+ *
+ * <p>Any argument to a stage's computation is the outcome of a
+ * triggering stage's computation.
  *
  * <li>One stage's execution may be triggered by completion of a
  * single stage, or both of two stages, or either of two stages.
@@ -64,8 +73,7 @@ import java.util.function.Function;
  * <em>both</em> of two stages may <em>combine</em> their results or
  * effects, using correspondingly named methods. Those triggered by
  * <em>either</em> of two stages make no guarantees about which of the
- * results or effects are used for the dependent stage's
- * computation.
+ * results or effects are used for the dependent stage's computation.
  *
  * <li>Dependencies among stages control the triggering of
  * computations, but do not otherwise guarantee any particular
@@ -80,26 +88,27 @@ import java.util.function.Function;
  * properties, and might not even support concurrent execution, but
  * are arranged for processing in a way that accommodates asynchrony.
  *
- * <li>Two method forms support processing whether the triggering
- * stage completed normally or exceptionally: Method {@link
- * #whenComplete whenComplete} allows injection of an action
- * regardless of outcome, otherwise preserving the outcome in its
- * completion. Method {@link #handle handle} additionally allows the
- * stage to compute a replacement result that may enable further
- * processing by other dependent stages.  In all other cases, if a
- * stage's computation terminates abruptly with an (unchecked)
- * exception or error, then all dependent stages requiring its
- * completion complete exceptionally as well, with a {@link
- * CompletionException} holding the exception as its cause.  If a
- * stage is dependent on <em>both</em> of two stages, and both
+ * <li>Two method forms ({@link #handle handle} and {@link
+ * #whenComplete whenComplete}) support unconditional computation
+ * whether the triggering stage completed normally or exceptionally.
+ * Method {@link #exceptionally exceptionally} supports computation
+ * only when the triggering stage completes exceptionally, computing a
+ * replacement result, similarly to the java {@code catch} keyword.
+ * In all other cases, if a stage's computation terminates abruptly
+ * with an (unchecked) exception or error, then all dependent stages
+ * requiring its completion complete exceptionally as well, with a
+ * {@link CompletionException} holding the exception as its cause.  If
+ * a stage is dependent on <em>both</em> of two stages, and both
  * complete exceptionally, then the CompletionException may correspond
  * to either one of these exceptions.  If a stage is dependent on
  * <em>either</em> of two others, and only one of them completes
  * exceptionally, no guarantees are made about whether the dependent
  * stage completes normally or exceptionally. In the case of method
  * {@code whenComplete}, when the supplied action itself encounters an
- * exception, then the stage exceptionally completes with this
- * exception if not already completed exceptionally.
+ * exception, then the stage completes exceptionally with this
+ * exception unless the source stage also completed exceptionally, in
+ * which case the exceptional completion from the source stage is
+ * given preference and propagated to the dependent stage.
  *
  * </ul>
  *
@@ -110,6 +119,23 @@ import java.util.function.Function;
  * {@code T}) for methods accepting them may be null, passing a null
  * value for any other parameter will result in a {@link
  * NullPointerException} being thrown.
+ *
+ * <p>Method form {@link #handle handle} is the most general way of
+ * creating a continuation stage, unconditionally performing a
+ * computation that is given both the result and exception (if any) of
+ * the triggering CompletionStage, and computing an arbitrary result.
+ * Method {@link #whenComplete whenComplete} is similar, but preserves
+ * the result of the triggering stage instead of computing a new one.
+ * Because a stage's normal result may be {@code null}, both methods
+ * should have a computation structured thus:
+ *
+ * <pre>{@code (result, exception) -> {
+ *   if (exception == null) {
+ *     // triggering stage completed normally
+ *   } else {
+ *     // triggering stage completed exceptionally
+ *   }
+ * }}</pre>
  *
  * <p>This interface does not define methods for initially creating,
  * forcibly completing normally or exceptionally, probing completion
@@ -129,11 +155,15 @@ public interface CompletionStage<T> {
      * normally, is executed with this stage's result as the argument
      * to the supplied function.
      *
-     * See the {@link CompletionStage} documentation for rules
+     * <p>This method is analogous to
+     * {@link java.util.Optional#map Optional.map} and
+     * {@link java.util.stream.Stream#map Stream.map}.
+     *
+     * <p>See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
      *
-     * @param fn the function to use to compute the value of
-     * the returned CompletionStage
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage
      * @param <U> the function's return type
      * @return the new CompletionStage
      */
@@ -148,8 +178,8 @@ public interface CompletionStage<T> {
      * See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
      *
-     * @param fn the function to use to compute the value of
-     * the returned CompletionStage
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage
      * @param <U> the function's return type
      * @return the new CompletionStage
      */
@@ -164,8 +194,8 @@ public interface CompletionStage<T> {
      * See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
      *
-     * @param fn the function to use to compute the value of
-     * the returned CompletionStage
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage
      * @param executor the executor to use for asynchronous execution
      * @param <U> the function's return type
      * @return the new CompletionStage
@@ -269,8 +299,8 @@ public interface CompletionStage<T> {
      * covering exceptional completion.
      *
      * @param other the other CompletionStage
-     * @param fn the function to use to compute the value of
-     * the returned CompletionStage
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage
      * @param <U> the type of the other CompletionStage's result
      * @param <V> the function's return type
      * @return the new CompletionStage
@@ -281,16 +311,16 @@ public interface CompletionStage<T> {
 
     /**
      * Returns a new CompletionStage that, when this and the other
-     * given stage complete normally, is executed using this stage's
-     * default asynchronous execution facility, with the two results
-     * as arguments to the supplied function.
+     * given stage both complete normally, is executed using this
+     * stage's default asynchronous execution facility, with the two
+     * results as arguments to the supplied function.
      *
      * See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
      *
      * @param other the other CompletionStage
-     * @param fn the function to use to compute the value of
-     * the returned CompletionStage
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage
      * @param <U> the type of the other CompletionStage's result
      * @param <V> the function's return type
      * @return the new CompletionStage
@@ -301,16 +331,16 @@ public interface CompletionStage<T> {
 
     /**
      * Returns a new CompletionStage that, when this and the other
-     * given stage complete normally, is executed using the supplied
-     * executor, with the two results as arguments to the supplied
-     * function.
+     * given stage both complete normally, is executed using the
+     * supplied executor, with the two results as arguments to the
+     * supplied function.
      *
      * See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
      *
      * @param other the other CompletionStage
-     * @param fn the function to use to compute the value of
-     * the returned CompletionStage
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage
      * @param executor the executor to use for asynchronous execution
      * @param <U> the type of the other CompletionStage's result
      * @param <V> the function's return type
@@ -341,9 +371,12 @@ public interface CompletionStage<T> {
 
     /**
      * Returns a new CompletionStage that, when this and the other
-     * given stage complete normally, is executed using this stage's
-     * default asynchronous execution facility, with the two results
-     * as arguments to the supplied action.
+     * given stage both complete normally, is executed using this
+     * stage's default asynchronous execution facility, with the two
+     * results as arguments to the supplied action.
+     *
+     * See the {@link CompletionStage} documentation for rules
+     * covering exceptional completion.
      *
      * @param other the other CompletionStage
      * @param action the action to perform before completing the
@@ -357,9 +390,12 @@ public interface CompletionStage<T> {
 
     /**
      * Returns a new CompletionStage that, when this and the other
-     * given stage complete normally, is executed using the supplied
-     * executor, with the two results as arguments to the supplied
-     * function.
+     * given stage both complete normally, is executed using the
+     * supplied executor, with the two results as arguments to the
+     * supplied action.
+     *
+     * See the {@link CompletionStage} documentation for rules
+     * covering exceptional completion.
      *
      * @param other the other CompletionStage
      * @param action the action to perform before completing the
@@ -389,8 +425,8 @@ public interface CompletionStage<T> {
                                               Runnable action);
     /**
      * Returns a new CompletionStage that, when this and the other
-     * given stage complete normally, executes the given action using
-     * this stage's default asynchronous execution facility.
+     * given stage both complete normally, executes the given action
+     * using this stage's default asynchronous execution facility.
      *
      * See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
@@ -405,8 +441,8 @@ public interface CompletionStage<T> {
 
     /**
      * Returns a new CompletionStage that, when this and the other
-     * given stage complete normally, executes the given action using
-     * the supplied executor.
+     * given stage both complete normally, executes the given action
+     * using the supplied executor.
      *
      * See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
@@ -429,8 +465,8 @@ public interface CompletionStage<T> {
      * covering exceptional completion.
      *
      * @param other the other CompletionStage
-     * @param fn the function to use to compute the value of
-     * the returned CompletionStage
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage
      * @param <U> the function's return type
      * @return the new CompletionStage
      */
@@ -448,8 +484,8 @@ public interface CompletionStage<T> {
      * covering exceptional completion.
      *
      * @param other the other CompletionStage
-     * @param fn the function to use to compute the value of
-     * the returned CompletionStage
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage
      * @param <U> the function's return type
      * @return the new CompletionStage
      */
@@ -467,8 +503,8 @@ public interface CompletionStage<T> {
      * covering exceptional completion.
      *
      * @param other the other CompletionStage
-     * @param fn the function to use to compute the value of
-     * the returned CompletionStage
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage
      * @param executor the executor to use for asynchronous execution
      * @param <U> the function's return type
      * @return the new CompletionStage
@@ -517,7 +553,7 @@ public interface CompletionStage<T> {
      * Returns a new CompletionStage that, when either this or the
      * other given stage complete normally, is executed using the
      * supplied executor, with the corresponding result as argument to
-     * the supplied function.
+     * the supplied action.
      *
      * See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
@@ -585,123 +621,81 @@ public interface CompletionStage<T> {
          Executor executor);
 
     /**
-     * Returns a new CompletionStage that, when this stage completes
-     * normally, is executed with this stage's result as the argument
-     * to the supplied function.
+     * Returns a new CompletionStage that is completed with the same
+     * value as the CompletionStage returned by the given function.
      *
-     * See the {@link CompletionStage} documentation for rules
+     * <p>When this stage completes normally, the given function is
+     * invoked with this stage's result as the argument, returning
+     * another CompletionStage.  When that stage completes normally,
+     * the CompletionStage returned by this method is completed with
+     * the same value.
+     *
+     * <p>To ensure progress, the supplied function must arrange
+     * eventual completion of its result.
+     *
+     * <p>This method is analogous to
+     * {@link java.util.Optional#flatMap Optional.flatMap} and
+     * {@link java.util.stream.Stream#flatMap Stream.flatMap}.
+     *
+     * <p>See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
      *
-     * @param fn the function returning a new CompletionStage
+     * @param fn the function to use to compute another CompletionStage
      * @param <U> the type of the returned CompletionStage's result
-     * @return the CompletionStage
+     * @return the new CompletionStage
      */
     public <U> CompletionStage<U> thenCompose
         (Function<? super T, ? extends CompletionStage<U>> fn);
 
     /**
-     * Returns a new CompletionStage that, when this stage completes
-     * normally, is executed using this stage's default asynchronous
-     * execution facility, with this stage's result as the argument to the
-     * supplied function.
+     * Returns a new CompletionStage that is completed with the same
+     * value as the CompletionStage returned by the given function,
+     * executed using this stage's default asynchronous execution
+     * facility.
      *
-     * See the {@link CompletionStage} documentation for rules
+     * <p>When this stage completes normally, the given function is
+     * invoked with this stage's result as the argument, returning
+     * another CompletionStage.  When that stage completes normally,
+     * the CompletionStage returned by this method is completed with
+     * the same value.
+     *
+     * <p>To ensure progress, the supplied function must arrange
+     * eventual completion of its result.
+     *
+     * <p>See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
      *
-     * @param fn the function returning a new CompletionStage
+     * @param fn the function to use to compute another CompletionStage
      * @param <U> the type of the returned CompletionStage's result
-     * @return the CompletionStage
+     * @return the new CompletionStage
      */
     public <U> CompletionStage<U> thenComposeAsync
         (Function<? super T, ? extends CompletionStage<U>> fn);
 
     /**
-     * Returns a new CompletionStage that, when this stage completes
-     * normally, is executed using the supplied Executor, with this
-     * stage's result as the argument to the supplied function.
+     * Returns a new CompletionStage that is completed with the same
+     * value as the CompletionStage returned by the given function,
+     * executed using the supplied Executor.
      *
-     * See the {@link CompletionStage} documentation for rules
+     * <p>When this stage completes normally, the given function is
+     * invoked with this stage's result as the argument, returning
+     * another CompletionStage.  When that stage completes normally,
+     * the CompletionStage returned by this method is completed with
+     * the same value.
+     *
+     * <p>To ensure progress, the supplied function must arrange
+     * eventual completion of its result.
+     *
+     * <p>See the {@link CompletionStage} documentation for rules
      * covering exceptional completion.
      *
-     * @param fn the function returning a new CompletionStage
+     * @param fn the function to use to compute another CompletionStage
      * @param executor the executor to use for asynchronous execution
      * @param <U> the type of the returned CompletionStage's result
-     * @return the CompletionStage
+     * @return the new CompletionStage
      */
     public <U> CompletionStage<U> thenComposeAsync
         (Function<? super T, ? extends CompletionStage<U>> fn,
-         Executor executor);
-
-    /**
-     * Returns a new CompletionStage that, when this stage completes
-     * exceptionally, is executed with this stage's exception as the
-     * argument to the supplied function.  Otherwise, if this stage
-     * completes normally, then the returned stage also completes
-     * normally with the same value.
-     *
-     * @param fn the function to use to compute the value of the
-     * returned CompletionStage if this CompletionStage completed
-     * exceptionally
-     * @return the new CompletionStage
-     */
-    public CompletionStage<T> exceptionally
-        (Function<Throwable, ? extends T> fn);
-
-    /**
-     * Returns a new CompletionStage with the same result or exception as
-     * this stage, that executes the given action when this stage completes.
-     *
-     * <p>When this stage is complete, the given action is invoked
-     * with the result (or {@code null} if none) and the exception (or
-     * {@code null} if none) of this stage as arguments.  The returned
-     * stage is completed when the action returns.  If the supplied
-     * action itself encounters an exception, then the returned stage
-     * exceptionally completes with this exception unless this stage
-     * also completed exceptionally (in which case, the returned stage
-     * exceptionally completes with the original exception).
-     *
-     * @param action the action to perform
-     * @return the new CompletionStage
-     */
-    public CompletionStage<T> whenComplete
-        (BiConsumer<? super T, ? super Throwable> action);
-
-    /**
-     * Returns a new CompletionStage with the same result or exception as
-     * this stage, that executes the given action using this stage's
-     * default asynchronous execution facility when this stage completes.
-     *
-     * <p>When this stage is complete, the given action is invoked with the
-     * result (or {@code null} if none) and the exception (or {@code null}
-     * if none) of this stage as arguments.  The returned stage is completed
-     * when the action returns.  If the supplied action itself encounters an
-     * exception, then the returned stage exceptionally completes with this
-     * exception unless this stage also completed exceptionally.
-     *
-     * @param action the action to perform
-     * @return the new CompletionStage
-     */
-    public CompletionStage<T> whenCompleteAsync
-        (BiConsumer<? super T, ? super Throwable> action);
-
-    /**
-     * Returns a new CompletionStage with the same result or exception as
-     * this stage, that executes the given action using the supplied
-     * Executor when this stage completes.
-     *
-     * <p>When this stage is complete, the given action is invoked with the
-     * result (or {@code null} if none) and the exception (or {@code null}
-     * if none) of this stage as arguments.  The returned stage is completed
-     * when the action returns.  If the supplied action itself encounters an
-     * exception, then the returned stage exceptionally completes with this
-     * exception unless this stage also completed exceptionally.
-     *
-     * @param action the action to perform
-     * @param executor the executor to use for asynchronous execution
-     * @return the new CompletionStage
-     */
-    public CompletionStage<T> whenCompleteAsync
-        (BiConsumer<? super T, ? super Throwable> action,
          Executor executor);
 
     /**
@@ -761,6 +755,100 @@ public interface CompletionStage<T> {
     public <U> CompletionStage<U> handleAsync
         (BiFunction<? super T, Throwable, ? extends U> fn,
          Executor executor);
+
+    /**
+     * Returns a new CompletionStage with the same result or exception as
+     * this stage, that executes the given action when this stage completes.
+     *
+     * <p>When this stage is complete, the given action is invoked
+     * with the result (or {@code null} if none) and the exception (or
+     * {@code null} if none) of this stage as arguments.  The returned
+     * stage is completed when the action returns.
+     *
+     * <p>Unlike method {@link #handle handle},
+     * this method is not designed to translate completion outcomes,
+     * so the supplied action should not throw an exception. However,
+     * if it does, the following rules apply: if this stage completed
+     * normally but the supplied action throws an exception, then the
+     * returned stage completes exceptionally with the supplied
+     * action's exception. Or, if this stage completed exceptionally
+     * and the supplied action throws an exception, then the returned
+     * stage completes exceptionally with this stage's exception.
+     *
+     * @param action the action to perform
+     * @return the new CompletionStage
+     */
+    public CompletionStage<T> whenComplete
+        (BiConsumer<? super T, ? super Throwable> action);
+
+    /**
+     * Returns a new CompletionStage with the same result or exception as
+     * this stage, that executes the given action using this stage's
+     * default asynchronous execution facility when this stage completes.
+     *
+     * <p>When this stage is complete, the given action is invoked with the
+     * result (or {@code null} if none) and the exception (or {@code null}
+     * if none) of this stage as arguments.  The returned stage is completed
+     * when the action returns.
+     *
+     * <p>Unlike method {@link #handleAsync(BiFunction) handleAsync},
+     * this method is not designed to translate completion outcomes,
+     * so the supplied action should not throw an exception. However,
+     * if it does, the following rules apply: If this stage completed
+     * normally but the supplied action throws an exception, then the
+     * returned stage completes exceptionally with the supplied
+     * action's exception. Or, if this stage completed exceptionally
+     * and the supplied action throws an exception, then the returned
+     * stage completes exceptionally with this stage's exception.
+     *
+     * @param action the action to perform
+     * @return the new CompletionStage
+     */
+    public CompletionStage<T> whenCompleteAsync
+        (BiConsumer<? super T, ? super Throwable> action);
+
+    /**
+     * Returns a new CompletionStage with the same result or exception as
+     * this stage, that executes the given action using the supplied
+     * Executor when this stage completes.
+     *
+     * <p>When this stage is complete, the given action is invoked with the
+     * result (or {@code null} if none) and the exception (or {@code null}
+     * if none) of this stage as arguments.  The returned stage is completed
+     * when the action returns.
+     *
+     * <p>Unlike method {@link #handleAsync(BiFunction,Executor) handleAsync},
+     * this method is not designed to translate completion outcomes,
+     * so the supplied action should not throw an exception. However,
+     * if it does, the following rules apply: If this stage completed
+     * normally but the supplied action throws an exception, then the
+     * returned stage completes exceptionally with the supplied
+     * action's exception. Or, if this stage completed exceptionally
+     * and the supplied action throws an exception, then the returned
+     * stage completes exceptionally with this stage's exception.
+     *
+     * @param action the action to perform
+     * @param executor the executor to use for asynchronous execution
+     * @return the new CompletionStage
+     */
+    public CompletionStage<T> whenCompleteAsync
+        (BiConsumer<? super T, ? super Throwable> action,
+         Executor executor);
+
+    /**
+     * Returns a new CompletionStage that, when this stage completes
+     * exceptionally, is executed with this stage's exception as the
+     * argument to the supplied function.  Otherwise, if this stage
+     * completes normally, then the returned stage also completes
+     * normally with the same value.
+     *
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage if this CompletionStage completed
+     * exceptionally
+     * @return the new CompletionStage
+     */
+    public CompletionStage<T> exceptionally
+        (Function<Throwable, ? extends T> fn);
 
     /**
      * Returns a {@link CompletableFuture} maintaining the same
