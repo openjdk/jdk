@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8005092
+ * @bug      8005092 6469562
  * @summary  Test repeated annotations output.
  * @author   bpatel
  * @library  ../lib
@@ -57,7 +57,7 @@ public class TestRepeatedAnnotations extends JavadocTester {
                 + "title=\"annotation in pkg\">@ContaineeRegDoc</a>",
                 "<a href=\"../pkg/RegContainerDoc.html\" "
                 + "title=\"annotation in pkg\">@RegContainerDoc</a>"
-                + "(<a href=\"../pkg/RegContainerDoc.html#value--\">value</a>={"
+                + "({"
                 + "<a href=\"../pkg/RegContaineeNotDoc.html\" "
                 + "title=\"annotation in pkg\">@RegContaineeNotDoc</a>,"
                 + "<a href=\"../pkg/RegContaineeNotDoc.html\" "
@@ -70,7 +70,7 @@ public class TestRepeatedAnnotations extends JavadocTester {
                 + "title=\"annotation in pkg\">@ContaineeSynthDoc</a>",
                 "<a href=\"../pkg/ContainerSynthDoc.html\" "
                 + "title=\"annotation in pkg\">@ContainerSynthDoc</a>("
-                + "<a href=\"../pkg/ContainerSynthDoc.html#value--\">value</a>="
+                + ""
                 + "<a href=\"../pkg/ContaineeSynthDoc.html\" "
                 + "title=\"annotation in pkg\">@ContaineeSynthDoc</a>)",
                 "<a href=\"../pkg/ContaineeSynthDoc.html\" "
@@ -87,7 +87,7 @@ public class TestRepeatedAnnotations extends JavadocTester {
                 + "(<a href=\"../pkg/RegArryDoc.html#y--\">y</a>={1,2})",
                 "<a href=\"../pkg/NonSynthDocContainer.html\" "
                 + "title=\"annotation in pkg\">@NonSynthDocContainer</a>"
-                + "(<a href=\"../pkg/NonSynthDocContainer.html#value--\">value</a>="
+                + "("
                 + "<a href=\"../pkg/RegArryDoc.html\" title=\"annotation in pkg\">@RegArryDoc</a>)");
 
         checkOutput("pkg1/C.html", true,
