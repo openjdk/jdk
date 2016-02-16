@@ -430,23 +430,28 @@ public class XMLNSDocumentScannerImpl
         //since scanAttributeValue doesn't use attIndex parameter therefore we
         //can safely add the attribute later..
         XMLString tmpStr = getString();
-        scanAttributeValue(tmpStr, fTempString2,
-                fAttributeQName.rawname, attributes,
-                attrIndex, isVC, fCurrentElement.rawname);
+
+        /**
+         * Determine whether this is a namespace declaration that will be subject
+         * to the name limit check in the scanAttributeValue operation.
+         * Namespace declaration format: xmlns="..." or xmlns:prefix="..."
+         * Note that prefix:xmlns="..." isn't a namespace.
+         */
+        String localpart = fAttributeQName.localpart;
+        String prefix = fAttributeQName.prefix != null
+                ? fAttributeQName.prefix : XMLSymbols.EMPTY_STRING;
+        boolean isNSDecl = fBindNamespaces & (prefix == XMLSymbols.PREFIX_XMLNS ||
+                    prefix == XMLSymbols.EMPTY_STRING && localpart == XMLSymbols.PREFIX_XMLNS);
+
+        scanAttributeValue(tmpStr, fTempString2, fAttributeQName.rawname, attributes,
+                attrIndex, isVC, fCurrentElement.rawname, isNSDecl);
 
         String value = null;
         //fTempString.toString();
 
         // record namespace declarations if any.
         if (fBindNamespaces) {
-
-            String localpart = fAttributeQName.localpart;
-            String prefix = fAttributeQName.prefix != null
-                    ? fAttributeQName.prefix : XMLSymbols.EMPTY_STRING;
-            // when it's of form xmlns="..." or xmlns:prefix="...",
-            // it's a namespace declaration. but prefix:xmlns="..." isn't.
-            if (prefix == XMLSymbols.PREFIX_XMLNS ||
-                    prefix == XMLSymbols.EMPTY_STRING && localpart == XMLSymbols.PREFIX_XMLNS) {
+            if (isNSDecl) {
                 //check the length of URI
                 if (tmpStr.length > fXMLNameLimit) {
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,

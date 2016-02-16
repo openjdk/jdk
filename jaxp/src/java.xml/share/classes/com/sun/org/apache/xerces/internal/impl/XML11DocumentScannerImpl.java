@@ -184,6 +184,7 @@ public class XML11DocumentScannerImpl
      * @param checkEntities true if undeclared entities should be reported as VC violation,
      *                      false if undeclared entities should be reported as WFC violation.
      * @param eleName The name of element to which this attribute belongs.
+     * @param isNSURI The flag indicating whether the content is a namespace URI
      *
      * @return true if the non-normalized and normalized value are the same
      *
@@ -193,7 +194,7 @@ public class XML11DocumentScannerImpl
     protected boolean scanAttributeValue(XMLString value,
                                       XMLString nonNormalizedValue,
                                       String atName,
-                                      boolean checkEntities,String eleName)
+                                      boolean checkEntities,String eleName, boolean isNSURI)
         throws IOException, XNIException
     {
         // quote
@@ -205,7 +206,7 @@ public class XML11DocumentScannerImpl
         fEntityScanner.scanChar();
         int entityDepth = fEntityDepth;
 
-        int c = fEntityScanner.scanLiteral(quote, value);
+        int c = fEntityScanner.scanLiteral(quote, value, isNSURI);
         if (DEBUG_ATTR_NORMALIZATION) {
             System.out.println("** scanLiteral -> \""
                                + value.toString() + "\"");
@@ -387,7 +388,7 @@ public class XML11DocumentScannerImpl
                         fStringBuffer2.append((char)c);
                     }
                 }
-                c = fEntityScanner.scanLiteral(quote, value);
+                c = fEntityScanner.scanLiteral(quote, value, isNSURI);
                 if (entityDepth == fEntityDepth) {
                     fStringBuffer2.append(value);
                 }

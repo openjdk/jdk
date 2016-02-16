@@ -34,6 +34,7 @@ import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
 import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
+import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XMLAttributes;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
@@ -599,7 +600,7 @@ public abstract class XMLScanner
                     : "QuoteRequiredInXMLDecl" , new Object[]{name});
         }
         fEntityScanner.scanChar();
-        int c = fEntityScanner.scanLiteral(quote, value);
+        int c = fEntityScanner.scanLiteral(quote, value, false);
         if (c != quote) {
             fStringBuffer2.clear();
             do {
@@ -617,7 +618,7 @@ public abstract class XMLScanner
                                 fEntityScanner.scanChar();
                     }
                 }
-                c = fEntityScanner.scanLiteral(quote, value);
+                c = fEntityScanner.scanLiteral(quote, value, false);
             } while (c != quote);
             fStringBuffer2.append(value);
             value.setValues(fStringBuffer2);
@@ -811,15 +812,14 @@ public abstract class XMLScanner
      * @param checkEntities true if undeclared entities should be reported as VC violation,
      *                      false if undeclared entities should be reported as WFC violation.
      * @param eleName The name of element to which this attribute belongs.
+     * @param isNSURI a flag indicating whether the content is a Namespace URI
      *
      * <strong>Note:</strong> This method uses fStringBuffer2, anything in it
      * at the time of calling is lost.
      **/
-    protected void scanAttributeValue(XMLString value,
-            XMLString nonNormalizedValue,
-            String atName,
-            XMLAttributes attributes, int attrIndex,
-            boolean checkEntities, String eleName)
+    protected void scanAttributeValue(XMLString value, XMLString nonNormalizedValue,
+            String atName, XMLAttributes attributes, int attrIndex, boolean checkEntities,
+            String eleName, boolean isNSURI)
             throws IOException, XNIException {
         XMLStringBuffer stringBuffer = null;
         // quote
@@ -831,7 +831,7 @@ public abstract class XMLScanner
         fEntityScanner.scanChar();
         int entityDepth = fEntityDepth;
 
-        int c = fEntityScanner.scanLiteral(quote, value);
+        int c = fEntityScanner.scanLiteral(quote, value, isNSURI);
         if (DEBUG_ATTR_NORMALIZATION) {
             System.out.println("** scanLiteral -> \""
                     + value.toString() + "\"");
@@ -993,7 +993,7 @@ public abstract class XMLScanner
                                 fStringBuffer2.append((char)c);
                             }
                 }
-                c = fEntityScanner.scanLiteral(quote, value);
+                c = fEntityScanner.scanLiteral(quote, value, isNSURI);
                 if (entityDepth == fEntityDepth && fNeedNonNormalizedValue) {
                     fStringBuffer2.append(value);
                 }
@@ -1066,7 +1066,7 @@ public abstract class XMLScanner
             }
             fEntityScanner.scanChar();
             XMLString ident = fString;
-            if (fEntityScanner.scanLiteral(quote, ident) != quote) {
+            if (fEntityScanner.scanLiteral(quote, ident, false) != quote) {
                 fStringBuffer.clear();
                 do {
                     fStringBuffer.append(ident);
@@ -1077,7 +1077,7 @@ public abstract class XMLScanner
                         reportFatalError("InvalidCharInSystemID",
                             new Object[] {Integer.toString(c, 16)});
                     }
-                } while (fEntityScanner.scanLiteral(quote, ident) != quote);
+                } while (fEntityScanner.scanLiteral(quote, ident, false) != quote);
                 fStringBuffer.append(ident);
                 ident = fStringBuffer;
             }
