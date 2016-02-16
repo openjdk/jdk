@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8075526
+ * @bug 8075526 8135108
  * @key intermittent
  * @summary Test timestamp via ZipEntry.get/setTimeLocal()
  */
@@ -41,6 +41,7 @@ public class TestLocalTime {
         try {
             LocalDateTime ldt = LocalDateTime.now();
             test(getBytes(ldt), ldt);    // now
+
             ldt = ldt.withYear(1968); test(getBytes(ldt), ldt);
             ldt = ldt.withYear(1970); test(getBytes(ldt), ldt);
             ldt = ldt.withYear(1982); test(getBytes(ldt), ldt);
@@ -55,6 +56,13 @@ public class TestLocalTime {
             testWithTZ(tz, ldt.withYear(2037));
             testWithTZ(tz, ldt.withYear(2100));
             testWithTZ(tz, ldt.withYear(2106));
+
+            // for #8135108
+            ldt = LocalDateTime.of(2100, 12, 06, 12, 34, 34, 973);
+            test(getBytes(ldt), ldt);
+            ldt = LocalDateTime.of(2106, 12, 06, 12, 34, 34, 973);
+            test(getBytes(ldt), ldt);
+
         } finally {
             TimeZone.setDefault(tz0);
         }
