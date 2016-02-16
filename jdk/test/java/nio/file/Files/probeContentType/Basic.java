@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,18 @@
  * @run main/othervm Basic
  */
 
-import java.nio.file.*;
 import java.io.*;
+import java.nio.file.*;
+import java.util.stream.Stream;
 
 /**
  * Uses Files.probeContentType to probe html file, custom file type, and minimal
  * set of file extension to content type mappings.
  */
 public class Basic {
+
+    private static final boolean IS_UNIX =
+        ! System.getProperty("os.name").startsWith("Windows");
 
     static Path createHtmlFile() throws IOException {
         Path file = Files.createTempFile("foo", ".html");
@@ -51,10 +55,61 @@ public class Basic {
         return Files.createTempFile("red", ".grape");
     }
 
-    static void checkContentTypes(String[] extensions, String[] expectedTypes)
+    private static int checkContentTypes(String expected, String actual) {
+        assert expected != null;
+        assert actual != null;
+
+        if (!expected.equals(actual)) {
+            if (IS_UNIX) {
+                Path userMimeTypes =
+                    Paths.get(System.getProperty("user.home"), ".mime.types");
+                if (!Files.exists(userMimeTypes)) {
+                    System.out.println(userMimeTypes + " does not exist");
+                } else if (!Files.isReadable(userMimeTypes)) {
+                    System.out.println(userMimeTypes + " is not readable");
+                } else {
+                    System.out.println(userMimeTypes + " contents:");
+                    try (Stream<String> lines = Files.lines(userMimeTypes)) {
+                        lines.forEach(System.out::println);
+                        System.out.println("");
+                    } catch (IOException ioe) {
+                        System.err.println("Problem reading "
+                                           + userMimeTypes);
+                    }
+                }
+
+                Path etcMimeTypes = Paths.get("/etc/mime.types");
+                if (!Files.exists(etcMimeTypes)) {
+                    System.out.println(etcMimeTypes + " does not exist");
+                } else if (!Files.isReadable(etcMimeTypes)) {
+                    System.out.println(etcMimeTypes + " is not readable");
+                } else {
+                    System.out.println(etcMimeTypes + " contents:");
+                    try (Stream<String> lines = Files.lines(etcMimeTypes)) {
+                        lines.forEach(System.out::println);
+                        System.out.println("");
+                    } catch (IOException ioe) {
+                        System.err.println("Problem reading "
+                                           + etcMimeTypes);
+                    }
+                }
+            }
+
+            System.err.println("Expected \"" + expected
+                               + "\" but obtained \""
+                               + actual + "\"");
+
+            return 1;
+        }
+
+        return 0;
+    }
+
+    static int checkOSXContentTypes(String[] extensions, String[] expectedTypes)
         throws IOException {
         if (extensions.length != expectedTypes.length) {
-            throw new IllegalArgumentException("Parameter array lengths differ");
+            throw new IllegalArgumentException
+                ("Parameter array lengths differ");
         }
 
         int failures = 0;
@@ -79,12 +134,11 @@ public class Basic {
             }
         }
 
-        if (failures > 0) {
-            throw new RuntimeException("Test failed!");
-        }
+        return failures;
     }
 
     public static void main(String[] args) throws IOException {
+        int failures = 0;
 
         // exercise default file type detector
         Path file = createHtmlFile();
@@ -93,8 +147,7 @@ public class Basic {
             if (type == null) {
                 System.err.println("Content type cannot be determined - test skipped");
             } else {
-                if (!type.equals("text/html"))
-                    throw new RuntimeException("Unexpected type: " + type);
+                failures += checkContentTypes("text/html", type);
             }
         } finally {
             Files.delete(file);
@@ -106,8 +159,7 @@ public class Basic {
             String type = Files.probeContentType(file);
             if (type == null)
                 throw new RuntimeException("Custom file type detector not installed?");
-            if (!type.equals("grape/unknown"))
-                throw new RuntimeException("Unexpected type: " + type);
+            failures += checkContentTypes("grape/unknown", type);
         } finally {
             Files.delete(file);
         }
@@ -122,7 +174,11 @@ public class Basic {
                 "image/jpeg", "audio/mpeg", "video/mp4", "application/pdf",
                 "image/png"
             };
-            checkContentTypes(extensions, expectedTypes);
+            failures += checkOSXContentTypes(extensions, expectedTypes);
+        }
+
+        if (failures > 0) {
+            throw new RuntimeException("Test failed!");
         }
     }
 }
