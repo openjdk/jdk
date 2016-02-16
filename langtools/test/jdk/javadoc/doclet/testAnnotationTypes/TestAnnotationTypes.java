@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4973609 8015249 8025633 8026567
+ * @bug      4973609 8015249 8025633 8026567 6469561
  * @summary  Make sure that annotation types with 0 members does not have
  *           extra HR tags.
  * @author   jamieh
@@ -61,7 +61,7 @@ public class TestAnnotationTypes extends JavadocTester {
                 + "</code>&nbsp;</td>",
                 "<!-- ============ ANNOTATION TYPE FIELD DETAIL =========== -->",
                 "<h4>DEFAULT_NAME</h4>\n"
-                + "<pre>public static final&nbsp;java."
+                + "<pre>static final&nbsp;java."
                 + "lang.String&nbsp;DEFAULT_NAME</pre>");
 
         checkOutput("pkg/AnnotationType.html", true,
@@ -69,6 +69,21 @@ public class TestAnnotationTypes extends JavadocTester {
                 + "<li>Field&nbsp;|&nbsp;</li>",
                 "<li>Detail:&nbsp;</li>\n"
                 + "<li>Field&nbsp;|&nbsp;</li>");
+
+        checkOutput("pkg/AnnotationType.html", true,
+                    "<!-- ============ ANNOTATION TYPE MEMBER DETAIL =========== -->",
+                    "<ul class=\"blockList\">",
+                    "<li class=\"blockList\"><a name=\"annotation.type.element.detail\">",
+                    "<!--   -->",
+                    "</a>",
+                    "<h3>Element Detail</h3>",
+                    "<a name=\"value--\">",
+                    "<!--   -->",
+                    "</a>",
+                    "<ul class=\"blockListLast\">",
+                    "<li class=\"blockList\">",
+                    "<h4>value</h4>",
+                    "<pre>int&nbsp;value</pre>" );
 
         checkOutput("pkg/AnnotationType.html", false,
                 "<HR>\n\n"

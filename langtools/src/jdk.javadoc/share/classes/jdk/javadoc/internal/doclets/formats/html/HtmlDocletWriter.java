@@ -2363,7 +2363,9 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         if (!map.isEmpty()) {
             annotation.addContent("(");
             boolean isFirst = true;
-            for (ExecutableElement element : map.keySet()) {
+            Set<? extends ExecutableElement> keys = map.keySet();
+            boolean multipleValues = keys.size() > 1;
+            for (ExecutableElement element : keys) {
                 if (isFirst) {
                     isFirst = false;
                 } else {
@@ -2376,9 +2378,12 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                         }
                     }
                 }
-                annotation.addContent(getDocLink(LinkInfoImpl.Kind.ANNOTATION,
-                        element, element.getSimpleName().toString(), false));
-                annotation.addContent("=");
+                String simpleName = element.getSimpleName().toString();
+                if (multipleValues || !"value".equals(simpleName)) { // Omit "value=" where unnecessary
+                    annotation.addContent(getDocLink(LinkInfoImpl.Kind.ANNOTATION,
+                                                     element, simpleName, false));
+                    annotation.addContent("=");
+                }
                 AnnotationValue annotationValue = map.get(element);
                 List<AnnotationValue> annotationTypeValues = new ArrayList<>();
                 new SimpleAnnotationValueVisitor9<Void, AnnotationValue>() {
