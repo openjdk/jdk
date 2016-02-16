@@ -4010,7 +4010,6 @@ int MatchRule::is_expensive() const {
   if( _rChild ) {
     const char  *opType = _rChild->_opType;
     if( strcmp(opType,"AtanD")==0 ||
-        strcmp(opType,"CosD")==0 ||
         strcmp(opType,"DivD")==0 ||
         strcmp(opType,"DivF")==0 ||
         strcmp(opType,"DivI")==0 ||
@@ -4018,7 +4017,6 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ModD")==0 ||
         strcmp(opType,"ModF")==0 ||
         strcmp(opType,"ModI")==0 ||
-        strcmp(opType,"SinD")==0 ||
         strcmp(opType,"SqrtD")==0 ||
         strcmp(opType,"TanD")==0 ||
         strcmp(opType,"ConvD2F")==0 ||

@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
@@ -58,7 +59,7 @@ public class ExternalEditor {
         this.input = input;
     }
 
-    private void edit(String cmd, String initialText) {
+    private void edit(String[] cmd, String initialText) {
         try {
             setupWatch(initialText);
             launch(cmd);
@@ -106,8 +107,10 @@ public class ExternalEditor {
         watchedThread.start();
     }
 
-    private void launch(String cmd) throws IOException {
-        ProcessBuilder pb = new ProcessBuilder(cmd, tmpfile.toString());
+    private void launch(String[] cmd) throws IOException {
+        String[] params = Arrays.copyOf(cmd, cmd.length + 1);
+        params[cmd.length] = tmpfile.toString();
+        ProcessBuilder pb = new ProcessBuilder(params);
         pb = pb.inheritIO();
 
         try {
@@ -139,7 +142,7 @@ public class ExternalEditor {
         }
     }
 
-    static void edit(String cmd, Consumer<String> errorHandler, String initialText,
+    static void edit(String[] cmd, Consumer<String> errorHandler, String initialText,
             Consumer<String> saveHandler, IOContext input) {
         ExternalEditor ed = new ExternalEditor(errorHandler,  saveHandler, input);
         ed.edit(cmd, initialText);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,6 @@ public class Resolve {
     public final boolean allowMethodHandles;
     public final boolean allowFunctionalInterfaceMostSpecific;
     public final boolean checkVarargsAccessAfterResolution;
-    private final boolean debugResolve;
     private final boolean compactMethodDiags;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
 
@@ -120,7 +119,6 @@ public class Resolve {
         diags = JCDiagnostic.Factory.instance(context);
         Source source = Source.instance(context);
         Options options = Options.instance(context);
-        debugResolve = options.isSet("debugresolve");
         compactMethodDiags = options.isSet(Option.XDIAGS, "compact") ||
                 options.isUnset(Option.XDIAGS) && options.isUnset("rawDiagnostics");
         verboseResolutionMode = VerboseResolutionMode.getVerboseResolutionMode(options);
@@ -3897,8 +3895,6 @@ public class Resolve {
             super(HIDDEN, sym, "access error");
             this.env = env;
             this.site = site;
-            if (debugResolve)
-                log.error("proc.messager", sym + " @ " + site + " is inaccessible.");
         }
 
         @Override

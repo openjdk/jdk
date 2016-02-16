@@ -244,7 +244,7 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
   } else {
     // G1 pre/post barriers
     assert(p2x->outcnt() <= 2, "expects 1 or 2 users: Xor and URShift nodes");
-    // It could be only one user, URShift node, in Object.clone() instrinsic
+    // It could be only one user, URShift node, in Object.clone() intrinsic
     // but the new allocation is passed to arraycopy stub and it could not
     // be scalar replaced. So we don't check the case.
 
@@ -1813,10 +1813,11 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
     // there can be two Allocates to one Initialize.  The answer in all these
     // edge cases is safety first.  It is always safe to clear immediately
     // within an Allocate, and then (maybe or maybe not) clear some more later.
-    if (!ZeroTLAB)
+    if (!(UseTLAB && ZeroTLAB)) {
       rawmem = ClearArrayNode::clear_memory(control, rawmem, object,
                                             header_size, size_in_bytes,
                                             &_igvn);
+    }
   } else {
     if (!init->is_complete()) {
       // Try to win by zeroing only what the init does not store.
@@ -2653,9 +2654,9 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   eliminate_macro_nodes();
 
   // Make sure expansion will not cause node limit to be exceeded.
-  // Worst case is a macro node gets expanded into about 50 nodes.
+  // Worst case is a macro node gets expanded into about 200 nodes.
   // Allow 50% more for optimization.
-  if (C->check_node_count(C->macro_count() * 75, "out of nodes before macro expansion" ) )
+  if (C->check_node_count(C->macro_count() * 300, "out of nodes before macro expansion" ) )
     return true;
 
   // Eliminate Opaque and LoopLimit nodes. Do it after all loop optimizations.

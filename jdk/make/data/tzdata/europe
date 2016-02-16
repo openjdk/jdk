@@ -2616,13 +2616,20 @@ Zone Asia/Irkutsk	 6:57:05 -	LMT	1880
 # Note: Effective 2008-03-01, (75) Chita Oblast and (80) Agin-Buryat
 # Autonomous Okrug merged to form (92, RU-ZAB) Zabaykalsky Krai.
 
+# From Alexander Krivenyshev (2016-01-02):
+# [The] time zone in the Trans-Baikal Territory (Zabaykalsky Krai) -
+# Asia/Chita [is changing] from UTC+8 to UTC+9.  Effective date will
+# be March 27, 2016 at 2:00am....
+# http://publication.pravo.gov.ru/Document/View/000120151230010
+
 Zone Asia/Chita	 7:33:52 -	LMT	1919 Dec 15
 			 8:00	-	YAKT	1930 Jun 21 # Yakutsk Time
 			 9:00	Russia	YAK%sT	1991 Mar 31  2:00s
 			 8:00	Russia	YAK%sT	1992 Jan 19  2:00s
 			 9:00	Russia	YAK%sT	2011 Mar 27  2:00s
 			10:00	-	YAKT	2014 Oct 26  2:00s
-			 8:00	-	IRKT
+			 8:00	-	IRKT	2016 Mar 27  2:00
+			 9:00	-	YAKT
 
 
 # From Tim Parenti (2014-07-03), per Oscar van Vlijmen (2009-11-29):
@@ -3177,6 +3184,12 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
 # It's officially announced now by the Ministry of Energy.
 # Turkey delays winter time to 8th of November 04:00
 # http://www.aa.com.tr/tr/turkiye/yaz-saati-uygulamasi-8-kasimda-sona-erecek/362217
+#
+# From BBC News (2015-10-25):
+# Confused Turks are asking "what's the time?" after automatic clocks defied a
+# government decision ... "For the next two weeks #Turkey is on EEST... Erdogan
+# Engineered Standard Time," said Twitter user @aysekarahasan.
+# http://www.bbc.com/news/world-europe-34631326
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Turkey	1916	only	-	May	 1	0:00	1:00	S

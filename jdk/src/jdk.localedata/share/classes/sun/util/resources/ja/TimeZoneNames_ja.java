@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,6 +276,9 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
         String XJT[] = new String[] {"\u4e2d\u56fd\u6a19\u6e96\u6642", "XJT",
                                      "\u4e2d\u56fd\u590f\u6642\u9593", "XJDT",
                                      "\u4E2D\u56FD\u6642\u9593", "XJT"};
+        String YAKT[] = new String[] {"\u30e4\u30af\u30fc\u30c4\u30af\u6642\u9593", "YAKT",
+                                      "\u30e4\u30af\u30fc\u30c4\u30af\u590f\u6642\u9593", "YAKST",
+                                      "\u30E4\u30AF\u30FC\u30C4\u30AF\u6642\u9593", "YAKT"};
 
         return new Object[][] {
             {"America/Los_Angeles", PST},
@@ -487,7 +490,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"America/Mendoza", AGT},
             {"America/Menominee", CST},
             {"America/Merida", CST},
-            {"America/Metlakatla", PST},
+            {"America/Metlakatla", AKST},
             {"America/Mexico_City", CST},
             {"America/Miquelon", new String[] {"\u30b5\u30f3\u30d4\u30a8\u30fc\u30eb\u30fb\u30df\u30af\u30ed\u30f3\u8af8\u5cf6\u6a19\u6e96\u6642", "PMST",
                                                "\u30b5\u30f3\u30d4\u30a8\u30fc\u30eb\u30fb\u30df\u30af\u30ed\u30f3\u8af8\u5cf6\u590f\u6642\u9593", "PMDT",
@@ -608,7 +611,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                           "\u30d6\u30eb\u30cd\u30a4\u590f\u6642\u9593", "BNST",
                                           "\u30D6\u30EB\u30CD\u30A4\u6642\u9593", "BNT"}},
             {"Asia/Calcutta", IST},
-            {"Asia/Chita", IRKT},
+            {"Asia/Chita", YAKT},
             {"Asia/Choibalsan", new String[] {"\u30c1\u30e7\u30a4\u30d0\u30eb\u30b5\u30f3\u6642\u9593", "CHOT",
                                               "\u30c1\u30e7\u30a4\u30d0\u30eb\u30b5\u30f3\u590f\u6642\u9593", "CHOST",
                                               "\u30C1\u30E7\u30A4\u30D0\u30EB\u30B5\u30F3\u6642\u9593", "CHOT"}},
@@ -649,9 +652,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"Asia/Kashgar", XJT},
             {"Asia/Kathmandu", NPT},
             {"Asia/Katmandu", NPT},
-            {"Asia/Khandyga", new String[] {"\u30CF\u30F3\u30C9\u30A5\u30A4\u30AC\u6642\u9593", "YAKT",
-                                            "\u30CF\u30F3\u30C9\u30A5\u30A4\u30AC\u590F\u6642\u9593", "YAKST",
-                                            "\u30CF\u30F3\u30C9\u30A5\u30A4\u30AC\u6642\u9593", "YAKT"}},
+            {"Asia/Khandyga", YAKT},
             {"Asia/Kolkata", IST},
             {"Asia/Krasnoyarsk", KRAT},
             {"Asia/Kuala_Lumpur", MYT},
@@ -717,9 +718,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"Asia/Vladivostok", new String[] {"\u30a6\u30e9\u30b8\u30aa\u30b9\u30c8\u30af\u6642\u9593", "VLAT",
                                                "\u30a6\u30e9\u30b8\u30aa\u30b9\u30c8\u30af\u590f\u6642\u9593", "VLAST",
                                                "\u30A6\u30E9\u30B8\u30AA\u30B9\u30C8\u30AF\u6642\u9593", "VLAT"}},
-            {"Asia/Yakutsk", new String[] {"\u30e4\u30af\u30fc\u30c4\u30af\u6642\u9593", "YAKT",
-                                           "\u30e4\u30af\u30fc\u30c4\u30af\u590f\u6642\u9593", "YAKST",
-                                           "\u30E4\u30AF\u30FC\u30C4\u30AF\u6642\u9593", "YAKT"}},
+            {"Asia/Yakutsk", YAKT},
             {"Asia/Yekaterinburg", new String[] {"\u30a8\u30ab\u30c6\u30ea\u30f3\u30d6\u30eb\u30b0\u6642\u9593", "YEKT",
                                                  "\u30a8\u30ab\u30c6\u30ea\u30f3\u30d6\u30eb\u30b0\u590f\u6642\u9593", "YEKST",
                                                  "\u30A8\u30AB\u30C6\u30EA\u30F3\u30D6\u30EB\u30AF\u6642\u9593", "YEKT"}},

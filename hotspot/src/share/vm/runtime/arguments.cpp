@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"
@@ -399,14 +400,11 @@ static AliasedFlag const aliased_jvm_flags[] = {
   { NULL, NULL}
 };
 
-static AliasedFlag const aliased_jvm_logging_flags[] = {
-  { "-XX:+TraceClassResolution", "-Xlog:classresolve=info"},
-  { "-XX:-TraceClassResolution", "-Xlog:classresolve=off"},
-  { "-XX:+TraceExceptions", "-Xlog:exceptions=info" },
-  { "-XX:-TraceExceptions", "-Xlog:exceptions=off" },
-  { "-XX:+TraceMonitorInflation", "-Xlog:monitorinflation=debug" },
-  { "-XX:-TraceMonitorInflation", "-Xlog:monitorinflation=off" },
-  { NULL, NULL }
+static AliasedLoggingFlag const aliased_logging_flags[] = {
+  { "TraceClassResolution", LogLevel::Info, true, LogTag::_classresolve },
+  { "TraceExceptions", LogLevel::Info, true, LogTag::_exceptions },
+  { "TraceMonitorInflation", LogLevel::Debug, true, LogTag::_monitorinflation },
+  { NULL, LogLevel::Off, false, LogTag::__NO_TAG }
 };
 
 // Return true if "v" is less than "other", where "other" may be "undefined".
@@ -939,18 +937,15 @@ const char* Arguments::handle_aliases_and_deprecation(const char* arg, bool warn
   return NULL;
 }
 
-// lookup_logging_aliases
-// Called from parse_each_vm_init_arg(). Should be called on -XX options before specific cases are checked.
-// If arg matches any aliased_jvm_logging_flags entry, look up the real name and copy it into buffer.
-bool Arguments::lookup_logging_aliases(const char* arg, char* buffer) {
-  for (size_t i = 0; aliased_jvm_logging_flags[i].alias_name != NULL; i++) {
-    const AliasedFlag& flag_status = aliased_jvm_logging_flags[i];
-    if (strcmp(flag_status.alias_name, arg) == 0) {
-      strcpy(buffer, flag_status.real_name);
-      return true;
+AliasedLoggingFlag Arguments::catch_logging_aliases(const char* name){
+  for (size_t i = 0; aliased_logging_flags[i].alias_name != NULL; i++) {
+    const AliasedLoggingFlag& alf = aliased_logging_flags[i];
+    if (strcmp(alf.alias_name, name) == 0) {
+      return alf;
     }
   }
-  return false;
+  AliasedLoggingFlag a = {NULL, LogLevel::Off, false, LogTag::__NO_TAG};
+  return a;
 }
 
 bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
@@ -962,8 +957,14 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
   char dummy;
   const char* real_name;
   bool warn_if_deprecated = true;
+  AliasedLoggingFlag alf;
 
   if (sscanf(arg, "-%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
+    alf = catch_logging_aliases(name);
+    if (alf.alias_name != NULL){
+      LogConfiguration::configure_stdout(LogLevel::Off, alf.exactMatch, alf.tag, LogTag::__NO_TAG);
+      return true;
+    }
     real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
     if (real_name == NULL) {
       return false;
@@ -971,6 +972,11 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
     return set_bool_flag(real_name, false, origin);
   }
   if (sscanf(arg, "+%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
+    alf = catch_logging_aliases(name);
+    if (alf.alias_name != NULL){
+      LogConfiguration::configure_stdout(alf.level, alf.exactMatch, alf.tag, LogTag::__NO_TAG);
+      return true;
+    }
     real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
     if (real_name == NULL) {
       return false;
@@ -1675,16 +1681,16 @@ void Arguments::set_cms_and_parnew_gc_flags() {
       // OldPLAB sizing manually turned off: Use a larger default setting,
       // unless it was manually specified. This is because a too-low value
       // will slow down scavenges.
-      FLAG_SET_ERGO(size_t, OldPLABSize, CFLS_LAB::_default_static_old_plab_size); // default value before 6631166
+      FLAG_SET_ERGO(size_t, OldPLABSize, CompactibleFreeListSpaceLAB::_default_static_old_plab_size); // default value before 6631166
     } else {
-      FLAG_SET_DEFAULT(OldPLABSize, CFLS_LAB::_default_dynamic_old_plab_size); // old CMSParPromoteBlocksToClaim default
+      FLAG_SET_DEFAULT(OldPLABSize, CompactibleFreeListSpaceLAB::_default_dynamic_old_plab_size); // old CMSParPromoteBlocksToClaim default
     }
   }
 
   // If either of the static initialization defaults have changed, note this
   // modification.
   if (!FLAG_IS_DEFAULT(OldPLABSize) || !FLAG_IS_DEFAULT(OldPLABWeight)) {
-    CFLS_LAB::modify_initialization(OldPLABSize, OldPLABWeight);
+    CompactibleFreeListSpaceLAB::modify_initialization(OldPLABSize, OldPLABWeight);
   }
 
   if (!ClassUnloading) {
@@ -2622,14 +2628,14 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                                        SysClassPath* scp_p,
                                        bool* scp_assembly_required_p,
                                        Flag::Flags origin) {
-  // Remaining part of option string
+  // For match_option to return remaining or value part of option string
   const char* tail;
 
   // iterate over arguments
   for (int index = 0; index < args->nOptions; index++) {
     bool is_absolute_path = false;  // for -agentpath vs -agentlib
 
-    JavaVMOption* option = args->options + index;
+    const JavaVMOption* option = args->options + index;
 
     if (!match_option(option, "-Djava.class.path", &tail) &&
         !match_option(option, "-Dsun.java.command", &tail) &&
@@ -2643,16 +2649,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         build_jvm_args(option->optionString);
     }
 
-    // char buffer to store looked up logging option.
-    char aliased_logging_option[256];
-
-    // Catch -XX options which are aliased to Unified logging commands.
-    if (match_option(option, "-XX:", &tail)) {
-      if (lookup_logging_aliases(option->optionString, aliased_logging_option)) {
-        option->optionString = aliased_logging_option;
-      }
-    }
-
     // -verbose:[class/gc/jni]
     if (match_option(option, "-verbose", &tail)) {
       if (!strcmp(tail, ":class") || !strcmp(tail, "")) {
@@ -2663,11 +2659,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           return JNI_EINVAL;
         }
       } else if (!strcmp(tail, ":gc")) {
-        // LogConfiguration_lock is not set up yet, but this code is executed by a single thread
-        bool ret = LogConfiguration::parse_log_arguments("stdout", "gc", NULL, NULL, NULL);
-        if (!ret) {
-          return JNI_EINVAL;
-        }
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
       } else if (!strcmp(tail, ":jni")) {
         if (FLAG_SET_CMDLINE(bool, PrintJNIResolving, true) != Flag::SUCCESS) {
           return JNI_EINVAL;
@@ -3496,15 +3488,19 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
 class ScopedVMInitArgs : public StackObj {
  private:
   JavaVMInitArgs _args;
+  char*          _container_name;
   bool           _is_set;
+  char*          _vm_options_file_arg;
 
  public:
-  ScopedVMInitArgs() {
+  ScopedVMInitArgs(const char *container_name) {
     _args.version = JNI_VERSION_1_2;
     _args.nOptions = 0;
     _args.options = NULL;
     _args.ignoreUnrecognized = false;
+    _container_name = (char *)container_name;
     _is_set = false;
+    _vm_options_file_arg = NULL;
   }
 
   // Populates the JavaVMInitArgs object represented by this
@@ -3536,10 +3532,23 @@ class ScopedVMInitArgs : public StackObj {
     return JNI_OK;
   }
 
-  JavaVMInitArgs* get() { return &_args; }
-  bool is_set()         { return _is_set; }
+  JavaVMInitArgs* get()             { return &_args; }
+  char* container_name()            { return _container_name; }
+  bool  is_set()                    { return _is_set; }
+  bool  found_vm_options_file_arg() { return _vm_options_file_arg != NULL; }
+  char* vm_options_file_arg()       { return _vm_options_file_arg; }
+
+  void set_vm_options_file_arg(const char *vm_options_file_arg) {
+    if (_vm_options_file_arg != NULL) {
+      os::free(_vm_options_file_arg);
+    }
+    _vm_options_file_arg = os::strdup_check_oom(vm_options_file_arg);
+  }
 
   ~ScopedVMInitArgs() {
+    if (_vm_options_file_arg != NULL) {
+      os::free(_vm_options_file_arg);
+    }
     if (_args.options == NULL) return;
     for (int i = 0; i < _args.nOptions; i++) {
       os::free(_args.options[i].optionString);
@@ -3820,12 +3829,23 @@ static bool use_vm_log() {
 
 #endif // PRODUCT
 
+bool Arguments::args_contains_vm_options_file_arg(const JavaVMInitArgs* args) {
+  for (int index = 0; index < args->nOptions; index++) {
+    const JavaVMOption* option = args->options + index;
+    const char* tail;
+    if (match_option(option, "-XX:VMOptionsFile=", &tail)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 jint Arguments::insert_vm_options_file(const JavaVMInitArgs* args,
-                                       char** vm_options_file,
+                                       const char* vm_options_file,
                                        const int vm_options_file_pos,
-                                       ScopedVMInitArgs *vm_options_file_args,
+                                       ScopedVMInitArgs* vm_options_file_args,
                                        ScopedVMInitArgs* args_out) {
-  jint code = parse_vm_options_file(*vm_options_file, vm_options_file_args);
+  jint code = parse_vm_options_file(vm_options_file, vm_options_file_args);
   if (code != JNI_OK) {
     return code;
   }
@@ -3834,17 +3854,46 @@ jint Arguments::insert_vm_options_file(const JavaVMInitArgs* args,
     return JNI_OK;
   }
 
+  if (args_contains_vm_options_file_arg(vm_options_file_args->get())) {
+    jio_fprintf(defaultStream::error_stream(),
+                "A VM options file may not refer to a VM options file. "
+                "Specification of '-XX:VMOptionsFile=<file-name>' in the "
+                "options file '%s' in options container '%s' is an error.\n",
+                vm_options_file_args->vm_options_file_arg(),
+                vm_options_file_args->container_name());
+    return JNI_EINVAL;
+  }
+
   return args_out->insert(args, vm_options_file_args->get(),
                           vm_options_file_pos);
 }
 
+// Expand -XX:VMOptionsFile found in args_in as needed.
+// mod_args and args_out parameters may return values as needed.
+jint Arguments::expand_vm_options_as_needed(const JavaVMInitArgs* args_in,
+                                            ScopedVMInitArgs* mod_args,
+                                            JavaVMInitArgs** args_out) {
+  jint code = match_special_option_and_act(args_in, mod_args);
+  if (code != JNI_OK) {
+    return code;
+  }
+
+  if (mod_args->is_set()) {
+    // args_in contains -XX:VMOptionsFile and mod_args contains the
+    // original options from args_in along with the options expanded
+    // from the VMOptionsFile. Return a short-hand to the caller.
+    *args_out = mod_args->get();
+  } else {
+    *args_out = (JavaVMInitArgs *)args_in;  // no changes so use args_in
+  }
+  return JNI_OK;
+}
+
 jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
-                                             char ** vm_options_file,
                                              ScopedVMInitArgs* args_out) {
   // Remaining part of option string
   const char* tail;
-  int   vm_options_file_pos = -1;
-  ScopedVMInitArgs vm_options_file_args;
+  ScopedVMInitArgs vm_options_file_args(args_out->container_name());
 
   for (int index = 0; index < args->nOptions; index++) {
     const JavaVMOption* option = args->options + index;
@@ -3856,38 +3905,33 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
       continue;
     }
     if (match_option(option, "-XX:VMOptionsFile=", &tail)) {
-      if (vm_options_file != NULL) {
-        // The caller accepts -XX:VMOptionsFile
-        if (*vm_options_file != NULL) {
-          jio_fprintf(defaultStream::error_stream(),
-                      "The VM Options file can only be specified once and "
-                      "only on the command line.\n");
-          return JNI_EINVAL;
-        }
-
-        *vm_options_file = (char *) tail;
-        vm_options_file_pos = index;  // save position of -XX:VMOptionsFile
-        // If there's a VMOptionsFile, parse that (also can set flags_file)
-        jint code = insert_vm_options_file(args, vm_options_file,
-                                           vm_options_file_pos,
-                                           &vm_options_file_args, args_out);
-        if (code != JNI_OK) {
-          return code;
-        }
-        if (args_out->is_set()) {
-          // The VMOptions file inserted some options so switch 'args'
-          // to the new set of options, and continue processing which
-          // preserves "last option wins" semantics.
-          args = args_out->get();
-          // The first option from the VMOptionsFile replaces the
-          // current option.  So we back track to process the
-          // replacement option.
-          index--;
-        }
-      } else {
+      if (vm_options_file_args.found_vm_options_file_arg()) {
         jio_fprintf(defaultStream::error_stream(),
-                    "VM options file is only supported on the command line\n");
+                    "The option '%s' is already specified in the options "
+                    "container '%s' so the specification of '%s' in the "
+                    "same options container is an error.\n",
+                    vm_options_file_args.vm_options_file_arg(),
+                    vm_options_file_args.container_name(),
+                    option->optionString);
         return JNI_EINVAL;
+      }
+      vm_options_file_args.set_vm_options_file_arg(option->optionString);
+      // If there's a VMOptionsFile, parse that
+      jint code = insert_vm_options_file(args, tail, index,
+                                         &vm_options_file_args, args_out);
+      if (code != JNI_OK) {
+        return code;
+      }
+      args_out->set_vm_options_file_arg(vm_options_file_args.vm_options_file_arg());
+      if (args_out->is_set()) {
+        // The VMOptions file inserted some options so switch 'args'
+        // to the new set of options, and continue processing which
+        // preserves "last option wins" semantics.
+        args = args_out->get();
+        // The first option from the VMOptionsFile replaces the
+        // current option.  So we back track to process the
+        // replacement option.
+        index--;
       }
       continue;
     }
@@ -3957,7 +4001,7 @@ static void print_options(const JavaVMInitArgs *args) {
 
 // Parse entry point called from JNI_CreateJavaVM
 
-jint Arguments::parse(const JavaVMInitArgs* args) {
+jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   assert(verify_special_jvm_flags(), "deprecated and obsolete flag table inconsistent");
 
   // Initialize ranges and constraints
@@ -3966,67 +4010,74 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 
   // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
   const char* hotspotrc = ".hotspotrc";
-  char* vm_options_file = NULL;
   bool settings_file_specified = false;
   bool needs_hotspotrc_warning = false;
-  ScopedVMInitArgs java_tool_options_args;
-  ScopedVMInitArgs java_options_args;
-  ScopedVMInitArgs modified_cmd_line_args;
+  ScopedVMInitArgs initial_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
+  ScopedVMInitArgs initial_java_options_args("env_var='_JAVA_OPTIONS'");
+
+  // Pointers to current working set of containers
+  JavaVMInitArgs* cur_cmd_args;
+  JavaVMInitArgs* cur_java_options_args;
+  JavaVMInitArgs* cur_java_tool_options_args;
+
+  // Containers for modified/expanded options
+  ScopedVMInitArgs mod_cmd_args("cmd_line_args");
+  ScopedVMInitArgs mod_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
+  ScopedVMInitArgs mod_java_options_args("env_var='_JAVA_OPTIONS'");
+
 
   jint code =
-      parse_java_tool_options_environment_variable(&java_tool_options_args);
+      parse_java_tool_options_environment_variable(&initial_java_tool_options_args);
   if (code != JNI_OK) {
     return code;
   }
 
-  code = parse_java_options_environment_variable(&java_options_args);
+  code = parse_java_options_environment_variable(&initial_java_options_args);
   if (code != JNI_OK) {
     return code;
   }
 
-  code = match_special_option_and_act(java_tool_options_args.get(),
-                                      NULL, NULL);
+  code = expand_vm_options_as_needed(initial_java_tool_options_args.get(),
+                                     &mod_java_tool_options_args,
+                                     &cur_java_tool_options_args);
   if (code != JNI_OK) {
     return code;
   }
 
-  code = match_special_option_and_act(args, &vm_options_file,
-                                      &modified_cmd_line_args);
+  code = expand_vm_options_as_needed(initial_cmd_args,
+                                     &mod_cmd_args,
+                                     &cur_cmd_args);
   if (code != JNI_OK) {
     return code;
   }
 
-
-  // The command line arguments have been modified to include VMOptionsFile arguments.
-  if (modified_cmd_line_args.is_set()) {
-    args = modified_cmd_line_args.get();
-  }
-
-  code = match_special_option_and_act(java_options_args.get(),
-                                      NULL, NULL);
+  code = expand_vm_options_as_needed(initial_java_options_args.get(),
+                                     &mod_java_options_args,
+                                     &cur_java_options_args);
   if (code != JNI_OK) {
     return code;
   }
 
-  const char * flags_file = Arguments::get_jvm_flags_file();
+  const char* flags_file = Arguments::get_jvm_flags_file();
   settings_file_specified = (flags_file != NULL);
 
   if (IgnoreUnrecognizedVMOptions) {
-    // uncast const to modify the flag args->ignoreUnrecognized
-    *(jboolean*)(&args->ignoreUnrecognized) = true;
-    java_tool_options_args.get()->ignoreUnrecognized = true;
-    java_options_args.get()->ignoreUnrecognized = true;
+    cur_cmd_args->ignoreUnrecognized = true;
+    cur_java_tool_options_args->ignoreUnrecognized = true;
+    cur_java_options_args->ignoreUnrecognized = true;
   }
 
   // Parse specified settings file
   if (settings_file_specified) {
-    if (!process_settings_file(flags_file, true, args->ignoreUnrecognized)) {
+    if (!process_settings_file(flags_file, true,
+                               cur_cmd_args->ignoreUnrecognized)) {
       return JNI_EINVAL;
     }
   } else {
 #ifdef ASSERT
     // Parse default .hotspotrc settings file
-    if (!process_settings_file(".hotspotrc", false, args->ignoreUnrecognized)) {
+    if (!process_settings_file(".hotspotrc", false,
+                               cur_cmd_args->ignoreUnrecognized)) {
       return JNI_EINVAL;
     }
 #else
@@ -4038,15 +4089,15 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 
   if (PrintVMOptions) {
-    print_options(java_tool_options_args.get());
-    print_options(args);
-    print_options(java_options_args.get());
+    print_options(cur_java_tool_options_args);
+    print_options(cur_cmd_args);
+    print_options(cur_java_options_args);
   }
 
   // Parse JavaVMInitArgs structure passed in, as well as JAVA_TOOL_OPTIONS and _JAVA_OPTIONS
-  jint result = parse_vm_init_args(java_tool_options_args.get(),
-                                   java_options_args.get(),
-                                   args);   // command line arguments
+  jint result = parse_vm_init_args(cur_java_tool_options_args,
+                                   cur_java_options_args,
+                                   cur_cmd_args);
 
   if (result != JNI_OK) {
     return result;

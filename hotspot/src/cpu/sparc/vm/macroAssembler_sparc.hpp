@@ -1278,6 +1278,7 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void tlab_refill(Label& retry_tlab, Label& try_eden, Label& slow_case);
+  void zero_memory(Register base, Register index);
   void incr_allocated_bytes(RegisterOrConstant size_in_bytes,
                             Register t1, Register t2);
 

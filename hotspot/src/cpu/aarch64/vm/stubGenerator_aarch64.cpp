@@ -744,7 +744,7 @@ class StubGenerator: public StubCodeGenerator {
            __ sub(end, end, start); // number of bytes to copy
 
           const Register count = end; // 'end' register contains bytes count now
-          __ mov(scratch, (address)ct->byte_map_base);
+          __ load_byte_map_base(scratch);
           __ add(start, start, scratch);
           if (UseConcMarkSweepGC) {
             __ membar(__ StoreStore);
@@ -962,7 +962,7 @@ class StubGenerator: public StubCodeGenerator {
       __ lea(d, Address(d, count, Address::lsl(exact_log2(-step))));
     }
 
-    Label done, tail;
+    Label tail;
 
     __ cmp(count, 16/granularity);
     __ br(Assembler::LO, tail);
@@ -987,7 +987,8 @@ class StubGenerator: public StubCodeGenerator {
       }
       // rscratch2 is the byte adjustment needed to align s.
       __ cbz(rscratch2, aligned);
-      __ lsr(rscratch2, rscratch2, exact_log2(granularity));
+      int shift = exact_log2(granularity);
+      if (shift)  __ lsr(rscratch2, rscratch2, shift);
       __ sub(count, count, rscratch2);
 
 #if 0

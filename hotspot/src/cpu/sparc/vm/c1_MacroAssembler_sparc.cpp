@@ -205,12 +205,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
 
 void C1_MacroAssembler::initialize_body(Register base, Register index) {
-  assert_different_registers(base, index);
-  Label loop;
-  bind(loop);
-  subcc(index, HeapWordSize, index);
-  brx(Assembler::greaterEqual, true, Assembler::pt, loop);
-  delayed()->st_ptr(G0, base, index);
+  zero_memory(base, index);
 }
 
 
@@ -237,7 +232,7 @@ void C1_MacroAssembler::allocate_object(
   }
   try_allocate(obj, noreg, obj_size * wordSize, t2, t3, slow_case);
 
-  initialize_object(obj, klass, noreg, obj_size * HeapWordSize, t1, t2);
+  initialize_object(obj, klass, noreg, obj_size * HeapWordSize, t1, t2, /* is_tlab_allocated */ UseTLAB);
 }
 
 void C1_MacroAssembler::initialize_object(
@@ -246,7 +241,8 @@ void C1_MacroAssembler::initialize_object(
   Register var_size_in_bytes,          // object size in bytes if unknown at compile time; invalid otherwise
   int      con_size_in_bytes,          // object size in bytes if   known at compile time
   Register t1,                         // temp register
-  Register t2                          // temp register
+  Register t2,                         // temp register
+  bool     is_tlab_allocated           // the object was allocated in a TLAB; relevant for the implementation of ZeroTLAB
   ) {
   const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
 
@@ -269,31 +265,33 @@ void C1_MacroAssembler::initialize_object(
 
 #endif
 
-  // initialize body
-  const int threshold = 5 * HeapWordSize;              // approximate break even point for code size
-  if (var_size_in_bytes != noreg) {
-    // use a loop
-    add(obj, hdr_size_in_bytes, t1);               // compute address of first element
-    sub(var_size_in_bytes, hdr_size_in_bytes, t2); // compute size of body
-    initialize_body(t1, t2);
+  if (!(UseTLAB && ZeroTLAB && is_tlab_allocated)) {
+    // initialize body
+    const int threshold = 5 * HeapWordSize;              // approximate break even point for code size
+    if (var_size_in_bytes != noreg) {
+      // use a loop
+      add(obj, hdr_size_in_bytes, t1);               // compute address of first element
+      sub(var_size_in_bytes, hdr_size_in_bytes, t2); // compute size of body
+      initialize_body(t1, t2);
 #ifndef _LP64
-  } else if (con_size_in_bytes < threshold * 2) {
-    // on v9 we can do double word stores to fill twice as much space.
-    assert(hdr_size_in_bytes % 8 == 0, "double word aligned");
-    assert(con_size_in_bytes % 8 == 0, "double word aligned");
-    for (int i = hdr_size_in_bytes; i < con_size_in_bytes; i += 2 * HeapWordSize) stx(G0, obj, i);
+    } else if (con_size_in_bytes < threshold * 2) {
+      // on v9 we can do double word stores to fill twice as much space.
+      assert(hdr_size_in_bytes % 8 == 0, "double word aligned");
+      assert(con_size_in_bytes % 8 == 0, "double word aligned");
+      for (int i = hdr_size_in_bytes; i < con_size_in_bytes; i += 2 * HeapWordSize) stx(G0, obj, i);
 #endif
-  } else if (con_size_in_bytes <= threshold) {
-    // use explicit NULL stores
-    for (int i = hdr_size_in_bytes; i < con_size_in_bytes; i += HeapWordSize)     st_ptr(G0, obj, i);
-  } else if (con_size_in_bytes > hdr_size_in_bytes) {
-    // use a loop
-    const Register base  = t1;
-    const Register index = t2;
-    add(obj, hdr_size_in_bytes, base);               // compute address of first element
-    // compute index = number of words to clear
-    set(con_size_in_bytes - hdr_size_in_bytes, index);
-    initialize_body(base, index);
+    } else if (con_size_in_bytes <= threshold) {
+      // use explicit NULL stores
+      for (int i = hdr_size_in_bytes; i < con_size_in_bytes; i += HeapWordSize)     st_ptr(G0, obj, i);
+    } else if (con_size_in_bytes > hdr_size_in_bytes) {
+      // use a loop
+      const Register base  = t1;
+      const Register index = t2;
+      add(obj, hdr_size_in_bytes, base);               // compute address of first element
+      // compute index = number of words to clear
+      set(con_size_in_bytes - hdr_size_in_bytes, index);
+      initialize_body(base, index);
+    }
   }
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {

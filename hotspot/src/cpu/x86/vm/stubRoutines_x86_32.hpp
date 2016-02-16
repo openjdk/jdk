@@ -30,7 +30,7 @@
 // extend it.
 
 enum platform_dependent_constants {
-  code_size1 =  9000,           // simply increase if too small (assembler will crash if too small)
+  code_size1 =  20000,           // simply increase if too small (assembler will crash if too small)
   code_size2 = 33800            // simply increase if too small (assembler will crash if too small)
 };
 

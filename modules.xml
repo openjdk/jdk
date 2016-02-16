@@ -205,6 +205,9 @@
       <name>javax.security.cert</name>
     </export>
     <export>
+      <name>jdk</name>
+    </export>
+    <export>
       <name>jdk.net</name>
     </export>
     <export>
@@ -274,6 +277,10 @@
       <to>jdk.scripting.nashorn</to>
     </export>
     <export>
+      <name>jdk.internal.ref</name>
+      <to>java.desktop</to>
+    </export>
+    <export>
       <name>jdk.internal</name>
       <to>jdk.jfr</to>
     </export>
@@ -290,7 +297,6 @@
       <to>java.security.jgss</to>
       <to>java.security.sasl</to>
       <to>java.xml</to>
-      <to>java.xml.ws</to>
       <to>jdk.charsets</to>
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.deploy.osx</to>

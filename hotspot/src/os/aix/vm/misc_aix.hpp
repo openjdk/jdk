@@ -1,5 +1,5 @@
 /*
- * Copyright 2012, 2015 SAP AG. All rights reserved.
+ * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@
     fputc('\n', stderr); fflush(stderr); \
   } \
 }
-#define ERRBYE(s) { trcVerbose(s); return -1; }
 
 #define assert0(b) assert((b), "")
 #define guarantee0(b) guarantee((b), "")

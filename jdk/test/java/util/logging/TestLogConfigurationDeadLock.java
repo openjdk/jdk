@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import java.util.logging.Logger;
  * @summary Synchronization issues in Logger and LogManager. This test
  *       focusses more particularly on potential deadlock in
  *       drainLoggerRefQueueBounded / readConfiguration
+ * @modules java.logging
+ *          java.management
  * @run main/othervm TestLogConfigurationDeadLock
  * @author danielfuchs
  */
