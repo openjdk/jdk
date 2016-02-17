@@ -666,7 +666,7 @@ class StubGenerator: public StubCodeGenerator {
   //     count   -  element count
   //     tmp     - scratch register
   //
-  //     Destroy no registers!
+  //     Destroy no registers except rscratch1 and rscratch2
   //
   void  gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized) {
     BarrierSet* bs = Universe::heap()->barrier_set();
@@ -674,12 +674,13 @@ class StubGenerator: public StubCodeGenerator {
     case BarrierSet::G1SATBCTLogging:
       // With G1, don't generate the call if we statically know that the target in uninitialized
       if (!dest_uninitialized) {
-        __ push(RegSet::range(r0, r29), sp);         // integer registers except lr & sp
+        __ push_call_clobbered_registers();
         if (count == c_rarg0) {
           if (addr == c_rarg1) {
             // exactly backwards!!
-            __ stp(c_rarg0, c_rarg1, __ pre(sp, -2 * wordSize));
-            __ ldp(c_rarg1, c_rarg0, __ post(sp, -2 * wordSize));
+            __ mov(rscratch1, c_rarg0);
+            __ mov(c_rarg0, c_rarg1);
+            __ mov(c_rarg1, rscratch1);
           } else {
             __ mov(c_rarg1, count);
             __ mov(c_rarg0, addr);
@@ -689,7 +690,7 @@ class StubGenerator: public StubCodeGenerator {
           __ mov(c_rarg1, count);
         }
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
-        __ pop(RegSet::range(r0, r29), sp);         // integer registers except lr & sp        }
+        __ pop_call_clobbered_registers();
         break;
       case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
@@ -719,7 +720,7 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::G1SATBCTLogging:
 
         {
-          __ push(RegSet::range(r0, r29), sp);         // integer registers except lr & sp
+          __ push_call_clobbered_registers();
           // must compute element count unless barrier set interface is changed (other platforms supply count)
           assert_different_registers(start, end, scratch);
           __ lea(scratch, Address(end, BytesPerHeapOop));
@@ -728,7 +729,7 @@ class StubGenerator: public StubCodeGenerator {
           __ mov(c_rarg0, start);
           __ mov(c_rarg1, scratch);
           __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), 2);
-          __ pop(RegSet::range(r0, r29), sp);         // integer registers except lr & sp        }
+          __ pop_call_clobbered_registers();
         }
         break;
       case BarrierSet::CardTableForRS:
@@ -1394,10 +1395,10 @@ class StubGenerator: public StubCodeGenerator {
   //   no-overlap entry point used by generate_conjoint_long_oop_copy().
   //
   address generate_disjoint_oop_copy(bool aligned, address *entry,
-                                     const char *name, bool dest_uninitialized = false) {
+                                     const char *name, bool dest_uninitialized) {
     const bool is_oop = true;
     const size_t size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
-    return generate_disjoint_copy(size, aligned, is_oop, entry, name);
+    return generate_disjoint_copy(size, aligned, is_oop, entry, name, dest_uninitialized);
   }
 
   // Arguments:
@@ -1412,10 +1413,11 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_conjoint_oop_copy(bool aligned,
                                      address nooverlap_target, address *entry,
-                                     const char *name, bool dest_uninitialized = false) {
+                                     const char *name, bool dest_uninitialized) {
     const bool is_oop = true;
     const size_t size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
-    return generate_conjoint_copy(size, aligned, is_oop, nooverlap_target, entry, name);
+    return generate_conjoint_copy(size, aligned, is_oop, nooverlap_target, entry,
+                                  name, dest_uninitialized);
   }
 
 
@@ -1521,6 +1523,8 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L);
     }
 #endif //ASSERT
+
+    gen_write_ref_array_pre_barrier(to, count, dest_uninitialized);
 
     // save the original count
     __ mov(count_save, count);
@@ -1988,9 +1992,11 @@ class StubGenerator: public StubCodeGenerator {
       bool aligned = !UseCompressedOops;
 
       StubRoutines::_arrayof_oop_disjoint_arraycopy
-        = generate_disjoint_oop_copy(aligned, &entry, "arrayof_oop_disjoint_arraycopy");
+        = generate_disjoint_oop_copy(aligned, &entry, "arrayof_oop_disjoint_arraycopy",
+                                     /*dest_uninitialized*/false);
       StubRoutines::_arrayof_oop_arraycopy
-        = generate_conjoint_oop_copy(aligned, entry, &entry_oop_arraycopy, "arrayof_oop_arraycopy");
+        = generate_conjoint_oop_copy(aligned, entry, &entry_oop_arraycopy, "arrayof_oop_arraycopy",
+                                     /*dest_uninitialized*/false);
       // Aligned versions without pre-barriers
       StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit
         = generate_disjoint_oop_copy(aligned, &entry, "arrayof_oop_disjoint_arraycopy_uninit",
