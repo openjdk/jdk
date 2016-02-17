@@ -620,7 +620,6 @@ public class URLClassPath {
         private JarFile jar;
         private URL csu;
         private JarIndex index;
-        private MetaIndex metaIndex;
         private URLStreamHandler handler;
         private HashMap<String, Loader> lmap;
         private boolean closed = false;
@@ -640,32 +639,7 @@ public class URLClassPath {
             handler = jarHandler;
             lmap = loaderMap;
 
-            if (!isOptimizable(url)) {
-                ensureOpen();
-            } else {
-                 String fileName = url.getFile();
-                if (fileName != null) {
-                    fileName = ParseUtil.decode(fileName);
-                    File f = new File(fileName);
-                    metaIndex = MetaIndex.forJar(f);
-                    // If the meta index is found but the file is not
-                    // installed, set metaIndex to null. A typical
-                    // senario is charsets.jar which won't be installed
-                    // when the user is running in certain locale environment.
-                    // The side effect of null metaIndex will cause
-                    // ensureOpen get called so that IOException is thrown.
-                    if (metaIndex != null && !f.exists()) {
-                        metaIndex = null;
-                    }
-                }
-
-                // metaIndex is null when either there is no such jar file
-                // entry recorded in meta-index file or such jar file is
-                // missing in JRE. See bug 6340399.
-                if (metaIndex == null) {
-                    ensureOpen();
-                }
-            }
+            ensureOpen();
         }
 
         @Override
@@ -699,7 +673,7 @@ public class URLClassPath {
                                 }
 
                                 jar = getJarFile(csu);
-                                index = JarIndex.getJarIndex(jar, metaIndex);
+                                index = JarIndex.getJarIndex(jar);
                                 if (index != null) {
                                     String[] jarfiles = index.getJarFiles();
                                 // Add all the dependent URLs to the lmap so that loaders
@@ -854,12 +828,6 @@ public class URLClassPath {
          * Returns the JAR Resource for the specified name.
          */
         Resource getResource(final String name, boolean check) {
-            if (metaIndex != null) {
-                if (!metaIndex.mayContain(name)) {
-                    return null;
-                }
-            }
-
             try {
                 ensureOpen();
             } catch (IOException e) {
@@ -999,10 +967,6 @@ public class URLClassPath {
          */
         URL[] getClassPath() throws IOException {
             if (index != null) {
-                return null;
-            }
-
-            if (metaIndex != null) {
                 return null;
             }
 
