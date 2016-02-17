@@ -154,7 +154,10 @@ void ConcurrentG1RefineThread::run_service() {
         if (_next != NULL && !_next->is_active() && curr_buffer_num > _next->_threshold) {
           _next->activate();
         }
-      } while (dcqs.apply_closure_to_completed_buffer(_refine_closure, _worker_id + _worker_id_offset, cg1r()->green_zone()));
+      } while (dcqs.apply_closure_to_completed_buffer(_refine_closure,
+                                                      _worker_id + _worker_id_offset,
+                                                      cg1r()->green_zone(),
+                                                      false /* during_pause */));
 
       // We can exit the loop above while being active if there was a yield request.
       if (is_active()) {
