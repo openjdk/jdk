@@ -208,11 +208,19 @@ public final class StringConcatFactory {
         DUMPER = (dumpPath == null) ? null : ProxyClassesDumper.getInstance(dumpPath);
     }
 
+    /**
+     * Cache key is a composite of:
+     *   - class name, that lets to disambiguate stubs, to avoid excess sharing
+     *   - method type, describing the dynamic arguments for concatenation
+     *   - concat recipe, describing the constants and concat shape
+     */
     private static final class Key {
+        final String className;
         final MethodType mt;
         final Recipe recipe;
 
-        public Key(MethodType mt, Recipe recipe) {
+        public Key(String className, MethodType mt, Recipe recipe) {
+            this.className = className;
             this.mt = mt;
             this.recipe = recipe;
         }
@@ -224,6 +232,7 @@ public final class StringConcatFactory {
 
             Key key = (Key) o;
 
+            if (!className.equals(key.className)) return false;
             if (!mt.equals(key.mt)) return false;
             if (!recipe.equals(key.recipe)) return false;
             return true;
@@ -231,7 +240,8 @@ public final class StringConcatFactory {
 
         @Override
         public int hashCode() {
-            int result = mt.hashCode();
+            int result = className.hashCode();
+            result = 31 * result + mt.hashCode();
             result = 31 * result + recipe.hashCode();
             return result;
         }
@@ -614,20 +624,20 @@ public final class StringConcatFactory {
                     MAX_INDY_CONCAT_ARG_SLOTS);
         }
 
+        String className = getClassName(lookup.lookupClass());
         MethodType mt = adaptType(concatType);
-
         Recipe rec = new Recipe(recipe, constants);
 
         MethodHandle mh;
         if (CACHE_ENABLE) {
-            Key key = new Key(mt, rec);
+            Key key = new Key(className, mt, rec);
             mh = CACHE.get(key);
             if (mh == null) {
-                mh = generate(lookup, mt, rec);
+                mh = generate(lookup, className, mt, rec);
                 CACHE.put(key, mh);
             }
         } else {
-            mh = generate(lookup, mt, rec);
+            mh = generate(lookup, className, mt, rec);
         }
         return new ConstantCallSite(mh.asType(concatType));
     }
@@ -659,15 +669,59 @@ public final class StringConcatFactory {
                 : args;
     }
 
-    private static MethodHandle generate(Lookup lookup, MethodType mt, Recipe recipe) throws StringConcatException {
+    private static String getClassName(Class<?> hostClass) throws StringConcatException {
+        /*
+          When cache is enabled, we want to cache as much as we can.
+
+          However, there are two peculiarities:
+
+           a) The generated class should stay within the same package as the
+              host class, to allow Unsafe.defineAnonymousClass access controls
+              to work properly. JDK may choose to fail with IllegalAccessException
+              when accessing a VM anonymous class with non-privileged callers,
+              see JDK-8058575.
+
+           b) If we mark the stub with some prefix, say, derived from the package
+              name because of (a), we can technically use that stub in other packages.
+              But the call stack traces would be extremely puzzling to unsuspecting users
+              and profiling tools: whatever stub wins the race, would be linked in all
+              similar callsites.
+
+           Therefore, we set the class prefix to match the host class package, and use
+           the prefix as the cache key too. This only affects BC_* strategies, and only when
+           cache is enabled.
+         */
+
+        switch (STRATEGY) {
+            case BC_SB:
+            case BC_SB_SIZED:
+            case BC_SB_SIZED_EXACT: {
+                if (CACHE_ENABLE) {
+                    Package pkg = hostClass.getPackage();
+                    return (pkg != null ? pkg.getName().replace('.', '/') + "/" : "") + "Stubs$$StringConcat";
+                } else {
+                    return hostClass.getName().replace('.', '/') + "$$StringConcat";
+                }
+            }
+            case MH_SB_SIZED:
+            case MH_SB_SIZED_EXACT:
+            case MH_INLINE_SIZED_EXACT:
+                // MethodHandle strategies do not need a class name.
+                return "";
+            default:
+                throw new StringConcatException("Concatenation strategy " + STRATEGY + " is not implemented");
+        }
+    }
+
+    private static MethodHandle generate(Lookup lookup, String className, MethodType mt, Recipe recipe) throws StringConcatException {
         try {
             switch (STRATEGY) {
                 case BC_SB:
-                    return BytecodeStringBuilderStrategy.generate(lookup, mt, recipe, Mode.DEFAULT);
+                    return BytecodeStringBuilderStrategy.generate(lookup, className, mt, recipe, Mode.DEFAULT);
                 case BC_SB_SIZED:
-                    return BytecodeStringBuilderStrategy.generate(lookup, mt, recipe, Mode.SIZED);
+                    return BytecodeStringBuilderStrategy.generate(lookup, className, mt, recipe, Mode.SIZED);
                 case BC_SB_SIZED_EXACT:
-                    return BytecodeStringBuilderStrategy.generate(lookup, mt, recipe, Mode.SIZED_EXACT);
+                    return BytecodeStringBuilderStrategy.generate(lookup, className, mt, recipe, Mode.SIZED_EXACT);
                 case MH_SB_SIZED:
                     return MethodHandleStringBuilderStrategy.generate(mt, recipe, Mode.SIZED);
                 case MH_SB_SIZED_EXACT:
@@ -746,19 +800,18 @@ public final class StringConcatFactory {
     private static final class BytecodeStringBuilderStrategy {
         static final Unsafe UNSAFE = Unsafe.getUnsafe();
         static final int CLASSFILE_VERSION = 52;
-        static final String NAME_FACTORY = "concat";
-        static final String CLASS_NAME = "java/lang/String$Concat";
+        static final String METHOD_NAME = "concat";
 
         private BytecodeStringBuilderStrategy() {
             // no instantiation
         }
 
-        private static MethodHandle generate(MethodHandles.Lookup lookup, MethodType args, Recipe recipe, Mode mode) throws Exception {
+        private static MethodHandle generate(Lookup lookup, String className, MethodType args, Recipe recipe, Mode mode) throws Exception {
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
 
             cw.visit(CLASSFILE_VERSION,
                     ACC_SUPER + ACC_PUBLIC + ACC_FINAL + ACC_SYNTHETIC,
-                    CLASS_NAME,
+                    className,  // Unsafe.defineAnonymousClass would append an unique ID
                     null,
                     "java/lang/Object",
                     null
@@ -766,7 +819,7 @@ public final class StringConcatFactory {
 
             MethodVisitor mv = cw.visitMethod(
                     ACC_PUBLIC + ACC_STATIC + ACC_FINAL,
-                    NAME_FACTORY,
+                    METHOD_NAME,
                     args.toMethodDescriptorString(),
                     null,
                     null);
@@ -1045,19 +1098,22 @@ public final class StringConcatFactory {
             mv.visitEnd();
             cw.visitEnd();
 
-            Class<?> targetClass = lookup.lookupClass();
-            final byte[] classBytes = cw.toByteArray();
-            final Class<?> innerClass = UNSAFE.defineAnonymousClass(targetClass, classBytes, null);
-
-            if (DUMPER != null) {
-                DUMPER.dumpClass(innerClass.getName(), classBytes);
-            }
-
+            byte[] classBytes = cw.toByteArray();
             try {
+                Class<?> hostClass = lookup.lookupClass();
+                Class<?> innerClass = UNSAFE.defineAnonymousClass(hostClass, classBytes, null);
                 UNSAFE.ensureClassInitialized(innerClass);
-                return lookup.findStatic(innerClass, NAME_FACTORY, args);
-            } catch (ReflectiveOperationException e) {
-                throw new StringConcatException("Exception finding constructor", e);
+                dumpIfEnabled(innerClass.getName(), classBytes);
+                return Lookup.IMPL_LOOKUP.findStatic(innerClass, METHOD_NAME, args);
+            } catch (Throwable e) {
+                dumpIfEnabled(className + "$$FAILED", classBytes);
+                throw new StringConcatException("Error while spinning the class", e);
+            }
+        }
+
+        private static void dumpIfEnabled(String name, byte[] bytes) {
+            if (DUMPER != null) {
+                DUMPER.dumpClass(name, bytes);
             }
         }
 
@@ -1687,7 +1743,7 @@ public final class StringConcatFactory {
         private static final Function<Class<?>, MethodHandle> MOST = new Function<Class<?>, MethodHandle>() {
             @Override
             public MethodHandle apply(Class<?> cl) {
-                MethodHandle mhObject = lookupStatic(Lookup.PUBLIC_LOOKUP, String.class, "valueOf", String.class, Object.class);
+                MethodHandle mhObject = lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, Object.class);
 
                 // We need the additional conversion here, because String.valueOf(Object) may return null.
                 // String conversion rules in Java state we need to produce "null" String in this case.
@@ -1698,9 +1754,9 @@ public final class StringConcatFactory {
                 if (cl == String.class) {
                     return mhObject;
                 } else if (cl == float.class) {
-                    return lookupStatic(Lookup.PUBLIC_LOOKUP, String.class, "valueOf", String.class, float.class);
+                    return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, float.class);
                 } else if (cl == double.class) {
-                    return lookupStatic(Lookup.PUBLIC_LOOKUP, String.class, "valueOf", String.class, double.class);
+                    return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, double.class);
                 } else if (!cl.isPrimitive()) {
                     return mhObjectNoNulls;
                 }
@@ -1719,13 +1775,13 @@ public final class StringConcatFactory {
                 }
 
                 if (cl == byte.class || cl == short.class || cl == int.class) {
-                    return lookupStatic(Lookup.PUBLIC_LOOKUP, String.class, "valueOf", String.class, int.class);
+                    return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, int.class);
                 } else if (cl == boolean.class) {
-                    return lookupStatic(Lookup.PUBLIC_LOOKUP, String.class, "valueOf", String.class, boolean.class);
+                    return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, boolean.class);
                 } else if (cl == char.class) {
-                    return lookupStatic(Lookup.PUBLIC_LOOKUP, String.class, "valueOf", String.class, char.class);
+                    return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, char.class);
                 } else if (cl == long.class) {
-                    return lookupStatic(Lookup.PUBLIC_LOOKUP, String.class, "valueOf", String.class, long.class);
+                    return lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, long.class);
                 } else {
                     throw new IllegalStateException("Unknown class: " + cl);
                 }
