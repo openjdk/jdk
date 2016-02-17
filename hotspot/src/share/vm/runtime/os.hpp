@@ -152,7 +152,6 @@ class os: AllStatic {
   static size_t page_size_for_region(size_t region_size, size_t min_pages, bool must_be_aligned);
 
   // Get summary strings for system information in buffer provided
-  static bool  get_host_name(char* buf, size_t buflen) PRODUCT_RETURN_(return false;);  // true if available
   static void  get_summary_cpu_info(char* buf, size_t buflen);
   static void  get_summary_os_info(char* buf, size_t buflen);
 
@@ -594,6 +593,9 @@ class os: AllStatic {
 
   // Write to stream
   static int log_vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
+
+  // Get host name in buffer provided
+  static bool get_host_name(char* buf, size_t buflen);
 
   // Print out system information; they are called by fatal error handler.
   // Output format may be different on different platforms.
