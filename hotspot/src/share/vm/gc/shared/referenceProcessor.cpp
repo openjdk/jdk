@@ -30,7 +30,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
-#include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/referenceProcessor.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.inline.hpp"

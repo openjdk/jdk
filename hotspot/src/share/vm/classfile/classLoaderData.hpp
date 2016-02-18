@@ -116,6 +116,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void dump_on(outputStream * const out) PRODUCT_RETURN;
   static void dump() { dump_on(tty); }
   static void verify();
+  static void log_creation(Handle loader, ClassLoaderData* cld, TRAPS);
 
   static bool unload_list_contains(const void* x);
 #ifndef PRODUCT

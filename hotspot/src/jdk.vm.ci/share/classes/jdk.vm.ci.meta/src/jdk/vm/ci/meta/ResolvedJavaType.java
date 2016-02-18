@@ -23,7 +23,6 @@
 package jdk.vm.ci.meta;
 
 import java.lang.annotation.Annotation;
-import java.net.URL;
 
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 
@@ -306,11 +305,6 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider {
      * Returns name of source file of this type.
      */
     String getSourceFileName();
-
-    /**
-     * Returns the class file path - if available - of this type, or {@code null}.
-     */
-    URL getClassFilePath();
 
     /**
      * Returns {@code true} if the type is a local type.

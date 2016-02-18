@@ -35,6 +35,16 @@
  *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.positive=false
  *      -XX:-EnableJVMCI
  *      compiler.jvmci.JVM_GetJVMCIRuntimeTest
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
+ *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.positive=true
+ *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.threaded=true
+ *      -XX:+EnableJVMCI
+ *      compiler.jvmci.JVM_GetJVMCIRuntimeTest
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
+ *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.positive=false
+ *      -Dcompiler.jvmci.JVM_GetJVMCIRuntimeTest.threaded=true
+ *      -XX:-EnableJVMCI
+ *      compiler.jvmci.JVM_GetJVMCIRuntimeTest
 
  */
 
@@ -43,22 +53,27 @@ package compiler.jvmci;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.test.lib.Asserts;
 
-import java.lang.reflect.Method;
-
-public class JVM_GetJVMCIRuntimeTest {
+public class JVM_GetJVMCIRuntimeTest implements Runnable {
     private static final boolean IS_POSITIVE = Boolean.getBoolean(
             "compiler.jvmci.JVM_GetJVMCIRuntimeTest.positive");
+    private static final boolean IN_THREAD = Boolean.getBoolean(
+            "compiler.jvmci.JVM_GetJVMCIRuntimeTest.threaded");
 
-    private final Method initializeRuntime;
-
-    public static void main(String[] args) {
-        new JVM_GetJVMCIRuntimeTest().runTest();
+    public static void main(String[] args) throws Throwable {
+        JVM_GetJVMCIRuntimeTest instance = new JVM_GetJVMCIRuntimeTest();
+        if (IN_THREAD) {
+            Thread t = new Thread(instance);
+            t.start();
+            t.join();
+        } else {
+            instance.run();
+        }
     }
 
-    private void runTest() {
+    public void run() {
         Object result;
         try {
-            result = invoke();
+            result = JVMCI.getRuntime();
         } catch (InternalError e) {
             if (IS_POSITIVE) {
                 throw new AssertionError("unexpected exception", e);
@@ -70,28 +85,8 @@ public class JVM_GetJVMCIRuntimeTest {
         }
         Asserts.assertNotNull(result,
                 "initializeRuntime returned null");
-        Asserts.assertEQ(result, invoke(),
+        Asserts.assertEQ(result, JVMCI.getRuntime(),
                 "initializeRuntime returns different results");
 
-    }
-    private Object invoke() {
-        Object result;
-        try {
-            result = initializeRuntime.invoke(JVMCI.class);
-        } catch (ReflectiveOperationException e) {
-            throw new Error("can't invoke initializeRuntime", e);
-        }
-        return result;
-    }
-
-    private JVM_GetJVMCIRuntimeTest() {
-        Method method;
-        try {
-            method = JVMCI.class.getDeclaredMethod("initializeRuntime");
-            method.setAccessible(true);
-        } catch (NoSuchMethodException e) {
-            throw new Error("can't find JVMCI::initializeRuntime", e);
-        }
-        initializeRuntime = method;
     }
 }

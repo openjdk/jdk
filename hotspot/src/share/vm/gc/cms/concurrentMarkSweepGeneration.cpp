@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1517,6 +1517,8 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   SerialOldTracer* gc_tracer = GenMarkSweep::gc_tracer();
   gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
 
+  gch->pre_full_gc_dump(gc_timer);
+
   GCTraceTime(Trace, gc) t("CMS:MSC");
 
   // Temporarily widen the span of the weak reference processing to
@@ -1592,6 +1594,8 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   // Restart the "inter sweep timer" for the next epoch.
   _inter_sweep_timer.reset();
   _inter_sweep_timer.start();
+
+  gch->post_full_gc_dump(gc_timer);
 
   gc_timer->register_gc_end();
 
@@ -3323,6 +3327,8 @@ class ParConcMarkingClosure: public MetadataAwareOopClosure {
     }
   }
 };
+
+DO_OOP_WORK_IMPL(ParConcMarkingClosure)
 
 // Grey object scanning during work stealing phase --
 // the salient assumption here is that any references

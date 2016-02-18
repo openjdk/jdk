@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,8 @@ G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() : ConcurrentGCThread(
                          true,
                          Monitor::_safepoint_check_never);
 
-  create_and_start();
-
   set_name("G1 Young RemSet Sampling");
+  create_and_start();
 }
 
 void G1YoungRemSetSamplingThread::sleep_before_next_cycle() {
