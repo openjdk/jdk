@@ -34,6 +34,7 @@
   LOG_TAG(alloc) \
   LOG_TAG(age) \
   LOG_TAG(barrier) \
+  LOG_TAG(biasedlocking) \
   LOG_TAG(bot) \
   LOG_TAG(census) \
   LOG_TAG(classhisto) \

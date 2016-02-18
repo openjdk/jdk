@@ -1488,9 +1488,6 @@ public:
   develop(bool, TraceClearedExceptions, false,                              \
           "Print when an exception is forcibly cleared")                    \
                                                                             \
-  product(bool, TraceBiasedLocking, false,                                  \
-          "Trace biased locking in JVM")                                    \
-                                                                            \
   /* gc */                                                                  \
                                                                             \
   product(bool, UseSerialGC, false,                                         \
