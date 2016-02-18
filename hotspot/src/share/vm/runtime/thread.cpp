@@ -3600,6 +3600,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     vm_exit_during_initialization("Failed to initialize tracing backend");
   }
 
+  // No more stub generation allowed after that point.
+  StubCodeDesc::freeze();
+
   // Set flag that basic initialization has completed. Used by exceptions and various
   // debug stuff, that does not work until all basic classes have been initialized.
   set_init_completed();
