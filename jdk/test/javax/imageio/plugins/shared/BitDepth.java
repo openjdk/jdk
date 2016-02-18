@@ -35,7 +35,11 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Iterator;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 
 public class BitDepth {
 
@@ -114,15 +118,15 @@ public class BitDepth {
 
     private int width = 80;
     private int height = 80;
-    private String[] format = { "png", "jpeg", "tif", "bmp", "gif" };
+    private String[] formats = { "png", "jpeg", "tiff", "bmp", "gif" };
 
     public BitDepth(String[] args) throws IOException {
         if (args.length > 0) {
-            format = args;
+            formats = args;
         }
 
-        for (int i = 0; i < format.length; i++) {
-            testFormat(format[i]);
+        for (String format : formats) {
+            testFormat(format);
         }
     }
 
@@ -130,11 +134,7 @@ public class BitDepth {
 
         boolean allOK = true;
 
-        for (int i = 0; i < biRGBTypes.length; i++) {
-
-            int type = biRGBTypes[i];
-
-
+        for (int type : biRGBTypes) {
             // TODO: remove the following 'if' block after the 8147448 fix
             if ( format.toLowerCase().equals("bmp") && (
                 (type == BufferedImage.TYPE_INT_ARGB       ) ||
@@ -148,18 +148,18 @@ public class BitDepth {
                 continue;
             }
 
-
             System.out.println("Testing " + format +
                                " writer for type " + biTypeNames[type]);
             File f = testWriteRGB(format, type);
+            if (f == null)
+                continue;
+
             boolean ok = testReadRGB(f);
             if (ok) {
                 f.delete();
             }
             allOK = allOK && ok;
         }
-
-
 
         if (format.equals("png")) {
             System.out.println("Testing png writer for black stripe");
@@ -191,13 +191,22 @@ public class BitDepth {
         g.setColor(blue);
         g.fillRect(50, 50, 20, 20);
 
+        ImageTypeSpecifier spec = new ImageTypeSpecifier(bi);
+        Iterator<ImageWriter> writers = ImageIO.getImageWriters(spec, format);
         File file = new File("BitDepth_" + biTypeNames[type] + "." + format);
-        try {
-            ImageIO.write(bi, format, file);
-        } catch (RuntimeException re) {
-            System.out.println("Can't write a type "
-                               + biTypeNames[type] +
-                               " BufferedImage!");
+        if (!writers.hasNext()) {
+            System.out.println("\tNo writers available for type " + biTypeNames[type]
+                               + " BufferedImage!");
+        } else {
+            ImageWriter writer = writers.next();
+            try (ImageOutputStream out = ImageIO.createImageOutputStream(file)) {
+                writer.setOutput(out);
+                writer.write(bi);
+            } catch (Exception e) {
+                System.out.println("\tCan't write a type " +  biTypeNames[type]
+                           + " BufferedImage!");
+                return null;
+            }
         }
 
         return file;

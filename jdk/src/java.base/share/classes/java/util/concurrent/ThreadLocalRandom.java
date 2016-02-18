@@ -134,14 +134,13 @@ public class ThreadLocalRandom extends Random {
     private static final AtomicLong seeder = new AtomicLong(initialSeed());
 
     private static long initialSeed() {
-        String pp = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction(
-                        "java.util.secureRandomSeed"));
-        if (pp != null && pp.equalsIgnoreCase("true")) {
+        java.security.PrivilegedAction<Boolean> action =
+            () -> Boolean.getBoolean("java.util.secureRandomSeed");
+        if (java.security.AccessController.doPrivileged(action)) {
             byte[] seedBytes = java.security.SecureRandom.getSeed(8);
-            long s = (long)(seedBytes[0]) & 0xffL;
+            long s = (long)seedBytes[0] & 0xffL;
             for (int i = 1; i < 8; ++i)
-                s = (s << 8) | ((long)(seedBytes[i]) & 0xffL);
+                s = (s << 8) | ((long)seedBytes[i] & 0xffL);
             return s;
         }
         return (mix64(System.currentTimeMillis()) ^

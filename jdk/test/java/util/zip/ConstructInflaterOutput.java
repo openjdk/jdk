@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4679743
+ * @bug 4679743 8148624
  * @summary Test parts of InflaterOutputStream code that don't really do I/O.
  */
 
@@ -41,9 +41,10 @@ public class ConstructInflaterOutput {
         }
     }
 
+    private static MyInflater inf = new MyInflater();
+
     public static void realMain(String[] args) throws Throwable {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        MyInflater inf = new MyInflater();
         InflaterOutputStream ios = null;
         byte[] b = new byte[512];
 

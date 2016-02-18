@@ -641,10 +641,21 @@ public final class WToolkit extends SunToolkit implements Runnable {
             GraphicsEnvironment.getLocalGraphicsEnvironment();
         return ge.getXResolution();
     }
+
     @Override
-    protected native int getScreenWidth();
+    protected int getScreenWidth() {
+        return GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getDefaultConfiguration()
+                .getBounds().width;
+    }
+
     @Override
-    protected native int getScreenHeight();
+    protected int getScreenHeight() {
+        return GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getDefaultConfiguration()
+                .getBounds().height;
+    }
+
     private native Insets getScreenInsets(int screen);
 
 

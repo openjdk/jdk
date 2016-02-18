@@ -81,8 +81,6 @@ text: .text%Java_java_lang_reflect_Array_newArray;
 text: .text%Java_java_lang_Throwable_getStackTraceDepth;
 text: .text%Java_java_lang_Throwable_getStackTraceElement;
 text: .text%Java_java_lang_System_identityHashCode;
-text: .text%Java_sun_misc_Signal_findSignal;
-text: .text%Java_sun_misc_Signal_handle0;
 text: .text%JNU_NotifyAll;
 # Test LoadFrame
 text: .text%JNU_CallMethodByName;

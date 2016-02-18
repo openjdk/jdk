@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ done
 # run test
 ${TESTJAVA}${FS}bin${FS}java \
         ${TESTVMOPTS} \
-        -verbose:class -XX:+TraceClassLoading -cp . \
+        -verbose:class -Xlog:classload -cp . \
         -Dtest.classes=${TESTCLASSES} \
         Starter one-way
 # -XX:+UnlockDiagnosticVMOptions -XX:+UnsyncloadClass \
