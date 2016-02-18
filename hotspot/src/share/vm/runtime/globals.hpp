@@ -1482,9 +1482,6 @@ public:
   develop(bool, TraceCompiledIC, false,                                     \
           "Trace changes of compiled IC")                                   \
                                                                             \
-  develop(bool, TraceStartupTime, false,                                    \
-          "Trace setup time")                                               \
-                                                                            \
   develop(bool, TraceProtectionDomainVerification, false,                   \
           "Trace protection domain verification")                           \
                                                                             \

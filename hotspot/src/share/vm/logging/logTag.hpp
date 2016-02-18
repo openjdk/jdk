@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@
   LOG_TAG(scavenge) \
   LOG_TAG(scrub) \
   LOG_TAG(start) \
+  LOG_TAG(startuptime) \
   LOG_TAG(state) \
   LOG_TAG(stats) \
   LOG_TAG(stringdedup) \
