@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.InvalidKeyException;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.RSAKey;
 import java.security.interfaces.DSAKey;
+import java.security.interfaces.DSAParams;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import javax.crypto.SecretKey;
@@ -87,7 +88,8 @@ public final class KeyUtil {
             size = pubk.getParams().getOrder().bitLength();
         } else if (key instanceof DSAKey) {
             DSAKey pubk = (DSAKey)key;
-            size = pubk.getParams().getP().bitLength();
+            DSAParams params = pubk.getParams();    // params can be null
+            size = (params != null) ? params.getP().bitLength() : -1;
         } else if (key instanceof DHKey) {
             DHKey pubk = (DHKey)key;
             size = pubk.getParams().getP().bitLength();
