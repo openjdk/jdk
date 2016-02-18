@@ -27,6 +27,8 @@
 
 #include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1BlockOffsetTable.hpp"
+#include "gc/g1/g1HeapRegionTraceType.hpp"
+#include "gc/g1/heapRegionTracer.hpp"
 #include "gc/g1/heapRegionType.hpp"
 #include "gc/g1/survRateGroup.hpp"
 #include "gc/shared/ageTable.hpp"
@@ -243,6 +245,8 @@ class HeapRegion: public G1ContiguousSpace {
     return HeapRegion::block_size(addr); // Avoid virtual call
   }
 
+  void report_region_type_change(G1HeapRegionTraceType::Type to);
+
  protected:
   // The index of this region in the heap region sequence.
   uint  _hrm_index;
@@ -427,6 +431,7 @@ class HeapRegion: public G1ContiguousSpace {
 
   const char* get_type_str() const { return _type.get_str(); }
   const char* get_short_type_str() const { return _type.get_short_str(); }
+  G1HeapRegionTraceType::Type get_trace_type() { return _type.get_trace_type(); }
 
   bool is_free() const { return _type.is_free(); }
 
@@ -637,15 +642,15 @@ class HeapRegion: public G1ContiguousSpace {
     }
   }
 
-  void set_free() { _type.set_free(); }
+  void set_free();
 
-  void set_eden()        { _type.set_eden();        }
-  void set_eden_pre_gc() { _type.set_eden_pre_gc(); }
-  void set_survivor()    { _type.set_survivor();    }
+  void set_eden();
+  void set_eden_pre_gc();
+  void set_survivor();
 
-  void set_old() { _type.set_old(); }
+  void set_old();
 
-  void set_archive() { _type.set_archive(); }
+  void set_archive();
 
   // Determine if an object has been allocated since the last
   // mark performed by the collector. This returns true iff the object

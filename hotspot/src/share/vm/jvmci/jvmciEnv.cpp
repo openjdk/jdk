@@ -591,6 +591,13 @@ JVMCIEnv::CodeInstallResult JVMCIEnv::register_method(
   // JVMTI -- compiled method notification (must be done outside lock)
   if (nm != NULL) {
     nm->post_compiled_method_load_event();
+
+    if (env == NULL) {
+      // This compile didn't come through the CompileBroker so perform the printing here
+      DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
+      nm->maybe_print_nmethod(directive);
+      DirectivesStack::release(directive);
+    }
   }
 
   return result;
