@@ -67,6 +67,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
+#include "runtime/logTimer.hpp"
 #include "runtime/memprofiler.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -3341,7 +3342,7 @@ void Threads::threads_do(ThreadClosure* tc) {
 }
 
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
-  TraceTime timer("Initialize java.lang classes", TraceStartupTime);
+  TraceStartupTime timer("Initialize java.lang classes");
 
   if (EagerXrunInit && Arguments::init_libraries_at_startup()) {
     create_vm_init_libraries();
@@ -3388,6 +3389,8 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
 }
 
 void Threads::initialize_jsr292_core_classes(TRAPS) {
+  TraceStartupTime timer("Initialize java.lang.invoke classes");
+
   initialize_class(vmSymbols::java_lang_invoke_MethodHandle(), CHECK);
   initialize_class(vmSymbols::java_lang_invoke_MemberName(), CHECK);
   initialize_class(vmSymbols::java_lang_invoke_MethodHandleNatives(), CHECK);
@@ -3457,7 +3460,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   HOTSPOT_VM_INIT_BEGIN();
 
   // Timing (must come after argument parsing)
-  TraceTime timer("Create VM", TraceStartupTime);
+  TraceStartupTime timer("Create VM");
 
   // Initialize the os module after parsing the args
   jint os_init_2_result = os::init_2();
@@ -3542,8 +3545,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   JvmtiExport::transition_pending_onload_raw_monitors();
 
   // Create the VMThread
-  { TraceTime timer("Start VMThread", TraceStartupTime);
-    VMThread::create();
+  { TraceStartupTime timer("Start VMThread");
+
+  VMThread::create();
     Thread* vmthread = VMThread::vm_thread();
 
     if (!os::create_thread(vmthread, os::vm_thread)) {
