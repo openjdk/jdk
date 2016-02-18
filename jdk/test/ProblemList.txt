@@ -308,9 +308,6 @@ sun/security/provider/SecureRandom/StrongSecureRandom.java      macosx-10.10
 # 8074580
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               generic-all
 
-# 8146387
-javax/net/ssl/SSLSession/SessionCacheSizeTests.java windows-all,solaris-all
-
 ############################################################################
 
 # jdk_sound
