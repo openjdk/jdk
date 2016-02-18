@@ -2015,23 +2015,33 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   int vep_offset = ((intptr_t)__ pc()) - start;
 
 #ifdef COMPILER1
-  if (InlineObjectHash && method->intrinsic_id() == vmIntrinsics::_hashCode) {
-    // Object.hashCode can pull the hashCode from the header word
-    // instead of doing a full VM transition once it's been computed.
-    // Since hashCode is usually polymorphic at call sites we can't do
-    // this optimization at the call site without a lot of work.
+  if ((InlineObjectHash && method->intrinsic_id() == vmIntrinsics::_hashCode) || (method->intrinsic_id() == vmIntrinsics::_identityHashCode)) {
+    // Object.hashCode, System.identityHashCode can pull the hashCode from the
+    // header word instead of doing a full VM transition once it's been computed.
+    // Since hashCode is usually polymorphic at call sites we can't do this
+    // optimization at the call site without a lot of work.
     Label slowCase;
-    Register receiver             = O0;
+    Label done;
+    Register obj_reg              = O0;
     Register result               = O0;
     Register header               = G3_scratch;
     Register hash                 = G3_scratch; // overwrite header value with hash value
     Register mask                 = G1;         // to get hash field from header
 
+    // Unlike for Object.hashCode, System.identityHashCode is static method and
+    // gets object as argument instead of the receiver.
+    if (method->intrinsic_id() == vmIntrinsics::_identityHashCode) {
+      assert(method->is_static(), "method should be static");
+      // return 0 for null reference input
+      __ br_null(obj_reg, false, Assembler::pn, done);
+      __ delayed()->mov(obj_reg, hash);
+    }
+
     // Read the header and build a mask to get its hash field.  Give up if the object is not unlocked.
     // We depend on hash_mask being at most 32 bits and avoid the use of
     // hash_mask_in_place because it could be larger than 32 bits in a 64-bit
     // vm: see markOop.hpp.
-    __ ld_ptr(receiver, oopDesc::mark_offset_in_bytes(), header);
+    __ ld_ptr(obj_reg, oopDesc::mark_offset_in_bytes(), header);
     __ sethi(markOopDesc::hash_mask, mask);
     __ btst(markOopDesc::unlocked_value, header);
     __ br(Assembler::zero, false, Assembler::pn, slowCase);
@@ -2054,6 +2064,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ delayed()->nop();
 
     // leaf return.
+    __ bind(done);
     __ retl();
     __ delayed()->mov(hash, result);
     __ bind(slowCase);
