@@ -61,13 +61,13 @@ public class ExecutorCompletionServiceLoops {
             max = Integer.parseInt(args[0]);
 
         System.out.println("Warmup...");
-        oneTest( base );
+        oneTest(base);
         Thread.sleep(100);
         print = true;
 
         for (int i = 1; i <= max; i += (i+1) >>> 1) {
             System.out.print("n: " + i * base);
-            oneTest(i * base );
+            oneTest(i * base);
             Thread.sleep(100);
         }
         pool.shutdown();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,12 +190,11 @@ public abstract class SSLServerSocket extends ServerSocket {
      * default guarantees a minimum quality of service in all enabled
      * cipher suites.
      * <P>
-     * There are several reasons why an enabled cipher suite might
-     * not actually be used.  For example:  the server socket might
-     * not have appropriate private keys available to it or the cipher
-     * suite might be anonymous, precluding the use of client authentication,
-     * while the server socket has been told to require that sort of
-     * authentication.
+     * Note that even if a suite is enabled, it may never be used. This
+     * can occur if the peer does not support it, or its use is restricted,
+     * or the requisite certificates (and private keys) for the suite are
+     * not available, or an anonymous suite is enabled but authentication
+     * is required.
      *
      * @return an array of cipher suites enabled
      * @see #getSupportedCipherSuites()
@@ -258,6 +257,11 @@ public abstract class SSLServerSocket extends ServerSocket {
     /**
      * Returns the names of the protocols which are currently
      * enabled for use by the newly accepted connections.
+     * <P>
+     * Note that even if a protocol is enabled, it may never be used.
+     * This can occur if the peer does not support the protocol, or its
+     * use is restricted, or there are no enabled cipher suites supported
+     * by the protocol.
      *
      * @return an array of protocol names
      * @see #getSupportedProtocols()

@@ -73,10 +73,7 @@ AwtTextArea* AwtTextArea::Create(jobject peer, jobject parent)
 }
 
 void AwtTextArea::EditSetSel(CHARRANGE &cr) {
-    // Fix for 5003402: added restoring/hiding selection to enable automatic scrolling
-    SendMessage(EM_HIDESELECTION, FALSE, TRUE);
     SendMessage(EM_EXSETSEL, 0, reinterpret_cast<LPARAM>(&cr));
-    SendMessage(EM_HIDESELECTION, TRUE, TRUE);
     // 6417581: force expected drawing
     if (IS_WINVISTA && cr.cpMin == cr.cpMax) {
         ::InvalidateRect(GetHWnd(), NULL, TRUE);
