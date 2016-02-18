@@ -1231,7 +1231,12 @@ public final class Unsafe {
     /** @see #getLongUnaligned(Object, long) */
     @HotSpotIntrinsicCandidate
     public final char getCharUnaligned(Object o, long offset) {
-        return (char)getShortUnaligned(o, offset);
+        if ((offset & 1) == 0) {
+            return getChar(o, offset);
+        } else {
+            return (char)makeShort(getByte(o, offset),
+                                   getByte(o, offset + 1));
+        }
     }
 
     /** @see #getLongUnaligned(Object, long, boolean) */
