@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,35 @@
  * questions.
  */
 
-package pkg;
+/*
+ * @test
+ * @bug      8149468
+ * @summary  Verify that non included classes are not inspected.
+ * @library  ../lib
+ * @modules  jdk.javadoc/jdk.javadoc.internal.tool
+ * @build    JavadocTester
+ * @run main TestIncluded
+ */
 
-@RegDoc(x=1)
-public class D {
+public class TestIncluded extends JavadocTester {
 
-    @RegArryDoc(y={1})
-    public void test1() {}
+    public static void main(String... args) throws Exception {
+        TestIncluded tester = new TestIncluded();
+        tester.runTests();
+    }
 
-    @RegArryDoc(y={1,2})
-    public void test2() {}
-
-    @NonSynthDocContainer({@RegArryDoc})
-    public void test3() {}
+    /*
+     * The arguments specify only "pkg" but "parent" sources are on the path.
+     * The class parent.A utilizes a non existent taglet, that will trigger
+     * an error, if doc comments are inspected.
+     */
+    @Test
+    void test() {
+        javadoc("-d", "out",
+                "-Xdoclint:all",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+        checkFiles(false, "parent/A.html");
+    }
 }
