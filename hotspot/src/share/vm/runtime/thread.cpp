@@ -170,11 +170,10 @@ void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
     assert(((uintptr_t) aligned_addr + (uintptr_t) size) <=
            ((uintptr_t) real_malloc_addr + (uintptr_t) aligned_size),
            "JavaThread alignment code overflowed allocated storage");
-    if (TraceBiasedLocking) {
-      if (aligned_addr != real_malloc_addr) {
-        tty->print_cr("Aligned thread " INTPTR_FORMAT " to " INTPTR_FORMAT,
-                      p2i(real_malloc_addr), p2i(aligned_addr));
-      }
+    if (aligned_addr != real_malloc_addr) {
+      log_info(biasedlocking)("Aligned thread " INTPTR_FORMAT " to " INTPTR_FORMAT,
+                              p2i(real_malloc_addr),
+                              p2i(aligned_addr));
     }
     ((Thread*) aligned_addr)->_real_malloc_address = real_malloc_addr;
     return aligned_addr;
