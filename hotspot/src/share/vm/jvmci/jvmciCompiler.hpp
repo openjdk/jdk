@@ -33,10 +33,10 @@ private:
   bool _bootstrapping;
 
   /**
-   * Number of methods compiled by JVMCI. This is not synchronized
-   * so may not be 100% accurate.
+   * Number of methods successfully compiled by a call to
+   * JVMCICompiler::compile_method().
    */
-  volatile int _methodsCompiled;
+  volatile int _methods_compiled;
 
   static JVMCICompiler* _instance;
 
@@ -80,8 +80,11 @@ public:
   // Print compilation timers and statistics
   virtual void print_timers();
 
-  // Print compilation statistics
-  void reset_compilation_stats();
+  /**
+   * Gets the number of methods that have been successfully compiled by
+   * a call to JVMCICompiler::compile_method().
+   */
+  int methods_compiled() { return _methods_compiled; }
 
   // Print compilation timers and statistics
   static void print_compilation_timers();

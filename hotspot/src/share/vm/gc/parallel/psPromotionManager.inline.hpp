@@ -284,7 +284,7 @@ inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
 
   // This code must come after the CAS test, or it will print incorrect
   // information.
-  if (develop_log_is_enabled(Trace, gc, scavenge) && o->is_forwarded()) {
+  if (log_develop_is_enabled(Trace, gc, scavenge) && o->is_forwarded()) {
     log_develop_trace(gc, scavenge)("{%s %s " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
                       "forwarding",
                       new_obj->klass()->internal_name(), p2i((void *)o), p2i((void *)new_obj), new_obj->size());

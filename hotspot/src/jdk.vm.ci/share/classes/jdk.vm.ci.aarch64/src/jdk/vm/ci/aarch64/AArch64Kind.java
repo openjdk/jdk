@@ -58,13 +58,13 @@ public enum AArch64Kind implements PlatformKind {
     private final AArch64Kind scalar;
     private final EnumKey<AArch64Kind> key = new EnumKey<>(this);
 
-    private AArch64Kind(int size) {
+    AArch64Kind(int size) {
         this.size = size;
         this.scalar = this;
         this.vectorLength = 1;
     }
 
-    private AArch64Kind(int size, AArch64Kind scalar) {
+    AArch64Kind(int size, AArch64Kind scalar) {
         this.size = size;
         this.scalar = scalar;
 

@@ -32,11 +32,13 @@ import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.DebugInfo;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
+import jdk.vm.ci.code.site.Call;
 import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.code.site.Infopoint;
 import jdk.vm.ci.code.site.InfopointReason;
+import jdk.vm.ci.code.site.Mark;
 import jdk.vm.ci.code.site.Reference;
 import jdk.vm.ci.code.site.Site;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
@@ -45,6 +47,7 @@ import jdk.vm.ci.hotspot.HotSpotCompiledNmethod;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.Assumptions.Assumption;
+import jdk.vm.ci.meta.InvokeTarget;
 import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.PlatformKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -59,6 +62,11 @@ public abstract class TestAssembler {
      * Emit the method prologue code (e.g. building the new stack frame).
      */
     public abstract void emitPrologue();
+
+    /**
+     * Emit the method epilogue code (e.g. the deopt handler).
+     */
+    public abstract void emitEpilogue();
 
     /**
      * Emit code to grow the stack frame.
@@ -181,6 +189,8 @@ public abstract class TestAssembler {
     private int stackAlignment;
     private int curStackSlot;
 
+    private StackSlot deoptRescue;
+
     protected TestAssembler(CodeCacheProvider codeCache, int initialFrameSize, int stackAlignment, PlatformKind narrowOopKind, Register... registers) {
         this.narrowOopKind = LIRKind.reference(narrowOopKind);
 
@@ -216,6 +226,18 @@ public abstract class TestAssembler {
         return StackSlot.get(kind, -curStackSlot, true);
     }
 
+    protected void setDeoptRescueSlot(StackSlot deoptRescue) {
+        this.deoptRescue = deoptRescue;
+    }
+
+    protected void recordCall(InvokeTarget target, int size, boolean direct, DebugInfo debugInfo) {
+        sites.add(new Call(target, code.position(), size, direct, debugInfo));
+    }
+
+    protected void recordMark(Object id) {
+        sites.add(new Mark(code.position(), id));
+    }
+
     protected void recordImplicitException(DebugInfo info) {
         sites.add(new Infopoint(code.position(), info, InfopointReason.IMPLICIT_EXCEPTION));
     }
@@ -249,7 +271,7 @@ public abstract class TestAssembler {
         byte[] finishedData = data.finish();
         DataPatch[] finishedDataPatches = dataPatches.toArray(new DataPatch[0]);
         return new HotSpotCompiledNmethod(method.getName(), finishedCode, finishedCode.length, finishedSites, new Assumption[0], new ResolvedJavaMethod[]{method}, new Comment[0], finishedData, 16,
-                        finishedDataPatches, false, frameSize, 0, method, 0, id, 0L, false);
+                        finishedDataPatches, false, frameSize, deoptRescue, method, 0, id, 0L, false);
     }
 
     protected static class Buffer {

@@ -28,6 +28,7 @@ import java.lang.reflect.Method;
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.Site;
 import jdk.vm.ci.hotspot.HotSpotCompiledCode;
@@ -71,9 +72,9 @@ public class CodeInstallerTest {
         dummyMethod = metaAccess.lookupJavaMethod(method);
     }
 
-    protected void installEmptyCode(Site[] sites, Assumption[] assumptions, Comment[] comments, int dataSectionAlignment, DataPatch[] dataSectionPatches) {
+    protected void installEmptyCode(Site[] sites, Assumption[] assumptions, Comment[] comments, int dataSectionAlignment, DataPatch[] dataSectionPatches, StackSlot deoptRescueSlot) {
         HotSpotCompiledCode code = new HotSpotCompiledCode("dummyMethod", new byte[0], 0, sites, assumptions, new ResolvedJavaMethod[]{dummyMethod}, comments, new byte[8], dataSectionAlignment,
-                        dataSectionPatches, false, 0, 0);
+                        dataSectionPatches, false, 0, deoptRescueSlot);
         codeCache.addCode(dummyMethod, code, null, null);
     }
 

@@ -109,6 +109,13 @@ Declares a structure type that can be used in other events.
       <value type="ADDRESS" field="address" label="Monitor Address" description="Address of object waited on" relation="JAVA_MONITOR_ADDRESS"/>
     </event>
 
+    <event id="JavaMonitorInflate" path="java/monitor_inflate" label="Java Monitor Inflated"
+           has_thread="true" has_stacktrace="true" is_instant="false">
+      <value type="CLASS" field="klass" label="Monitor Class"/>
+      <value type="ADDRESS" field="address" label="Monitor Address" relation="JAVA_MONITOR_ADDRESS"/>
+      <value type="INFLATECAUSE" field="cause" label="Cause" description="Cause of inflation"/>
+    </event>
+
     <event id="ReservedStackActivation" path="java/reserved_stack_activation" label="Reserved Stack Activation" description="Activation of Reserved Stack Area caused by stack overflow with ReservedStackAccess annotated method in call stack"
             has_thread="true" has_stacktrace="true" is_instant="true">
         <value type="METHOD" field="method" label="Java Method"/>

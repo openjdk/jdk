@@ -34,6 +34,7 @@
 #include "classfile/verifier.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
@@ -79,7 +80,7 @@
 
 #define JAVA_CLASSFILE_MAGIC              0xCAFEBABE
 #define JAVA_MIN_SUPPORTED_VERSION        45
-#define JAVA_MAX_SUPPORTED_VERSION        52
+#define JAVA_MAX_SUPPORTED_VERSION        53
 #define JAVA_MAX_SUPPORTED_MINOR_VERSION  0
 
 // Used for two backward compatibility reasons:
@@ -99,6 +100,8 @@
 
 // Extension method support.
 #define JAVA_8_VERSION                    52
+
+#define JAVA_9_VERSION                    53
 
 enum { LegalClass, LegalField, LegalMethod }; // used to verify unqualified names
 
@@ -2705,7 +2708,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
                                      ConstMethod::NORMAL,
                                      CHECK_NULL);
 
-  ClassLoadingService::add_class_method_size(m->size()*HeapWordSize);
+  ClassLoadingService::add_class_method_size(m->size()*wordSize);
 
   // Fill in information from fixed part (access_flags already set)
   m->set_constants(_cp);
@@ -4602,8 +4605,8 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
       }
     } else if (major_gte_15) {
       // Class file version in the interval [JAVA_1_5_VERSION, JAVA_8_VERSION)
-      if (!is_public || is_static || is_final || is_synchronized ||
-          is_native || !is_abstract || is_strict) {
+      if (!is_public || is_private || is_protected || is_static || is_final ||
+          is_synchronized || is_native || !is_abstract || is_strict) {
         is_illegal = true;
       }
     } else {
@@ -5347,30 +5350,12 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
   ClassLoadingService::notify_class_loaded(ik, false /* not shared class */);
 
   if (!is_internal()) {
-    if (TraceClassLoading) {
-      ResourceMark rm;
-      // print in a single call to reduce interleaving of output
-      if (_stream->source() != NULL) {
-        tty->print("[Loaded %s from %s]\n",
-                   ik->external_name(),
-                   _stream->source());
-      } else if (_loader_data->class_loader() == NULL) {
-        const Klass* const caller =
-          THREAD->is_Java_thread()
-                ? ((JavaThread*)THREAD)->security_get_caller_class(1)
-                : NULL;
-        // caller can be NULL, for example, during a JVMTI VM_Init hook
-        if (caller != NULL) {
-          tty->print("[Loaded %s by instance of %s]\n",
-                     ik->external_name(),
-                     caller->external_name());
-        } else {
-          tty->print("[Loaded %s]\n", ik->external_name());
-        }
-      } else {
-        tty->print("[Loaded %s from %s]\n", ik->external_name(),
-                   _loader_data->class_loader()->klass()->external_name());
-      }
+    if (log_is_enabled(Info, classload)) {
+      ik->print_loading_log(LogLevel::Info, _loader_data, _stream);
+    }
+    // No 'else' here as logging levels are not mutually exclusive
+    if (log_is_enabled(Debug, classload)) {
+      ik->print_loading_log(LogLevel::Debug, _loader_data, _stream);
     }
 
     if (log_is_enabled(Info, classresolve))  {

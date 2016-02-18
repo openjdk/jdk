@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ int ConstMethod::size(int code_size,
 
   int extra_words = align_size_up(extra_bytes, BytesPerWord) / BytesPerWord;
   assert(extra_words == extra_bytes/BytesPerWord, "should already be aligned");
-  return align_object_size(header_size() + extra_words);
+  return align_metadata_size(header_size() + extra_words);
 }
 
 Method* ConstMethod::method() const {
@@ -492,6 +492,6 @@ void ConstMethod::verify_on(outputStream* st) {
       uncompressed_table_start = (u2*) m_end;
   }
   int gap = (intptr_t) uncompressed_table_start - (intptr_t) compressed_table_end;
-  int max_gap = align_object_size(1)*BytesPerWord;
+  int max_gap = align_metadata_size(1)*BytesPerWord;
   guarantee(gap >= 0 && gap < max_gap, "invalid method layout");
 }

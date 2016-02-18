@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,9 +289,9 @@ HeapWord* GenCollectedHeap::attempt_allocation(size_t size,
 
 HeapWord* GenCollectedHeap::mem_allocate(size_t size,
                                          bool* gc_overhead_limit_was_exceeded) {
-  return collector_policy()->mem_allocate_work(size,
-                                               false /* is_tlab */,
-                                               gc_overhead_limit_was_exceeded);
+  return gen_policy()->mem_allocate_work(size,
+                                         false /* is_tlab */,
+                                         gc_overhead_limit_was_exceeded);
 }
 
 bool GenCollectedHeap::must_clear_all_soft_refs() {
@@ -458,7 +458,6 @@ void GenCollectedHeap::do_collection(bool           full,
         prepared_for_verification = true;
       }
 
-      assert(!_young_gen->performs_in_place_marking(), "No young generation do in place marking");
       collect_generation(_young_gen,
                          full,
                          size,
@@ -482,14 +481,10 @@ void GenCollectedHeap::do_collection(bool           full,
         increment_total_full_collections();
       }
 
-      pre_full_gc_dump(NULL);    // do any pre full gc dumps
-
       if (!prepared_for_verification && run_verification &&
           VerifyGCLevel <= 1 && VerifyBeforeGC) {
         prepare_for_verify();
       }
-
-      assert(_old_gen->performs_in_place_marking(), "All old generations do in place marking");
 
       if (do_young_collection) {
         // We did a young GC. Need a new GC id for the old GC.
@@ -509,11 +504,6 @@ void GenCollectedHeap::do_collection(bool           full,
     // for instance, a promotion failure could have led to
     // a whole heap collection.
     complete = complete || collected_old;
-
-    if (complete) { // We did a full collection
-      // FIXME: See comment at pre_full_gc_dump call
-      post_full_gc_dump(NULL);   // do any post full gc dumps
-    }
 
     print_heap_change(young_prev_used, old_prev_used);
     MetaspaceAux::print_metaspace_change(metadata_prev_used);
@@ -551,7 +541,7 @@ void GenCollectedHeap::do_collection(bool           full,
 }
 
 HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
-  return collector_policy()->satisfy_failed_allocation(size, is_tlab);
+  return gen_policy()->satisfy_failed_allocation(size, is_tlab);
 }
 
 #ifdef ASSERT
@@ -988,9 +978,9 @@ size_t GenCollectedHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 
 HeapWord* GenCollectedHeap::allocate_new_tlab(size_t size) {
   bool gc_overhead_limit_was_exceeded;
-  return collector_policy()->mem_allocate_work(size /* size */,
-                                               true /* is_tlab */,
-                                               &gc_overhead_limit_was_exceeded);
+  return gen_policy()->mem_allocate_work(size /* size */,
+                                         true /* is_tlab */,
+                                         &gc_overhead_limit_was_exceeded);
 }
 
 // Requires "*prev_ptr" to be non-NULL.  Deletes and a block of minimal size
