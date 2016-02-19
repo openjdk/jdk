@@ -75,7 +75,7 @@ public class TestOptionsWithRanges {
         int failedTests;
         List<JVMOption> allOptions;
 
-        allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap();
+        allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap(origin -> (!(origin.contains("develop") || origin.contains("notproduct"))));
 
         /* Shared flags can cause JVM to exit with error code 2 */
         setAllowedExitCodes("SharedReadWriteSize", 2);
