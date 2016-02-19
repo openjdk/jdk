@@ -372,6 +372,7 @@ class JvmtiExport : public AllStatic {
   static void transition_pending_onload_raw_monitors() NOT_JVMTI_RETURN;
 
   // attach support
+  static jint load_agent_library(const char *agent, const char *absParam, const char *options, outputStream* out) NOT_JVMTI_RETURN_(JNI_ERR);
   static jint load_agent_library(AttachOperation* op, outputStream* out) NOT_JVMTI_RETURN_(JNI_ERR);
 
   // SetNativeMethodPrefix support

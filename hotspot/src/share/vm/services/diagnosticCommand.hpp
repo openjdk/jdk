@@ -174,6 +174,26 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class JVMTIAgentLoadDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _libpath;
+  DCmdArgument<char*> _option;
+public:
+  JVMTIAgentLoadDCmd(outputStream* output, bool heap);
+  static const char* name() { return "JVMTI.agent_load"; }
+  static const char* description() {
+    return "Load JVMTI native agent.";
+  }
+  static const char* impact() { return "Low"; }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "control", NULL};
+    return p;
+  }
+  static int num_arguments();
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 class VMDynamicLibrariesDCmd : public DCmd {
 public:
   VMDynamicLibrariesDCmd(outputStream* output, bool heap);
