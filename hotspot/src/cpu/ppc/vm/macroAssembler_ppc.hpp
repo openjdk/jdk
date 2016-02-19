@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -679,6 +679,39 @@ class MacroAssembler: public Assembler {
 
   void clear_memory_doubleword(Register base_ptr, Register cnt_dwords, Register tmp = R0);
 
+#ifdef COMPILER2
+  // Intrinsics for CompactStrings
+  // Compress char[] to byte[] by compressing 16 bytes at once.
+  void string_compress_16(Register src, Register dst, Register cnt,
+                          Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
+                          Label& Lfailure);
+
+  // Compress char[] to byte[]. cnt must be positive int.
+  void string_compress(Register src, Register dst, Register cnt, Register tmp, Label& Lfailure);
+
+  // Inflate byte[] to char[] by inflating 16 bytes at once.
+  void string_inflate_16(Register src, Register dst, Register cnt,
+                         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
+
+  // Inflate byte[] to char[]. cnt must be positive int.
+  void string_inflate(Register src, Register dst, Register cnt, Register tmp);
+
+  void string_compare(Register str1, Register str2, Register cnt1, Register cnt2,
+                      Register tmp1, Register result, int ae);
+
+  void array_equals(bool is_array_equ, Register ary1, Register ary2,
+                    Register limit, Register tmp1, Register result, bool is_byte);
+
+  void string_indexof(Register result, Register haystack, Register haycnt,
+                      Register needle, ciTypeArray* needle_values, Register needlecnt, int needlecntval,
+                      Register tmp1, Register tmp2, Register tmp3, Register tmp4, int ae);
+
+  void string_indexof_char(Register result, Register haystack, Register haycnt,
+                           Register needle, jchar needleChar, Register tmp1, Register tmp2, bool is_byte);
+
+  void has_negatives(Register src, Register cnt, Register result, Register tmp1, Register tmp2);
+
+  // Intrinsics for non-CompactStrings
   // Needle of length 1.
   void string_indexof_1(Register result, Register haystack, Register haycnt,
                         Register needle, jchar needleChar,
@@ -694,6 +727,7 @@ class MacroAssembler: public Assembler {
                           Register tmp5_reg);
   void char_arrays_equalsImm(Register str1_reg, Register str2_reg, int cntval, Register result_reg,
                              Register tmp1_reg, Register tmp2_reg);
+#endif
 
   // Emitters for BigInteger.multiplyToLen intrinsic.
   inline void multiply64(Register dest_hi, Register dest_lo,

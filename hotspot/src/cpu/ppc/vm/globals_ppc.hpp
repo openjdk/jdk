@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,7 @@ define_pd_global(size_t, CMSYoungGenPerWorker, 16*M);  // Default max size of CM
 
 define_pd_global(uintx, TypeProfileLevel, 111);
 
-// No performance work done here yet.
-define_pd_global(bool, CompactStrings, false);
+define_pd_global(bool, CompactStrings, true);
 
 // Platform dependent flag handling: flags only defined on this platform.
 #define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct, range, constraint)  \
