@@ -158,9 +158,20 @@ OPT_CFLAGS/NO_TAIL_CALL_OPT  = -Wu,-O~yz
 OPT_CCFLAGS/NO_TAIL_CALL_OPT = -Qoption ube -O~yz
 OPT_CFLAGS/stubGenerator_x86_32.o = $(OPT_CFLAGS) -xspace
 OPT_CFLAGS/stubGenerator_x86_64.o = $(OPT_CFLAGS) -xspace
+# The debug flag is added to OPT_CFLAGS, but lost in case of per-file overrides
+# of OPT_CFLAGS. Restore it here.
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+   OPT_CFLAGS/stubGenerator_x86_32.o += -g0 -xs
+   OPT_CFLAGS/stubGenerator_x86_64.o += -g0 -xs
+endif
 endif # Platform_arch == x86
 ifeq ("${Platform_arch}", "sparc")
 OPT_CFLAGS/stubGenerator_sparc.o = $(OPT_CFLAGS) -xspace
+# The debug flag is added to OPT_CFLAGS, but lost in case of per-file overrides
+# of OPT_CFLAGS. Restore it here.
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+   OPT_CFLAGS/stubGenerator_sparc.o += -g0 -xs
+endif
 endif
 endif # COMPILER_REV_NUMERIC >= 509
 
