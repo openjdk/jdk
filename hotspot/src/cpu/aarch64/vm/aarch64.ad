@@ -13281,7 +13281,7 @@ instruct MoveF2I_reg_reg(iRegINoSp dst, vRegF src) %{
     __ fmovs($dst$$Register, as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_f2i);
 
 %}
 
@@ -13299,7 +13299,7 @@ instruct MoveI2F_reg_reg(vRegF dst, iRegI src) %{
     __ fmovs(as_FloatRegister($dst$$reg), $src$$Register);
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_i2f);
 
 %}
 
@@ -13317,7 +13317,7 @@ instruct MoveD2L_reg_reg(iRegLNoSp dst, vRegD src) %{
     __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_d2l);
 
 %}
 
@@ -13335,7 +13335,7 @@ instruct MoveL2D_reg_reg(vRegD dst, iRegL src) %{
     __ fmovd(as_FloatRegister($dst$$reg), $src$$Register);
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_l2d);
 
 %}
 
@@ -16502,7 +16502,7 @@ instruct vsll2I(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift64_imm);
+  ins_pipe(vshift64);
 %}
 
 instruct vsll4I(vecX dst, vecX src, vecX shift) %{
@@ -16516,7 +16516,7 @@ instruct vsll4I(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift128_imm);
+  ins_pipe(vshift128);
 %}
 
 instruct vsrl2I(vecD dst, vecD src, vecX shift) %{
@@ -16529,7 +16529,7 @@ instruct vsrl2I(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift64_imm);
+  ins_pipe(vshift64);
 %}
 
 instruct vsrl4I(vecX dst, vecX src, vecX shift) %{
@@ -16542,7 +16542,7 @@ instruct vsrl4I(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift128_imm);
+  ins_pipe(vshift128);
 %}
 
 instruct vsll2I_imm(vecD dst, vecD src, immI shift) %{
@@ -16660,7 +16660,7 @@ instruct vsll2L_imm(vecX dst, vecX src, immI shift) %{
            as_FloatRegister($src$$reg),
            (int)$shift$$constant & 63);
   %}
-  ins_pipe(vshift128);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsra2L_imm(vecX dst, vecX src, immI shift) %{
