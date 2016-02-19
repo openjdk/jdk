@@ -2777,12 +2777,6 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 }
 
 void G1CollectedHeap::print_tracing_info() const {
-  // We'll overload this to mean "trace GC pause statistics."
-  if (TraceYoungGenTime || TraceOldGenTime) {
-    // The "G1CollectorPolicy" is keeping track of these stats, so delegate
-    // to that.
-    g1_policy()->print_tracing_info();
-  }
   g1_rem_set()->print_summary_info();
   concurrent_mark()->print_summary_info();
   g1_policy()->print_yg_surv_rate_info();
@@ -2908,7 +2902,6 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
                                                bool* succeeded,
                                                GCCause::Cause gc_cause) {
   assert_heap_not_locked_and_not_at_safepoint();
-  g1_policy()->record_stop_world_start();
   VM_G1IncCollectionPause op(gc_count_before,
                              word_size,
                              false, /* should_initiate_conc_mark */
