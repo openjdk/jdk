@@ -56,7 +56,7 @@
 // forward declaration for class -- see below for definition
 class BreakpointInfo;
 class ClassFileParser;
-class DepChange;
+class KlassDepChange;
 class DependencyContext;
 class fieldDescriptor;
 class jniIdMapBase;
@@ -821,7 +821,7 @@ public:
 
   // maintenance of deoptimization dependencies
   inline DependencyContext dependencies();
-  int  mark_dependent_nmethods(DepChange& changes);
+  int  mark_dependent_nmethods(KlassDepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
   void remove_dependent_nmethod(nmethod* nm, bool delete_immediately);
 
