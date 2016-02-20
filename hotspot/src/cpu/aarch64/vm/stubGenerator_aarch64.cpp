@@ -741,6 +741,7 @@ class StubGenerator: public StubCodeGenerator {
   void generate_copy_longs(Label &start, Register s, Register d, Register count,
                            copy_direction direction) {
     int unit = wordSize * direction;
+    int bias = (UseSIMDForMemoryOps ? 4:2) * wordSize;
 
     int offset;
     const Register t0 = r3, t1 = r4, t2 = r5, t3 = r6,
@@ -760,8 +761,8 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     __ bind(start);
     if (direction == copy_forwards) {
-      __ sub(s, s, 2 * wordSize);
-      __ sub(d, d, 2 * wordSize);
+      __ sub(s, s, bias);
+      __ sub(d, d, bias);
     }
 
 #ifdef ASSERT
@@ -776,10 +777,15 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     // Fill 8 registers
-    __ ldp(t0, t1, Address(s, 2 * unit));
-    __ ldp(t2, t3, Address(s, 4 * unit));
-    __ ldp(t4, t5, Address(s, 6 * unit));
-    __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
+    if (UseSIMDForMemoryOps) {
+      __ ldpq(v0, v1, Address(s, 4 * unit));
+      __ ldpq(v2, v3, Address(__ pre(s, 8 * unit)));
+    } else {
+      __ ldp(t0, t1, Address(s, 2 * unit));
+      __ ldp(t2, t3, Address(s, 4 * unit));
+      __ ldp(t4, t5, Address(s, 6 * unit));
+      __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
+    }
 
     __ subs(count, count, 16);
     __ br(Assembler::LO, drain);
@@ -797,38 +803,55 @@ class StubGenerator: public StubCodeGenerator {
     if (PrefetchCopyIntervalInBytes > 0)
       __ prfm(use_stride ? Address(s, stride) : Address(s, prefetch), PLDL1KEEP);
 
-    __ stp(t0, t1, Address(d, 2 * unit));
-    __ ldp(t0, t1, Address(s, 2 * unit));
-    __ stp(t2, t3, Address(d, 4 * unit));
-    __ ldp(t2, t3, Address(s, 4 * unit));
-    __ stp(t4, t5, Address(d, 6 * unit));
-    __ ldp(t4, t5, Address(s, 6 * unit));
-    __ stp(t6, t7, Address(__ pre(d, 8 * unit)));
-    __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
+    if (UseSIMDForMemoryOps) {
+      __ stpq(v0, v1, Address(d, 4 * unit));
+      __ ldpq(v0, v1, Address(s, 4 * unit));
+      __ stpq(v2, v3, Address(__ pre(d, 8 * unit)));
+      __ ldpq(v2, v3, Address(__ pre(s, 8 * unit)));
+    } else {
+      __ stp(t0, t1, Address(d, 2 * unit));
+      __ ldp(t0, t1, Address(s, 2 * unit));
+      __ stp(t2, t3, Address(d, 4 * unit));
+      __ ldp(t2, t3, Address(s, 4 * unit));
+      __ stp(t4, t5, Address(d, 6 * unit));
+      __ ldp(t4, t5, Address(s, 6 * unit));
+      __ stp(t6, t7, Address(__ pre(d, 8 * unit)));
+      __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
+    }
 
     __ subs(count, count, 8);
     __ br(Assembler::HS, again);
 
     // Drain
     __ bind(drain);
-    __ stp(t0, t1, Address(d, 2 * unit));
-    __ stp(t2, t3, Address(d, 4 * unit));
-    __ stp(t4, t5, Address(d, 6 * unit));
-    __ stp(t6, t7, Address(__ pre(d, 8 * unit)));
-
-    if (direction == copy_forwards) {
-      __ add(s, s, 2 * wordSize);
-      __ add(d, d, 2 * wordSize);
+    if (UseSIMDForMemoryOps) {
+      __ stpq(v0, v1, Address(d, 4 * unit));
+      __ stpq(v2, v3, Address(__ pre(d, 8 * unit)));
+    } else {
+      __ stp(t0, t1, Address(d, 2 * unit));
+      __ stp(t2, t3, Address(d, 4 * unit));
+      __ stp(t4, t5, Address(d, 6 * unit));
+      __ stp(t6, t7, Address(__ pre(d, 8 * unit)));
     }
 
     {
       Label L1, L2;
       __ tbz(count, exact_log2(4), L1);
-      __ ldp(t0, t1, Address(__ adjust(s, 2 * unit, direction == copy_backwards)));
-      __ ldp(t2, t3, Address(__ adjust(s, 2 * unit, direction == copy_backwards)));
-      __ stp(t0, t1, Address(__ adjust(d, 2 * unit, direction == copy_backwards)));
-      __ stp(t2, t3, Address(__ adjust(d, 2 * unit, direction == copy_backwards)));
+      if (UseSIMDForMemoryOps) {
+        __ ldpq(v0, v1, Address(__ pre(s, 4 * unit)));
+        __ stpq(v0, v1, Address(__ pre(d, 4 * unit)));
+      } else {
+        __ ldp(t0, t1, Address(s, 2 * unit));
+        __ ldp(t2, t3, Address(__ pre(s, 4 * unit)));
+        __ stp(t0, t1, Address(d, 2 * unit));
+        __ stp(t2, t3, Address(__ pre(d, 4 * unit)));
+      }
       __ bind(L1);
+
+      if (direction == copy_forwards) {
+        __ add(s, s, 2 * wordSize);
+        __ add(d, d, 2 * wordSize);
+      }
 
       __ tbz(count, 1, L2);
       __ ldp(t0, t1, Address(__ adjust(s, 2 * unit, direction == copy_backwards)));
@@ -914,8 +937,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (PrefetchCopyIntervalInBytes > 0)
       __ prfm(Address(s, 0), PLDL1KEEP);
-
-    __ cmp(count, 80/granularity);
+    __ cmp(count, (UseSIMDForMemoryOps ? 96:80)/granularity);
     __ br(Assembler::HI, copy_big);
 
     __ lea(send, Address(s, count, Address::lsl(exact_log2(granularity))));
@@ -931,15 +953,22 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::LS, copy32);
 
     // 33..64 bytes
-    __ ldp(t0, t1, Address(s, 0));
-    __ ldp(t2, t3, Address(s, 16));
-    __ ldp(t4, t5, Address(send, -32));
-    __ ldp(t6, t7, Address(send, -16));
+    if (UseSIMDForMemoryOps) {
+      __ ldpq(v0, v1, Address(s, 0));
+      __ ldpq(v2, v3, Address(send, -32));
+      __ stpq(v0, v1, Address(d, 0));
+      __ stpq(v2, v3, Address(dend, -32));
+    } else {
+      __ ldp(t0, t1, Address(s, 0));
+      __ ldp(t2, t3, Address(s, 16));
+      __ ldp(t4, t5, Address(send, -32));
+      __ ldp(t6, t7, Address(send, -16));
 
-    __ stp(t0, t1, Address(d, 0));
-    __ stp(t2, t3, Address(d, 16));
-    __ stp(t4, t5, Address(dend, -32));
-    __ stp(t6, t7, Address(dend, -16));
+      __ stp(t0, t1, Address(d, 0));
+      __ stp(t2, t3, Address(d, 16));
+      __ stp(t4, t5, Address(dend, -32));
+      __ stp(t6, t7, Address(dend, -16));
+    }
     __ b(finish);
 
     // 17..32 bytes
@@ -950,19 +979,29 @@ class StubGenerator: public StubCodeGenerator {
     __ stp(t2, t3, Address(dend, -16));
     __ b(finish);
 
-    // 65..80 bytes
+    // 65..80/96 bytes
+    // (96 bytes if SIMD because we do 32 byes per instruction)
     __ bind(copy80);
-    __ ldp(t0, t1, Address(s, 0));
-    __ ldp(t2, t3, Address(s, 16));
-    __ ldp(t4, t5, Address(s, 32));
-    __ ldp(t6, t7, Address(s, 48));
-    __ ldp(t8, t9, Address(send, -16));
+    if (UseSIMDForMemoryOps) {
+      __ ldpq(v0, v1, Address(s, 0));
+      __ ldpq(v2, v3, Address(s, 32));
+      __ ldpq(v4, v5, Address(send, -32));
+      __ stpq(v0, v1, Address(d, 0));
+      __ stpq(v2, v3, Address(d, 32));
+      __ stpq(v4, v5, Address(dend, -32));
+    } else {
+      __ ldp(t0, t1, Address(s, 0));
+      __ ldp(t2, t3, Address(s, 16));
+      __ ldp(t4, t5, Address(s, 32));
+      __ ldp(t6, t7, Address(s, 48));
+      __ ldp(t8, t9, Address(send, -16));
 
-    __ stp(t0, t1, Address(d, 0));
-    __ stp(t2, t3, Address(d, 16));
-    __ stp(t4, t5, Address(d, 32));
-    __ stp(t6, t7, Address(d, 48));
-    __ stp(t8, t9, Address(dend, -16));
+      __ stp(t0, t1, Address(d, 0));
+      __ stp(t2, t3, Address(d, 16));
+      __ stp(t4, t5, Address(d, 32));
+      __ stp(t6, t7, Address(d, 48));
+      __ stp(t8, t9, Address(dend, -16));
+    }
     __ b(finish);
 
     // 0..16 bytes
