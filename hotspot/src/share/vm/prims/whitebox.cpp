@@ -34,6 +34,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/universe.hpp"
+#include "oops/constantPool.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
 #include "prims/whitebox.hpp"
@@ -1305,6 +1306,38 @@ WB_ENTRY(jlong, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
   return (jlong) ikh->constants();
 WB_END
 
+WB_ENTRY(jint, WB_GetConstantPoolCacheIndexTag(JNIEnv* env, jobject wb))
+  return ConstantPool::CPCACHE_INDEX_TAG;
+WB_END
+
+WB_ENTRY(jint, WB_GetConstantPoolCacheLength(JNIEnv* env, jobject wb, jclass klass))
+  instanceKlassHandle ikh(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ikh->constants();
+  if (cp->cache() == NULL) {
+      return -1;
+  }
+  return cp->cache()->length();
+WB_END
+
+WB_ENTRY(jint, WB_ConstantPoolRemapInstructionOperandFromCache(JNIEnv* env, jobject wb, jclass klass, jint index))
+  instanceKlassHandle ikh(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ikh->constants();
+  if (cp->cache() == NULL) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalStateException(), "Constant pool does not have a cache");
+  }
+  jint cpci = index;
+  jint cpciTag = ConstantPool::CPCACHE_INDEX_TAG;
+  if (cpciTag > cpci || cpci >= cp->cache()->length() + cpciTag) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Constant pool cache index is out of range");
+  }
+  jint cpi = cp->remap_instruction_operand_from_cache(cpci);
+  return cpi;
+WB_END
+
+WB_ENTRY(jint, WB_ConstantPoolEncodeIndyIndex(JNIEnv* env, jobject wb, jint index))
+  return ConstantPool::encode_invokedynamic_index(index);
+WB_END
+
 WB_ENTRY(void, WB_ClearInlineCaches(JNIEnv* env, jobject wb))
   VM_ClearICs clear_ics;
   VMThread::execute(&clear_ics);
@@ -1620,6 +1653,12 @@ static JNINativeMethod methods[] = {
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
+  {CC"getConstantPoolCacheIndexTag0", CC"()I",  (void*)&WB_GetConstantPoolCacheIndexTag},
+  {CC"getConstantPoolCacheLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_GetConstantPoolCacheLength},
+  {CC"remapInstructionOperandFromCPCache0",
+      CC"(Ljava/lang/Class;I)I",                      (void*)&WB_ConstantPoolRemapInstructionOperandFromCache},
+  {CC"encodeConstantPoolIndyIndex0",
+      CC"(I)I",                      (void*)&WB_ConstantPoolEncodeIndyIndex},
   {CC"getMethodBooleanOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Boolean;",
                                                       (void*)&WB_GetMethodBooleaneOption},
