@@ -896,13 +896,25 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
       break;
     }
 
-    case T_SHORT: case T_CHAR: // 2 bytes
+    case T_SHORT:
       assert(value->type() == T_INT, "Agreement.");
       val = value->get_int();
       obj->short_at_put(index, (jshort)*((jint*)&val));
       break;
 
-    case T_BOOLEAN: case T_BYTE: // 1 byte
+    case T_CHAR:
+      assert(value->type() == T_INT, "Agreement.");
+      val = value->get_int();
+      obj->char_at_put(index, (jchar)*((jint*)&val));
+      break;
+
+    case T_BYTE:
+      assert(value->type() == T_INT, "Agreement.");
+      val = value->get_int();
+      obj->byte_at_put(index, (jbyte)*((jint*)&val));
+      break;
+
+    case T_BOOLEAN:
       assert(value->type() == T_INT, "Agreement.");
       val = value->get_int();
       obj->bool_at_put(index, (jboolean)*((jint*)&val));
@@ -1017,13 +1029,25 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
         break;
       }
 
-      case T_SHORT: case T_CHAR: // 2 bytes
+      case T_SHORT:
         assert(value->type() == T_INT, "Agreement.");
         val = value->get_int();
         obj->short_field_put(offset, (jshort)*((jint*)&val));
         break;
 
-      case T_BOOLEAN: case T_BYTE: // 1 byte
+      case T_CHAR:
+        assert(value->type() == T_INT, "Agreement.");
+        val = value->get_int();
+        obj->char_field_put(offset, (jchar)*((jint*)&val));
+        break;
+
+      case T_BYTE:
+        assert(value->type() == T_INT, "Agreement.");
+        val = value->get_int();
+        obj->byte_field_put(offset, (jbyte)*((jint*)&val));
+        break;
+
+      case T_BOOLEAN:
         assert(value->type() == T_INT, "Agreement.");
         val = value->get_int();
         obj->bool_field_put(offset, (jboolean)*((jint*)&val));
