@@ -119,6 +119,28 @@ public class WhiteBox {
     return getConstantPool0(aClass);
   }
 
+  private native int getConstantPoolCacheIndexTag0();
+  public         int getConstantPoolCacheIndexTag() {
+    return getConstantPoolCacheIndexTag0();
+  }
+
+  private native int getConstantPoolCacheLength0(Class<?> aClass);
+  public         int getConstantPoolCacheLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getConstantPoolCacheLength0(aClass);
+  }
+
+  private native int remapInstructionOperandFromCPCache0(Class<?> aClass, int index);
+  public         int remapInstructionOperandFromCPCache(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return remapInstructionOperandFromCPCache0(aClass, index);
+  }
+
+  private native int encodeConstantPoolIndyIndex0(int index);
+  public         int encodeConstantPoolIndyIndex(int index) {
+    return encodeConstantPoolIndyIndex0(index);
+  }
+
   // JVMTI
   private native void addToBootstrapClassLoaderSearch0(String segment);
   public         void addToBootstrapClassLoaderSearch(String segment){
