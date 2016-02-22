@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,31 @@
  * questions.
  */
 
-/*
- * @test TestPrintGCDetailsVerbose
- * @bug 8016740
- * @summary Tests that jvm with maximally verbose GC logging does not crash when ParOldGC has no memory
- * @key gc
- * @requires vm.gc=="Parallel" | vm.gc=="null"
- * @library /testlibrary
- * @run main/othervm -Xmx50m -XX:+UseParallelGC -Xlog:gc*=trace TestPrintGCDetailsVerbose
- */
-public class TestPrintGCDetailsVerbose {
+package optionsvalidation;
 
-    public static void main(String[] args) {
-        for (int t = 0; t <= 10; t++) {
-            byte a[][] = new byte[100000][];
-            try {
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = new byte[100000];
-                }
-            } catch (OutOfMemoryError oome) {
-                a = null;
-                System.out.println("OOM!");
-                continue;
+import java.lang.ref.WeakReference;
+
+class JVMStartup {
+    private static volatile WeakReference<Object> weakRef;
+
+    private static synchronized void createWeakRef() {
+        Object o = new Object();
+        weakRef = new WeakReference<>(o);
+    }
+
+    /* Simple method to test that java start-up. Used for testing options. */
+    public static void main(String[] args) throws Exception {
+        byte[] garbage = new byte[8192];
+        int i = 0;
+        createWeakRef();
+        do {
+            garbage = new byte[8192];
+            i++;
+            /* Initiate GC after 5 iterations */
+            if (i > 5) {
+                System.gc();
             }
-        }
+        } while(weakRef.get() != null);
+        System.out.println("Java start-up!");
     }
 }
-
