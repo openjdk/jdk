@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,8 +150,8 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   }
 #if defined(COMPILER2) || INCLUDE_JVMCI
   if (save_vectors) {
-    assert(UseAVX > 0, "512bit vectors are supported only with EVEX");
-    assert(MaxVectorSize == 64, "only 512bit vectors are supported now");
+    assert(UseAVX > 0, "up to 512bit vectors are supported with EVEX");
+    assert(MaxVectorSize <= 64, "up to 512bit vectors are supported now");
   }
 #else
   assert(!save_vectors, "vectors are generated only by C2 and JVMCI");
@@ -176,18 +176,18 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 
   // push cpu state handles this on EVEX enabled targets
   if (save_vectors) {
-    // Save upper half of YMM registes(0..15)
+    // Save upper half of YMM registers(0..15)
     int base_addr = XSAVE_AREA_YMM_BEGIN;
     for (int n = 0; n < 16; n++) {
       __ vextractf128h(Address(rsp, base_addr+n*16), as_XMMRegister(n));
     }
     if (VM_Version::supports_evex()) {
-      // Save upper half of ZMM registes(0..15)
+      // Save upper half of ZMM registers(0..15)
       base_addr = XSAVE_AREA_ZMM_BEGIN;
       for (int n = 0; n < 16; n++) {
         __ vextractf64x4h(Address(rsp, base_addr+n*32), as_XMMRegister(n), 1);
       }
-      // Save full ZMM registes(16..num_xmm_regs)
+      // Save full ZMM registers(16..num_xmm_regs)
       base_addr = XSAVE_AREA_UPPERBANK;
       off = 0;
       int vector_len = Assembler::AVX_512bit;
@@ -321,8 +321,8 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
 
 #if defined(COMPILER2) || INCLUDE_JVMCI
   if (restore_vectors) {
-    assert(UseAVX > 0, "512bit vectors are supported only with EVEX");
-    assert(MaxVectorSize == 64, "only 512bit vectors are supported now");
+    assert(UseAVX > 0, "up to 512bit vectors are supported with EVEX");
+    assert(MaxVectorSize <= 64, "up to 512bit vectors are supported now");
   }
 #else
   assert(!restore_vectors, "vectors are generated only by C2");
@@ -330,18 +330,18 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
 
   // On EVEX enabled targets everything is handled in pop fpu state
   if (restore_vectors) {
-    // Restore upper half of YMM registes (0..15)
+    // Restore upper half of YMM registers (0..15)
     int base_addr = XSAVE_AREA_YMM_BEGIN;
     for (int n = 0; n < 16; n++) {
       __ vinsertf128h(as_XMMRegister(n), Address(rsp,  base_addr+n*16));
     }
     if (VM_Version::supports_evex()) {
-      // Restore upper half of ZMM registes (0..15)
+      // Restore upper half of ZMM registers (0..15)
       base_addr = XSAVE_AREA_ZMM_BEGIN;
       for (int n = 0; n < 16; n++) {
         __ vinsertf64x4h(as_XMMRegister(n), Address(rsp, base_addr+n*32), 1);
       }
-      // Restore full ZMM registes(16..num_xmm_regs)
+      // Restore full ZMM registers(16..num_xmm_regs)
       base_addr = XSAVE_AREA_UPPERBANK;
       int vector_len = Assembler::AVX_512bit;
       int off = 0;
@@ -351,7 +351,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     }
   } else {
     if (VM_Version::supports_evex()) {
-      // Restore upper bank of ZMM registes(16..31) for double/float usage
+      // Restore upper bank of ZMM registers(16..31) for double/float usage
       int base_addr = XSAVE_AREA_UPPERBANK;
       int off = 0;
       for (int n = 16; n < num_xmm_regs; n++) {

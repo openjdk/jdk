@@ -3822,8 +3822,8 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
   assert(vtable_index >= 0 || vtable_index == Method::nonvirtual_vtable_index,
          "bad index %d", vtable_index);
   // Get the Method* out of the appropriate vtable entry.
-  int entry_offset  = (InstanceKlass::vtable_start_offset() +
-                     vtable_index*vtableEntry::size()) * wordSize +
+  int entry_offset  = in_bytes(Klass::vtable_start_offset()) +
+                     vtable_index*vtableEntry::size_in_bytes() +
                      vtableEntry::method_offset_in_bytes();
   Node* entry_addr  = basic_plus_adr(obj_klass, entry_offset);
   Node* target_call = make_load(NULL, entry_addr, TypePtr::NOTNULL, T_ADDRESS, MemNode::unordered);

@@ -28,62 +28,97 @@ package com.sun.xml.internal.ws.api.pipe;
 import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Simple utility class to instantiate correct Thread instance
- * depending on runtime context (jdk/non-jdk usage)
+ * depending on runtime context (jdk/non-jdk usage) and Java version.
  *
  * @author miroslav.kos@oracle.com
  */
 final class ThreadHelper {
 
     private static final String SAFE_THREAD_NAME = "sun.misc.ManagedLocalsThread";
-    private static final Constructor THREAD_CONSTRUCTOR;
+
+    private static final ThreadFactory threadFactory;
 
     // no instantiating wanted
     private ThreadHelper() {
     }
 
     static {
-        THREAD_CONSTRUCTOR = AccessController.doPrivileged(
-                new PrivilegedAction<Constructor> () {
+        threadFactory = AccessController.doPrivileged(
+                new PrivilegedAction<ThreadFactory> () {
                     @Override
-                    public Constructor run() {
+                    public ThreadFactory run() {
+                        // In order of preference
                         try {
-                            Class cls = Class.forName(SAFE_THREAD_NAME);
-                            if (cls != null) {
-                                return cls.getConstructor(Runnable.class);
+                            try {
+                                Class<Thread> cls = Thread.class;
+                                Constructor<Thread> ctr = cls.getConstructor(
+                                        ThreadGroup.class,
+                                        Runnable.class,
+                                        String.class,
+                                        long.class,
+                                        boolean.class);
+                                return new JDK9ThreadFactory(ctr);
+                            } catch (NoSuchMethodException ignored) {
+                                // constructor newly added in Java SE 9
                             }
+                            Class<?> cls = Class.forName(SAFE_THREAD_NAME);
+                            Constructor<?> ctr = cls.getConstructor(Runnable.class);
+                            return new SunMiscThreadFactory(ctr);
                         } catch (ClassNotFoundException ignored) {
                         } catch (NoSuchMethodException ignored) {
                         }
-                        return null;
+                        return new LegacyThreadFactory();
                     }
                 }
         );
     }
 
     static Thread createNewThread(final Runnable r) {
-        if (isJDKInternal()) {
-            return AccessController.doPrivileged(
-                    new PrivilegedAction<Thread>() {
-                        @Override
-                        public Thread run() {
-                            try {
-                                return (Thread) THREAD_CONSTRUCTOR.newInstance(r);
-                            } catch (Exception e) {
-                                return new Thread(r);
-                            }
-                        }
-                    }
-            );
-        } else {
-            return new Thread(r);
+        return threadFactory.newThread(r);
+    }
+
+    // A Thread factory backed by the Thread constructor that
+    // suppresses inheriting of inheritable thread-locals.
+    private static class JDK9ThreadFactory implements ThreadFactory {
+        final Constructor<Thread> ctr;
+        JDK9ThreadFactory(Constructor<Thread> ctr) { this.ctr = ctr; }
+        @Override public Thread newThread(Runnable r) {
+            try {
+                return ctr.newInstance(null, r, "toBeReplaced", 0, false);
+            } catch (ReflectiveOperationException x) {
+                throw new InternalError(x);
+            }
         }
     }
 
-    private static boolean isJDKInternal() {
-        String className = ThreadHelper.class.getName();
-        return className.contains(".internal.");
+    // A Thread factory backed by sun.misc.ManagedLocalsThread
+    private static class SunMiscThreadFactory implements ThreadFactory {
+        final Constructor<?> ctr;
+        SunMiscThreadFactory(Constructor<?> ctr) { this.ctr = ctr; }
+        @Override public Thread newThread(Runnable r) {
+            return AccessController.doPrivileged(
+                new PrivilegedAction<Thread>() {
+                    @Override
+                    public Thread run() {
+                        try {
+                            return (Thread) ctr.newInstance(r);
+                        } catch (Exception e) {
+                            return new Thread(r);
+                        }
+                    }
+                }
+            );
+        }
+    }
+
+    // A Thread factory backed by new Thread(Runnable)
+    private static class LegacyThreadFactory implements ThreadFactory {
+        @Override public Thread newThread(Runnable r) {
+            return new Thread(r);
+        }
     }
 }

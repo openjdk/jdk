@@ -1228,6 +1228,17 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
     }
 
     /**
+     * ECMA 6 21.1.3.27 String.prototype [ @@iterator ]( )
+     *
+     * @param self self reference
+     * @return a string iterator
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, name = "@@iterator")
+    public static Object getIterator(final Object self) {
+        return new StringIterator(checkObjectToString(self), Global.instance());
+    }
+
+    /**
      * Lookup the appropriate method for an invoke dynamic call.
      *
      * @param request  the link request

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.EnumSet;
 
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.util.Context;
@@ -66,10 +67,13 @@ public class JavadocClassFinder extends ClassFinder {
     private EnumSet<JavaFileObject.Kind> noSource = EnumSet.of(JavaFileObject.Kind.CLASS,
                                                                JavaFileObject.Kind.HTML);
 
+    private final JavacTrees trees;
+
     public JavadocClassFinder(Context context) {
         super(context);
         docenv = DocEnv.instance(context);
         preferSource = true;
+        trees = JavacTrees.instance(context);
     }
 
     /**
@@ -85,7 +89,9 @@ public class JavadocClassFinder extends ClassFinder {
      */
     @Override
     protected void extraFileActions(PackageSymbol pack, JavaFileObject fo) {
-        if (fo.isNameCompatible("package", JavaFileObject.Kind.HTML))
+        if (fo.isNameCompatible("package", JavaFileObject.Kind.HTML)) {
             docenv.pkgToJavaFOMap.put(pack, fo);
+            trees.putJavaFileObject(pack, fo);
+        }
     }
 }

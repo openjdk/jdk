@@ -121,12 +121,16 @@ public class RemovePollRace {
         final int SPINS = 5;
         final AtomicLong removes = new AtomicLong(0);
         final AtomicLong polls = new AtomicLong(0);
-        final int adderCount =
-            Math.max(1, Runtime.getRuntime().availableProcessors() / 4);
-        final int removerCount =
-            Math.max(1, Runtime.getRuntime().availableProcessors() / 4);
+
+        // We need at least 3 threads, but we don't want to use too
+        // many on massively multi-core systems.
+        final int cpus = Runtime.getRuntime().availableProcessors();
+        final int threadsToUse = Math.max(3, Math.min(cpus, 16));
+        final int adderCount = threadsToUse / 3;
+        final int removerCount = adderCount;
         final int pollerCount = removerCount;
         final int threadCount = adderCount + removerCount + pollerCount;
+
         final CountDownLatch startingGate = new CountDownLatch(1);
         final CountDownLatch addersDone = new CountDownLatch(adderCount);
         final Runnable remover = new Runnable() {

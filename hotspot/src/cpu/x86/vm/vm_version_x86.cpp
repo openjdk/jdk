@@ -1163,13 +1163,6 @@ void VM_Version::get_processor_features() {
   if( cache_line_size > AllocatePrefetchStepSize )
     AllocatePrefetchStepSize = cache_line_size;
 
-  assert(AllocatePrefetchLines > 0, "invalid value");
-  if( AllocatePrefetchLines < 1 )     // set valid value in product VM
-    AllocatePrefetchLines = 3;
-  assert(AllocateInstancePrefetchLines > 0, "invalid value");
-  if( AllocateInstancePrefetchLines < 1 ) // set valid value in product VM
-    AllocateInstancePrefetchLines = 1;
-
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
 
@@ -1183,7 +1176,9 @@ void VM_Version::get_processor_features() {
     }
     if (supports_sse4_2() && supports_ht()) { // Nehalem based cpus
       AllocatePrefetchDistance = 192;
-      AllocatePrefetchLines = 4;
+      if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) {
+        FLAG_SET_DEFAULT(AllocatePrefetchLines, 4);
+      }
     }
 #ifdef COMPILER2
     if (supports_sse4_2()) {

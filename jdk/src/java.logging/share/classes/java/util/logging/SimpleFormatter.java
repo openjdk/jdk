@@ -135,7 +135,7 @@ public class SimpleFormatter extends Formatter {
      *     SEVERE: several message with an exception
      *     </pre></li>
      * <li> {@code java.util.logging.SimpleFormatter.format="%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS.%1$tN %1$Tp %2$s%n%4$s: %5$s%6$s%n"}
-     *      <p>Since JDK 1.9, {@code java.util.logging} uses {@link
+     *      <p>Since JDK 9, {@code java.util.logging} uses {@link
      *         java.time.Clock#systemUTC() java.time} to create more precise time
      *         stamps.
      *         The format above can be used to add a {@code .%1$tN} to the

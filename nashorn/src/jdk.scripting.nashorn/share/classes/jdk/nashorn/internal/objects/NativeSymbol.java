@@ -37,6 +37,8 @@ import jdk.nashorn.internal.WeakValueCache;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
+import jdk.nashorn.internal.objects.annotations.Getter;
+import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
@@ -65,6 +67,12 @@ public final class NativeSymbol extends ScriptObject {
 
     /** See ES6 19.4.2.1 */
     private static WeakValueCache<String, Symbol> globalSymbolRegistry = new WeakValueCache<>();
+
+    /**
+     * ECMA 6 19.4.2.4 Symbol.iterator
+     */
+    @Property(where = Where.CONSTRUCTOR, attributes = Attribute.NON_ENUMERABLE_CONSTANT, name = "iterator")
+    public static final Symbol iterator = new Symbol("Symbol.iterator");
 
     NativeSymbol(final Symbol symbol) {
         this(symbol, Global.instance());

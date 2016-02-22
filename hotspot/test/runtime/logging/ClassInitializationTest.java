@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,10 @@ public class ClassInitializationTest {
     public static void main(String... args) throws Exception {
 
         // (1)
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:classinit=info", "-Xverify:all", "-Xmx64m", "BadMap50");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:classinit=info",
+                                                                  "-Xverify:all",
+                                                                  "-Xmx64m",
+                                                                  "BadMap50");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldContain("Start class verification for:");
         out.shouldContain("End class verification for:");
@@ -50,16 +53,29 @@ public class ClassInitializationTest {
 
         // (2)
         if (Platform.isDebugBuild()) {
-          pb = ProcessTools.createJavaProcessBuilder("-Xlog:classinit=info", "-Xverify:all", "-XX:+EagerInitialization", "-Xmx64m", "-version");
-          out = new OutputAnalyzer(pb.start());
-          out.shouldContain("[Initialized").shouldContain("without side effects]");
-          out.shouldHaveExitValue(0);
+            pb = ProcessTools.createJavaProcessBuilder("-Xlog:classinit=info",
+                                                       "-Xverify:all",
+                                                       "-XX:+EagerInitialization",
+                                                       "-Xmx64m",
+                                                       InnerClass.class.getName());
+            out = new OutputAnalyzer(pb.start());
+            out.shouldContain("[Initialized").shouldContain("without side effects]");
+            out.shouldHaveExitValue(0);
         }
         // (3) Ensure that VerboseVerification still triggers appropriate messages.
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:+VerboseVerification", "-Xverify:all", "-Xmx64m", "BadMap50");
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
+                                                   "-XX:+VerboseVerification",
+                                                   "-Xverify:all",
+                                                   "-Xmx64m",
+                                                   "BadMap50");
         out = new OutputAnalyzer(pb.start());
         out.shouldContain("End class verification for:");
         out.shouldContain("Verification for BadMap50 failed");
         out.shouldContain("Fail over class verification to old verifier for: BadMap50");
+    }
+    public static class InnerClass {
+        public static void main(String[] args) throws Exception {
+            System.out.println("Inner Class");
+        }
     }
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8005091 8009686 8025633 8026567
+ * @bug      8005091 8009686 8025633 8026567 6469562
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -260,13 +260,13 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/ThrWithValue.html", true,
                 "<pre>void&nbsp;oneException()\n"
                 + "           throws <a href=\"../typeannos/ThrB.html\" title=\""
-                + "annotation in typeannos\">@ThrB</a>(<a href=\"../typeannos/"
-                + "ThrB.html#value--\">value</a>=\"m\") java.lang.Exception</pre>",
+                + "annotation in typeannos\">@ThrB</a>("
+                + "\"m\") java.lang.Exception</pre>",
 
                 "<pre>void&nbsp;twoExceptions()\n"
                 + "            throws <a href=\"../typeannos/ThrB.html\" title=\""
-                + "annotation in typeannos\">@ThrB</a>(<a href=\"../typeannos/"
-                + "ThrB.html#value--\">value</a>=\"m\") java.lang.RuntimeException,\n"
+                + "annotation in typeannos\">@ThrB</a>("
+                + "\"m\") java.lang.RuntimeException,\n"
                 + "                   <a href=\"../typeannos/ThrA.html\" title=\""
                 + "annotation in typeannos\">@ThrA</a> java.lang.Exception</pre>");
 
@@ -293,14 +293,14 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/BoundWithValue.html", true,
                 "<pre>void&nbsp;wcSuper(<a href=\"../typeannos/MyList.html\" title=\""
                 + "class in typeannos\">MyList</a>&lt;? super <a href=\"../typeannos/"
-                + "WldB.html\" title=\"annotation in typeannos\">@WldB</a>(<a href=\""
-                + "../typeannos/WldB.html#value--\">value</a>=\"m\") java.lang."
+                + "WldB.html\" title=\"annotation in typeannos\">@WldB</a>("
+                + "\"m\") java.lang."
                 + "String&gt;&nbsp;l)</pre>",
 
                 "<pre><a href=\"../typeannos/MyList.html\" title=\"class in "
                 + "typeannos\">MyList</a>&lt;? extends <a href=\"../typeannos/WldB."
-                + "html\" title=\"annotation in typeannos\">@WldB</a>(<a href=\"../"
-                + "typeannos/WldB.html#value--\">value</a>=\"m\") java.lang.String"
+                + "html\" title=\"annotation in typeannos\">@WldB</a>("
+                + "\"m\") java.lang.String"
                 + "&gt;&nbsp;returnWcExtends()</pre>");
 
         // Test for receiver annotations (Receivers.java).
@@ -314,7 +314,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 "<pre>java.lang.String&nbsp;nonVoid(<a href=\"../typeannos/RcvrA."
                 + "html\" title=\"annotation in typeannos\">@RcvrA</a> <a href=\"../"
                 + "typeannos/RcvrB.html\" title=\"annotation in typeannos\">@RcvrB"
-                + "</a>(<a href=\"../typeannos/RcvrB.html#value--\">value</a>=\"m\")"
+                + "</a>(\"m\")"
                 + "&nbsp;DefaultUnmodified&nbsp;this)</pre>",
 
                 "<pre>&lt;T extends java.lang.Runnable&gt;&nbsp;void&nbsp;accept("
@@ -337,15 +337,15 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/WithValue.html", true,
                 "<pre>&lt;T extends java.lang.Runnable&gt;&nbsp;void&nbsp;accept("
                 + "<a href=\"../typeannos/RcvrB.html\" title=\"annotation in "
-                + "typeannos\">@RcvrB</a>(<a href=\"../typeannos/RcvrB.html#value--\">"
-                + "value</a>=\"m\")&nbsp;WithValue&nbsp;this,\n"
+                + "typeannos\">@RcvrB</a>("
+                + "\"m\")&nbsp;WithValue&nbsp;this,\n"
                 + "                                           T&nbsp;r)\n"
                 + "                                    throws java.lang.Exception</pre>");
 
         checkOutput("typeannos/WithFinal.html", true,
                 "<pre>java.lang.String&nbsp;nonVoid(<a href=\"../typeannos/RcvrB."
-                + "html\" title=\"annotation in typeannos\">@RcvrB</a>(<a href=\"../"
-                + "typeannos/RcvrB.html#value--\">value</a>=\"m\")&nbsp;WithFinal"
+                + "html\" title=\"annotation in typeannos\">@RcvrB</a>("
+                + "\"m\")&nbsp;WithFinal"
                 + "&nbsp;this)</pre>");
 
         checkOutput("typeannos/WithBody.html", true,

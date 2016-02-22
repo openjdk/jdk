@@ -45,7 +45,7 @@ import java.lang.annotation.Target;
  * throw a delayed StackOverflowError when the thread exits the annotated
  * method.
  *
- * @since 1.9
+ * @since 9
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})

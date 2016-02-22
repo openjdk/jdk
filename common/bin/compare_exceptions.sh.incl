@@ -563,6 +563,7 @@ if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
       ./Contents/Home/lib/libnpjp2.dylib
       ./Contents/Home/lib/libosx.dylib
       ./Contents/Home/lib/libosxapp.dylib
+      ./Contents/Home/lib/libosxui.dylib
       ./Contents/Home/lib/libverify.dylib
       ./Contents/Home/lib/libsaproc.dylib
       ./Contents/Home/lib/libsplashscreen.dylib

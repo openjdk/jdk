@@ -867,17 +867,18 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           }
         }
         // Cast reference arguments to its type.
-        for (int i = 0; i < signature->count(); i++) {
+        for (int i = 0, j = 0; i < signature->count(); i++) {
           ciType* t = signature->type_at(i);
           if (t->is_klass()) {
-            Node* arg = kit.argument(receiver_skip + i);
+            Node* arg = kit.argument(receiver_skip + j);
             const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
             const Type*       sig_type = TypeOopPtr::make_from_klass(t->as_klass());
             if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
               Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, sig_type));
-              kit.set_argument(receiver_skip + i, cast_obj);
+              kit.set_argument(receiver_skip + j, cast_obj);
             }
           }
+          j += t->size();  // long and double take two slots
         }
 
         // Try to get the most accurate receiver type

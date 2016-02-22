@@ -25,7 +25,7 @@
  * @test
  * @bug 8137167
  * @summary Tests directives to be able to compile only specified  methods
- * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
+ * @library /testlibrary /test/lib /compiler/testlibrary ../share /
  * @build compiler.compilercontrol.directives.CompileOnlyTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*

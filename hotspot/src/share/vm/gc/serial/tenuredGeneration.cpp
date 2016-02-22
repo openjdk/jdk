@@ -176,7 +176,11 @@ void TenuredGeneration::collect(bool   full,
   SerialOldTracer* gc_tracer = GenMarkSweep::gc_tracer();
   gc_tracer->report_gc_start(gch->gc_cause(), gc_timer->gc_start());
 
+  gch->pre_full_gc_dump(gc_timer);
+
   GenMarkSweep::invoke_at_safepoint(ref_processor(), clear_all_soft_refs);
+
+  gch->post_full_gc_dump(gc_timer);
 
   gc_timer->register_gc_end();
 

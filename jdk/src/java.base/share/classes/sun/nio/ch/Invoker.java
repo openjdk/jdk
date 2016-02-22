@@ -29,6 +29,7 @@ import java.nio.channels.*;
 import java.util.concurrent.*;
 import java.security.AccessController;
 import sun.security.action.GetIntegerAction;
+import jdk.internal.misc.InnocuousThread;
 
 /**
  * Defines static methods to invoke a completion handler or arbitrary task.
@@ -134,9 +135,9 @@ class Invoker {
         // clear thread locals when in default thread pool
         if (System.getSecurityManager() != null) {
             Thread me = Thread.currentThread();
-            if (me instanceof sun.misc.InnocuousThread) {
+            if (me instanceof InnocuousThread) {
                 GroupAndInvokeCount thisGroupAndInvokeCount = myGroupAndInvokeCount.get();
-                ((sun.misc.InnocuousThread)me).eraseThreadLocals();
+                ((InnocuousThread)me).eraseThreadLocals();
                 if (thisGroupAndInvokeCount != null) {
                     myGroupAndInvokeCount.set(thisGroupAndInvokeCount);
                 }
