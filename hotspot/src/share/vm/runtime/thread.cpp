@@ -67,6 +67,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
+#include "runtime/logTimer.hpp"
 #include "runtime/memprofiler.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -169,11 +170,10 @@ void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
     assert(((uintptr_t) aligned_addr + (uintptr_t) size) <=
            ((uintptr_t) real_malloc_addr + (uintptr_t) aligned_size),
            "JavaThread alignment code overflowed allocated storage");
-    if (TraceBiasedLocking) {
-      if (aligned_addr != real_malloc_addr) {
-        tty->print_cr("Aligned thread " INTPTR_FORMAT " to " INTPTR_FORMAT,
-                      p2i(real_malloc_addr), p2i(aligned_addr));
-      }
+    if (aligned_addr != real_malloc_addr) {
+      log_info(biasedlocking)("Aligned thread " INTPTR_FORMAT " to " INTPTR_FORMAT,
+                              p2i(real_malloc_addr),
+                              p2i(aligned_addr));
     }
     ((Thread*) aligned_addr)->_real_malloc_address = real_malloc_addr;
     return aligned_addr;
@@ -3341,7 +3341,7 @@ void Threads::threads_do(ThreadClosure* tc) {
 }
 
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
-  TraceTime timer("Initialize java.lang classes", TraceStartupTime);
+  TraceStartupTime timer("Initialize java.lang classes");
 
   if (EagerXrunInit && Arguments::init_libraries_at_startup()) {
     create_vm_init_libraries();
@@ -3388,6 +3388,8 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
 }
 
 void Threads::initialize_jsr292_core_classes(TRAPS) {
+  TraceStartupTime timer("Initialize java.lang.invoke classes");
+
   initialize_class(vmSymbols::java_lang_invoke_MethodHandle(), CHECK);
   initialize_class(vmSymbols::java_lang_invoke_MemberName(), CHECK);
   initialize_class(vmSymbols::java_lang_invoke_MethodHandleNatives(), CHECK);
@@ -3457,7 +3459,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   HOTSPOT_VM_INIT_BEGIN();
 
   // Timing (must come after argument parsing)
-  TraceTime timer("Create VM", TraceStartupTime);
+  TraceStartupTime timer("Create VM");
 
   // Initialize the os module after parsing the args
   jint os_init_2_result = os::init_2();
@@ -3542,8 +3544,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   JvmtiExport::transition_pending_onload_raw_monitors();
 
   // Create the VMThread
-  { TraceTime timer("Start VMThread", TraceStartupTime);
-    VMThread::create();
+  { TraceStartupTime timer("Start VMThread");
+
+  VMThread::create();
     Thread* vmthread = VMThread::vm_thread();
 
     if (!os::create_thread(vmthread, os::vm_thread)) {

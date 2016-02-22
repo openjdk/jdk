@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,13 +75,20 @@ public class TestOptionsWithRanges {
         int failedTests;
         List<JVMOption> allOptions;
 
-        allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap();
+        allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap(origin -> (!(origin.contains("develop") || origin.contains("notproduct"))));
 
         /* Shared flags can cause JVM to exit with error code 2 */
         setAllowedExitCodes("SharedReadWriteSize", 2);
         setAllowedExitCodes("SharedReadOnlySize", 2);
         setAllowedExitCodes("SharedMiscDataSize", 2);
         setAllowedExitCodes("SharedMiscCodeSize", 2);
+
+        /*
+         * JDK-8145204
+         * Temporarily remove testing of max range for ParGCArrayScanChunk because
+         * JVM can hang when ParGCArrayScanChunk=4294967296 and ParallelGC is used
+         */
+        excludeTestMaxRange("ParGCArrayScanChunk");
 
         /*
          * Remove CICompilerCount from testing because currently it can hang system

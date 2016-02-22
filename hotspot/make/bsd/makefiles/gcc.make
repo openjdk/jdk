@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -330,6 +330,13 @@ ifeq ($(USE_CLANG), true)
     ), 1)
     OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
     OPT_CFLAGS/unsafe.o += -O1
+
+    # The debug flag is added to OPT_CFLAGS, but lost in case of per-file overrides
+    # of OPT_CFLAGS. Restore it here.
+    ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+      OPT_CFLAGS/loopTransform.o += -g
+      OPT_CFLAGS/unsafe.o += -g
+    endif
   else
     $(error "Update compiler workarounds for Clang $(CC_VER_MAJOR).$(CC_VER_MINOR)")
   endif

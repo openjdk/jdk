@@ -2662,9 +2662,6 @@ void G1ConcurrentMark::print_on_error(outputStream* st) const {
 // We take a break if someone is trying to stop the world.
 bool G1ConcurrentMark::do_yield_check(uint worker_id) {
   if (SuspendibleThreadSet::should_yield()) {
-    if (worker_id == 0) {
-      _g1h->g1_policy()->record_concurrent_pause();
-    }
     SuspendibleThreadSet::yield();
     return true;
   } else {
