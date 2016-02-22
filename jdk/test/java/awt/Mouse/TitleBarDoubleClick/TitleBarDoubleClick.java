@@ -71,7 +71,6 @@ public class TitleBarDoubleClick extends Applet implements MouseListener,
             frame.addMouseListener(this);
             frame.addWindowListener(this);
             frame.setVisible(true);
-            Util.waitForIdle(robot);
     }// start()
 
     // Move the mouse into the title bar and double click to maximize the

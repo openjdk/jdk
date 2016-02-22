@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,9 @@ pkgadd_help() {
 # called at the very beginning in configure.ac.
 AC_DEFUN_ONCE([HELP_PRINT_ADDITIONAL_HELP_AND_EXIT],
 [
-  if test "x$CONFIGURE_PRINT_TOOLCHAIN_LIST" != x; then
+  if test "x$CONFIGURE_PRINT_ADDITIONAL_HELP" != x; then
+
+    # Print available toolchains
     $PRINTF "The following toolchains are available as arguments to --with-toolchain-type.\n"
     $PRINTF "Which are valid to use depends on the build platform.\n"
     for toolchain in $VALID_TOOLCHAINS_all; do

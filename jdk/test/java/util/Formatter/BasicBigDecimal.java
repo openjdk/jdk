@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DateFormatSymbols;
 import java.util.*;
-
-
-
 
 import static java.util.Calendar.*;
 
@@ -1156,7 +1153,6 @@ public class BasicBigDecimal extends Basic {
 
         val = new BigDecimal(BigInteger.ZERO, 6);
         test("%.4f", "0.0000", val);
-
         val = new BigDecimal(BigInteger.ZERO, -6);
         test("%.4f", "0.0000", val);
 

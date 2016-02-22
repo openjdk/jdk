@@ -382,6 +382,9 @@ MsgRouting AwtWindow::WmWindowPosChanged(LPARAM windowPos) {
     if (wp->flags & SWP_HIDEWINDOW) {
         EnableTranslucency(FALSE);
     }
+    if (wp->flags & SWP_SHOWWINDOW) {
+        EnableTranslucency(TRUE);
+    }
 
     return mrDoDefault;
 }

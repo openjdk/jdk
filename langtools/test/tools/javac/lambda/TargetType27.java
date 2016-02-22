@@ -4,7 +4,7 @@
  * @summary Add lambda tests
  *  complex case of cyclic type inference (lambda returned where inference var expected)
  * @compile/fail/ref=TargetType27.out -XDrawDiagnostics TargetType27.java
- * @compile/fail/ref=TargetType27.out -XDrawDiagnostics -XDcomplexinference TargetType27.java
+ * @compile/fail/ref=TargetType27.out -XDrawDiagnostics TargetType27.java
  */
 
 class TargetType27 {

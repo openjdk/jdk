@@ -227,12 +227,12 @@ class ZipEntry implements ZipConstants, Cloneable {
         if (year < 0) {
             this.xdostime = DOSTIME_BEFORE_1980;
         } else {
-            this.xdostime = (year << 25 |
+            this.xdostime = ((year << 25 |
                 time.getMonthValue() << 21 |
                 time.getDayOfMonth() << 16 |
                 time.getHour() << 11 |
                 time.getMinute() << 5 |
-                time.getSecond() >> 1)
+                time.getSecond() >> 1) & 0xffffffffL)
                 + ((long)(((time.getSecond() & 0x1) * 1000) +
                       time.getNano() / 1000_000) << 32);
         }
