@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
       default: {
         // Dispatch the signal to java
         HandleMark hm(THREAD);
-        Klass* k = SystemDictionary::resolve_or_null(vmSymbols::sun_misc_Signal(), THREAD);
+        Klass* k = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_misc_Signal(), THREAD);
         KlassHandle klass (THREAD, k);
         if (klass.not_null()) {
           JavaValue result(T_VOID);

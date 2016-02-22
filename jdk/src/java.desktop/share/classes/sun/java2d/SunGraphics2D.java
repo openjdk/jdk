@@ -3118,8 +3118,7 @@ public final class SunGraphics2D
                 invalidateTransform();
             }
             return result;
-        } else if (resolutionVariantHint != SunHints.INTVAL_RESOLUTION_VARIANT_BASE
-                   && (img instanceof MultiResolutionImage)) {
+        } else if (img instanceof MultiResolutionImage) {
             // get scaled destination image size
 
             int width = img.getWidth(observer);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 4244499 4532049 4700978 4820807 4980042
  * @summary Test ZipInputStream, ZipOutputStream and ZipFile with non-UTF8 encoding
+ * @modules jdk.charsets
  */
 
 import java.io.*;

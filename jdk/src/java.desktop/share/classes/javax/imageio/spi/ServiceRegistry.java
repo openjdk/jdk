@@ -759,7 +759,7 @@ class SubRegistry {
         this.category = category;
     }
 
-    public boolean registerServiceProvider(Object provider) {
+    public synchronized boolean registerServiceProvider(Object provider) {
         Object oprovider = map.get(provider.getClass());
         boolean present =  oprovider != null;
 
@@ -781,7 +781,7 @@ class SubRegistry {
      *
      * @return true if the provider was previously registered.
      */
-    public boolean deregisterServiceProvider(Object provider) {
+    public synchronized boolean deregisterServiceProvider(Object provider) {
         Object oprovider = map.get(provider.getClass());
 
         if (provider == oprovider) {
@@ -797,22 +797,23 @@ class SubRegistry {
         return false;
     }
 
-    public boolean contains(Object provider) {
+    public synchronized boolean contains(Object provider) {
         Object oprovider = map.get(provider.getClass());
         return oprovider == provider;
     }
 
-    public boolean setOrdering(Object firstProvider,
-                               Object secondProvider) {
+    public synchronized boolean setOrdering(Object firstProvider,
+                                            Object secondProvider) {
         return poset.setOrdering(firstProvider, secondProvider);
     }
 
-    public boolean unsetOrdering(Object firstProvider,
-                                 Object secondProvider) {
+    public synchronized boolean unsetOrdering(Object firstProvider,
+                                              Object secondProvider) {
         return poset.unsetOrdering(firstProvider, secondProvider);
     }
 
-    public Iterator<Object> getServiceProviders(boolean useOrdering) {
+    public synchronized Iterator<Object> getServiceProviders
+                                         (boolean useOrdering) {
         if (useOrdering) {
             return poset.iterator();
         } else {
@@ -821,11 +822,12 @@ class SubRegistry {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getServiceProviderByClass(Class<T> providerClass) {
+    public synchronized <T> T getServiceProviderByClass
+                              (Class<T> providerClass) {
         return (T)map.get(providerClass);
     }
 
-    public void clear() {
+    public synchronized void clear() {
         Iterator<Object> iter = map.values().iterator();
         while (iter.hasNext()) {
             Object provider = iter.next();
@@ -839,7 +841,7 @@ class SubRegistry {
         poset.clear();
     }
 
-    public void finalize() {
+    public synchronized void finalize() {
         clear();
     }
 }

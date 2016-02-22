@@ -28,7 +28,6 @@ package sun.java2d.opengl;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.RenderQueue;
-import sun.misc.InnocuousThread;
 import sun.misc.ManagedLocalsThread;
 
 import static sun.java2d.pipe.BufferedOpCodes.*;

@@ -1707,13 +1707,18 @@ public final class ZonedDateTime
      * Note that this is a different approach to that used by days, months and years,
      * thus adding one day is not the same as adding 24 hours.
      * <p>
-     * For example, consider a time-zone where the spring DST cutover means that the
-     * local times 01:00 to 01:59 occur twice changing from offset +02:00 to +01:00.
+     * For example, consider a time-zone, such as 'Europe/Paris', where the
+     * Autumn DST cutover means that the local times 02:00 to 02:59 occur twice
+     * changing from offset +02:00 in summer to +01:00 in winter.
      * <ul>
-     * <li>Adding one hour to 00:30+02:00 will result in 01:30+02:00
-     * <li>Adding one hour to 01:30+02:00 will result in 01:30+01:00
-     * <li>Adding one hour to 01:30+01:00 will result in 02:30+01:00
-     * <li>Adding three hours to 00:30+02:00 will result in 02:30+01:00
+     * <li>Adding one hour to 01:30+02:00 will result in 02:30+02:00
+     *     (both in summer time)
+     * <li>Adding one hour to 02:30+02:00 will result in 02:30+01:00
+     *     (moving from summer to winter time)
+     * <li>Adding one hour to 02:30+01:00 will result in 03:30+01:00
+     *     (both in winter time)
+     * <li>Adding three hours to 01:30+02:00 will result in 03:30+01:00
+     *     (moving from summer to winter time)
      * </ul>
      * <p>
      * This instance is immutable and unaffected by this method call.
@@ -1948,13 +1953,18 @@ public final class ZonedDateTime
      * Note that this is a different approach to that used by days, months and years,
      * thus subtracting one day is not the same as adding 24 hours.
      * <p>
-     * For example, consider a time-zone where the spring DST cutover means that the
-     * local times 01:00 to 01:59 occur twice changing from offset +02:00 to +01:00.
+     * For example, consider a time-zone, such as 'Europe/Paris', where the
+     * Autumn DST cutover means that the local times 02:00 to 02:59 occur twice
+     * changing from offset +02:00 in summer to +01:00 in winter.
      * <ul>
-     * <li>Subtracting one hour from 02:30+01:00 will result in 01:30+02:00
-     * <li>Subtracting one hour from 01:30+01:00 will result in 01:30+02:00
-     * <li>Subtracting one hour from 01:30+02:00 will result in 00:30+01:00
-     * <li>Subtracting three hours from 02:30+01:00 will result in 00:30+02:00
+     * <li>Subtracting one hour from 03:30+01:00 will result in 02:30+01:00
+     *     (both in winter time)
+     * <li>Subtracting one hour from 02:30+01:00 will result in 02:30+02:00
+     *     (moving from winter to summer time)
+     * <li>Subtracting one hour from 02:30+02:00 will result in 01:30+02:00
+     *     (both in summer time)
+     * <li>Subtracting three hours from 03:30+01:00 will result in 01:30+02:00
+     *     (moving from winter to summer time)
      * </ul>
      * <p>
      * This instance is immutable and unaffected by this method call.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Deadlock between LogManager.<clinit> and Logger.getLogger()
  * @author  Daniel D. Daugherty
  * @modules java.base/sun.util.logging
+ *          java.logging
  * @compile -XDignore.symbol.file LoggingDeadlock4.java
  * @run main/othervm/timeout=15 LoggingDeadlock4
  */
