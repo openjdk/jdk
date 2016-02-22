@@ -239,6 +239,7 @@
       <to>java.xml</to>
       <to>jdk.charsets</to>
       <to>jdk.management.resource</to>
+      <to>jdk.net</to>
       <to>jdk.scripting.nashorn</to>
       <to>jdk.vm.ci</to>
     </export>
@@ -297,7 +298,6 @@
       <to>java.security.jgss</to>
       <to>java.security.sasl</to>
       <to>java.xml</to>
-      <to>java.xml.ws</to>
       <to>jdk.charsets</to>
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.deploy.osx</to>
@@ -319,6 +319,10 @@
       <name>sun.net.dns</name>
       <to>java.security.jgss</to>
       <to>jdk.naming.dns</to>
+    </export>
+    <export>
+      <name>sun.net.sdp</name>
+      <to>jdk.net</to>
     </export>
     <export>
       <name>sun.net.spi.nameservice</name>
@@ -346,6 +350,7 @@
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.crypto.ucrypto</to>
       <to>jdk.management.resource</to>
+      <to>jdk.net</to>
       <to>jdk.sctp</to>
     </export>
     <export>

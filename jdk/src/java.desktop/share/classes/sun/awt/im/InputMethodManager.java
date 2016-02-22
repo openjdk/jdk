@@ -55,7 +55,6 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import sun.awt.InputMethodSupport;
 import sun.awt.SunToolkit;
-import sun.misc.InnocuousThread;
 import sun.misc.ManagedLocalsThread;
 
 /**

@@ -127,7 +127,7 @@ public class AccessorProperty extends Property {
      *
      * @return  New {@link AccessorProperty} created.
      */
-    public static AccessorProperty create(final String key, final int propertyFlags, final MethodHandle getter, final MethodHandle setter) {
+    public static AccessorProperty create(final Object key, final int propertyFlags, final MethodHandle getter, final MethodHandle setter) {
         return new AccessorProperty(key, propertyFlags, -1, getter, setter);
     }
 
@@ -599,6 +599,11 @@ public class AccessorProperty extends Property {
      */
     protected final boolean isUndefined() {
         return getLocalType() == null;
+    }
+
+    @Override
+    public boolean hasNativeSetter() {
+        return objectSetter != null;
     }
 
     @Override

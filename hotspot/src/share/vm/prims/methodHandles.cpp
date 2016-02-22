@@ -64,30 +64,21 @@
 bool MethodHandles::_enabled = false; // set true after successful native linkage
 MethodHandlesAdapterBlob* MethodHandles::_adapter_code = NULL;
 
-
 /**
  * Generates method handle adapters. Returns 'false' if memory allocation
  * failed and true otherwise.
  */
-bool MethodHandles::generate_adapters() {
-  if (SystemDictionary::MethodHandle_klass() == NULL) {
-    return true;
-  }
-
+void MethodHandles::generate_adapters() {
+  assert(SystemDictionary::MethodHandle_klass() != NULL, "should be present");
   assert(_adapter_code == NULL, "generate only once");
 
   ResourceMark rm;
   TraceStartupTime timer("MethodHandles adapters generation");
   _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size);
-  if (_adapter_code == NULL) {
-     return false;
-  }
-
   CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
   g.generate();
   code.log_section_sizes("MethodHandlesAdapterBlob");
-  return true;
 }
 
 //------------------------------------------------------------------------------
@@ -1437,53 +1428,31 @@ static JNINativeMethod MH_methods[] = {
 };
 
 /**
- * Helper method to register native methods.
- */
-static bool register_natives(JNIEnv* env, jclass clazz, const JNINativeMethod* methods, jint nMethods) {
-  int status = env->RegisterNatives(clazz, methods, nMethods);
-  if (status != JNI_OK || env->ExceptionOccurred()) {
-    warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
-    env->ExceptionClear();
-    return false;
-  }
-  return true;
-}
-
-/**
  * This one function is exported, used by NativeLookup.
  */
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
   assert(!MethodHandles::enabled(), "must not be enabled");
-  bool enable_MH = true;
+  assert(SystemDictionary::MethodHandle_klass() != NULL, "should be present");
 
-  jclass MH_class = NULL;
-  if (SystemDictionary::MethodHandle_klass() == NULL) {
-    enable_MH = false;
-  } else {
-    oop mirror = SystemDictionary::MethodHandle_klass()->java_mirror();
-    MH_class = (jclass) JNIHandles::make_local(env, mirror);
-  }
+  oop mirror = SystemDictionary::MethodHandle_klass()->java_mirror();
+  jclass MH_class = (jclass) JNIHandles::make_local(env, mirror);
 
-  if (enable_MH) {
+  {
     ThreadToNativeFromVM ttnfv(thread);
 
-    if (enable_MH) {
-      enable_MH = register_natives(env, MHN_class, MHN_methods, sizeof(MHN_methods)/sizeof(JNINativeMethod));
-    }
-    if (enable_MH) {
-      enable_MH = register_natives(env, MH_class, MH_methods, sizeof(MH_methods)/sizeof(JNINativeMethod));
-    }
+    int status = env->RegisterNatives(MHN_class, MHN_methods, sizeof(MHN_methods)/sizeof(JNINativeMethod));
+    guarantee(status == JNI_OK && !env->ExceptionOccurred(),
+              "register java.lang.invoke.MethodHandleNative natives");
+
+    status = env->RegisterNatives(MH_class, MH_methods, sizeof(MH_methods)/sizeof(JNINativeMethod));
+    guarantee(status == JNI_OK && !env->ExceptionOccurred(),
+              "register java.lang.invoke.MethodHandle natives");
   }
 
   if (TraceInvokeDynamic) {
     tty->print_cr("MethodHandle support loaded (using LambdaForms)");
   }
 
-  if (enable_MH) {
-    if (MethodHandles::generate_adapters() == false) {
-      THROW_MSG(vmSymbols::java_lang_VirtualMachineError(), "Out of space in CodeCache for method handle adapters");
-    }
-    MethodHandles::set_enabled(true);
-  }
+  MethodHandles::set_enabled(true);
 }
 JVM_END

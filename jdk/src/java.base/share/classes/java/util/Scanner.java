@@ -38,8 +38,6 @@ import java.util.regex.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import sun.misc.LRUCache;
-
 /**
  * A simple text scanner which can parse primitive types and strings using
  * regular expressions.
@@ -366,15 +364,7 @@ public final class Scanner implements Iterator<String>, Closeable {
     private Locale locale = null;
 
     // A cache of the last few recently used Patterns
-    private LRUCache<String,Pattern> patternCache =
-    new LRUCache<String,Pattern>(7) {
-        protected Pattern create(String s) {
-            return Pattern.compile(s);
-        }
-        protected boolean hasName(Pattern p, String s) {
-            return p.pattern().equals(s);
-        }
-    };
+    private PatternLRUCache patternCache = new PatternLRUCache(7);
 
     // A holder of the last IOException encountered
     private IOException lastException;
@@ -2836,6 +2826,52 @@ public final class Scanner implements Iterator<String>, Closeable {
                 else
                     return false; // reached end of input
             }
+        }
+    }
+
+    /** Small LRU cache of Patterns. */
+    private static class PatternLRUCache {
+
+        private Pattern[] oa = null;
+        private final int size;
+
+        PatternLRUCache(int size) {
+            this.size = size;
+        }
+
+        boolean hasName(Pattern p, String s) {
+            return p.pattern().equals(s);
+        }
+
+        void moveToFront(Object[] oa, int i) {
+            Object ob = oa[i];
+            for (int j = i; j > 0; j--)
+                oa[j] = oa[j - 1];
+            oa[0] = ob;
+        }
+
+        Pattern forName(String name) {
+            if (oa == null) {
+                Pattern[] temp = new Pattern[size];
+                oa = temp;
+            } else {
+                for (int i = 0; i < oa.length; i++) {
+                    Pattern ob = oa[i];
+                    if (ob == null)
+                        continue;
+                    if (hasName(ob, name)) {
+                        if (i > 0)
+                            moveToFront(oa, i);
+                        return ob;
+                    }
+                }
+            }
+
+            // Create a new object
+            Pattern ob = Pattern.compile(name);
+            oa[oa.length - 1] = ob;
+            moveToFront(oa, oa.length - 1);
+            return ob;
         }
     }
 }

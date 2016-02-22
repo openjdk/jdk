@@ -28,7 +28,9 @@ package com.sun.tools.javac.api;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.BreakIterator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -68,12 +70,16 @@ import com.sun.source.util.DocTrees;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Scope.NamedImportScope;
+import com.sun.tools.javac.code.Scope.StarImportScope;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
+import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.ClassType;
@@ -103,6 +109,7 @@ import com.sun.tools.javac.tree.DCTree.DCIdentifier;
 import com.sun.tools.javac.tree.DCTree.DCParam;
 import com.sun.tools.javac.tree.DCTree.DCReference;
 import com.sun.tools.javac.tree.DCTree.DCText;
+import com.sun.tools.javac.tree.DocCommentTable;
 import com.sun.tools.javac.tree.DocTreeMaker;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
@@ -163,6 +170,8 @@ public class JavacTrees extends DocTrees {
     private BreakIterator breakIterator;
     private JavaFileManager fileManager;
     private ParserFactory parser;
+    private Symtab syms;
+    private Map<JavaFileObject, PackageSymbol> javaFileObjectToPackageMap;
 
     // called reflectively from Trees.instance(CompilationTask task)
     public static JavacTrees instance(JavaCompiler.CompilationTask task) {
@@ -186,6 +195,7 @@ public class JavacTrees extends DocTrees {
     }
 
     protected JavacTrees(Context context) {
+        javaFileObjectToPackageMap = new HashMap<>();
         this.breakIterator = null;
         context.put(JavacTrees.class, this);
         init(context);
@@ -207,6 +217,7 @@ public class JavacTrees extends DocTrees {
         types = Types.instance(context);
         docTreeMaker = DocTreeMaker.instance(context);
         parser = ParserFactory.instance(context);
+        syms = Symtab.instance(context);
         fileManager = context.get(JavaFileManager.class);
         JavacTask t = context.get(JavacTask.class);
         if (t instanceof JavacTaskImpl)
@@ -1018,7 +1029,8 @@ public class JavacTrees extends DocTrees {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DocTreePath getDocTreePath(FileObject fileObject) {
         JavaFileObject jfo = asJavaFileObject(fileObject);
-        return new DocTreePath(makeTreePath(jfo), getDocCommentTree(jfo));
+        DocCommentTree docCommentTree = getDocCommentTree(jfo);
+        return new DocTreePath(makeTreePath(jfo, docCommentTree), docCommentTree);
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
@@ -1136,7 +1148,17 @@ public class JavacTrees extends DocTrees {
         }
     }
 
-    private TreePath makeTreePath(final JavaFileObject jfo) {
+    /**
+     * Register a file object, such as for a package.html, that provides
+     * doc comments for a package.
+     * @param psym the PackageSymbol representing the package.
+     * @param jfo  the JavaFileObject for the given package.
+     */
+    public void putJavaFileObject(PackageSymbol psym, JavaFileObject jfo) {
+        javaFileObjectToPackageMap.putIfAbsent(jfo, psym);
+    }
+
+    private TreePath makeTreePath(final JavaFileObject jfo, DocCommentTree dcTree) {
         JCCompilationUnit jcCompilationUnit = new JCCompilationUnit(List.nil()) {
             public int getPos() {
                 return Position.FIRSTPOS;
@@ -1156,8 +1178,44 @@ public class JavacTrees extends DocTrees {
                 return null;
             }
         };
+
+        PackageSymbol psym = javaFileObjectToPackageMap.getOrDefault(jfo, syms.unnamedPackage);
+
+        jcCompilationUnit.docComments = new DocCommentTable() {
+            @Override
+            public boolean hasComment(JCTree tree) {
+                return false;
+            }
+
+            @Override
+            public Comment getComment(JCTree tree) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public String getCommentText(JCTree tree) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public DCDocComment getCommentTree(JCTree tree) {
+                return (DCDocComment)dcTree;
+            }
+
+            @Override
+            public void putComment(JCTree tree, Comment c) {
+                throw new UnsupportedOperationException();
+            }
+
+        };
+        jcCompilationUnit.lineMap = jcCompilationUnit.getLineMap();
+        jcCompilationUnit.namedImportScope = new NamedImportScope(psym, jcCompilationUnit.toplevelScope);
+        jcCompilationUnit.packge = psym;
+        jcCompilationUnit.starImportScope = null;
         jcCompilationUnit.sourcefile = jfo;
-        enter.main(List.of(jcCompilationUnit));
+        jcCompilationUnit.starImportScope = new StarImportScope(psym);
+        jcCompilationUnit.toplevelScope = WriteableScope.create(psym);
+
         return new TreePath(jcCompilationUnit);
     }
 }
