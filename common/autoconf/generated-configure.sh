@@ -701,6 +701,7 @@ COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
 LDFLAGS_TESTEXE
 LDFLAGS_TESTLIB
+LDFLAGS_HASH_STYLE
 LDFLAGS_CXX_JDK
 JDKEXE_LIBS
 JDKLIB_LIBS
@@ -4230,7 +4231,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4860,7 +4861,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1455271513
+DATE_WHEN_GENERATED=1456136545
 
 ###############################################################################
 #
@@ -46881,6 +46882,7 @@ $as_echo "$supports" >&6; }
 
 
 
+
   LDFLAGS_TESTLIB="$LDFLAGS_JDKLIB"
   LDFLAGS_TESTEXE="$LDFLAGS_JDKEXE"
 
@@ -58630,7 +58632,8 @@ fi
 
 
   # Setup libm (the maths library)
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cos in -lm" >&5
+  if test "x$OPENJDK_TARGET_OS" != "xwindows"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cos in -lm" >&5
 $as_echo_n "checking for cos in -lm... " >&6; }
 if ${ac_cv_lib_m_cos+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -58675,12 +58678,15 @@ _ACEOF
 
 else
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Maths library was not found" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Maths library was not found" >&5
 $as_echo "$as_me: Maths library was not found" >&6;}
 
 fi
 
-  LIBM=-lm
+    LIBM="-lm"
+  else
+    LIBM=""
+  fi
 
 
   # Setup libdl (for dynamic library loading)
