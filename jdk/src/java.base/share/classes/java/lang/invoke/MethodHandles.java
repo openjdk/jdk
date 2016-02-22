@@ -856,7 +856,8 @@ assertEquals("", (String) MH_newString.invokeExact());
          * @return the desired method handle
          * @throws NoSuchMethodException if the method does not exist
          * @throws IllegalAccessException if access checking fails,
-         *                                or if the method is {@code static}
+         *                                or if the method is {@code static},
+         *                                or if the method is {@code private} method of interface,
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
          * @exception SecurityException if a security manager is present and it

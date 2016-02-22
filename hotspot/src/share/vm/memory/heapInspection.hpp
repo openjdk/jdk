@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,13 +154,9 @@ public:
 
   HEAP_INSPECTION_COLUMNS_DO(DECLARE_KLASS_SIZE_STATS_FIELD)
 
-  static int count(oop x) {
-    return (HeapWordSize * (((x) != NULL) ? (x)->size() : 0));
-  }
+  static int count(oop x);
 
-  static int count_array(objArrayOop x) {
-    return (HeapWordSize * (((x) != NULL) ? (x)->size() : 0));
-  }
+  static int count_array(objArrayOop x);
 
   template <class T> static int count(T* x) {
     return (HeapWordSize * ((x) ? (x)->size() : 0));
@@ -285,8 +281,6 @@ class KlassInfoHisto : public StackObj {
   KlassInfoTable *_cit;
   GrowableArray<KlassInfoEntry*>* _elements;
   GrowableArray<KlassInfoEntry*>* elements() const { return _elements; }
-  const char* _title;
-  const char* title() const { return _title; }
   static int sort_helper(KlassInfoEntry** e1, KlassInfoEntry** e2);
   void print_elements(outputStream* st) const;
   void print_class_stats(outputStream* st, bool csv_format, const char *columns);
@@ -344,7 +338,7 @@ class KlassInfoHisto : public StackObj {
   }
 
  public:
-  KlassInfoHisto(KlassInfoTable* cit, const char* title);
+  KlassInfoHisto(KlassInfoTable* cit);
   ~KlassInfoHisto();
   void add(KlassInfoEntry* cie);
   void print_histo_on(outputStream* st, bool print_class_stats, bool csv_format, const char *columns);

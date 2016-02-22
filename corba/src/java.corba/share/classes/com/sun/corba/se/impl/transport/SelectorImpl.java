@@ -26,15 +26,19 @@
 package com.sun.corba.se.impl.transport;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.ClosedSelectorException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
+
 
 import com.sun.corba.se.pept.broker.Broker;
 import com.sun.corba.se.pept.transport.Acceptor;
@@ -111,7 +115,16 @@ class SelectorImpl
                 interestOpsList.add(keyAndOp);
             }
             // tell Selector Thread there's an update to a SelectorKey's Ops
-            selector.wakeup();
+            try {
+                if (selector != null) {
+                    // wakeup Selector thread to process close request
+                    selector.wakeup();
+                }
+            } catch (Throwable t) {
+                if (orb.transportDebugFlag) {
+                    dprint(".registerInterestOps: selector.wakeup: ", t);
+                }
+            }
         }
         else {
             wrapper.selectionKeyInvalid(eventHandler.toString());
@@ -186,7 +199,9 @@ class SelectorImpl
             if (selectionKey != null) {
                 selectionKey.cancel();
             }
-            selector.wakeup();
+            if (selector != null) {
+                selector.wakeup();
+            }
             return;
         }
 
@@ -239,6 +254,8 @@ class SelectorImpl
             readerThread.close();
         }
 
+       clearDeferredRegistrations();
+
         // Selector
 
         try {
@@ -248,7 +265,7 @@ class SelectorImpl
             }
         } catch (Throwable t) {
             if (orb.transportDebugFlag) {
-                dprint(".close: selector.close: " + t);
+                dprint(".close: selector.wakeup: ", t);
             }
         }
     }
@@ -273,15 +290,16 @@ class SelectorImpl
                     n = selector.select(timeout);
                 } catch (IOException  e) {
                     if (orb.transportDebugFlag) {
-                        dprint(".run: selector.select: " + e);
+                        dprint(".run: selector.select: ", e);
                     }
+                } catch (ClosedSelectorException csEx) {
+                    if (orb.transportDebugFlag) {
+                        dprint(".run: selector.select: ", csEx);
+                    }
+                    break;
                 }
                 if (closed) {
-                    selector.close();
-                    if (orb.transportDebugFlag) {
-                        dprint(".run: closed - .run return");
-                    }
-                    return;
+                    break;
                 }
                 /*
                   if (timeout == 0 && orb.transportDebugFlag) {
@@ -321,12 +339,62 @@ class SelectorImpl
                 }
             }
         }
+        try {
+            if (selector != null) {
+                if (orb.transportDebugFlag) {
+                    dprint(".run: selector.close ");
+                }
+                selector.close();
+            }
+        } catch (Throwable t) {
+            if (orb.transportDebugFlag) {
+                dprint(".run: selector.close: ", t);
+            }
+        }
     }
 
     /////////////////////////////////////////////////////
     //
     // Implementation.
     //
+
+    private void clearDeferredRegistrations() {
+        synchronized (deferredRegistrations) {
+            int deferredListSize = deferredRegistrations.size();
+            if (orb.transportDebugFlag) {
+                dprint(".clearDeferredRegistrations:deferred list size == " + deferredListSize);
+            }
+            for (int i = 0; i < deferredListSize; i++) {
+                EventHandler eventHandler =
+                    (EventHandler)deferredRegistrations.get(i);
+                if (orb.transportDebugFlag) {
+                    dprint(".clearDeferredRegistrations: " + eventHandler);
+                }
+                SelectableChannel channel = eventHandler.getChannel();
+                SelectionKey selectionKey = null;
+
+                try {
+                    if (orb.transportDebugFlag) {
+                        dprint(".clearDeferredRegistrations:close channel == "
+                                + channel);
+                        dprint(".clearDeferredRegistrations:close channel class == "
+                                + channel.getClass().getName());
+                    }
+                    channel.close();
+                    selectionKey = eventHandler.getSelectionKey();
+                    if (selectionKey != null) {
+                        selectionKey.cancel();
+                        selectionKey.attach(null);
+                    }
+                } catch (IOException ioEx) {
+                    if (orb.transportDebugFlag) {
+                        dprint(".clearDeferredRegistrations: ", ioEx);
+                    }
+                }
+            }
+            deferredRegistrations.clear();
+        }
+    }
 
     private synchronized boolean isClosed ()
     {
@@ -344,7 +412,7 @@ class SelectorImpl
             selector = Selector.open();
         } catch (IOException e) {
             if (orb.transportDebugFlag) {
-                dprint(".startSelector: Selector.open: IOException: " + e);
+                dprint(".startSelector: Selector.open: IOException: ", e);
             }
             // REVISIT - better handling/reporting
             RuntimeException rte =
@@ -379,7 +447,7 @@ class SelectorImpl
                                          (Object)eventHandler);
                 } catch (ClosedChannelException e) {
                     if (orb.transportDebugFlag) {
-                        dprint(".handleDeferredRegistrations: " + e);
+                        dprint(".handleDeferredRegistrations: ", e);
                     }
                 }
                 eventHandler.setSelectionKey(selectionKey);

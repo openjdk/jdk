@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037 8142447 8144095 8140265 8144906
+ * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886
  * @requires os.family != "solaris"
  * @summary Tests for Basic tests for REPL tool
  * @library /tools/lib
@@ -306,17 +306,36 @@ public class ToolBasicTest extends ReplToolTesting {
         );
     }
 
-    public void testHelp() {
+    public void testHelpLength() {
         Consumer<String> testOutput = (s) -> {
             List<String> ss = Stream.of(s.split("\n"))
                     .filter(l -> !l.isEmpty())
                     .collect(Collectors.toList());
-            assertTrue(ss.size() >= 5, "Help does not print enough lines:\n" + s);
+            assertTrue(ss.size() >= 10, "Help does not print enough lines:\n" + s);
         };
         test(
                 (a) -> assertCommandCheckOutput(a, "/?", testOutput),
-                (a) -> assertCommandCheckOutput(a, "/help", testOutput)
+                (a) -> assertCommandCheckOutput(a, "/help", testOutput),
+                (a) -> assertCommandCheckOutput(a, "/help /list", testOutput)
         );
+    }
+
+    public void testHelp() {
+        test(
+                (a) -> assertHelp(a, "/?", "/list", "/help", "/exit", "intro"),
+                (a) -> assertHelp(a, "/help", "/list", "/help", "/exit", "intro"),
+                (a) -> assertHelp(a, "/help short", "shortcuts", "<tab>"),
+                (a) -> assertHelp(a, "/? /li", "/list all", "snippets"),
+                (a) -> assertHelp(a, "/help /help", "/help <command>")
+        );
+    }
+
+    private void assertHelp(boolean a, String command, String... find) {
+        assertCommandCheckOutput(a, command, s -> {
+            for (String f : find) {
+                assertTrue(s.contains(f), "Expected output of " + command + " to contain: " + f);
+            }
+        });
     }
 
     public void oneLineOfError() {
@@ -682,10 +701,12 @@ public class ToolBasicTest extends ReplToolTesting {
                 a -> assertVariable(a, "int", "aardvark"),
                 a -> assertCommandCheckOutput(a, "/list aardvark",
                         s -> assertTrue(s.contains("aardvark"))),
+                a -> assertCommandCheckOutput(a, "/list start",
+                        s -> checkLineToList(s, START_UP)),
                 a -> assertCommandCheckOutput(a, "/list all",
                         s -> checkLineToList(s, startVarList)),
-                a -> assertCommandCheckOutput(a, "/list history",
-                        s -> assertTrue(s.split("\n").length >= 4, s)),
+                a -> assertCommandCheckOutput(a, "/list printf",
+                        s -> assertTrue(s.contains("void printf"))),
                 a -> assertCommandCheckOutput(a, "/list " + arg,
                         s -> assertEquals(s, "|  No definition or id named " + arg +
                                 " found.  Try /list without arguments.\n"))

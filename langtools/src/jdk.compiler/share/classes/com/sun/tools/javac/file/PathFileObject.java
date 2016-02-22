@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,11 +432,13 @@ public abstract class PathFileObject implements JavaFileObject {
 
     @Override @DefinedBy(Api.COMPILER)
     public InputStream openInputStream() throws IOException {
+        fileManager.updateLastUsedTime();
         return Files.newInputStream(path);
     }
 
     @Override @DefinedBy(Api.COMPILER)
     public OutputStream openOutputStream() throws IOException {
+        fileManager.updateLastUsedTime();
         fileManager.flushCache(this);
         ensureParentDirectoriesExist();
         return Files.newOutputStream(path);
@@ -471,6 +473,7 @@ public abstract class PathFileObject implements JavaFileObject {
 
     @Override @DefinedBy(Api.COMPILER)
     public Writer openWriter() throws IOException {
+        fileManager.updateLastUsedTime();
         fileManager.flushCache(this);
         ensureParentDirectoriesExist();
         return new OutputStreamWriter(Files.newOutputStream(path), fileManager.getEncodingName());

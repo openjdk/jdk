@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
  */
 
 package sun.misc;
-import java.util.Hashtable;
+
+import java.util.Objects;
 
 /**
  * This class provides ANSI/ISO C signal support. A Java program can register
@@ -68,19 +69,17 @@ import java.util.Hashtable;
  *
  * @author   Sheng Liang
  * @author   Bill Shannon
- * @see      sun.misc.SignalHandler
+ * @see     sun.misc.SignalHandler
  * @since    1.2
  */
 public final class Signal {
-    private static Hashtable<Signal,SignalHandler> handlers = new Hashtable<>(4);
-    private static Hashtable<Integer,Signal> signals = new Hashtable<>(4);
 
-    private int number;
-    private String name;
+    // Delegate to jdk.internal.misc.Signal.
+    private final jdk.internal.misc.Signal iSignal;
 
     /* Returns the signal number */
     public int getNumber() {
-        return number;
+        return iSignal.getNumber();
     }
 
     /**
@@ -90,7 +89,7 @@ public final class Signal {
      * @see sun.misc.Signal#Signal(String name)
      */
     public String getName() {
-        return name;
+        return iSignal.getName();
     }
 
     /**
@@ -107,7 +106,7 @@ public final class Signal {
             return false;
         }
         Signal other1 = (Signal)other;
-        return name.equals(other1.name) && (number == other1.number);
+        return iSignal.equals(other1.iSignal);
     }
 
     /**
@@ -116,7 +115,7 @@ public final class Signal {
      * @return  a hash code value for this object.
      */
     public int hashCode() {
-        return number;
+        return getNumber();
     }
 
     /**
@@ -126,7 +125,7 @@ public final class Signal {
      * @return a string representation of the signal
      */
     public String toString() {
-        return "SIG" + name;
+        return iSignal.toString();
     }
 
     /**
@@ -137,11 +136,7 @@ public final class Signal {
      * @see sun.misc.Signal#getName()
      */
     public Signal(String name) {
-        number = findSignal(name);
-        this.name = name;
-        if (number < 0) {
-            throw new IllegalArgumentException("Unknown signal: " + name);
-        }
+        iSignal = new jdk.internal.misc.Signal(name);
     }
 
     /**
@@ -159,30 +154,9 @@ public final class Signal {
     public static synchronized SignalHandler handle(Signal sig,
                                                     SignalHandler handler)
         throws IllegalArgumentException {
-        long newH = (handler instanceof NativeSignalHandler) ?
-                      ((NativeSignalHandler)handler).getHandler() : 2;
-        long oldH = handle0(sig.number, newH);
-        if (oldH == -1) {
-            throw new IllegalArgumentException
-                ("Signal already used by VM or OS: " + sig);
-        }
-        signals.put(sig.number, sig);
-        synchronized (handlers) {
-            SignalHandler oldHandler = handlers.get(sig);
-            handlers.remove(sig);
-            if (newH == 2) {
-                handlers.put(sig, handler);
-            }
-            if (oldH == 0) {
-                return SignalHandler.SIG_DFL;
-            } else if (oldH == 1) {
-                return SignalHandler.SIG_IGN;
-            } else if (oldH == 2) {
-                return oldHandler;
-            } else {
-                return new NativeSignalHandler(oldH);
-            }
-        }
+        jdk.internal.misc.Signal.Handler oldHandler = jdk.internal.misc.Signal.handle(sig.iSignal,
+                InternalMiscHandler.of(sig, handler));
+        return SunMiscHandler.of(sig.iSignal, oldHandler);
     }
 
     /**
@@ -192,41 +166,70 @@ public final class Signal {
      * @see sun.misc.Signal#handle(Signal sig, SignalHandler handler)
      */
     public static void raise(Signal sig) throws IllegalArgumentException {
-        if (handlers.get(sig) == null) {
-            throw new IllegalArgumentException("Unhandled signal: " + sig);
-        }
-        raise0(sig.number);
+        jdk.internal.misc.Signal.raise(sig.iSignal);
     }
 
-    /* Called by the VM to execute Java signal handlers. */
-    private static void dispatch(final int number) {
-        final Signal sig = signals.get(number);
-        final SignalHandler handler = handlers.get(sig);
-
-        Runnable runnable = new Runnable () {
-            public void run() {
-              // Don't bother to reset the priority. Signal handler will
-              // run at maximum priority inherited from the VM signal
-              // dispatch thread.
-              // Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
-                handler.handle(sig);
-            }
-        };
-        if (handler != null) {
-            new Thread(null, runnable, sig + " handler", 0, false).start();
-        }
-    }
-
-    /* Find the signal number, given a name. Returns -1 for unknown signals. */
-    private static native int findSignal(String sigName);
-    /* Registers a native signal handler, and returns the old handler.
-     * Handler values:
-     *   0     default handler
-     *   1     ignore the signal
-     *   2     call back to Signal.dispatch
-     *   other arbitrary native signal handlers
+    /*
+     * Wrapper class to proxy a SignalHandler to a jdk.internal.misc.Signal.Handler.
      */
-    private static native long handle0(int sig, long nativeH);
-    /* Raise a given signal number */
-    private static native void raise0(int sig);
+    static final class InternalMiscHandler implements jdk.internal.misc.Signal.Handler {
+        private final SignalHandler handler;
+        private final Signal signal;
+
+        static jdk.internal.misc.Signal.Handler of(Signal signal, SignalHandler handler) {
+            if (handler == SignalHandler.SIG_DFL) {
+                return jdk.internal.misc.Signal.Handler.SIG_DFL;
+            } else if (handler == SignalHandler.SIG_IGN) {
+                return jdk.internal.misc.Signal.Handler.SIG_IGN;
+            } else if (handler instanceof SunMiscHandler) {
+                return ((SunMiscHandler)handler).iHandler;
+            } else {
+                return new InternalMiscHandler(signal, handler);
+            }
+        }
+
+        private InternalMiscHandler(Signal signal, SignalHandler handler) {
+            this.handler = handler;
+            this.signal = signal;
+        }
+
+        @Override
+        public void handle(jdk.internal.misc.Signal ignore) {
+            handler.handle(signal);
+        }
+    }
+
+    /*
+     * Wrapper class to proxy a jdk.internal.misc.Signal.Handler to a SignalHandler.
+     */
+    static final class SunMiscHandler implements SignalHandler {
+        private final jdk.internal.misc.Signal iSignal;
+        private final jdk.internal.misc.Signal.Handler iHandler;
+
+        static SignalHandler of(jdk.internal.misc.Signal signal, jdk.internal.misc.Signal.Handler handler) {
+            if (handler == jdk.internal.misc.Signal.Handler.SIG_DFL) {
+                return SignalHandler.SIG_DFL;
+            } else if (handler == jdk.internal.misc.Signal.Handler.SIG_IGN) {
+                return SignalHandler.SIG_IGN;
+            } else if (handler instanceof InternalMiscHandler) {
+                return ((InternalMiscHandler) handler).handler;
+            } else {
+                return new SunMiscHandler(signal, handler);
+            }
+        }
+
+        SunMiscHandler(jdk.internal.misc.Signal iSignal, jdk.internal.misc.Signal.Handler iHandler) {
+            this.iSignal = iSignal;
+            this.iHandler = iHandler;
+        }
+
+        @Override
+        public void handle(Signal sig) {
+            iHandler.handle(iSignal);
+        }
+
+        public String toString() {
+            return iHandler.toString();
+        }
+    }
 }

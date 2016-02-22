@@ -150,7 +150,7 @@ public final class ZoneOffset
      */
     public static final ZoneOffset UTC = ZoneOffset.ofTotalSeconds(0);
     /**
-     * Constant for the maximum supported offset.
+     * Constant for the minimum supported offset.
      */
     public static final ZoneOffset MIN = ZoneOffset.ofTotalSeconds(-MAX_SECONDS);
     /**

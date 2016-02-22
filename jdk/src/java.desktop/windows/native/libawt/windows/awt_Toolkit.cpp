@@ -2347,53 +2347,6 @@ Java_sun_awt_windows_WToolkit_getMaximumCursorColors(JNIEnv *env, jobject self)
 
 /*
  * Class:     sun_awt_windows_WToolkit
- * Method:    getScreenWidth
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL
-Java_sun_awt_windows_WToolkit_getScreenWidth(JNIEnv *env, jobject self)
-{
-    TRY;
-
-    int width = ::GetSystemMetrics(SM_CXSCREEN);
-
-    if (!Devices::GetInstance()) {
-        Devices::UpdateInstance(env);
-    }
-    Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice *device = devices->GetDevice(
-                        AwtWin32GraphicsDevice::GetDefaultDeviceIndex());
-
-    return (device == NULL) ? width : device->ScaleDownX(width);
-    CATCH_BAD_ALLOC_RET(0);
-}
-
-/*
- * Class:     sun_awt_windows_WToolkit
- * Method:    getScreenHeight
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL
-Java_sun_awt_windows_WToolkit_getScreenHeight(JNIEnv *env, jobject self)
-{
-    TRY;
-
-    int height = ::GetSystemMetrics(SM_CYSCREEN);
-
-    if (!Devices::GetInstance()) {
-        Devices::UpdateInstance(env);
-    }
-    Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice *device = devices->GetDevice(
-                        AwtWin32GraphicsDevice::GetDefaultDeviceIndex());
-
-    return (device == NULL) ? height : device->ScaleDownY(height);
-
-    CATCH_BAD_ALLOC_RET(0);
-}
-
-/*
- * Class:     sun_awt_windows_WToolkit
  * Method:    getSreenInsets
  * Signature: (I)Ljava/awt/Insets;
  */

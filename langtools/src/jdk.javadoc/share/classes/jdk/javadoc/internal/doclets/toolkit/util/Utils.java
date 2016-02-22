@@ -176,7 +176,7 @@ public class Utils {
         List<Element> excludeList = members.stream()
                 .filter((member) -> (!isDeprecated(member)))
                 .sorted(makeGeneralPurposeComparator())
-                .collect(Collectors.toCollection(ArrayList::new));
+                .collect(Collectors.<Element, List<Element>>toCollection(ArrayList::new));
         return excludeList;
     }
 

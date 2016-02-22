@@ -319,21 +319,7 @@ public class Launcher {
                             if (bootClassPath == null)
                                 return new URL[0];
                             // Skip empty path in boot class path i.e. not default to use CWD
-                            File[] classPath = getClassPath(bootClassPath, false);
-                            int len = classPath.length;
-                            Set<File> seenDirs = new HashSet<File>();
-                            for (int i = 0; i < len; i++) {
-                                File curEntry = classPath[i];
-                                // Negative test used to properly handle
-                                // nonexistent jars on boot class path
-                                if (!curEntry.isDirectory()) {
-                                    curEntry = curEntry.getParentFile();
-                                }
-                                if (curEntry != null && seenDirs.add(curEntry)) {
-                                    MetaIndex.registerDirectory(curEntry);
-                                }
-                            }
-                            return pathToURLs(classPath);
+                            return pathToURLs(getClassPath(bootClassPath, false));
                         }
                     }
                 );

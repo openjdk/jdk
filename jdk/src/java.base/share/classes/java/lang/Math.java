@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1476,18 +1476,18 @@ public final class Math {
         int exp = getExponent(d);
 
         switch(exp) {
-        case DoubleConsts.MAX_EXPONENT+1:       // NaN or infinity
+        case Double.MAX_EXPONENT + 1:       // NaN or infinity
             return Math.abs(d);
 
-        case DoubleConsts.MIN_EXPONENT-1:       // zero or subnormal
+        case Double.MIN_EXPONENT - 1:       // zero or subnormal
             return Double.MIN_VALUE;
 
         default:
-            assert exp <= DoubleConsts.MAX_EXPONENT && exp >= DoubleConsts.MIN_EXPONENT;
+            assert exp <= Double.MAX_EXPONENT && exp >= Double.MIN_EXPONENT;
 
             // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
             exp = exp - (DoubleConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= DoubleConsts.MIN_EXPONENT) {
+            if (exp >= Double.MIN_EXPONENT) {
                 return powerOfTwoD(exp);
             }
             else {
@@ -1495,7 +1495,7 @@ public final class Math {
                 // representation of Double.MIN_VALUE appropriate
                 // number of positions
                 return Double.longBitsToDouble(1L <<
-                (exp - (DoubleConsts.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH-1)) ));
+                (exp - (Double.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH-1)) ));
             }
         }
     }
@@ -1527,26 +1527,25 @@ public final class Math {
         int exp = getExponent(f);
 
         switch(exp) {
-        case FloatConsts.MAX_EXPONENT+1:        // NaN or infinity
+        case Float.MAX_EXPONENT+1:        // NaN or infinity
             return Math.abs(f);
 
-        case FloatConsts.MIN_EXPONENT-1:        // zero or subnormal
-            return FloatConsts.MIN_VALUE;
+        case Float.MIN_EXPONENT-1:        // zero or subnormal
+            return Float.MIN_VALUE;
 
         default:
-            assert exp <= FloatConsts.MAX_EXPONENT && exp >= FloatConsts.MIN_EXPONENT;
+            assert exp <= Float.MAX_EXPONENT && exp >= Float.MIN_EXPONENT;
 
             // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
             exp = exp - (FloatConsts.SIGNIFICAND_WIDTH-1);
-            if (exp >= FloatConsts.MIN_EXPONENT) {
+            if (exp >= Float.MIN_EXPONENT) {
                 return powerOfTwoF(exp);
-            }
-            else {
+            } else {
                 // return a subnormal result; left shift integer
                 // representation of FloatConsts.MIN_VALUE appropriate
                 // number of positions
                 return Float.intBitsToFloat(1 <<
-                (exp - (FloatConsts.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH-1)) ));
+                (exp - (Float.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH-1)) ));
             }
         }
     }
@@ -2276,7 +2275,7 @@ public final class Math {
         // nonzero value by it would be guaranteed to over or
         // underflow; due to rounding, scaling down takes an
         // additional power of two which is reflected here
-        final int MAX_SCALE = DoubleConsts.MAX_EXPONENT + -DoubleConsts.MIN_EXPONENT +
+        final int MAX_SCALE = Double.MAX_EXPONENT + -Double.MIN_EXPONENT +
                               DoubleConsts.SIGNIFICAND_WIDTH + 1;
         int exp_adjust = 0;
         int scale_increment = 0;
@@ -2345,7 +2344,7 @@ public final class Math {
         // nonzero value by it would be guaranteed to over or
         // underflow; due to rounding, scaling down takes an
         // additional power of two which is reflected here
-        final int MAX_SCALE = FloatConsts.MAX_EXPONENT + -FloatConsts.MIN_EXPONENT +
+        final int MAX_SCALE = Float.MAX_EXPONENT + -Float.MIN_EXPONENT +
                               FloatConsts.SIGNIFICAND_WIDTH + 1;
 
         // Make sure scaling factor is in a reasonable range
@@ -2371,7 +2370,7 @@ public final class Math {
      * Returns a floating-point power of two in the normal range.
      */
     static double powerOfTwoD(int n) {
-        assert(n >= DoubleConsts.MIN_EXPONENT && n <= DoubleConsts.MAX_EXPONENT);
+        assert(n >= Double.MIN_EXPONENT && n <= Double.MAX_EXPONENT);
         return Double.longBitsToDouble((((long)n + (long)DoubleConsts.EXP_BIAS) <<
                                         (DoubleConsts.SIGNIFICAND_WIDTH-1))
                                        & DoubleConsts.EXP_BIT_MASK);
@@ -2381,7 +2380,7 @@ public final class Math {
      * Returns a floating-point power of two in the normal range.
      */
     static float powerOfTwoF(int n) {
-        assert(n >= FloatConsts.MIN_EXPONENT && n <= FloatConsts.MAX_EXPONENT);
+        assert(n >= Float.MIN_EXPONENT && n <= Float.MAX_EXPONENT);
         return Float.intBitsToFloat(((n + FloatConsts.EXP_BIAS) <<
                                      (FloatConsts.SIGNIFICAND_WIDTH-1))
                                     & FloatConsts.EXP_BIT_MASK);

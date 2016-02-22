@@ -546,7 +546,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler, Hand
       // Make sure a valid compile_id is associated with every compile
       id = CompileBroker::assign_compile_id_unlocked(Thread::current(), method, entry_bci);
     }
-    result = JVMCIEnv::register_method(method, nm, entry_bci, &_offsets, _custom_stack_area_offset, &buffer,
+    result = JVMCIEnv::register_method(method, nm, entry_bci, &_offsets, _orig_pc_offset, &buffer,
                                        stack_slots, _debug_recorder->_oopmaps, &_exception_handler_table,
                                        compiler, _debug_recorder, _dependencies, env, id,
                                        has_unsafe_access, _has_wide_vector, installed_code, compiled_code, speculation_log);
@@ -576,7 +576,19 @@ void CodeInstaller::initialize_fields(oop target, oop compiled_code, TRAPS) {
   _code_handle = JNIHandles::make_local(HotSpotCompiledCode::targetCode(compiled_code));
   _code_size = HotSpotCompiledCode::targetCodeSize(compiled_code);
   _total_frame_size = HotSpotCompiledCode::totalFrameSize(compiled_code);
-  _custom_stack_area_offset = HotSpotCompiledCode::customStackAreaOffset(compiled_code);
+
+  oop deoptRescueSlot = HotSpotCompiledCode::deoptRescueSlot(compiled_code);
+  if (deoptRescueSlot == NULL) {
+    _orig_pc_offset = -1;
+  } else {
+    _orig_pc_offset = StackSlot::offset(deoptRescueSlot);
+    if (StackSlot::addFrameSize(deoptRescueSlot)) {
+      _orig_pc_offset += _total_frame_size;
+    }
+    if (_orig_pc_offset < 0) {
+      JVMCI_ERROR("invalid deopt rescue slot: %d", _orig_pc_offset);
+    }
+  }
 
   // Pre-calculate the constants section size.  This is required for PC-relative addressing.
   _data_section_handle = JNIHandles::make_local(HotSpotCompiledCode::dataSection(compiled_code));
@@ -724,6 +736,9 @@ JVMCIEnv::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer,
       if (site_InfopointReason::SAFEPOINT() == reason || site_InfopointReason::CALL() == reason || site_InfopointReason::IMPLICIT_EXCEPTION() == reason) {
         TRACE_jvmci_4("safepoint at %i", pc_offset);
         site_Safepoint(buffer, pc_offset, site, CHECK_OK);
+        if (_orig_pc_offset < 0) {
+          JVMCI_ERROR_OK("method contains safepoint, but has no deopt rescue slot");
+        }
       } else {
         TRACE_jvmci_4("infopoint at %i", pc_offset);
         site_Infopoint(buffer, pc_offset, site, CHECK_OK);
