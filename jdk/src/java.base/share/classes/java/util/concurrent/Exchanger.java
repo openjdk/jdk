@@ -155,8 +155,8 @@ public class Exchanger<V> {
      * a value that is enough for common platforms.  Additionally,
      * extra care elsewhere is taken to avoid other false/unintended
      * sharing and to enhance locality, including adding padding (via
-     * jdk.internal.vm.annotation.Contended) to Nodes, embedding "bound" as an Exchanger
-     * field, and reworking some park/unpark mechanics compared to
+     * @Contended) to Nodes, embedding "bound" as an Exchanger field,
+     * and reworking some park/unpark mechanics compared to
      * LockSupport versions.
      *
      * The arena starts out with only one used slot. We expand the
@@ -304,8 +304,7 @@ public class Exchanger<V> {
 
     /**
      * Nodes hold partially exchanged data, plus other per-thread
-     * bookkeeping. Padded via @jdk.internal.vm.annotation.Contended to reduce memory
-     * contention.
+     * bookkeeping. Padded via @Contended to reduce memory contention.
      */
     @jdk.internal.vm.annotation.Contended static final class Node {
         int index;              // Arena index

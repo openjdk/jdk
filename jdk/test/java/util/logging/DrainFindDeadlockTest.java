@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.util.Map;
  * @bug 8010939
  * @summary check for deadlock between findLogger() and drainLoggerRefQueueBounded()
  * @author jim.gish@oracle.com
+ * @modules java.logging
+ *          java.management
  * @build DrainFindDeadlockTest
  * @run main/othervm DrainFindDeadlockTest
  * @key randomness

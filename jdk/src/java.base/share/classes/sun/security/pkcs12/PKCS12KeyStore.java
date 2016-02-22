@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -394,19 +394,19 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
             // decode secret key
             } else {
-                SecretKeyFactory sKeyFactory =
-                    SecretKeyFactory.getInstance(keyAlgo);
                 byte[] keyBytes = in.getOctetString();
                 SecretKeySpec secretKeySpec =
                     new SecretKeySpec(keyBytes, keyAlgo);
 
                 // Special handling required for PBE: needs a PBEKeySpec
                 if (keyAlgo.startsWith("PBE")) {
+                    SecretKeyFactory sKeyFactory =
+                        SecretKeyFactory.getInstance(keyAlgo);
                     KeySpec pbeKeySpec =
                         sKeyFactory.getKeySpec(secretKeySpec, PBEKeySpec.class);
                     key = sKeyFactory.generateSecret(pbeKeySpec);
                 } else {
-                    key = sKeyFactory.generateSecret(secretKeySpec);
+                    key = secretKeySpec;
                 }
 
                 if (debug != null) {

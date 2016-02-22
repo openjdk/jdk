@@ -54,11 +54,17 @@ public class CorbaInboundConnectionCacheImpl
 {
     protected Collection connectionCache;
 
+    private Acceptor acceptor;
+
     public CorbaInboundConnectionCacheImpl(ORB orb, Acceptor acceptor)
     {
         super(orb, acceptor.getConnectionCacheType(),
               ((CorbaAcceptor)acceptor).getMonitoringName());
         this.connectionCache = new ArrayList();
+        this.acceptor = acceptor;
+        if (orb.transportDebugFlag) {
+            dprint(": " + acceptor );
+        }
     }
 
     ////////////////////////////////////////////////////
@@ -66,9 +72,23 @@ public class CorbaInboundConnectionCacheImpl
     // pept.transport.InboundConnectionCache
     //
 
+    public void close () {
+
+        super.close();
+        if (orb.transportDebugFlag) {
+            dprint(".close: " + acceptor );
+        }
+        this.acceptor.close();
+
+    }
+
     public Connection get(Acceptor acceptor)
     {
         throw wrapper.methodShouldNotBeCalled();
+    }
+
+    public Acceptor getAcceptor () {
+        return acceptor;
     }
 
     public void put(Acceptor acceptor, Connection connection)

@@ -95,6 +95,8 @@ public final class Global extends Scope {
     // (__FILE__, __DIR__, __LINE__)
     private static final Object LAZY_SENTINEL = new Object();
 
+    private static final String PACKAGE_PREFIX = "jdk.nashorn.internal.objects.";
+
     private InvokeByName TO_STRING;
     private InvokeByName VALUE_OF;
 
@@ -222,9 +224,6 @@ public final class Global extends Scope {
     @Property(name = "Number", attributes = Attribute.NOT_ENUMERABLE)
     public volatile Object number;
 
-    /** ECMA 2016 19.4.1 - Symbol constructor */
-    @Property(name = "Symbol", attributes = Attribute.NOT_ENUMERABLE)
-    public volatile Object symbol;
 
     /**
      * Getter for ECMA 15.1.4.7 Date property
@@ -748,6 +747,147 @@ public final class Global extends Scope {
 
     private volatile Object float64Array;
 
+
+    /**
+     * Getter for the Symbol property.
+     *
+     * @param self self reference
+     * @return  the value of the Symbol property
+     */
+    @Getter(name = "Symbol", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getSymbol(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.symbol == LAZY_SENTINEL) {
+            global.symbol = global.getBuiltinSymbol();
+        }
+        return global.symbol;
+    }
+
+    /**
+     * Setter for the Symbol property.
+     *
+     * @param self self reference
+     * @param value value of the Symbol property
+     */
+    @Setter(name = "Symbol", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setSymbol(final Object self, final Object value) {
+        Global.instanceFrom(self).symbol = value;
+    }
+
+    private volatile Object symbol;
+
+    /**
+     * Getter for the Map property.
+     *
+     * @param self self reference
+     * @return  the value of the Map property
+     */
+    @Getter(name = "Map", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getMap(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.map == LAZY_SENTINEL) {
+            global.map = global.getBuiltinMap();
+        }
+        return global.map;
+    }
+
+    /**
+     * Setter for the Map property.
+     *
+     * @param self self reference
+     * @param value value of the Map property
+     */
+    @Setter(name = "Map", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setMap(final Object self, final Object value) {
+        Global.instanceFrom(self).map = value;
+    }
+
+    private volatile Object map;
+
+    /**
+     * Getter for the WeakMap property.
+     *
+     * @param self self reference
+     * @return  the value of the WeakMap property
+     */
+    @Getter(name = "WeakMap", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getWeakMap(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.weakMap == LAZY_SENTINEL) {
+            global.weakMap = global.getBuiltinWeakMap();
+        }
+        return global.weakMap;
+    }
+
+    /**
+     * Setter for the WeakMap property.
+     *
+     * @param self self reference
+     * @param value value of the WeakMap property
+     */
+    @Setter(name = "WeakMap", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setWeakMap(final Object self, final Object value) {
+        Global.instanceFrom(self).weakMap = value;
+    }
+
+    private volatile Object weakMap;
+
+    /**
+     * Getter for the Set property.
+     *
+     * @param self self reference
+     * @return  the value of the Set property
+     */
+    @Getter(name = "Set", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getSet(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.set == LAZY_SENTINEL) {
+            global.set = global.getBuiltinSet();
+        }
+        return global.set;
+    }
+
+    /**
+     * Setter for the Set property.
+     *
+     * @param self self reference
+     * @param value value of the Set property
+     */
+    @Setter(name = "Set", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setSet(final Object self, final Object value) {
+        Global.instanceFrom(self).set = value;
+    }
+
+    private volatile Object set;
+
+    /**
+     * Getter for the WeakSet property.
+     *
+     * @param self self reference
+     * @return  the value of the WeakSet property
+     */
+    @Getter(name = "WeakSet", attributes = Attribute.NOT_ENUMERABLE)
+    public static Object getWeakSet(final Object self) {
+        final Global global = Global.instanceFrom(self);
+        if (global.weakSet == LAZY_SENTINEL) {
+            global.weakSet = global.getBuiltinWeakSet();
+        }
+        return global.weakSet;
+    }
+
+    /**
+     * Setter for the WeakSet property.
+     *
+     * @param self self reference
+     * @param value value of the WeakSet property
+     */
+    @Setter(name = "WeakSet", attributes = Attribute.NOT_ENUMERABLE)
+    public static void setWeakSet(final Object self, final Object value) {
+        Global.instanceFrom(self).weakSet = value;
+    }
+
+    private volatile Object weakSet;
+
     /** Nashorn extension: Java access - global.Packages */
     @Property(name = "Packages", attributes = Attribute.NOT_ENUMERABLE)
     public volatile Object packages;
@@ -907,6 +1047,15 @@ public final class Global extends Scope {
     private ScriptFunction builtinFloat32Array;
     private ScriptFunction builtinFloat64Array;
     private ScriptFunction builtinSymbol;
+    private ScriptFunction builtinMap;
+    private ScriptFunction builtinWeakMap;
+    private ScriptFunction builtinSet;
+    private ScriptFunction builtinWeakSet;
+    private ScriptObject   builtinIteratorPrototype;
+    private ScriptObject   builtinMapIteratorPrototype;
+    private ScriptObject   builtinSetIteratorPrototype;
+    private ScriptObject   builtinArrayIteratorPrototype;
+    private ScriptObject   builtinStringIteratorPrototype;
 
     /*
      * ECMA section 13.2.3 The [[ThrowTypeError]] Function Object
@@ -1673,7 +1822,58 @@ public final class Global extends Scope {
     }
 
     ScriptObject getSymbolPrototype() {
-        return ScriptFunction.getPrototype(builtinSymbol);
+        return ScriptFunction.getPrototype(getBuiltinSymbol());
+    }
+
+    ScriptObject getMapPrototype() {
+        return ScriptFunction.getPrototype(getBuiltinMap());
+    }
+
+    ScriptObject getWeakMapPrototype() {
+        return ScriptFunction.getPrototype(getBuiltinWeakMap());
+    }
+
+    ScriptObject getSetPrototype() {
+        return ScriptFunction.getPrototype(getBuiltinSet());
+    }
+
+    ScriptObject getWeakSetPrototype() {
+        return ScriptFunction.getPrototype(getBuiltinWeakSet());
+    }
+
+    ScriptObject getIteratorPrototype() {
+        if (builtinIteratorPrototype == null) {
+            builtinIteratorPrototype = initPrototype("AbstractIterator", getObjectPrototype());
+        }
+        return builtinIteratorPrototype;
+    }
+
+    ScriptObject getMapIteratorPrototype() {
+        if (builtinMapIteratorPrototype == null) {
+            builtinMapIteratorPrototype = initPrototype("MapIterator", getIteratorPrototype());
+        }
+        return builtinMapIteratorPrototype;
+    }
+
+    ScriptObject getSetIteratorPrototype() {
+        if (builtinSetIteratorPrototype == null) {
+            builtinSetIteratorPrototype = initPrototype("SetIterator", getIteratorPrototype());
+        }
+        return builtinSetIteratorPrototype;
+    }
+
+    ScriptObject getArrayIteratorPrototype() {
+        if (builtinArrayIteratorPrototype == null) {
+            builtinArrayIteratorPrototype = initPrototype("ArrayIterator", getIteratorPrototype());
+        }
+        return builtinArrayIteratorPrototype;
+    }
+
+    ScriptObject getStringIteratorPrototype() {
+        if (builtinStringIteratorPrototype == null) {
+            builtinStringIteratorPrototype = initPrototype("StringIterator", getIteratorPrototype());
+        }
+        return builtinStringIteratorPrototype;
     }
 
     private synchronized ScriptFunction getBuiltinArrayBuffer() {
@@ -1914,6 +2114,41 @@ public final class Global extends Scope {
             this.builtinURIError = initErrorSubtype("URIError", getErrorPrototype());
         }
         return this.builtinURIError;
+    }
+
+    private synchronized ScriptFunction getBuiltinSymbol() {
+        if (this.builtinSymbol == null) {
+            this.builtinSymbol = initConstructorAndSwitchPoint("Symbol", ScriptFunction.class);
+        }
+        return this.builtinSymbol;
+    }
+
+    private synchronized ScriptFunction getBuiltinMap() {
+        if (this.builtinMap == null) {
+            this.builtinMap = initConstructorAndSwitchPoint("Map", ScriptFunction.class);
+        }
+        return this.builtinMap;
+    }
+
+    private synchronized ScriptFunction getBuiltinWeakMap() {
+        if (this.builtinWeakMap == null) {
+            this.builtinWeakMap = initConstructorAndSwitchPoint("WeakMap", ScriptFunction.class);
+        }
+        return this.builtinWeakMap;
+    }
+
+    private synchronized ScriptFunction getBuiltinSet() {
+        if (this.builtinSet == null) {
+            this.builtinSet = initConstructorAndSwitchPoint("Set", ScriptFunction.class);
+        }
+        return this.builtinSet;
+    }
+
+    private synchronized ScriptFunction getBuiltinWeakSet() {
+        if (this.builtinWeakSet == null) {
+            this.builtinWeakSet = initConstructorAndSwitchPoint("WeakSet", ScriptFunction.class);
+        }
+        return this.builtinWeakSet;
     }
 
     @Override
@@ -2311,14 +2546,6 @@ public final class Global extends Scope {
         this.builtinString    = initConstructorAndSwitchPoint("String", ScriptFunction.class);
         this.builtinMath      = initConstructorAndSwitchPoint("Math", ScriptObject.class);
 
-        if (env._es6) {
-            this.builtinSymbol = initConstructorAndSwitchPoint("Symbol", ScriptFunction.class);
-        } else {
-            // We need to manually delete nasgen-generated properties we don't want
-            this.delete("Symbol", false);
-            this.builtinObject.delete("getOwnPropertySymbols", false);
-        }
-
         // initialize String.prototype.length to 0
         // add String.prototype.length
         final ScriptObject stringPrototype = getStringPrototype();
@@ -2327,6 +2554,25 @@ public final class Global extends Scope {
         // set isArray flag on Array.prototype
         final ScriptObject arrayPrototype = getArrayPrototype();
         arrayPrototype.setIsArray();
+
+        if (env._es6) {
+            this.symbol   = LAZY_SENTINEL;
+            this.map      = LAZY_SENTINEL;
+            this.weakMap  = LAZY_SENTINEL;
+            this.set      = LAZY_SENTINEL;
+            this.weakSet  = LAZY_SENTINEL;
+        } else {
+            // We need to manually delete nasgen-generated properties we don't want
+            this.delete("Symbol", false);
+            this.delete("Map", false);
+            this.delete("WeakMap", false);
+            this.delete("Set", false);
+            this.delete("WeakSet", false);
+            builtinObject.delete("getOwnPropertySymbols", false);
+            arrayPrototype.delete("entries", false);
+            arrayPrototype.delete("keys", false);
+            arrayPrototype.delete("values", false);
+        }
 
         // Error stuff
         initErrorObjects();
@@ -2459,8 +2705,6 @@ public final class Global extends Scope {
 
         final String execName = ScriptingFunctions.EXEC_NAME;
         value = ScriptFunction.createBuiltin(execName, ScriptingFunctions.EXEC);
-        value.addOwnProperty(ScriptingFunctions.THROW_ON_ERROR_NAME, Attribute.NOT_ENUMERABLE, false);
-
         addOwnProperty(execName, Attribute.NOT_ENUMERABLE, value);
 
         // Nashorn extension: global.echo (scripting-mode-only)
@@ -2474,10 +2718,10 @@ public final class Global extends Scope {
         addOwnProperty("$OPTIONS", Attribute.NOT_ENUMERABLE, options);
 
         // Nashorn extension: global.$ENV (scripting-mode-only)
+        final ScriptObject env = newObject();
         if (System.getSecurityManager() == null) {
             // do not fill $ENV if we have a security manager around
             // Retrieve current state of ENV variables.
-            final ScriptObject env = newObject();
             env.putAll(System.getenv(), scriptEnv._strict);
 
             // Some platforms, e.g., Windows, do not define the PWD environment
@@ -2486,11 +2730,8 @@ public final class Global extends Scope {
             if (!env.containsKey(ScriptingFunctions.PWD_NAME)) {
                 env.put(ScriptingFunctions.PWD_NAME, System.getProperty("user.dir"), scriptEnv._strict);
             }
-
-            addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, env);
-        } else {
-            addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
         }
+        addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, env);
 
         // add other special properties for exec support
         addOwnProperty(ScriptingFunctions.OUT_NAME, Attribute.NOT_ENUMERABLE, UNDEFINED);
@@ -2527,7 +2768,6 @@ public final class Global extends Scope {
         this.string            = this.builtinString;
         this.syntaxError       = this.builtinSyntaxError;
         this.typeError         = this.builtinTypeError;
-        this.symbol            = this.builtinSymbol;
     }
 
     private void initDebug() {
@@ -2563,7 +2803,7 @@ public final class Global extends Scope {
     private <T extends ScriptObject> T initConstructor(final String name, final Class<T> clazz) {
         try {
             // Assuming class name pattern for built-in JS constructors.
-            final StringBuilder sb = new StringBuilder("jdk.nashorn.internal.objects.");
+            final StringBuilder sb = new StringBuilder(PACKAGE_PREFIX);
 
             sb.append("Native");
             sb.append(name);
@@ -2585,6 +2825,22 @@ public final class Global extends Scope {
 
             res.setIsBuiltin();
 
+            return res;
+        } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ScriptObject initPrototype(final String name, final ScriptObject prototype) {
+        try {
+            // Assuming class name pattern for JS prototypes
+            final String className = PACKAGE_PREFIX + name + "$Prototype";
+
+            final Class<?> funcClass = Class.forName(className);
+            final ScriptObject res = (ScriptObject) funcClass.newInstance();
+
+            res.setIsBuiltin();
+            res.setInitialProto(prototype);
             return res;
         } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);

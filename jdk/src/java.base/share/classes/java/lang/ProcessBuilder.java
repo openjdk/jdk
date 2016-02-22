@@ -553,10 +553,9 @@ public final class ProcessBuilder
          *
          * <p>It will always be true that
          * <pre> {@code
-         * Redirect.DISCARD.file() the filename appropriate for the operating system
+         * Redirect.DISCARD.file() is the filename appropriate for the operating system
          * and may be null &&
-         * Redirect.DISCARD.type() == Redirect.Type.WRITE &&
-         * Redirect.DISCARD.append() == false
+         * Redirect.DISCARD.type() == Redirect.Type.WRITE
          * }</pre>
          * @since 9
          */

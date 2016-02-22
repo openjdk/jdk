@@ -55,13 +55,13 @@ abstract class Striped64 extends Number {
      * accessed directly by subclasses.
      *
      * Table entries are of class Cell; a variant of AtomicLong padded
-     * (via @jdk.internal.vm.annotation.Contended) to reduce cache contention. Padding
-     * is overkill for most Atomics because they are usually
-     * irregularly scattered in memory and thus don't interfere much
-     * with each other. But Atomic objects residing in arrays will
-     * tend to be placed adjacent to each other, and so will most
-     * often share cache lines (with a huge negative performance
-     * impact) without this precaution.
+     * (via @Contended) to reduce cache contention. Padding is
+     * overkill for most Atomics because they are usually irregularly
+     * scattered in memory and thus don't interfere much with each
+     * other. But Atomic objects residing in arrays will tend to be
+     * placed adjacent to each other, and so will most often share
+     * cache lines (with a huge negative performance impact) without
+     * this precaution.
      *
      * In part because Cells are relatively large, we avoid creating
      * them until they are needed.  When there is no contention, all

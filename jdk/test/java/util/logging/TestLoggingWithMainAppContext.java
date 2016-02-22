@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import javax.imageio.ImageIO;
  * @summary Test that the default user context is used when in the main
  *          application context. This test must not be run in same VM or agent
  *          VM mode: it would not test the intended behavior.
+ * @modules java.desktop
+ *          java.logging
  * @run main/othervm TestLoggingWithMainAppContext
  */
 public class TestLoggingWithMainAppContext {

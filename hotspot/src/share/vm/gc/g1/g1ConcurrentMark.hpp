@@ -229,6 +229,8 @@ private:
   volatile bool        _should_abort;
   HeapRegion* volatile _next_survivor;
 
+  void notify_scan_done();
+
 public:
   G1CMRootRegions();
   // We actually do most of the initialization in this method.
@@ -247,6 +249,8 @@ public:
   // Claim the next root region to scan atomically, or return NULL if
   // all have been claimed.
   HeapRegion* claim_next();
+
+  void cancel_scan();
 
   // Flag that we're done with root region scanning and notify anyone
   // who's waiting on it. If aborted is false, assume that all regions

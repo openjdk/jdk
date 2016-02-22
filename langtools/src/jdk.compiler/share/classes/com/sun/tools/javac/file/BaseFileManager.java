@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,6 @@ import javax.tools.JavaFileObject.Kind;
 
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Source;
-import com.sun.tools.javac.file.FSInfo;
-import com.sun.tools.javac.file.Locations;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
@@ -88,6 +86,27 @@ public abstract class BaseFileManager implements JavaFileManager {
         options = Options.instance(context);
         classLoaderClass = options.get("procloader");
         locations.update(log, Lint.instance(context), FSInfo.instance(context));
+
+        // Setting this option is an indication that close() should defer actually closing
+        // the file manager until after a specified period of inactivity.
+        // This is to accomodate clients which save references to Symbols created for use
+        // within doclets or annotation processors, and which then attempt to use those
+        // references after the tool exits, having closed any internally managed file manager.
+        // Ideally, such clients should run the tool via the javax.tools API, providing their
+        // own file manager, which can be closed by the client when all use of that file
+        // manager is complete.
+        // If the option has a numeric value, it will be interpreted as the duration,
+        // in seconds, of the period of inactivity to wait for, before the file manager
+        // is actually closed.
+        // See also deferredClose().
+        String s = options.get("fileManager.deferClose");
+        if (s != null) {
+            try {
+                deferredCloseTimeout = (int) (Float.parseFloat(s) * 1000);
+            } catch (NumberFormatException e) {
+                deferredCloseTimeout = 60 * 1000;  // default: one minute, in millis
+            }
+        }
     }
 
     protected Locations createLocations() {
@@ -115,6 +134,42 @@ public abstract class BaseFileManager implements JavaFileManager {
      * be closed when it is no longer required.
      */
     public boolean autoClose;
+
+    /**
+     * Wait for a period of inactivity before calling close().
+     * The length of the period of inactivity is given by {@code deferredCloseTimeout}
+     */
+    protected void deferredClose() {
+        Thread t = new Thread(getClass().getName() + " DeferredClose") {
+            @Override
+            public void run() {
+                try {
+                    synchronized (BaseFileManager.this) {
+                        long now = System.currentTimeMillis();
+                        while (now < lastUsedTime + deferredCloseTimeout) {
+                            BaseFileManager.this.wait(lastUsedTime + deferredCloseTimeout - now);
+                            now = System.currentTimeMillis();
+                        }
+                        deferredCloseTimeout = 0;
+                        close();
+                    }
+                } catch (InterruptedException e) {
+                } catch (IOException e) {
+                }
+            }
+        };
+        t.setDaemon(true);
+        t.start();
+    }
+
+    synchronized void updateLastUsedTime() {
+        if (deferredCloseTimeout > 0) { // avoid updating the time unnecessarily
+            lastUsedTime = System.currentTimeMillis();
+        }
+    }
+
+    private long lastUsedTime = System.currentTimeMillis();
+    protected long deferredCloseTimeout = 0;
 
     protected Source getSource() {
         String sourceName = options.get(Option.SOURCE);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class JavacOptionPrep {
         //  - Sources provided without preceding option (SRC2)
         //  - An unrecognized option which is to be passed on to javac
         String sjavacArgs = "-cp " + TestPath.CP1 + SEP + TestPath.CP2 +
-                            " -d dest " +
+                            " -d dest" +
                             " -h header" +
                             " -sourcepath " + TestPath.SOURCEPATH1 +
                             " -src " + TestPath.SRC1 +
