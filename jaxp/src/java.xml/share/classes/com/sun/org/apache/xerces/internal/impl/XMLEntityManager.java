@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -370,7 +370,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     protected Map<String, Entity> fEntities = new HashMap<>();
 
     /** Entity stack. */
-    protected Stack fEntityStack = new Stack();
+    protected Stack<Entity> fEntityStack = new Stack<>();
 
     /** Current entity. */
     protected Entity.ScannedEntity fCurrentEntity = null;
@@ -633,10 +633,10 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                         final HTTPInputSource httpInputSource = (HTTPInputSource) xmlInputSource;
 
                         // set request properties
-                        Iterator propIter = httpInputSource.getHTTPRequestProperties();
+                        Iterator<Map.Entry<String, String>> propIter = httpInputSource.getHTTPRequestProperties();
                         while (propIter.hasNext()) {
-                            Map.Entry entry = (Map.Entry) propIter.next();
-                            urlConnection.setRequestProperty((String) entry.getKey(), (String) entry.getValue());
+                            Map.Entry<String, String> entry = propIter.next();
+                            urlConnection.setRequestProperty(entry.getKey(), entry.getValue());
                         }
 
                         // set preference for redirection
@@ -1057,7 +1057,6 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         String literalSystemId = resourceIdentifier.getLiteralSystemId();
         String baseSystemId = resourceIdentifier.getBaseSystemId();
         String expandedSystemId = resourceIdentifier.getExpandedSystemId();
-        String namespace = resourceIdentifier.getNamespace();
 
         // if no base systemId given, assume that it's relative
         // to the systemId of the current scanned entity
@@ -2067,14 +2066,6 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
         // system id has to be a valid URI
         if (strict) {
-
-
-            // check if there is a system id before
-            // trying to expand it.
-            if (systemId == null) {
-                return null;
-            }
-
             try {
                 // if it's already an absolute one, return it
                 new URI(systemId);
@@ -2968,7 +2959,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
                     if (!fCurrentEntity.xmlDeclChunkRead)
                     {
                         fCurrentEntity.xmlDeclChunkRead = true;
-                        len = fCurrentEntity.DEFAULT_XMLDECL_BUFFER_SIZE;
+                        len = DEFAULT_XMLDECL_BUFFER_SIZE;
                     }
                     return fInputStream.read(b, off, len);
                 }
