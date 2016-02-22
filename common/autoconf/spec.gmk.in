@@ -314,6 +314,10 @@ COMPILER_SUPPORTS_TARGET_BITS_FLAG=@COMPILER_SUPPORTS_TARGET_BITS_FLAG@
 # Option used to pass a command file to the compiler
 COMPILER_COMMAND_FILE_FLAG:=@COMPILER_COMMAND_FILE_FLAG@
 
+# Option for specifying a file which saves the binder commands
+# produced by the link step (for debugging, currently AIX only)
+COMPILER_BINDCMD_FILE_FLAG:=@COMPILER_BINDCMD_FILE_FLAG@
+
 CC_OUT_OPTION:=@CC_OUT_OPTION@
 EXE_OUT_OPTION:=@EXE_OUT_OPTION@
 LD_OUT_OPTION:=@LD_OUT_OPTION@
