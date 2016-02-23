@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_INLINE_HPP
 #define SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_INLINE_HPP
 
-#include "gc/g1/concurrentMark.hpp"
 #include "gc/g1/concurrentMarkThread.hpp"
+#include "gc/g1/g1ConcurrentMark.hpp"
 
   // Total virtual time so far.
 inline double ConcurrentMarkThread::vtime_accum() {

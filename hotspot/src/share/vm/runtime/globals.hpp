@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -741,9 +741,6 @@ public:
   product(bool, ForceTimeHighResolution, false,                             \
           "Using high time resolution (for Win32 only)")                    \
                                                                             \
-  develop(bool, TraceItables, false,                                        \
-          "Trace initialization and use of itables")                        \
-                                                                            \
   develop(bool, TracePcPatching, false,                                     \
           "Trace usage of frame::patch_pc")                                 \
                                                                             \
@@ -829,9 +826,6 @@ public:
   notproduct(bool, StressCriticalJNINatives, false,                         \
           "Exercise register saving code in critical natives")              \
                                                                             \
-  product(bool, UseSSE42Intrinsics, false,                                  \
-          "SSE4.2 versions of intrinsics")                                  \
-                                                                            \
   product(bool, UseAESIntrinsics, false,                                    \
           "Use intrinsics for AES versions of crypto")                      \
                                                                             \
@@ -892,7 +886,7 @@ public:
                                                                             \
   notproduct(bool, StrictSafepointChecks, trueInDebug,                      \
           "Enable strict checks that safepoints cannot happen for threads " \
-          "that use No_Safepoint_Verifier")                                 \
+          "that use NoSafepointVerifier")                                   \
                                                                             \
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
@@ -2337,6 +2331,14 @@ public:
   diagnostic(bool, VerifyDuringGC, false,                                   \
           "Verify memory system during GC (between phases)")                \
                                                                             \
+  diagnostic(ccstrlist, VerifySubSet, "",                                   \
+          "Memory sub-systems to verify when Verify*GC flag(s) "            \
+          "are enabled. One or more sub-systems can be specified "          \
+          "in a comma separated string. Sub-systems are: "                  \
+          "threads, heap, symbol_table, string_table, codecache, "          \
+          "dictionary, classloader_data_graph, metaspace, jni_handles, "    \
+          "c-heap, codecache_oops")                                         \
+                                                                            \
   diagnostic(bool, GCParallelVerificationEnabled, true,                     \
           "Enable parallel memory system verification")                     \
                                                                             \
@@ -2386,6 +2388,14 @@ public:
           "will sleep while yielding before giving up and resuming GC")     \
           range(0, max_juint)                                               \
                                                                             \
+  product(bool, PrintGC, false,                                             \
+          "Print message at garbage collection. "                           \
+          "Deprecated, use -Xlog:gc instead.")                              \
+                                                                            \
+  product(bool, PrintGCDetails, false,                                      \
+          "Print more details at garbage collection. "                      \
+          "Deprecated, use -Xlog:gc* instead.")                             \
+                                                                            \
   develop(intx, ConcGCYieldTimeout, 0,                                      \
           "If non-zero, assert that GC threads yield within this "          \
           "number of milliseconds")                                         \
@@ -2403,20 +2413,11 @@ public:
   product(bool, TraceClassPaths, false,                                     \
           "Trace processing of class paths")                                \
                                                                             \
-  product_rw(bool, TraceClassLoading, false,                                \
-          "Trace all classes loaded")                                       \
-                                                                            \
   product(bool, TraceClassLoadingPreorder, false,                           \
           "Trace all classes loaded in order referenced (not loaded)")      \
                                                                             \
-  product_rw(bool, TraceClassUnloading, false,                              \
-          "Trace unloading of classes")                                     \
-                                                                            \
   product_rw(bool, TraceLoaderConstraints, false,                           \
           "Trace loader constraints")                                       \
-                                                                            \
-  develop(bool, TraceClassLoaderData, false,                                \
-          "Trace class loader loader_data lifetime")                        \
                                                                             \
   product(size_t, InitialBootClassLoaderMetaspaceSize,                      \
           NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
@@ -2705,9 +2706,6 @@ public:
   develop(bool, DebugVtables, false,                                        \
           "add debugging code to vtable dispatch")                          \
                                                                             \
-  develop(bool, PrintVtables, false,                                        \
-          "print vtables when printing klass")                              \
-                                                                            \
   notproduct(bool, PrintVtableStats, false,                                 \
           "print vtables stats at end of run")                              \
                                                                             \
@@ -2967,16 +2965,16 @@ public:
                                                                             \
   product(intx,  AllocatePrefetchLines, 3,                                  \
           "Number of lines to prefetch ahead of array allocation pointer")  \
-          range(1, max_jint / 2)                                            \
+          range(1, 64)                                                      \
                                                                             \
   product(intx,  AllocateInstancePrefetchLines, 1,                          \
           "Number of lines to prefetch ahead of instance allocation "       \
           "pointer")                                                        \
-          range(1, max_jint / 2)                                            \
+          range(1, 64)                                                      \
                                                                             \
   product(intx,  AllocatePrefetchStepSize, 16,                              \
           "Step size in bytes of sequential prefetch instructions")         \
-          range(1, max_jint)                                                \
+          range(1, 512)                                                     \
           constraint(AllocatePrefetchStepSizeConstraintFunc,AfterMemoryInit)\
                                                                             \
   product(intx,  AllocatePrefetchInstr, 0,                                  \
@@ -3250,7 +3248,7 @@ public:
                                                                             \
   product(size_t, MinTLABSize, 2*K,                                         \
           "Minimum allowed TLAB size (in bytes)")                           \
-          range(1, max_uintx)                                               \
+          range(1, max_uintx/2)                                             \
           constraint(MinTLABSizeConstraintFunc,AfterMemoryInit)             \
                                                                             \
   product(size_t, TLABSize, 0,                                              \
@@ -3393,10 +3391,10 @@ public:
           "also has a smaller default value; see arguments.cpp.")           \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, MarkSweepAlwaysCompactCount,     4,                        \
+  product(uint, MarkSweepAlwaysCompactCount,     4,                         \
           "How often should we fully compact the heap (ignoring the dead "  \
           "space parameters)")                                              \
-          range(1, max_uintx)                                               \
+          range(1, max_juint)                                               \
                                                                             \
   develop(uintx, GCExpandToAllocateDelayMillis, 0,                          \
           "Delay between expansion and allocation (in milliseconds)")       \
@@ -3949,7 +3947,7 @@ public:
   product(bool, PerfDisableSharedMem, false,                                \
           "Store performance data in standard memory")                      \
                                                                             \
-  product(intx, PerfDataMemorySize, 64*K,                                   \
+  product(intx, PerfDataMemorySize, 32*K,                                   \
           "Size of performance data memory region. Will be rounded "        \
           "up to a multiple of the native os page size.")                   \
           range(128, 32*64*K)                                               \

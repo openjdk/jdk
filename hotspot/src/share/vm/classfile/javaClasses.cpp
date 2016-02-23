@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ compute_offset(int &dest_offset,
       tty->print_cr("  name: %s, sig: %s, flags: %08x", fs.name()->as_C_string(), fs.signature()->as_C_string(), fs.access_flags().as_int());
     }
 #endif //PRODUCT
-    vm_exit_during_initialization("Invalid layout of preloaded class: use -XX:+TraceClassLoading to see the origin of the problem class");
+    vm_exit_during_initialization("Invalid layout of preloaded class: use -Xlog:classload=info to see the origin of the problem class");
   }
   dest_offset = fd.offset();
 }
@@ -1524,7 +1524,7 @@ class BacktraceBuilder: public StackObj {
   objArrayOop     _mirrors;
   typeArrayOop    _cprefs; // needed to insulate method name against redefinition
   int             _index;
-  No_Safepoint_Verifier _nsv;
+  NoSafepointVerifier _nsv;
 
  public:
 
@@ -1583,7 +1583,7 @@ class BacktraceBuilder: public StackObj {
 
   void expand(TRAPS) {
     objArrayHandle old_head(THREAD, _head);
-    Pause_No_Safepoint_Verifier pnsv(&_nsv);
+    PauseNoSafepointVerifier pnsv(&_nsv);
 
     objArrayOop head = oopFactory::new_objectArray(trace_size, CHECK);
     objArrayHandle new_head(THREAD, head);
@@ -1782,6 +1782,20 @@ void java_lang_Throwable::print_stack_trace(Handle throwable, outputStream* st) 
       }
     }
   }
+}
+
+/**
+ * Print the throwable stack trace by calling the Java method java.lang.Throwable.printStackTrace().
+ */
+void java_lang_Throwable::java_printStackTrace(Handle throwable, TRAPS) {
+  assert(throwable->is_a(SystemDictionary::Throwable_klass()), "Throwable instance expected");
+  JavaValue result(T_VOID);
+  JavaCalls::call_virtual(&result,
+                          throwable,
+                          KlassHandle(THREAD, SystemDictionary::Throwable_klass()),
+                          vmSymbols::printStackTrace_name(),
+                          vmSymbols::void_method_signature(),
+                          THREAD);
 }
 
 void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHandle& method, TRAPS) {
@@ -3958,7 +3972,7 @@ int InjectedField::compute_offset() {
     tty->print_cr("  name: %s, sig: %s, flags: %08x", fs.name()->as_C_string(), fs.signature()->as_C_string(), fs.access_flags().as_int());
   }
 #endif //PRODUCT
-  vm_exit_during_initialization("Invalid layout of preloaded class: use -XX:+TraceClassLoading to see the origin of the problem class");
+  vm_exit_during_initialization("Invalid layout of preloaded class: use -Xlog:classload=info to see the origin of the problem class");
   return -1;
 }
 

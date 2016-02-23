@@ -45,7 +45,7 @@ void VM_ParallelGCFailedAllocation::doit() {
   GCCauseSetter gccs(heap, _gc_cause);
   _result = heap->failed_mem_allocate(_word_size);
 
-  if (_result == NULL && GC_locker::is_active_and_needs_gc()) {
+  if (_result == NULL && GCLocker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
 }

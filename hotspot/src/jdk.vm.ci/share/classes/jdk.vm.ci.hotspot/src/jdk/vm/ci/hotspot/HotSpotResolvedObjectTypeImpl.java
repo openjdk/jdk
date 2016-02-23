@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,7 +48,6 @@ import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.MetaUtil;
 import jdk.vm.ci.meta.ModifiersProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -304,16 +302,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    public JavaConstant getJavaClass() {
-        return HotSpotObjectConstantImpl.forObject(mirror());
-    }
-
-    @Override
-    public Constant getObjectHub() {
-        return klass();
-    }
-
-    @Override
     public AssumptionResult<Boolean> hasFinalizableSubclass() {
         assert !isArray();
         if (!compilerToVM().hasFinalizableSubclass(this)) {
@@ -482,8 +470,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             /* Everything has the core vtable of java.lang.Object */
             return config.baseVtableLength();
         }
-        int result = UNSAFE.getInt(getMetaspaceKlass() + config.instanceKlassVtableLengthOffset) / (config.vtableEntrySize / config.heapWordSize);
-        assert result >= config.baseVtableLength() : UNSAFE.getInt(getMetaspaceKlass() + config.instanceKlassVtableLengthOffset) + " " + config.vtableEntrySize;
+        int result = UNSAFE.getInt(getMetaspaceKlass() + config.klassVtableLengthOffset) / (config.vtableEntrySize / config.heapWordSize);
+        assert result >= config.baseVtableLength() : UNSAFE.getInt(getMetaspaceKlass() + config.klassVtableLengthOffset) + " " + config.vtableEntrySize;
         return result;
     }
 
@@ -565,7 +553,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
          *
          * @param index index to the fields array
          */
-        public FieldInfo(int index) {
+        FieldInfo(int index) {
             HotSpotVMConfig config = config();
             // Get Klass::_fields
             final long metaspaceFields = UNSAFE.getAddress(getMetaspaceKlass() + config.instanceKlassFieldsOffset);
@@ -846,12 +834,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             // @formatter:on
         }
         return null;
-    }
-
-    @Override
-    public URL getClassFilePath() {
-        Class<?> cls = mirror();
-        return cls.getResource(MetaUtil.getSimpleName(cls, true).replace('.', '$') + ".class");
     }
 
     @Override

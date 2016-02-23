@@ -22,9 +22,6 @@
  */
 package jdk.vm.ci.hotspot.sparc;
 
-import static jdk.vm.ci.code.CallingConvention.Type.JavaCall;
-import static jdk.vm.ci.code.CallingConvention.Type.JavaCallee;
-import static jdk.vm.ci.code.CallingConvention.Type.NativeCall;
 import static jdk.vm.ci.meta.JavaKind.Void;
 import static jdk.vm.ci.meta.Value.ILLEGAL;
 import static jdk.vm.ci.sparc.SPARC.REGISTER_SAFE_AREA_SIZE;
@@ -81,6 +78,7 @@ import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaKind;
@@ -107,6 +105,7 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
         return allocatable.clone();
     }
 
+    @Override
     public Register[] filterAllocatableRegisters(PlatformKind kind, Register[] registers) {
         ArrayList<Register> list = new ArrayList<>();
         for (Register reg : registers) {
@@ -200,17 +199,20 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
     }
 
     @Override
-    public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, TargetDescription target, boolean stackOnly) {
-        if (type == JavaCall || type == NativeCall) {
-            return callingConvention(cpuCallerParameterRegisters, returnType, parameterTypes, type, target, stackOnly);
+    public CallingConvention getCallingConvention(Type type, JavaType returnType, JavaType[] parameterTypes, TargetDescription target) {
+        HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
+        if (type == HotSpotCallingConventionType.JavaCall || type == HotSpotCallingConventionType.NativeCall) {
+            return callingConvention(cpuCallerParameterRegisters, returnType, parameterTypes, hotspotType, target);
         }
-        if (type == JavaCallee) {
-            return callingConvention(cpuCalleeParameterRegisters, returnType, parameterTypes, type, target, stackOnly);
+        if (type == HotSpotCallingConventionType.JavaCallee) {
+            return callingConvention(cpuCalleeParameterRegisters, returnType, parameterTypes, hotspotType, target);
         }
         throw JVMCIError.shouldNotReachHere();
     }
 
+    @Override
     public Register[] getCallingConventionRegisters(Type type, JavaKind kind) {
+        HotSpotCallingConventionType hotspotType = (HotSpotCallingConventionType) type;
         switch (kind) {
             case Boolean:
             case Byte:
@@ -219,7 +221,7 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
             case Int:
             case Long:
             case Object:
-                return type == Type.JavaCallee ? cpuCalleeParameterRegisters : cpuCallerParameterRegisters;
+                return hotspotType == HotSpotCallingConventionType.JavaCallee ? cpuCalleeParameterRegisters : cpuCallerParameterRegisters;
             case Double:
             case Float:
                 return fpuFloatParameterRegisters;
@@ -228,7 +230,7 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
         }
     }
 
-    private CallingConvention callingConvention(Register[] generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, Type type, TargetDescription target, boolean stackOnly) {
+    private CallingConvention callingConvention(Register[] generalParameterRegisters, JavaType returnType, JavaType[] parameterTypes, HotSpotCallingConventionType type, TargetDescription target) {
         AllocatableValue[] locations = new AllocatableValue[parameterTypes.length];
 
         int currentGeneral = 0;
@@ -246,13 +248,13 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
                 case Int:
                 case Long:
                 case Object:
-                    if (!stackOnly && currentGeneral < generalParameterRegisters.length) {
+                    if (currentGeneral < generalParameterRegisters.length) {
                         Register register = generalParameterRegisters[currentGeneral++];
                         locations[i] = register.asValue(target.getLIRKind(kind));
                     }
                     break;
                 case Double:
-                    if (!stackOnly && currentFloating < fpuFloatParameterRegisters.length) {
+                    if (currentFloating < fpuFloatParameterRegisters.length) {
                         if (currentFloating % 2 != 0) {
                             // Make register number even to be a double reg
                             currentFloating++;
@@ -263,7 +265,7 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
                     }
                     break;
                 case Float:
-                    if (!stackOnly && currentFloating < fpuFloatParameterRegisters.length) {
+                    if (currentFloating < fpuFloatParameterRegisters.length) {
                         Register register = fpuFloatParameterRegisters[currentFloating++];
                         locations[i] = register.asValue(target.getLIRKind(kind));
                     }
@@ -287,7 +289,7 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
         AllocatableValue returnLocation = returnKind == Void ? ILLEGAL : getReturnRegister(returnKind, type).asValue(target.getLIRKind(returnKind.getStackKind()));
 
         int outArgSpillArea;
-        if (type == NativeCall && addNativeRegisterArgumentSlots) {
+        if (type == HotSpotCallingConventionType.NativeCall && addNativeRegisterArgumentSlots) {
             // Space for native callee which may spill our outgoing arguments
             outArgSpillArea = Math.min(locations.length, generalParameterRegisters.length) * target.wordSize;
         } else {
@@ -302,10 +304,10 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
 
     @Override
     public Register getReturnRegister(JavaKind kind) {
-        return getReturnRegister(kind, JavaCallee);
+        return getReturnRegister(kind, HotSpotCallingConventionType.JavaCallee);
     }
 
-    private static Register getReturnRegister(JavaKind kind, Type type) {
+    private static Register getReturnRegister(JavaKind kind, HotSpotCallingConventionType type) {
         switch (kind) {
             case Boolean:
             case Byte:
@@ -314,7 +316,7 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
             case Int:
             case Long:
             case Object:
-                return type == JavaCallee ? i0 : o0;
+                return type == HotSpotCallingConventionType.JavaCallee ? i0 : o0;
             case Float:
                 return f0;
             case Double:

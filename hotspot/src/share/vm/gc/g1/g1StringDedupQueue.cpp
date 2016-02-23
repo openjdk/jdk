@@ -96,7 +96,7 @@ void G1StringDedupQueue::push(uint worker_id, oop java_string) {
 
 oop G1StringDedupQueue::pop() {
   assert(!SafepointSynchronize::is_at_safepoint(), "Must not be at safepoint");
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
 
   // Try all queues before giving up
   for (size_t tries = 0; tries < _queue->_nqueues; tries++) {

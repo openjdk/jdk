@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,6 +306,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
                    adapter->size_of_parameters());
 
   if (TraceInvokeDynamic) {
+    ttyLocker ttyl;
     tty->print_cr("set_method_handle bc=%d appendix=" PTR_FORMAT "%s method_type=" PTR_FORMAT "%s method=" PTR_FORMAT " ",
                   invoke_code,
                   p2i(appendix()),    (has_appendix    ? "" : " (unused)"),
@@ -357,6 +358,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   set_bytecode_1(invoke_code);
   NOT_PRODUCT(verify(tty));
   if (TraceInvokeDynamic) {
+    ttyLocker ttyl;
     this->print(tty, 0);
   }
 }
@@ -394,9 +396,7 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
         int holder_index = cpool->uncached_klass_ref_index_at(constant_pool_index());
         if (cpool->tag_at(holder_index).is_klass()) {
           Klass* klass = cpool->resolved_klass_at(holder_index);
-          if (!klass->is_instance_klass())
-            klass = SystemDictionary::Object_klass();
-          return InstanceKlass::cast(klass)->method_at_vtable(f2_as_index());
+          return klass->method_at_vtable(f2_as_index());
         }
       }
       break;

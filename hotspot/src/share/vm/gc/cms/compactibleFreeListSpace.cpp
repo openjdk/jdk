@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,10 @@ void CompactibleFreeListSpace::initializeIndexedFreeListArray() {
     assert(_indexedFreeList[i].tail() == NULL, "reset check failed");
     assert(_indexedFreeList[i].hint() == IndexSetSize, "reset check failed");
   }
+}
+
+size_t CompactibleFreeListSpace::obj_size(const HeapWord* addr) const {
+  return adjustObjectSize(oop(addr)->size());
 }
 
 void CompactibleFreeListSpace::resetIndexedFreeListArray() {
@@ -576,7 +580,7 @@ void CompactibleFreeListSpace::set_end(HeapWord* value) {
   }
 }
 
-class FreeListSpace_DCTOC : public Filtering_DCTOC {
+class FreeListSpaceDCTOC : public FilteringDCTOC {
   CompactibleFreeListSpace* _cfls;
   CMSCollector* _collector;
   bool _parallel;
@@ -596,21 +600,21 @@ protected:
   walk_mem_region_with_cl_DECL(FilteringClosure);
 
 public:
-  FreeListSpace_DCTOC(CompactibleFreeListSpace* sp,
-                      CMSCollector* collector,
-                      ExtendedOopClosure* cl,
-                      CardTableModRefBS::PrecisionStyle precision,
-                      HeapWord* boundary,
-                      bool parallel) :
-    Filtering_DCTOC(sp, cl, precision, boundary),
+  FreeListSpaceDCTOC(CompactibleFreeListSpace* sp,
+                     CMSCollector* collector,
+                     ExtendedOopClosure* cl,
+                     CardTableModRefBS::PrecisionStyle precision,
+                     HeapWord* boundary,
+                     bool parallel) :
+    FilteringDCTOC(sp, cl, precision, boundary),
     _cfls(sp), _collector(collector), _parallel(parallel) {}
 };
 
 // We de-virtualize the block-related calls below, since we know that our
 // space is a CompactibleFreeListSpace.
 
-#define FreeListSpace_DCTOC__walk_mem_region_with_cl_DEFN(ClosureType)          \
-void FreeListSpace_DCTOC::walk_mem_region_with_cl(MemRegion mr,                 \
+#define FreeListSpaceDCTOC__walk_mem_region_with_cl_DEFN(ClosureType)           \
+void FreeListSpaceDCTOC::walk_mem_region_with_cl(MemRegion mr,                  \
                                                  HeapWord* bottom,              \
                                                  HeapWord* top,                 \
                                                  ClosureType* cl) {             \
@@ -620,10 +624,10 @@ void FreeListSpace_DCTOC::walk_mem_region_with_cl(MemRegion mr,                 
      walk_mem_region_with_cl_nopar(mr, bottom, top, cl);                        \
    }                                                                            \
 }                                                                               \
-void FreeListSpace_DCTOC::walk_mem_region_with_cl_par(MemRegion mr,             \
-                                                      HeapWord* bottom,         \
-                                                      HeapWord* top,            \
-                                                      ClosureType* cl) {        \
+void FreeListSpaceDCTOC::walk_mem_region_with_cl_par(MemRegion mr,              \
+                                                     HeapWord* bottom,          \
+                                                     HeapWord* top,             \
+                                                     ClosureType* cl) {         \
   /* Skip parts that are before "mr", in case "block_start" sent us             \
      back too far. */                                                           \
   HeapWord* mr_start = mr.start();                                              \
@@ -647,10 +651,10 @@ void FreeListSpace_DCTOC::walk_mem_region_with_cl_par(MemRegion mr,             
     }                                                                           \
   }                                                                             \
 }                                                                               \
-void FreeListSpace_DCTOC::walk_mem_region_with_cl_nopar(MemRegion mr,           \
-                                                        HeapWord* bottom,       \
-                                                        HeapWord* top,          \
-                                                        ClosureType* cl) {      \
+void FreeListSpaceDCTOC::walk_mem_region_with_cl_nopar(MemRegion mr,            \
+                                                       HeapWord* bottom,        \
+                                                       HeapWord* top,           \
+                                                       ClosureType* cl) {       \
   /* Skip parts that are before "mr", in case "block_start" sent us             \
      back too far. */                                                           \
   HeapWord* mr_start = mr.start();                                              \
@@ -678,15 +682,15 @@ void FreeListSpace_DCTOC::walk_mem_region_with_cl_nopar(MemRegion mr,           
 // (There are only two of these, rather than N, because the split is due
 // only to the introduction of the FilteringClosure, a local part of the
 // impl of this abstraction.)
-FreeListSpace_DCTOC__walk_mem_region_with_cl_DEFN(ExtendedOopClosure)
-FreeListSpace_DCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
+FreeListSpaceDCTOC__walk_mem_region_with_cl_DEFN(ExtendedOopClosure)
+FreeListSpaceDCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
 
 DirtyCardToOopClosure*
 CompactibleFreeListSpace::new_dcto_cl(ExtendedOopClosure* cl,
                                       CardTableModRefBS::PrecisionStyle precision,
                                       HeapWord* boundary,
                                       bool parallel) {
-  return new FreeListSpace_DCTOC(this, _collector, cl, precision, boundary, parallel);
+  return new FreeListSpaceDCTOC(this, _collector, cl, precision, boundary, parallel);
 }
 
 
@@ -2413,7 +2417,7 @@ void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// CFLS_LAB
+// CompactibleFreeListSpaceLAB
 ///////////////////////////////////////////////////////////////////////////
 
 #define VECTOR_257(x)                                                                                  \
@@ -2432,12 +2436,12 @@ void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
 // generic OldPLABSize, whose static default is different; if overridden at the
 // command-line, this will get reinitialized via a call to
 // modify_initialization() below.
-AdaptiveWeightedAverage CFLS_LAB::_blocks_to_claim[]    =
-  VECTOR_257(AdaptiveWeightedAverage(OldPLABWeight, (float)CFLS_LAB::_default_dynamic_old_plab_size));
-size_t CFLS_LAB::_global_num_blocks[]  = VECTOR_257(0);
-uint   CFLS_LAB::_global_num_workers[] = VECTOR_257(0);
+AdaptiveWeightedAverage CompactibleFreeListSpaceLAB::_blocks_to_claim[]    =
+  VECTOR_257(AdaptiveWeightedAverage(OldPLABWeight, (float)CompactibleFreeListSpaceLAB::_default_dynamic_old_plab_size));
+size_t CompactibleFreeListSpaceLAB::_global_num_blocks[]  = VECTOR_257(0);
+uint   CompactibleFreeListSpaceLAB::_global_num_workers[] = VECTOR_257(0);
 
-CFLS_LAB::CFLS_LAB(CompactibleFreeListSpace* cfls) :
+CompactibleFreeListSpaceLAB::CompactibleFreeListSpaceLAB(CompactibleFreeListSpace* cfls) :
   _cfls(cfls)
 {
   assert(CompactibleFreeListSpace::IndexSetSize == 257, "Modify VECTOR_257() macro above");
@@ -2451,7 +2455,7 @@ CFLS_LAB::CFLS_LAB(CompactibleFreeListSpace* cfls) :
 
 static bool _CFLS_LAB_modified = false;
 
-void CFLS_LAB::modify_initialization(size_t n, unsigned wt) {
+void CompactibleFreeListSpaceLAB::modify_initialization(size_t n, unsigned wt) {
   assert(!_CFLS_LAB_modified, "Call only once");
   _CFLS_LAB_modified = true;
   for (size_t i = CompactibleFreeListSpace::IndexSetStart;
@@ -2461,7 +2465,7 @@ void CFLS_LAB::modify_initialization(size_t n, unsigned wt) {
   }
 }
 
-HeapWord* CFLS_LAB::alloc(size_t word_sz) {
+HeapWord* CompactibleFreeListSpaceLAB::alloc(size_t word_sz) {
   FreeChunk* res;
   assert(word_sz == _cfls->adjustObjectSize(word_sz), "Error");
   if (word_sz >=  CompactibleFreeListSpace::IndexSetSize) {
@@ -2491,7 +2495,7 @@ HeapWord* CFLS_LAB::alloc(size_t word_sz) {
 
 // Get a chunk of blocks of the right size and update related
 // book-keeping stats
-void CFLS_LAB::get_from_global_pool(size_t word_sz, AdaptiveFreeList<FreeChunk>* fl) {
+void CompactibleFreeListSpaceLAB::get_from_global_pool(size_t word_sz, AdaptiveFreeList<FreeChunk>* fl) {
   // Get the #blocks we want to claim
   size_t n_blks = (size_t)_blocks_to_claim[word_sz].average();
   assert(n_blks > 0, "Error");
@@ -2525,7 +2529,7 @@ void CFLS_LAB::get_from_global_pool(size_t word_sz, AdaptiveFreeList<FreeChunk>*
   _num_blocks[word_sz] += fl->count();
 }
 
-void CFLS_LAB::compute_desired_plab_size() {
+void CompactibleFreeListSpaceLAB::compute_desired_plab_size() {
   for (size_t i =  CompactibleFreeListSpace::IndexSetStart;
        i < CompactibleFreeListSpace::IndexSetSize;
        i += CompactibleFreeListSpace::IndexSetStride) {
@@ -2551,7 +2555,7 @@ void CFLS_LAB::compute_desired_plab_size() {
 // access, one would need to take the FL locks and,
 // depending on how it is used, stagger access from
 // parallel threads to reduce contention.
-void CFLS_LAB::retire(int tid) {
+void CompactibleFreeListSpaceLAB::retire(int tid) {
   // We run this single threaded with the world stopped;
   // so no need for locks and such.
   NOT_PRODUCT(Thread* t = Thread::current();)

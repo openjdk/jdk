@@ -822,11 +822,10 @@ bool StringConcat::validate_mem_flow() {
             }
           } else if (ctrl->is_IfTrue()) { // null checks, class checks
             iff = ctrl->in(0)->as_If();
-            assert(iff->is_If(), "must be if");
             // Verify that the other arm is an uncommon trap
             Node* otherproj = iff->proj_out(1 - ctrl->as_Proj()->_con);
             CallStaticJavaNode* call = otherproj->unique_out()->isa_CallStaticJava();
-            assert(strcmp(call->_name, "uncommon_trap") == 0, "must be uncommond trap");
+            assert(strcmp(call->_name, "uncommon_trap") == 0, "must be uncommon trap");
             ctrl = iff->in(0);
           } else {
             break;
@@ -914,6 +913,13 @@ bool StringConcat::validate_control_flow() {
       BoolNode* b = iff->in(1)->isa_Bool();
 
       if (b == NULL) {
+#ifndef PRODUCT
+        if (PrintOptimizeStringConcat) {
+          tty->print_cr("unexpected input to IfNode");
+          iff->in(1)->dump();
+          tty->cr();
+        }
+#endif
         fail = true;
         break;
       }
@@ -1460,7 +1466,7 @@ void PhaseStringOpts::copy_latin1_string(GraphKit& kit, IdealKit& ideal, Node* s
       // Use fast intrinsic
       Node* src = kit.array_element_address(src_array, kit.intcon(0), T_BYTE);
       Node* dst = kit.array_element_address(dst_array, start, T_BYTE);
-      kit.inflate_string(src, dst, __ value(count));
+      kit.inflate_string(src, dst, TypeAryPtr::BYTES, __ value(count));
     } else {
       // No intrinsic available, use slow method
       kit.inflate_string_slow(src_array, dst_array, start, __ value(count));

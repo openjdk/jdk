@@ -38,6 +38,7 @@
 #include "opto/c2compiler.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
 #include "opto/compile.hpp"
@@ -400,6 +401,13 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
     Node* n = C->macro_node(i);
     if (!useful.member(n)) {
       remove_macro_node(n);
+    }
+  }
+  // Remove useless CastII nodes with range check dependency
+  for (int i = range_check_cast_count() - 1; i >= 0; i--) {
+    Node* cast = range_check_cast_node(i);
+    if (!useful.member(cast)) {
+      remove_range_check_cast(cast);
     }
   }
   // Remove useless expensive node
@@ -926,7 +934,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                            compiler,
                            has_unsafe_access(),
                            SharedRuntime::is_wide_vector(max_vector_size()),
-                           _directive,
                            rtm_state()
                            );
 
@@ -1178,6 +1185,7 @@ void Compile::Init(int aliaslevel) {
   _macro_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   _predicate_opaqs = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   _expensive_nodes = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
+  _range_check_casts = new(comp_arena()) GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   register_library_intrinsics();
 }
 
@@ -1924,6 +1932,22 @@ void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
   assert(predicate_count()==0, "should be clean!");
 }
 
+void Compile::add_range_check_cast(Node* n) {
+  assert(n->isa_CastII()->has_range_check(), "CastII should have range check dependency");
+  assert(!_range_check_casts->contains(n), "duplicate entry in range check casts");
+  _range_check_casts->append(n);
+}
+
+// Remove all range check dependent CastIINodes.
+void Compile::remove_range_check_casts(PhaseIterGVN &igvn) {
+  for (int i = range_check_cast_count(); i > 0; i--) {
+    Node* cast = range_check_cast_node(i-1);
+    assert(cast->isa_CastII()->has_range_check(), "CastII should have range check dependency");
+    igvn.replace_node(cast, cast->in(1));
+  }
+  assert(range_check_cast_count() == 0, "should be empty");
+}
+
 // StringOpts and late inlining of string methods
 void Compile::inline_string_calls(bool parse_time) {
   {
@@ -2284,6 +2308,12 @@ void Compile::Optimize() {
     PhaseIdealLoop::verify(igvn);
   }
 
+  if (range_check_cast_count() > 0) {
+    // No more loop optimizations. Remove all range check dependent CastIINodes.
+    C->remove_range_check_casts(igvn);
+    igvn.optimize();
+  }
+
   {
     TracePhase tp("macroExpand", &timers[_t_macroExpand]);
     PhaseMacroExpand  mex(igvn);
@@ -2296,17 +2326,17 @@ void Compile::Optimize() {
   DEBUG_ONLY( _modified_nodes = NULL; )
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
-  process_print_inlining();
-  // A method with only infinite loops has no edges entering loops from root
-  {
-    TracePhase tp("graphReshape", &timers[_t_graphReshaping]);
-    if (final_graph_reshaping()) {
-      assert(failing(), "must bail out w/ explicit message");
-      return;
-    }
-  }
+ process_print_inlining();
+ // A method with only infinite loops has no edges entering loops from root
+ {
+   TracePhase tp("graphReshape", &timers[_t_graphReshaping]);
+   if (final_graph_reshaping()) {
+     assert(failing(), "must bail out w/ explicit message");
+     return;
+   }
+ }
 
-  print_method(PHASE_OPTIMIZE_FINISHED, 2);
+ print_method(PHASE_OPTIMIZE_FINISHED, 2);
 }
 
 
@@ -2874,7 +2904,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
           Node* use = m->fast_out(i);
           if (use->is_Mem() || use->is_EncodeNarrowPtr()) {
             use->ensure_control_or_add_prec(n->in(0));
-          } else if (use->in(0) == NULL) {
+          } else {
             switch(use->Opcode()) {
             case Op_AddP:
             case Op_DecodeN:
@@ -3085,6 +3115,16 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     }
     break;
 
+#endif
+
+#ifdef ASSERT
+  case Op_CastII:
+    // Verify that all range check dependent CastII nodes were removed.
+    if (n->isa_CastII()->has_range_check()) {
+      n->dump(3);
+      assert(false, "Range check dependent CastII node was not removed");
+    }
+    break;
 #endif
 
   case Op_ModI:
@@ -3962,7 +4002,7 @@ int Compile::static_subtype_check(ciKlass* superk, ciKlass* subk) {
   return SSC_full_test;
 }
 
-Node* Compile::conv_I2X_index(PhaseGVN *phase, Node* idx, const TypeInt* sizetype) {
+Node* Compile::conv_I2X_index(PhaseGVN* phase, Node* idx, const TypeInt* sizetype, Node* ctrl) {
 #ifdef _LP64
   // The scaled index operand to AddP must be a clean 64-bit value.
   // Java allows a 32-bit int to be incremented to a negative
@@ -3975,11 +4015,29 @@ Node* Compile::conv_I2X_index(PhaseGVN *phase, Node* idx, const TypeInt* sizetyp
   // number.  (The prior range check has ensured this.)
   // This assertion is used by ConvI2LNode::Ideal.
   int index_max = max_jint - 1;  // array size is max_jint, index is one less
-  if (sizetype != NULL)  index_max = sizetype->_hi - 1;
-  const TypeLong* lidxtype = TypeLong::make(CONST64(0), index_max, Type::WidenMax);
-  idx = phase->transform(new ConvI2LNode(idx, lidxtype));
+  if (sizetype != NULL) index_max = sizetype->_hi - 1;
+  const TypeInt* iidxtype = TypeInt::make(0, index_max, Type::WidenMax);
+  idx = constrained_convI2L(phase, idx, iidxtype, ctrl);
 #endif
   return idx;
+}
+
+// Convert integer value to a narrowed long type dependent on ctrl (for example, a range check)
+Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl) {
+  if (ctrl != NULL) {
+    // Express control dependency by a CastII node with a narrow type.
+    value = new CastIINode(value, itype, false, true /* range check dependency */);
+    // Make the CastII node dependent on the control input to prevent the narrowed ConvI2L
+    // node from floating above the range check during loop optimizations. Otherwise, the
+    // ConvI2L node may be eliminated independently of the range check, causing the data path
+    // to become TOP while the control path is still there (although it's unreachable).
+    value->set_req(0, ctrl);
+    // Save CastII node to remove it after loop optimizations.
+    phase->C->add_range_check_cast(value);
+    value = phase->transform(value);
+  }
+  const TypeLong* ltype = TypeLong::make(itype->_lo, itype->_hi, itype->_widen);
+  return phase->transform(new ConvI2LNode(value, ltype));
 }
 
 // The message about the current inlining is accumulated in

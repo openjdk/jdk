@@ -25,6 +25,7 @@ package compiler.jvmci.common;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompilationRequestResult;
 import jdk.vm.ci.hotspot.HotSpotVMEventListener;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.runtime.JVMCICompiler;
@@ -43,8 +44,9 @@ public class JVMCIHelpers {
     public static class EmptyHotspotCompiler implements JVMCICompiler {
 
         @Override
-        public void compileMethod(CompilationRequest request) {
+        public CompilationRequestResult compileMethod(CompilationRequest request) {
             // do nothing
+            return CompilationRequestResult.failure("no compiler configured", true);
         }
     }
 

@@ -34,35 +34,9 @@ import jdk.vm.ci.meta.Value;
 public class CallingConvention {
 
     /**
-     * Constants denoting the type of a call for which a calling convention is requested.
+     * Marker interface denoting the type of a call for which a calling convention is requested.
      */
-    public enum Type {
-        /**
-         * A request for the outgoing argument locations at a call site to Java code.
-         */
-        JavaCall(true),
-
-        /**
-         * A request for the incoming argument locations.
-         */
-        JavaCallee(false),
-
-        /**
-         * A request for the outgoing argument locations at a call site to external native code that
-         * complies with the platform ABI.
-         */
-        NativeCall(true);
-
-        /**
-         * Determines if this is a request for the outgoing argument locations at a call site.
-         */
-        public final boolean out;
-
-        public static final Type[] VALUES = values();
-
-        private Type(boolean out) {
-            this.out = out;
-        }
+    public interface Type {
     }
 
     /**

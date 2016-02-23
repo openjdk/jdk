@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,7 +301,7 @@ public final class Double extends Number implements Comparable<Double> {
             if(d == 0.0) {
                 answer.append("0.0p0");
             } else {
-                boolean subnormal = (d < DoubleConsts.MIN_NORMAL);
+                boolean subnormal = (d < Double.MIN_NORMAL);
 
                 // Isolate significand bits and OR in a high-order bit
                 // so that the string representation has a known
@@ -329,7 +329,7 @@ public final class Double extends Number implements Comparable<Double> {
                 // exponent (the representation of a subnormal uses
                 // E_min -1).
                 answer.append(subnormal ?
-                              DoubleConsts.MIN_EXPONENT:
+                              Double.MIN_EXPONENT:
                               Math.getExponent(d));
             }
             return answer.toString();
@@ -574,7 +574,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @since 1.8
      */
     public static boolean isFinite(double d) {
-        return Math.abs(d) <= DoubleConsts.MAX_VALUE;
+        return Math.abs(d) <= Double.MAX_VALUE;
     }
 
     /**

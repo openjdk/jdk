@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classFileParser.hpp"
+#include "classfile/classFileStream.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
@@ -35,6 +36,7 @@
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
 #include "jvmtifiles/jvmti.h"
+#include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
@@ -211,9 +213,9 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind) :
   _static_field_size(parser.static_field_size()),
   _nonstatic_oop_map_size(nonstatic_oop_map_size(parser.total_oop_map_count())),
-  _vtable_len(parser.vtable_size()),
   _itable_len(parser.itable_size()),
   _reference_type(parser.reference_type()) {
+    set_vtable_length(parser.vtable_size());
     set_kind(kind);
     set_access_flags(parser.access_flags());
     set_is_anonymous(parser.is_anonymous());
@@ -362,10 +364,6 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
 
 bool InstanceKlass::should_be_initialized() const {
   return !is_initialized();
-}
-
-klassVtable* InstanceKlass::vtable() const {
-  return new klassVtable(this, start_of_vtable(), vtable_length() / vtableEntry::size());
 }
 
 klassItable* InstanceKlass::itable() const {
@@ -2624,7 +2622,7 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 bool InstanceKlass::add_member_name(Handle mem_name) {
   jweak mem_name_wref = JNIHandles::make_weak_global(mem_name);
   MutexLocker ml(MemberNameTable_lock);
-  DEBUG_ONLY(No_Safepoint_Verifier nsv);
+  DEBUG_ONLY(NoSafepointVerifier nsv);
 
   // Check if method has been redefined while taking out MemberNameTable_lock, if so
   // return false.  We cannot cache obsolete methods. They will crash when the function
@@ -2665,6 +2663,10 @@ static void print_vtable(intptr_t* start, int len, outputStream* st) {
     }
     st->cr();
   }
+}
+
+static void print_vtable(vtableEntry* start, int len, outputStream* st) {
+  return print_vtable(reinterpret_cast<intptr_t*>(start), len, st);
 }
 
 void InstanceKlass::print_on(outputStream* st) const {
@@ -2904,18 +2906,88 @@ const char* InstanceKlass::internal_name() const {
   return external_name();
 }
 
+void InstanceKlass::print_loading_log(LogLevel::type type,
+                                      ClassLoaderData* loader_data,
+                                      const ClassFileStream* cfs) const {
+  ResourceMark rm;
+  outputStream* log;
+
+  assert(type == LogLevel::Info || type == LogLevel::Debug, "sanity");
+
+  if (type == LogLevel::Info) {
+    log = LogHandle(classload)::info_stream();
+  } else {
+    assert(type == LogLevel::Debug,
+           "print_loading_log supports only Debug and Info levels");
+    log = LogHandle(classload)::debug_stream();
+  }
+
+  // Name and class hierarchy info
+  log->print("%s", external_name());
+
+  // Source
+  if (cfs != NULL) {
+    if (cfs->source() != NULL) {
+      log->print(" source: %s", cfs->source());
+    } else if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
+      Thread* THREAD = Thread::current();
+      Klass* caller =
+            THREAD->is_Java_thread()
+                ? ((JavaThread*)THREAD)->security_get_caller_class(1)
+                : NULL;
+      // caller can be NULL, for example, during a JVMTI VM_Init hook
+      if (caller != NULL) {
+        log->print(" source: instance of %s", caller->external_name());
+      } else {
+        // source is unknown
+      }
+    } else {
+      Handle class_loader(loader_data->class_loader());
+      log->print(" source: %s", class_loader->klass()->external_name());
+    }
+  } else {
+    log->print(" source: shared objects file");
+  }
+
+  if (type == LogLevel::Debug) {
+    // Class hierarchy info
+    log->print(" klass: " INTPTR_FORMAT " super: " INTPTR_FORMAT,
+               p2i(this),  p2i(superklass()));
+
+    if (local_interfaces() != NULL && local_interfaces()->length() > 0) {
+      log->print(" interfaces:");
+      int length = local_interfaces()->length();
+      for (int i = 0; i < length; i++) {
+        log->print(" " INTPTR_FORMAT,
+                   p2i(InstanceKlass::cast(local_interfaces()->at(i))));
+      }
+    }
+
+    // Class loader
+    log->print(" loader: [");
+    loader_data->print_value_on(log);
+    log->print("]");
+
+    // Classfile checksum
+    if (cfs) {
+      log->print(" bytes: %d checksum: %08x",
+                 cfs->length(),
+                 ClassLoader::crc32(0, (const char*)cfs->buffer(),
+                 cfs->length()));
+    }
+  }
+  log->cr();
+}
+
 #if INCLUDE_SERVICES
 // Size Statistics
 void InstanceKlass::collect_statistics(KlassSizeStats *sz) const {
   Klass::collect_statistics(sz);
 
-  sz->_inst_size  = HeapWordSize * size_helper();
-  sz->_vtab_bytes = HeapWordSize * align_object_offset(vtable_length());
-  sz->_itab_bytes = HeapWordSize * align_object_offset(itable_length());
-  sz->_nonstatic_oopmap_bytes = HeapWordSize *
-        ((is_interface() || is_anonymous()) ?
-         align_object_offset(nonstatic_oop_map_size()) :
-         nonstatic_oop_map_size());
+  sz->_inst_size  = wordSize * size_helper();
+  sz->_vtab_bytes = wordSize * vtable_length();
+  sz->_itab_bytes = wordSize * itable_length();
+  sz->_nonstatic_oopmap_bytes = wordSize * nonstatic_oop_map_size();
 
   int n = 0;
   n += (sz->_methods_array_bytes         = sz->count_array(methods()));

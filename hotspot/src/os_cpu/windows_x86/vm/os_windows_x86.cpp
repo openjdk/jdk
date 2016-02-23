@@ -599,6 +599,7 @@ void os::print_register_info(outputStream *st, const void *context) {
   // this is only for the "general purpose" registers
 
 #ifdef AMD64
+  st->print("RIP="); print_location(st, uc->Rip);
   st->print("RAX="); print_location(st, uc->Rax);
   st->print("RBX="); print_location(st, uc->Rbx);
   st->print("RCX="); print_location(st, uc->Rcx);
@@ -616,6 +617,7 @@ void os::print_register_info(outputStream *st, const void *context) {
   st->print("R14="); print_location(st, uc->R14);
   st->print("R15="); print_location(st, uc->R15);
 #else
+  st->print("EIP="); print_location(st, uc->Eip);
   st->print("EAX="); print_location(st, uc->Eax);
   st->print("EBX="); print_location(st, uc->Ebx);
   st->print("ECX="); print_location(st, uc->Ecx);

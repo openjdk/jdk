@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,13 +84,12 @@ public class InstanceKlass extends Klass {
     nonstaticOopMapSize  = new CIntField(type.getCIntegerField("_nonstatic_oop_map_size"), 0);
     isMarkedDependent    = new CIntField(type.getCIntegerField("_is_marked_dependent"), 0);
     initState            = new CIntField(type.getCIntegerField("_init_state"), 0);
-    vtableLen            = new CIntField(type.getCIntegerField("_vtable_len"), 0);
     itableLen            = new CIntField(type.getCIntegerField("_itable_len"), 0);
     breakpoints          = type.getAddressField("_breakpoints");
     genericSignatureIndex = new CIntField(type.getCIntegerField("_generic_signature_index"), 0);
     majorVersion         = new CIntField(type.getCIntegerField("_major_version"), 0);
     minorVersion         = new CIntField(type.getCIntegerField("_minor_version"), 0);
-    headerSize           = Oop.alignObjectOffset(type.getSize());
+    headerSize           = type.getSize();
 
     // read field offset constants
     ACCESS_FLAGS_OFFSET            = db.lookupIntConstant("FieldInfo::access_flags_offset").intValue();
@@ -143,7 +142,6 @@ public class InstanceKlass extends Klass {
   private static CIntField nonstaticOopMapSize;
   private static CIntField isMarkedDependent;
   private static CIntField initState;
-  private static CIntField vtableLen;
   private static CIntField itableLen;
   private static AddressField breakpoints;
   private static CIntField genericSignatureIndex;
@@ -242,8 +240,7 @@ public class InstanceKlass extends Klass {
   }
 
   public long getSize() {
-    return Oop.alignObjectSize(getHeaderSize() + Oop.alignObjectOffset(getVtableLen()) +
-                               Oop.alignObjectOffset(getItableLen()) + Oop.alignObjectOffset(getNonstaticOopMapSize()));
+    return alignSize(getHeaderSize() + getVtableLen() + getItableLen() + getNonstaticOopMapSize());
   }
 
   public static long getHeaderSize() { return headerSize; }
@@ -352,7 +349,6 @@ public class InstanceKlass extends Klass {
   public long      getStaticOopFieldCount() { return                staticOopFieldCount.getValue(this); }
   public long      getNonstaticOopMapSize() { return                nonstaticOopMapSize.getValue(this); }
   public boolean   getIsMarkedDependent()   { return                isMarkedDependent.getValue(this) != 0; }
-  public long      getVtableLen()           { return                vtableLen.getValue(this); }
   public long      getItableLen()           { return                itableLen.getValue(this); }
   public long      majorVersion()           { return                majorVersion.getValue(this); }
   public long      minorVersion()           { return                minorVersion.getValue(this); }
@@ -548,7 +544,6 @@ public class InstanceKlass extends Klass {
       visitor.doCInt(nonstaticOopMapSize, true);
       visitor.doCInt(isMarkedDependent, true);
       visitor.doCInt(initState, true);
-      visitor.doCInt(vtableLen, true);
       visitor.doCInt(itableLen, true);
     }
 

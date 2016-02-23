@@ -32,6 +32,9 @@
 #include "runtime/perfData.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/stack.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciCompiler.hpp"
+#endif
 
 class nmethod;
 class nmethodLocker;
@@ -233,6 +236,9 @@ class CompileBroker: AllStatic {
                                           const char*         comment,
                                           bool                blocking);
   static void wait_for_completion(CompileTask* task);
+#if INCLUDE_JVMCI
+  static bool wait_for_jvmci_completion(JVMCICompiler* comp, CompileTask* task, JavaThread* thread);
+#endif
 
   static void invoke_compiler_on_method(CompileTask* task);
   static void post_compile(CompilerThread* thread, CompileTask* task, EventCompilation& event, bool success, ciEnv* ci_env);
@@ -346,8 +352,6 @@ public:
 
   // Debugging output for failure
   static void print_last_compile();
-
-  static void print_compiler_threads_on(outputStream* st);
 
   // compiler name for debugging
   static const char* compiler_name(int comp_level);

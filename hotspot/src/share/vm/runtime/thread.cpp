@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "code/codeCacheExtensions.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/workgroup.hpp"
@@ -1419,9 +1420,6 @@ void JavaThread::collect_counters(typeArrayOop array) {
 void JavaThread::initialize() {
   // Initialize fields
 
-  // Set the claimed par_id to UINT_MAX (ie not claiming any par_ids)
-  set_claimed_par_id(UINT_MAX);
-
   set_saved_exception_pc(NULL);
   set_threadObj(NULL);
   _anchor.clear();
@@ -2443,7 +2441,7 @@ void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
 // normal checks but also performs the transition back into
 // thread_in_Java state.  This is required so that critical natives
 // can potentially block and perform a GC if they are the last thread
-// exiting the GC_locker.
+// exiting the GCLocker.
 void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThread *thread) {
   check_special_condition_for_native_trans(thread);
 
@@ -2452,7 +2450,7 @@ void JavaThread::check_special_condition_for_native_trans_and_transition(JavaThr
 
   if (thread->do_critical_native_unlock()) {
     ThreadInVMfromJavaNoAsyncException tiv(thread);
-    GC_locker::unlock_critical(thread);
+    GCLocker::unlock_critical(thread);
     thread->clear_critical_native_unlock();
   }
 }
@@ -2887,6 +2885,20 @@ void JavaThread::print_on(outputStream *st) const {
   print_thread_state_on(st);
   _safepoint_state->print_on(st);
 #endif // PRODUCT
+  if (is_Compiler_thread()) {
+    CompilerThread* ct = (CompilerThread*)this;
+    if (ct->task() != NULL) {
+      st->print("   Compiling: ");
+      ct->task()->print(st, NULL, true, false);
+    } else {
+      st->print("   No compile task");
+    }
+    st->cr();
+  }
+}
+
+void JavaThread::print_name_on_error(outputStream* st, char *buf, int buflen) const {
+  st->print("%s", get_thread_name_string(buf, buflen));
 }
 
 // Called by fatal error handler. The difference between this and
@@ -3390,13 +3402,16 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
 
+  // Initialize library-based TLS
+  ThreadLocalStorage::init();
+
   // Initialize the output stream module
   ostream_init();
 
   // Process java launcher properties.
   Arguments::process_sun_java_launcher_properties(args);
 
-  // Initialize the os module before using TLS
+  // Initialize the os module
   os::init();
 
   // Record VM creation timing statistics
@@ -3450,9 +3465,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   jint adjust_after_os_result = Arguments::adjust_after_os();
   if (adjust_after_os_result != JNI_OK) return adjust_after_os_result;
-
-  // Initialize library-based TLS
-  ThreadLocalStorage::init();
 
   // Initialize output stream logging
   ostream_init_log();
@@ -4389,7 +4401,6 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     wt->print_on(st);
     st->cr();
   }
-  CompileBroker::print_compiler_threads_on(st);
   st->flush();
 }
 
@@ -4442,7 +4453,23 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
     current->print_on_error(st, buf, buflen);
     st->cr();
   }
+  st->cr();
+  st->print_cr("Threads with active compile tasks:");
+  print_threads_compiling(st, buf, buflen);
 }
+
+void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen) {
+  ALL_JAVA_THREADS(thread) {
+    if (thread->is_Compiler_thread()) {
+      CompilerThread* ct = (CompilerThread*) thread;
+      if (ct->task() != NULL) {
+        thread->print_name_on_error(st, buf, buflen);
+        ct->task()->print(st, NULL, true, true);
+      }
+    }
+  }
+}
+
 
 // Internal SpinLock and Mutex
 // Based on ParkEvent

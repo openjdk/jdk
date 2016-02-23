@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,12 +54,14 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "logging/log.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
@@ -286,9 +288,9 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
     _klasses = k;
   }
 
-  if (publicize && TraceClassLoaderData && Verbose && k->class_loader_data() != NULL) {
+  if (publicize && k->class_loader_data() != NULL) {
     ResourceMark rm;
-    tty->print_cr("[TraceClassLoaderData] Adding k: " PTR_FORMAT " %s to CLD: "
+    log_trace(classloaderdata)("Adding k: " PTR_FORMAT " %s to CLD: "
                   PTR_FORMAT " loader: " PTR_FORMAT " %s",
                   p2i(k),
                   k->external_name(),
@@ -326,15 +328,16 @@ void ClassLoaderData::unload() {
   // Tell serviceability tools these classes are unloading
   classes_do(InstanceKlass::notify_unload_class);
 
-  if (TraceClassLoaderData) {
+  if (log_is_enabled(Debug, classloaderdata)) {
     ResourceMark rm;
-    tty->print("[ClassLoaderData: unload loader data " INTPTR_FORMAT, p2i(this));
-    tty->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)class_loader()),
+    outputStream* log = LogHandle(classloaderdata)::debug_stream();
+    log->print(": unload loader data " INTPTR_FORMAT, p2i(this));
+    log->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)class_loader()),
                loader_name());
     if (is_anonymous()) {
-      tty->print(" for anonymous class  " INTPTR_FORMAT " ", p2i(_klasses));
+      log->print(" for anonymous class  " INTPTR_FORMAT " ", p2i(_klasses));
     }
-    tty->print_cr("]");
+    log->cr();
   }
 }
 
@@ -408,13 +411,13 @@ Metaspace* ClassLoaderData::metaspace_non_null() {
       assert (class_loader() == NULL, "Must be");
       set_metaspace(new Metaspace(_metaspace_lock, Metaspace::BootMetaspaceType));
     } else if (is_anonymous()) {
-      if (TraceClassLoaderData && Verbose && class_loader() != NULL) {
-        tty->print_cr("is_anonymous: %s", class_loader()->klass()->internal_name());
+      if (class_loader() != NULL) {
+        log_trace(classloaderdata)("is_anonymous: %s", class_loader()->klass()->internal_name());
       }
       set_metaspace(new Metaspace(_metaspace_lock, Metaspace::AnonymousMetaspaceType));
     } else if (class_loader()->is_a(SystemDictionary::reflect_DelegatingClassLoader_klass())) {
-      if (TraceClassLoaderData && Verbose && class_loader() != NULL) {
-        tty->print_cr("is_reflection: %s", class_loader()->klass()->internal_name());
+      if (class_loader() != NULL) {
+        log_trace(classloaderdata)("is_reflection: %s", class_loader()->klass()->internal_name());
       }
       set_metaspace(new Metaspace(_metaspace_lock, Metaspace::ReflectionMetaspaceType));
     } else {
@@ -574,9 +577,9 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
   // actual ClassLoaderData object.
   ClassLoaderData::Dependencies dependencies(CHECK_NULL);
 
-  No_Safepoint_Verifier no_safepoints; // we mustn't GC until we've installed the
-                                       // ClassLoaderData in the graph since the CLD
-                                       // contains unhandled oops
+  NoSafepointVerifier no_safepoints; // we mustn't GC until we've installed the
+                                     // ClassLoaderData in the graph since the CLD
+                                     // contains unhandled oops
 
   ClassLoaderData* cld = new ClassLoaderData(loader, is_anonymous, dependencies);
 
@@ -601,20 +604,46 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
     cld->set_next(next);
     ClassLoaderData* exchanged = (ClassLoaderData*)Atomic::cmpxchg_ptr(cld, list_head, next);
     if (exchanged == next) {
-      if (TraceClassLoaderData) {
-        ResourceMark rm;
-        tty->print("[ClassLoaderData: ");
-        tty->print("create class loader data " INTPTR_FORMAT, p2i(cld));
-        tty->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)cld->class_loader()),
-                   cld->loader_name());
-        tty->print_cr("]");
+      if (log_is_enabled(Debug, classloaderdata)) {
+       PauseNoSafepointVerifier pnsv(&no_safepoints); // Need safe points for JavaCalls::call_virtual
+       log_creation(loader, cld, CHECK_NULL);
       }
       return cld;
     }
     next = exchanged;
   } while (true);
-
 }
+
+void ClassLoaderDataGraph::log_creation(Handle loader, ClassLoaderData* cld, TRAPS) {
+  Handle string;
+  if (loader.not_null()) {
+    // Include the result of loader.toString() in the output. This allows
+    // the user of the log to identify the class loader instance.
+    JavaValue result(T_OBJECT);
+    KlassHandle spec_klass(THREAD, SystemDictionary::ClassLoader_klass());
+    JavaCalls::call_virtual(&result,
+                            loader,
+                            spec_klass,
+                            vmSymbols::toString_name(),
+                            vmSymbols::void_string_signature(),
+                            CHECK);
+    assert(result.get_type() == T_OBJECT, "just checking");
+    string = (oop)result.get_jobject();
+  }
+
+  ResourceMark rm;
+  outputStream* log = LogHandle(classloaderdata)::debug_stream();
+  log->print("create class loader data " INTPTR_FORMAT, p2i(cld));
+  log->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)cld->class_loader()),
+             cld->loader_name());
+
+  if (string.not_null()) {
+    log->print(": ");
+    java_lang_String::print(string(), log);
+  }
+  log->cr();
+}
+
 
 void ClassLoaderDataGraph::oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
@@ -709,10 +738,11 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
     if (!curr->claimed()) {
       array->push(curr);
 
-      if (TraceClassLoaderData) {
-        tty->print("[ClassLoaderData] found new CLD: ");
-        curr->print_value_on(tty);
-        tty->cr();
+      if (log_is_enabled(Debug, classloaderdata)) {
+        outputStream* log = LogHandle(classloaderdata)::debug_stream();
+        log->print("found new CLD: ");
+        curr->print_value_on(log);
+        log->cr();
       }
     }
 

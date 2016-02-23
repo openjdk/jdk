@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,15 +60,7 @@
   do_klass(DebugInfo_klass,                              jdk_vm_ci_code_DebugInfo,                              Jvmci) \
   do_klass(RegisterSaveLayout_klass,                     jdk_vm_ci_code_RegisterSaveLayout,                     Jvmci) \
   do_klass(BytecodeFrame_klass,                          jdk_vm_ci_code_BytecodeFrame,                          Jvmci) \
-  do_klass(CompilationResult_Call_klass,                 jdk_vm_ci_code_CompilationResult_Call,                 Jvmci) \
-  do_klass(CompilationResult_ConstantReference_klass,    jdk_vm_ci_code_CompilationResult_ConstantReference,    Jvmci) \
-  do_klass(CompilationResult_DataPatch_klass,            jdk_vm_ci_code_CompilationResult_DataPatch,            Jvmci) \
-  do_klass(CompilationResult_DataSectionReference_klass, jdk_vm_ci_code_CompilationResult_DataSectionReference, Jvmci) \
-  do_klass(CompilationResult_ExceptionHandler_klass,     jdk_vm_ci_code_CompilationResult_ExceptionHandler,     Jvmci) \
-  do_klass(CompilationResult_Mark_klass,                 jdk_vm_ci_code_CompilationResult_Mark,                 Jvmci) \
-  do_klass(CompilationResult_Infopoint_klass,            jdk_vm_ci_code_CompilationResult_Infopoint,            Jvmci) \
-  do_klass(CompilationResult_Site_klass,                 jdk_vm_ci_code_CompilationResult_Site,                 Jvmci) \
-  do_klass(InfopointReason_klass,                        jdk_vm_ci_code_InfopointReason,                        Jvmci) \
+  do_klass(CompilationRequestResult_klass,               jdk_vm_ci_code_CompilationRequestResult,               Jvmci) \
   do_klass(InstalledCode_klass,                          jdk_vm_ci_code_InstalledCode,                          Jvmci) \
   do_klass(code_Location_klass,                          jdk_vm_ci_code_Location,                               Jvmci) \
   do_klass(code_Register_klass,                          jdk_vm_ci_code_Register,                               Jvmci) \
@@ -76,6 +68,15 @@
   do_klass(StackSlot_klass,                              jdk_vm_ci_code_StackSlot,                              Jvmci) \
   do_klass(StackLockValue_klass,                         jdk_vm_ci_code_StackLockValue,                         Jvmci) \
   do_klass(VirtualObject_klass,                          jdk_vm_ci_code_VirtualObject,                          Jvmci) \
+  do_klass(site_Call_klass,                              jdk_vm_ci_code_site_Call,                              Jvmci) \
+  do_klass(site_ConstantReference_klass,                 jdk_vm_ci_code_site_ConstantReference,                 Jvmci) \
+  do_klass(site_DataPatch_klass,                         jdk_vm_ci_code_site_DataPatch,                         Jvmci) \
+  do_klass(site_DataSectionReference_klass,              jdk_vm_ci_code_site_DataSectionReference,              Jvmci) \
+  do_klass(site_ExceptionHandler_klass,                  jdk_vm_ci_code_site_ExceptionHandler,                  Jvmci) \
+  do_klass(site_Mark_klass,                              jdk_vm_ci_code_site_Mark,                              Jvmci) \
+  do_klass(site_Infopoint_klass,                         jdk_vm_ci_code_site_Infopoint,                         Jvmci) \
+  do_klass(site_Site_klass,                              jdk_vm_ci_code_site_Site,                              Jvmci) \
+  do_klass(site_InfopointReason_klass,                   jdk_vm_ci_code_site_InfopointReason,                   Jvmci) \
   do_klass(JavaConstant_klass,                           jdk_vm_ci_meta_JavaConstant,                           Jvmci) \
   do_klass(PrimitiveConstant_klass,                      jdk_vm_ci_meta_PrimitiveConstant,                      Jvmci) \
   do_klass(RawConstant_klass,                            jdk_vm_ci_meta_RawConstant,                            Jvmci) \

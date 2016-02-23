@@ -41,9 +41,7 @@ import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.inittimer.InitTimer;
 import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.runtime.JVMCIBackend;
-import jdk.vm.ci.service.ServiceProvider;
 
-@ServiceProvider(HotSpotJVMCIBackendFactory.class)
 public class AMD64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
     protected EnumSet<AMD64.CPUFeature> computeFeatures(HotSpotVMConfig config) {

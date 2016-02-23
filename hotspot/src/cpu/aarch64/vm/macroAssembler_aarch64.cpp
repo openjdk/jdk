@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -127,7 +127,10 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
                      Instruction_aarch64::extract(insn2, 4, 0)) {
         // movk #imm16<<32
         Instruction_aarch64::patch(branch + 4, 20, 5, (uint64_t)target >> 32);
-        offset &= (1<<20)-1;
+        long dest = ((long)target & 0xffffffffL) | ((long)branch & 0xffff00000000L);
+        long pc_page = (long)branch >> 12;
+        long adr_page = (long)dest >> 12;
+        offset = adr_page - pc_page;
         instructions = 2;
       }
     }
@@ -898,23 +901,18 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
          "caller must use same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
-  int vtable_base = InstanceKlass::vtable_start_offset() * wordSize;
+  int vtable_base = in_bytes(Klass::vtable_start_offset());
   int itentry_off = itableMethodEntry::method_offset_in_bytes();
   int scan_step   = itableOffsetEntry::size() * wordSize;
-  int vte_size    = vtableEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size_in_bytes();
   assert(vte_size == wordSize, "else adjust times_vte_scale");
 
-  ldrw(scan_temp, Address(recv_klass, InstanceKlass::vtable_length_offset() * wordSize));
+  ldrw(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
 
   // %%% Could store the aligned, prescaled offset in the klassoop.
   // lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
   lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(3)));
   add(scan_temp, scan_temp, vtable_base);
-  if (HeapWordsPerLong > 1) {
-    // Round up to align_object_offset boundary
-    // see code for instanceKlass::start_of_itable!
-    round_to(scan_temp, BytesPerLong);
-  }
 
   // Adjust recv_klass by scaled itable_index, so we can free itable_index.
   assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
@@ -963,7 +961,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = InstanceKlass::vtable_start_offset() * wordSize;
+  const int base = in_bytes(Klass::vtable_start_offset());
   assert(vtableEntry::size() * wordSize == 8,
          "adjust the scaling in the code below");
   int vtable_offset_in_bytes = base + vtableEntry::method_offset_in_bytes();
@@ -2301,6 +2299,30 @@ void MacroAssembler::c_stub_prolog(int gp_arg_count, int fp_arg_count, int ret_t
 }
 #endif
 
+void MacroAssembler::push_call_clobbered_registers() {
+  push(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2), sp);
+
+  // Push v0-v7, v16-v31.
+  for (int i = 30; i >= 0; i -= 2) {
+    if (i <= v7->encoding() || i >= v16->encoding()) {
+        stpd(as_FloatRegister(i), as_FloatRegister(i+1),
+             Address(pre(sp, -2 * wordSize)));
+    }
+  }
+}
+
+void MacroAssembler::pop_call_clobbered_registers() {
+
+  for (int i = 0; i < 32; i += 2) {
+    if (i <= v7->encoding() || i >= v16->encoding()) {
+      ldpd(as_FloatRegister(i), as_FloatRegister(i+1),
+           Address(post(sp, 2 * wordSize)));
+    }
+  }
+
+  pop(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2), sp);
+}
+
 void MacroAssembler::push_CPU_state(bool save_vectors) {
   push(0x3fffffff, sp);         // integer registers except lr & sp
 
@@ -3099,12 +3121,7 @@ void MacroAssembler::store_check(Register obj) {
 
   assert(CardTableModRefBS::dirty_card_val() == 0, "must be");
 
-  {
-    ExternalAddress cardtable((address) ct->byte_map_base);
-    unsigned long offset;
-    adrp(rscratch1, cardtable, offset);
-    assert(offset == 0, "byte_map_base is misaligned");
-  }
+  load_byte_map_base(rscratch1);
 
   if (UseCondCardMark) {
     Label L_already_dirty;
@@ -3596,12 +3613,10 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
 
   lsr(card_addr, store_addr, CardTableModRefBS::card_shift);
 
-  unsigned long offset;
-  adrp(tmp2, cardtable, offset);
-
   // get the address of the card
+  load_byte_map_base(tmp2);
   add(card_addr, card_addr, tmp2);
-  ldrb(tmp2, Address(card_addr, offset));
+  ldrb(tmp2, Address(card_addr));
   cmpw(tmp2, (int)G1SATBCardTableModRefBS::g1_young_card_val());
   br(Assembler::EQ, done);
 
@@ -3609,13 +3624,13 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
 
   membar(Assembler::StoreLoad);
 
-  ldrb(tmp2, Address(card_addr, offset));
+  ldrb(tmp2, Address(card_addr));
   cbzw(tmp2, done);
 
   // storing a region crossing, non-NULL oop, card is clean.
   // dirty card and log.
 
-  strb(zr, Address(card_addr, offset));
+  strb(zr, Address(card_addr));
 
   ldr(rscratch1, queue_index);
   cbz(rscratch1, runtime);
@@ -3938,7 +3953,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down to and including i=StackShadowPages.
-  for (int i = 0; i < (JavaThread::stack_shadow_zone_size() / os::vm_page_size()) - 1; i++) {
+  for (int i = 0; i < (int)(JavaThread::stack_shadow_zone_size() / os::vm_page_size()) - 1; i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
     lea(tmp, Address(tmp, -os::vm_page_size()));
@@ -3971,6 +3986,9 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
   long offset_low = dest_page - low_page;
   long offset_high = dest_page - high_page;
 
+  assert(is_valid_AArch64_address(dest.target()), "bad address");
+  assert(dest.getMode() == Address::literal, "ADRP must be applied to a literal address");
+
   InstructionMark im(this);
   code_section()->relocate(inst_mark(), dest.rspec());
   // 8143067: Ensure that the adrp can reach the dest from anywhere within
@@ -3978,13 +3996,29 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
   if (offset_high >= -(1<<20) && offset_low < (1<<20)) {
     _adrp(reg1, dest.target());
   } else {
-    unsigned long pc_page = (unsigned long)pc() >> 12;
-    long offset = dest_page - pc_page;
-    offset = (offset & ((1<<20)-1)) << 12;
-    _adrp(reg1, pc()+offset);
-    movk(reg1, ((unsigned long)dest.target() >> 32) & 0xffff, 32);
+    unsigned long target = (unsigned long)dest.target();
+    unsigned long adrp_target
+      = (target & 0xffffffffUL) | ((unsigned long)pc() & 0xffff00000000UL);
+
+    _adrp(reg1, (address)adrp_target);
+    movk(reg1, target >> 32, 32);
   }
   byte_offset = (unsigned long)dest.target() & 0xfff;
+}
+
+void MacroAssembler::load_byte_map_base(Register reg) {
+  jbyte *byte_map_base =
+    ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->byte_map_base;
+
+  if (is_valid_AArch64_address((address)byte_map_base)) {
+    // Strictly speaking the byte_map_base isn't an address at all,
+    // and it might even be negative.
+    unsigned long offset;
+    adrp(reg, ExternalAddress((address)byte_map_base), offset);
+    assert(offset == 0, "misaligned card table base");
+  } else {
+    mov(reg, (uint64_t)byte_map_base);
+  }
 }
 
 void MacroAssembler::build_frame(int framesize) {
@@ -4520,6 +4554,82 @@ void MacroAssembler::string_equals(Register str1, Register str2,
   bind(DONE);
 
   BLOCK_COMMENT("} string_equals");
+}
+
+
+void MacroAssembler::byte_arrays_equals(Register ary1, Register ary2,
+                                        Register result, Register tmp1)
+{
+  Register cnt1 = rscratch1;
+  Register cnt2 = rscratch2;
+  Register tmp2 = rscratch2;
+
+  Label SAME, DIFFER, NEXT, TAIL07, TAIL03, TAIL01;
+
+  int length_offset  = arrayOopDesc::length_offset_in_bytes();
+  int base_offset    = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+
+  BLOCK_COMMENT("byte_arrays_equals  {");
+
+    // different until proven equal
+    mov(result, false);
+
+    // same array?
+    cmp(ary1, ary2);
+    br(Assembler::EQ, SAME);
+
+    // ne if either null
+    cbz(ary1, DIFFER);
+    cbz(ary2, DIFFER);
+
+    // lengths ne?
+    ldrw(cnt1, Address(ary1, length_offset));
+    ldrw(cnt2, Address(ary2, length_offset));
+    cmp(cnt1, cnt2);
+    br(Assembler::NE, DIFFER);
+
+    lea(ary1, Address(ary1, base_offset));
+    lea(ary2, Address(ary2, base_offset));
+
+    subs(cnt1, cnt1, 8);
+    br(LT, TAIL07);
+
+  BIND(NEXT);
+    ldr(tmp1, Address(post(ary1, 8)));
+    ldr(tmp2, Address(post(ary2, 8)));
+    subs(cnt1, cnt1, 8);
+    eor(tmp1, tmp1, tmp2);
+    cbnz(tmp1, DIFFER);
+    br(GE, NEXT);
+
+  BIND(TAIL07);  // 0-7 bytes left, cnt1 = #bytes left - 4
+    tst(cnt1, 0b100);
+    br(EQ, TAIL03);
+    ldrw(tmp1, Address(post(ary1, 4)));
+    ldrw(tmp2, Address(post(ary2, 4)));
+    cmp(tmp1, tmp2);
+    br(NE, DIFFER);
+
+  BIND(TAIL03);  // 0-3 bytes left, cnt1 = #bytes left - 4
+    tst(cnt1, 0b10);
+    br(EQ, TAIL01);
+    ldrh(tmp1, Address(post(ary1, 2)));
+    ldrh(tmp2, Address(post(ary2, 2)));
+    cmp(tmp1, tmp2);
+    br(NE, DIFFER);
+  BIND(TAIL01);  // 0-1 byte left
+    tst(cnt1, 0b01);
+    br(EQ, SAME);
+    ldrb(tmp1, ary1);
+    ldrb(tmp2, ary2);
+    cmp(tmp1, tmp2);
+    br(NE, DIFFER);
+
+  BIND(SAME);
+    mov(result, true);
+  BIND(DIFFER); // result already set
+
+  BLOCK_COMMENT("} byte_arrays_equals");
 }
 
 // Compare char[] arrays aligned to 4 bytes

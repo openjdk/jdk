@@ -339,9 +339,9 @@ class LoopLimitNode : public Node {
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual Node *Identity( PhaseTransform *phase );
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 // -----------------------------IdealLoopTree----------------------------------
@@ -693,13 +693,18 @@ public:
   }
 
 private:
-  Node *get_ctrl_no_update( Node *i ) const {
+  Node *get_ctrl_no_update_helper(Node *i) const {
+    assert(has_ctrl(i), "should be control, not loop");
+    return (Node*)(((intptr_t)_nodes[i->_idx]) & ~1);
+  }
+
+  Node *get_ctrl_no_update(Node *i) const {
     assert( has_ctrl(i), "" );
-    Node *n = (Node*)(((intptr_t)_nodes[i->_idx]) & ~1);
+    Node *n = get_ctrl_no_update_helper(i);
     if (!n->in(0)) {
       // Skip dead CFG nodes
       do {
-        n = (Node*)(((intptr_t)_nodes[n->_idx]) & ~1);
+        n = get_ctrl_no_update_helper(n);
       } while (!n->in(0));
       n = find_non_split_ctrl(n);
     }
@@ -721,22 +726,15 @@ private:
   // from old_node to new_node to support the lazy update.  Reference
   // replaces loop reference, since that is not needed for dead node.
 public:
-  void lazy_update( Node *old_node, Node *new_node ) {
-    assert( old_node != new_node, "no cycles please" );
-    //old_node->set_req( 1, new_node /*NO DU INFO*/ );
-    // Nodes always have DU info now, so re-use the side array slot
-    // for this node to provide the forwarding pointer.
-    _nodes.map( old_node->_idx, (Node*)((intptr_t)new_node + 1) );
+  void lazy_update(Node *old_node, Node *new_node) {
+    assert(old_node != new_node, "no cycles please");
+    // Re-use the side array slot for this node to provide the
+    // forwarding pointer.
+    _nodes.map(old_node->_idx, (Node*)((intptr_t)new_node + 1));
   }
-  void lazy_replace( Node *old_node, Node *new_node ) {
-    _igvn.replace_node( old_node, new_node );
-    lazy_update( old_node, new_node );
-  }
-  void lazy_replace_proj( Node *old_node, Node *new_node ) {
-    assert( old_node->req() == 1, "use this for Projs" );
-    _igvn.hash_delete(old_node); // Must hash-delete before hacking edges
-    old_node->add_req( NULL );
-    lazy_replace( old_node, new_node );
+  void lazy_replace(Node *old_node, Node *new_node) {
+    _igvn.replace_node(old_node, new_node);
+    lazy_update(old_node, new_node);
   }
 
 private:

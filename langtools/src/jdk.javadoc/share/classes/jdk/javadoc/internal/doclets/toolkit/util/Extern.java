@@ -261,8 +261,8 @@ public class Extern {
         try {
             if (file.exists() && file.canRead()) {
                 boolean pathIsRelative =
-                        !DocFile.createFileForInput(configuration, path).isAbsolute()
-                        && !isUrl(path);
+                        !isUrl(path)
+                        && !DocFile.createFileForInput(configuration, path).isAbsolute();
                 readPackageList(file.openInputStream(), path, pathIsRelative);
             } else {
                 throw new Fault(configuration.getText("doclet.File_error", file.getPath()), null);

@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8081431
  * @summary Test of JShell#drop().
  * @build KullaTesting TestingInputStream
  * @run testng DropTest
@@ -79,7 +80,6 @@ public class DropTest extends KullaTesting {
         assertActiveKeys();
     }
 
-    @Test(enabled = false) // TODO 8081431
     public void testDropImport() {
         PersistentSnippet imp = importKey(assertEval("import java.util.*;"));
         PersistentSnippet decl = varKey(

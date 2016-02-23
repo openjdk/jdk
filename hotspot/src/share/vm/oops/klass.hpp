@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ class ParCompactionManager;
 class PSPromotionManager;
 class KlassSizeStats;
 class fieldDescriptor;
+class vtableEntry;
 
 class Klass : public Metadata {
   friend class VMStructs;
@@ -131,13 +132,16 @@ class Klass : public Metadata {
   jint        _modifier_flags;  // Processed access flags, for use by Class.getModifiers.
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
 
+  TRACE_DEFINE_KLASS_TRACE_ID;
+
   // Biased locking implementation and statistics
   // (the 64-bit chunk goes first, to avoid some fragmentation)
   jlong    _last_biased_lock_bulk_revocation_time;
   markOop  _prototype_header;   // Used when biased locking is both enabled and disabled for this type
   jint     _biased_lock_revocation_count;
 
-  TRACE_DEFINE_KLASS_TRACE_ID;
+  // vtable length
+  int _vtable_len;
 
   // Remembered sets support for the oops in the klasses.
   jbyte _modified_oops;             // Card Table Equivalent (YC/CMS support)
@@ -352,13 +356,13 @@ protected:
       |    (log2_esize << _lh_log2_element_size_shift);
   }
   static jint instance_layout_helper(jint size, bool slow_path_flag) {
-    return (size << LogHeapWordSize)
+    return (size << LogBytesPerWord)
       |    (slow_path_flag ? _lh_instance_slow_path_bit : 0);
   }
   static int layout_helper_to_size_helper(jint lh) {
     assert(lh > (jint)_lh_neutral_value, "must be instance");
     // Note that the following expression discards _lh_instance_slow_path_bit.
-    return lh >> LogHeapWordSize;
+    return lh >> LogBytesPerWord;
   }
   // Out-of-line version computes everything based on the etype:
   static jint array_layout_helper(BasicType etype);
@@ -374,8 +378,8 @@ protected:
 #endif
 
   // vtables
-  virtual klassVtable* vtable() const = 0;
-  virtual int vtable_length() const = 0;
+  klassVtable* vtable() const;
+  int vtable_length() const { return _vtable_len; }
 
   // subclass check
   bool is_subclass_of(const Klass* k) const;
@@ -438,7 +442,17 @@ protected:
   virtual Klass* array_klass_impl(bool or_null, int rank, TRAPS);
   virtual Klass* array_klass_impl(bool or_null, TRAPS);
 
+  void set_vtable_length(int len) { _vtable_len= len; }
+
+  vtableEntry* start_of_vtable() const;
  public:
+  Method* method_at_vtable(int index);
+
+  static ByteSize vtable_start_offset();
+  static ByteSize vtable_length_offset() {
+    return byte_offset_of(Klass, _vtable_len);
+  }
+
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
   virtual void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
@@ -524,12 +538,13 @@ protected:
   bool has_final_method() const         { return _access_flags.has_final_method(); }
   void set_has_finalizer()              { _access_flags.set_has_finalizer(); }
   void set_has_final_method()           { _access_flags.set_has_final_method(); }
-  bool is_cloneable() const             { return _access_flags.is_cloneable(); }
-  void set_is_cloneable()               { _access_flags.set_is_cloneable(); }
   bool has_vanilla_constructor() const  { return _access_flags.has_vanilla_constructor(); }
   void set_has_vanilla_constructor()    { _access_flags.set_has_vanilla_constructor(); }
   bool has_miranda_methods () const     { return access_flags().has_miranda_methods(); }
   void set_has_miranda_methods()        { _access_flags.set_has_miranda_methods(); }
+
+  bool is_cloneable() const;
+  void set_is_cloneable();
 
   // Biased locking support
   // Note: the prototype header is always set up to be at least the
@@ -578,7 +593,7 @@ protected:
   virtual void oop_ps_push_contents(  oop obj, PSPromotionManager* pm)   = 0;
   // Parallel Compact
   virtual void oop_pc_follow_contents(oop obj, ParCompactionManager* cm) = 0;
-  virtual void oop_pc_update_pointers(oop obj) = 0;
+  virtual void oop_pc_update_pointers(oop obj, ParCompactionManager* cm) = 0;
 #endif
 
   // Iterators specialized to particular subtypes

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,23 +58,13 @@ class AbstractRefProcTaskExecutor;
 class DiscoveredList {
 public:
   DiscoveredList() : _len(0), _compressed_head(0), _oop_head(NULL) { }
-  oop head() const     {
-     return UseCompressedOops ?  oopDesc::decode_heap_oop(_compressed_head) :
-                                _oop_head;
-  }
+  inline oop head() const;
   HeapWord* adr_head() {
     return UseCompressedOops ? (HeapWord*)&_compressed_head :
                                (HeapWord*)&_oop_head;
   }
-  void set_head(oop o) {
-    if (UseCompressedOops) {
-      // Must compress the head ptr.
-      _compressed_head = oopDesc::encode_heap_oop(o);
-    } else {
-      _oop_head = o;
-    }
-  }
-  bool   is_empty() const       { return head() == NULL; }
+  inline void set_head(oop o);
+  inline bool is_empty() const;
   size_t length()               { return _len; }
   void   set_length(size_t len) { _len = len;  }
   void   inc_length(size_t inc) { _len += inc; assert(_len > 0, "Error"); }
@@ -113,22 +103,7 @@ private:
 public:
   inline DiscoveredListIterator(DiscoveredList&    refs_list,
                                 OopClosure*        keep_alive,
-                                BoolObjectClosure* is_alive):
-    _refs_list(refs_list),
-    _prev_next(refs_list.adr_head()),
-    _prev(NULL),
-    _ref(refs_list.head()),
-#ifdef ASSERT
-    _first_seen(refs_list.head()),
-#endif
-#ifndef PRODUCT
-    _processed(0),
-    _removed(0),
-#endif
-    _next(NULL),
-    _keep_alive(keep_alive),
-    _is_alive(is_alive)
-{ }
+                                BoolObjectClosure* is_alive);
 
   // End Of List.
   inline bool has_next() const { return _ref != NULL; }
@@ -244,10 +219,9 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   DiscoveredList* _discoveredWeakRefs;
   DiscoveredList* _discoveredFinalRefs;
   DiscoveredList* _discoveredPhantomRefs;
-  DiscoveredList* _discoveredCleanerRefs;
 
  public:
-  static int number_of_subclasses_of_ref() { return (REF_CLEANER - REF_OTHER); }
+  static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_OTHER); }
 
   uint num_q()                             { return _num_q; }
   uint max_num_q()                         { return _max_num_q; }

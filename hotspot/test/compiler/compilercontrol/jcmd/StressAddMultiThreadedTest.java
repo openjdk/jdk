@@ -27,7 +27,9 @@
  * @summary Tests jcmd to be able to add a lot of huge directive files with
  *          parallel executed jcmds until timeout has reached
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
- * @build StressAddMultiThreadedTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
+ * @ignore 8148563
+ * @build compiler.compilercontrol.jcmd.StressAddMultiThreadedTest
+ *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils
  *        compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,11 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/method.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -166,7 +168,7 @@ CallInfo::CallInfo(Method* resolved_method, Klass* resolved_klass) {
   } else if (!resolved_klass->is_interface()) {
     // A default or miranda method.  Compute the vtable index.
     ResourceMark rm;
-    klassVtable* vt = InstanceKlass::cast(resolved_klass)->vtable();
+    klassVtable* vt = resolved_klass->vtable();
     index = LinkResolver::vtable_index_of_interface_method(resolved_klass,
                            resolved_method);
     assert(index >= 0 , "we should have valid vtable index at this point");
@@ -447,6 +449,7 @@ methodHandle LinkResolver::lookup_polymorphic_method(
         assert(result->intrinsic_id() != vmIntrinsics::_invokeGeneric, "wrong place to find this");
         assert(basic_signature == result->signature(), "predict the result signature");
         if (TraceMethodHandles) {
+          ttyLocker ttyl;
           tty->print("lookup_polymorphic_method => intrinsic ");
           result->print_on(tty);
         }
@@ -479,6 +482,7 @@ methodHandle LinkResolver::lookup_polymorphic_method(
                                                             &method_type,
                                                             CHECK_NULL);
       if (TraceMethodHandles) {
+        ttyLocker ttyl;
         tty->print("lookup_polymorphic_method => (via Java) ");
         result->print_on(tty);
         tty->print("  lookup_polymorphic_method => appendix = ");
@@ -728,6 +732,36 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
   return resolved_method;
 }
 
+static void trace_method_resolution(const char* prefix,
+                                    KlassHandle klass,
+                                    KlassHandle resolved_klass,
+                                    const methodHandle& method,
+                                    bool logitables,
+                                    int index = -1) {
+#ifndef PRODUCT
+  ResourceMark rm;
+  outputStream* st;
+  if (logitables) {
+    st = LogHandle(itables)::trace_stream();
+  } else {
+    st = LogHandle(vtables)::trace_stream();
+  }
+  st->print("%s%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
+            prefix,
+            (klass.is_null() ? "<NULL>" : klass->internal_name()),
+            (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
+            Method::name_and_sig_as_C_string(resolved_klass(),
+                                             method->name(),
+                                             method->signature()),
+            method->method_holder()->internal_name());
+  method->print_linkage_flags(st);
+  if (index != -1) {
+    st->print("vtable_index:%d", index);
+  }
+  st->cr();
+#endif // PRODUCT
+}
+
 methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info,
                                                     bool nostatics, TRAPS) {
 
@@ -784,10 +818,10 @@ methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info,
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  if (TraceItables && Verbose) {
+  if (log_develop_is_enabled(Trace, itables)) {
     trace_method_resolution("invokeinterface resolved method: caller-class",
-                            link_info.current_klass(), resolved_klass, resolved_method);
-    tty->cr();
+                            link_info.current_klass(), resolved_klass,
+                            resolved_method, true);
   }
 
   return resolved_method;
@@ -1032,10 +1066,9 @@ methodHandle LinkResolver::linktime_resolve_special_method(const LinkInfo& link_
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  if (TraceItables && Verbose) {
+  if (log_develop_is_enabled(Trace, itables)) {
     trace_method_resolution("invokespecial resolved method: caller-class:",
-                            current_klass, resolved_klass, resolved_method);
-    tty->cr();
+                            current_klass, resolved_klass, resolved_method, true);
   }
 
   return resolved_method;
@@ -1104,10 +1137,9 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
                                                sel_method->signature()));
   }
 
-  if (TraceItables && Verbose) {
+  if (log_develop_is_enabled(Trace, itables)) {
     trace_method_resolution("invokespecial selected method: resolved-class:",
-                            resolved_klass, resolved_klass, sel_method);
-    tty->cr();
+                            resolved_klass, resolved_klass, sel_method, true);
   }
 
   // setup result
@@ -1158,10 +1190,9 @@ methodHandle LinkResolver::linktime_resolve_virtual_method(const LinkInfo& link_
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  if (PrintVtables && Verbose) {
+  if (log_develop_is_enabled(Trace, vtables)) {
     trace_method_resolution("invokevirtual resolved method: caller-class:",
-                            current_klass, resolved_klass, resolved_method);
-    tty->cr();
+                            current_klass, resolved_klass, resolved_method, false);
   }
 
   return resolved_method;
@@ -1198,8 +1229,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
                            resolved_method);
     assert(vtable_index >= 0 , "we should have valid vtable index at this point");
 
-    InstanceKlass* inst = InstanceKlass::cast(recv_klass());
-    selected_method = methodHandle(THREAD, inst->method_at_vtable(vtable_index));
+    selected_method = methodHandle(THREAD, recv_klass->method_at_vtable(vtable_index));
   } else {
     // at this point we are sure that resolved_method is virtual and not
     // a default or miranda method; therefore, it must have a valid vtable index.
@@ -1214,10 +1244,7 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
       assert(resolved_method->can_be_statically_bound(), "cannot override this method");
       selected_method = resolved_method;
     } else {
-      // recv_klass might be an arrayKlassOop but all vtables start at
-      // the same place. The cast is to avoid virtual call and assertion.
-      InstanceKlass* inst = (InstanceKlass*)recv_klass();
-      selected_method = methodHandle(THREAD, inst->method_at_vtable(vtable_index));
+      selected_method = methodHandle(THREAD, recv_klass->method_at_vtable(vtable_index));
     }
   }
 
@@ -1239,10 +1266,10 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
                                                       selected_method->signature()));
   }
 
-  if (PrintVtables && Verbose) {
+  if (log_develop_is_enabled(Trace, vtables)) {
     trace_method_resolution("invokevirtual selected method: receiver-class:",
-                            recv_klass, resolved_klass, selected_method);
-    tty->print_cr("vtable_index:%d", vtable_index);
+                            recv_klass, resolved_klass, selected_method,
+                            false, vtable_index);
   }
   // setup result
   result.set_virtual(resolved_klass, recv_klass, resolved_method, selected_method, vtable_index, CHECK);
@@ -1338,10 +1365,9 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
                                                       sel_method->signature()));
   }
 
-  if (TraceItables && Verbose) {
+  if (log_develop_is_enabled(Trace, itables)) {
     trace_method_resolution("invokeinterface selected method: receiver-class",
-                            recv_klass, resolved_klass, sel_method);
-    tty->cr();
+                            recv_klass, resolved_klass, sel_method, true);
   }
   // setup result
   if (!resolved_method->has_itable_index()) {
@@ -1585,10 +1611,11 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   }
 
   if (TraceMethodHandles) {
-      ResourceMark rm(THREAD);
-      tty->print_cr("resolve_invokedynamic #%d %s %s",
+    ResourceMark rm(THREAD);
+    tty->print_cr("resolve_invokedynamic #%d %s %s in %s",
                   ConstantPool::decode_invokedynamic_index(index),
-                  method_name->as_C_string(), method_signature->as_C_string());
+                  method_name->as_C_string(), method_signature->as_C_string(),
+                  current_klass->name()->as_C_string());
     tty->print("  BSM info: "); bootstrap_specifier->print();
   }
 
@@ -1615,28 +1642,3 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
   result.set_handle(resolved_method, resolved_appendix, resolved_method_type, THREAD);
   wrap_invokedynamic_exception(CHECK);
 }
-
-#ifndef PRODUCT
-void LinkResolver::trace_method_resolution(const char* prefix,
-                                           KlassHandle klass,
-                                           KlassHandle resolved_klass,
-                                           const methodHandle& method) {
-  ResourceMark rm;
-  tty->print("%s%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
-             prefix,
-             (klass.is_null() ? "<NULL>" : klass->internal_name()),
-             (resolved_klass.is_null() ? "<NULL>" : resolved_klass->internal_name()),
-             Method::name_and_sig_as_C_string(resolved_klass(),
-                                              method->name(),
-                                              method->signature()),
-             method->method_holder()->internal_name()
-             );
-  method->access_flags().print_on(tty);
-  if (method->is_default_method()) {
-    tty->print("default ");
-  }
-  if (method->is_overpass()) {
-    tty->print("overpass ");
-  }
-}
-#endif // PRODUCT

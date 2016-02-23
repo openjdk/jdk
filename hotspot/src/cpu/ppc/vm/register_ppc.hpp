@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -609,13 +609,11 @@ REGISTER_DECLARATION(Register, R26_tmp6, R26);
 REGISTER_DECLARATION(Register, R27_tmp7, R27);
 REGISTER_DECLARATION(Register, R28_tmp8, R28);
 REGISTER_DECLARATION(Register, R29_tmp9, R29);
-#ifndef CC_INTERP
 REGISTER_DECLARATION(Register, R24_dispatch_addr,     R24);
 REGISTER_DECLARATION(Register, R25_templateTableBase, R25);
 REGISTER_DECLARATION(Register, R26_monitor,           R26);
 REGISTER_DECLARATION(Register, R27_constPoolCache,    R27);
 REGISTER_DECLARATION(Register, R28_mdx,               R28);
-#endif // CC_INTERP
 
 REGISTER_DECLARATION(Register, R19_inline_cache_reg, R19);
 REGISTER_DECLARATION(Register, R29_TOC, R29);
@@ -638,12 +636,9 @@ REGISTER_DECLARATION(Register, R29_TOC, R29);
 #define R26_monitor           AS_REGISTER(Register, R26)
 #define R27_constPoolCache    AS_REGISTER(Register, R27)
 #define R28_mdx               AS_REGISTER(Register, R28)
-#endif
 
 #define R19_inline_cache_reg AS_REGISTER(Register, R19)
 #define R29_TOC AS_REGISTER(Register, R29)
-
-#define CCR4_is_synced AS_REGISTER(ConditionRegister, CCR4)
 #endif
 
 // Scratch registers are volatile.

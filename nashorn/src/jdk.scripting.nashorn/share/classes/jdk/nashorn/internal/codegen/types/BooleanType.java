@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.nashorn.internal.codegen.types;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.I2D;
 import static jdk.internal.org.objectweb.asm.Opcodes.I2L;
-import static jdk.internal.org.objectweb.asm.Opcodes.IADD;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_0;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_1;
 import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
@@ -35,7 +34,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.IRETURN;
 import static jdk.internal.org.objectweb.asm.Opcodes.ISTORE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_INT;
-import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -134,11 +132,6 @@ public final class BooleanType extends Type {
     @Override
     public Type add(final MethodVisitor method, final int programPoint) {
         // Adding booleans in JavaScript is perfectly valid, they add as if false=0 and true=1
-        if(programPoint == INVALID_PROGRAM_POINT) {
-            method.visitInsn(IADD);
-        } else {
-            method.visitInvokeDynamicInsn("iadd", "(II)I", MATHBOOTSTRAP, programPoint);
-        }
-        return INT;
+        return Type.INT.add(method, programPoint);
     }
 }

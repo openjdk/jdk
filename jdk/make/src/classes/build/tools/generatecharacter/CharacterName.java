@@ -14,13 +14,14 @@ public class CharacterName {
                 System.err.println("Usage: java CharacterName UnicodeData.txt uniName.dat");
                 System.exit(1);
             }
-
             reader = new FileReader(args[0]);
             BufferedReader bfr = new BufferedReader(reader);
             String line = null;
 
             StringBuilder namePool = new StringBuilder();
             byte[] cpPoolBytes = new byte[0x100000];
+            boolean[] cpBlocks = new boolean[(Character.MAX_CODE_POINT + 1) >> 8];
+            int bkNum = 0;
             ByteBuffer cpBB = ByteBuffer.wrap(cpPoolBytes);
             int lastCp = 0;
             int cpNum = 0;
@@ -32,10 +33,26 @@ public class CharacterName {
                 if (spec != null) {
                     int cp = spec.getCodePoint();
                     String name = spec.getName();
-                    cpNum++;
                     if (name.equals("<control>") && spec.getOldName() != null) {
-                        if (spec.getOldName().length() != 0)
+                        if (cp == 0x7)  // <control>BELL -> BEL; u+1f514 <-> BELL
+                            name = "BEL";
+                        else if (spec.getOldName().length() != 0)
                             name = spec.getOldName();
+                        /*
+                           3 "figment" characters from NameAliases.txt
+                           Several documented labels for C1 control code points which
+                           were never actually approved in any standard...but were
+                           implemented in Perl regex.
+                           0080;PADDING CHARACTER;figment
+                           0081;HIGH OCTET PRESET;figment
+                           0099;SINGLE GRAPHIC CHARACTER INTRODUCER;figment
+                        */
+                        else if (cp == 0x80)
+                            name = "PADDING CHARACTER";
+                        else if (cp == 0x81)
+                            name = "HIGH OCTET PRESET";
+                        else if (cp == 0x99)
+                            name = "SINGLE GRAPHIC CHARACTER INTRODUCER";
                         else
                             continue;
                     } else if (name.startsWith("<")) {
@@ -61,7 +78,11 @@ public class CharacterName {
                         */
                         continue;
                     }
-
+                    cpNum++;
+                    if (!cpBlocks[cp >> 8]) {
+                        cpBlocks[cp >> 8] = true;
+                        bkNum++;
+                    }
                     if (cp == lastCp + 1) {
                         cpBB.put((byte)name.length());
                     } else {
@@ -76,11 +97,12 @@ public class CharacterName {
             byte[] namePoolBytes = namePool.toString().getBytes("ASCII");
             int cpLen = cpBB.position();
             int total = cpLen + namePoolBytes.length;
-
             DataOutputStream dos = new DataOutputStream(
                                        new DeflaterOutputStream(
                                            new FileOutputStream(args[1])));
             dos.writeInt(total);  // total
+            dos.writeInt(bkNum);  // bkNum;
+            dos.writeInt(cpNum);  // cpNum
             dos.writeInt(cpLen);  // nameOff
             dos.write(cpPoolBytes, 0, cpLen);
             dos.write(namePoolBytes);

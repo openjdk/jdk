@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -969,6 +969,15 @@ void MacroAssembler::addss(XMMRegister dst, AddressLiteral src) {
   } else {
     lea(rscratch1, src);
     addss(dst, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::addpd(XMMRegister dst, AddressLiteral src) {
+  if (reachable(src)) {
+    Assembler::addpd(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    Assembler::addpd(dst, Address(rscratch1, 0));
   }
 }
 
@@ -5417,7 +5426,7 @@ Register MacroAssembler::tlab_refill(Label& retry,
                                      Label& try_eden,
                                      Label& slow_case) {
   Register top = rax;
-  Register t1  = rcx;
+  Register t1  = rcx; // object size
   Register t2  = rsi;
   Register thread_reg = NOT_LP64(rdi) LP64_ONLY(r15_thread);
   assert_different_registers(top, thread_reg, t1, t2, /* preserve: */ rbx, rdx);
@@ -5513,10 +5522,74 @@ Register MacroAssembler::tlab_refill(Label& retry,
   addptr(top, t1);
   subptr(top, (int32_t)ThreadLocalAllocBuffer::alignment_reserve_in_bytes());
   movptr(Address(thread_reg, in_bytes(JavaThread::tlab_end_offset())), top);
+
+  if (ZeroTLAB) {
+    // This is a fast TLAB refill, therefore the GC is not notified of it.
+    // So compiled code must fill the new TLAB with zeroes.
+    movptr(top, Address(thread_reg, in_bytes(JavaThread::tlab_start_offset())));
+    zero_memory(top, t1, 0, t2);
+  }
+
   verify_tlab();
   jmp(retry);
 
   return thread_reg; // for use by caller
+}
+
+// Preserves the contents of address, destroys the contents length_in_bytes and temp.
+void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp) {
+  assert(address != length_in_bytes && address != temp && temp != length_in_bytes, "registers must be different");
+  assert((offset_in_bytes & (BytesPerWord - 1)) == 0, "offset must be a multiple of BytesPerWord");
+  Label done;
+
+  testptr(length_in_bytes, length_in_bytes);
+  jcc(Assembler::zero, done);
+
+  // initialize topmost word, divide index by 2, check if odd and test if zero
+  // note: for the remaining code to work, index must be a multiple of BytesPerWord
+#ifdef ASSERT
+  {
+    Label L;
+    testptr(length_in_bytes, BytesPerWord - 1);
+    jcc(Assembler::zero, L);
+    stop("length must be a multiple of BytesPerWord");
+    bind(L);
+  }
+#endif
+  Register index = length_in_bytes;
+  xorptr(temp, temp);    // use _zero reg to clear memory (shorter code)
+  if (UseIncDec) {
+    shrptr(index, 3);  // divide by 8/16 and set carry flag if bit 2 was set
+  } else {
+    shrptr(index, 2);  // use 2 instructions to avoid partial flag stall
+    shrptr(index, 1);
+  }
+#ifndef _LP64
+  // index could have not been a multiple of 8 (i.e., bit 2 was set)
+  {
+    Label even;
+    // note: if index was a multiple of 8, then it cannot
+    //       be 0 now otherwise it must have been 0 before
+    //       => if it is even, we don't need to check for 0 again
+    jcc(Assembler::carryClear, even);
+    // clear topmost word (no jump would be needed if conditional assignment worked here)
+    movptr(Address(address, index, Address::times_8, offset_in_bytes - 0*BytesPerWord), temp);
+    // index could be 0 now, must check again
+    jcc(Assembler::zero, done);
+    bind(even);
+  }
+#endif // !_LP64
+  // initialize remaining object fields: index is a multiple of 2 now
+  {
+    Label loop;
+    bind(loop);
+    movptr(Address(address, index, Address::times_8, offset_in_bytes - 1*BytesPerWord), temp);
+    NOT_LP64(movptr(Address(address, index, Address::times_8, offset_in_bytes - 2*BytesPerWord), temp);)
+    decrement(index);
+    jcc(Assembler::notZero, loop);
+  }
+
+  bind(done);
 }
 
 void MacroAssembler::incr_allocated_bytes(Register thread,
@@ -5730,34 +5803,22 @@ void MacroAssembler::trigfunc(char trig, int num_fpu_regs_in_use) {
   }
 
   Label slow_case, done;
+  if (trig == 't') {
+    ExternalAddress pi4_adr = (address)&pi_4;
+    if (reachable(pi4_adr)) {
+      // x ?<= pi/4
+      fld_d(pi4_adr);
+      fld_s(1);                // Stack:  X  PI/4  X
+      fabs();                  // Stack: |X| PI/4  X
+      fcmp(tmp);
+      jcc(Assembler::above, slow_case);
 
-  ExternalAddress pi4_adr = (address)&pi_4;
-  if (reachable(pi4_adr)) {
-    // x ?<= pi/4
-    fld_d(pi4_adr);
-    fld_s(1);                // Stack:  X  PI/4  X
-    fabs();                  // Stack: |X| PI/4  X
-    fcmp(tmp);
-    jcc(Assembler::above, slow_case);
-
-    // fastest case: -pi/4 <= x <= pi/4
-    switch(trig) {
-    case 's':
-      fsin();
-      break;
-    case 'c':
-      fcos();
-      break;
-    case 't':
+      // fastest case: -pi/4 <= x <= pi/4
       ftan();
-      break;
-    default:
-      assert(false, "bad intrinsic");
-      break;
-    }
-    jmp(done);
-  }
 
+      jmp(done);
+    }
+  }
   // slow case: runtime call
   bind(slow_case);
 
@@ -5790,7 +5851,6 @@ void MacroAssembler::trigfunc(char trig, int num_fpu_regs_in_use) {
   }
 }
 
-
 // Look up the method for a megamorphic invokeinterface call.
 // The target method is determined by <intf_klass, itable_index>.
 // The receiver klass is in recv_klass.
@@ -5807,22 +5867,17 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
          "caller must use same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
-  int vtable_base = InstanceKlass::vtable_start_offset() * wordSize;
+  int vtable_base = in_bytes(Klass::vtable_start_offset());
   int itentry_off = itableMethodEntry::method_offset_in_bytes();
   int scan_step   = itableOffsetEntry::size() * wordSize;
-  int vte_size    = vtableEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size_in_bytes();
   Address::ScaleFactor times_vte_scale = Address::times_ptr;
   assert(vte_size == wordSize, "else adjust times_vte_scale");
 
-  movl(scan_temp, Address(recv_klass, InstanceKlass::vtable_length_offset() * wordSize));
+  movl(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
 
   // %%% Could store the aligned, prescaled offset in the klassoop.
   lea(scan_temp, Address(recv_klass, scan_temp, times_vte_scale, vtable_base));
-  if (HeapWordsPerLong > 1) {
-    // Round up to align_object_offset boundary
-    // see code for InstanceKlass::start_of_itable!
-    round_to(scan_temp, BytesPerLong);
-  }
 
   // Adjust recv_klass by scaled itable_index, so we can free itable_index.
   assert(itableMethodEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
@@ -5870,7 +5925,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = InstanceKlass::vtable_start_offset() * wordSize;
+  const int base = in_bytes(Klass::vtable_start_offset());
   assert(vtableEntry::size() * wordSize == wordSize, "else adjust the scaling in the code below");
   Address vtable_entry_addr(recv_klass,
                             vtable_index, Address::times_ptr,

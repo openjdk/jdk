@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,11 @@
 #include "gc/parallel/cardTableExtension.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/generationSizer.hpp"
+#include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMarkSweep.hpp"
-#include "gc/parallel/psParallelCompact.hpp"
+#include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/vmPSOperations.hpp"
@@ -250,7 +251,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
       }
 
       // Failed to allocate without a gc.
-      if (GC_locker::is_active_and_needs_gc()) {
+      if (GCLocker::is_active_and_needs_gc()) {
         // If this thread is not in a jni critical section, we stall
         // the requestor until the critical section has cleared and
         // GC allowed. When the critical section clears, a GC is
@@ -260,7 +261,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         JavaThread* jthr = JavaThread::current();
         if (!jthr->in_critical()) {
           MutexUnlocker mul(Heap_lock);
-          GC_locker::stall_until_clear();
+          GCLocker::stall_until_clear();
           gclocker_stalled_count += 1;
           continue;
         } else {
@@ -350,7 +351,7 @@ ParallelScavengeHeap::death_march_check(HeapWord* const addr, size_t size) {
 }
 
 HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
-  if (!should_alloc_in_eden(size) || GC_locker::is_active_and_needs_gc()) {
+  if (!should_alloc_in_eden(size) || GCLocker::is_active_and_needs_gc()) {
     // Size is too big for eden, or gc is locked out.
     return old_gen()->allocate(size);
   }

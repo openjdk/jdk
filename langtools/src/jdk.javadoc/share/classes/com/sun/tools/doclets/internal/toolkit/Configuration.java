@@ -212,13 +212,6 @@ public abstract class Configuration {
      * used.Default is don't show version information.
      */
     public boolean showversion = false;
-
-    /**
-     * Sourcepath from where to read the source files. Default is classpath.
-     *
-     */
-    public String sourcepath = "";
-
     /**
      * Argument for command line option "-Xprofilespath".
      */
@@ -492,11 +485,6 @@ public abstract class Configuration {
                 showversion = true;
             } else if (opt.equals("-nodeprecated")) {
                 nodeprecated = true;
-            } else if (opt.equals("-sourcepath")) {
-                sourcepath = os[1];
-            } else if ((opt.equals("-classpath") || opt.equals("-cp")) &&
-                       sourcepath.length() == 0) {
-                sourcepath = os[1];
             } else if (opt.equals("-excludedocfilessubdir")) {
                 addToSet(excludedDocFileDirs, os[1]);
             } else if (opt.equals("-noqualifier")) {
@@ -540,10 +528,6 @@ public abstract class Configuration {
                 String pkglisturl = os[2];
                 extern.link(url, pkglisturl, root, true);
             }
-        }
-        if (sourcepath.length() == 0) {
-            sourcepath = System.getProperty("env.class.path") == null ? "" :
-                System.getProperty("env.class.path");
         }
         if (docencoding == null) {
             docencoding = encoding;

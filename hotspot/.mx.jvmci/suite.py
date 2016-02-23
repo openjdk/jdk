@@ -1,5 +1,5 @@
 suite = {
-  "mxversion" : "5.5.12",
+  "mxversion" : "5.6.16",
   "name" : "jvmci",
   "url" : "http://openjdk.java.net/projects/graal",
   "developer" : {
@@ -24,15 +24,13 @@ suite = {
 
   "defaultLicense" : "GPLv2-CPE",
 
-  # This puts mx/ as a sibiling of the JDK build configuration directories
+  # This puts mx/ as a sibling of the JDK build configuration directories
   # (e.g., macosx-x86_64-normal-server-release).
   "outputRoot" : "../build/mx/hotspot",
 
     # ------------- Libraries -------------
 
   "libraries" : {
-
-    # ------------- Libraries -------------
 
     "HCFDIS" : {
       "urls" : ["https://lafo.ssw.uni-linz.ac.at/pub/hcfdis-3.jar"],
@@ -53,26 +51,24 @@ suite = {
       "sha1" : "122b87ca88e41a415cf8b523fd3d03b4325134a3",
       "urls" : ["https://lafo.ssw.uni-linz.ac.at/pub/graal-external-deps/batik-all-1.7.jar"],
     },
+
+    # Stubs for classes introduced in JDK9 that allow compilation with a JDK8 javac and Eclipse.
+    # The "path" and "sha1" attributes are added when mx_jvmci is loaded
+    # (see mx_jvmci._update_JDK9_STUBS_library()).
+    "JDK9_STUBS" : {
+        "license" : "GPLv2-CPE",
+     },
   },
 
   "projects" : {
 
     # ------------- JVMCI:Service -------------
 
-    "jdk.vm.ci.service" : {
+    "jdk.vm.ci.services" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "javaCompliance" : "1.8",
       "workingSets" : "API,JVMCI",
-    },
-
-    "jdk.vm.ci.service.processor" : {
-      "subDir" : "src/jdk.vm.ci/share/classes",
-      "sourceDirs" : ["src"],
-      "dependencies" : ["jdk.vm.ci.service"],
-      "checkstyle" : "jdk.vm.ci.service",
-      "javaCompliance" : "1.8",
-      "workingSets" : "JVMCI,Codegen,HotSpot",
     },
 
     # ------------- JVMCI:API -------------
@@ -80,7 +76,7 @@ suite = {
     "jdk.vm.ci.common" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
-      "checkstyle" : "jdk.vm.ci.service",
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "API,JVMCI",
     },
@@ -88,7 +84,7 @@ suite = {
     "jdk.vm.ci.meta" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
-      "checkstyle" : "jdk.vm.ci.service",
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "API,JVMCI",
     },
@@ -97,7 +93,7 @@ suite = {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.meta"],
-      "checkstyle" : "jdk.vm.ci.service",
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "API,JVMCI",
     },
@@ -108,7 +104,7 @@ suite = {
       "dependencies" : [
         "jdk.vm.ci.code",
       ],
-      "checkstyle" : "jdk.vm.ci.service",
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "API,JVMCI",
     },
@@ -121,7 +117,7 @@ suite = {
         "jdk.vm.ci.common",
         "jdk.vm.ci.runtime",
       ],
-      "checkstyle" : "jdk.vm.ci.service",
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "API,JVMCI",
     },
@@ -129,7 +125,7 @@ suite = {
     "jdk.vm.ci.inittimer" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
-      "checkstyle" : "jdk.vm.ci.service",
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI",
     },
@@ -140,7 +136,7 @@ suite = {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
-      "checkstyle" : "jdk.vm.ci.service",
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI,AArch64",
     },
@@ -149,7 +145,7 @@ suite = {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
-      "checkstyle" : "jdk.vm.ci.service",
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI,AMD64",
     },
@@ -158,7 +154,7 @@ suite = {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
-      "checkstyle" : "jdk.vm.ci.service",
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI,SPARC",
     },
@@ -171,9 +167,10 @@ suite = {
         "jdk.vm.ci.common",
         "jdk.vm.ci.inittimer",
         "jdk.vm.ci.runtime",
-        "jdk.vm.ci.service",
+        "jdk.vm.ci.services",
+        "JDK9_STUBS",
       ],
-      "checkstyle" : "jdk.vm.ci.service",
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI",
     },
@@ -181,7 +178,7 @@ suite = {
     "jdk.vm.ci.hotspotvmconfig" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "sourceDirs" : ["src"],
-      "checkstyle" : "jdk.vm.ci.service",
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI,HotSpot",
     },
@@ -193,10 +190,7 @@ suite = {
         "jdk.vm.ci.aarch64",
         "jdk.vm.ci.hotspot",
       ],
-      "checkstyle" : "jdk.vm.ci.service",
-      "annotationProcessors" : [
-        "JVMCI_SERVICE_PROCESSOR",
-      ],
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI,HotSpot,AArch64",
     },
@@ -208,10 +202,7 @@ suite = {
         "jdk.vm.ci.amd64",
         "jdk.vm.ci.hotspot",
       ],
-      "checkstyle" : "jdk.vm.ci.service",
-      "annotationProcessors" : [
-        "JVMCI_SERVICE_PROCESSOR",
-      ],
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI,HotSpot,AMD64",
     },
@@ -223,10 +214,7 @@ suite = {
         "jdk.vm.ci.sparc",
         "jdk.vm.ci.hotspot",
       ],
-      "checkstyle" : "jdk.vm.ci.service",
-      "annotationProcessors" : [
-        "JVMCI_SERVICE_PROCESSOR",
-      ],
+      "checkstyle" : "jdk.vm.ci.services",
       "javaCompliance" : "1.8",
       "workingSets" : "JVMCI,HotSpot,SPARC",
     },
@@ -241,9 +229,9 @@ suite = {
 
     # ------------- Distributions -------------
 
-    "JVMCI_SERVICE" : {
+    "JVMCI_SERVICES" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
-      "dependencies" : ["jdk.vm.ci.service"],
+      "dependencies" : ["jdk.vm.ci.services"],
     },
 
     "JVMCI_API" : {
@@ -257,7 +245,7 @@ suite = {
         "jdk.vm.ci.sparc",
       ],
       "distDependencies" : [
-        "JVMCI_SERVICE",
+        "JVMCI_SERVICES",
       ],
     },
 
@@ -277,7 +265,7 @@ suite = {
       ],
       "distDependencies" : [
         "JVMCI_HOTSPOTVMCONFIG",
-        "JVMCI_SERVICE",
+        "JVMCI_SERVICES",
         "JVMCI_API",
       ],
     },
@@ -293,28 +281,18 @@ suite = {
       "exclude" : ["mx:JUNIT"],
     },
 
-
-    "JVMCI_SERVICE_PROCESSOR" : {
-      "subDir" : "src/jdk.vm.ci/share/classes",
-      "dependencies" : ["jdk.vm.ci.service.processor"],
-      "distDependencies" : [
-        "JVMCI_SERVICE",
-      ],
-    },
-
     # This exists to have a monolithic jvmci.jar file which simplifies
     # using the -Xoverride option in JDK9.
     "JVMCI" : {
       "subDir" : "src/jdk.vm.ci/share/classes",
       "overlaps" : [
         "JVMCI_API",
-        "JVMCI_SERVICE",
+        "JVMCI_SERVICES",
         "JVMCI_HOTSPOT",
         "JVMCI_HOTSPOTVMCONFIG",
-        "JVMCI_SERVICE_PROCESSOR",
       ],
       "dependencies" : [
-        "jdk.vm.ci.service",
+        "jdk.vm.ci.services",
         "jdk.vm.ci.inittimer",
         "jdk.vm.ci.runtime",
         "jdk.vm.ci.common",
@@ -325,8 +303,8 @@ suite = {
         "jdk.vm.ci.hotspot.aarch64",
         "jdk.vm.ci.hotspot.amd64",
         "jdk.vm.ci.hotspot.sparc",
-        "jdk.vm.ci.service.processor"
       ],
+      "exclude" : ["JDK9_STUBS"]
     },
   },
 }

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4679743
+ * @bug 4679743 8148624
  * @summary Test parts of DeflaterInputStream code that don't really do I/O.
  */
 
@@ -41,10 +41,10 @@ public class ConstructDeflaterInput {
         }
     }
 
+    private static MyDeflater def = new MyDeflater();
     public static void realMain(String[] args) throws Throwable {
         ByteArrayInputStream bais = new ByteArrayInputStream(
             "hello, world".getBytes());
-        MyDeflater def = new MyDeflater();
         DeflaterInputStream dis = null;
         byte[] b = new byte[512];
 

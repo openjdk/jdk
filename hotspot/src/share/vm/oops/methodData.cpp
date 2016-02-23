@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -934,7 +934,7 @@ int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
 int MethodData::compute_allocation_size_in_words(const methodHandle& method) {
   int byte_size = compute_allocation_size_in_bytes(method);
   int word_size = align_size_up(byte_size, BytesPerWord) / BytesPerWord;
-  return align_object_size(word_size);
+  return align_metadata_size(word_size);
 }
 
 // Initialize an individual data segment.  Returns the size of
@@ -1140,7 +1140,7 @@ MethodData::MethodData(const methodHandle& method, int size, TRAPS)
 }
 
 void MethodData::initialize() {
-  No_Safepoint_Verifier no_safepoint;  // init function atomic wrt GC
+  NoSafepointVerifier no_safepoint;  // init function atomic wrt GC
   ResourceMark rm;
 
   init();

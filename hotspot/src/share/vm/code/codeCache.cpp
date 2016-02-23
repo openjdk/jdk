@@ -1034,7 +1034,7 @@ int CodeCache::mark_for_deoptimization(DepChange& changes) {
   // implementor.
   // nmethod::check_all_dependencies works only correctly, if no safepoint
   // can happen
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
   for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
     Klass* d = str.klass();
     number_of_marked_CodeBlobs += InstanceKlass::cast(d)->mark_dependent_nmethods(changes);
@@ -1494,7 +1494,7 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
 }
 
 void CodeCache::print_codelist(outputStream* st) {
-  assert_locked_or_safepoint(CodeCache_lock);
+  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   NMethodIterator iter;
   while(iter.next_alive()) {
@@ -1508,9 +1508,8 @@ void CodeCache::print_codelist(outputStream* st) {
 }
 
 void CodeCache::print_layout(outputStream* st) {
-  assert_locked_or_safepoint(CodeCache_lock);
+  MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   ResourceMark rm;
-
   print_summary(st, true);
 }
 

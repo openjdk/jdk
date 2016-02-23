@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,14 @@
 
 class GCPolicyCounters;
 
-/* Copyright (c) 1992, 2015, Oracle and/or its affiliates, and Stanford University.
+/* Copyright (c) 1992, 2016, Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */
 
 // Age table for adaptive feedback-mediated tenuring (scavenging)
 //
 // Note: all sizes are in oops
 
-class ageTable VALUE_OBJ_CLASS_SPEC {
+class AgeTable VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
 
  public:
@@ -50,15 +50,13 @@ class ageTable VALUE_OBJ_CLASS_SPEC {
 
   // constructor.  "global" indicates that this is the global age table
   // (as opposed to gc-thread-local)
-  ageTable(bool global = true);
+  AgeTable(bool global = true);
 
   // clear table
   void clear();
 
   // add entry
-  void add(oop p, size_t oop_size) {
-    add(p->age(), oop_size);
-  }
+  inline void add(oop p, size_t oop_size);
 
   void add(uint age, size_t oop_size) {
     assert(age > 0 && age < table_size, "invalid age of object");
@@ -67,7 +65,7 @@ class ageTable VALUE_OBJ_CLASS_SPEC {
 
   // Merge another age table with the current one.  Used
   // for parallel young generation gc.
-  void merge(ageTable* subTable);
+  void merge(AgeTable* subTable);
 
   // calculate new tenuring threshold based on age information
   uint compute_tenuring_threshold(size_t survivor_capacity, GCPolicyCounters* gc_counters);

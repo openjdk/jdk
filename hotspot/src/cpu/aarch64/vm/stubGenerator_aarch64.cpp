@@ -744,7 +744,7 @@ class StubGenerator: public StubCodeGenerator {
            __ sub(end, end, start); // number of bytes to copy
 
           const Register count = end; // 'end' register contains bytes count now
-          __ mov(scratch, (address)ct->byte_map_base);
+          __ load_byte_map_base(scratch);
           __ add(start, start, scratch);
           if (UseConcMarkSweepGC) {
             __ membar(__ StoreStore);
@@ -786,12 +786,19 @@ class StubGenerator: public StubCodeGenerator {
     int offset;
     const Register t0 = r3, t1 = r4, t2 = r5, t3 = r6,
       t4 = r7, t5 = r10, t6 = r11, t7 = r12;
+    const Register stride = r13;
 
     assert_different_registers(rscratch1, t0, t1, t2, t3, t4, t5, t6, t7);
     assert_different_registers(s, d, count, rscratch1);
 
     Label again, large, small;
-    __ align(6);
+    const char *stub_name;
+    if (direction == copy_forwards)
+      stub_name = "foward_copy_longs";
+    else
+      stub_name = "backward_copy_longs";
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    __ align(CodeEntryAlignment);
     __ bind(start);
     __ cmp(count, 8);
     __ br(Assembler::LO, small);
@@ -836,7 +843,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ ret(lr);
 
-    __ align(6);
+    __ align(CodeEntryAlignment);
     __ bind(large);
 
     // Fill 8 registers
@@ -845,10 +852,18 @@ class StubGenerator: public StubCodeGenerator {
     __ ldp(t4, t5, Address(s, 6 * unit));
     __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
 
+    int prefetch = PrefetchCopyIntervalInBytes;
+    bool use_stride = false;
+    if (direction == copy_backwards) {
+       use_stride = prefetch > 256;
+       prefetch = -prefetch;
+       if (use_stride) __ mov(stride, prefetch);
+    }
+
     __ bind(again);
 
-    if (direction == copy_forwards && PrefetchCopyIntervalInBytes > 0)
-      __ prfm(Address(s, PrefetchCopyIntervalInBytes), PLDL1KEEP);
+    if (PrefetchCopyIntervalInBytes > 0)
+      __ prfm(use_stride ? Address(s, stride) : Address(s, prefetch), PLDL1KEEP);
 
     __ stp(t0, t1, Address(d, 2 * unit));
     __ ldp(t0, t1, Address(s, 2 * unit));
@@ -962,7 +977,7 @@ class StubGenerator: public StubCodeGenerator {
       __ lea(d, Address(d, count, Address::lsl(exact_log2(-step))));
     }
 
-    Label done, tail;
+    Label tail;
 
     __ cmp(count, 16/granularity);
     __ br(Assembler::LO, tail);
@@ -987,7 +1002,8 @@ class StubGenerator: public StubCodeGenerator {
       }
       // rscratch2 is the byte adjustment needed to align s.
       __ cbz(rscratch2, aligned);
-      __ lsr(rscratch2, rscratch2, exact_log2(granularity));
+      int shift = exact_log2(granularity);
+      if (shift)  __ lsr(rscratch2, rscratch2, shift);
       __ sub(count, count, rscratch2);
 
 #if 0
@@ -1150,8 +1166,11 @@ class StubGenerator: public StubCodeGenerator {
       // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
       BLOCK_COMMENT("Entry:");
     }
-    __ cmp(d, s);
-    __ br(Assembler::LS, nooverlap_target);
+
+    // use fwd copy when (d-s) above_equal (count*size)
+    __ sub(rscratch1, d, s);
+    __ cmp(rscratch1, count, Assembler::LSL, exact_log2(size));
+    __ br(Assembler::HS, nooverlap_target);
 
     if (is_oop) {
       __ push(RegSet::of(d, count), sp);

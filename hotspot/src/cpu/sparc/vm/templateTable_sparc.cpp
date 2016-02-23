@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3153,14 +3153,11 @@ void TemplateTable::invokeinterface(int byte_no) {
   //
 
   // compute start of first itableOffsetEntry (which is at end of vtable)
-  const int base = InstanceKlass::vtable_start_offset() * wordSize;
+  const int base = in_bytes(Klass::vtable_start_offset());
   Label search;
   Register Rtemp = O1_flags;
 
-  __ ld(O2_Klass, InstanceKlass::vtable_length_offset() * wordSize, Rtemp);
-  if (align_object_offset(1) > 1) {
-    __ round_to(Rtemp, align_object_offset(1));
-  }
+  __ ld(O2_Klass, in_bytes(Klass::vtable_length_offset()), Rtemp);
   __ sll(Rtemp, LogBytesPerWord, Rtemp);   // Rscratch *= 4;
   if (Assembler::is_simm13(base)) {
     __ add(Rtemp, base, Rtemp);
@@ -3356,7 +3353,15 @@ void TemplateTable::_new() {
       __ cmp_and_brx_short(RtlabWasteLimitValue, RfreeValue, Assembler::greaterEqualUnsigned, Assembler::pt, slow_case); // tlab waste is small
 
       // increment waste limit to prevent getting stuck on this slow path
-      __ add(RtlabWasteLimitValue, ThreadLocalAllocBuffer::refill_waste_limit_increment(), RtlabWasteLimitValue);
+      if (Assembler::is_simm13(ThreadLocalAllocBuffer::refill_waste_limit_increment())) {
+        __ add(RtlabWasteLimitValue, ThreadLocalAllocBuffer::refill_waste_limit_increment(), RtlabWasteLimitValue);
+      } else {
+        // set64 does not use the temp register if the given constant is 32 bit. So
+        // we can just use any register; using G0 results in ignoring of the upper 32 bit
+        // of that value.
+        __ set64(ThreadLocalAllocBuffer::refill_waste_limit_increment(), G4_scratch, G0);
+        __ add(RtlabWasteLimitValue, G4_scratch, RtlabWasteLimitValue);
+      }
       __ st_ptr(RtlabWasteLimitValue, G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()));
     } else {
       // No allocation in the shared eden.

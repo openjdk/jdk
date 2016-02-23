@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8080357
  * @summary Tests for EvaluationState.methods
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng MethodsTest
@@ -36,7 +37,6 @@ import jdk.jshell.Snippet.Status;
 import org.testng.annotations.Test;
 
 import static jdk.jshell.Snippet.Status.*;
-import static jdk.jshell.Snippet.SubKind.*;
 
 @Test
 public class MethodsTest extends KullaTesting {
@@ -72,6 +72,15 @@ public class MethodsTest extends KullaTesting {
         assertMethodDeclSnippet(m2, "f", "(A.Bar)void", RECOVERABLE_NOT_DEFINED, 1, 0);
         assertDrop(m1, ste(m1, RECOVERABLE_NOT_DEFINED, DROPPED, false, null));
         assertMethodDeclSnippet(m1, "f", "(Bar)void", DROPPED, 1, 0);
+    }
+
+    // 8080357
+    public void testNonReplUnresolved() {
+        // internal case
+        assertEval("class CCC {}", added(VALID));
+        assertEval("void f1() { CCC.xxxx(); }", added(RECOVERABLE_DEFINED));
+        // external case, not recoverable
+        assertDeclareFail("void f2() { System.xxxx(); }", "compiler.err.cant.resolve.location.args");
     }
 
     public void methods() {

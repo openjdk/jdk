@@ -203,7 +203,7 @@ else
 endif
 
 # Compiler warnings are treated as errors
-WARNINGS_ARE_ERRORS = -Werror
+WARNINGS_ARE_ERRORS ?= -Werror
 
 ifeq ($(USE_CLANG), true)
   # However we need to clean the code up before we can unrestrictedly enable this option with Clang

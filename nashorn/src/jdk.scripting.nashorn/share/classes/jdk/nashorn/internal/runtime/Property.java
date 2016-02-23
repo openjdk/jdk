@@ -99,6 +99,9 @@ public abstract class Property implements Serializable {
     /** Does this property support dual field representation? */
     public static final int DUAL_FIELDS             = 1 << 11;
 
+    /** Is this an accessor property as as defined in ES5 8.6.1? */
+    public static final int IS_ACCESSOR_PROPERTY    = 1 << 12;
+
     /** Property key. */
     private final Object key;
 
@@ -496,6 +499,16 @@ public abstract class Property implements Serializable {
     public abstract void setValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict);
 
     /**
+     * Returns true if this property has a low-level setter handle. This can be used to determine whether a
+     * nasgen-generated accessor property should be treated as non-writable. For user-created accessor properties
+     * {@link #hasSetterFunction(ScriptObject)} should be used to find whether a setter function exists in
+     * a given object.
+     *
+     * @return true if a native setter handle exists
+     */
+    public abstract boolean hasNativeSetter();
+
+    /**
      * Abstract method for retrieving the setter for the property. We do not know
      * anything about the internal representation when we request the setter, we only
      * know that the setter will take the property as a parameter of the given type.
@@ -692,5 +705,13 @@ public abstract class Property implements Serializable {
      */
     public boolean hasDualFields() {
         return (flags & DUAL_FIELDS) != 0;
+    }
+
+    /**
+     * Is this an accessor property as defined in ES5 8.6.1?
+     * @return true if this is an accessor property
+     */
+    public boolean isAccessorProperty() {
+        return (flags & IS_ACCESSOR_PROPERTY) != 0;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,6 @@
   template(java_lang_ref_WeakReference,               "java/lang/ref/WeakReference")              \
   template(java_lang_ref_FinalReference,              "java/lang/ref/FinalReference")             \
   template(java_lang_ref_PhantomReference,            "java/lang/ref/PhantomReference")           \
-  template(sun_misc_Cleaner,                          "sun/misc/Cleaner")                         \
   template(java_lang_ref_Finalizer,                   "java/lang/ref/Finalizer")                  \
   template(java_lang_reflect_AccessibleObject,        "java/lang/reflect/AccessibleObject")       \
   template(java_lang_reflect_Method,                  "java/lang/reflect/Method")                 \
@@ -110,13 +109,13 @@
   template(java_io_ByteArrayInputStream,              "java/io/ByteArrayInputStream")             \
   template(java_io_Serializable,                      "java/io/Serializable")                     \
   template(java_util_Arrays,                          "java/util/Arrays")                         \
-  template(java_util_Objects,                         "java/util/Objects")                         \
+  template(java_util_Objects,                         "java/util/Objects")                        \
   template(java_util_Properties,                      "java/util/Properties")                     \
   template(java_util_Vector,                          "java/util/Vector")                         \
   template(java_util_AbstractList,                    "java/util/AbstractList")                   \
   template(java_util_Hashtable,                       "java/util/Hashtable")                      \
   template(java_lang_Compiler,                        "java/lang/Compiler")                       \
-  template(sun_misc_Signal,                           "sun/misc/Signal")                          \
+  template(jdk_internal_misc_Signal,                  "jdk/internal/misc/Signal")                 \
   template(sun_misc_Launcher,                         "sun/misc/Launcher")                        \
   template(java_lang_AssertionStatusDirectives,       "java/lang/AssertionStatusDirectives")      \
   template(getBootClassPathEntryForClass_name,        "getBootClassPathEntryForClass")            \

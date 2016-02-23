@@ -133,6 +133,9 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java generic-all
 # 8029891
 java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 
+# 7008363
+java/lang/StringCoding/CheckEncodings.sh                        generic-all
+
 ############################################################################
 
 # jdk_instrument
@@ -301,9 +304,6 @@ sun/security/provider/SecureRandom/StrongSecureRandom.java      macosx-10.10
 
 # 8074580
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               generic-all
-
-# 8146387
-javax/net/ssl/SSLSession/SessionCacheSizeTests.java windows-all,solaris-all
 
 ############################################################################
 

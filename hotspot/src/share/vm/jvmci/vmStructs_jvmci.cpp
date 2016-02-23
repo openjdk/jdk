@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@
 
 
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
-  static_field(CompilerToVM::Data,             InstanceKlass_vtable_start_offset,      int)                                          \
-  static_field(CompilerToVM::Data,             InstanceKlass_vtable_length_offset,     int)                                          \
+  static_field(CompilerToVM::Data,             Klass_vtable_start_offset,              int)                                          \
+  static_field(CompilerToVM::Data,             Klass_vtable_length_offset,             int)                                          \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             Method_extra_stack_entries,             int)                                          \
                                                                                                                                      \
@@ -73,6 +73,8 @@
                                                                                                                                      \
   static_field(CompilerToVM::Data,             cardtable_start_address,                jbyte*)                                       \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
+                                                                                                                                     \
+  static_field(CompilerToVM::Data,             vm_page_size,                           int)                                          \
                                                                                                                                      \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \

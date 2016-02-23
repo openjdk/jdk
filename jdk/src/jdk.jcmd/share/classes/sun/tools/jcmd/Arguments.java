@@ -119,7 +119,7 @@ class Arguments {
         System.out.println("  If the pid is 0, commands will be sent to all Java processes.   ");
         System.out.println("  The main class argument will be used to match (either partially ");
         System.out.println("  or fully) the class used to start Java.                         ");
-        System.out.println("  If no options are given, lists Java processes (same as -p).     ");
+        System.out.println("  If no options are given, lists Java processes (same as -l).     ");
         System.out.println("                                                                  ");
         System.out.println("  PerfCounter.print display the counters exposed by this process  ");
         System.out.println("  -f  read and execute commands from the file                     ");

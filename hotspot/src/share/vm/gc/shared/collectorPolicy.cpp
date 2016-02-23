@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,7 +303,7 @@ void GenCollectorPolicy::initialize_flags() {
 
   // Make sure NewSize allows an old generation to fit even if set on the command line
   if (FLAG_IS_CMDLINE(NewSize) && NewSize >= _initial_heap_byte_size) {
-    warning("NewSize was set larger than initial heap size, will use initial heap size.");
+    log_warning(gc, ergo)("NewSize was set larger than initial heap size, will use initial heap size.");
     NewSize = bound_minus_alignment(NewSize, _initial_heap_byte_size);
   }
 
@@ -325,9 +325,9 @@ void GenCollectorPolicy::initialize_flags() {
       // Make sure there is room for an old generation
       size_t smaller_max_new_size = MaxHeapSize - _gen_alignment;
       if (FLAG_IS_CMDLINE(MaxNewSize)) {
-        warning("MaxNewSize (" SIZE_FORMAT "k) is equal to or greater than the entire "
-                "heap (" SIZE_FORMAT "k).  A new max generation size of " SIZE_FORMAT "k will be used.",
-                MaxNewSize/K, MaxHeapSize/K, smaller_max_new_size/K);
+        log_warning(gc, ergo)("MaxNewSize (" SIZE_FORMAT "k) is equal to or greater than the entire "
+                              "heap (" SIZE_FORMAT "k).  A new max generation size of " SIZE_FORMAT "k will be used.",
+                              MaxNewSize/K, MaxHeapSize/K, smaller_max_new_size/K);
       }
       FLAG_SET_ERGO(size_t, MaxNewSize, smaller_max_new_size);
       if (NewSize > MaxNewSize) {
@@ -346,9 +346,9 @@ void GenCollectorPolicy::initialize_flags() {
     // At this point this should only happen if the user specifies a large NewSize and/or
     // a small (but not too small) MaxNewSize.
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
-      warning("NewSize (" SIZE_FORMAT "k) is greater than the MaxNewSize (" SIZE_FORMAT "k). "
-              "A new max generation size of " SIZE_FORMAT "k will be used.",
-              NewSize/K, MaxNewSize/K, NewSize/K);
+      log_warning(gc, ergo)("NewSize (" SIZE_FORMAT "k) is greater than the MaxNewSize (" SIZE_FORMAT "k). "
+                            "A new max generation size of " SIZE_FORMAT "k will be used.",
+                            NewSize/K, MaxNewSize/K, NewSize/K);
     }
     FLAG_SET_ERGO(size_t, MaxNewSize, NewSize);
     _max_young_size = MaxNewSize;
@@ -516,10 +516,10 @@ void GenCollectorPolicy::initialize_size_info() {
     // The generation minimums and the overall heap minimum should
     // be within one generation alignment.
     if (_initial_old_size > _max_old_size) {
-      warning("Inconsistency between maximum heap size and maximum "
-          "generation sizes: using maximum heap = " SIZE_FORMAT
-          " -XX:OldSize flag is being ignored",
-          _max_heap_byte_size);
+      log_warning(gc, ergo)("Inconsistency between maximum heap size and maximum "
+                            "generation sizes: using maximum heap = " SIZE_FORMAT
+                            ", -XX:OldSize flag is being ignored",
+                            _max_heap_byte_size);
       _initial_old_size = _max_old_size;
     }
 
@@ -531,8 +531,8 @@ void GenCollectorPolicy::initialize_size_info() {
   // differs from JDK8 where the generation sizes have higher priority
   // than the initial heap size.
   if ((_initial_old_size + _initial_young_size) != _initial_heap_byte_size) {
-    warning("Inconsistency between generation sizes and heap size, resizing "
-            "the generations to fit the heap.");
+    log_warning(gc, ergo)("Inconsistency between generation sizes and heap size, resizing "
+                          "the generations to fit the heap.");
 
     size_t desired_young_size = _initial_heap_byte_size - _initial_old_size;
     if (_initial_heap_byte_size < _initial_old_size) {
@@ -620,7 +620,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
         return result;
       }
 
-      if (GC_locker::is_active_and_needs_gc()) {
+      if (GCLocker::is_active_and_needs_gc()) {
         if (is_tlab) {
           return NULL;  // Caller will retry allocating individual object.
         }
@@ -647,7 +647,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
         if (!jthr->in_critical()) {
           MutexUnlocker mul(Heap_lock);
           // Wait for JNI critical section to be exited
-          GC_locker::stall_until_clear();
+          GCLocker::stall_until_clear();
           gclocker_stalled_count += 1;
           continue;
         } else {
@@ -697,8 +697,8 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-          warning("GenCollectorPolicy::mem_allocate_work retries %d times \n\t"
-                  " size=" SIZE_FORMAT " %s", try_count, size, is_tlab ? "(TLAB)" : "");
+          log_warning(gc, ergo)("GenCollectorPolicy::mem_allocate_work retries %d times,"
+                                " size=" SIZE_FORMAT " %s", try_count, size, is_tlab ? "(TLAB)" : "");
     }
   }
 }
@@ -728,7 +728,7 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
   HeapWord* result = NULL;
 
   assert(size != 0, "Precondition violated");
-  if (GC_locker::is_active_and_needs_gc()) {
+  if (GCLocker::is_active_and_needs_gc()) {
     // GC locker is active; instead of a collection we will attempt
     // to expand the heap, if there's room for expansion.
     if (!gch->is_maximal_no_gc()) {
@@ -774,7 +774,7 @@ HeapWord* GenCollectorPolicy::satisfy_failed_allocation(size_t size,
   // free memory should be here, especially if they are expensive. If this
   // attempt fails, an OOM exception will be thrown.
   {
-    UIntXFlagSetting flag_change(MarkSweepAlwaysCompactCount, 1); // Make sure the heap is fully compacted
+    UIntFlagSetting flag_change(MarkSweepAlwaysCompactCount, 1); // Make sure the heap is fully compacted
 
     gch->do_collection(true,                      // full
                        true,                      // clear_all_soft_refs
@@ -815,8 +815,8 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
       return result;
     }
 
-    if (GC_locker::is_active_and_needs_gc()) {
-      // If the GC_locker is active, just expand and allocate.
+    if (GCLocker::is_active_and_needs_gc()) {
+      // If the GCLocker is active, just expand and allocate.
       // If that does not succeed, wait if this thread is not
       // in a critical section itself.
       result =
@@ -828,7 +828,7 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
       JavaThread* jthr = JavaThread::current();
       if (!jthr->in_critical()) {
         // Wait for JNI critical section to be exited
-        GC_locker::stall_until_clear();
+        GCLocker::stall_until_clear();
         // The GC invoked by the last thread leaving the critical
         // section will be a young collection and a full collection
         // is (currently) needed for unloading classes so continue
@@ -870,8 +870,8 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
     loop_count++;
     if ((QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
-      warning("satisfy_failed_metadata_allocation() retries %d times \n\t"
-              " size=" SIZE_FORMAT, loop_count, word_size);
+      log_warning(gc, ergo)("satisfy_failed_metadata_allocation() retries %d times,"
+                            " size=" SIZE_FORMAT, loop_count, word_size);
     }
   } while (true);  // Until a GC is done
 }
@@ -887,7 +887,7 @@ bool GenCollectorPolicy::should_try_older_generation_allocation(
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   size_t young_capacity = gch->young_gen()->capacity_before_gc();
   return    (word_size > heap_word_size(young_capacity))
-         || GC_locker::is_active_and_needs_gc()
+         || GCLocker::is_active_and_needs_gc()
          || gch->incremental_collection_failed();
 }
 

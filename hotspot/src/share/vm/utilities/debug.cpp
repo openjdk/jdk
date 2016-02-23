@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,7 +461,7 @@ extern "C" void blob(CodeBlob* cb) {
 extern "C" void dump_vtable(address p) {
   Command c("dump_vtable");
   Klass* k = (Klass*)p;
-  InstanceKlass::cast(k)->vtable()->print();
+  k->vtable()->print();
 }
 
 
@@ -480,12 +480,13 @@ extern "C" void nm(intptr_t p) {
 extern "C" void disnm(intptr_t p) {
   Command c("disnm");
   CodeBlob* cb = CodeCache::find_blob((address) p);
-  nmethod* nm = cb->as_nmethod_or_null();
-  if (nm) {
-    nm->print();
-    Disassembler::decode(nm);
-  } else {
-    cb->print();
+  if (cb != NULL) {
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != NULL) {
+      nm->print();
+    } else {
+      cb->print();
+    }
     Disassembler::decode(cb);
   }
 }

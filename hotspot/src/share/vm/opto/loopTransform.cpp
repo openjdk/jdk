@@ -2404,15 +2404,25 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   if (needs_guard) {
     // Check for an obvious zero trip guard.
     Node* inctrl = PhaseIdealLoop::skip_loop_predicates(cl->in(LoopNode::EntryControl));
-    if (inctrl->Opcode() == Op_IfTrue) {
+    if (inctrl->Opcode() == Op_IfTrue || inctrl->Opcode() == Op_IfFalse) {
+      bool maybe_swapped = (inctrl->Opcode() == Op_IfFalse);
       // The test should look like just the backedge of a CountedLoop
       Node* iff = inctrl->in(0);
       if (iff->is_If()) {
         Node* bol = iff->in(1);
-        if (bol->is_Bool() && bol->as_Bool()->_test._test == cl->loopexit()->test_trip()) {
-          Node* cmp = bol->in(1);
-          if (cmp->is_Cmp() && cmp->in(1) == cl->init_trip() && cmp->in(2) == cl->limit()) {
-            needs_guard = false;
+        if (bol->is_Bool()) {
+          BoolTest test = bol->as_Bool()->_test;
+          if (maybe_swapped) {
+            test._test = test.commute();
+            test._test = test.negate();
+          }
+          if (test._test == cl->loopexit()->test_trip()) {
+            Node* cmp = bol->in(1);
+            int init_idx = maybe_swapped ? 2 : 1;
+            int limit_idx = maybe_swapped ? 1 : 2;
+            if (cmp->is_Cmp() && cmp->in(init_idx) == cl->init_trip() && cmp->in(limit_idx) == cl->limit()) {
+              needs_guard = false;
+            }
           }
         }
       }
@@ -2660,7 +2670,7 @@ bool IdealLoopTree::iteration_split( PhaseIdealLoop *phase, Node_List &old_new )
 
 //=============================================================================
 // Process all the loops in the loop tree and replace any fill
-// patterns with an intrisc version.
+// patterns with an intrinsic version.
 bool PhaseIdealLoop::do_intrinsify_fill() {
   bool changed = false;
   for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
@@ -2758,8 +2768,9 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   }
 
   // Make sure the address expression can be handled.  It should be
-  // head->phi * elsize + con.  head->phi might have a ConvI2L.
+  // head->phi * elsize + con.  head->phi might have a ConvI2L(CastII()).
   Node* elements[4];
+  Node* cast = NULL;
   Node* conv = NULL;
   bool found_index = false;
   int count = store->in(MemNode::Address)->as_AddP()->unpack_offsets(elements, ARRAY_SIZE(elements));
@@ -2774,6 +2785,12 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
         conv = value;
         value = value->in(1);
       }
+      if (value->Opcode() == Op_CastII &&
+          value->as_CastII()->has_range_check()) {
+        // Skip range check dependent CastII nodes
+        cast = value;
+        value = value->in(1);
+      }
 #endif
       if (value != head->phi()) {
         msg = "unhandled shift in address";
@@ -2786,9 +2803,16 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
         }
       }
     } else if (n->Opcode() == Op_ConvI2L && conv == NULL) {
-      if (n->in(1) == head->phi()) {
+      conv = n;
+      n = n->in(1);
+      if (n->Opcode() == Op_CastII &&
+          n->as_CastII()->has_range_check()) {
+        // Skip range check dependent CastII nodes
+        cast = n;
+        n = n->in(1);
+      }
+      if (n == head->phi()) {
         found_index = true;
-        conv = n;
       } else {
         msg = "unhandled input to ConvI2L";
       }
@@ -2847,6 +2871,7 @@ bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& st
   // Address elements are ok
   if (con)   ok.set(con->_idx);
   if (shift) ok.set(shift->_idx);
+  if (cast)  ok.set(cast->_idx);
   if (conv)  ok.set(conv->_idx);
 
   for (uint i = 0; msg == NULL && i < lpt->_body.size(); i++) {
@@ -3033,7 +3058,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   // state of the loop.  It's safe in this case to replace it with the
   // result_mem.
   _igvn.replace_node(store->in(MemNode::Memory), result_mem);
-  _igvn.replace_node(exit, result_ctrl);
+  lazy_replace(exit, result_ctrl);
   _igvn.replace_node(store, result_mem);
   // Any uses the increment outside of the loop become the loop limit.
   _igvn.replace_node(head->incr(), head->limit());

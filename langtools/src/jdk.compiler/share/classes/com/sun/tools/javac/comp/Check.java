@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,6 @@ public class Check {
     private final JCDiagnostic.Factory diags;
     private boolean warnOnSyntheticConflicts;
     private boolean suppressAbortOnBadClassFile;
-    private boolean enableSunApiLintControl;
     private final JavaFileManager fileManager;
     private final Source source;
     private final Profile profile;
@@ -131,10 +130,8 @@ public class Check {
         allowStrictMethodClashCheck = source.allowStrictMethodClashCheck();
         allowPrivateSafeVarargs = source.allowPrivateSafeVarargs();
         allowDiamondWithAnonymousClassCreation = source.allowDiamondWithAnonymousClassCreation();
-        complexInference = options.isSet("complexinference");
         warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
         suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
-        enableSunApiLintControl = options.isSet("enableSunApiLintControl");
         warnOnAccessToSensitiveMembers = options.isSet("warnOnAccessToSensitiveMembers");
 
         Target target = Target.instance(context);
@@ -144,14 +141,13 @@ public class Check {
 
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
-        boolean verboseSunApi = lint.isEnabled(LintCategory.SUNAPI);
         boolean enforceMandatoryWarnings = true;
 
         deprecationHandler = new MandatoryWarningHandler(log, verboseDeprecated,
                 enforceMandatoryWarnings, "deprecated", LintCategory.DEPRECATION);
         uncheckedHandler = new MandatoryWarningHandler(log, verboseUnchecked,
                 enforceMandatoryWarnings, "unchecked", LintCategory.UNCHECKED);
-        sunApiHandler = new MandatoryWarningHandler(log, verboseSunApi,
+        sunApiHandler = new MandatoryWarningHandler(log, false,
                 enforceMandatoryWarnings, "sunapi", null);
 
         deferredLintHandler = DeferredLintHandler.instance(context);
@@ -176,10 +172,6 @@ public class Check {
     /** Switch: can diamond inference be used in anonymous instance creation ?
      */
     boolean allowDiamondWithAnonymousClassCreation;
-
-    /** Switch: -complexinference option set?
-     */
-    boolean complexInference;
 
     /** Character for synthetic names
      */
@@ -246,15 +238,6 @@ public class Check {
     void warnUnsafeVararg(DiagnosticPosition pos, String key, Object... args) {
         if (lint.isEnabled(LintCategory.VARARGS) && allowSimplifiedVarargs)
             log.warning(LintCategory.VARARGS, pos, key, args);
-    }
-
-    /** Warn about using proprietary API.
-     *  @param pos        Position to be used for error reporting.
-     *  @param msg        A string describing the problem.
-     */
-    public void warnSunApi(DiagnosticPosition pos, String msg, Object... args) {
-        if (!lint.isSuppressed(LintCategory.SUNAPI))
-            sunApiHandler.report(pos, msg, args);
     }
 
     public void warnStatic(DiagnosticPosition pos, String msg, Object... args) {
@@ -3226,13 +3209,8 @@ public class Check {
 
     void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
         if ((s.flags() & PROPRIETARY) != 0) {
-            deferredLintHandler.report(new DeferredLintHandler.LintLogger() {
-                public void report() {
-                    if (enableSunApiLintControl)
-                      warnSunApi(pos, "sun.proprietary", s);
-                    else
-                      log.mandatoryWarning(pos, "sun.proprietary", s);
-                }
+            deferredLintHandler.report(() -> {
+                log.mandatoryWarning(pos, "sun.proprietary", s);
             });
         }
     }

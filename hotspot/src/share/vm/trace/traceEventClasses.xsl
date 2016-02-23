@@ -36,7 +36,6 @@
 // Some parts of traceEvent.hpp are used outside of
 // INCLUDE_TRACE
 
-#include "memory/resourceArea.hpp"
 #include "tracefiles/traceTypes.hpp"
 #include "trace/traceEvent.hpp"
 #include "utilities/macros.hpp"
@@ -57,7 +56,8 @@ public:
   void set_endtime(const Ticks&amp; time) {}
   bool should_commit() const { return false; }
   static bool is_enabled() { return false; }
-  void commit() const {}
+  void commit() {}
+  void cancel() {}
 };
 
   <xsl:apply-templates select="trace/events/struct" mode="empty"/>
@@ -136,7 +136,6 @@ public:
 </xsl:text>
   <xsl:value-of select="concat('  Event', @id, '(EventStartTime timing=TIMED) : TraceEvent&lt;Event', @id, '&gt;(timing) {}', $newline)"/>
   void writeEvent(void) {
-    ResourceMark rm;
     if (UseLockedTracing) {
       ttyLocker lock;
       writeEventContent();

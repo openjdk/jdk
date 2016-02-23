@@ -120,8 +120,14 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(AllocatePrefetchStepSize, 64);
   FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, 256);
   FLAG_SET_DEFAULT(PrefetchFieldsAhead, 256);
-  FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, 256);
-  FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
+  if (FLAG_IS_DEFAULT(PrefetchCopyIntervalInBytes))
+    FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, 256);
+  if ((PrefetchCopyIntervalInBytes & 7) || (PrefetchCopyIntervalInBytes >= 32768)) {
+    warning("PrefetchCopyIntervalInBytes must be a multiple of 8 and < 32768");
+    PrefetchCopyIntervalInBytes &= ~7;
+    if (PrefetchCopyIntervalInBytes >= 32768)
+      PrefetchCopyIntervalInBytes = 32760;
+  }
 
   unsigned long auxv = getauxval(AT_HWCAP);
 

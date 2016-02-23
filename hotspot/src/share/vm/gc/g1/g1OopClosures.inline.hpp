@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_GC_G1_G1OOPCLOSURES_INLINE_HPP
 #define SHARE_VM_GC_G1_G1OOPCLOSURES_INLINE_HPP
 
-#include "gc/g1/concurrentMark.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -141,12 +141,16 @@ inline void G1Mux2Closure::do_oop_work(T* p) {
   _c1->do_oop(p);
   _c2->do_oop(p);
 }
+void G1Mux2Closure::do_oop(oop* p)       { do_oop_work(p); }
+void G1Mux2Closure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 template <class T>
 inline void G1TriggerClosure::do_oop_work(T* p) {
   // Record that this closure was actually applied (triggered).
   _triggered = true;
 }
+void G1TriggerClosure::do_oop(oop* p)       { do_oop_work(p); }
+void G1TriggerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 template <class T>
 inline void G1InvokeIfNotTriggeredClosure::do_oop_work(T* p) {
@@ -154,6 +158,8 @@ inline void G1InvokeIfNotTriggeredClosure::do_oop_work(T* p) {
     _oop_cl->do_oop(p);
   }
 }
+void G1InvokeIfNotTriggeredClosure::do_oop(oop* p)       { do_oop_work(p); }
+void G1InvokeIfNotTriggeredClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 template <class T>
 inline void G1UpdateRSOrPushRefOopClosure::do_oop_work(T* p) {
@@ -224,6 +230,8 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_work(T* p) {
     to->rem_set()->add_reference(p, _worker_i);
   }
 }
+void G1UpdateRSOrPushRefOopClosure::do_oop(oop* p)       { do_oop_work(p); }
+void G1UpdateRSOrPushRefOopClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 template <class T>
 void G1ParCopyHelper::do_klass_barrier(T* p, oop new_obj) {

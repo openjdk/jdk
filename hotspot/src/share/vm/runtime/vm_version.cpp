@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,6 +215,8 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "Sun Studio 12u1"
       #elif __SUNPRO_CC == 0x5120
         #define HOTSPOT_BUILD_COMPILER "Sun Studio 12u3"
+      #elif __SUNPRO_CC == 0x5130
+        #define HOTSPOT_BUILD_COMPILER "Sun Studio 12u4"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown Workshop:" XSTR(__SUNPRO_CC)
       #endif
@@ -238,9 +240,14 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
     #define FLOAT_ARCH_STR XSTR(FLOAT_ARCH)
   #endif
 
-  return VMNAME " (" VM_RELEASE ") for " OS "-" CPU FLOAT_ARCH_STR
-         " JRE (" VERSION_STRING "), built on " __DATE__ " " __TIME__
-         " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER;
+  #define INTERNAL_VERSION_SUFFIX VM_RELEASE ")" \
+         " for " OS "-" CPU FLOAT_ARCH_STR \
+         " JRE (" VERSION_STRING "), built on " __DATE__ " " __TIME__ \
+         " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER
+
+  return strcmp(DEBUG_LEVEL, "release") == 0
+      ? VMNAME " (" INTERNAL_VERSION_SUFFIX
+      : VMNAME " (" DEBUG_LEVEL " " INTERNAL_VERSION_SUFFIX;
 }
 
 const char *Abstract_VM_Version::vm_build_user() {
@@ -249,6 +256,11 @@ const char *Abstract_VM_Version::vm_build_user() {
 
 const char *Abstract_VM_Version::jdk_debug_level() {
   return DEBUG_LEVEL;
+}
+
+const char *Abstract_VM_Version::printable_jdk_debug_level() {
+  // Debug level is not printed for "release" builds
+  return strcmp(DEBUG_LEVEL, "release") == 0 ? "" : DEBUG_LEVEL " ";
 }
 
 unsigned int Abstract_VM_Version::jvm_version() {

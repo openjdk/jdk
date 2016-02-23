@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,13 +120,12 @@ private:
   jobject       _data_section_handle;
   jobject       _data_section_patches_handle;
   jobject       _sites_handle;
-  jobject       _exception_handlers_handle;
   CodeOffsets   _offsets;
 
   jobject       _code_handle;
   jint          _code_size;
   jint          _total_frame_size;
-  jint          _custom_stack_area_offset;
+  jint          _orig_pc_offset;
   jint          _parameter_count;
   jint          _constants_size;
 #ifndef PRODUCT
@@ -166,7 +165,6 @@ private:
   arrayOop code() { return (arrayOop) JNIHandles::resolve(_code_handle); }
   arrayOop data_section() { return (arrayOop) JNIHandles::resolve(_data_section_handle); }
   objArrayOop data_section_patches() { return (objArrayOop) JNIHandles::resolve(_data_section_patches_handle); }
-  objArrayOop exception_handlers() { return (objArrayOop) JNIHandles::resolve(_exception_handlers_handle); }
 #ifndef PRODUCT
   objArrayOop comments() { return (objArrayOop) JNIHandles::resolve(_comments_handle); }
 #endif
@@ -196,7 +194,7 @@ protected:
   narrowKlass record_narrow_metadata_reference(Handle constant, TRAPS);
 #endif
 
-  // extract the fields of the CompilationResult
+  // extract the fields of the HotSpotCompiledCode
   void initialize_fields(oop target, oop target_method, TRAPS);
   void initialize_dependencies(oop target_method, OopRecorder* oop_recorder, TRAPS);
 
@@ -216,6 +214,7 @@ protected:
   void site_Call(CodeBuffer& buffer, jint pc_offset, Handle site, TRAPS);
   void site_DataPatch(CodeBuffer& buffer, jint pc_offset, Handle site, TRAPS);
   void site_Mark(CodeBuffer& buffer, jint pc_offset, Handle site, TRAPS);
+  void site_ExceptionHandler(jint pc_offset, Handle site);
 
   OopMap* create_oop_map(Handle debug_info, TRAPS);
 
@@ -235,7 +234,6 @@ protected:
 
   GrowableArray<ScopeValue*>* record_virtual_objects(Handle debug_info, TRAPS);
 
-  void process_exception_handlers();
   int estimateStubSpace(int static_call_stubs);
 };
 
