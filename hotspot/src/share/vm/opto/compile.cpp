@@ -88,7 +88,27 @@ MachConstantBaseNode* Compile::mach_constant_base_node() {
 
 // Return the index at which m must be inserted (or already exists).
 // The sort order is by the address of the ciMethod, with is_virtual as minor key.
-int Compile::intrinsic_insertion_index(ciMethod* m, bool is_virtual) {
+class IntrinsicDescPair {
+ private:
+  ciMethod* _m;
+  bool _is_virtual;
+ public:
+  IntrinsicDescPair(ciMethod* m, bool is_virtual) : _m(m), _is_virtual(is_virtual) {}
+  static int compare(IntrinsicDescPair* const& key, CallGenerator* const& elt) {
+    ciMethod* m= elt->method();
+    ciMethod* key_m = key->_m;
+    if (key_m < m)      return -1;
+    else if (key_m > m) return 1;
+    else {
+      bool is_virtual = elt->is_virtual();
+      bool key_virtual = key->_is_virtual;
+      if (key_virtual < is_virtual)      return -1;
+      else if (key_virtual > is_virtual) return 1;
+      else                               return 0;
+    }
+  }
+};
+int Compile::intrinsic_insertion_index(ciMethod* m, bool is_virtual, bool& found) {
 #ifdef ASSERT
   for (int i = 1; i < _intrinsics->length(); i++) {
     CallGenerator* cg1 = _intrinsics->at(i-1);
@@ -99,63 +119,28 @@ int Compile::intrinsic_insertion_index(ciMethod* m, bool is_virtual) {
            "compiler intrinsics list must stay sorted");
   }
 #endif
-  // Binary search sorted list, in decreasing intervals [lo, hi].
-  int lo = 0, hi = _intrinsics->length()-1;
-  while (lo <= hi) {
-    int mid = (uint)(hi + lo) / 2;
-    ciMethod* mid_m = _intrinsics->at(mid)->method();
-    if (m < mid_m) {
-      hi = mid-1;
-    } else if (m > mid_m) {
-      lo = mid+1;
-    } else {
-      // look at minor sort key
-      bool mid_virt = _intrinsics->at(mid)->is_virtual();
-      if (is_virtual < mid_virt) {
-        hi = mid-1;
-      } else if (is_virtual > mid_virt) {
-        lo = mid+1;
-      } else {
-        return mid;  // exact match
-      }
-    }
-  }
-  return lo;  // inexact match
+  IntrinsicDescPair pair(m, is_virtual);
+  return _intrinsics->find_sorted<IntrinsicDescPair*, IntrinsicDescPair::compare>(&pair, found);
 }
 
 void Compile::register_intrinsic(CallGenerator* cg) {
   if (_intrinsics == NULL) {
     _intrinsics = new (comp_arena())GrowableArray<CallGenerator*>(comp_arena(), 60, 0, NULL);
   }
-  // This code is stolen from ciObjectFactory::insert.
-  // Really, GrowableArray should have methods for
-  // insert_at, remove_at, and binary_search.
   int len = _intrinsics->length();
-  int index = intrinsic_insertion_index(cg->method(), cg->is_virtual());
-  if (index == len) {
-    _intrinsics->append(cg);
-  } else {
-#ifdef ASSERT
-    CallGenerator* oldcg = _intrinsics->at(index);
-    assert(oldcg->method() != cg->method() || oldcg->is_virtual() != cg->is_virtual(), "don't register twice");
-#endif
-    _intrinsics->append(_intrinsics->at(len-1));
-    int pos;
-    for (pos = len-2; pos >= index; pos--) {
-      _intrinsics->at_put(pos+1,_intrinsics->at(pos));
-    }
-    _intrinsics->at_put(index, cg);
-  }
+  bool found = false;
+  int index = intrinsic_insertion_index(cg->method(), cg->is_virtual(), found);
+  assert(!found, "registering twice");
+  _intrinsics->insert_before(index, cg);
   assert(find_intrinsic(cg->method(), cg->is_virtual()) == cg, "registration worked");
 }
 
 CallGenerator* Compile::find_intrinsic(ciMethod* m, bool is_virtual) {
   assert(m->is_loaded(), "don't try this on unloaded methods");
   if (_intrinsics != NULL) {
-    int index = intrinsic_insertion_index(m, is_virtual);
-    if (index < _intrinsics->length()
-        && _intrinsics->at(index)->method() == m
-        && _intrinsics->at(index)->is_virtual() == is_virtual) {
+    bool found = false;
+    int index = intrinsic_insertion_index(m, is_virtual, found);
+     if (found) {
       return _intrinsics->at(index);
     }
   }
