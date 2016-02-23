@@ -389,9 +389,6 @@ public class JavaCompiler {
 
         verbose       = options.isSet(VERBOSE);
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
-        stubOutput    = options.isSet("-stubs");
-        relax         = options.isSet("-relax");
-        printFlat     = options.isSet("-printflat");
         encoding      = options.get(ENCODING);
         lineDebugInfo = options.isUnset(G_CUSTOM) ||
                         options.isSet(G_CUSTOM, "lines");
@@ -446,18 +443,6 @@ public class JavaCompiler {
     /** Emit plain Java source files rather than class files.
      */
     public boolean sourceOutput;
-
-    /** Emit stub source files rather than class files.
-     */
-    public boolean stubOutput;
-
-    /** Switch: relax some constraints for producing the jsr14 prototype.
-     */
-    boolean relax;
-
-    /** Debug switch: Emit Java sources after inner class flattening.
-     */
-    public boolean printFlat;
 
     /** The encoding to be used for source input.
      */
@@ -611,7 +596,7 @@ public class JavaCompiler {
     // where
         public boolean keepComments = false;
         protected boolean keepComments() {
-            return keepComments || sourceOutput || stubOutput;
+            return keepComments || sourceOutput;
         }
 
 
@@ -676,30 +661,6 @@ public class JavaCompiler {
         }
     }
 
-    /** Emit plain Java source for a class.
-     *  @param env    The attribution environment of the outermost class
-     *                containing this class.
-     *  @param cdef   The class definition to be printed.
-     */
-    JavaFileObject printSource(Env<AttrContext> env, JCClassDecl cdef) throws IOException {
-        JavaFileObject outFile
-            = fileManager.getJavaFileForOutput(CLASS_OUTPUT,
-                                               cdef.sym.flatname.toString(),
-                                               JavaFileObject.Kind.SOURCE,
-                                               null);
-        if (inputFiles.contains(outFile)) {
-            log.error(cdef.pos(), "source.cant.overwrite.input.file", outFile);
-            return null;
-        } else {
-            try (BufferedWriter out = new BufferedWriter(outFile.openWriter())) {
-                new Pretty(out, true).printUnit(env.toplevel, cdef);
-                if (verbose)
-                    log.printVerbose("wrote.file", outFile);
-            }
-            return outFile;
-        }
-    }
-
     /** Generate code and emit a class file for a given class
      *  @param env    The attribution environment of the outermost class
      *                containing this class.
@@ -718,6 +679,30 @@ public class JavaCompiler {
             chk.completionError(cdef.pos(), ex);
         }
         return null;
+    }
+
+    /** Emit plain Java source for a class.
+     *  @param env    The attribution environment of the outermost class
+     *                containing this class.
+     *  @param cdef   The class definition to be printed.
+     */
+    JavaFileObject printSource(Env<AttrContext> env, JCClassDecl cdef) throws IOException {
+        JavaFileObject outFile
+           = fileManager.getJavaFileForOutput(CLASS_OUTPUT,
+                                               cdef.sym.flatname.toString(),
+                                               JavaFileObject.Kind.SOURCE,
+                                               null);
+        if (inputFiles.contains(outFile)) {
+            log.error(cdef.pos(), "source.cant.overwrite.input.file", outFile);
+            return null;
+        } else {
+            try (BufferedWriter out = new BufferedWriter(outFile.openWriter())) {
+                new Pretty(out, true).printUnit(env.toplevel, cdef);
+                if (verbose)
+                    log.printVerbose("wrote.file", outFile);
+            }
+            return outFile;
+        }
     }
 
     /** Compile a source file that has been accessed by the class finder.
@@ -898,12 +883,6 @@ public class JavaCompiler {
     }
 
     /**
-     * Set needRootClasses to true, in JavaCompiler subclass constructor
-     * that want to collect public apis of classes supplied on the command line.
-     */
-    protected boolean needRootClasses = false;
-
-    /**
      * The list of classes explicitly supplied on the command line for compilation.
      * Not always populated.
      */
@@ -966,7 +945,7 @@ public class JavaCompiler {
         // If generating source, or if tracking public apis,
         // then remember the classes declared in
         // the original compilation units listed on the command line.
-        if (needRootClasses || sourceOutput || stubOutput) {
+        if (sourceOutput) {
             ListBuffer<JCClassDecl> cdefs = new ListBuffer<>();
             for (JCCompilationUnit unit : roots) {
                 for (List<JCTree> defs = unit.defs;
@@ -1275,11 +1254,6 @@ public class JavaCompiler {
             if (shouldStop(CompileState.FLOW))
                 return;
 
-            if (relax) {
-                results.add(env);
-                return;
-            }
-
             if (verboseCompilePolicy)
                 printNote("[flow " + env.enclClass.sym + "]");
             JavaFileObject prev = log.useSource(
@@ -1419,27 +1393,14 @@ public class JavaCompiler {
             TreeMaker localMake = make.forToplevel(env.toplevel);
 
             if (env.tree.hasTag(JCTree.Tag.PACKAGEDEF)) {
-                if (!(stubOutput || sourceOutput || printFlat)) {
+                if (!(sourceOutput)) {
                     if (shouldStop(CompileState.LOWER))
-                        return;
+                       return;
                     List<JCTree> pdef = lower.translateTopLevelClass(env, env.tree, localMake);
                     if (pdef.head != null) {
                         Assert.check(pdef.tail.isEmpty());
                         results.add(new Pair<>(env, (JCClassDecl)pdef.head));
                     }
-                }
-                return;
-            }
-
-            if (stubOutput) {
-                //emit stub Java source file, only for compilation
-                //units enumerated explicitly on the command line
-                JCClassDecl cdef = (JCClassDecl)env.tree;
-                if (untranslated instanceof JCClassDecl &&
-                    rootClasses.contains((JCClassDecl)untranslated) &&
-                    ((cdef.mods.flags & (Flags.PROTECTED|Flags.PUBLIC)) != 0 ||
-                     cdef.sym.packge().getQualifiedName() == names.java_lang)) {
-                    results.add(new Pair<>(env, removeMethodBodies(cdef)));
                 }
                 return;
             }
@@ -1504,16 +1465,12 @@ public class JavaCompiler {
         if (shouldStop(CompileState.GENERATE))
             return;
 
-        boolean usePrintSource = (stubOutput || sourceOutput || printFlat);
-
         for (Pair<Env<AttrContext>, JCClassDecl> x: queue) {
             Env<AttrContext> env = x.fst;
             JCClassDecl cdef = x.snd;
 
             if (verboseCompilePolicy) {
-                printNote("[generate "
-                               + (usePrintSource ? " source" : "code")
-                               + " " + cdef.sym + "]");
+                printNote("[generate " + (sourceOutput ? " source" : "code") + " " + cdef.sym + "]");
             }
 
             if (!taskListener.isEmpty()) {
@@ -1526,9 +1483,9 @@ public class JavaCompiler {
                                       env.toplevel.sourcefile);
             try {
                 JavaFileObject file;
-                if (usePrintSource)
+                if (sourceOutput) {
                     file = printSource(env, cdef);
-                else {
+                } else {
                     if (fileManager.hasLocation(StandardLocation.NATIVE_HEADER_OUTPUT)
                             && jniWriter.needsHeader(cdef.sym)) {
                         jniWriter.write(cdef.sym);
