@@ -157,6 +157,20 @@ public class JdkInternalMiscUnsafeAccessTestDouble {
         }
 
 
+        // Lazy
+        {
+            UNSAFE.putDoubleRelease(base, offset, 1.0d);
+            double x = UNSAFE.getDoubleAcquire(base, offset);
+            assertEquals(x, 1.0d, "putRelease double value");
+        }
+
+        // Opaque
+        {
+            UNSAFE.putDoubleOpaque(base, offset, 2.0d);
+            double x = UNSAFE.getDoubleOpaque(base, offset);
+            assertEquals(x, 2.0d, "putOpaque double value");
+        }
+
 
 
     }
