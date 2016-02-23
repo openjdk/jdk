@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,12 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
-import java.lang.ref.Reference;
 import java.security.AccessController;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import static sun.java2d.marlin.MarlinUtils.logInfo;
 import sun.awt.geom.PathConsumer2D;
+import sun.java2d.ReentrantContextProvider;
+import sun.java2d.ReentrantContextProviderCLQ;
+import sun.java2d.ReentrantContextProviderTL;
 import sun.java2d.pipe.AATileGenerator;
 import sun.java2d.pipe.Region;
 import sun.java2d.pipe.RenderingEngine;
@@ -882,45 +883,49 @@ public class MarlinRenderingEngine extends RenderingEngine
     // use ThreadLocal or ConcurrentLinkedQueue to get one RendererContext
     private static final boolean useThreadLocal;
 
-    // hard reference
-    static final int REF_HARD = 0;
-    // soft reference
-    static final int REF_SOFT = 1;
-    // weak reference
-    static final int REF_WEAK = 2;
-
     // reference type stored in either TL or CLQ
     static final int REF_TYPE;
 
     // Per-thread RendererContext
-    private static final ThreadLocal<Object> rdrCtxThreadLocal;
-    // RendererContext queue when ThreadLocal is disabled
-    private static final ConcurrentLinkedQueue<Object> rdrCtxQueue;
+    private static final ReentrantContextProvider<RendererContext> rdrCtxProvider;
 
     // Static initializer to use TL or CLQ mode
     static {
-        // CLQ mode by default:
         useThreadLocal = MarlinProperties.isUseThreadLocal();
-        rdrCtxThreadLocal = (useThreadLocal) ? new ThreadLocal<Object>()
-                                             : null;
-        rdrCtxQueue = (!useThreadLocal) ? new ConcurrentLinkedQueue<Object>()
-                                        : null;
 
         // Soft reference by default:
-        String refType = AccessController.doPrivileged(
+        final String refType = AccessController.doPrivileged(
                             new GetPropertyAction("sun.java2d.renderer.useRef",
                             "soft"));
         switch (refType) {
             default:
             case "soft":
-                REF_TYPE = REF_SOFT;
+                REF_TYPE = ReentrantContextProvider.REF_SOFT;
                 break;
             case "weak":
-                REF_TYPE = REF_WEAK;
+                REF_TYPE = ReentrantContextProvider.REF_WEAK;
                 break;
             case "hard":
-                REF_TYPE = REF_HARD;
+                REF_TYPE = ReentrantContextProvider.REF_HARD;
                 break;
+        }
+
+        if (useThreadLocal) {
+            rdrCtxProvider = new ReentrantContextProviderTL<RendererContext>(REF_TYPE)
+                {
+                    @Override
+                    protected RendererContext newContext() {
+                        return RendererContext.createContext();
+                    }
+                };
+        } else {
+            rdrCtxProvider = new ReentrantContextProviderCLQ<RendererContext>(REF_TYPE)
+                {
+                    @Override
+                    protected RendererContext newContext() {
+                        return RendererContext.createContext();
+                    }
+                };
         }
     }
 
@@ -936,13 +941,13 @@ public class MarlinRenderingEngine extends RenderingEngine
         String refType;
         switch (REF_TYPE) {
             default:
-            case REF_HARD:
+            case ReentrantContextProvider.REF_HARD:
                 refType = "hard";
                 break;
-            case REF_SOFT:
+            case ReentrantContextProvider.REF_SOFT:
                 refType = "soft";
                 break;
-            case REF_WEAK:
+            case ReentrantContextProvider.REF_WEAK:
                 refType = "weak";
                 break;
         }
@@ -1025,22 +1030,7 @@ public class MarlinRenderingEngine extends RenderingEngine
      */
     @SuppressWarnings({"unchecked"})
     static RendererContext getRendererContext() {
-        RendererContext rdrCtx = null;
-        final Object ref = (useThreadLocal) ? rdrCtxThreadLocal.get()
-                           : rdrCtxQueue.poll();
-        if (ref != null) {
-            // resolve reference:
-            rdrCtx = (REF_TYPE == REF_HARD) ? ((RendererContext) ref)
-                     : ((Reference<RendererContext>) ref).get();
-        }
-        // create a new RendererContext if none is available
-        if (rdrCtx == null) {
-            rdrCtx = RendererContext.createContext();
-            if (useThreadLocal) {
-                // update thread local reference:
-                rdrCtxThreadLocal.set(rdrCtx.reference);
-            }
-        }
+        final RendererContext rdrCtx = rdrCtxProvider.acquire();
         if (doMonitors) {
             RendererContext.stats.mon_pre_getAATileGenerator.start();
         }
@@ -1057,8 +1047,6 @@ public class MarlinRenderingEngine extends RenderingEngine
         if (doMonitors) {
             RendererContext.stats.mon_pre_getAATileGenerator.stop();
         }
-        if (!useThreadLocal) {
-            rdrCtxQueue.offer(rdrCtx.reference);
-        }
+        rdrCtxProvider.release(rdrCtx);
     }
 }
