@@ -1584,6 +1584,13 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
   assert (type2aelembytes(T_CHAR) == type2aelembytes(T_BYTE)*2,
           "sanity: byte[] and char[] scales agree");
 
+  // Bail when getChar over constants is requested: constant folding would
+  // reject folding mismatched char access over byte[]. A normal inlining for getChar
+  // Java method would constant fold nicely instead.
+  if (!is_store && value->is_Con() && index->is_Con()) {
+    return false;
+  }
+
   Node* adr = array_element_address(value, index, T_CHAR);
   if (is_store) {
     (void) store_to_memory(control(), adr, ch, T_CHAR, TypeAryPtr::BYTES, MemNode::unordered,
