@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,36 +22,27 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1EVACFAILURE_HPP
-#define SHARE_VM_GC_G1_G1EVACFAILURE_HPP
+#include "gc/shared/preservedMarks.hpp"
+#include "oops/markOop.inline.hpp"
+#include "utilities/stack.inline.hpp"
 
-#include "gc/g1/g1OopClosures.hpp"
-#include "gc/g1/heapRegionManager.hpp"
- #include "gc/shared/preservedMarks.hpp"
-#include "gc/shared/workgroup.hpp"
-#include "utilities/globalDefinitions.hpp"
+#ifndef SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
+#define SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
 
-class G1CollectedHeap;
+inline bool PreservedMarks::should_preserve_mark(oop obj, markOop m) const {
+  return m->must_be_preserved_for_promotion_failure(obj);
+}
 
-// Task to fixup self-forwarding pointers
-// installed as a result of an evacuation failure.
-class G1ParRemoveSelfForwardPtrsTask: public AbstractGangTask {
-protected:
-  G1CollectedHeap* _g1h;
-  HeapRegionClaimer _hrclaimer;
+inline void PreservedMarks::push(oop obj, markOop m) {
+  assert(should_preserve_mark(obj, m), "pre-condition");
+  OopAndMarkOop elem(obj, m);
+  _stack.push(elem);
+}
 
-public:
-  G1ParRemoveSelfForwardPtrsTask();
+inline void PreservedMarks::push_if_necessary(oop obj, markOop m) {
+  if (should_preserve_mark(obj, m)) {
+    push(obj, m);
+  }
+}
 
-  void work(uint worker_id);
-};
-
-class G1RestorePreservedMarksTask : public AbstractGangTask {
-  OopAndMarkOopStack* _preserved_objs;
- public:
-  G1RestorePreservedMarksTask(OopAndMarkOopStack* preserved_objs);
-
-  void work(uint worker_id);
-};
-
-#endif // SHARE_VM_GC_G1_G1EVACFAILURE_HPP
+#endif // SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP

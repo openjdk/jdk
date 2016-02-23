@@ -30,6 +30,7 @@
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
+#include "gc/shared/preservedMarks.hpp"
 #include "utilities/stack.hpp"
 
 class ContiguousSpace;
@@ -87,15 +88,8 @@ protected:
   // therefore we must remove their forwarding pointers.
   void remove_forwarding_pointers();
 
-  // Preserve the mark of "obj", if necessary, in preparation for its mark
-  // word being overwritten with a self-forwarding-pointer.
-  void   preserve_mark_if_necessary(oop obj, markOop m);
-  void   preserve_mark(oop obj, markOop m);    // work routine used by the above
-
-  // Together, these keep <object with a preserved mark, mark value> pairs.
-  // They should always contain the same number of elements.
-  Stack<oop, mtGC>     _objs_with_preserved_marks;
-  Stack<markOop, mtGC> _preserved_marks_of_objs;
+  // Preserved marks
+  PreservedMarksSet _preserved_marks_set;
 
   // Promotion failure handling
   ExtendedOopClosure *_promo_failure_scan_stack_closure;
