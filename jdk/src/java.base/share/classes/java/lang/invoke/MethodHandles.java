@@ -2139,7 +2139,7 @@ return invoker;
      * if its index does not appear in the array.
      * As in the case of {@link #dropArguments(MethodHandle,int,List) dropArguments},
      * incoming arguments which are not mentioned in the reordering array
-     * are may be any type, as determined only by {@code newType}.
+     * may be of any type, as determined only by {@code newType}.
      * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
@@ -2157,6 +2157,9 @@ MethodHandle twice = permuteArguments(add, intfn1, 0, 0);
 assert(twice.type().equals(intfn1));
 assert((int)twice.invokeExact(21) == 42);
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      * @param target the method handle to invoke after arguments are reordered
      * @param newType the expected type of the new method handle
      * @param reorder an index array which controls the reordering
@@ -2421,6 +2424,9 @@ assert((int)twice.invokeExact(21) == 42);
      * It may range between zero and <i>N-L</i> (inclusively),
      * where <i>N</i> is the arity of the target method handle
      * and <i>L</i> is the length of the values array.
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      * @param target the method handle to invoke after the argument is inserted
      * @param pos where to insert the argument (zero for the first)
      * @param values the series of arguments to insert
@@ -2647,6 +2653,9 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
      *   return target(p..., f[i](v[i])..., b...);
      * }
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      *
      * @param target the method handle to invoke after arguments are filtered
      * @param pos the position of the first argument to filter
@@ -2791,6 +2800,9 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
      * a non-void result, then {@code collectArguments(mh, N, coll)}
      * is equivalent to {@code filterArguments(mh, N, coll)}.
      * Other equivalences are possible but would require argument permutation.
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      *
      * @param target the method handle to invoke after filtering the subsequence of arguments
      * @param pos the position of the first adapter argument to pass to the filter,
@@ -2887,6 +2899,9 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      *   filter3(v);
      * }
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      * @param target the method handle to invoke before filtering the return value
      * @param filter method handle to call on the return value
      * @return method handle which incorporates the specified return value filtering logic
@@ -2981,6 +2996,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *   return target2(a..., b...);
      * }
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      * @param target the method handle to invoke after arguments are combined
      * @param combiner method handle to call initially on the incoming arguments
      * @return method handle which incorporates the specified argument folding logic
@@ -3828,8 +3846,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * (Note that, except for argument type conversions, combinators represent {@code void} values in parameter lists
      * by omitting the corresponding paradoxical arguments, not by inserting {@code null} or zero values.)
      * <p>
-     * The {@code target} and {@code cleanup} handles' return types must be the same. Their parameter type lists also
-     * must be the same, but the {@code cleanup} handle must accept one or two more leading parameters:<ul>
+     * The {@code target} and {@code cleanup} handles must have the same corresponding argument and return types, except
+     * that the {@code cleanup} handle may omit trailing arguments. Also, the {@code cleanup} handle must have one or
+     * two extra leading parameters:<ul>
      * <li>a {@code Throwable}, which will carry the exception thrown by the {@code target} handle (if any); and
      * <li>a parameter of the same type as the return type of both {@code target} and {@code cleanup}, which will carry
      * the result from the execution of the {@code target} handle.
@@ -3949,6 +3968,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *   return target2(z..., a..., b...);
      * }
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      *
      * @param target the method handle to invoke after arguments are combined
      * @param pos the position at which to start folding and at which to insert the folding result; if this is {@code
