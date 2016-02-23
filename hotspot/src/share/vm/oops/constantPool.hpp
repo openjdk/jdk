@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,9 +303,7 @@ class ConstantPool : public Metadata {
     *symbol_at_addr(which) = s;
   }
 
-  void string_at_put(int which, int obj_index, oop str) {
-    resolved_references()->obj_at_put(obj_index, str);
-  }
+  void string_at_put(int which, int obj_index, oop str);
 
   // For temporary use while constructing constant pool
   void string_index_at_put(int which, int string_index) {
@@ -725,8 +723,8 @@ class ConstantPool : public Metadata {
   }
 
   // Sizing (in words)
-  static int header_size()             { return sizeof(ConstantPool)/HeapWordSize; }
-  static int size(int length)          { return align_object_size(header_size() + length); }
+  static int header_size()             { return sizeof(ConstantPool)/wordSize; }
+  static int size(int length)          { return align_metadata_size(header_size() + length); }
   int size() const                     { return size(length()); }
 #if INCLUDE_SERVICES
   void collect_statistics(KlassSizeStats *sz) const;

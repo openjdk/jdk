@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import static jdk.vm.ci.inittimer.InitTimer.timer;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -37,10 +38,12 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 import jdk.vm.ci.code.Architecture;
-import jdk.vm.ci.code.CompilationResult;
+import jdk.vm.ci.code.CompilationRequestResult;
+import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.inittimer.InitTimer;
+import jdk.vm.ci.inittimer.SuppressFBWarnings;
 import jdk.vm.ci.meta.JVMCIMetaAccessContext;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
@@ -48,7 +51,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.vm.ci.runtime.JVMCIBackend;
 import jdk.vm.ci.runtime.JVMCICompiler;
-import jdk.vm.ci.service.Services;
+import jdk.vm.ci.services.Services;
 import jdk.internal.misc.VM;
 
 //JaCoCo Exclude
@@ -85,19 +88,96 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
     }
 
     /**
-     * Gets a boolean value based on a system property {@linkplain VM#getSavedProperty(String)
-     * saved} at system initialization time. The property name is prefixed with "{@code jvmci.}".
-     *
-     * @param name the name of the system property to derive a boolean value from using
-     *            {@link Boolean#parseBoolean(String)}
-     * @param def the value to return if there is no system property corresponding to {@code name}
+     * A list of all supported JVMCI options.
      */
-    public static boolean getBooleanProperty(String name, boolean def) {
-        String value = VM.getSavedProperty("jvmci." + name);
-        if (value == null) {
-            return def;
+    public enum Option {
+        ImplicitStableValues(boolean.class, true, "Mark well-known stable fields as such."),
+        // Note: The following one is not used (see InitTimer.ENABLED).
+        InitTimer(boolean.class, false, "Specifies if initialization timing is enabled."),
+        PrintConfig(boolean.class, false, "Prints all HotSpotVMConfig fields."),
+        PrintFlags(boolean.class, false, "Prints all JVMCI flags and exits."),
+        ShowFlags(boolean.class, false, "Prints all JVMCI flags and continues."),
+        TraceMethodDataFilter(String.class, null, ""),
+        TrustFinalDefaultFields(boolean.class, true, "Determines whether to treat final fields with default values as constant.");
+
+        /**
+         * The prefix for system properties that are JVMCI options.
+         */
+        private static final String JVMCI_OPTION_PROPERTY_PREFIX = "jvmci.";
+
+        /**
+         * Marker for uninitialized flags.
+         */
+        private static final String UNINITIALIZED = "UNINITIALIZED";
+
+        private final Class<?> type;
+        private Object value;
+        private final Object defaultValue;
+        private boolean isDefault;
+        private final String help;
+
+        Option(Class<?> type, Object defaultValue, String help) {
+            assert Character.isUpperCase(name().charAt(0)) : "Option name must start with upper-case letter: " + name();
+            this.type = type;
+            this.value = UNINITIALIZED;
+            this.defaultValue = defaultValue;
+            this.help = help;
         }
-        return Boolean.parseBoolean(value);
+
+        @SuppressFBWarnings(value = "ES_COMPARING_STRINGS_WITH_EQ", justification = "sentinel must be String since it's a static final in an enum")
+        private Object getValue() {
+            if (value == UNINITIALIZED) {
+                String propertyValue = VM.getSavedProperty(JVMCI_OPTION_PROPERTY_PREFIX + name());
+                if (propertyValue == null) {
+                    this.value = defaultValue;
+                    this.isDefault = true;
+                } else {
+                    if (type == boolean.class) {
+                        this.value = Boolean.parseBoolean(propertyValue);
+                    } else if (type == String.class) {
+                        this.value = propertyValue;
+                    } else {
+                        throw new JVMCIError("Unexpected option type " + type);
+                    }
+                    this.isDefault = false;
+                }
+                // Saved properties should not be interned - let's be sure
+                assert value != UNINITIALIZED;
+            }
+            return value;
+        }
+
+        /**
+         * Returns the option's value as boolean.
+         *
+         * @return option's value
+         */
+        public boolean getBoolean() {
+            return (boolean) getValue();
+        }
+
+        /**
+         * Returns the option's value as String.
+         *
+         * @return option's value
+         */
+        public String getString() {
+            return (String) getValue();
+        }
+
+        /**
+         * Prints all option flags to {@code out}.
+         *
+         * @param out stream to print to
+         */
+        public static void printFlags(PrintStream out) {
+            out.println("[List of JVMCI options]");
+            for (Option option : values()) {
+                Object value = option.getValue();
+                String assign = option.isDefault ? ":=" : " =";
+                out.printf("%9s %-40s %s %-14s %s%n", option.type.getSimpleName(), option, assign, value, option.help);
+            }
+        }
     }
 
     public static HotSpotJVMCIBackendFactory findFactory(String architecture) {
@@ -164,7 +244,16 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
         }
         metaAccessContext = context;
 
-        if (Boolean.valueOf(System.getProperty("jvmci.printconfig"))) {
+        boolean printFlags = Option.PrintFlags.getBoolean();
+        boolean showFlags = Option.ShowFlags.getBoolean();
+        if (printFlags || showFlags) {
+            Option.printFlags(System.out);
+            if (printFlags) {
+                System.exit(0);
+            }
+        }
+
+        if (Option.PrintConfig.getBoolean()) {
             printConfig(config, compilerToVm);
         }
 
@@ -241,8 +330,10 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
      * Called from the VM.
      */
     @SuppressWarnings({"unused"})
-    private void compileMethod(HotSpotResolvedJavaMethod method, int entryBCI, long jvmciEnv, int id) {
-        getCompiler().compileMethod(new HotSpotCompilationRequest(method, entryBCI, jvmciEnv, id));
+    private CompilationRequestResult compileMethod(HotSpotResolvedJavaMethod method, int entryBCI, long jvmciEnv, int id) {
+        CompilationRequestResult result = getCompiler().compileMethod(new HotSpotCompilationRequest(method, entryBCI, jvmciEnv, id));
+        assert result != null : "compileMethod must always return something";
+        return result;
     }
 
     /**
@@ -262,11 +353,11 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
      *
      * @param hotSpotCodeCacheProvider
      * @param installedCode
-     * @param compResult
+     * @param compiledCode
      */
-    void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompilationResult compResult) {
+    void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompiledCode compiledCode) {
         for (HotSpotVMEventListener vmEventListener : vmEventListeners) {
-            vmEventListener.notifyInstall(hotSpotCodeCacheProvider, installedCode, compResult);
+            vmEventListener.notifyInstall(hotSpotCodeCacheProvider, installedCode, compiledCode);
         }
     }
 

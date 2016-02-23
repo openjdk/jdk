@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,11 @@
 # "ARG_FOO".
 #
 # The generated function can be called like this:
-# MYFUNC(FOO: [foo-val], BAR:
-#     [
+# MYFUNC(FOO: [foo-val],
+#     BAR: [
 #         $ECHO hello world
 #     ])
-#
+# Note that the argument value must start on the same line as the argument name.
 #
 # Argument 1: Name of the function to define
 # Argument 2: List of legal named arguments, with a * prefix for required arguments
@@ -573,6 +573,11 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/common/autoconf
+
+  # Setup username (for use in adhoc version strings etc)
+  # Outer [ ] to quote m4.
+  [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
+  AC_SUBST(USERNAME)
 ])
 
 # Evaluates platform specific overrides for devkit variables.

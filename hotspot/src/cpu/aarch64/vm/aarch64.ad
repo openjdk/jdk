@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, Red Hat Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -577,7 +577,7 @@ reg_class no_special_reg32_with_fp(
     R26
  /* R27, */                     // heapbase
  /* R28, */                     // thread
-    R29,                        // fp
+ /* R29, */                     // fp
  /* R30, */                     // lr
  /* R31 */                      // sp
 );
@@ -646,7 +646,7 @@ reg_class no_special_reg_with_fp(
     R26, R26_H,
  /* R27, R27_H, */              // heapbase
  /* R28, R28_H, */              // thread
-    R29, R29_H,                 // fp
+ /* R29, R29_H, */              // fp
  /* R30, R30_H, */              // lr
  /* R31, R31_H */               // sp
 );
@@ -4442,11 +4442,7 @@ encode %{
 
   enc_class aarch64_enc_mov_byte_map_base(iRegP dst, immByteMapBase src) %{
     MacroAssembler _masm(&cbuf);
-    address page = (address)$src$$constant;
-    Register dst_reg = as_Register($dst$$reg);
-    unsigned long off;
-    __ adrp(dst_reg, ExternalAddress(page), off);
-    assert(off == 0, "assumed offset == 0");
+    __ load_byte_map_base($dst$$Register);
   %}
 
   enc_class aarch64_enc_mov_n(iRegN dst, immN src) %{
@@ -6673,6 +6669,14 @@ opclass iRegIorL2I(iRegI, iRegL2I);
 
 //----------PIPELINE-----------------------------------------------------------
 // Rules which define the behavior of the target architectures pipeline.
+
+// For specific pipelines, eg A53, define the stages of that pipeline
+//pipe_desc(ISS, EX1, EX2, WR);
+#define ISS S0
+#define EX1 S1
+#define EX2 S2
+#define WR  S3
+
 // Integer ALU reg operation
 pipeline %{
 
@@ -6707,11 +6711,498 @@ resources( INS0, INS1, INS01 = INS0 | INS1,
 //----------PIPELINE DESCRIPTION-----------------------------------------------
 // Pipeline Description specifies the stages in the machine's pipeline
 
-pipe_desc(ISS, EX1, EX2, WR);
+// Define the pipeline as a generic 6 stage pipeline
+pipe_desc(S0, S1, S2, S3, S4, S5);
 
 //----------PIPELINE CLASSES---------------------------------------------------
 // Pipeline Classes describe the stages in which input and output are
 // referenced by the hardware pipeline.
+
+pipe_class fp_dop_reg_reg_s(vRegF dst, vRegF src1, vRegF src2)
+%{
+  single_instruction;
+  src1   : S1(read);
+  src2   : S2(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_dop_reg_reg_d(vRegD dst, vRegD src1, vRegD src2)
+%{
+  single_instruction;
+  src1   : S1(read);
+  src2   : S2(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_uop_s(vRegF dst, vRegF src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_uop_d(vRegD dst, vRegD src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_d2f(vRegF dst, vRegD src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_f2d(vRegD dst, vRegF src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_f2i(iRegINoSp dst, vRegF src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_f2l(iRegLNoSp dst, vRegF src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_i2f(vRegF dst, iRegIorL2I src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_l2f(vRegF dst, iRegL src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_d2i(iRegINoSp dst, vRegD src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_d2l(iRegLNoSp dst, vRegD src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_i2d(vRegD dst, iRegIorL2I src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_l2d(vRegD dst, iRegIorL2I src)
+%{
+  single_instruction;
+  src    : S1(read);
+  dst    : S5(write);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_div_s(vRegF dst, vRegF src1, vRegF src2)
+%{
+  single_instruction;
+  src1   : S1(read);
+  src2   : S2(read);
+  dst    : S5(write);
+  INS0   : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_div_d(vRegD dst, vRegD src1, vRegD src2)
+%{
+  single_instruction;
+  src1   : S1(read);
+  src2   : S2(read);
+  dst    : S5(write);
+  INS0   : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class fp_cond_reg_reg_s(vRegF dst, vRegF src1, vRegF src2, rFlagsReg cr)
+%{
+  single_instruction;
+  cr     : S1(read);
+  src1   : S1(read);
+  src2   : S1(read);
+  dst    : S3(write);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class fp_cond_reg_reg_d(vRegD dst, vRegD src1, vRegD src2, rFlagsReg cr)
+%{
+  single_instruction;
+  cr     : S1(read);
+  src1   : S1(read);
+  src2   : S1(read);
+  dst    : S3(write);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class fp_imm_s(vRegF dst)
+%{
+  single_instruction;
+  dst    : S3(write);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class fp_imm_d(vRegD dst)
+%{
+  single_instruction;
+  dst    : S3(write);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class fp_load_constant_s(vRegF dst)
+%{
+  single_instruction;
+  dst    : S4(write);
+  INS01  : ISS;
+  NEON_FP : S4;
+%}
+
+pipe_class fp_load_constant_d(vRegD dst)
+%{
+  single_instruction;
+  dst    : S4(write);
+  INS01  : ISS;
+  NEON_FP : S4;
+%}
+
+pipe_class vmul64(vecD dst, vecD src1, vecD src2)
+%{
+  single_instruction;
+  dst    : S5(write);
+  src1   : S1(read);
+  src2   : S1(read);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class vmul128(vecX dst, vecX src1, vecX src2)
+%{
+  single_instruction;
+  dst    : S5(write);
+  src1   : S1(read);
+  src2   : S1(read);
+  INS0   : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class vmla64(vecD dst, vecD src1, vecD src2)
+%{
+  single_instruction;
+  dst    : S5(write);
+  src1   : S1(read);
+  src2   : S1(read);
+  dst    : S1(read);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class vmla128(vecX dst, vecX src1, vecX src2)
+%{
+  single_instruction;
+  dst    : S5(write);
+  src1   : S1(read);
+  src2   : S1(read);
+  dst    : S1(read);
+  INS0   : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class vdop64(vecD dst, vecD src1, vecD src2)
+%{
+  single_instruction;
+  dst    : S4(write);
+  src1   : S2(read);
+  src2   : S2(read);
+  INS01  : ISS;
+  NEON_FP : S4;
+%}
+
+pipe_class vdop128(vecX dst, vecX src1, vecX src2)
+%{
+  single_instruction;
+  dst    : S4(write);
+  src1   : S2(read);
+  src2   : S2(read);
+  INS0   : ISS;
+  NEON_FP : S4;
+%}
+
+pipe_class vlogical64(vecD dst, vecD src1, vecD src2)
+%{
+  single_instruction;
+  dst    : S3(write);
+  src1   : S2(read);
+  src2   : S2(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vlogical128(vecX dst, vecX src1, vecX src2)
+%{
+  single_instruction;
+  dst    : S3(write);
+  src1   : S2(read);
+  src2   : S2(read);
+  INS0   : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vshift64(vecD dst, vecD src, vecX shift)
+%{
+  single_instruction;
+  dst    : S3(write);
+  src    : S1(read);
+  shift  : S1(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vshift128(vecX dst, vecX src, vecX shift)
+%{
+  single_instruction;
+  dst    : S3(write);
+  src    : S1(read);
+  shift  : S1(read);
+  INS0   : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vshift64_imm(vecD dst, vecD src, immI shift)
+%{
+  single_instruction;
+  dst    : S3(write);
+  src    : S1(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vshift128_imm(vecX dst, vecX src, immI shift)
+%{
+  single_instruction;
+  dst    : S3(write);
+  src    : S1(read);
+  INS0   : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vdop_fp64(vecD dst, vecD src1, vecD src2)
+%{
+  single_instruction;
+  dst    : S5(write);
+  src1   : S1(read);
+  src2   : S1(read);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class vdop_fp128(vecX dst, vecX src1, vecX src2)
+%{
+  single_instruction;
+  dst    : S5(write);
+  src1   : S1(read);
+  src2   : S1(read);
+  INS0   : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class vmuldiv_fp64(vecD dst, vecD src1, vecD src2)
+%{
+  single_instruction;
+  dst    : S5(write);
+  src1   : S1(read);
+  src2   : S1(read);
+  INS0   : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class vmuldiv_fp128(vecX dst, vecX src1, vecX src2)
+%{
+  single_instruction;
+  dst    : S5(write);
+  src1   : S1(read);
+  src2   : S1(read);
+  INS0   : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class vsqrt_fp128(vecX dst, vecX src)
+%{
+  single_instruction;
+  dst    : S5(write);
+  src    : S1(read);
+  INS0   : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class vunop_fp64(vecD dst, vecD src)
+%{
+  single_instruction;
+  dst    : S5(write);
+  src    : S1(read);
+  INS01  : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class vunop_fp128(vecX dst, vecX src)
+%{
+  single_instruction;
+  dst    : S5(write);
+  src    : S1(read);
+  INS0   : ISS;
+  NEON_FP : S5;
+%}
+
+pipe_class vdup_reg_reg64(vecD dst, iRegI src)
+%{
+  single_instruction;
+  dst    : S3(write);
+  src    : S1(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vdup_reg_reg128(vecX dst, iRegI src)
+%{
+  single_instruction;
+  dst    : S3(write);
+  src    : S1(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vdup_reg_freg64(vecD dst, vRegF src)
+%{
+  single_instruction;
+  dst    : S3(write);
+  src    : S1(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vdup_reg_freg128(vecX dst, vRegF src)
+%{
+  single_instruction;
+  dst    : S3(write);
+  src    : S1(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vdup_reg_dreg128(vecX dst, vRegD src)
+%{
+  single_instruction;
+  dst    : S3(write);
+  src    : S1(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vmovi_reg_imm64(vecD dst)
+%{
+  single_instruction;
+  dst    : S3(write);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vmovi_reg_imm128(vecX dst)
+%{
+  single_instruction;
+  dst    : S3(write);
+  INS0   : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vload_reg_mem64(vecD dst, vmem mem)
+%{
+  single_instruction;
+  dst    : S5(write);
+  mem    : ISS(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vload_reg_mem128(vecX dst, vmem mem)
+%{
+  single_instruction;
+  dst    : S5(write);
+  mem    : ISS(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vstore_reg_mem64(vecD src, vmem mem)
+%{
+  single_instruction;
+  mem    : ISS(read);
+  src    : S2(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
+
+pipe_class vstore_reg_mem128(vecD src, vmem mem)
+%{
+  single_instruction;
+  mem    : ISS(read);
+  src    : S2(read);
+  INS01  : ISS;
+  NEON_FP : S3;
+%}
 
 //------- Integer ALU operations --------------------------
 
@@ -7559,7 +8050,7 @@ instruct loadConF_packed(vRegF dst, immFPacked con) %{
     __ fmovs(as_FloatRegister($dst$$reg), (double)$con$$constant);
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_imm_s);
 %}
 
 // Load Float Constant
@@ -7577,7 +8068,7 @@ instruct loadConF(vRegF dst, immF con) %{
     __ ldrs(as_FloatRegister($dst$$reg), $constantaddress($con));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_load_constant_s);
 %}
 
 // Load Packed Double Constant
@@ -7590,7 +8081,7 @@ instruct loadConD_packed(vRegD dst, immDPacked con) %{
     __ fmovd(as_FloatRegister($dst$$reg), $con$$constant);
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_imm_d);
 %}
 
 // Load Double Constant
@@ -7607,7 +8098,7 @@ instruct loadConD(vRegD dst, immD con) %{
     __ ldrd(as_FloatRegister($dst$$reg), $constantaddress($con));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_load_constant_d);
 %}
 
 // Store Instructions
@@ -9615,7 +10106,7 @@ instruct cmovF_reg(cmpOp cmp, rFlagsReg cr, vRegF dst, vRegF src1,  vRegF src2)
               cond);
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_cond_reg_reg_s);
 %}
 
 instruct cmovUF_reg(cmpOpU cmp, rFlagsRegU cr, vRegF dst, vRegF src1,  vRegF src2)
@@ -9633,7 +10124,7 @@ instruct cmovUF_reg(cmpOpU cmp, rFlagsRegU cr, vRegF dst, vRegF src1,  vRegF src
               cond);
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_cond_reg_reg_s);
 %}
 
 instruct cmovD_reg(cmpOp cmp, rFlagsReg cr, vRegD dst, vRegD src1,  vRegD src2)
@@ -9651,7 +10142,7 @@ instruct cmovD_reg(cmpOp cmp, rFlagsReg cr, vRegD dst, vRegD src1,  vRegD src2)
               cond);
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_cond_reg_reg_d);
 %}
 
 instruct cmovUD_reg(cmpOpU cmp, rFlagsRegU cr, vRegD dst, vRegD src1,  vRegD src2)
@@ -9669,7 +10160,7 @@ instruct cmovUD_reg(cmpOpU cmp, rFlagsRegU cr, vRegD dst, vRegD src1,  vRegD src
               cond);
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_cond_reg_reg_d);
 %}
 
 // ============================================================================
@@ -12033,7 +12524,7 @@ instruct addF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
              as_FloatRegister($src2$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_dop_reg_reg_s);
 %}
 
 instruct addD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
@@ -12048,7 +12539,7 @@ instruct addD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
              as_FloatRegister($src2$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_dop_reg_reg_d);
 %}
 
 instruct subF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
@@ -12063,7 +12554,7 @@ instruct subF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
              as_FloatRegister($src2$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_dop_reg_reg_s);
 %}
 
 instruct subD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
@@ -12078,7 +12569,7 @@ instruct subD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
              as_FloatRegister($src2$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_dop_reg_reg_d);
 %}
 
 instruct mulF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
@@ -12093,7 +12584,7 @@ instruct mulF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
              as_FloatRegister($src2$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_dop_reg_reg_s);
 %}
 
 instruct mulD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
@@ -12108,7 +12599,7 @@ instruct mulD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
              as_FloatRegister($src2$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_dop_reg_reg_d);
 %}
 
 // We cannot use these fused mul w add/sub ops because they don't
@@ -12256,7 +12747,7 @@ instruct divF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
              as_FloatRegister($src2$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_div_s);
 %}
 
 instruct divD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
@@ -12271,7 +12762,7 @@ instruct divD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
              as_FloatRegister($src2$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_div_d);
 %}
 
 instruct negF_reg_reg(vRegF dst, vRegF src) %{
@@ -12285,7 +12776,7 @@ instruct negF_reg_reg(vRegF dst, vRegF src) %{
              as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_uop_s);
 %}
 
 instruct negD_reg_reg(vRegD dst, vRegD src) %{
@@ -12299,7 +12790,7 @@ instruct negD_reg_reg(vRegD dst, vRegD src) %{
              as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_uop_d);
 %}
 
 instruct absF_reg(vRegF dst, vRegF src) %{
@@ -12312,7 +12803,7 @@ instruct absF_reg(vRegF dst, vRegF src) %{
              as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_uop_s);
 %}
 
 instruct absD_reg(vRegD dst, vRegD src) %{
@@ -12325,7 +12816,7 @@ instruct absD_reg(vRegD dst, vRegD src) %{
              as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_uop_d);
 %}
 
 instruct sqrtD_reg(vRegD dst, vRegD src) %{
@@ -12338,7 +12829,7 @@ instruct sqrtD_reg(vRegD dst, vRegD src) %{
              as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_div_s);
 %}
 
 instruct sqrtF_reg(vRegF dst, vRegF src) %{
@@ -12351,7 +12842,7 @@ instruct sqrtF_reg(vRegF dst, vRegF src) %{
              as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_div_d);
 %}
 
 // ============================================================================
@@ -12638,7 +13129,7 @@ instruct convD2F_reg(vRegF dst, vRegD src) %{
     __ fcvtd(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_d2f);
 %}
 
 instruct convF2D_reg(vRegD dst, vRegF src) %{
@@ -12651,7 +13142,7 @@ instruct convF2D_reg(vRegD dst, vRegF src) %{
     __ fcvts(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_f2d);
 %}
 
 instruct convF2I_reg_reg(iRegINoSp dst, vRegF src) %{
@@ -12664,7 +13155,7 @@ instruct convF2I_reg_reg(iRegINoSp dst, vRegF src) %{
     __ fcvtzsw(as_Register($dst$$reg), as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_f2i);
 %}
 
 instruct convF2L_reg_reg(iRegLNoSp dst, vRegF src) %{
@@ -12677,7 +13168,7 @@ instruct convF2L_reg_reg(iRegLNoSp dst, vRegF src) %{
     __ fcvtzs(as_Register($dst$$reg), as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_f2l);
 %}
 
 instruct convI2F_reg_reg(vRegF dst, iRegIorL2I src) %{
@@ -12690,7 +13181,7 @@ instruct convI2F_reg_reg(vRegF dst, iRegIorL2I src) %{
     __ scvtfws(as_FloatRegister($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_i2f);
 %}
 
 instruct convL2F_reg_reg(vRegF dst, iRegL src) %{
@@ -12703,7 +13194,7 @@ instruct convL2F_reg_reg(vRegF dst, iRegL src) %{
     __ scvtfs(as_FloatRegister($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_l2f);
 %}
 
 instruct convD2I_reg_reg(iRegINoSp dst, vRegD src) %{
@@ -12716,7 +13207,7 @@ instruct convD2I_reg_reg(iRegINoSp dst, vRegD src) %{
     __ fcvtzdw(as_Register($dst$$reg), as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_d2i);
 %}
 
 instruct convD2L_reg_reg(iRegLNoSp dst, vRegD src) %{
@@ -12729,7 +13220,7 @@ instruct convD2L_reg_reg(iRegLNoSp dst, vRegD src) %{
     __ fcvtzd(as_Register($dst$$reg), as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_d2l);
 %}
 
 instruct convI2D_reg_reg(vRegD dst, iRegIorL2I src) %{
@@ -12742,7 +13233,7 @@ instruct convI2D_reg_reg(vRegD dst, iRegIorL2I src) %{
     __ scvtfwd(as_FloatRegister($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_i2d);
 %}
 
 instruct convL2D_reg_reg(vRegD dst, iRegL src) %{
@@ -12755,7 +13246,7 @@ instruct convL2D_reg_reg(vRegD dst, iRegL src) %{
     __ scvtfd(as_FloatRegister($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(fp_l2d);
 %}
 
 // stack <-> reg and reg <-> reg shuffles with no conversion
@@ -14437,7 +14928,22 @@ instruct string_equals(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct array_equals(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
+instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
+                      iRegP_R10 tmp, rFlagsReg cr)
+%{
+  predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
+  match(Set result (AryEq ary1 ary2));
+  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, KILL cr);
+
+  format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
+  ins_encode %{
+    __ byte_arrays_equals($ary1$$Register, $ary2$$Register,
+                          $result$$Register, $tmp$$Register);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
                       iRegP_R10 tmp, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
@@ -14500,7 +15006,7 @@ instruct loadV4(vecD dst, vmem mem)
   ins_cost(4 * INSN_COST);
   format %{ "ldrs   $dst,$mem\t# vector (32 bits)" %}
   ins_encode( aarch64_enc_ldrvS(dst, mem) );
-  ins_pipe(pipe_class_memory);
+  ins_pipe(vload_reg_mem64);
 %}
 
 // Load vector (64 bits)
@@ -14511,7 +15017,7 @@ instruct loadV8(vecD dst, vmem mem)
   ins_cost(4 * INSN_COST);
   format %{ "ldrd   $dst,$mem\t# vector (64 bits)" %}
   ins_encode( aarch64_enc_ldrvD(dst, mem) );
-  ins_pipe(pipe_class_memory);
+  ins_pipe(vload_reg_mem64);
 %}
 
 // Load Vector (128 bits)
@@ -14522,7 +15028,7 @@ instruct loadV16(vecX dst, vmem mem)
   ins_cost(4 * INSN_COST);
   format %{ "ldrq   $dst,$mem\t# vector (128 bits)" %}
   ins_encode( aarch64_enc_ldrvQ(dst, mem) );
-  ins_pipe(pipe_class_memory);
+  ins_pipe(vload_reg_mem128);
 %}
 
 // Store Vector (32 bits)
@@ -14533,7 +15039,7 @@ instruct storeV4(vecD src, vmem mem)
   ins_cost(4 * INSN_COST);
   format %{ "strs   $mem,$src\t# vector (32 bits)" %}
   ins_encode( aarch64_enc_strvS(src, mem) );
-  ins_pipe(pipe_class_memory);
+  ins_pipe(vstore_reg_mem64);
 %}
 
 // Store Vector (64 bits)
@@ -14544,7 +15050,7 @@ instruct storeV8(vecD src, vmem mem)
   ins_cost(4 * INSN_COST);
   format %{ "strd   $mem,$src\t# vector (64 bits)" %}
   ins_encode( aarch64_enc_strvD(src, mem) );
-  ins_pipe(pipe_class_memory);
+  ins_pipe(vstore_reg_mem64);
 %}
 
 // Store Vector (128 bits)
@@ -14555,7 +15061,7 @@ instruct storeV16(vecX src, vmem mem)
   ins_cost(4 * INSN_COST);
   format %{ "strq   $mem,$src\t# vector (128 bits)" %}
   ins_encode( aarch64_enc_strvQ(src, mem) );
-  ins_pipe(pipe_class_memory);
+  ins_pipe(vstore_reg_mem128);
 %}
 
 instruct replicate8B(vecD dst, iRegIorL2I src)
@@ -14568,7 +15074,7 @@ instruct replicate8B(vecD dst, iRegIorL2I src)
   ins_encode %{
     __ dup(as_FloatRegister($dst$$reg), __ T8B, as_Register($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_reg64);
 %}
 
 instruct replicate16B(vecX dst, iRegIorL2I src)
@@ -14580,7 +15086,7 @@ instruct replicate16B(vecX dst, iRegIorL2I src)
   ins_encode %{
     __ dup(as_FloatRegister($dst$$reg), __ T16B, as_Register($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_reg128);
 %}
 
 instruct replicate8B_imm(vecD dst, immI con)
@@ -14593,7 +15099,7 @@ instruct replicate8B_imm(vecD dst, immI con)
   ins_encode %{
     __ mov(as_FloatRegister($dst$$reg), __ T8B, $con$$constant & 0xff);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmovi_reg_imm64);
 %}
 
 instruct replicate16B_imm(vecX dst, immI con)
@@ -14605,7 +15111,7 @@ instruct replicate16B_imm(vecX dst, immI con)
   ins_encode %{
     __ mov(as_FloatRegister($dst$$reg), __ T16B, $con$$constant & 0xff);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmovi_reg_imm128);
 %}
 
 instruct replicate4S(vecD dst, iRegIorL2I src)
@@ -14618,7 +15124,7 @@ instruct replicate4S(vecD dst, iRegIorL2I src)
   ins_encode %{
     __ dup(as_FloatRegister($dst$$reg), __ T4H, as_Register($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_reg64);
 %}
 
 instruct replicate8S(vecX dst, iRegIorL2I src)
@@ -14630,7 +15136,7 @@ instruct replicate8S(vecX dst, iRegIorL2I src)
   ins_encode %{
     __ dup(as_FloatRegister($dst$$reg), __ T8H, as_Register($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_reg128);
 %}
 
 instruct replicate4S_imm(vecD dst, immI con)
@@ -14643,7 +15149,7 @@ instruct replicate4S_imm(vecD dst, immI con)
   ins_encode %{
     __ mov(as_FloatRegister($dst$$reg), __ T4H, $con$$constant & 0xffff);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmovi_reg_imm64);
 %}
 
 instruct replicate8S_imm(vecX dst, immI con)
@@ -14655,7 +15161,7 @@ instruct replicate8S_imm(vecX dst, immI con)
   ins_encode %{
     __ mov(as_FloatRegister($dst$$reg), __ T8H, $con$$constant & 0xffff);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmovi_reg_imm128);
 %}
 
 instruct replicate2I(vecD dst, iRegIorL2I src)
@@ -14667,7 +15173,7 @@ instruct replicate2I(vecD dst, iRegIorL2I src)
   ins_encode %{
     __ dup(as_FloatRegister($dst$$reg), __ T2S, as_Register($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_reg64);
 %}
 
 instruct replicate4I(vecX dst, iRegIorL2I src)
@@ -14679,7 +15185,7 @@ instruct replicate4I(vecX dst, iRegIorL2I src)
   ins_encode %{
     __ dup(as_FloatRegister($dst$$reg), __ T4S, as_Register($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_reg128);
 %}
 
 instruct replicate2I_imm(vecD dst, immI con)
@@ -14691,7 +15197,7 @@ instruct replicate2I_imm(vecD dst, immI con)
   ins_encode %{
     __ mov(as_FloatRegister($dst$$reg), __ T2S, $con$$constant);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmovi_reg_imm64);
 %}
 
 instruct replicate4I_imm(vecX dst, immI con)
@@ -14703,7 +15209,7 @@ instruct replicate4I_imm(vecX dst, immI con)
   ins_encode %{
     __ mov(as_FloatRegister($dst$$reg), __ T4S, $con$$constant);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmovi_reg_imm128);
 %}
 
 instruct replicate2L(vecX dst, iRegL src)
@@ -14715,7 +15221,7 @@ instruct replicate2L(vecX dst, iRegL src)
   ins_encode %{
     __ dup(as_FloatRegister($dst$$reg), __ T2D, as_Register($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_reg128);
 %}
 
 instruct replicate2L_zero(vecX dst, immI0 zero)
@@ -14729,7 +15235,7 @@ instruct replicate2L_zero(vecX dst, immI0 zero)
            as_FloatRegister($dst$$reg),
            as_FloatRegister($dst$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmovi_reg_imm128);
 %}
 
 instruct replicate2F(vecD dst, vRegF src)
@@ -14742,7 +15248,7 @@ instruct replicate2F(vecD dst, vRegF src)
     __ dup(as_FloatRegister($dst$$reg), __ T2S,
            as_FloatRegister($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_freg64);
 %}
 
 instruct replicate4F(vecX dst, vRegF src)
@@ -14755,7 +15261,7 @@ instruct replicate4F(vecX dst, vRegF src)
     __ dup(as_FloatRegister($dst$$reg), __ T4S,
            as_FloatRegister($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_freg128);
 %}
 
 instruct replicate2D(vecX dst, vRegD src)
@@ -14768,7 +15274,7 @@ instruct replicate2D(vecX dst, vRegD src)
     __ dup(as_FloatRegister($dst$$reg), __ T2D,
            as_FloatRegister($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_dreg128);
 %}
 
 // ====================REDUCTION ARITHMETIC====================================
@@ -15014,7 +15520,7 @@ instruct vadd8B(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop64);
 %}
 
 instruct vadd16B(vecX dst, vecX src1, vecX src2)
@@ -15028,7 +15534,7 @@ instruct vadd16B(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop128);
 %}
 
 instruct vadd4S(vecD dst, vecD src1, vecD src2)
@@ -15043,7 +15549,7 @@ instruct vadd4S(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop64);
 %}
 
 instruct vadd8S(vecX dst, vecX src1, vecX src2)
@@ -15057,7 +15563,7 @@ instruct vadd8S(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop128);
 %}
 
 instruct vadd2I(vecD dst, vecD src1, vecD src2)
@@ -15071,7 +15577,7 @@ instruct vadd2I(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop64);
 %}
 
 instruct vadd4I(vecX dst, vecX src1, vecX src2)
@@ -15085,7 +15591,7 @@ instruct vadd4I(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop128);
 %}
 
 instruct vadd2L(vecX dst, vecX src1, vecX src2)
@@ -15099,7 +15605,7 @@ instruct vadd2L(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop128);
 %}
 
 instruct vadd2F(vecD dst, vecD src1, vecD src2)
@@ -15113,7 +15619,7 @@ instruct vadd2F(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop_fp64);
 %}
 
 instruct vadd4F(vecX dst, vecX src1, vecX src2)
@@ -15127,7 +15633,7 @@ instruct vadd4F(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop_fp128);
 %}
 
 instruct vadd2D(vecX dst, vecX src1, vecX src2)
@@ -15140,7 +15646,7 @@ instruct vadd2D(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop_fp128);
 %}
 
 // --------------------------------- SUB --------------------------------------
@@ -15157,7 +15663,7 @@ instruct vsub8B(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop64);
 %}
 
 instruct vsub16B(vecX dst, vecX src1, vecX src2)
@@ -15171,7 +15677,7 @@ instruct vsub16B(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop128);
 %}
 
 instruct vsub4S(vecD dst, vecD src1, vecD src2)
@@ -15186,7 +15692,7 @@ instruct vsub4S(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop64);
 %}
 
 instruct vsub8S(vecX dst, vecX src1, vecX src2)
@@ -15200,7 +15706,7 @@ instruct vsub8S(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop128);
 %}
 
 instruct vsub2I(vecD dst, vecD src1, vecD src2)
@@ -15214,7 +15720,7 @@ instruct vsub2I(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop64);
 %}
 
 instruct vsub4I(vecX dst, vecX src1, vecX src2)
@@ -15228,7 +15734,7 @@ instruct vsub4I(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop128);
 %}
 
 instruct vsub2L(vecX dst, vecX src1, vecX src2)
@@ -15242,7 +15748,7 @@ instruct vsub2L(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop128);
 %}
 
 instruct vsub2F(vecD dst, vecD src1, vecD src2)
@@ -15256,7 +15762,7 @@ instruct vsub2F(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop_fp64);
 %}
 
 instruct vsub4F(vecX dst, vecX src1, vecX src2)
@@ -15270,7 +15776,7 @@ instruct vsub4F(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop_fp128);
 %}
 
 instruct vsub2D(vecX dst, vecX src1, vecX src2)
@@ -15284,7 +15790,7 @@ instruct vsub2D(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdop_fp128);
 %}
 
 // --------------------------------- MUL --------------------------------------
@@ -15301,7 +15807,7 @@ instruct vmul4S(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmul64);
 %}
 
 instruct vmul8S(vecX dst, vecX src1, vecX src2)
@@ -15315,7 +15821,7 @@ instruct vmul8S(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmul128);
 %}
 
 instruct vmul2I(vecD dst, vecD src1, vecD src2)
@@ -15329,7 +15835,7 @@ instruct vmul2I(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmul64);
 %}
 
 instruct vmul4I(vecX dst, vecX src1, vecX src2)
@@ -15343,7 +15849,7 @@ instruct vmul4I(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmul128);
 %}
 
 instruct vmul2F(vecD dst, vecD src1, vecD src2)
@@ -15357,7 +15863,7 @@ instruct vmul2F(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmuldiv_fp64);
 %}
 
 instruct vmul4F(vecX dst, vecX src1, vecX src2)
@@ -15371,7 +15877,7 @@ instruct vmul4F(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmuldiv_fp128);
 %}
 
 instruct vmul2D(vecX dst, vecX src1, vecX src2)
@@ -15385,7 +15891,7 @@ instruct vmul2D(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmuldiv_fp128);
 %}
 
 // --------------------------------- MLA --------------------------------------
@@ -15402,7 +15908,7 @@ instruct vmla4S(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmla64);
 %}
 
 instruct vmla8S(vecX dst, vecX src1, vecX src2)
@@ -15416,7 +15922,7 @@ instruct vmla8S(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmla128);
 %}
 
 instruct vmla2I(vecD dst, vecD src1, vecD src2)
@@ -15430,7 +15936,7 @@ instruct vmla2I(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmla64);
 %}
 
 instruct vmla4I(vecX dst, vecX src1, vecX src2)
@@ -15444,7 +15950,7 @@ instruct vmla4I(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmla128);
 %}
 
 // --------------------------------- MLS --------------------------------------
@@ -15461,7 +15967,7 @@ instruct vmls4S(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmla64);
 %}
 
 instruct vmls8S(vecX dst, vecX src1, vecX src2)
@@ -15475,7 +15981,7 @@ instruct vmls8S(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmla128);
 %}
 
 instruct vmls2I(vecD dst, vecD src1, vecD src2)
@@ -15489,7 +15995,7 @@ instruct vmls2I(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmla64);
 %}
 
 instruct vmls4I(vecX dst, vecX src1, vecX src2)
@@ -15503,7 +16009,7 @@ instruct vmls4I(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmla128);
 %}
 
 // --------------------------------- DIV --------------------------------------
@@ -15519,7 +16025,7 @@ instruct vdiv2F(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmuldiv_fp64);
 %}
 
 instruct vdiv4F(vecX dst, vecX src1, vecX src2)
@@ -15533,7 +16039,7 @@ instruct vdiv4F(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmuldiv_fp128);
 %}
 
 instruct vdiv2D(vecX dst, vecX src1, vecX src2)
@@ -15547,7 +16053,7 @@ instruct vdiv2D(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vmuldiv_fp128);
 %}
 
 // --------------------------------- SQRT -------------------------------------
@@ -15561,7 +16067,7 @@ instruct vsqrt2D(vecX dst, vecX src)
     __ fsqrt(as_FloatRegister($dst$$reg), __ T2D,
              as_FloatRegister($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vsqrt_fp128);
 %}
 
 // --------------------------------- ABS --------------------------------------
@@ -15576,7 +16082,7 @@ instruct vabs2F(vecD dst, vecD src)
     __ fabs(as_FloatRegister($dst$$reg), __ T2S,
             as_FloatRegister($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vunop_fp64);
 %}
 
 instruct vabs4F(vecX dst, vecX src)
@@ -15589,7 +16095,7 @@ instruct vabs4F(vecX dst, vecX src)
     __ fabs(as_FloatRegister($dst$$reg), __ T4S,
             as_FloatRegister($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vunop_fp128);
 %}
 
 instruct vabs2D(vecX dst, vecX src)
@@ -15602,7 +16108,7 @@ instruct vabs2D(vecX dst, vecX src)
     __ fabs(as_FloatRegister($dst$$reg), __ T2D,
             as_FloatRegister($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vunop_fp128);
 %}
 
 // --------------------------------- NEG --------------------------------------
@@ -15617,7 +16123,7 @@ instruct vneg2F(vecD dst, vecD src)
     __ fneg(as_FloatRegister($dst$$reg), __ T2S,
             as_FloatRegister($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vunop_fp64);
 %}
 
 instruct vneg4F(vecX dst, vecX src)
@@ -15630,7 +16136,7 @@ instruct vneg4F(vecX dst, vecX src)
     __ fneg(as_FloatRegister($dst$$reg), __ T4S,
             as_FloatRegister($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vunop_fp128);
 %}
 
 instruct vneg2D(vecX dst, vecX src)
@@ -15643,7 +16149,7 @@ instruct vneg2D(vecX dst, vecX src)
     __ fneg(as_FloatRegister($dst$$reg), __ T2D,
             as_FloatRegister($src$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vunop_fp128);
 %}
 
 // --------------------------------- AND --------------------------------------
@@ -15660,7 +16166,7 @@ instruct vand8B(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vlogical64);
 %}
 
 instruct vand16B(vecX dst, vecX src1, vecX src2)
@@ -15674,7 +16180,7 @@ instruct vand16B(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vlogical128);
 %}
 
 // --------------------------------- OR ---------------------------------------
@@ -15691,7 +16197,7 @@ instruct vor8B(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vlogical64);
 %}
 
 instruct vor16B(vecX dst, vecX src1, vecX src2)
@@ -15705,7 +16211,7 @@ instruct vor16B(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vlogical128);
 %}
 
 // --------------------------------- XOR --------------------------------------
@@ -15722,7 +16228,7 @@ instruct vxor8B(vecD dst, vecD src1, vecD src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vlogical64);
 %}
 
 instruct vxor16B(vecX dst, vecX src1, vecX src2)
@@ -15736,7 +16242,7 @@ instruct vxor16B(vecX dst, vecX src1, vecX src2)
             as_FloatRegister($src1$$reg),
             as_FloatRegister($src2$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vlogical128);
 %}
 
 // ------------------------------ Shift ---------------------------------------
@@ -15747,7 +16253,7 @@ instruct vshiftcntL(vecX dst, iRegIorL2I cnt) %{
   ins_encode %{
     __ dup(as_FloatRegister($dst$$reg), __ T16B, as_Register($cnt$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_reg128);
 %}
 
 // Right shifts on aarch64 SIMD are implemented as left shift by -ve amount
@@ -15758,7 +16264,7 @@ instruct vshiftcntR(vecX dst, iRegIorL2I cnt) %{
     __ dup(as_FloatRegister($dst$$reg), __ T16B, as_Register($cnt$$reg));
     __ negr(as_FloatRegister($dst$$reg), __ T16B, as_FloatRegister($dst$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vdup_reg_reg128);
 %}
 
 instruct vsll8B(vecD dst, vecD src, vecX shift) %{
@@ -15773,7 +16279,7 @@ instruct vsll8B(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64);
 %}
 
 instruct vsll16B(vecX dst, vecX src, vecX shift) %{
@@ -15787,7 +16293,7 @@ instruct vsll16B(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128);
 %}
 
 instruct vsrl8B(vecD dst, vecD src, vecX shift) %{
@@ -15801,7 +16307,7 @@ instruct vsrl8B(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64);
 %}
 
 instruct vsrl16B(vecX dst, vecX src, vecX shift) %{
@@ -15814,7 +16320,7 @@ instruct vsrl16B(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128);
 %}
 
 instruct vsll8B_imm(vecD dst, vecD src, immI shift) %{
@@ -15834,7 +16340,7 @@ instruct vsll8B_imm(vecD dst, vecD src, immI shift) %{
              as_FloatRegister($src$$reg), sh);
     }
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64_imm);
 %}
 
 instruct vsll16B_imm(vecX dst, vecX src, immI shift) %{
@@ -15853,7 +16359,7 @@ instruct vsll16B_imm(vecX dst, vecX src, immI shift) %{
              as_FloatRegister($src$$reg), sh);
     }
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsra8B_imm(vecD dst, vecD src, immI shift) %{
@@ -15869,7 +16375,7 @@ instruct vsra8B_imm(vecD dst, vecD src, immI shift) %{
     __ sshr(as_FloatRegister($dst$$reg), __ T8B,
            as_FloatRegister($src$$reg), sh);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64_imm);
 %}
 
 instruct vsra16B_imm(vecX dst, vecX src, immI shift) %{
@@ -15884,7 +16390,7 @@ instruct vsra16B_imm(vecX dst, vecX src, immI shift) %{
     __ sshr(as_FloatRegister($dst$$reg), __ T16B,
            as_FloatRegister($src$$reg), sh);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsrl8B_imm(vecD dst, vecD src, immI shift) %{
@@ -15904,7 +16410,7 @@ instruct vsrl8B_imm(vecD dst, vecD src, immI shift) %{
              as_FloatRegister($src$$reg), -sh & 7);
     }
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64_imm);
 %}
 
 instruct vsrl16B_imm(vecX dst, vecX src, immI shift) %{
@@ -15923,7 +16429,7 @@ instruct vsrl16B_imm(vecX dst, vecX src, immI shift) %{
              as_FloatRegister($src$$reg), -sh & 7);
     }
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsll4S(vecD dst, vecD src, vecX shift) %{
@@ -15938,7 +16444,7 @@ instruct vsll4S(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64);
 %}
 
 instruct vsll8S(vecX dst, vecX src, vecX shift) %{
@@ -15952,7 +16458,7 @@ instruct vsll8S(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128);
 %}
 
 instruct vsrl4S(vecD dst, vecD src, vecX shift) %{
@@ -15966,7 +16472,7 @@ instruct vsrl4S(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64);
 %}
 
 instruct vsrl8S(vecX dst, vecX src, vecX shift) %{
@@ -15979,7 +16485,7 @@ instruct vsrl8S(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128);
 %}
 
 instruct vsll4S_imm(vecD dst, vecD src, immI shift) %{
@@ -15999,7 +16505,7 @@ instruct vsll4S_imm(vecD dst, vecD src, immI shift) %{
              as_FloatRegister($src$$reg), sh);
     }
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64_imm);
 %}
 
 instruct vsll8S_imm(vecX dst, vecX src, immI shift) %{
@@ -16018,7 +16524,7 @@ instruct vsll8S_imm(vecX dst, vecX src, immI shift) %{
              as_FloatRegister($src$$reg), sh);
     }
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsra4S_imm(vecD dst, vecD src, immI shift) %{
@@ -16034,7 +16540,7 @@ instruct vsra4S_imm(vecD dst, vecD src, immI shift) %{
     __ sshr(as_FloatRegister($dst$$reg), __ T4H,
            as_FloatRegister($src$$reg), sh);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64_imm);
 %}
 
 instruct vsra8S_imm(vecX dst, vecX src, immI shift) %{
@@ -16049,7 +16555,7 @@ instruct vsra8S_imm(vecX dst, vecX src, immI shift) %{
     __ sshr(as_FloatRegister($dst$$reg), __ T8H,
            as_FloatRegister($src$$reg), sh);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsrl4S_imm(vecD dst, vecD src, immI shift) %{
@@ -16069,7 +16575,7 @@ instruct vsrl4S_imm(vecD dst, vecD src, immI shift) %{
              as_FloatRegister($src$$reg), -sh & 15);
     }
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64_imm);
 %}
 
 instruct vsrl8S_imm(vecX dst, vecX src, immI shift) %{
@@ -16088,7 +16594,7 @@ instruct vsrl8S_imm(vecX dst, vecX src, immI shift) %{
              as_FloatRegister($src$$reg), -sh & 15);
     }
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsll2I(vecD dst, vecD src, vecX shift) %{
@@ -16102,7 +16608,7 @@ instruct vsll2I(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64_imm);
 %}
 
 instruct vsll4I(vecX dst, vecX src, vecX shift) %{
@@ -16116,7 +16622,7 @@ instruct vsll4I(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsrl2I(vecD dst, vecD src, vecX shift) %{
@@ -16129,7 +16635,7 @@ instruct vsrl2I(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64_imm);
 %}
 
 instruct vsrl4I(vecX dst, vecX src, vecX shift) %{
@@ -16142,7 +16648,7 @@ instruct vsrl4I(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsll2I_imm(vecD dst, vecD src, immI shift) %{
@@ -16155,7 +16661,7 @@ instruct vsll2I_imm(vecD dst, vecD src, immI shift) %{
            as_FloatRegister($src$$reg),
            (int)$shift$$constant & 31);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64_imm);
 %}
 
 instruct vsll4I_imm(vecX dst, vecX src, immI shift) %{
@@ -16168,7 +16674,7 @@ instruct vsll4I_imm(vecX dst, vecX src, immI shift) %{
            as_FloatRegister($src$$reg),
            (int)$shift$$constant & 31);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsra2I_imm(vecD dst, vecD src, immI shift) %{
@@ -16181,7 +16687,7 @@ instruct vsra2I_imm(vecD dst, vecD src, immI shift) %{
             as_FloatRegister($src$$reg),
             -(int)$shift$$constant & 31);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64_imm);
 %}
 
 instruct vsra4I_imm(vecX dst, vecX src, immI shift) %{
@@ -16194,7 +16700,7 @@ instruct vsra4I_imm(vecX dst, vecX src, immI shift) %{
             as_FloatRegister($src$$reg),
             -(int)$shift$$constant & 31);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsrl2I_imm(vecD dst, vecD src, immI shift) %{
@@ -16207,7 +16713,7 @@ instruct vsrl2I_imm(vecD dst, vecD src, immI shift) %{
             as_FloatRegister($src$$reg),
             -(int)$shift$$constant & 31);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift64_imm);
 %}
 
 instruct vsrl4I_imm(vecX dst, vecX src, immI shift) %{
@@ -16220,7 +16726,7 @@ instruct vsrl4I_imm(vecX dst, vecX src, immI shift) %{
             as_FloatRegister($src$$reg),
             -(int)$shift$$constant & 31);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsll2L(vecX dst, vecX src, vecX shift) %{
@@ -16234,7 +16740,7 @@ instruct vsll2L(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128);
 %}
 
 instruct vsrl2L(vecX dst, vecX src, vecX shift) %{
@@ -16247,7 +16753,7 @@ instruct vsrl2L(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128);
 %}
 
 instruct vsll2L_imm(vecX dst, vecX src, immI shift) %{
@@ -16260,7 +16766,7 @@ instruct vsll2L_imm(vecX dst, vecX src, immI shift) %{
            as_FloatRegister($src$$reg),
            (int)$shift$$constant & 63);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128);
 %}
 
 instruct vsra2L_imm(vecX dst, vecX src, immI shift) %{
@@ -16273,7 +16779,7 @@ instruct vsra2L_imm(vecX dst, vecX src, immI shift) %{
             as_FloatRegister($src$$reg),
             -(int)$shift$$constant & 63);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsrl2L_imm(vecX dst, vecX src, immI shift) %{
@@ -16286,7 +16792,7 @@ instruct vsrl2L_imm(vecX dst, vecX src, immI shift) %{
             as_FloatRegister($src$$reg),
             -(int)$shift$$constant & 63);
   %}
-  ins_pipe(pipe_class_default);
+  ins_pipe(vshift128_imm);
 %}
 
 //----------PEEPHOLE RULES-----------------------------------------------------

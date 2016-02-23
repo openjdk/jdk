@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   friend class ConcurrentMarkSweepGeneration;
   friend class CMSCollector;
   // Local alloc buffer for promotion into this space.
-  friend class CFLS_LAB;
+  friend class CompactibleFreeListSpaceLAB;
   // Allow scan_and_* functions to call (private) overrides of the auxiliary functions on this class
   template <typename SpaceType>
   friend void CompactibleSpace::scan_and_adjust_pointers(SpaceType* space);
@@ -313,9 +313,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
     return adjustObjectSize(size);
   }
 
-  inline size_t obj_size(const HeapWord* addr) const {
-    return adjustObjectSize(oop(addr)->size());
-  }
+  inline size_t obj_size(const HeapWord* addr) const;
 
  protected:
   // Reset the indexed free list to its initial empty condition.
@@ -662,7 +660,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
 // A parallel-GC-thread-local allocation buffer for allocation into a
 // CompactibleFreeListSpace.
-class CFLS_LAB : public CHeapObj<mtGC> {
+class CompactibleFreeListSpaceLAB : public CHeapObj<mtGC> {
   // The space that this buffer allocates into.
   CompactibleFreeListSpace* _cfls;
 
@@ -686,7 +684,7 @@ public:
   static const int _default_dynamic_old_plab_size = 16;
   static const int _default_static_old_plab_size  = 50;
 
-  CFLS_LAB(CompactibleFreeListSpace* cfls);
+  CompactibleFreeListSpaceLAB(CompactibleFreeListSpace* cfls);
 
   // Allocate and return a block of the given size, or else return NULL.
   HeapWord* alloc(size_t word_sz);

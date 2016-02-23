@@ -117,7 +117,7 @@ endif
 
 
 # Compiler warnings are treated as errors
-WARNINGS_ARE_ERRORS = -Werror
+WARNINGS_ARE_ERRORS ?= -Werror
 
 # Enable these warnings. See 'info gcc' about details on these options
 WARNING_FLAGS = -Wpointer-arith -Wconversion -Wsign-compare -Wundef -Wformat=2

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,17 +381,17 @@ void FreeRegionList_test() {
   MemRegion heap(NULL, num_regions_in_test * HeapRegion::GrainWords);
   // Allocate a fake BOT because the HeapRegion constructor initializes
   // the BOT.
-  size_t bot_size = G1BlockOffsetSharedArray::compute_size(heap.word_size());
+  size_t bot_size = G1BlockOffsetTable::compute_size(heap.word_size());
   HeapWord* bot_data = NEW_C_HEAP_ARRAY(HeapWord, bot_size, mtGC);
-  ReservedSpace bot_rs(G1BlockOffsetSharedArray::compute_size(heap.word_size()));
+  ReservedSpace bot_rs(G1BlockOffsetTable::compute_size(heap.word_size()));
   G1RegionToSpaceMapper* bot_storage =
     G1RegionToSpaceMapper::create_mapper(bot_rs,
                                          bot_rs.size(),
                                          os::vm_page_size(),
                                          HeapRegion::GrainBytes,
-                                         G1BlockOffsetSharedArray::N_bytes,
+                                         BOTConstants::N_bytes,
                                          mtGC);
-  G1BlockOffsetSharedArray oa(heap, bot_storage);
+  G1BlockOffsetTable bot(heap, bot_storage);
   bot_storage->commit_regions(0, num_regions_in_test);
 
   // Set up memory regions for the heap regions.
@@ -401,11 +401,11 @@ void FreeRegionList_test() {
   MemRegion mr3(mr2.end(), HeapRegion::GrainWords);
   MemRegion mr4(mr3.end(), HeapRegion::GrainWords);
 
-  HeapRegion hr0(0, &oa, mr0);
-  HeapRegion hr1(1, &oa, mr1);
-  HeapRegion hr2(2, &oa, mr2);
-  HeapRegion hr3(3, &oa, mr3);
-  HeapRegion hr4(4, &oa, mr4);
+  HeapRegion hr0(0, &bot, mr0);
+  HeapRegion hr1(1, &bot, mr1);
+  HeapRegion hr2(2, &bot, mr2);
+  HeapRegion hr3(3, &bot, mr3);
+  HeapRegion hr4(4, &bot, mr4);
   l.add_ordered(&hr1);
   l.add_ordered(&hr0);
   l.add_ordered(&hr3);

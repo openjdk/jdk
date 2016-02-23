@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2013, 2015 SAP AG. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3282,9 +3282,9 @@ void TemplateTable::generate_vtable_call(Register Rrecv_klass, Register Rindex, 
   const Register Rtarget_method = Rindex;
 
   // Get target method & entry point.
-  const int base = InstanceKlass::vtable_start_offset() * wordSize;
+  const int base = in_bytes(Klass::vtable_start_offset());
   // Calc vtable addr scale the vtable index by 8.
-  __ sldi(Rindex, Rindex, exact_log2(vtableEntry::size() * wordSize));
+  __ sldi(Rindex, Rindex, exact_log2(vtableEntry::size_in_bytes()));
   // Load target.
   __ addi(Rrecv_klass, Rrecv_klass, base + vtableEntry::method_offset_in_bytes());
   __ ldx(Rtarget_method, Rindex, Rrecv_klass);

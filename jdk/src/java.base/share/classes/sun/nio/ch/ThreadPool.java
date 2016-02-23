@@ -30,6 +30,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.security.action.GetPropertyAction;
 import sun.security.action.GetIntegerAction;
+import jdk.internal.misc.InnocuousThread;
 
 /**
  * Encapsulates a thread pool associated with a channel group.
@@ -81,7 +82,7 @@ public class ThreadPool {
         } else {
             return (Runnable r) -> {
                 PrivilegedAction<Thread> action = () -> {
-                    Thread t = new sun.misc.InnocuousThread(r);
+                    Thread t = new InnocuousThread(r);
                     t.setDaemon(true);
                     return t;
                };

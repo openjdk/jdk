@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2188,30 +2188,18 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   }
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
-  int vtable_base = InstanceKlass::vtable_start_offset() * wordSize;
+  int vtable_base = in_bytes(Klass::vtable_start_offset());
   int scan_step   = itableOffsetEntry::size() * wordSize;
-  int vte_size    = vtableEntry::size() * wordSize;
+  int vte_size    = vtableEntry::size_in_bytes();
 
-  lduw(recv_klass, InstanceKlass::vtable_length_offset() * wordSize, scan_temp);
+  lduw(recv_klass, in_bytes(Klass::vtable_length_offset()), scan_temp);
   // %%% We should store the aligned, prescaled offset in the klassoop.
   // Then the next several instructions would fold away.
 
-  int round_to_unit = ((HeapWordsPerLong > 1) ? BytesPerLong : 0);
   int itb_offset = vtable_base;
-  if (round_to_unit != 0) {
-    // hoist first instruction of round_to(scan_temp, BytesPerLong):
-    itb_offset += round_to_unit - wordSize;
-  }
-  int itb_scale = exact_log2(vtableEntry::size() * wordSize);
+  int itb_scale = exact_log2(vtableEntry::size_in_bytes());
   sll(scan_temp, itb_scale,  scan_temp);
   add(scan_temp, itb_offset, scan_temp);
-  if (round_to_unit != 0) {
-    // Round up to align_object_offset boundary
-    // see code for InstanceKlass::start_of_itable!
-    // Was: round_to(scan_temp, BytesPerLong);
-    // Hoisted: add(scan_temp, BytesPerLong-1, scan_temp);
-    and3(scan_temp, -round_to_unit, scan_temp);
-  }
   add(recv_klass, scan_temp, scan_temp);
 
   // Adjust recv_klass by scaled itable_index, so we can free itable_index.
@@ -2280,16 +2268,16 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            Register method_result) {
   assert_different_registers(recv_klass, method_result, vtable_index.register_or_noreg());
   Register sethi_temp = method_result;
-  const int base = (InstanceKlass::vtable_start_offset() * wordSize +
-                    // method pointer offset within the vtable entry:
-                    vtableEntry::method_offset_in_bytes());
+  const int base = in_bytes(Klass::vtable_start_offset()) +
+                   // method pointer offset within the vtable entry:
+                   vtableEntry::method_offset_in_bytes();
   RegisterOrConstant vtable_offset = vtable_index;
   // Each of the following three lines potentially generates an instruction.
   // But the total number of address formation instructions will always be
   // at most two, and will often be zero.  In any case, it will be optimal.
   // If vtable_index is a register, we will have (sll_ptr N,x; inc_ptr B,x; ld_ptr k,x).
   // If vtable_index is a constant, we will have at most (set B+X<<N,t; ld_ptr k,t).
-  vtable_offset = regcon_sll_ptr(vtable_index, exact_log2(vtableEntry::size() * wordSize), vtable_offset);
+  vtable_offset = regcon_sll_ptr(vtable_index, exact_log2(vtableEntry::size_in_bytes()), vtable_offset);
   vtable_offset = regcon_inc_ptr(vtable_offset, base, vtable_offset, sethi_temp);
   Address vtable_entry_addr(recv_klass, ensure_simm13_or_reg(vtable_offset, sethi_temp));
   ld_ptr(vtable_entry_addr, method_result);
@@ -3386,10 +3374,20 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   // Retain tlab and allocate object in shared space if
   // the amount free in the tlab is too large to discard.
   cmp(t1, t2);
-  brx(Assembler::lessEqual, false, Assembler::pt, discard_tlab);
 
+  brx(Assembler::lessEqual, false, Assembler::pt, discard_tlab);
   // increment waste limit to prevent getting stuck on this slow path
-  delayed()->add(t2, ThreadLocalAllocBuffer::refill_waste_limit_increment(), t2);
+  if (Assembler::is_simm13(ThreadLocalAllocBuffer::refill_waste_limit_increment())) {
+    delayed()->add(t2, ThreadLocalAllocBuffer::refill_waste_limit_increment(), t2);
+  } else {
+    delayed()->nop();
+    // set64 does not use the temp register if the given constant is 32 bit. So
+    // we can just use any register; using G0 results in ignoring of the upper 32 bit
+    // of that value.
+    set64(ThreadLocalAllocBuffer::refill_waste_limit_increment(), t3, G0);
+    add(t2, t3, t2);
+  }
+
   st_ptr(t2, G2_thread, in_bytes(JavaThread::tlab_refill_waste_limit_offset()));
   if (TLABStats) {
     // increment number of slow_allocations
@@ -3459,9 +3457,25 @@ void MacroAssembler::tlab_refill(Label& retry, Label& try_eden, Label& slow_case
   add(top, t1, top); // t1 is tlab_size
   sub(top, ThreadLocalAllocBuffer::alignment_reserve_in_bytes(), top);
   st_ptr(top, G2_thread, in_bytes(JavaThread::tlab_end_offset()));
+
+  if (ZeroTLAB) {
+    // This is a fast TLAB refill, therefore the GC is not notified of it.
+    // So compiled code must fill the new TLAB with zeroes.
+    ld_ptr(G2_thread, in_bytes(JavaThread::tlab_start_offset()), t2);
+    zero_memory(t2, t1);
+  }
   verify_tlab();
   ba(retry);
   delayed()->nop();
+}
+
+void MacroAssembler::zero_memory(Register base, Register index) {
+  assert_different_registers(base, index);
+  Label loop;
+  bind(loop);
+  subcc(index, HeapWordSize, index);
+  brx(Assembler::greaterEqual, true, Assembler::pt, loop);
+  delayed()->st_ptr(G0, base, index);
 }
 
 void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes,

@@ -36,5 +36,5 @@ bool G1CollectedHeap::copy_allocation_context_stats(const jint* contexts,
 
 HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
                                              MemRegion mr) {
-  return new HeapRegion(hrs_index, bot_shared(), mr);
+  return new HeapRegion(hrs_index, bot(), mr);
 }

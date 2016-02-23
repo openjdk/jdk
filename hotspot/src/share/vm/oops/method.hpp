@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -622,7 +622,7 @@ class Method : public Metadata {
   bool has_compiled_code() const                 { return code() != NULL; }
 
   // sizing
-  static int header_size()                       { return sizeof(Method)/HeapWordSize; }
+  static int header_size()                       { return sizeof(Method)/wordSize; }
   static int size(bool is_native);
   int size() const                               { return method_size(); }
 #if INCLUDE_SERVICES
@@ -940,6 +940,7 @@ class Method : public Metadata {
   void print_on(outputStream* st) const;
 #endif
   void print_value_on(outputStream* st) const;
+  void print_linkage_flags(outputStream* st) PRODUCT_RETURN;
 
   const char* internal_name() const { return "{method}"; }
 

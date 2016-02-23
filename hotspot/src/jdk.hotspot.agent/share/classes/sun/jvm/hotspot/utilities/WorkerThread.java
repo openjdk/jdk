@@ -35,7 +35,11 @@ public class WorkerThread {
   public WorkerThread() {
     mqb = new MessageQueueBackend();
     mq = mqb.getFirstQueue();
-    new Thread(new MainLoop()).start();
+
+    // Enable to terminate this worker during runnning by daemonize.
+    Thread mqthread = new Thread(new MainLoop());
+    mqthread.setDaemon(true);
+    mqthread.start();
   }
 
   /** Runs the given Runnable in the thread represented by this

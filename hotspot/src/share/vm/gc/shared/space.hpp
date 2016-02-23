@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,9 +360,7 @@ private:
     return size;
   }
 
-  inline size_t obj_size(const HeapWord* addr) const {
-    return oop(addr)->size();
-  }
+  inline size_t obj_size(const HeapWord* addr) const;
 
 public:
   CompactibleSpace() :
@@ -508,9 +506,7 @@ class ContiguousSpace: public CompactibleSpace {
     return true; // Always true, since scan_limit is top
   }
 
-  inline size_t scanned_block_size(const HeapWord* addr) const {
-    return oop(addr)->size();
-  }
+  inline size_t scanned_block_size(const HeapWord* addr) const;
 
  protected:
   HeapWord* _top;
@@ -676,7 +672,7 @@ class ContiguousSpace: public CompactibleSpace {
 
 // A dirty card to oop closure that does filtering.
 // It knows how to filter out objects that are outside of the _boundary.
-class Filtering_DCTOC : public DirtyCardToOopClosure {
+class FilteringDCTOC : public DirtyCardToOopClosure {
 protected:
   // Override.
   void walk_mem_region(MemRegion mr,
@@ -697,7 +693,7 @@ protected:
                                        FilteringClosure* cl) = 0;
 
 public:
-  Filtering_DCTOC(Space* sp, ExtendedOopClosure* cl,
+  FilteringDCTOC(Space* sp, ExtendedOopClosure* cl,
                   CardTableModRefBS::PrecisionStyle precision,
                   HeapWord* boundary) :
     DirtyCardToOopClosure(sp, cl, precision, boundary) {}
@@ -713,7 +709,7 @@ public:
 // 2. That the space is really made up of objects and not just
 //    blocks.
 
-class ContiguousSpaceDCTOC : public Filtering_DCTOC {
+class ContiguousSpaceDCTOC : public FilteringDCTOC {
 protected:
   // Overrides.
   HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj);
@@ -729,7 +725,7 @@ public:
   ContiguousSpaceDCTOC(ContiguousSpace* sp, ExtendedOopClosure* cl,
                        CardTableModRefBS::PrecisionStyle precision,
                        HeapWord* boundary) :
-    Filtering_DCTOC(sp, cl, precision, boundary)
+    FilteringDCTOC(sp, cl, precision, boundary)
   {}
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,19 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/ageTable.hpp"
+#include "gc/shared/ageTable.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
+#include "oops/oop.inline.hpp"
 #include "utilities/copy.hpp"
 
-/* Copyright (c) 1992, 2015, Oracle and/or its affiliates, and Stanford University.
+/* Copyright (c) 1992, 2016, Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */
 
-ageTable::ageTable(bool global) {
+AgeTable::AgeTable(bool global) {
 
   clear();
 
@@ -61,19 +62,19 @@ ageTable::ageTable(bool global) {
   }
 }
 
-void ageTable::clear() {
+void AgeTable::clear() {
   for (size_t* p = sizes; p < sizes + table_size; ++p) {
     *p = 0;
   }
 }
 
-void ageTable::merge(ageTable* subTable) {
+void AgeTable::merge(AgeTable* subTable) {
   for (int i = 0; i < table_size; i++) {
     sizes[i]+= subTable->sizes[i];
   }
 }
 
-uint ageTable::compute_tenuring_threshold(size_t survivor_capacity, GCPolicyCounters* gc_counters) {
+uint AgeTable::compute_tenuring_threshold(size_t survivor_capacity, GCPolicyCounters* gc_counters) {
   size_t desired_survivor_size = (size_t)((((double) survivor_capacity)*TargetSurvivorRatio)/100);
   uint result;
 

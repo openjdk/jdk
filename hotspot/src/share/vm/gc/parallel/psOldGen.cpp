@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMarkSweepDecorator.hpp"
@@ -257,7 +258,7 @@ void PSOldGen::expand(size_t bytes) {
     success = expand_to_reserved();
   }
 
-  if (success && GC_locker::is_active_and_needs_gc()) {
+  if (success && GCLocker::is_active_and_needs_gc()) {
     log_debug(gc)("Garbage collection disabled, expanded heap instead");
   }
 }

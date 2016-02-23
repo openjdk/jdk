@@ -39,7 +39,9 @@
   LOG_TAG(classhisto) \
   LOG_TAG(classresolve) \
   LOG_TAG(classinit) \
-  LOG_TAG(comp) \
+  LOG_TAG(classload) /* Trace all classes loaded */ \
+  LOG_TAG(classloaderdata) /* class loader loader_data lifetime */ \
+  LOG_TAG(classunload) /* Trace unloading of classes */ \
   LOG_TAG(compaction) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
@@ -52,12 +54,14 @@
   LOG_TAG(heap) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
+  LOG_TAG(itables) \
   LOG_TAG(jni) \
   LOG_TAG(liveness) \
   LOG_TAG(logging) \
   LOG_TAG(marking) \
   LOG_TAG(metaspace) \
   LOG_TAG(monitorinflation) \
+  LOG_TAG(os) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(promotion) \
@@ -65,7 +69,6 @@
   LOG_TAG(refine) \
   LOG_TAG(region) \
   LOG_TAG(remset) \
-  LOG_TAG(rt) \
   LOG_TAG(safepoint) \
   LOG_TAG(scavenge) \
   LOG_TAG(scrub) \
@@ -74,13 +77,13 @@
   LOG_TAG(stats) \
   LOG_TAG(stringdedup) \
   LOG_TAG(survivor) \
-  LOG_TAG(svc) \
   LOG_TAG(sweep) \
   LOG_TAG(task) \
   LOG_TAG(tlab) \
   LOG_TAG(time) \
   LOG_TAG(verify) \
-  LOG_TAG(vmoperation)
+  LOG_TAG(vmoperation) \
+  LOG_TAG(vtables)
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)
 

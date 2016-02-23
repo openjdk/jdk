@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4017232
+ * @bug 4017232 8046339
  * @summary If, after returning a reference to a remote object in the current
  * VM (which gets implicitly converted to a remote stub), the client fails to
  * both send a DGC dirty call and to send a "DGC acknowledgment", the RMI
@@ -36,10 +36,14 @@
 
 import java.io.*;
 import java.net.*;
+import java.lang.reflect.Field;
 import java.lang.ref.*;
 
 import java.rmi.*;
 import java.rmi.server.*;
+import java.util.Map;
+
+import sun.rmi.transport.DGCAckHandler;
 
 interface ReturnRemote extends Remote {
     Object returnRemote() throws RemoteException;
@@ -48,6 +52,7 @@ interface ReturnRemote extends Remote {
 public class DGCAckFailure implements ReturnRemote {
 
     private static final long TIMEOUT = 20000;
+    private static final long ACK_TIMEOUT = TIMEOUT / 2;
 
     public Object returnRemote() {
         return new Wrapper(this);
@@ -55,7 +60,8 @@ public class DGCAckFailure implements ReturnRemote {
 
     public static void main(String[] args) throws Exception {
 
-        System.setProperty("sun.rmi.dgc.ackTimeout", "10000");
+        System.setProperty("sun.rmi.dgc.ackTimeout",
+                Long.toString(ACK_TIMEOUT));
 
         /*
          * Set a socket factory that has a hook for shutting down all client
@@ -93,12 +99,31 @@ public class DGCAckFailure implements ReturnRemote {
                     break;
                 }
             }
-            if (ref == weakRef) {
-                System.err.println("TEST PASSED");
-            } else {
+            if (ref != weakRef) {
                 throw new RuntimeException("TEST FAILED: " +
                     "timed out, remote object not garbage collected");
             }
+
+            // 8046339
+            // All DGCAckHandlers must be properly released after timeout
+            Thread.sleep(ACK_TIMEOUT + 100);
+            try {
+                Field field =
+                        DGCAckHandler.class.getDeclaredField("idTable");
+                field.setAccessible(true);
+                Object obj = field.get(null);
+                Map<?,?> idTable = (Map<?,?>)obj;
+
+                if (!idTable.isEmpty()) {
+                    throw new RuntimeException("TEST FAILED: " +
+                            "DGCAckHandler.idTable isn't empty");
+                }
+            } catch (ReflectiveOperationException roe) {
+                throw new RuntimeException(roe);
+            }
+
+            System.err.println("TEST PASSED");
+
         } finally {
             try {
                 UnicastRemoteObject.unexportObject((Remote) weakRef.get(),

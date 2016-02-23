@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
@@ -633,6 +634,7 @@ Handle JVMCIRuntime::callStatic(const char* className, const char* methodName, c
 
 void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
   if (JNIHandles::resolve(_HotSpotJVMCIRuntime_instance) == NULL) {
+    ResourceMark rm;
 #ifdef ASSERT
     // This should only be called in the context of the JVMCI class being initialized
     TempNewSymbol name = SymbolTable::new_symbol("jdk/vm/ci/runtime/JVMCI", CHECK);

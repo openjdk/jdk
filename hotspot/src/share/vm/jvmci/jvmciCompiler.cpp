@@ -38,7 +38,7 @@ elapsedTimer JVMCICompiler::_codeInstallTimer;
 
 JVMCICompiler::JVMCICompiler() : AbstractCompiler(jvmci) {
   _bootstrapping = false;
-  _methodsCompiled = 0;
+  _methods_compiled = 0;
   assert(_instance == NULL, "only one instance allowed");
   _instance = this;
 }
@@ -99,7 +99,7 @@ void JVMCICompiler::bootstrap() {
     } while (first_round && qsize == 0);
     first_round = false;
     if (PrintBootstrap) {
-      while (z < (_methodsCompiled / 100)) {
+      while (z < (_methods_compiled / 100)) {
         ++z;
         tty->print_raw(".");
       }
@@ -107,7 +107,7 @@ void JVMCICompiler::bootstrap() {
   } while (qsize != 0);
 
   if (PrintBootstrap) {
-    tty->print_cr(" in " JLONG_FORMAT " ms (compiled %d methods)", os::javaTimeMillis() - start, _methodsCompiled);
+    tty->print_cr(" in " JLONG_FORMAT " ms (compiled %d methods)", os::javaTimeMillis() - start, _methods_compiled);
   }
   _bootstrapping = false;
 }
@@ -134,7 +134,6 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
   JVMCIRuntime::initialize_well_known_classes(CHECK_ABORT);
 
   HandleMark hm;
-  ResourceMark rm;
   Handle receiver = JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK_ABORT);
 
   JavaValue method_result(T_OBJECT);
@@ -143,8 +142,8 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
   JavaCalls::call_static(&method_result, SystemDictionary::HotSpotResolvedJavaMethodImpl_klass(),
                          vmSymbols::fromMetaspace_name(), vmSymbols::method_fromMetaspace_signature(), &args, THREAD);
 
+  JavaValue result(T_OBJECT);
   if (!HAS_PENDING_EXCEPTION) {
-    JavaValue result(T_VOID);
     JavaCallArguments args;
     args.push_oop(receiver);
     args.push_oop((oop)method_result.get_jobject());
@@ -162,15 +161,27 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
     Handle exception(THREAD, PENDING_EXCEPTION);
     CLEAR_PENDING_EXCEPTION;
 
-    {
-      ttyLocker ttyl;
-      java_lang_Throwable::print_stack_trace(exception, tty);
-    }
+    java_lang_Throwable::java_printStackTrace(exception, THREAD);
 
-    // Something went wrong so disable compilation at this level
-    method->set_not_compilable(CompLevel_full_optimization);
+    env->set_failure("exception throw", false);
   } else {
-    _methodsCompiled++;
+    oop result_object = (oop) result.get_jobject();
+    if (result_object != NULL) {
+      oop failure_message = CompilationRequestResult::failureMessage(result_object);
+      if (failure_message != NULL) {
+        const char* failure_reason = java_lang_String::as_utf8_string(failure_message);
+        env->set_failure(failure_reason, CompilationRequestResult::retry(result_object) != 0);
+      } else {
+        if (env->task()->code() == NULL) {
+          env->set_failure("no nmethod produced", true);
+        } else {
+          env->task()->set_num_inlined_bytecodes(CompilationRequestResult::inlinedBytecodes(result_object));
+          Atomic::inc(&_methods_compiled);
+        }
+      }
+    } else {
+      assert(false, "JVMCICompiler.compileMethod should always return non-null");
+    }
   }
 }
 
@@ -181,11 +192,7 @@ void JVMCICompiler::abort_on_pending_exception(Handle exception, const char* mes
   Thread* THREAD = Thread::current();
   CLEAR_PENDING_EXCEPTION;
 
-  {
-    ttyLocker ttyl;
-    tty->print_raw_cr(message);
-    java_lang_Throwable::print_stack_trace(exception, tty);
-  }
+  java_lang_Throwable::java_printStackTrace(exception, THREAD);
 
   // Give other aborting threads to also print their stack traces.
   // This can be very useful when debugging class initialization

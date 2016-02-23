@@ -168,7 +168,7 @@ ifeq ($(HAS_SPEC),)
 
     MAKE_INIT_WITH_SPEC_ARGUMENTS := ACTUAL_TOPDIR=$(topdir) \
         USER_MAKE_VARS="$(USER_MAKE_VARS)" MAKE_LOG_FLAGS=$(MAKE_LOG_FLAGS) \
-        LOG_LEVEL=$(LOG_LEVEL) LOG_NOFILE=$(LOG_NOFILE) \
+        LOG_LEVEL=$(LOG_LEVEL) LOG_NOFILE=$(LOG_NOFILE) LOG_CMDLINES=$(LOG_CMDLINES) \
         INIT_TARGETS="$(INIT_TARGETS)" \
         SEQUENTIAL_TARGETS="$(SEQUENTIAL_TARGETS)" \
         PARALLEL_TARGETS="$(PARALLEL_TARGETS)"
@@ -319,6 +319,7 @@ else # HAS_SPEC=true
 	$(call PrepareCompareBuild)
 
     post-compare-build:
+	$(call WaitForSmartJavacFinish)
 	$(call CleanupCompareBuild)
 	$(call CompareBuildDoComparison)
 

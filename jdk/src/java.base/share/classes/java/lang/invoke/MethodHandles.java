@@ -856,7 +856,8 @@ assertEquals("", (String) MH_newString.invokeExact());
          * @return the desired method handle
          * @throws NoSuchMethodException if the method does not exist
          * @throws IllegalAccessException if access checking fails,
-         *                                or if the method is {@code static}
+         *                                or if the method is {@code static},
+         *                                or if the method is {@code private} method of interface,
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
          * @exception SecurityException if a security manager is present and it
@@ -2138,7 +2139,7 @@ return invoker;
      * if its index does not appear in the array.
      * As in the case of {@link #dropArguments(MethodHandle,int,List) dropArguments},
      * incoming arguments which are not mentioned in the reordering array
-     * are may be any type, as determined only by {@code newType}.
+     * may be of any type, as determined only by {@code newType}.
      * <blockquote><pre>{@code
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
@@ -2156,6 +2157,9 @@ MethodHandle twice = permuteArguments(add, intfn1, 0, 0);
 assert(twice.type().equals(intfn1));
 assert((int)twice.invokeExact(21) == 42);
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      * @param target the method handle to invoke after arguments are reordered
      * @param newType the expected type of the new method handle
      * @param reorder an index array which controls the reordering
@@ -2420,6 +2424,9 @@ assert((int)twice.invokeExact(21) == 42);
      * It may range between zero and <i>N-L</i> (inclusively),
      * where <i>N</i> is the arity of the target method handle
      * and <i>L</i> is the length of the values array.
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      * @param target the method handle to invoke after the argument is inserted
      * @param pos where to insert the argument (zero for the first)
      * @param values the series of arguments to insert
@@ -2638,14 +2645,25 @@ assertEquals("xY", (String) f1.invokeExact("x", "y")); // xY
 MethodHandle f2 = filterArguments(cat, 0, upcase, upcase);
 assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
      * }</pre></blockquote>
-     * <p> Here is pseudocode for the resulting adapter:
+     * <p>Here is pseudocode for the resulting adapter. In the code, {@code T}
+     * denotes the return type of both the {@code target} and resulting adapter.
+     * {@code P}/{@code p} and {@code B}/{@code b} represent the types and values
+     * of the parameters and arguments that precede and follow the filter position
+     * {@code pos}, respectively. {@code A[i]}/{@code a[i]} stand for the types and
+     * values of the filtered parameters and arguments; they also represent the
+     * return types of the {@code filter[i]} handles. The latter accept arguments
+     * {@code v[i]} of type {@code V[i]}, which also appear in the signature of
+     * the resulting adapter.
      * <blockquote><pre>{@code
-     * V target(P... p, A[i]... a[i], B... b);
+     * T target(P... p, A[i]... a[i], B... b);
      * A[i] filter[i](V[i]);
      * T adapter(P... p, V[i]... v[i], B... b) {
-     *   return target(p..., f[i](v[i])..., b...);
+     *   return target(p..., filter[i](v[i])..., b...);
      * }
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      *
      * @param target the method handle to invoke after arguments are filtered
      * @param pos the position of the first argument to filter
@@ -2752,7 +2770,17 @@ MethodHandle ts3_ts2_ts3 = collectArguments(ts3_ts2, 1, ts3);
 assertEquals("[top, [[up, down, strange], charm], bottom]",
              (String) ts3_ts2_ts3.invokeExact("top", "up", "down", "strange", "charm", "bottom"));
      * }</pre></blockquote>
-     * <p> Here is pseudocode for the resulting adapter:
+     * <p>Here is pseudocode for the resulting adapter. In the code, {@code T}
+     * represents the return type of the {@code target} and resulting adapter.
+     * {@code V}/{@code v} stand for the return type and value of the
+     * {@code filter}, which are also found in the signature and arguments of
+     * the {@code target}, respectively, unless {@code V} is {@code void}.
+     * {@code A}/{@code a} and {@code C}/{@code c} represent the parameter types
+     * and values preceding and following the collection position, {@code pos},
+     * in the {@code target}'s signature. They also turn up in the resulting
+     * adapter's signature and arguments, where they surround
+     * {@code B}/{@code b}, which represent the parameter types and arguments
+     * to the {@code filter} (if any).
      * <blockquote><pre>{@code
      * T target(A...,V,C...);
      * V filter(B...);
@@ -2770,7 +2798,7 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
      * // and if the filter has a void return:
      * T target3(A...,C...);
      * void filter3(B...);
-     * void adapter3(A... a,B... b,C... c) {
+     * T adapter3(A... a,B... b,C... c) {
      *   filter3(b...);
      *   return target3(a...,c...);
      * }
@@ -2790,6 +2818,9 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
      * a non-void result, then {@code collectArguments(mh, N, coll)}
      * is equivalent to {@code filterArguments(mh, N, coll)}.
      * Other equivalences are possible but would require argument permutation.
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      *
      * @param target the method handle to invoke after filtering the subsequence of arguments
      * @param pos the position of the first adapter argument to pass to the filter,
@@ -2863,29 +2894,36 @@ System.out.println((String) cat.invokeExact("x", "y")); // xy
 MethodHandle f0 = filterReturnValue(cat, length);
 System.out.println((int) f0.invokeExact("x", "y")); // 2
      * }</pre></blockquote>
-     * <p> Here is pseudocode for the resulting adapter:
+     * <p>Here is pseudocode for the resulting adapter. In the code,
+     * {@code T}/{@code t} represent the result type and value of the
+     * {@code target}; {@code V}, the result type of the {@code filter}; and
+     * {@code A}/{@code a}, the types and values of the parameters and arguments
+     * of the {@code target} as well as the resulting adapter.
      * <blockquote><pre>{@code
-     * V target(A...);
-     * T filter(V);
-     * T adapter(A... a) {
-     *   V v = target(a...);
-     *   return filter(v);
+     * T target(A...);
+     * V filter(T);
+     * V adapter(A... a) {
+     *   T t = target(a...);
+     *   return filter(t);
      * }
      * // and if the target has a void return:
      * void target2(A...);
-     * T filter2();
-     * T adapter2(A... a) {
+     * V filter2();
+     * V adapter2(A... a) {
      *   target2(a...);
      *   return filter2();
      * }
      * // and if the filter has a void return:
-     * V target3(A...);
+     * T target3(A...);
      * void filter3(V);
      * void adapter3(A... a) {
-     *   V v = target3(a...);
-     *   filter3(v);
+     *   T t = target3(a...);
+     *   filter3(t);
      * }
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      * @param target the method handle to invoke before filtering the return value
      * @param filter method handle to call on the return value
      * @return method handle which incorporates the specified return value filtering logic
@@ -2963,7 +3001,15 @@ MethodHandle catTrace = foldArguments(cat, trace);
 // also prints "boo":
 assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }</pre></blockquote>
-     * <p> Here is pseudocode for the resulting adapter:
+     * <p>Here is pseudocode for the resulting adapter. In the code, {@code T}
+     * represents the result type of the {@code target} and resulting adapter.
+     * {@code V}/{@code v} represent the type and value of the parameter and argument
+     * of {@code target} that precedes the folding position; {@code V} also is
+     * the result type of the {@code combiner}. {@code A}/{@code a} denote the
+     * types and values of the {@code N} parameters and arguments at the folding
+     * position. {@code B}/{@code b} represent the types and values of the
+     * {@code target} parameters and arguments that follow the folded parameters
+     * and arguments.
      * <blockquote><pre>{@code
      * // there are N arguments in A...
      * T target(V, A[N]..., B...);
@@ -2980,6 +3026,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *   return target2(a..., b...);
      * }
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      * @param target the method handle to invoke after arguments are combined
      * @param combiner method handle to call initially on the incoming arguments
      * @return method handle which incorporates the specified argument folding logic
@@ -3021,7 +3070,13 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * argument and return types, except that the return type
      * of the test must be boolean, and the test is allowed
      * to have fewer arguments than the other two method handles.
-     * <p> Here is pseudocode for the resulting adapter:
+     * <p>
+     * Here is pseudocode for the resulting adapter. In the code, {@code T}
+     * represents the uniform result type of the three involved handles;
+     * {@code A}/{@code a}, the types and values of the {@code target}
+     * parameters and arguments that are consumed by the {@code test}; and
+     * {@code B}/{@code b}, those types and values of the {@code target}
+     * parameters and arguments that are not consumed by the {@code test}.
      * <blockquote><pre>{@code
      * boolean test(A...);
      * T target(A...,B...);
@@ -3083,7 +3138,13 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * argument and return types, except that handler may omit trailing arguments
      * (similarly to the predicate in {@link #guardWithTest guardWithTest}).
      * Also, the handler must have an extra leading parameter of {@code exType} or a supertype.
-     * <p> Here is pseudocode for the resulting adapter:
+     * <p>
+     * Here is pseudocode for the resulting adapter. In the code, {@code T}
+     * represents the return type of the {@code target} and {@code handler},
+     * and correspondingly that of the resulting adapter; {@code A}/{@code a},
+     * the types and values of arguments to the resulting handle consumed by
+     * {@code handler}; and {@code B}/{@code b}, those of arguments to the
+     * resulting handle discarded by {@code handler}.
      * <blockquote><pre>{@code
      * T target(A..., B...);
      * T handler(ExType, A...);
@@ -3827,8 +3888,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * (Note that, except for argument type conversions, combinators represent {@code void} values in parameter lists
      * by omitting the corresponding paradoxical arguments, not by inserting {@code null} or zero values.)
      * <p>
-     * The {@code target} and {@code cleanup} handles' return types must be the same. Their parameter type lists also
-     * must be the same, but the {@code cleanup} handle must accept one or two more leading parameters:<ul>
+     * The {@code target} and {@code cleanup} handles must have the same corresponding argument and return types, except
+     * that the {@code cleanup} handle may omit trailing arguments. Also, the {@code cleanup} handle must have one or
+     * two extra leading parameters:<ul>
      * <li>a {@code Throwable}, which will carry the exception thrown by the {@code target} handle (if any); and
      * <li>a parameter of the same type as the return type of both {@code target} and {@code cleanup}, which will carry
      * the result from the execution of the {@code target} handle.
@@ -3931,7 +3993,16 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     // also prints "jum":
     assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }</pre></blockquote>
-     * <p> Here is pseudocode for the resulting adapter:
+     * <p>Here is pseudocode for the resulting adapter. In the code, {@code T}
+     * represents the result type of the {@code target} and resulting adapter.
+     * {@code V}/{@code v} represent the type and value of the parameter and argument
+     * of {@code target} that precedes the folding position; {@code V} also is
+     * the result type of the {@code combiner}. {@code A}/{@code a} denote the
+     * types and values of the {@code N} parameters and arguments at the folding
+     * position. {@code Z}/{@code z} and {@code B}/{@code b} represent the types
+     * and values of the {@code target} parameters and arguments that precede and
+     * follow the folded parameters and arguments starting at {@code pos},
+     * respectively.
      * <blockquote><pre>{@code
      * // there are N arguments in A...
      * T target(Z..., V, A[N]..., B...);
@@ -3948,6 +4019,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *   return target2(z..., a..., b...);
      * }
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      *
      * @param target the method handle to invoke after arguments are combined
      * @param pos the position at which to start folding and at which to insert the folding result; if this is {@code

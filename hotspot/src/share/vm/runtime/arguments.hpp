@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_RUNTIME_ARGUMENTS_HPP
 #define SHARE_VM_RUNTIME_ARGUMENTS_HPP
 
+#include "logging/logLevel.hpp"
+#include "logging/logTag.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
@@ -223,6 +225,14 @@ class AgentLibraryList VALUE_OBJ_CLASS_SPEC {
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
 class ScopedVMInitArgs;
 
+// Most logging functions require 5 tags. Some of them may be _NO_TAG.
+typedef struct {
+  const char* alias_name;
+  LogLevelType level;
+  bool exactMatch;
+  LogTagType tag;
+} AliasedLoggingFlag;
+
 class Arguments : AllStatic {
   friend class VMStructs;
   friend class JvmtiExport;
@@ -284,6 +294,7 @@ class Arguments : AllStatic {
 
   // Option flags
   static bool   _has_profile;
+  static const char*  _gc_log_filename;
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
 
@@ -379,13 +390,18 @@ class Arguments : AllStatic {
   static jint parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args);
   static jint parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args);
   static jint insert_vm_options_file(const JavaVMInitArgs* args,
-                                     char** vm_options_file,
+                                     const char* vm_options_file,
                                      const int vm_options_file_pos,
                                      ScopedVMInitArgs* vm_options_file_args,
                                      ScopedVMInitArgs* args_out);
+  static bool args_contains_vm_options_file_arg(const JavaVMInitArgs* args);
+  static jint expand_vm_options_as_needed(const JavaVMInitArgs* args_in,
+                                          ScopedVMInitArgs* mod_args,
+                                          JavaVMInitArgs** args_out);
   static jint match_special_option_and_act(const JavaVMInitArgs* args,
-                                           char** vm_options_file,
                                            ScopedVMInitArgs* args_out);
+
+  static bool handle_deprecated_print_gc_flags();
 
   static jint parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
                                  const JavaVMInitArgs *java_options_args,
@@ -446,7 +462,7 @@ class Arguments : AllStatic {
   // Return NULL if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
   static bool lookup_logging_aliases(const char* arg, char* buffer);
-
+  static AliasedLoggingFlag catch_logging_aliases(const char* name);
   static short  CompileOnlyClassesNum;
   static short  CompileOnlyClassesMax;
   static char** CompileOnlyClasses;

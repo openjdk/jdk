@@ -58,10 +58,15 @@ import compiler.jvmci.common.testcases.SimpleClass;
 import jdk.test.lib.Asserts;
 import java.lang.reflect.Method;
 import jdk.vm.ci.hotspot.HotSpotVMEventListener;
-import jdk.vm.ci.code.CompilationResult;
+import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.code.site.DataPatch;
+import jdk.vm.ci.code.site.Site;
+import jdk.vm.ci.meta.Assumptions.Assumption;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
-import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
+import jdk.vm.ci.hotspot.HotSpotCompiledCode;
+import jdk.vm.ci.hotspot.HotSpotCompiledCode.Comment;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 
@@ -102,17 +107,15 @@ public class JvmciNotifyInstallEventTest implements HotSpotVMEventListener {
         }
         HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(SimpleClass.class, testMethod);
-        CompilationResult compResult = new CompilationResult(METHOD_NAME);
-        HotSpotCompilationRequest compRequest = new HotSpotCompilationRequest(method, -1, 0L);
-        // to pass sanity check of default -1
-        compResult.setTotalFrameSize(0);
-        compResult.close();
-        codeCache.installCode(compRequest, compResult, /* installedCode = */ null, /* speculationLog = */ null,
+        HotSpotCompiledCode compiledCode = new HotSpotCompiledCode(METHOD_NAME, new byte[0], 0, new Site[0],
+                new Assumption[0], new ResolvedJavaMethod[]{method}, new Comment[0], new byte[0], 16,
+                new DataPatch[0], false, 0, null);
+        codeCache.installCode(method, compiledCode, /* installedCode = */ null, /* speculationLog = */ null,
                 /* isDefault = */ false);
         Asserts.assertEQ(gotInstallNotification, 1,
                 "Got unexpected event count after 1st install attempt");
         // since "empty" compilation result is ok, a second attempt should be ok
-        codeCache.installCode(compRequest, compResult, /* installedCode = */ null, /* speculationLog = */ null,
+        codeCache.installCode(method, compiledCode, /* installedCode = */ null, /* speculationLog = */ null,
                 /* isDefault = */ false);
         Asserts.assertEQ(gotInstallNotification, 2,
                 "Got unexpected event count after 2nd install attempt");
@@ -120,7 +123,7 @@ public class JvmciNotifyInstallEventTest implements HotSpotVMEventListener {
 
     @Override
     public void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider,
-            InstalledCode installedCode, CompilationResult compResult) {
+            InstalledCode installedCode, CompiledCode compiledCode) {
         gotInstallNotification++;
     }
 }

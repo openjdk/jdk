@@ -27,6 +27,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/specialized_oop_closures.hpp"
+#include "logging/logLevel.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
@@ -94,10 +95,10 @@ class OopMapBlock VALUE_OBJ_CLASS_SPEC {
   uint count() const         { return _count; }
   void set_count(uint count) { _count = count; }
 
-  // sizeof(OopMapBlock) in HeapWords.
+  // sizeof(OopMapBlock) in words.
   static const int size_in_words() {
-    return align_size_up(int(sizeof(OopMapBlock)), HeapWordSize) >>
-      LogHeapWordSize;
+    return align_size_up(int(sizeof(OopMapBlock)), wordSize) >>
+      LogBytesPerWord;
   }
 
  private:
@@ -178,6 +179,7 @@ class InstanceKlass: public Klass {
   u2              _java_fields_count;    // The number of declared Java fields
   int             _nonstatic_oop_map_size;// size in words of nonstatic oop map blocks
 
+  int             _itable_len;           // length of Java itable (in words)
   // _is_marked_dependent can be set concurrently, thus cannot be part of the
   // _misc_flags.
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
@@ -211,8 +213,6 @@ class InstanceKlass: public Klass {
   u2              _minor_version;        // minor version number of class file
   u2              _major_version;        // major version number of class file
   Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recusive initialization)
-  int             _vtable_len;           // length of Java vtable (in words)
-  int             _itable_len;           // length of Java itable (in words)
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   MemberNameTable* _member_names;        // Member names
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
@@ -310,10 +310,6 @@ class InstanceKlass: public Klass {
 
   int static_oop_field_count() const       { return (int)_static_oop_field_count; }
   void set_static_oop_field_count(u2 size) { _static_oop_field_count = size; }
-
-  // Java vtable
-  int  vtable_length() const               { return _vtable_len; }
-  void set_vtable_length(int len)          { _vtable_len = len; }
 
   // Java itable
   int  itable_length() const               { return _itable_len; }
@@ -927,19 +923,17 @@ public:
   }
 
   // Sizing (in words)
-  static int header_size()            { return align_object_offset(sizeof(InstanceKlass)/HeapWordSize); }
+  static int header_size()            { return sizeof(InstanceKlass)/wordSize; }
 
   static int size(int vtable_length, int itable_length,
                   int nonstatic_oop_map_size,
                   bool is_interface, bool is_anonymous) {
-    return align_object_size(header_size() +
-           align_object_offset(vtable_length) +
-           align_object_offset(itable_length) +
-           ((is_interface || is_anonymous) ?
-             align_object_offset(nonstatic_oop_map_size) :
-             nonstatic_oop_map_size) +
-           (is_interface ? (int)sizeof(Klass*)/HeapWordSize : 0) +
-           (is_anonymous ? (int)sizeof(Klass*)/HeapWordSize : 0));
+    return align_metadata_size(header_size() +
+           vtable_length +
+           itable_length +
+           nonstatic_oop_map_size +
+           (is_interface ? (int)sizeof(Klass*)/wordSize : 0) +
+           (is_anonymous ? (int)sizeof(Klass*)/wordSize : 0));
   }
   int size() const                    { return size(vtable_length(),
                                                itable_length(),
@@ -951,19 +945,15 @@ public:
   virtual void collect_statistics(KlassSizeStats *sz) const;
 #endif
 
-  static int vtable_start_offset()    { return header_size(); }
-  static int vtable_length_offset()   { return offset_of(InstanceKlass, _vtable_len) / HeapWordSize; }
+  intptr_t* start_of_itable()   const { return (intptr_t*)start_of_vtable() + vtable_length(); }
+  intptr_t* end_of_itable()     const { return start_of_itable() + itable_length(); }
 
-  intptr_t* start_of_vtable() const        { return ((intptr_t*)this) + vtable_start_offset(); }
-  intptr_t* start_of_itable() const        { return start_of_vtable() + align_object_offset(vtable_length()); }
   int  itable_offset_in_words() const { return start_of_itable() - (intptr_t*)this; }
-
-  intptr_t* end_of_itable() const          { return start_of_itable() + itable_length(); }
 
   address static_field_addr(int offset);
 
   OopMapBlock* start_of_nonstatic_oop_maps() const {
-    return (OopMapBlock*)(start_of_itable() + align_object_offset(itable_length()));
+    return (OopMapBlock*)(start_of_itable() + itable_length());
   }
 
   Klass** end_of_nonstatic_oop_maps() const {
@@ -1007,9 +997,7 @@ public:
     return !layout_helper_needs_slow_path(layout_helper());
   }
 
-  // Java vtable/itable
-  klassVtable* vtable() const;        // return new klassVtable wrapper
-  inline Method* method_at_vtable(int index);
+  // Java itable
   klassItable* itable() const;        // return new klassItable wrapper
   Method* method_at_itable(Klass* holder, int index, TRAPS);
 
@@ -1052,7 +1040,7 @@ public:
   void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
   // Parallel Compact
   void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
-  void oop_pc_update_pointers(oop obj);
+  void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);
 #endif
 
   // Oop fields (and metadata) iterators
@@ -1257,18 +1245,10 @@ public:
   void verify_on(outputStream* st);
 
   void oop_verify_on(oop obj, outputStream* st);
-};
 
-inline Method* InstanceKlass::method_at_vtable(int index)  {
-#ifndef PRODUCT
-  assert(index >= 0, "valid vtable index");
-  if (DebugVtables) {
-    verify_vtable_index(index);
-  }
-#endif
-  vtableEntry* ve = (vtableEntry*)start_of_vtable();
-  return ve[index].method();
-}
+  // Logging
+  void print_loading_log(LogLevel::type type, ClassLoaderData* loader_data, const ClassFileStream* cfs) const;
+};
 
 // for adding methods
 // UNSET_IDNUM return means no more ids available

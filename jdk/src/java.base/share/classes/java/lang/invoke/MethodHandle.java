@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1026,6 +1026,9 @@ MethodHandle longsToString = publicLookup()
   .asCollector(long[].class, 1);
 assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      * @param arrayType often {@code Object[]}, the type of the array argument which will collect the arguments
      * @param arrayLength the number of arguments to collect into a new array argument
      * @return a new method handle which collects some trailing argument
@@ -1067,6 +1070,9 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
     swWrite4.invoke('W', 'X', 'Y', 'Z', 3, 1);
     assertEquals("BCPQRSZ", swr.toString());
      * }</pre></blockquote>
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      * @param collectArgPos the zero-based position in the parameter list at which to start collecting.
      * @param arrayType often {@code Object[]}, the type of the array argument which will collect the arguments
      * @param arrayLength the number of arguments to collect into a new array argument
@@ -1356,8 +1362,11 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      * The reference {@code x} must be convertible to the first parameter
      * type of the target.
      * <p>
-     * (<em>Note:</em>  Because method handles are immutable, the target method handle
-     * retains its original type and behavior.)
+     * <em>Note:</em>  Because method handles are immutable, the target method handle
+     * retains its original type and behavior.
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original target method handle was.
      * @param x  the value to bind to the first argument of the target
      * @return a new method handle which prepends the given value to the incoming
      *         argument list, before calling the original method handle

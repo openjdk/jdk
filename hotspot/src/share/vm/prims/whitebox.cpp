@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,9 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/concurrentMark.hpp"
 #include "gc/g1/concurrentMarkThread.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/adjoiningGenerations.hpp"
@@ -565,14 +565,15 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(method_id));
 
   DirectiveSet* directive;
+  AbstractCompiler* comp = CompileBroker::compiler((int)compLevel);
   if (compilation_context != NULL) {
     compilation_context_id = reflected_method_to_jmid(thread, env, compilation_context);
     CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
     methodHandle cch(THREAD, Method::checked_resolve_jmethod_id(compilation_context_id));
-    directive = DirectivesStack::getMatchingDirective(cch, CompileBroker::compiler((int)compLevel));
+    directive = DirectivesStack::getMatchingDirective(cch, comp);
   } else {
     // Calling with NULL matches default directive
-    directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler((int)compLevel));
+    directive = DirectivesStack::getDefaultDirective(comp);
   }
   bool result = CompileBroker::compiler(compLevel)->is_intrinsic_available(mh, directive);
   DirectivesStack::release(directive);
@@ -1095,6 +1096,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
 
   CodeBlobStub stub(code);
   jobjectArray codeBlob = codeBlob2objectArray(thread, env, &stub);
+  CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 0, codeBlob);
 
   jobject level = integerBox(thread, env, code->comp_level());
@@ -1180,6 +1182,7 @@ WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_t
   for (GrowableArrayIterator<CodeBlobStub*> it = blobs.begin();
        it != blobs.end(); ++it) {
     jobjectArray obj = codeBlob2objectArray(thread, env, *it);
+    CHECK_JNI_EXCEPTION_(env, NULL);
     env->SetObjectArrayElement(result, i, obj);
     ++i;
   }
@@ -1407,7 +1410,7 @@ int WhiteBox::offset_for_field(const char* field_name, oop object,
   if (res == NULL) {
     tty->print_cr("Invalid layout of %s at %s", ik->external_name(),
         name_symbol->as_C_string());
-    vm_exit_during_initialization("Invalid layout of preloaded class: use -XX:+TraceClassLoading to see the origin of the problem class");
+    vm_exit_during_initialization("Invalid layout of preloaded class: use -Xlog:classload=info to see the origin of the problem class");
   }
 
   //fetch the field at the offset we've found

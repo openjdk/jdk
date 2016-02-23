@@ -23,7 +23,6 @@
 package jdk.vm.ci.meta;
 
 import java.lang.annotation.Annotation;
-import java.net.URL;
 
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 
@@ -33,17 +32,6 @@ import jdk.vm.ci.meta.Assumptions.AssumptionResult;
  * .
  */
 public interface ResolvedJavaType extends JavaType, ModifiersProvider {
-    /**
-     * Gets the runtime representation of the Java class object of this type.
-     */
-    JavaConstant getJavaClass();
-
-    /**
-     * Gets the runtime representation of the "hub" of this type--that is, the closest part of the
-     * type representation which is typically stored in the object header.
-     */
-    Constant getObjectHub();
-
     /**
      * Checks whether this type has a finalizer method.
      *
@@ -317,11 +305,6 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider {
      * Returns name of source file of this type.
      */
     String getSourceFileName();
-
-    /**
-     * Returns the class file path - if available - of this type, or {@code null}.
-     */
-    URL getClassFilePath();
 
     /**
      * Returns {@code true} if the type is a local type.

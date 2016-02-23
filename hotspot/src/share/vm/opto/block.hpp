@@ -499,6 +499,7 @@ class PhaseCFG : public Phase {
   void convert_NeverBranch_to_Goto(Block *b);
 
   CFGLoop* create_loop_tree();
+  bool is_dominator(Node* dom_node, Node* node);
 
   #ifndef PRODUCT
   bool _trace_opto_pipelining;  // tracing flag

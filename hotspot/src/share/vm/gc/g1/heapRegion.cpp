@@ -143,6 +143,7 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
   // The cast to int is safe, given that we've bounded region_size by
   // MIN_REGION_SIZE and MAX_REGION_SIZE.
   GrainBytes = region_size;
+  log_info(gc, heap)("Heap region size: " SIZE_FORMAT "M", GrainBytes / M);
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
@@ -153,7 +154,7 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
 }
 
 void HeapRegion::reset_after_compaction() {
-  G1OffsetTableContigSpace::reset_after_compaction();
+  G1ContiguousSpace::reset_after_compaction();
   // After a compaction the mark bitmap is invalid, so we must
   // treat all objects as being inside the unmarked area.
   zero_marked_bytes();
@@ -183,7 +184,6 @@ void HeapRegion::hr_clear(bool par, bool clear_space, bool locked) {
   }
   zero_marked_bytes();
 
-  _offsets.resize(HeapRegion::GrainWords);
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
@@ -219,7 +219,7 @@ void HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
-  _offsets.set_for_starts_humongous(obj_top, fill_size);
+  _bot_part.set_for_starts_humongous(obj_top, fill_size);
 }
 
 void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
@@ -239,9 +239,9 @@ void HeapRegion::clear_humongous() {
 }
 
 HeapRegion::HeapRegion(uint hrm_index,
-                       G1BlockOffsetSharedArray* sharedOffsetArray,
+                       G1BlockOffsetTable* bot,
                        MemRegion mr) :
-    G1OffsetTableContigSpace(sharedOffsetArray, mr),
+    G1ContiguousSpace(bot),
     _hrm_index(hrm_index),
     _allocation_context(AllocationContext::system()),
     _humongous_start_region(NULL),
@@ -257,7 +257,7 @@ HeapRegion::HeapRegion(uint hrm_index,
     _rem_set(NULL), _recorded_rs_length(0), _predicted_elapsed_time_ms(0),
     _predicted_bytes_to_copy(0)
 {
-  _rem_set = new HeapRegionRemSet(sharedOffsetArray, this);
+  _rem_set = new HeapRegionRemSet(bot, this);
 
   initialize(mr);
 }
@@ -265,7 +265,7 @@ HeapRegion::HeapRegion(uint hrm_index,
 void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
   assert(_rem_set->is_empty(), "Remembered set must be empty");
 
-  G1OffsetTableContigSpace::initialize(mr, clear_space, mangle_space);
+  G1ContiguousSpace::initialize(mr, clear_space, mangle_space);
 
   hr_clear(false /*par*/, false /*clear_space*/);
   set_top(bottom());
@@ -600,8 +600,8 @@ void HeapRegion::print_on(outputStream* st) const {
                p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()));
 }
 
-class VerifyLiveClosure: public OopClosure {
-private:
+class G1VerificationClosure : public OopClosure {
+protected:
   G1CollectedHeap* _g1h;
   CardTableModRefBS* _bs;
   oop _containing_obj;
@@ -612,10 +612,10 @@ public:
   // _vo == UsePrevMarking -> use "prev" marking information,
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseMarkWord    -> use mark word from object header.
-  VerifyLiveClosure(G1CollectedHeap* g1h, VerifyOption vo) :
+  G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
     _g1h(g1h), _bs(barrier_set_cast<CardTableModRefBS>(g1h->barrier_set())),
-    _containing_obj(NULL), _failures(false), _n_failures(0), _vo(vo)
-  { }
+    _containing_obj(NULL), _failures(false), _n_failures(0), _vo(vo) {
+  }
 
   void set_containing_obj(oop obj) {
     _containing_obj = obj;
@@ -623,9 +623,6 @@ public:
 
   bool failures() { return _failures; }
   int n_failures() { return _n_failures; }
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
 
   void print_object(outputStream* out, oop obj) {
 #ifdef PRODUCT
@@ -636,12 +633,24 @@ public:
     obj->print_on(out);
 #endif // PRODUCT
   }
+};
+
+class VerifyLiveClosure : public G1VerificationClosure {
+public:
+  VerifyLiveClosure(G1CollectedHeap* g1h, VerifyOption vo) : G1VerificationClosure(g1h, vo) {}
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p) { do_oop_work(p); }
 
   template <class T>
   void do_oop_work(T* p) {
     assert(_containing_obj != NULL, "Precondition");
     assert(!_g1h->is_obj_dead_cond(_containing_obj, _vo),
-           "Precondition");
+      "Precondition");
+    verify_liveness(p);
+  }
+
+  template <class T>
+  void verify_liveness(T* p) {
     T heap_oop = oopDesc::load_heap_oop(p);
     LogHandle(gc, verify) log;
     if (!oopDesc::is_null(heap_oop)) {
@@ -649,7 +658,7 @@ public:
       bool failed = false;
       if (!_g1h->is_in_closed_subset(obj) || _g1h->is_obj_dead_cond(obj, _vo)) {
         MutexLockerEx x(ParGCRareEvent_lock,
-                        Mutex::_no_safepoint_check_flag);
+          Mutex::_no_safepoint_check_flag);
 
         if (!_failures) {
           log.info("----------");
@@ -658,17 +667,17 @@ public:
         if (!_g1h->is_in_closed_subset(obj)) {
           HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
           log.info("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region [" PTR_FORMAT ", " PTR_FORMAT ")",
-                   p2i(p), p2i(_containing_obj), p2i(from->bottom()), p2i(from->end()));
+            p2i(p), p2i(_containing_obj), p2i(from->bottom()), p2i(from->end()));
           print_object(log.info_stream(), _containing_obj);
           log.info("points to obj " PTR_FORMAT " not in the heap", p2i(obj));
         } else {
           HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
-          HeapRegion* to   = _g1h->heap_region_containing((HeapWord*)obj);
+          HeapRegion* to = _g1h->heap_region_containing((HeapWord*)obj);
           log.info("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region [" PTR_FORMAT ", " PTR_FORMAT ")",
-                   p2i(p), p2i(_containing_obj), p2i(from->bottom()), p2i(from->end()));
+            p2i(p), p2i(_containing_obj), p2i(from->bottom()), p2i(from->end()));
           print_object(log.info_stream(), _containing_obj);
           log.info("points to dead obj " PTR_FORMAT " in region [" PTR_FORMAT ", " PTR_FORMAT ")",
-                   p2i(obj), p2i(to->bottom()), p2i(to->end()));
+            p2i(obj), p2i(to->bottom()), p2i(to->end()));
           print_object(log.info_stream(), obj);
         }
         log.info("----------");
@@ -676,42 +685,64 @@ public:
         failed = true;
         _n_failures++;
       }
+    }
+  }
+};
 
-      if (!_g1h->collector_state()->full_collection() || G1VerifyRSetsDuringFullGC) {
-        HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
-        HeapRegion* to   = _g1h->heap_region_containing(obj);
-        if (from != NULL && to != NULL &&
-            from != to &&
-            !to->is_pinned()) {
-          jbyte cv_obj = *_bs->byte_for_const(_containing_obj);
-          jbyte cv_field = *_bs->byte_for_const(p);
-          const jbyte dirty = CardTableModRefBS::dirty_card_val();
+class VerifyRemSetClosure : public G1VerificationClosure {
+public:
+  VerifyRemSetClosure(G1CollectedHeap* g1h, VerifyOption vo) : G1VerificationClosure(g1h, vo) {}
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p) { do_oop_work(p); }
 
-          bool is_bad = !(from->is_young()
-                          || to->rem_set()->contains_reference(p)
-                          || !G1HRRSFlushLogBuffersOnVerify && // buffers were not flushed
-                              (_containing_obj->is_objArray() ?
-                                  cv_field == dirty
-                               : cv_obj == dirty || cv_field == dirty));
-          if (is_bad) {
-            MutexLockerEx x(ParGCRareEvent_lock,
-                            Mutex::_no_safepoint_check_flag);
+  template <class T>
+  void do_oop_work(T* p) {
+    assert(_containing_obj != NULL, "Precondition");
+    assert(!_g1h->is_obj_dead_cond(_containing_obj, _vo),
+      "Precondition");
+    verify_remembered_set(p);
+  }
 
-            if (!_failures) {
-              log.info("----------");
-            }
-            log.info("Missing rem set entry:");
-            log.info("Field " PTR_FORMAT " of obj " PTR_FORMAT ", in region " HR_FORMAT,
-                     p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
-            ResourceMark rm;
-            _containing_obj->print_on(log.info_stream());
-            log.info("points to obj " PTR_FORMAT " in region " HR_FORMAT, p2i(obj), HR_FORMAT_PARAMS(to));
-            obj->print_on(log.info_stream());
-            log.info("Obj head CTE = %d, field CTE = %d.", cv_obj, cv_field);
+  template <class T>
+  void verify_remembered_set(T* p) {
+    T heap_oop = oopDesc::load_heap_oop(p);
+    LogHandle(gc, verify) log;
+    if (!oopDesc::is_null(heap_oop)) {
+      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+      bool failed = false;
+      HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
+      HeapRegion* to = _g1h->heap_region_containing(obj);
+      if (from != NULL && to != NULL &&
+        from != to &&
+        !to->is_pinned()) {
+        jbyte cv_obj = *_bs->byte_for_const(_containing_obj);
+        jbyte cv_field = *_bs->byte_for_const(p);
+        const jbyte dirty = CardTableModRefBS::dirty_card_val();
+
+        bool is_bad = !(from->is_young()
+          || to->rem_set()->contains_reference(p)
+          || !G1HRRSFlushLogBuffersOnVerify && // buffers were not flushed
+          (_containing_obj->is_objArray() ?
+          cv_field == dirty
+          : cv_obj == dirty || cv_field == dirty));
+        if (is_bad) {
+          MutexLockerEx x(ParGCRareEvent_lock,
+            Mutex::_no_safepoint_check_flag);
+
+          if (!_failures) {
             log.info("----------");
-            _failures = true;
-            if (!failed) _n_failures++;
           }
+          log.info("Missing rem set entry:");
+          log.info("Field " PTR_FORMAT " of obj " PTR_FORMAT ", in region " HR_FORMAT,
+            p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
+          ResourceMark rm;
+          _containing_obj->print_on(log.info_stream());
+          log.info("points to obj " PTR_FORMAT " in region " HR_FORMAT, p2i(obj), HR_FORMAT_PARAMS(to));
+          obj->print_on(log.info_stream());
+          log.info("Obj head CTE = %d, field CTE = %d.", cv_obj, cv_field);
+          log.info("----------");
+          _failures = true;
+          if (!failed) _n_failures++;
         }
       }
     }
@@ -728,6 +759,7 @@ void HeapRegion::verify(VerifyOption vo,
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
   VerifyLiveClosure vl_cl(g1, vo);
+  VerifyRemSetClosure vr_cl(g1, vo);
   bool is_region_humongous = is_humongous();
   size_t object_num = 0;
   while (p < top()) {
@@ -753,7 +785,23 @@ void HeapRegion::verify(VerifyOption vo,
           return;
         } else {
           vl_cl.set_containing_obj(obj);
-          obj->oop_iterate_no_header(&vl_cl);
+          if (!g1->collector_state()->full_collection() || G1VerifyRSetsDuringFullGC) {
+            // verify liveness and rem_set
+            vr_cl.set_containing_obj(obj);
+            G1Mux2Closure mux(&vl_cl, &vr_cl);
+            obj->oop_iterate_no_header(&mux);
+
+            if (vr_cl.failures()) {
+              *failures = true;
+            }
+            if (G1MaxVerifyFailures >= 0 &&
+              vr_cl.n_failures() >= G1MaxVerifyFailures) {
+              return;
+            }
+          } else {
+            // verify only liveness
+            obj->oop_iterate_no_header(&vl_cl);
+          }
           if (vl_cl.failures()) {
             *failures = true;
           }
@@ -763,7 +811,7 @@ void HeapRegion::verify(VerifyOption vo,
           }
         }
       } else {
-        log_info(gc, verify)(PTR_FORMAT " no an oop", p2i(obj));
+        log_info(gc, verify)(PTR_FORMAT " not an oop", p2i(obj));
         *failures = true;
         return;
       }
@@ -773,7 +821,7 @@ void HeapRegion::verify(VerifyOption vo,
   }
 
   if (!is_young() && !is_empty()) {
-    _offsets.verify();
+    _bot_part.verify();
   }
 
   if (is_region_humongous) {
@@ -797,7 +845,7 @@ void HeapRegion::verify(VerifyOption vo,
   if (p < the_end) {
     // Look up top
     HeapWord* addr_1 = p;
-    HeapWord* b_start_1 = _offsets.block_start_const(addr_1);
+    HeapWord* b_start_1 = _bot_part.block_start_const(addr_1);
     if (b_start_1 != p) {
       log_info(gc, verify)("BOT look up for top: " PTR_FORMAT " "
                            " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,
@@ -809,7 +857,7 @@ void HeapRegion::verify(VerifyOption vo,
     // Look up top + 1
     HeapWord* addr_2 = p + 1;
     if (addr_2 < the_end) {
-      HeapWord* b_start_2 = _offsets.block_start_const(addr_2);
+      HeapWord* b_start_2 = _bot_part.block_start_const(addr_2);
       if (b_start_2 != p) {
         log_info(gc, verify)("BOT look up for top + 1: " PTR_FORMAT " "
                              " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,
@@ -823,7 +871,7 @@ void HeapRegion::verify(VerifyOption vo,
     size_t diff = pointer_delta(the_end, p) / 2;
     HeapWord* addr_3 = p + diff;
     if (addr_3 < the_end) {
-      HeapWord* b_start_3 = _offsets.block_start_const(addr_3);
+      HeapWord* b_start_3 = _bot_part.block_start_const(addr_3);
       if (b_start_3 != p) {
         log_info(gc, verify)("BOT look up for top + diff: " PTR_FORMAT " "
                              " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,
@@ -835,7 +883,7 @@ void HeapRegion::verify(VerifyOption vo,
 
     // Look up end - 1
     HeapWord* addr_4 = the_end - 1;
-    HeapWord* b_start_4 = _offsets.block_start_const(addr_4);
+    HeapWord* b_start_4 = _bot_part.block_start_const(addr_4);
     if (b_start_4 != p) {
       log_info(gc, verify)("BOT look up for end - 1: " PTR_FORMAT " "
                            " yielded " PTR_FORMAT ", expecting " PTR_FORMAT,
@@ -853,6 +901,46 @@ void HeapRegion::verify() const {
   verify(VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
 }
 
+void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
+  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  *failures = false;
+  HeapWord* p = bottom();
+  HeapWord* prev_p = NULL;
+  VerifyRemSetClosure vr_cl(g1, vo);
+  while (p < top()) {
+    oop obj = oop(p);
+    size_t obj_size = block_size(p);
+
+    if (!g1->is_obj_dead_cond(obj, this, vo)) {
+      if (obj->is_oop()) {
+        vr_cl.set_containing_obj(obj);
+        obj->oop_iterate_no_header(&vr_cl);
+
+        if (vr_cl.failures()) {
+          *failures = true;
+        }
+        if (G1MaxVerifyFailures >= 0 &&
+          vr_cl.n_failures() >= G1MaxVerifyFailures) {
+          return;
+        }
+      } else {
+        log_info(gc, verify)(PTR_FORMAT " not an oop", p2i(obj));
+        *failures = true;
+        return;
+      }
+    }
+
+    prev_p = p;
+    p += obj_size;
+  }
+}
+
+void HeapRegion::verify_rem_set() const {
+  bool failures = false;
+  verify_rem_set(VerifyOption_G1UsePrevMarking, &failures);
+  guarantee(!failures, "HeapRegion RemSet verification failed");
+}
+
 void HeapRegion::prepare_for_compaction(CompactPoint* cp) {
   scan_and_forward(this, cp);
 }
@@ -860,52 +948,41 @@ void HeapRegion::prepare_for_compaction(CompactPoint* cp) {
 // G1OffsetTableContigSpace code; copied from space.cpp.  Hope this can go
 // away eventually.
 
-void G1OffsetTableContigSpace::clear(bool mangle_space) {
+void G1ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
   _scan_top = bottom();
   CompactibleSpace::clear(mangle_space);
   reset_bot();
 }
 
-void G1OffsetTableContigSpace::set_bottom(HeapWord* new_bottom) {
-  Space::set_bottom(new_bottom);
-  _offsets.set_bottom(new_bottom);
-}
-
-void G1OffsetTableContigSpace::set_end(HeapWord* new_end) {
-  assert(new_end == _bottom + HeapRegion::GrainWords, "set_end should only ever be set to _bottom + HeapRegion::GrainWords");
-  Space::set_end(new_end);
-  _offsets.resize(new_end - bottom());
-}
-
 #ifndef PRODUCT
-void G1OffsetTableContigSpace::mangle_unused_area() {
+void G1ContiguousSpace::mangle_unused_area() {
   mangle_unused_area_complete();
 }
 
-void G1OffsetTableContigSpace::mangle_unused_area_complete() {
+void G1ContiguousSpace::mangle_unused_area_complete() {
   SpaceMangler::mangle_region(MemRegion(top(), end()));
 }
 #endif
 
-void G1OffsetTableContigSpace::print() const {
+void G1ContiguousSpace::print() const {
   print_short();
   tty->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", "
                 INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-                p2i(bottom()), p2i(top()), p2i(_offsets.threshold()), p2i(end()));
+                p2i(bottom()), p2i(top()), p2i(_bot_part.threshold()), p2i(end()));
 }
 
-HeapWord* G1OffsetTableContigSpace::initialize_threshold() {
-  return _offsets.initialize_threshold();
+HeapWord* G1ContiguousSpace::initialize_threshold() {
+  return _bot_part.initialize_threshold();
 }
 
-HeapWord* G1OffsetTableContigSpace::cross_threshold(HeapWord* start,
+HeapWord* G1ContiguousSpace::cross_threshold(HeapWord* start,
                                                     HeapWord* end) {
-  _offsets.alloc_block(start, end);
-  return _offsets.threshold();
+  _bot_part.alloc_block(start, end);
+  return _bot_part.threshold();
 }
 
-HeapWord* G1OffsetTableContigSpace::scan_top() const {
+HeapWord* G1ContiguousSpace::scan_top() const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   HeapWord* local_top = top();
   OrderAccess::loadload();
@@ -918,7 +995,7 @@ HeapWord* G1OffsetTableContigSpace::scan_top() const {
   }
 }
 
-void G1OffsetTableContigSpace::record_timestamp() {
+void G1ContiguousSpace::record_timestamp() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   unsigned curr_gc_time_stamp = g1h->get_gc_time_stamp();
 
@@ -935,17 +1012,17 @@ void G1OffsetTableContigSpace::record_timestamp() {
   }
 }
 
-void G1OffsetTableContigSpace::record_retained_region() {
+void G1ContiguousSpace::record_retained_region() {
   // scan_top is the maximum address where it's safe for the next gc to
   // scan this region.
   _scan_top = top();
 }
 
-void G1OffsetTableContigSpace::safe_object_iterate(ObjectClosure* blk) {
+void G1ContiguousSpace::safe_object_iterate(ObjectClosure* blk) {
   object_iterate(blk);
 }
 
-void G1OffsetTableContigSpace::object_iterate(ObjectClosure* blk) {
+void G1ContiguousSpace::object_iterate(ObjectClosure* blk) {
   HeapWord* p = bottom();
   while (p < top()) {
     if (block_is_obj(p)) {
@@ -955,17 +1032,14 @@ void G1OffsetTableContigSpace::object_iterate(ObjectClosure* blk) {
   }
 }
 
-G1OffsetTableContigSpace::
-G1OffsetTableContigSpace(G1BlockOffsetSharedArray* sharedOffsetArray,
-                         MemRegion mr) :
-  _offsets(sharedOffsetArray, mr),
+G1ContiguousSpace::G1ContiguousSpace(G1BlockOffsetTable* bot) :
+  _bot_part(bot, this),
   _par_alloc_lock(Mutex::leaf, "OffsetTableContigSpace par alloc lock", true),
   _gc_time_stamp(0)
 {
-  _offsets.set_space(this);
 }
 
-void G1OffsetTableContigSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
+void G1ContiguousSpace::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
   CompactibleSpace::initialize(mr, clear_space, mangle_space);
   _top = bottom();
   _scan_top = bottom();

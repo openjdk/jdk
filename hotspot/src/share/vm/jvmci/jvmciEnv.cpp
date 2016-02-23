@@ -48,16 +48,17 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
 
-JVMCIEnv::JVMCIEnv(CompileTask* task, int system_dictionary_modification_counter) {
-  _task = task;
-  _system_dictionary_modification_counter = system_dictionary_modification_counter;
-  {
-    // Get Jvmti capabilities under lock to get consistent values.
-    MutexLocker mu(JvmtiThreadState_lock);
-    _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint();
-    _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables();
-    _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions();
-  }
+JVMCIEnv::JVMCIEnv(CompileTask* task, int system_dictionary_modification_counter):
+  _task(task),
+  _system_dictionary_modification_counter(system_dictionary_modification_counter),
+  _failure_reason(NULL),
+  _retryable(true)
+{
+  // Get Jvmti capabilities under lock to get consistent values.
+  MutexLocker mu(JvmtiThreadState_lock);
+  _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint();
+  _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables();
+  _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions();
 }
 
 // ------------------------------------------------------------------
@@ -534,7 +535,9 @@ JVMCIEnv::CodeInstallResult JVMCIEnv::register_method(
         // Record successful registration.
         // (Put nm into the task handle *before* publishing to the Java heap.)
         CompileTask* task = env == NULL ? NULL : env->task();
-        if (task != NULL)  task->set_code(nm);
+        if (task != NULL) {
+          task->set_code(nm);
+        }
 
         if (installed_code->is_a(HotSpotNmethod::klass()) && HotSpotNmethod::isDefault(installed_code())) {
           if (entry_bci == InvocationEntryBci) {

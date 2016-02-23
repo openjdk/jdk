@@ -27,7 +27,8 @@
  * @ignore 8140405
  * @summary Tests jcmd to be able to clear directives added via options
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
- * @build ClearDirectivesFileStackTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
+ * @build compiler.compilercontrol.jcmd.ClearDirectivesFileStackTest
+ *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

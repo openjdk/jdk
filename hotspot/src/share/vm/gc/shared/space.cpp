@@ -208,9 +208,9 @@ HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
   return top;
 }
 
-void Filtering_DCTOC::walk_mem_region(MemRegion mr,
-                                      HeapWord* bottom,
-                                      HeapWord* top) {
+void FilteringDCTOC::walk_mem_region(MemRegion mr,
+                                     HeapWord* bottom,
+                                     HeapWord* top) {
   // Note that this assumption won't hold if we have a concurrent
   // collector in this space, which may have freed up objects after
   // they were dirtied and before the stop-the-world GC that is

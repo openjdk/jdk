@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
-#include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/referenceProcessor.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.inline.hpp"
@@ -119,7 +119,6 @@ ReferenceProcessor::ReferenceProcessor(MemRegion span,
   _discoveredWeakRefs    = &_discoveredSoftRefs[_max_num_q];
   _discoveredFinalRefs   = &_discoveredWeakRefs[_max_num_q];
   _discoveredPhantomRefs = &_discoveredFinalRefs[_max_num_q];
-  _discoveredCleanerRefs = &_discoveredPhantomRefs[_max_num_q];
 
   // Initialize all entries to NULL
   for (uint i = 0; i < _max_num_q * number_of_subclasses_of_ref(); i++) {
@@ -208,14 +207,11 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
 
   _soft_ref_timestamp_clock = java_lang_ref_SoftReference::clock();
 
-  // Include cleaners in phantom statistics.  We expect Cleaner
-  // references to be temporary, and don't want to deal with
-  // possible incompatibilities arising from making it more visible.
   ReferenceProcessorStats stats(
       total_count(_discoveredSoftRefs),
       total_count(_discoveredWeakRefs),
       total_count(_discoveredFinalRefs),
-      total_count(_discoveredPhantomRefs) + total_count(_discoveredCleanerRefs));
+      total_count(_discoveredPhantomRefs));
 
   // Soft references
   {
@@ -245,12 +241,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
     GCTraceTime(Debug, gc, ref) tt("PhantomReference", gc_timer);
     process_discovered_reflist(_discoveredPhantomRefs, NULL, true,
                                is_alive, keep_alive, complete_gc, task_executor);
-
-    // Process cleaners, but include them in phantom timing.  We expect
-    // Cleaner references to be temporary, and don't want to deal with
-    // possible incompatibilities arising from making it more visible.
-    process_discovered_reflist(_discoveredCleanerRefs, NULL, true,
-                                 is_alive, keep_alive, complete_gc, task_executor);
   }
 
   // Weak global JNI references. It would make more sense (semantically) to
@@ -807,7 +797,6 @@ void ReferenceProcessor::balance_all_queues() {
   balance_queues(_discoveredWeakRefs);
   balance_queues(_discoveredFinalRefs);
   balance_queues(_discoveredPhantomRefs);
-  balance_queues(_discoveredCleanerRefs);
 }
 
 void ReferenceProcessor::process_discovered_reflist(
@@ -911,9 +900,6 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
       break;
     case REF_PHANTOM:
       list = &_discoveredPhantomRefs[id];
-      break;
-    case REF_CLEANER:
-      list = &_discoveredCleanerRefs[id];
       break;
     case REF_NONE:
       // we should not reach here if we are an InstanceRefKlass
@@ -1162,17 +1148,6 @@ void ReferenceProcessor::preclean_discovered_references(
       preclean_discovered_reflist(_discoveredPhantomRefs[i], is_alive,
                                   keep_alive, complete_gc, yield);
     }
-
-    // Cleaner references.  Included in timing for phantom references.  We
-    // expect Cleaner references to be temporary, and don't want to deal with
-    // possible incompatibilities arising from making it more visible.
-    for (uint i = 0; i < _max_num_q; i++) {
-      if (yield->should_return()) {
-        return;
-      }
-      preclean_discovered_reflist(_discoveredCleanerRefs[i], is_alive,
-                                  keep_alive, complete_gc, yield);
-    }
   }
 }
 
@@ -1238,7 +1213,6 @@ const char* ReferenceProcessor::list_name(uint i) {
      case 1: return "WeakRef";
      case 2: return "FinalRef";
      case 3: return "PhantomRef";
-     case 4: return "CleanerRef";
    }
    ShouldNotReachHere();
    return NULL;

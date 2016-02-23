@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvm_misc.hpp"
@@ -577,15 +578,14 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
         }
       }
     }
-    if (TraceClassLoading || TraceClassPaths) {
+    if (TraceClassPaths) {
       tty->print_cr("[Opened %s]", path);
     }
+    log_info(classload)("opened: %s", path);
   } else {
     // Directory
     new_entry = new ClassPathDirEntry(path);
-    if (TraceClassLoading) {
-      tty->print_cr("[Path %s]", path);
-    }
+    log_info(classload)("path: %s", path);
   }
   return new_entry;
 }

@@ -1748,7 +1748,7 @@ static void save_or_restore_arguments(MacroAssembler* masm,
 }
 
 
-// Check GC_locker::needs_gc and enter the runtime if it's true.  This
+// Check GCLocker::needs_gc and enter the runtime if it's true.  This
 // keeps a new JNI critical region from starting until a GC has been
 // forced.  Save down any oops in registers and describe them in an
 // OopMap.
@@ -1759,9 +1759,9 @@ static void check_needs_gc_for_critical_native(MacroAssembler* masm,
                                                OopMapSet* oop_maps,
                                                VMRegPair* in_regs,
                                                BasicType* in_sig_bt) {
-  __ block_comment("check GC_locker::needs_gc");
+  __ block_comment("check GCLocker::needs_gc");
   Label cont;
-  AddressLiteral sync_state(GC_locker::needs_gc_address());
+  AddressLiteral sync_state(GCLocker::needs_gc_address());
   __ load_bool_contents(sync_state, G3_scratch);
   __ cmp_zero_and_br(Assembler::equal, G3_scratch, cont);
   __ delayed()->nop();
@@ -1936,14 +1936,14 @@ static void gen_special_dispatch(MacroAssembler* masm,
 // GetPrimtiveArrayCritical and disallow the use of any other JNI
 // functions.  The wrapper is expected to unpack the arguments before
 // passing them to the callee and perform checks before and after the
-// native call to ensure that they GC_locker
+// native call to ensure that they GCLocker
 // lock_critical/unlock_critical semantics are followed.  Some other
 // parts of JNI setup are skipped like the tear down of the JNI handle
 // block and the check for pending exceptions it's impossible for them
 // to be thrown.
 //
 // They are roughly structured like this:
-//    if (GC_locker::needs_gc())
+//    if (GCLocker::needs_gc())
 //      SharedRuntime::block_for_jni_critical();
 //    tranistion to thread_in_native
 //    unpack arrray arguments and call native entry point

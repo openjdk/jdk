@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,10 @@ class BoundTest {
 
 class BoundWithValue {
     void wcExtends(MyList<? extends @WldB("m") String> l) { }
-    void wcSuper(MyList<? super @WldB(value="m") String> l) { }
+    void wcSuper(MyList<? super @WldB("m") String> l) { }
 
     MyList<? extends @WldB("m") String> returnWcExtends() { return null; }
-    MyList<? super @WldB(value="m") String> returnWcSuper() { return null; }
+    MyList<? super @WldB("m") String> returnWcSuper() { return null; }
     MyList<? extends @WldB("m") MyList<? super @WldB("m") String>> complex() { return null; }
 }
 
@@ -57,10 +57,10 @@ class SelfTest {
 
 class SelfWithValue {
     void wcExtends(MyList<@WldB("m") ?> l) { }
-    void wcSuper(MyList<@WldB(value="m") ?> l) { }
+    void wcSuper(MyList<@WldB("m") ?> l) { }
 
     MyList<@WldB("m") ?> returnWcExtends() { return null; }
-    MyList<@WldB(value="m") ?> returnWcSuper() { return null; }
+    MyList<@WldB("m") ?> returnWcSuper() { return null; }
     MyList<@WldB("m") ? extends MyList<@WldB("m") ? super String>> complex() { return null; }
 }
 

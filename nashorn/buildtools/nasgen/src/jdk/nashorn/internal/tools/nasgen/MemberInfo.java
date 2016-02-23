@@ -28,6 +28,8 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJECT_ARRAY_DES
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJECT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTOBJECT_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.STRING_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.TYPE_SYMBOL;
+
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.nashorn.internal.objects.annotations.Where;
@@ -466,11 +468,10 @@ public final class MemberInfo implements Cloneable {
         switch (type.getSort()) {
             case Type.BOOLEAN:
             case Type.INT:
-            case Type.LONG:
             case Type.DOUBLE:
                 return true;
             default:
-                return false;
+                return type != TYPE_SYMBOL;
         }
     }
 

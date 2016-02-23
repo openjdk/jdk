@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,9 @@ protected:
 
 public:
 
-  HeapRegion* hr() const { return _hr; }
+  HeapRegion* hr() const {
+    return (HeapRegion*) OrderAccess::load_ptr_acquire(&_hr);
+  }
 
   jint occupied() const {
     // Overkill, but if we ever need it...
@@ -123,10 +125,12 @@ public:
       set_next(NULL);
       set_prev(NULL);
     }
-    _hr = hr;
     _collision_list_next = NULL;
     _occupied = 0;
     _bm.clear();
+    // Make sure that the bitmap clearing above has been finished before publishing
+    // this PRT to concurrent threads.
+    OrderAccess::release_store_ptr(&_hr, hr);
   }
 
   void add_reference(OopOrNarrowOopStar from) {
@@ -357,7 +361,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   int from_card = (int)(uintptr_t(from) >> CardTableModRefBS::card_shift);
 
   if (G1FromCardCache::contains_or_replace(tid, cur_hrm_ind, from_card)) {
-    assert(contains_reference(from), "We just added it!");
+    assert(contains_reference(from), "We just found " PTR_FORMAT " in the FromCardCache", p2i(from));
     return;
   }
 
@@ -367,7 +371,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
 
   // If the region is already coarsened, return.
   if (_coarse_map.at(from_hrm_ind)) {
-    assert(contains_reference(from), "We just added it!");
+    assert(contains_reference(from), "We just found " PTR_FORMAT " in the Coarse table", p2i(from));
     return;
   }
 
@@ -388,7 +392,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
              "Must be in range.");
       if (G1HRRSUseSparseTable &&
           _sparse_table.add_card(from_hrm_ind, card_index)) {
-        assert(contains_reference_locked(from), "We just added it!");
+        assert(contains_reference_locked(from), "We just added " PTR_FORMAT " to the Sparse table", p2i(from));
         return;
       }
 
@@ -438,7 +442,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   assert(prt != NULL, "Inv");
 
   prt->add_reference(from);
-  assert(contains_reference(from), "We just added it!");
+  assert(contains_reference(from), "We just added " PTR_FORMAT " to the PRT", p2i(from));
 }
 
 PerRegionTable*
@@ -687,9 +691,9 @@ OtherRegionsTable::do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task) {
   _sparse_table.do_cleanup_work(hrrs_cleanup_task);
 }
 
-HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
+HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetTable* bot,
                                    HeapRegion* hr)
-  : _bosa(bosa),
+  : _bot(bot),
     _m(Mutex::leaf, FormatBuffer<128>("HeapRegionRemSet lock #%u", hr->hrm_index()), true, Monitor::_safepoint_check_never),
     _code_roots(), _other_regions(hr, &_m), _iter_state(Unclaimed), _iter_claimed(0) {
   reset_for_par_iteration();
@@ -728,8 +732,7 @@ void HeapRegionRemSet::print() {
   HeapRegionRemSetIterator iter(this);
   size_t card_index;
   while (iter.has_next(card_index)) {
-    HeapWord* card_start =
-      G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
+    HeapWord* card_start = _bot->address_for_index(card_index);
     tty->print_cr("  Card " PTR_FORMAT, p2i(card_start));
   }
   if (iter.n_yielded() != occupied()) {
@@ -786,6 +789,9 @@ void HeapRegionRemSet::scrub(CardTableModRefBS* ctbs,
 
 void HeapRegionRemSet::add_strong_code_root(nmethod* nm) {
   assert(nm != NULL, "sanity");
+  assert((!CodeCache_lock->owned_by_self() || SafepointSynchronize::is_at_safepoint()),
+          "should call add_strong_code_root_locked instead. CodeCache_lock->owned_by_self(): %s, is_at_safepoint(): %s",
+          BOOL_TO_STR(CodeCache_lock->owned_by_self()), BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()));
   // Optimistic unlocked contains-check
   if (!_code_roots.contains(nm)) {
     MutexLockerEx ml(&_m, Mutex::_no_safepoint_check_flag);
@@ -795,6 +801,12 @@ void HeapRegionRemSet::add_strong_code_root(nmethod* nm) {
 
 void HeapRegionRemSet::add_strong_code_root_locked(nmethod* nm) {
   assert(nm != NULL, "sanity");
+  assert((CodeCache_lock->owned_by_self() ||
+         (SafepointSynchronize::is_at_safepoint() &&
+          (_m.owned_by_self() || Thread::current()->is_VM_thread()))),
+          "not safely locked. CodeCache_lock->owned_by_self(): %s, is_at_safepoint(): %s, _m.owned_by_self(): %s, Thread::current()->is_VM_thread(): %s",
+          BOOL_TO_STR(CodeCache_lock->owned_by_self()), BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()),
+          BOOL_TO_STR(_m.owned_by_self()), BOOL_TO_STR(Thread::current()->is_VM_thread()));
   _code_roots.add(nm);
 }
 
@@ -825,7 +837,7 @@ HeapRegionRemSetIterator:: HeapRegionRemSetIterator(HeapRegionRemSet* hrrs) :
   _hrrs(hrrs),
   _g1h(G1CollectedHeap::heap()),
   _coarse_map(&hrrs->_other_regions._coarse_map),
-  _bosa(hrrs->_bosa),
+  _bot(hrrs->_bot),
   _is(Sparse),
   // Set these values so that we increment to the first region.
   _coarse_cur_region_index(-1),
@@ -852,7 +864,7 @@ bool HeapRegionRemSetIterator::coarse_has_next(size_t& card_index) {
       _coarse_cur_region_cur_card = 0;
       HeapWord* r_bot =
         _g1h->region_at((uint) _coarse_cur_region_index)->bottom();
-      _cur_region_card_offset = _bosa->index_for(r_bot);
+      _cur_region_card_offset = _bot->index_for(r_bot);
     } else {
       return false;
     }
@@ -893,7 +905,7 @@ void HeapRegionRemSetIterator::switch_to_prt(PerRegionTable* prt) {
   _fine_cur_prt = prt;
 
   HeapWord* r_bot = _fine_cur_prt->hr()->bottom();
-  _cur_region_card_offset = _bosa->index_for(r_bot);
+  _cur_region_card_offset = _bot->index_for(r_bot);
 
   // The bitmap scan for the PRT always scans from _cur_region_cur_card + 1.
   // To avoid special-casing this start case, and not miss the first bitmap
@@ -1001,7 +1013,7 @@ void HeapRegionRemSet::test() {
   size_t card_index;
   while (iter.has_next(card_index)) {
     HeapWord* card_start =
-      G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
+      G1CollectedHeap::heap()->bot()->address_for_index(card_index);
     tty->print_cr("  Card " PTR_FORMAT ".", p2i(card_start));
     sum++;
   }

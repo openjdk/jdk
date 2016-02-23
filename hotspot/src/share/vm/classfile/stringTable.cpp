@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/compactHashtable.inline.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -136,7 +136,7 @@ oop StringTable::basic_add(int index_arg, Handle string, jchar* name,
   assert(java_lang_String::equals(string(), name, len),
          "string must be properly initialized");
   // Cannot hit a safepoint in this function because the "this" pointer can move.
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
 
   // Check if the symbol table has been rehashed, if so, need to recalculate
   // the hash value and index before second lookup.
@@ -737,7 +737,7 @@ bool StringTable::copy_compact_table(char** top, char *end, GrowableArray<MemReg
     return false;
   }
   ch_table.dump(top, end);
-  *top = (char*)align_pointer_up(*top, sizeof(void*));
+  *top = (char*)align_ptr_up(*top, sizeof(void*));
 
 #endif
   return true;
@@ -760,7 +760,7 @@ const char* StringTable::init_shared_table(FileMapInfo *mapinfo, char *buffer) {
   juint *p = (juint*)buffer;
   const char* end = _shared_table.init(
           CompactHashtable<oop, char>::_string_table, (char*)p);
-  const char* aligned_end = (const char*)align_pointer_up(end, sizeof(void*));
+  const char* aligned_end = (const char*)align_ptr_up(end, sizeof(void*));
 
   if (_ignore_shared_strings) {
     _shared_table.reset();

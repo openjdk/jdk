@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,11 +232,17 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
    const char* runtime_name = JDK_Version::runtime_name() != NULL ?
                                 JDK_Version::runtime_name() : "";
    const char* runtime_version = JDK_Version::runtime_version() != NULL ?
-                                JDK_Version::runtime_version() : "";
-   st->print_cr("# JRE version: %s (%s) (build %s)", runtime_name, buf, runtime_version);
+                                   JDK_Version::runtime_version() : "";
+   const char* jdk_debug_level = Abstract_VM_Version::printable_jdk_debug_level() != NULL ?
+                                   Abstract_VM_Version::printable_jdk_debug_level() : "";
+
+   st->print_cr("# JRE version: %s (%s) (%sbuild %s)", runtime_name, buf,
+                 jdk_debug_level, runtime_version);
+
    // This is the long version with some default settings added
-   st->print_cr("# Java VM: %s (%s, %s%s%s%s%s, %s, %s)",
+   st->print_cr("# Java VM: %s (%s%s, %s%s%s%s%s, %s, %s)",
                  Abstract_VM_Version::vm_name(),
+                 jdk_debug_level,
                  Abstract_VM_Version::vm_release(),
                  Abstract_VM_Version::vm_info_string(),
                  TieredCompilation ? ", tiered" : "",
@@ -981,10 +987,12 @@ void VMError::print_vm_info(outputStream* st) {
 volatile intptr_t VMError::first_error_tid = -1;
 
 // An error could happen before tty is initialized or after it has been
-// destroyed. Here we use a very simple unbuffered fdStream for printing.
-// Only out.print_raw() and out.print_raw_cr() should be used, as other
-// printing methods need to allocate large buffer on stack. To format a
-// string, use jio_snprintf() with a static buffer or use staticBufferStream.
+// destroyed.
+// Please note: to prevent large stack allocations, the log- and
+// output-stream use a global scratch buffer for format printing.
+// (see VmError::report_and_die(). Access to those streams is synchronized
+// in  VmError::report_and_die() - there is only one reporting thread at
+// any given time.
 fdStream VMError::out(defaultStream::output_fd());
 fdStream VMError::log; // error log used by VMError::report_and_die()
 
@@ -1094,6 +1102,8 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 {
   // Don't allocate large buffer on stack
   static char buffer[O_BUFLEN];
+  out.set_scratch_buffer(buffer, sizeof(buffer));
+  log.set_scratch_buffer(buffer, sizeof(buffer));
 
   // How many errors occurred in error handler when reporting first_error.
   static int recursive_error_count;
@@ -1180,8 +1190,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
   // print to screen
   if (!out_done) {
-    staticBufferStream sbs(buffer, sizeof(buffer), &out);
-    report(&sbs, false);
+    report(&out, false);
 
     out_done = true;
 
@@ -1209,8 +1218,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       }
     }
 
-    staticBufferStream sbs(buffer, O_BUFLEN, &log);
-    report(&sbs, true);
+    report(&log, true);
     _current_step = 0;
     _current_step_info = "";
 
@@ -1232,38 +1240,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
     log.set_fd(-1);
     log_done = true;
-  }
-
-
-  static bool skip_OnError = false;
-  if (!skip_OnError && OnError && OnError[0]) {
-    skip_OnError = true;
-
-    out.print_raw_cr("#");
-    out.print_raw   ("# -XX:OnError=\"");
-    out.print_raw   (OnError);
-    out.print_raw_cr("\"");
-
-    char* cmd;
-    const char* ptr = OnError;
-    while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != NULL){
-      out.print_raw   ("#   Executing ");
-#if defined(LINUX) || defined(_ALLBSD_SOURCE)
-      out.print_raw   ("/bin/sh -c ");
-#elif defined(SOLARIS)
-      out.print_raw   ("/usr/bin/sh -c ");
-#endif
-      out.print_raw   ("\"");
-      out.print_raw   (cmd);
-      out.print_raw_cr("\" ...");
-
-      if (os::fork_and_exec(cmd) < 0) {
-        out.print_cr("os::fork_and_exec failed: %s (%d)", strerror(errno), errno);
-      }
-    }
-
-    // done with OnError
-    OnError = NULL;
   }
 
   static bool skip_replay = ReplayCompiles; // Do not overwrite file during replay
@@ -1293,6 +1269,40 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
     out.print_raw_cr("#");
     print_bug_submit_message(&out, _thread);
+  }
+
+  static bool skip_OnError = false;
+  if (!skip_OnError && OnError && OnError[0]) {
+    skip_OnError = true;
+
+    // Flush output and finish logs before running OnError commands.
+    ostream_abort();
+
+    out.print_raw_cr("#");
+    out.print_raw   ("# -XX:OnError=\"");
+    out.print_raw   (OnError);
+    out.print_raw_cr("\"");
+
+    char* cmd;
+    const char* ptr = OnError;
+    while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != NULL){
+      out.print_raw   ("#   Executing ");
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
+      out.print_raw   ("/bin/sh -c ");
+#elif defined(SOLARIS)
+      out.print_raw   ("/usr/bin/sh -c ");
+#endif
+      out.print_raw   ("\"");
+      out.print_raw   (cmd);
+      out.print_raw_cr("\" ...");
+
+      if (os::fork_and_exec(cmd) < 0) {
+        out.print_cr("os::fork_and_exec failed: %s (%d)", strerror(errno), errno);
+      }
+    }
+
+    // done with OnError
+    OnError = NULL;
   }
 
   if (!UseOSErrorReporting) {

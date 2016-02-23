@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,18 @@
 #endif
 #undef FAST_DISPATCH
 
+// Size of interpreter code.  Increase if too small.  Interpreter will
+// fail with a guarantee ("not enough space for interpreter generation");
+// if too small.
+// Run with +PrintInterpreter to get the VM to print out the size.
+// Max size with JVMTI
+#ifdef _LP64
+  // The sethi() instruction generates lots more instructions when shell
+  // stack limit is unlimited, so that's why this is much bigger.
+int TemplateInterpreter::InterpreterCodeSize = 260 * K;
+#else
+int TemplateInterpreter::InterpreterCodeSize = 230 * K;
+#endif
 
 // Generation of Interpreter
 //
@@ -63,6 +75,174 @@
 
 //----------------------------------------------------------------------------------------------------
 
+#ifndef _LP64
+address TemplateInterpreterGenerator::generate_slow_signature_handler() {
+  address entry = __ pc();
+  Argument argv(0, true);
+
+  // We are in the jni transition frame. Save the last_java_frame corresponding to the
+  // outer interpreter frame
+  //
+  __ set_last_Java_frame(FP, noreg);
+  // make sure the interpreter frame we've pushed has a valid return pc
+  __ mov(O7, I7);
+  __ mov(Lmethod, G3_scratch);
+  __ mov(Llocals, G4_scratch);
+  __ save_frame(0);
+  __ mov(G2_thread, L7_thread_cache);
+  __ add(argv.address_in_frame(), O3);
+  __ mov(G2_thread, O0);
+  __ mov(G3_scratch, O1);
+  __ call(CAST_FROM_FN_PTR(address, InterpreterRuntime::slow_signature_handler), relocInfo::runtime_call_type);
+  __ delayed()->mov(G4_scratch, O2);
+  __ mov(L7_thread_cache, G2_thread);
+  __ reset_last_Java_frame();
+
+  // load the register arguments (the C code packed them as varargs)
+  for (Argument ldarg = argv.successor(); ldarg.is_register(); ldarg = ldarg.successor()) {
+      __ ld_ptr(ldarg.address_in_frame(), ldarg.as_register());
+  }
+  __ ret();
+  __ delayed()->
+     restore(O0, 0, Lscratch);  // caller's Lscratch gets the result handler
+  return entry;
+}
+
+
+#else
+// LP64 passes floating point arguments in F1, F3, F5, etc. instead of
+// O0, O1, O2 etc..
+// Doubles are passed in D0, D2, D4
+// We store the signature of the first 16 arguments in the first argument
+// slot because it will be overwritten prior to calling the native
+// function, with the pointer to the JNIEnv.
+// If LP64 there can be up to 16 floating point arguments in registers
+// or 6 integer registers.
+address TemplateInterpreterGenerator::generate_slow_signature_handler() {
+
+  enum {
+    non_float  = 0,
+    float_sig  = 1,
+    double_sig = 2,
+    sig_mask   = 3
+  };
+
+  address entry = __ pc();
+  Argument argv(0, true);
+
+  // We are in the jni transition frame. Save the last_java_frame corresponding to the
+  // outer interpreter frame
+  //
+  __ set_last_Java_frame(FP, noreg);
+  // make sure the interpreter frame we've pushed has a valid return pc
+  __ mov(O7, I7);
+  __ mov(Lmethod, G3_scratch);
+  __ mov(Llocals, G4_scratch);
+  __ save_frame(0);
+  __ mov(G2_thread, L7_thread_cache);
+  __ add(argv.address_in_frame(), O3);
+  __ mov(G2_thread, O0);
+  __ mov(G3_scratch, O1);
+  __ call(CAST_FROM_FN_PTR(address, InterpreterRuntime::slow_signature_handler), relocInfo::runtime_call_type);
+  __ delayed()->mov(G4_scratch, O2);
+  __ mov(L7_thread_cache, G2_thread);
+  __ reset_last_Java_frame();
+
+
+  // load the register arguments (the C code packed them as varargs)
+  Address Sig = argv.address_in_frame();        // Argument 0 holds the signature
+  __ ld_ptr( Sig, G3_scratch );                   // Get register argument signature word into G3_scratch
+  __ mov( G3_scratch, G4_scratch);
+  __ srl( G4_scratch, 2, G4_scratch);             // Skip Arg 0
+  Label done;
+  for (Argument ldarg = argv.successor(); ldarg.is_float_register(); ldarg = ldarg.successor()) {
+    Label NonFloatArg;
+    Label LoadFloatArg;
+    Label LoadDoubleArg;
+    Label NextArg;
+    Address a = ldarg.address_in_frame();
+    __ andcc(G4_scratch, sig_mask, G3_scratch);
+    __ br(Assembler::zero, false, Assembler::pt, NonFloatArg);
+    __ delayed()->nop();
+
+    __ cmp(G3_scratch, float_sig );
+    __ br(Assembler::equal, false, Assembler::pt, LoadFloatArg);
+    __ delayed()->nop();
+
+    __ cmp(G3_scratch, double_sig );
+    __ br(Assembler::equal, false, Assembler::pt, LoadDoubleArg);
+    __ delayed()->nop();
+
+    __ bind(NonFloatArg);
+    // There are only 6 integer register arguments!
+    if ( ldarg.is_register() )
+      __ ld_ptr(ldarg.address_in_frame(), ldarg.as_register());
+    else {
+    // Optimization, see if there are any more args and get out prior to checking
+    // all 16 float registers.  My guess is that this is rare.
+    // If is_register is false, then we are done the first six integer args.
+      __ br_null_short(G4_scratch, Assembler::pt, done);
+    }
+    __ ba(NextArg);
+    __ delayed()->srl( G4_scratch, 2, G4_scratch );
+
+    __ bind(LoadFloatArg);
+    __ ldf( FloatRegisterImpl::S, a, ldarg.as_float_register(), 4);
+    __ ba(NextArg);
+    __ delayed()->srl( G4_scratch, 2, G4_scratch );
+
+    __ bind(LoadDoubleArg);
+    __ ldf( FloatRegisterImpl::D, a, ldarg.as_double_register() );
+    __ ba(NextArg);
+    __ delayed()->srl( G4_scratch, 2, G4_scratch );
+
+    __ bind(NextArg);
+
+  }
+
+  __ bind(done);
+  __ ret();
+  __ delayed()->
+     restore(O0, 0, Lscratch);  // caller's Lscratch gets the result handler
+  return entry;
+}
+#endif
+
+void TemplateInterpreterGenerator::generate_counter_overflow(Label& Lcontinue) {
+
+  // Generate code to initiate compilation on the counter overflow.
+
+  // InterpreterRuntime::frequency_counter_overflow takes two arguments,
+  // the first indicates if the counter overflow occurs at a backwards branch (NULL bcp)
+  // and the second is only used when the first is true.  We pass zero for both.
+  // The call returns the address of the verified entry point for the method or NULL
+  // if the compilation did not complete (either went background or bailed out).
+  __ set((int)false, O2);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), O2, O2, true);
+  // returns verified_entry_point or NULL
+  // we ignore it in any case
+  __ ba_short(Lcontinue);
+
+}
+
+
+// End of helpers
+
+// Various method entries
+
+// Abstract method entry
+// Attempt to execute abstract method. Throw exception
+//
+address TemplateInterpreterGenerator::generate_abstract_entry(void) {
+  address entry = __ pc();
+  // abstract method entry
+  // throw exception
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
+  // the call_VM checks for exception, so we should never return here.
+  __ should_not_reach_here();
+  return entry;
+
+}
 
 void TemplateInterpreterGenerator::save_native_result(void) {
   // result potentially in O0/O1: save it across calls
@@ -911,6 +1091,31 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
   return NULL;
 }
+
+// TODO: rather than touching all pages, check against stack_overflow_limit and bang yellow page to
+// generate exception
+void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
+  // Quick & dirty stack overflow checking: bang the stack & handle trap.
+  // Note that we do the banging after the frame is setup, since the exception
+  // handling code expects to find a valid interpreter frame on the stack.
+  // Doing the banging earlier fails if the caller frame is not an interpreter
+  // frame.
+  // (Also, the exception throwing code expects to unlock any synchronized
+  // method receiever, so do the banging after locking the receiver.)
+
+  // Bang each page in the shadow zone. We can't assume it's been done for
+  // an interpreter frame with greater than a page of locals, so each page
+  // needs to be checked.  Only true for non-native.
+  if (UseStackBanging) {
+    const int page_size = os::vm_page_size();
+    const int n_shadow_pages = ((int)JavaThread::stack_shadow_zone_size()) / page_size;
+    const int start_page = native_call ? n_shadow_pages : 1;
+    for (int pages = start_page; pages <= n_shadow_pages; pages++) {
+      __ bang_stack_with_offset(pages*page_size);
+    }
+  }
+}
+
 //
 // Interpreter stub for calling a native method. (asm interpreter)
 // This sets up a somewhat different looking stack for calling the native method
