@@ -3235,10 +3235,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     GCTraceCPUTime tcpu;
 
-    uint active_workers = AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
-                                                                  workers()->active_workers(),
-                                                                  Threads::number_of_non_daemon_threads());
-    workers()->set_active_workers(active_workers);
     FormatBuffer<> gc_string("Pause ");
     if (collector_state()->during_initial_mark_pause()) {
       gc_string.append("Initial Mark");
@@ -3248,6 +3244,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       gc_string.append("Mixed");
     }
     GCTraceTime(Info, gc) tm(gc_string, NULL, gc_cause(), true);
+
+    uint active_workers = AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
+                                                                  workers()->active_workers(),
+                                                                  Threads::number_of_non_daemon_threads());
+    workers()->set_active_workers(active_workers);
 
     g1_policy()->note_gc_start(active_workers);
 
