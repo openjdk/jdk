@@ -776,8 +776,6 @@ define SetupNativeCompilationBody
       $1_EXTRA_LDFLAGS += $(COMPILER_BINDCMD_FILE_FLAG)$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).loadmap
     endif
 
-    $1_EXTRA_LIBS += $(GLOBAL_LIBS)
-
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
         $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_CREATE_DEBUGINFO_CMDS) \
         $$($1_STRIP_CMD)
@@ -854,8 +852,6 @@ define SetupNativeCompilationBody
 
   ifneq (,$$($1_PROGRAM))
     # A executable binary has been specified, setup the target for it.
-    $1_EXTRA_LIBS += $(GLOBAL_LIBS)
-
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
         $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
         $$($1_CODESIGN) $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
