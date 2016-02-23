@@ -225,7 +225,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -export:ZIP_Open -export:ZIP_Close -export:ZIP_FindEntry \
         -export:ZIP_ReadEntry -export:ZIP_GetNextEntry \
-        -export:ZIP_InflateFully, \
+        -export:ZIP_InflateFully -export:ZIP_CRC32, \
     LIBS_unix := -ljvm -ljava $(LIBZ), \
     LIBS_solaris := -lc, \
     LIBS_windows := jvm.lib $(WIN_JAVA_LIB), \
