@@ -129,7 +129,7 @@ class typeArrayOopDesc : public arrayOopDesc {
   Metadata* metadata_at(int which) const {
     return (Metadata*)*long_at_addr(which); }
   void metadata_at_put(int which, Metadata* contents) {
-    *long_at_addr(which) = (long)contents;
+    *long_at_addr(which) = (jlong)contents;
   }
 #else
   Metadata* metadata_at(int which) const {
