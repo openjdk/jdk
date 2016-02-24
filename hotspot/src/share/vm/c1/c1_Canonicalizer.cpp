@@ -239,7 +239,10 @@ void Canonicalizer::do_ArrayLength    (ArrayLength*     x) {
 
   } else if ((ct = x->array()->as_Constant()) != NULL) {
     // Constant arrays have constant lengths.
-    set_constant(ct->type()->as_ArrayConstant()->value()->length());
+    ArrayConstant* cnst = ct->type()->as_ArrayConstant();
+    if (cnst != NULL) {
+      set_constant(cnst->value()->length());
+    }
 
 #ifdef ASSERT
   } else {
