@@ -628,6 +628,7 @@ static void cleanup_sharedmem_resources(const char* dirname) {
 
   if (!is_directory_secure(dirname)) {
     // the directory is not secure, don't attempt any cleanup
+    os::closedir(dirp);
     return;
   }
 
@@ -1445,6 +1446,8 @@ static char* mapping_create_shared(size_t size) {
 
   // check that the file system is secure - i.e. it supports ACLs.
   if (!is_filesystem_secure(dirname)) {
+    FREE_C_HEAP_ARRAY(char, dirname);
+    FREE_C_HEAP_ARRAY(char, user);
     return NULL;
   }
 
@@ -1624,6 +1627,7 @@ static void open_file_mapping(const char* user, int vmid,
   //
   if (!is_directory_secure(dirname)) {
     FREE_C_HEAP_ARRAY(char, dirname);
+    if (luser != user) FREE_C_HEAP_ARRAY(char, luser);
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Process not found");
   }
