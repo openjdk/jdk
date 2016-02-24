@@ -158,7 +158,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                         writer.getDocLink(LinkInfoImpl.Kind.PROPERTY_COPY,
                         holder, property,
                         utils.isIncluded(holder)
-                                ? holder.toString() : utils.getFullyQualifiedName(holder),
+                                ? holder.getSimpleName() : holder.getQualifiedName(),
                             false);
                 Content codeLink = HtmlTree.CODE(link);
                 Content descfrmLabel = HtmlTree.SPAN(HtmlStyle.descfrmTypeLabel,

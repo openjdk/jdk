@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ public class RawHtml extends Content {
      *
      * @param rawHtml raw HTML text to be added
      */
-    public RawHtml(String rawHtml) {
-        rawHtmlContent = nullCheck(rawHtml);
+    public RawHtml(CharSequence rawHtml) {
+        rawHtmlContent = rawHtml.toString();
     }
 
     /**
@@ -77,7 +77,8 @@ public class RawHtml extends Content {
      *                              DocletAbortException because it
      *                              is not supported.
      */
-    public void addContent(String stringContent) {
+    @Override
+    public void addContent(CharSequence stringContent) {
         throw new DocletAbortException("not supported");
     }
 
@@ -103,7 +104,7 @@ public class RawHtml extends Content {
         return charCount(rawHtmlContent);
     }
 
-    static int charCount(String htmlText) {
+    static int charCount(CharSequence htmlText) {
         State state = State.TEXT;
         int count = 0;
         for (int i = 0; i < htmlText.length(); i++) {
