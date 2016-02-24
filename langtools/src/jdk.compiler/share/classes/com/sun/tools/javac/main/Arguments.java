@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package com.sun.tools.javac.main;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -73,7 +74,7 @@ public class Arguments {
 
     private String ownName;
     private Set<String> classNames;
-    private Set<File> files;
+    private Set<Path> files;
     private Map<Option, String> deferredFileManagerOptions;
     private Set<JavaFileObject> fileObjects;
     private final Options options;
@@ -153,8 +154,8 @@ public class Arguments {
         }
 
         @Override
-        public void addFile(File f) {
-            files.add(f);
+        public void addFile(Path p) {
+            files.add(p);
         }
 
         @Override
@@ -252,7 +253,7 @@ public class Arguments {
             } else {
                 fileObjects = new LinkedHashSet<>();
                 JavacFileManager jfm = (JavacFileManager) getFileManager();
-                for (JavaFileObject fo: jfm.getJavaFileObjectsFromFiles(files))
+                for (JavaFileObject fo: jfm.getJavaFileObjectsFromPaths(files))
                     fileObjects.add(fo);
             }
         }
@@ -583,8 +584,8 @@ public class Arguments {
         if (value == null) {
             return true;
         }
-        File file = new File(value);
-        if (file.exists() && !file.isDirectory()) {
+        Path file = Paths.get(value);
+        if (Files.exists(file) && !Files.isDirectory(file)) {
             error("err.file.not.directory", value);
             return false;
         }
