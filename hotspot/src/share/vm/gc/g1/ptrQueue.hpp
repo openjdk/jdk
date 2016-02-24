@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,6 @@
 // addresses.  For example, a generational write barrier might log
 // the addresses of modified old-generation objects.  This type supports
 // this operation.
-
-// The definition of placement operator new(size_t, void*) in the <new>.
-#include <new>
 
 class PtrQueueSet;
 class PtrQueue VALUE_OBJ_CLASS_SPEC {
@@ -168,42 +165,38 @@ protected:
 class BufferNode {
   size_t _index;
   BufferNode* _next;
-public:
+  void* _buffer[1];             // Pseudo flexible array member.
+
   BufferNode() : _index(0), _next(NULL) { }
+  ~BufferNode() { }
+
+  static size_t buffer_offset() {
+    return offset_of(BufferNode, _buffer);
+  }
+
+public:
   BufferNode* next() const     { return _next;  }
   void set_next(BufferNode* n) { _next = n;     }
   size_t index() const         { return _index; }
   void set_index(size_t i)     { _index = i;    }
 
-  // Align the size of the structure to the size of the pointer
-  static size_t aligned_size() {
-    static const size_t alignment = round_to(sizeof(BufferNode), sizeof(void*));
-    return alignment;
+  // Allocate a new BufferNode with the "buffer" having size bytes.
+  static BufferNode* allocate(size_t byte_size);
+
+  // Free a BufferNode.
+  static void deallocate(BufferNode* node);
+
+  // Return the BufferNode containing the buffer.
+  static BufferNode* make_node_from_buffer(void** buffer) {
+    return reinterpret_cast<BufferNode*>(
+      reinterpret_cast<char*>(buffer) - buffer_offset());
   }
 
-  // BufferNode is allocated before the buffer.
-  // The chunk of memory that holds both of them is a block.
-
-  // Produce a new BufferNode given a buffer.
-  static BufferNode* new_from_buffer(void** buf) {
-    return new (make_block_from_buffer(buf)) BufferNode;
-  }
-
-  // The following are the required conversion routines:
-  static BufferNode* make_node_from_buffer(void** buf) {
-    return (BufferNode*)make_block_from_buffer(buf);
-  }
+  // Return the buffer for node.
   static void** make_buffer_from_node(BufferNode *node) {
-    return make_buffer_from_block(node);
-  }
-  static void* make_block_from_node(BufferNode *node) {
-    return (void*)node;
-  }
-  static void** make_buffer_from_block(void* p) {
-    return (void**)((char*)p + aligned_size());
-  }
-  static void* make_block_from_buffer(void** p) {
-    return (void*)((char*)p - aligned_size());
+    // &_buffer[0] might lead to index out of bounds warnings.
+    return reinterpret_cast<void**>(
+      reinterpret_cast<char*>(node) + buffer_offset());
   }
 };
 
