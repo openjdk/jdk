@@ -199,8 +199,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
             Content classPackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInClass, packageLabel);
             Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classPackageLabel);
             pkgNameDiv.addContent(getSpace());
-            Content pkgNameContent = getPackageLink(pkg,
-                    new StringContent(pkg.getQualifiedName().toString()));
+            Content pkgNameContent = getPackageLink(pkg, new StringContent(pkg.getQualifiedName()));
             pkgNameDiv.addContent(pkgNameContent);
             div.addContent(pkgNameDiv);
         }
@@ -395,10 +394,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                     new LinkInfoImpl(configuration, LinkInfoImpl.Kind.TREE,
                     typeElement));
             if (configuration.shouldExcludeQualifier(utils.containingPackage(typeElement).toString())) {
-                li.addContent(utils.asTypeElement(type).getSimpleName().toString());
+                li.addContent(utils.asTypeElement(type).getSimpleName());
                 li.addContent(typeParameters);
             } else {
-                li.addContent(utils.asTypeElement(type).getQualifiedName().toString());
+                li.addContent(utils.asTypeElement(type).getQualifiedName());
                 li.addContent(typeParameters);
             }
         } else {
