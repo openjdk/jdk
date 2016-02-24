@@ -389,7 +389,6 @@ public class JavaCompiler {
 
         verbose       = options.isSet(VERBOSE);
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
-        encoding      = options.get(ENCODING);
         lineDebugInfo = options.isUnset(G_CUSTOM) ||
                         options.isSet(G_CUSTOM, "lines");
         genEndPos     = options.isSet(XJCOV) ||
@@ -444,9 +443,6 @@ public class JavaCompiler {
      */
     public boolean sourceOutput;
 
-    /** The encoding to be used for source input.
-     */
-    public String encoding;
 
     /** Generate code with the LineNumberTable attribute for debugging
      */
