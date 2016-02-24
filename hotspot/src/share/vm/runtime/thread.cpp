@@ -324,6 +324,10 @@ void Thread::record_stack_base_and_size() {
   // record thread's native stack, stack grows downward
   MemTracker::record_thread_stack(stack_end(), stack_size());
 #endif // INCLUDE_NMT
+  log_debug(os, thread)("Thread " UINTX_FORMAT " stack dimensions: "
+    PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT "k).",
+    os::current_thread_id(), p2i(stack_base() - stack_size()),
+    p2i(stack_base()), stack_size()/1024);
 }
 
 
@@ -1802,6 +1806,10 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     // Call after last event on thread
     EVENT_THREAD_EXIT(this);
 
+    log_info(os, thread)("Thread " UINTX_FORMAT " %s.",
+      os::current_thread_id(),
+      exit_type == JavaThread::normal_exit ? "exiting" : "detaching");
+
     // Call Thread.exit(). We try 3 times in case we got another Thread.stop during
     // the execution of the method. If that is not enough, then we don't really care. Thread.stop
     // is deprecated anyhow.
@@ -2491,18 +2499,25 @@ void JavaThread::create_stack_guard_pages() {
   // warning("Guarding at " PTR_FORMAT " for len " SIZE_FORMAT "\n", low_addr, len);
 
   if (allocate && !os::create_stack_guard_pages((char *) low_addr, len)) {
-    warning("Attempt to allocate stack guard pages failed.");
+    log_warning(os, thread)("Attempt to allocate stack guard pages failed.");
     return;
   }
 
   if (os::guard_memory((char *) low_addr, len)) {
     _stack_guard_state = stack_guard_enabled;
   } else {
-    warning("Attempt to protect stack guard pages failed.");
+    log_warning(os, thread)("Attempt to protect stack guard pages failed ("
+      PTR_FORMAT "-" PTR_FORMAT ").", p2i(low_addr), p2i(low_addr + len));
     if (os::uncommit_memory((char *) low_addr, len)) {
-      warning("Attempt to deallocate stack guard pages failed.");
+      log_warning(os, thread)("Attempt to deallocate stack guard pages failed.");
     }
+    return;
   }
+
+  log_debug(os, thread)("Thread " UINTX_FORMAT " stack guard pages activated: "
+    PTR_FORMAT "-" PTR_FORMAT ".",
+    os::current_thread_id(), p2i(low_addr), p2i(low_addr + len));
+
 }
 
 void JavaThread::remove_stack_guard_pages() {
@@ -2515,16 +2530,25 @@ void JavaThread::remove_stack_guard_pages() {
     if (os::remove_stack_guard_pages((char *) low_addr, len)) {
       _stack_guard_state = stack_guard_unused;
     } else {
-      warning("Attempt to deallocate stack guard pages failed.");
+      log_warning(os, thread)("Attempt to deallocate stack guard pages failed ("
+        PTR_FORMAT "-" PTR_FORMAT ").", p2i(low_addr), p2i(low_addr + len));
+      return;
     }
   } else {
     if (_stack_guard_state == stack_guard_unused) return;
     if (os::unguard_memory((char *) low_addr, len)) {
       _stack_guard_state = stack_guard_unused;
     } else {
-      warning("Attempt to unprotect stack guard pages failed.");
+      log_warning(os, thread)("Attempt to unprotect stack guard pages failed ("
+        PTR_FORMAT "-" PTR_FORMAT ").", p2i(low_addr), p2i(low_addr + len));
+      return;
     }
   }
+
+  log_debug(os, thread)("Thread " UINTX_FORMAT " stack guard pages removed: "
+    PTR_FORMAT "-" PTR_FORMAT ".",
+    os::current_thread_id(), p2i(low_addr), p2i(low_addr + len));
+
 }
 
 void JavaThread::enable_stack_reserved_zone() {

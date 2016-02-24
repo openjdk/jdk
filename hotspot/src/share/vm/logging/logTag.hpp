@@ -81,6 +81,7 @@
   LOG_TAG(survivor) \
   LOG_TAG(sweep) \
   LOG_TAG(task) \
+  LOG_TAG(thread) \
   LOG_TAG(tlab) \
   LOG_TAG(time) \
   LOG_TAG(verify) \
