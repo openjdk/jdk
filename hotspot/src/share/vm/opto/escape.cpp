@@ -490,6 +490,8 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       }
       break;
     }
+    case Op_CompareAndExchangeP:
+    case Op_CompareAndExchangeN:
     case Op_GetAndSetP:
     case Op_GetAndSetN: {
       add_objload_to_connection_graph(n, delayed_worklist);
@@ -499,6 +501,8 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_StoreN:
     case Op_StoreNKlass:
     case Op_StorePConditional:
+    case Op_WeakCompareAndSwapP:
+    case Op_WeakCompareAndSwapN:
     case Op_CompareAndSwapP:
     case Op_CompareAndSwapN: {
       Node* adr = n->in(MemNode::Address);
@@ -698,8 +702,12 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_StoreN:
     case Op_StoreNKlass:
     case Op_StorePConditional:
+    case Op_CompareAndExchangeP:
+    case Op_CompareAndExchangeN:
     case Op_CompareAndSwapP:
     case Op_CompareAndSwapN:
+    case Op_WeakCompareAndSwapP:
+    case Op_WeakCompareAndSwapN:
     case Op_GetAndSetP:
     case Op_GetAndSetN: {
       Node* adr = n->in(MemNode::Address);

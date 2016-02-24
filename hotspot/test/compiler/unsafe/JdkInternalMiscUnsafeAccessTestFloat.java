@@ -157,6 +157,20 @@ public class JdkInternalMiscUnsafeAccessTestFloat {
         }
 
 
+        // Lazy
+        {
+            UNSAFE.putFloatRelease(base, offset, 1.0f);
+            float x = UNSAFE.getFloatAcquire(base, offset);
+            assertEquals(x, 1.0f, "putRelease float value");
+        }
+
+        // Opaque
+        {
+            UNSAFE.putFloatOpaque(base, offset, 2.0f);
+            float x = UNSAFE.getFloatOpaque(base, offset);
+            assertEquals(x, 2.0f, "putOpaque float value");
+        }
+
 
 
     }
