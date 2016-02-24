@@ -505,7 +505,10 @@ class Arguments : AllStatic {
   static void set_gc_specific_flags();
   static inline bool gc_selected(); // whether a gc has been selected
   static void select_gc_ergonomically();
-
+#if INCLUDE_JVMCI
+  // Check consistency of jvmci vm argument settings.
+  static bool check_jvmci_args_consistency();
+#endif
   // Check for consistency in the selection of the garbage collector.
   static bool check_gc_consistency();        // Check user-selected gc
   // Check consistency or otherwise of VM argument settings

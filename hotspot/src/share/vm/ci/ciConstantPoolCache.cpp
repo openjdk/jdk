@@ -41,15 +41,21 @@ ciConstantPoolCache::ciConstantPoolCache(Arena* arena,
   _keys = new (arena) GrowableArray<int>(arena, expected_size, 0, 0);
 }
 
+int ciConstantPoolCache::key_compare(const int& key, const int& elt) {
+  if (key < elt)      return -1;
+  else if (key > elt) return 1;
+  else                  return 0;
+}
+
 // ------------------------------------------------------------------
 // ciConstantPoolCache::get
 //
 // Get the entry at some index
 void* ciConstantPoolCache::get(int index) {
   ASSERT_IN_VM;
-  int pos = find(index);
-  if (pos >= _keys->length() ||
-      _keys->at(pos) != index) {
+  bool found = false;
+  int pos = _keys->find_sorted<int, ciConstantPoolCache::key_compare>(index, found);
+  if (!found) {
     // This element is not present in the cache.
     return NULL;
   }
@@ -57,42 +63,15 @@ void* ciConstantPoolCache::get(int index) {
 }
 
 // ------------------------------------------------------------------
-// ciConstantPoolCache::find
-//
-// Use binary search to find the position of this index in the cache.
-// If there is no entry in the cache corresponding to this oop, return
-// the position at which the index would be inserted.
-int ciConstantPoolCache::find(int key) {
-  int min = 0;
-  int max = _keys->length()-1;
-
-  while (max >= min) {
-    int mid = (max + min) / 2;
-    int value = _keys->at(mid);
-    if (value < key) {
-      min = mid + 1;
-    } else if (value > key) {
-      max = mid - 1;
-    } else {
-      return mid;
-    }
-  }
-  return min;
-}
-
-// ------------------------------------------------------------------
 // ciConstantPoolCache::insert
 //
 // Insert a ciObject into the table at some index.
 void ciConstantPoolCache::insert(int index, void* elem) {
-  int i;
-  int pos = find(index);
-  for (i = _keys->length()-1; i >= pos; i--) {
-    _keys->at_put_grow(i+1, _keys->at(i));
-    _elements->at_put_grow(i+1, _elements->at(i));
-  }
-  _keys->at_put_grow(pos, index);
-  _elements->at_put_grow(pos, elem);
+  bool found = false;
+  int pos = _keys->find_sorted<int, ciConstantPoolCache::key_compare>(index, found);
+  assert(!found, "duplicate");
+  _keys->insert_before(pos, index);
+  _elements->insert_before(pos, elem);
 }
 
 // ------------------------------------------------------------------
