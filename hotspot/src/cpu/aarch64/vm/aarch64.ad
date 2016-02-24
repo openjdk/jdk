@@ -14783,19 +14783,19 @@ instruct string_indexof_con(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_equals(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
-                        iRegI_R0 result, iRegP_R10 tmp, rFlagsReg cr)
+                        iRegI_R0 result, rFlagsReg cr)
 %{
   predicate(!CompactStrings);
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(KILL tmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
+  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
 
-  format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp" %}
+  format %{ "String Equals $str1,$str2,$cnt -> $result" %}
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ asrw($cnt$$Register, $cnt$$Register, 1);
-    __ string_equals($str1$$Register, $str2$$Register,
-                      $cnt$$Register, $result$$Register,
-                      $tmp$$Register);
+    __ arrays_equals($str1$$Register, $str2$$Register,
+                     $result$$Register, $cnt$$Register,
+                     2, /*is_string*/true);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -14809,9 +14809,10 @@ instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 
   format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
   ins_encode %{
-    __ byte_arrays_equals($ary1$$Register, $ary2$$Register,
-                          $result$$Register, $tmp$$Register);
-  %}
+    __ arrays_equals($ary1$$Register, $ary2$$Register,
+                     $result$$Register, $tmp$$Register,
+                     1, /*is_string*/false);
+    %}
   ins_pipe(pipe_class_memory);
 %}
 
@@ -14824,11 +14825,13 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 
   format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
   ins_encode %{
-    __ char_arrays_equals($ary1$$Register, $ary2$$Register,
-                          $result$$Register, $tmp$$Register);
+    __ arrays_equals($ary1$$Register, $ary2$$Register,
+                     $result$$Register, $tmp$$Register,
+                     2, /*is_string*/false);
   %}
   ins_pipe(pipe_class_memory);
 %}
+
 
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
