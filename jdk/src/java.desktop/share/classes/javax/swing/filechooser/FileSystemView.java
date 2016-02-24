@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -581,6 +581,69 @@ public abstract class FileSystemView {
         } else {
             return psf;
         }
+    }
+
+    /**
+     * Returns an array of files representing the values to show by default in
+     * the file chooser selector.
+     *
+     * @return an array of {@code File} objects.
+     * @throws SecurityException if the caller does not have necessary
+     *                           permissions
+     * @since 9
+     */
+    public File[] getChooserComboBoxFiles() {
+        return (File[]) ShellFolder.get("fileChooserComboBoxFolders");
+    }
+
+    /**
+     * Returns whether the specified file denotes a shell interpreted link which
+     * can be obtained by the {@link #getLinkLocation(File)}.
+     *
+     * @param file a file
+     * @return whether this is a link
+     * @throws NullPointerException if {@code file} equals {@code null}
+     * @throws SecurityException if the caller does not have necessary
+     *                           permissions
+     * @see #getLinkLocation(File)
+     * @since 9
+     */
+    public boolean isLink(File file) {
+        if (file == null) {
+            throw new NullPointerException("file is null");
+        }
+        try {
+            return ShellFolder.getShellFolder(file).isLink();
+        } catch (FileNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns the regular file referenced by the specified link file if
+     * the specified file is a shell interpreted link.
+     * Returns {@code null} if the specified file is not
+     * a shell interpreted link.
+     *
+     * @param file a file
+     * @return the linked file or {@code null}.
+     * @throws FileNotFoundException if the linked file does not exist
+     * @throws NullPointerException if {@code file} equals {@code null}
+     * @throws SecurityException if the caller does not have necessary
+     *                           permissions
+     * @since 9
+     */
+    public File getLinkLocation(File file) throws FileNotFoundException {
+        if (file == null) {
+            throw new NullPointerException("file is null");
+        }
+        ShellFolder shellFolder;
+        try {
+            shellFolder = ShellFolder.getShellFolder(file);
+        } catch (FileNotFoundException e) {
+            return null;
+        }
+        return shellFolder.isLink() ? shellFolder.getLinkLocation() : null;
     }
 
     /**
