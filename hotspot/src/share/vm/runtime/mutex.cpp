@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1320,15 +1320,12 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
     // The rank Mutex::native  is an exception in that it is not subject
     // to the verification rules.
     // Here are some further notes relating to mutex acquisition anomalies:
-    // . under Solaris, the interrupt lock gets acquired when doing
-    //   profiling, so any lock could be held.
     // . it is also ok to acquire Safepoint_lock at the very end while we
     //   already hold Terminator_lock - may happen because of periodic safepoints
     if (this->rank() != Mutex::native &&
         this->rank() != Mutex::suspend_resume &&
         locks != NULL && locks->rank() <= this->rank() &&
         !SafepointSynchronize::is_at_safepoint() &&
-        this != Interrupt_lock && this != ProfileVM_lock &&
         !(this == Safepoint_lock && contains(locks, Terminator_lock) &&
         SafepointSynchronize::is_synchronizing())) {
       new_owner->print_owned_locks();
