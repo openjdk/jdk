@@ -1668,8 +1668,7 @@ void os::win32::print_windows_version(outputStream* st) {
     if (is_workstation) {
       st->print("10");
     } else {
-      // The server version name of Windows 10 is not known at this time
-      st->print("%d.%d", major_version, minor_version);
+      st->print("Server 2016");
     }
     break;
 
