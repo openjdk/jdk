@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,11 @@ class MulticastSocket extends DatagramSocket {
      * <p>
      * When the socket is created the
      * {@link DatagramSocket#setReuseAddress(boolean)} method is
-     * called to enable the SO_REUSEADDR socket option.
+     * called to enable the SO_REUSEADDR socket option. When
+     * {@link StandardSocketOptions#SO_REUSEPORT SO_REUSEPORT} is
+     * supported then
+     * {@link DatagramSocketImpl#setOption(SocketOption, Object)}
+     * is called to enable the socket option.
      *
      * @exception IOException if an I/O exception occurs
      * while creating the MulticastSocket
@@ -106,6 +110,7 @@ class MulticastSocket extends DatagramSocket {
      *             {@code checkListen} method doesn't allow the operation.
      * @see SecurityManager#checkListen
      * @see java.net.DatagramSocket#setReuseAddress(boolean)
+     * @see java.net.DatagramSocketImpl#setOption(SocketOption, Object)
      */
     public MulticastSocket() throws IOException {
         this(new InetSocketAddress(0));
@@ -166,6 +171,11 @@ class MulticastSocket extends DatagramSocket {
 
         // Enable SO_REUSEADDR before binding
         setReuseAddress(true);
+
+        // Enable SO_REUSEPORT if supported before binding
+        if (supportedOptions().contains(StandardSocketOptions.SO_REUSEPORT)) {
+            this.setOption(StandardSocketOptions.SO_REUSEPORT, true);
+        }
 
         if (bindaddr != null) {
             try {
