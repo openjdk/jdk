@@ -156,7 +156,7 @@ private:
   jint pd_next_offset(NativeInstruction* inst, jint pc_offset, Handle method, TRAPS);
   void pd_patch_OopConstant(int pc_offset, Handle constant, TRAPS);
   void pd_patch_MetaspaceConstant(int pc_offset, Handle constant, TRAPS);
-  void pd_patch_DataSectionReference(int pc_offset, int data_offset);
+  void pd_patch_DataSectionReference(int pc_offset, int data_offset, TRAPS);
   void pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, TRAPS);
   void pd_relocate_JavaMethod(Handle method, jint pc_offset, TRAPS);
   void pd_relocate_poll(address pc, jint mark, TRAPS);

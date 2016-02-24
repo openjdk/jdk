@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,6 @@
 // Set the default values for platform dependent flags used by the
 // runtime system.  See globals.hpp for details of what they do.
 
-define_pd_global(bool,  ConvertSleepToYield,  true);
 define_pd_global(bool,  ShareVtableStubs,     true);
 define_pd_global(bool,  NeedsDeoptSuspend,    false);
 

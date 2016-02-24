@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,175 @@ void Copy::conjoint_memory_atomic(void* from, void* to, size_t size) {
   }
 }
 
+class CopySwap : AllStatic {
+public:
+  /**
+   * Copy and byte swap elements
+   *
+   * @param src address of source
+   * @param dst address of destination
+   * @param byte_count number of bytes to copy
+   * @param elem_size size of the elements to copy-swap
+   */
+  static void conjoint_swap(address src, address dst, size_t byte_count, size_t elem_size) {
+    assert(src != NULL, "address must not be NULL");
+    assert(dst != NULL, "address must not be NULL");
+    assert(elem_size == 2 || elem_size == 4 || elem_size == 8,
+           "incorrect element size: " SIZE_FORMAT, elem_size);
+    assert(is_size_aligned(byte_count, elem_size),
+           "byte_count " SIZE_FORMAT " must be multiple of element size " SIZE_FORMAT, byte_count, elem_size);
+
+    address src_end = src + byte_count;
+
+    if (dst <= src || dst >= src_end) {
+      do_conjoint_swap<RIGHT>(src, dst, byte_count, elem_size);
+    } else {
+      do_conjoint_swap<LEFT>(src, dst, byte_count, elem_size);
+    }
+  }
+
+private:
+  /**
+   * Byte swap a 16-bit value
+   */
+  static uint16_t byte_swap(uint16_t x) {
+    return (x << 8) | (x >> 8);
+  }
+
+  /**
+   * Byte swap a 32-bit value
+   */
+  static uint32_t byte_swap(uint32_t x) {
+    uint16_t lo = (uint16_t)x;
+    uint16_t hi = (uint16_t)(x >> 16);
+
+    return ((uint32_t)byte_swap(lo) << 16) | (uint32_t)byte_swap(hi);
+  }
+
+  /**
+   * Byte swap a 64-bit value
+   */
+  static uint64_t byte_swap(uint64_t x) {
+    uint32_t lo = (uint32_t)x;
+    uint32_t hi = (uint32_t)(x >> 32);
+
+    return ((uint64_t)byte_swap(lo) << 32) | (uint64_t)byte_swap(hi);
+  }
+
+  enum CopyDirection {
+    RIGHT, // lower -> higher address
+    LEFT   // higher -> lower address
+  };
+
+  /**
+   * Copy and byte swap elements
+   *
+   * <T> - type of element to copy
+   * <D> - copy direction
+   * <is_src_aligned> - true if src argument is aligned to element size
+   * <is_dst_aligned> - true if dst argument is aligned to element size
+   *
+   * @param src address of source
+   * @param dst address of destination
+   * @param byte_count number of bytes to copy
+   */
+  template <typename T, CopyDirection D, bool is_src_aligned, bool is_dst_aligned>
+  static void do_conjoint_swap(address src, address dst, size_t byte_count) {
+    address cur_src, cur_dst;
+
+    switch (D) {
+    case RIGHT:
+      cur_src = src;
+      cur_dst = dst;
+      break;
+    case LEFT:
+      cur_src = src + byte_count - sizeof(T);
+      cur_dst = dst + byte_count - sizeof(T);
+      break;
+    }
+
+    for (size_t i = 0; i < byte_count / sizeof(T); i++) {
+      T tmp;
+
+      if (is_src_aligned) {
+        tmp = *(T*)cur_src;
+      } else {
+        memcpy(&tmp, cur_src, sizeof(T));
+      }
+
+      tmp = byte_swap(tmp);
+
+      if (is_dst_aligned) {
+        *(T*)cur_dst = tmp;
+      } else {
+        memcpy(cur_dst, &tmp, sizeof(T));
+      }
+
+      switch (D) {
+      case RIGHT:
+        cur_src += sizeof(T);
+        cur_dst += sizeof(T);
+        break;
+      case LEFT:
+        cur_src -= sizeof(T);
+        cur_dst -= sizeof(T);
+        break;
+      }
+    }
+  }
+
+  /**
+   * Copy and byte swap elements
+   *
+   * <T> - type of element to copy
+   * <D> - copy direction
+   *
+   * @param src address of source
+   * @param dst address of destination
+   * @param byte_count number of bytes to copy
+   */
+  template <typename T, CopyDirection direction>
+  static void do_conjoint_swap(address src, address dst, size_t byte_count) {
+    if (is_ptr_aligned(src, sizeof(T))) {
+      if (is_ptr_aligned(dst, sizeof(T))) {
+        do_conjoint_swap<T,direction,true,true>(src, dst, byte_count);
+      } else {
+        do_conjoint_swap<T,direction,true,false>(src, dst, byte_count);
+      }
+    } else {
+      if (is_ptr_aligned(dst, sizeof(T))) {
+        do_conjoint_swap<T,direction,false,true>(src, dst, byte_count);
+      } else {
+        do_conjoint_swap<T,direction,false,false>(src, dst, byte_count);
+      }
+    }
+  }
+
+
+  /**
+   * Copy and byte swap elements
+   *
+   * <D> - copy direction
+   *
+   * @param src address of source
+   * @param dst address of destination
+   * @param byte_count number of bytes to copy
+   * @param elem_size size of the elements to copy-swap
+   */
+  template <CopyDirection D>
+  static void do_conjoint_swap(address src, address dst, size_t byte_count, size_t elem_size) {
+    switch (elem_size) {
+    case 2: do_conjoint_swap<uint16_t,D>(src, dst, byte_count); break;
+    case 4: do_conjoint_swap<uint32_t,D>(src, dst, byte_count); break;
+    case 8: do_conjoint_swap<uint64_t,D>(src, dst, byte_count); break;
+    default: guarantee(false, "do_conjoint_swap: Invalid elem_size %zd\n", elem_size);
+    }
+  }
+};
+
+void Copy::conjoint_swap(address src, address dst, size_t byte_count, size_t elem_size) {
+  CopySwap::conjoint_swap(src, dst, byte_count, elem_size);
+}
 
 // Fill bytes; larger units are filled atomically if everything is aligned.
 void Copy::fill_to_memory_atomic(void* to, size_t size, jubyte value) {
