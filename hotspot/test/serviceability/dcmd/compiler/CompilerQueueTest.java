@@ -24,25 +24,33 @@
 /*
  * @test CompilerQueueTest
  * @bug 8054889
- * @library /testlibrary
+ * @library /testlibrary /test/lib /
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @ignore 8069160
  * @build jdk.test.lib.*
- * @build jdk.test.lib.dcmd.*
- * @run testng CompilerQueueTest
- * @run testng/othervm -XX:-TieredCompilation CompilerQueueTest
- * @run testng/othervm -Xint CompilerQueueTest
+ *        jdk.test.lib.dcmd.*
+ *        sun.hotspot.WhiteBox
+ *        compiler.testlibrary.CompilerUtils
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmixed -XX:+WhiteBoxAPI CompilerQueueTest
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmixed -XX:-TieredCompilation -XX:+WhiteBoxAPI CompilerQueueTest
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xint -XX:+WhiteBoxAPI CompilerQueueTest
  * @summary Test of diagnostic command Compiler.queue
  */
 
+import compiler.testlibrary.CompilerUtils;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import org.testng.annotations.Test;
+import org.testng.Assert;
+import sun.hotspot.WhiteBox;
 
+import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
 import java.util.Iterator;
 
 public class CompilerQueueTest {
@@ -54,70 +62,123 @@ public class CompilerQueueTest {
      *
      * Output example:
      *
-     * Contents of C1 compile queue
-     * ----------------------------
-     * 73       3       java.lang.AbstractStringBuilder::append (50 bytes)
-     * 74       1       java.util.TreeMap::size (5 bytes)
-     * 75       3       java.lang.StringBuilder::append (8 bytes)
-     * 83       3       java.util.TreeMap$ValueIterator::next (8 bytes)
-     * 84       1       javax.management.MBeanFeatureInfo::getName (5 bytes)
-     * ----------------------------
-     * Contents of C2 compile queue
-     * ----------------------------
+     * Current compiles:
+     * C1 CompilerThread14 267       3       java.net.URLStreamHandler::parseURL (1166 bytes)
+     * C1 CompilerThread13 760       3       javax.management.StandardMBean::getDescription (11 bytes)
+     * C1 CompilerThread12 757  s    3       com.sun.jmx.mbeanserver.DefaultMXBeanMappingFactory::getMapping (27 bytes)
+     * C1 CompilerThread11 756  s!   3       com.sun.jmx.mbeanserver.DefaultMXBeanMappingFactory::mappingForType (110 bytes)
+     * C1 CompilerThread10 761       3       java.lang.StringLatin1::indexOf (121 bytes)
+     * C2 CompilerThread7 769       4       CompilerQueueTest::testcaseMethod4 (1 bytes)
+     *
+     * C1 compile queue:
+     * 762       3       java.lang.invoke.MethodType::basicType (8 bytes)
+     * 763       3       java.util.ArrayList::rangeCheck (22 bytes)
+     * 764       3       java.util.ArrayList::elementData (7 bytes)
+     * 765       3       jdk.internal.org.objectweb.asm.MethodVisitor::<init> (35 bytes)
+     * 766       1       CompilerQueueTest::testcaseMethod1 (1 bytes)
+     * 767       2       CompilerQueueTest::testcaseMethod2 (1 bytes)
+     * 768       3       CompilerQueueTest::testcaseMethod3 (1 bytes)
+     * 770       3       java.util.Properties::getProperty (46 bytes)
+     *
+     * C2 compile queue:
      * Empty
-     * ----------------------------
      *
      **/
 
+    protected static final WhiteBox WB = WhiteBox.getWhiteBox();
+
     public void run(CommandExecutor executor) {
+
+        TestCase[] testcases = {
+                new TestCase(1, "testcaseMethod1"),
+                new TestCase(2, "testcaseMethod2"),
+                new TestCase(3, "testcaseMethod3"),
+                new TestCase(4, "testcaseMethod4"),
+        };
+
+        // Lock compilation makes all compiles stay in queue or compile thread before completion
+        WB.lockCompilation();
+
+        // Enqueue one test method for each available level
+        int[] complevels = CompilerUtils.getAvailableCompilationLevels();
+        for (int level : complevels) {
+            TestCase testcase = testcases[level - 1];
+
+            boolean added = WB.enqueueMethodForCompilation(testcase.method, testcase.level);
+            // Set results to false for those methods we must to find
+            // We will also assert if we find any test method we don't expect
+            Assert.assertTrue(WB.isMethodQueuedForCompilation(testcase.method));
+            testcase.check = false;
+        }
 
         // Get output from dcmd (diagnostic command)
         OutputAnalyzer output = executor.execute("Compiler.queue");
         Iterator<String> lines = output.asLines().iterator();
 
+        // Loop over output set result for all found methods
         while (lines.hasNext()) {
             String str = lines.next();
-            if (str.startsWith("Contents of C")) {
-                match(lines.next(), "----------------------------");
-                str = lines.next();
-                if (!str.equals("Empty")) {
-                    while (str.charAt(0) != '-') {
-                        validateMethodLine(str);
-                        str = lines.next();
+            // Fast check for common part of method name
+            if (str.contains("testcaseMethod")) {
+                for (TestCase testcase : testcases) {
+                    if (str.contains(testcase.methodName)) {
+                        Assert.assertFalse(testcase.check, "Must not be found or already found.");
+                        testcase.check = true;
                     }
-                } else {
-                    str = lines.next();
                 }
-                match(str,"----------------------------");
-            } else {
-                Assert.fail("Failed parsing dcmd queue, line: " + str);
             }
         }
-    }
 
-    private static void validateMethodLine(String str) {
-        // Skip until package/class name begins. Trim to remove whitespace that
-        // may differ.
-        String name = str.substring(14).trim();
-        int sep = name.indexOf("::");
-        if (sep == -1) {
-            Assert.fail("Failed dcmd queue, didn't find separator :: in: " + name);
+        for (TestCase testcase : testcases) {
+            if (!testcase.check) {
+                // If this method wasn't found it must have been removed by policy,
+                // verify that it is now removed from the queue
+                Assert.assertFalse(WB.isMethodQueuedForCompilation(testcase.method), "Must be found or not in queue");
+            }
+            // Otherwise all good.
         }
-        try {
-            Class.forName(name.substring(0, sep));
-        } catch (ClassNotFoundException e) {
-            Assert.fail("Failed dcmd queue, Class for name: " + str);
-        }
-    }
 
-    public static void match(String line, String str) {
-        if (!line.equals(str)) {
-            Assert.fail("String equals: " + line + ", " + str);
-        }
+        // Enable compilations again
+        WB.unlockCompilation();
     }
 
     @Test
     public void jmx() {
         run(new JMXExecutor());
     }
+
+    public void testcaseMethod1() {
+    }
+
+    public void testcaseMethod2() {
+    }
+
+    public void testcaseMethod3() {
+    }
+
+    public void testcaseMethod4() {
+    }
+
+    public static Method getMethod(Class klass, String name, Class<?>... parameterTypes) {
+        try {
+            return klass.getDeclaredMethod(name, parameterTypes);
+        } catch (NoSuchMethodException | SecurityException e) {
+            throw new RuntimeException("exception on getting method Helper." + name, e);
+        }
+    }
+
+    class TestCase {
+        Method method;
+        int level;
+        String methodName;
+        Boolean check;
+
+        public TestCase(int level, String methodName) {
+            this.method = getMethod(CompilerQueueTest.class, methodName);
+            this.level = level;
+            this.methodName = methodName;
+            this.check = true;
+        }
+    }
+
 }
