@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 
 package com.sun.tools.javac.main;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -238,13 +240,7 @@ public enum Option {
 
     IMPLICIT("-implicit:", "opt.implicit", STANDARD, BASIC, ONEOF, "none", "class"),
 
-    ENCODING("-encoding", "opt.arg.encoding", "opt.encoding", STANDARD, FILEMANAGER) {
-        @Override
-        public boolean process(OptionHelper helper, String option, String operand) {
-            return super.process(helper, option, operand);
-        }
-
-    },
+    ENCODING("-encoding", "opt.arg.encoding", "opt.encoding", STANDARD, FILEMANAGER),
 
     SOURCE("-source", "opt.arg.release", "opt.source", STANDARD, BASIC) {
         @Override
@@ -537,16 +533,16 @@ public enum Option {
         @Override
         public boolean process(OptionHelper helper, String option) {
             if (option.endsWith(".java") ) {
-                File f = new File(option);
-                if (!f.exists()) {
-                    helper.error("err.file.not.found", f);
+                Path p = Paths.get(option);
+                if (!Files.exists(p)) {
+                    helper.error("err.file.not.found", p);
                     return true;
                 }
-                if (!f.isFile()) {
-                    helper.error("err.file.not.file", f);
+                if (!Files.isRegularFile(p)) {
+                    helper.error("err.file.not.file", p);
                     return true;
                 }
-                helper.addFile(f);
+                helper.addFile(p);
             } else {
                 helper.addClassName(option);
             }
