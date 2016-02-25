@@ -38,6 +38,7 @@ import org.testng.annotations.Test;
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @build ClassFileInstaller jdk.test.lib.* SimpleJvmtiAgent
+ * @ignore 8150318
  * @run main ClassFileInstaller SimpleJvmtiAgent
  * @run testng LoadAgentDcmdTest
  */
