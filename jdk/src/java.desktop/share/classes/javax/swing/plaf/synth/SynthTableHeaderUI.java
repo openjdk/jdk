@@ -230,9 +230,10 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
 
             boolean hasRollover = (column == getRolloverColumn());
             if (isSelected || hasRollover || hasFocus) {
+                boolean enabled = (table == null)? true : table.isEnabled();
                 SynthLookAndFeel.setSelectedUI((SynthLabelUI)SynthLookAndFeel.
                              getUIOfType(getUI(), SynthLabelUI.class),
-                             isSelected, hasFocus, table.isEnabled(),
+                             isSelected, hasFocus, enabled,
                              hasRollover);
             } else {
                 SynthLookAndFeel.resetSelectedUI();
