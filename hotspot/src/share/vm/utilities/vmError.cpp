@@ -1121,6 +1121,10 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   if (first_error_tid == -1 &&
       Atomic::cmpxchg_ptr(mytid, &first_error_tid, -1) == -1) {
 
+    // Initialize time stamps to use the same base.
+    out.time_stamp().update_to(1);
+    log.time_stamp().update_to(1);
+
     _id = id;
     _message = message;
     _thread = thread;
