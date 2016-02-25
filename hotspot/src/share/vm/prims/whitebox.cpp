@@ -644,12 +644,12 @@ WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobjec
   return (mh->queued_for_compilation() || nm != NULL);
 WB_END
 
-WB_ENTRY(jboolean, WB_ShouldPrintAssembly(JNIEnv* env, jobject o, jobject method))
+WB_ENTRY(jboolean, WB_ShouldPrintAssembly(JNIEnv* env, jobject o, jobject method, jint comp_level))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
 
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, CompileBroker::compiler(CompLevel_simple));
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, CompileBroker::compiler(comp_level));
   bool result = directive->PrintAssemblyOption;
   DirectivesStack::release(directive);
 
@@ -1556,8 +1556,8 @@ static JNINativeMethod methods[] = {
 #endif // INCLUDE_NMT
   {CC"deoptimizeFrames",   CC"(Z)I",                  (void*)&WB_DeoptimizeFrames  },
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
-    {CC"deoptimizeMethod0",   CC"(Ljava/lang/reflect/Executable;Z)I",
-                                                        (void*)&WB_DeoptimizeMethod  },
+  {CC"deoptimizeMethod0",   CC"(Ljava/lang/reflect/Executable;Z)I",
+                                                      (void*)&WB_DeoptimizeMethod  },
   {CC"isMethodCompiled0",   CC"(Ljava/lang/reflect/Executable;Z)Z",
                                                       (void*)&WB_IsMethodCompiled  },
   {CC"isMethodCompilable0", CC"(Ljava/lang/reflect/Executable;IZ)Z",
@@ -1592,7 +1592,7 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)I",
                                                       (void*)&WB_MatchesInline},
   {CC"shouldPrintAssembly",
-        CC"(Ljava/lang/reflect/Executable;)Z",
+        CC"(Ljava/lang/reflect/Executable;I)Z",
                                                         (void*)&WB_ShouldPrintAssembly},
 
   {CC"isConstantVMFlag",   CC"(Ljava/lang/String;)Z", (void*)&WB_IsConstantVMFlag},
