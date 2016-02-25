@@ -1400,7 +1400,6 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       JavaThread::dirty_card_queue_set().abandon_logs();
       assert(dirty_card_queue_set().completed_buffers_num() == 0, "DCQS should be empty");
 
-      _young_list->reset_sampled_info();
       // At this point there should be no regions in the
       // entire heap tagged as young.
       assert(check_young_list_empty(true /* check_heap */),
@@ -3390,8 +3389,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         clear_cset_fast_test();
 
-        _young_list->reset_sampled_info();
-
         // Don't check the whole heap at this point as the
         // GC alloc regions from this pause have been tagged
         // as survivors and moved on to the survivor list.
@@ -5188,8 +5185,8 @@ public:
   bool success() { return _success; }
 };
 
-bool G1CollectedHeap::check_young_list_empty(bool check_heap, bool check_sample) {
-  bool ret = _young_list->check_list_empty(check_sample);
+bool G1CollectedHeap::check_young_list_empty(bool check_heap) {
+  bool ret = _young_list->check_list_empty();
 
   if (check_heap) {
     NoYoungRegionsClosure closure;

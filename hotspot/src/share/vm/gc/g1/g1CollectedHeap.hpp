@@ -1333,8 +1333,7 @@ public:
     return _young_list->check_list_well_formed();
   }
 
-  bool check_young_list_empty(bool check_heap,
-                              bool check_sample = true);
+  bool check_young_list_empty(bool check_heap);
 
   // *** Stuff related to concurrent marking.  It's not clear to me that so
   // many of these need to be public.

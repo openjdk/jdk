@@ -26,6 +26,8 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
+#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "runtime/mutexLocker.hpp"
 
@@ -100,22 +102,35 @@ void G1YoungRemSetSamplingThread::sample_young_list_rs_lengths() {
   G1CollectorPolicy* g1p = g1h->g1_policy();
   if (g1p->adaptive_young_list_length()) {
     int regions_visited = 0;
-    g1h->young_list()->rs_length_sampling_init();
-    while (g1h->young_list()->rs_length_sampling_more()) {
-      g1h->young_list()->rs_length_sampling_next();
+    HeapRegion* hr = g1h->young_list()->first_region();
+    size_t sampled_rs_lengths = 0;
+
+    while (hr != NULL) {
+      size_t rs_length = hr->rem_set()->occupied();
+      sampled_rs_lengths += rs_length;
+
+      // The current region may not yet have been added to the
+      // incremental collection set (it gets added when it is
+      // retired as the current allocation region).
+      if (hr->in_collection_set()) {
+        // Update the collection set policy information for this region
+        g1p->update_incremental_cset_info(hr, rs_length);
+      }
+
       ++regions_visited;
 
       // we try to yield every time we visit 10 regions
       if (regions_visited == 10) {
         if (sts.should_yield()) {
           sts.yield();
-          // we just abandon the iteration
-          break;
+          // A gc may have occurred and our sampling data is stale and further
+          // traversal of the young list is unsafe
+          return;
         }
         regions_visited = 0;
       }
+      hr = hr->get_next_young_region();
     }
-
-    g1p->revise_young_list_target_length_if_necessary();
+    g1p->revise_young_list_target_length_if_necessary(sampled_rs_lengths);
   }
 }
