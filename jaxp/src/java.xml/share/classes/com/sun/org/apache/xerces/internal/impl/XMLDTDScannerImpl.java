@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -46,7 +46,6 @@ import com.sun.org.apache.xerces.internal.impl.XMLEntityHandler;
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
-import com.sun.xml.internal.stream.Entity;
 
 /**
  * This class is responsible for scanning the declarations found
