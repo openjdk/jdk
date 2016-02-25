@@ -43,6 +43,7 @@
   LOG_TAG(classload) /* Trace all classes loaded */ \
   LOG_TAG(classloaderdata) /* class loader loader_data lifetime */ \
   LOG_TAG(classunload) /* Trace unloading of classes */ \
+  LOG_TAG(classpath) \
   LOG_TAG(compaction) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
