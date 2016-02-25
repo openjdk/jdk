@@ -22,15 +22,17 @@
 
 # Tiered testing definitions
 
-# All langtools tests are tier 1.
+# (Nearly) all langtools tests are tier 1.
 tier1 = \
     com \
     jdk \
     lib \
-    tools
+    tools \
+    -jdk/jshell/ToolReloadTest.java
 
-# No langtools tests are tier 2.
-tier2 = 
+# (Almost) no langtools tests are tier 2.
+tier2 = \
+    jdk/jshell/ToolReloadTest.java
 
 # No langtools tests are tier 3 either.
 tier3 = 

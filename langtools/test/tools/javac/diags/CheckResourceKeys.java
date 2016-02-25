@@ -231,22 +231,15 @@ public class CheckResourceKeys {
         "compiler.err.type.var.more.than.once.in.result",   // UNUSED
         "compiler.misc.non.denotable.type",                 // UNUSED
         "compiler.misc.unnamed.package",                    // should be required, CR 6964147
-        "compiler.misc.verbose.retro",                      // UNUSED
-        "compiler.misc.verbose.retro.with",                 // UNUSED
-        "compiler.misc.verbose.retro.with.list",            // UNUSED
         "compiler.warn.proc.type.already.exists",           // TODO in JavacFiler
         "javac.err.invalid.arg",                            // UNUSED ??
         "javac.opt.arg.class",                              // UNUSED ??
         "javac.opt.arg.pathname",                           // UNUSED ??
         "javac.opt.moreinfo",                               // option commented out
         "javac.opt.nogj",                                   // UNUSED
-        "javac.opt.printflat",                              // option commented out
         "javac.opt.printsearch",                            // option commented out
         "javac.opt.prompt",                                 // option commented out
-        "javac.opt.retrofit",                               // UNUSED
-        "javac.opt.s",                                      // option commented out
-        "javac.opt.scramble",                               // option commented out
-        "javac.opt.scrambleall"                             // option commented out
+        "javac.opt.s"                                       // option commented out
         ));
 
     /**
