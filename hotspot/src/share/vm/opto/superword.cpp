@@ -2253,6 +2253,9 @@ void SuperWord::output() {
           C->set_major_progress();
         }
         cl->mark_do_unroll_only();
+        if (do_reserve_copy()) {
+          cl->mark_loop_vectorized();
+        }
       }
     }
   }

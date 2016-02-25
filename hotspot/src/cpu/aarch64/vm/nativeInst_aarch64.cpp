@@ -136,7 +136,7 @@ void NativeMovConstReg::set_data(intptr_t x) {
     MacroAssembler::pd_patch_instruction(instruction_address(), (address)x);
     ICache::invalidate_range(instruction_address(), instruction_size);
   }
-};
+}
 
 void NativeMovConstReg::print() {
   tty->print_cr(PTR_FORMAT ": mov reg, " INTPTR_FORMAT,
@@ -208,6 +208,32 @@ void NativeJump::set_jump_destination(address dest) {
 
 //-------------------------------------------------------------------
 
+address NativeGeneralJump::jump_destination() const {
+  NativeMovConstReg* move = nativeMovConstReg_at(instruction_address());
+  address dest = (address) move->data();
+
+  // We use jump to self as the unresolved address which the inline
+  // cache code (and relocs) know about
+
+  // return -1 if jump to self
+  dest = (dest == (address) this) ? (address) -1 : dest;
+  return dest;
+}
+
+void NativeGeneralJump::set_jump_destination(address dest) {
+  NativeMovConstReg* move = nativeMovConstReg_at(instruction_address());
+
+  // We use jump to self as the unresolved address which the inline
+  // cache code (and relocs) know about
+  if (dest == (address) -1) {
+    dest = instruction_address();
+  }
+
+  move->set_data((uintptr_t) dest);
+};
+
+//-------------------------------------------------------------------
+
 bool NativeInstruction::is_safepoint_poll() {
   // a safepoint_poll is implemented in two steps as either
   //
@@ -247,6 +273,22 @@ bool NativeInstruction::is_ldrw_to_zr(address instr) {
   unsigned insn = *(unsigned*)instr;
   return (Instruction_aarch64::extract(insn, 31, 22) == 0b1011100101 &&
           Instruction_aarch64::extract(insn, 4, 0) == 0b11111);
+}
+
+bool NativeInstruction::is_general_jump() {
+  if (is_movz()) {
+    NativeInstruction* inst1 = nativeInstruction_at(addr_at(instruction_size * 1));
+    if (inst1->is_movk()) {
+      NativeInstruction* inst2 = nativeInstruction_at(addr_at(instruction_size * 2));
+      if (inst2->is_movk()) {
+        NativeInstruction* inst3 = nativeInstruction_at(addr_at(instruction_size * 3));
+        if (inst3->is_blr()) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 bool NativeInstruction::is_movz() {
