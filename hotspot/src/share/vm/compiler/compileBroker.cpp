@@ -469,7 +469,6 @@ CompileQueue* CompileBroker::compile_queue(int comp_level) {
 void CompileBroker::print_compile_queues(outputStream* st) {
   st->print_cr("Current compiles: ");
   MutexLocker locker(MethodCompileQueue_lock);
-  MutexLocker locker2(Threads_lock);
 
   char buf[2000];
   int buflen = sizeof(buf);
