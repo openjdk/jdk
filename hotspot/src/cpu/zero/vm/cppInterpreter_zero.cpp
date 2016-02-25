@@ -804,26 +804,6 @@ InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
   return (InterpreterFrame *) fp;
 }
 
-BasicType CppInterpreter::result_type_of(Method* method) {
-  BasicType t = T_ILLEGAL; // silence compiler warnings
-  switch (method->result_index()) {
-    case 0 : t = T_BOOLEAN; break;
-    case 1 : t = T_CHAR;    break;
-    case 2 : t = T_BYTE;    break;
-    case 3 : t = T_SHORT;   break;
-    case 4 : t = T_INT;     break;
-    case 5 : t = T_LONG;    break;
-    case 6 : t = T_VOID;    break;
-    case 7 : t = T_FLOAT;   break;
-    case 8 : t = T_DOUBLE;  break;
-    case 9 : t = T_OBJECT;  break;
-    default: ShouldNotReachHere();
-  }
-  assert(AbstractInterpreter::BasicType_as_index(t) == method->result_index(),
-         "out of step with AbstractInterpreter::BasicType_as_index");
-  return t;
-}
-
 address CppInterpreter::return_entry(TosState state, int length, Bytecodes::Code code) {
   ShouldNotCallThis();
   return NULL;
