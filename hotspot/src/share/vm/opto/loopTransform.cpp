@@ -666,7 +666,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     if (future_unroll_ct > LoopMaxUnroll) return false;
   } else {
     // obey user constraints on vector mapped loops with additional unrolling applied
-    if ((future_unroll_ct / cl->slp_max_unroll()) > LoopMaxUnroll) return false;
+    int unroll_constraint = (cl->slp_max_unroll()) ? cl->slp_max_unroll() : 1;
+    if ((future_unroll_ct / unroll_constraint) > LoopMaxUnroll) return false;
   }
 
   // Check for initial stride being a small enough constant
@@ -689,7 +690,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   //   Progress defined as current size less than 20% larger than previous size.
   if (UseSuperWord && cl->node_count_before_unroll() > 0 &&
       future_unroll_ct > LoopUnrollMin &&
-      (future_unroll_ct - 1) * 10.0 > cl->profile_trip_cnt() &&
+      (future_unroll_ct - 1) * (100 / LoopPercentProfileLimit) > cl->profile_trip_cnt() &&
       1.2 * cl->node_count_before_unroll() < (double)_body.size()) {
     return false;
   }
@@ -1257,6 +1258,146 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // Now force out all loop-invariant dominating tests.  The optimizer
   // finds some, but we _know_ they are all useless.
   peeled_dom_test_elim(loop,old_new);
+  loop->record_for_igvn();
+}
+
+//------------------------------insert_vector_post_loop------------------------
+// Insert a copy of the atomic unrolled vectorized main loop as a post loop,
+// unroll_policy has already informed us that more unrolling is about to happen to
+// the main loop.  The resultant post loop will serve as a vectorized drain loop.
+void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new) {
+  if (!loop->_head->is_CountedLoop()) return;
+
+  CountedLoopNode *cl = loop->_head->as_CountedLoop();
+
+  // only process vectorized main loops
+  if (!cl->is_vectorized_loop() || !cl->is_main_loop()) return;
+
+  int slp_max_unroll_factor = cl->slp_max_unroll();
+  int cur_unroll = cl->unrolled_count();
+
+  if (slp_max_unroll_factor == 0) return;
+
+  // only process atomic unroll vector loops (not super unrolled after vectorization)
+  if (cur_unroll != slp_max_unroll_factor) return;
+
+  // we only ever process this one time
+  if (cl->has_atomic_post_loop()) return;
+
+#ifndef PRODUCT
+  if (TraceLoopOpts) {
+    tty->print("PostVector  ");
+    loop->dump_head();
+  }
+#endif
+  C->set_major_progress();
+
+  // Find common pieces of the loop being guarded with pre & post loops
+  CountedLoopNode *main_head = loop->_head->as_CountedLoop();
+  CountedLoopEndNode *main_end = main_head->loopexit();
+  guarantee(main_end != NULL, "no loop exit node");
+  // diagnostic to show loop end is not properly formed
+  assert(main_end->outcnt() == 2, "1 true, 1 false path only");
+  uint dd_main_head = dom_depth(main_head);
+  uint max = main_head->outcnt();
+
+  // mark this loop as processed
+  main_head->mark_has_atomic_post_loop();
+
+  Node *pre_header = main_head->in(LoopNode::EntryControl);
+  Node *init = main_head->init_trip();
+  Node *incr = main_end->incr();
+  Node *limit = main_end->limit();
+  Node *stride = main_end->stride();
+  Node *cmp = main_end->cmp_node();
+  BoolTest::mask b_test = main_end->test_trip();
+
+  //------------------------------
+  // Step A: Create a new post-Loop.
+  Node* main_exit = main_end->proj_out(false);
+  assert(main_exit->Opcode() == Op_IfFalse, "");
+  int dd_main_exit = dom_depth(main_exit);
+
+  // Step A1: Clone the loop body of main.  The clone becomes the vector post-loop.
+  // The main loop pre-header illegally has 2 control users (old & new loops).
+  clone_loop(loop, old_new, dd_main_exit);
+  assert(old_new[main_end->_idx]->Opcode() == Op_CountedLoopEnd, "");
+  CountedLoopNode *post_head = old_new[main_head->_idx]->as_CountedLoop();
+  post_head->set_normal_loop();
+  post_head->set_post_loop(main_head);
+
+  // Reduce the post-loop trip count.
+  CountedLoopEndNode* post_end = old_new[main_end->_idx]->as_CountedLoopEnd();
+  post_end->_prob = PROB_FAIR;
+
+  // Build the main-loop normal exit.
+  IfFalseNode *new_main_exit = new IfFalseNode(main_end);
+  _igvn.register_new_node_with_optimizer(new_main_exit);
+  set_idom(new_main_exit, main_end, dd_main_exit);
+  set_loop(new_main_exit, loop->_parent);
+
+  // Step A2: Build a zero-trip guard for the vector post-loop.  After leaving the
+  // main-loop, the vector post-loop may not execute at all.  We 'opaque' the incr
+  // (the vectorized main-loop trip-counter exit value) because we will be changing
+  // the exit value (via additional unrolling) so we cannot constant-fold away the zero
+  // trip guard until all unrolling is done.
+  Node *zer_opaq = new Opaque1Node(C, incr);
+  Node *zer_cmp = new CmpINode(zer_opaq, limit);
+  Node *zer_bol = new BoolNode(zer_cmp, b_test);
+  register_new_node(zer_opaq, new_main_exit);
+  register_new_node(zer_cmp, new_main_exit);
+  register_new_node(zer_bol, new_main_exit);
+
+  // Build the IfNode
+  IfNode *zer_iff = new IfNode(new_main_exit, zer_bol, PROB_FAIR, COUNT_UNKNOWN);
+  _igvn.register_new_node_with_optimizer(zer_iff);
+  set_idom(zer_iff, new_main_exit, dd_main_exit);
+  set_loop(zer_iff, loop->_parent);
+
+  // Plug in the false-path, taken if we need to skip vector post-loop
+  _igvn.replace_input_of(main_exit, 0, zer_iff);
+  set_idom(main_exit, zer_iff, dd_main_exit);
+  set_idom(main_exit->unique_out(), zer_iff, dd_main_exit);
+  // Make the true-path, must enter the vector post loop
+  Node *zer_taken = new IfTrueNode(zer_iff);
+  _igvn.register_new_node_with_optimizer(zer_taken);
+  set_idom(zer_taken, zer_iff, dd_main_exit);
+  set_loop(zer_taken, loop->_parent);
+  // Plug in the true path
+  _igvn.hash_delete(post_head);
+  post_head->set_req(LoopNode::EntryControl, zer_taken);
+  set_idom(post_head, zer_taken, dd_main_exit);
+
+  Arena *a = Thread::current()->resource_area();
+  VectorSet visited(a);
+  Node_Stack clones(a, main_head->back_control()->outcnt());
+  // Step A3: Make the fall-in values to the vector post-loop come from the
+  // fall-out values of the main-loop.
+  for (DUIterator_Fast imax, i = main_head->fast_outs(imax); i < imax; i++) {
+    Node* main_phi = main_head->fast_out(i);
+    if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() >0) {
+      Node *cur_phi = old_new[main_phi->_idx];
+      Node *fallnew = clone_up_backedge_goo(main_head->back_control(),
+                                            post_head->init_control(),
+                                            main_phi->in(LoopNode::LoopBackControl),
+                                            visited, clones);
+      _igvn.hash_delete(cur_phi);
+      cur_phi->set_req(LoopNode::EntryControl, fallnew);
+    }
+  }
+
+  // CastII for the new post loop:
+  bool inserted = cast_incr_before_loop(zer_opaq->in(1), zer_taken, post_head);
+  assert(inserted, "no castII inserted");
+
+  // It's difficult to be precise about the trip-counts
+  // for post loops.  They are usually very short,
+  // so guess that unit vector trips is a reasonable value.
+  post_head->set_profile_trip_cnt((float)slp_max_unroll_factor);
+
+  // Now force out all loop-invariant dominating tests.  The optimizer
+  // finds some, but we _know_ they are all useless.
+  peeled_dom_test_elim(loop, old_new);
   loop->record_for_igvn();
 }
 
@@ -2608,6 +2749,9 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
     // and we'd rather unroll the post-RCE'd loop SO... do not unroll if
     // peeling.
     if (should_unroll && !should_peel) {
+      if (SuperWordLoopUnrollAnalysis) {
+        phase->insert_vector_post_loop(this, old_new);
+      }
       phase->do_unroll(this, old_new, true);
     }
 

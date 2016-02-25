@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
@@ -123,6 +124,7 @@ void ConcurrentMarkThread::run_service() {
     // wait until started is set.
     sleepBeforeNextCycle();
     if (_should_terminate) {
+      _cm->root_regions()->cancel_scan();
       break;
     }
 
@@ -132,6 +134,11 @@ void ConcurrentMarkThread::run_service() {
       HandleMark   hm;
       double cycle_start = os::elapsedVTime();
 
+      {
+        GCConcPhaseTimer(_cm, "Concurrent Clearing of Claimed Marks");
+        ClassLoaderDataGraph::clear_claimed_marks();
+      }
+
       // We have to ensure that we finish scanning the root regions
       // before the next GC takes place. To ensure this we have to
       // make sure that we do not join the STS until the root regions
@@ -140,7 +147,7 @@ void ConcurrentMarkThread::run_service() {
       // without the root regions have been scanned which would be a
       // correctness issue.
 
-      if (!cm()->has_aborted()) {
+      {
         GCConcPhaseTimer(_cm, "Concurrent Root Region Scanning");
         _cm->scanRootRegions();
       }
