@@ -224,6 +224,7 @@ void Canonicalizer::do_StoreField     (StoreField*      x) {
 void Canonicalizer::do_ArrayLength    (ArrayLength*     x) {
   NewArray*  na;
   Constant*  ct;
+  LoadField* lf;
 
   if ((na = x->array()->as_NewArray()) != NULL) {
     // New arrays might have the known length.
@@ -244,12 +245,15 @@ void Canonicalizer::do_ArrayLength    (ArrayLength*     x) {
       set_constant(cnst->value()->length());
     }
 
-#ifdef ASSERT
-  } else {
-    LoadField* lf = x->array()->as_LoadField();
-    bool is_static_constant = (lf != NULL) && lf->field()->is_constant() && lf->field()->is_static();
-    assert(!is_static_constant, "Constant field loads are folded during parsing");
-#endif // ASSERT
+  } else if ((lf = x->array()->as_LoadField()) != NULL) {
+    ciField* field = lf->field();
+    if (field->is_constant() && field->is_static()) {
+      assert(PatchALot || ScavengeRootsInCode < 2, "Constant field loads are folded during parsing");
+      ciObject* c = field->constant_value().as_object();
+      if (!c->is_null_object()) {
+        set_constant(c->as_array()->length());
+      }
+    }
   }
 }
 
