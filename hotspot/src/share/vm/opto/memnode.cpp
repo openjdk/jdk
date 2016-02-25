@@ -1582,6 +1582,15 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
   return NULL;
 }
 
+static bool is_mismatched_access(ciConstant con, BasicType loadbt) {
+  BasicType conbt = con.basic_type();
+  assert(conbt != T_NARROWOOP, "sanity");
+  if (loadbt == T_NARROWOOP || loadbt == T_ARRAY) {
+    loadbt = T_OBJECT;
+  }
+  return (conbt != loadbt);
+}
+
 // Try to constant-fold a stable array element.
 static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicType loadbt) {
   assert(ary->const_oop(), "array should be constant");
@@ -1590,8 +1599,7 @@ static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicTyp
   // Decode the results of GraphKit::array_element_address.
   ciArray* aobj = ary->const_oop()->as_array();
   ciConstant con = aobj->element_value_by_offset(off);
-
-  if (con.basic_type() != T_ILLEGAL && !con.is_null_or_zero()) {
+  if (con.basic_type() != T_ILLEGAL && !is_mismatched_access(con, loadbt) && !con.is_null_or_zero()) {
     const Type* con_type = Type::make_from_constant(con);
     if (con_type != NULL) {
       if (con_type->isa_aryptr()) {
@@ -1642,7 +1650,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     const bool off_beyond_header = ((uint)off >= (uint)min_base_off);
 
     // Try to constant-fold a stable array element.
-    if (FoldStableValues && ary->is_stable() && ary->const_oop() != NULL) {
+    if (FoldStableValues && !is_mismatched_access() && ary->is_stable() && ary->const_oop() != NULL) {
       // Make sure the reference is not into the header and the offset is constant
       if (off_beyond_header && adr->is_AddP() && off != Type::OffsetBot) {
         const Type* con_type = fold_stable_ary_elem(ary, off, memory_type());
