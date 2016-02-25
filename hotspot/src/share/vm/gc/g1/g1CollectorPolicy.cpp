@@ -787,10 +787,9 @@ double G1CollectorPolicy::predict_survivor_regions_evac_time() const {
   return survivor_regions_evac_time;
 }
 
-void G1CollectorPolicy::revise_young_list_target_length_if_necessary() {
+void G1CollectorPolicy::revise_young_list_target_length_if_necessary(size_t rs_lengths) {
   guarantee( adaptive_young_list_length(), "should not call this otherwise" );
 
-  size_t rs_lengths = _g1->young_list()->sampled_rs_lengths();
   if (rs_lengths > _rs_lengths_prediction) {
     // add 10% to avoid having to recalculate often
     size_t rs_lengths_prediction = rs_lengths * 1100 / 1000;
