@@ -522,6 +522,9 @@ protected:
   // after processing.
   void enqueue_discovered_references(G1ParScanThreadStateSet* per_thread_states);
 
+  // Merges the information gathered on a per-thread basis for all worker threads
+  // during GC into global variables.
+  void merge_per_thread_state_info(G1ParScanThreadStateSet* per_thread_states);
 public:
   WorkGang* workers() const { return _workers; }
 
