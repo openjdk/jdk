@@ -291,7 +291,6 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   _g1->cleanUpCardTable();
 
   DirtyCardQueueSet& into_cset_dcqs = _into_cset_dirty_card_queue_set;
-  int into_cset_n_buffers = into_cset_dcqs.completed_buffers_num();
 
   if (_g1->evacuation_failed()) {
     double restore_remembered_set_start = os::elapsedTime();
