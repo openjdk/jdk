@@ -27,6 +27,7 @@ import utils.*;
  * @test
  * @summary Test checks the consistency of the output
  * displayed with jstat -gccapacity.
+ * @ignore 8149778
  * @library /test/lib/share/classes
  * @library ../share
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true

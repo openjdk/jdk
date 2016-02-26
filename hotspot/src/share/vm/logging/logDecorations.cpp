@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,19 @@
 #include "services/management.hpp"
 
 jlong LogDecorations::_vm_start_time_millis = 0;
+const char* LogDecorations::_host_name = "";
 
 LogDecorations::LogDecorations(LogLevelType level, const LogTagSet &tagset, const LogDecorators &decorators)
   : _level(level), _tagset(tagset), _millis(-1) {
   create_decorations(decorators);
+}
+
+void LogDecorations::initialize(jlong vm_start_time) {
+  char buffer[1024];
+  if (os::get_host_name(buffer, sizeof(buffer))){
+    _host_name = os::strdup_check_oom(buffer);
+  }
+  _vm_start_time_millis = vm_start_time;
 }
 
 void LogDecorations::create_decorations(const LogDecorators &decorators) {
@@ -109,3 +118,9 @@ char* LogDecorations::create_tags_decoration(char* pos) {
   int written = _tagset.label(pos, DecorationsBufferSize - (pos - _decorations_buffer));
   ASSERT_AND_RETURN(written, pos)
 }
+
+char* LogDecorations::create_hostname_decoration(char* pos) {
+  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), "%s", _host_name);
+  ASSERT_AND_RETURN(written, pos)
+}
+
