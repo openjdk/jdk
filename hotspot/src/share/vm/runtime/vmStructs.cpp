@@ -390,7 +390,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
   nonstatic_field(Method,                      _constMethod,                                  ConstMethod*)                          \
-  nonstatic_field(Method,                      _method_data,                                  MethodData*)                           \
+  COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(Method, _method_data,                            MethodData*))                          \
   nonstatic_field(Method,                      _method_counters,                              MethodCounters*)                       \
   nonstatic_field(Method,                      _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
