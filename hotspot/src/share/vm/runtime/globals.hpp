@@ -1055,10 +1055,6 @@ public:
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  develop(size_t, SegmentedHeapDumpThreshold, 2*G,                          \
-          "Generate a segmented heap dump (JAVA PROFILE 1.0.2 format) "     \
-          "when the heap usage is larger than this")                        \
-                                                                            \
   develop(size_t, HeapDumpSegmentSize, 1*G,                                 \
           "Approximate segment size when generating a segmented heap dump") \
                                                                             \
