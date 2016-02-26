@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     StringDedupQueueFixup,
     StringDedupTableFixup,
     RedirtyCards,
+    PreserveCMReferents,
     GCParPhasesSentinel
   };
 
@@ -107,6 +108,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_non_young_cset_choice_time_ms;
 
   double _recorded_redirty_logged_cards_time_ms;
+
+  double _recorded_preserve_cm_referents_time_ms;
 
   double _recorded_young_free_cset_time_ms;
   double _recorded_non_young_free_cset_time_ms;
@@ -232,6 +235,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_redirty_logged_cards_time_ms(double time_ms) {
     _recorded_redirty_logged_cards_time_ms = time_ms;
+  }
+
+  void record_preserve_cm_referents_time_ms(double time_ms) {
+    _recorded_preserve_cm_referents_time_ms = time_ms;
   }
 
   void record_cur_collection_start_sec(double time_ms) {
