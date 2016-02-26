@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>(max_gc_threads, "Parallel Redirty:", true, 3);
   _redirtied_cards = new WorkerDataArray<size_t>(max_gc_threads, "Redirtied Cards:", true, 3);
   _gc_par_phases[RedirtyCards]->link_thread_work_items(_redirtied_cards);
+
+  _gc_par_phases[PreserveCMReferents] = new WorkerDataArray<double>(max_gc_threads, "Parallel Preserve CM Refs:", true, 3);
 }
 
 void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
@@ -392,10 +394,12 @@ void G1GCPhaseTimes::print() {
   print_stats(Indents[2], "Choose CSet",
     (_recorded_young_cset_choice_time_ms +
     _recorded_non_young_cset_choice_time_ms));
+  print_stats(Indents[2], "Preserve CM Refs", _recorded_preserve_cm_referents_time_ms);
   print_stats(Indents[2], "Ref Proc", _cur_ref_proc_time_ms);
   print_stats(Indents[2], "Ref Enq", _cur_ref_enq_time_ms);
   print_stats(Indents[2], "Redirty Cards", _recorded_redirty_logged_cards_time_ms);
   par_phase_printer.print(RedirtyCards);
+  par_phase_printer.print(PreserveCMReferents);
   if (G1EagerReclaimHumongousObjects) {
     print_stats(Indents[2], "Humongous Register", _cur_fast_reclaim_humongous_register_time_ms);
 

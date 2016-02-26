@@ -511,6 +511,9 @@ protected:
   // allocated block, or else "NULL".
   HeapWord* expand_and_allocate(size_t word_size, AllocationContext_t context);
 
+  // Preserve any referents discovered by concurrent marking that have not yet been
+  // copied by the STW pause.
+  void preserve_cm_referents(G1ParScanThreadStateSet* per_thread_states);
   // Process any reference objects discovered during
   // an incremental evacuation pause.
   void process_discovered_references(G1ParScanThreadStateSet* per_thread_states);
