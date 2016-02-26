@@ -1984,8 +1984,8 @@ jint G1CollectedHeap::initialize() {
   JavaThread::dirty_card_queue_set().initialize(_refine_cte_cl,
                                                 DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
-                                                concurrent_g1_refine()->yellow_zone(),
-                                                concurrent_g1_refine()->red_zone(),
+                                                (int)concurrent_g1_refine()->yellow_zone(),
+                                                (int)concurrent_g1_refine()->red_zone(),
                                                 Shared_DirtyCardQ_lock,
                                                 NULL,  // fl_owner
                                                 true); // init_free_ids

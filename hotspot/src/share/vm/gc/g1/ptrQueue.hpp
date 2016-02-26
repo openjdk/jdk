@@ -209,7 +209,7 @@ protected:
   Monitor* _cbl_mon;  // Protects the fields below.
   BufferNode* _completed_buffers_head;
   BufferNode* _completed_buffers_tail;
-  int _n_completed_buffers;
+  size_t _n_completed_buffers;
   int _process_completed_threshold;
   volatile bool _process_completed;
 
@@ -233,9 +233,9 @@ protected:
   // Maximum number of elements allowed on completed queue: after that,
   // enqueuer does the work itself.  Zero indicates no maximum.
   int _max_completed_queue;
-  int _completed_queue_padding;
+  size_t _completed_queue_padding;
 
-  int completed_buffers_list_length();
+  size_t completed_buffers_list_length();
   void assert_completed_buffer_list_len_correct_locked();
   void assert_completed_buffer_list_len_correct();
 
@@ -299,15 +299,15 @@ public:
   // list size may be reduced, if that is deemed desirable.
   void reduce_free_list();
 
-  int completed_buffers_num() { return _n_completed_buffers; }
+  size_t completed_buffers_num() { return _n_completed_buffers; }
 
   void merge_bufferlists(PtrQueueSet* src);
 
   void set_max_completed_queue(int m) { _max_completed_queue = m; }
   int max_completed_queue() { return _max_completed_queue; }
 
-  void set_completed_queue_padding(int padding) { _completed_queue_padding = padding; }
-  int completed_queue_padding() { return _completed_queue_padding; }
+  void set_completed_queue_padding(size_t padding) { _completed_queue_padding = padding; }
+  size_t completed_queue_padding() { return _completed_queue_padding; }
 
   // Notify the consumer if the number of buffers crossed the threshold
   void notify_if_necessary();

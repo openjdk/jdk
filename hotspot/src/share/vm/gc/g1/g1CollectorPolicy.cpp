@@ -1301,12 +1301,12 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
     const int k_gy = 3, k_gr = 6;
     const double inc_k = 1.1, dec_k = 0.9;
 
-    int g = cg1r->green_zone();
+    size_t g = cg1r->green_zone();
     if (update_rs_time > goal_ms) {
-      g = (int)(g * dec_k);  // Can become 0, that's OK. That would mean a mutator-only processing.
+      g = (size_t)(g * dec_k);  // Can become 0, that's OK. That would mean a mutator-only processing.
     } else {
       if (update_rs_time < goal_ms && update_rs_processed_buffers > g) {
-        g = (int)MAX2(g * inc_k, g + 1.0);
+        g = (size_t)MAX2(g * inc_k, g + 1.0);
       }
     }
     // Change the refinement threads params
@@ -1315,15 +1315,15 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
     cg1r->set_red_zone(g * k_gr);
     cg1r->reinitialize_threads();
 
-    int processing_threshold_delta = MAX2((int)(cg1r->green_zone() * _predictor.sigma()), 1);
-    int processing_threshold = MIN2(cg1r->green_zone() + processing_threshold_delta,
+    size_t processing_threshold_delta = MAX2<size_t>(cg1r->green_zone() * _predictor.sigma(), 1);
+    size_t processing_threshold = MIN2(cg1r->green_zone() + processing_threshold_delta,
                                     cg1r->yellow_zone());
     // Change the barrier params
-    dcqs.set_process_completed_threshold(processing_threshold);
-    dcqs.set_max_completed_queue(cg1r->red_zone());
+    dcqs.set_process_completed_threshold((int)processing_threshold);
+    dcqs.set_max_completed_queue((int)cg1r->red_zone());
   }
 
-  int curr_queue_size = dcqs.completed_buffers_num();
+  size_t curr_queue_size = dcqs.completed_buffers_num();
   if (curr_queue_size >= cg1r->yellow_zone()) {
     dcqs.set_completed_queue_padding(curr_queue_size);
   } else {

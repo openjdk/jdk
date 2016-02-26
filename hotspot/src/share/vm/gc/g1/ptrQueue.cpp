@@ -271,16 +271,17 @@ void PtrQueueSet::enqueue_complete_buffer(void** buf, size_t index) {
   _n_completed_buffers++;
 
   if (!_process_completed && _process_completed_threshold >= 0 &&
-      _n_completed_buffers >= _process_completed_threshold) {
+      _n_completed_buffers >= (size_t)_process_completed_threshold) {
     _process_completed = true;
-    if (_notify_when_complete)
+    if (_notify_when_complete) {
       _cbl_mon->notify();
+    }
   }
   DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
 }
 
-int PtrQueueSet::completed_buffers_list_length() {
-  int n = 0;
+size_t PtrQueueSet::completed_buffers_list_length() {
+  size_t n = 0;
   BufferNode* cbn = _completed_buffers_head;
   while (cbn != NULL) {
     n++;
@@ -334,7 +335,8 @@ void PtrQueueSet::merge_bufferlists(PtrQueueSet *src) {
 
 void PtrQueueSet::notify_if_necessary() {
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-  if (_n_completed_buffers >= _process_completed_threshold || _max_completed_queue == 0) {
+  assert(_process_completed_threshold >= 0, "_process_completed is negative");
+  if (_n_completed_buffers >= (size_t)_process_completed_threshold || _max_completed_queue == 0) {
     _process_completed = true;
     if (_notify_when_complete)
       _cbl_mon->notify();
