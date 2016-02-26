@@ -413,6 +413,7 @@ void G1GCPhaseTimes::print() {
     _recorded_non_young_free_cset_time_ms));
   log_trace(gc, phases)("%sYoung Free CSet: %.1lf ms", Indents[3], _recorded_young_free_cset_time_ms);
   log_trace(gc, phases)("%sNon-Young Free CSet: %.1lf ms", Indents[3], _recorded_non_young_free_cset_time_ms);
+  print_stats(Indents[2], "Merge Per-Thread State", _recorded_merge_pss_time_ms);
   if (_cur_verify_after_time_ms > 0.0) {
     print_stats(Indents[2], "Verify After", _cur_verify_after_time_ms);
   }

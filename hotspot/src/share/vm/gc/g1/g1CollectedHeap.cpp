@@ -4594,6 +4594,12 @@ void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadStateSet* per
   g1_policy()->phase_times()->record_ref_enq_time(ref_enq_time * 1000.0);
 }
 
+void G1CollectedHeap::merge_per_thread_state_info(G1ParScanThreadStateSet* per_thread_states) {
+  double merge_pss_time_start = os::elapsedTime();
+  per_thread_states->flush();
+  g1_policy()->phase_times()->record_merge_pss_time_ms((os::elapsedTime() - merge_pss_time_start) * 1000.0);
+}
+
 void G1CollectedHeap::pre_evacuate_collection_set() {
   _expand_heap_after_alloc_failure = true;
   _evacuation_failed = false;
@@ -4696,7 +4702,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
 
   _allocator->release_gc_alloc_regions(evacuation_info);
 
-  per_thread_states->flush();
+  merge_per_thread_state_info(per_thread_states);
 
   record_obj_copy_mem_stats();
 

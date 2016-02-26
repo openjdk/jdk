@@ -23,7 +23,7 @@
 
 /*
  * @test TestGCLogMessages
- * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330 8076463
+ * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330 8076463 8150630
  * @summary Ensure the output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
@@ -88,6 +88,8 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Humongous Register", Level.DEBUG),
         // Preserve CM Referents
         new LogMessageWithLevel("Preserve CM Refs", Level.DEBUG),
+        // Merge PSS
+        new LogMessageWithLevel("Merge Per-Thread State", Level.DEBUG),
     };
 
     void checkMessagesAtLevel(OutputAnalyzer output, LogMessageWithLevel messages[], Level level) throws Exception {

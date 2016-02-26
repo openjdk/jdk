@@ -111,6 +111,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _recorded_preserve_cm_referents_time_ms;
 
+  double _recorded_merge_pss_time_ms;
+
   double _recorded_young_free_cset_time_ms;
   double _recorded_non_young_free_cset_time_ms;
 
@@ -239,6 +241,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_preserve_cm_referents_time_ms(double time_ms) {
     _recorded_preserve_cm_referents_time_ms = time_ms;
+  }
+
+  void record_merge_pss_time_ms(double time_ms) {
+    _recorded_merge_pss_time_ms = time_ms;
   }
 
   void record_cur_collection_start_sec(double time_ms) {
