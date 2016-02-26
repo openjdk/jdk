@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,25 +213,23 @@ JNF_COCOA_EXIT(env);
  */
 
 JNIEXPORT jboolean JNICALL Java_com_apple_eio_FileManager__1moveToTrash
-(JNIEnv *env, jclass clz, jstring url)
+(JNIEnv *env, jclass clz, jstring fileName)
 {
-        __block jboolean returnValue = JNI_FALSE;
+    __block BOOL returnValue = NO;
 JNF_COCOA_ENTER(env);
 
-    NSString *path = JNFNormalizedNSStringForPath(env, url);
+    NSString * path = JNFNormalizedNSStringForPath(env, fileName);
+    NSURL *url = [NSURL fileURLWithPath:path];
     [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-        NSInteger res = 0;
-        [[NSWorkspace sharedWorkspace] performFileOperation:NSWorkspaceRecycleOperation
-                                                     source:[path stringByDeletingLastPathComponent]
-                                                destination:nil
-                                                      files:[NSArray arrayWithObject:[path lastPathComponent]]
-                                                        tag:&res];
-        returnValue = (res == 0);
+
+        returnValue  = [[NSFileManager defaultManager] trashItemAtURL:url
+                                                     resultingItemURL:nil
+                                                                error:nil];
     }];
 
 JNF_COCOA_EXIT(env);
 
-        return returnValue;
+        return returnValue ? JNI_TRUE: JNI_FALSE;
 }
 
 /*
