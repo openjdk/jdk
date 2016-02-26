@@ -46,6 +46,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libdt_socket/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_windows := -export:jdwpTransport_OnLoad, \
     LIBS_linux := -lpthread, \
     LIBS_solaris := -lnsl -lsocket -lc, \
     LIBS_windows := $(JDKLIB_LIBS) ws2_32.lib, \
