@@ -4395,6 +4395,8 @@ public:
   { }
 
   void work(uint worker_id) {
+    G1GCParPhaseTimesTracker x(_g1h->g1_policy()->phase_times(), G1GCPhaseTimes::PreserveCMReferents, worker_id);
+
     ResourceMark rm;
     HandleMark   hm;
 
@@ -4458,13 +4460,8 @@ void G1CollectedHeap::process_weak_jni_handles() {
   g1_policy()->phase_times()->record_ref_proc_time(ref_proc_time * 1000.0);
 }
 
-// Weak Reference processing during an evacuation pause (part 1).
-void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per_thread_states) {
-  double ref_proc_start = os::elapsedTime();
-
-  ReferenceProcessor* rp = _ref_processor_stw;
-  assert(rp->discovery_enabled(), "should have been enabled");
-
+void G1CollectedHeap::preserve_cm_referents(G1ParScanThreadStateSet* per_thread_states) {
+  double preserve_cm_referents_start = os::elapsedTime();
   // Any reference objects, in the collection set, that were 'discovered'
   // by the CM ref processor should have already been copied (either by
   // applying the external root copy closure to the discovered lists, or
@@ -4492,8 +4489,17 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
                                                  per_thread_states,
                                                  no_of_gc_workers,
                                                  _task_queues);
-
   workers()->run_task(&keep_cm_referents);
+
+  g1_policy()->phase_times()->record_preserve_cm_referents_time_ms((os::elapsedTime() - preserve_cm_referents_start) * 1000.0);
+}
+
+// Weak Reference processing during an evacuation pause (part 1).
+void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per_thread_states) {
+  double ref_proc_start = os::elapsedTime();
+
+  ReferenceProcessor* rp = _ref_processor_stw;
+  assert(rp->discovery_enabled(), "should have been enabled");
 
   // Closure to test whether a referent is alive.
   G1STWIsAliveClosure is_alive(this);
@@ -4526,6 +4532,8 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
                                               NULL,
                                               _gc_timer_stw);
   } else {
+    uint no_of_gc_workers = workers()->active_workers();
+
     // Parallel reference processing
     assert(rp->num_q() == no_of_gc_workers, "sanity");
     assert(no_of_gc_workers <= rp->max_num_q(), "sanity");
@@ -4581,6 +4589,12 @@ void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadStateSet* per
 
   double ref_enq_time = os::elapsedTime() - ref_enq_start;
   g1_policy()->phase_times()->record_ref_enq_time(ref_enq_time * 1000.0);
+}
+
+void G1CollectedHeap::merge_per_thread_state_info(G1ParScanThreadStateSet* per_thread_states) {
+  double merge_pss_time_start = os::elapsedTime();
+  per_thread_states->flush();
+  g1_policy()->phase_times()->record_merge_pss_time_ms((os::elapsedTime() - merge_pss_time_start) * 1000.0);
 }
 
 void G1CollectedHeap::pre_evacuate_collection_set() {
@@ -4641,6 +4655,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   // objects (and their reachable sub-graphs) that were
   // not copied during the pause.
   if (g1_policy()->should_process_references()) {
+    preserve_cm_referents(per_thread_states);
     process_discovered_references(per_thread_states);
   } else {
     ref_processor_stw()->verify_no_references_recorded();
@@ -4684,7 +4699,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
 
   _allocator->release_gc_alloc_regions(evacuation_info);
 
-  per_thread_states->flush();
+  merge_per_thread_state_info(per_thread_states);
 
   record_obj_copy_mem_stats();
 
