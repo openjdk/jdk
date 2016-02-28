@@ -2702,11 +2702,8 @@ public:
 };
 
 static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h) {
-  ReferenceProcessor* result = NULL;
-  if (G1UseConcMarkReferenceProcessing) {
-    result = g1h->ref_processor_cm();
-    assert(result != NULL, "should not be NULL");
-  }
+  ReferenceProcessor* result = g1h->ref_processor_cm();
+  assert(result != NULL, "CM reference processor should not be NULL");
   return result;
 }
 
