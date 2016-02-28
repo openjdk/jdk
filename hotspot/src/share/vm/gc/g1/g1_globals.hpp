@@ -71,10 +71,6 @@
           "draining concurrent marking work queues.")                       \
           range(1, max_intx)                                                \
                                                                             \
-  experimental(bool, G1UseConcMarkReferenceProcessing, true,                \
-          "If true, enable reference discovery during concurrent "          \
-          "marking and reference processing at the end of remark.")         \
-                                                                            \
   experimental(double, G1LastPLABAverageOccupancy, 50.0,                    \
                "The expected average occupancy of the last PLAB in "        \
                "percent.")                                                  \
