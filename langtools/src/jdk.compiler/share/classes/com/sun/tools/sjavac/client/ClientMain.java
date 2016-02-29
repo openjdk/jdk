@@ -70,24 +70,15 @@ public class ClientMain {
 
         // Prepare sjavac object
         boolean useServer = options.getServerConf() != null;
-        Sjavac sjavac;
-        // Create an sjavac implementation to be used for compilation
-        if (useServer) {
-            try {
-                sjavac = new SjavacClient(options);
-            } catch (PortFileInaccessibleException e) {
-                Log.error("Port file inaccessible.");
-                return -1;
-            }
-        } else {
-            sjavac = new SjavacImpl();
-        }
+        Sjavac sjavac = useServer ? new SjavacClient(options) : new SjavacImpl();
 
+        // Perform compilation
         int rc = sjavac.compile(args);
 
         // If sjavac is running in the foreground we should shut it down at this point
-        if (!useServer)
+        if (!useServer) {
             sjavac.shutdown();
+        }
 
         return rc;
     }

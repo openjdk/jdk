@@ -88,7 +88,7 @@ public class SjavacClient implements Sjavac {
     // Store the server conf settings here.
     private final String settings;
 
-    public SjavacClient(Options options) throws PortFileInaccessibleException {
+    public SjavacClient(Options options) {
         String tmpServerConf = options.getServerConf();
         String serverConf = (tmpServerConf!=null)? tmpServerConf : "";
         String tmpId = Util.extractStringOption("id", serverConf);
@@ -98,12 +98,7 @@ public class SjavacClient implements Sjavac {
                                         .toAbsolutePath()
                                         .toString();
         String portfileName = Util.extractStringOption("portfile", serverConf, defaultPortfile);
-        try {
-            portFile = SjavacServer.getPortFile(portfileName);
-        } catch (PortFileInaccessibleException e) {
-            Log.error("Port file inaccessable: " + e);
-            throw e;
-        }
+        portFile = SjavacServer.getPortFile(portfileName);
         sjavacForkCmd = Util.extractStringOption("sjavac", serverConf, "sjavac");
         int poolsize = Util.extractIntOption("poolsize", serverConf);
         keepalive = Util.extractIntOption("keepalive", serverConf, 120);
@@ -154,6 +149,9 @@ public class SjavacClient implements Sjavac {
                     result = Integer.parseInt(content);
                 }
             }
+        } catch (PortFileInaccessibleException e) {
+            Log.error("Port file inaccessible.");
+            result = CompilationSubResult.ERROR_FATAL;
         } catch (IOException ioe) {
             Log.error("IOException caught during compilation: " + ioe.getMessage());
             Log.debug(ioe);
@@ -204,13 +202,15 @@ public class SjavacClient implements Sjavac {
     private void makeSureServerIsRunning(PortFile portFile)
             throws IOException, InterruptedException {
 
-        portFile.lock();
-        portFile.getValues();
-        portFile.unlock();
+        if (portFile.exists()) {
+            portFile.lock();
+            portFile.getValues();
+            portFile.unlock();
 
-        if (portFile.containsPortInfo()) {
-            // Server seems to already be running
-            return;
+            if (portFile.containsPortInfo()) {
+                // Server seems to already be running
+                return;
+            }
         }
 
         // Fork a new server and wait for it to start
