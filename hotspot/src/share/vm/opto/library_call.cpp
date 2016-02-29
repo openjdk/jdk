@@ -2541,10 +2541,12 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
   if (alias_type->element() != NULL || alias_type->field() != NULL) {
     BasicType bt;
     if (alias_type->element() != NULL) {
-      const Type* element = alias_type->element();
+      // Use address type to get the element type. Alias type doesn't provide
+      // enough information (e.g., doesn't differentiate between byte[] and boolean[]).
+      const Type* element = adr_type->is_aryptr()->elem();
       bt = element->isa_narrowoop() ? T_OBJECT : element->array_element_basic_type();
     } else {
-      bt = alias_type->field()->type()->basic_type();
+      bt = alias_type->field()->layout_type();
     }
     if (bt == T_ARRAY) {
       // accessing an array field with getObject is not a mismatch
@@ -2561,7 +2563,7 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
     // Try to constant fold a load from a constant field
     ciField* field = alias_type->field();
     if (heap_base_oop != top() &&
-        field != NULL && field->is_constant() && field->layout_type() == type) {
+        field != NULL && field->is_constant() && !mismatched) {
       // final or stable field
       const Type* con_type = Type::make_constant(alias_type->field(), heap_base_oop);
       if (con_type != NULL) {
