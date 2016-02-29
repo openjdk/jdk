@@ -1660,6 +1660,7 @@ class JavaThread: public Thread {
   void print_thread_state_on(outputStream*) const      PRODUCT_RETURN;
   void print_thread_state() const                      PRODUCT_RETURN;
   void print_on_error(outputStream* st, char* buf, int buflen) const;
+  void print_name_on_error(outputStream* st, char* buf, int buflen) const;
   void verify();
   const char* get_thread_name() const;
  private:
@@ -2158,6 +2159,7 @@ class Threads: AllStatic {
     print_on(tty, print_stacks, internal_format, false /* no concurrent lock printed */);
   }
   static void print_on_error(outputStream* st, Thread* current, char* buf, int buflen);
+  static void print_threads_compiling(outputStream* st, char* buf, int buflen);
 
   // Get Java threads that are waiting to enter a monitor. If doLock
   // is true, then Threads_lock is grabbed as needed. Otherwise, the

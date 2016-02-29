@@ -72,24 +72,20 @@ class ResourceBundleGenerator implements BundleGenerator {
     public void generateBundle(String packageName, String baseName, String localeID, boolean useJava,
                                Map<String, ?> map, BundleType type) throws IOException {
         String suffix = useJava ? ".java" : ".properties";
-        String lang = CLDRConverter.getLanguageCode(localeID);
-        String ctry = CLDRConverter.getCountryCode(localeID);
         String dirName = CLDRConverter.DESTINATION_DIR + File.separator + "sun" + File.separator
                 + packageName + File.separator + "resources" + File.separator + "cldr";
-        if (lang.length() > 0) {
-            if (CLDRConverter.isBaseModule ^ isBaseLocale(localeID)) {
-                return;
-            }
-            dirName = dirName + File.separator + lang +
-                      (ctry != null && ctry.length() > 0 ? File.separator + ctry : "");
-            packageName = packageName + ".resources.cldr." + lang +
-                      (ctry != null && ctry.length() > 0 ? "." + ctry : "");
-        } else {
-            if (!CLDRConverter.isBaseModule) {
-                return;
-            }
-            packageName = packageName + ".resources.cldr";
+        packageName = packageName + ".resources.cldr";
+
+        if (CLDRConverter.isBaseModule ^ isBaseLocale(localeID)) {
+            return;
         }
+
+        // Assume that non-base resources go into jdk.localedata
+        if (!CLDRConverter.isBaseModule) {
+            dirName = dirName + File.separator + "ext";
+            packageName = packageName + ".ext";
+        }
+
         File dir = new File(dirName);
         if (!dir.exists()) {
             dir.mkdirs();
@@ -252,10 +248,7 @@ class ResourceBundleGenerator implements BundleGenerator {
             dir.mkdirs();
         }
         String className =
-            (CLDRConverter.isBaseModule ? "CLDRBaseLocaleDataMetaInfo" :
-                "CLDRLocaleDataMetaInfo_" +
-                CLDRConverter.DESTINATION_DIR.substring(CLDRConverter.DESTINATION_DIR.lastIndexOf('/')+1)
-                    .replaceAll("\\.", "_"));
+            (CLDRConverter.isBaseModule ? "CLDRBaseLocaleDataMetaInfo" : "CLDRLocaleDataMetaInfo");
         File file = new File(dir, className + ".java");
         if (!file.exists()) {
             file.createNewFile();
@@ -338,7 +331,7 @@ class ResourceBundleGenerator implements BundleGenerator {
         Locale locale = LOCALE_BUILDER
                             .clear()
                             .setLanguage(CLDRConverter.getLanguageCode(localeID))
-                            .setRegion(CLDRConverter.getCountryCode(localeID))
+                            .setRegion(CLDRConverter.getRegionCode(localeID))
                             .build();
         return CLDRConverter.BASE_LOCALES.contains(locale);
     }

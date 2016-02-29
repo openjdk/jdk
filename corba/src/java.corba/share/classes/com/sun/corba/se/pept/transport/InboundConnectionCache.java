@@ -36,6 +36,8 @@ public interface InboundConnectionCache
     public void put(Acceptor acceptor, Connection connection);
 
     public void remove(Connection connection);
+
+    public Acceptor getAcceptor();
 }
 
 // End of file.

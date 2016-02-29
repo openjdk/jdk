@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5267,8 +5267,29 @@ bool os::check_heap(bool force) {
 
 
 bool os::find(address addr, outputStream* st) {
-  // Nothing yet
-  return false;
+  int offset = -1;
+  bool result = false;
+  char buf[256];
+  if (os::dll_address_to_library_name(addr, buf, sizeof(buf), &offset)) {
+    st->print(PTR_FORMAT " ", addr);
+    if (strlen(buf) < sizeof(buf) - 1) {
+      char* p = strrchr(buf, '\\');
+      if (p) {
+        st->print("%s", p + 1);
+      } else {
+        st->print("%s", buf);
+      }
+    } else {
+        // The library name is probably truncated. Let's omit the library name.
+        // See also JDK-8147512.
+    }
+    if (os::dll_address_to_function_name(addr, buf, sizeof(buf), &offset)) {
+      st->print("::%s + 0x%x", buf, offset);
+    }
+    st->cr();
+    result = true;
+  }
+  return result;
 }
 
 LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {

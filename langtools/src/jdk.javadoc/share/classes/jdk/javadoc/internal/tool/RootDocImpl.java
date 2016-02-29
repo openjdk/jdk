@@ -272,7 +272,7 @@ public class RootDocImpl implements DocletEnvironment {
     public List<Element> getSelectedElements(List<? extends Element> elements) {
         return elements.stream()
                 .filter(e -> isIncluded(e))
-                .collect(Collectors.toList());
+                .collect(Collectors.<Element>toList());
     }
 
     @Override

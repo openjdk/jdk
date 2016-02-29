@@ -320,6 +320,48 @@ class Authenticator {
     }
 
     /**
+     * Ask this authenticator for a password.
+     *
+     * @param host The hostname of the site requesting authentication.
+     * @param addr The InetAddress of the site requesting authorization,
+     *             or null if not known.
+     * @param port the port for the requested connection
+     * @param protocol The protocol that's requesting the connection
+     *          ({@link java.net.Authenticator#getRequestingProtocol()})
+     * @param prompt A prompt string for the user
+     * @param scheme The authentication scheme
+     * @param url The requesting URL that caused the authentication
+     * @param reqType The type (server or proxy) of the entity requesting
+     *              authentication.
+     *
+     * @return The username/password, or null if one can't be gotten
+     *
+     * @since 9
+     */
+    public PasswordAuthentication
+    requestPasswordAuthenticationInstance(String host,
+                                          InetAddress addr,
+                                          int port,
+                                          String protocol,
+                                          String prompt,
+                                          String scheme,
+                                          URL url,
+                                          RequestorType reqType) {
+        synchronized (this) {
+            this.reset();
+            this.requestingHost = host;
+            this.requestingSite = addr;
+            this.requestingPort = port;
+            this.requestingProtocol = protocol;
+            this.requestingPrompt = prompt;
+            this.requestingScheme = scheme;
+            this.requestingURL = url;
+            this.requestingAuthType = reqType;
+            return this.getPasswordAuthentication();
+        }
+    }
+
+    /**
      * Gets the {@code hostname} of the
      * site or proxy requesting authentication, or {@code null}
      * if not available.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/concurrentG1Refine.hpp"
-#include "gc/g1/concurrentMark.hpp"
 #include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -116,15 +116,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _recent_avg_pause_time_ratio(0.0),
   _rs_lengths_prediction(0),
   _max_survivor_regions(0),
-
-  _eden_used_bytes_before_gc(0),
-  _survivor_used_bytes_before_gc(0),
-  _old_used_bytes_before_gc(0),
-  _humongous_used_bytes_before_gc(0),
-  _heap_used_bytes_before_gc(0),
-  _metaspace_used_bytes_before_gc(0),
-  _eden_capacity_bytes_before_gc(0),
-  _heap_capacity_bytes_before_gc(0),
 
   _eden_cset_region_length(0),
   _survivor_cset_region_length(0),
@@ -745,22 +736,6 @@ void G1CollectorPolicy::update_rs_lengths_prediction(size_t prediction) {
   }
 }
 
-HeapWord* G1CollectorPolicy::mem_allocate_work(size_t size,
-                                               bool is_tlab,
-                                               bool* gc_overhead_limit_was_exceeded) {
-  guarantee(false, "Not using this policy feature yet.");
-  return NULL;
-}
-
-// This method controls how a collector handles one or more
-// of its generations being fully allocated.
-HeapWord* G1CollectorPolicy::satisfy_failed_allocation(size_t size,
-                                                       bool is_tlab) {
-  guarantee(false, "Not using this policy feature yet.");
-  return NULL;
-}
-
-
 #ifndef PRODUCT
 bool G1CollectorPolicy::verify_young_ages() {
   HeapRegion* head = _g1->young_list()->first_region();
@@ -809,7 +784,6 @@ G1CollectorPolicy::verify_young_ages(HeapRegion* head,
 
 void G1CollectorPolicy::record_full_collection_start() {
   _full_collection_start_sec = os::elapsedTime();
-  record_heap_size_info_at_start(true /* full */);
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_full_collection(true);
 }
@@ -870,8 +844,6 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
   double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
   _trace_young_gen_time_data.record_start_collection(s_w_t_ms);
   _stop_world_start = 0.0;
-
-  record_heap_size_info_at_start(false /* full */);
 
   phase_times()->record_cur_collection_start_sec(start_time_sec);
   _pending_cards = _g1->pending_card_num();
@@ -987,7 +959,7 @@ bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t cards_scanned) {
+void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t cards_scanned, size_t heap_used_bytes_before_gc) {
   double end_time_sec = os::elapsedTime();
 
   size_t cur_used_bytes = _g1->used();
@@ -1138,7 +1110,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     }
     _rs_length_diff_seq->add((double) rs_length_diff);
 
-    size_t freed_bytes = _heap_used_bytes_before_gc - cur_used_bytes;
+    size_t freed_bytes = heap_used_bytes_before_gc - cur_used_bytes;
     size_t copied_bytes = _collection_set_bytes_used_before - freed_bytes;
     double cost_per_byte_ms = 0.0;
 
@@ -1260,51 +1232,8 @@ void G1CollectorPolicy::report_ihop_statistics() {
   _ihop_control->print();
 }
 
-#define EXT_SIZE_FORMAT "%.1f%s"
-#define EXT_SIZE_PARAMS(bytes)                                  \
-  byte_size_in_proper_unit((double)(bytes)),                    \
-  proper_unit_for_byte_size((bytes))
-
-void G1CollectorPolicy::record_heap_size_info_at_start(bool full) {
-  YoungList* young_list = _g1->young_list();
-  _eden_used_bytes_before_gc = young_list->eden_used_bytes();
-  _survivor_used_bytes_before_gc = young_list->survivor_used_bytes();
-  _heap_capacity_bytes_before_gc = _g1->capacity();
-  _old_used_bytes_before_gc = _g1->old_regions_count() * HeapRegion::GrainBytes;
-  _humongous_used_bytes_before_gc = _g1->humongous_regions_count() * HeapRegion::GrainBytes;
-  _heap_used_bytes_before_gc = _g1->used();
-  _eden_capacity_bytes_before_gc = (_young_list_target_length * HeapRegion::GrainBytes) - _survivor_used_bytes_before_gc;
-  _metaspace_used_bytes_before_gc = MetaspaceAux::used_bytes();
-}
-
-void G1CollectorPolicy::print_detailed_heap_transition() const {
-  YoungList* young_list = _g1->young_list();
-
-  size_t eden_used_bytes_after_gc = young_list->eden_used_bytes();
-  size_t survivor_used_bytes_after_gc = young_list->survivor_used_bytes();
-  size_t heap_used_bytes_after_gc = _g1->used();
-  size_t old_used_bytes_after_gc = _g1->old_regions_count() * HeapRegion::GrainBytes;
-  size_t humongous_used_bytes_after_gc = _g1->humongous_regions_count() * HeapRegion::GrainBytes;
-
-  size_t heap_capacity_bytes_after_gc = _g1->capacity();
-  size_t eden_capacity_bytes_after_gc =
-    (_young_list_target_length * HeapRegion::GrainBytes) - survivor_used_bytes_after_gc;
-  size_t survivor_capacity_bytes_after_gc = _max_survivor_regions * HeapRegion::GrainBytes;
-
-  log_info(gc, heap)("Eden: " SIZE_FORMAT "K->" SIZE_FORMAT "K("  SIZE_FORMAT "K)",
-                     _eden_used_bytes_before_gc / K, eden_used_bytes_after_gc /K, eden_capacity_bytes_after_gc /K);
-  log_info(gc, heap)("Survivor: " SIZE_FORMAT "K->" SIZE_FORMAT "K("  SIZE_FORMAT "K)",
-                     _survivor_used_bytes_before_gc / K, survivor_used_bytes_after_gc /K, survivor_capacity_bytes_after_gc /K);
-  log_info(gc, heap)("Old: " SIZE_FORMAT "K->" SIZE_FORMAT "K",
-                     _old_used_bytes_before_gc / K, old_used_bytes_after_gc /K);
-  log_info(gc, heap)("Humongous: " SIZE_FORMAT "K->" SIZE_FORMAT "K",
-                     _humongous_used_bytes_before_gc / K, humongous_used_bytes_after_gc /K);
-
-  MetaspaceAux::print_metaspace_change(_metaspace_used_bytes_before_gc);
-}
-
-void G1CollectorPolicy::print_phases(double pause_time_ms) {
-  phase_times()->print(pause_time_ms);
+void G1CollectorPolicy::print_phases() {
+  phase_times()->print();
 }
 
 void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
@@ -2310,7 +2239,7 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
       // whether we added any apparently expensive regions or not, to
       // avoid generating output per region.
       log_debug(gc, ergo, cset)("Added expensive regions to CSet (old CSet region num not reached min)."
-                                "old %u regions, expensive: %u regions, min %u regions, remaining time: %1.2fms",
+                                "old: %u regions, expensive: %u regions, min: %u regions, remaining time: %1.2fms",
                                 old_cset_region_length(), expensive_region_num, min_old_cset_length, time_remaining_ms);
     }
 
@@ -2319,7 +2248,7 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
 
   stop_incremental_cset_building();
 
-  log_debug(gc, ergo, cset)("Finish choosing CSet. old %u regions, predicted old region time: %1.2fms, time remaining: %1.2f",
+  log_debug(gc, ergo, cset)("Finish choosing CSet. old: %u regions, predicted old region time: %1.2fms, time remaining: %1.2f",
                             old_cset_region_length(), predicted_old_time_ms, time_remaining_ms);
 
   double non_young_end_time_sec = os::elapsedTime();

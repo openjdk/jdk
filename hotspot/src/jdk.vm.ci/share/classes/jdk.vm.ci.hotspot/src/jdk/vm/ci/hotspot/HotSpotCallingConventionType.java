@@ -49,7 +49,7 @@ public enum HotSpotCallingConventionType implements CallingConvention.Type {
 
     public static final Type[] VALUES = values();
 
-    private HotSpotCallingConventionType(boolean out) {
+    HotSpotCallingConventionType(boolean out) {
         this.out = out;
     }
 }

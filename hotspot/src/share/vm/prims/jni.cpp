@@ -1131,11 +1131,7 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       assert(m->valid_vtable_index(), "no valid vtable index");
       int vtbl_index = m->vtable_index();
       if (vtbl_index != Method::nonvirtual_vtable_index) {
-        Klass* k = h_recv->klass();
-        // k might be an arrayKlassOop but all vtables start at
-        // the same place. The cast is to avoid virtual call and assertion.
-        InstanceKlass *ik = (InstanceKlass*)k;
-        selected_method = ik->method_at_vtable(vtbl_index);
+        selected_method = h_recv->klass()->method_at_vtable(vtbl_index);
       } else {
         // final method
         selected_method = m;

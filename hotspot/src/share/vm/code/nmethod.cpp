@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
+#include "logging/log.hpp"
 #ifdef TARGET_ARCH_x86
 # include "nativeInst_x86.hpp"
 #endif
@@ -321,9 +322,12 @@ address ExceptionCache::test_address(address addr) {
 
 bool ExceptionCache::add_address_and_handler(address addr, address handler) {
   if (test_address(addr) == handler) return true;
-  if (count() < cache_size) {
-    set_pc_at(count(),addr);
-    set_handler_at(count(), handler);
+
+  int index = count();
+  if (index < cache_size) {
+    set_pc_at(index, addr);
+    set_handler_at(index, handler);
+    OrderAccess::storestore();
     increment_count();
     return true;
   }
@@ -1310,13 +1314,14 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   flush_dependencies(is_alive);
 
   // Break cycle between nmethod & method
-  if (TraceClassUnloading && WizardMode) {
-    tty->print_cr("[Class unloading: Making nmethod " INTPTR_FORMAT
-                  " unloadable], Method*(" INTPTR_FORMAT
+  if (log_is_enabled(Trace, classunload)) {
+    outputStream* log = LogHandle(classunload)::trace_stream();
+    log->print_cr("making nmethod " INTPTR_FORMAT
+                  " unloadable, Method*(" INTPTR_FORMAT
                   "), cause(" INTPTR_FORMAT ")",
                   p2i(this), p2i(_method), p2i(cause));
     if (!Universe::heap()->is_gc_active())
-      cause->klass()->print();
+      cause->klass()->print_on(log);
   }
   // Unlink the osr method, so we do not look this up again
   if (is_osr_method()) {
