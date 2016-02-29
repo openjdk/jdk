@@ -313,7 +313,7 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // ANSI C++ does not allow casting from one pointer type to a function pointer
 // directly without at best a warning. This macro accomplishes it silently
 // In every case that is present at this point the value be cast is a pointer
-// to a C linkage function. In somecase the type used for the cast reflects
+// to a C linkage function. In some case the type used for the cast reflects
 // that linkage and a picky compiler would not complain. In other cases because
 // there is no convenient place to place a typedef with extern C linkage (i.e
 // a platform dependent header file) it doesn't. At this point no compiler seems
@@ -678,7 +678,7 @@ extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a jcha
 inline const char* type2name(BasicType t) { return (uint)t < T_CONFLICT+1 ? type2name_tab[t] : NULL; }
 extern BasicType name2type(const char* name);
 
-// Auxilary math routines
+// Auxiliary math routines
 // least common multiple
 extern size_t lcm(size_t a, size_t b);
 
@@ -801,7 +801,7 @@ class JavaValue {
 
 // TosState describes the top-of-stack state before and after the execution of
 // a bytecode or method. The top-of-stack value may be cached in one or more CPU
-// registers. The TosState corresponds to the 'machine represention' of this cached
+// registers. The TosState corresponds to the 'machine representation' of this cached
 // value. There's 4 states corresponding to the JAVA types int, long, float & double
 // as well as a 5th state in case the top-of-stack value is actually on the top
 // of stack (in memory) and thus not cached. The atos state corresponds to the itos
@@ -876,7 +876,7 @@ TosState as_TosState(BasicType type);
 // a transition from one state to another. These extra states makes it possible for the safepoint code to
 // handle certain thread_states without having to suspend the thread - making the safepoint code faster.
 //
-// Given a state, the xxx_trans state can always be found by adding 1.
+// Given a state, the xxxx_trans state can always be found by adding 1.
 //
 enum JavaThreadState {
   _thread_uninitialized     =  0, // should never happen (missing initialization)
@@ -1425,7 +1425,7 @@ template<class T> static void swap(T& a, T& b) {
 // operations.
 
 // The goal of this code to avoid undefined or implementation-defined
-// behaviour.  The use of an lvalue to reference cast is explicitly
+// behavior.  The use of an lvalue to reference cast is explicitly
 // permitted by Lvalues and rvalues [basic.lval].  [Section 3.10 Para
 // 15 in C++03]
 #define JAVA_INTEGER_OP(OP, NAME, TYPE, UNSIGNED_TYPE)  \
