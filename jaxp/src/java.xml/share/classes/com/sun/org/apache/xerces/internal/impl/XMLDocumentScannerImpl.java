@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -31,7 +31,6 @@ import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
-import com.sun.org.apache.xerces.internal.xni.XMLString;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
@@ -223,9 +222,6 @@ public class XMLDocumentScannerImpl
 
     /** A DTD Description. */
     private final XMLDTDDescription fDTDDescription = new XMLDTDDescription(null, null, null, null, null);
-
-    /** String. */
-    private XMLString fString = new XMLString();
 
     private static final char [] DOCTYPE = {'D','O','C','T','Y','P','E'};
     private static final char [] COMMENTSTRING = {'-','-'};

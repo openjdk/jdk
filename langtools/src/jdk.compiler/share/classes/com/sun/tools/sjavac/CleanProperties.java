@@ -75,9 +75,7 @@ public class CleanProperties implements Transformer {
                              Map<String, PubApi> dependencyPublicApis,
                              int debugLevel,
                              boolean incremental,
-                             int numCores,
-                             Writer out,
-                             Writer err) {
+                             int numCores) {
         boolean rc = true;
         for (String pkgName : pkgSrcs.keySet()) {
             String pkgNameF = pkgName.replace('.',File.separatorChar);

@@ -97,18 +97,8 @@ import com.sun.org.apache.xerces.internal.xni.XNIException;
 public class XML11DTDScannerImpl
     extends XMLDTDScannerImpl {
 
-    /** Array of 3 strings. */
-    private String[] fStrings = new String[3];
-
-    /** String. */
-    private XMLString fString = new XMLString();
-
     /** String buffer. */
     private XMLStringBuffer fStringBuffer = new XMLStringBuffer();
-
-    /** String buffer. */
-    private XMLStringBuffer fStringBuffer2 = new XMLStringBuffer();
-    private XMLStringBuffer fStringBuffer3 = new XMLStringBuffer();
 
     //
     // Constructors

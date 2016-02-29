@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,7 @@
  *
  * @clean foo.package-info
  *
- * @compile -XD-printflat package-info.java
- * @run main/othervm T6257443 -no foo/package-info.class
- *
- * @compile -XD-stubs package-info.java
- * @run main/othervm T6257443 -no foo/package-info.class
- *
- * @compile -XD-printsource package-info.java
+ * @compile -printsource package-info.java
  * @run main/othervm T6257443 -no foo/package-info.class
  */
 

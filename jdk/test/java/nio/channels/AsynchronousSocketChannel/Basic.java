@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Set;
 
 public class Basic {
     static final Random rand = new Random();
@@ -165,6 +166,15 @@ public class Basic {
             // read others (can't check as actual value is implementation dependent)
             ch.getOption(SO_RCVBUF);
             ch.getOption(SO_SNDBUF);
+
+            Set<SocketOption<?>> options = ch.supportedOptions();
+            boolean reuseport = options.contains(SO_REUSEPORT);
+            if (reuseport) {
+                if (ch.getOption(SO_REUSEPORT))
+                    throw new RuntimeException("Default of SO_REUSEPORT should be 'false'");
+                if (!ch.setOption(SO_REUSEPORT, true).getOption(SO_REUSEPORT))
+                    throw new RuntimeException("SO_REUSEPORT did not change");
+            }
         }
     }
 

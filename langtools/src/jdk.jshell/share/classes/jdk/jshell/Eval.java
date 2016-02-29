@@ -420,7 +420,7 @@ class Eval {
         TaskFactory.AnalyzeTask at = trialCompile(guts);
         if (!at.hasErrors() && at.firstCuTree() != null) {
             return TreeDissector.createByFirstClass(at)
-                    .typeOfReturnStatement(at.messages(), state.maps::fullClassNameAndPackageToClass);
+                    .typeOfReturnStatement(at, state);
         }
         return null;
     }

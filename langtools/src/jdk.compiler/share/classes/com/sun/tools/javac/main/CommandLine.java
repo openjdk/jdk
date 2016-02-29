@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,10 @@ package com.sun.tools.javac.main;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.io.FileReader;
-import java.io.BufferedReader;
 import java.io.StreamTokenizer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import com.sun.tools.javac.util.ListBuffer;
 
 /**
@@ -73,7 +74,7 @@ public class CommandLine {
     private static void loadCmdFile(String name, ListBuffer<String> args)
         throws IOException
     {
-        try (Reader r = new BufferedReader(new FileReader(name))) {
+        try (Reader r = Files.newBufferedReader(Paths.get(name))) {
             StreamTokenizer st = new StreamTokenizer(r);
             st.resetSyntax();
             st.wordChars(' ', 255);

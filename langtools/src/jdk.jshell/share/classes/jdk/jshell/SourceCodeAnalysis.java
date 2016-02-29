@@ -70,6 +70,28 @@ public abstract class SourceCodeAnalysis {
     public abstract String documentation(String input, int cursor);
 
     /**
+     * Infer the type of the given expression. The expression spans from the beginning of {@code code}
+     * to the given {@code cursor} position. Returns null if the type of the expression cannot
+     * be inferred.
+     *
+     * @param code the expression for which the type should be inferred
+     * @param cursor current cursor position in the given code
+     * @return the inferred type, or null if it cannot be inferred
+     */
+    public abstract String analyzeType(String code, int cursor);
+
+    /**
+     * List qualified names known for the simple name in the given code immediately
+     * to the left of the given cursor position. The qualified names are gathered by inspecting the
+     * classpath used by eval (see {@link JShell#addToClasspath(java.lang.String)}).
+     *
+     * @param code the expression for which the candidate qualified names should be computed
+     * @param cursor current cursor position in the given code
+     * @return the known qualified names
+     */
+    public abstract QualifiedNames listQualifiedNames(String code, int cursor);
+
+    /**
      * Internal only constructor
      */
     SourceCodeAnalysis() {}
@@ -80,7 +102,7 @@ public abstract class SourceCodeAnalysis {
      */
     public static class CompletionInfo {
 
-        public CompletionInfo(Completeness completeness, int unitEndPos, String source, String remaining) {
+        CompletionInfo(Completeness completeness, int unitEndPos, String source, String remaining) {
             this.completeness = completeness;
             this.unitEndPos = unitEndPos;
             this.source = source;
@@ -197,5 +219,66 @@ public abstract class SourceCodeAnalysis {
          * is preferred.
          */
         public final boolean isSmart;
+    }
+
+    /**
+     * List of possible qualified names.
+     */
+    public static final class QualifiedNames {
+
+        private final List<String> names;
+        private final int simpleNameLength;
+        private final boolean upToDate;
+        private final boolean resolvable;
+
+        QualifiedNames(List<String> names, int simpleNameLength, boolean upToDate, boolean resolvable) {
+            this.names = names;
+            this.simpleNameLength = simpleNameLength;
+            this.upToDate = upToDate;
+            this.resolvable = resolvable;
+        }
+
+        /**
+         * Known qualified names for the given simple name in the original code.
+         *
+         * @return known qualified names
+         */
+        public List<String> getNames() {
+            return names;
+        }
+
+        /**
+         * The length of the simple name in the original code for which the
+         * qualified names where gathered.
+         *
+         * @return the length of the simple name; -1 if there is no name immediately left to the cursor for
+         *         which the candidates could be computed
+         */
+        public int getSimpleNameLength() {
+            return simpleNameLength;
+        }
+
+        /**
+         * Whether the result is based on up to date data. The
+         * {@link SourceCodeAnalysis#listQualifiedNames(java.lang.String, int) listQualifiedNames}
+         * method may return before the classpath is fully inspected, in which case this method will
+         * return {@code false}. If the result is based on a fully inspected classpath, this method
+         * will return {@code true}.
+         *
+         * @return true iff the results is based on up-to-date data
+         */
+        public boolean isUpToDate() {
+            return upToDate;
+        }
+
+        /**
+         * Whether the given simple name in the original code refers to a resolvable element.
+         *
+         * @return true iff the given simple name in the original code refers to a resolvable element
+         */
+        public boolean isResolvable() {
+            return resolvable;
+        }
+
     }
 }
