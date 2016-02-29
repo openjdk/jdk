@@ -1582,14 +1582,22 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
   return NULL;
 }
 
+#ifdef ASSERT
 static bool is_mismatched_access(ciConstant con, BasicType loadbt) {
   BasicType conbt = con.basic_type();
-  assert(conbt != T_NARROWOOP, "sanity");
-  if (loadbt == T_NARROWOOP || loadbt == T_ARRAY) {
-    loadbt = T_OBJECT;
+  switch (conbt) {
+    case T_BOOLEAN: conbt = T_BYTE;   break;
+    case T_ARRAY:   conbt = T_OBJECT; break;
+  }
+  switch (loadbt) {
+    case T_BOOLEAN:   loadbt = T_BYTE;   break;
+    case T_NARROWOOP: loadbt = T_OBJECT; break;
+    case T_ARRAY:     loadbt = T_OBJECT; break;
+    case T_ADDRESS:   loadbt = T_OBJECT; break;
   }
   return (conbt != loadbt);
 }
+#endif // ASSERT
 
 // Try to constant-fold a stable array element.
 static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicType loadbt) {
@@ -1599,7 +1607,9 @@ static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicTyp
   // Decode the results of GraphKit::array_element_address.
   ciArray* aobj = ary->const_oop()->as_array();
   ciConstant con = aobj->element_value_by_offset(off);
-  if (con.basic_type() != T_ILLEGAL && !is_mismatched_access(con, loadbt) && !con.is_null_or_zero()) {
+  if (con.basic_type() != T_ILLEGAL && !con.is_null_or_zero()) {
+    assert(!is_mismatched_access(con, loadbt),
+           "conbt=%s; loadbt=%s", type2name(con.basic_type()), type2name(loadbt));
     const Type* con_type = Type::make_from_constant(con);
     if (con_type != NULL) {
       if (con_type->isa_aryptr()) {
