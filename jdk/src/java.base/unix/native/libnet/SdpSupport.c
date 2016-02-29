@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,11 @@ Java_sun_net_sdp_SdpSupport_convert0(JNIEnv *env, jclass cls, int fd)
         len = sizeof(arg);
         if (getsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg, &len) == 0)
             setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char*)&arg, len);
+#ifdef SO_REUSEPORT
+        len = sizeof(arg);
+        if (getsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (char*)&arg, &len) == 0)
+            setsockopt(s, SOL_SOCKET, SO_REUSEPORT, (char*)&arg, len);
+#endif
         len = sizeof(arg);
         if (getsockopt(fd, SOL_SOCKET, SO_OOBINLINE, (char*)&arg, &len) == 0)
             setsockopt(s, SOL_SOCKET, SO_OOBINLINE, (char*)&arg, len);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ void PSMarkSweep::invoke(bool maximum_heap_compaction) {
     heap->collector_policy()->should_clear_all_soft_refs();
 
   uint count = maximum_heap_compaction ? 1 : MarkSweepAlwaysCompactCount;
-  UIntXFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
+  UIntFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
   PSMarkSweep::invoke_no_policy(clear_all_soft_refs || maximum_heap_compaction);
 }
 
@@ -156,8 +156,6 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     old_gen->verify_object_start_array();
   }
 
-  heap->pre_full_gc_dump(_gc_timer);
-
   // Filled in below to track the state of the young gen after the collection.
   bool eden_empty;
   bool survivors_empty;
@@ -168,6 +166,9 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     GCTraceCPUTime tcpu;
     GCTraceTime(Info, gc) t("Pause Full", NULL, gc_cause, true);
+
+    heap->pre_full_gc_dump(_gc_timer);
+
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 
@@ -345,6 +346,8 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
     heap->update_counters();
+
+    heap->post_full_gc_dump(_gc_timer);
   }
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
@@ -366,8 +369,6 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
   heap->print_heap_after_gc();
   heap->trace_heap_after_gc(_gc_tracer);
-
-  heap->post_full_gc_dump(_gc_timer);
 
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();

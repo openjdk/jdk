@@ -173,6 +173,14 @@ public abstract class JarURLConnection extends URLConnection {
         }
 
         jarFileURL = new URL(spec.substring(0, separator++));
+        /*
+         * The url argument may have had a runtime fragment appended, so
+         * we need to add a runtime fragment to the jarFileURL to enable
+         * runtime versioning when the underlying jar file is opened.
+         */
+        if ("runtime".equals(url.getRef())) {
+            jarFileURL = new URL(jarFileURL, "#runtime");
+        }
         entryName = null;
 
         /* if ! is the last letter of the innerURL, entryName is null */

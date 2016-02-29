@@ -27,7 +27,7 @@
  * @test
  * @bug 8148490
  * @summary Test correct saving and restoring of vector registers at safepoints.
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileCommand=exclude,TestRegisterRestoring::main -XX:+SafepointALot TestRegisterRestoring
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xbatch -XX:-TieredCompilation -XX:CompileCommand=exclude,TestRegisterRestoring::main -XX:+SafepointALot TestRegisterRestoring
  */
 public class TestRegisterRestoring {
   public static void main(String args[]) throws Exception {

@@ -82,16 +82,16 @@ class oopDesc {
   // objects during a GC) -- requires a valid klass pointer
   inline void init_mark();
 
-  /*inline*/ Klass* klass() const;
+  inline Klass* klass() const;
   inline Klass* klass_or_null() const volatile;
   inline Klass** klass_addr();
   inline narrowKlass* compressed_klass_addr();
 
-  /*inline*/ void set_klass(Klass* k);
+  inline void set_klass(Klass* k);
 
   // For klass field compression
   inline int klass_gap() const;
-  /*inline*/ void set_klass_gap(int z);
+  inline void set_klass_gap(int z);
   // For when the klass pointer is being used as a linked list "next" field.
   inline void set_klass_to_list_ptr(oop k);
   inline oop list_ptr_from_klass();
@@ -103,7 +103,7 @@ class oopDesc {
   inline bool is_a(Klass* k) const;
 
   // Returns the actual oop size of the object
-  /*inline*/ int size();
+  inline int size();
 
   // Sometimes (for complicated concurrency-related reasons), it is useful
   // to be able to figure out the size of an object knowing its klass.
@@ -111,7 +111,7 @@ class oopDesc {
 
   // type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()            const;
-  /*inline*/ bool is_array()               const;
+  inline bool is_array()               const;
   inline bool is_objArray()            const;
   inline bool is_typeArray()           const;
 
@@ -149,15 +149,15 @@ class oopDesc {
   // These are overloaded for oop and narrowOop as are the other functions
   // below so that they can be called in template functions.
   static inline oop decode_heap_oop_not_null(oop v) { return v; }
-  static /*inline*/ oop decode_heap_oop_not_null(narrowOop v);
+  static inline oop decode_heap_oop_not_null(narrowOop v);
   static inline oop decode_heap_oop(oop v) { return v; }
-  static /*inline*/ oop decode_heap_oop(narrowOop v);
+  static inline oop decode_heap_oop(narrowOop v);
 
   // Encode an oop pointer to a narrow oop. The or_null versions accept
   // null oop pointer, others do not in order to eliminate the
   // null checking branches.
   static inline narrowOop encode_heap_oop_not_null(oop v);
-  static /*inline*/ narrowOop encode_heap_oop(oop v);
+  static inline narrowOop encode_heap_oop(oop v);
 
   // Load an oop out of the Java heap as is without decoding.
   // Called by GC to check for null before decoding.
@@ -284,8 +284,8 @@ class oopDesc {
   inline bool has_bias_pattern() const;
 
   // asserts
-  /*inline*/ bool is_oop(bool ignore_mark_word = false) const;
-  /*inline*/ bool is_oop_or_null(bool ignore_mark_word = false) const;
+  inline bool is_oop(bool ignore_mark_word = false) const;
+  inline bool is_oop_or_null(bool ignore_mark_word = false) const;
 #ifndef PRODUCT
   inline bool is_unlocked_oop() const;
 #endif
@@ -312,7 +312,7 @@ class oopDesc {
   inline oop forwardee() const;
 
   // Age of object during scavenge
-  /*inline*/ uint age() const;
+  inline uint age() const;
   inline void incr_age();
 
   // mark-sweep support
@@ -330,8 +330,8 @@ class oopDesc {
   inline int  ms_adjust_pointers();
 #if INCLUDE_ALL_GCS
   // Parallel Compact
-  inline void pc_follow_contents(ParCompactionManager* pc);
-  inline void pc_update_contents();
+  inline void pc_follow_contents(ParCompactionManager* cm);
+  inline void pc_update_contents(ParCompactionManager* cm);
   // Parallel Scavenge
   inline void ps_push_contents(PSPromotionManager* pm);
 #endif

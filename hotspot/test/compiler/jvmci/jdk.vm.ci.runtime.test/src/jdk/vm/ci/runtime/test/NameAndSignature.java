@@ -39,7 +39,7 @@ class NameAndSignature {
     final Class<?> returnType;
     final Class<?>[] parameterTypes;
 
-    public NameAndSignature(Method m) {
+    NameAndSignature(Method m) {
         this.name = m.getName();
         this.returnType = m.getReturnType();
         this.parameterTypes = m.getParameterTypes();
