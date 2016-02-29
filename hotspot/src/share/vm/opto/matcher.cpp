@@ -2415,8 +2415,10 @@ void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
 
       bool push_it = false;
       if( proj->Opcode() == Op_IfTrue ) {
+#ifndef PRODUCT
         extern int all_null_checks_found;
         all_null_checks_found++;
+#endif
         if( b->_test._test == BoolTest::ne ) {
           push_it = true;
         }
