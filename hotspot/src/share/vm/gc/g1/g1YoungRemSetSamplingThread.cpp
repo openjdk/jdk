@@ -57,21 +57,21 @@ void G1YoungRemSetSamplingThread::stop() {
   }
 }
 
-G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() : ConcurrentGCThread() {
-  _monitor = new Monitor(Mutex::nonleaf,
-                         "G1YoungRemSetSamplingThread monitor",
-                         true,
-                         Monitor::_safepoint_check_never);
-
+G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() :
+    ConcurrentGCThread(),
+    _monitor(Mutex::nonleaf,
+             "G1YoungRemSetSamplingThread monitor",
+             true,
+             Monitor::_safepoint_check_never) {
   set_name("G1 Young RemSet Sampling");
   create_and_start();
 }
 
 void G1YoungRemSetSamplingThread::sleep_before_next_cycle() {
-  MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
+  MutexLockerEx x(&_monitor, Mutex::_no_safepoint_check_flag);
   if (!_should_terminate) {
     intx waitms = G1ConcRefinementServiceIntervalMillis; // 300, really should be?
-    _monitor->wait(Mutex::_no_safepoint_check_flag, waitms);
+    _monitor.wait(Mutex::_no_safepoint_check_flag, waitms);
   }
 }
 
@@ -92,8 +92,8 @@ void G1YoungRemSetSamplingThread::run_service() {
 }
 
 void G1YoungRemSetSamplingThread::stop_service() {
-  MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
-  _monitor->notify();
+  MutexLockerEx x(&_monitor, Mutex::_no_safepoint_check_flag);
+  _monitor.notify();
 }
 
 void G1YoungRemSetSamplingThread::sample_young_list_rs_lengths() {
