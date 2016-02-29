@@ -1806,10 +1806,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     // Call after last event on thread
     EVENT_THREAD_EXIT(this);
 
-    log_info(os, thread)("Thread " UINTX_FORMAT " %s.",
-      os::current_thread_id(),
-      exit_type == JavaThread::normal_exit ? "exiting" : "detaching");
-
     // Call Thread.exit(). We try 3 times in case we got another Thread.stop during
     // the execution of the method. If that is not enough, then we don't really care. Thread.stop
     // is deprecated anyhow.
@@ -1931,6 +1927,10 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     flush_barrier_queues();
   }
 #endif // INCLUDE_ALL_GCS
+
+  log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
+    exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
+    os::current_thread_id());
 
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread
   Threads::remove(this);

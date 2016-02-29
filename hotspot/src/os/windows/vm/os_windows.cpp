@@ -543,8 +543,7 @@ bool os::create_main_thread(JavaThread* thread) {
 // Helper function to trace _beginthreadex attributes,
 //  similar to os::Posix::describe_pthread_attr()
 static char* describe_beginthreadex_attributes(char* buf, size_t buflen,
-  size_t stacksize, unsigned initflag)
-{
+                                               size_t stacksize, unsigned initflag) {
   stringStream ss(buf, buflen);
   if (stacksize == 0) {
     ss.print("stacksize: default, ");
@@ -552,7 +551,7 @@ static char* describe_beginthreadex_attributes(char* buf, size_t buflen,
     ss.print("stacksize: " SIZE_FORMAT "k, ", stacksize / 1024);
   }
   ss.print("flags: ");
-  #define PRINT_FLAG(f) if (initflag & f) ss.print( XSTR(f) " ");
+  #define PRINT_FLAG(f) if (initflag & f) ss.print( #f " ");
   #define ALL(X) \
     X(CREATE_SUSPENDED) \
     X(STACK_SIZE_PARAM_IS_A_RESERVATION)
