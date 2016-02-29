@@ -28,109 +28,70 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/workerDataArray.inline.hpp"
-#include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
 #include "logging/log.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/os.hpp"
 
-// Helper class for avoiding interleaved logging
-class LineBuffer: public StackObj {
-
-private:
-  static const int BUFFER_LEN = 1024;
-  static const int INDENT_CHARS = 3;
-  char _buffer[BUFFER_LEN];
-  int _indent_level;
-  int _cur;
-
-  void vappend(const char* format, va_list ap)  ATTRIBUTE_PRINTF(2, 0) {
-    int res = vsnprintf(&_buffer[_cur], BUFFER_LEN - _cur, format, ap);
-    if (res != -1) {
-      _cur += res;
-    } else {
-      DEBUG_ONLY(warning("buffer too small in LineBuffer");)
-      _buffer[BUFFER_LEN -1] = 0;
-      _cur = BUFFER_LEN; // vsnprintf above should not add to _buffer if we are called again
-    }
-  }
-
-public:
-  explicit LineBuffer(int indent_level): _indent_level(indent_level), _cur(0) {
-    for (; (_cur < BUFFER_LEN && _cur < (_indent_level * INDENT_CHARS)); _cur++) {
-      _buffer[_cur] = ' ';
-    }
-  }
-
-#ifndef PRODUCT
-  ~LineBuffer() {
-    assert(_cur == _indent_level * INDENT_CHARS, "pending data in buffer - append_and_print_cr() not called?");
-  }
-#endif
-
-  void append(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3) {
-    va_list ap;
-    va_start(ap, format);
-    vappend(format, ap);
-    va_end(ap);
-  }
-
-  const char* to_string() {
-    _cur = _indent_level * INDENT_CHARS;
-    return _buffer;
-  }
-};
-
-static const char* Indents[4] = {"", "   ", "      ", "         "};
+static const char* Indents[5] = {"", "  ", "    ", "     ", "       "};
 
 G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _max_gc_threads(max_gc_threads)
 {
   assert(max_gc_threads > 0, "Must have some GC threads");
 
-  _gc_par_phases[GCWorkerStart] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Start:", false, 2);
-  _gc_par_phases[ExtRootScan] = new WorkerDataArray<double>(max_gc_threads, "Ext Root Scanning:", true, 2);
+  _gc_par_phases[GCWorkerStart] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Start (ms):");
+  _gc_par_phases[ExtRootScan] = new WorkerDataArray<double>(max_gc_threads, "Ext Root Scanning (ms):");
 
   // Root scanning phases
-  _gc_par_phases[ThreadRoots] = new WorkerDataArray<double>(max_gc_threads, "Thread Roots:", true, 3);
-  _gc_par_phases[StringTableRoots] = new WorkerDataArray<double>(max_gc_threads, "StringTable Roots:", true, 3);
-  _gc_par_phases[UniverseRoots] = new WorkerDataArray<double>(max_gc_threads, "Universe Roots:", true, 3);
-  _gc_par_phases[JNIRoots] = new WorkerDataArray<double>(max_gc_threads, "JNI Handles Roots:", true, 3);
-  _gc_par_phases[ObjectSynchronizerRoots] = new WorkerDataArray<double>(max_gc_threads, "ObjectSynchronizer Roots:", true, 3);
-  _gc_par_phases[FlatProfilerRoots] = new WorkerDataArray<double>(max_gc_threads, "FlatProfiler Roots:", true, 3);
-  _gc_par_phases[ManagementRoots] = new WorkerDataArray<double>(max_gc_threads, "Management Roots:", true, 3);
-  _gc_par_phases[SystemDictionaryRoots] = new WorkerDataArray<double>(max_gc_threads, "SystemDictionary Roots:", true, 3);
-  _gc_par_phases[CLDGRoots] = new WorkerDataArray<double>(max_gc_threads, "CLDG Roots:", true, 3);
-  _gc_par_phases[JVMTIRoots] = new WorkerDataArray<double>(max_gc_threads, "JVMTI Roots:", true, 3);
-  _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>(max_gc_threads, "CM RefProcessor Roots:", true, 3);
-  _gc_par_phases[WaitForStrongCLD] = new WorkerDataArray<double>(max_gc_threads, "Wait For Strong CLD:", true, 3);
-  _gc_par_phases[WeakCLDRoots] = new WorkerDataArray<double>(max_gc_threads, "Weak CLD Roots:", true, 3);
-  _gc_par_phases[SATBFiltering] = new WorkerDataArray<double>(max_gc_threads, "SATB Filtering:", true, 3);
+  _gc_par_phases[ThreadRoots] = new WorkerDataArray<double>(max_gc_threads, "Thread Roots (ms):");
+  _gc_par_phases[StringTableRoots] = new WorkerDataArray<double>(max_gc_threads, "StringTable Roots (ms):");
+  _gc_par_phases[UniverseRoots] = new WorkerDataArray<double>(max_gc_threads, "Universe Roots (ms):");
+  _gc_par_phases[JNIRoots] = new WorkerDataArray<double>(max_gc_threads, "JNI Handles Roots (ms):");
+  _gc_par_phases[ObjectSynchronizerRoots] = new WorkerDataArray<double>(max_gc_threads, "ObjectSynchronizer Roots (ms):");
+  _gc_par_phases[FlatProfilerRoots] = new WorkerDataArray<double>(max_gc_threads, "FlatProfiler Roots (ms):");
+  _gc_par_phases[ManagementRoots] = new WorkerDataArray<double>(max_gc_threads, "Management Roots (ms):");
+  _gc_par_phases[SystemDictionaryRoots] = new WorkerDataArray<double>(max_gc_threads, "SystemDictionary Roots (ms):");
+  _gc_par_phases[CLDGRoots] = new WorkerDataArray<double>(max_gc_threads, "CLDG Roots (ms):");
+  _gc_par_phases[JVMTIRoots] = new WorkerDataArray<double>(max_gc_threads, "JVMTI Roots (ms):");
+  _gc_par_phases[CMRefRoots] = new WorkerDataArray<double>(max_gc_threads, "CM RefProcessor Roots (ms):");
+  _gc_par_phases[WaitForStrongCLD] = new WorkerDataArray<double>(max_gc_threads, "Wait For Strong CLD (ms):");
+  _gc_par_phases[WeakCLDRoots] = new WorkerDataArray<double>(max_gc_threads, "Weak CLD Roots (ms):");
+  _gc_par_phases[SATBFiltering] = new WorkerDataArray<double>(max_gc_threads, "SATB Filtering (ms):");
 
-  _gc_par_phases[UpdateRS] = new WorkerDataArray<double>(max_gc_threads, "Update RS:", true, 2);
-  _gc_par_phases[ScanHCC] = new WorkerDataArray<double>(max_gc_threads, "Scan HCC:", true, 3);
-  _gc_par_phases[ScanHCC]->set_enabled(ConcurrentG1Refine::hot_card_cache_enabled());
-  _gc_par_phases[ScanRS] = new WorkerDataArray<double>(max_gc_threads, "Scan RS:", true, 2);
-  _gc_par_phases[CodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Code Root Scanning:", true, 2);
-  _gc_par_phases[ObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Object Copy:", true, 2);
-  _gc_par_phases[Termination] = new WorkerDataArray<double>(max_gc_threads, "Termination:", true, 2);
-  _gc_par_phases[GCWorkerTotal] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Total:", true, 2);
-  _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>(max_gc_threads, "GC Worker End:", false, 2);
-  _gc_par_phases[Other] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Other:", true, 2);
+  _gc_par_phases[UpdateRS] = new WorkerDataArray<double>(max_gc_threads, "Update RS (ms):");
+  if (ConcurrentG1Refine::hot_card_cache_enabled()) {
+    _gc_par_phases[ScanHCC] = new WorkerDataArray<double>(max_gc_threads, "Scan HCC (ms):");
+  } else {
+    _gc_par_phases[ScanHCC] = NULL;
+  }
+  _gc_par_phases[ScanRS] = new WorkerDataArray<double>(max_gc_threads, "Scan RS (ms):");
+  _gc_par_phases[CodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Code Root Scanning (ms):");
+  _gc_par_phases[ObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Object Copy (ms):");
+  _gc_par_phases[Termination] = new WorkerDataArray<double>(max_gc_threads, "Termination (ms):");
+  _gc_par_phases[GCWorkerTotal] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Total (ms):");
+  _gc_par_phases[GCWorkerEnd] = new WorkerDataArray<double>(max_gc_threads, "GC Worker End (ms):");
+  _gc_par_phases[Other] = new WorkerDataArray<double>(max_gc_threads, "GC Worker Other (ms):");
 
-  _update_rs_processed_buffers = new WorkerDataArray<size_t>(max_gc_threads, "Processed Buffers:", true, 3);
+  _update_rs_processed_buffers = new WorkerDataArray<size_t>(max_gc_threads, "Processed Buffers:");
   _gc_par_phases[UpdateRS]->link_thread_work_items(_update_rs_processed_buffers);
 
-  _termination_attempts = new WorkerDataArray<size_t>(max_gc_threads, "Termination Attempts:", true, 3);
+  _termination_attempts = new WorkerDataArray<size_t>(max_gc_threads, "Termination Attempts:");
   _gc_par_phases[Termination]->link_thread_work_items(_termination_attempts);
 
-  _gc_par_phases[StringDedupQueueFixup] = new WorkerDataArray<double>(max_gc_threads, "Queue Fixup:", true, 2);
-  _gc_par_phases[StringDedupTableFixup] = new WorkerDataArray<double>(max_gc_threads, "Table Fixup:", true, 2);
+  if (UseStringDeduplication) {
+    _gc_par_phases[StringDedupQueueFixup] = new WorkerDataArray<double>(max_gc_threads, "Queue Fixup (ms):");
+    _gc_par_phases[StringDedupTableFixup] = new WorkerDataArray<double>(max_gc_threads, "Table Fixup (ms):");
+  } else {
+    _gc_par_phases[StringDedupQueueFixup] = NULL;
+    _gc_par_phases[StringDedupTableFixup] = NULL;
+  }
 
-  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>(max_gc_threads, "Parallel Redirty:", true, 3);
-  _redirtied_cards = new WorkerDataArray<size_t>(max_gc_threads, "Redirtied Cards:", true, 3);
+  _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>(max_gc_threads, "Parallel Redirty (ms):");
+  _redirtied_cards = new WorkerDataArray<size_t>(max_gc_threads, "Redirtied Cards:");
   _gc_par_phases[RedirtyCards]->link_thread_work_items(_redirtied_cards);
 
-  _gc_par_phases[PreserveCMReferents] = new WorkerDataArray<double>(max_gc_threads, "Parallel Preserve CM Refs:", true, 3);
+  _gc_par_phases[PreserveCMReferents] = new WorkerDataArray<double>(max_gc_threads, "Parallel Preserve CM Refs (ms):");
 }
 
 void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
@@ -142,11 +103,10 @@ void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
   _external_accounted_time_ms = 0.0;
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
-    _gc_par_phases[i]->reset();
+    if (_gc_par_phases[i] != NULL) {
+      _gc_par_phases[i]->reset();
+    }
   }
-
-  _gc_par_phases[StringDedupQueueFixup]->set_enabled(G1StringDedup::is_enabled());
-  _gc_par_phases[StringDedupTableFixup]->set_enabled(G1StringDedup::is_enabled());
 }
 
 void G1GCPhaseTimes::note_gc_end() {
@@ -168,43 +128,10 @@ void G1GCPhaseTimes::note_gc_end() {
   }
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
-    _gc_par_phases[i]->verify(_active_gc_threads);
-  }
-}
-
-void G1GCPhaseTimes::print_stats(const char* indent, const char* str, double value) {
-  log_debug(gc, phases)("%s%s: %.1lf ms", indent, str, value);
-}
-
-double G1GCPhaseTimes::accounted_time_ms() {
-    // First subtract any externally accounted time
-    double misc_time_ms = _external_accounted_time_ms;
-
-    // Subtract the root region scanning wait time. It's initialized to
-    // zero at the start of the pause.
-    misc_time_ms += _root_region_scan_wait_time_ms;
-
-    misc_time_ms += _cur_collection_par_time_ms;
-
-    // Now subtract the time taken to fix up roots in generated code
-    misc_time_ms += _cur_collection_code_root_fixup_time_ms;
-
-    // Strong code root purge time
-    misc_time_ms += _cur_strong_code_root_purge_time_ms;
-
-    if (G1StringDedup::is_enabled()) {
-      // String dedup fixup time
-      misc_time_ms += _cur_string_dedup_fixup_time_ms;
+    if (_gc_par_phases[i] != NULL) {
+      _gc_par_phases[i]->verify(_active_gc_threads);
     }
-
-    // Subtract the time taken to clean the card table from the
-    // current value of "other time"
-    misc_time_ms += _cur_clear_ct_time_ms;
-
-    // Remove expand heap time from "other time"
-    misc_time_ms += _cur_expand_heap_time_ms;
-
-    return misc_time_ms;
+  }
 }
 
 // record the time a phase took in seconds
@@ -226,196 +153,144 @@ double G1GCPhaseTimes::average_time_ms(GCParPhases phase) {
   return _gc_par_phases[phase]->average(_active_gc_threads) * 1000.0;
 }
 
-double G1GCPhaseTimes::get_time_ms(GCParPhases phase, uint worker_i) {
-  return _gc_par_phases[phase]->get(worker_i) * 1000.0;
-}
-
-double G1GCPhaseTimes::sum_time_ms(GCParPhases phase) {
-  return _gc_par_phases[phase]->sum(_active_gc_threads) * 1000.0;
-}
-
-double G1GCPhaseTimes::min_time_ms(GCParPhases phase) {
-  return _gc_par_phases[phase]->minimum(_active_gc_threads) * 1000.0;
-}
-
-double G1GCPhaseTimes::max_time_ms(GCParPhases phase) {
-  return _gc_par_phases[phase]->maximum(_active_gc_threads) * 1000.0;
-}
-
-size_t G1GCPhaseTimes::get_thread_work_item(GCParPhases phase, uint worker_i) {
-  assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
-  return _gc_par_phases[phase]->thread_work_items()->get(worker_i);
-}
-
 size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase) {
   assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
   return _gc_par_phases[phase]->thread_work_items()->sum(_active_gc_threads);
 }
 
-double G1GCPhaseTimes::average_thread_work_items(GCParPhases phase) {
-  assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
-  return _gc_par_phases[phase]->thread_work_items()->average(_active_gc_threads);
+template <class T>
+void G1GCPhaseTimes::details(T* phase, const char* indent) {
+  LogHandle(gc, phases, task) log;
+  if (log.is_level(LogLevel::Trace)) {
+    outputStream* trace_out = log.trace_stream();
+    trace_out->print("%s", indent);
+    phase->print_details_on(trace_out, _active_gc_threads);
+  }
 }
 
-size_t G1GCPhaseTimes::min_thread_work_items(GCParPhases phase) {
-  assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
-  return _gc_par_phases[phase]->thread_work_items()->minimum(_active_gc_threads);
+void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent, outputStream* out, bool print_sum) {
+  out->print("%s", Indents[indent]);
+  phase->print_summary_on(out, _active_gc_threads, print_sum);
+  details(phase, Indents[indent]);
+
+  WorkerDataArray<size_t>* work_items = phase->thread_work_items();
+  if (work_items != NULL) {
+    out->print("%s", Indents[indent + 1]);
+    work_items->print_summary_on(out, _active_gc_threads, true);
+    details(work_items, Indents[indent + 1]);
+  }
 }
 
-size_t G1GCPhaseTimes::max_thread_work_items(GCParPhases phase) {
-  assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
-  return _gc_par_phases[phase]->thread_work_items()->maximum(_active_gc_threads);
+void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase) {
+  LogHandle(gc, phases) log;
+  if (log.is_level(LogLevel::Debug)) {
+    ResourceMark rm;
+    log_phase(phase, 2, log.debug_stream(), true);
+  }
 }
 
-class G1GCParPhasePrinter : public StackObj {
-  G1GCPhaseTimes* _phase_times;
- public:
-  G1GCParPhasePrinter(G1GCPhaseTimes* phase_times) : _phase_times(phase_times) {}
-
-  void print(G1GCPhaseTimes::GCParPhases phase_id) {
-    WorkerDataArray<double>* phase = _phase_times->_gc_par_phases[phase_id];
-
-    if (phase->_length == 1) {
-      print_single_length(phase_id, phase);
-    } else {
-      print_multi_length(phase_id, phase);
-    }
+void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum) {
+  LogHandle(gc, phases) log;
+  if (log.is_level(LogLevel::Trace)) {
+    ResourceMark rm;
+    log_phase(phase, 3, log.trace_stream(), print_sum);
   }
+}
 
+#define PHASE_DOUBLE_FORMAT "%s%s: %.1lfms"
+#define PHASE_SIZE_FORMAT "%s%s: " SIZE_FORMAT
 
- private:
-  void print_single_length(G1GCPhaseTimes::GCParPhases phase_id, WorkerDataArray<double>* phase) {
-    // No need for min, max, average and sum for only one worker
-    log_debug(gc, phases)("%s%s:  %.1lf", Indents[phase->_indent_level], phase->_title, _phase_times->get_time_ms(phase_id, 0));
+#define info_line(str, value) \
+  log_info(gc, phases)(PHASE_DOUBLE_FORMAT, Indents[1], str, value);
 
-    WorkerDataArray<size_t>* work_items = phase->_thread_work_items;
-    if (work_items != NULL) {
-      log_debug(gc, phases)("%s%s:  " SIZE_FORMAT, Indents[work_items->_indent_level], work_items->_title, _phase_times->sum_thread_work_items(phase_id));
-    }
-  }
+#define debug_line(str, value) \
+  log_debug(gc, phases)(PHASE_DOUBLE_FORMAT, Indents[2], str, value);
 
-  void print_time_values(const char* indent, G1GCPhaseTimes::GCParPhases phase_id) {
-    if (log_is_enabled(Trace, gc)) {
-      LineBuffer buf(0);
-      uint active_length = _phase_times->_active_gc_threads;
-      for (uint i = 0; i < active_length; ++i) {
-        buf.append(" %4.1lf", _phase_times->get_time_ms(phase_id, i));
-      }
-      const char* line = buf.to_string();
-      log_trace(gc, phases)("%s%-25s%s", indent, "", line);
-    }
-  }
+#define trace_line(str, value) \
+  log_trace(gc, phases)(PHASE_DOUBLE_FORMAT, Indents[3], str, value);
 
-  void print_count_values(const char* indent, G1GCPhaseTimes::GCParPhases phase_id, WorkerDataArray<size_t>* thread_work_items) {
-    if (log_is_enabled(Trace, gc)) {
-      LineBuffer buf(0);
-      uint active_length = _phase_times->_active_gc_threads;
-      for (uint i = 0; i < active_length; ++i) {
-        buf.append("  " SIZE_FORMAT, _phase_times->get_thread_work_item(phase_id, i));
-      }
-      const char* line = buf.to_string();
-      log_trace(gc, phases)("%s%-25s%s", indent, "", line);
-    }
-  }
+#define trace_line_sz(str, value) \
+  log_trace(gc, phases)(PHASE_SIZE_FORMAT, Indents[3], str, value);
 
-  void print_thread_work_items(G1GCPhaseTimes::GCParPhases phase_id, WorkerDataArray<size_t>* thread_work_items) {
-    const char* indent = Indents[thread_work_items->_indent_level];
+#define trace_line_ms(str, value) \
+  log_trace(gc, phases)(PHASE_SIZE_FORMAT, Indents[3], str, value);
 
-    assert(thread_work_items->_print_sum, "%s does not have print sum true even though it is a count", thread_work_items->_title);
-
-    log_debug(gc, phases)("%s%-25s Min: " SIZE_FORMAT ", Avg: %4.1lf, Max: " SIZE_FORMAT ", Diff: " SIZE_FORMAT ", Sum: " SIZE_FORMAT,
-        indent, thread_work_items->_title,
-        _phase_times->min_thread_work_items(phase_id), _phase_times->average_thread_work_items(phase_id), _phase_times->max_thread_work_items(phase_id),
-        _phase_times->max_thread_work_items(phase_id) - _phase_times->min_thread_work_items(phase_id), _phase_times->sum_thread_work_items(phase_id));
-
-    print_count_values(indent, phase_id, thread_work_items);
-  }
-
-  void print_multi_length(G1GCPhaseTimes::GCParPhases phase_id, WorkerDataArray<double>* phase) {
-    const char* indent = Indents[phase->_indent_level];
-
-    if (phase->_print_sum) {
-      log_debug(gc, phases)("%s%-25s Min: %4.1lf, Avg: %4.1lf, Max: %4.1lf, Diff: %4.1lf, Sum: %4.1lf",
-          indent, phase->_title,
-          _phase_times->min_time_ms(phase_id), _phase_times->average_time_ms(phase_id), _phase_times->max_time_ms(phase_id),
-          _phase_times->max_time_ms(phase_id) - _phase_times->min_time_ms(phase_id), _phase_times->sum_time_ms(phase_id));
-    } else {
-      log_debug(gc, phases)("%s%-25s Min: %4.1lf, Avg: %4.1lf, Max: %4.1lf, Diff: %4.1lf",
-          indent, phase->_title,
-          _phase_times->min_time_ms(phase_id), _phase_times->average_time_ms(phase_id), _phase_times->max_time_ms(phase_id),
-          _phase_times->max_time_ms(phase_id) - _phase_times->min_time_ms(phase_id));
-    }
-
-    print_time_values(indent, phase_id);
-
-    if (phase->_thread_work_items != NULL) {
-      print_thread_work_items(phase_id, phase->_thread_work_items);
-    }
-  }
-};
+#define info_line_and_account(str, value) \
+  info_line(str, value);                  \
+  accounted_time_ms += value;
 
 void G1GCPhaseTimes::print() {
   note_gc_end();
 
-  G1GCParPhasePrinter par_phase_printer(this);
-
+  double accounted_time_ms = _external_accounted_time_ms;
   if (_root_region_scan_wait_time_ms > 0.0) {
-    print_stats(Indents[1], "Root Region Scan Waiting", _root_region_scan_wait_time_ms);
+    info_line_and_account("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
   }
 
-  print_stats(Indents[1], "Parallel Time", _cur_collection_par_time_ms);
-  for (int i = 0; i <= GCMainParPhasesLast; i++) {
-    par_phase_printer.print((GCParPhases) i);
+  info_line_and_account("Evacuate Collection Set", _cur_collection_par_time_ms);
+  trace_phase(_gc_par_phases[GCWorkerStart], false);
+  debug_phase(_gc_par_phases[ExtRootScan]);
+  for (int i = ThreadRoots; i <= SATBFiltering; i++) {
+    trace_phase(_gc_par_phases[i]);
   }
+  debug_phase(_gc_par_phases[UpdateRS]);
+  if (ConcurrentG1Refine::hot_card_cache_enabled()) {
+    trace_phase(_gc_par_phases[ScanHCC]);
+  }
+  debug_phase(_gc_par_phases[ScanRS]);
+  debug_phase(_gc_par_phases[CodeRoots]);
+  debug_phase(_gc_par_phases[ObjCopy]);
+  debug_phase(_gc_par_phases[Termination]);
+  debug_phase(_gc_par_phases[Other]);
+  debug_phase(_gc_par_phases[GCWorkerTotal]);
+  trace_phase(_gc_par_phases[GCWorkerEnd], false);
 
-  print_stats(Indents[1], "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
-  print_stats(Indents[1], "Code Root Purge", _cur_strong_code_root_purge_time_ms);
+  info_line_and_account("Code Roots", _cur_collection_code_root_fixup_time_ms + _cur_strong_code_root_purge_time_ms);
+  debug_line("Code Roots Fixup", _cur_collection_code_root_fixup_time_ms);
+  debug_line("Code Roots Purge", _cur_strong_code_root_purge_time_ms);
+
   if (G1StringDedup::is_enabled()) {
-    print_stats(Indents[1], "String Dedup Fixup", _cur_string_dedup_fixup_time_ms);
-    for (int i = StringDedupPhasesFirst; i <= StringDedupPhasesLast; i++) {
-      par_phase_printer.print((GCParPhases) i);
-    }
+    info_line_and_account("String Dedup Fixup", _cur_string_dedup_fixup_time_ms);
+    debug_phase(_gc_par_phases[StringDedupQueueFixup]);
+    debug_phase(_gc_par_phases[StringDedupTableFixup]);
   }
-  print_stats(Indents[1], "Clear CT", _cur_clear_ct_time_ms);
-  print_stats(Indents[1], "Expand Heap After Collection", _cur_expand_heap_time_ms);
-  double misc_time_ms = _gc_pause_time_ms - accounted_time_ms();
-  print_stats(Indents[1], "Other", misc_time_ms);
+  info_line_and_account("Clear Card Table", _cur_clear_ct_time_ms);
+  info_line_and_account("Expand Heap After Collection", _cur_expand_heap_time_ms);
+
+  double free_cset_time = _recorded_young_free_cset_time_ms + _recorded_non_young_free_cset_time_ms;
+  info_line_and_account("Free Collection Set", free_cset_time);
+  debug_line("Young Free Collection Set", _recorded_young_free_cset_time_ms);
+  debug_line("Non-Young Free Collection Set", _recorded_non_young_free_cset_time_ms);
+  info_line_and_account("Merge Per-Thread State", _recorded_merge_pss_time_ms);
+
+  info_line("Other", _gc_pause_time_ms - accounted_time_ms);
   if (_cur_verify_before_time_ms > 0.0) {
-    print_stats(Indents[2], "Verify Before", _cur_verify_before_time_ms);
+    debug_line("Verify Before", _cur_verify_before_time_ms);
   }
   if (G1CollectedHeap::heap()->evacuation_failed()) {
     double evac_fail_handling = _cur_evac_fail_recalc_used + _cur_evac_fail_remove_self_forwards +
       _cur_evac_fail_restore_remsets;
-    print_stats(Indents[2], "Evacuation Failure", evac_fail_handling);
-    log_trace(gc, phases)("%sRecalculate Used: %.1lf ms", Indents[3], _cur_evac_fail_recalc_used);
-    log_trace(gc, phases)("%sRemove Self Forwards: %.1lf ms", Indents[3], _cur_evac_fail_remove_self_forwards);
-    log_trace(gc, phases)("%sRestore RemSet: %.1lf ms", Indents[3], _cur_evac_fail_restore_remsets);
+    debug_line("Evacuation Failure", evac_fail_handling);
+    trace_line("Recalculate Used", _cur_evac_fail_recalc_used);
+    trace_line("Remove Self Forwards",_cur_evac_fail_remove_self_forwards);
+    trace_line("Restore RemSet", _cur_evac_fail_restore_remsets);
   }
-  print_stats(Indents[2], "Choose CSet",
-    (_recorded_young_cset_choice_time_ms +
-    _recorded_non_young_cset_choice_time_ms));
-  print_stats(Indents[2], "Preserve CM Refs", _recorded_preserve_cm_referents_time_ms);
-  print_stats(Indents[2], "Ref Proc", _cur_ref_proc_time_ms);
-  print_stats(Indents[2], "Ref Enq", _cur_ref_enq_time_ms);
-  print_stats(Indents[2], "Redirty Cards", _recorded_redirty_logged_cards_time_ms);
-  par_phase_printer.print(RedirtyCards);
-  par_phase_printer.print(PreserveCMReferents);
+  debug_line("Choose CSet", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
+  debug_line("Preserve CM Refs", _recorded_preserve_cm_referents_time_ms);
+  debug_line("Ref Proc", _cur_ref_proc_time_ms);
+  debug_line("Ref Enq", _cur_ref_enq_time_ms);
+  debug_line("Redirty Cards", _recorded_redirty_logged_cards_time_ms);
+  trace_phase(_gc_par_phases[RedirtyCards]);
+  trace_phase(_gc_par_phases[PreserveCMReferents]);
   if (G1EagerReclaimHumongousObjects) {
-    print_stats(Indents[2], "Humongous Register", _cur_fast_reclaim_humongous_register_time_ms);
-
-    log_trace(gc, phases)("%sHumongous Total: " SIZE_FORMAT, Indents[3], _cur_fast_reclaim_humongous_total);
-    log_trace(gc, phases)("%sHumongous Candidate: " SIZE_FORMAT, Indents[3], _cur_fast_reclaim_humongous_candidates);
-    print_stats(Indents[2], "Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
-    log_trace(gc, phases)("%sHumongous Reclaimed: " SIZE_FORMAT, Indents[3], _cur_fast_reclaim_humongous_reclaimed);
+    debug_line("Humongous Register", _cur_fast_reclaim_humongous_register_time_ms);
+    trace_line_sz("Humongous Total", _cur_fast_reclaim_humongous_total);
+    trace_line_sz("Humongous Candidate", _cur_fast_reclaim_humongous_candidates);
+    debug_line("Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
+    trace_line_sz("Humongous Reclaimed", _cur_fast_reclaim_humongous_reclaimed);
   }
-  print_stats(Indents[2], "Free CSet",
-    (_recorded_young_free_cset_time_ms +
-    _recorded_non_young_free_cset_time_ms));
-  log_trace(gc, phases)("%sYoung Free CSet: %.1lf ms", Indents[3], _recorded_young_free_cset_time_ms);
-  log_trace(gc, phases)("%sNon-Young Free CSet: %.1lf ms", Indents[3], _recorded_non_young_free_cset_time_ms);
-  print_stats(Indents[2], "Merge Per-Thread State", _recorded_merge_pss_time_ms);
   if (_cur_verify_after_time_ms > 0.0) {
-    print_stats(Indents[2], "Verify After", _cur_verify_after_time_ms);
+    debug_line("Verify After", _cur_verify_after_time_ms);
   }
 }
 
