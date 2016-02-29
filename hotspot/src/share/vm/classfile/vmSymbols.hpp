@@ -109,13 +109,13 @@
   template(java_io_ByteArrayInputStream,              "java/io/ByteArrayInputStream")             \
   template(java_io_Serializable,                      "java/io/Serializable")                     \
   template(java_util_Arrays,                          "java/util/Arrays")                         \
-  template(java_util_Objects,                         "java/util/Objects")                         \
+  template(java_util_Objects,                         "java/util/Objects")                        \
   template(java_util_Properties,                      "java/util/Properties")                     \
   template(java_util_Vector,                          "java/util/Vector")                         \
   template(java_util_AbstractList,                    "java/util/AbstractList")                   \
   template(java_util_Hashtable,                       "java/util/Hashtable")                      \
   template(java_lang_Compiler,                        "java/lang/Compiler")                       \
-  template(sun_misc_Signal,                           "sun/misc/Signal")                          \
+  template(jdk_internal_misc_Signal,                  "jdk/internal/misc/Signal")                 \
   template(sun_misc_Launcher,                         "sun/misc/Launcher")                        \
   template(java_lang_AssertionStatusDirectives,       "java/lang/AssertionStatusDirectives")      \
   template(getBootClassPathEntryForClass_name,        "getBootClassPathEntryForClass")            \

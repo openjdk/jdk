@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ PaddedEnd<T>* PaddedArray<T, flags, alignment>::create_unfreeable(uint length) {
   void* chunk = AllocateHeap(length * sizeof(PaddedEnd<T, alignment>) + alignment, flags);
 
   // Make the initial alignment.
-  PaddedEnd<T>* aligned_padded_array = (PaddedEnd<T>*)align_pointer_up(chunk, alignment);
+  PaddedEnd<T>* aligned_padded_array = (PaddedEnd<T>*)align_ptr_up(chunk, alignment);
 
   // Call the default constructor for each element.
   for (uint i = 0; i < length; i++) {
@@ -65,7 +65,7 @@ T** Padded2DArray<T, flags, alignment>::create_unfreeable(uint rows, uint column
   // Clear the allocated memory.
   memset(chunk, 0, total_size);
   // Align the chunk of memory.
-  T** result = (T**)align_pointer_up(chunk, alignment);
+  T** result = (T**)align_ptr_up(chunk, alignment);
   void* data_start = (void*)((uintptr_t)result + table_size);
 
   // Fill in the row table.
@@ -87,7 +87,7 @@ T* PaddedPrimitiveArray<T, flags, alignment>::create_unfreeable(size_t length) {
 
   memset(chunk, 0, length * sizeof(T) + alignment);
 
-  return (T*)align_pointer_up(chunk, alignment);
+  return (T*)align_ptr_up(chunk, alignment);
 }
 
 #endif // SHARE_VM_MEMORY_PADDED_INLINE_HPP

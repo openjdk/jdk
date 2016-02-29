@@ -338,7 +338,7 @@ shmemGetLastError(jdwpTransportEnv* env, char **msgP)
     return JDWPTRANSPORT_ERROR_NONE;
 }
 
-JNIEXPORT jint JNICALL
+jint JNICALL
 jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
                      jint version, jdwpTransportEnv** result)
 {

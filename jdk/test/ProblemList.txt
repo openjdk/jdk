@@ -165,9 +165,6 @@ javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java			generi
 # 8147985
 sun/management/jmxremote/bootstrap/JMXInterfaceBindingTest.java generic-all
 
-# 8145919
-sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh       generic-all
-
 ############################################################################
 
 # jdk_net
@@ -202,6 +199,9 @@ java/nio/channels/Selector/OutOfBand.java                       macosx-all
 # 7158947, Solaris 11
 java/nio/file/WatchService/Basic.java				solaris-all
 java/nio/file/WatchService/LotsOfEvents.java			solaris-all
+
+# 8149712
+java/nio/charset/coders/BashStreams.java                        generic-all
 
 ############################################################################
 

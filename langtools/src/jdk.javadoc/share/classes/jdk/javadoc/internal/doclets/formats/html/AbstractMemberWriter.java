@@ -261,10 +261,13 @@ public abstract class AbstractMemberWriter {
         // According to JLS, we should not be showing public modifier for
         // interface methods.
         if ((utils.isField(member) || utils.isMethod(member))
-                && writer instanceof ClassWriterImpl
-                && utils.isInterface(((ClassWriterImpl) writer).getTypeElement())) {
+            && ((writer instanceof ClassWriterImpl
+                 && utils.isInterface(((ClassWriterImpl) writer).getTypeElement())  ||
+                 writer instanceof AnnotationTypeWriterImpl) )) {
             // Remove the implicit abstract and public modifiers
-            if (utils.isMethod(member) && utils.isInterface(member.getEnclosingElement())) {
+            if (utils.isMethod(member) &&
+                (utils.isInterface(member.getEnclosingElement()) ||
+                 utils.isAnnotationType(member.getEnclosingElement()))) {
                 set.remove(ABSTRACT);
                 set.remove(PUBLIC);
             }

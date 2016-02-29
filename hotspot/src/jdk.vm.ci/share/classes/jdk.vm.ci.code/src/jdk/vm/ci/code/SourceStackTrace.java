@@ -23,7 +23,7 @@
 package jdk.vm.ci.code;
 
 /**
- * Class representing a exception with a stack trace of the currently processed position in the
+ * Class representing an exception with a stack trace of the currently processed position in the
  * compiled Java program instead of the stack trace of the compiler. The exception of the compiler
  * is saved as the cause of this exception.
  */
@@ -36,7 +36,7 @@ public abstract class SourceStackTrace extends BailoutException {
             private static final long serialVersionUID = 6279381376051787907L;
 
             @Override
-            public final synchronized Throwable fillInStackTrace() {
+            public synchronized Throwable fillInStackTrace() {
                 assert elements != null;
                 setStackTrace(elements);
                 return this;

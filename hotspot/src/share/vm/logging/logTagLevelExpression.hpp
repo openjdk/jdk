@@ -47,6 +47,11 @@ class LogTagLevelExpression : public StackObj {
   bool          _allow_other_tags[MaxCombinations];
 
   void new_combination() {
+    // Make sure either all tags are set or the last tag is __NO_TAG
+    if (_ntags < LogTag::MaxTags) {
+      _tags[_ncombinations][_ntags] = LogTag::__NO_TAG;
+    }
+
     _ncombinations++;
     _ntags = 0;
   }
@@ -64,10 +69,13 @@ class LogTagLevelExpression : public StackObj {
     _allow_other_tags[_ncombinations] = true;
   }
 
-  void clear();
-
  public:
   LogTagLevelExpression() : _ntags(0), _ncombinations(0) {
+    for (size_t combination = 0; combination < MaxCombinations; combination++) {
+      _level[combination] = LogLevel::Invalid;
+      _allow_other_tags[combination] = false;
+      _tags[combination][0] = LogTag::__NO_TAG;
+    }
   }
 
   bool parse(const char* str, outputStream* errstream = NULL);

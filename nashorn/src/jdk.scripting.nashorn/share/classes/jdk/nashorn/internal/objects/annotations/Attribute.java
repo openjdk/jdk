@@ -31,21 +31,31 @@ package jdk.nashorn.internal.objects.annotations;
  */
 
 public interface Attribute {
-    /** flag for non writable objects */
+    /** Flag for non-writable properties */
     public static final int NOT_WRITABLE     = jdk.nashorn.internal.runtime.Property.NOT_WRITABLE;
 
-    /** flag for non enumerable objects */
+    /** Flag for non-enumerable properties */
     public static final int NOT_ENUMERABLE   = jdk.nashorn.internal.runtime.Property.NOT_ENUMERABLE;
 
-    /** flag for non configurable objects */
+    /** Flag for non-configurable properties */
     public static final int NOT_CONFIGURABLE = jdk.nashorn.internal.runtime.Property.NOT_CONFIGURABLE;
 
-    /** read-only, non-configurable property */
+    /**
+     * Flag for accessor (getter/setter) properties as opposed to data properties.
+     *
+     * <p>This allows nasgen-created properties to behave like user-accessors. it should only be used for
+     * properties that are explicitly specified as accessor properties in the ECMAScript specification
+     * such as Map.prototype.size in ES6, not value properties that happen to be implemented by getter/setter
+     * such as the "length" properties of String or Array objects.</p>
+     */
+    public static final int IS_ACCESSOR = jdk.nashorn.internal.runtime.Property.IS_ACCESSOR_PROPERTY;
+
+    /** Read-only, non-configurable property */
     public static final int CONSTANT = NOT_WRITABLE | NOT_CONFIGURABLE;
 
-    /** non-enumerable, read-only, non-configurable property */
+    /** Non-enumerable, read-only, non-configurable property */
     public static final int NON_ENUMERABLE_CONSTANT = NOT_ENUMERABLE | CONSTANT;
 
-    /** by default properties are writable, enumerable and configurable */
+    /** By default properties are writable, enumerable and configurable */
     public static final int DEFAULT_ATTRIBUTES = 0;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,15 @@
 
 package pkg;
 
-@ContainerSynthDoc(value={@ContaineeSynthDoc,@ContaineeSynthDoc})
-@ContainerRegDoc(value={@ContaineeRegDoc,@ContaineeRegDoc})
-@RegContainerDoc(value={@RegContaineeNotDoc,@RegContaineeNotDoc})
-@ContainerRegNotDoc(value={@RegContaineeDoc,@RegContaineeDoc})
-@RegContainerNotDoc(value={@RegContaineeNotDoc,@RegContaineeNotDoc})
+@ContainerSynthDoc({@ContaineeSynthDoc,@ContaineeSynthDoc})
+@ContainerRegDoc({@ContaineeRegDoc,@ContaineeRegDoc})
+@RegContainerDoc({@RegContaineeNotDoc,@RegContaineeNotDoc})
+@ContainerRegNotDoc({@RegContaineeDoc,@RegContaineeDoc})
+@RegContainerNotDoc({@RegContaineeNotDoc,@RegContaineeNotDoc})
 @ContaineeSynthDoc @ContaineeSynthDoc @ContaineeSynthDoc
 public class C {
 
-    @ContainerSynthDoc(value={@ContaineeSynthDoc})
+    @ContainerSynthDoc({@ContaineeSynthDoc})
     public void test1() {}
 
     @ContaineeSynthDoc @ContaineeSynthDoc

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_SERVICES_CLASSLOADINGSERVICE_HPP
 #define SHARE_VM_SERVICES_CLASSLOADINGSERVICE_HPP
 
+#include "logging/log.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/growableArray.hpp"
@@ -54,7 +55,7 @@ private:
 public:
   static void init();
 
-  static bool get_verbose() { return TraceClassLoading; }
+  static bool get_verbose() { return log_is_enabled(Info, classload); }
   static bool set_verbose(bool verbose);
   static void reset_trace_class_unloading() NOT_MANAGEMENT_RETURN;
 

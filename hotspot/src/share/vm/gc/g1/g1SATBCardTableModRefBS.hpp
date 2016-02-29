@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,20 +58,11 @@ public:
 
   // We export this to make it available in cases where the static
   // type of the barrier set is known.  Note that it is non-virtual.
-  template <class T> inline void inline_write_ref_field_pre(T* field, oop newVal) {
-    T heap_oop = oopDesc::load_heap_oop(field);
-    if (!oopDesc::is_null(heap_oop)) {
-      enqueue(oopDesc::decode_heap_oop(heap_oop));
-    }
-  }
+  template <class T> inline void inline_write_ref_field_pre(T* field, oop newVal);
 
   // These are the more general virtual versions.
-  virtual void write_ref_field_pre_work(oop* field, oop new_val) {
-    inline_write_ref_field_pre(field, new_val);
-  }
-  virtual void write_ref_field_pre_work(narrowOop* field, oop new_val) {
-    inline_write_ref_field_pre(field, new_val);
-  }
+  inline virtual void write_ref_field_pre_work(oop* field, oop new_val);
+  inline virtual void write_ref_field_pre_work(narrowOop* field, oop new_val);
   virtual void write_ref_field_pre_work(void* field, oop new_val) {
     guarantee(false, "Not needed");
   }
@@ -98,15 +89,7 @@ public:
     return (val & (clean_card_mask_val() | claimed_card_val())) == claimed_card_val();
   }
 
-  void set_card_claimed(size_t card_index) {
-      jbyte val = _byte_map[card_index];
-      if (val == clean_card_val()) {
-        val = (jbyte)claimed_card_val();
-      } else {
-        val |= (jbyte)claimed_card_val();
-      }
-      _byte_map[card_index] = val;
-  }
+  inline void set_card_claimed(size_t card_index);
 
   void verify_g1_young_region(MemRegion mr) PRODUCT_RETURN;
   void g1_mark_as_young(const MemRegion& mr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
  * @build jdk.test.lib.*
  * @build jdk.test.lib.dcmd.*
  * @build jdk.test.lib.hprof.*
- * @build jdk.test.lib.hprof.module.*
+ * @build jdk.test.lib.hprof.model.*
  * @build jdk.test.lib.hprof.parser.*
  * @build jdk.test.lib.hprof.utils.*
  * @run testng HeapDumpTest

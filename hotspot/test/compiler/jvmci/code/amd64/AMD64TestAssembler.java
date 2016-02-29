@@ -33,6 +33,8 @@ import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotConstant;
+import jdk.vm.ci.hotspot.HotSpotForeignCallTarget;
+import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.LIRKind;
 import jdk.vm.ci.meta.VMConstant;
@@ -63,6 +65,16 @@ public class AMD64TestAssembler extends TestAssembler {
         emitFatNop();
         code.emitByte(0x50 | AMD64.rbp.encoding);  // PUSH rbp
         emitMove(true, AMD64.rbp, AMD64.rsp);      // MOV rbp, rsp
+        setDeoptRescueSlot(newStackSlot(LIRKind.value(AMD64Kind.QWORD)));
+    }
+
+    @Override
+    public void emitEpilogue() {
+        HotSpotVMConfig config = HotSpotVMConfig.config();
+        recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
+        recordCall(new HotSpotForeignCallTarget(config.handleDeoptStub), 5, true, null);
+        code.emitByte(0xE8); // CALL rel32
+        code.emitInt(0xDEADDEAD);
     }
 
     @Override

@@ -763,7 +763,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
   if (cp_cache_entry->is_resolved(bytecode)) return;
 
   if (bytecode == Bytecodes::_invokeinterface) {
-    if (develop_log_is_enabled(Trace, itables)) {
+    if (log_develop_is_enabled(Trace, itables)) {
       ResourceMark rm(thread);
       log_develop_trace(itables)("Resolving: klass: %s to method: %s",
                                  info.resolved_klass()->name()->as_C_string(),

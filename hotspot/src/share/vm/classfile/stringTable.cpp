@@ -737,7 +737,7 @@ bool StringTable::copy_compact_table(char** top, char *end, GrowableArray<MemReg
     return false;
   }
   ch_table.dump(top, end);
-  *top = (char*)align_pointer_up(*top, sizeof(void*));
+  *top = (char*)align_ptr_up(*top, sizeof(void*));
 
 #endif
   return true;
@@ -760,7 +760,7 @@ const char* StringTable::init_shared_table(FileMapInfo *mapinfo, char *buffer) {
   juint *p = (juint*)buffer;
   const char* end = _shared_table.init(
           CompactHashtable<oop, char>::_string_table, (char*)p);
-  const char* aligned_end = (const char*)align_pointer_up(end, sizeof(void*));
+  const char* aligned_end = (const char*)align_ptr_up(end, sizeof(void*));
 
   if (_ignore_shared_strings) {
     _shared_table.reset();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ int klassVtable::initialize_from_super(KlassHandle super) {
     superVtable->verify(tty, true);
 #endif
     superVtable->copy_vtable_to(table());
-    if (develop_log_is_enabled(Trace, vtables)) {
+    if (log_develop_is_enabled(Trace, vtables)) {
       ResourceMark rm;
       log_develop_trace(vtables)("copy vtable from %s to %s size %d",
                                  super->internal_name(), klass()->internal_name(),
@@ -272,7 +272,7 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
       assert(super_method->name() == name && super_method->signature() == signature, "vtable entry name/sig mismatch");
 #endif
       if (supersuperklass->is_override(super_method, target_loader, target_classname, THREAD)) {
-        if (develop_log_is_enabled(Trace, vtables)) {
+        if (log_develop_is_enabled(Trace, vtables)) {
           ResourceMark rm(THREAD);
           outputStream* logst = LogHandle(vtables)::trace_stream();
           char* sig = target_method()->name_and_sig_as_C_string();
@@ -303,7 +303,7 @@ static void log_vtables(int i, bool overrides, methodHandle target_method,
                         KlassHandle target_klass, Method* super_method,
                         Thread* thread) {
 #ifndef PRODUCT
-  if (develop_log_is_enabled(Trace, vtables)) {
+  if (log_develop_is_enabled(Trace, vtables)) {
     ResourceMark rm(thread);
     outputStream* logst = LogHandle(vtables)::trace_stream();
     char* sig = target_method()->name_and_sig_as_C_string();
@@ -491,7 +491,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
 }
 
 void klassVtable::put_method_at(Method* m, int index) {
-  if (develop_log_is_enabled(Trace, vtables)) {
+  if (log_develop_is_enabled(Trace, vtables)) {
     ResourceMark rm;
     outputStream* logst = LogHandle(vtables)::trace_stream();
     const char* sig = (m != NULL) ? m->name_and_sig_as_C_string() : "<NULL>";
@@ -818,7 +818,7 @@ int klassVtable::fill_in_mirandas(int initialized) {
   get_mirandas(&mirandas, NULL, ik()->super(), ik()->methods(),
                ik()->default_methods(), ik()->local_interfaces());
   for (int i = 0; i < mirandas.length(); i++) {
-    if (develop_log_is_enabled(Trace, vtables)) {
+    if (log_develop_is_enabled(Trace, vtables)) {
       Method* meth = mirandas.at(i);
       ResourceMark rm(Thread::current());
       outputStream* logst = LogHandle(vtables)::trace_stream();
@@ -1043,7 +1043,7 @@ int klassItable::assign_itable_indices_for_interface(Klass* klass) {
     if (interface_method_needs_itable_index(m)) {
       assert(!m->is_final_method(), "no final interface methods");
       // If m is already assigned a vtable index, do not disturb it.
-      if (develop_log_is_enabled(Trace, itables)) {
+      if (log_develop_is_enabled(Trace, itables)) {
         ResourceMark rm;
         outputStream* logst = LogHandle(itables)::trace_stream();
         assert(m != NULL, "methods can never be null");
@@ -1158,7 +1158,7 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
       int ime_num = m->itable_index();
       assert(ime_num < ime_count, "oob");
       itableOffsetEntry::method_entry(_klass(), method_table_offset)[ime_num].initialize(target());
-      if (develop_log_is_enabled(Trace, itables)) {
+      if (log_develop_is_enabled(Trace, itables)) {
         ResourceMark rm(THREAD);
         if (target() != NULL) {
           outputStream* logst = LogHandle(itables)::trace_stream();
@@ -1331,7 +1331,7 @@ int klassItable::compute_itable_size(Array<Klass*>* transitive_interfaces) {
   int itable_size = calc_itable_size(cic.nof_interfaces() + 1, cic.nof_methods());
 
   // Statistics
-  update_stats(itable_size * HeapWordSize);
+  update_stats(itable_size * wordSize);
 
   return itable_size;
 }
