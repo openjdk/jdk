@@ -107,8 +107,7 @@ public class SjavacServer implements Terminable {
     /**
      * Acquire the port file. Synchronized since several threads inside an smart javac wrapper client acquires the same port file at the same time.
      */
-    public static synchronized PortFile getPortFile(String filename)
-            throws PortFileInaccessibleException {
+    public static synchronized PortFile getPortFile(String filename) {
         if (allPortFiles == null) {
             allPortFiles = new HashMap<>();
         }
