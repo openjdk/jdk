@@ -32,8 +32,6 @@ class LineBuffer;
 template <class T> class WorkerDataArray;
 
 class G1GCPhaseTimes : public CHeapObj<mtGC> {
-  friend class G1GCParPhasePrinter;
-
   uint _active_gc_threads;
   uint _max_gc_threads;
   jlong _gc_start_counter;
@@ -125,10 +123,13 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_verify_before_time_ms;
   double _cur_verify_after_time_ms;
 
-  // Helper methods for detailed logging
-  void print_stats(const char*, const char* str, double value);
-
   void note_gc_end();
+
+  template <class T>
+  void details(T* phase, const char* indent);
+  void log_phase(WorkerDataArray<double>* phase, uint indent, outputStream* out, bool print_sum);
+  void debug_phase(WorkerDataArray<double>* phase);
+  void trace_phase(WorkerDataArray<double>* phase, bool print_sum = true);
 
  public:
   G1GCPhaseTimes(uint max_gc_threads);
@@ -147,16 +148,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double average_time_ms(GCParPhases phase);
 
   size_t sum_thread_work_items(GCParPhases phase);
-
- private:
-  double get_time_ms(GCParPhases phase, uint worker_i);
-  double sum_time_ms(GCParPhases phase);
-  double min_time_ms(GCParPhases phase);
-  double max_time_ms(GCParPhases phase);
-  size_t get_thread_work_item(GCParPhases phase, uint worker_i);
-  double average_thread_work_items(GCParPhases phase);
-  size_t min_thread_work_items(GCParPhases phase);
-  size_t max_thread_work_items(GCParPhases phase);
 
  public:
 
@@ -262,8 +253,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   void inc_external_accounted_time_ms(double time_ms) {
     _external_accounted_time_ms += time_ms;
   }
-
-  double accounted_time_ms();
 
   double cur_collection_start_sec() {
     return _cur_collection_start_sec;
