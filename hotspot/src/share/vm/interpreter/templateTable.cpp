@@ -26,8 +26,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
-#include "runtime/timer.hpp"
-
+#include "runtime/logTimer.hpp"
 
 #ifdef CC_INTERP
 
@@ -246,7 +245,7 @@ void TemplateTable::initialize() {
   if (_is_initialized) return;
 
   // Initialize table
-  TraceTime timer("TemplateTable initialization", TraceStartupTime);
+  TraceStartupTime timer("TemplateTable initialization");
 
   _bs = Universe::heap()->barrier_set();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,11 +95,8 @@ public class CompilationService {
             for (JavaFileObject jfo : fm.getJavaFileObjectsFromFiles(sourcesToCompileFiles))
                 explicitJFOs.append(SmartFileManager.locWrap(jfo, StandardLocation.SOURCE_PATH));
 
-            // Create a new logger
-            StringWriter stdoutLog = new StringWriter();
+            // Create a log to capture compiler output
             StringWriter stderrLog = new StringWriter();
-            PrintWriter stdout = new PrintWriter(stdoutLog);
-            PrintWriter stderr = new PrintWriter(stderrLog);
             com.sun.tools.javac.main.Main.Result rc = com.sun.tools.javac.main.Main.Result.OK;
             PublicApiCollector pubApiCollector = new PublicApiCollector(context, explicitJFOs);
             PathAndPackageVerifier papVerifier = new PathAndPackageVerifier();
@@ -108,11 +105,10 @@ public class CompilationService {
                 if (explicitJFOs.size() > 0) {
                     sfm.setVisibleSources(visibleSources);
                     sfm.cleanArtifacts();
-                    sfm.setLog(stdout);
 
                     // Do the compilation!
                     JavacTaskImpl task =
-                            (JavacTaskImpl) compiler.getTask(stderr,
+                            (JavacTaskImpl) compiler.getTask(new PrintWriter(stderrLog),
                                                              sfm,
                                                              null,
                                                              Arrays.asList(args),
@@ -144,7 +140,6 @@ public class CompilationService {
 
             compilationResult.packagePubapis = pubApiCollector.getPubApis(true);
             compilationResult.dependencyPubapis = pubApiCollector.getPubApis(false);
-            compilationResult.stdout = stdoutLog.toString();
             compilationResult.stderr = stderrLog.toString();
             compilationResult.returnCode = rc.exitCode;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import jdk.test.lib.dcmd.JMXExecutor;
 import sun.tools.attach.HotSpotVirtualMachine;
 
 import static optionsvalidation.JVMOptionsUtils.failedMessage;
+import static optionsvalidation.JVMOptionsUtils.GCType;
 import static optionsvalidation.JVMOptionsUtils.printOutputContent;
 import static optionsvalidation.JVMOptionsUtils.VMType;
 
@@ -374,17 +375,21 @@ public abstract class JVMOption {
     private boolean runJavaWithParam(String optionValue, boolean valid) throws Exception {
         int exitCode;
         boolean result = true;
-        String value = optionValue.substring(optionValue.lastIndexOf("=") + 1);
-        String fullOptionString = prependString.toString() + optionValue;
+        String errorMessage = null;
         List<String> runJava = new ArrayList<>();
         OutputAnalyzer out;
 
         if (VMType != null) {
             runJava.add(VMType);
         }
+
+        if (GCType != null) {
+            runJava.add(GCType);
+        }
+
         runJava.addAll(prepend);
         runJava.add(optionValue);
-        runJava.add(JVMOptionsUtils.class.getName());
+        runJava.add(JVMStartup.class.getName());
 
         out = new OutputAnalyzer(ProcessTools.createJavaProcessBuilder(runJava.toArray(new String[0])).start());
 
@@ -392,38 +397,35 @@ public abstract class JVMOption {
 
         if (out.getOutput().contains("A fatal error has been detected by the Java Runtime Environment")) {
             /* Always consider "fatal error" in output as fail */
-            failedMessage(name, fullOptionString, valid, "JVM output reports a fatal error. JVM exited with code " + exitCode + "!");
-            printOutputContent(out);
-            result = false;
+            errorMessage = "JVM output reports a fatal error. JVM exited with code " + exitCode + "!";
         } else if (valid == true) {
             if (!allowedExitCodes.contains(exitCode)) {
-                failedMessage(name, fullOptionString, valid, "JVM exited with unexpected error code = " + exitCode);
-                printOutputContent(out);
-                result = false;
+                errorMessage = "JVM exited with unexpected error code = " + exitCode;
             } else if ((exitCode != 0) && (out.getOutput().isEmpty() == true)) {
-                failedMessage(name, fullOptionString, valid, "JVM exited with error(exitcode == " + exitCode +
-                        "), but with empty stdout and stderr. Description of error is needed!");
-                result = false;
+                errorMessage = "JVM exited with error(exitcode == " + exitCode + "), but with empty stdout and stderr. " +
+                       "Description of error is needed!";
             } else if (out.getOutput().contains("is outside the allowed range")) {
-                failedMessage(name, fullOptionString, valid, "JVM output contains \"is outside the allowed range\"");
-                printOutputContent(out);
-                result = false;
+                errorMessage = "JVM output contains \"is outside the allowed range\"";
             }
         } else {
             // valid == false
+            String value = optionValue.substring(optionValue.lastIndexOf("=") + 1);
+            String errorMessageCommandLineValue = getErrorMessageCommandLine(value);
             if (exitCode == 0) {
-                failedMessage(name, fullOptionString, valid, "JVM successfully exit");
-                result = false;
+                errorMessage = "JVM successfully exit";
             } else if (exitCode != 1) {
-                failedMessage(name, fullOptionString, valid, "JVM exited with code "
-                        + exitCode + " which not equal to 1");
-                result = false;
-            } else if (!out.getOutput().contains(getErrorMessageCommandLine(value))) {
-                failedMessage(name, fullOptionString, valid, "JVM output does not contain "
-                        + "expected output \"" + getErrorMessageCommandLine(value) + "\"");
-                printOutputContent(out);
-                result = false;
+                errorMessage = "JVM exited with code " + exitCode + " which not equal to 1";
+            } else if (!out.getOutput().contains(errorMessageCommandLineValue)) {
+                errorMessage = "JVM output does not contain expected output \"" + errorMessageCommandLineValue + "\"";
             }
+        }
+
+        if (errorMessage != null) {
+            String fullOptionString = String.format("%s %s %s %s",
+                    VMType == null ? "" : VMType, GCType == null ? "" : GCType, prependString.toString(), optionValue).trim().replaceAll("  +", " ");
+            failedMessage(name, fullOptionString, valid, errorMessage);
+            printOutputContent(out);
+            result = false;
         }
 
         System.out.println("");

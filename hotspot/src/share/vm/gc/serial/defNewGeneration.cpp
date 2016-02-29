@@ -36,6 +36,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
@@ -184,6 +185,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t initial_size,
                                    const char* policy)
   : Generation(rs, initial_size),
+    _preserved_marks_set(false /* in_c_heap */),
     _promo_failure_drain_in_progress(false),
     _should_allocate_from_space(false)
 {
@@ -602,6 +604,8 @@ void DefNewGeneration::collect(bool   full,
 
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
+  // The preserved marks should be empty at the start of the GC.
+  _preserved_marks_set.init(1);
 
   gch->rem_set()->prepare_for_younger_refs_iterate(false);
 
@@ -704,6 +708,8 @@ void DefNewGeneration::collect(bool   full,
     // Reset the PromotionFailureALot counters.
     NOT_PRODUCT(gch->reset_promotion_should_fail();)
   }
+  // We should have processed and cleared all the preserved marks.
+  _preserved_marks_set.reclaim();
   // set new iteration safe limit for the survivor spaces
   from()->set_concurrent_iteration_safe_limit(from()->top());
   to()->set_concurrent_iteration_safe_limit(to()->top());
@@ -721,13 +727,6 @@ void DefNewGeneration::collect(bool   full,
   gc_tracer.report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
 }
 
-class RemoveForwardPointerClosure: public ObjectClosure {
-public:
-  void do_object(oop obj) {
-    obj->init_mark();
-  }
-};
-
 void DefNewGeneration::init_assuming_no_promotion_failure() {
   _promotion_failed = false;
   _promotion_failed_info.reset();
@@ -735,33 +734,12 @@ void DefNewGeneration::init_assuming_no_promotion_failure() {
 }
 
 void DefNewGeneration::remove_forwarding_pointers() {
-  RemoveForwardPointerClosure rspc;
+  RemoveForwardedPointerClosure rspc;
   eden()->object_iterate(&rspc);
   from()->object_iterate(&rspc);
 
   // Now restore saved marks, if any.
-  assert(_objs_with_preserved_marks.size() == _preserved_marks_of_objs.size(),
-         "should be the same");
-  while (!_objs_with_preserved_marks.is_empty()) {
-    oop obj   = _objs_with_preserved_marks.pop();
-    markOop m = _preserved_marks_of_objs.pop();
-    obj->set_mark(m);
-  }
-  _objs_with_preserved_marks.clear(true);
-  _preserved_marks_of_objs.clear(true);
-}
-
-void DefNewGeneration::preserve_mark(oop obj, markOop m) {
-  assert(_promotion_failed && m->must_be_preserved_for_promotion_failure(obj),
-         "Oversaving!");
-  _objs_with_preserved_marks.push(obj);
-  _preserved_marks_of_objs.push(m);
-}
-
-void DefNewGeneration::preserve_mark_if_necessary(oop obj, markOop m) {
-  if (m->must_be_preserved_for_promotion_failure(obj)) {
-    preserve_mark(obj, m);
-  }
+  _preserved_marks_set.restore();
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
@@ -769,7 +747,7 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
-  preserve_mark_if_necessary(old, old->mark());
+  _preserved_marks_set.get()->push_if_necessary(old, old->mark());
   // forward to self
   old->forward_to(old);
 

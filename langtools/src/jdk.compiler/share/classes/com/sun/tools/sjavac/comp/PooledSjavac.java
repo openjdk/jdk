@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,13 @@
 
 package com.sun.tools.sjavac.comp;
 
-import java.io.Writer;
+import com.sun.tools.sjavac.Log;
+import com.sun.tools.sjavac.server.Sjavac;
+
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import com.sun.tools.sjavac.Log;
-import com.sun.tools.sjavac.server.Sjavac;
 
 /**
  * An sjavac implementation that limits the number of concurrent calls by
@@ -55,10 +54,12 @@ public class PooledSjavac implements Sjavac {
     }
 
     @Override
-    public int compile(String[] args, Writer out, Writer err) {
+    public int compile(String[] args) {
+        Log log = Log.get();
         try {
             return pool.submit(() -> {
-                return delegate.compile(args, out, err);
+                Log.setLogForCurrentThread(log);
+                return delegate.compile(args);
             }).get();
         } catch (Exception e) {
             e.printStackTrace();

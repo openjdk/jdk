@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,10 +173,18 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
     }
 
     public void setOption(int opt, Object val) throws SocketException {
+        if (opt == SocketOptions.SO_REUSEPORT) {
+            // SO_REUSEPORT is not supported on Windows.
+            throw new UnsupportedOperationException("unsupported option");
+        }
         impl.setOption(opt, val);
     }
 
     public Object getOption(int opt) throws SocketException {
+        if (opt == SocketOptions.SO_REUSEPORT) {
+            // SO_REUSEPORT is not supported on Windows.
+            throw new UnsupportedOperationException("unsupported option");
+        }
         return impl.getOption(opt);
     }
 
@@ -332,14 +340,27 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
 
     void socketSetOption(int cmd, boolean on, Object value)
         throws SocketException {
+        if (cmd == SocketOptions.SO_REUSEPORT) {
+            // SO_REUSEPORT is not supported on Windows.
+            throw new UnsupportedOperationException("unsupported option");
+        }
         impl.socketSetOption(cmd, on, value);
     }
 
     int socketGetOption(int opt, Object iaContainerObj) throws SocketException {
+        if (opt == SocketOptions.SO_REUSEPORT) {
+            // SO_REUSEPORT is not supported on Windows.
+            throw new UnsupportedOperationException("unsupported option");
+        }
         return impl.socketGetOption(opt, iaContainerObj);
     }
 
     void socketSendUrgentData(int data) throws IOException {
         impl.socketSendUrgentData(data);
+    }
+
+    static boolean isReusePortAvailable() {
+        // SO_REUSEPORT is not supported on Windows.
+        return false;
     }
 }
