@@ -43,6 +43,7 @@
   LOG_TAG(classload) /* Trace all classes loaded */ \
   LOG_TAG(classloaderdata) /* class loader loader_data lifetime */ \
   LOG_TAG(classunload) /* Trace unloading of classes */ \
+  LOG_TAG(classpath) \
   LOG_TAG(compaction) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
@@ -81,6 +82,7 @@
   LOG_TAG(survivor) \
   LOG_TAG(sweep) \
   LOG_TAG(task) \
+  LOG_TAG(thread) \
   LOG_TAG(tlab) \
   LOG_TAG(time) \
   LOG_TAG(verify) \

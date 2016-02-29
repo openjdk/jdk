@@ -36,6 +36,7 @@
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm_aix.h"
+#include "logging/log.hpp"
 #include "libo4.hpp"
 #include "libperfstat_aix.hpp"
 #include "libodm_aix.hpp"
@@ -791,13 +792,8 @@ static void *java_start(Thread *thread) {
   const pthread_t pthread_id = ::pthread_self();
   const tid_t kernel_thread_id = ::thread_self();
 
-  trcVerbose("newborn Thread : pthread-id %u, ktid " UINT64_FORMAT
-    ", stack %p ... %p, stacksize 0x%IX (%IB)",
-    pthread_id, kernel_thread_id,
-    thread->stack_end(),
-    thread->stack_base(),
-    thread->stack_size(),
-    thread->stack_size());
+  log_info(os, thread)("Thread is alive (pthread id " UINTX_FORMAT ", tid " UINTX_FORMAT ")",
+    (uintx) pthread_id, (uintx) kernel_thread_id);
 
   // Normally, pthread stacks on AIX live in the data segment (are allocated with malloc()
   // by the pthread library). In rare cases, this may not be the case, e.g. when third-party
@@ -805,7 +801,7 @@ static void *java_start(Thread *thread) {
   // guard pages on those stacks, because the stacks may reside in memory which is not
   // protectable (shmated).
   if (thread->stack_base() > ::sbrk(0)) {
-    trcVerbose("Thread " UINT64_FORMAT ": stack not in data segment.", (uint64_t) pthread_id);
+    log_warning(os, thread)("Thread " UINTX_FORMAT ": stack not in data segment.", (uintx)pthread_id);
   }
 
   // Try to randomize the cache line index of hot stack frames.
@@ -839,8 +835,8 @@ static void *java_start(Thread *thread) {
   // Call one more level start routine.
   thread->run();
 
-  trcVerbose("Thread finished : pthread-id %u, ktid " UINT64_FORMAT ".",
-    pthread_id, kernel_thread_id);
+  log_info(os, thread)("Thread finished (pthread id " UINTX_FORMAT ", tid " UINTX_FORMAT ").",
+    (uintx) pthread_id, (uintx) kernel_thread_id);
 
   return 0;
 }
@@ -908,20 +904,19 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
   pthread_t tid;
   int ret = pthread_create(&tid, &attr, (void* (*)(void*)) java_start, thread);
 
+
+  char buf[64];
+  if (ret == 0) {
+    log_info(os, thread)("Thread started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+      (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+  } else {
+    log_warning(os, thread)("Failed to start thread - pthread_create failed (%s) for attributes: %s.",
+      strerror(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+  }
+
   pthread_attr_destroy(&attr);
 
-  if (ret == 0) {
-    trcVerbose("Created New Thread : pthread-id %u", tid);
-  } else {
-    if (os::Aix::on_pase()) {
-      // QIBM_MULTI_THREADED=Y is needed when the launcher is started on iSeries
-      // using QSH. Otherwise pthread_create fails with errno=11.
-      trcVerbose("(Please make sure you set the environment variable "
-              "QIBM_MULTI_THREADED=Y before running this program.)");
-    }
-    if (PrintMiscellaneous && (Verbose || WizardMode)) {
-      perror("pthread_create()");
-    }
+  if (ret != 0) {
     // Need to clean up stuff we've allocated so far
     thread->set_osthread(NULL);
     delete osthread;
@@ -958,13 +953,6 @@ bool os::create_attached_thread(JavaThread* thread) {
   const pthread_t pthread_id = ::pthread_self();
   const tid_t kernel_thread_id = ::thread_self();
 
-  trcVerbose("attaching Thread : pthread-id %u, ktid " UINT64_FORMAT ", stack %p ... %p, stacksize 0x%IX (%IB)",
-    pthread_id, kernel_thread_id,
-    thread->stack_end(),
-    thread->stack_base(),
-    thread->stack_size(),
-    thread->stack_size());
-
   // OSThread::thread_id is the pthread id.
   osthread->set_thread_id(pthread_id);
 
@@ -989,6 +977,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   // initialize signal mask for this thread
   // and save the caller's signal mask
   os::Aix::hotspot_sigmask(thread);
+
+  log_info(os, thread)("Thread attached (pthread id " UINTX_FORMAT ", tid " UINTX_FORMAT ")",
+    (uintx) pthread_id, (uintx) kernel_thread_id);
 
   return true;
 }

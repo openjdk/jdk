@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,11 +61,11 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
   * 2) green = 0. Means no caching. Can be a good way to minimize the
   *    amount of time spent updating rsets during a collection.
   */
-  int _green_zone;
-  int _yellow_zone;
-  int _red_zone;
+  size_t _green_zone;
+  size_t _yellow_zone;
+  size_t _red_zone;
 
-  int _thread_threshold_step;
+  size_t _thread_threshold_step;
 
   // We delay the refinement of 'hot' cards using the hot card cache.
   G1HotCardCache _hot_card_cache;
@@ -100,17 +100,17 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
 
   void print_worker_threads_on(outputStream* st) const;
 
-  void set_green_zone(int x)  { _green_zone = x;  }
-  void set_yellow_zone(int x) { _yellow_zone = x; }
-  void set_red_zone(int x)    { _red_zone = x;    }
+  void set_green_zone(size_t x)  { _green_zone = x;  }
+  void set_yellow_zone(size_t x) { _yellow_zone = x; }
+  void set_red_zone(size_t x)    { _red_zone = x;    }
 
-  int green_zone() const      { return _green_zone;  }
-  int yellow_zone() const     { return _yellow_zone; }
-  int red_zone() const        { return _red_zone;    }
+  size_t green_zone() const      { return _green_zone;  }
+  size_t yellow_zone() const     { return _yellow_zone; }
+  size_t red_zone() const        { return _red_zone;    }
 
   uint worker_thread_num() const { return _n_worker_threads; }
 
-  int thread_threshold_step() const { return _thread_threshold_step; }
+  size_t thread_threshold_step() const { return _thread_threshold_step; }
 
   G1HotCardCache* hot_card_cache() { return &_hot_card_cache; }
 
