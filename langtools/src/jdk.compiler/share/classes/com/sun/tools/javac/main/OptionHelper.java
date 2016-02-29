@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package com.sun.tools.javac.main;
 
+import java.nio.file.Path;
+
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.PrefixKind;
-import java.io.File;
 
 /**
  * Helper object to be used by {@link Option#process}, providing access to
@@ -63,7 +64,7 @@ public abstract class OptionHelper {
     abstract void error(String key, Object... args);
 
     /** Record a file to be compiled. */
-    abstract void addFile(File f);
+    abstract void addFile(Path p);
 
     /** Record the name of a class for annotation processing. */
     abstract void addClassName(String s);
@@ -112,8 +113,8 @@ public abstract class OptionHelper {
         }
 
         @Override
-        public void addFile(File f) {
-            throw new IllegalArgumentException(f.getPath());
+        public void addFile(Path p) {
+            throw new IllegalArgumentException(p.toString());
         }
 
         @Override

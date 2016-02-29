@@ -52,6 +52,7 @@ define_pd_global(intx, RegisterCostAreaRatio,        12000);
 define_pd_global(bool, UseTLAB,                      true);
 define_pd_global(bool, ResizeTLAB,                   true);
 define_pd_global(intx, LoopUnrollLimit,              60); // Design center runs on 1.3.1
+define_pd_global(intx, LoopPercentProfileLimit,      10);
 define_pd_global(intx, MinJumpTableSize,             5);
 
 // Peephole and CISC spilling both break the graph, and so makes the

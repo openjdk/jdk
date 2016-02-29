@@ -309,6 +309,15 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     /**
+     * Returns true if this method has a {@code ReservedStackAccess} annotation.
+     *
+     * @return true if ReservedStackAccess annotation present, false otherwise
+     */
+    public boolean hasReservedStackAccess() {
+        return (getFlags() & config().methodFlagsReservedStackAccess) != 0;
+    }
+
+    /**
      * Manually adds a DontInline annotation to this method.
      */
     public void setNotInlineable() {

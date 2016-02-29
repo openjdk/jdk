@@ -42,6 +42,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import com.sun.tools.sjavac.comp.CompilationService;
 import com.sun.tools.sjavac.options.Options;
@@ -89,9 +91,7 @@ public class CompileJavaPackages implements Transformer {
                              final Map<String, PubApi> dependencyPubapis,
                              int debugLevel,
                              boolean incremental,
-                             int numCores,
-                             final Writer out,
-                             final Writer err) {
+                             int numCores) {
 
         Log.debug("Performing CompileJavaPackages transform...");
 
@@ -219,7 +219,9 @@ public class CompileJavaPackages implements Transformer {
             }
 
             String chunkId = id + "-" + String.valueOf(i);
+            Log log = Log.get();
             compilationCalls.add(() -> {
+                Log.setLogForCurrentThread(log);
                 CompilationSubResult result = sjavac.compile("n/a",
                                                              chunkId,
                                                              args.prepJavacArgs(),
@@ -227,8 +229,8 @@ public class CompileJavaPackages implements Transformer {
                                                              cc.srcs,
                                                              visibleSources);
                 synchronized (lock) {
-                    safeWrite(result.stdout, out);
-                    safeWrite(result.stderr, err);
+                    Util.getLines(result.stdout).forEach(Log::info);
+                    Util.getLines(result.stderr).forEach(Log::error);
                 }
                 return result;
             });
@@ -246,8 +248,10 @@ public class CompileJavaPackages implements Transformer {
                 subResults.add(fut.get());
             } catch (ExecutionException ee) {
                 Log.error("Compilation failed: " + ee.getMessage());
-            } catch (InterruptedException ee) {
-                Log.error("Compilation interrupted: " + ee.getMessage());
+                Log.error(ee);
+            } catch (InterruptedException ie) {
+                Log.error("Compilation interrupted: " + ie.getMessage());
+                Log.error(ie);
                 Thread.currentThread().interrupt();
             }
         }
@@ -290,16 +294,6 @@ public class CompileJavaPackages implements Transformer {
         Log.debug("Compilation of "+numSources+" source files took "+minutes+"m "+seconds+"s");
 
         return rc;
-    }
-
-    private void safeWrite(String str, Writer w) {
-        if (str.length() > 0) {
-            try {
-                w.write(str);
-            } catch (IOException e) {
-                Log.error("Could not print compilation output.");
-            }
-        }
     }
 
     /**

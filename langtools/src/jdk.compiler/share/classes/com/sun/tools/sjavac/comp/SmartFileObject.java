@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,9 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 public class SmartFileObject implements JavaFileObject {
 
     JavaFileObject file;
-    PrintWriter stdout;
 
-    public SmartFileObject(JavaFileObject r, PrintWriter pw) {
+    public SmartFileObject(JavaFileObject r) {
         file = r;
-        stdout = pw;
     }
 
     @Override
@@ -113,7 +111,7 @@ public class SmartFileObject implements JavaFileObject {
         } catch (FileNotFoundException | NoSuchFileException e) {
             // Perfectly ok.
         }
-        return new SmartWriter(file, s.toString(), file.getName(), stdout);
+        return new SmartWriter(file, s.toString(), file.getName());
     }
 
     @DefinedBy(Api.COMPILER)

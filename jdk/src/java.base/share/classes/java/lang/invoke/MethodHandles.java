@@ -4137,8 +4137,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         // The cleanup parameter list (minus the leading Throwable and result parameters) must be a sublist of the
         // target parameter list.
         int cleanupArgIndex = rtype == void.class ? 1 : 2;
-        if (!cleanupParamTypes.subList(cleanupArgIndex, cleanupParamTypes.size()).
-                equals(target.type().parameterList().subList(0, cleanupParamTypes.size() - cleanupArgIndex))) {
+        List<Class<?>> cleanupArgSuffix = cleanupParamTypes.subList(cleanupArgIndex, cleanupParamTypes.size());
+        List<Class<?>> targetParamTypes = target.type().parameterList();
+        if (targetParamTypes.size() < cleanupArgSuffix.size() ||
+                !cleanupArgSuffix.equals(targetParamTypes.subList(0, cleanupParamTypes.size() - cleanupArgIndex))) {
             throw misMatchedTypes("cleanup parameters after (Throwable,result) and target parameter list prefix",
                     cleanup.type(), target.type());
         }
