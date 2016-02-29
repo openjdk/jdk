@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -792,8 +792,8 @@ static void *java_start(Thread *thread) {
   const pthread_t pthread_id = ::pthread_self();
   const tid_t kernel_thread_id = ::thread_self();
 
-  log_info(os, thread)("Thread is alive (pthread id " UINTX_FORMAT ", tid " UINTX_FORMAT ")",
-    (uintx) pthread_id, (uintx) kernel_thread_id);
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT ").",
+    os::current_thread_id(), (uintx) kernel_thread_id);
 
   // Normally, pthread stacks on AIX live in the data segment (are allocated with malloc()
   // by the pthread library). In rare cases, this may not be the case, e.g. when third-party
@@ -801,7 +801,7 @@ static void *java_start(Thread *thread) {
   // guard pages on those stacks, because the stacks may reside in memory which is not
   // protectable (shmated).
   if (thread->stack_base() > ::sbrk(0)) {
-    log_warning(os, thread)("Thread " UINTX_FORMAT ": stack not in data segment.", (uintx)pthread_id);
+    log_warning(os, thread)("Thread stack not in data segment.");
   }
 
   // Try to randomize the cache line index of hot stack frames.
@@ -835,8 +835,8 @@ static void *java_start(Thread *thread) {
   // Call one more level start routine.
   thread->run();
 
-  log_info(os, thread)("Thread finished (pthread id " UINTX_FORMAT ", tid " UINTX_FORMAT ").",
-    (uintx) pthread_id, (uintx) kernel_thread_id);
+  log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT ").",
+    os::current_thread_id(), (uintx) kernel_thread_id);
 
   return 0;
 }
@@ -978,8 +978,8 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   os::Aix::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (pthread id " UINTX_FORMAT ", tid " UINTX_FORMAT ")",
-    (uintx) pthread_id, (uintx) kernel_thread_id);
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT ").",
+    os::current_thread_id(), (uintx) kernel_thread_id);
 
   return true;
 }

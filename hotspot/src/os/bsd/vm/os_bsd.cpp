@@ -682,7 +682,7 @@ static void *java_start(Thread *thread) {
 
   osthread->set_thread_id(os::Bsd::gettid());
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ".",
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) pthread_self());
 
 #ifdef __APPLE__
@@ -720,7 +720,7 @@ static void *java_start(Thread *thread) {
   // call one more level start routine
   thread->run();
 
-  log_info(os, thread)("Thread finished (tid " UINTX_FORMAT ", pthread id " UINTX_FORMAT ").",
+  log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) pthread_self());
 
   return 0;
@@ -871,7 +871,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   os::Bsd::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ".",
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) pthread_self());
 
   return true;

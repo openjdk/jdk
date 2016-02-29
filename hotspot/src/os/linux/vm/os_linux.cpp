@@ -694,7 +694,7 @@ static void *java_start(Thread *thread) {
   // call one more level start routine
   thread->run();
 
-  log_info(os, thread)("Thread finished (tid " UINTX_FORMAT ", pthread id " UINTX_FORMAT ").",
+  log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) pthread_self());
 
   return 0;
