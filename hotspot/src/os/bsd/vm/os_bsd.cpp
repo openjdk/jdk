@@ -32,6 +32,7 @@
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm_bsd.h"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "mutex_bsd.inline.hpp"
@@ -681,6 +682,9 @@ static void *java_start(Thread *thread) {
 
   osthread->set_thread_id(os::Bsd::gettid());
 
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ".",
+    os::current_thread_id(), (uintx) pthread_self());
+
 #ifdef __APPLE__
   uint64_t unique_thread_id = locate_unique_thread_id(osthread->thread_id());
   guarantee(unique_thread_id != 0, "unique thread id was not found");
@@ -715,6 +719,9 @@ static void *java_start(Thread *thread) {
 
   // call one more level start routine
   thread->run();
+
+  log_info(os, thread)("Thread finished (tid " UINTX_FORMAT ", pthread id " UINTX_FORMAT ").",
+    os::current_thread_id(), (uintx) pthread_self());
 
   return 0;
 }
@@ -776,12 +783,18 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
     pthread_t tid;
     int ret = pthread_create(&tid, &attr, (void* (*)(void*)) java_start, thread);
 
+    char buf[64];
+    if (ret == 0) {
+      log_info(os, thread)("Thread started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+        (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+    } else {
+      log_warning(os, thread)("Failed to start thread - pthread_create failed (%s) for attributes: %s.",
+        strerror(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+    }
+
     pthread_attr_destroy(&attr);
 
     if (ret != 0) {
-      if (PrintMiscellaneous && (Verbose || WizardMode)) {
-        perror("pthread_create()");
-      }
       // Need to clean up stuff we've allocated so far
       thread->set_osthread(NULL);
       delete osthread;
@@ -857,6 +870,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   // initialize signal mask for this thread
   // and save the caller's signal mask
   os::Bsd::hotspot_sigmask(thread);
+
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ".",
+    os::current_thread_id(), (uintx) pthread_self());
 
   return true;
 }

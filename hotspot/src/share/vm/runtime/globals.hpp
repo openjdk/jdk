@@ -2403,9 +2403,6 @@ public:
   product(bool, IgnoreEmptyClassPaths, false,                               \
           "Ignore empty path elements in -classpath")                       \
                                                                             \
-  product(bool, TraceClassPaths, false,                                     \
-          "Trace processing of class paths")                                \
-                                                                            \
   product(bool, TraceClassLoadingPreorder, false,                           \
           "Trace all classes loaded in order referenced (not loaded)")      \
                                                                             \

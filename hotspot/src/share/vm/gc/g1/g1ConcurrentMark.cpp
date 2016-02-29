@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2271,7 +2271,7 @@ void G1ConcurrentMark::checkpointRootsFinalWork() {
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
   guarantee(has_overflown() ||
             satb_mq_set.completed_buffers_num() == 0,
-            "Invariant: has_overflown = %s, num buffers = %d",
+            "Invariant: has_overflown = %s, num buffers = " SIZE_FORMAT,
             BOOL_TO_STR(has_overflown()),
             satb_mq_set.completed_buffers_num());
 
@@ -2702,11 +2702,8 @@ public:
 };
 
 static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h) {
-  ReferenceProcessor* result = NULL;
-  if (G1UseConcMarkReferenceProcessing) {
-    result = g1h->ref_processor_cm();
-    assert(result != NULL, "should not be NULL");
-  }
+  ReferenceProcessor* result = g1h->ref_processor_cm();
+  assert(result != NULL, "CM reference processor should not be NULL");
   return result;
 }
 
