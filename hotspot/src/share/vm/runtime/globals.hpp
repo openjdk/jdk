@@ -1478,9 +1478,6 @@ public:
   develop(bool, TraceCompiledIC, false,                                     \
           "Trace changes of compiled IC")                                   \
                                                                             \
-  develop(bool, TraceProtectionDomainVerification, false,                   \
-          "Trace protection domain verification")                           \
-                                                                            \
   develop(bool, TraceClearedExceptions, false,                              \
           "Print when an exception is forcibly cleared")                    \
                                                                             \

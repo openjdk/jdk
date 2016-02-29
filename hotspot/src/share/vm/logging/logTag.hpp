@@ -67,6 +67,7 @@
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(promotion) \
+  LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
   LOG_TAG(ref) \
   LOG_TAG(refine) \
   LOG_TAG(region) \
