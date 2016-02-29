@@ -33,9 +33,10 @@
  *
  * @run main/othervm
  *        -Xbootclasspath/a:.
+ *        -Xmixed
  *        -XX:+UnlockDiagnosticVMOptions
  *        -XX:+WhiteBoxAPI
- *        -XX:MaxInlineSize=100
+ *        -XX:MaxInlineSize=70
  *        -XX:MinInliningThreshold=0
  *        TestStringIntrinsics2
  */

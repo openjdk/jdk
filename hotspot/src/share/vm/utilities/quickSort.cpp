@@ -44,6 +44,31 @@ static int test_comparator(int a, int b) {
   }
   return 1;
 }
+
+static void print_array(const char* prefix, int* array, int length) {
+  tty->print("%s:", prefix);
+  for (int i = 0; i < length; i++) {
+    tty->print(" %d", array[i]);
+  }
+  tty->cr();
+}
+
+static bool compare_arrays(int* actual, int* expected, int length) {
+  for (int i = 0; i < length; i++) {
+    if (actual[i] != expected[i]) {
+      print_array("Sorted array  ", actual, length);
+      print_array("Expected array", expected, length);
+      return false;
+    }
+  }
+  return true;
+}
+
+template <class C>
+static bool sort_and_compare(int* arrayToSort, int* expectedResult, int length, C comparator, bool idempotent = false) {
+  QuickSort::sort<int, C>(arrayToSort, length, comparator, idempotent);
+  return compare_arrays(arrayToSort, expectedResult, length);
+}
 #endif // ASSERT
 
 static int test_even_odd_comparator(int a, int b) {
@@ -70,31 +95,6 @@ extern "C" {
     }
     return 1;
   }
-}
-
-static void print_array(const char* prefix, int* array, int length) {
-  tty->print("%s:", prefix);
-  for (int i = 0; i < length; i++) {
-    tty->print(" %d", array[i]);
-  }
-  tty->cr();
-}
-
-static bool compare_arrays(int* actual, int* expected, int length) {
-  for (int i = 0; i < length; i++) {
-    if (actual[i] != expected[i]) {
-      print_array("Sorted array  ", actual, length);
-      print_array("Expected array", expected, length);
-      return false;
-    }
-  }
-  return true;
-}
-
-template <class C>
-static bool sort_and_compare(int* arrayToSort, int* expectedResult, int length, C comparator, bool idempotent = false) {
-  QuickSort::sort<int, C>(arrayToSort, length, comparator, idempotent);
-  return compare_arrays(arrayToSort, expectedResult, length);
 }
 
 void QuickSort_test() {

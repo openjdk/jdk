@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,9 +81,6 @@ final class ClientHandshaker extends Handshaker {
 
     private boolean serverKeyExchangeReceived;
 
-    private final boolean enableStatusRequestExtension =
-            Debug.getBooleanProperty(
-                    "jdk.tls.client.enableStatusRequestExtension", true);
     private boolean staplingActive = false;
     private X509Certificate[] deferredCerts;
 
@@ -761,7 +758,7 @@ final class ClientHandshaker extends Handshaker {
                     type == ExtensionType.EXT_STATUS_REQUEST_V2) {
                 // Only enable the stapling feature if the client asserted
                 // these extensions.
-                if (enableStatusRequestExtension) {
+                if (sslContext.isStaplingEnabled(true)) {
                     staplingActive = true;
                 } else {
                     fatalSE(Alerts.alert_unexpected_message, "Server set " +
@@ -1562,7 +1559,7 @@ final class ClientHandshaker extends Handshaker {
         }
 
         // Add status_request and status_request_v2 extensions
-        if (enableStatusRequestExtension) {
+        if (sslContext.isStaplingEnabled(true)) {
             clientHelloMessage.addCertStatusReqListV2Extension();
             clientHelloMessage.addCertStatusRequestExtension();
         }

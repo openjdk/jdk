@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key intermittent
  * @bug 8081845 8147898
  * @summary Tests for /reload in JShell tool
  * @modules jdk.compiler/com.sun.tools.javac.api
