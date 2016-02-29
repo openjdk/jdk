@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -891,12 +891,11 @@ bool os::create_main_thread(JavaThread* thread) {
 
 // Helper function to trace thread attributes, similar to os::Posix::describe_pthread_attr()
 static char* describe_thr_create_attributes(char* buf, size_t buflen,
-  size_t stacksize, long flags)
-{
+                                            size_t stacksize, long flags) {
   stringStream ss(buf, buflen);
   ss.print("stacksize: " SIZE_FORMAT "k, ", stacksize / 1024);
   ss.print("flags: ");
-  #define PRINT_FLAG(f) if (flags & f) ss.print( XSTR(f) " ");
+  #define PRINT_FLAG(f) if (flags & f) ss.print( #f " ");
   #define ALL(X) \
     X(THR_SUSPENDED) \
     X(THR_DETACHED) \
@@ -1006,7 +1005,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   char buf[64];
   if (status == 0) {
-    log_info(os, thread)("Thread started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+    log_info(os, thread)("Thread started (tid: " UINTX_FORMAT ", attributes: %s). ",
       (uintx) tid, describe_thr_create_attributes(buf, sizeof(buf), stack_size, flags));
   } else {
     log_warning(os, thread)("Failed to start thread - thr_create failed (%s) for attributes: %s.",
