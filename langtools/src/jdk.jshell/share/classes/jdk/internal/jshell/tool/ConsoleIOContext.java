@@ -26,6 +26,7 @@
 package jdk.internal.jshell.tool;
 
 import jdk.jshell.SourceCodeAnalysis.CompletionInfo;
+import jdk.jshell.SourceCodeAnalysis.QualifiedNames;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
 
 import java.awt.event.ActionListener;
@@ -34,8 +35,12 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -144,6 +149,11 @@ class ConsoleIOContext extends IOContext {
         bind(DOCUMENTATION_SHORTCUT, (ActionListener) evt -> documentation(repl));
         bind(CTRL_UP, (ActionListener) evt -> moveHistoryToSnippet(((EditingHistory) in.getHistory())::previousSnippet));
         bind(CTRL_DOWN, (ActionListener) evt -> moveHistoryToSnippet(((EditingHistory) in.getHistory())::nextSnippet));
+        for (FixComputer computer : FIX_COMPUTERS) {
+            for (String shortcuts : SHORTCUT_FIXES) {
+                bind(shortcuts + computer.shortcut, (ActionListener) evt -> fixes(computer));
+            }
+        }
     }
 
     @Override
@@ -216,6 +226,11 @@ class ConsoleIOContext extends IOContext {
     private static final String DOCUMENTATION_SHORTCUT = "\033\133\132"; //Shift-TAB
     private static final String CTRL_UP = "\033\133\061\073\065\101"; //Ctrl-UP
     private static final String CTRL_DOWN = "\033\133\061\073\065\102"; //Ctrl-DOWN
+    private static final String[] SHORTCUT_FIXES = {
+        "\033\015", //Alt-Enter (Linux)
+        "\033\133\061\067\176", //F6/Alt-F1 (Mac)
+        "\u001BO3P" //Alt-F1 (Linux)
+    };
 
     private void documentation(JShellTool repl) {
         String buffer = in.getCursorBuffer().buffer.toString();
@@ -289,6 +304,185 @@ class ConsoleIOContext extends IOContext {
     public void replaceLastHistoryEntry(String source) {
         history.fullHistoryReplace(source);
     }
+
+    //compute possible options/Fixes based on the selected FixComputer, present them to the user,
+    //and perform the selected one:
+    private void fixes(FixComputer computer) {
+        String input = prefix + in.getCursorBuffer().toString();
+        int cursor = prefix.length() + in.getCursorBuffer().cursor;
+        FixResult candidates = computer.compute(repl, input, cursor);
+
+        try {
+            final boolean printError = candidates.error != null && !candidates.error.isEmpty();
+            if (printError) {
+                in.println(candidates.error);
+            }
+            if (candidates.fixes.isEmpty()) {
+                in.beep();
+                if (printError) {
+                    in.redrawLine();
+                    in.flush();
+                }
+            } else if (candidates.fixes.size() == 1 && !computer.showMenu) {
+                if (printError) {
+                    in.redrawLine();
+                    in.flush();
+                }
+                candidates.fixes.get(0).perform(in);
+            } else {
+                List<Fix> fixes = new ArrayList<>(candidates.fixes);
+                fixes.add(0, new Fix() {
+                    @Override
+                    public String displayName() {
+                        return "Do nothing";
+                    }
+
+                    @Override
+                    public void perform(ConsoleReader in) throws IOException {
+                        in.redrawLine();
+                    }
+                });
+
+                Map<Character, Fix> char2Fix = new HashMap<>();
+                in.println();
+                for (int i = 0; i < fixes.size(); i++) {
+                    Fix fix = fixes.get(i);
+                    char2Fix.put((char) ('0' + i), fix);
+                    in.println("" + i + ": " + fixes.get(i).displayName());
+                }
+                in.print("Choice: ");
+                in.flush();
+                int read;
+
+                read = in.readCharacter();
+
+                Fix fix = char2Fix.get((char) read);
+
+                if (fix == null) {
+                    in.beep();
+                    fix = fixes.get(0);
+                }
+
+                in.println();
+
+                fix.perform(in);
+
+                in.flush();
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * A possible action which the user can choose to perform.
+     */
+    public interface Fix {
+        /**
+         * A name that should be shown to the user.
+         */
+        public String displayName();
+        /**
+         * Perform the given action.
+         */
+        public void perform(ConsoleReader in) throws IOException;
+    }
+
+    /**
+     * A factory for {@link Fix}es.
+     */
+    public abstract static class FixComputer {
+        private final char shortcut;
+        private final boolean showMenu;
+
+        /**
+         * Construct a new FixComputer. {@code shortcut} defines the key which should trigger this FixComputer.
+         * If {@code showMenu} is {@code false}, and this computer returns exactly one {@code Fix},
+         * no options will be show to the user, and the given {@code Fix} will be performed.
+         */
+        public FixComputer(char shortcut, boolean showMenu) {
+            this.shortcut = shortcut;
+            this.showMenu = showMenu;
+        }
+
+        /**
+         * Compute possible actions for the given code.
+         */
+        public abstract FixResult compute(JShellTool repl, String code, int cursor);
+    }
+
+    /**
+     * A list of {@code Fix}es with a possible error that should be shown to the user.
+     */
+    public static class FixResult {
+        public final List<Fix> fixes;
+        public final String error;
+
+        public FixResult(List<Fix> fixes, String error) {
+            this.fixes = fixes;
+            this.error = error;
+        }
+    }
+
+    private static final FixComputer[] FIX_COMPUTERS = new FixComputer[] {
+        new FixComputer('v', false) { //compute "Introduce variable" Fix:
+            @Override
+            public FixResult compute(JShellTool repl, String code, int cursor) {
+                String type = repl.analysis.analyzeType(code, cursor);
+                if (type == null) {
+                    return new FixResult(Collections.emptyList(), null);
+                }
+                return new FixResult(Collections.singletonList(new Fix() {
+                    @Override
+                    public String displayName() {
+                        return "Create variable";
+                    }
+                    @Override
+                    public void perform(ConsoleReader in) throws IOException {
+                        in.redrawLine();
+                        in.setCursorPosition(0);
+                        in.putString(type + "  = ");
+                        in.setCursorPosition(in.getCursorBuffer().cursor - 3);
+                        in.flush();
+                    }
+                }), null);
+            }
+        },
+        new FixComputer('i', true) { //compute "Add import" Fixes:
+            @Override
+            public FixResult compute(JShellTool repl, String code, int cursor) {
+                QualifiedNames res = repl.analysis.listQualifiedNames(code, cursor);
+                List<Fix> fixes = new ArrayList<>();
+                for (String fqn : res.getNames()) {
+                    fixes.add(new Fix() {
+                        @Override
+                        public String displayName() {
+                            return "import: " + fqn;
+                        }
+                        @Override
+                        public void perform(ConsoleReader in) throws IOException {
+                            repl.state.eval("import " + fqn + ";");
+                            in.println("Imported: " + fqn);
+                            in.redrawLine();
+                        }
+                    });
+                }
+                if (res.isResolvable()) {
+                    return new FixResult(Collections.emptyList(),
+                                         "\nThe identifier is resolvable in this context.");
+                } else {
+                    String error = "";
+                    if (fixes.isEmpty()) {
+                        error = "\nNo candidate fully qualified names found to import.";
+                    }
+                    if (!res.isUpToDate()) {
+                        error += "\nResults may be incomplete; try again later for complete results.";
+                    }
+                    return new FixResult(fixes, error);
+                }
+            }
+        }
+    };
 
     private static final class JShellUnixTerminal extends NoInterruptUnixTerminal {
 

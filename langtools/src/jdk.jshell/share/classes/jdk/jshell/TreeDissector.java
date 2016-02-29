@@ -41,13 +41,14 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
-import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.Name;
 import static jdk.jshell.Util.isDoIt;
+import jdk.jshell.TaskFactory.AnalyzeTask;
 import jdk.jshell.Wrap.Range;
+
 import java.util.List;
 import java.util.Locale;
-import java.util.function.BinaryOperator;
+
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.lang.model.type.TypeMirror;
@@ -209,7 +210,7 @@ class TreeDissector {
     }
 
 
-    ExpressionInfo typeOfReturnStatement(JavacMessages messages, BinaryOperator<String> fullClassNameAndPackageToClass) {
+    ExpressionInfo typeOfReturnStatement(AnalyzeTask at, JShell state) {
         ExpressionInfo ei = new ExpressionInfo();
         Tree unitTree = firstStatement();
         if (unitTree instanceof ReturnTree) {
@@ -219,9 +220,7 @@ class TreeDissector {
                 if (viPath != null) {
                     TypeMirror tm = trees().getTypeMirror(viPath);
                     if (tm != null) {
-                        Type type = (Type)tm;
-                        TypePrinter tp = new TypePrinter(messages, fullClassNameAndPackageToClass, type);
-                        ei.typeName = tp.visit(type, Locale.getDefault());
+                        ei.typeName = printType(at, state, tm);
                         switch (tm.getKind()) {
                             case VOID:
                             case NONE:
@@ -261,6 +260,12 @@ class TreeDissector {
         TDSignatureGenerator sg = new TDSignatureGenerator(types);
         sg.assembleSig(mt);
         return sg.toString();
+    }
+
+    public static String printType(AnalyzeTask at, JShell state, TypeMirror type) {
+        Type typeImpl = (Type) type;
+        TypePrinter tp = new TypePrinter(at.messages(), state.maps::fullClassNameAndPackageToClass, typeImpl);
+        return tp.visit(typeImpl, Locale.getDefault());
     }
 
     /**
