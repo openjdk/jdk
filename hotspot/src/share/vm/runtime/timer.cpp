@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/ostream.hpp"
@@ -114,14 +115,15 @@ jlong TimeStamp::ticks_since_update() const {
 }
 
 TraceTime::TraceTime(const char* title,
-                     bool doit) {
+                     bool doit,
+                     LogTagType tag) {
   _active   = doit;
   _verbose  = true;
+  _tag      = tag;
+  _title    = title;
 
   if (_active) {
     _accum = NULL;
-    tty->print("[%s", title);
-    tty->flush();
     _t.start();
   }
 }
@@ -129,14 +131,14 @@ TraceTime::TraceTime(const char* title,
 TraceTime::TraceTime(const char* title,
                      elapsedTimer* accumulator,
                      bool doit,
-                     bool verbose) {
-  _active = doit;
-  _verbose = verbose;
+                     bool verbose,
+                     LogTagType tag) {
+  _active   = doit;
+  _verbose  = verbose;
+  _tag      = tag;
+  _title    = title;
+
   if (_active) {
-    if (_verbose) {
-      tty->print("[%s", title);
-      tty->flush();
-    }
     _accum = accumulator;
     _t.start();
   }
@@ -147,8 +149,15 @@ TraceTime::~TraceTime() {
     _t.stop();
     if (_accum!=NULL) _accum->add(_t);
     if (_verbose) {
-      tty->print_cr(", %3.7f secs]", _t.seconds());
-      tty->flush();
+      switch (_tag) {
+        case LogTag::_startuptime :
+          log_info(startuptime)("%s, %3.7f secs", _title, _t.seconds());
+          break;
+        case LogTag::__NO_TAG :
+       default :
+          tty->print_cr("[%s, %3.7f secs]", _title, _t.seconds());
+          tty->flush();
+      }
     }
   }
 }

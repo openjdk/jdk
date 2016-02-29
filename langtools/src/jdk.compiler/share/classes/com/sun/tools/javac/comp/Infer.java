@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,11 @@ import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph.Node;
 import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
 import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -353,9 +355,9 @@ public class Infer {
                         rsContext.attrMode(),
                         rsContext.step,
                         round);
-                File dotFile = new File(dependenciesFolder, filename);
-                try (FileWriter fw = new FileWriter(dotFile)) {
-                    fw.append(graph);
+                Path dotFile = Paths.get(dependenciesFolder, filename);
+                try (Writer w = Files.newBufferedWriter(dotFile)) {
+                    w.append(graph);
                 }
                 round++;
             }

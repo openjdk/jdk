@@ -2200,17 +2200,22 @@ extern "C" {
 }
 
 jint JvmtiExport::load_agent_library(AttachOperation* op, outputStream* st) {
+  // get agent name and options
+  const char* agent = op->arg(0);
+  const char* absParam = op->arg(1);
+  const char* options = op->arg(2);
+
+  return load_agent_library(agent, absParam, options, st);
+}
+
+jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
+                                     const char *options, outputStream* st) {
   char ebuf[1024];
   char buffer[JVM_MAXPATHLEN];
   void* library = NULL;
   jint result = JNI_ERR;
   const char *on_attach_symbols[] = AGENT_ONATTACH_SYMBOLS;
   size_t num_symbol_entries = ARRAY_SIZE(on_attach_symbols);
-
-  // get agent name and options
-  const char* agent = op->arg(0);
-  const char* absParam = op->arg(1);
-  const char* options = op->arg(2);
 
   // The abs paramter should be "true" or "false"
   bool is_absolute_path = (absParam != NULL) && (strcmp(absParam,"true")==0);

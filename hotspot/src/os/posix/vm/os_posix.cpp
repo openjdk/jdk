@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,14 +238,12 @@ void os::Posix::print_uname_info(outputStream* st) {
   st->cr();
 }
 
-#ifndef PRODUCT
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
   uname(&name);
   jio_snprintf(buf, buflen, "%s", name.nodename);
   return true;
 }
-#endif // PRODUCT
 
 bool os::has_allocatable_memory_limit(julong* limit) {
   struct rlimit rlim;

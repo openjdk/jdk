@@ -123,16 +123,11 @@ public class JavacState {
     // Setup transform that always exist.
     private CompileJavaPackages compileJavaPackages = new CompileJavaPackages();
 
-    // Where to send stdout and stderr.
-    private Writer out, err;
-
     // Command line options.
     private Options options;
 
-    JavacState(Options op, boolean removeJavacState, Writer o, Writer e) {
+    JavacState(Options op, boolean removeJavacState) {
         options = op;
-        out = o;
-        err = e;
         numCores = options.getNumCores();
         theArgs = options.getStateArgsString();
         binDir = Util.pathToFile(options.getDestDir());
@@ -294,8 +289,8 @@ public class JavacState {
     /**
      * Load a javac_state file.
      */
-    public static JavacState load(Options options, Writer out, Writer err) {
-        JavacState db = new JavacState(options, false, out, err);
+    public static JavacState load(Options options) {
+        JavacState db = new JavacState(options, false);
         Module  lastModule = null;
         Package lastPackage = null;
         Source  lastSource = null;
@@ -367,22 +362,22 @@ public class JavacState {
             noFileFound = true;
         } catch (IOException e) {
             Log.info("Dropping old javac_state because of errors when reading it.");
-            db = new JavacState(options, true, out, err);
+            db = new JavacState(options, true);
             foundCorrectVerNr = true;
             newCommandLine = false;
             syntaxError = false;
     }
         if (foundCorrectVerNr == false && !noFileFound) {
             Log.info("Dropping old javac_state since it is of an old version.");
-            db = new JavacState(options, true, out, err);
+            db = new JavacState(options, true);
         } else
         if (newCommandLine == true && !noFileFound) {
             Log.info("Dropping old javac_state since a new command line is used!");
-            db = new JavacState(options, true, out, err);
+            db = new JavacState(options, true);
         } else
         if (syntaxError == true) {
             Log.info("Dropping old javac_state since it contains syntax errors.");
-            db = new JavacState(options, true, out, err);
+            db = new JavacState(options, true);
         }
         db.prev.calculateDependents();
         return db;
@@ -812,9 +807,7 @@ public class JavacState {
                                     dependencyPublicApis,
                                     0,
                                     isIncremental(),
-                                    numCores,
-                                    out,
-                                    err);
+                                    numCores);
             if (!r)
                 rc = false;
 

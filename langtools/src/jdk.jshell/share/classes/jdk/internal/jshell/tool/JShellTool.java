@@ -988,13 +988,19 @@ public class JShellTool {
                 CommandKind.HELP_SUBJECT));
         registerCommand(new Command("shortcuts", "Describe shortcuts",
                 "Supported shortcuts include:\n\n" +
-                "<tab>       -- After entering the first few letters of a Java identifier,\n" +
-                "               a jshell command, or, in some cases, a jshell command argument,\n" +
-                "               press the <tab> key to complete the input.\n" +
-                "               If there is more than one completion, show possible completions.\n" +
-                "Shift-<tab> -- After the name and open parenthesis of a method or constructor invocation,\n" +
-                "               hold the <shift> key and press the <tab> to see a synopsis of all\n" +
-                "               matching methods/constructors.\n",
+                "<tab>            -- After entering the first few letters of a Java identifier,\n" +
+                "                    a jshell command, or, in some cases, a jshell command argument,\n" +
+                "                    press the <tab> key to complete the input.\n" +
+                "                    If there is more than one completion, show possible completions.\n" +
+                "Shift-<tab>      -- After the name and open parenthesis of a method or constructor invocation,\n" +
+                "                    hold the <shift> key and press the <tab> to see a synopsis of all\n" +
+                "                    matching methods/constructors.\n" +
+                "<fix-shortcut> v -- After a complete expression, press \"<fix-shortcut> v\" to introduce a new variable\n" +
+                "                    whose type is based on the type of the expression.\n" +
+                "                    The \"<fix-shortcut>\" is either Alt-F1 or Alt-Enter, depending on the platform.\n" +
+                "<fix-shortcut> i -- After an unresolvable identifier, press \"<fix-shortcut> i\" and jshell will propose\n" +
+                "                    possible fully qualified names based on the content of the specified classpath.\n" +
+                "                    The \"<fix-shortcut>\" is either Alt-F1 or Alt-Enter, depending on the platform.\n",
                 CommandKind.HELP_SUBJECT));
     }
 
