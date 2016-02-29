@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,6 +185,29 @@ public final class StandardSocketOptions {
      */
     public static final SocketOption<Boolean> SO_REUSEADDR =
         new StdSocketOption<Boolean>("SO_REUSEADDR", Boolean.class);
+
+    /**
+     * Re-use port.
+     *
+     * <p> The value of this socket option is a {@code Boolean} that represents
+     * whether the option is enabled or disabled. The exact semantics of this
+     * socket option are socket type and system dependent.
+     *
+     * <p> In the case of stream-oriented sockets, this socket option usually allows
+     * multiple listening sockets to be bound to both same address
+     * and same port.
+     *
+     * <p> For datagram-oriented sockets the socket option usually allows
+     * multiple UDP sockets to be bound to the same address and port.
+     *
+     * <p> An implementation allows this socket option to be set before the
+     * socket is bound or connected. Changing the value of this socket option
+     * after the socket is bound has no effect.
+     *
+     * @since 9
+     */
+    public static final SocketOption<Boolean> SO_REUSEPORT =
+        new StdSocketOption<Boolean>("SO_REUSEPORT", Boolean.class);
 
     /**
      * Linger on close if data is present.

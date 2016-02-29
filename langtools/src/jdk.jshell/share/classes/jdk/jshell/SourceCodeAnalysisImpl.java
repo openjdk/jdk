@@ -79,13 +79,23 @@ import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -99,6 +109,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.lang.model.SourceVersion;
+
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.QualifiedNameable;
@@ -118,12 +129,30 @@ import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
  * @author Robert Field
  */
 class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
+
+    private static final Map<Path, ClassIndex> PATH_TO_INDEX = new HashMap<>();
+    private static final ExecutorService INDEXER = Executors.newFixedThreadPool(1, r -> {
+        Thread t = new Thread(r);
+        t.setDaemon(true);
+        t.setUncaughtExceptionHandler((thread, ex) -> ex.printStackTrace());
+        return t;
+    });
+
     private final JShell proc;
     private final CompletenessAnalyzer ca;
+    private final Map<Path, ClassIndex> currentIndexes = new HashMap<>();
+    private int indexVersion;
+    private int classpathVersion;
+    private final Object suspendLock = new Object();
+    private int suspend;
 
     SourceCodeAnalysisImpl(JShell proc) {
         this.proc = proc;
         this.ca = new CompletenessAnalyzer(proc);
+
+        int cpVersion = classpathVersion = 1;
+
+        INDEXER.submit(() -> refreshIndexes(cpVersion));
     }
 
     @Override
@@ -203,6 +232,15 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     @Override
     public List<Suggestion> completionSuggestions(String code, int cursor, int[] anchor) {
+        suspendIndexing();
+        try {
+            return completionSuggestionsImpl(code, cursor, anchor);
+        } finally {
+            resumeIndexing();
+        }
+    }
+
+    private List<Suggestion> completionSuggestionsImpl(String code, int cursor, int[] anchor) {
         code = code.substring(0, cursor);
         Matcher m = JAVA_IDENTIFIER.matcher(code);
         String identifier = "";
@@ -390,8 +428,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
                 long start = sp.getStartPosition(topLevel, tree);
                 long end = sp.getEndPosition(topLevel, tree);
+                long prevEnd = deepest[0] != null ? sp.getEndPosition(topLevel, deepest[0].getLeaf()) : -1;
 
-                if (start <= pos && pos <= end) {
+                if (start <= pos && pos <= end &&
+                    (start != end || prevEnd != end || deepest[0] == null ||
+                     deepest[0].getParentPath().getLeaf() != getCurrentPath().getLeaf())) {
                     deepest[0] = new TreePath(getCurrentPath(), tree);
                     return super.scan(tree, p);
                 }
@@ -589,32 +630,28 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 .collect(toList());
     }
 
-    private Set<String> emptyContextPackages = null;
-
     void classpathChanged() {
-        emptyContextPackages = null;
+        synchronized (currentIndexes) {
+            int cpVersion = ++classpathVersion;
+
+            INDEXER.submit(() -> refreshIndexes(cpVersion));
+        }
     }
 
     private Set<PackageElement> listPackages(AnalyzeTask at, String enclosingPackage) {
-        Set<String> packs;
-
-        if (enclosingPackage.isEmpty() && emptyContextPackages != null) {
-            packs = emptyContextPackages;
-        } else {
-            packs = new HashSet<>();
-
-            listPackages(StandardLocation.PLATFORM_CLASS_PATH, enclosingPackage, packs);
-            listPackages(StandardLocation.CLASS_PATH, enclosingPackage, packs);
-            listPackages(StandardLocation.SOURCE_PATH, enclosingPackage, packs);
-
-            if (enclosingPackage.isEmpty()) {
-                emptyContextPackages = packs;
-            }
+        synchronized (currentIndexes) {
+            return currentIndexes.values()
+                                 .stream()
+                                 .flatMap(idx -> idx.packages.stream())
+                                 .filter(p -> enclosingPackage.isEmpty() || p.startsWith(enclosingPackage + "."))
+                                 .map(p -> {
+                                     int dot = p.indexOf('.', enclosingPackage.length() + 1);
+                                     return dot == (-1) ? p : p.substring(0, dot);
+                                 })
+                                 .distinct()
+                                 .map(p -> createPackageElement(at, p))
+                                 .collect(Collectors.toSet());
         }
-
-        return packs.stream()
-                    .map(pkg -> createPackageElement(at, pkg))
-                    .collect(Collectors.toSet());
     }
 
     private PackageElement createPackageElement(AnalyzeTask at, String packageName) {
@@ -623,79 +660,6 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         PackageElement existing = syms.enterPackage(names.fromString(packageName));
 
         return existing;
-    }
-
-    private void listPackages(Location loc, String enclosing, Set<String> packs) {
-        Iterable<? extends Path> paths = proc.taskFactory.fileManager().getLocationAsPaths(loc);
-
-        if (paths == null)
-            return ;
-
-        for (Path p : paths) {
-            listPackages(p, enclosing, packs);
-        }
-    }
-
-    private void listPackages(Path path, String enclosing, Set<String> packages) {
-        try {
-            if (path.equals(Paths.get("JRT_MARKER_FILE"))) {
-                FileSystem jrtfs = FileSystems.getFileSystem(URI.create("jrt:/"));
-                Path modules = jrtfs.getPath("modules");
-                try (DirectoryStream<Path> stream = Files.newDirectoryStream(modules)) {
-                    for (Path c : stream) {
-                        listDirectory(c, enclosing, packages);
-                    }
-                }
-            } else if (!Files.isDirectory(path)) {
-                if (Files.exists(path)) {
-                    ClassLoader cl = SourceCodeAnalysisImpl.class.getClassLoader();
-
-                    try (FileSystem zip = FileSystems.newFileSystem(path, cl)) {
-                        listDirectory(zip.getRootDirectories().iterator().next(), enclosing, packages);
-                    }
-                }
-            } else {
-                listDirectory(path, enclosing, packages);
-            }
-        } catch (IOException ex) {
-            proc.debug(ex, "SourceCodeAnalysisImpl.listPackages(" + path.toString() + ", " + enclosing + ", " + packages + ")");
-        }
-    }
-
-    private void listDirectory(Path path, String enclosing, Set<String> packages) throws IOException {
-        String separator = path.getFileSystem().getSeparator();
-        Path resolved = path.resolve(enclosing.replace(".", separator));
-
-        if (Files.isDirectory(resolved)) {
-            try (DirectoryStream<Path> ds = Files.newDirectoryStream(resolved)) {
-                for (Path entry : ds) {
-                    String name = pathName(entry);
-
-                    if (SourceVersion.isIdentifier(name) &&
-                        Files.isDirectory(entry) &&
-                        validPackageCandidate(entry)) {
-                        packages.add(enclosing + (enclosing.isEmpty() ? "" : ".") + name);
-                    }
-                }
-            }
-        }
-    }
-
-    private boolean validPackageCandidate(Path p) throws IOException {
-        try (Stream<Path> dir = Files.list(p)) {
-            return dir.anyMatch(e -> Files.isDirectory(e) && SourceVersion.isIdentifier(pathName(e)) ||
-                                e.getFileName().toString().endsWith(".class"));
-        }
-    }
-
-    private String pathName(Path p) {
-        String separator = p.getFileSystem().getSeparator();
-        String name = p.getFileName().toString();
-
-        if (name.endsWith(separator)) //jars have '/' appended
-            name = name.substring(0, name.length() - separator.length());
-
-        return name;
     }
 
     private Element createArrayLengthSymbol(AnalyzeTask at, TypeMirror site) {
@@ -965,6 +929,15 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     @Override
     public String documentation(String code, int cursor) {
+        suspendIndexing();
+        try {
+            return documentationImpl(code, cursor);
+        } finally {
+            resumeIndexing();
+        }
+    }
+
+    private String documentationImpl(String code, int cursor) {
         code = code.substring(0, cursor);
         if (code.trim().isEmpty()) { //TODO: comment handling
             code += ";";
@@ -1073,5 +1046,348 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             return ((ArrayType)arrayType).getComponentType();
         }
         return arrayType;
+    }
+
+    @Override
+    public String analyzeType(String code, int cursor) {
+        code = code.substring(0, cursor);
+        CompletionInfo completionInfo = analyzeCompletion(code);
+        if (!completionInfo.completeness.isComplete)
+            return null;
+        if (completionInfo.completeness == Completeness.COMPLETE_WITH_SEMI) {
+            code += ";";
+        }
+
+        OuterWrap codeWrap;
+        switch (guessKind(code)) {
+            case IMPORT: case METHOD: case CLASS: case ENUM:
+            case INTERFACE: case ANNOTATION_TYPE: case VARIABLE:
+                return null;
+            default:
+                codeWrap = wrapInClass(Wrap.methodWrap(code));
+                break;
+        }
+        AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap);
+        SourcePositions sp = at.trees().getSourcePositions();
+        CompilationUnitTree topLevel = at.firstCuTree();
+        int pos = codeWrap.snippetIndexToWrapIndex(code.length());
+        TreePath tp = pathFor(topLevel, sp, pos);
+        while (ExpressionTree.class.isAssignableFrom(tp.getParentPath().getLeaf().getKind().asInterface()) &&
+               tp.getParentPath().getLeaf().getKind() != Kind.ERRONEOUS &&
+               tp.getParentPath().getParentPath() != null)
+            tp = tp.getParentPath();
+        TypeMirror type = at.trees().getTypeMirror(tp);
+
+        if (type == null)
+            return null;
+
+        switch (type.getKind()) {
+            case ERROR: case NONE: case OTHER:
+            case PACKAGE: case VOID:
+                return null; //not usable
+            case NULL:
+                type = at.getElements().getTypeElement("java.lang.Object").asType();
+                break;
+        }
+
+        return TreeDissector.printType(at, proc, type);
+    }
+
+    @Override
+    public QualifiedNames listQualifiedNames(String code, int cursor) {
+        code = code.substring(0, cursor);
+        if (code.trim().isEmpty()) {
+            return new QualifiedNames(Collections.emptyList(), -1, true, false);
+        }
+        OuterWrap codeWrap;
+        switch (guessKind(code)) {
+            case IMPORT:
+                return new QualifiedNames(Collections.emptyList(), -1, true, false);
+            case METHOD:
+                codeWrap = wrapInClass(Wrap.classMemberWrap(code));
+                break;
+            default:
+                codeWrap = wrapInClass(Wrap.methodWrap(code));
+                break;
+        }
+        AnalyzeTask at = proc.taskFactory.new AnalyzeTask(codeWrap);
+        SourcePositions sp = at.trees().getSourcePositions();
+        CompilationUnitTree topLevel = at.firstCuTree();
+        TreePath tp = pathFor(topLevel, sp, codeWrap.snippetIndexToWrapIndex(code.length()));
+        if (tp.getLeaf().getKind() != Kind.IDENTIFIER) {
+            return new QualifiedNames(Collections.emptyList(), -1, true, false);
+        }
+        Scope scope = at.trees().getScope(tp);
+        TypeMirror type = at.trees().getTypeMirror(tp);
+        Element el = at.trees().getElement(tp);
+
+        boolean erroneous = (type.getKind() == TypeKind.ERROR && el.getKind() == ElementKind.CLASS) ||
+                            (el.getKind() == ElementKind.PACKAGE && el.getEnclosedElements().isEmpty());
+        String simpleName = ((IdentifierTree) tp.getLeaf()).getName().toString();
+        boolean upToDate;
+        List<String> result;
+
+        synchronized (currentIndexes) {
+            upToDate = classpathVersion == indexVersion;
+            result = currentIndexes.values()
+                                   .stream()
+                                   .flatMap(idx -> idx.classSimpleName2FQN.getOrDefault(simpleName,
+                                                                                        Collections.emptyList()).stream())
+                                   .distinct()
+                                   .filter(fqn -> isAccessible(at, scope, fqn))
+                                   .sorted()
+                                   .collect(Collectors.toList());
+        }
+
+        return new QualifiedNames(result, simpleName.length(), upToDate, !erroneous);
+    }
+
+    private boolean isAccessible(AnalyzeTask at, Scope scope, String fqn) {
+        TypeElement type = at.getElements().getTypeElement(fqn);
+        if (type == null)
+            return false;
+        return at.trees().isAccessible(scope, type);
+    }
+
+    //--------------------
+    // classpath indexing:
+    //--------------------
+
+    //the indexing can be suspended when a more important task is running:
+    private void waitIndexingNotSuspended() {
+        boolean suspendedNotified = false;
+        synchronized (suspendLock) {
+            while (suspend > 0) {
+                if (!suspendedNotified) {
+                    suspendedNotified = true;
+                }
+                try {
+                    suspendLock.wait();
+                } catch (InterruptedException ex) {
+                }
+            }
+        }
+    }
+
+    public void suspendIndexing() {
+        synchronized (suspendLock) {
+            suspend++;
+        }
+    }
+
+    public void resumeIndexing() {
+        synchronized (suspendLock) {
+            if (--suspend == 0) {
+                suspendLock.notifyAll();
+            }
+        }
+    }
+
+    //update indexes, either initially or after a classpath change:
+    private void refreshIndexes(int version) {
+        try {
+            Collection<Path> paths = new ArrayList<>();
+            MemoryFileManager fm = proc.taskFactory.fileManager();
+
+            appendPaths(fm, StandardLocation.PLATFORM_CLASS_PATH, paths);
+            appendPaths(fm, StandardLocation.CLASS_PATH, paths);
+            appendPaths(fm, StandardLocation.SOURCE_PATH, paths);
+
+            Map<Path, ClassIndex> newIndexes = new HashMap<>();
+
+            //setup existing/last known data:
+            for (Path p : paths) {
+                ClassIndex index = PATH_TO_INDEX.get(p);
+                if (index != null) {
+                    newIndexes.put(p, index);
+                }
+            }
+
+            synchronized (currentIndexes) {
+                //temporary setting old data:
+                currentIndexes.clear();
+                currentIndexes.putAll(newIndexes);
+            }
+
+            //update/compute the indexes if needed:
+            for (Path p : paths) {
+                waitIndexingNotSuspended();
+
+                ClassIndex index = indexForPath(p);
+                newIndexes.put(p, index);
+            }
+
+            synchronized (currentIndexes) {
+                currentIndexes.clear();
+                currentIndexes.putAll(newIndexes);
+            }
+        } catch (Exception ex) {
+            proc.debug(ex, "SourceCodeAnalysisImpl.refreshIndexes(" + version + ")");
+        } finally {
+            synchronized (currentIndexes) {
+                indexVersion = version;
+            }
+        }
+    }
+
+    private void appendPaths(MemoryFileManager fm, Location loc, Collection<Path> paths) {
+        Iterable<? extends Path> locationPaths = fm.getLocationAsPaths(loc);
+        if (locationPaths == null)
+            return ;
+        for (Path path : locationPaths) {
+            if (".".equals(path.toString())) {
+                //skip CWD
+                continue;
+            }
+
+            paths.add(path);
+        }
+    }
+
+    //create/update index a given JavaFileManager entry (which may be a JDK installation, a jar/zip file or a directory):
+    //if an index exists for the given entry, the existing index is kept unless the timestamp is modified
+    private ClassIndex indexForPath(Path path) {
+        if (isJRTMarkerFile(path)) {
+            FileSystem jrtfs = FileSystems.getFileSystem(URI.create("jrt:/"));
+            Path modules = jrtfs.getPath("modules");
+            return PATH_TO_INDEX.compute(path, (p, index) -> {
+                try {
+                    long lastModified = Files.getLastModifiedTime(modules).toMillis();
+                    if (index == null || index.timestamp != lastModified) {
+                        try (DirectoryStream<Path> stream = Files.newDirectoryStream(modules)) {
+                            index = doIndex(lastModified, path, stream);
+                        }
+                    }
+                    return index;
+                } catch (IOException ex) {
+                    proc.debug(ex, "SourceCodeAnalysisImpl.indexesForPath(" + path.toString() + ")");
+                    return new ClassIndex(-1, path, Collections.emptySet(), Collections.emptyMap());
+                }
+            });
+        } else if (!Files.isDirectory(path)) {
+            if (Files.exists(path)) {
+                return PATH_TO_INDEX.compute(path, (p, index) -> {
+                    try {
+                        long lastModified = Files.getLastModifiedTime(p).toMillis();
+                        if (index == null || index.timestamp != lastModified) {
+                            ClassLoader cl = SourceCodeAnalysisImpl.class.getClassLoader();
+
+                            try (FileSystem zip = FileSystems.newFileSystem(path, cl)) {
+                                index = doIndex(lastModified, path, zip.getRootDirectories());
+                            }
+                        }
+                        return index;
+                    } catch (IOException ex) {
+                        proc.debug(ex, "SourceCodeAnalysisImpl.indexesForPath(" + path.toString() + ")");
+                        return new ClassIndex(-1, path, Collections.emptySet(), Collections.emptyMap());
+                    }
+                });
+            } else {
+                return new ClassIndex(-1, path, Collections.emptySet(), Collections.emptyMap());
+            }
+        } else {
+            return PATH_TO_INDEX.compute(path, (p, index) -> {
+                //no persistence for directories, as we cannot check timestamps:
+                if (index == null) {
+                    index = doIndex(-1, path, Arrays.asList(p));
+                }
+                return index;
+            });
+        }
+    }
+
+    static boolean isJRTMarkerFile(Path path) {
+        return path.equals(Paths.get("JRT_MARKER_FILE"));
+    }
+
+    //create an index based on the content of the given dirs; the original JavaFileManager entry is originalPath.
+    private ClassIndex doIndex(long timestamp, Path originalPath, Iterable<? extends Path> dirs) {
+        Set<String> packages = new HashSet<>();
+        Map<String, Collection<String>> classSimpleName2FQN = new HashMap<>();
+
+        for (Path d : dirs) {
+            try {
+                Files.walkFileTree(d, new FileVisitor<Path>() {
+                    int depth;
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                        waitIndexingNotSuspended();
+                        if (depth++ == 0)
+                            return FileVisitResult.CONTINUE;
+                        String dirName = dir.getFileName().toString();
+                        String sep = dir.getFileSystem().getSeparator();
+                        dirName = dirName.endsWith(sep) ? dirName.substring(0, dirName.length() - sep.length())
+                                                        : dirName;
+                        if (SourceVersion.isIdentifier(dirName))
+                            return FileVisitResult.CONTINUE;
+                        return FileVisitResult.SKIP_SUBTREE;
+                    }
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        waitIndexingNotSuspended();
+                        if (file.getFileName().toString().endsWith(".class")) {
+                            String relativePath = d.relativize(file).toString();
+                            String binaryName = relativePath.substring(0, relativePath.length() - 6).replace('/', '.');
+                            int packageDot = binaryName.lastIndexOf('.');
+                            if (packageDot > (-1)) {
+                                packages.add(binaryName.substring(0, packageDot));
+                            }
+                            String typeName = binaryName.replace('$', '.');
+                            addClassName2Map(classSimpleName2FQN, typeName);
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                        depth--;
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException ex) {
+                proc.debug(ex, "doIndex(" + d.toString() + ")");
+            }
+        }
+
+        return new ClassIndex(timestamp, originalPath, packages, classSimpleName2FQN);
+    }
+
+    private static void addClassName2Map(Map<String, Collection<String>> classSimpleName2FQN, String typeName) {
+        int simpleNameDot = typeName.lastIndexOf('.');
+        classSimpleName2FQN.computeIfAbsent(typeName.substring(simpleNameDot + 1), n -> new LinkedHashSet<>())
+                           .add(typeName);
+    }
+
+    //holder for indexed data about a given path
+    public static final class ClassIndex {
+        public final long timestamp;
+        public final Path forPath;
+        public final Set<String> packages;
+        public final Map<String, Collection<String>> classSimpleName2FQN;
+
+        public ClassIndex(long timestamp, Path forPath, Set<String> packages, Map<String, Collection<String>> classSimpleName2FQN) {
+            this.timestamp = timestamp;
+            this.forPath = forPath;
+            this.packages = packages;
+            this.classSimpleName2FQN = classSimpleName2FQN;
+        }
+
+    }
+
+    //for tests, to be able to wait until the indexing finishes:
+    public void waitBackgroundTaskFinished() throws Exception {
+        boolean upToDate;
+        synchronized (currentIndexes) {
+            upToDate = classpathVersion == indexVersion;
+        }
+        while (!upToDate) {
+            INDEXER.submit(() -> {}).get();
+            synchronized (currentIndexes) {
+                upToDate = classpathVersion == indexVersion;
+            }
+        }
     }
 }

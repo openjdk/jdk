@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.tools.sjavac.comp;
 
+import com.sun.tools.sjavac.Log;
+
 import java.io.*;
 import javax.tools.JavaFileObject;
 
@@ -45,19 +47,17 @@ public class SmartWriter extends Writer {
     JavaFileObject file;
     String oldContent;
     StringWriter newContent = new StringWriter();
-    PrintWriter stdout;
     boolean closed;
-    public SmartWriter(JavaFileObject f, String s, String n, PrintWriter pw) {
+
+    public SmartWriter(JavaFileObject f, String s, String n) {
         name = n;
         file = f;
         oldContent = s;
         newContent = new StringWriter();
-        stdout = pw;
         closed = false;
     }
 
-    public void write(char[] chars, int i, int i1)
-    {
+    public void write(char[] chars, int i, int i1) {
         newContent.write(chars, i, i1);
     }
 
@@ -70,7 +70,7 @@ public class SmartWriter extends Writer {
             try (Writer writer = file.openWriter()) {
                 writer.write(s);
             }
-            stdout.println("Writing "+file.getName().substring(p+1));
+            Log.debug("Writing " + file.getName().substring(p + 1));
         }
     }
 

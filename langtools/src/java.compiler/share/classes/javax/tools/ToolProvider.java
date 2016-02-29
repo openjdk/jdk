@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,7 @@ package javax.tools;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import static java.util.logging.Level.*;
 
 /**
  * Provides methods for locating tool providers, for example,
@@ -44,47 +39,6 @@ import static java.util.logging.Level.*;
  * @since 1.6
  */
 public class ToolProvider {
-
-    private static final String propertyName = "sun.tools.ToolProvider";
-    private static final String loggerName   = "javax.tools";
-
-    /*
-     * Define the system property "sun.tools.ToolProvider" to enable
-     * debugging:
-     *
-     *     java ... -Dsun.tools.ToolProvider ...
-     */
-    static <T> T trace(Level level, Object reason) {
-        // NOTE: do not make this method private as it affects stack traces
-        try {
-            if (System.getProperty(propertyName) != null) {
-                StackTraceElement[] st = Thread.currentThread().getStackTrace();
-                String method = "???";
-                String cls = ToolProvider.class.getName();
-                if (st.length > 2) {
-                    StackTraceElement frame = st[2];
-                    method = String.format((Locale)null, "%s(%s:%s)",
-                                           frame.getMethodName(),
-                                           frame.getFileName(),
-                                           frame.getLineNumber());
-                    cls = frame.getClassName();
-                }
-                Logger logger = Logger.getLogger(loggerName);
-                if (reason instanceof Throwable) {
-                    logger.logp(level, cls, method,
-                                reason.getClass().getName(), (Throwable)reason);
-                } else {
-                    logger.logp(level, cls, method, String.valueOf(reason));
-                }
-            }
-        } catch (SecurityException ex) {
-            System.err.format((Locale)null, "%s: %s; %s%n",
-                              ToolProvider.class.getName(),
-                              reason,
-                              ex.getLocalizedMessage());
-        }
-        return null;
-    }
 
     private static final String systemJavaCompilerName
         = "com.sun.tools.javac.api.JavacTool";
@@ -153,7 +107,7 @@ public class ToolProvider {
         try {
             return c.asSubclass(clazz).newInstance();
         } catch (InstantiationException | IllegalAccessException | RuntimeException | Error e) {
-            return trace(WARNING, e);
+            throw new Error(e);
         }
     }
 
@@ -164,7 +118,7 @@ public class ToolProvider {
             try {
                 c = Class.forName(name, false, ClassLoader.getSystemClassLoader());
             } catch (ClassNotFoundException | RuntimeException | Error e) {
-                return trace(WARNING, e);
+                throw new Error(e);
             }
             toolClasses.put(name, new WeakReference<>(c));
         }

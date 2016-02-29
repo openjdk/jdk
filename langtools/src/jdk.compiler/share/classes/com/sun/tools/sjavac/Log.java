@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,24 @@
 package com.sun.tools.sjavac;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Locale;
 
 /**
  * Utility class only for sjavac logging.
- * The log level can be set using for example --log=DEBUG on the sjavac command line.
+ *
+ * Logging in sjavac has special requirements when running in server/client
+ * mode. Most of the log messages is generated server-side, but the server
+ * is typically spawned by the client in the background, so the user usually
+ * does not see the server stdout/stderr. For this reason log messages needs
+ * to relayed back to the client that performed the request that generated the
+ * log message. To support this use case this class maintains a per-thread log
+ * instance so that each connected client can have its own instance that
+ * relays messages back to the requesting client.
+ *
+ * On the client-side (or when running sjavac without server-mode) there will
+ * typically just be one Log instance.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -38,61 +51,94 @@ import java.io.Writer;
  *  deletion without notice.</b>
  */
 public class Log {
-    private static PrintWriter out, err;
 
-    public final static int WARN = 1;
-    public final static int INFO = 2;
-    public final static int DEBUG = 3;
-    public final static int TRACE = 4;
-    private static int level = WARN;
+    public enum Level {
+        ERROR,
+        WARN,
+        INFO,
+        DEBUG,
+        TRACE;
+    }
+
+    private static Log stdOutErr = new Log(new PrintWriter(System.out), new PrintWriter(System.err));
+    private static ThreadLocal<Log> loggers = new ThreadLocal<>();
+
+    protected PrintWriter err; // Used for error and warning messages
+    protected PrintWriter out; // Used for other messages
+    protected Level level = Level.INFO;
+
+    public Log(Writer out, Writer err) {
+        this.out = out == null ? null : new PrintWriter(out, true);
+        this.err = err == null ? null : new PrintWriter(err, true);
+    }
+
+    public static void setLogForCurrentThread(Log log) {
+        loggers.set(log);
+    }
+
+    public static void setLogLevel(String l) {
+        setLogLevel(Level.valueOf(l.toUpperCase(Locale.US)));
+    }
+
+    public static void setLogLevel(Level l) {
+        get().level = l;
+    }
 
     static public void trace(String msg) {
-        if (level >= TRACE) {
-            out.println(msg);
-        }
+        log(Level.TRACE, msg);
     }
 
     static public void debug(String msg) {
-        if (level >= DEBUG) {
-            out.println(msg);
-        }
+        log(Level.DEBUG, msg);
     }
 
     static public void info(String msg) {
-        if (level >= INFO) {
-            out.println(msg);
-        }
+        log(Level.INFO, msg);
     }
 
     static public void warn(String msg) {
-        err.println(msg);
+        log(Level.WARN, msg);
     }
 
     static public void error(String msg) {
-        err.println(msg);
+        log(Level.ERROR, msg);
     }
 
-    static public void initializeLog(Writer o, Writer e) {
-        out = new PrintWriter(o);
-        err = new PrintWriter(e);
+    static public void error(Throwable t) {
+        log(Level.ERROR, t);
     }
 
-    static public void setLogLevel(String l) {
-        switch (l) {
-            case "warn": level = WARN; break;
-            case "info": level = INFO; break;
-            case "debug": level = DEBUG; break;
-            case "trace": level = TRACE; break;
-            default:
-                throw new IllegalArgumentException("No such log level \"" + l + "\"");
-        }
+    static public void log(Level l, String msg) {
+        get().printLogMsg(l, msg);
     }
 
-    static public boolean isTracing() {
-        return level >= TRACE;
+    public static void debug(Throwable t) {
+        log(Level.DEBUG, t);
+    }
+
+    public static void log(Level l, Throwable t) {
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw, true));
+        log(l, sw.toString());
     }
 
     static public boolean isDebugging() {
-        return level >= DEBUG;
+        return get().isLevelLogged(Level.DEBUG);
+    }
+
+    protected boolean isLevelLogged(Level l) {
+        return l.ordinal() <= level.ordinal();
+    }
+
+    public static Log get() {
+        Log log = loggers.get();
+        return log != null ? log : stdOutErr;
+    }
+
+    protected void printLogMsg(Level msgLevel, String msg) {
+        if (isLevelLogged(msgLevel)) {
+            PrintWriter pw = msgLevel.ordinal() <= Level.WARN.ordinal() ? err : out;
+            pw.println(msg);
+        }
     }
 }

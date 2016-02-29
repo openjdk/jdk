@@ -81,10 +81,15 @@ public class PortFile {
      * Create a new portfile.
      * @param fn is the path to the file.
      */
-    public PortFile(String fn) throws PortFileInaccessibleException {
+    public PortFile(String fn) {
         filename = fn;
         file = new File(filename);
         stopFile = new File(filename+".stop");
+        containsPortInfo = false;
+        lock = null;
+    }
+
+    private void initializeChannel() throws PortFileInaccessibleException {
         try {
             rwfile = new RandomAccessFile(file, "rw");
         } catch (FileNotFoundException e) {
@@ -94,14 +99,15 @@ public class PortFile {
         // The rwfile should only be readable by the owner of the process
         // and no other! How do we do that on a RandomAccessFile?
         channel = rwfile.getChannel();
-        containsPortInfo = false;
-        lock = null;
     }
 
     /**
      * Lock the port file.
      */
     public void lock() throws IOException, InterruptedException {
+        if (channel == null) {
+            initializeChannel();
+        }
         lockSem.acquire();
         lock = channel.lock();
     }
@@ -204,8 +210,8 @@ public class PortFile {
         if (stopFile.exists()) {
             try {
                 stopFile.delete();
-            } catch (Exception e)
-            {}
+            } catch (Exception e) {
+            }
             return true;
         }
         return false;
@@ -215,7 +221,9 @@ public class PortFile {
      * Unlock the port file.
      */
     public void unlock() throws IOException {
-        Assert.check(lock != null);
+        if (lock == null) {
+            return;
+        }
         lock.release();
         lock = null;
         lockSem.release();
@@ -230,9 +238,11 @@ public class PortFile {
         long timeout = startTime + getServerStartupTimeoutSeconds() * 1000;
         while (true) {
             Log.debug("Looking for valid port file values...");
-            lock();
-            getValues();
-            unlock();
+            if (exists()) {
+                lock();
+                getValues();
+                unlock();
+            }
             if (containsPortInfo) {
                 Log.debug("Valid port file values found after " + (System.currentTimeMillis() - startTime) + " ms");
                 return;
