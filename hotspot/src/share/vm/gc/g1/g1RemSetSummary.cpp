@@ -221,7 +221,7 @@ public:
 class HRRSStatsIter: public HeapRegionClosure {
 private:
   RegionTypeCounter _young;
-  RegionTypeCounter _humonguous;
+  RegionTypeCounter _humongous;
   RegionTypeCounter _free;
   RegionTypeCounter _old;
   RegionTypeCounter _all;
@@ -245,7 +245,7 @@ private:
   HeapRegion* max_code_root_mem_sz_region() const { return _max_code_root_mem_sz_region; }
 
 public:
-  HRRSStatsIter() : _all("All"), _young("Young"), _humonguous("Humonguous"),
+  HRRSStatsIter() : _all("All"), _young("Young"), _humongous("Humongous"),
     _free("Free"), _old("Old"), _max_code_root_mem_sz_region(NULL), _max_rs_mem_sz_region(NULL),
     _max_rs_mem_sz(0), _max_code_root_mem_sz(0)
   {}
@@ -274,7 +274,7 @@ public:
     } else if (r->is_young()) {
       current = &_young;
     } else if (r->is_humongous()) {
-      current = &_humonguous;
+      current = &_humongous;
     } else if (r->is_old()) {
       current = &_old;
     } else {
@@ -287,7 +287,7 @@ public:
   }
 
   void print_summary_on(outputStream* out) {
-    RegionTypeCounter* counters[] = { &_young, &_humonguous, &_free, &_old, NULL };
+    RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, NULL };
 
     out->print_cr(" Current rem set statistics");
     out->print_cr("  Total per region rem sets sizes = " SIZE_FORMAT "K."

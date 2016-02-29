@@ -1,4 +1,4 @@
-#
+
 # Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -36,10 +36,11 @@
 TEXT_SRCDIR := $(JDK_TOPDIR)/src/java.base/share/classes \
     $(JDK_TOPDIR)/src/jdk.localedata/share/classes
 TEXT_PKG := sun/text/resources
+TEXT_PKG_LD := $(TEXT_PKG)/ext
 TEXT_SOURCES := $(TEXT_PKG)/BreakIteratorRules.java \
     $(TEXT_PKG)/BreakIteratorInfo.java \
-    $(TEXT_PKG)/th/BreakIteratorRules_th.java \
-    $(TEXT_PKG)/th/BreakIteratorInfo_th.java
+    $(TEXT_PKG_LD)/BreakIteratorRules_th.java \
+    $(TEXT_PKG_LD)/BreakIteratorInfo_th.java
 
 # Generate BreakIteratorData
 BREAK_ITERATOR_CLASSES := $(BUILDTOOLS_OUTPUTDIR)/break_iterator_classes
@@ -62,8 +63,8 @@ BIFILES := $(BASE_DATA_PKG_DIR)/CharacterBreakIteratorData \
     $(BASE_DATA_PKG_DIR)/WordBreakIteratorData \
     $(BASE_DATA_PKG_DIR)/LineBreakIteratorData \
     $(BASE_DATA_PKG_DIR)/SentenceBreakIteratorData
-BIFILES_TH := $(LD_DATA_PKG_DIR)/th/WordBreakIteratorData_th \
-    $(LD_DATA_PKG_DIR)/th/LineBreakIteratorData_th
+BIFILES_TH := $(LD_DATA_PKG_DIR)/WordBreakIteratorData_th \
+    $(LD_DATA_PKG_DIR)/LineBreakIteratorData_th
 
 $(BIFILES): $(BASE_DATA_PKG_DIR)/_the.bifiles
 $(BASE_DATA_PKG_DIR)/_the.bifiles: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
@@ -80,7 +81,6 @@ $(BIFILES_TH): $(LD_DATA_PKG_DIR)/_the.bifiles_th
 $(LD_DATA_PKG_DIR)/_the.bifiles_th: JAVA_FLAGS += -Xbootclasspath/p:$(BREAK_ITERATOR_CLASSES)
 $(LD_DATA_PKG_DIR)/_the.bifiles_th: $(BUILD_TOOLS) $(UNICODEDATA) $(BUILD_BREAKITERATOR)
 	$(call LogInfo, Generating BreakIteratorData_th)
-	$(call MakeDir, $(@D)/th)
 	$(RM) $(BIFILES_TH)
 	$(TOOL_GENERATEBREAKITERATORDATA) \
 	    -o $(@D) \

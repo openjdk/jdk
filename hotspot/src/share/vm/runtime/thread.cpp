@@ -31,6 +31,7 @@
 #include "code/codeCacheExtensions.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/workgroup.hpp"
@@ -2884,6 +2885,20 @@ void JavaThread::print_on(outputStream *st) const {
   print_thread_state_on(st);
   _safepoint_state->print_on(st);
 #endif // PRODUCT
+  if (is_Compiler_thread()) {
+    CompilerThread* ct = (CompilerThread*)this;
+    if (ct->task() != NULL) {
+      st->print("   Compiling: ");
+      ct->task()->print(st, NULL, true, false);
+    } else {
+      st->print("   No compile task");
+    }
+    st->cr();
+  }
+}
+
+void JavaThread::print_name_on_error(outputStream* st, char *buf, int buflen) const {
+  st->print("%s", get_thread_name_string(buf, buflen));
 }
 
 // Called by fatal error handler. The difference between this and
@@ -4386,7 +4401,6 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     wt->print_on(st);
     st->cr();
   }
-  CompileBroker::print_compiler_threads_on(st);
   st->flush();
 }
 
@@ -4439,7 +4453,23 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
     current->print_on_error(st, buf, buflen);
     st->cr();
   }
+  st->cr();
+  st->print_cr("Threads with active compile tasks:");
+  print_threads_compiling(st, buf, buflen);
 }
+
+void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen) {
+  ALL_JAVA_THREADS(thread) {
+    if (thread->is_Compiler_thread()) {
+      CompilerThread* ct = (CompilerThread*) thread;
+      if (ct->task() != NULL) {
+        thread->print_name_on_error(st, buf, buflen);
+        ct->task()->print(st, NULL, true, true);
+      }
+    }
+  }
+}
+
 
 // Internal SpinLock and Mutex
 // Based on ParkEvent

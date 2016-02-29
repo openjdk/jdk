@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,19 @@
 #include "net_util.h"
 
 int IPv6_supported() ;
+int reuseport_supported() ;
 
 static int IPv6_available;
+static int REUSEPORT_available;
 
 JNIEXPORT jint JNICALL ipv6_available()
 {
     return IPv6_available ;
+}
+
+JNIEXPORT jint JNICALL reuseport_available()
+{
+    return REUSEPORT_available;
 }
 
 JNIEXPORT jint JNICALL
@@ -45,7 +52,6 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
     jmethodID mid;
     jstring s;
     jint preferIPv4Stack;
-
     if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_2) != JNI_OK) {
         return JNI_EVERSION; /* JNI version not supported */
     }
@@ -64,6 +70,9 @@ DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
        supporting socket APIs are available
     */
     IPv6_available = IPv6_supported() & (!preferIPv4Stack);
+
+    /* check if SO_REUSEPORT is supported on this platform */
+    REUSEPORT_available = reuseport_supported();
     platformInit();
     parseExclusiveBindProperty(env);
 

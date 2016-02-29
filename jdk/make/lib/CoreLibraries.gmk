@@ -157,7 +157,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     LIBS_unix := -ljvm -lverify, \
     LIBS_linux := $(LIBDL) $(BUILD_LIBFDLIBM), \
     LIBS_solaris := -lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc, \
-    LIBS_aix := $(LIBDL) $(BUILD_LIBFDLIBM) -lm,\
+    LIBS_aix := $(LIBDL) $(BUILD_LIBFDLIBM) $(LIBM),\
     LIBS_macosx := -lfdlibm \
         -framework CoreFoundation \
         -framework Foundation \

@@ -74,13 +74,13 @@ public enum AMD64Kind implements PlatformKind {
     private final AMD64Kind scalar;
     private final EnumKey<AMD64Kind> key = new EnumKey<>(this);
 
-    private AMD64Kind(int size) {
+    AMD64Kind(int size) {
         this.size = size;
         this.scalar = this;
         this.vectorLength = 1;
     }
 
-    private AMD64Kind(int size, AMD64Kind scalar) {
+    AMD64Kind(int size, AMD64Kind scalar) {
         this.size = size;
         this.scalar = scalar;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,10 @@ inline HeapWord* OffsetTableContigSpace::par_allocate(size_t size) {
 inline HeapWord*
 OffsetTableContigSpace::block_start_const(const void* p) const {
   return _offsets.block_start(p);
+}
+
+size_t CompactibleSpace::obj_size(const HeapWord* addr) const {
+  return oop(addr)->size();
 }
 
 template <class SpaceType>
@@ -331,4 +335,9 @@ inline void CompactibleSpace::scan_and_compact(SpaceType* space) {
     if (ZapUnusedHeapArea) space->mangle_unused_area();
   }
 }
+
+size_t ContiguousSpace::scanned_block_size(const HeapWord* addr) const {
+  return oop(addr)->size();
+}
+
 #endif // SHARE_VM_GC_SHARED_SPACE_INLINE_HPP

@@ -39,7 +39,7 @@ inline oop objArrayOopDesc::obj_at(int index) const {
   }
 }
 
-inline void objArrayOopDesc::obj_at_put(int index, oop value) {
+void objArrayOopDesc::obj_at_put(int index, oop value) {
   if (UseCompressedOops) {
     oop_store(obj_at_addr<narrowOop>(index), value);
   } else {

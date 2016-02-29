@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,8 @@ public class Net {
 
     private static volatile boolean checkedIPv6;
     private static volatile boolean isIPv6Available;
+    private static volatile boolean checkedReusePort;
+    private static volatile boolean isReusePortAvailable;
 
     /**
      * Tells whether dual-IPv4/IPv6 sockets should be used.
@@ -66,6 +68,17 @@ public class Net {
             checkedIPv6 = true;
         }
         return isIPv6Available;
+    }
+
+    /**
+     * Tells whether SO_REUSEPORT is supported.
+     */
+    static boolean isReusePortAvailable() {
+        if (!checkedReusePort) {
+            isReusePortAvailable = isReusePortAvailable0();
+            checkedReusePort = true;
+        }
+        return isReusePortAvailable;
     }
 
     /**
@@ -388,6 +401,8 @@ public class Net {
     // -- Socket operations --
 
     private static native boolean isIPv6Available0();
+
+    private static native boolean isReusePortAvailable0();
 
     /*
      * Returns 1 for Windows and -1 for Solaris/Linux/Mac OS

@@ -29,21 +29,8 @@
 
 const char* LogTagLevelExpression::DefaultExpressionString = "all";
 
-void LogTagLevelExpression::clear() {
-  _ntags = 0;
-  _ncombinations = 0;
-  for (size_t combination = 0; combination < MaxCombinations; combination++) {
-    _level[combination] = LogLevel::Invalid;
-    _allow_other_tags[combination] = false;
-    for (size_t tag = 0; tag < LogTag::MaxTags; tag++) {
-      _tags[combination][tag] = LogTag::__NO_TAG;
-    }
-  }
-}
-
 bool LogTagLevelExpression::parse(const char* str, outputStream* errstream) {
   bool success = true;
-  clear();
   if (str == NULL || strcmp(str, "") == 0) {
     str = DefaultExpressionString;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,12 +117,7 @@ class PSScavenge: AllStatic {
   }
   // Adaptive size policy support.  When the young generation/old generation
   // boundary moves, _young_generation_boundary must be reset
-  static void set_young_generation_boundary(HeapWord* v) {
-    _young_generation_boundary = v;
-    if (UseCompressedOops) {
-      _young_generation_boundary_compressed = (uintptr_t)oopDesc::encode_heap_oop((oop)v);
-    }
-  }
+  static void set_young_generation_boundary(HeapWord* v);
 
   // Called by parallelScavengeHeap to init the tenuring threshold
   static void initialize();
