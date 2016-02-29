@@ -51,7 +51,7 @@ public class ClientMain {
 
     public static int run(String[] args, Writer out, Writer err) {
 
-        Log.initializeLog(out, err);
+        Log.setLogForCurrentThread(new Log(out, err));
 
         Options options;
         try {
@@ -60,6 +60,8 @@ public class ClientMain {
             Log.error(e.getMessage());
             return -1;
         }
+
+        Log.setLogLevel(options.getLogLevel());
 
         Log.debug("==========================================================");
         Log.debug("Launching sjavac client with the following parameters:");
@@ -81,7 +83,7 @@ public class ClientMain {
             sjavac = new SjavacImpl();
         }
 
-        int rc = sjavac.compile(args, out, err);
+        int rc = sjavac.compile(args);
 
         // If sjavac is running in the foreground we should shut it down at this point
         if (!useServer)

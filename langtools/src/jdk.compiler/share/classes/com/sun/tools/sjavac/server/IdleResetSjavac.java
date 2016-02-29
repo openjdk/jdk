@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
 
 package com.sun.tools.sjavac.server;
 
+import com.sun.tools.sjavac.Log;
+
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Writer;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -53,8 +57,8 @@ public class IdleResetSjavac implements Sjavac {
     private TimerTask idlenessTimerTask;
 
     public IdleResetSjavac(Sjavac delegate,
-                            Terminable toShutdown,
-                            long idleTimeout) {
+                           Terminable toShutdown,
+                           long idleTimeout) {
         this.delegate = delegate;
         this.toShutdown = toShutdown;
         this.idleTimeout = idleTimeout;
@@ -62,10 +66,10 @@ public class IdleResetSjavac implements Sjavac {
     }
 
     @Override
-    public int compile(String[] args, Writer out, Writer err) {
+    public int compile(String[] args) {
         startCall();
         try {
-            return delegate.compile(args, out, err);
+            return delegate.compile(args);
         } finally {
             endCall();
         }
@@ -95,6 +99,7 @@ public class IdleResetSjavac implements Sjavac {
             throw new IllegalStateException("Idle timeout already scheduled");
         idlenessTimerTask = new TimerTask() {
             public void run() {
+                Log.setLogForCurrentThread(ServerMain.getErrorLog());
                 toShutdown.shutdown("Server has been idle for " + (idleTimeout / 1000) + " seconds.");
             }
         };

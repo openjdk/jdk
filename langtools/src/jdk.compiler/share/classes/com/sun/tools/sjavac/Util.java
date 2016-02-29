@@ -36,7 +36,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Utilities.
@@ -235,5 +237,11 @@ public class Util {
         String fileNameStr = file.getFileName().toString();
         int dotIndex = fileNameStr.indexOf('.');
         return dotIndex == -1 ? "" : fileNameStr.substring(dotIndex);
+    }
+
+    public static Stream<String> getLines(String str) {
+        return str.isEmpty()
+                ? Stream.empty()
+                : Stream.of(str.split(Pattern.quote(System.lineSeparator())));
     }
 }
