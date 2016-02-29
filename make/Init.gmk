@@ -154,6 +154,9 @@ ifeq ($(HAS_SPEC),)
           # Do nothing
         endif
 
+    # Do not let make delete spec files even if aborted while doing a reconfigure
+    .PRECIOUS: $(SPECS)
+
     # Unless reconfigure is explicitely called, let all main targets depend on
     # the spec files to be up to date.
     ifeq ($(findstring reconfigure, $(INIT_TARGETS)), )

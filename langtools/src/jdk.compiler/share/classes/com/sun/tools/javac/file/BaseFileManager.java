@@ -267,7 +267,14 @@ public abstract class BaseFileManager implements JavaFileManager {
      * @return true if successful, and false otherwise
      */
     public boolean handleOption(Option option, String value) {
-        return locations.handleOption(option, value);
+        switch (option) {
+            case ENCODING:
+                encodingName = value;
+                return true;
+
+            default:
+                return locations.handleOption(option, value);
+        }
     }
 
     /**
@@ -285,6 +292,7 @@ public abstract class BaseFileManager implements JavaFileManager {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Encoding">
+    private String encodingName;
     private String defaultEncodingName;
     private String getDefaultEncodingName() {
         if (defaultEncodingName == null) {
@@ -295,11 +303,7 @@ public abstract class BaseFileManager implements JavaFileManager {
     }
 
     public String getEncodingName() {
-        String encName = options.get(Option.ENCODING);
-        if (encName == null)
-            return getDefaultEncodingName();
-        else
-            return encName;
+        return (encodingName != null) ? encodingName : getDefaultEncodingName();
     }
 
     @SuppressWarnings("cast")

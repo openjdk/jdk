@@ -701,6 +701,7 @@ COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
 LDFLAGS_TESTEXE
 LDFLAGS_TESTLIB
+LDFLAGS_HASH_STYLE
 LDFLAGS_CXX_JDK
 JDKEXE_LIBS
 JDKLIB_LIBS
@@ -743,6 +744,7 @@ EXE_OUT_OPTION
 CC_OUT_OPTION
 STRIPFLAGS
 ARFLAGS
+COMPILER_BINDCMD_FILE_FLAG
 COMPILER_COMMAND_FILE_FLAG
 COMPILER_TARGET_BITS_FLAG
 JT_HOME
@@ -4230,7 +4232,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4860,7 +4862,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1455271513
+DATE_WHEN_GENERATED=1456136781
 
 ###############################################################################
 #
@@ -45391,12 +45393,16 @@ $as_echo "$tool_specified" >&6; }
 
   # COMPILER_TARGET_BITS_FLAG  : option for selecting 32- or 64-bit output
   # COMPILER_COMMAND_FILE_FLAG : option for passing a command file to the compiler
+  # COMPILER_BINDCMD_FILE_FLAG : option for specifying a file which saves the binder
+  #                              commands produced by the link step (currently AIX only)
   if test "x$TOOLCHAIN_TYPE" = xxlc; then
     COMPILER_TARGET_BITS_FLAG="-q"
     COMPILER_COMMAND_FILE_FLAG="-f"
+    COMPILER_BINDCMD_FILE_FLAG="-bloadmap:"
   else
     COMPILER_TARGET_BITS_FLAG="-m"
     COMPILER_COMMAND_FILE_FLAG="@"
+    COMPILER_BINDCMD_FILE_FLAG=""
 
     # The solstudio linker does not support @-files.
     if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
@@ -45421,6 +45427,7 @@ $as_echo "no" >&6; }
       rm -rf command.file
     fi
   fi
+
 
 
 
@@ -46198,10 +46205,23 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     SET_SHARED_LIBRARY_NAME='-h $1'
     SET_SHARED_LIBRARY_MAPFILE='-M$1'
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    PICFLAG="-qpic=large"
+    # '-qpic' defaults to 'qpic=small'. This means that the compiler generates only
+    # one instruction for accessing the TOC. If the TOC grows larger than 64K, the linker
+    # will have to patch this single instruction with a call to some out-of-order code which
+    # does the load from the TOC. This is of course slow. But in that case we also would have
+    # to use '-bbigtoc' for linking anyway so we could also change the PICFLAG to 'qpic=large'.
+    # With 'qpic=large' the compiler will by default generate a two-instruction sequence which
+    # can be patched directly by the linker and does not require a jump to out-of-order code.
+    # Another alternative instead of using 'qpic=large -bbigtoc' may be to use '-qminimaltoc'
+    # instead. This creates a distinct TOC for every compilation unit (and thus requires two
+    # loads for accessing a global variable). But there are rumors that this may be seen as a
+    # 'performance feature' because of improved code locality of the symbols used in a
+    # compilation unit.
+    PICFLAG="-qpic"
+    JVM_CFLAGS="$JVM_CFLAGS $PICFLAG"
     C_FLAG_REORDER=''
     CXX_FLAG_REORDER=''
-    SHARED_LIBRARY_FLAGS="-qmkshrobj"
+    SHARED_LIBRARY_FLAGS="-qmkshrobj -bM:SRE -bnoentry"
     SET_EXECUTABLE_ORIGIN=""
     SET_SHARED_LIBRARY_ORIGIN=''
     SET_SHARED_LIBRARY_NAME=''
@@ -46824,7 +46844,7 @@ $as_echo "$supports" >&6; }
     LDFLAGS_CXX_SOLSTUDIO="-norunpath"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LDFLAGS_CXX_SOLSTUDIO -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LDFLAGS_XLC="-brtl -bnolibpath -bexpall -bernotok"
+    LDFLAGS_XLC="-b64 -brtl -bnolibpath -bexpall -bernotok"
     LDFLAGS_JDK="${LDFLAGS_JDK} $LDFLAGS_XLC"
   fi
 
@@ -46874,6 +46894,7 @@ $as_echo "$supports" >&6; }
       JDKLIB_LIBS="$JDKLIB_LIBS -lc"
     fi
   fi
+
 
 
 
@@ -58630,7 +58651,8 @@ fi
 
 
   # Setup libm (the maths library)
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cos in -lm" >&5
+  if test "x$OPENJDK_TARGET_OS" != "xwindows"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cos in -lm" >&5
 $as_echo_n "checking for cos in -lm... " >&6; }
 if ${ac_cv_lib_m_cos+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -58675,12 +58697,15 @@ _ACEOF
 
 else
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Maths library was not found" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Maths library was not found" >&5
 $as_echo "$as_me: Maths library was not found" >&6;}
 
 fi
 
-  LIBM=-lm
+    LIBM="-lm"
+  else
+    LIBM=""
+  fi
 
 
   # Setup libdl (for dynamic library loading)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,12 +165,6 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         },
 
         new HiddenOption(true, "-td") {
-            void process(JavahTask task, String opt, String arg) {
-                 // ignored; for backwards compatibility
-            }
-        },
-
-        new HiddenOption(false, "-stubs") {
             void process(JavahTask task, String opt, String arg) {
                  // ignored; for backwards compatibility
             }
@@ -454,8 +448,6 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         if (llni)
             g = new LLNI(doubleAlign, util);
         else {
-//            if (stubs)
-//                throw new BadArgs("jni.no.stubs");
             g = new JNI(util);
         }
 
