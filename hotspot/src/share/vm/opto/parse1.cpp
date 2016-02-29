@@ -45,6 +45,7 @@
 // the most. Some of the non-static variables are needed in bytecodeInfo.cpp
 // and eventually should be encapsulated in a proper class (gri 8/18/98).
 
+#ifndef PRODUCT
 int nodes_created              = 0;
 int methods_parsed             = 0;
 int methods_seen               = 0;
@@ -53,42 +54,42 @@ int blocks_seen                = 0;
 
 int explicit_null_checks_inserted = 0;
 int explicit_null_checks_elided   = 0;
-int all_null_checks_found         = 0, implicit_null_checks              = 0;
-int implicit_null_throws          = 0;
+int all_null_checks_found         = 0;
+int implicit_null_checks          = 0;
 
-int reclaim_idx  = 0;
-int reclaim_in   = 0;
-int reclaim_node = 0;
-
-#ifndef PRODUCT
 bool Parse::BytecodeParseHistogram::_initialized = false;
 uint Parse::BytecodeParseHistogram::_bytecodes_parsed [Bytecodes::number_of_codes];
 uint Parse::BytecodeParseHistogram::_nodes_constructed[Bytecodes::number_of_codes];
 uint Parse::BytecodeParseHistogram::_nodes_transformed[Bytecodes::number_of_codes];
 uint Parse::BytecodeParseHistogram::_new_values       [Bytecodes::number_of_codes];
-#endif
 
 //------------------------------print_statistics-------------------------------
-#ifndef PRODUCT
 void Parse::print_statistics() {
   tty->print_cr("--- Compiler Statistics ---");
   tty->print("Methods seen: %d  Methods parsed: %d", methods_seen, methods_parsed);
   tty->print("  Nodes created: %d", nodes_created);
   tty->cr();
-  if (methods_seen != methods_parsed)
+  if (methods_seen != methods_parsed) {
     tty->print_cr("Reasons for parse failures (NOT cumulative):");
+  }
   tty->print_cr("Blocks parsed: %d  Blocks seen: %d", blocks_parsed, blocks_seen);
 
-  if( explicit_null_checks_inserted )
-    tty->print_cr("%d original NULL checks - %d elided (%2d%%); optimizer leaves %d,", explicit_null_checks_inserted, explicit_null_checks_elided, (100*explicit_null_checks_elided)/explicit_null_checks_inserted, all_null_checks_found);
-  if( all_null_checks_found )
+  if (explicit_null_checks_inserted) {
+    tty->print_cr("%d original NULL checks - %d elided (%2d%%); optimizer leaves %d,",
+                  explicit_null_checks_inserted, explicit_null_checks_elided,
+                  (100*explicit_null_checks_elided)/explicit_null_checks_inserted,
+                  all_null_checks_found);
+  }
+  if (all_null_checks_found) {
     tty->print_cr("%d made implicit (%2d%%)", implicit_null_checks,
                   (100*implicit_null_checks)/all_null_checks_found);
-  if( implicit_null_throws )
+  }
+  if (SharedRuntime::_implicit_null_throws) {
     tty->print_cr("%d implicit null exceptions at runtime",
-                  implicit_null_throws);
+                  SharedRuntime::_implicit_null_throws);
+  }
 
-  if( PrintParseStatistics && BytecodeParseHistogram::initialized() ) {
+  if (PrintParseStatistics && BytecodeParseHistogram::initialized()) {
     BytecodeParseHistogram::print();
   }
 }
@@ -495,7 +496,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     C->dependencies()->assert_evol_method(method());
   }
 
-  methods_seen++;
+  NOT_PRODUCT(methods_seen++);
 
   // Do some special top-level things.
   if (depth() == 1 && C->is_osr_compilation()) {
@@ -530,8 +531,8 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   }
 #endif
 
-  methods_parsed++;
 #ifndef PRODUCT
+  methods_parsed++;
   // add method size here to guarantee that inlined methods are added too
   if (CITime)
     _total_bytes_compiled += method()->code_size();
@@ -652,7 +653,7 @@ void Parse::do_all_blocks() {
         continue;
       }
 
-      blocks_parsed++;
+      NOT_PRODUCT(blocks_parsed++);
 
       progress = true;
       if (block->is_loop_head() || block->is_handler() || has_irreducible && !block->is_ready()) {
@@ -712,9 +713,9 @@ void Parse::do_all_blocks() {
     }
   }
 
+#ifndef PRODUCT
   blocks_seen += block_count();
 
-#ifndef PRODUCT
   // Make sure there are no half-processed blocks remaining.
   // Every remaining unprocessed block is dead and may be ignored now.
   for (int rpo = 0; rpo < block_count(); rpo++) {
@@ -1446,7 +1447,6 @@ void Parse::do_one_block() {
 
   assert(block()->is_merged(), "must be merged before being parsed");
   block()->mark_parsed();
-  ++_blocks_parsed;
 
   // Set iterator to start of block.
   iter().reset_to_bci(block()->start());
@@ -1595,9 +1595,6 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       if (TraceOptoParse)  tty->print_cr(", but path is dead and doesn't count");
       return;
     }
-
-    // Record that a new block has been merged.
-    ++_blocks_merged;
 
     // Make a region if we know there are multiple or unpredictable inputs.
     // (Also, if this is a plain fall-through, we might see another region,

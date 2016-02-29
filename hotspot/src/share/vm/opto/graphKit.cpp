@@ -1179,8 +1179,10 @@ Node* GraphKit::load_array_length(Node* array) {
 // Helper function to do a NULL pointer check.  Returned value is
 // the incoming address with NULL casted away.  You are allowed to use the
 // not-null value only if you are control dependent on the test.
+#ifndef PRODUCT
 extern int explicit_null_checks_inserted,
            explicit_null_checks_elided;
+#endif
 Node* GraphKit::null_check_common(Node* value, BasicType type,
                                   // optional arguments for variations:
                                   bool assert_null,
@@ -1193,7 +1195,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
     value = cast_not_null(value);   // Make it appear to be non-null (4962416).
     return value;
   }
-  explicit_null_checks_inserted++;
+  NOT_PRODUCT(explicit_null_checks_inserted++);
 
   // Construct NULL check
   Node *chk = NULL;
@@ -1233,7 +1235,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
         // See if the type is contained in NULL_PTR.
         // If so, then the value is already null.
         if (t->higher_equal(TypePtr::NULL_PTR)) {
-          explicit_null_checks_elided++;
+          NOT_PRODUCT(explicit_null_checks_elided++);
           return value;           // Elided null assert quickly!
         }
       } else {
@@ -1242,7 +1244,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
         // type.  In other words, "value" was not-null.
         if (t->meet(TypePtr::NULL_PTR) != t->remove_speculative()) {
           // same as: if (!TypePtr::NULL_PTR->higher_equal(t)) ...
-          explicit_null_checks_elided++;
+          NOT_PRODUCT(explicit_null_checks_elided++);
           return value;           // Elided null check quickly!
         }
       }
@@ -1282,7 +1284,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
         set_control(cfg);
         Node *res = cast_not_null(value);
         set_control(oldcontrol);
-        explicit_null_checks_elided++;
+        NOT_PRODUCT(explicit_null_checks_elided++);
         return res;
       }
       cfg = IfNode::up_one_dom(cfg, /*linear_only=*/ true);
@@ -1326,15 +1328,18 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
     IfNode* iff = create_and_map_if(control(), tst, ok_prob, COUNT_UNKNOWN);
     Node* null_true = _gvn.transform( new IfFalseNode(iff));
     set_control(      _gvn.transform( new IfTrueNode(iff)));
-    if (null_true == top())
+#ifndef PRODUCT
+    if (null_true == top()) {
       explicit_null_checks_elided++;
+    }
+#endif
     (*null_control) = null_true;
   } else {
     BuildCutout unless(this, tst, ok_prob);
     // Check for optimizer eliding test at parse time
     if (stopped()) {
       // Failure not possible; do not bother making uncommon trap.
-      explicit_null_checks_elided++;
+      NOT_PRODUCT(explicit_null_checks_elided++);
     } else if (assert_null) {
       uncommon_trap(reason,
                     Deoptimization::Action_make_not_entrant,
