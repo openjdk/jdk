@@ -121,7 +121,8 @@
  *            underlying protocol handlers like http or https.</li>
  *       <li>{@link java.net.HttpURLConnection} is a subclass of URLConnection
  *            and provides some additional functionalities specific to the
- *            HTTP protocol.</li>
+ *            HTTP protocol. This API has been superceded by the newer
+              HTTP client API described in the previous section.</li>
  * </ul>
  * <p>The recommended usage is to use {@link java.net.URI} to identify
  *    resources, then convert it into a {@link java.net.URL} when it is time to

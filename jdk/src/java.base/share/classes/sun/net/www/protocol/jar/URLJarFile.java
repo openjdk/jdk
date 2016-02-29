@@ -65,9 +65,10 @@ public class URLJarFile extends JarFile {
     }
 
     static JarFile getJarFile(URL url, URLJarFileCloseController closeController) throws IOException {
-        if (isFileURL(url))
-            return new URLJarFile(url, closeController);
-        else {
+        if (isFileURL(url)) {
+            Release version = "runtime".equals(url.getRef()) ? Release.RUNTIME : Release.BASE;
+            return new URLJarFile(url, closeController, version);
+        } else {
             return retrieve(url, closeController);
         }
     }
@@ -89,8 +90,13 @@ public class URLJarFile extends JarFile {
         this.closeController = closeController;
     }
 
-    private URLJarFile(URL url, URLJarFileCloseController closeController) throws IOException {
-        super(ParseUtil.decode(url.getFile()));
+    private URLJarFile(File file, URLJarFileCloseController closeController, Release version) throws IOException {
+        super(file, true, ZipFile.OPEN_READ | ZipFile.OPEN_DELETE, version);
+        this.closeController = closeController;
+    }
+
+    private URLJarFile(URL url, URLJarFileCloseController closeController, Release version) throws IOException {
+        super(new File(ParseUtil.decode(url.getFile())), true, ZipFile.OPEN_READ, version);
         this.closeController = closeController;
     }
 
@@ -179,14 +185,6 @@ public class URLJarFile extends JarFile {
      * Given a URL, retrieves a JAR file, caches it to disk, and creates a
      * cached JAR file object.
      */
-    private static JarFile retrieve(final URL url) throws IOException {
-        return retrieve(url, null);
-    }
-
-    /**
-     * Given a URL, retrieves a JAR file, caches it to disk, and creates a
-     * cached JAR file object.
-     */
      private static JarFile retrieve(final URL url, final URLJarFileCloseController closeController) throws IOException {
         /*
          * See if interface is set, then call retrieve function of the class
@@ -202,6 +200,7 @@ public class URLJarFile extends JarFile {
         {
 
             JarFile result = null;
+            Release version = "runtime".equals(url.getRef()) ? Release.RUNTIME : Release.BASE;
 
             /* get the stream before asserting privileges */
             try (final InputStream in = url.openConnection().getInputStream()) {
@@ -211,7 +210,7 @@ public class URLJarFile extends JarFile {
                             Path tmpFile = Files.createTempFile("jar_cache", null);
                             try {
                                 Files.copy(in, tmpFile, StandardCopyOption.REPLACE_EXISTING);
-                                JarFile jarFile = new URLJarFile(tmpFile.toFile(), closeController);
+                                JarFile jarFile = new URLJarFile(tmpFile.toFile(), closeController, version);
                                 tmpFile.toFile().deleteOnExit();
                                 return jarFile;
                             } catch (Throwable thr) {
