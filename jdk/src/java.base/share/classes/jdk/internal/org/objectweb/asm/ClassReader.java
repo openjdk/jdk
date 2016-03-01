@@ -1199,7 +1199,14 @@ public class ClassReader {
                         if (labels[label] == null) {
                             readLabel(label, labels).status |= Label.DEBUG;
                         }
-                        labels[label].line = readUnsignedShort(v + 12);
+                        Label l = labels[label];
+                        while (l.line > 0) {
+                            if (l.next == null) {
+                                l.next = new Label();
+                            }
+                            l = l.next;
+                        }
+                        l.line = readUnsignedShort(v + 12);
                         v += 4;
                     }
                 }
@@ -1314,9 +1321,15 @@ public class ClassReader {
             // visits the label and line number for this offset, if any
             Label l = labels[offset];
             if (l != null) {
+                Label next = l.next;
+                l.next = null;
                 mv.visitLabel(l);
                 if ((context.flags & SKIP_DEBUG) == 0 && l.line > 0) {
                     mv.visitLineNumber(l.line, l);
+                    while (next != null) {
+                        mv.visitLineNumber(next.line, l);
+                        next = next.next;
+                    }
                 }
             }
 
@@ -1857,8 +1870,7 @@ public class ClassReader {
             v += 2;
             break;
         case 'B': // pointer to CONSTANT_Byte
-            av.visit(name,
-                    (byte) readInt(items[readUnsignedShort(v)]));
+            av.visit(name, (byte) readInt(items[readUnsignedShort(v)]));
             v += 2;
             break;
         case 'Z': // pointer to CONSTANT_Boolean
@@ -1868,13 +1880,11 @@ public class ClassReader {
             v += 2;
             break;
         case 'S': // pointer to CONSTANT_Short
-            av.visit(name,
-                    (short) readInt(items[readUnsignedShort(v)]));
+            av.visit(name, (short) readInt(items[readUnsignedShort(v)]));
             v += 2;
             break;
         case 'C': // pointer to CONSTANT_Char
-            av.visit(name,
-                    (char) readInt(items[readUnsignedShort(v)]));
+            av.visit(name, (char) readInt(items[readUnsignedShort(v)]));
             v += 2;
             break;
         case 's': // pointer to CONSTANT_Utf8
@@ -2515,11 +2525,12 @@ public class ClassReader {
             int tag = readByte(index);
             int[] items = this.items;
             int cpIndex = items[readUnsignedShort(index + 1)];
+            boolean itf = b[cpIndex - 1] == ClassWriter.IMETH;
             String owner = readClass(cpIndex, buf);
             cpIndex = items[readUnsignedShort(cpIndex + 2)];
             String name = readUTF8(cpIndex, buf);
             String desc = readUTF8(cpIndex + 2, buf);
-            return new Handle(tag, owner, name, desc);
+            return new Handle(tag, owner, name, desc, itf);
         }
     }
 }
