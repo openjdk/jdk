@@ -1582,7 +1582,6 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
   return NULL;
 }
 
-#ifdef ASSERT
 static bool is_mismatched_access(ciConstant con, BasicType loadbt) {
   BasicType conbt = con.basic_type();
   switch (conbt) {
@@ -1597,7 +1596,6 @@ static bool is_mismatched_access(ciConstant con, BasicType loadbt) {
   }
   return (conbt != loadbt);
 }
-#endif // ASSERT
 
 // Try to constant-fold a stable array element.
 static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicType loadbt) {
@@ -1608,10 +1606,11 @@ static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicTyp
   ciArray* aobj = ary->const_oop()->as_array();
   ciConstant con = aobj->element_value_by_offset(off);
   if (con.basic_type() != T_ILLEGAL && !con.is_null_or_zero()) {
-    assert(!is_mismatched_access(con, loadbt),
-           "conbt=%s; loadbt=%s", type2name(con.basic_type()), type2name(loadbt));
+    bool is_mismatched = is_mismatched_access(con, loadbt);
+    assert(!is_mismatched, "conbt=%s; loadbt=%s", type2name(con.basic_type()), type2name(loadbt));
     const Type* con_type = Type::make_from_constant(con);
-    if (con_type != NULL) {
+    // Guard against erroneous constant folding.
+    if (!is_mismatched && con_type != NULL) {
       if (con_type->isa_aryptr()) {
         // Join with the array element type, in case it is also stable.
         int dim = ary->stable_dimension();
