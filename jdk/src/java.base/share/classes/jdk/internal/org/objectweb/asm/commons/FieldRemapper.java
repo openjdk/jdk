@@ -59,128 +59,42 @@
 
 package jdk.internal.org.objectweb.asm.commons;
 
+import jdk.internal.org.objectweb.asm.AnnotationVisitor;
+import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.signature.SignatureVisitor;
+import jdk.internal.org.objectweb.asm.TypePath;
 
 /**
- * A {@link SignatureVisitor} adapter for type mapping.
+ * A {@link FieldVisitor} adapter for type remapping.
  *
- * @deprecated use {@link SignatureRemapper} instead.
  * @author Eugene Kuleshov
  */
-@Deprecated
-public class RemappingSignatureAdapter extends SignatureVisitor {
-
-    private final SignatureVisitor v;
+public class FieldRemapper extends FieldVisitor {
 
     private final Remapper remapper;
 
-    private String className;
-
-    public RemappingSignatureAdapter(final SignatureVisitor v,
-            final Remapper remapper) {
-        this(Opcodes.ASM5, v, remapper);
+    public FieldRemapper(final FieldVisitor fv, final Remapper remapper) {
+        this(Opcodes.ASM5, fv, remapper);
     }
 
-    protected RemappingSignatureAdapter(final int api,
-            final SignatureVisitor v, final Remapper remapper) {
-        super(api);
-        this.v = v;
+    protected FieldRemapper(final int api, final FieldVisitor fv,
+            final Remapper remapper) {
+        super(api, fv);
         this.remapper = remapper;
     }
 
     @Override
-    public void visitClassType(String name) {
-        className = name;
-        v.visitClassType(remapper.mapType(name));
+    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+        AnnotationVisitor av = fv.visitAnnotation(remapper.mapDesc(desc),
+                visible);
+        return av == null ? null : new AnnotationRemapper(av, remapper);
     }
 
     @Override
-    public void visitInnerClassType(String name) {
-        String remappedOuter = remapper.mapType(className) + '$';
-        className = className + '$' + name;
-        String remappedName = remapper.mapType(className);
-        int index = remappedName.startsWith(remappedOuter) ? remappedOuter
-                .length() : remappedName.lastIndexOf('$') + 1;
-        v.visitInnerClassType(remappedName.substring(index));
-    }
-
-    @Override
-    public void visitFormalTypeParameter(String name) {
-        v.visitFormalTypeParameter(name);
-    }
-
-    @Override
-    public void visitTypeVariable(String name) {
-        v.visitTypeVariable(name);
-    }
-
-    @Override
-    public SignatureVisitor visitArrayType() {
-        v.visitArrayType();
-        return this;
-    }
-
-    @Override
-    public void visitBaseType(char descriptor) {
-        v.visitBaseType(descriptor);
-    }
-
-    @Override
-    public SignatureVisitor visitClassBound() {
-        v.visitClassBound();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitExceptionType() {
-        v.visitExceptionType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitInterface() {
-        v.visitInterface();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitInterfaceBound() {
-        v.visitInterfaceBound();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitParameterType() {
-        v.visitParameterType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitReturnType() {
-        v.visitReturnType();
-        return this;
-    }
-
-    @Override
-    public SignatureVisitor visitSuperclass() {
-        v.visitSuperclass();
-        return this;
-    }
-
-    @Override
-    public void visitTypeArgument() {
-        v.visitTypeArgument();
-    }
-
-    @Override
-    public SignatureVisitor visitTypeArgument(char wildcard) {
-        v.visitTypeArgument(wildcard);
-        return this;
-    }
-
-    @Override
-    public void visitEnd() {
-        v.visitEnd();
+    public AnnotationVisitor visitTypeAnnotation(int typeRef,
+            TypePath typePath, String desc, boolean visible) {
+        AnnotationVisitor av = super.visitTypeAnnotation(typeRef, typePath,
+                remapper.mapDesc(desc), visible);
+        return av == null ? null : new AnnotationRemapper(av, remapper);
     }
 }
