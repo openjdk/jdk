@@ -99,8 +99,13 @@ class TraceEvent : public StackObj {
         cancel();
         return;
     }
-    if (_endTime == 0) {
-      static_cast<T*>(this)->set_endtime(Tracing::time());
+
+    if (_startTime == 0) {
+      static_cast<T*>(this)->set_starttime(Tracing::time());
+    } else {
+      if (_endTime == 0) {
+        static_cast<T*>(this)->set_endtime(Tracing::time());
+      }
     }
     if (static_cast<T*>(this)->should_write()) {
       static_cast<T*>(this)->writeEvent();
