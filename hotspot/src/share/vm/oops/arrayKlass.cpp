@@ -89,7 +89,7 @@ ArrayKlass::ArrayKlass(Symbol* name) :
     set_super(Universe::is_bootstrapping() ? (Klass*)NULL : SystemDictionary::Object_klass());
     set_layout_helper(Klass::_lh_neutral_value);
     set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
-    TRACE_INIT_ID(this);
+    TRACE_INIT_KLASS_ID(this);
 }
 
 
