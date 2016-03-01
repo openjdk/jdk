@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ typedef u8 traceid;
 
 #define EVENT_THREAD_EXIT(thread)
 #define EVENT_THREAD_DESTRUCT(thread)
+#define TRACE_KLASS_CREATION(k, p, t)
 
 #define TRACE_INIT_KLASS_ID(k)
 #define TRACE_INIT_THREAD_ID(td)
