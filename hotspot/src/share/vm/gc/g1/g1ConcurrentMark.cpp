@@ -1097,7 +1097,7 @@ void G1ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     reset_marking_state();
   } else {
     {
-      GCTraceTime(Debug, gc) trace("GC Aggregate Data", g1h->gc_timer_cm());
+      GCTraceTime(Debug, gc) trace("Aggregate Data", g1h->gc_timer_cm());
 
       // Aggregate the per-task counting data that we have accumulated
       // while marking.
@@ -2018,7 +2018,7 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   // Inner scope to exclude the cleaning of the string and symbol
   // tables from the displayed time.
   {
-    GCTraceTime(Debug, gc) trace("GC Ref Proc", g1h->gc_timer_cm());
+    GCTraceTime(Debug, gc) trace("Reference Processing", g1h->gc_timer_cm());
 
     ReferenceProcessor* rp = g1h->ref_processor_cm();
 
