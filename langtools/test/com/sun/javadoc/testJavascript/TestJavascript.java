@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,14 @@ public class TestJavascript extends JavadocTester {
                 + "        }\n"
                 + "        return true;\n"
                 + "    }\n"
+                + "    function loadFrames() {\n"
+                + "        if (targetPage != \"\" && targetPage != \"undefined\")\n"
+                + "             top.classFrame.location = top.targetPage;\n"
+                + "    }\n"
                 + "</script>");
+
+        checkOutput("index.html", true,
+                "<body onload=\"loadFrames()\"");
 
         //Make sure title javascript only runs if is-external is not true
         checkOutput("pkg/C.html", true,
