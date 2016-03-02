@@ -182,6 +182,10 @@ public class UnsafeGetStableArrayElement {
         static long    testJ_U() { return U.getLongUnaligned(  STABLE_LONG_ARRAY,  ARRAY_LONG_BASE_OFFSET + 1); }
     }
 
+    static void run(Callable<?> c) throws Exception {
+        run(c, null, null);
+    }
+
     static void run(Callable<?> c, Runnable sameResultAction, Runnable changeResultAction) throws Exception {
         Object first = c.call();
 
@@ -295,13 +299,7 @@ public class UnsafeGetStableArrayElement {
         testMatched(   Test::testD_D, Test::changeD);
 
         // Object[], aligned accesses
-        testMismatched(Test::testL_Z, Test::changeL);
-        testMismatched(Test::testL_B, Test::changeL);
-        testMismatched(Test::testL_S, Test::changeL);
-        testMismatched(Test::testL_C, Test::changeL);
-        testMismatched(Test::testL_I, Test::changeL);
-        testMismatched(Test::testL_J, Test::changeL);
-        testMismatched(Test::testL_F, Test::changeL);
+        testMismatched(Test::testL_J, Test::changeL); // long & double are always as large as an OOP
         testMismatched(Test::testL_D, Test::changeL);
         testMatched(   Test::testL_L, Test::changeL);
 
@@ -310,5 +308,17 @@ public class UnsafeGetStableArrayElement {
         testMismatched(Test::testC_U, Test::changeC);
         testMismatched(Test::testI_U, Test::changeI);
         testMismatched(Test::testJ_U, Test::changeJ);
+
+        // No way to reliably check the expected behavior:
+        //   (1) OOPs change during GC;
+        //   (2) there's no way to reliably change some part of an OOP (e.g., when reading a byte from it).
+        //
+        // Just trigger the compilation hoping to catch any problems with asserts.
+        run(Test::testL_B);
+        run(Test::testL_Z);
+        run(Test::testL_S);
+        run(Test::testL_C);
+        run(Test::testL_I);
+        run(Test::testL_F);
     }
 }
