@@ -39,9 +39,9 @@ import java.util.Arrays;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import jdk.Version;
 
 import static java.util.jar.JarFile.Release;
-import static sun.misc.Version.jdkMajorVersion;  // fixme JEP 223 Version
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -50,6 +50,9 @@ import org.testng.annotations.Test;
 
 
 public class MultiReleaseJarAPI {
+
+    static final int MAJOR_VERSION = Version.current().major();
+
     String userdir = System.getProperty("user.dir",".");
     File unversioned = new File(userdir, "unversioned.jar");
     File multirelease = new File(userdir, "multi-release.jar");
@@ -106,7 +109,7 @@ public class MultiReleaseJarAPI {
         }
 
         // assure that we have a Release object corresponding to the actual runtime version
-        String version = "VERSION_" + jdkMajorVersion();
+        String version = "VERSION_" + MAJOR_VERSION;
         boolean runtimeVersionExists = false;
         for (Release value : values) {
             if (version.equals(value.name())) runtimeVersionExists = true;
@@ -123,7 +126,7 @@ public class MultiReleaseJarAPI {
             if (name.equals("BASE")) {
                 prefix = "";
             } else if (name.equals("RUNTIME")) {
-                prefix = "META-INF/versions/" + jdkMajorVersion() + "/";
+                prefix = "META-INF/versions/" + MAJOR_VERSION + "/";
             } else {
                 prefix = "META-INF/versions/" + name.substring(8) + "/";
             }
