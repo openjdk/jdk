@@ -27,6 +27,7 @@
  * @bug 8139885
  * @bug 8143798
  * @bug 8150825
+ * @bug 8150635
  * @run testng/othervm -ea -esa test.java.lang.invoke.T8139885
  */
 
@@ -77,6 +78,15 @@ public class T8139885 {
     }
 
     @Test
+    public static void testLoopNullInit() throws Throwable {
+        // null initializer for counter, should initialize to 0, one-clause loop
+        MethodHandle[] counterClause = new MethodHandle[]{null, Loop.MH_inc, Loop.MH_pred, Loop.MH_fin};
+        MethodHandle loop = MethodHandles.loop(counterClause);
+        assertEquals(Loop.MT_loop, loop.type());
+        assertEquals(10, loop.invoke(10));
+    }
+
+    @Test
     public static void testLoopVoid1() throws Throwable {
         // construct a post-checked loop that only does one iteration and has a void body and void local state
         MethodHandle loop = MethodHandles.loop(new MethodHandle[]{Empty.MH_f, Empty.MH_f, Empty.MH_pred, null});
@@ -94,6 +104,15 @@ public class T8139885 {
     }
 
     @Test
+    public static void testLoopVoid3() throws Throwable {
+        // construct a post-checked loop that only does one iteration and has a void body and void local state,
+        // and that has a void finalizer
+        MethodHandle loop = MethodHandles.loop(new MethodHandle[]{null, Empty.MH_f, Empty.MH_pred, Empty.MH_f});
+        assertEquals(MethodType.methodType(void.class), loop.type());
+        loop.invoke();
+    }
+
+    @Test
     public static void testLoopFacWithVoidState() throws Throwable {
         // like testLoopFac, but with additional void state that outputs a dot
         MethodHandle[] counterClause = new MethodHandle[]{Fac.MH_zero, Fac.MH_inc};
@@ -102,6 +121,31 @@ public class T8139885 {
         MethodHandle loop = MethodHandles.loop(counterClause, accumulatorClause, dotClause);
         assertEquals(Fac.MT_fac, loop.type());
         assertEquals(120, loop.invoke(5));
+    }
+
+    @Test
+    public static void testLoopVoidInt() throws Throwable {
+        // construct a post-checked loop that only does one iteration and has a void body and void local state,
+        // and that returns a constant
+        MethodHandle loop = MethodHandles.loop(new MethodHandle[]{null, Empty.MH_f, Empty.MH_pred, Empty.MH_c});
+        assertEquals(MethodType.methodType(int.class), loop.type());
+        assertEquals(23, loop.invoke());
+    }
+
+    @Test
+    public static void testLoopWithVirtuals() throws Throwable {
+        // construct a loop (to calculate factorial) that uses a mix of static and virtual methods
+        MethodHandle[] counterClause = new MethodHandle[]{null, LoopWithVirtuals.permute(LoopWithVirtuals.MH_inc)};
+        MethodHandle[] accumulatorClause = new MethodHandle[]{
+                // init function must indicate the loop arguments (there is no other means to determine them)
+                MethodHandles.dropArguments(LoopWithVirtuals.MH_one, 0, LoopWithVirtuals.class),
+                LoopWithVirtuals.permute(LoopWithVirtuals.MH_mult),
+                LoopWithVirtuals.permute(LoopWithVirtuals.MH_pred),
+                LoopWithVirtuals.permute(LoopWithVirtuals.MH_fin)
+        };
+        MethodHandle loop = MethodHandles.loop(counterClause, accumulatorClause);
+        assertEquals(LoopWithVirtuals.MT_loop, loop.type());
+        assertEquals(120, loop.invoke(new LoopWithVirtuals(), 5));
     }
 
     @Test
@@ -121,31 +165,38 @@ public class T8139885 {
         List<MethodHandle> nesteps = Arrays.asList(Fac.MH_inc, eek, Fac.MH_dot);
         List<MethodHandle> nepreds = Arrays.asList(null, Fac.MH_pred, null);
         List<MethodHandle> nefinis = Arrays.asList(null, Fac.MH_fin, null);
+        List<MethodHandle> lvsteps = Arrays.asList(LoopWithVirtuals.MH_inc, LoopWithVirtuals.MH_mult);
+        List<MethodHandle> lvpreds = Arrays.asList(null, LoopWithVirtuals.MH_pred);
+        List<MethodHandle> lvfinis = Arrays.asList(null, LoopWithVirtuals.MH_fin);
         MethodHandle[][][] cases = {
-                null,
-                {},
-                {{null, Fac.MH_inc}, {Fac.MH_one, null, Fac.MH_mult, Fac.MH_pred, Fac.MH_fin}},
-                {{null, Fac.MH_inc}, null},
-                {{Fac.MH_zero, Fac.MH_dot}},
-                {{ii}, {id}, {i3}},
-                {{null, Fac.MH_inc, null, Fac.MH_fin}, {null, Fac.MH_inc, null, Fac.MH_inc},
-                        {null, Counted.MH_start, null, Counted.MH_step}},
-                {{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, Fac.MH_mult, null, Fac.MH_fin}, {null, Fac.MH_dot}},
-                {{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, Fac.MH_mult, Fac.MH_fin, Fac.MH_fin}, {null, Fac.MH_dot}},
-                {{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, eek, Fac.MH_pred, Fac.MH_fin}, {null, Fac.MH_dot}}
+                /*  1 */ null,
+                /*  2 */ {},
+                /*  3 */ {{null, Fac.MH_inc}, {Fac.MH_one, null, Fac.MH_mult, Fac.MH_pred, Fac.MH_fin}},
+                /*  4 */ {{null, Fac.MH_inc}, null},
+                /*  5 */ {{Fac.MH_zero, Fac.MH_dot}},
+                /*  6 */ {{ii}, {id}, {i3}},
+                /*  7 */ {{null, Fac.MH_inc, null, Fac.MH_fin}, {null, Fac.MH_inc, null, Fac.MH_inc},
+                            {null, Counted.MH_start, null, Counted.MH_step}},
+                /*  8 */ {{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, Fac.MH_mult, null, Fac.MH_fin}, {null, Fac.MH_dot}},
+                /*  9 */ {{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, Fac.MH_mult, Fac.MH_fin, Fac.MH_fin}, {null, Fac.MH_dot}},
+                /* 10 */ {{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, eek, Fac.MH_pred, Fac.MH_fin}, {null, Fac.MH_dot}},
+                /* 11 */ {{null, LoopWithVirtuals.MH_inc}, {LoopWithVirtuals.MH_one, LoopWithVirtuals.MH_mult, LoopWithVirtuals.MH_pred, LoopWithVirtuals.MH_fin}}
         };
         String[] messages = {
-                "null or no clauses passed",
-                "null or no clauses passed",
-                "All loop clauses must be represented as MethodHandle arrays with at most 4 elements.",
-                "null clauses are not allowed",
-                "clause 0: init and step return types must match: int != void",
-                "found non-effectively identical init parameter type lists: " + inits + " (common suffix: " + ints + ")",
-                "found non-identical finalizer return types: " + finis + " (return type: int)",
-                "no predicate found: " + preds1,
-                "predicates must have boolean return type: " + preds2,
-                "found non-effectively identical parameter type lists:\nstep: " + nesteps + "\npred: " + nepreds +
-                        "\nfini: " + nefinis + " (common parameter sequence: " + ints + ")"
+                /*  1 */ "null or no clauses passed",
+                /*  2 */ "null or no clauses passed",
+                /*  3 */ "All loop clauses must be represented as MethodHandle arrays with at most 4 elements.",
+                /*  4 */ "null clauses are not allowed",
+                /*  5 */ "clause 0: init and step return types must match: int != void",
+                /*  6 */ "found non-effectively identical init parameter type lists: " + inits +
+                            " (common suffix: " + ints + ")",
+                /*  7 */ "found non-identical finalizer return types: " + finis + " (return type: int)",
+                /*  8 */ "no predicate found: " + preds1,
+                /*  9 */ "predicates must have boolean return type: " + preds2,
+                /* 10 */ "found non-effectively identical parameter type lists:\nstep: " + nesteps +
+                            "\npred: " + nepreds + "\nfini: " + nefinis + " (common parameter sequence: " + ints + ")",
+                /* 11 */ "found non-effectively identical parameter type lists:\nstep: " + lvsteps +
+                            "\npred: " + lvpreds + "\nfini: " + lvfinis + " (common parameter sequence: " + ints + ")"
         };
         for (int i = 0; i < cases.length; ++i) {
             boolean caught = false;
@@ -570,18 +621,25 @@ public class T8139885 {
             return false;
         }
 
+        static int c() {
+            return 23;
+        }
+
         static final Class<Empty> EMPTY = Empty.class;
 
         static final MethodType MT_f = methodType(void.class);
         static final MethodType MT_pred = methodType(boolean.class);
+        static final MethodType MT_c = methodType(int.class);
 
         static final MethodHandle MH_f;
         static final MethodHandle MH_pred;
+        static final MethodHandle MH_c;
 
         static {
             try {
                 MH_f = LOOKUP.findStatic(EMPTY, "f", MT_f);
                 MH_pred = LOOKUP.findStatic(EMPTY, "pred", MT_pred);
+                MH_c = LOOKUP.findStatic(EMPTY, "c", MT_c);
             } catch (Exception e) {
                 throw new ExceptionInInitializerError(e);
             }
@@ -647,6 +705,104 @@ public class T8139885 {
             } catch (Exception e) {
                 throw new ExceptionInInitializerError(e);
             }
+        }
+
+    }
+
+    static class Loop {
+
+        static int inc(int i, int k) {
+            return i + 1;
+        }
+
+        static boolean pred(int i, int k) {
+            return i < k;
+        }
+
+        static int fin(int i, int k) {
+            return k;
+        }
+
+        static final Class<Loop> LOOP = Loop.class;
+
+        static final MethodType MT_inc = methodType(int.class, int.class, int.class);
+        static final MethodType MT_pred = methodType(boolean.class, int.class, int.class);
+        static final MethodType MT_fin = methodType(int.class, int.class, int.class);
+
+        static final MethodHandle MH_inc;
+        static final MethodHandle MH_pred;
+        static final MethodHandle MH_fin;
+
+        static final MethodType MT_loop = methodType(int.class, int.class);
+
+        static {
+            try {
+                MH_inc = LOOKUP.findStatic(LOOP, "inc", MT_inc);
+                MH_pred = LOOKUP.findStatic(LOOP, "pred", MT_pred);
+                MH_fin = LOOKUP.findStatic(LOOP, "fin", MT_fin);
+            } catch (Exception e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
+
+    }
+
+    static class LoopWithVirtuals {
+
+        static int one(int k) {
+            return 1;
+        }
+
+        int inc(int i, int acc, int k) {
+            return i + 1;
+        }
+
+        int mult(int i, int acc, int k) {
+            return i * acc;
+        }
+
+        boolean pred(int i, int acc, int k) {
+            return i < k;
+        }
+
+        int fin(int i, int acc, int k) {
+            return acc;
+        }
+
+        static final Class<LoopWithVirtuals> LOOP_WITH_VIRTUALS = LoopWithVirtuals.class;
+
+        static final MethodType MT_one = methodType(int.class, int.class);
+        static final MethodType MT_inc = methodType(int.class, int.class, int.class, int.class);
+        static final MethodType MT_mult = methodType(int.class, int.class, int.class, int.class);
+        static final MethodType MT_pred = methodType(boolean.class, int.class, int.class, int.class);
+        static final MethodType MT_fin = methodType(int.class, int.class, int.class, int.class);
+
+        static final MethodHandle MH_one;
+        static final MethodHandle MH_inc;
+        static final MethodHandle MH_mult;
+        static final MethodHandle MH_pred;
+        static final MethodHandle MH_fin;
+
+        static final MethodType MT_loop = methodType(int.class, LOOP_WITH_VIRTUALS, int.class);
+
+        static {
+            try {
+                MH_one = LOOKUP.findStatic(LOOP_WITH_VIRTUALS, "one", MT_one);
+                MH_inc = LOOKUP.findVirtual(LOOP_WITH_VIRTUALS, "inc", MT_inc);
+                MH_mult = LOOKUP.findVirtual(LOOP_WITH_VIRTUALS, "mult", MT_mult);
+                MH_pred = LOOKUP.findVirtual(LOOP_WITH_VIRTUALS, "pred", MT_pred);
+                MH_fin = LOOKUP.findVirtual(LOOP_WITH_VIRTUALS, "fin", MT_fin);
+            } catch (Exception e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
+
+        static MethodHandle permute(MethodHandle h) {
+            // The handles representing virtual methods need to be rearranged to match the required order of arguments
+            // (loop-local state comes first, then loop arguments). As the receiver comes first in the signature but is
+            // a loop argument, it must be moved to the appropriate position in the signature.
+            return MethodHandles.permuteArguments(h,
+                    methodType(h.type().returnType(), int.class, int.class, LOOP_WITH_VIRTUALS, int.class), 2, 0, 1, 3);
         }
 
     }
