@@ -1,7 +1,5 @@
-WarnSerializableLambdaTestb.java:14:69: compiler.warn.access.to.sensitive.member.from.serializable.element: test()
-WarnSerializableLambdaTestb.java:18:69: compiler.warn.access.to.sensitive.member.from.serializable.element: test()
-WarnSerializableLambdaTestb.java:36:40: compiler.warn.access.to.sensitive.member.from.serializable.element: j
-WarnSerializableLambdaTestb.java:50:25: compiler.warn.access.to.sensitive.member.from.serializable.element: r
+WarnSerializableLambdaTestb.java:36:40: compiler.warn.access.to.member.from.serializable.element: j
+WarnSerializableLambdaTestb.java:50:25: compiler.warn.access.to.member.from.serializable.element: r
 - compiler.err.warnings.and.werror
 1 error
-4 warnings
+2 warnings
