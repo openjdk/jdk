@@ -3384,6 +3384,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         g1_policy()->clear_collection_set();
 
+        record_obj_copy_mem_stats();
+        _survivor_evac_stats.adjust_desired_plab_sz();
+        _old_evac_stats.adjust_desired_plab_sz();
+
         // Start a new incremental collection set for the next pause.
         g1_policy()->start_incremental_cset_building();
 
@@ -4700,11 +4704,6 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   _allocator->release_gc_alloc_regions(evacuation_info);
 
   merge_per_thread_state_info(per_thread_states);
-
-  record_obj_copy_mem_stats();
-
-  _survivor_evac_stats.adjust_desired_plab_sz();
-  _old_evac_stats.adjust_desired_plab_sz();
 
   // Reset and re-enable the hot card cache.
   // Note the counts for the cards in the regions in the
