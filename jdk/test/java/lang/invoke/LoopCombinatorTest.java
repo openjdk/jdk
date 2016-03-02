@@ -25,20 +25,16 @@
 
 /* @test
  * @bug 8139885
- * @bug 8143798
- * @bug 8150825
  * @bug 8150635
- * @run testng/othervm -ea -esa test.java.lang.invoke.T8139885
+ * @run testng/othervm -ea -esa test.java.lang.invoke.LoopCombinatorTest
  */
 
 package test.java.lang.invoke;
 
-import java.io.StringWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.WrongMethodTypeException;
 import java.util.*;
 
 import static java.lang.invoke.MethodType.methodType;
@@ -48,15 +44,11 @@ import static org.testng.AssertJUnit.*;
 import org.testng.annotations.*;
 
 /**
- * Example-scale and negative tests for JEP 274 extensions.
+ * Tests for the loop combinators introduced in JEP 274.
  */
-public class T8139885 {
+public class LoopCombinatorTest {
 
     static final Lookup LOOKUP = MethodHandles.lookup();
-
-    //
-    // Tests.
-    //
 
     @Test
     public static void testLoopFac() throws Throwable {
@@ -148,10 +140,8 @@ public class T8139885 {
         assertEquals(120, loop.invoke(new LoopWithVirtuals(), 5));
     }
 
-    @Test
-    public static void testLoopNegative() throws Throwable {
-        MethodHandle mh_loop =
-                LOOKUP.findStatic(MethodHandles.class, "loop", methodType(MethodHandle.class, MethodHandle[][].class));
+    @DataProvider
+    static Object[][] negativeTestData() {
         MethodHandle i0 = MethodHandles.constant(int.class, 0);
         MethodHandle ii = MethodHandles.dropArguments(i0, 0, int.class, int.class);
         MethodHandle id = MethodHandles.dropArguments(i0, 0, int.class, double.class);
@@ -168,46 +158,55 @@ public class T8139885 {
         List<MethodHandle> lvsteps = Arrays.asList(LoopWithVirtuals.MH_inc, LoopWithVirtuals.MH_mult);
         List<MethodHandle> lvpreds = Arrays.asList(null, LoopWithVirtuals.MH_pred);
         List<MethodHandle> lvfinis = Arrays.asList(null, LoopWithVirtuals.MH_fin);
-        MethodHandle[][][] cases = {
-                /*  1 */ null,
-                /*  2 */ {},
-                /*  3 */ {{null, Fac.MH_inc}, {Fac.MH_one, null, Fac.MH_mult, Fac.MH_pred, Fac.MH_fin}},
-                /*  4 */ {{null, Fac.MH_inc}, null},
-                /*  5 */ {{Fac.MH_zero, Fac.MH_dot}},
-                /*  6 */ {{ii}, {id}, {i3}},
-                /*  7 */ {{null, Fac.MH_inc, null, Fac.MH_fin}, {null, Fac.MH_inc, null, Fac.MH_inc},
-                            {null, Counted.MH_start, null, Counted.MH_step}},
-                /*  8 */ {{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, Fac.MH_mult, null, Fac.MH_fin}, {null, Fac.MH_dot}},
-                /*  9 */ {{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, Fac.MH_mult, Fac.MH_fin, Fac.MH_fin}, {null, Fac.MH_dot}},
-                /* 10 */ {{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, eek, Fac.MH_pred, Fac.MH_fin}, {null, Fac.MH_dot}},
-                /* 11 */ {{null, LoopWithVirtuals.MH_inc}, {LoopWithVirtuals.MH_one, LoopWithVirtuals.MH_mult, LoopWithVirtuals.MH_pred, LoopWithVirtuals.MH_fin}}
+        return new Object[][] {
+                {null, "null or no clauses passed"},
+                {new MethodHandle[][]{}, "null or no clauses passed"},
+                {new MethodHandle[][]{{null, Fac.MH_inc}, {Fac.MH_one, null, Fac.MH_mult, Fac.MH_pred, Fac.MH_fin}},
+                        "All loop clauses must be represented as MethodHandle arrays with at most 4 elements."},
+                {new MethodHandle[][]{{null, Fac.MH_inc}, null}, "null clauses are not allowed"},
+                {new MethodHandle[][]{{Fac.MH_zero, Fac.MH_dot}},
+                        "clause 0: init and step return types must match: int != void"},
+                {new MethodHandle[][]{{ii}, {id}, {i3}},
+                        "found non-effectively identical init parameter type lists: " + inits +
+                                " (common suffix: " + ints + ")"},
+                {new MethodHandle[][]{{null, Fac.MH_inc, null, Fac.MH_fin}, {null, Fac.MH_inc, null, Fac.MH_inc},
+                        {null, Counted.MH_start, null, Counted.MH_step}},
+                        "found non-identical finalizer return types: " + finis + " (return type: int)"},
+                {new MethodHandle[][]{{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, Fac.MH_mult, null, Fac.MH_fin},
+                        {null, Fac.MH_dot}}, "no predicate found: " + preds1},
+                {new MethodHandle[][]{{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, Fac.MH_mult, Fac.MH_fin, Fac.MH_fin},
+                        {null, Fac.MH_dot}}, "predicates must have boolean return type: " + preds2},
+                {new MethodHandle[][]{{Fac.MH_zero, Fac.MH_inc}, {Fac.MH_one, eek, Fac.MH_pred, Fac.MH_fin},
+                        {null, Fac.MH_dot}},
+                        "found non-effectively identical parameter type lists:\nstep: " + nesteps +
+                                "\npred: " + nepreds + "\nfini: " + nefinis + " (common parameter sequence: " + ints + ")"},
+                {new MethodHandle[][]{{null, LoopWithVirtuals.MH_inc},
+                        {LoopWithVirtuals.MH_one, LoopWithVirtuals.MH_mult, LoopWithVirtuals.MH_pred, LoopWithVirtuals.MH_fin}},
+                        "found non-effectively identical parameter type lists:\nstep: " + lvsteps +
+                                "\npred: " + lvpreds + "\nfini: " + lvfinis + " (common parameter sequence: " + ints + ")"}
         };
-        String[] messages = {
-                /*  1 */ "null or no clauses passed",
-                /*  2 */ "null or no clauses passed",
-                /*  3 */ "All loop clauses must be represented as MethodHandle arrays with at most 4 elements.",
-                /*  4 */ "null clauses are not allowed",
-                /*  5 */ "clause 0: init and step return types must match: int != void",
-                /*  6 */ "found non-effectively identical init parameter type lists: " + inits +
-                            " (common suffix: " + ints + ")",
-                /*  7 */ "found non-identical finalizer return types: " + finis + " (return type: int)",
-                /*  8 */ "no predicate found: " + preds1,
-                /*  9 */ "predicates must have boolean return type: " + preds2,
-                /* 10 */ "found non-effectively identical parameter type lists:\nstep: " + nesteps +
-                            "\npred: " + nepreds + "\nfini: " + nefinis + " (common parameter sequence: " + ints + ")",
-                /* 11 */ "found non-effectively identical parameter type lists:\nstep: " + lvsteps +
-                            "\npred: " + lvpreds + "\nfini: " + lvfinis + " (common parameter sequence: " + ints + ")"
-        };
-        for (int i = 0; i < cases.length; ++i) {
-            boolean caught = false;
-            try {
-                mh_loop.invokeWithArguments(cases[i]);
-            } catch (IllegalArgumentException iae) {
-                assertEquals(messages[i], iae.getMessage());
-                caught = true;
-            }
-            assertTrue(caught);
+    }
+
+    static final MethodHandle MH_loop;
+
+    static {
+        try {
+            MH_loop = LOOKUP.findStatic(MethodHandles.class, "loop", methodType(MethodHandle.class, MethodHandle[][].class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new ExceptionInInitializerError(e);
         }
+    }
+
+    @Test(dataProvider = "negativeTestData")
+    public static void testLoopNegative(MethodHandle[][] clauses, String expectedMessage) throws Throwable {
+        boolean caught = false;
+        try {
+            MH_loop.invokeWithArguments(clauses);
+        } catch (IllegalArgumentException iae) {
+            assertEquals(expectedMessage, iae.getMessage());
+            caught = true;
+        }
+        assertTrue(caught);
     }
 
     @Test
@@ -334,284 +333,6 @@ public class T8139885 {
         }
         assertTrue(caught);
     }
-
-    @Test
-    public static void testTryFinally() throws Throwable {
-        MethodHandle hello = MethodHandles.tryFinally(TryFinally.MH_greet, TryFinally.MH_exclaim);
-        assertEquals(TryFinally.MT_hello, hello.type());
-        assertEquals("Hello, world!", hello.invoke("world"));
-    }
-
-    @Test
-    public static void testTryFinallyVoid() throws Throwable {
-        MethodHandle tfVoid = MethodHandles.tryFinally(TryFinally.MH_print, TryFinally.MH_printMore);
-        assertEquals(TryFinally.MT_printHello, tfVoid.type());
-        tfVoid.invoke("world");
-    }
-
-    @Test
-    public static void testTryFinallySublist() throws Throwable {
-        MethodHandle helloMore = MethodHandles.tryFinally(TryFinally.MH_greetMore, TryFinally.MH_exclaimMore);
-        assertEquals(TryFinally.MT_moreHello, helloMore.type());
-        assertEquals("Hello, world and universe (but world first)!", helloMore.invoke("world", "universe"));
-    }
-
-    @Test
-    public static void testTryFinallyNegative() {
-        MethodHandle intid = MethodHandles.identity(int.class);
-        MethodHandle intco = MethodHandles.constant(int.class, 0);
-        MethodHandle errTarget = MethodHandles.dropArguments(intco, 0, int.class, double.class, String.class, int.class);
-        MethodHandle errCleanup = MethodHandles.dropArguments(MethodHandles.constant(int.class, 0), 0, Throwable.class,
-                int.class, double.class, Object.class);
-        MethodHandle[][] cases = {
-                {intid, MethodHandles.identity(double.class)},
-                {intid, MethodHandles.dropArguments(intid, 0, String.class)},
-                {intid, MethodHandles.dropArguments(intid, 0, Throwable.class, double.class)},
-                {errTarget, errCleanup},
-                {TryFinally.MH_voidTarget, TryFinally.MH_voidCleanup}
-        };
-        String[] messages = {
-                "target and return types must match: double != int",
-                "cleanup first argument and Throwable must match: (String,int)int != class java.lang.Throwable",
-                "cleanup second argument and target return type must match: (Throwable,double,int)int != int",
-                "cleanup parameters after (Throwable,result) and target parameter list prefix must match: " +
-                        errCleanup.type() + " != " + errTarget.type(),
-                "cleanup parameters after (Throwable,result) and target parameter list prefix must match: " +
-                        TryFinally.MH_voidCleanup.type() + " != " + TryFinally.MH_voidTarget.type()
-        };
-        for (int i = 0; i < cases.length; ++i) {
-            boolean caught = false;
-            try {
-                MethodHandles.tryFinally(cases[i][0], cases[i][1]);
-            } catch (IllegalArgumentException iae) {
-                assertEquals(messages[i], iae.getMessage());
-                caught = true;
-            }
-            assertTrue(caught);
-        }
-    }
-
-    @Test
-    public static void testFold0a() throws Throwable {
-        // equivalence to foldArguments(MethodHandle,MethodHandle)
-        MethodHandle fold = MethodHandles.foldArguments(Fold.MH_multer, 0, Fold.MH_adder);
-        assertEquals(Fold.MT_folded1, fold.type());
-        assertEquals(720, (int) fold.invoke(3, 4, 5));
-    }
-
-    @Test
-    public static void testFold1a() throws Throwable {
-        // test foldArguments for folding position 1
-        MethodHandle fold = MethodHandles.foldArguments(Fold.MH_multer, 1, Fold.MH_adder1);
-        assertEquals(Fold.MT_folded1, fold.type());
-        assertEquals(540, (int) fold.invoke(3, 4, 5));
-    }
-
-    @Test
-    public static void testFold0b() throws Throwable {
-        // test foldArguments equivalence with multiple types
-        MethodHandle fold = MethodHandles.foldArguments(Fold.MH_str, 0, Fold.MH_comb);
-        assertEquals(Fold.MT_folded2, fold.type());
-        assertEquals(23, (int) fold.invoke("true", true, 23));
-    }
-
-    @Test
-    public static void testFold1b() throws Throwable {
-        // test folgArguments for folding position 1, with multiple types
-        MethodHandle fold = MethodHandles.foldArguments(Fold.MH_str, 1, Fold.MH_comb2);
-        assertEquals(Fold.MT_folded3, fold.type());
-        assertEquals(1, (int) fold.invoke(true, true, 1));
-        assertEquals(-1, (int) fold.invoke(true, false, -1));
-    }
-
-    @Test
-    public static void testFoldArgumentsExample() throws Throwable {
-        // test the JavaDoc foldArguments-with-pos example
-        StringWriter swr = new StringWriter();
-        MethodHandle trace = LOOKUP.findVirtual(StringWriter.class, "write", methodType(void.class, String.class)).bindTo(swr);
-        MethodHandle cat = LOOKUP.findVirtual(String.class, "concat", methodType(String.class, String.class));
-        assertEquals("boojum", (String) cat.invokeExact("boo", "jum"));
-        MethodHandle catTrace = MethodHandles.foldArguments(cat, 1, trace);
-        assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
-        assertEquals("jum", swr.toString());
-    }
-
-    @Test
-    public static void testAsSpreader() throws Throwable {
-        MethodHandle spreader = SpreadCollect.MH_forSpreading.asSpreader(1, int[].class, 3);
-        assertEquals(SpreadCollect.MT_spreader, spreader.type());
-        assertEquals("A456B", (String) spreader.invoke("A", new int[]{4, 5, 6}, "B"));
-    }
-
-    @Test
-    public static void testAsSpreaderExample() throws Throwable {
-        // test the JavaDoc asSpreader-with-pos example
-        MethodHandle compare = LOOKUP.findStatic(Objects.class, "compare", methodType(int.class, Object.class, Object.class, Comparator.class));
-        MethodHandle compare2FromArray = compare.asSpreader(0, Object[].class, 2);
-        Object[] ints = new Object[]{3, 9, 7, 7};
-        Comparator<Integer> cmp = (a, b) -> a - b;
-        assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 0, 2), cmp) < 0);
-        assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 1, 3), cmp) > 0);
-        assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 2, 4), cmp) == 0);
-    }
-
-    @Test
-    public static void testAsSpreaderIllegalPos() throws Throwable {
-        int[] illegalPos = {-7, 3, 19};
-        int caught = 0;
-        for (int p : illegalPos) {
-            try {
-                SpreadCollect.MH_forSpreading.asSpreader(p, Object[].class, 3);
-            } catch (IllegalArgumentException iae) {
-                assertEquals("bad spread position", iae.getMessage());
-                ++caught;
-            }
-        }
-        assertEquals(illegalPos.length, caught);
-    }
-
-    @Test
-    public static void testAsSpreaderIllegalMethodType() throws Throwable {
-        MethodHandle h = MethodHandles.dropArguments(MethodHandles.constant(String.class, ""), 0, int.class, int.class);
-        boolean caught = false;
-        try {
-            MethodHandle s = h.asSpreader(String[].class, 1);
-        } catch (WrongMethodTypeException wmte) {
-            caught = true;
-        }
-        assertTrue(caught);
-    }
-
-    @Test
-    public static void testAsCollector() throws Throwable {
-        MethodHandle collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 1);
-        assertEquals(SpreadCollect.MT_collector1, collector.type());
-        assertEquals("A4B", (String) collector.invoke("A", 4, "B"));
-        collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 2);
-        assertEquals(SpreadCollect.MT_collector2, collector.type());
-        assertEquals("A45B", (String) collector.invoke("A", 4, 5, "B"));
-        collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 3);
-        assertEquals(SpreadCollect.MT_collector3, collector.type());
-        assertEquals("A456B", (String) collector.invoke("A", 4, 5, 6, "B"));
-    }
-
-    @Test
-    public static void testAsCollectorInvokeWithArguments() throws Throwable {
-        MethodHandle collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 1);
-        assertEquals(SpreadCollect.MT_collector1, collector.type());
-        assertEquals("A4B", (String) collector.invokeWithArguments("A", 4, "B"));
-        collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 2);
-        assertEquals(SpreadCollect.MT_collector2, collector.type());
-        assertEquals("A45B", (String) collector.invokeWithArguments("A", 4, 5, "B"));
-        collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 3);
-        assertEquals(SpreadCollect.MT_collector3, collector.type());
-        assertEquals("A456B", (String) collector.invokeWithArguments("A", 4, 5, 6, "B"));
-    }
-
-    @Test
-    public static void testAsCollectorLeading() throws Throwable {
-        MethodHandle collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 1);
-        assertEquals(SpreadCollect.MT_collectorLeading1, collector.type());
-        assertEquals("7Q", (String) collector.invoke(7, "Q"));
-        collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 2);
-        assertEquals(SpreadCollect.MT_collectorLeading2, collector.type());
-        assertEquals("78Q", (String) collector.invoke(7, 8, "Q"));
-        collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 3);
-        assertEquals(SpreadCollect.MT_collectorLeading3, collector.type());
-        assertEquals("789Q", (String) collector.invoke(7, 8, 9, "Q"));
-    }
-
-    @Test
-    public static void testAsCollectorLeadingInvokeWithArguments() throws Throwable {
-        MethodHandle collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 1);
-        assertEquals(SpreadCollect.MT_collectorLeading1, collector.type());
-        assertEquals("7Q", (String) collector.invokeWithArguments(7, "Q"));
-        collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 2);
-        assertEquals(SpreadCollect.MT_collectorLeading2, collector.type());
-        assertEquals("78Q", (String) collector.invokeWithArguments(7, 8, "Q"));
-        collector = SpreadCollect.MH_forCollectingLeading.asCollector(0, int[].class, 3);
-        assertEquals(SpreadCollect.MT_collectorLeading3, collector.type());
-        assertEquals("789Q", (String) collector.invokeWithArguments(7, 8, 9, "Q"));
-    }
-
-    @Test
-    public static void testAsCollectorNone() throws Throwable {
-        MethodHandle collector = SpreadCollect.MH_forCollecting.asCollector(1, int[].class, 0);
-        assertEquals(SpreadCollect.MT_collector0, collector.type());
-        assertEquals("AB", (String) collector.invoke("A", "B"));
-    }
-
-    @Test
-    public static void testAsCollectorIllegalPos() throws Throwable {
-        int[] illegalPos = {-1, 17};
-        int caught = 0;
-        for (int p : illegalPos) {
-            try {
-                SpreadCollect.MH_forCollecting.asCollector(p, int[].class, 0);
-            } catch (IllegalArgumentException iae) {
-                assertEquals("bad collect position", iae.getMessage());
-                ++caught;
-            }
-        }
-        assertEquals(illegalPos.length, caught);
-    }
-
-    @Test
-    public static void testAsCollectorExample() throws Throwable {
-        // test the JavaDoc asCollector-with-pos example
-        StringWriter swr = new StringWriter();
-        MethodHandle swWrite = LOOKUP.
-                findVirtual(StringWriter.class, "write", methodType(void.class, char[].class, int.class, int.class)).
-                bindTo(swr);
-        MethodHandle swWrite4 = swWrite.asCollector(0, char[].class, 4);
-        swWrite4.invoke('A', 'B', 'C', 'D', 1, 2);
-        assertEquals("BC", swr.toString());
-        swWrite4.invoke('P', 'Q', 'R', 'S', 0, 4);
-        assertEquals("BCPQRS", swr.toString());
-        swWrite4.invoke('W', 'X', 'Y', 'Z', 3, 1);
-        assertEquals("BCPQRSZ", swr.toString());
-    }
-
-    @Test
-    public static void testFindSpecial() throws Throwable {
-        FindSpecial.C c = new FindSpecial.C();
-        assertEquals("I1.m", c.m());
-        MethodType t = MethodType.methodType(String.class);
-        MethodHandle ci1m = LOOKUP.findSpecial(FindSpecial.I1.class, "m", t, FindSpecial.C.class);
-        assertEquals("I1.m", (String) ci1m.invoke(c));
-    }
-
-    @Test
-    public static void testFindSpecialAbstract() throws Throwable {
-        FindSpecial.C c = new FindSpecial.C();
-        assertEquals("q", c.q());
-        MethodType t = MethodType.methodType(String.class);
-        boolean caught = false;
-        try {
-            MethodHandle ci3q = LOOKUP.findSpecial(FindSpecial.I3.class, "q", t, FindSpecial.C.class);
-        } catch (Throwable thrown) {
-            if (!(thrown instanceof IllegalAccessException) || !FindSpecial.ABSTRACT_ERROR.equals(thrown.getMessage())) {
-                throw new AssertionError(thrown.getMessage(), thrown);
-            }
-            caught = true;
-        }
-        assertTrue(caught);
-    }
-
-    @Test
-    public static void testFindClassCNFE() throws Throwable {
-        boolean caught = false;
-        try {
-            LOOKUP.findClass("does.not.Exist");
-        } catch (ClassNotFoundException cnfe) {
-            caught = true;
-        }
-        assertTrue(caught);
-    }
-
-    //
-    // Methods used to assemble tests.
-    //
 
     static class Empty {
 
@@ -1040,228 +761,6 @@ public class T8139885 {
             }
         }
 
-    }
-
-    static class TryFinally {
-
-        static String greet(String whom) {
-            return "Hello, " + whom;
-        }
-
-        static String exclaim(Throwable t, String r, String whom) {
-            return r + "!";
-        }
-
-        static void print(String what) {
-            System.out.print("Hello, " + what);
-        }
-
-        static void printMore(Throwable t, String what) {
-            System.out.println("!");
-        }
-
-        static String greetMore(String first, String second) {
-            return "Hello, " + first + " and " + second;
-        }
-
-        static String exclaimMore(Throwable t, String r, String first) {
-            return r + " (but " + first + " first)!";
-        }
-
-        static void voidTarget() {}
-
-        static void voidCleanup(Throwable t, int a) {}
-
-        static final Class<TryFinally> TRY_FINALLY = TryFinally.class;
-
-        static final MethodType MT_greet = methodType(String.class, String.class);
-        static final MethodType MT_exclaim = methodType(String.class, Throwable.class, String.class, String.class);
-        static final MethodType MT_print = methodType(void.class, String.class);
-        static final MethodType MT_printMore = methodType(void.class, Throwable.class, String.class);
-        static final MethodType MT_greetMore = methodType(String.class, String.class, String.class);
-        static final MethodType MT_exclaimMore = methodType(String.class, Throwable.class, String.class, String.class);
-        static final MethodType MT_voidTarget = methodType(void.class);
-        static final MethodType MT_voidCleanup = methodType(void.class, Throwable.class, int.class);
-
-        static final MethodHandle MH_greet;
-        static final MethodHandle MH_exclaim;
-        static final MethodHandle MH_print;
-        static final MethodHandle MH_printMore;
-        static final MethodHandle MH_greetMore;
-        static final MethodHandle MH_exclaimMore;
-        static final MethodHandle MH_voidTarget;
-        static final MethodHandle MH_voidCleanup;
-
-        static final MethodType MT_hello = methodType(String.class, String.class);
-        static final MethodType MT_printHello = methodType(void.class, String.class);
-        static final MethodType MT_moreHello = methodType(String.class, String.class, String.class);
-
-        static {
-            try {
-                MH_greet = LOOKUP.findStatic(TRY_FINALLY, "greet", MT_greet);
-                MH_exclaim = LOOKUP.findStatic(TRY_FINALLY, "exclaim", MT_exclaim);
-                MH_print = LOOKUP.findStatic(TRY_FINALLY, "print", MT_print);
-                MH_printMore = LOOKUP.findStatic(TRY_FINALLY, "printMore", MT_printMore);
-                MH_greetMore = LOOKUP.findStatic(TRY_FINALLY, "greetMore", MT_greetMore);
-                MH_exclaimMore = LOOKUP.findStatic(TRY_FINALLY, "exclaimMore", MT_exclaimMore);
-                MH_voidTarget = LOOKUP.findStatic(TRY_FINALLY, "voidTarget", MT_voidTarget);
-                MH_voidCleanup = LOOKUP.findStatic(TRY_FINALLY, "voidCleanup", MT_voidCleanup);
-            } catch (Exception e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
-
-    }
-
-    static class Fold {
-
-        static int adder(int a, int b, int c) {
-            return a + b + c;
-        }
-
-        static int adder1(int a, int b) {
-            return a + b;
-        }
-
-        static int multer(int x, int q, int r, int s) {
-            return x * q * r * s;
-        }
-
-        static int str(boolean b1, String s, boolean b2, int x) {
-            return b1 && s.equals(String.valueOf(b2)) ? x : -x;
-        }
-
-        static boolean comb(String s, boolean b2) {
-            return !s.equals(b2);
-        }
-
-        static String comb2(boolean b2, int x) {
-            int ib = b2 ? 1 : 0;
-            return ib == x ? "true" : "false";
-        }
-
-        static final Class<Fold> FOLD = Fold.class;
-
-        static final MethodType MT_adder = methodType(int.class, int.class, int.class, int.class);
-        static final MethodType MT_adder1 = methodType(int.class, int.class, int.class);
-        static final MethodType MT_multer = methodType(int.class, int.class, int.class, int.class, int.class);
-        static final MethodType MT_str = methodType(int.class, boolean.class, String.class, boolean.class, int.class);
-        static final MethodType MT_comb = methodType(boolean.class, String.class, boolean.class);
-        static final MethodType MT_comb2 = methodType(String.class, boolean.class, int.class);
-
-        static final MethodHandle MH_adder;
-        static final MethodHandle MH_adder1;
-        static final MethodHandle MH_multer;
-        static final MethodHandle MH_str;
-        static final MethodHandle MH_comb;
-        static final MethodHandle MH_comb2;
-
-        static final MethodType MT_folded1 = methodType(int.class, int.class, int.class, int.class);
-        static final MethodType MT_folded2 = methodType(int.class, String.class, boolean.class, int.class);
-        static final MethodType MT_folded3 = methodType(int.class, boolean.class, boolean.class, int.class);
-
-        static {
-            try {
-                MH_adder = LOOKUP.findStatic(FOLD, "adder", MT_adder);
-                MH_adder1 = LOOKUP.findStatic(FOLD, "adder1", MT_adder1);
-                MH_multer = LOOKUP.findStatic(FOLD, "multer", MT_multer);
-                MH_str = LOOKUP.findStatic(FOLD, "str", MT_str);
-                MH_comb = LOOKUP.findStatic(FOLD, "comb", MT_comb);
-                MH_comb2 = LOOKUP.findStatic(FOLD, "comb2", MT_comb2);
-            } catch (Exception e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
-    }
-
-    static class SpreadCollect {
-
-        static String forSpreading(String s1, int i1, int i2, int i3, String s2) {
-            return s1 + i1 + i2 + i3 + s2;
-        }
-
-        static String forCollecting(String s1, int[] is, String s2) {
-            StringBuilder sb = new StringBuilder(s1);
-            for (int i : is) {
-                sb.append(i);
-            }
-            return sb.append(s2).toString();
-        }
-
-        static String forCollectingLeading(int[] is, String s) {
-            return forCollecting("", is, s);
-        }
-
-        static final Class<SpreadCollect> SPREAD_COLLECT = SpreadCollect.class;
-
-        static final MethodType MT_forSpreading = methodType(String.class, String.class, int.class, int.class, int.class, String.class);
-        static final MethodType MT_forCollecting = methodType(String.class, String.class, int[].class, String.class);
-        static final MethodType MT_forCollectingLeading = methodType(String.class, int[].class, String.class);
-
-        static final MethodHandle MH_forSpreading;
-        static final MethodHandle MH_forCollecting;
-        static final MethodHandle MH_forCollectingLeading;
-
-        static final MethodType MT_spreader = methodType(String.class, String.class, int[].class, String.class);
-        static final MethodType MT_collector0 = methodType(String.class, String.class, String.class);
-        static final MethodType MT_collector1 = methodType(String.class, String.class, int.class, String.class);
-        static final MethodType MT_collector2 = methodType(String.class, String.class, int.class, int.class, String.class);
-        static final MethodType MT_collector3 = methodType(String.class, String.class, int.class, int.class, int.class, String.class);
-        static final MethodType MT_collectorLeading1 = methodType(String.class, int.class, String.class);
-        static final MethodType MT_collectorLeading2 = methodType(String.class, int.class, int.class, String.class);
-        static final MethodType MT_collectorLeading3 = methodType(String.class, int.class, int.class, int.class, String.class);
-
-        static final String NONE_ERROR = "zero array length in MethodHandle.asCollector";
-
-        static {
-            try {
-                MH_forSpreading = LOOKUP.findStatic(SPREAD_COLLECT, "forSpreading", MT_forSpreading);
-                MH_forCollecting = LOOKUP.findStatic(SPREAD_COLLECT, "forCollecting", MT_forCollecting);
-                MH_forCollectingLeading = LOOKUP.findStatic(SPREAD_COLLECT, "forCollectingLeading", MT_forCollectingLeading);
-            } catch (Exception e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
-
-    }
-
-    static class FindSpecial {
-
-        interface I1 {
-            default String m() {
-                return "I1.m";
-            }
-        }
-
-        interface I2 {
-            default String m() {
-                return "I2.m";
-            }
-        }
-
-        interface I3 {
-            String q();
-        }
-
-        static class C implements I1, I2, I3 {
-            public String m() {
-                return I1.super.m();
-            }
-            public String q() {
-                return "q";
-            }
-        }
-
-        static final String ABSTRACT_ERROR = "no such method: test.java.lang.invoke.T8139885$FindSpecial$I3.q()String/invokeSpecial";
-
-    }
-
-    //
-    // Auxiliary methods.
-    //
-
-    static MethodHandle[] mha(MethodHandle... mhs) {
-        return mhs;
     }
 
 }
