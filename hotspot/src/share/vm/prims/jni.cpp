@@ -89,7 +89,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_1_8;
+static jint CurrentVersion = JNI_VERSION_9;
 
 #ifdef _WIN32
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
