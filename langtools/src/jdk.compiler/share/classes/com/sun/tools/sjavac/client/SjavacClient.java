@@ -257,7 +257,7 @@ public class SjavacClient implements Sjavac {
         // serverProcess != null at this point.
         try {
             // Throws an IOException if no valid values materialize
-            portFile.waitForValidValues();
+            portFile.waitForValidValues(serverProcess);
         } catch (IOException ex) {
             // Process was started, but server failed to initialize. This could
             // for instance be due to the JVM not finding the server class,
