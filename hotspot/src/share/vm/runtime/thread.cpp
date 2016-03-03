@@ -1005,9 +1005,9 @@ static void call_initializeSystemClass(TRAPS) {
 char java_runtime_name[128] = "";
 char java_runtime_version[128] = "";
 
-// extract the JRE name from sun.misc.Version.java_runtime_name
+// extract the JRE name from java.lang.VersionProps.java_runtime_name
 static const char* get_java_runtime_name(TRAPS) {
-  Klass* k = SystemDictionary::find(vmSymbols::sun_misc_Version(),
+  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
                                     Handle(), Handle(), CHECK_AND_CLEAR_NULL);
   fieldDescriptor fd;
   bool found = k != NULL &&
@@ -1027,9 +1027,9 @@ static const char* get_java_runtime_name(TRAPS) {
   }
 }
 
-// extract the JRE version from sun.misc.Version.java_runtime_version
+// extract the JRE version from java.lang.VersionProps.java_runtime_version
 static const char* get_java_runtime_version(TRAPS) {
-  Klass* k = SystemDictionary::find(vmSymbols::sun_misc_Version(),
+  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
                                     Handle(), Handle(), CHECK_AND_CLEAR_NULL);
   fieldDescriptor fd;
   bool found = k != NULL &&
