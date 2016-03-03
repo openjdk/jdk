@@ -200,7 +200,6 @@ oop StringTable::lookup(jchar* name, int len) {
   return string;
 }
 
-
 oop StringTable::intern(Handle string_or_null, jchar* name,
                         int len, TRAPS) {
   oop found_string = lookup_shared(name, len);
@@ -214,7 +213,9 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
 
   // Found
   if (found_string != NULL) {
-    ensure_string_alive(found_string);
+    if (found_string != string_or_null()) {
+      ensure_string_alive(found_string);
+    }
     return found_string;
   }
 
@@ -249,7 +250,9 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
                                   hashValue, CHECK_NULL);
   }
 
-  ensure_string_alive(added_or_found);
+  if (added_or_found != string()) {
+    ensure_string_alive(added_or_found);
+  }
 
   return added_or_found;
 }

@@ -89,8 +89,6 @@ bool ConcurrentG1RefineThread::is_active() {
 void ConcurrentG1RefineThread::activate() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
   if (!is_primary()) {
-    log_debug(gc, refine)("G1-Refine-activated worker %d, on threshold %d, current %d",
-                          _worker_id, _threshold, JavaThread::dirty_card_queue_set().completed_buffers_num());
     set_active(true);
   } else {
     DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
@@ -102,8 +100,6 @@ void ConcurrentG1RefineThread::activate() {
 void ConcurrentG1RefineThread::deactivate() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
   if (!is_primary()) {
-    log_debug(gc, refine)("G1-Refine-deactivated worker %d, off threshold %d, current %d",
-                          _worker_id, _deactivation_threshold, JavaThread::dirty_card_queue_set().completed_buffers_num());
     set_active(false);
   } else {
     DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
@@ -130,9 +126,12 @@ void ConcurrentG1RefineThread::run_service() {
       break;
     }
 
+    DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+    log_debug(gc, refine)("Activated %d, on threshold: %d, current: %d",
+                          _worker_id, _threshold, dcqs.completed_buffers_num());
+
     {
       SuspendibleThreadSetJoiner sts_join;
-      DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
 
       do {
         int curr_buffer_num = (int)dcqs.completed_buffers_num();
@@ -142,24 +141,19 @@ void ConcurrentG1RefineThread::run_service() {
           dcqs.set_completed_queue_padding(0);
         }
 
-        if (!is_primary() && curr_buffer_num <= _deactivation_threshold) {
-          // If the number of the buffer has fallen below our threshold
-          // we should deactivate. The predecessor will reactivate this
-          // thread should the number of the buffers cross the threshold again.
-          deactivate();
-          break;
-        }
-
         // Check if we need to activate the next thread.
         if (_next != NULL && !_next->is_active() && curr_buffer_num > _next->_threshold) {
           _next->activate();
         }
-      } while (dcqs.apply_closure_to_completed_buffer(_refine_closure, _worker_id + _worker_id_offset, cg1r()->green_zone()));
+      } while (dcqs.apply_closure_to_completed_buffer(_refine_closure,
+                                                      _worker_id + _worker_id_offset,
+                                                      _deactivation_threshold,
+                                                      false /* during_pause */));
 
-      // We can exit the loop above while being active if there was a yield request.
-      if (is_active()) {
-        deactivate();
-      }
+      deactivate();
+      log_debug(gc, refine)("Deactivated %d, off threshold: %d, current: %d",
+                            _worker_id, _deactivation_threshold,
+                            dcqs.completed_buffers_num());
     }
 
     if (os::supports_vtime()) {
@@ -169,7 +163,7 @@ void ConcurrentG1RefineThread::run_service() {
     }
   }
 
-  log_debug(gc, refine)("G1-Refine-stop");
+  log_debug(gc, refine)("Stopping %d", _worker_id);
 }
 
 void ConcurrentG1RefineThread::stop() {

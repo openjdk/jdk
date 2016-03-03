@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2007, 2008 Red Hat, Inc.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -29,12 +29,6 @@
 ifeq ($(USE_CLANG), true)
   WARNING_FLAGS += -Wno-undef
 endif
-# Suppress some warning flags that are normally turned on for hotspot,
-# because some of the zero code has not been updated accordingly.
-WARNING_FLAGS += -Wno-return-type \
-  -Wno-format-nonliteral -Wno-format-security \
-  -Wno-maybe-uninitialized
- 
 
 # The copied fdlibm routines in sharedRuntimeTrig.o must not be optimized
 OPT_CFLAGS/sharedRuntimeTrig.o = $(OPT_CFLAGS/NOOPT)
