@@ -1161,6 +1161,59 @@ public final class Unsafe {
     public native Object allocateInstance(Class<?> cls)
         throws InstantiationException;
 
+    /**
+     * Allocates an array of a given type, but does not do zeroing.
+     * <p>
+     * This method should only be used in the very rare cases where a high-performance code
+     * overwrites the destination array completely, and compilers cannot assist in zeroing elimination.
+     * In an overwhelming majority of cases, a normal Java allocation should be used instead.
+     * <p>
+     * Users of this method are <b>required</b> to overwrite the initial (garbage) array contents
+     * before allowing untrusted code, or code in other threads, to observe the reference
+     * to the newly allocated array. In addition, the publication of the array reference must be
+     * safe according to the Java Memory Model requirements.
+     * <p>
+     * The safest approach to deal with an uninitialized array is to keep the reference to it in local
+     * variable at least until the initialization is complete, and then publish it <b>once</b>, either
+     * by writing it to a <em>volatile</em> field, or storing it into a <em>final</em> field in constructor,
+     * or issuing a {@link #storeFence} before publishing the reference.
+     * <p>
+     * @implnote This method can only allocate primitive arrays, to avoid garbage reference
+     * elements that could break heap integrity.
+     *
+     * @param componentType array component type to allocate
+     * @param length array size to allocate
+     * @throws IllegalArgumentException if component type is null, or not a primitive class;
+     *                                  or the length is negative
+     */
+    public Object allocateUninitializedArray(Class<?> componentType, int length) {
+       if (componentType == null) {
+           throw new IllegalArgumentException("Component type is null");
+       }
+       if (!componentType.isPrimitive()) {
+           throw new IllegalArgumentException("Component type is not primitive");
+       }
+       if (length < 0) {
+           throw new IllegalArgumentException("Negative length");
+       }
+       return allocateUninitializedArray0(componentType, length);
+    }
+
+    @HotSpotIntrinsicCandidate
+    private Object allocateUninitializedArray0(Class<?> componentType, int length) {
+       // These fallbacks provide zeroed arrays, but intrinsic is not required to
+       // return the zeroed arrays.
+       if (componentType == byte.class)    return new byte[length];
+       if (componentType == boolean.class) return new boolean[length];
+       if (componentType == short.class)   return new short[length];
+       if (componentType == char.class)    return new char[length];
+       if (componentType == int.class)     return new int[length];
+       if (componentType == float.class)   return new float[length];
+       if (componentType == long.class)    return new long[length];
+       if (componentType == double.class)  return new double[length];
+       return null;
+    }
+
     /** Throws the exception without telling the verifier. */
     public native void throwException(Throwable ee);
 
