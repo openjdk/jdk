@@ -107,25 +107,25 @@
           "Number of enqueued update buffers that will "                    \
           "trigger concurrent processing. Will be selected ergonomically "  \
           "by default.")                                                    \
-          range(0, SIZE_MAX)                                                \
+          range(0, max_intx)                                                \
                                                                             \
   product(size_t, G1ConcRefinementRedZone, 0,                               \
           "Maximum number of enqueued update buffers before mutator "       \
           "threads start processing new ones instead of enqueueing them. "  \
           "Will be selected ergonomically by default. Zero will disable "   \
           "concurrent processing.")                                         \
-          range(0, SIZE_MAX)                                                \
+          range(0, max_intx)                                                \
                                                                             \
   product(size_t, G1ConcRefinementGreenZone, 0,                             \
           "The number of update buffers that are left in the queue by the " \
           "concurrent processing threads. Will be selected ergonomically "  \
           "by default.")                                                    \
-          range(0, SIZE_MAX)                                                \
+          range(0, max_intx)                                                \
                                                                             \
   product(uintx, G1ConcRefinementServiceIntervalMillis, 300,                \
           "The last concurrent refinement thread wakes up every "           \
           "specified number of milliseconds to do miscellaneous work.")     \
-          range(0, max_uintx)                                               \
+          range(0, max_jint)                                                \
                                                                             \
   product(size_t, G1ConcRefinementThresholdStep, 0,                         \
           "Each time the rset update queue increases by this amount "       \

@@ -68,7 +68,7 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
 void ConcurrentG1RefineThread::initialize() {
   // Current thread activation threshold
   _threshold = MIN2(cg1r()->thread_threshold_step() * (_worker_id + 1) + cg1r()->green_zone(),
-                         cg1r()->yellow_zone());
+                    cg1r()->yellow_zone());
   // A thread deactivates once the number of buffer reached a deactivation threshold
    _deactivation_threshold =
      MAX2(_threshold - MIN2(_threshold, cg1r()->thread_threshold_step()),
