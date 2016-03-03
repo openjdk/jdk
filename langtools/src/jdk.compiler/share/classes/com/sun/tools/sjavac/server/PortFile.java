@@ -232,7 +232,7 @@ public class PortFile {
     /**
      * Wait for the port file to contain values that look valid.
      */
-    public void waitForValidValues(Process serverProcess) throws IOException, InterruptedException {
+    public void waitForValidValues() throws IOException, InterruptedException {
         final int MS_BETWEEN_ATTEMPTS = 500;
         long startTime = System.currentTimeMillis();
         long timeout = startTime + getServerStartupTimeoutSeconds() * 1000;
@@ -249,9 +249,6 @@ public class PortFile {
             }
             if (System.currentTimeMillis() > timeout) {
                 break;
-            }
-            if (!serverProcess.isAlive()) {
-                throw new IOException("Server process terminated.");
             }
             Thread.sleep(MS_BETWEEN_ATTEMPTS);
         }
