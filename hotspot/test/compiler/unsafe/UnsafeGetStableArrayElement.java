@@ -27,6 +27,7 @@
  * @test
  * @summary tests on constant folding of unsafe get operations from stable arrays
  * @library /testlibrary /test/lib
+ * @ignore 8151137
  *
  * @requires vm.flavor != "client"
  *
