@@ -1284,8 +1284,9 @@ public:
   // C2 compiled method's prolog code.
   void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b);
 
-  // clear memory of size 'cnt' qwords, starting at 'base'.
-  void clear_mem(Register base, Register cnt, Register rtmp);
+  // clear memory of size 'cnt' qwords, starting at 'base';
+  // if 'is_large' is set, do not try to produce short loop
+  void clear_mem(Register base, Register cnt, Register rtmp, bool is_large);
 
 #ifdef COMPILER2
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,

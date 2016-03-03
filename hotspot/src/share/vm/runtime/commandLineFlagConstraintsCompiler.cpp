@@ -354,6 +354,14 @@ Flag::Error TypeProfileLevelConstraintFunc(uintx value, bool verbose) {
   return Flag::SUCCESS;
 }
 
+Flag::Error InitArrayShortSizeConstraintFunc(intx value, bool verbose) {
+  if (value % BytesPerLong != 0) {
+    return Flag::VIOLATES_CONSTRAINT;
+  } else {
+    return Flag::SUCCESS;
+  }
+}
+
 #ifdef COMPILER2
 Flag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
   if (InteriorEntryAlignment > CodeEntryAlignment) {
