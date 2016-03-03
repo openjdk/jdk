@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,8 +222,7 @@ class CompileBroker: AllStatic {
   static JavaThread* make_thread(const char* name, CompileQueue* queue, CompilerCounters* counters, AbstractCompiler* comp, bool compiler_thread, TRAPS);
   static void init_compiler_sweeper_threads(int c1_compiler_count, int c2_compiler_count);
   static bool compilation_is_complete  (const methodHandle& method, int osr_bci, int comp_level);
-  static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level);
-  static bool is_compile_blocking();
+  static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
   static void preload_classes          (const methodHandle& method, TRAPS);
 
   static CompileTask* create_compile_task(CompileQueue*       queue,
@@ -253,6 +252,7 @@ class CompileBroker: AllStatic {
                                   const methodHandle& hot_method,
                                   int hot_count,
                                   const char* comment,
+                                  bool blocking,
                                   Thread* thread);
 
   static CompileQueue* compile_queue(int comp_level);
@@ -290,6 +290,15 @@ public:
                                  const methodHandle& hot_method,
                                  int hot_count,
                                  const char* comment, Thread* thread);
+
+  static nmethod* compile_method(const methodHandle& method,
+                                   int osr_bci,
+                                   int comp_level,
+                                   const methodHandle& hot_method,
+                                   int hot_count,
+                                   const char* comment,
+                                   DirectiveSet* directive,
+                                   Thread* thread);
 
   // Acquire any needed locks and assign a compile id
   static uint assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci);
