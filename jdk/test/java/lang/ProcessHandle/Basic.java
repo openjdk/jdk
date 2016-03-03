@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /test/lib/share/classes
- * @run testng InfoTest
+ * @run testng Basic
  * @summary Basic tests for ProcessHandler
  * @author Roger Riggs
  */

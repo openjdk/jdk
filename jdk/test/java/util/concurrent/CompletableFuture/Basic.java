@@ -34,15 +34,17 @@
 /*
  * @test
  * @bug 8005696
+ * @summary Basic tests for CompletableFuture
+ * @library /lib/testlibrary/
  * @run main Basic
  * @run main/othervm -Djava.util.concurrent.ForkJoinPool.common.parallelism=0 Basic
- * @summary Basic tests for CompletableFuture
  * @author Chris Hegarty
  */
 
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.concurrent.CompletableFuture.supplyAsync;
 import static java.util.concurrent.ForkJoinPool.commonPool;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.lang.reflect.Array;
@@ -54,8 +56,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import jdk.testlibrary.Utils;
 
 public class Basic {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
 
     static void checkCompletedNormally(CompletableFuture<?> cf, Object value) {
         checkCompletedNormally(cf, value == null ? null : new Object[] { value });
@@ -109,12 +113,13 @@ public class Basic {
     }
 
     private static void realMain(String[] args) throws Throwable {
-        ExecutorService executor = Executors.newFixedThreadPool(2);
+        ExecutorService pool = Executors.newFixedThreadPool(2);
         try {
-            test(executor);
+            test(pool);
         } finally {
-            executor.shutdown();
-            executor.awaitTermination(30L, SECONDS);
+            pool.shutdown();
+            if (! pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
+                throw new Error();
         }
     }
 

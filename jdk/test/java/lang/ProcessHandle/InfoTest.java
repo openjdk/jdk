@@ -114,9 +114,13 @@ public class InfoTest {
             long cpuLoopTime = 100;             // 100 ms
             String[] extraArgs = {"pid", "parent", "stdin"};
             JavaChild p1 = JavaChild.spawnJavaChild((Object[])extraArgs);
-            Instant afterStart = Instant.now();
+            Instant afterStart = null;
 
             try (BufferedReader lines = p1.outputReader()) {
+                // Read the args line to know the subprocess has started
+                lines.readLine();
+                afterStart = Instant.now();
+
                 Duration lastCpu = Duration.ofMillis(0L);
                 for (int j = 0; j < 10; j++) {
 
@@ -126,8 +130,7 @@ public class InfoTest {
                     // Read cputime from child
                     Duration childCpuTime = null;
                     // Read lines from the child until the result from cputime is returned
-                    String s;
-                    while ((s = lines.readLine()) != null) {
+                    for (String s; (s = lines.readLine()) != null;) {
                         String[] split = s.trim().split(" ");
                         if (split.length == 3 && split[1].equals("cputime")) {
                             long nanos = Long.valueOf(split[2]);
