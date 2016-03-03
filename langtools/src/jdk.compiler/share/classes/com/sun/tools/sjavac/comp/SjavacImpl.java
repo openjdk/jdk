@@ -28,7 +28,6 @@ package com.sun.tools.sjavac.comp;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -80,6 +79,10 @@ public class SjavacImpl implements Sjavac {
 
         if (!validateOptions(options))
             return RC_FATAL;
+
+        if (srcDstOverlap(options.getSources(), options.getDestDir())) {
+            return RC_FATAL;
+        }
 
         if (!createIfMissing(options.getDestDir()))
             return RC_FATAL;
@@ -328,6 +331,22 @@ public class SjavacImpl implements Sjavac {
 
         return err == null;
 
+    }
+
+    private static boolean srcDstOverlap(List<SourceLocation> locs, Path dest) {
+        for (SourceLocation loc : locs) {
+            if (isOverlapping(loc.getPath(), dest)) {
+                Log.error("Source location " + loc.getPath() + " overlaps with destination " + dest);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isOverlapping(Path p1, Path p2) {
+        p1 = p1.toAbsolutePath().normalize();
+        p2 = p2.toAbsolutePath().normalize();
+        return p1.startsWith(p2) || p2.startsWith(p1);
     }
 
     private static boolean createIfMissing(Path dir) {
