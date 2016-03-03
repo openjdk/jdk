@@ -893,11 +893,15 @@ class JarFile extends ZipFile {
     }
 
     private JarEntry verifiableEntry(ZipEntry ze) {
-        if (!(ze instanceof JarFileEntry)) {
-            ze = getJarEntry(ze.getName());
+        if (ze instanceof JarFileEntry) {
+            // assure the name and entry match for verification
+            return ((JarFileEntry)ze).reifiedEntry();
         }
-        // assure the name and entry match for verification
-        return ze == null ? null : ((JarFileEntry)ze).reifiedEntry();
+        ze = getJarEntry(ze.getName());
+        if (ze instanceof JarFileEntry) {
+            return ((JarFileEntry)ze).reifiedEntry();
+        }
+        return (JarEntry)ze;
     }
 
     // Statics for hand-coded Boyer-Moore search
