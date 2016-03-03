@@ -35,6 +35,7 @@
  *        gc.g1.plab.lib.MemoryConsumer
  *        gc.g1.plab.lib.PLABUtils
  *        gc.g1.plab.lib.AppPLABResize
+ * @ignore 8150183
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main gc.g1.plab.TestPLABResize

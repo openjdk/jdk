@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test TestPrintGCDetailsVerbose
- * @bug 8016740
- * @summary Tests that jvm with maximally verbose GC logging does not crash when ParOldGC has no memory
- * @key gc
- * @requires vm.gc=="Parallel" | vm.gc=="null"
- * @library /testlibrary
- * @run main/othervm -Xmx50m -XX:+UseParallelGC -Xlog:gc*=trace TestPrintGCDetailsVerbose
- */
-public class TestPrintGCDetailsVerbose {
+#include "gc/shared/preservedMarks.hpp"
+#include "oops/markOop.inline.hpp"
+#include "utilities/stack.inline.hpp"
 
-    public static void main(String[] args) {
-        for (int t = 0; t <= 10; t++) {
-            byte a[][] = new byte[100000][];
-            try {
-                for (int i = 0; i < a.length; i++) {
-                    a[i] = new byte[100000];
-                }
-            } catch (OutOfMemoryError oome) {
-                a = null;
-                System.out.println("OOM!");
-                continue;
-            }
-        }
-    }
+#ifndef SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
+#define SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
+
+inline bool PreservedMarks::should_preserve_mark(oop obj, markOop m) const {
+  return m->must_be_preserved_for_promotion_failure(obj);
 }
 
+inline void PreservedMarks::push(oop obj, markOop m) {
+  assert(should_preserve_mark(obj, m), "pre-condition");
+  OopAndMarkOop elem(obj, m);
+  _stack.push(elem);
+}
+
+inline void PreservedMarks::push_if_necessary(oop obj, markOop m) {
+  if (should_preserve_mark(obj, m)) {
+    push(obj, m);
+  }
+}
+
+#endif // SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
