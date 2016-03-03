@@ -21,35 +21,17 @@
  * questions.
  */
 
-/*
- * @test
- * @bug      8149842
- * @summary  Verify that non included classes are not inspected.
- * @library  ../lib
- * @modules  jdk.javadoc/jdk.javadoc.internal.tool
- * @build    JavadocTester
- * @run main TestIncluded
- */
+// key: compiler.err.anonymous.diamond.method.does.not.override.superclass
+// key: compiler.misc.diamond.anonymous.methods.implicitly.override
 
-public class TestIncluded extends JavadocTester {
-
-    public static void main(String... args) throws Exception {
-        TestIncluded tester = new TestIncluded();
-        tester.runTests();
+class X {
+    interface  Foo<T> {
+        void g(T t);
     }
-
-    /*
-     * The arguments specify only "pkg" but "parent" sources are on the path.
-     * The class parent.A utilizes a non existent taglet, that will trigger
-     * an error, if doc comments are inspected.
-     */
-    @Test
-    void test() {
-        javadoc("-d", "out",
-                "-Xdoclint:all",
-                "-sourcepath", testSrc,
-                "pkg");
-        checkExit(Exit.OK);
-        checkFiles(false, "parent/A.html");
-    }
+    void m() {
+      Foo<String> fs = new Foo<>() {
+          public void g(String s) { }
+          void someMethod() { }
+      };
+   }
 }

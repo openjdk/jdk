@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8062373
+ * @bug 8062373 8151018
  *
  * @summary  Test that javac complains when a <> inferred class contains a public method that does override a supertype method.
  * @author sadayapalam
