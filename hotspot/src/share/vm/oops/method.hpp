@@ -64,9 +64,7 @@ class Method : public Metadata {
  friend class JVMCIVMStructs;
  private:
   ConstMethod*      _constMethod;                // Method read-only data.
-#if defined(COMPILER2) || INCLUDE_JVMCI
   MethodData*       _method_data;
-#endif
   MethodCounters*   _method_counters;
   AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
@@ -321,7 +319,6 @@ class Method : public Metadata {
   // InterpreterRuntime::exception_handler_for_exception.
   static int fast_exception_handler_bci_for(methodHandle mh, KlassHandle ex_klass, int throw_bci, TRAPS);
 
-#if defined(COMPILER2) || INCLUDE_JVMCI
   // method data access
   MethodData* method_data() const              {
     return _method_data;
@@ -333,10 +330,6 @@ class Method : public Metadata {
     // the initialization of data otherwise.
     OrderAccess::release_store_ptr((volatile void *)&_method_data, data);
   }
-#else
-  MethodData* method_data() const              { return NULL; }
-  void set_method_data(MethodData* data)       { }
-#endif
 
   MethodCounters* method_counters() const {
     return _method_counters;
@@ -646,16 +639,9 @@ class Method : public Metadata {
 #endif /* CC_INTERP */
   static ByteSize from_compiled_offset()         { return byte_offset_of(Method, _from_compiled_entry); }
   static ByteSize code_offset()                  { return byte_offset_of(Method, _code); }
-#if defined(COMPILER2) || INCLUDE_JVMCI
   static ByteSize method_data_offset()           {
     return byte_offset_of(Method, _method_data);
   }
-#else
-  static ByteSize method_data_offset()           {
-    ShouldNotReachHere();
-    return in_ByteSize(0);
-  }
-#endif
   static ByteSize method_counters_offset()       {
     return byte_offset_of(Method, _method_counters);
   }
@@ -668,11 +654,7 @@ class Method : public Metadata {
   static ByteSize signature_handler_offset()     { return in_ByteSize(sizeof(Method) + wordSize);      }
 
   // for code generation
-#if defined(COMPILER2) || INCLUDE_JVMCI
   static int method_data_offset_in_bytes()       { return offset_of(Method, _method_data); }
-#else
-  static int method_data_offset_in_bytes()       { ShouldNotReachHere(); return 0; }
-#endif
   static int intrinsic_id_offset_in_bytes()      { return offset_of(Method, _intrinsic_id); }
   static int intrinsic_id_size_in_bytes()        { return sizeof(u2); }
 

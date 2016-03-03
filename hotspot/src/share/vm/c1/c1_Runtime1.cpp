@@ -1502,23 +1502,21 @@ JRT_ENTRY(void, Runtime1::predicate_failed_trap(JavaThread* thread))
   nm->make_not_entrant();
 
   methodHandle m(nm->method());
-  if (ProfileInterpreter) {
-    MethodData* mdo = m->method_data();
+  MethodData* mdo = m->method_data();
 
-    if (mdo == NULL && !HAS_PENDING_EXCEPTION) {
-      // Build an MDO.  Ignore errors like OutOfMemory;
-      // that simply means we won't have an MDO to update.
-      Method::build_interpreter_method_data(m, THREAD);
-      if (HAS_PENDING_EXCEPTION) {
-        assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
-        CLEAR_PENDING_EXCEPTION;
-      }
-      mdo = m->method_data();
+  if (mdo == NULL && !HAS_PENDING_EXCEPTION) {
+    // Build an MDO.  Ignore errors like OutOfMemory;
+    // that simply means we won't have an MDO to update.
+    Method::build_interpreter_method_data(m, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      assert((PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())), "we expect only an OOM error here");
+      CLEAR_PENDING_EXCEPTION;
     }
+    mdo = m->method_data();
+  }
 
-    if (mdo != NULL) {
-      mdo->inc_trap_count(Deoptimization::Reason_none);
-    }
+  if (mdo != NULL) {
+    mdo->inc_trap_count(Deoptimization::Reason_none);
   }
 
   if (TracePredicateFailedTraps) {

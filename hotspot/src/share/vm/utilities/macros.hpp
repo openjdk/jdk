@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,15 +205,6 @@
 #define COMPILER2_PRESENT(code)
 #define NOT_COMPILER2(code) code
 #endif // COMPILER2
-
-// COMPILER2 or JVMCI
-#if defined(COMPILER2) || INCLUDE_JVMCI
-#define COMPILER2_OR_JVMCI_PRESENT(code) code
-#define NOT_COMPILER2_OR_JVMCI(code)
-#else
-#define COMPILER2_OR_JVMCI_PRESENT(code)
-#define NOT_COMPILER2_OR_JVMCI(code) code
-#endif
 
 #ifdef TIERED
 #define TIERED_ONLY(code) code
