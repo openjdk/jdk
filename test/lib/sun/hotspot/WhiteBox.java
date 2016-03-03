@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,4 +455,8 @@ public class WhiteBox {
   public native boolean isSharedClass(Class<?> c);
   public native boolean isShared(Object o);
   public native boolean areSharedStringsIgnored();
+
+  // Compiler Directive
+  public native int addCompilerDirective(String compDirect);
+  public native void removeCompilerDirective(int count);
 }
