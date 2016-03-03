@@ -7198,21 +7198,50 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
 
 }
 
-void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp) {
+void MacroAssembler::clear_mem(Register base, Register cnt, Register tmp, bool is_large) {
   // cnt - number of qwords (8-byte words).
   // base - start address, qword aligned.
+  // is_large - if optimizers know cnt is larger than InitArrayShortSize
   assert(base==rdi, "base register must be edi for rep stos");
   assert(tmp==rax,   "tmp register must be eax for rep stos");
   assert(cnt==rcx,   "cnt register must be ecx for rep stos");
+  assert(InitArrayShortSize % BytesPerLong == 0,
+    "InitArrayShortSize should be the multiple of BytesPerLong");
+
+  Label DONE;
 
   xorptr(tmp, tmp);
+
+  if (!is_large) {
+    Label LOOP, LONG;
+    cmpptr(cnt, InitArrayShortSize/BytesPerLong);
+    jccb(Assembler::greater, LONG);
+
+    NOT_LP64(shlptr(cnt, 1);) // convert to number of 32-bit words for 32-bit VM
+
+    decrement(cnt);
+    jccb(Assembler::negative, DONE); // Zero length
+
+    // Use individual pointer-sized stores for small counts:
+    BIND(LOOP);
+    movptr(Address(base, cnt, Address::times_ptr), tmp);
+    decrement(cnt);
+    jccb(Assembler::greaterEqual, LOOP);
+    jmpb(DONE);
+
+    BIND(LONG);
+  }
+
+  // Use longer rep-prefixed ops for non-small counts:
   if (UseFastStosb) {
-    shlptr(cnt,3); // convert to number of bytes
+    shlptr(cnt, 3); // convert to number of bytes
     rep_stosb();
   } else {
-    NOT_LP64(shlptr(cnt,1);) // convert to number of dwords for 32-bit VM
+    NOT_LP64(shlptr(cnt, 1);) // convert to number of 32-bit words for 32-bit VM
     rep_stos();
   }
+
+  BIND(DONE);
 }
 
 #ifdef COMPILER2

@@ -4162,6 +4162,13 @@ public:
              "in the loaded class C. "                                      \
              "Check (3) is available only in debug builds.")                \
                                                                             \
+  develop_pd(intx, InitArrayShortSize,                                      \
+          "Threshold small size (in bytes) for clearing arrays. "           \
+          "Anything this size or smaller may get converted to discrete "    \
+          "scalar stores.")                                                 \
+          range(0, max_intx)                                                \
+          constraint(InitArrayShortSizeConstraintFunc, AfterErgo)           \
+                                                                            \
   diagnostic(bool, CompilerDirectivesIgnoreCompileCommands, false,          \
              "Disable backwards compatibility for compile commands.")       \
                                                                             \
