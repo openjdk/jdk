@@ -48,6 +48,7 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "prims/nativeLookup.hpp"
+#include "prims/unsafe.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "trace/traceMacros.hpp"
 
@@ -2306,9 +2307,6 @@ void LibraryCallKit::insert_pre_barrier(Node* base_oop, Node* offset,
 }
 
 
-// Interpret Unsafe.fieldOffset cookies correctly:
-extern jlong Unsafe_field_offset_to_byte_offset(jlong field_offset);
-
 const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type, bool is_native_ptr) {
   // Attempt to infer a sharper value type from the offset and base type.
   ciKlass* sharpened_klass = NULL;
@@ -4466,7 +4464,7 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
 }
 
 //----------------------inline_unsafe_copyMemory-------------------------
-// public native void Unsafe.copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
+// public native void Unsafe.copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
 bool LibraryCallKit::inline_unsafe_copyMemory() {
   if (callee()->is_static())  return false;  // caller must have the capability!
   null_check_receiver();  // null-check receiver
