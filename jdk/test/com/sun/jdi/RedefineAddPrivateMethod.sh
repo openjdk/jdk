@@ -35,7 +35,8 @@ createJavaFile()
     cat <<EOF > $1.java.1
 public class $1 {
     static public void main(String[] args) {
-        // @1 breakpoint @2 breakpoint
+        System.out.println("@1 breakpoint");
+        System.out.println("@2 breakpoint");
     }
 
     // @1 uncomment private static void test() {}
@@ -50,7 +51,8 @@ dojdbCmds()
     runToBkpt @1
     redefineClass @1
     setBkpts @2
-    cmd allowExit cont
+    runToBkpt @2
+    cmd exitJdb
 }
 
 
