@@ -1830,7 +1830,7 @@ public final class System {
 
 
         lineSeparator = props.getProperty("line.separator");
-        sun.misc.Version.init();
+        VersionProps.init();
 
         FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
