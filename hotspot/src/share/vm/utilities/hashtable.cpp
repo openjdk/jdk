@@ -383,4 +383,9 @@ template class BasicHashtable<mtClassShared>;
 template class BasicHashtable<mtSymbol>;
 template class BasicHashtable<mtCode>;
 template class BasicHashtable<mtInternal>;
+#if INCLUDE_TRACE
+template class Hashtable<Symbol*, mtTracing>;
+template class HashtableEntry<Symbol*, mtTracing>;
+template class BasicHashtable<mtTracing>;
+#endif
 template class BasicHashtable<mtCompiler>;

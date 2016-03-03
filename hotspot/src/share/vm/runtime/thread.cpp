@@ -1694,7 +1694,7 @@ void JavaThread::run() {
 
   EventThreadStart event;
   if (event.should_commit()) {
-    event.set_javalangthread(java_lang_Thread::thread_id(this->threadObj()));
+    event.set_thread(THREAD_TRACE_ID(this));
     event.commit();
   }
 
@@ -1799,7 +1799,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     // from java_lang_Thread object
     EventThreadEnd event;
     if (event.should_commit()) {
-      event.set_javalangthread(java_lang_Thread::thread_id(this->threadObj()));
+      event.set_thread(THREAD_TRACE_ID(this));
       event.commit();
     }
 
@@ -3554,6 +3554,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return status;
   }
 
+  if (TRACE_INITIALIZE() != JNI_OK) {
+    vm_exit_during_initialization("Failed to initialize tracing backend");
+  }
+
   // Should be done after the heap is fully created
   main_thread->cache_global_variables();
 
@@ -3621,11 +3625,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   reset_vm_info_property(CHECK_JNI_ERR);
 
   quicken_jni_functions();
-
-  // Must be run after init_ft which initializes ft_enabled
-  if (TRACE_INITIALIZE() != JNI_OK) {
-    vm_exit_during_initialization("Failed to initialize tracing backend");
-  }
 
   // No more stub generation allowed after that point.
   StubCodeDesc::freeze();
@@ -4134,6 +4133,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_1_4) return JNI_TRUE;
   if (version == JNI_VERSION_1_6) return JNI_TRUE;
   if (version == JNI_VERSION_1_8) return JNI_TRUE;
+  if (version == JNI_VERSION_9) return JNI_TRUE;
   return JNI_FALSE;
 }
 

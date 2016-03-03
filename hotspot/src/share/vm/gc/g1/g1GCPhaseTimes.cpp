@@ -277,8 +277,8 @@ void G1GCPhaseTimes::print() {
   }
   debug_line("Choose CSet", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
   debug_line("Preserve CM Refs", _recorded_preserve_cm_referents_time_ms);
-  debug_line("Ref Proc", _cur_ref_proc_time_ms);
-  debug_line("Ref Enq", _cur_ref_enq_time_ms);
+  debug_line("Reference Processing", _cur_ref_proc_time_ms);
+  debug_line("Reference Enqueuing", _cur_ref_enq_time_ms);
   debug_line("Redirty Cards", _recorded_redirty_logged_cards_time_ms);
   trace_phase(_gc_par_phases[RedirtyCards]);
   trace_phase(_gc_par_phases[PreserveCMReferents]);
