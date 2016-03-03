@@ -125,53 +125,6 @@ public class ThreadLocalRandom extends Random {
      * but we provide identical statistical properties.
      */
 
-    /** Generates per-thread initialization/probe field */
-    private static final AtomicInteger probeGenerator = new AtomicInteger();
-
-    /**
-     * The next seed for default constructors.
-     */
-    private static final AtomicLong seeder = new AtomicLong(initialSeed());
-
-    private static long initialSeed() {
-        if (java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    return Boolean.getBoolean("java.util.secureRandomSeed");
-                }})) {
-            byte[] seedBytes = java.security.SecureRandom.getSeed(8);
-            long s = (long)seedBytes[0] & 0xffL;
-            for (int i = 1; i < 8; ++i)
-                s = (s << 8) | ((long)seedBytes[i] & 0xffL);
-            return s;
-        }
-        return (mix64(System.currentTimeMillis()) ^
-                mix64(System.nanoTime()));
-    }
-
-    /**
-     * The seed increment.
-     */
-    private static final long GAMMA = 0x9e3779b97f4a7c15L;
-
-    /**
-     * The increment for generating probe values.
-     */
-    private static final int PROBE_INCREMENT = 0x9e3779b9;
-
-    /**
-     * The increment of seeder per new instance.
-     */
-    private static final long SEEDER_INCREMENT = 0xbb67ae8584caa73bL;
-
-    // Constants from SplittableRandom
-    private static final double DOUBLE_UNIT = 0x1.0p-53;  // 1.0  / (1L << 53)
-    private static final float  FLOAT_UNIT  = 0x1.0p-24f; // 1.0f / (1 << 24)
-
-    /** Rarely-used holder for the second of a pair of Gaussians */
-    private static final ThreadLocal<Double> nextLocalGaussian =
-        new ThreadLocal<>();
-
     private static long mix64(long z) {
         z = (z ^ (z >>> 33)) * 0xff51afd7ed558ccdL;
         z = (z ^ (z >>> 33)) * 0xc4ceb9fe1a85ec53L;
@@ -193,9 +146,6 @@ public class ThreadLocalRandom extends Random {
     private ThreadLocalRandom() {
         initialized = true; // false during super() call
     }
-
-    /** The common ThreadLocalRandom */
-    static final ThreadLocalRandom instance = new ThreadLocalRandom();
 
     /**
      * Initialize Thread fields for the current thread.  Called only
@@ -247,11 +197,6 @@ public class ThreadLocalRandom extends Random {
     protected int next(int bits) {
         return (int)(mix64(nextSeed()) >>> (64 - bits));
     }
-
-    // IllegalArgumentException messages
-    static final String BAD_BOUND = "bound must be positive";
-    static final String BAD_RANGE = "bound must be greater than origin";
-    static final String BAD_SIZE  = "size must be non-negative";
 
     /**
      * The form of nextLong used by LongStream Spliterators.  If
@@ -1050,6 +995,32 @@ public class ThreadLocalRandom extends Random {
         return current();
     }
 
+    // Static initialization
+
+    /**
+     * The seed increment.
+     */
+    private static final long GAMMA = 0x9e3779b97f4a7c15L;
+
+    /**
+     * The increment for generating probe values.
+     */
+    private static final int PROBE_INCREMENT = 0x9e3779b9;
+
+    /**
+     * The increment of seeder per new instance.
+     */
+    private static final long SEEDER_INCREMENT = 0xbb67ae8584caa73bL;
+
+    // Constants from SplittableRandom
+    private static final double DOUBLE_UNIT = 0x1.0p-53;  // 1.0  / (1L << 53)
+    private static final float  FLOAT_UNIT  = 0x1.0p-24f; // 1.0f / (1 << 24)
+
+    // IllegalArgumentException messages
+    static final String BAD_BOUND = "bound must be positive";
+    static final String BAD_RANGE = "bound must be greater than origin";
+    static final String BAD_SIZE  = "size must be non-negative";
+
     // Unsafe mechanics
     private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
     private static final long SEED;
@@ -1065,6 +1036,38 @@ public class ThreadLocalRandom extends Random {
                 (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
+        }
+    }
+
+    /** Rarely-used holder for the second of a pair of Gaussians */
+    private static final ThreadLocal<Double> nextLocalGaussian =
+        new ThreadLocal<>();
+
+    /** Generates per-thread initialization/probe field */
+    private static final AtomicInteger probeGenerator = new AtomicInteger();
+
+    /** The common ThreadLocalRandom */
+    static final ThreadLocalRandom instance = new ThreadLocalRandom();
+
+    /**
+     * The next seed for default constructors.
+     */
+    private static final AtomicLong seeder
+        = new AtomicLong(mix64(System.currentTimeMillis()) ^
+                         mix64(System.nanoTime()));
+
+    // at end of <clinit> to survive static initialization circularity
+    static {
+        if (java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Boolean>() {
+                public Boolean run() {
+                    return Boolean.getBoolean("java.util.secureRandomSeed");
+                }})) {
+            byte[] seedBytes = java.security.SecureRandom.getSeed(8);
+            long s = (long)seedBytes[0] & 0xffL;
+            for (int i = 1; i < 8; ++i)
+                s = (s << 8) | ((long)seedBytes[i] & 0xffL);
+            seeder.set(s);
         }
     }
 }
