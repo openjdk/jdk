@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 7162400
  * @key regression
  * @summary Regression test for attach issue where stale pid files in /tmp lead to connection issues
+ * @modules jdk.attach/sun.tools.attach
  * @library /testlibrary
  * @build jdk.test.lib.* AttachWithStalePidFileTarget
  * @run main AttachWithStalePidFile
