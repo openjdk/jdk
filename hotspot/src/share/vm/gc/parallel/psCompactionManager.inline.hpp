@@ -125,13 +125,13 @@ inline void oop_pc_follow_contents_specialized(objArrayOop obj, int index, ParCo
   T* const beg = base + beg_index;
   T* const end = base + end_index;
 
+  if (end_index < len) {
+    cm->push_objarray(obj, end_index); // Push the continuation.
+  }
+
   // Push the non-NULL elements of the next stride on the marking stack.
   for (T* e = beg; e < end; e++) {
     cm->mark_and_push<T>(e);
-  }
-
-  if (end_index < len) {
-    cm->push_objarray(obj, end_index); // Push the continuation.
   }
 }
 
