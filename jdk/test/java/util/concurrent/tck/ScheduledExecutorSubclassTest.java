@@ -32,6 +32,7 @@
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
@@ -55,7 +56,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -226,52 +229,75 @@ public class ScheduledExecutorSubclassTest extends JSR166TestCase {
     }
 
     /**
-     * scheduleAtFixedRate executes series of tasks at given rate
+     * scheduleAtFixedRate executes series of tasks at given rate.
+     * Eventually, it must hold that:
+     *   cycles - 1 <= elapsedMillis/delay < cycles
      */
     public void testFixedRateSequence() throws InterruptedException {
         final CustomExecutor p = new CustomExecutor(1);
         try (PoolCleaner cleaner = cleaner(p)) {
             for (int delay = 1; delay <= LONG_DELAY_MS; delay *= 3) {
-                long startTime = System.nanoTime();
-                int cycles = 10;
+                final long startTime = System.nanoTime();
+                final int cycles = 8;
                 final CountDownLatch done = new CountDownLatch(cycles);
-                Runnable task = new CheckedRunnable() {
+                final Runnable task = new CheckedRunnable() {
                     public void realRun() { done.countDown(); }};
-                ScheduledFuture h =
+                final ScheduledFuture periodicTask =
                     p.scheduleAtFixedRate(task, 0, delay, MILLISECONDS);
-                await(done);
-                h.cancel(true);
-                double normalizedTime =
-                    (double) millisElapsedSince(startTime) / delay;
-                if (normalizedTime >= cycles - 1 &&
-                    normalizedTime <= cycles)
+                final int totalDelayMillis = (cycles - 1) * delay;
+                await(done, totalDelayMillis + LONG_DELAY_MS);
+                periodicTask.cancel(true);
+                final long elapsedMillis = millisElapsedSince(startTime);
+                assertTrue(elapsedMillis >= totalDelayMillis);
+                if (elapsedMillis <= cycles * delay)
                     return;
+                // else retry with longer delay
             }
             fail("unexpected execution rate");
         }
     }
 
     /**
-     * scheduleWithFixedDelay executes series of tasks with given period
+     * scheduleWithFixedDelay executes series of tasks with given period.
+     * Eventually, it must hold that each task starts at least delay and at
+     * most 2 * delay after the termination of the previous task.
      */
     public void testFixedDelaySequence() throws InterruptedException {
         final CustomExecutor p = new CustomExecutor(1);
         try (PoolCleaner cleaner = cleaner(p)) {
             for (int delay = 1; delay <= LONG_DELAY_MS; delay *= 3) {
-                long startTime = System.nanoTime();
-                int cycles = 10;
+                final long startTime = System.nanoTime();
+                final AtomicLong previous = new AtomicLong(startTime);
+                final AtomicBoolean tryLongerDelay = new AtomicBoolean(false);
+                final int cycles = 8;
                 final CountDownLatch done = new CountDownLatch(cycles);
-                Runnable task = new CheckedRunnable() {
-                    public void realRun() { done.countDown(); }};
-                ScheduledFuture h =
+                final int d = delay;
+                final Runnable task = new CheckedRunnable() {
+                    public void realRun() {
+                        long now = System.nanoTime();
+                        long elapsedMillis
+                            = NANOSECONDS.toMillis(now - previous.get());
+                        if (done.getCount() == cycles) { // first execution
+                            if (elapsedMillis >= d)
+                                tryLongerDelay.set(true);
+                        } else {
+                            assertTrue(elapsedMillis >= d);
+                            if (elapsedMillis >= 2 * d)
+                                tryLongerDelay.set(true);
+                        }
+                        previous.set(now);
+                        done.countDown();
+                    }};
+                final ScheduledFuture periodicTask =
                     p.scheduleWithFixedDelay(task, 0, delay, MILLISECONDS);
-                await(done);
-                h.cancel(true);
-                double normalizedTime =
-                    (double) millisElapsedSince(startTime) / delay;
-                if (normalizedTime >= cycles - 1 &&
-                    normalizedTime <= cycles)
+                final int totalDelayMillis = (cycles - 1) * delay;
+                await(done, totalDelayMillis + cycles * LONG_DELAY_MS);
+                periodicTask.cancel(true);
+                final long elapsedMillis = millisElapsedSince(startTime);
+                assertTrue(elapsedMillis >= totalDelayMillis);
+                if (!tryLongerDelay.get())
                     return;
+                // else retry with longer delay
             }
             fail("unexpected execution rate");
         }
