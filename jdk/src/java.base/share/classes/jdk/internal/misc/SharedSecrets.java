@@ -118,6 +118,8 @@ public class SharedSecrets {
     }
 
     public static JavaNetInetAddressAccess getJavaNetInetAddressAccess() {
+        if (javaNetInetAddressAccess == null)
+            unsafe.ensureClassInitialized(java.net.InetAddress.class);
         return javaNetInetAddressAccess;
     }
 
