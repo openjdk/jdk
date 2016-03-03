@@ -70,7 +70,7 @@ G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() :
 void G1YoungRemSetSamplingThread::sleep_before_next_cycle() {
   MutexLockerEx x(&_monitor, Mutex::_no_safepoint_check_flag);
   if (!_should_terminate) {
-    intx waitms = G1ConcRefinementServiceIntervalMillis; // 300, really should be?
+    uintx waitms = G1ConcRefinementServiceIntervalMillis; // 300, really should be?
     _monitor.wait(Mutex::_no_safepoint_check_flag, waitms);
   }
 }
