@@ -234,6 +234,16 @@ public class LoopCombinatorTest {
     }
 
     @Test
+    public static void testDoWhileNullInit() throws Throwable {
+        While w = new While();
+        int v = 5;
+        MethodHandle loop = MethodHandles.doWhileLoop(null, While.MH_voidBody.bindTo(w), While.MH_voidPred.bindTo(w));
+        assertEquals(While.MT_void, loop.type());
+        loop.invoke(v);
+        assertEquals(v, w.i);
+    }
+
+    @Test
     public static void testWhileZip() throws Throwable {
         MethodHandle loop = MethodHandles.doWhileLoop(While.MH_zipInitZip, While.MH_zipStep, While.MH_zipPred);
         assertEquals(While.MT_zip, loop.type());
@@ -241,6 +251,16 @@ public class LoopCombinatorTest {
         List<String> b = Arrays.asList("e", "f", "g", "h");
         List<String> zipped = Arrays.asList("a", "e", "b", "f", "c", "g", "d", "h");
         assertEquals(zipped, (List<String>) loop.invoke(a.iterator(), b.iterator()));
+    }
+
+    @Test
+    public static void testWhileNullInit() throws Throwable {
+        While w = new While();
+        int v = 5;
+        MethodHandle loop = MethodHandles.whileLoop(null, While.MH_voidPred.bindTo(w), While.MH_voidBody.bindTo(w));
+        assertEquals(While.MT_void, loop.type());
+        loop.invoke(v);
+        assertEquals(v, w.i);
     }
 
     @Test
@@ -568,6 +588,16 @@ public class LoopCombinatorTest {
             return zip;
         }
 
+        private int i = 0;
+
+        void voidBody(int k) {
+            ++i;
+        }
+
+        boolean voidPred(int k) {
+            return i < k;
+        }
+
         static final Class<While> WHILE = While.class;
 
         static final MethodType MT_zero = methodType(int.class, int.class);
@@ -579,6 +609,8 @@ public class LoopCombinatorTest {
         static final MethodType MT_zipInitZip = methodType(List.class, Iterator.class, Iterator.class);
         static final MethodType MT_zipPred = methodType(boolean.class, List.class, Iterator.class, Iterator.class);
         static final MethodType MT_zipStep = methodType(List.class, List.class, Iterator.class, Iterator.class);
+        static final MethodType MT_voidBody = methodType(void.class, int.class);
+        static final MethodType MT_voidPred = methodType(boolean.class, int.class);
 
         static final MethodHandle MH_zero;
         static final MethodHandle MH_pred;
@@ -589,10 +621,13 @@ public class LoopCombinatorTest {
         static final MethodHandle MH_zipInitZip;
         static final MethodHandle MH_zipPred;
         static final MethodHandle MH_zipStep;
+        static final MethodHandle MH_voidBody;
+        static final MethodHandle MH_voidPred;
 
         static final MethodType MT_while = methodType(int.class, int.class);
         static final MethodType MT_string = methodType(String.class);
         static final MethodType MT_zip = methodType(List.class, Iterator.class, Iterator.class);
+        static final MethodType MT_void = methodType(void.class, int.class);
 
         static {
             try {
@@ -605,6 +640,8 @@ public class LoopCombinatorTest {
                 MH_zipInitZip = LOOKUP.findStatic(WHILE, "zipInitZip", MT_zipInitZip);
                 MH_zipPred = LOOKUP.findStatic(WHILE, "zipPred", MT_zipPred);
                 MH_zipStep = LOOKUP.findStatic(WHILE, "zipStep", MT_zipStep);
+                MH_voidBody = LOOKUP.findVirtual(WHILE, "voidBody", MT_voidBody);
+                MH_voidPred = LOOKUP.findVirtual(WHILE, "voidPred", MT_voidPred);
             } catch (Exception e) {
                 throw new ExceptionInInitializerError(e);
             }
