@@ -1433,9 +1433,6 @@ public:
   product(bool, VerifyMergedCPBytecodes, true,                              \
           "Verify bytecodes after RedefineClasses constant pool merging")   \
                                                                             \
-  develop(bool, TraceJNIHandleAllocation, false,                            \
-          "Trace allocation/deallocation of JNI handle blocks")             \
-                                                                            \
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
                                                                             \
