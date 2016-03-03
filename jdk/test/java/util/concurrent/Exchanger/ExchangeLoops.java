@@ -34,18 +34,20 @@
 /*
  * @test
  * @bug 4486658
- * @run main/timeout=720 ExchangeLoops
  * @summary checks to make sure a pipeline of exchangers passes data.
+ * @library /lib/testlibrary/
  */
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import jdk.testlibrary.Utils;
 
 public class ExchangeLoops {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static final ExecutorService pool = Executors.newCachedThreadPool();
     static boolean print = false;
 
@@ -56,14 +58,14 @@ public class ExchangeLoops {
 
     public static void main(String[] args) throws Exception {
         int maxStages = 5;
-        int iters = 10000;
+        int iters = 2000;
 
         if (args.length > 0)
             maxStages = Integer.parseInt(args[0]);
 
         print = false;
         System.out.println("Warmup...");
-        oneRun(2, 100000);
+        oneRun(2, iters);
         print = true;
 
         for (int i = 2; i <= maxStages; i += (i+1) >>> 1) {
@@ -71,7 +73,7 @@ public class ExchangeLoops {
             oneRun(i, iters);
         }
         pool.shutdown();
-        if (! pool.awaitTermination(60L, SECONDS))
+        if (! pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
             throw new Error();
    }
 
