@@ -3464,12 +3464,6 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
   }
 #endif
 
-#if !defined(COMPILER2) && !INCLUDE_JVMCI
-  UNSUPPORTED_OPTION(ProfileInterpreter, "ProfileInterpreter");
-  NOT_PRODUCT(UNSUPPORTED_OPTION(TraceProfileInterpreter, "TraceProfileInterpreter"));
-  UNSUPPORTED_OPTION(PrintMethodData, "PrintMethodData");
-#endif
-
 #ifndef TIERED
   // Tiered compilation is undefined.
   UNSUPPORTED_OPTION(TieredCompilation, "TieredCompilation");

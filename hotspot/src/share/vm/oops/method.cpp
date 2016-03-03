@@ -383,15 +383,14 @@ void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
   MutexLocker ml(MethodData_lock, THREAD);
   if (method->method_data() == NULL) {
     ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-#if defined(COMPILER2) || INCLUDE_JVMCI
     MethodData* method_data = MethodData::allocate(loader_data, method, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CompileBroker::log_metaspace_failure();
       ClassLoaderDataGraph::set_metaspace_oom(true);
       return;   // return the exception (which is cleared)
     }
+
     method->set_method_data(method_data);
-#endif
     if (PrintMethodData && (Verbose || WizardMode)) {
       ResourceMark rm(THREAD);
       tty->print("build_interpreter_method_data for ");
@@ -921,7 +920,7 @@ void Method::unlink_method() {
   // shared class that failed to load, this->link_method() may
   // have already been called (before an exception happened), so
   // this->_method_data may not be NULL.
-  assert(!DumpSharedSpaces || method_data() == NULL, "unexpected method data?");
+  assert(!DumpSharedSpaces || _method_data == NULL, "unexpected method data?");
 
   set_method_data(NULL);
   clear_method_counters();
