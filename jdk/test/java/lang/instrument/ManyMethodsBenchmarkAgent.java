@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,8 @@
  * @summary Tests and benchmarks the JVMTI RedefineClasses when a
  *          single class (and its parent) contains many methods.
  *
- * @modules java.compiler
+ * @modules jdk.compiler
  *          java.instrument
- *          jdk.compiler
  * @run build ManyMethodsBenchmarkApp ManyMethodsBenchmarkAgent
  * @run shell MakeJAR3.sh ManyMethodsBenchmarkAgent 'Can-Retransform-Classes: true'
  * @run main/othervm -javaagent:ManyMethodsBenchmarkAgent.jar ManyMethodsBenchmarkApp
