@@ -38,7 +38,6 @@ import sun.hotspot.WhiteBox;
  * Expects the following properties to be set:
  * - iterations - amount of iteration per cycle.
  * - chunk.size - size of objects to be allocated
- * - threads - number of gc threads (-XX:ParallelGCThreads) to calculate PLAB sizes.
  */
 final public class AppPLABResize {
 
@@ -47,7 +46,6 @@ final public class AppPLABResize {
     // Defined by properties.
     private static final int ITERATIONS = Integer.getInteger("iterations");
     private static final long CHUNK = Long.getLong("chunk.size");
-    private static final int GC_THREADS = Integer.getInteger("threads");
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
@@ -59,13 +57,13 @@ final public class AppPLABResize {
      */
     public static void main(String[] args) {
 
-        if (ITERATIONS == 0 || CHUNK == 0 || GC_THREADS == 0) {
+        if (ITERATIONS == 0 || CHUNK == 0) {
             throw new IllegalArgumentException("Properties should be set");
         }
 
         long wordSize = Platform.is32bit() ? 4l : 8l;
         // PLAB size is shared between threads.
-        long initialMemorySize = wordSize * GC_THREADS * MEM_ALLOC_WORDS;
+        long initialMemorySize = wordSize * MEM_ALLOC_WORDS;
 
         // Expect changing memory to half during all iterations.
         long memChangeStep = initialMemorySize / 2 / ITERATIONS;

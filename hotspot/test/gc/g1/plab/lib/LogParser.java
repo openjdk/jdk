@@ -57,7 +57,8 @@ final public class LogParser {
 
     private final String log;
 
-    private final Map<Long, Map<ReportType, Map<String,Long>>> reportHolder;
+    // Contains Map of PLAB statistics for given log.
+    private final Map<Long, Map<ReportType, Map<String, Long>>> report;
 
     // GC ID
     private static final Pattern GC_ID_PATTERN = Pattern.compile("\\[gc,plab\\s*\\] GC\\((\\d+)\\)");
@@ -65,7 +66,7 @@ final public class LogParser {
     private static final Pattern PAIRS_PATTERN = Pattern.compile("\\w* \\w+:\\s+\\d+");
 
     /**
-     * Construct LogParser Object
+     * Construct LogParser object, parse log file with PLAB statistics and store it into report.
      *
      * @param log - VM Output
      */
@@ -74,43 +75,44 @@ final public class LogParser {
             throw new IllegalArgumentException("Parameter log should not be null.");
         }
         this.log = log;
-        reportHolder = parseLines();
+        report = parseLines();
     }
 
     /**
-     * @return log which is being processed
+     * @return log which was processed
      */
     public String getLog() {
         return log;
     }
 
     /**
-     * Returns list of log entries.
+     * Returns the GC log entries for Survivor and Old stats.
+     * The entries are represented as a map of gcID to the StatMap.
      *
-     * @return list of Pair with ReportType and Map of parameters/values.
+     * @return The log entries for the Survivor and Old stats.
      */
-    public Map<Long,Map<ReportType, Map<String,Long>>> getEntries() {
-        return reportHolder;
+    public Map<Long, Map<ReportType, Map<String, Long>>> getEntries() {
+        return report;
     }
 
-    private Map<Long,Map<ReportType, Map<String,Long>>> parseLines() throws NumberFormatException {
+    private Map<Long, Map<ReportType, Map<String, Long>>> parseLines() throws NumberFormatException {
         Scanner lineScanner = new Scanner(log);
-        Map<Long,Map<ReportType, Map<String,Long>>> allocationStatistics = new HashMap<>();
+        Map<Long, Map<ReportType, Map<String, Long>>> allocationStatistics = new HashMap<>();
         Optional<Long> gc_id;
         while (lineScanner.hasNextLine()) {
             String line = lineScanner.nextLine();
             gc_id = getGcId(line);
-            if ( gc_id.isPresent() ) {
+            if (gc_id.isPresent()) {
                 Matcher matcher = PAIRS_PATTERN.matcher(line);
                 if (matcher.find()) {
-                    Map<ReportType,Map<String, Long>> oneReportItem;
+                    Map<ReportType, Map<String, Long>> oneReportItem;
                     ReportType reportType;
 
                     if (!allocationStatistics.containsKey(gc_id.get())) {
-                      allocationStatistics.put(gc_id.get(), new EnumMap<>(ReportType.class));
+                        allocationStatistics.put(gc_id.get(), new EnumMap<>(ReportType.class));
                     }
 
-                    if ( line.contains("Young") ) {
+                    if (line.contains("Young")) {
                         reportType = ReportType.SURVIVOR_STATS;
                     } else {
                         reportType = ReportType.OLD_STATS;
@@ -118,7 +120,7 @@ final public class LogParser {
 
                     oneReportItem = allocationStatistics.get(gc_id.get());
                     if (!oneReportItem.containsKey(reportType)) {
-                      oneReportItem.put(reportType,new HashMap<String, Long>());
+                        oneReportItem.put(reportType, new HashMap<>());
                     }
 
                     // Extract all pairs from log.
