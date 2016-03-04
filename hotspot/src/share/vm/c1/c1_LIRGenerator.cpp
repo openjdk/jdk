@@ -1293,6 +1293,25 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
   __ move_wide(new LIR_Address(temp, in_bytes(Klass::java_mirror_offset()), T_OBJECT), result);
 }
 
+// java.lang.Class::isPrimitive()
+void LIRGenerator::do_isPrimitive(Intrinsic* x) {
+  assert(x->number_of_arguments() == 1, "wrong type");
+
+  LIRItem rcvr(x->argument_at(0), this);
+  rcvr.load_item();
+  LIR_Opr temp = new_register(T_METADATA);
+  LIR_Opr result = rlock_result(x);
+
+  CodeEmitInfo* info = NULL;
+  if (x->needs_null_check()) {
+    info = state_for(x);
+  }
+
+  __ move(new LIR_Address(rcvr.result(), java_lang_Class::klass_offset_in_bytes(), T_ADDRESS), temp, info);
+  __ cmp(lir_cond_notEqual, temp, LIR_OprFact::intConst(0));
+  __ cmove(lir_cond_notEqual, LIR_OprFact::intConst(0), LIR_OprFact::intConst(1), result, T_BOOLEAN);
+}
+
 
 // Example: Thread.currentThread()
 void LIRGenerator::do_currentThread(Intrinsic* x) {
@@ -3132,6 +3151,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_Object_init:    do_RegisterFinalizer(x); break;
   case vmIntrinsics::_isInstance:     do_isInstance(x);    break;
+  case vmIntrinsics::_isPrimitive:    do_isPrimitive(x);   break;
   case vmIntrinsics::_getClass:       do_getClass(x);      break;
   case vmIntrinsics::_currentThread:  do_currentThread(x); break;
 

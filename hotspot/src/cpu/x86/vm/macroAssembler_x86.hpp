@@ -48,7 +48,6 @@ class MacroAssembler: public Assembler {
   // This is the base routine called by the different versions of call_VM_leaf. The interpreter
   // may customize this version by overriding it for its purposes (e.g., to save/restore
   // additional registers when doing a VM call).
-#define COMMA ,
 
   virtual void call_VM_leaf_base(
     address entry_point,               // the entry point
@@ -903,35 +902,66 @@ class MacroAssembler: public Assembler {
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src);
 
+  void fast_sha1(XMMRegister abcd, XMMRegister e0, XMMRegister e1, XMMRegister msg0,
+                 XMMRegister msg1, XMMRegister msg2, XMMRegister msg3, XMMRegister shuf_mask,
+                 Register buf, Register state, Register ofs, Register limit, Register rsp,
+                 bool multi_block);
+
+#ifdef _LP64
+  void fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
+                   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
+                   Register buf, Register state, Register ofs, Register limit, Register rsp,
+                   bool multi_block, XMMRegister shuf_mask);
+#else
+  void fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
+                   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
+                   Register buf, Register state, Register ofs, Register limit, Register rsp,
+                   bool multi_block);
+#endif
+
   void fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp);
 
+#ifdef _LP64
   void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rcx, Register rdx, Register tmp1 LP64_ONLY(COMMA Register tmp2));
+                Register rax, Register rcx, Register rdx, Register tmp1, Register tmp2);
 
   void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
                 XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
-                Register rdx NOT_LP64(COMMA  Register tmp) LP64_ONLY(COMMA  Register tmp1)
-                LP64_ONLY(COMMA  Register tmp2) LP64_ONLY(COMMA  Register tmp3) LP64_ONLY(COMMA  Register tmp4));
+                Register rdx, Register tmp1, Register tmp2, Register tmp3, Register tmp4);
 
   void fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rbx LP64_ONLY(COMMA  Register rcx), Register rdx
-                LP64_ONLY(COMMA Register tmp1) LP64_ONLY(COMMA Register tmp2)
-                LP64_ONLY(COMMA Register tmp3) LP64_ONLY(COMMA Register tmp4));
+                Register rax, Register rbx, Register rcx, Register rdx, Register tmp1, Register tmp2,
+                Register tmp3, Register tmp4);
 
   void fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rcx, Register rdx NOT_LP64(COMMA Register tmp)
-                LP64_ONLY(COMMA Register r8) LP64_ONLY(COMMA Register r9)
-                LP64_ONLY(COMMA Register r10) LP64_ONLY(COMMA Register r11));
+                Register rax, Register rcx, Register rdx, Register tmp1,
+                Register tmp2, Register tmp3, Register tmp4);
+#else
+  void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp1);
 
-#ifndef _LP64
+  void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
+                XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
+                Register rdx, Register tmp);
+
+  void fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rbx, Register rdx);
+
+  void fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp);
+
   void libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Register eax, Register ecx,
                         Register edx, Register ebx, Register esi, Register edi,
                         Register ebp, Register esp);
+
   void libm_reduce_pi04l(Register eax, Register ecx, Register edx, Register ebx,
                          Register esi, Register edi, Register ebp, Register esp);
 #endif
@@ -1284,8 +1314,9 @@ public:
   // C2 compiled method's prolog code.
   void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b);
 
-  // clear memory of size 'cnt' qwords, starting at 'base'.
-  void clear_mem(Register base, Register cnt, Register rtmp);
+  // clear memory of size 'cnt' qwords, starting at 'base';
+  // if 'is_large' is set, do not try to produce short loop
+  void clear_mem(Register base, Register cnt, Register rtmp, bool is_large);
 
 #ifdef COMPILER2
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,
