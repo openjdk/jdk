@@ -3068,6 +3068,136 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_upper_word_mask() {
+    __ align(64);
+    StubCodeMark mark(this, "StubRoutines", "upper_word_mask");
+    address start = __ pc();
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0x00000000, relocInfo::none, 0);
+    __ emit_data(0xFFFFFFFF, relocInfo::none, 0);
+    return start;
+  }
+
+  address generate_shuffle_byte_flip_mask() {
+    __ align(64);
+    StubCodeMark mark(this, "StubRoutines", "shuffle_byte_flip_mask");
+    address start = __ pc();
+    __ emit_data(0x0c0d0e0f, relocInfo::none, 0);
+    __ emit_data(0x08090a0b, relocInfo::none, 0);
+    __ emit_data(0x04050607, relocInfo::none, 0);
+    __ emit_data(0x00010203, relocInfo::none, 0);
+    return start;
+  }
+
+  // ofs and limit are use for multi-block byte array.
+  // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
+  address generate_sha1_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf   = rax;
+    Register state = rdx;
+    Register ofs   = rcx;
+    Register limit = rdi;
+
+    const Address  buf_param(rbp, 8 + 0);
+    const Address  state_param(rbp, 8 + 4);
+    const Address  ofs_param(rbp, 8 + 8);
+    const Address  limit_param(rbp, 8 + 12);
+
+    const XMMRegister abcd = xmm0;
+    const XMMRegister e0 = xmm1;
+    const XMMRegister e1 = xmm2;
+    const XMMRegister msg0 = xmm3;
+
+    const XMMRegister msg1 = xmm4;
+    const XMMRegister msg2 = xmm5;
+    const XMMRegister msg3 = xmm6;
+    const XMMRegister shuf_mask = xmm7;
+
+    __ enter();
+    __ subptr(rsp, 8 * wordSize);
+    if (multi_block) {
+      __ push(limit);
+    }
+    __ movptr(buf, buf_param);
+    __ movptr(state, state_param);
+    if (multi_block) {
+      __ movptr(ofs, ofs_param);
+      __ movptr(limit, limit_param);
+    }
+
+    __ fast_sha1(abcd, e0, e1, msg0, msg1, msg2, msg3, shuf_mask,
+      buf, state, ofs, limit, rsp, multi_block);
+
+    if (multi_block) {
+      __ pop(limit);
+    }
+    __ addptr(rsp, 8 * wordSize);
+    __ leave();
+    __ ret(0);
+    return start;
+  }
+
+  address generate_pshuffle_byte_flip_mask() {
+    __ align(64);
+    StubCodeMark mark(this, "StubRoutines", "pshuffle_byte_flip_mask");
+    address start = __ pc();
+    __ emit_data(0x00010203, relocInfo::none, 0);
+    __ emit_data(0x04050607, relocInfo::none, 0);
+    __ emit_data(0x08090a0b, relocInfo::none, 0);
+    __ emit_data(0x0c0d0e0f, relocInfo::none, 0);
+    return start;
+  }
+
+  // ofs and limit are use for multi-block byte array.
+  // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
+ address generate_sha256_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf = rbx;
+    Register state = rsi;
+    Register ofs = rdx;
+    Register limit = rcx;
+
+    const Address  buf_param(rbp, 8 + 0);
+    const Address  state_param(rbp, 8 + 4);
+    const Address  ofs_param(rbp, 8 + 8);
+    const Address  limit_param(rbp, 8 + 12);
+
+    const XMMRegister msg = xmm0;
+    const XMMRegister state0 = xmm1;
+    const XMMRegister state1 = xmm2;
+    const XMMRegister msgtmp0 = xmm3;
+
+    const XMMRegister msgtmp1 = xmm4;
+    const XMMRegister msgtmp2 = xmm5;
+    const XMMRegister msgtmp3 = xmm6;
+    const XMMRegister msgtmp4 = xmm7;
+
+    __ enter();
+    __ subptr(rsp, 8 * wordSize);
+    handleSOERegisters(true /*saving*/);
+    __ movptr(buf, buf_param);
+    __ movptr(state, state_param);
+    if (multi_block) {
+     __ movptr(ofs, ofs_param);
+     __ movptr(limit, limit_param);
+    }
+
+    __ fast_sha256(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
+      buf, state, ofs, limit, rsp, multi_block);
+
+    handleSOERegisters(false);
+    __ addptr(rsp, 8 * wordSize);
+    __ leave();
+    __ ret(0);
+    return start;
+  }
 
   // byte swap x86 long
   address generate_ghash_long_swap_mask() {
@@ -3770,6 +3900,19 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAESCTRIntrinsics) {
       StubRoutines::x86::_counter_shuffle_mask_addr = generate_counter_shuffle_mask();
       StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt_Parallel();
+    }
+
+    if (UseSHA1Intrinsics) {
+      StubRoutines::x86::_upper_word_mask_addr = generate_upper_word_mask();
+      StubRoutines::x86::_shuffle_byte_flip_mask_addr = generate_shuffle_byte_flip_mask();
+      StubRoutines::_sha1_implCompress = generate_sha1_implCompress(false, "sha1_implCompress");
+      StubRoutines::_sha1_implCompressMB = generate_sha1_implCompress(true, "sha1_implCompressMB");
+    }
+    if (UseSHA256Intrinsics) {
+      StubRoutines::x86::_k256_adr = (address)StubRoutines::x86::_k256;
+      StubRoutines::x86::_pshuffle_byte_flip_mask_addr = generate_pshuffle_byte_flip_mask();
+      StubRoutines::_sha256_implCompress = generate_sha256_implCompress(false, "sha256_implCompress");
+      StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(true, "sha256_implCompressMB");
     }
 
     // Generate GHASH intrinsics code

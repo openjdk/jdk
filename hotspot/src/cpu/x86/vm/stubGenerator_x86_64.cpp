@@ -3695,6 +3695,133 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_upper_word_mask() {
+    __ align(64);
+    StubCodeMark mark(this, "StubRoutines", "upper_word_mask");
+    address start = __ pc();
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0xFFFFFFFF00000000, relocInfo::none);
+    return start;
+  }
+
+  address generate_shuffle_byte_flip_mask() {
+    __ align(64);
+    StubCodeMark mark(this, "StubRoutines", "shuffle_byte_flip_mask");
+    address start = __ pc();
+    __ emit_data64(0x08090a0b0c0d0e0f, relocInfo::none);
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    return start;
+  }
+
+  // ofs and limit are use for multi-block byte array.
+  // int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
+  address generate_sha1_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf = c_rarg0;
+    Register state = c_rarg1;
+    Register ofs = c_rarg2;
+    Register limit = c_rarg3;
+
+    const XMMRegister abcd = xmm0;
+    const XMMRegister e0 = xmm1;
+    const XMMRegister e1 = xmm2;
+    const XMMRegister msg0 = xmm3;
+
+    const XMMRegister msg1 = xmm4;
+    const XMMRegister msg2 = xmm5;
+    const XMMRegister msg3 = xmm6;
+    const XMMRegister shuf_mask = xmm7;
+
+    __ enter();
+
+#ifdef _WIN64
+    // save the xmm registers which must be preserved 6-7
+    __ subptr(rsp, 4 * wordSize);
+    __ movdqu(Address(rsp, 0), xmm6);
+    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
+#endif
+
+    __ subptr(rsp, 4 * wordSize);
+
+    __ fast_sha1(abcd, e0, e1, msg0, msg1, msg2, msg3, shuf_mask,
+      buf, state, ofs, limit, rsp, multi_block);
+
+    __ addptr(rsp, 4 * wordSize);
+#ifdef _WIN64
+    // restore xmm regs belonging to calling function
+    __ movdqu(xmm6, Address(rsp, 0));
+    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
+    __ addptr(rsp, 4 * wordSize);
+#endif
+
+    __ leave();
+    __ ret(0);
+    return start;
+  }
+
+  address generate_pshuffle_byte_flip_mask() {
+    __ align(64);
+    StubCodeMark mark(this, "StubRoutines", "pshuffle_byte_flip_mask");
+    address start = __ pc();
+    __ emit_data64(0x0405060700010203, relocInfo::none);
+    __ emit_data64(0x0c0d0e0f08090a0b, relocInfo::none);
+    return start;
+  }
+
+// ofs and limit are use for multi-block byte array.
+// int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
+  address generate_sha256_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf = c_rarg0;
+    Register state = c_rarg1;
+    Register ofs = c_rarg2;
+    Register limit = c_rarg3;
+
+    const XMMRegister msg = xmm0;
+    const XMMRegister state0 = xmm1;
+    const XMMRegister state1 = xmm2;
+    const XMMRegister msgtmp0 = xmm3;
+
+    const XMMRegister msgtmp1 = xmm4;
+    const XMMRegister msgtmp2 = xmm5;
+    const XMMRegister msgtmp3 = xmm6;
+    const XMMRegister msgtmp4 = xmm7;
+
+    const XMMRegister shuf_mask = xmm8;
+
+    __ enter();
+#ifdef _WIN64
+    // save the xmm registers which must be preserved 6-7
+    __ subptr(rsp, 6 * wordSize);
+    __ movdqu(Address(rsp, 0), xmm6);
+    __ movdqu(Address(rsp, 2 * wordSize), xmm7);
+    __ movdqu(Address(rsp, 4 * wordSize), xmm8);
+#endif
+
+    __ subptr(rsp, 4 * wordSize);
+
+    __ fast_sha256(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
+      buf, state, ofs, limit, rsp, multi_block, shuf_mask);
+
+    __ addptr(rsp, 4 * wordSize);
+#ifdef _WIN64
+    // restore xmm regs belonging to calling function
+    __ movdqu(xmm6, Address(rsp, 0));
+    __ movdqu(xmm7, Address(rsp, 2 * wordSize));
+    __ movdqu(xmm8, Address(rsp, 4 * wordSize));
+    __ addptr(rsp, 6 * wordSize);
+#endif
+    __ leave();
+    __ ret(0);
+    return start;
+  }
+
   // This is a version of CTR/AES crypt which does 6 blocks in a loop at a time
   // to hide instruction latency
   //
@@ -4972,6 +5099,19 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAESCTRIntrinsics){
       StubRoutines::x86::_counter_shuffle_mask_addr = generate_counter_shuffle_mask();
       StubRoutines::_counterMode_AESCrypt = generate_counterMode_AESCrypt_Parallel();
+    }
+
+    if (UseSHA1Intrinsics) {
+      StubRoutines::x86::_upper_word_mask_addr = generate_upper_word_mask();
+      StubRoutines::x86::_shuffle_byte_flip_mask_addr = generate_shuffle_byte_flip_mask();
+      StubRoutines::_sha1_implCompress = generate_sha1_implCompress(false, "sha1_implCompress");
+      StubRoutines::_sha1_implCompressMB = generate_sha1_implCompress(true, "sha1_implCompressMB");
+    }
+    if (UseSHA256Intrinsics) {
+      StubRoutines::x86::_k256_adr = (address)StubRoutines::x86::_k256;
+      StubRoutines::x86::_pshuffle_byte_flip_mask_addr = generate_pshuffle_byte_flip_mask();
+      StubRoutines::_sha256_implCompress = generate_sha256_implCompress(false, "sha256_implCompress");
+      StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(true, "sha256_implCompressMB");
     }
 
     // Generate GHASH intrinsics code
