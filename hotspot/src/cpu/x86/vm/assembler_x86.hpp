@@ -1672,6 +1672,18 @@ private:
 
   void setb(Condition cc, Register dst);
 
+  void palignr(XMMRegister dst, XMMRegister src, int imm8);
+  void pblendw(XMMRegister dst, XMMRegister src, int imm8);
+
+  void sha1rnds4(XMMRegister dst, XMMRegister src, int imm8);
+  void sha1nexte(XMMRegister dst, XMMRegister src);
+  void sha1msg1(XMMRegister dst, XMMRegister src);
+  void sha1msg2(XMMRegister dst, XMMRegister src);
+  // xmm0 is implicit additional source to the following instruction.
+  void sha256rnds2(XMMRegister dst, XMMRegister src);
+  void sha256msg1(XMMRegister dst, XMMRegister src);
+  void sha256msg2(XMMRegister dst, XMMRegister src);
+
   void shldl(Register dst, Register src);
   void shldl(Register dst, Register src, int8_t imm8);
 
@@ -1868,6 +1880,7 @@ private:
   void paddb(XMMRegister dst, XMMRegister src);
   void paddw(XMMRegister dst, XMMRegister src);
   void paddd(XMMRegister dst, XMMRegister src);
+  void paddd(XMMRegister dst, Address src);
   void paddq(XMMRegister dst, XMMRegister src);
   void vpaddb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);

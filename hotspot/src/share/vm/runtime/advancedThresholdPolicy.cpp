@@ -42,17 +42,30 @@ void AdvancedThresholdPolicy::print_specific(EventType type, methodHandle mh, me
 }
 
 void AdvancedThresholdPolicy::initialize() {
+  int count = CICompilerCount;
+#ifdef _LP64
   // Turn on ergonomic compiler count selection
   if (FLAG_IS_DEFAULT(CICompilerCountPerCPU) && FLAG_IS_DEFAULT(CICompilerCount)) {
     FLAG_SET_DEFAULT(CICompilerCountPerCPU, true);
   }
-  int count = CICompilerCount;
   if (CICompilerCountPerCPU) {
     // Simple log n seems to grow too slowly for tiered, try something faster: log n * log log n
     int log_cpu = log2_intptr(os::active_processor_count());
     int loglog_cpu = log2_intptr(MAX2(log_cpu, 1));
     count = MAX2(log_cpu * loglog_cpu, 1) * 3 / 2;
   }
+#else
+  // On 32-bit systems, the number of compiler threads is limited to 3.
+  // On these systems, the virtual address space available to the JVM
+  // is usually limited to 2-4 GB (the exact value depends on the platform).
+  // As the compilers (especially C2) can consume a large amount of
+  // memory, scaling the number of compiler threads with the number of
+  // available cores can result in the exhaustion of the address space
+  /// available to the VM and thus cause the VM to crash.
+  if (FLAG_IS_DEFAULT(CICompilerCount)) {
+    count = 3;
+  }
+#endif
 
   set_c1_count(MAX2(count / 3, 1));
   set_c2_count(MAX2(count - c1_count(), 1));

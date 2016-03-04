@@ -3425,9 +3425,6 @@ const bool Matcher::misaligned_vectors_ok() {
 // false => size gets scaled to BytesPerLong, ok.
 const bool Matcher::init_array_count_is_in_bytes = false;
 
-// Threshold size for cleararray.
-const int Matcher::init_array_short_size = 18 * BytesPerLong;
-
 // Use conditional move (CMOVL)
 const int Matcher::long_cmove_cost() {
   // long cmoves are no more expensive than int cmoves
