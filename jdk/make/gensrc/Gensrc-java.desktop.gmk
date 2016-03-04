@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,9 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   PROP_SRC_DIRS += $(JDK_TOPDIR)/src/java.desktop/windows/classes/sun/awt/windows
-else
+endif
+
+ifeq ($(filter $(OPENJDK_TARGET_OS), windows macosx), )
   PROP_SRC_DIRS += $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/gtk/resources
 endif
 
