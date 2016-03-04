@@ -3092,16 +3092,16 @@ public:
   develop(intx, MethodHistogramCutoff, 100,                                 \
           "The cutoff value for method invocation histogram (+CountCalls)") \
                                                                             \
-  develop(intx, ProfilerNumberOfInterpretedMethods, 25,                     \
+  diagnostic(intx, ProfilerNumberOfInterpretedMethods, 25,                  \
           "Number of interpreted methods to show in profile")               \
                                                                             \
-  develop(intx, ProfilerNumberOfCompiledMethods, 25,                        \
+  diagnostic(intx, ProfilerNumberOfCompiledMethods, 25,                     \
           "Number of compiled methods to show in profile")                  \
                                                                             \
-  develop(intx, ProfilerNumberOfStubMethods, 25,                            \
+  diagnostic(intx, ProfilerNumberOfStubMethods, 25,                         \
           "Number of stub methods to show in profile")                      \
                                                                             \
-  develop(intx, ProfilerNumberOfRuntimeStubNodes, 25,                       \
+  diagnostic(intx, ProfilerNumberOfRuntimeStubNodes, 25,                    \
           "Number of runtime stub nodes to show in profile")                \
                                                                             \
   product(intx, ProfileIntervalsTicks, 100,                                 \
