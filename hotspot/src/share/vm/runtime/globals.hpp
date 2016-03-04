@@ -725,7 +725,7 @@ public:
                                                                             \
   product(bool, UseSHA, false,                                              \
           "Control whether SHA instructions can be used "                   \
-          "on SPARC and on ARM")                                            \
+          "on SPARC, on ARM and on x86")                                    \
                                                                             \
   product(bool, UseGHASHIntrinsics, false,                                  \
           "Use intrinsics for GHASH versions of crypto")                    \
