@@ -239,6 +239,7 @@
       <to>java.xml</to>
       <to>jdk.charsets</to>
       <to>jdk.management.resource</to>
+      <to>jdk.jfr</to>
       <to>jdk.net</to>
       <to>jdk.scripting.nashorn</to>
       <to>jdk.vm.ci</to>
@@ -248,6 +249,22 @@
       <to>java.desktop</to>
       <to>java.management</to>
       <to>jdk.jvmstat</to>
+    </export>
+    <export>
+      <name>jdk.internal.org.xml.sax</name>
+      <to>jdk.jfr</to>
+    </export>
+    <export>
+      <name>jdk.internal.org.xml.sax.helpers</name>
+      <to>jdk.jfr</to>
+    </export>
+    <export>
+      <name>jdk.internal.util.xml</name>
+      <to>jdk.jfr</to>
+    </export>
+    <export>
+      <name>jdk.internal.util.xml.impl</name>
+      <to>jdk.jfr</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm</name>
@@ -314,6 +331,7 @@
       <to>jdk.vm.ci</to>
       <to>jdk.zipfs</to>
       <to>java.instrument</to>
+      <to>jdk.jfr</to>
     </export>
     <export>
       <name>sun.net</name>
@@ -914,6 +932,7 @@
       <name>sun.management.spi</name>
       <to>jdk.management</to>
       <to>jdk.management.cmm</to>
+      <to>jdk.management.jfr</to>
     </export>
   </module>
   <module>
