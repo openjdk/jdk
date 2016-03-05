@@ -196,8 +196,12 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         div.addStyle(HtmlStyle.header);
         PackageElement pkg = utils.containingPackage(typeElement);
         if (!pkg.isUnnamed()) {
-            Content pkgNameContent = new StringContent(utils.getPackageName(pkg));
-            Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, pkgNameContent);
+            Content classPackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInClass, packageLabel);
+            Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classPackageLabel);
+            pkgNameDiv.addContent(getSpace());
+            Content pkgNameContent = getPackageLink(pkg,
+                    new StringContent(pkg.getQualifiedName().toString()));
+            pkgNameDiv.addContent(pkgNameContent);
             div.addContent(pkgNameDiv);
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,
