@@ -1638,6 +1638,7 @@ Address MacroAssembler::form_address(Register Rd, Register base, long byte_offse
 
 void MacroAssembler::atomic_incw(Register counter_addr, Register tmp, Register tmp2) {
   Label retry_load;
+  prfm(Address(counter_addr), PSTL1STRM);
   bind(retry_load);
   // flush and load exclusive from the memory location
   ldxrw(tmp, counter_addr);
@@ -2078,7 +2079,7 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
     membar(AnyAny);
   } else {
     Label retry_load, nope;
-
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     // flush and load exclusive from the memory location
     // and fail if it is not what we expect
@@ -2114,7 +2115,7 @@ void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Regis
     membar(AnyAny);
   } else {
     Label retry_load, nope;
-
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     // flush and load exclusive from the memory location
     // and fail if it is not what we expect
@@ -2149,6 +2150,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   } else {
     BLOCK_COMMENT("cmpxchg {");
     Label retry_load, done;
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     load_exclusive(tmp, addr, size, acquire);
     if (size == xword)
@@ -2177,6 +2179,7 @@ void MacroAssembler::atomic_##OP(Register prev, RegisterOrConstant incr, Registe
     result = different(prev, incr, addr) ? prev : rscratch2;            \
                                                                         \
   Label retry_load;                                                     \
+  prfm(Address(addr), PSTL1STRM);                                       \
   bind(retry_load);                                                     \
   LDXR(result, addr);                                                   \
   OP(rscratch1, result, incr);                                          \
@@ -2199,6 +2202,7 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
     result = different(prev, newv, addr) ? prev : rscratch2;            \
                                                                         \
   Label retry_load;                                                     \
+  prfm(Address(addr), PSTL1STRM);                                       \
   bind(retry_load);                                                     \
   LDXR(result, addr);                                                   \
   STXR(rscratch1, newv, addr);                                          \
