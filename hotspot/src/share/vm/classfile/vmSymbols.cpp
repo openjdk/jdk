@@ -328,8 +328,6 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
 #ifdef TRACE_HAVE_INTRINSICS
-  case vmIntrinsics::_classID:
-  case vmIntrinsics::_threadID:
   case vmIntrinsics::_counterTime:
 #endif
   case vmIntrinsics::_currentTimeMillis:

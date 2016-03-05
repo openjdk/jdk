@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,11 +57,6 @@ ifeq ($(HAS_ALT_SRC), true)
 TraceGeneratedNames +=  \
 	traceRequestables.hpp \
     traceEventControl.hpp
-
-ifneq ($(INCLUDE_TRACE), false)
-TraceGeneratedNames += traceProducer.cpp
-endif
-
 endif
 
 TraceGeneratedFiles = $(TraceGeneratedNames:%=$(TraceOutDir)/%)
@@ -98,9 +93,6 @@ $(TraceOutDir)/traceEventClasses.hpp: $(TraceSrcDir)/trace.xml $(TraceSrcDir)/tr
 else
 
 $(TraceOutDir)/traceEventClasses.hpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceEventClasses.xsl $(XML_DEPS)
-	$(GENERATE_CODE)
-
-$(TraceOutDir)/traceProducer.cpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceProducer.xsl $(XML_DEPS)
 	$(GENERATE_CODE)
 
 $(TraceOutDir)/traceRequestables.hpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceRequestables.xsl $(XML_DEPS)

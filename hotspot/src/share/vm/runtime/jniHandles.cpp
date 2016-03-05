@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,10 +278,6 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread)  {
       // Allocate new block
       block = new JNIHandleBlock();
       _blocks_allocated++;
-      if (TraceJNIHandleAllocation) {
-        tty->print_cr("JNIHandleBlock " INTPTR_FORMAT " allocated (%d total blocks)",
-                      p2i(block), _blocks_allocated);
-      }
       if (ZapJNIHandleArea) block->zap();
       #ifndef PRODUCT
       // Link new block to list of all allocated blocks
@@ -498,10 +494,6 @@ void JNIHandleBlock::rebuild_free_list() {
   if (extra > 0) {
     // Not as many free handles as we would like - compute number of new blocks to append
     _allocate_before_rebuild = (extra + block_size_in_oops - 1) / block_size_in_oops;
-  }
-  if (TraceJNIHandleAllocation) {
-    tty->print_cr("Rebuild free list JNIHandleBlock " INTPTR_FORMAT " blocks=%d used=%d free=%d add=%d",
-                  p2i(this), blocks, total-free, free, _allocate_before_rebuild);
   }
 }
 

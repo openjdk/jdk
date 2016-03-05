@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_SHARED_COPYFAILEDINFO_HPP
 
 #include "runtime/thread.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class CopyFailedInfo : public CHeapObj<mtGC> {
@@ -63,26 +64,28 @@ class CopyFailedInfo : public CHeapObj<mtGC> {
 };
 
 class PromotionFailedInfo : public CopyFailedInfo {
-  OSThread* _thread;
+  traceid _thread_trace_id;
 
  public:
-  PromotionFailedInfo() : CopyFailedInfo(), _thread(NULL) {}
+  PromotionFailedInfo() : CopyFailedInfo(), _thread_trace_id(0) {}
 
   void register_copy_failure(size_t size) {
     CopyFailedInfo::register_copy_failure(size);
-    if (_thread == NULL) {
-      _thread = Thread::current()->osthread();
+    if (_thread_trace_id == 0) {
+      _thread_trace_id = THREAD_TRACE_ID(Thread::current());
     } else {
-      assert(_thread == Thread::current()->osthread(), "The PromotionFailedInfo should be thread local.");
+      assert(THREAD_TRACE_ID(Thread::current()) == _thread_trace_id,
+        "The PromotionFailedInfo should be thread local.");
     }
   }
 
   void reset() {
     CopyFailedInfo::reset();
-    _thread = NULL;
+    _thread_trace_id = 0;
   }
 
-  OSThread* thread() const { return _thread; }
+  traceid thread_trace_id() const { return _thread_trace_id; }
+
 };
 
 class EvacuationFailedInfo : public CopyFailedInfo {};
