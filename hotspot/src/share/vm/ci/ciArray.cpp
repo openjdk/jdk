@@ -107,8 +107,9 @@ ciConstant ciArray::element_value_by_offset(intptr_t element_offset) {
   intptr_t header = arrayOopDesc::base_offset_in_bytes(elembt);
   intptr_t index = (element_offset - header) >> shift;
   intptr_t offset = header + ((intptr_t)index << shift);
-  if (offset != element_offset || index != (jint)index)
+  if (offset != element_offset || index != (jint)index || index < 0 || index >= length()) {
     return ciConstant();
+  }
   return element_value((jint) index);
 }
 

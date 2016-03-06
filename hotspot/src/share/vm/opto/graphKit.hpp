@@ -834,6 +834,7 @@ class GraphKit : public Phase {
   int next_monitor();
   Node* insert_mem_bar(int opcode, Node* precedent = NULL);
   Node* insert_mem_bar_volatile(int opcode, int alias_idx, Node* precedent = NULL);
+  void insert_store_load_for_barrier();
   // Optional 'precedent' is appended as an extra edge, to force ordering.
   FastLockNode* shared_lock(Node* obj);
   void shared_unlock(Node* box, Node* obj);

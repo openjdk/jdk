@@ -260,6 +260,13 @@ ciObject* ciObjectFactory::get(oop key) {
   return new_object;
 }
 
+int ciObjectFactory::metadata_compare(Metadata* const& key, ciMetadata* const& elt) {
+  Metadata* value = elt->constant_encoding();
+  if (key < value)      return -1;
+  else if (key > value) return 1;
+  else                  return 0;
+}
+
 // ------------------------------------------------------------------
 // ciObjectFactory::get_metadata
 //
@@ -280,7 +287,8 @@ ciMetadata* ciObjectFactory::get_metadata(Metadata* key) {
   }
 #endif // ASSERT
   int len = _ci_metadata->length();
-  int index = find(key, _ci_metadata);
+  bool found = false;
+  int index = _ci_metadata->find_sorted<Metadata*, ciObjectFactory::metadata_compare>(key, found);
 #ifdef ASSERT
   if (CIObjectFactoryVerify) {
     for (int i=0; i<_ci_metadata->length(); i++) {
@@ -290,7 +298,8 @@ ciMetadata* ciObjectFactory::get_metadata(Metadata* key) {
     }
   }
 #endif
-  if (!is_found_at(index, key, _ci_metadata)) {
+
+  if (!found) {
     // The ciMetadata does not yet exist. Create it and insert it
     // into the cache.
     ciMetadata* new_object = create_new_metadata(key);
@@ -300,10 +309,10 @@ ciMetadata* ciObjectFactory::get_metadata(Metadata* key) {
     if (len != _ci_metadata->length()) {
       // creating the new object has recursively entered new objects
       // into the table.  We need to recompute our index.
-      index = find(key, _ci_metadata);
+      index = _ci_metadata->find_sorted<Metadata*, ciObjectFactory::metadata_compare>(key, found);
     }
-    assert(!is_found_at(index, key, _ci_metadata), "no double insert");
-    insert(index, new_object, _ci_metadata);
+    assert(!found, "no double insert");
+    _ci_metadata->insert_before(index, new_object);
     return new_object;
   }
   return _ci_metadata->at(index)->as_metadata();
@@ -653,60 +662,6 @@ ciReturnAddress* ciObjectFactory::get_return_address(int bci) {
 // ciObjectFactory::init_ident_of
 void ciObjectFactory::init_ident_of(ciBaseObject* obj) {
   obj->set_ident(_next_ident++);
-}
-
-// ------------------------------------------------------------------
-// ciObjectFactory::find
-//
-// Use binary search to find the position of this oop in the cache.
-// If there is no entry in the cache corresponding to this oop, return
-// the position at which the oop should be inserted.
-int ciObjectFactory::find(Metadata* key, GrowableArray<ciMetadata*>* objects) {
-  int min = 0;
-  int max = objects->length()-1;
-
-  // print_contents();
-
-  while (max >= min) {
-    int mid = (max + min) / 2;
-    Metadata* value = objects->at(mid)->constant_encoding();
-    if (value < key) {
-      min = mid + 1;
-    } else if (value > key) {
-      max = mid - 1;
-    } else {
-      return mid;
-    }
-  }
-  return min;
-}
-
-// ------------------------------------------------------------------
-// ciObjectFactory::is_found_at
-//
-// Verify that the binary seach found the given key.
-bool ciObjectFactory::is_found_at(int index, Metadata* key, GrowableArray<ciMetadata*>* objects) {
-  return (index < objects->length() &&
-          objects->at(index)->constant_encoding() == key);
-}
-
-
-// ------------------------------------------------------------------
-// ciObjectFactory::insert
-//
-// Insert a ciObject into the table at some index.
-void ciObjectFactory::insert(int index, ciMetadata* obj, GrowableArray<ciMetadata*>* objects) {
-  int len = objects->length();
-  if (len == index) {
-    objects->append(obj);
-  } else {
-    objects->append(objects->at(len-1));
-    int pos;
-    for (pos = len-2; pos >= index; pos--) {
-      objects->at_put(pos+1,objects->at(pos));
-    }
-    objects->at_put(index, obj);
-  }
 }
 
 static ciObjectFactory::NonPermObject* emptyBucket = NULL;
