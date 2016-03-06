@@ -157,6 +157,20 @@ public class JdkInternalMiscUnsafeAccessTestShort {
         }
 
 
+        // Lazy
+        {
+            UNSAFE.putShortRelease(base, offset, (short)1);
+            short x = UNSAFE.getShortAcquire(base, offset);
+            assertEquals(x, (short)1, "putRelease short value");
+        }
+
+        // Opaque
+        {
+            UNSAFE.putShortOpaque(base, offset, (short)2);
+            short x = UNSAFE.getShortOpaque(base, offset);
+            assertEquals(x, (short)2, "putOpaque short value");
+        }
+
         // Unaligned
         {
             UNSAFE.putShortUnaligned(base, offset, (short)2);

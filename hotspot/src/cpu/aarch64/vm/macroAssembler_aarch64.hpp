@@ -1186,13 +1186,11 @@ public:
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1);
-  void string_equals(Register str1, Register str2,
-                     Register cnt, Register result,
-                     Register tmp1);
-  void char_arrays_equals(Register ary1, Register ary2,
-                          Register result, Register tmp1);
-  void byte_arrays_equals(Register ary1, Register ary2,
-                          Register result, Register tmp1);
+
+  void arrays_equals(Register a1, Register a2,
+                     Register result, Register cnt1,
+                     int elem_size, bool is_string);
+
   void encode_iso_array(Register src, Register dst,
                         Register len, Register result,
                         FloatRegister Vtmp1, FloatRegister Vtmp2,

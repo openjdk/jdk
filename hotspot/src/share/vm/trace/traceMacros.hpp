@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,29 @@
 #ifndef SHARE_VM_TRACE_TRACEMACROS_HPP
 #define SHARE_VM_TRACE_TRACEMACROS_HPP
 
+typedef u8 traceid;
+
 #define EVENT_THREAD_EXIT(thread)
 #define EVENT_THREAD_DESTRUCT(thread)
+#define TRACE_KLASS_CREATION(k, p, t)
 
-#define TRACE_INIT_ID(k)
+#define TRACE_INIT_KLASS_ID(k)
+#define TRACE_INIT_THREAD_ID(td)
 #define TRACE_DATA TraceThreadData
 
+#define THREAD_TRACE_ID(thread) ((traceid)thread->osthread()->thread_id())
 #define TRACE_START() JNI_OK
 #define TRACE_INITIALIZE() JNI_OK
 
-#define TRACE_DEFINE_KLASS_METHODS typedef int ___IGNORED_hs_trace_type1
-#define TRACE_DEFINE_KLASS_TRACE_ID typedef int ___IGNORED_hs_trace_type2
-#define TRACE_DEFINE_OFFSET typedef int ___IGNORED_hs_trace_type3
-#define TRACE_ID_OFFSET in_ByteSize(0); ShouldNotReachHere()
+#define TRACE_DEFINE_TRACE_ID_METHODS typedef int ___IGNORED_hs_trace_type1
+#define TRACE_DEFINE_TRACE_ID_FIELD typedef int ___IGNORED_hs_trace_type2
+#define TRACE_DEFINE_KLASS_TRACE_ID_OFFSET typedef int ___IGNORED_hs_trace_type3
+#define TRACE_KLASS_TRACE_ID_OFFSET in_ByteSize(0); ShouldNotReachHere()
+#define TRACE_DEFINE_THREAD_TRACE_DATA_OFFSET typedef int ___IGNORED_hs_trace_type4
+#define TRACE_THREAD_TRACE_DATA_OFFSET in_ByteSize(0); ShouldNotReachHere()
+#define TRACE_DEFINE_THREAD_TRACE_ID_OFFSET typedef int ___IGNORED_hs_trace_type5
+#define TRACE_THREAD_TRACE_ID_OFFSET in_ByteSize(0); ShouldNotReachHere()
+#define TRACE_DEFINE_THREAD_ID_SIZE typedef int ___IGNORED_hs_trace_type6
 #define TRACE_TEMPLATES(template)
 #define TRACE_INTRINSICS(do_intrinsic, do_class, do_name, do_signature, do_alias)
 

@@ -35,6 +35,7 @@
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm_windows.h"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "mutex_windows.inline.hpp"
@@ -71,6 +72,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
 #ifdef _DEBUG
@@ -436,6 +438,8 @@ static unsigned __stdcall java_start(Thread* thread) {
     res = 20115;    // java thread
   }
 
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ").", os::current_thread_id());
+
   // Install a win32 structured exception handler around every thread created
   // by VM, so VM can generate error dump when an exception occurred in non-
   // Java thread (e.g. VM thread).
@@ -445,6 +449,8 @@ static unsigned __stdcall java_start(Thread* thread) {
                                      (_EXCEPTION_POINTERS*)_exception_info())) {
     // Nothing to do.
   }
+
+  log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ").", os::current_thread_id());
 
   // One less thread is executing
   // When the VMThread gets here, the main thread may have already exited
@@ -509,6 +515,10 @@ bool os::create_attached_thread(JavaThread* thread) {
   osthread->set_state(RUNNABLE);
 
   thread->set_osthread(osthread);
+
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ").",
+    os::current_thread_id());
+
   return true;
 }
 
@@ -528,6 +538,27 @@ bool os::create_main_thread(JavaThread* thread) {
 
   thread->set_osthread(_starting_thread);
   return true;
+}
+
+// Helper function to trace _beginthreadex attributes,
+//  similar to os::Posix::describe_pthread_attr()
+static char* describe_beginthreadex_attributes(char* buf, size_t buflen,
+                                               size_t stacksize, unsigned initflag) {
+  stringStream ss(buf, buflen);
+  if (stacksize == 0) {
+    ss.print("stacksize: default, ");
+  } else {
+    ss.print("stacksize: " SIZE_FORMAT "k, ", stacksize / 1024);
+  }
+  ss.print("flags: ");
+  #define PRINT_FLAG(f) if (initflag & f) ss.print( #f " ");
+  #define ALL(X) \
+    X(CREATE_SUSPENDED) \
+    X(STACK_SIZE_PARAM_IS_A_RESERVATION)
+  ALL(PRINT_FLAG)
+  #undef ALL
+  #undef PRINT_FLAG
+  return buf;
 }
 
 // Allocate and initialize a new OSThread
@@ -596,13 +627,23 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // document because JVM uses C runtime library. The good news is that the
   // flag appears to work with _beginthredex() as well.
 
+  const unsigned initflag = CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION;
   HANDLE thread_handle =
     (HANDLE)_beginthreadex(NULL,
                            (unsigned)stack_size,
                            (unsigned (__stdcall *)(void*)) java_start,
                            thread,
-                           CREATE_SUSPENDED | STACK_SIZE_PARAM_IS_A_RESERVATION,
+                           initflag,
                            &thread_id);
+
+  char buf[64];
+  if (thread_handle != NULL) {
+    log_info(os, thread)("Thread started (tid: %u, attributes: %s)",
+      thread_id, describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
+  } else {
+    log_warning(os, thread)("Failed to start thread - _beginthreadex failed (%s) for attributes: %s.",
+      strerror(errno), describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
+  }
 
   if (thread_handle == NULL) {
     // Need to clean up stuff we've allocated so far
@@ -1668,8 +1709,7 @@ void os::win32::print_windows_version(outputStream* st) {
     if (is_workstation) {
       st->print("10");
     } else {
-      // The server version name of Windows 10 is not known at this time
-      st->print("%d.%d", major_version, minor_version);
+      st->print("Server 2016");
     }
     break;
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ protected:
     vcipher,
     vpmsumb,
     tcheck,
+    mfdscr,
     num_features // last entry to count features
   };
   enum Feature_Flag_Set {
@@ -62,6 +63,7 @@ protected:
     vcipher_m             = (1 << vcipher),
     vpmsumb_m             = (1 << vpmsumb),
     tcheck_m              = (1 << tcheck ),
+    mfdscr_m              = (1 << mfdscr ),
     all_features_m        = (unsigned long)-1
   };
 
@@ -94,6 +96,7 @@ public:
   static bool has_vcipher() { return (_features & vcipher_m) != 0; }
   static bool has_vpmsumb() { return (_features & vpmsumb_m) != 0; }
   static bool has_tcheck()  { return (_features & tcheck_m) != 0; }
+  static bool has_mfdscr()  { return (_features & mfdscr_m) != 0; }
 
   // Assembler testing
   static void allow_all();

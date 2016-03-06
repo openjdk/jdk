@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1434,41 +1434,73 @@ int LinearScan::interval_cmp(Interval** a, Interval** b) {
 }
 
 #ifndef PRODUCT
-bool LinearScan::is_sorted(IntervalArray* intervals) {
-  int from = -1;
-  int i, j;
-  for (i = 0; i < intervals->length(); i ++) {
-    Interval* it = intervals->at(i);
-    if (it != NULL) {
-      if (from > it->from()) {
-        assert(false, "");
-        return false;
-      }
-      from = it->from();
+int interval_cmp(Interval* const& l, Interval* const& r) {
+  return l->from() - r->from();
+}
+
+bool find_interval(Interval* interval, IntervalArray* intervals) {
+  bool found;
+  int idx = intervals->find_sorted<Interval*, interval_cmp>(interval, found);
+
+  if (!found) {
+    return false;
+  }
+
+  int from = interval->from();
+
+  // The index we've found using binary search is pointing to an interval
+  // that is defined in the same place as the interval we were looking for.
+  // So now we have to look around that index and find exact interval.
+  for (int i = idx; i >= 0; i--) {
+    if (intervals->at(i) == interval) {
+      return true;
+    }
+    if (intervals->at(i)->from() != from) {
+      break;
     }
   }
 
-  // check in both directions if sorted list and unsorted list contain same intervals
-  for (i = 0; i < interval_count(); i++) {
-    if (interval_at(i) != NULL) {
-      int num_found = 0;
-      for (j = 0; j < intervals->length(); j++) {
-        if (interval_at(i) == intervals->at(j)) {
-          num_found++;
-        }
-      }
-      assert(num_found == 1, "lists do not contain same intervals");
+  for (int i = idx + 1; i < intervals->length(); i++) {
+    if (intervals->at(i) == interval) {
+      return true;
+    }
+    if (intervals->at(i)->from() != from) {
+      break;
     }
   }
-  for (j = 0; j < intervals->length(); j++) {
-    int num_found = 0;
-    for (i = 0; i < interval_count(); i++) {
-      if (interval_at(i) == intervals->at(j)) {
-        num_found++;
-      }
+
+  return false;
+}
+
+bool LinearScan::is_sorted(IntervalArray* intervals) {
+  int from = -1;
+  int null_count = 0;
+
+  for (int i = 0; i < intervals->length(); i++) {
+    Interval* it = intervals->at(i);
+    if (it != NULL) {
+      assert(from <= it->from(), "Intervals are unordered");
+      from = it->from();
+    } else {
+      null_count++;
     }
-    assert(num_found == 1, "lists do not contain same intervals");
   }
+
+  assert(null_count == 0, "Sorted intervals should not contain nulls");
+
+  null_count = 0;
+
+  for (int i = 0; i < interval_count(); i++) {
+    Interval* interval = interval_at(i);
+    if (interval != NULL) {
+      assert(find_interval(interval, intervals), "Lists do not contain same intervals");
+    } else {
+      null_count++;
+    }
+  }
+
+  assert(interval_count() - null_count == intervals->length(),
+      "Sorted list should contain the same amount of non-NULL intervals as unsorted list");
 
   return true;
 }
@@ -1536,7 +1568,7 @@ void LinearScan::sort_intervals_before_allocation() {
       sorted_len++;
     }
   }
-  IntervalArray* sorted_list = new IntervalArray(sorted_len);
+  IntervalArray* sorted_list = new IntervalArray(sorted_len, sorted_len, NULL);
 
   // special sorting algorithm: the original interval-list is almost sorted,
   // only some intervals are swapped. So this is much faster than a complete QuickSort
@@ -1574,8 +1606,8 @@ void LinearScan::sort_intervals_after_allocation() {
     _needs_full_resort = false;
   }
 
-  IntervalArray* old_list      = _sorted_intervals;
-  IntervalList*  new_list      = _new_intervals_from_allocation;
+  IntervalArray* old_list = _sorted_intervals;
+  IntervalList* new_list = _new_intervals_from_allocation;
   int old_len = old_list->length();
   int new_len = new_list->length();
 
@@ -1589,7 +1621,8 @@ void LinearScan::sort_intervals_after_allocation() {
   new_list->sort(interval_cmp);
 
   // merge old and new list (both already sorted) into one combined list
-  IntervalArray* combined_list = new IntervalArray(old_len + new_len);
+  int combined_list_len = old_len + new_len;
+  IntervalArray* combined_list = new IntervalArray(combined_list_len, combined_list_len, NULL);
   int old_idx = 0;
   int new_idx = 0;
 
@@ -3211,6 +3244,10 @@ void LinearScan::verify_intervals() {
       has_error = true;
     }
 
+    // special intervals that are created in MoveResolver
+    // -> ignore them because the range information has no meaning there
+    if (i1->from() == 1 && i1->to() == 2) continue;
+
     if (i1->first() == Range::end()) {
       tty->print_cr("Interval %d has no Range", i1->reg_num()); i1->print(); tty->cr();
       has_error = true;
@@ -3225,18 +3262,13 @@ void LinearScan::verify_intervals() {
 
     for (int j = i + 1; j < len; j++) {
       Interval* i2 = interval_at(j);
-      if (i2 == NULL) continue;
-
-      // special intervals that are created in MoveResolver
-      // -> ignore them because the range information has no meaning there
-      if (i1->from() == 1 && i1->to() == 2) continue;
-      if (i2->from() == 1 && i2->to() == 2) continue;
+      if (i2 == NULL || (i2->from() == 1 && i2->to() == 2)) continue;
 
       int r1 = i1->assigned_reg();
       int r1Hi = i1->assigned_regHi();
       int r2 = i2->assigned_reg();
       int r2Hi = i2->assigned_regHi();
-      if (i1->intersects(i2) && (r1 == r2 || r1 == r2Hi || (r1Hi != any_reg && (r1Hi == r2 || r1Hi == r2Hi)))) {
+      if ((r1 == r2 || r1 == r2Hi || (r1Hi != any_reg && (r1Hi == r2 || r1Hi == r2Hi))) && i1->intersects(i2)) {
         tty->print_cr("Intervals %d and %d overlap and have the same register assigned", i1->reg_num(), i2->reg_num());
         i1->print(); tty->cr();
         i2->print(); tty->cr();
@@ -3429,7 +3461,8 @@ void LinearScan::verify_registers() {
 
 void RegisterVerifier::verify(BlockBegin* start) {
   // setup input registers (method arguments) for first block
-  IntervalList* input_state = new IntervalList(state_size(), NULL);
+  int input_state_len = state_size();
+  IntervalList* input_state = new IntervalList(input_state_len, input_state_len, NULL);
   CallingConvention* args = compilation()->frame_map()->incoming_arguments();
   for (int n = 0; n < args->length(); n++) {
     LIR_Opr opr = args->at(n);
@@ -3543,7 +3576,7 @@ void RegisterVerifier::process_successor(BlockBegin* block, IntervalList* input_
 
 IntervalList* RegisterVerifier::copy(IntervalList* input_state) {
   IntervalList* copy_state = new IntervalList(input_state->length());
-  copy_state->push_all(input_state);
+  copy_state->appendAll(input_state);
   return copy_state;
 }
 
@@ -5506,7 +5539,7 @@ void LinearScanWalker::split_and_spill_intersecting_intervals(int reg, int regHi
     IntervalList* processed = _spill_intervals[reg];
     for (int i = 0; i < _spill_intervals[regHi]->length(); i++) {
       Interval* it = _spill_intervals[regHi]->at(i);
-      if (processed->index_of(it) == -1) {
+      if (processed->find_from_end(it) == -1) {
         remove_from_list(it);
         split_and_spill_interval(it);
       }

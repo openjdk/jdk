@@ -893,7 +893,8 @@ void VMDynamicLibrariesDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 void CompileQueueDCmd::execute(DCmdSource source, TRAPS) {
-  CompileBroker::print_compile_queues(output());
+  VM_PrintCompileQueue printCompileQueueOp(output());
+  VMThread::execute(&printCompileQueueOp);
 }
 
 void CodeListDCmd::execute(DCmdSource source, TRAPS) {
