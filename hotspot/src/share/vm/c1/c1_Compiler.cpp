@@ -229,8 +229,6 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_getCharStringU:
   case vmIntrinsics::_putCharStringU:
 #ifdef TRACE_HAVE_INTRINSICS
-  case vmIntrinsics::_classID:
-  case vmIntrinsics::_threadID:
   case vmIntrinsics::_counterTime:
 #endif
     break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,19 +36,19 @@ ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h) :
 {
   // Ergonomically select initial concurrent refinement parameters
   if (FLAG_IS_DEFAULT(G1ConcRefinementGreenZone)) {
-    FLAG_SET_DEFAULT(G1ConcRefinementGreenZone, (intx)ParallelGCThreads);
+    FLAG_SET_DEFAULT(G1ConcRefinementGreenZone, ParallelGCThreads);
   }
   set_green_zone(G1ConcRefinementGreenZone);
 
   if (FLAG_IS_DEFAULT(G1ConcRefinementYellowZone)) {
     FLAG_SET_DEFAULT(G1ConcRefinementYellowZone, green_zone() * 3);
   }
-  set_yellow_zone(MAX2<int>(G1ConcRefinementYellowZone, green_zone()));
+  set_yellow_zone(MAX2(G1ConcRefinementYellowZone, green_zone()));
 
   if (FLAG_IS_DEFAULT(G1ConcRefinementRedZone)) {
     FLAG_SET_DEFAULT(G1ConcRefinementRedZone, yellow_zone() * 2);
   }
-  set_red_zone(MAX2<int>(G1ConcRefinementRedZone, yellow_zone()));
+  set_red_zone(MAX2(G1ConcRefinementRedZone, yellow_zone()));
 }
 
 ConcurrentG1Refine* ConcurrentG1Refine::create(G1CollectedHeap* g1h, CardTableEntryClosure* refine_closure, jint* ecode) {

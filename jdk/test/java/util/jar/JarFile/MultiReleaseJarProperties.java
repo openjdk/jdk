@@ -54,8 +54,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-
-import static sun.misc.Version.jdkMajorVersion;  // fixme JEP 223 Version
+import jdk.Version;
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -63,6 +62,9 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 public class MultiReleaseJarProperties {
+
+    static final int MAJOR_VERSION = Version.current().major();
+
     final static int ROOTVERSION = 8; // magic number from knowledge of internals
     final static String userdir = System.getProperty("user.dir", ".");
     final static File multirelease = new File(userdir, "multi-release.jar");
@@ -77,14 +79,14 @@ public class MultiReleaseJarProperties {
         creator.compileEntries();
         creator.buildMultiReleaseJar();
 
-        rtVersion = Integer.getInteger("jdk.util.jar.version", jdkMajorVersion());
+        rtVersion = Integer.getInteger("jdk.util.jar.version", MAJOR_VERSION);
         String mrprop = System.getProperty("jdk.util.jar.enableMultiRelease", "");
         if (mrprop.equals("false")) {
             rtVersion = ROOTVERSION;
         } else if (rtVersion < ROOTVERSION) {
             rtVersion = ROOTVERSION;
-        } else if (rtVersion > jdkMajorVersion()) {
-            rtVersion = jdkMajorVersion();
+        } else if (rtVersion > MAJOR_VERSION) {
+            rtVersion = MAJOR_VERSION;
         }
         force = mrprop.equals("force");
 

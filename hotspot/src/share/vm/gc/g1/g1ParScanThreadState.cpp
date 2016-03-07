@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,6 +327,9 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
 
 G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) {
   assert(worker_id < _n_workers, "out of bounds access");
+  if (_states[worker_id] == NULL) {
+    _states[worker_id] = new_par_scan_state(worker_id, _young_cset_length);
+  }
   return _states[worker_id];
 }
 
@@ -351,6 +354,10 @@ void G1ParScanThreadStateSet::flush() {
 
   for (uint worker_index = 0; worker_index < _n_workers; ++worker_index) {
     G1ParScanThreadState* pss = _states[worker_index];
+
+    if (pss == NULL) {
+      continue;
+    }
 
     _total_cards_scanned += _cards_scanned[worker_index];
 
