@@ -255,7 +255,16 @@ void VM_Version::initialize() {
     }
 #endif
 #ifdef linux
-    // TODO: check kernel version (we currently have too old versions only)
+    // At least Linux kernel 4.2, as the problematic behavior of syscalls
+    // being called in the middle of a transaction has been addressed.
+    // Please, refer to commit b4b56f9ecab40f3b4ef53e130c9f6663be491894
+    // in Linux kernel source tree: https://goo.gl/Kc5i7A
+    if (os::Linux::os_version_is_known()) {
+      if (os::Linux::os_version() >= 0x040200)
+        os_too_old = false;
+    } else {
+      vm_exit_during_initialization("RTM can not be enabled: kernel version is unknown.");
+    }
 #endif
     if (os_too_old) {
       vm_exit_during_initialization("RTM is not supported on this OS version.");
