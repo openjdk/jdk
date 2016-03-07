@@ -28,6 +28,7 @@
 #include "gc/g1/evacuationInfo.hpp"
 #include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
+#include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
@@ -65,6 +66,7 @@ class ObjectClosure;
 class SpaceClosure;
 class CompactibleSpaceClosure;
 class Space;
+class G1CollectionSet;
 class G1CollectorPolicy;
 class G1RemSet;
 class HeapRegionRemSetIterator;
@@ -362,6 +364,8 @@ protected:
 
   // The current policy object for the collector.
   G1CollectorPolicy* _g1_policy;
+
+  G1CollectionSet _collection_set;
 
   // This is the second level of trying to allocate a new region. If
   // new_region() didn't find a region on the free_list, this call will
@@ -984,6 +988,9 @@ public:
 
   // The current policy object for the collector.
   G1CollectorPolicy* g1_policy() const { return _g1_policy; }
+
+  const G1CollectionSet* collection_set() const { return &_collection_set; }
+  G1CollectionSet* collection_set() { return &_collection_set; }
 
   virtual CollectorPolicy* collector_policy() const;
 

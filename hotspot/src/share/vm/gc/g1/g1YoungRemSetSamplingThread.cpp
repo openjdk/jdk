@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1YoungRemSetSamplingThread.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
@@ -114,7 +115,7 @@ void G1YoungRemSetSamplingThread::sample_young_list_rs_lengths() {
       // retired as the current allocation region).
       if (hr->in_collection_set()) {
         // Update the collection set policy information for this region
-        g1p->update_incremental_cset_info(hr, rs_length);
+        g1h->collection_set()->update_young_region_prediction(hr, rs_length);
       }
 
       ++regions_visited;

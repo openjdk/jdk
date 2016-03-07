@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP
 #define SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP
 
-#include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1InCSetState.hpp"
@@ -41,6 +40,7 @@
 //   * when to collect.
 
 class HeapRegion;
+class G1CollectionSet;
 class CollectionSetChooser;
 class G1IHOPControl;
 class G1YoungGenSizer;
@@ -65,8 +65,6 @@ class G1CollectorPolicy: public CollectorPolicy {
 
   void initialize_alignments();
   void initialize_flags();
-
-  CollectionSetChooser* _cset_chooser;
 
   double _full_collection_start_sec;
 
@@ -128,20 +126,8 @@ class G1CollectorPolicy: public CollectorPolicy {
 
   G1YoungGenSizer* _young_gen_sizer;
 
-  uint _eden_cset_region_length;
-  uint _survivor_cset_region_length;
-  uint _old_cset_region_length;
-
-  void init_cset_region_lengths(uint eden_cset_region_length,
-                                uint survivor_cset_region_length);
-
-  uint eden_cset_region_length() const     { return _eden_cset_region_length;     }
-  uint survivor_cset_region_length() const { return _survivor_cset_region_length; }
-  uint old_cset_region_length() const      { return _old_cset_region_length;      }
-
   uint _free_regions_at_end_of_collection;
 
-  size_t _recorded_rs_lengths;
   size_t _max_rs_lengths;
 
   size_t _rs_lengths_prediction;
@@ -229,13 +215,6 @@ public:
   size_t predict_bytes_to_copy(HeapRegion* hr) const;
   double predict_region_elapsed_time_ms(HeapRegion* hr, bool for_young_gc) const;
 
-  void set_recorded_rs_lengths(size_t rs_lengths);
-
-  uint cset_region_length() const       { return young_cset_region_length() +
-                                           old_cset_region_length(); }
-  uint young_cset_region_length() const { return eden_cset_region_length() +
-                                           survivor_cset_region_length(); }
-
   double predict_survivor_regions_evac_time() const;
 
   bool should_update_surv_rate_group_predictors() {
@@ -274,6 +253,7 @@ public:
   double accum_yg_surv_rate_pred(int age) const;
 
 protected:
+  G1CollectionSet* _collection_set;
   virtual double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
   virtual double other_time_ms(double pause_time_ms) const;
 
@@ -281,10 +261,7 @@ protected:
   double non_young_other_time_ms() const;
   double constant_other_time_ms(double pause_time_ms) const;
 
-  CollectionSetChooser* cset_chooser() const {
-    return _cset_chooser;
-  }
-
+  CollectionSetChooser* cset_chooser() const;
 private:
   // Statistics kept per GC stoppage, pause or full.
   TruncatedSeq* _recent_prev_end_times_for_all_gcs_sec;
@@ -292,64 +269,8 @@ private:
   // Add a new GC of the given duration and end time to the record.
   void update_recent_gc_times(double end_time_sec, double elapsed_ms);
 
-  // The head of the list (via "next_in_collection_set()") representing the
-  // current collection set. Set from the incrementally built collection
-  // set at the start of the pause.
-  HeapRegion* _collection_set;
-
-  // The number of bytes in the collection set before the pause. Set from
-  // the incrementally built collection set at the start of an evacuation
-  // pause, and incremented in finalize_old_cset_part() when adding old regions
-  // (if any) to the collection set.
-  size_t _collection_set_bytes_used_before;
-
   // The number of bytes copied during the GC.
   size_t _bytes_copied_during_gc;
-
-  // The associated information that is maintained while the incremental
-  // collection set is being built with young regions. Used to populate
-  // the recorded info for the evacuation pause.
-
-  enum CSetBuildType {
-    Active,             // We are actively building the collection set
-    Inactive            // We are not actively building the collection set
-  };
-
-  CSetBuildType _inc_cset_build_state;
-
-  // The head of the incrementally built collection set.
-  HeapRegion* _inc_cset_head;
-
-  // The tail of the incrementally built collection set.
-  HeapRegion* _inc_cset_tail;
-
-  // The number of bytes in the incrementally built collection set.
-  // Used to set _collection_set_bytes_used_before at the start of
-  // an evacuation pause.
-  size_t _inc_cset_bytes_used_before;
-
-  // The RSet lengths recorded for regions in the CSet. It is updated
-  // by the thread that adds a new region to the CSet. We assume that
-  // only one thread can be allocating a new CSet region (currently,
-  // it does so after taking the Heap_lock) hence no need to
-  // synchronize updates to this field.
-  size_t _inc_cset_recorded_rs_lengths;
-
-  // A concurrent refinement thread periodically samples the young
-  // region RSets and needs to update _inc_cset_recorded_rs_lengths as
-  // the RSets grow. Instead of having to synchronize updates to that
-  // field we accumulate them in this field and add it to
-  // _inc_cset_recorded_rs_lengths_diffs at the start of a GC.
-  ssize_t _inc_cset_recorded_rs_lengths_diffs;
-
-  // The predicted elapsed time it will take to collect the regions in
-  // the CSet. This is updated by the thread that adds a new region to
-  // the CSet. See the comment for _inc_cset_recorded_rs_lengths about
-  // MT-safety assumptions.
-  double _inc_cset_predicted_elapsed_time_ms;
-
-  // See the comment for _inc_cset_recorded_rs_lengths_diffs.
-  double _inc_cset_predicted_elapsed_time_ms_diffs;
 
   // Stash a pointer to the g1 heap.
   G1CollectedHeap* _g1;
@@ -424,6 +345,9 @@ private:
   bool predict_will_fit(uint young_length, double base_time_ms,
                         uint base_free_regions, double target_pause_time_ms) const;
 
+public:
+  size_t pending_cards() const { return _pending_cards; }
+
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a mixed GC.
   uint calc_min_old_cset_length() const;
@@ -436,6 +360,7 @@ private:
   // as a percentage of the current heap capacity.
   double reclaimable_bytes_perc(size_t reclaimable_bytes) const;
 
+private:
   // Sets up marking if proper conditions are met.
   void maybe_start_marking();
 
@@ -520,83 +445,20 @@ public:
     return _bytes_copied_during_gc;
   }
 
-  size_t collection_set_bytes_used_before() const {
-    return _collection_set_bytes_used_before;
-  }
-
   // Determine whether there are candidate regions so that the
   // next GC should be mixed. The two action strings are used
   // in the ergo output when the method returns true or false.
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str) const;
 
-  // Choose a new collection set.  Marks the chosen regions as being
-  // "in_collection_set", and links them together.  The head and number of
-  // the collection set are available via access methods.
-  double finalize_young_cset_part(double target_pause_time_ms);
-  virtual void finalize_old_cset_part(double time_remaining_ms);
-
-  // The head of the list (via "next_in_collection_set()") representing the
-  // current collection set.
-  HeapRegion* collection_set() { return _collection_set; }
-
-  void clear_collection_set() { _collection_set = NULL; }
-
-  // Add old region "hr" to the CSet.
-  void add_old_region_to_cset(HeapRegion* hr);
-
-  // Incremental CSet Support
-
-  // The head of the incrementally built collection set.
-  HeapRegion* inc_cset_head() { return _inc_cset_head; }
-
-  // The tail of the incrementally built collection set.
-  HeapRegion* inc_set_tail() { return _inc_cset_tail; }
-
-  // Initialize incremental collection set info.
-  void start_incremental_cset_building();
-
-  // Perform any final calculations on the incremental CSet fields
-  // before we can use them.
-  void finalize_incremental_cset_building();
-
-  void clear_incremental_cset() {
-    _inc_cset_head = NULL;
-    _inc_cset_tail = NULL;
-  }
-
-  // Stop adding regions to the incremental collection set
-  void stop_incremental_cset_building() { _inc_cset_build_state = Inactive; }
-
-  // Add information about hr to the aggregated information for the
-  // incrementally built collection set.
-  void add_to_incremental_cset_info(HeapRegion* hr, size_t rs_length);
-
-  // Update information about hr in the aggregated information for
-  // the incrementally built collection set.
-  void update_incremental_cset_info(HeapRegion* hr, size_t new_rs_length);
-
+  virtual void finalize_collection_set(double target_pause_time_ms);
 private:
-  // Update the incremental cset information when adding a region
-  // (should not be called directly).
-  void add_region_to_incremental_cset_common(HeapRegion* hr);
-
   // Set the state to start a concurrent marking cycle and clear
   // _initiate_conc_mark_if_possible because it has now been
   // acted on.
   void initiate_conc_mark();
 
 public:
-  // Add hr to the LHS of the incremental collection set.
-  void add_region_to_incremental_cset_lhs(HeapRegion* hr);
-
-  // Add hr to the RHS of the incremental collection set.
-  void add_region_to_incremental_cset_rhs(HeapRegion* hr);
-
-#ifndef PRODUCT
-  void print_collection_set(HeapRegion* list_head, outputStream* st);
-#endif // !PRODUCT
-
   // This sets the initiate_conc_mark_if_possible() flag to start a
   // new cycle, as long as we are not already in one. It's best if it
   // is called during a safepoint when the test whether a cycle is in

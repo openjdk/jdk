@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #ifndef SHARE_VM_GC_G1_G1COLLECTORSTATE_HPP
 #define SHARE_VM_GC_G1_G1COLLECTORSTATE_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "gc/g1/g1YCTypes.hpp"
+#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Various state variables that indicate
 // the phase of the G1 collection.
