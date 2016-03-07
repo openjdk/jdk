@@ -1065,9 +1065,6 @@ class PSParallelCompact : AllStatic {
   // non-empty.
   static void fill_dense_prefix_end(SpaceId id);
 
-  // Clear the summary data source_region field for the specified addresses.
-  static void clear_source_region(HeapWord* beg_addr, HeapWord* end_addr);
-
   static void summarize_spaces_quick();
   static void summarize_space(SpaceId id, bool maximum_compaction);
   static void summary_phase(ParCompactionManager* cm, bool maximum_compaction);
