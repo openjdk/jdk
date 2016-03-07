@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -606,7 +606,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         try
         {
             DateFormatSymbols other = (DateFormatSymbols)super.clone();
-            copyMembers(new SymbolsCacheEntry(locale), other);
+            copyMembers(this, other);
             return other;
         } catch (CloneNotSupportedException e) {
             throw new InternalError(e);
@@ -669,7 +669,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     /**
      * Cache to hold DateFormatSymbols instances per Locale.
      */
-    private static final ConcurrentMap<Locale, SoftReference<SymbolsCacheEntry>> cachedInstances
+    private static final ConcurrentMap<Locale, SoftReference<DateFormatSymbols>> cachedInstances
         = new ConcurrentHashMap<>(3);
 
     private transient int lastZoneIndex;
@@ -683,10 +683,10 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         locale = desiredLocale;
 
         // Copy values of a cached instance if any.
-        SoftReference<SymbolsCacheEntry> ref = cachedInstances.get(locale);
-        SymbolsCacheEntry sce;
-        if (ref != null && (sce = ref.get()) != null) {
-            copyMembers(sce, this);
+        SoftReference<DateFormatSymbols> ref = cachedInstances.get(locale);
+        DateFormatSymbols dfs;
+        if (ref != null && (dfs = ref.get()) != null) {
+            copyMembers(dfs, this);
             return;
         }
 
@@ -717,11 +717,11 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         weekdays = toOneBasedArray(resource.getStringArray("DayNames"));
         shortWeekdays = toOneBasedArray(resource.getStringArray("DayAbbreviations"));
 
-        sce = new SymbolsCacheEntry(locale);
-        ref = new SoftReference<>(sce);
-        SoftReference<SymbolsCacheEntry> x = cachedInstances.putIfAbsent(locale, ref);
+        // Put a clone in the cache
+        ref = new SoftReference<>((DateFormatSymbols)this.clone());
+        SoftReference<DateFormatSymbols> x = cachedInstances.putIfAbsent(locale, ref);
         if (x != null) {
-            SymbolsCacheEntry y = x.get();
+            DateFormatSymbols y = x.get();
             if (y == null) {
                 // Replace the empty SoftReference with ref.
                 cachedInstances.put(locale, ref);
@@ -812,7 +812,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      * @param src the source DateFormatSymbols.
      * @param dst the target DateFormatSymbols.
      */
-    private void copyMembers(SymbolsCacheEntry src, DateFormatSymbols dst)
+    private void copyMembers(DateFormatSymbols src, DateFormatSymbols dst)
     {
         dst.eras = Arrays.copyOf(src.eras, src.eras.length);
         dst.months = Arrays.copyOf(src.months, src.months.length);
@@ -821,7 +821,7 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         dst.shortWeekdays = Arrays.copyOf(src.shortWeekdays, src.shortWeekdays.length);
         dst.ampms = Arrays.copyOf(src.ampms, src.ampms.length);
         if (src.zoneStrings != null) {
-            dst.zoneStrings = getZoneStringsImpl(true);
+            dst.zoneStrings = src.getZoneStringsImpl(true);
         } else {
             dst.zoneStrings = null;
         }
@@ -841,44 +841,5 @@ public class DateFormatSymbols implements Serializable, Cloneable {
             zoneStrings = TimeZoneNameUtility.getZoneStrings(locale);
         }
         stream.defaultWriteObject();
-    }
-
-    private static class SymbolsCacheEntry {
-
-        final String eras[];
-        final String months[];
-        final String shortMonths[];
-        final String weekdays[];
-        final String shortWeekdays[];
-        final String ampms[];
-        final String zoneStrings[][];
-        final String localPatternChars;
-
-        SymbolsCacheEntry(Locale locale) {
-            // Initialize the fields from the ResourceBundle for locale.
-            LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DateFormatSymbolsProvider.class, locale);
-            // Avoid any potential recursions
-            if (!(adapter instanceof ResourceBundleBasedAdapter)) {
-                adapter = LocaleProviderAdapter.getResourceBundleBased();
-            }
-            ResourceBundle resource = ((ResourceBundleBasedAdapter) adapter).getLocaleData().getDateFormatData(locale);
-            if (resource.containsKey("Eras")) {
-                this.eras = resource.getStringArray("Eras");
-            } else if (resource.containsKey("long.Eras")) {
-                this.eras = resource.getStringArray("long.Eras");
-            } else if (resource.containsKey("short.Eras")) {
-                this.eras = resource.getStringArray("short.Eras");
-            } else {
-                this.eras = null;
-            }
-            this.months = resource.getStringArray("MonthNames");
-            this.shortMonths = resource.getStringArray("MonthAbbreviations");
-            this.weekdays = toOneBasedArray(resource.getStringArray("DayNames"));
-            this.shortWeekdays = toOneBasedArray(resource.getStringArray("DayAbbreviations"));
-            this.ampms = resource.getStringArray("AmPmMarkers");
-            this.zoneStrings = TimeZoneNameUtility.getZoneStrings(locale);
-            this.localPatternChars = resource.getString("DateTimePatternChars");
-
-        }
     }
 }
