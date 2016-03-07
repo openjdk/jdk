@@ -84,13 +84,6 @@ public class TestOptionsWithRanges {
         setAllowedExitCodes("SharedMiscCodeSize", 2);
 
         /*
-         * JDK-8145204
-         * Temporarily remove testing of max range for ParGCArrayScanChunk because
-         * JVM can hang when ParGCArrayScanChunk=4294967296 and ParallelGC is used
-         */
-        excludeTestMaxRange("ParGCArrayScanChunk");
-
-        /*
          * Remove CICompilerCount from testing because currently it can hang system
          */
         excludeTestMaxRange("CICompilerCount");
