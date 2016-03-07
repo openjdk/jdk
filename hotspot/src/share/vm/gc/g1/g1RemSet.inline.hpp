@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,7 @@ inline void G1RemSet::par_write_ref(HeapRegion* from, T* p, uint tid) {
 #ifdef ASSERT
   // can't do because of races
   // assert(obj == NULL || obj->is_oop(), "expected an oop");
-
-  // Do the safe subset of is_oop
-#ifdef CHECK_UNHANDLED_OOPS
-  oopDesc* o = obj.obj();
-#else
-  oopDesc* o = obj;
-#endif // CHECK_UNHANDLED_OOPS
-  assert((intptr_t)o % MinObjAlignmentInBytes == 0, "not oop aligned");
+  assert(check_obj_alignment(obj), "not oop aligned");
   assert(_g1->is_in_reserved(obj), "must be in heap");
 #endif // ASSERT
 
