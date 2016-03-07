@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,10 +71,6 @@
           "draining concurrent marking work queues.")                       \
           range(1, max_intx)                                                \
                                                                             \
-  experimental(bool, G1UseConcMarkReferenceProcessing, true,                \
-          "If true, enable reference discovery during concurrent "          \
-          "marking and reference processing at the end of remark.")         \
-                                                                            \
   experimental(double, G1LastPLABAverageOccupancy, 50.0,                    \
                "The expected average occupancy of the last PLAB in "        \
                "percent.")                                                  \
@@ -107,35 +103,35 @@
           "Size of an update buffer")                                       \
           range(1, NOT_LP64(32*M) LP64_ONLY(1*G))                           \
                                                                             \
-  product(intx, G1ConcRefinementYellowZone, 0,                              \
+  product(size_t, G1ConcRefinementYellowZone, 0,                            \
           "Number of enqueued update buffers that will "                    \
           "trigger concurrent processing. Will be selected ergonomically "  \
           "by default.")                                                    \
           range(0, max_intx)                                                \
                                                                             \
-  product(intx, G1ConcRefinementRedZone, 0,                                 \
+  product(size_t, G1ConcRefinementRedZone, 0,                               \
           "Maximum number of enqueued update buffers before mutator "       \
           "threads start processing new ones instead of enqueueing them. "  \
           "Will be selected ergonomically by default. Zero will disable "   \
           "concurrent processing.")                                         \
           range(0, max_intx)                                                \
                                                                             \
-  product(intx, G1ConcRefinementGreenZone, 0,                               \
+  product(size_t, G1ConcRefinementGreenZone, 0,                             \
           "The number of update buffers that are left in the queue by the " \
           "concurrent processing threads. Will be selected ergonomically "  \
           "by default.")                                                    \
           range(0, max_intx)                                                \
                                                                             \
-  product(intx, G1ConcRefinementServiceIntervalMillis, 300,                 \
+  product(uintx, G1ConcRefinementServiceIntervalMillis, 300,                \
           "The last concurrent refinement thread wakes up every "           \
           "specified number of milliseconds to do miscellaneous work.")     \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, G1ConcRefinementThresholdStep, 0,                           \
+  product(size_t, G1ConcRefinementThresholdStep, 0,                         \
           "Each time the rset update queue increases by this amount "       \
           "activate the next refinement thread if available. "              \
           "Will be selected ergonomically by default.")                     \
-          range(0, max_jint)                                                \
+          range(0, SIZE_MAX)                                                \
                                                                             \
   product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \

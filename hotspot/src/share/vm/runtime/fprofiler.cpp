@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -836,8 +836,7 @@ void FlatProfiler::record_vm_tick() {
     vm_thread_profiler->inc_thread_ticks();
 
     // Get a snapshot of a current VMThread pc (and leave it running!)
-    // The call may fail if, for instance the VM thread is interrupted while
-    // holding the Interrupt_lock or for other reasons.
+    // The call may fail in some circumstances
     epc = os::get_thread_pc(VMThread::vm_thread());
     if(epc.pc() != NULL) {
       if (os::dll_address_to_function_name(epc.pc(), buf, sizeof(buf), NULL)) {

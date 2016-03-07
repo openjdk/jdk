@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8075526 8135108
- * @key intermittent
  * @summary Test timestamp via ZipEntry.get/setTimeLocal()
  */
 

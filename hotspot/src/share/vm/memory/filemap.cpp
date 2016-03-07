@@ -208,9 +208,7 @@ void FileMapInfo::allocate_classpath_entry_table() {
         count ++;
         bytes += (int)entry_size;
         bytes += name_bytes;
-        if (TraceClassPaths) {
-          tty->print_cr("[Add main shared path (%s) %s]", (cpe->is_jar_file() ? "jar" : "dir"), name);
-        }
+        log_info(classpath)("add main shared path (%s) %s", (cpe->is_jar_file() ? "jar" : "dir"), name);
       } else {
         SharedClassPathEntry* ent = shared_classpath(cur_entry);
         if (cpe->is_jar_file()) {
@@ -275,9 +273,7 @@ bool FileMapInfo::validate_classpath_entry_table() {
     struct stat st;
     const char* name = ent->_name;
     bool ok = true;
-    if (TraceClassPaths) {
-      tty->print_cr("[Checking shared classpath entry: %s]", name);
-    }
+    log_info(classpath)("checking shared classpath entry: %s", name);
     if (os::stat(name, &st) != 0) {
       fail_continue("Required classpath entry does not exist: %s", name);
       ok = false;
@@ -301,9 +297,7 @@ bool FileMapInfo::validate_classpath_entry_table() {
       }
     }
     if (ok) {
-      if (TraceClassPaths) {
-        tty->print_cr("[ok]");
-      }
+      log_info(classpath)("ok");
     } else if (!PrintSharedArchiveAndExit) {
       _validating_classpath_entry_table = false;
       return false;
@@ -888,10 +882,8 @@ bool FileMapInfo::FileMapHeader::validate() {
   char header_version[JVM_IDENT_MAX];
   get_header_version(header_version);
   if (strncmp(_jvm_ident, header_version, JVM_IDENT_MAX-1) != 0) {
-    if (TraceClassPaths) {
-      tty->print_cr("Expected: %s", header_version);
-      tty->print_cr("Actual:   %s", _jvm_ident);
-    }
+    log_info(classpath)("expected: %s", header_version);
+    log_info(classpath)("actual:   %s", _jvm_ident);
     FileMapInfo::fail_continue("The shared archive file was created by a different"
                   " version or build of HotSpot");
     return false;
@@ -919,7 +911,7 @@ bool FileMapInfo::validate_header() {
   if (status) {
     if (!ClassLoader::check_shared_paths_misc_info(_paths_misc_info, _header->_paths_misc_info_size)) {
       if (!PrintSharedArchiveAndExit) {
-        fail_continue("shared class paths mismatch (hint: enable -XX:+TraceClassPaths to diagnose the failure)");
+        fail_continue("shared class paths mismatch (hint: enable -Xlog:classpath=info to diagnose the failure)");
         status = false;
       }
     }
