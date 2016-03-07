@@ -346,10 +346,20 @@ public class JShell implements AutoCloseable {
      * @see JShell#onShutdown(java.util.function.Consumer)
      */
     public List<SnippetEvent> eval(String input) throws IllegalStateException {
-        checkIfAlive();
-        List<SnippetEvent> events = eval.eval(input);
-        events.forEach(this::notifyKeyStatusEvent);
-        return Collections.unmodifiableList(events);
+        SourceCodeAnalysisImpl a = sourceCodeAnalysis;
+        if (a != null) {
+            a.suspendIndexing();
+        }
+        try {
+            checkIfAlive();
+            List<SnippetEvent> events = eval.eval(input);
+            events.forEach(this::notifyKeyStatusEvent);
+            return Collections.unmodifiableList(events);
+        } finally {
+            if (a != null) {
+                a.resumeIndexing();
+            }
+        }
     }
 
     /**

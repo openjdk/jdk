@@ -7840,7 +7840,9 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   Label COMPARE_WIDE_VECTORS_LOOP_FAILED;  // used only _LP64 && AVX3
   int stride, stride2, adr_stride, adr_stride1, adr_stride2;
   int stride2x2 = 0x40;
-  Address::ScaleFactor scale, scale1, scale2;
+  Address::ScaleFactor scale = Address::no_scale;
+  Address::ScaleFactor scale1 = Address::no_scale;
+  Address::ScaleFactor scale2 = Address::no_scale;
 
   if (ae != StrIntrinsicNode::LL) {
     stride2x2 = 0x20;
@@ -7894,9 +7896,9 @@ void MacroAssembler::string_compare(Register str1, Register str2,
       stride = 8;
     }
   } else {
-    scale = Address::no_scale;  // not used
     scale1 = Address::times_1;
     scale2 = Address::times_2;
+    // scale not used
     stride = 8;
   }
 

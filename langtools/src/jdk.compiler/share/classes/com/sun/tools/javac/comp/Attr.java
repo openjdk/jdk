@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,8 +155,6 @@ public class Attr extends JCTree.Visitor {
         allowDefaultMethods = source.allowDefaultMethods();
         allowStaticInterfaceMethods = source.allowStaticInterfaceMethods();
         sourceName = source.name;
-        relax = (options.isSet("-retrofit") ||
-                options.isSet("-relax"));
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
 
         statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
@@ -167,10 +165,6 @@ public class Attr extends JCTree.Visitor {
         unknownTypeExprInfo = new ResultInfo(KindSelector.VAL_TYP, Type.noType);
         recoveryInfo = new RecoveryInfo(deferredAttr.emptyDeferredAttrContext);
     }
-
-    /** Switch: relax some constraints for retrofit mode.
-     */
-    boolean relax;
 
     /** Switch: support target-typing inference
      */
@@ -1025,8 +1019,7 @@ public class Attr extends JCTree.Visitor {
                         log.error(tree.pos(),
                                   "default.allowed.in.intf.annotation.member");
                 }
-                if (isDefaultMethod || (tree.sym.flags() & (ABSTRACT | NATIVE)) == 0 &&
-                    !relax)
+                if (isDefaultMethod || (tree.sym.flags() & (ABSTRACT | NATIVE)) == 0)
                     log.error(tree.pos(), "missing.meth.body.or.decl.abstract");
             } else if ((tree.sym.flags() & (ABSTRACT|DEFAULT|PRIVATE)) == ABSTRACT) {
                 if ((owner.flags() & INTERFACE) != 0) {
@@ -4384,8 +4377,7 @@ public class Attr extends JCTree.Visitor {
         // If this is a non-abstract class, check that it has no abstract
         // methods or unimplemented methods of an implemented interface.
         if ((c.flags() & (ABSTRACT | INTERFACE)) == 0) {
-            if (!relax)
-                chk.checkAllDefined(tree.pos(), c);
+            chk.checkAllDefined(tree.pos(), c);
         }
 
         if ((c.flags() & ANNOTATION) != 0) {

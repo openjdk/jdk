@@ -37,6 +37,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -98,26 +99,29 @@ public class Collection8Test extends JSR166TestCase {
     public void testForEachConcurrentStressTest() throws Throwable {
         if (!impl.isConcurrent()) return;
         final Collection c = impl.emptyCollection();
-        final long testDurationMillis = SHORT_DELAY_MS;
+        final long testDurationMillis = timeoutMillis();
         final AtomicBoolean done = new AtomicBoolean(false);
         final Object elt = impl.makeElement(1);
-        ExecutorService pool = Executors.newCachedThreadPool();
-        Runnable checkElt = () -> {
-            while (!done.get())
-                c.stream().forEach((x) -> { assertSame(x, elt); }); };
-        Runnable addRemove = () -> {
-            while (!done.get()) {
-                assertTrue(c.add(elt));
-                assertTrue(c.remove(elt));
-            }};
-        Future<?> f1 = pool.submit(checkElt);
-        Future<?> f2 = pool.submit(addRemove);
-        Thread.sleep(testDurationMillis);
-        done.set(true);
-        pool.shutdown();
-        assertTrue(pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
-        assertNull(f1.get(LONG_DELAY_MS, MILLISECONDS));
-        assertNull(f2.get(LONG_DELAY_MS, MILLISECONDS));
+        final Future<?> f1, f2;
+        final ExecutorService pool = Executors.newCachedThreadPool();
+        try (PoolCleaner cleaner = cleaner(pool, done)) {
+            final CountDownLatch threadsStarted = new CountDownLatch(2);
+            Runnable checkElt = () -> {
+                threadsStarted.countDown();
+                while (!done.get())
+                    c.stream().forEach((x) -> { assertSame(x, elt); }); };
+            Runnable addRemove = () -> {
+                threadsStarted.countDown();
+                while (!done.get()) {
+                    assertTrue(c.add(elt));
+                    assertTrue(c.remove(elt));
+                }};
+            f1 = pool.submit(checkElt);
+            f2 = pool.submit(addRemove);
+            Thread.sleep(testDurationMillis);
+        }
+        assertNull(f1.get(0L, MILLISECONDS));
+        assertNull(f2.get(0L, MILLISECONDS));
     }
 
     // public void testCollection8DebugFail() { fail(); }
