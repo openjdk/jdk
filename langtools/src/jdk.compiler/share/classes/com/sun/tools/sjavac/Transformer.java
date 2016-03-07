@@ -95,9 +95,7 @@ public interface Transformer {
                       Map<String, PubApi>     dependencyApis,
                       int debugLevel,
                       boolean incremental,
-                      int numCores,
-                      Writer out,
-                      Writer err);
+                      int numCores);
 
     void setExtra(String e);
     void setExtra(Options args);

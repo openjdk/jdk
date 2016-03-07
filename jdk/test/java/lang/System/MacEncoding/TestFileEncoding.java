@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.*;
  * @bug 8011194
  * @summary Test value of file.encoding for corresponding value of LANG, etc
  * @library ../../../../tools/launcher/ ../
+ * @modules jdk.compiler
  * @build TestHelper TestFileEncoding ExpectedEncoding
  * @run main TestFileEncoding UTF-8
  * @run main/othervm -Dfile.encoding=MyEncoding -DuserEncoding=MyEncoding TestFileEncoding MyEncoding

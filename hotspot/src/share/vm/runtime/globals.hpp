@@ -1239,9 +1239,8 @@ public:
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
                                                                             \
-  product_pd(bool, ConvertSleepToYield,                                     \
-          "Convert sleep(0) to thread yield "                               \
-          "(may be off for Solaris to improve GUI)")                        \
+  product(bool, ConvertSleepToYield, true,                                  \
+          "Convert sleep(0) to thread yield ")                              \
                                                                             \
   product(bool, ConvertYieldToSleep, false,                                 \
           "Convert yield to a sleep of MinSleepInterval to simulate Win32 " \
@@ -1278,10 +1277,6 @@ public:
                                                                             \
   experimental(intx, hashCode, 5,                                           \
                "(Unstable) select hashCode generation algorithm")           \
-                                                                            \
-  experimental(intx, WorkAroundNPTLTimedWaitHang, 0,                        \
-               "(Unstable, Linux-specific) "                                \
-               "avoid NPTL-FUTEX hang pthread_cond_timedwait")              \
                                                                             \
   product(bool, FilterSpuriousWakeups, true,                                \
           "When true prevents OS-level spurious, or premature, wakeups "    \
@@ -2012,11 +2007,15 @@ public:
           range(min_intx, 100)                                              \
                                                                             \
   product(uintx, InitiatingHeapOccupancyPercent, 45,                        \
-          "Percentage of the (entire) heap occupancy to start a "           \
-          "concurrent GC cycle. It is used by GCs that trigger a "          \
-          "concurrent GC cycle based on the occupancy of the entire heap, " \
-          "not just one of the generations (e.g., G1). A value of 0 "       \
-          "denotes 'do constant GC cycles'.")                               \
+          "The percent occupancy (IHOP) of the current old generation "     \
+          "capacity above which a concurrent mark cycle will be initiated " \
+          "Its value may change over time if adaptive IHOP is enabled, "    \
+          "otherwise the value remains constant. "                          \
+          "In the latter case a value of 0 will result as frequent as "     \
+          "possible concurrent marking cycles. A value of 100 disables "    \
+          "concurrent marking. "                                            \
+          "Fragmentation waste in the old generation is not considered "    \
+          "free space in this calculation. (G1 collector only)")            \
           range(0, 100)                                                     \
                                                                             \
   manageable(intx, CMSTriggerInterval, -1,                                  \

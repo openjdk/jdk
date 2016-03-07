@@ -25,9 +25,11 @@
  * @test
  * @bug 6460501 6236036 6500694 6490770
  * @summary Repeated failed timed waits shouldn't leak memory
+ * @library /lib/testlibrary/
  * @author Martin Buchholz
  */
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -54,8 +56,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import jdk.testlibrary.Utils;
 
 public class TimedAcquireLeak {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
+
     static String javahome() {
         String jh = System.getProperty("java.home");
         return (jh.endsWith("jre")) ? jh.substring(0, jh.length() - 4) : jh;
@@ -191,7 +196,7 @@ public class TimedAcquireLeak {
 
         final String[] jobCmd = {
             java, "-Xmx8m", "-XX:+UsePerfData",
-            "-classpath", System.getProperty("test.classes", "."),
+            "-classpath", System.getProperty("test.class.path"),
             childClassName, uniqueID
         };
         final Process p = new ProcessBuilder(jobCmd).start();
@@ -219,7 +224,7 @@ public class TimedAcquireLeak {
         check(Math.abs(n1 - n0) < 10);
         check(n1 < 25);
         drainers.shutdown();
-        if (!drainers.awaitTermination(10L, SECONDS)) {
+        if (!drainers.awaitTermination(LONG_DELAY_MS, MILLISECONDS)) {
             drainers.shutdownNow(); // last resort
             throw new AssertionError("thread pool did not terminate");
         }

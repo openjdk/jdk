@@ -333,6 +333,8 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseParNewGC",                  JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
+  { "ConvertSleepToYield",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
+  { "ConvertYieldToSleep",          JDK_Version::jdk(9), JDK_Version::jdk(10),     JDK_Version::jdk(11) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },

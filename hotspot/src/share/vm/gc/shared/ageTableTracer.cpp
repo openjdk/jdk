@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,16 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-// key: compiler.warn.synthetic.name.conflict
-// options: -XDwarnOnSyntheticConflicts
+#include "precompiled.hpp"
+#include "gc/shared/ageTableTracer.hpp"
+#include "gc/shared/gcId.hpp"
+#include "trace/tracing.hpp"
 
-class WarnSyntheticNameConflict {
+void AgeTableTracer::send_tenuring_distribution_event(uint age, size_t size) {
+  EventTenuringDistribution e;
+  if (e.should_commit()) {
+    e.set_gcId(GCId::current());
+    e.set_age(age);
+    e.set_size(size);
+    e.commit();
+  }
+}
 
-    static class Outer {
-        WarnSyntheticNameConflict this$0 = null;
-    }
-
-    public class Inner extends Outer { }
+bool AgeTableTracer::is_tenuring_distribution_event_enabled() {
+  return EventTenuringDistribution::is_enabled();
 }

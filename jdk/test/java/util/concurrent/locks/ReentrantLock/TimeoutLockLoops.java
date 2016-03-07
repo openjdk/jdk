@@ -34,9 +34,11 @@
 /*
  * @test
  * @bug 4486658 5031862 8140471
- * @run main TimeoutLockLoops
  * @summary Checks for responsiveness of locks to timeouts.
+ * @library /lib/testlibrary/
  */
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.SplittableRandom;
 import java.util.concurrent.CyclicBarrier;
@@ -44,8 +46,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import jdk.testlibrary.Utils;
 
 public final class TimeoutLockLoops {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static final ExecutorService pool = Executors.newCachedThreadPool();
     static final SplittableRandom rnd = new SplittableRandom();
     static boolean print = false;
@@ -63,7 +67,7 @@ public final class TimeoutLockLoops {
             new ReentrantLockLoop(i).test();
         }
         pool.shutdown();
-        if (! pool.awaitTermination(60L, TimeUnit.SECONDS))
+        if (! pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
             throw new Error();
     }
 

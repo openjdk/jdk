@@ -68,6 +68,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 
 import jdk.vm.ci.code.Architecture;
 import jdk.vm.ci.code.CallingConvention;
@@ -140,14 +141,17 @@ public class SPARCHotSpotRegisterConfig implements RegisterConfig {
                     i0, i1, i2, i3, i4, i5, i6, i7};
     // @formatter:on
 
+    private static final Register[] reservedRegisters = {sp, g0, g2};
+
     private static Register[] initAllocatable(Architecture arch, boolean reserveForHeapBase) {
         Register[] allRegisters = arch.getAvailableValueRegisters();
-        Register[] registers = new Register[allRegisters.length - (reserveForHeapBase ? 4 : 3)];
+        Register[] registers = new Register[allRegisters.length - reservedRegisters.length - (reserveForHeapBase ? 1 : 0)];
+        List<Register> reservedRegistersList = Arrays.asList(reservedRegisters);
 
         int idx = 0;
         for (Register reg : allRegisters) {
-            if (reg.equals(sp) || reg.equals(g2) || reg.equals(g0)) {
-                // skip g0, stack pointer and thread register
+            if (reservedRegistersList.contains(reg)) {
+                // skip reserved registers
                 continue;
             }
             if (reserveForHeapBase && reg.equals(g6)) {

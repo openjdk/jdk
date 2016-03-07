@@ -3268,12 +3268,17 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * <li>This list of types is called the "common prefix".
      * </ol>
      * <p>
-     * <em>Step 1B: Determine loop parameters.</em><ol type="a">
-     * <li>Examine init function parameter lists.
-     * <li>Omitted init functions are deemed to have {@code null} parameter lists.
-     * <li>All init function parameter lists must be effectively identical.
-     * <li>The longest parameter list (which is necessarily unique) is called the "common suffix".
+     * <em>Step 1B: Determine loop parameters.</em><ul>
+     * <li><b>If at least one init function is given,</b><ol type="a">
+     *   <li>Examine init function parameter lists.
+     *   <li>Omitted init functions are deemed to have {@code null} parameter lists.
+     *   <li>All init function parameter lists must be effectively identical.
+     *   <li>The longest parameter list (which is necessarily unique) is called the "common suffix".
      * </ol>
+     * <li><b>If no init function is given,</b><ol type="a">
+     *   <li>Examine the suffixes of the step, pred, and fini parameter lists, after removing the "common prefix".
+     *   <li>The longest of these suffixes is taken as the "common suffix".
+     * </ol></ul>
      * <p>
      * <em>Step 1C: Determine loop return type.</em><ol type="a">
      * <li>Examine fini function return types, disregarding omitted fini functions.
@@ -3285,9 +3290,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * <li>There must be at least one non-omitted pred function.
      * <li>Every non-omitted pred function must have a {@code boolean} return type.
      * </ol>
-     * <p>
-     * (Implementation Note: Steps 1A, 1B, 1C, 1D are logically independent of each other, and may be performed in any
-     * order.)
      * <p>
      * <em>Step 2: Determine parameter lists.</em><ol type="a">
      * <li>The parameter list for the resulting loop handle will be the "common suffix".
@@ -3375,10 +3377,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * <blockquote><pre>{@code
      * // iterative implementation of the factorial function as a loop handle
      * static int one(int k) { return 1; }
-     * int inc(int i, int acc, int k) { return i + 1; }
-     * int mult(int i, int acc, int k) { return i * acc; }
-     * boolean pred(int i, int acc, int k) { return i < k; }
-     * int fin(int i, int acc, int k) { return acc; }
+     * static int inc(int i, int acc, int k) { return i + 1; }
+     * static int mult(int i, int acc, int k) { return i * acc; }
+     * static boolean pred(int i, int acc, int k) { return i < k; }
+     * static int fin(int i, int acc, int k) { return acc; }
      * // assume MH_one, MH_inc, MH_mult, MH_pred, and MH_fin are handles to the above methods
      * // null initializer for counter, should initialize to 0
      * MethodHandle[] counterClause = new MethodHandle[]{null, MH_inc};
@@ -3436,9 +3438,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 collect(Collectors.toList());
 
         // Step 1B: determine loop parameters.
-        final List<Class<?>> empty = new ArrayList<>();
-        final List<Class<?>> commonSuffix = init.stream().filter(Objects::nonNull).map(MethodHandle::type).
-                map(MethodType::parameterList).reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
+        final List<Class<?>> commonSuffix = buildCommonSuffix(init, step, pred, fini, commonPrefix.size());
         checkLoop1b(init, commonSuffix);
 
         // Step 1C: determine loop return type.
@@ -3520,15 +3520,15 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @apiNote Example:
      * <blockquote><pre>{@code
      * // implement the zip function for lists as a loop handle
-     * List<String> initZip(Iterator<String> a, Iterator<String> b) { return new ArrayList<>(); }
-     * boolean zipPred(List<String> zip, Iterator<String> a, Iterator<String> b) { return a.hasNext() && b.hasNext(); }
-     * List<String> zipStep(List<String> zip, Iterator<String> a, Iterator<String> b) {
+     * static List<String> initZip(Iterator<String> a, Iterator<String> b) { return new ArrayList<>(); }
+     * static boolean zipPred(List<String> zip, Iterator<String> a, Iterator<String> b) { return a.hasNext() && b.hasNext(); }
+     * static List<String> zipStep(List<String> zip, Iterator<String> a, Iterator<String> b) {
      *   zip.add(a.next());
      *   zip.add(b.next());
      *   return zip;
      * }
      * // assume MH_initZip, MH_zipPred, and MH_zipStep are handles to the above methods
-     * MethodHandle loop = MethodHandles.doWhileLoop(MH_initZip, MH_zipStep, MH_zipPred);
+     * MethodHandle loop = MethodHandles.whileLoop(MH_initZip, MH_zipPred, MH_zipStep);
      * List<String> a = Arrays.asList("a", "b", "c", "d");
      * List<String> b = Arrays.asList("e", "f", "g", "h");
      * List<String> zipped = Arrays.asList("a", "e", "b", "f", "c", "g", "d", "h");
@@ -3594,9 +3594,9 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @apiNote Example:
      * <blockquote><pre>{@code
      * // int i = 0; while (i < limit) { ++i; } return i; => limit
-     * int zero(int limit) { return 0; }
-     * int step(int i, int limit) { return i + 1; }
-     * boolean pred(int i, int limit) { return i < limit; }
+     * static int zero(int limit) { return 0; }
+     * static int step(int i, int limit) { return i + 1; }
+     * static boolean pred(int i, int limit) { return i < limit; }
      * // assume MH_zero, MH_step, and MH_pred are handles to the above methods
      * MethodHandle loop = MethodHandles.doWhileLoop(MH_zero, MH_step, MH_pred);
      * assertEquals(23, loop.invoke(23));
@@ -3664,8 +3664,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * <blockquote><pre>{@code
      * // String s = "Lambdaman!"; for (int i = 0; i < 13; ++i) { s = "na " + s; } return s;
      * // => a variation on a well known theme
-     * String start(String arg) { return arg; }
-     * String step(int counter, String v, String arg) { return "na " + v; }
+     * static String start(String arg) { return arg; }
+     * static String step(int counter, String v, String arg) { return "na " + v; }
      * // assume MH_start and MH_step are handles to the two methods above
      * MethodHandle fit13 = MethodHandles.constant(int.class, 13);
      * MethodHandle loop = MethodHandles.countedLoop(fit13, MH_start, MH_step);
@@ -3808,11 +3808,11 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @apiNote Example:
      * <blockquote><pre>{@code
      * // reverse a list
-     * List<String> reverseStep(String e, List<String> r, List<String> l) {
+     * static List<String> reverseStep(String e, List<String> r, List<String> l) {
      *   r.add(0, e);
      *   return r;
      * }
-     * List<String> newArrayList(List<String> l) { return new ArrayList<>(); }
+     * static List<String> newArrayList(List<String> l) { return new ArrayList<>(); }
      * // assume MH_reverseStep, MH_newArrayList are handles to the above methods
      * MethodHandle loop = MethodHandles.iteratedLoop(null, MH_newArrayList, MH_reverseStep);
      * List<String> list = Arrays.asList("a", "b", "c", "d", "e");
@@ -4084,6 +4084,21 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         }
     }
 
+    private static List<Class<?>> buildCommonSuffix(List<MethodHandle> init, List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, int cpSize) {
+        final List<Class<?>> empty = List.of();
+        final List<MethodHandle> nonNullInits = init.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (nonNullInits.isEmpty()) {
+            final List<Class<?>> longest = Stream.of(step, pred, fini).flatMap(List::stream).filter(Objects::nonNull).
+                    // take only those that can contribute to a common suffix because they are longer than the prefix
+                    map(MethodHandle::type).filter(t -> t.parameterCount() > cpSize).map(MethodType::parameterList).
+                    reduce((p, q) -> p.size() >= q.size() ? p : q).orElse(empty);
+            return longest.size() == 0 ? empty : longest.subList(cpSize, longest.size());
+        } else {
+            return nonNullInits.stream().map(MethodHandle::type).map(MethodType::parameterList).
+                    reduce((p, q) -> p.size() >= q.size() ? p : q).get();
+        }
+    }
+
     private static void checkLoop1b(List<MethodHandle> init, List<Class<?>> commonSuffix) {
         if (init.stream().filter(Objects::nonNull).map(MethodHandle::type).map(MethodType::parameterList).
                 anyMatch(pl -> !pl.equals(commonSuffix.subList(0, pl.size())))) {
@@ -4109,8 +4124,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     private static void checkLoop2(List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, List<Class<?>> commonParameterSequence) {
+        final int cpSize = commonParameterSequence.size();
         if (Stream.of(step, pred, fini).flatMap(List::stream).filter(Objects::nonNull).map(MethodHandle::type).
-                map(MethodType::parameterList).anyMatch(pl -> !pl.equals(commonParameterSequence.subList(0, pl.size())))) {
+                map(MethodType::parameterList).
+                anyMatch(pl -> pl.size() > cpSize || !pl.equals(commonParameterSequence.subList(0, pl.size())))) {
             throw newIllegalArgumentException("found non-effectively identical parameter type lists:\nstep: " + step +
                     "\npred: " + pred + "\nfini: " + fini + " (common parameter sequence: " + commonParameterSequence + ")");
         }
@@ -4137,8 +4154,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         // The cleanup parameter list (minus the leading Throwable and result parameters) must be a sublist of the
         // target parameter list.
         int cleanupArgIndex = rtype == void.class ? 1 : 2;
-        if (!cleanupParamTypes.subList(cleanupArgIndex, cleanupParamTypes.size()).
-                equals(target.type().parameterList().subList(0, cleanupParamTypes.size() - cleanupArgIndex))) {
+        List<Class<?>> cleanupArgSuffix = cleanupParamTypes.subList(cleanupArgIndex, cleanupParamTypes.size());
+        List<Class<?>> targetParamTypes = target.type().parameterList();
+        if (targetParamTypes.size() < cleanupArgSuffix.size() ||
+                !cleanupArgSuffix.equals(targetParamTypes.subList(0, cleanupParamTypes.size() - cleanupArgIndex))) {
             throw misMatchedTypes("cleanup parameters after (Throwable,result) and target parameter list prefix",
                     cleanup.type(), target.type());
         }

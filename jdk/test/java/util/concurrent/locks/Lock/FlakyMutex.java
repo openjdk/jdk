@@ -25,8 +25,11 @@
  * @test
  * @bug 6503247 6574123
  * @summary Test resilience to tryAcquire methods that throw
+ * @library /lib/testlibrary/
  * @author Martin Buchholz
  */
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.Random;
 import java.util.concurrent.CyclicBarrier;
@@ -36,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.AbstractQueuedLongSynchronizer;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+import jdk.testlibrary.Utils;
 
 /**
  * This uses a variant of the standard Mutex demo, except with a
@@ -44,6 +48,7 @@ import java.util.concurrent.locks.Lock;
  */
 @SuppressWarnings("serial")
 public class FlakyMutex implements Lock {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static class MyError extends Error {}
     static class MyException extends Exception {}
     static class MyRuntimeException extends RuntimeException {}
@@ -91,7 +96,7 @@ public class FlakyMutex implements Lock {
                 } catch (Throwable t) { unexpected(t); }}});}
         barrier.await();
         es.shutdown();
-        check(es.awaitTermination(30L, TimeUnit.SECONDS));
+        check(es.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
     }
 
     private static class FlakySync extends AbstractQueuedLongSynchronizer {

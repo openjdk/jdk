@@ -25,8 +25,11 @@
  * @test
  * @bug 6233235 6268386
  * @summary Test allowsCoreThreadTimeOut
+ * @library /lib/testlibrary/
  * @author Martin Buchholz
  */
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -34,8 +37,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import jdk.testlibrary.Utils;
 
 public class CoreThreadTimeOut {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
 
     static class IdentifiableThreadFactory implements ThreadFactory {
         static ThreadFactory defaultThreadFactory
@@ -60,8 +65,8 @@ public class CoreThreadTimeOut {
         return count;
     }
 
-    static long millisElapsedSince(long t0) {
-        return (System.nanoTime() - t0) / (1000L * 1000L);
+    static long millisElapsedSince(long startTime) {
+        return (System.nanoTime() - startTime) / (1000L * 1000L);
     }
 
     void test(String[] args) throws Throwable {
@@ -89,7 +94,7 @@ public class CoreThreadTimeOut {
         equal(countExecutorThreads(), 0);
         tpe.shutdown();
         check(tpe.allowsCoreThreadTimeOut());
-        check(tpe.awaitTermination(10L, TimeUnit.SECONDS));
+        check(tpe.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
 
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new Exception("Some tests failed");

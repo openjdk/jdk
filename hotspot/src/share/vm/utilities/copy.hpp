@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,16 @@ class Copy : AllStatic {
       *to-- = *from--;
     }
   }
+
+  /**
+   * Copy and *unconditionally* byte swap elements
+   *
+   * @param src address of source
+   * @param dst address of destination
+   * @param byte_count number of bytes to copy
+   * @param elem_size size of the elements to copy-swap
+   */
+  static void conjoint_swap(address src, address dst, size_t byte_count, size_t elem_size);
 
   // Fill methods
 

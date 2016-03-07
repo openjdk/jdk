@@ -25,11 +25,11 @@
 
 ##########################################################################################
 # Install the launcher name, release version string, full version
-# string and the runtime name into the Version.java file.
+# string and the runtime name into the VersionProps.java file.
 
 $(eval $(call SetupTextFileProcessing, BUILD_VERSION_JAVA, \
-    SOURCE_FILES := $(JDK_TOPDIR)/src/java.base/share/classes/sun/misc/Version.java.template, \
-    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java, \
+    SOURCE_FILES := $(JDK_TOPDIR)/src/java.base/share/classes/java/lang/VersionProps.java.template, \
+    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/VersionProps.java, \
     REPLACEMENTS := \
         @@LAUNCHER_NAME@@ => $(LAUNCHER_NAME) ; \
         @@RUNTIME_NAME@@ => $(RUNTIME_NAME) ; \

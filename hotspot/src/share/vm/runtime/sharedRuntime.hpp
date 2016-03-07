@@ -359,6 +359,11 @@ class SharedRuntime: AllStatic {
   static address clean_opt_virtual_call_entry();
   static address clean_static_call_entry();
 
+#if defined(X86) && defined(COMPILER1)
+  // For Object.hashCode, System.identityHashCode try to pull hashCode from object header if available.
+  static void inline_check_hashcode_from_object_header(MacroAssembler* masm, methodHandle method, Register obj_reg, Register result);
+#endif // X86 && COMPILER1
+
  public:
 
   // Read the array of BasicTypes from a Java signature, and compute where

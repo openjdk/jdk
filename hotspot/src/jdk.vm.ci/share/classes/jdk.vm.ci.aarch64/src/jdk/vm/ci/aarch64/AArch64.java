@@ -70,56 +70,64 @@ public class AArch64 extends Architecture {
     public static final Register r28 = new Register(28, 28, "r28", CPU);
     public static final Register r29 = new Register(29, 29, "r29", CPU);
     public static final Register r30 = new Register(30, 30, "r30", CPU);
+
+    /*
+     * r31 is not a general purpose register, but represents either the stackpointer or the
+     * zero/discard register depending on the instruction. So we represent those two uses as two
+     * different registers. The register numbers are kept in sync with register_aarch64.hpp and have
+     * to be sequential, hence we also need a general r31 register here, which is never used.
+     */
     public static final Register r31 = new Register(31, 31, "r31", CPU);
+    public static final Register zr = new Register(32, 31, "zr", CPU);
+    public static final Register sp = new Register(33, 31, "sp", CPU);
 
     public static final Register lr = r30;
-    public static final Register zr = r31;
-    public static final Register sp = r31;
 
     // @formatter:off
     public static final Register[] cpuRegisters = {
         r0,  r1,  r2,  r3,  r4,  r5,  r6,  r7,
         r8,  r9,  r10, r11, r12, r13, r14, r15,
         r16, r17, r18, r19, r20, r21, r22, r23,
-        r24, r25, r26, r27, r28, r29, r30, r31
+        r24, r25, r26, r27, r28, r29, r30, r31,
+        zr,  sp
     };
     // @formatter:on
 
     public static final RegisterCategory SIMD = new RegisterCategory("SIMD");
 
     // Simd registers
-    public static final Register v0 = new Register(32, 0, "v0", SIMD);
-    public static final Register v1 = new Register(33, 1, "v1", SIMD);
-    public static final Register v2 = new Register(34, 2, "v2", SIMD);
-    public static final Register v3 = new Register(35, 3, "v3", SIMD);
-    public static final Register v4 = new Register(36, 4, "v4", SIMD);
-    public static final Register v5 = new Register(37, 5, "v5", SIMD);
-    public static final Register v6 = new Register(38, 6, "v6", SIMD);
-    public static final Register v7 = new Register(39, 7, "v7", SIMD);
-    public static final Register v8 = new Register(40, 8, "v8", SIMD);
-    public static final Register v9 = new Register(41, 9, "v9", SIMD);
-    public static final Register v10 = new Register(42, 10, "v10", SIMD);
-    public static final Register v11 = new Register(43, 11, "v11", SIMD);
-    public static final Register v12 = new Register(44, 12, "v12", SIMD);
-    public static final Register v13 = new Register(45, 13, "v13", SIMD);
-    public static final Register v14 = new Register(46, 14, "v14", SIMD);
-    public static final Register v15 = new Register(47, 15, "v15", SIMD);
-    public static final Register v16 = new Register(48, 16, "v16", SIMD);
-    public static final Register v17 = new Register(49, 17, "v17", SIMD);
-    public static final Register v18 = new Register(50, 18, "v18", SIMD);
-    public static final Register v19 = new Register(51, 19, "v19", SIMD);
-    public static final Register v20 = new Register(52, 20, "v20", SIMD);
-    public static final Register v21 = new Register(53, 21, "v21", SIMD);
-    public static final Register v22 = new Register(54, 22, "v22", SIMD);
-    public static final Register v23 = new Register(55, 23, "v23", SIMD);
-    public static final Register v24 = new Register(56, 24, "v24", SIMD);
-    public static final Register v25 = new Register(57, 25, "v25", SIMD);
-    public static final Register v26 = new Register(58, 26, "v26", SIMD);
-    public static final Register v27 = new Register(59, 27, "v27", SIMD);
-    public static final Register v28 = new Register(60, 28, "v28", SIMD);
-    public static final Register v29 = new Register(61, 29, "v29", SIMD);
-    public static final Register v30 = new Register(62, 30, "v30", SIMD);
-    public static final Register v31 = new Register(63, 31, "v31", SIMD);
+    public static final Register v0 = new Register(34, 0, "v0", SIMD);
+    public static final Register v1 = new Register(35, 1, "v1", SIMD);
+    public static final Register v2 = new Register(36, 2, "v2", SIMD);
+    public static final Register v3 = new Register(37, 3, "v3", SIMD);
+    public static final Register v4 = new Register(38, 4, "v4", SIMD);
+    public static final Register v5 = new Register(39, 5, "v5", SIMD);
+    public static final Register v6 = new Register(40, 6, "v6", SIMD);
+    public static final Register v7 = new Register(41, 7, "v7", SIMD);
+    public static final Register v8 = new Register(42, 8, "v8", SIMD);
+    public static final Register v9 = new Register(43, 9, "v9", SIMD);
+    public static final Register v10 = new Register(44, 10, "v10", SIMD);
+    public static final Register v11 = new Register(45, 11, "v11", SIMD);
+    public static final Register v12 = new Register(46, 12, "v12", SIMD);
+    public static final Register v13 = new Register(47, 13, "v13", SIMD);
+    public static final Register v14 = new Register(48, 14, "v14", SIMD);
+    public static final Register v15 = new Register(49, 15, "v15", SIMD);
+    public static final Register v16 = new Register(50, 16, "v16", SIMD);
+    public static final Register v17 = new Register(51, 17, "v17", SIMD);
+    public static final Register v18 = new Register(52, 18, "v18", SIMD);
+    public static final Register v19 = new Register(53, 19, "v19", SIMD);
+    public static final Register v20 = new Register(54, 20, "v20", SIMD);
+    public static final Register v21 = new Register(55, 21, "v21", SIMD);
+    public static final Register v22 = new Register(56, 22, "v22", SIMD);
+    public static final Register v23 = new Register(57, 23, "v23", SIMD);
+    public static final Register v24 = new Register(58, 24, "v24", SIMD);
+    public static final Register v25 = new Register(59, 25, "v25", SIMD);
+    public static final Register v26 = new Register(60, 26, "v26", SIMD);
+    public static final Register v27 = new Register(61, 27, "v27", SIMD);
+    public static final Register v28 = new Register(62, 28, "v28", SIMD);
+    public static final Register v29 = new Register(63, 29, "v29", SIMD);
+    public static final Register v30 = new Register(64, 30, "v30", SIMD);
+    public static final Register v31 = new Register(65, 31, "v31", SIMD);
 
     // @formatter:off
     public static final Register[] simdRegisters = {
@@ -136,6 +144,7 @@ public class AArch64 extends Architecture {
         r8,  r9,  r10, r11, r12, r13, r14, r15,
         r16, r17, r18, r19, r20, r21, r22, r23,
         r24, r25, r26, r27, r28, r29, r30, r31,
+        zr,  sp,
 
         v0,  v1,  v2,  v3,  v4,  v5,  v6,  v7,
         v8,  v9,  v10, v11, v12, v13, v14, v15,
