@@ -34,6 +34,7 @@
 #include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
@@ -1302,9 +1303,9 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       // set between the last GC or pause and now. We need to clear the
       // incremental collection set and then start rebuilding it afresh
       // after this full GC.
-      abandon_collection_set(g1_policy()->inc_cset_head());
-      g1_policy()->clear_incremental_cset();
-      g1_policy()->stop_incremental_cset_building();
+      abandon_collection_set(collection_set()->inc_head());
+      collection_set()->clear_incremental();
+      collection_set()->stop_incremental_building();
 
       tear_down_region_sets(false /* free_list_only */);
       collector_state()->set_gcs_are_young(true);
@@ -1426,8 +1427,8 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       _verifier->check_bitmaps("Full GC End");
 
       // Start a new incremental collection set for the next pause
-      assert(g1_policy()->collection_set() == NULL, "must be");
-      g1_policy()->start_incremental_cset_building();
+      assert(collection_set()->head() == NULL, "must be");
+      collection_set()->start_incremental_building();
 
       clear_cset_fast_test();
 
@@ -1741,6 +1742,7 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   CollectedHeap(),
   _g1_policy(policy_),
+  _collection_set(this),
   _dirty_card_queue_set(false),
   _is_alive_closure_cm(this),
   _is_alive_closure_stw(this),
@@ -2545,8 +2547,8 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(uint worker_i) {
   //          p threads
   // Then thread t will start at region floor ((t * n) / p)
 
-  result = g1_policy()->collection_set();
-  uint cs_size = g1_policy()->cset_region_length();
+  result = collection_set()->head();
+  uint cs_size = collection_set()->region_length();
   uint active_workers = workers()->active_workers();
 
   uint end_ind   = (cs_size * worker_i) / active_workers;
@@ -2577,7 +2579,7 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(uint worker_i) {
 }
 
 void G1CollectedHeap::collection_set_iterate(HeapRegionClosure* cl) {
-  HeapRegion* r = g1_policy()->collection_set();
+  HeapRegion* r = collection_set()->head();
   while (r != NULL) {
     HeapRegion* next = r->next_in_collection_set();
     if (cl->doHeapRegion(r)) {
@@ -2606,7 +2608,7 @@ void G1CollectedHeap::collection_set_iterate_from(HeapRegion* r,
     }
     cur = next;
   }
-  cur = g1_policy()->collection_set();
+  cur = collection_set()->head();
   while (cur != r) {
     HeapRegion* next = cur->next_in_collection_set();
     if (cl->doHeapRegion(cur) && false) {
@@ -3336,10 +3338,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
           concurrent_mark()->checkpointRootsInitialPre();
         }
 
-        double time_remaining_ms = g1_policy()->finalize_young_cset_part(target_pause_time_ms);
-        g1_policy()->finalize_old_cset_part(time_remaining_ms);
+        g1_policy()->finalize_collection_set(target_pause_time_ms);
 
-        evacuation_info.set_collectionset_regions(g1_policy()->cset_region_length());
+        evacuation_info.set_collectionset_regions(collection_set()->region_length());
 
         // Make sure the remembered sets are up to date. This needs to be
         // done before register_humongous_regions_with_cset(), because the
@@ -3358,7 +3359,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         _cm->verify_no_cset_oops();
 
         if (_hr_printer.is_active()) {
-          HeapRegion* hr = g1_policy()->collection_set();
+          HeapRegion* hr = collection_set()->head();
           while (hr != NULL) {
             _hr_printer.cset(hr);
             hr = hr->next_in_collection_set();
@@ -3373,7 +3374,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // Initialize the GC alloc regions.
         _allocator->init_gc_alloc_regions(evacuation_info);
 
-        G1ParScanThreadStateSet per_thread_states(this, workers()->active_workers(), g1_policy()->young_cset_region_length());
+        G1ParScanThreadStateSet per_thread_states(this, workers()->active_workers(), collection_set()->young_region_length());
         pre_evacuate_collection_set();
 
         // Actually do the work...
@@ -3382,18 +3383,18 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         post_evacuate_collection_set(evacuation_info, &per_thread_states);
 
         const size_t* surviving_young_words = per_thread_states.surviving_young_words();
-        free_collection_set(g1_policy()->collection_set(), evacuation_info, surviving_young_words);
+        free_collection_set(collection_set()->head(), evacuation_info, surviving_young_words);
 
         eagerly_reclaim_humongous_regions();
 
-        g1_policy()->clear_collection_set();
+        collection_set()->clear_head();
 
         record_obj_copy_mem_stats();
         _survivor_evac_stats.adjust_desired_plab_sz();
         _old_evac_stats.adjust_desired_plab_sz();
 
         // Start a new incremental collection set for the next pause.
-        g1_policy()->start_incremental_cset_building();
+        collection_set()->start_incremental_building();
 
         clear_cset_fast_test();
 
@@ -3468,7 +3469,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         size_t total_cards_scanned = per_thread_states.total_cards_scanned();
         g1_policy()->record_collection_pause_end(pause_time_ms, total_cards_scanned, heap_used_bytes_before_gc);
 
-        evacuation_info.set_collectionset_used_before(g1_policy()->collection_set_bytes_used_before());
+        evacuation_info.set_collectionset_used_before(collection_set()->bytes_used_before());
         evacuation_info.set_bytes_copied(g1_policy()->bytes_copied_during_gc());
 
         MemoryService::track_memory_usage();
@@ -4909,7 +4910,7 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
     if (cur->is_young()) {
       int index = cur->young_index_in_cset();
       assert(index != -1, "invariant");
-      assert((uint) index < policy->young_cset_region_length(), "invariant");
+      assert((uint) index < collection_set()->young_region_length(), "invariant");
       size_t words_survived = surviving_young_words[index];
       cur->record_surv_words_in_group(words_survived);
 
@@ -5382,7 +5383,7 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   assert(alloc_region->is_eden(), "all mutator alloc regions should be eden");
 
-  g1_policy()->add_region_to_incremental_cset_lhs(alloc_region);
+  collection_set()->add_eden_region(alloc_region);
   increase_used(allocated_bytes);
   _hr_printer.retire(alloc_region);
   // We update the eden sizes here, when the region is retired,
