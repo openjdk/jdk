@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,6 +247,9 @@ void emit_range_size_t(const char* /*name*/)    { /* NOP */ }
 void emit_range_double(const char* /*name*/)    { /* NOP */ }
 
 // CommandLineFlagRange emitting code functions if range arguments are provided
+void emit_range_int(const char* name, int min, int max)       {
+  CommandLineFlagRangeList::add(new CommandLineFlagRange_int(name, min, max));
+}
 void emit_range_intx(const char* name, intx min, intx max) {
   CommandLineFlagRangeList::add(new CommandLineFlagRange_intx(name, min, max));
 }
