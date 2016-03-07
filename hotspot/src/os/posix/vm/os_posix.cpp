@@ -336,13 +336,13 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   const char *start;
 
   if (lib_name != NULL) {
-    len = name_len = strlen(lib_name);
+    name_len = strlen(lib_name);
     if (is_absolute_path) {
       // Need to strip path, prefix and suffix
       if ((start = strrchr(lib_name, *os::file_separator())) != NULL) {
         lib_name = ++start;
       }
-      if (len <= (prefix_len + suffix_len)) {
+      if (strlen(lib_name) <= (prefix_len + suffix_len)) {
         return NULL;
       }
       lib_name += prefix_len;
