@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1971,33 +1971,31 @@ private:
   void vpxor(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpxor(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
-  // Copy low 128bit into high 128bit of YMM registers.
-  void vinsertf128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src);
-  void vextractf128h(XMMRegister dst, XMMRegister src);
-  void vextracti128h(XMMRegister dst, XMMRegister src);
+  // 128bit copy from/to 256bit (YMM) vector registers
+  void vinsertf128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void vinserti128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void vextractf128(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextracti128(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vinsertf128(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
+  void vinserti128(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
+  void vextractf128(Address dst, XMMRegister src, uint8_t imm8);
+  void vextracti128(Address dst, XMMRegister src, uint8_t imm8);
 
-  // Load/store high 128bit of YMM registers which does not destroy other half.
-  void vinsertf128h(XMMRegister dst, Address src);
-  void vinserti128h(XMMRegister dst, Address src);
-  void vextractf128h(Address dst, XMMRegister src);
-  void vextracti128h(Address dst, XMMRegister src);
+  // 256bit copy from/to 512bit (ZMM) vector registers
+  void vinserti64x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void vinsertf64x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void vextracti64x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextractf64x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextractf64x4(Address dst, XMMRegister src, uint8_t imm8);
+  void vinsertf64x4(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
 
-  // Copy low 256bit into high 256bit of ZMM registers.
-  void vinserti64x4h(XMMRegister dst, XMMRegister nds, XMMRegister src, int value);
-  void vinsertf64x4h(XMMRegister dst, XMMRegister nds, XMMRegister src, int value);
-  void vextracti64x4h(XMMRegister dst, XMMRegister src, int value);
-  void vextractf64x4h(XMMRegister dst, XMMRegister src, int value);
-  void vextractf64x4h(Address dst, XMMRegister src, int value);
-  void vinsertf64x4h(XMMRegister dst, Address src, int value);
-
-  // Copy targeted 128bit segments of the ZMM registers
-  void vextracti64x2h(XMMRegister dst, XMMRegister src, int value);
-  void vextractf64x2h(XMMRegister dst, XMMRegister src, int value);
-  void vextractf32x4h(XMMRegister dst, XMMRegister src, int value);
-  void vextractf32x4h(Address dst, XMMRegister src, int value);
-  void vinsertf32x4h(XMMRegister dst, XMMRegister nds, XMMRegister src, int value);
-  void vinsertf32x4h(XMMRegister dst, Address src, int value);
+  // 128bit copy from/to 256bit (YMM) or 512bit (ZMM) vector registers
+  void vextracti64x2(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextractf64x2(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextractf32x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextractf32x4(Address dst, XMMRegister src, uint8_t imm8);
+  void vinsertf32x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void vinsertf32x4(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
 
   // duplicate 4-bytes integer data from src into 8 locations in dest
   void vpbroadcastd(XMMRegister dst, XMMRegister src);
