@@ -1603,10 +1603,10 @@ public:
   product(bool, ResizePLAB, true,                                           \
           "Dynamically resize (survivor space) promotion LAB's")            \
                                                                             \
-  product(intx, ParGCArrayScanChunk, 50,                                    \
+  product(int, ParGCArrayScanChunk, 50,                                     \
           "Scan a subset of object array and push remainder, if array is "  \
           "bigger than this")                                               \
-          range(1, max_intx)                                                \
+          range(1, max_jint/3)                                              \
                                                                             \
   product(bool, ParGCUseLocalOverflow, false,                               \
           "Instead of a global overflow list, use local overflow stacks")   \

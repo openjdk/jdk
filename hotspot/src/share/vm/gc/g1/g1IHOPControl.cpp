@@ -29,13 +29,19 @@
 #include "gc/shared/gcTrace.hpp"
 #include "logging/log.hpp"
 
-G1IHOPControl::G1IHOPControl(double initial_ihop_percent, size_t target_occupancy) :
+G1IHOPControl::G1IHOPControl(double initial_ihop_percent) :
   _initial_ihop_percent(initial_ihop_percent),
-  _target_occupancy(target_occupancy),
+  _target_occupancy(0),
   _last_allocated_bytes(0),
   _last_allocation_time_s(0.0)
 {
   assert(_initial_ihop_percent >= 0.0 && _initial_ihop_percent <= 100.0, "Initial IHOP value must be between 0 and 100 but is %.3f", initial_ihop_percent);
+}
+
+void G1IHOPControl::update_target_occupancy(size_t new_target_occupancy) {
+  log_debug(gc, ihop)("Target occupancy update: old: " SIZE_FORMAT "B, new: " SIZE_FORMAT "B",
+                      _target_occupancy, new_target_occupancy);
+  _target_occupancy = new_target_occupancy;
 }
 
 void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t allocated_bytes, size_t additional_buffer_size) {
@@ -46,6 +52,7 @@ void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t allo
 }
 
 void G1IHOPControl::print() {
+  assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   size_t cur_conc_mark_start_threshold = get_conc_mark_start_threshold();
   log_debug(gc, ihop)("Basic information (value update), threshold: " SIZE_FORMAT "B (%1.2f), target occupancy: " SIZE_FORMAT "B, current occupancy: " SIZE_FORMAT "B, "
                       "recent allocation size: " SIZE_FORMAT "B, recent allocation duration: %1.2fms, recent old gen allocation rate: %1.2fB/s, recent marking phase length: %1.2fms",
@@ -60,6 +67,7 @@ void G1IHOPControl::print() {
 }
 
 void G1IHOPControl::send_trace_event(G1NewTracer* tracer) {
+  assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   tracer->report_basic_ihop_statistics(get_conc_mark_start_threshold(),
                                        _target_occupancy,
                                        G1CollectedHeap::heap()->used(),
@@ -68,10 +76,9 @@ void G1IHOPControl::send_trace_event(G1NewTracer* tracer) {
                                        last_marking_length_s());
 }
 
-G1StaticIHOPControl::G1StaticIHOPControl(double ihop_percent, size_t target_occupancy) :
-  G1IHOPControl(ihop_percent, target_occupancy),
+G1StaticIHOPControl::G1StaticIHOPControl(double ihop_percent) :
+  G1IHOPControl(ihop_percent),
   _last_marking_length_s(0.0) {
-  assert(_target_occupancy > 0, "Target occupancy must be larger than zero.");
 }
 
 #ifndef PRODUCT
@@ -85,7 +92,8 @@ static void test_update(G1IHOPControl* ctrl, double alloc_time, size_t alloc_amo
 void G1StaticIHOPControl::test() {
   size_t const initial_ihop = 45;
 
-  G1StaticIHOPControl ctrl(initial_ihop, 100);
+  G1StaticIHOPControl ctrl(initial_ihop);
+  ctrl.update_target_occupancy(100);
 
   size_t threshold = ctrl.get_conc_mark_start_threshold();
   assert(threshold == initial_ihop,
@@ -115,11 +123,10 @@ void G1StaticIHOPControl::test() {
 #endif
 
 G1AdaptiveIHOPControl::G1AdaptiveIHOPControl(double ihop_percent,
-                                             size_t initial_target_occupancy,
                                              G1Predictions const* predictor,
                                              size_t heap_reserve_percent,
                                              size_t heap_waste_percent) :
-  G1IHOPControl(ihop_percent, initial_target_occupancy),
+  G1IHOPControl(ihop_percent),
   _predictor(predictor),
   _marking_times_s(10, 0.95),
   _allocation_rate_s(10, 0.95),
@@ -130,6 +137,7 @@ G1AdaptiveIHOPControl::G1AdaptiveIHOPControl(double ihop_percent,
 }
 
 size_t G1AdaptiveIHOPControl::actual_target_threshold() const {
+  guarantee(_target_occupancy > 0, "Target occupancy still not updated yet.");
   // The actual target threshold takes the heap reserve and the expected waste in
   // free space  into account.
   // _heap_reserve is that part of the total heap capacity that is reserved for
@@ -227,7 +235,8 @@ void G1AdaptiveIHOPControl::test() {
   // target_size - (young_size + alloc_amount/alloc_time * marking_time)
 
   G1Predictions pred(0.95);
-  G1AdaptiveIHOPControl ctrl(initial_threshold, target_size, &pred, 0, 0);
+  G1AdaptiveIHOPControl ctrl(initial_threshold, &pred, 0, 0);
+  ctrl.update_target_occupancy(target_size);
 
   // First "load".
   size_t const alloc_time1 = 2;
@@ -288,5 +297,6 @@ void G1AdaptiveIHOPControl::test() {
 
 void IHOP_test() {
   G1StaticIHOPControl::test();
+  G1AdaptiveIHOPControl::test();
 }
 #endif
