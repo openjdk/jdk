@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,7 +385,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
     __ movdl(xmm0, rcx);
     __ pshufd(xmm0, xmm0, 0x00);
-    __ vinsertf128h(xmm0, xmm0, xmm0);
+    __ vinsertf128_high(xmm0, xmm0);
     __ vmovdqu(xmm7, xmm0);
 #ifdef _LP64
     __ vmovdqu(xmm8, xmm0);

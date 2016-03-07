@@ -3445,7 +3445,7 @@ void MacroAssembler::movptr(Address dst, Register src) {
 
 void MacroAssembler::movdqu(Address dst, XMMRegister src) {
   if (UseAVX > 2 && !VM_Version::supports_avx512vl() && (src->encoding() > 15)) {
-    Assembler::vextractf32x4h(dst, src, 0);
+    Assembler::vextractf32x4(dst, src, 0);
   } else {
     Assembler::movdqu(dst, src);
   }
@@ -3453,7 +3453,7 @@ void MacroAssembler::movdqu(Address dst, XMMRegister src) {
 
 void MacroAssembler::movdqu(XMMRegister dst, Address src) {
   if (UseAVX > 2 && !VM_Version::supports_avx512vl() && (dst->encoding() > 15)) {
-    Assembler::vinsertf32x4h(dst, src, 0);
+    Assembler::vinsertf32x4(dst, dst, src, 0);
   } else {
     Assembler::movdqu(dst, src);
   }
@@ -3478,7 +3478,7 @@ void MacroAssembler::movdqu(XMMRegister dst, AddressLiteral src) {
 
 void MacroAssembler::vmovdqu(Address dst, XMMRegister src) {
   if (UseAVX > 2 && !VM_Version::supports_avx512vl() && (src->encoding() > 15)) {
-    Assembler::vextractf64x4h(dst, src, 0);
+    vextractf64x4_low(dst, src);
   } else {
     Assembler::vmovdqu(dst, src);
   }
@@ -3486,7 +3486,7 @@ void MacroAssembler::vmovdqu(Address dst, XMMRegister src) {
 
 void MacroAssembler::vmovdqu(XMMRegister dst, Address src) {
   if (UseAVX > 2 && !VM_Version::supports_avx512vl() && (dst->encoding() > 15)) {
-    Assembler::vinsertf64x4h(dst, src, 0);
+    vinsertf64x4_low(dst, src);
   } else {
     Assembler::vmovdqu(dst, src);
   }
@@ -5649,14 +5649,14 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
         // Save upper half of ZMM registers
         subptr(rsp, 32*num_xmm_regs);
         for (int n = 0; n < num_xmm_regs; n++) {
-          vextractf64x4h(Address(rsp, n*32), as_XMMRegister(n), 1);
+          vextractf64x4_high(Address(rsp, n*32), as_XMMRegister(n));
         }
       }
       assert(UseAVX > 0, "256 bit vectors are supported only with AVX");
       // Save upper half of YMM registers
       subptr(rsp, 16*num_xmm_regs);
       for (int n = 0; n < num_xmm_regs; n++) {
-        vextractf128h(Address(rsp, n*16), as_XMMRegister(n));
+        vextractf128_high(Address(rsp, n*16), as_XMMRegister(n));
       }
     }
 #endif
@@ -5665,7 +5665,7 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
 #ifdef _LP64
     if (VM_Version::supports_evex()) {
       for (int n = 0; n < num_xmm_regs; n++) {
-        vextractf32x4h(Address(rsp, n*16), as_XMMRegister(n), 0);
+        vextractf32x4(Address(rsp, n*16), as_XMMRegister(n), 0);
       }
     } else {
       for (int n = 0; n < num_xmm_regs; n++) {
@@ -5753,7 +5753,7 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
 #ifdef _LP64
   if (VM_Version::supports_evex()) {
     for (int n = 0; n < num_xmm_regs; n++) {
-      vinsertf32x4h(as_XMMRegister(n), Address(rsp, n*16), 0);
+      vinsertf32x4(as_XMMRegister(n), as_XMMRegister(n), Address(rsp, n*16), 0);
     }
   } else {
     for (int n = 0; n < num_xmm_regs; n++) {
@@ -5771,12 +5771,12 @@ void MacroAssembler::fp_runtime_fallback(address runtime_entry, int nb_args, int
     if (MaxVectorSize > 16) {
       // Restore upper half of YMM registers.
       for (int n = 0; n < num_xmm_regs; n++) {
-        vinsertf128h(as_XMMRegister(n), Address(rsp, n*16));
+        vinsertf128_high(as_XMMRegister(n), Address(rsp, n*16));
       }
       addptr(rsp, 16*num_xmm_regs);
       if(UseAVX > 2) {
         for (int n = 0; n < num_xmm_regs; n++) {
-          vinsertf64x4h(as_XMMRegister(n), Address(rsp, n*32), 1);
+          vinsertf64x4_high(as_XMMRegister(n), Address(rsp, n*32));
         }
         addptr(rsp, 32*num_xmm_regs);
       }

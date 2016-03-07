@@ -275,7 +275,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (VM_Version::supports_evex()) {
       for (int i = xmm_save_first; i <= last_reg; i++) {
-        __ vextractf32x4h(xmm_save(i), as_XMMRegister(i), 0);
+        __ vextractf32x4(xmm_save(i), as_XMMRegister(i), 0);
       }
     } else {
       for (int i = xmm_save_first; i <= last_reg; i++) {
@@ -393,7 +393,7 @@ class StubGenerator: public StubCodeGenerator {
     // emit the restores for xmm regs
     if (VM_Version::supports_evex()) {
       for (int i = xmm_save_first; i <= last_reg; i++) {
-        __ vinsertf32x4h(as_XMMRegister(i), xmm_save(i), 0);
+        __ vinsertf32x4(as_XMMRegister(i), as_XMMRegister(i), xmm_save(i), 0);
       }
     } else {
       for (int i = xmm_save_first; i <= last_reg; i++) {

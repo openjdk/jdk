@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1215,13 +1215,130 @@ public:
   void vpxor(XMMRegister dst, XMMRegister src) { Assembler::vpxor(dst, dst, src, true); }
   void vpxor(XMMRegister dst, Address src) { Assembler::vpxor(dst, dst, src, true); }
 
-  // Move packed integer values from low 128 bit to hign 128 bit in 256 bit vector.
-  void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
-    if (UseAVX > 1) // vinserti128h is available only in AVX2
-      Assembler::vinserti128h(dst, nds, src);
-    else
-      Assembler::vinsertf128h(dst, nds, src);
+  void vinserti128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8) {
+    if (UseAVX > 1) { // vinserti128 is available only in AVX2
+      Assembler::vinserti128(dst, nds, src, imm8);
+    } else {
+      Assembler::vinsertf128(dst, nds, src, imm8);
+    }
   }
+
+  void vinserti128(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8) {
+    if (UseAVX > 1) { // vinserti128 is available only in AVX2
+      Assembler::vinserti128(dst, nds, src, imm8);
+    } else {
+      Assembler::vinsertf128(dst, nds, src, imm8);
+    }
+  }
+
+  void vextracti128(XMMRegister dst, XMMRegister src, uint8_t imm8) {
+    if (UseAVX > 1) { // vextracti128 is available only in AVX2
+      Assembler::vextracti128(dst, src, imm8);
+    } else {
+      Assembler::vextractf128(dst, src, imm8);
+    }
+  }
+
+  void vextracti128(Address dst, XMMRegister src, uint8_t imm8) {
+    if (UseAVX > 1) { // vextracti128 is available only in AVX2
+      Assembler::vextracti128(dst, src, imm8);
+    } else {
+      Assembler::vextractf128(dst, src, imm8);
+    }
+  }
+
+  // 128bit copy to/from high 128 bits of 256bit (YMM) vector registers
+  void vinserti128_high(XMMRegister dst, XMMRegister src) {
+    vinserti128(dst, dst, src, 1);
+  }
+  void vinserti128_high(XMMRegister dst, Address src) {
+    vinserti128(dst, dst, src, 1);
+  }
+  void vextracti128_high(XMMRegister dst, XMMRegister src) {
+    vextracti128(dst, src, 1);
+  }
+  void vextracti128_high(Address dst, XMMRegister src) {
+    vextracti128(dst, src, 1);
+  }
+  void vinsertf128_high(XMMRegister dst, XMMRegister src) {
+    vinsertf128(dst, dst, src, 1);
+  }
+  void vinsertf128_high(XMMRegister dst, Address src) {
+    vinsertf128(dst, dst, src, 1);
+  }
+  void vextractf128_high(XMMRegister dst, XMMRegister src) {
+    vextractf128(dst, src, 1);
+  }
+  void vextractf128_high(Address dst, XMMRegister src) {
+    vextractf128(dst, src, 1);
+  }
+
+  // 256bit copy to/from high 256 bits of 512bit (ZMM) vector registers
+  void vinserti64x4_high(XMMRegister dst, XMMRegister src) {
+    vinserti64x4(dst, dst, src, 1);
+  }
+  void vinsertf64x4_high(XMMRegister dst, XMMRegister src) {
+    vinsertf64x4(dst, dst, src, 1);
+  }
+  void vextracti64x4_high(XMMRegister dst, XMMRegister src) {
+    vextracti64x4(dst, src, 1);
+  }
+  void vextractf64x4_high(XMMRegister dst, XMMRegister src) {
+    vextractf64x4(dst, src, 1);
+  }
+  void vextractf64x4_high(Address dst, XMMRegister src) {
+    vextractf64x4(dst, src, 1);
+  }
+  void vinsertf64x4_high(XMMRegister dst, Address src) {
+    vinsertf64x4(dst, dst, src, 1);
+  }
+
+  // 128bit copy to/from low 128 bits of 256bit (YMM) vector registers
+  void vinserti128_low(XMMRegister dst, XMMRegister src) {
+    vinserti128(dst, dst, src, 0);
+  }
+  void vinserti128_low(XMMRegister dst, Address src) {
+    vinserti128(dst, dst, src, 0);
+  }
+  void vextracti128_low(XMMRegister dst, XMMRegister src) {
+    vextracti128(dst, src, 0);
+  }
+  void vextracti128_low(Address dst, XMMRegister src) {
+    vextracti128(dst, src, 0);
+  }
+  void vinsertf128_low(XMMRegister dst, XMMRegister src) {
+    vinsertf128(dst, dst, src, 0);
+  }
+  void vinsertf128_low(XMMRegister dst, Address src) {
+    vinsertf128(dst, dst, src, 0);
+  }
+  void vextractf128_low(XMMRegister dst, XMMRegister src) {
+    vextractf128(dst, src, 0);
+  }
+  void vextractf128_low(Address dst, XMMRegister src) {
+    vextractf128(dst, src, 0);
+  }
+
+  // 256bit copy to/from low 256 bits of 512bit (ZMM) vector registers
+  void vinserti64x4_low(XMMRegister dst, XMMRegister src) {
+    vinserti64x4(dst, dst, src, 0);
+  }
+  void vinsertf64x4_low(XMMRegister dst, XMMRegister src) {
+    vinsertf64x4(dst, dst, src, 0);
+  }
+  void vextracti64x4_low(XMMRegister dst, XMMRegister src) {
+    vextracti64x4(dst, src, 0);
+  }
+  void vextractf64x4_low(XMMRegister dst, XMMRegister src) {
+    vextractf64x4(dst, src, 0);
+  }
+  void vextractf64x4_low(Address dst, XMMRegister src) {
+    vextractf64x4(dst, src, 0);
+  }
+  void vinsertf64x4_low(XMMRegister dst, Address src) {
+    vinsertf64x4(dst, dst, src, 0);
+  }
+
 
   // Carry-Less Multiplication Quadword
   void vpclmulldq(XMMRegister dst, XMMRegister nds, XMMRegister src) {
