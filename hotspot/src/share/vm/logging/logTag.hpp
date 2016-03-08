@@ -87,6 +87,7 @@
   LOG_TAG(thread) \
   LOG_TAG(tlab) \
   LOG_TAG(time) \
+  LOG_TAG(verboseverification) \
   LOG_TAG(verify) \
   LOG_TAG(vmoperation) \
   LOG_TAG(vtables)
