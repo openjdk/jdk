@@ -29,26 +29,50 @@
  * @run main GCDuringIteration
  * @summary Check that iterators work properly in the presence of
  *          concurrent finalization and removal of elements.
- * @key randomness intermittent
+ * @key randomness
  */
 
-import java.util.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Random;
+import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.BooleanSupplier;
 import jdk.testlibrary.RandomFactory;
 
 public class GCDuringIteration {
-    private static void waitForFinalizersToRun() {
-        for (int i = 0; i < 2; i++)
-            tryWaitForFinalizersToRun();
+
+    /** No guarantees, but effective in practice. */
+    static void forceFullGc() {
+        CountDownLatch finalizeDone = new CountDownLatch(1);
+        WeakReference<?> ref = new WeakReference<Object>(new Object() {
+            protected void finalize() { finalizeDone.countDown(); }});
+        try {
+            for (int i = 0; i < 10; i++) {
+                System.gc();
+                if (finalizeDone.await(1L, SECONDS) && ref.get() == null) {
+                    System.runFinalization(); // try to pick up stragglers
+                    return;
+                }
+            }
+        } catch (InterruptedException unexpected) {
+            throw new AssertionError("unexpected InterruptedException");
+        }
+        throw new AssertionError("failed to do a \"full\" gc");
     }
 
-    private static void tryWaitForFinalizersToRun() {
-        System.gc();
-        final CountDownLatch fin = new CountDownLatch(1);
-        new Object() { protected void finalize() { fin.countDown(); }};
-        System.gc();
-        try { fin.await(); }
-        catch (InterruptedException ie) { throw new Error(ie); }
+    static void gcAwait(BooleanSupplier s) {
+        for (int i = 0; i < 10; i++) {
+            if (s.getAsBoolean())
+                return;
+            forceFullGc();
+        }
+        throw new AssertionError("failed to satisfy condition");
     }
 
     // A class with the traditional pessimal hashCode implementation,
@@ -76,9 +100,13 @@ public class GCDuringIteration {
             if (rnd.nextBoolean()) check(it.hasNext());
             equal(it.next().getValue(), i);
         }
-        if (rnd.nextBoolean())
-            THROWS(NoSuchElementException.class,
-                   new F(){void f(){it.next();}});
+        if (rnd.nextBoolean()) {
+            try {
+                it.next();
+                throw new AssertionError("should throw");
+            } catch (NoSuchElementException success) {}
+        }
+
         if (rnd.nextBoolean())
             check(! it.hasNext());
     }
@@ -106,9 +134,7 @@ public class GCDuringIteration {
             int first = firstValue(map);
             final Iterator<Map.Entry<Foo,Integer>> it = map.entrySet().iterator();
             foos[first] = null;
-            for (int i = 0; i < 10 && map.size() != first; i++)
-                tryWaitForFinalizersToRun();
-            equal(map.size(), first);
+            gcAwait(() -> map.size() == first);
             checkIterator(it, first-1);
             equal(map.size(), first);
             equal(firstValue(map), first-1);
@@ -119,15 +145,14 @@ public class GCDuringIteration {
             final Iterator<Map.Entry<Foo,Integer>> it = map.entrySet().iterator();
             it.next();          // protects first entry
             System.out.println(map.values());
+            int oldSize = map.size();
             foos[first] = null;
-            tryWaitForFinalizersToRun();
-            equal(map.size(), first+1);
+            forceFullGc();
+            equal(map.size(), oldSize);
             System.out.println(map.values());
             checkIterator(it, first-1);
             // first entry no longer protected
-            for (int i = 0; i < 10 && map.size() != first; i++)
-                tryWaitForFinalizersToRun();
-            equal(map.size(), first);
+            gcAwait(() -> map.size() == first);
             equal(firstValue(map), first-1);
         }
 
@@ -137,15 +162,12 @@ public class GCDuringIteration {
             it.next();          // protects first entry
             System.out.println(map.values());
             foos[first] = foos[first-1] = null;
-            tryWaitForFinalizersToRun();
-            equal(map.size(), first);
+            gcAwait(() -> map.size() == first);
             equal(firstValue(map), first);
             System.out.println(map.values());
             checkIterator(it, first-2);
             // first entry no longer protected
-            for (int i = 0; i < 10 && map.size() != first-1; i++)
-                tryWaitForFinalizersToRun();
-            equal(map.size(), first-1);
+            gcAwait(() -> map.size() == first-1);
             equal(firstValue(map), first-2);
         }
 
@@ -155,16 +177,15 @@ public class GCDuringIteration {
             it.next();          // protects first entry
             it.hasNext();       // protects second entry
             System.out.println(map.values());
+            int oldSize = map.size();
             foos[first] = foos[first-1] = null;
-            tryWaitForFinalizersToRun();
+            forceFullGc();
+            equal(map.size(), oldSize);
             equal(firstValue(map), first);
-            equal(map.size(), first+1);
             System.out.println(map.values());
             checkIterator(it, first-1);
             // first entry no longer protected
-            for (int i = 0; i < 10 && map.size() != first-1; i++)
-                tryWaitForFinalizersToRun();
-            equal(map.size(), first-1);
+            gcAwait(() -> map.size() == first-1);
             equal(firstValue(map), first-2);
         }
 
@@ -173,17 +194,16 @@ public class GCDuringIteration {
             final Iterator<Map.Entry<Foo,Integer>> it = map.entrySet().iterator();
             it.next();          // protects first entry
             System.out.println(map.values());
+            equal(map.size(), first+1);
             foos[first] = foos[first-1] = null;
-            tryWaitForFinalizersToRun();
+            gcAwait(() -> map.size() == first);
             it.remove();
             equal(firstValue(map), first-2);
             equal(map.size(), first-1);
             System.out.println(map.values());
             checkIterator(it, first-2);
             // first entry no longer protected
-            for (int i = 0; i < 10 && map.size() != first-1; i++)
-                tryWaitForFinalizersToRun();
-            equal(map.size(), first-1);
+            gcAwait(() -> map.size() == first-1);
             equal(firstValue(map), first-2);
         }
 
@@ -194,15 +214,14 @@ public class GCDuringIteration {
             it.remove();
             it.hasNext();       // protects second entry
             System.out.println(map.values());
+            equal(map.size(), first);
             foos[first] = foos[first-1] = null;
-            tryWaitForFinalizersToRun();
+            forceFullGc();
             equal(firstValue(map), first-1);
             equal(map.size(), first);
             System.out.println(map.values());
             checkIterator(it, first-1);
-            for (int i = 0; i < 10 && map.size() != first-1; i++)
-                tryWaitForFinalizersToRun();
-            equal(map.size(), first-1);
+            gcAwait(() -> map.size() == first-1);
             equal(firstValue(map), first-2);
         }
 
@@ -211,14 +230,11 @@ public class GCDuringIteration {
             final Iterator<Map.Entry<Foo,Integer>> it = map.entrySet().iterator();
             it.hasNext();       // protects first entry
             Arrays.fill(foos, null);
-            tryWaitForFinalizersToRun();
-            equal(map.size(), 1);
+            gcAwait(() -> map.size() == 1);
             System.out.println(map.values());
             equal(it.next().getValue(), first);
             check(! it.hasNext());
-            for (int i = 0; i < 10 && map.size() != 0; i++)
-                tryWaitForFinalizersToRun();
-            equal(map.size(), 0);
+            gcAwait(() -> map.size() == 0);
             check(map.isEmpty());
         }
     }
@@ -239,11 +255,4 @@ public class GCDuringIteration {
         try {test(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    abstract class F {abstract void f() throws Throwable;}
-    void THROWS(Class<? extends Throwable> k, F... fs) {
-        for (F f : fs)
-            try {f.f(); fail("Expected " + k.getName() + " not thrown");}
-            catch (Throwable t) {
-                if (k.isAssignableFrom(t.getClass())) pass();
-                else unexpected(t);}}
 }

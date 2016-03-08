@@ -44,7 +44,7 @@ import org.testng.Assert;
 import org.testng.annotations.*;
 
 public class MultiReleaseJarTest {
-    final private int MAJOR_VERSION= Version.current().major();
+    final private int MAJOR_VERSION = Version.current().major();
 
     final private String userdir = System.getProperty("user.dir",".");
     final private Map<String,String> stringEnv = new HashMap<>();

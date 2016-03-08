@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,11 @@
 /*
  * @test TestPrintGCDetailsVerbose
  * @bug 8016740
- * @summary Tests that jvm with PrintGCDetails and Verbose flags do not crash when ParOldGC has no memory
+ * @summary Tests that jvm with maximally verbose GC logging does not crash when ParOldGC has no memory
  * @key gc
- * @requires java.version ~= ".*fastdebug"
  * @requires vm.gc=="Parallel" | vm.gc=="null"
  * @library /testlibrary
- * @run main/othervm -Xmx50m -XX:+UseParallelOldGC -XX:+PrintGCDetails -XX:+Verbose TestPrintGCDetailsVerbose
+ * @run main/othervm -Xmx50m -XX:+UseParallelGC -Xlog:gc*=trace TestPrintGCDetailsVerbose
  */
 public class TestPrintGCDetailsVerbose {
 

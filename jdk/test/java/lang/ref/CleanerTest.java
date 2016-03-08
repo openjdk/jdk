@@ -52,7 +52,10 @@ import org.testng.annotations.Test;
  * @library /test/lib/share/classes /lib/testlibrary /test/lib
  * @build sun.hotspot.WhiteBox
  * @build jdk.test.lib.Utils
- * @modules java.base/jdk.internal.misc java.base/jdk.internal.ref
+ * @modules java.base/jdk.internal
+ *          java.base/jdk.internal.misc
+ *          java.base/jdk.internal.ref
+ *          java.management
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run testng/othervm
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.

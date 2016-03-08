@@ -29,6 +29,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/thread.hpp"
 #include "gc/shared/gcId.hpp"
+#include "logging/log.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -151,6 +152,7 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
     _active_workers = MAX2(1U, _active_workers);
     assert(UseDynamicNumberOfGCThreads || _active_workers == _total_workers,
            "Unless dynamic should use total workers");
+    log_info(gc, task)("GC Workers: %d", _active_workers);
   }
 
   // Return the Ith worker.

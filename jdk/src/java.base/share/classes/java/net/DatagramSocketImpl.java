@@ -27,9 +27,7 @@ package java.net;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.util.Set;
-import java.util.HashSet;
 
 /**
  * Abstract datagram and multicast socket implementation base class.
@@ -352,32 +350,32 @@ public abstract class DatagramSocketImpl implements SocketOptions {
         }
     }
 
-    private static final  Set<SocketOption<?>> dgSocketOptions =
-        new HashSet<>();
+    private static final Set<SocketOption<?>> dgSocketOptions;
 
-    private static final  Set<SocketOption<?>> mcSocketOptions =
-        new HashSet<>();
+    private static final Set<SocketOption<?>> mcSocketOptions;
 
     static {
-        dgSocketOptions.add(StandardSocketOptions.SO_SNDBUF);
-        dgSocketOptions.add(StandardSocketOptions.SO_RCVBUF);
-        dgSocketOptions.add(StandardSocketOptions.SO_REUSEADDR);
-        dgSocketOptions.add(StandardSocketOptions.IP_TOS);
+        dgSocketOptions = Set.of(StandardSocketOptions.SO_SNDBUF,
+                                 StandardSocketOptions.SO_RCVBUF,
+                                 StandardSocketOptions.SO_REUSEADDR,
+                                 StandardSocketOptions.IP_TOS);
 
-        mcSocketOptions.add(StandardSocketOptions.SO_SNDBUF);
-        mcSocketOptions.add(StandardSocketOptions.SO_RCVBUF);
-        mcSocketOptions.add(StandardSocketOptions.SO_REUSEADDR);
-        mcSocketOptions.add(StandardSocketOptions.IP_TOS);
-        mcSocketOptions.add(StandardSocketOptions.IP_MULTICAST_IF);
-        mcSocketOptions.add(StandardSocketOptions.IP_MULTICAST_TTL);
-        mcSocketOptions.add(StandardSocketOptions.IP_MULTICAST_LOOP);
-    };
+        mcSocketOptions = Set.of(StandardSocketOptions.SO_SNDBUF,
+                                 StandardSocketOptions.SO_RCVBUF,
+                                 StandardSocketOptions.SO_REUSEADDR,
+                                 StandardSocketOptions.IP_TOS,
+                                 StandardSocketOptions.IP_MULTICAST_IF,
+                                 StandardSocketOptions.IP_MULTICAST_TTL,
+                                 StandardSocketOptions.IP_MULTICAST_LOOP);
+    }
 
     /**
      * Returns a set of SocketOptions supported by this impl
      * and by this impl's socket (DatagramSocket or MulticastSocket)
      *
      * @return a Set of SocketOptions
+     *
+     * @since 9
      */
     protected Set<SocketOption<?>> supportedOptions() {
         if (getDatagramSocket() instanceof MulticastSocket) {
