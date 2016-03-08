@@ -1892,23 +1892,42 @@ void os::Solaris::print_libversion_info(outputStream* st) {
 
 static bool check_addr0(outputStream* st) {
   jboolean status = false;
+  const int read_chunk = 200;
+  int ret = 0;
+  int nmap = 0;
   int fd = ::open("/proc/self/map",O_RDONLY);
   if (fd >= 0) {
-    prmap_t p;
-    while (::read(fd, &p, sizeof(p)) > 0) {
-      if (p.pr_vaddr == 0x0) {
-        st->print("Warning: Address: 0x%x, Size: %dK, ",p.pr_vaddr, p.pr_size/1024, p.pr_mapname);
-        st->print("Mapped file: %s, ", p.pr_mapname[0] == '\0' ? "None" : p.pr_mapname);
-        st->print("Access:");
-        st->print("%s",(p.pr_mflags & MA_READ)  ? "r" : "-");
-        st->print("%s",(p.pr_mflags & MA_WRITE) ? "w" : "-");
-        st->print("%s",(p.pr_mflags & MA_EXEC)  ? "x" : "-");
-        st->cr();
-        status = true;
-      }
+    prmap_t *p = NULL;
+    char *mbuff = (char *) calloc(read_chunk, sizeof(prmap_t) + 1);
+    if (NULL == mbuff) {
+      ::close(fd);
+      return status;
     }
-    ::close(fd);
+    while ((ret = ::read(fd, mbuff, read_chunk*sizeof(prmap_t))) > 0) {
+      //check if read() has not read partial data
+      if( 0 != ret % sizeof(prmap_t)){
+        break;
+      }
+      nmap = ret / sizeof(prmap_t);
+      p = (prmap_t *)mbuff;
+      for(int i = 0; i < nmap; i++){
+        if (p->pr_vaddr == 0x0) {
+          st->print("Warning: Address: " PTR_FORMAT ", Size: %dK, ",p->pr_vaddr, p->pr_size/1024);
+          st->print("Mapped file: %s, ", p->pr_mapname[0] == '\0' ? "None" : p->pr_mapname);
+          st->print("Access: ");
+          st->print("%s",(p->pr_mflags & MA_READ)  ? "r" : "-");
+          st->print("%s",(p->pr_mflags & MA_WRITE) ? "w" : "-");
+          st->print("%s",(p->pr_mflags & MA_EXEC)  ? "x" : "-");
+          st->cr();
+          status = true;
+        }
+        p = (prmap_t *)(mbuff + sizeof(prmap_t));
+      }
+      memset(mbuff, 0, read_chunk*sizeof(prmap_t)+1);
+    }
+    free(mbuff);
   }
+  ::close(fd);
   return status;
 }
 
