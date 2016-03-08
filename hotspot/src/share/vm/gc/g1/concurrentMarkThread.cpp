@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/g1/concurrentMarkThread.inline.hpp"
+#include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
@@ -79,10 +80,11 @@ public:
 
 // Marking pauses can be scheduled flexibly, so we might delay marking to meet MMU.
 void ConcurrentMarkThread::delay_to_keep_mmu(G1CollectorPolicy* g1_policy, bool remark) {
+  const G1Analytics* analytics = g1_policy->analytics();
   if (g1_policy->adaptive_young_list_length()) {
     double now = os::elapsedTime();
-    double prediction_ms = remark ? g1_policy->predict_remark_time_ms()
-                                  : g1_policy->predict_cleanup_time_ms();
+    double prediction_ms = remark ? analytics->predict_remark_time_ms()
+                                  : analytics->predict_cleanup_time_ms();
     G1MMUTracker *mmu_tracker = g1_policy->mmu_tracker();
     jlong sleep_time_ms = mmu_tracker->when_ms(now, prediction_ms);
     os::sleep(this, sleep_time_ms, false);
