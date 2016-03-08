@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
+import jdk.Version;
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -47,6 +48,9 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 public class MultiReleaseJarSecurity {
+
+    static final int MAJOR_VERSION = Version.current().major();
+
     String userdir = System.getProperty("user.dir",".");
     File multirelease = new File(userdir, "multi-release.jar");
     File signedmultirelease = new File(userdir, "signed-multi-release.jar");
@@ -68,9 +72,8 @@ public class MultiReleaseJarSecurity {
     @Test
     public void testCertsAndSigners() throws IOException {
         try (JarFile jf = new JarFile(signedmultirelease, true, ZipFile.OPEN_READ, JarFile.Release.RUNTIME)) {
-            int version = sun.misc.Version.jdkMajorVersion();  // fixme JEP 223 Version
             CertsAndSigners vcas = new CertsAndSigners(jf, jf.getJarEntry("version/Version.class"));
-            CertsAndSigners rcas = new CertsAndSigners(jf, jf.getJarEntry("META-INF/versions/" + version + "/version/Version.class"));
+            CertsAndSigners rcas = new CertsAndSigners(jf, jf.getJarEntry("META-INF/versions/" + MAJOR_VERSION + "/version/Version.class"));
             Assert.assertTrue(Arrays.equals(rcas.getCertificates(), vcas.getCertificates()));
             Assert.assertTrue(Arrays.equals(rcas.getCodeSigners(), vcas.getCodeSigners()));
         }

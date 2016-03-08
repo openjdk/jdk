@@ -34,11 +34,12 @@
 /*
  * @test
  * @bug 4486658 6785442
- * @run main ConcurrentQueueLoops 8 123456
  * @summary Checks that a set of threads can repeatedly get and modify items
+ * @library /lib/testlibrary/
+ * @run main ConcurrentQueueLoops 8 123456
  */
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,8 +58,10 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import jdk.testlibrary.Utils;
 
 public class ConcurrentQueueLoops {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     ExecutorService pool;
     AtomicInteger totalItems;
     boolean print;
@@ -106,16 +109,14 @@ public class ConcurrentQueueLoops {
         print = false;
         System.out.println("Warmup...");
         oneRun(1, items, q);
-        //Thread.sleep(100);
         oneRun(3, items, q);
-        Thread.sleep(100);
         print = true;
 
         for (int i = 1; i <= maxStages; i += (i+1) >>> 1) {
             oneRun(i, items, q);
         }
         pool.shutdown();
-        check(pool.awaitTermination(60L, SECONDS));
+        check(pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
    }
 
     class Stage implements Callable<Integer> {

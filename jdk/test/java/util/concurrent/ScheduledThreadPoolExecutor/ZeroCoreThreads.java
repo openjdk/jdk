@@ -35,9 +35,11 @@
  * @test
  * @bug 8022642 8065320 8129861
  * @summary Ensure relative sanity when zero core threads
+ * @library /lib/testlibrary/
  */
 
 import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.lang.reflect.Field;
@@ -45,8 +47,28 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BooleanSupplier;
+import jdk.testlibrary.Utils;
 
 public class ZeroCoreThreads {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
+
+    static long millisElapsedSince(long startTime) {
+        return (System.nanoTime() - startTime) / (1000L * 1000L);
+    }
+
+    static void spinWaitUntil(BooleanSupplier predicate, long timeoutMillis) {
+        long startTime = -1L;
+        while (!predicate.getAsBoolean()) {
+            if (startTime == -1L)
+                startTime = System.nanoTime();
+            else if (millisElapsedSince(startTime) > timeoutMillis)
+                throw new AssertionError(
+                    String.format("timed out after %s ms", timeoutMillis));
+            Thread.yield();
+        }
+    }
+
     static boolean hasWaiters(ReentrantLock lock, Condition condition) {
         lock.lock();
         try {
@@ -54,6 +76,11 @@ public class ZeroCoreThreads {
         } finally {
             lock.unlock();
         }
+    }
+
+    static void awaitHasWaiters(ReentrantLock lock, Condition condition,
+                                long timeoutMillis) {
+        spinWaitUntil(() -> hasWaiters(lock, condition), timeoutMillis);
     }
 
     static <T> T getField(Object x, String fieldName) {
@@ -72,7 +99,7 @@ public class ZeroCoreThreads {
             test(p);
         } finally {
             p.shutdownNow();
-            check(p.awaitTermination(10L, SECONDS));
+            check(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
         }
     }
 
@@ -89,13 +116,7 @@ public class ZeroCoreThreads {
         equal(0L, p.getCompletedTaskCount());
         p.schedule(dummy, 1L, HOURS);
         // Ensure one pool thread actually waits in timed queue poll
-        long t0 = System.nanoTime();
-        while (!hasWaiters(lock, available)) {
-            if (System.nanoTime() - t0 > SECONDS.toNanos(10L))
-                throw new AssertionError
-                    ("timed out waiting for a waiter to show up");
-            Thread.yield();
-        }
+        awaitHasWaiters(lock, available, LONG_DELAY_MS);
         equal(1, p.getPoolSize());
         equal(1, p.getLargestPoolSize());
         equal(1L, p.getTaskCount());

@@ -791,7 +791,6 @@ Mutex* const SpaceManager::_expand_lock =
 void VirtualSpaceNode::inc_container_count() {
   assert_lock_strong(SpaceManager::expand_lock());
   _container_count++;
-  DEBUG_ONLY(verify_container_count();)
 }
 
 void VirtualSpaceNode::dec_container_count() {
@@ -1073,6 +1072,7 @@ void VirtualSpaceList::purge(ChunkManager* chunk_manager) {
   VirtualSpaceNode* next_vsl = prev_vsl;
   while (next_vsl != NULL) {
     VirtualSpaceNode* vsl = next_vsl;
+    DEBUG_ONLY(vsl->verify_container_count();)
     next_vsl = vsl->next();
     // Don't free the current virtual space since it will likely
     // be needed soon.
@@ -1137,19 +1137,19 @@ void VirtualSpaceList::retire_current_virtual_space() {
 }
 
 void VirtualSpaceNode::retire(ChunkManager* chunk_manager) {
+  DEBUG_ONLY(verify_container_count();)
   for (int i = (int)MediumIndex; i >= (int)ZeroIndex; --i) {
     ChunkIndex index = (ChunkIndex)i;
     size_t chunk_size = chunk_manager->free_chunks(index)->size();
 
     while (free_words_in_vs() >= chunk_size) {
-      DEBUG_ONLY(verify_container_count();)
       Metachunk* chunk = get_chunk_vs(chunk_size);
       assert(chunk != NULL, "allocation should have been successful");
 
       chunk_manager->return_chunks(index, chunk);
       chunk_manager->inc_free_chunks_total(chunk_size);
-      DEBUG_ONLY(verify_container_count();)
     }
+    DEBUG_ONLY(verify_container_count();)
   }
   assert(free_words_in_vs() == 0, "should be empty now");
 }

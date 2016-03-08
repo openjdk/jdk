@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ import com.sun.xml.internal.txw2.TypedXmlWriter;
 import com.sun.xml.internal.txw2.output.ResultFactory;
 import com.sun.xml.internal.txw2.output.XmlSerializer;
 import java.util.Collection;
+import java.util.HashSet;
 import org.xml.sax.SAXParseException;
 
 /**
@@ -436,7 +437,7 @@ public final class XmlSchemaGenerator<T,C,F,M> {
 
         if(logger.isLoggable(Level.FINE)) {
             // debug logging to see what's going on.
-            logger.log(Level.FINE,"Wrigin XML Schema for "+toString(),new StackRecorder());
+            logger.log(Level.FINE,"Writing XML Schema for "+toString(),new StackRecorder());
         }
 
         // make it fool-proof
@@ -465,6 +466,8 @@ public final class XmlSchemaGenerator<T,C,F,M> {
                     systemIds.put(n,output.getSystemId());
                 }
             }
+            //Clear the namespace specific set with already written classes
+            n.resetWritten();
         }
 
         // then write'em all
@@ -542,10 +545,22 @@ public final class XmlSchemaGenerator<T,C,F,M> {
          */
         private boolean useMimeNs;
 
+        /**
+         * Container for already processed classes
+         */
+        private final Set<ClassInfo> written = new HashSet<ClassInfo>();
+
         public Namespace(String uri) {
             this.uri = uri;
             assert !XmlSchemaGenerator.this.namespaces.containsKey(uri);
             XmlSchemaGenerator.this.namespaces.put(uri,this);
+        }
+
+        /**
+         * Clear out the set of already processed classes for this namespace
+         */
+        void resetWritten() {
+            written.clear();
         }
 
         /**
@@ -853,6 +868,10 @@ public final class XmlSchemaGenerator<T,C,F,M> {
          * @param parent the writer of the parent element into which the type will be defined
          */
         private void writeClass(ClassInfo<T,C> c, TypeHost parent) {
+            if (written.contains(c)) { // to avoid cycles let's check if we haven't already processed the class
+                return;
+            }
+            written.add(c);
             // special handling for value properties
             if (containsValueProp(c)) {
                 if (c.getProperties().size() == 1) {
@@ -1080,9 +1099,13 @@ public final class XmlSchemaGenerator<T,C,F,M> {
                                            }
                                        }
                                     }
-                                    if (cImpl != null)
-                                        e.ref(new QName(cImpl.getElementName().getNamespaceURI(), tn.getLocalPart()));
-                                    else
+                                    if (cImpl != null) {
+                                        if (tn.getNamespaceURI() != null && tn.getNamespaceURI().trim().length() != 0) {
+                                            e.ref(new QName(tn.getNamespaceURI(), tn.getLocalPart()));
+                                        } else {
+                                            e.ref(new QName(cImpl.getElementName().getNamespaceURI(), tn.getLocalPart()));
+                                        }
+                                    } else
                                         e.ref(new QName("", tn.getLocalPart()));
                                 } else
                                     e.ref(tn);

@@ -50,6 +50,7 @@ import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.parser.ReferenceParser;
 import com.sun.tools.javac.parser.Tokens.Comment;
+import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.tree.DCTree.DCAttribute;
 import com.sun.tools.javac.tree.DCTree.DCAuthor;
 import com.sun.tools.javac.tree.DCTree.DCComment;
@@ -206,7 +207,31 @@ public class DocTreeMaker implements DocTreeFactory {
         lb.addAll(cast(firstSentence));
         lb.addAll(cast(body));
         List<DCTree> fullBody = lb.toList();
-        DCDocComment tree = new DCDocComment(null, fullBody, cast(firstSentence), cast(body), cast(tags));
+
+        // A dummy comment to keep the diagnostics logic happy.
+        Comment c = new Comment() {
+            @Override
+            public String getText() {
+                return null;
+            }
+
+            @Override
+            public int getSourcePos(int index) {
+                return Position.NOPOS;
+            }
+
+            @Override
+            public CommentStyle getStyle() {
+                return CommentStyle.JAVADOC;
+            }
+
+            @Override
+            public boolean isDeprecated() {
+                return false;
+            }
+        };
+
+        DCDocComment tree = new DCDocComment(c, fullBody, cast(firstSentence), cast(body), cast(tags));
         return tree;
     }
 

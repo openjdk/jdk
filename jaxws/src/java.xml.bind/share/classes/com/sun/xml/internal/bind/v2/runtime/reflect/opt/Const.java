@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@ package com.sun.xml.internal.bind.v2.runtime.reflect.opt;
  * @author Kohsuke Kawaguchi
  */
 public final class Const {
-    public static byte default_value_byte = 0;
-    public static boolean default_value_boolean = false;
-    public static char default_value_char = 0;
-    public static float default_value_float = 0;
-    public static double default_value_double = 0;
-    public static int default_value_int = 0;
-    public static long default_value_long = 0;
-    public static short default_value_short = 0;
+    public static final byte default_value_byte = 0;
+    public static final boolean default_value_boolean = false;
+    public static final char default_value_char = 0;
+    public static final float default_value_float = 0;
+    public static final double default_value_double = 0;
+    public static final int default_value_int = 0;
+    public static final long default_value_long = 0;
+    public static final short default_value_short = 0;
 }
