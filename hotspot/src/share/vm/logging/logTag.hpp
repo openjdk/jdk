@@ -73,6 +73,7 @@
   LOG_TAG(region) \
   LOG_TAG(remset) \
   LOG_TAG(safepoint) \
+  LOG_TAG(safepointcleanup) \
   LOG_TAG(scavenge) \
   LOG_TAG(scrub) \
   LOG_TAG(start) \

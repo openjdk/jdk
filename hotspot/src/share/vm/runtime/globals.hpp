@@ -2545,10 +2545,6 @@ public:
   LP64_ONLY(range(-1, max_intx/MICROUNITS))                                 \
   NOT_LP64(range(-1, max_intx))                                             \
                                                                             \
-  product(bool, TraceSafepointCleanupTime, false,                           \
-          "Print the break down of clean up tasks performed during "        \
-          "safepoint")                                                      \
-                                                                            \
   product(bool, Inline, true,                                               \
           "Enable inlining")                                                \
                                                                             \
