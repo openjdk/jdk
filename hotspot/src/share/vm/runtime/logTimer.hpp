@@ -28,7 +28,7 @@
 #include "logging/log.hpp"
 #include "runtime/timer.hpp"
 
-// TraceStartupTime is used for tracing the execution time of a block with logging
+// These classes are used for tracing the execution time of a block with logging
 // Usage:
 //  { TraceStartupTime t("block time")
 //    some_code();
@@ -38,6 +38,11 @@
 class TraceStartupTime : public TraceTime {
   public:
     TraceStartupTime(const char* s) : TraceTime(s, log_is_enabled(Info, startuptime), LogTag::_startuptime) {}
+};
+
+class TraceSafepointTime : public TraceTime {
+  public:
+    TraceSafepointTime(const char* s) : TraceTime(s, log_is_enabled(Info, safepointcleanup), LogTag::_safepointcleanup) {}
 };
 
 #endif // SHARE_VM_RUNTIME_LOG_TIMER_HPP

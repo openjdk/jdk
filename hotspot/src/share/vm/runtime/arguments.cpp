@@ -405,13 +405,14 @@ static AliasedFlag const aliased_jvm_flags[] = {
 };
 
 static AliasedLoggingFlag const aliased_logging_flags[] = {
+  { "TraceBiasedLocking",        LogLevel::Info,  true,  LogTag::_biasedlocking },
   { "TraceClassLoading",         LogLevel::Info,  true,  LogTag::_classload },
   { "TraceClassPaths",           LogLevel::Info,  true,  LogTag::_classpath },
   { "TraceClassResolution",      LogLevel::Info,  true,  LogTag::_classresolve },
   { "TraceClassUnloading",       LogLevel::Info,  true,  LogTag::_classunload },
   { "TraceExceptions",           LogLevel::Info,  true,  LogTag::_exceptions },
   { "TraceMonitorInflation",     LogLevel::Debug, true,  LogTag::_monitorinflation },
-  { "TraceBiasedLocking",        LogLevel::Info,  true,  LogTag::_biasedlocking },
+  { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LogTag::_safepointcleanup },
   { NULL,                        LogLevel::Off,   false, LogTag::__NO_TAG }
 };
 
