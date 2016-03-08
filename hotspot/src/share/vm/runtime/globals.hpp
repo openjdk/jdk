@@ -990,9 +990,6 @@ public:
   develop(bool, PrintVMMessages, true,                                      \
           "Print VM messages on console")                                   \
                                                                             \
-  diagnostic(bool, VerboseVerification, false,                              \
-          "Display detailed verification details")                          \
-                                                                            \
   notproduct(uintx, ErrorHandlerTest, 0,                                    \
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See test_error_handler() "    \

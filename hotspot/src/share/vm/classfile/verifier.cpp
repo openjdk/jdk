@@ -33,6 +33,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
@@ -176,9 +177,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
     if (can_failover && !HAS_PENDING_EXCEPTION &&
         (exception_name == vmSymbols::java_lang_VerifyError() ||
          exception_name == vmSymbols::java_lang_ClassFormatError())) {
-      if (VerboseVerification) {
-        tty->print_cr("Fail over class verification to old verifier for: %s", klassName);
-      }
+      log_info(verboseverification)("Fail over class verification to old verifier for: %s", klassName);
       log_info(classinit)("Fail over class verification to old verifier for: %s", klassName);
       exception_name = inference_verify(
         klass, message_buffer, message_buffer_len, THREAD);
@@ -194,8 +193,8 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
   if (log_is_enabled(Info, classinit)){
     log_end_verification(LogHandle(classinit)::info_stream(), klassName, exception_name, THREAD);
   }
-  if (VerboseVerification){
-    log_end_verification(tty, klassName, exception_name, THREAD);
+  if (log_is_enabled(Info, verboseverification)){
+    log_end_verification(LogHandle(verboseverification)::info_stream(), klassName, exception_name, THREAD);
   }
 
   if (HAS_PENDING_EXCEPTION) {
@@ -269,9 +268,7 @@ Symbol* Verifier::inference_verify(
   }
 
   ResourceMark rm(THREAD);
-  if (VerboseVerification) {
-    tty->print_cr("Verifying class %s with old format", klass->external_name());
-  }
+  log_info(verboseverification)("Verifying class %s with old format", klass->external_name());
 
   jclass cls = (jclass) JNIHandles::make_local(env, klass->java_mirror());
   jint result;
@@ -583,10 +580,7 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig, TRAPS) {
 }
 
 void ClassVerifier::verify_class(TRAPS) {
-  if (VerboseVerification) {
-    tty->print_cr("Verifying class %s with new format",
-      _klass->external_name());
-  }
+  log_info(verboseverification)("Verifying class %s with new format", _klass->external_name());
 
   Array<Method*>* methods = _klass->methods();
   int num_methods = methods->length();
@@ -606,10 +600,7 @@ void ClassVerifier::verify_class(TRAPS) {
   }
 
   if (was_recursively_verified()){
-    if (VerboseVerification){
-      tty->print_cr("Recursive verification detected for: %s",
-                    _klass->external_name());
-    }
+    log_info(verboseverification)("Recursive verification detected for: %s", _klass->external_name());
     log_info(classinit)("Recursive verification detected for: %s",
                         _klass->external_name());
   }
@@ -618,9 +609,7 @@ void ClassVerifier::verify_class(TRAPS) {
 void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   HandleMark hm(THREAD);
   _method = m;   // initialize _method
-  if (VerboseVerification) {
-    tty->print_cr("Verifying method %s", m->name_and_sig_as_C_string());
-  }
+  log_info(verboseverification)("Verifying method %s", m->name_and_sig_as_C_string());
 
 // For clang, the only good constant format string is a literal constant format string.
 #define bad_type_msg "Bad type on operand stack in %s"
@@ -667,8 +656,9 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   StackMapTable stackmap_table(&reader, &current_frame, max_locals, max_stack,
                                code_data, code_length, CHECK_VERIFY(this));
 
-  if (VerboseVerification) {
-    stackmap_table.print_on(tty);
+  if (log_is_enabled(Info, verboseverification)) {
+    ResourceMark rm(THREAD);
+    stackmap_table.print_on(LogHandle(verboseverification)::info_stream());
   }
 
   RawBytecodeStream bcs(m);
@@ -708,12 +698,11 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
       VerificationType type, type2;
       VerificationType atype;
 
-#ifndef PRODUCT
-      if (VerboseVerification) {
-        current_frame.print_on(tty);
-        tty->print_cr("offset = %d,  opcode = %s", bci, Bytecodes::name(opcode));
+      if (log_is_enabled(Info, verboseverification)) {
+        ResourceMark rm(THREAD);
+        current_frame.print_on(LogHandle(verboseverification)::info_stream());
+        log_info(verboseverification)("offset = %d,  opcode = %s", bci, Bytecodes::name(opcode));
       }
-#endif
 
       // Make sure wide instruction is in correct format
       if (bcs.is_wide()) {
@@ -2533,11 +2522,10 @@ void ClassVerifier::verify_invoke_init(
             verify_error(ErrorContext::bad_code(bci),
               "Bad <init> method call from after the start of a try block");
             return;
-          } else if (VerboseVerification) {
-            ResourceMark rm;
-            tty->print_cr(
-              "Survived call to ends_in_athrow(): %s",
-              current_class()->name()->as_C_string());
+          } else if (log_is_enabled(Info, verboseverification)) {
+            ResourceMark rm(THREAD);
+            log_info(verboseverification)("Survived call to ends_in_athrow(): %s",
+                                          current_class()->name()->as_C_string());
           }
         }
       }
