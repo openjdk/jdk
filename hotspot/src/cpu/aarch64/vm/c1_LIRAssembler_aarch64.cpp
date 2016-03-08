@@ -1556,38 +1556,52 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 }
 
 void LIR_Assembler::casw(Register addr, Register newval, Register cmpval) {
-  Label retry_load, nope;
-  // flush and load exclusive from the memory location
-  // and fail if it is not what we expect
-  __ bind(retry_load);
-  __ ldaxrw(rscratch1, addr);
-  __ cmpw(rscratch1, cmpval);
-  __ cset(rscratch1, Assembler::NE);
-  __ br(Assembler::NE, nope);
-  // if we store+flush with no intervening write rscratch1 wil be zero
-  __ stlxrw(rscratch1, newval, addr);
-  // retry so we only ever return after a load fails to compare
-  // ensures we don't return a stale value after a failed write.
-  __ cbnzw(rscratch1, retry_load);
-  __ bind(nope);
+  if (UseLSE) {
+    __ mov(rscratch1, cmpval);
+    __ casal(Assembler::word, rscratch1, newval, addr);
+    __ cmpw(rscratch1, cmpval);
+    __ cset(rscratch1, Assembler::NE);
+  } else {
+    Label retry_load, nope;
+    // flush and load exclusive from the memory location
+    // and fail if it is not what we expect
+    __ bind(retry_load);
+    __ ldaxrw(rscratch1, addr);
+    __ cmpw(rscratch1, cmpval);
+    __ cset(rscratch1, Assembler::NE);
+    __ br(Assembler::NE, nope);
+    // if we store+flush with no intervening write rscratch1 wil be zero
+    __ stlxrw(rscratch1, newval, addr);
+    // retry so we only ever return after a load fails to compare
+    // ensures we don't return a stale value after a failed write.
+    __ cbnzw(rscratch1, retry_load);
+    __ bind(nope);
+  }
   __ membar(__ AnyAny);
 }
 
 void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
-  Label retry_load, nope;
-  // flush and load exclusive from the memory location
-  // and fail if it is not what we expect
-  __ bind(retry_load);
-  __ ldaxr(rscratch1, addr);
-  __ cmp(rscratch1, cmpval);
-  __ cset(rscratch1, Assembler::NE);
-  __ br(Assembler::NE, nope);
-  // if we store+flush with no intervening write rscratch1 wil be zero
-  __ stlxr(rscratch1, newval, addr);
-  // retry so we only ever return after a load fails to compare
-  // ensures we don't return a stale value after a failed write.
-  __ cbnz(rscratch1, retry_load);
-  __ bind(nope);
+  if (UseLSE) {
+    __ mov(rscratch1, cmpval);
+    __ casal(Assembler::xword, rscratch1, newval, addr);
+    __ cmp(rscratch1, cmpval);
+    __ cset(rscratch1, Assembler::NE);
+  } else {
+    Label retry_load, nope;
+    // flush and load exclusive from the memory location
+    // and fail if it is not what we expect
+    __ bind(retry_load);
+    __ ldaxr(rscratch1, addr);
+    __ cmp(rscratch1, cmpval);
+    __ cset(rscratch1, Assembler::NE);
+    __ br(Assembler::NE, nope);
+    // if we store+flush with no intervening write rscratch1 wil be zero
+    __ stlxr(rscratch1, newval, addr);
+    // retry so we only ever return after a load fails to compare
+    // ensures we don't return a stale value after a failed write.
+    __ cbnz(rscratch1, retry_load);
+    __ bind(nope);
+  }
   __ membar(__ AnyAny);
 }
 

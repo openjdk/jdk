@@ -2070,25 +2070,32 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
   // oldv holds comparison value
   // newv holds value to write in exchange
   // addr identifies memory word to compare against/update
-  // tmp returns 0/1 for success/failure
-  Label retry_load, nope;
+  if (UseLSE) {
+    mov(tmp, oldv);
+    casal(Assembler::xword, oldv, newv, addr);
+    cmp(tmp, oldv);
+    br(Assembler::EQ, succeed);
+    membar(AnyAny);
+  } else {
+    Label retry_load, nope;
 
-  bind(retry_load);
-  // flush and load exclusive from the memory location
-  // and fail if it is not what we expect
-  ldaxr(tmp, addr);
-  cmp(tmp, oldv);
-  br(Assembler::NE, nope);
-  // if we store+flush with no intervening write tmp wil be zero
-  stlxr(tmp, newv, addr);
-  cbzw(tmp, succeed);
-  // retry so we only ever return after a load fails to compare
-  // ensures we don't return a stale value after a failed write.
-  b(retry_load);
-  // if the memory word differs we return it in oldv and signal a fail
-  bind(nope);
-  membar(AnyAny);
-  mov(oldv, tmp);
+    bind(retry_load);
+    // flush and load exclusive from the memory location
+    // and fail if it is not what we expect
+    ldaxr(tmp, addr);
+    cmp(tmp, oldv);
+    br(Assembler::NE, nope);
+    // if we store+flush with no intervening write tmp wil be zero
+    stlxr(tmp, newv, addr);
+    cbzw(tmp, succeed);
+    // retry so we only ever return after a load fails to compare
+    // ensures we don't return a stale value after a failed write.
+    b(retry_load);
+    // if the memory word differs we return it in oldv and signal a fail
+    bind(nope);
+    membar(AnyAny);
+    mov(oldv, tmp);
+  }
   if (fail)
     b(*fail);
 }
@@ -2099,26 +2106,61 @@ void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Regis
   // newv holds value to write in exchange
   // addr identifies memory word to compare against/update
   // tmp returns 0/1 for success/failure
-  Label retry_load, nope;
+  if (UseLSE) {
+    mov(tmp, oldv);
+    casal(Assembler::word, oldv, newv, addr);
+    cmp(tmp, oldv);
+    br(Assembler::EQ, succeed);
+    membar(AnyAny);
+  } else {
+    Label retry_load, nope;
 
-  bind(retry_load);
-  // flush and load exclusive from the memory location
-  // and fail if it is not what we expect
-  ldaxrw(tmp, addr);
-  cmp(tmp, oldv);
-  br(Assembler::NE, nope);
-  // if we store+flush with no intervening write tmp wil be zero
-  stlxrw(tmp, newv, addr);
-  cbzw(tmp, succeed);
-  // retry so we only ever return after a load fails to compare
-  // ensures we don't return a stale value after a failed write.
-  b(retry_load);
-  // if the memory word differs we return it in oldv and signal a fail
-  bind(nope);
-  membar(AnyAny);
-  mov(oldv, tmp);
+    bind(retry_load);
+    // flush and load exclusive from the memory location
+    // and fail if it is not what we expect
+    ldaxrw(tmp, addr);
+    cmp(tmp, oldv);
+    br(Assembler::NE, nope);
+    // if we store+flush with no intervening write tmp wil be zero
+    stlxrw(tmp, newv, addr);
+    cbzw(tmp, succeed);
+    // retry so we only ever return after a load fails to compare
+    // ensures we don't return a stale value after a failed write.
+    b(retry_load);
+    // if the memory word differs we return it in oldv and signal a fail
+    bind(nope);
+    membar(AnyAny);
+    mov(oldv, tmp);
+  }
   if (fail)
     b(*fail);
+}
+
+// A generic CAS; success or failure is in the EQ flag.
+void MacroAssembler::cmpxchg(Register addr, Register expected,
+                             Register new_val,
+                             enum operand_size size,
+                             bool acquire, bool release,
+                             Register tmp) {
+  if (UseLSE) {
+    mov(tmp, expected);
+    lse_cas(tmp, new_val, addr, size, acquire, release, /*not_pair*/ true);
+    cmp(tmp, expected);
+  } else {
+    BLOCK_COMMENT("cmpxchg {");
+    Label retry_load, done;
+    bind(retry_load);
+    load_exclusive(tmp, addr, size, acquire);
+    if (size == xword)
+      cmp(tmp, expected);
+    else
+      cmpw(tmp, expected);
+    br(Assembler::NE, done);
+    store_exclusive(tmp, new_val, addr, size, release);
+    cbnzw(tmp, retry_load);
+    bind(done);
+    BLOCK_COMMENT("} cmpxchg");
+  }
 }
 
 static bool different(Register a, RegisterOrConstant b, Register c) {
