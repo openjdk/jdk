@@ -1222,30 +1222,12 @@ public final class String
         public int compare(String s1, String s2) {
             byte v1[] = s1.value;
             byte v2[] = s2.value;
-            int n1 = s1.length();
-            int n2 = s2.length();
-            boolean s1IsLatin1 = s1.isLatin1();
-            boolean s2IsLatin1 = s2.isLatin1();
-            int min = Math.min(n1, n2);
-            for (int i = 0; i < min; i++) {
-                char c1 = s1IsLatin1 ? StringLatin1.getChar(v1, i)
-                                     : StringUTF16.getChar(v1, i);
-                char c2 = s2IsLatin1 ? StringLatin1.getChar(v2, i)
-                                     : StringUTF16.getChar(v2, i);
-                if (c1 != c2) {
-                    c1 = Character.toUpperCase(c1);
-                    c2 = Character.toUpperCase(c2);
-                    if (c1 != c2) {
-                        c1 = Character.toLowerCase(c1);
-                        c2 = Character.toLowerCase(c2);
-                        if (c1 != c2) {
-                            // No overflow because of numeric promotion
-                            return c1 - c2;
-                        }
-                    }
-                }
+            if (s1.coder() == s2.coder()) {
+                return s1.isLatin1() ? StringLatin1.compareToCI(v1, v2)
+                                     : StringUTF16.compareToCI(v1, v2);
             }
-            return n1 - n2;
+            return s1.isLatin1() ? StringLatin1.compareToCI_UTF16(v1, v2)
+                                 : StringUTF16.compareToCI_Latin1(v1, v2);
         }
 
         /** Replaces the de-serialized object. */

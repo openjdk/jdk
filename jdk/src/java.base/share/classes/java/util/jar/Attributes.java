@@ -34,9 +34,9 @@ import java.util.Set;
 import java.util.Collection;
 import java.util.AbstractSet;
 import java.util.Iterator;
+import java.util.Locale;
 import sun.util.logging.PlatformLogger;
 import java.util.Comparator;
-import sun.misc.ASCIICaseInsensitiveComparator;
 
 /**
  * The Attributes class maps Manifest attribute names to associated string
@@ -501,7 +501,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          */
         public boolean equals(Object o) {
             if (o instanceof Name) {
-                Comparator<String> c = ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER;
+                Comparator<String> c = String.CASE_INSENSITIVE_ORDER;
                 return c.compare(name, ((Name)o).name) == 0;
             } else {
                 return false;
@@ -513,7 +513,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          */
         public int hashCode() {
             if (hashCode == -1) {
-                hashCode = ASCIICaseInsensitiveComparator.lowerCaseHashCode(name);
+                hashCode = name.toLowerCase(Locale.ROOT).hashCode();
             }
             return hashCode;
         }
