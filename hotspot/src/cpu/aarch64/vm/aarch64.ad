@@ -4132,14 +4132,14 @@ encode %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               &Assembler::ldxr, &MacroAssembler::cmp, &Assembler::stlxr);
+               Assembler::xword, /*acquire*/ false, /*release*/ true);
   %}
 
   enc_class aarch64_enc_cmpxchgw(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               &Assembler::ldxrw, &MacroAssembler::cmpw, &Assembler::stlxrw);
+               Assembler::word, /*acquire*/ false, /*release*/ true);
   %}
 
 
@@ -4151,14 +4151,14 @@ encode %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               &Assembler::ldaxr, &MacroAssembler::cmp, &Assembler::stlxr);
+               Assembler::xword, /*acquire*/ true, /*release*/ true);
   %}
 
   enc_class aarch64_enc_cmpxchgw_acq(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               &Assembler::ldaxrw, &MacroAssembler::cmpw, &Assembler::stlxrw);
+               Assembler::word, /*acquire*/ true, /*release*/ true);
   %}
 
 
@@ -4676,7 +4676,12 @@ encode %{
 
     // Compare object markOop with mark and if equal exchange scratch1
     // with object markOop.
-    {
+    if (UseLSE) {
+      __ mov(tmp, disp_hdr);
+      __ casal(Assembler::xword, tmp, box, oop);
+      __ cmp(tmp, disp_hdr);
+      __ br(Assembler::EQ, cont);
+    } else {
       Label retry_load;
       __ bind(retry_load);
       __ ldaxr(tmp, oop);
@@ -4726,7 +4731,11 @@ encode %{
       __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markOopDesc::monitor_value));
       __ mov(disp_hdr, zr);
 
-      {
+      if (UseLSE) {
+        __ mov(rscratch1, disp_hdr);
+        __ casal(Assembler::xword, rscratch1, rthread, tmp);
+        __ cmp(rscratch1, disp_hdr);
+      } else {
         Label retry_load, fail;
         __ bind(retry_load);
         __ ldaxr(rscratch1, tmp);
@@ -4815,7 +4824,11 @@ encode %{
     // see the stack address of the basicLock in the markOop of the
     // object.
 
-      {
+      if (UseLSE) {
+        __ mov(tmp, box);
+        __ casl(Assembler::xword, tmp, disp_hdr, oop);
+        __ cmp(tmp, box);
+      } else {
         Label retry_load;
         __ bind(retry_load);
         __ ldxr(tmp, oop);
