@@ -300,7 +300,6 @@
       <to>java.xml</to>
       <to>jdk.charsets</to>
       <to>jdk.crypto.pkcs11</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.httpserver</to>
       <to>jdk.jartool</to>
       <to>jdk.jconsole</to>
@@ -421,7 +420,6 @@
     <export>
       <name>sun.security.pkcs</name>
       <to>jdk.crypto.ec</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.jartool</to>
     </export>
     <export>
@@ -462,7 +460,6 @@
       <to>jdk.crypto.mscapi</to>
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.crypto.ucrypto</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.jartool</to>
       <to>jdk.policytool</to>
       <to>jdk.security.auth</to>
@@ -473,7 +470,6 @@
       <to>java.naming</to>
       <to>jdk.crypto.ec</to>
       <to>jdk.crypto.pkcs11</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.jartool</to>
       <to>jdk.security.auth</to>
     </export>
@@ -1705,11 +1701,6 @@
   <module>
     <name>jdk.crypto.ucrypto</name>
     <depend>java.base</depend>
-  </module>
-  <module>
-    <name>jdk.deploy.osx</name>
-    <depend>java.base</depend>
-    <depend>java.desktop</depend>
   </module>
   <module>
     <name>jdk.dev</name>
