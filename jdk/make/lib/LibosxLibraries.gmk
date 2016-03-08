@@ -23,18 +23,15 @@
 # questions.
 #
 
-include LibCommon.gmk
-
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   ################################################################################
 
-  LIBOSX_DIRS := $(JDK_TOPDIR)/src/jdk.deploy.osx/macosx/native/libosx
+  LIBOSX_DIRS := $(JDK_TOPDIR)/src/java.desktop/macosx/native/libosx
   LIBOSX_CFLAGS := -I$(LIBOSX_DIRS) \
       -I$(JDK_TOPDIR)/src/java.desktop/macosx/native/libosxapp \
       $(LIBJAVA_HEADER_FLAGS) \
       -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
-      -I$(SUPPORT_OUTPUTDIR)/headers/jdk.deploy.osx \
       #
 
   $(eval $(call SetupNativeCompilation,BUILD_LIBOSX, \
