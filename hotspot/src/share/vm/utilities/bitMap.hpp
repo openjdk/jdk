@@ -100,9 +100,8 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   idx_t word_index_round_up(idx_t bit) const;
 
   // Verification.
-  inline void verify_index(idx_t index) const NOT_DEBUG_RETURN;
-  inline void verify_range(idx_t beg_index, idx_t end_index) const
-    NOT_DEBUG_RETURN;
+  void verify_index(idx_t index) const NOT_DEBUG_RETURN;
+  void verify_range(idx_t beg_index, idx_t end_index) const NOT_DEBUG_RETURN;
 
   // Statistics.
   static idx_t* _pop_count_table;
@@ -306,36 +305,12 @@ class BitMap2D VALUE_OBJ_CLASS_SPEC {
     return _map.size() / _bits_per_slot;
   }
 
-  bool is_valid_index(idx_t slot_index, idx_t bit_within_slot_index) {
-    verify_bit_within_slot_index(bit_within_slot_index);
-    return (bit_index(slot_index, bit_within_slot_index) < size_in_bits());
-  }
-
-  bool at(idx_t slot_index, idx_t bit_within_slot_index) const {
-    verify_bit_within_slot_index(bit_within_slot_index);
-    return _map.at(bit_index(slot_index, bit_within_slot_index));
-  }
-
-  void set_bit(idx_t slot_index, idx_t bit_within_slot_index) {
-    verify_bit_within_slot_index(bit_within_slot_index);
-    _map.set_bit(bit_index(slot_index, bit_within_slot_index));
-  }
-
-  void clear_bit(idx_t slot_index, idx_t bit_within_slot_index) {
-    verify_bit_within_slot_index(bit_within_slot_index);
-    _map.clear_bit(bit_index(slot_index, bit_within_slot_index));
-  }
-
-  void at_put(idx_t slot_index, idx_t bit_within_slot_index, bool value) {
-    verify_bit_within_slot_index(bit_within_slot_index);
-    _map.at_put(bit_index(slot_index, bit_within_slot_index), value);
-  }
-
-  void at_put_grow(idx_t slot_index, idx_t bit_within_slot_index, bool value) {
-    verify_bit_within_slot_index(bit_within_slot_index);
-    _map.at_put_grow(bit_index(slot_index, bit_within_slot_index), value);
-  }
-
+  bool is_valid_index(idx_t slot_index, idx_t bit_within_slot_index);
+  bool at(idx_t slot_index, idx_t bit_within_slot_index) const;
+  void set_bit(idx_t slot_index, idx_t bit_within_slot_index);
+  void clear_bit(idx_t slot_index, idx_t bit_within_slot_index);
+  void at_put(idx_t slot_index, idx_t bit_within_slot_index, bool value);
+  void at_put_grow(idx_t slot_index, idx_t bit_within_slot_index, bool value);
   void clear();
 };
 
