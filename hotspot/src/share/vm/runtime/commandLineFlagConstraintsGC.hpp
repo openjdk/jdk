@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ Flag::Error CMSOldPLABMaxConstraintFunc(size_t value, bool verbose);
 Flag::Error MarkStackSizeConstraintFunc(size_t value, bool verbose);
 Flag::Error CMSPrecleanDenominatorConstraintFunc(uintx value, bool verbose);
 Flag::Error CMSPrecleanNumeratorConstraintFunc(uintx value, bool verbose);
+Flag::Error CMSSamplingGrainConstraintFunc(uintx value, bool verbose);
 Flag::Error CMSWorkQueueDrainThresholdConstraintFunc(uintx value, bool verbose);
 Flag::Error MaxGCPauseMillisConstraintFunc(uintx value, bool verbose);
 Flag::Error GCPauseIntervalMillisConstraintFunc(uintx value, bool verbose);
