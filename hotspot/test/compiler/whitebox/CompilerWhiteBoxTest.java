@@ -213,6 +213,7 @@ public abstract class CompilerWhiteBoxTest {
      *                          compilation level.
      */
     protected final void checkNotCompiled() {
+        waitBackgroundCompilation();
         checkNotCompiled(true);
         checkNotCompiled(false);
     }
@@ -226,7 +227,6 @@ public abstract class CompilerWhiteBoxTest {
      *                          compilation level.
      */
     protected final void checkNotCompiled(boolean isOsr) {
-        waitBackgroundCompilation();
         if (WHITE_BOX.isMethodQueuedForCompilation(method)) {
             throw new RuntimeException(method + " must not be in queue");
         }
@@ -315,11 +315,11 @@ public abstract class CompilerWhiteBoxTest {
             return;
         }
         final Object obj = new Object();
-        for (int i = 0; i < 10
+        for (int i = 0; i < 100
                 && WHITE_BOX.isMethodQueuedForCompilation(executable); ++i) {
             synchronized (obj) {
                 try {
-                    obj.wait(1000);
+                    obj.wait(100);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
