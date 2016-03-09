@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javax.crypto.spec.DHGenParameterSpec;
  *
  * <p>The Diffie-Hellman parameter generation accepts the size in bits of the
  * prime modulus and the size in bits of the random exponent as input.
- * The size of the prime modulus defaults to 1024 bits.
+ * The size of the prime modulus defaults to 2048 bits.
  *
  * @author Jan Luehe
  *
@@ -50,7 +50,7 @@ public final class DHParameterGenerator
 extends AlgorithmParameterGeneratorSpi {
 
     // The size in bits of the prime modulus
-    private int primeSize = 1024;
+    private int primeSize = 2048;
 
     // The size in bits of the random exponent (private value)
     private int exponentSize = 0;

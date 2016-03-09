@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+// Copyright (c) 2012, 2016 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2024,13 +2024,13 @@ const bool Matcher::match_rule_supported(int opcode) {
     return (UsePopCountInstruction && VM_Version::has_popcntw());
 
   case Op_StrComp:
-    return SpecialStringCompareTo && !CompactStrings;
+    return SpecialStringCompareTo;
   case Op_StrEquals:
-    return SpecialStringEquals && !CompactStrings;
+    return SpecialStringEquals;
   case Op_StrIndexOf:
-    return SpecialStringIndexOf && !CompactStrings;
+    return SpecialStringIndexOf;
   case Op_StrIndexOfChar:
-    return SpecialStringIndexOf && !CompactStrings;
+    return SpecialStringIndexOf;
   }
 
   return true;  // Per default match rules are supported.
@@ -11022,6 +11022,584 @@ instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, Universe dummy, reg
   ins_pipe(pipe_class_default);
 %}
 
+instruct string_compareL(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt1, rarg4RegI cnt2, iRegIdst result,
+                         iRegIdst tmp, regCTR ctr, flagsRegCR0 cr0) %{
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP_DEF result, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL ctr, KILL cr0, TEMP tmp);
+  ins_cost(300);
+  format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result \t// KILL $tmp" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register,
+                      $tmp$$Register,
+                      $result$$Register, StrIntrinsicNode::LL);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct string_compareU(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt1, rarg4RegI cnt2, iRegIdst result,
+                         iRegIdst tmp, regCTR ctr, flagsRegCR0 cr0) %{
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP_DEF result, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL ctr, KILL cr0, TEMP tmp);
+  ins_cost(300);
+  format %{ "String Compare char[] $str1,$cnt1,$str2,$cnt2 -> $result \t// KILL $tmp" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register,
+                      $tmp$$Register,
+                      $result$$Register, StrIntrinsicNode::UU);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct string_compareLU(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt1, rarg4RegI cnt2, iRegIdst result,
+                          iRegIdst tmp, regCTR ctr, flagsRegCR0 cr0) %{
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP_DEF result, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL ctr, KILL cr0, TEMP tmp);
+  ins_cost(300);
+  format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result \t// KILL $tmp" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register,
+                      $tmp$$Register,
+                      $result$$Register, StrIntrinsicNode::LU);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct string_compareUL(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt1, rarg4RegI cnt2, iRegIdst result,
+                          iRegIdst tmp, regCTR ctr, flagsRegCR0 cr0) %{
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP_DEF result, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL ctr, KILL cr0, TEMP tmp);
+  ins_cost(300);
+  format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result \t// KILL $tmp" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ string_compare($str2$$Register, $str1$$Register,
+                      $cnt2$$Register, $cnt1$$Register,
+                      $tmp$$Register,
+                      $result$$Register, StrIntrinsicNode::UL);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct string_equalsL(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt, iRegIdst result,
+                        iRegIdst tmp, regCTR ctr, flagsRegCR0 cr0) %{
+  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
+  match(Set result (StrEquals (Binary str1 str2) cnt));
+  effect(TEMP_DEF result, USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP tmp, KILL ctr, KILL cr0);
+  ins_cost(300);
+  format %{ "String Equals byte[] $str1,$str2,$cnt -> $result \t// KILL $tmp" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ array_equals(false, $str1$$Register, $str2$$Register,
+                    $cnt$$Register, $tmp$$Register,
+                    $result$$Register, true /* byte */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct string_equalsU(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt, iRegIdst result,
+                        iRegIdst tmp, regCTR ctr, flagsRegCR0 cr0) %{
+  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU);
+  match(Set result (StrEquals (Binary str1 str2) cnt));
+  effect(TEMP_DEF result, USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP tmp, KILL ctr, KILL cr0);
+  ins_cost(300);
+  format %{ "String Equals char[]  $str1,$str2,$cnt -> $result \t// KILL $tmp" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ array_equals(false, $str1$$Register, $str2$$Register,
+                    $cnt$$Register, $tmp$$Register,
+                    $result$$Register, false /* byte */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct array_equalsB(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
+                       iRegIdst tmp1, iRegIdst tmp2, regCTR ctr, flagsRegCR0 cr0, flagsRegCR0 cr1) %{
+  predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
+  match(Set result (AryEq ary1 ary2));
+  effect(TEMP_DEF result, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, KILL ctr, KILL cr0, KILL cr1);
+  ins_cost(300);
+  format %{ "Array Equals $ary1,$ary2 -> $result \t// KILL $tmp1,$tmp2" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ array_equals(true, $ary1$$Register, $ary2$$Register,
+                    $tmp1$$Register, $tmp2$$Register,
+                    $result$$Register, true /* byte */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct array_equalsC(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
+                       iRegIdst tmp1, iRegIdst tmp2, regCTR ctr, flagsRegCR0 cr0, flagsRegCR0 cr1) %{
+  predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
+  match(Set result (AryEq ary1 ary2));
+  effect(TEMP_DEF result, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, KILL ctr, KILL cr0, KILL cr1);
+  ins_cost(300);
+  format %{ "Array Equals $ary1,$ary2 -> $result \t// KILL $tmp1,$tmp2" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ array_equals(true, $ary1$$Register, $ary2$$Register,
+                    $tmp1$$Register, $tmp2$$Register,
+                    $result$$Register, false /* byte */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct indexOf_imm1_char_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+                             immP needleImm, immL offsetImm, immI_1 needlecntImm,
+                             iRegIdst tmp1, iRegIdst tmp2,
+                             flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary (AddP needleImm offsetImm) needlecntImm)));
+  effect(TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  // Required for EA: check if it is still a type_array.
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
+  ins_cost(150);
+
+  format %{ "String IndexOf CSCL1 $haystack[0..$haycnt], $needleImm+$offsetImm[0..$needlecntImm]"
+            "-> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
+
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    immPOper *needleOper = (immPOper *)$needleImm;
+    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
+    jchar chr;
+#ifdef VM_LITTLE_ENDIAN
+    chr = (((jchar)(unsigned char)needle_values->element_value(1).as_byte()) << 8) |
+           ((jchar)(unsigned char)needle_values->element_value(0).as_byte());
+#else
+    chr = (((jchar)(unsigned char)needle_values->element_value(0).as_byte()) << 8) |
+           ((jchar)(unsigned char)needle_values->element_value(1).as_byte());
+#endif
+    __ string_indexof_char($result$$Register,
+                           $haystack$$Register, $haycnt$$Register,
+                           R0, chr,
+                           $tmp1$$Register, $tmp2$$Register, false /*is_byte*/);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOf_imm1_char_L(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+                             immP needleImm, immL offsetImm, immI_1 needlecntImm,
+                             iRegIdst tmp1, iRegIdst tmp2,
+                             flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary (AddP needleImm offsetImm) needlecntImm)));
+  effect(TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  // Required for EA: check if it is still a type_array.
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL);
+  ins_cost(150);
+
+  format %{ "String IndexOf CSCL1 $haystack[0..$haycnt], $needleImm+$offsetImm[0..$needlecntImm]"
+            "-> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
+
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    immPOper *needleOper = (immPOper *)$needleImm;
+    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
+    jchar chr = (jchar)needle_values->element_value(0).as_byte();
+    __ string_indexof_char($result$$Register,
+                           $haystack$$Register, $haycnt$$Register,
+                           R0, chr,
+                           $tmp1$$Register, $tmp2$$Register, true /*is_byte*/);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOf_imm1_char_UL(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+                              immP needleImm, immL offsetImm, immI_1 needlecntImm,
+                              iRegIdst tmp1, iRegIdst tmp2,
+                              flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary (AddP needleImm offsetImm) needlecntImm)));
+  effect(TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  // Required for EA: check if it is still a type_array.
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL);
+  ins_cost(150);
+
+  format %{ "String IndexOf CSCL1 $haystack[0..$haycnt], $needleImm+$offsetImm[0..$needlecntImm]"
+            "-> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
+
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    immPOper *needleOper = (immPOper *)$needleImm;
+    const TypeOopPtr *t = needleOper->type()->isa_oopptr();
+    ciTypeArray* needle_values = t->const_oop()->as_type_array();  // Pointer to live char *
+    jchar chr = (jchar)needle_values->element_value(0).as_byte();
+    __ string_indexof_char($result$$Register,
+                           $haystack$$Register, $haycnt$$Register,
+                           R0, chr,
+                           $tmp1$$Register, $tmp2$$Register, false /*is_byte*/);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOf_imm1_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+                        rscratch2RegP needle, immI_1 needlecntImm,
+                        iRegIdst tmp1, iRegIdst tmp2,
+                        flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecntImm)));
+  effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  // Required for EA: check if it is still a type_array.
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+  ins_cost(180);
+
+  format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
+            " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    Node *ndl = in(operand_index($needle));  // The node that defines needle.
+    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    guarantee(needle_values, "sanity");
+    jchar chr;
+#ifdef VM_LITTLE_ENDIAN
+    chr = (((jchar)(unsigned char)needle_values->element_value(1).as_byte()) << 8) |
+           ((jchar)(unsigned char)needle_values->element_value(0).as_byte());
+#else
+    chr = (((jchar)(unsigned char)needle_values->element_value(0).as_byte()) << 8) |
+           ((jchar)(unsigned char)needle_values->element_value(1).as_byte());
+#endif
+    __ string_indexof_char($result$$Register,
+                           $haystack$$Register, $haycnt$$Register,
+                           R0, chr,
+                           $tmp1$$Register, $tmp2$$Register, false /*is_byte*/);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOf_imm1_L(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+                        rscratch2RegP needle, immI_1 needlecntImm,
+                        iRegIdst tmp1, iRegIdst tmp2,
+                        flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecntImm)));
+  effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  // Required for EA: check if it is still a type_array.
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+  ins_cost(180);
+
+  format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
+            " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    Node *ndl = in(operand_index($needle));  // The node that defines needle.
+    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    guarantee(needle_values, "sanity");
+    jchar chr = (jchar)needle_values->element_value(0).as_byte();
+    __ string_indexof_char($result$$Register,
+                           $haystack$$Register, $haycnt$$Register,
+                           R0, chr,
+                           $tmp1$$Register, $tmp2$$Register, true /*is_byte*/);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOf_imm1_UL(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+                         rscratch2RegP needle, immI_1 needlecntImm,
+                         iRegIdst tmp1, iRegIdst tmp2,
+                         flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecntImm)));
+  effect(USE_KILL needle, TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  // Required for EA: check if it is still a type_array.
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+  ins_cost(180);
+
+  format %{ "String IndexOf SCL1 $haystack[0..$haycnt], $needle[0..$needlecntImm]"
+            " -> $result \t// KILL $haycnt, $needle, $tmp1, $tmp2, $cr0, $cr1" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    Node *ndl = in(operand_index($needle));  // The node that defines needle.
+    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+    guarantee(needle_values, "sanity");
+    jchar chr = (jchar)needle_values->element_value(0).as_byte();
+    __ string_indexof_char($result$$Register,
+                           $haystack$$Register, $haycnt$$Register,
+                           R0, chr,
+                           $tmp1$$Register, $tmp2$$Register, false /*is_byte*/);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOfChar_U(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt,
+                       iRegIsrc ch, iRegIdst tmp1, iRegIdst tmp2,
+                       flagsRegCR0 cr0, flagsRegCR1 cr1, regCTR ctr) %{
+  match(Set result (StrIndexOfChar (Binary haystack haycnt) ch));
+  effect(TEMP tmp1, TEMP tmp2, KILL cr0, KILL cr1, KILL ctr);
+  predicate(CompactStrings);
+  ins_cost(180);
+
+  format %{ "String IndexOfChar $haystack[0..$haycnt], $ch"
+            " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $cr0, $cr1" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ string_indexof_char($result$$Register,
+                           $haystack$$Register, $haycnt$$Register,
+                           $ch$$Register, 0 /* this is not used if the character is already in a register */,
+                           $tmp1$$Register, $tmp2$$Register, false /*is_byte*/);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOf_imm_U(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
+                       iRegPsrc needle, uimmI15 needlecntImm,
+                       iRegIdst tmp1, iRegIdst tmp2, iRegIdst tmp3, iRegIdst tmp4, iRegIdst tmp5,
+                       flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecntImm)));
+  effect(USE_KILL haycnt, /* better: TDEF haycnt, */ TEMP_DEF result,
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
+  // Required for EA: check if it is still a type_array.
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+  ins_cost(250);
+
+  format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
+            " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    Node *ndl = in(operand_index($needle));  // The node that defines needle.
+    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+
+    __ string_indexof($result$$Register,
+                      $haystack$$Register, $haycnt$$Register,
+                      $needle$$Register, needle_values, $tmp5$$Register, $needlecntImm$$constant,
+                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, StrIntrinsicNode::UU);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOf_imm_L(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
+                       iRegPsrc needle, uimmI15 needlecntImm,
+                       iRegIdst tmp1, iRegIdst tmp2, iRegIdst tmp3, iRegIdst tmp4, iRegIdst tmp5,
+                       flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecntImm)));
+  effect(USE_KILL haycnt, /* better: TDEF haycnt, */ TEMP_DEF result,
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
+  // Required for EA: check if it is still a type_array.
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+  ins_cost(250);
+
+  format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
+            " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    Node *ndl = in(operand_index($needle));  // The node that defines needle.
+    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+
+    __ string_indexof($result$$Register,
+                      $haystack$$Register, $haycnt$$Register,
+                      $needle$$Register, needle_values, $tmp5$$Register, $needlecntImm$$constant,
+                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, StrIntrinsicNode::LL);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOf_imm_UL(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt,
+                        iRegPsrc needle, uimmI15 needlecntImm,
+                        iRegIdst tmp1, iRegIdst tmp2, iRegIdst tmp3, iRegIdst tmp4, iRegIdst tmp5,
+                        flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecntImm)));
+  effect(USE_KILL haycnt, /* better: TDEF haycnt, */ TEMP_DEF result,
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
+  // Required for EA: check if it is still a type_array.
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop() &&
+            n->in(3)->in(1)->bottom_type()->is_aryptr()->const_oop()->is_type_array());
+  ins_cost(250);
+
+  format %{ "String IndexOf SCL $haystack[0..$haycnt], $needle[0..$needlecntImm]"
+            " -> $result \t// KILL $haycnt, $tmp1, $tmp2, $tmp3, $tmp4, $tmp5, $cr0, $cr1" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    Node *ndl = in(operand_index($needle));  // The node that defines needle.
+    ciTypeArray* needle_values = ndl->bottom_type()->is_aryptr()->const_oop()->as_type_array();
+
+    __ string_indexof($result$$Register,
+                      $haystack$$Register, $haycnt$$Register,
+                      $needle$$Register, needle_values, $tmp5$$Register, $needlecntImm$$constant,
+                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, StrIntrinsicNode::UL);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOf_U(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt, iRegPsrc needle, rscratch2RegI needlecnt,
+                   iRegLdst tmp1, iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4,
+                   flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecnt)));
+  effect(USE_KILL haycnt, USE_KILL needlecnt, /*better: TDEF haycnt, TDEF needlecnt,*/
+         TEMP_DEF result,
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
+  ins_cost(300);
+
+  format %{ "String IndexOf $haystack[0..$haycnt], $needle[0..$needlecnt]"
+             " -> $result \t// KILL $haycnt, $needlecnt, $tmp1, $tmp2, $tmp3, $tmp4, $cr0, $cr1" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ string_indexof($result$$Register,
+                      $haystack$$Register, $haycnt$$Register,
+                      $needle$$Register, NULL, $needlecnt$$Register, 0,  // needlecnt not constant.
+                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, StrIntrinsicNode::UU);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOf_L(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt, iRegPsrc needle, rscratch2RegI needlecnt,
+                   iRegLdst tmp1, iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4,
+                   flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecnt)));
+  effect(USE_KILL haycnt, USE_KILL needlecnt, /*better: TDEF haycnt, TDEF needlecnt,*/
+         TEMP_DEF result,
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL);
+  ins_cost(300);
+
+  format %{ "String IndexOf $haystack[0..$haycnt], $needle[0..$needlecnt]"
+             " -> $result \t// KILL $haycnt, $needlecnt, $tmp1, $tmp2, $tmp3, $tmp4, $cr0, $cr1" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ string_indexof($result$$Register,
+                      $haystack$$Register, $haycnt$$Register,
+                      $needle$$Register, NULL, $needlecnt$$Register, 0,  // needlecnt not constant.
+                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, StrIntrinsicNode::LL);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct indexOf_UL(iRegIdst result, iRegPsrc haystack, rscratch1RegI haycnt, iRegPsrc needle, rscratch2RegI needlecnt,
+                    iRegLdst tmp1, iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4,
+                    flagsRegCR0 cr0, flagsRegCR1 cr1, flagsRegCR6 cr6, regCTR ctr) %{
+  match(Set result (StrIndexOf (Binary haystack haycnt) (Binary needle needlecnt)));
+  effect(USE_KILL haycnt, USE_KILL needlecnt, /*better: TDEF haycnt, TDEF needlecnt,*/
+         TEMP_DEF result,
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr0, KILL cr1, KILL cr6, KILL ctr);
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL);
+  ins_cost(300);
+
+  format %{ "String IndexOf $haystack[0..$haycnt], $needle[0..$needlecnt]"
+             " -> $result \t// KILL $haycnt, $needlecnt, $tmp1, $tmp2, $tmp3, $tmp4, $cr0, $cr1" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ string_indexof($result$$Register,
+                      $haystack$$Register, $haycnt$$Register,
+                      $needle$$Register, NULL, $needlecnt$$Register, 0,  // needlecnt not constant.
+                      $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, StrIntrinsicNode::UL);
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+// char[] to byte[] compression
+instruct string_compress(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst result, iRegLdst tmp1,
+                         iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4, iRegLdst tmp5, regCTR ctr, flagsRegCR0 cr0) %{
+  match(Set result (StrCompressedCopy src (Binary dst len)));
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
+         USE_KILL src, USE_KILL dst, KILL ctr, KILL cr0);
+  ins_cost(300);
+  format %{ "String Compress $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    Label Lskip, Ldone;
+    __ li($result$$Register, 0);
+    __ string_compress_16($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register,
+                          $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, Ldone);
+    __ rldicl_($tmp1$$Register, $len$$Register, 0, 64-3); // Remaining characters.
+    __ beq(CCR0, Lskip);
+    __ string_compress($src$$Register, $dst$$Register, $tmp1$$Register, $tmp2$$Register, Ldone);
+    __ bind(Lskip);
+    __ mr($result$$Register, $len$$Register);
+    __ bind(Ldone);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// byte[] to char[] inflation
+instruct string_inflate(Universe dummy, rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegLdst tmp1,
+                        iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4, iRegLdst tmp5, regCTR ctr, flagsRegCR0 cr0) %{
+  match(Set dummy (StrInflatedCopy src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, USE_KILL src, USE_KILL dst, KILL ctr, KILL cr0);
+  ins_cost(300);
+  format %{ "String Inflate $src,$dst,$len \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    Label Ldone;
+    __ string_inflate_16($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register,
+                         $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, $tmp5$$Register);
+    __ rldicl_($tmp1$$Register, $len$$Register, 0, 64-3); // Remaining characters.
+    __ beq(CCR0, Ldone);
+    __ string_inflate($src$$Register, $dst$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ bind(Ldone);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// StringCoding.java intrinsics
+instruct has_negatives(rarg1RegP ary1, iRegIsrc len, iRegIdst result, iRegLdst tmp1, iRegLdst tmp2,
+                       regCTR ctr, flagsRegCR0 cr0)
+%{
+  match(Set result (HasNegatives ary1 len));
+  effect(TEMP_DEF result, USE_KILL ary1, TEMP tmp1, TEMP tmp2, KILL ctr, KILL cr0);
+  ins_cost(300);
+  format %{ "has negatives byte[] $ary1,$len -> $result \t// KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ has_negatives($ary1$$Register, $len$$Register, $result$$Register,
+                     $tmp1$$Register, $tmp2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// encode char[] to byte[] in ISO_8859_1
+instruct encode_iso_array(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst result, iRegLdst tmp1,
+                          iRegLdst tmp2, iRegLdst tmp3, iRegLdst tmp4, iRegLdst tmp5, regCTR ctr, flagsRegCR0 cr0) %{
+  match(Set result (EncodeISOArray src (Binary dst len)));
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
+         USE_KILL src, USE_KILL dst, KILL ctr, KILL cr0);
+  ins_cost(300);
+  format %{ "Encode array $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    Label Lslow, Lfailure1, Lfailure2, Ldone;
+    __ string_compress_16($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register,
+                          $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, Lfailure1);
+    __ rldicl_($result$$Register, $len$$Register, 0, 64-3); // Remaining characters.
+    __ beq(CCR0, Ldone);
+    __ bind(Lslow);
+    __ string_compress($src$$Register, $dst$$Register, $result$$Register, $tmp2$$Register, Lfailure2);
+    __ li($result$$Register, 0);
+    __ b(Ldone);
+
+    __ bind(Lfailure1);
+    __ mr($result$$Register, $len$$Register);
+    __ mfctr($tmp1$$Register);
+    __ rldimi_($result$$Register, $tmp1$$Register, 3, 0); // Remaining characters.
+    __ beq(CCR0, Ldone);
+    __ b(Lslow);
+
+    __ bind(Lfailure2);
+    __ mfctr($result$$Register); // Remaining characters.
+
+    __ bind(Ldone);
+    __ subf($result$$Register, $result$$Register, $len$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+
 // String_IndexOf for needle of length 1.
 //
 // Match needle into immediate operands: no loadConP node needed. Saves one
@@ -11060,11 +11638,11 @@ instruct string_indexOf_imm1_char(iRegIdst result, iRegPsrc haystack, iRegIsrc h
     if (java_lang_String::has_coder_field()) {
       // New compact strings byte array strings
 #ifdef VM_LITTLE_ENDIAN
-      chr = (((jchar)needle_values->element_value(1).as_byte()) << 8) |
-              (jchar)needle_values->element_value(0).as_byte();
+    chr = (((jchar)(unsigned char)needle_values->element_value(1).as_byte()) << 8) |
+           ((jchar)(unsigned char)needle_values->element_value(0).as_byte());
 #else
-      chr = (((jchar)needle_values->element_value(0).as_byte()) << 8) |
-              (jchar)needle_values->element_value(1).as_byte();
+    chr = (((jchar)(unsigned char)needle_values->element_value(0).as_byte()) << 8) |
+           ((jchar)(unsigned char)needle_values->element_value(1).as_byte());
 #endif
     } else {
       // Old char array strings
@@ -11115,11 +11693,11 @@ instruct string_indexOf_imm1(iRegIdst result, iRegPsrc haystack, iRegIsrc haycnt
     if (java_lang_String::has_coder_field()) {
       // New compact strings byte array strings
 #ifdef VM_LITTLE_ENDIAN
-      chr = (((jchar)needle_values->element_value(1).as_byte()) << 8) |
-              (jchar)needle_values->element_value(0).as_byte();
+    chr = (((jchar)(unsigned char)needle_values->element_value(1).as_byte()) << 8) |
+           ((jchar)(unsigned char)needle_values->element_value(0).as_byte());
 #else
-      chr = (((jchar)needle_values->element_value(0).as_byte()) << 8) |
-              (jchar)needle_values->element_value(1).as_byte();
+    chr = (((jchar)(unsigned char)needle_values->element_value(0).as_byte()) << 8) |
+           ((jchar)(unsigned char)needle_values->element_value(1).as_byte());
 #endif
     } else {
       // Old char array strings
@@ -11321,6 +11899,20 @@ instruct minI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   %}
 %}
 
+instruct minI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+  match(Set dst (MinI src1 src2));
+  effect(KILL cr0);
+  predicate(VM_Version::has_isel());
+  ins_cost(DEFAULT_COST*2);
+
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ cmpw(CCR0, $src1$$Register, $src2$$Register);
+    __ isel($dst$$Register, CCR0, Assembler::less, /*invert*/false, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct maxI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   match(Set dst (MaxI src1 src2));
   ins_cost(DEFAULT_COST*6);
@@ -11339,6 +11931,20 @@ instruct maxI_reg_reg_Ex(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
     andcL_reg_reg(doz, diff, sm); // >=0
     addI_regL_regL(dst, doz, src1s);
   %}
+%}
+
+instruct maxI_reg_reg_isel(iRegIdst dst, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
+  match(Set dst (MaxI src1 src2));
+  effect(KILL cr0);
+  predicate(VM_Version::has_isel());
+  ins_cost(DEFAULT_COST*2);
+
+  ins_encode %{
+    // TODO: PPC port $archOpcode(ppc64Opcode_compound);
+    __ cmpw(CCR0, $src1$$Register, $src2$$Register);
+    __ isel($dst$$Register, CCR0, Assembler::greater, /*invert*/false, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
 %}
 
 //---------- Population Count Instructions ------------------------------------

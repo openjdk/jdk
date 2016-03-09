@@ -1879,7 +1879,7 @@ inline DependencyContext InstanceKlass::dependencies() {
   return dep_context;
 }
 
-int InstanceKlass::mark_dependent_nmethods(DepChange& changes) {
+int InstanceKlass::mark_dependent_nmethods(KlassDepChange& changes) {
   return dependencies().mark_dependent_nmethods(changes);
 }
 

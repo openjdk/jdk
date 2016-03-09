@@ -35,14 +35,21 @@
  * @test
  * @bug 6725789
  * @summary Check for long overflow in task time comparison.
+ * @library /lib/testlibrary/
  */
+
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import jdk.testlibrary.Utils;
 
 public class DelayOverflow {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
+
     static void waitForNanoTimeTick() {
         for (long t0 = System.nanoTime(); t0 == System.nanoTime(); )
             ;
@@ -52,16 +59,16 @@ public class DelayOverflow {
                      Runnable r, int how) {
         switch (how) {
         case 0:
-            pool.schedule(r, 0, TimeUnit.MILLISECONDS);
+            pool.schedule(r, 0, MILLISECONDS);
             break;
         case 1:
-            pool.schedule(Executors.callable(r), 0, TimeUnit.DAYS);
+            pool.schedule(Executors.callable(r), 0, DAYS);
             break;
         case 2:
-            pool.scheduleWithFixedDelay(r, 0, 1000, TimeUnit.NANOSECONDS);
+            pool.scheduleWithFixedDelay(r, 0, 1000, NANOSECONDS);
             break;
         case 3:
-            pool.scheduleAtFixedRate(r, 0, 1000, TimeUnit.MILLISECONDS);
+            pool.scheduleAtFixedRate(r, 0, 1000, MILLISECONDS);
             break;
         default:
             fail(String.valueOf(how));
@@ -72,16 +79,16 @@ public class DelayOverflow {
                                 Runnable r, int how) {
         switch (how) {
         case 0:
-            pool.schedule(r, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+            pool.schedule(r, Long.MAX_VALUE, MILLISECONDS);
             break;
         case 1:
-            pool.schedule(Executors.callable(r), Long.MAX_VALUE, TimeUnit.DAYS);
+            pool.schedule(Executors.callable(r), Long.MAX_VALUE, DAYS);
             break;
         case 2:
-            pool.scheduleWithFixedDelay(r, Long.MAX_VALUE, 1000, TimeUnit.NANOSECONDS);
+            pool.scheduleWithFixedDelay(r, Long.MAX_VALUE, 1000, NANOSECONDS);
             break;
         case 3:
-            pool.scheduleAtFixedRate(r, Long.MAX_VALUE, 1000, TimeUnit.MILLISECONDS);
+            pool.scheduleAtFixedRate(r, Long.MAX_VALUE, 1000, MILLISECONDS);
             break;
         default:
             fail(String.valueOf(how));
@@ -114,14 +121,14 @@ public class DelayOverflow {
                                 proceedLatch.await();
                             } catch (Throwable t) { unexpected(t); }
                         }};
-                pool.schedule(keepPoolBusy, 0, TimeUnit.SECONDS);
+                pool.schedule(keepPoolBusy, 0, DAYS);
                 busyLatch.await();
                 scheduleNow(pool, notifier, nowHow);
                 waitForNanoTimeTick();
                 scheduleAtTheEndOfTime(pool, neverRuns, thenHow);
                 proceedLatch.countDown();
 
-                check(runLatch.await(10L, TimeUnit.SECONDS));
+                check(runLatch.await(LONG_DELAY_MS, MILLISECONDS));
                 equal(runLatch.getCount(), 0L);
 
                 pool.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
@@ -142,10 +149,9 @@ public class DelayOverflow {
                         } catch (Throwable t) { unexpected(t); }
                     }};
             pool.scheduleWithFixedDelay(scheduleNowScheduler,
-                                        0, Long.MAX_VALUE,
-                                        TimeUnit.NANOSECONDS);
+                                        0, Long.MAX_VALUE, NANOSECONDS);
 
-            check(runLatch.await(10L, TimeUnit.SECONDS));
+            check(runLatch.await(LONG_DELAY_MS, MILLISECONDS));
             equal(runLatch.getCount(), 0L);
 
             pool.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);

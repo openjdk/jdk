@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_JVMCI_COMMANDLINEFLAGCONSTRAINTSJVMCI_HPP
-#define SHARE_VM_JVMCI_COMMANDLINEFLAGCONSTRAINTSJVMCI_HPP
+package pkg4;
 
-#include "runtime/globals.hpp"
-#include "utilities/globalDefinitions.hpp"
+public class C {
 
-/*
- * Here we have JVMCI arguments constraints functions, which are called automatically
- * whenever flag's value changes. If the constraint fails the function should return
- * an appropriate error value.
- */
+    /**
+     * Defines the number of cycles in this animation. The {@code cycleCount}
+     * may be {@code INDEFINITE} for animations that repeat indefinitely.
+     * Now we add a > to deliberately cause an Html error.
+     * @defaultValue 11
+     * @since JavaFX 8.0
+     */
+    public DoubleProperty rate;
 
-Flag::Error EnableJVMCIMustBeEnabledConstraintFunc(bool value, bool verbose);
-Flag::Error EnableJVMCIMustBeEnabledConstraintFunc(intx value, bool verbose);
+    public final void setRate(double value) {}
 
-#endif /* SHARE_VM_JVMCI_COMMANDLINEFLAGCONSTRAINTSJVMCI_HPP */
+    public final double getRate() {return 2.0d;}
+
+    public final DoubleProperty rateProperty() {return new DoubleProperty();}
+
+    class DoubleProperty {}
+
+}

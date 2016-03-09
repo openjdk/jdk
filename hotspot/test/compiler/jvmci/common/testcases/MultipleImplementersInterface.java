@@ -23,6 +23,9 @@
 
 package compiler.jvmci.common.testcases;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public interface MultipleImplementersInterface {
 
     int INT_CONSTANT = Integer.MAX_VALUE;
@@ -42,12 +45,34 @@ public interface MultipleImplementersInterface {
         // empty
     }
 
-    default void interfaceMethodReferral(MultipleImplementersInterface obj) {
-        obj.defaultMethod();
-    }
-
     default void lambdaUsingMethod() {
         Thread t = new Thread(this::defaultMethod);
         t.start();
+    }
+
+    default void printFields() {
+        System.out.println(OBJECT_CONSTANT);
+        String s = "";
+        System.out.println(s);
+    }
+
+    static void staticMethod() {
+        System.getProperties(); // calling some static method
+        Map map = new HashMap(); // calling some constructor
+        map.put(OBJECT_CONSTANT, OBJECT_CONSTANT); // calling some interface method
+        map.remove(OBJECT_CONSTANT); // calling some default interface method
+    }
+
+    default void instanceMethod() {
+        toString(); // calling some virtual method
+    }
+
+    default void anonClassMethod() {
+        new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("Running");
+            }
+        }.run();
     }
 }

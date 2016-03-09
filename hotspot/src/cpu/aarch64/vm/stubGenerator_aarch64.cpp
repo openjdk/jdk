@@ -163,30 +163,20 @@ class StubGenerator: public StubCodeGenerator {
     sp_after_call_off = -26,
 
     d15_off            = -26,
-    d14_off            = -25,
     d13_off            = -24,
-    d12_off            = -23,
     d11_off            = -22,
-    d10_off            = -21,
     d9_off             = -20,
-    d8_off             = -19,
 
     r28_off            = -18,
-    r27_off            = -17,
     r26_off            = -16,
-    r25_off            = -15,
     r24_off            = -14,
-    r23_off            = -13,
     r22_off            = -12,
-    r21_off            = -11,
     r20_off            = -10,
-    r19_off            =  -9,
     call_wrapper_off   =  -8,
     result_off         =  -7,
     result_type_off    =  -6,
     method_off         =  -5,
     entry_point_off    =  -4,
-    parameters_off     =  -3,
     parameter_size_off =  -2,
     thread_off         =  -1,
     fp_f               =   0,
@@ -208,30 +198,20 @@ class StubGenerator: public StubCodeGenerator {
     const Address result_type   (rfp, result_type_off    * wordSize);
     const Address method        (rfp, method_off         * wordSize);
     const Address entry_point   (rfp, entry_point_off    * wordSize);
-    const Address parameters    (rfp, parameters_off     * wordSize);
     const Address parameter_size(rfp, parameter_size_off * wordSize);
 
     const Address thread        (rfp, thread_off         * wordSize);
 
     const Address d15_save      (rfp, d15_off * wordSize);
-    const Address d14_save      (rfp, d14_off * wordSize);
     const Address d13_save      (rfp, d13_off * wordSize);
-    const Address d12_save      (rfp, d12_off * wordSize);
     const Address d11_save      (rfp, d11_off * wordSize);
-    const Address d10_save      (rfp, d10_off * wordSize);
     const Address d9_save       (rfp, d9_off * wordSize);
-    const Address d8_save       (rfp, d8_off * wordSize);
 
     const Address r28_save      (rfp, r28_off * wordSize);
-    const Address r27_save      (rfp, r27_off * wordSize);
     const Address r26_save      (rfp, r26_off * wordSize);
-    const Address r25_save      (rfp, r25_off * wordSize);
     const Address r24_save      (rfp, r24_off * wordSize);
-    const Address r23_save      (rfp, r23_off * wordSize);
     const Address r22_save      (rfp, r22_off * wordSize);
-    const Address r21_save      (rfp, r21_off * wordSize);
     const Address r20_save      (rfp, r20_off * wordSize);
-    const Address r19_save      (rfp, r19_off * wordSize);
 
     // stub code
 
@@ -254,31 +234,20 @@ class StubGenerator: public StubCodeGenerator {
     // rthread because we want to sanity check rthread later
     __ str(c_rarg7,  thread);
     __ strw(c_rarg6, parameter_size);
-    __ str(c_rarg5,  parameters);
-    __ str(c_rarg4,  entry_point);
-    __ str(c_rarg3,  method);
-    __ str(c_rarg2,  result_type);
-    __ str(c_rarg1,  result);
-    __ str(c_rarg0,  call_wrapper);
-    __ str(r19,      r19_save);
-    __ str(r20,      r20_save);
-    __ str(r21,      r21_save);
-    __ str(r22,      r22_save);
-    __ str(r23,      r23_save);
-    __ str(r24,      r24_save);
-    __ str(r25,      r25_save);
-    __ str(r26,      r26_save);
-    __ str(r27,      r27_save);
-    __ str(r28,      r28_save);
+    __ stp(c_rarg4, c_rarg5,  entry_point);
+    __ stp(c_rarg2, c_rarg3,  result_type);
+    __ stp(c_rarg0, c_rarg1,  call_wrapper);
 
-    __ strd(v8,      d8_save);
-    __ strd(v9,      d9_save);
-    __ strd(v10,     d10_save);
-    __ strd(v11,     d11_save);
-    __ strd(v12,     d12_save);
-    __ strd(v13,     d13_save);
-    __ strd(v14,     d14_save);
-    __ strd(v15,     d15_save);
+    __ stp(r20, r19,   r20_save);
+    __ stp(r22, r21,   r22_save);
+    __ stp(r24, r23,   r24_save);
+    __ stp(r26, r25,   r26_save);
+    __ stp(r28, r27,   r28_save);
+
+    __ stpd(v9,  v8,   d9_save);
+    __ stpd(v11, v10,  d11_save);
+    __ stpd(v13, v12,  d13_save);
+    __ stpd(v15, v14,  d15_save);
 
     // install Java thread in global register now we have saved
     // whatever value it held
@@ -385,33 +354,22 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     // restore callee-save registers
-    __ ldrd(v15,      d15_save);
-    __ ldrd(v14,      d14_save);
-    __ ldrd(v13,      d13_save);
-    __ ldrd(v12,      d12_save);
-    __ ldrd(v11,      d11_save);
-    __ ldrd(v10,      d10_save);
-    __ ldrd(v9,       d9_save);
-    __ ldrd(v8,       d8_save);
+    __ ldpd(v15, v14,  d15_save);
+    __ ldpd(v13, v12,  d13_save);
+    __ ldpd(v11, v10,  d11_save);
+    __ ldpd(v9,  v8,   d9_save);
 
-    __ ldr(r28,      r28_save);
-    __ ldr(r27,      r27_save);
-    __ ldr(r26,      r26_save);
-    __ ldr(r25,      r25_save);
-    __ ldr(r24,      r24_save);
-    __ ldr(r23,      r23_save);
-    __ ldr(r22,      r22_save);
-    __ ldr(r21,      r21_save);
-    __ ldr(r20,      r20_save);
-    __ ldr(r19,      r19_save);
-    __ ldr(c_rarg0,  call_wrapper);
-    __ ldr(c_rarg1,  result);
+    __ ldp(r28, r27,   r28_save);
+    __ ldp(r26, r25,   r26_save);
+    __ ldp(r24, r23,   r24_save);
+    __ ldp(r22, r21,   r22_save);
+    __ ldp(r20, r19,   r20_save);
+
+    __ ldp(c_rarg0, c_rarg1,  call_wrapper);
     __ ldrw(c_rarg2, result_type);
     __ ldr(c_rarg3,  method);
-    __ ldr(c_rarg4,  entry_point);
-    __ ldr(c_rarg5,  parameters);
-    __ ldr(c_rarg6,  parameter_size);
-    __ ldr(c_rarg7,  thread);
+    __ ldp(c_rarg4, c_rarg5,  entry_point);
+    __ ldp(c_rarg6, c_rarg7,  parameter_size);
 
 #ifndef PRODUCT
     // tell the simulator we are about to end Java execution
@@ -666,7 +624,7 @@ class StubGenerator: public StubCodeGenerator {
   //     count   -  element count
   //     tmp     - scratch register
   //
-  //     Destroy no registers!
+  //     Destroy no registers except rscratch1 and rscratch2
   //
   void  gen_write_ref_array_pre_barrier(Register addr, Register count, bool dest_uninitialized) {
     BarrierSet* bs = Universe::heap()->barrier_set();
@@ -674,12 +632,13 @@ class StubGenerator: public StubCodeGenerator {
     case BarrierSet::G1SATBCTLogging:
       // With G1, don't generate the call if we statically know that the target in uninitialized
       if (!dest_uninitialized) {
-        __ push(RegSet::range(r0, r29), sp);         // integer registers except lr & sp
+        __ push_call_clobbered_registers();
         if (count == c_rarg0) {
           if (addr == c_rarg1) {
             // exactly backwards!!
-            __ stp(c_rarg0, c_rarg1, __ pre(sp, -2 * wordSize));
-            __ ldp(c_rarg1, c_rarg0, __ post(sp, -2 * wordSize));
+            __ mov(rscratch1, c_rarg0);
+            __ mov(c_rarg0, c_rarg1);
+            __ mov(c_rarg1, rscratch1);
           } else {
             __ mov(c_rarg1, count);
             __ mov(c_rarg0, addr);
@@ -689,7 +648,7 @@ class StubGenerator: public StubCodeGenerator {
           __ mov(c_rarg1, count);
         }
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
-        __ pop(RegSet::range(r0, r29), sp);         // integer registers except lr & sp        }
+        __ pop_call_clobbered_registers();
         break;
       case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
@@ -719,7 +678,7 @@ class StubGenerator: public StubCodeGenerator {
       case BarrierSet::G1SATBCTLogging:
 
         {
-          __ push(RegSet::range(r0, r29), sp);         // integer registers except lr & sp
+          __ push_call_clobbered_registers();
           // must compute element count unless barrier set interface is changed (other platforms supply count)
           assert_different_registers(start, end, scratch);
           __ lea(scratch, Address(end, BytesPerHeapOop));
@@ -728,7 +687,7 @@ class StubGenerator: public StubCodeGenerator {
           __ mov(c_rarg0, start);
           __ mov(c_rarg1, scratch);
           __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_post), 2);
-          __ pop(RegSet::range(r0, r29), sp);         // integer registers except lr & sp        }
+          __ pop_call_clobbered_registers();
         }
         break;
       case BarrierSet::CardTableForRS:
@@ -1394,10 +1353,10 @@ class StubGenerator: public StubCodeGenerator {
   //   no-overlap entry point used by generate_conjoint_long_oop_copy().
   //
   address generate_disjoint_oop_copy(bool aligned, address *entry,
-                                     const char *name, bool dest_uninitialized = false) {
+                                     const char *name, bool dest_uninitialized) {
     const bool is_oop = true;
     const size_t size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
-    return generate_disjoint_copy(size, aligned, is_oop, entry, name);
+    return generate_disjoint_copy(size, aligned, is_oop, entry, name, dest_uninitialized);
   }
 
   // Arguments:
@@ -1412,10 +1371,11 @@ class StubGenerator: public StubCodeGenerator {
   //
   address generate_conjoint_oop_copy(bool aligned,
                                      address nooverlap_target, address *entry,
-                                     const char *name, bool dest_uninitialized = false) {
+                                     const char *name, bool dest_uninitialized) {
     const bool is_oop = true;
     const size_t size = UseCompressedOops ? sizeof (jint) : sizeof (jlong);
-    return generate_conjoint_copy(size, aligned, is_oop, nooverlap_target, entry, name);
+    return generate_conjoint_copy(size, aligned, is_oop, nooverlap_target, entry,
+                                  name, dest_uninitialized);
   }
 
 
@@ -1521,6 +1481,8 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L);
     }
 #endif //ASSERT
+
+    gen_write_ref_array_pre_barrier(to, count, dest_uninitialized);
 
     // save the original count
     __ mov(count_save, count);
@@ -1988,9 +1950,11 @@ class StubGenerator: public StubCodeGenerator {
       bool aligned = !UseCompressedOops;
 
       StubRoutines::_arrayof_oop_disjoint_arraycopy
-        = generate_disjoint_oop_copy(aligned, &entry, "arrayof_oop_disjoint_arraycopy");
+        = generate_disjoint_oop_copy(aligned, &entry, "arrayof_oop_disjoint_arraycopy",
+                                     /*dest_uninitialized*/false);
       StubRoutines::_arrayof_oop_arraycopy
-        = generate_conjoint_oop_copy(aligned, entry, &entry_oop_arraycopy, "arrayof_oop_arraycopy");
+        = generate_conjoint_oop_copy(aligned, entry, &entry_oop_arraycopy, "arrayof_oop_arraycopy",
+                                     /*dest_uninitialized*/false);
       // Aligned versions without pre-barriers
       StubRoutines::_arrayof_oop_disjoint_arraycopy_uninit
         = generate_disjoint_oop_copy(aligned, &entry, "arrayof_oop_disjoint_arraycopy_uninit",

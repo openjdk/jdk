@@ -170,6 +170,22 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
 #end[Ordered]
 
 #if[JdkInternalMisc]
+        // Lazy
+        {
+            UNSAFE.put$Type$Release(base, offset, $value1$);
+            $type$ x = UNSAFE.get$Type$Acquire(base, offset);
+            assertEquals(x, $value1$, "putRelease $type$ value");
+        }
+
+        // Opaque
+        {
+            UNSAFE.put$Type$Opaque(base, offset, $value2$);
+            $type$ x = UNSAFE.get$Type$Opaque(base, offset);
+            assertEquals(x, $value2$, "putOpaque $type$ value");
+        }
+#end[JdkInternalMisc]
+
+#if[JdkInternalMisc]
 #if[Unaligned]
         // Unaligned
         {
@@ -210,6 +226,72 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
             assertEquals(x, $value2$, "failing compareAndSwap $type$ value");
         }
 
+#if[JdkInternalMisc]
+        // Advanced compare
+        {
+            $type$ r = UNSAFE.compareAndExchange$Type$Volatile(base, offset, $value2$, $value1$);
+            assertEquals(r, $value2$, "success compareAndExchangeVolatile $type$");
+            $type$ x = UNSAFE.get$Type$(base, offset);
+            assertEquals(x, $value1$, "success compareAndExchangeVolatile $type$ value");
+        }
+
+        {
+            $type$ r = UNSAFE.compareAndExchange$Type$Volatile(base, offset, $value2$, $value3$);
+            assertEquals(r, $value1$, "failing compareAndExchangeVolatile $type$");
+            $type$ x = UNSAFE.get$Type$(base, offset);
+            assertEquals(x, $value1$, "failing compareAndExchangeVolatile $type$ value");
+        }
+
+        {
+            $type$ r = UNSAFE.compareAndExchange$Type$Acquire(base, offset, $value1$, $value2$);
+            assertEquals(r, $value1$, "success compareAndExchangeAcquire $type$");
+            $type$ x = UNSAFE.get$Type$(base, offset);
+            assertEquals(x, $value2$, "success compareAndExchangeAcquire $type$ value");
+        }
+
+        {
+            $type$ r = UNSAFE.compareAndExchange$Type$Acquire(base, offset, $value1$, $value3$);
+            assertEquals(r, $value2$, "failing compareAndExchangeAcquire $type$");
+            $type$ x = UNSAFE.get$Type$(base, offset);
+            assertEquals(x, $value2$, "failing compareAndExchangeAcquire $type$ value");
+        }
+
+        {
+            $type$ r = UNSAFE.compareAndExchange$Type$Release(base, offset, $value2$, $value1$);
+            assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
+            $type$ x = UNSAFE.get$Type$(base, offset);
+            assertEquals(x, $value1$, "success compareAndExchangeRelease $type$ value");
+        }
+
+        {
+            $type$ r = UNSAFE.compareAndExchange$Type$Release(base, offset, $value2$, $value3$);
+            assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
+            $type$ x = UNSAFE.get$Type$(base, offset);
+            assertEquals(x, $value1$, "failing compareAndExchangeRelease $type$ value");
+        }
+
+        {
+            boolean r = UNSAFE.weakCompareAndSwap$Type$(base, offset, $value1$, $value2$);
+            assertEquals(r, true, "weakCompareAndSwap $type$");
+            $type$ x = UNSAFE.get$Type$(base, offset);
+            assertEquals(x, $value2$, "weakCompareAndSwap $type$ value");
+        }
+
+        {
+            boolean r = UNSAFE.weakCompareAndSwap$Type$Acquire(base, offset, $value2$, $value1$);
+            assertEquals(r, true, "weakCompareAndSwapAcquire $type$");
+            $type$ x = UNSAFE.get$Type$(base, offset);
+            assertEquals(x, $value1$, "weakCompareAndSwapAcquire $type$");
+        }
+
+        {
+            boolean r = UNSAFE.weakCompareAndSwap$Type$Release(base, offset, $value1$, $value2$);
+            assertEquals(r, true, "weakCompareAndSwapRelease $type$");
+            $type$ x = UNSAFE.get$Type$(base, offset);
+            assertEquals(x, $value2$, "weakCompareAndSwapRelease $type$");
+        }
+#end[JdkInternalMisc]
+
         // Compare set and get
         {
             $type$ o = UNSAFE.getAndSet$Type$(base, offset, $value1$);
@@ -245,3 +327,4 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
 #end[!boolean]
 #end[!Object]
 }
+

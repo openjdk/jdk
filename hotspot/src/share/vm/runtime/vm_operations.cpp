@@ -485,6 +485,10 @@ void VM_Exit::wait_if_vm_exited() {
   }
 }
 
+void VM_PrintCompileQueue::doit() {
+  CompileBroker::print_compile_queues(_out);
+}
+
 #if INCLUDE_SERVICES
 void VM_PrintClassHierarchy::doit() {
   KlassHierarchy::print_class_hierarchy(_out, _print_interfaces, _print_subclasses, _classname);
