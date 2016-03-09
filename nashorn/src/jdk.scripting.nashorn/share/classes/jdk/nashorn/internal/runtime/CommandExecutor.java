@@ -64,6 +64,9 @@ class CommandExecutor {
         return System.getProperty("os.name").contains("Windows");
     });
 
+    // Cygwin drive alias prefix.
+    private static final String CYGDRIVE = "/cygdrive/";
+
     // User's home directory
     private static final String HOME_DIRECTORY =
         AccessController.doPrivileged((PrivilegedAction<String>)() -> {
@@ -388,7 +391,7 @@ class CommandExecutor {
      * @return resolved Path to file
      */
     private static Path resolvePath(final String cwd, final String fileName) {
-        return Paths.get(cwd).resolve(fileName).normalize();
+        return Paths.get(sanitizePath(cwd)).resolve(fileName).normalize();
     }
 
     /**
@@ -402,7 +405,8 @@ class CommandExecutor {
         switch (cmd.get(0)) {
             // Set current working directory.
             case "cd":
-                // If zero args then use home dirrectory as cwd else use first arg.
+                final boolean cygpath = IS_WINDOWS && cwd.startsWith(CYGDRIVE);
+                // If zero args then use home directory as cwd else use first arg.
                 final String newCWD = cmd.size() < 2 ? HOME_DIRECTORY : cmd.get(1);
                 // Normalize the cwd
                 final Path cwdPath = resolvePath(cwd, newCWD);
@@ -418,7 +422,13 @@ class CommandExecutor {
                 }
 
                 // Set PWD environment variable to be picked up as cwd.
-                environment.put("PWD", cwdPath.toString());
+                // Make sure Cygwin paths look like Unix paths.
+                String scwd = cwdPath.toString();
+                if (cygpath && scwd.length() >= 2 &&
+                        Character.isLetter(scwd.charAt(0)) && scwd.charAt(1) == ':') {
+                    scwd = CYGDRIVE + Character.toLowerCase(scwd.charAt(0)) + "/" + scwd.substring(2);
+                }
+                environment.put("PWD", scwd);
                 return true;
 
             // Set an environment variable.
@@ -445,7 +455,8 @@ class CommandExecutor {
     }
 
     /**
-     * preprocessCommand - scan the command for redirects
+     * preprocessCommand - scan the command for redirects, and sanitize the
+     * executable path
      * @param tokens       command tokens
      * @param cwd          current working directory
      * @param redirectInfo redirection information
@@ -471,7 +482,36 @@ class CommandExecutor {
             command.add(stripQuotes(token));
         }
 
+        if (command.size() > 0) {
+            command.set(0, sanitizePath(command.get(0)));
+        }
+
         return command;
+    }
+
+    /**
+     * Sanitize a path in case the underlying platform is Cygwin. In that case,
+     * convert from the {@code /cygdrive/x} drive specification to the usual
+     * Windows {@code X:} format.
+     *
+     * @param d a String representing a path
+     * @return a String representing the same path in a form that can be
+     *         processed by the underlying platform
+     */
+    private static String sanitizePath(final String d) {
+        if (!IS_WINDOWS || (IS_WINDOWS && !d.startsWith(CYGDRIVE))) {
+            return d;
+        }
+        final String pd = d.substring(CYGDRIVE.length());
+        if (pd.length() >= 2 && pd.charAt(1) == '/') {
+            // drive letter plus / -> convert /cygdrive/x/... to X:/...
+            return pd.charAt(0) + ":" + pd.substring(1);
+        } else if (pd.length() == 1) {
+            // just drive letter -> convert /cygdrive/x to X:
+            return pd.charAt(0) + ":";
+        }
+        // remaining case: /cygdrive/ -> can't convert
+        return d;
     }
 
     /**
@@ -485,7 +525,7 @@ class CommandExecutor {
         // Create new ProcessBuilder.
         final ProcessBuilder pb = new ProcessBuilder(command);
         // Set current working directory.
-        pb.directory(new File(cwd));
+        pb.directory(new File(sanitizePath(cwd)));
 
         // Map environment variables.
         final Map<String, String> processEnvironment = pb.environment();
@@ -523,7 +563,7 @@ class CommandExecutor {
         // Create ProcessBuilder with cwd and redirects set.
         createProcessBuilder(command, cwd, redirectInfo);
 
-        // If piped the wait for the next command.
+        // If piped, wait for the next command.
         if (isPiped) {
             return;
         }
@@ -765,7 +805,7 @@ class CommandExecutor {
 
     /**
      * process - process a command array of strings
-     * @param script command script to be processed
+     * @param tokens command script to be processed
      */
     void process(final List<String> tokens) {
         // Prepare to accumulate command tokens.
