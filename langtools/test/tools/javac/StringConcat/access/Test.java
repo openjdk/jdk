@@ -21,23 +21,27 @@
  * questions.
  */
 
-/*
- * @test
- * @bug     8151223
- * @summary String concatenation fails with implicit toString() on package-private class
- * @modules jdk.jdeps/com.sun.tools.classfile
- * @compile -XDstringConcat=indy              Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java
- * @run main Test
- * @compile -XDstringConcat=indyWithConstants Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java
- * @run main Test
- */
-
 import com.sun.tools.classfile.*;
 import com.sun.tools.classfile.ConstantPool.*;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+/*
+ * @test
+ * @bug     8151223
+ * @summary String concatenation fails with implicit toString() on package-private class
+ * @modules jdk.jdeps/com.sun.tools.classfile
+ *
+ * @clean *
+ * @compile -XDstringConcat=indy              Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java
+ * @run main Test
+ *
+ * @clean *
+ * @compile -XDstringConcat=indyWithConstants Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java
+ * @run main Test
+ */
 
 public class Test {
     static List<String> actualTypes;
