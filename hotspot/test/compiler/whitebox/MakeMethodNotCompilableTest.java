@@ -31,14 +31,24 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @build MakeMethodNotCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::* MakeMethodNotCompilableTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  -Xmixed MakeMethodNotCompilableTest
  * @summary testing of WB::makeMethodNotCompilable()
  * @author igor.ignatyev@oracle.com
  */
 public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
     private int bci;
     public static void main(String[] args) throws Exception {
-        CompilerWhiteBoxTest.main(MakeMethodNotCompilableTest::new, args);
+        String directive =
+                "[{ match:\"*SimpleTestCase$Helper.*\", BackgroundCompilation: false }, " +
+                " { match:\"*.*\", inline:\"-*SimpleTestCase$Helper.*\"}]";
+        if (WHITE_BOX.addCompilerDirective(directive) != 2) {
+            throw new RuntimeException("Could not add directive");
+        }
+        try {
+            CompilerWhiteBoxTest.main(MakeMethodNotCompilableTest::new, args);
+        } finally {
+            WHITE_BOX.removeCompilerDirective(2);
+        }
     }
 
     private MakeMethodNotCompilableTest(TestCase testCase) {
