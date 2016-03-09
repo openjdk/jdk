@@ -177,6 +177,8 @@ public:
     _max_rs_lengths = rs_lengths;
   }
 
+  size_t predict_rs_lengths() const;
+
   size_t predict_rs_length_diff() const;
 
   double predict_alloc_rate_ms() const;
