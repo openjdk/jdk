@@ -409,7 +409,7 @@ uint G1CollectorPolicy::calculate_young_list_desired_max_length() const {
 }
 
 uint G1CollectorPolicy::update_young_list_max_and_target_length() {
-  return update_young_list_max_and_target_length(get_new_size_prediction(_rs_lengths_seq));
+  return update_young_list_max_and_target_length(predict_rs_lengths());
 }
 
 uint G1CollectorPolicy::update_young_list_max_and_target_length(size_t rs_lengths) {
@@ -616,7 +616,7 @@ void G1CollectorPolicy::revise_young_list_target_length_if_necessary(size_t rs_l
 }
 
 void G1CollectorPolicy::update_rs_lengths_prediction() {
-  update_rs_lengths_prediction(get_new_size_prediction(_rs_lengths_seq));
+  update_rs_lengths_prediction(predict_rs_lengths());
 }
 
 void G1CollectorPolicy::update_rs_lengths_prediction(size_t prediction) {
@@ -1150,6 +1150,10 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
   dcqs.notify_if_necessary();
 }
 
+size_t G1CollectorPolicy::predict_rs_lengths() const {
+  return get_new_size_prediction(_rs_lengths_seq);
+}
+
 size_t G1CollectorPolicy::predict_rs_length_diff() const {
   return get_new_size_prediction(_rs_length_diff_seq);
 }
@@ -1269,7 +1273,7 @@ double G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards,
 }
 
 double G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) const {
-  size_t rs_length = predict_rs_length_diff();
+  size_t rs_length = predict_rs_lengths() + predict_rs_length_diff();
   size_t card_num;
   if (collector_state()->gcs_are_young()) {
     card_num = predict_young_card_num(rs_length);
