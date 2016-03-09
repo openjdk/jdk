@@ -27,6 +27,7 @@ jdk.vm.cds
 jdk.vm.ci
 jdk.management
 jdk.management.cmm
+jdk.management.jfr
 jdk.management.resource
 jdk.naming.rmi
 jdk.sctp
