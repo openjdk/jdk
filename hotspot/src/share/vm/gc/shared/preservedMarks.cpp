@@ -62,9 +62,14 @@ void PreservedMarksSet::init(uint num) {
 }
 
 void PreservedMarksSet::restore() {
+  size_t total_size = 0;
   for (uint i = 0; i < _num; i += 1) {
+    total_size += get(i)->size();
     get(i)->restore();
   }
+  assert_empty();
+
+  log_trace(gc)("Restored " SIZE_FORMAT " marks", total_size);
 }
 
 void PreservedMarksSet::reclaim() {

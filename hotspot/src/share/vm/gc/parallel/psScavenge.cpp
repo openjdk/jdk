@@ -68,8 +68,6 @@ uintptr_t                  PSScavenge::_young_generation_boundary_compressed = 0
 elapsedTimer               PSScavenge::_accumulated_time;
 STWGCTimer                 PSScavenge::_gc_timer;
 ParallelScavengeTracer     PSScavenge::_gc_tracer;
-Stack<markOop, mtGC>       PSScavenge::_preserved_mark_stack;
-Stack<oop, mtGC>           PSScavenge::_preserved_oop_stack;
 CollectorCounters*         PSScavenge::_counters = NULL;
 
 // Define before use
@@ -120,14 +118,6 @@ class PSEvacuateFollowersClosure: public VoidClosure {
     _promotion_manager->drain_stacks(true);
     guarantee(_promotion_manager->stacks_empty(),
               "stacks should be empty at this point");
-  }
-};
-
-class PSPromotionFailedClosure : public ObjectClosure {
-  virtual void do_object(oop obj) {
-    if (obj->is_forwarded()) {
-      obj->init_mark();
-    }
   }
 };
 
@@ -256,9 +246,6 @@ bool PSScavenge::invoke() {
 bool PSScavenge::invoke_no_policy() {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-
-  assert(_preserved_mark_stack.is_empty(), "should be empty");
-  assert(_preserved_oop_stack.is_empty(), "should be empty");
 
   _gc_timer.register_gc_start();
 
@@ -656,50 +643,18 @@ bool PSScavenge::invoke_no_policy() {
 }
 
 // This method iterates over all objects in the young generation,
-// unforwarding markOops. It then restores any preserved mark oops,
-// and clears the _preserved_mark_stack.
+// removing all forwarding references. It then restores any preserved marks.
 void PSScavenge::clean_up_failed_promotion() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
 
-  {
-    ResourceMark rm;
+  RemoveForwardedPointerClosure remove_fwd_ptr_closure;
+  young_gen->object_iterate(&remove_fwd_ptr_closure);
 
-    // Unforward all pointers in the young gen.
-    PSPromotionFailedClosure unforward_closure;
-    young_gen->object_iterate(&unforward_closure);
-
-    log_trace(gc, ergo)("Restoring " SIZE_FORMAT " marks", _preserved_oop_stack.size());
-
-    // Restore any saved marks.
-    while (!_preserved_oop_stack.is_empty()) {
-      oop obj      = _preserved_oop_stack.pop();
-      markOop mark = _preserved_mark_stack.pop();
-      obj->set_mark(mark);
-    }
-
-    // Clear the preserved mark and oop stack caches.
-    _preserved_mark_stack.clear(true);
-    _preserved_oop_stack.clear(true);
-  }
+  PSPromotionManager::restore_preserved_marks();
 
   // Reset the PromotionFailureALot counters.
   NOT_PRODUCT(heap->reset_promotion_should_fail();)
-}
-
-// This method is called whenever an attempt to promote an object
-// fails. Some markOops will need preservation, some will not. Note
-// that the entire eden is traversed after a failed promotion, with
-// all forwarded headers replaced by the default markOop. This means
-// it is not necessary to preserve most markOops.
-void PSScavenge::oop_promotion_failed(oop obj, markOop obj_mark) {
-  if (obj_mark->must_be_preserved_for_promotion_failure(obj)) {
-    // Should use per-worker private stacks here rather than
-    // locking a common pair of stacks.
-    ThreadCritical tc;
-    _preserved_oop_stack.push(obj);
-    _preserved_mark_stack.push(obj_mark);
-  }
 }
 
 bool PSScavenge::should_attempt_scavenge() {

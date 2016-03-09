@@ -53,6 +53,7 @@ private:
 
 public:
   bool is_empty() const { return _stack.is_empty(); }
+  size_t size() const { return _stack.size(); }
   inline void push_if_necessary(oop obj, markOop m);
   // Iterate over the stack, restore the preserved marks, then reclaim
   // the memory taken up by stack chunks.
@@ -65,7 +66,7 @@ public:
   virtual void do_object(oop obj);
 };
 
-class PreservedMarksSet VALUE_OBJ_CLASS_SPEC {
+class PreservedMarksSet : public CHeapObj<mtGC> {
 private:
   // true -> _stacks will be allocated in the C heap
   // false -> _stacks will be allocated in the resource arena
