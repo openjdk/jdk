@@ -34,9 +34,20 @@ STATIC_ASSERT(sizeof(BitMap::bm_word_t) == BytesPerWord); // "Implementation ass
 BitMap::BitMap(idx_t size_in_bits, bool in_resource_area) :
   _map(NULL), _size(0)
 {
-  assert(sizeof(bm_word_t) == BytesPerWord, "Implementation assumption.");
   resize(size_in_bits, in_resource_area);
 }
+
+#ifdef ASSERT
+void BitMap::verify_index(idx_t index) const {
+  assert(index < _size, "BitMap index out of bounds");
+}
+
+void BitMap::verify_range(idx_t beg_index, idx_t end_index) const {
+  assert(beg_index <= end_index, "BitMap range error");
+  // Note that [0,0) and [size,size) are both valid ranges.
+  if (end_index != _size) verify_index(end_index);
+}
+#endif // #ifdef ASSERT
 
 void BitMap::resize(idx_t size_in_bits, bool in_resource_area) {
   idx_t old_size_in_words = size_in_words();
