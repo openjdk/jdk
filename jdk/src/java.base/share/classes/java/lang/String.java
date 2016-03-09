@@ -42,6 +42,7 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * The {@code String} class represents character strings. All
@@ -119,7 +120,18 @@ import jdk.internal.HotSpotIntrinsicCandidate;
 public final class String
     implements java.io.Serializable, Comparable<String>, CharSequence {
 
-    /** The value is used for character storage. */
+    /**
+     * The value is used for character storage.
+     *
+     * @implNote This field is trusted by the VM, and is a subject to
+     * constant folding if String instance is constant. Overwriting this
+     * field after construction will cause problems.
+     *
+     * Additionally, it is marked with {@link Stable} to trust the contents
+     * of the array. No other facility in JDK provides this functionality (yet).
+     * {@link Stable} is safe here, because value is never null.
+     */
+    @Stable
     private final byte[] value;
 
     /**
@@ -129,6 +141,9 @@ public final class String
      * LATIN1
      * UTF16
      *
+     * @implNote This field is trusted by the VM, and is a subject to
+     * constant folding if String instance is constant. Overwriting this
+     * field after construction will cause problems.
      */
     private final byte coder;
 
