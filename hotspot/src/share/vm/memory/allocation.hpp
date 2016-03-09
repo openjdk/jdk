@@ -716,9 +716,6 @@ class ArrayAllocator : public AllStatic {
  private:
   static bool should_use_malloc(size_t length);
 
-  static size_t size_for_malloc(size_t length);
-  static size_t size_for_mmap(size_t length);
-
   static E* allocate_malloc(size_t length);
   static E* allocate_mmap(size_t length);
 
@@ -728,6 +725,28 @@ class ArrayAllocator : public AllStatic {
  public:
   static E* allocate(size_t length);
   static E* reallocate(E* old_addr, size_t old_length, size_t new_length);
+  static void free(E* addr, size_t length);
+};
+
+// Uses mmaped memory for all allocations. All allocations are initially
+// zero-filled. No pre-touching.
+template <class E, MEMFLAGS F>
+class MmapArrayAllocator : public AllStatic {
+ private:
+  static size_t size_for(size_t length);
+
+ public:
+  static E* allocate(size_t length);
+  static void free(E* addr, size_t length);
+};
+
+// Uses malloc:ed memory for all allocations.
+template <class E, MEMFLAGS F>
+class MallocArrayAllocator : public AllStatic {
+ public:
+  static size_t size_for(size_t length);
+
+  static E* allocate(size_t length);
   static void free(E* addr, size_t length);
 };
 
