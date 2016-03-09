@@ -1901,7 +1901,8 @@ public:
                                                                             \
   product(uintx, CMSSamplingGrain, 16*K,                                    \
           "The minimum distance between eden samples for CMS (see above)")  \
-          range(1, max_uintx)                                               \
+          range(ObjectAlignmentInBytes, max_uintx)                          \
+          constraint(CMSSamplingGrainConstraintFunc,AfterMemoryInit)        \
                                                                             \
   product(bool, CMSScavengeBeforeRemark, false,                             \
           "Attempt scavenge before the CMS remark step")                    \
