@@ -249,18 +249,22 @@ class CommandExecutor {
         // Stream to copy to.
         private final OutputStream output;
 
+        private final Thread thread;
+
         Piper(final InputStream input, final OutputStream output) {
             this.input = input;
             this.output = output;
+            this.thread = new Thread(this, "$EXEC Piper");
         }
 
         /**
          * start - start the Piper in a new daemon thread
+         * @return this Piper
          */
-        void start() {
-            Thread thread = new Thread(this, "$EXEC Piper");
+        Piper start() {
             thread.setDaemon(true);
             thread.start();
+            return this;
         }
 
         /**
@@ -293,6 +297,10 @@ class CommandExecutor {
                     // Don't care.
                 }
             }
+        }
+
+        public void join() throws InterruptedException {
+            thread.join();
         }
 
         // Exit thread.
@@ -621,15 +629,17 @@ class CommandExecutor {
         ByteArrayOutputStream byteOutputStream = null;
         ByteArrayOutputStream byteErrorStream = null;
 
+        final List<Piper> piperThreads = new ArrayList<>();
+
         // If input is not redirected.
         if (inputIsPipe) {
             // If inputStream other than System.in is provided.
             if (inputStream != null) {
                 // Pipe inputStream to first process output stream.
-                new Piper(inputStream, firstProcess.getOutputStream()).start();
+                piperThreads.add(new Piper(inputStream, firstProcess.getOutputStream()).start());
             } else {
                 // Otherwise assume an input string has been provided.
-                new Piper(new ByteArrayInputStream(inputString.getBytes()), firstProcess.getOutputStream()).start();
+                piperThreads.add(new Piper(new ByteArrayInputStream(inputString.getBytes()), firstProcess.getOutputStream()).start());
             }
         }
 
@@ -638,11 +648,11 @@ class CommandExecutor {
             // If outputStream other than System.out is provided.
             if (outputStream != null ) {
                 // Pipe outputStream from last process input stream.
-                new Piper(lastProcess.getInputStream(), outputStream).start();
+                piperThreads.add(new Piper(lastProcess.getInputStream(), outputStream).start());
             } else {
                 // Otherwise assume an output string needs to be prepared.
                 byteOutputStream = new ByteArrayOutputStream(BUFFER_SIZE);
-                new Piper(lastProcess.getInputStream(), byteOutputStream).start();
+                piperThreads.add(new Piper(lastProcess.getInputStream(), byteOutputStream).start());
             }
         }
 
@@ -650,11 +660,11 @@ class CommandExecutor {
         if (errorIsPipe) {
             // If errorStream other than System.err is provided.
             if (errorStream != null) {
-                new Piper(lastProcess.getErrorStream(), errorStream).start();
+                piperThreads.add(new Piper(lastProcess.getErrorStream(), errorStream).start());
             } else {
                 // Otherwise assume an error string needs to be prepared.
                 byteErrorStream = new ByteArrayOutputStream(BUFFER_SIZE);
-                new Piper(lastProcess.getErrorStream(), byteErrorStream).start();
+                piperThreads.add(new Piper(lastProcess.getErrorStream(), byteErrorStream).start());
             }
         }
 
@@ -662,13 +672,13 @@ class CommandExecutor {
         for (int i = 0, n = processes.size() - 1; i < n; i++) {
             final Process prev = processes.get(i);
             final Process next = processes.get(i + 1);
-            new Piper(prev.getInputStream(), next.getOutputStream()).start();
+            piperThreads.add(new Piper(prev.getInputStream(), next.getOutputStream()).start());
         }
 
         // Wind up processes.
         try {
             // Get the user specified timeout.
-            long timeout = envVarLongValue("JJS_TIMEOUT");
+            final long timeout = envVarLongValue("JJS_TIMEOUT");
 
             // If user specified timeout (milliseconds.)
             if (timeout != 0) {
@@ -682,6 +692,10 @@ class CommandExecutor {
             } else {
                 // Wait for last process and get exit code.
                 exitCode = lastProcess.waitFor();
+            }
+            // Wait for all piper threads to terminate
+            for (final Piper piper : piperThreads) {
+                piper.join();
             }
 
             // Accumulate the output and error streams.
