@@ -29,12 +29,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 
-BitMap::BitMap(bm_word_t* map, idx_t size_in_bits) :
-  _map(map), _size(size_in_bits)
-{
-  assert(sizeof(bm_word_t) == BytesPerWord, "Implementation assumption.");
-}
-
+STATIC_ASSERT(sizeof(BitMap::bm_word_t) == BytesPerWord); // "Implementation assumption."
 
 BitMap::BitMap(idx_t size_in_bits, bool in_resource_area) :
   _map(NULL), _size(0)
