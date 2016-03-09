@@ -33,8 +33,7 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.*;
 
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
-import static com.sun.tools.javac.code.TypeTag.DOUBLE;
-import static com.sun.tools.javac.code.TypeTag.LONG;
+import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.PLUS;
 import com.sun.tools.javac.jvm.Items.*;
@@ -140,6 +139,25 @@ public abstract class StringConcat {
             }
         }
         return res.append(tree);
+    }
+
+    /**
+     * If the type is not accessible from current context, try to figure out the
+     * sharpest accessible supertype.
+     *
+     * @param originalType type to sharpen
+     * @return sharped type
+     */
+    Type sharpestAccessible(Type originalType) {
+        if (originalType.hasTag(ARRAY)) {
+            return types.makeArrayType(sharpestAccessible(types.elemtype(originalType)));
+        }
+
+        Type type = originalType;
+        while (!rs.isAccessible(gen.getAttrEnv(), type.asElement())) {
+            type = types.supertype(type);
+        }
+        return type;
     }
 
     /**
@@ -314,7 +332,7 @@ public abstract class StringConcat {
                     if (arg.type == syms.botType) {
                         dynamicArgs.add(types.boxedClass(syms.voidType).type);
                     } else {
-                        dynamicArgs.add(arg.type);
+                        dynamicArgs.add(sharpestAccessible(arg.type));
                     }
                     gen.genExpr(arg, arg.type).load();
                 }
@@ -415,7 +433,7 @@ public abstract class StringConcat {
                     } else {
                         // Ordinary arguments come through the dynamic arguments.
                         recipe.append(TAG_ARG);
-                        dynamicArgs.add(arg.type);
+                        dynamicArgs.add(sharpestAccessible(arg.type));
                         gen.genExpr(arg, arg.type).load();
                     }
                 }
