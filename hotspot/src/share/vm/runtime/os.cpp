@@ -1600,8 +1600,8 @@ bool os::release_memory(char* addr, size_t bytes) {
   return res;
 }
 
-void os::pretouch_memory(char* start, char* end) {
-  for (volatile char *p = start; p < end; p += os::vm_page_size()) {
+void os::pretouch_memory(void* start, void* end) {
+  for (volatile char *p = (char*)start; p < (char*)end; p += os::vm_page_size()) {
     *p = 0;
   }
 }
