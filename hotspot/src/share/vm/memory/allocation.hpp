@@ -724,30 +724,23 @@ public:
 // is set so that we always use malloc except for Solaris where we set the
 // limit to get mapped memory.
 template <class E, MEMFLAGS F>
-class ArrayAllocator VALUE_OBJ_CLASS_SPEC {
-  char* _addr;
-  bool _use_malloc;
-  size_t _size;
-  bool _free_in_destructor;
+class ArrayAllocator : public AllStatic {
+ private:
+  static bool should_use_malloc(size_t length);
 
-  static bool should_use_malloc(size_t size) {
-    return size < ArrayAllocatorMallocLimit;
-  }
+  static size_t size_for_malloc(size_t length);
+  static size_t size_for_mmap(size_t length);
 
-  static char* allocate_inner(size_t& size, bool& use_malloc);
+  static E* allocate_malloc(size_t length);
+  static E* allocate_mmap(size_t length);
+
+  static void free_malloc(E* addr, size_t length);
+  static void free_mmap(E* addr, size_t length);
+
  public:
-  ArrayAllocator(bool free_in_destructor = true) :
-    _addr(NULL), _use_malloc(false), _size(0), _free_in_destructor(free_in_destructor) { }
-
-  ~ArrayAllocator() {
-    if (_free_in_destructor) {
-      free();
-    }
-  }
-
-  E* allocate(size_t length);
-  E* reallocate(size_t new_length);
-  void free();
+  static E* allocate(size_t length);
+  static E* reallocate(E* old_addr, size_t old_length, size_t new_length);
+  static void free(E* addr, size_t length);
 };
 
 #endif // SHARE_VM_MEMORY_ALLOCATION_HPP
