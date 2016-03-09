@@ -30,14 +30,14 @@
 #include "utilities/copy.hpp"
 
 BitMap::BitMap(bm_word_t* map, idx_t size_in_bits) :
-  _map(map), _size(size_in_bits), _map_allocator(false)
+  _map(map), _size(size_in_bits)
 {
   assert(sizeof(bm_word_t) == BytesPerWord, "Implementation assumption.");
 }
 
 
 BitMap::BitMap(idx_t size_in_bits, bool in_resource_area) :
-  _map(NULL), _size(0), _map_allocator(false)
+  _map(NULL), _size(0)
 {
   assert(sizeof(bm_word_t) == BytesPerWord, "Implementation assumption.");
   resize(size_in_bits, in_resource_area);
@@ -54,7 +54,7 @@ void BitMap::resize(idx_t size_in_bits, bool in_resource_area) {
     Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) _map,
                          MIN2(old_size_in_words, new_size_in_words));
   } else {
-    _map = _map_allocator.reallocate(new_size_in_words);
+    _map = ArrayAllocator<bm_word_t, mtInternal>::reallocate(old_map, old_size_in_words, new_size_in_words);
   }
 
   if (new_size_in_words > old_size_in_words) {

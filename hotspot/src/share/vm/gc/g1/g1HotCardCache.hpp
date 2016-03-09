@@ -61,7 +61,6 @@ class G1HotCardCache: public CHeapObj<mtGC> {
 
   G1CardCounts      _card_counts;
 
-  ArrayAllocator<jbyte*, mtGC> _hot_cache_memory;
 
   // The card cache table
   jbyte**           _hot_cache;

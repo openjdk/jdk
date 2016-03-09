@@ -248,7 +248,6 @@ public:
 
 template <class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
 class GenericTaskQueue: public TaskQueueSuper<N, F> {
-  ArrayAllocator<E, F> _array_allocator;
 protected:
   typedef typename TaskQueueSuper<N, F>::Age Age;
   typedef typename TaskQueueSuper<N, F>::idx_t idx_t;
