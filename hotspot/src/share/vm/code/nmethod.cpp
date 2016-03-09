@@ -536,7 +536,7 @@ void nmethod::init_defaults() {
   _has_method_handle_invokes  = 0;
   _lazy_critical_native       = 0;
   _has_wide_vectors           = 0;
-  _marked_for_deoptimization  = 0;
+  _mark_for_deoptimization_status = not_marked;
   _lock_count                 = 0;
   _stack_traversal_mark       = 0;
   _unload_reported            = false; // jvmti state
@@ -1458,7 +1458,7 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
                   SharedRuntime::get_handle_wrong_method_stub());
     }
 
-    if (is_in_use()) {
+    if (is_in_use() && update_recompile_counts()) {
       // It's a true state change, so mark the method as decompiled.
       // Do it only for transition from alive.
       inc_decompile_count();

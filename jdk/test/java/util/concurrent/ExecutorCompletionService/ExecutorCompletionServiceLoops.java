@@ -34,19 +34,21 @@
 /*
  * @test
  * @bug 4965960
- * @run main/timeout=3600 ExecutorCompletionServiceLoops
- * @summary  Exercise ExecutorCompletionServiceLoops
+ * @summary  Exercise ExecutorCompletionService
+ * @library /lib/testlibrary/
  */
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import jdk.testlibrary.Utils;
 
 public class ExecutorCompletionServiceLoops {
-    static final int POOLSIZE = 100;
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
+    static final int POOLSIZE = 10;
     static final ExecutorService pool =
         Executors.newFixedThreadPool(POOLSIZE);
     static final ExecutorCompletionService<Integer> ecs =
@@ -55,23 +57,21 @@ public class ExecutorCompletionServiceLoops {
 
     public static void main(String[] args) throws Exception {
         int max = 8;
-        int base = 10000;
+        int base = 2000;
 
         if (args.length > 0)
             max = Integer.parseInt(args[0]);
 
         System.out.println("Warmup...");
         oneTest(base);
-        Thread.sleep(100);
         print = true;
 
         for (int i = 1; i <= max; i += (i+1) >>> 1) {
             System.out.print("n: " + i * base);
             oneTest(i * base);
-            Thread.sleep(100);
         }
         pool.shutdown();
-        if (! pool.awaitTermination(60L, SECONDS))
+        if (! pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
             throw new Error();
    }
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8149468
+ * @bug      8149842
  * @summary  Verify that non included classes are not inspected.
  * @library  ../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool

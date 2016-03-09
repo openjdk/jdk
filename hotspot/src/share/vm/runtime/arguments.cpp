@@ -2318,6 +2318,17 @@ bool Arguments::sun_java_launcher_is_altjvm() {
 //===========================================================================================================
 // Parsing of main arguments
 
+#if INCLUDE_JVMCI
+// Check consistency of jvmci vm argument settings.
+bool Arguments::check_jvmci_args_consistency() {
+  if (!EnableJVMCI && !JVMCIGlobals::check_jvmci_flags_are_consistent()) {
+    JVMCIGlobals::print_jvmci_args_inconsistency_error_message();
+    return false;
+  }
+  return true;
+}
+#endif //INCLUDE_JVMCI
+
 // Check consistency of GC selection
 bool Arguments::check_gc_consistency() {
   // Ensure that the user has not selected conflicting sets
@@ -2414,6 +2425,9 @@ bool Arguments::check_vm_args_consistency() {
 #endif
   }
 #if INCLUDE_JVMCI
+
+  status = status && check_jvmci_args_consistency();
+
   if (EnableJVMCI) {
     if (!ScavengeRootsInCode) {
       warning("forcing ScavengeRootsInCode non-zero because JVMCI is enabled");

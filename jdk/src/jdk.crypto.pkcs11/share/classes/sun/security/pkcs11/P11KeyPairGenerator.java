@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,8 +106,15 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
                 maxKeyLen = 2048;
             }
         } else {
-            // RSA, DH, and DSA
-            keySize = 1024;
+            if (algorithm.equals("DSA")) {
+                // keep default keysize at 1024 since larger keysizes may be
+                // incompatible with SHA1withDSA and SHA-2 Signature algs
+                // may not be supported by native pkcs11 implementations
+                keySize = 1024;
+            } else {
+                // RSA and DH
+                keySize = 2048;
+            }
             if ((minKeyLen == -1) || (minKeyLen < 512)) {
                 minKeyLen = 512;
             }

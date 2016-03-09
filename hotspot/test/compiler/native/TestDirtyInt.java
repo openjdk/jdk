@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "jvmci/commandLineFlagConstraintsJVMCI.hpp"
-#include "runtime/arguments.hpp"
-#include "runtime/globals.hpp"
-#include "utilities/defaultStream.hpp"
-
-Flag::Error EnableJVMCIMustBeEnabledConstraintFunc(bool value, bool verbose) {
-  if (!EnableJVMCI) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(), "EnableJVMCI must be enabled\n");
+/* @test
+ * @run main/native TestDirtyInt
+ */
+public class TestDirtyInt {
+    static {
+        System.loadLibrary("TestDirtyInt");
     }
-    return Flag::VIOLATES_CONSTRAINT;
-  } else {
-    return Flag::SUCCESS;
-  }
-}
 
-Flag::Error EnableJVMCIMustBeEnabledConstraintFunc(intx value, bool verbose) {
-  if (!EnableJVMCI) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(), "EnableJVMCI must be enabled\n");
+    native static int test(int v);
+
+    static int compiled(int v) {
+        return test(v<<2);
     }
-    return Flag::VIOLATES_CONSTRAINT;
-  } else {
-    return Flag::SUCCESS;
-  }
+
+    static public void main(String[] args) {
+        for (int i = 0; i < 20000; i++) {
+            int res = compiled(Integer.MAX_VALUE);
+            if (res != 0x42) {
+                throw new RuntimeException("Test failed");
+            }
+        }
+    }
 }

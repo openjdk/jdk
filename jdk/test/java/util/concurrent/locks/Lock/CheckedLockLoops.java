@@ -35,9 +35,10 @@
  * @test
  * @bug 4486658
  * @summary basic safety and liveness of ReentrantLocks, and other locks based on them
+ * @library /lib/testlibrary/
  */
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.SplittableRandom;
 import java.util.concurrent.CyclicBarrier;
@@ -47,8 +48,10 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import jdk.testlibrary.Utils;
 
 public final class CheckedLockLoops {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static ExecutorService pool;
     static final SplittableRandom rnd = new SplittableRandom();
 
@@ -63,7 +66,7 @@ public final class CheckedLockLoops {
             oneTest(i, iters / i);
         }
         pool.shutdown();
-        if (! pool.awaitTermination(10L, SECONDS))
+        if (! pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
             throw new Error();
         pool = null;
     }

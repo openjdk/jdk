@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.io.*;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
@@ -102,6 +103,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
     protected void generateFrameFile() throws IOException {
         Content frame = getFrameDetails();
         HtmlTree body = new HtmlTree(HtmlTag.BODY);
+        body.addAttr(HtmlAttr.ONLOAD, "loadFrames()");
         if (configuration.allowTag(HtmlTag.MAIN)) {
             HtmlTree main = HtmlTree.MAIN(frame);
             body.addContent(main);
