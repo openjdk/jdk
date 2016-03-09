@@ -59,10 +59,10 @@ var ls_startwd = $OUT
 $EXEC("cd ..; ls")
 var ls_cdupwd = $OUT
 eq($ENV.PWD, startwd, 'PWD changed during $EXEC cd')
-neq(ls_startwd, ls_cdupwd, 'same ls result for startwd and upwd')
+neq(ls_startwd, ls_cdupwd, 'same ls result for startwd and upwd with $EXEC cd')
 
 $ENV.PWD = upwd
 eq($ENV.PWD, upwd, '$ENV.PWD change had no effect')
 $EXEC("ls")
 var ls_epupwd = $OUT
-eq(ls_cdupwd, ls_epupwd, 'different results for upwd')
+neq(ls_startwd, ls_epupwd, 'same ls result for startwd and upwd with $ENV.PWD cd')
