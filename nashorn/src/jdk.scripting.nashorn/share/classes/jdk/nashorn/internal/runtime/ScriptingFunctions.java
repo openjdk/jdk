@@ -72,7 +72,7 @@ public final class ScriptingFunctions {
     public static final String EXIT_NAME = "$EXIT";
 
     /** Names of special properties used by $ENV API. */
-    public  static final String ENV_NAME  = "$ENV";
+    public static final String ENV_NAME  = "$ENV";
 
     /** Name of the environment variable for the current working directory. */
     public static final String PWD_NAME  = "PWD";
