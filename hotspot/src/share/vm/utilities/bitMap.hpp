@@ -116,7 +116,7 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
   BitMap() : _map(NULL), _size(0) {}
 
   // Constructs a bitmap with the given map and size.
-  BitMap(bm_word_t* map, idx_t size_in_bits);
+  BitMap(bm_word_t* map, idx_t size_in_bits) :_map(map), _size(size_in_bits) {}
 
   // Constructs an empty bitmap of the given size (that is, this clears the
   // new bitmap).  Allocates the map array in resource area if
