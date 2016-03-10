@@ -5358,12 +5358,12 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
       ik->print_loading_log(LogLevel::Debug, _loader_data, _stream);
     }
 
-    if (log_is_enabled(Info, classresolve))  {
+    if (log_is_enabled(Debug, classresolve))  {
       ResourceMark rm;
       // print out the superclass.
       const char * from = ik->external_name();
       if (ik->java_super() != NULL) {
-        log_info(classresolve)("%s %s (super)",
+        log_debug(classresolve)("%s %s (super)",
                    from,
                    ik->java_super()->external_name());
       }
@@ -5374,7 +5374,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
         for (int i = 0; i < length; i++) {
           const Klass* const k = local_interfaces->at(i);
           const char * to = k->external_name();
-          log_info(classresolve)("%s %s (interface)", from, to);
+          log_debug(classresolve)("%s %s (interface)", from, to);
         }
       }
     }

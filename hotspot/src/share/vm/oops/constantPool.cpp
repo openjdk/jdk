@@ -208,11 +208,11 @@ void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Kla
   if (k() != this_cp->pool_holder()) {
     // only print something if the classes are different
     if (source_file != NULL) {
-      log_info(classresolve)("%s %s %s:%d",
+      log_debug(classresolve)("%s %s %s:%d",
                  this_cp->pool_holder()->external_name(),
                  k->external_name(), source_file, line_number);
     } else {
-      log_info(classresolve)("%s %s",
+      log_debug(classresolve)("%s %s",
                  this_cp->pool_holder()->external_name(),
                  k->external_name());
     }
@@ -281,15 +281,10 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   ClassLoaderData* this_key = this_cp->pool_holder()->class_loader_data();
   this_key->record_dependency(k(), CHECK_NULL); // Can throw OOM
 
-  if (log_is_enabled(Info, classresolve) && !k->is_array_klass()) {
-    // skip resolving the constant pool so that this code gets
-    // called the next time some bytecodes refer to this class.
-    trace_class_resolution(this_cp, k);
-    return k();
-  } else {
-    this_cp->klass_at_put(which, k());
-  }
+  // logging for classresolve tag.
+  trace_class_resolution(this_cp, k);
 
+  this_cp->klass_at_put(which, k());
   entry = this_cp->resolved_klass_at(which);
   assert(entry.is_resolved() && entry.get_klass()->is_klass(), "must be resolved at this point");
   return entry.get_klass();

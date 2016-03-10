@@ -206,9 +206,9 @@ static void trace_class_resolution_impl(Klass* to_class, TRAPS) {
       const char * to = to_class->external_name();
       // print in a single call to reduce interleaving between threads
       if (source_file != NULL) {
-        log_info(classresolve)("%s %s %s:%d (%s)", from, to, source_file, line_number, trace);
+        log_debug(classresolve)("%s %s %s:%d (%s)", from, to, source_file, line_number, trace);
       } else {
-        log_info(classresolve)("%s %s (%s)", from, to, trace);
+        log_debug(classresolve)("%s %s (%s)", from, to, trace);
       }
     }
   }
@@ -835,7 +835,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
     return NULL;
   }
 
-  if (log_is_enabled(Info, classresolve)) {
+  if (log_is_enabled(Debug, classresolve)) {
     trace_class_resolution(k);
   }
   return (jclass) JNIHandles::make_local(env, k->java_mirror());
@@ -872,7 +872,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
   jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
                                                h_prot, false, THREAD);
 
-  if (log_is_enabled(Info, classresolve) && result != NULL) {
+  if (log_is_enabled(Debug, classresolve) && result != NULL) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
   }
   return result;
@@ -902,7 +902,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
   jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
                                                h_prot, true, thread);
 
-  if (log_is_enabled(Info, classresolve) && result != NULL) {
+  if (log_is_enabled(Debug, classresolve) && result != NULL) {
     // this function is generally only used for class loading during verification.
     ResourceMark rm;
     oop from_mirror = JNIHandles::resolve_non_null(from);
@@ -912,7 +912,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
     oop mirror = JNIHandles::resolve_non_null(result);
     Klass* to_class = java_lang_Class::as_Klass(mirror);
     const char * to = to_class->external_name();
-    log_info(classresolve)("%s %s (verification)", from_name, to);
+    log_debug(classresolve)("%s %s (verification)", from_name, to);
   }
 
   return result;
@@ -980,7 +980,7 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
                                                    &st,
                                                    CHECK_NULL);
 
-  if (log_is_enabled(Info, classresolve) && k != NULL) {
+  if (log_is_enabled(Debug, classresolve) && k != NULL) {
     trace_class_resolution(k);
   }
 
