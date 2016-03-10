@@ -98,6 +98,7 @@ import jdk.internal.jshell.tool.Feedback.FormatCase;
 import jdk.internal.jshell.tool.Feedback.FormatResolve;
 import jdk.internal.jshell.tool.Feedback.FormatWhen;
 import static java.util.stream.Collectors.toList;
+import static jdk.jshell.Snippet.Kind.METHOD;
 import static java.util.stream.Collectors.toMap;
 import static jdk.jshell.Snippet.SubKind.VAR_VALUE_SUBKIND;
 
@@ -2139,7 +2140,7 @@ public class JShellTool {
     }
     //where
     void printUnresolved(UnresolvedReferenceException ex) {
-        MethodSnippet corralled =  ex.getMethodSnippet();
+        DeclarationSnippet corralled =  ex.getSnippet();
         List<Diag> otherErrors = errorsOnly(state.diagnostics(corralled));
         StringBuilder sb = new StringBuilder();
         if (otherErrors.size() > 0) {
@@ -2155,7 +2156,10 @@ public class JShellTool {
             sb.append(".");
         }
 
-        hard("Attempted to call %s which cannot be invoked until%s", corralled.name(),
+        String format = corralled.kind() == METHOD
+                ? "Attempted to call %s which cannot be invoked until%s"
+                : "Attempted to use %s which cannot be accessed until%s";
+        hard(format, corralled.name(),
                 unresolved(corralled), sb.toString());
         if (otherErrors.size() > 0) {
             printDiagnostics(corralled.source(), otherErrors, true);
