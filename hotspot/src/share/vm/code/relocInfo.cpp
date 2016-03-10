@@ -457,49 +457,6 @@ RelocationHolder Relocation::spec_simple(relocInfo::relocType rtype) {
   return itr._rh;
 }
 
-int32_t Relocation::runtime_address_to_index(address runtime_address) {
-  assert(!is_reloc_index((intptr_t)runtime_address), "must not look like an index");
-
-  if (runtime_address == NULL)  return 0;
-
-  StubCodeDesc* p = StubCodeDesc::desc_for(runtime_address);
-  if (p != NULL && p->begin() == runtime_address) {
-    assert(is_reloc_index(p->index()), "there must not be too many stubs");
-    return (int32_t)p->index();
-  } else {
-    // Known "miscellaneous" non-stub pointers:
-    // os::get_polling_page(), SafepointSynchronize::address_of_state()
-    if (PrintRelocations) {
-      tty->print_cr("random unregistered address in relocInfo: " INTPTR_FORMAT, p2i(runtime_address));
-    }
-#ifndef _LP64
-    return (int32_t) (intptr_t)runtime_address;
-#else
-    // didn't fit return non-index
-    return -1;
-#endif /* _LP64 */
-  }
-}
-
-
-address Relocation::index_to_runtime_address(int32_t index) {
-  if (index == 0)  return NULL;
-
-  if (is_reloc_index(index)) {
-    StubCodeDesc* p = StubCodeDesc::desc_for_index(index);
-    assert(p != NULL, "there must be a stub for this index");
-    return p->begin();
-  } else {
-#ifndef _LP64
-    // this only works on 32bit machines
-    return (address) ((intptr_t) index);
-#else
-    fatal("Relocation::index_to_runtime_address, int32_t not pointer sized");
-    return NULL;
-#endif /* _LP64 */
-  }
-}
-
 address Relocation::old_addr_for(address newa,
                                  const CodeBuffer* src, CodeBuffer* dest) {
   int sect = dest->section_index_of(newa);
@@ -623,20 +580,13 @@ void trampoline_stub_Relocation::unpack_data() {
 
 void external_word_Relocation::pack_data_to(CodeSection* dest) {
   short* p = (short*) dest->locs_end();
-  int32_t index = runtime_address_to_index(_target);
 #ifndef _LP64
-  p = pack_1_int_to(p, index);
+  p = pack_1_int_to(p, (int32_t) (intptr_t)_target);
 #else
-  if (is_reloc_index(index)) {
-    p = pack_2_ints_to(p, index, 0);
-  } else {
-    jlong t = (jlong) _target;
-    int32_t lo = low(t);
-    int32_t hi = high(t);
-    p = pack_2_ints_to(p, lo, hi);
-    DEBUG_ONLY(jlong t1 = jlong_from(hi, lo));
-    assert(!is_reloc_index(t1) && (address) t1 == _target, "not symmetric");
-  }
+  jlong t = (jlong) _target;
+  int32_t lo = low(t);
+  int32_t hi = high(t);
+  p = pack_2_ints_to(p, lo, hi);
 #endif /* _LP64 */
   dest->set_locs_end((relocInfo*) p);
 }
@@ -644,16 +594,12 @@ void external_word_Relocation::pack_data_to(CodeSection* dest) {
 
 void external_word_Relocation::unpack_data() {
 #ifndef _LP64
-  _target = index_to_runtime_address(unpack_1_int());
+  _target = (address) (intptr_t)unpack_1_int();
 #else
   int32_t lo, hi;
   unpack_2_ints(lo, hi);
   jlong t = jlong_from(hi, lo);;
-  if (is_reloc_index(t)) {
-    _target = index_to_runtime_address(t);
-  } else {
-    _target = (address) t;
-  }
+  _target = (address) t;
 #endif /* _LP64 */
 }
 

@@ -128,6 +128,20 @@ public class JdkInternalMiscUnsafeAccessTestBoolean {
         }
 
 
+        // Lazy
+        {
+            UNSAFE.putBooleanRelease(base, offset, true);
+            boolean x = UNSAFE.getBooleanAcquire(base, offset);
+            assertEquals(x, true, "putRelease boolean value");
+        }
+
+        // Opaque
+        {
+            UNSAFE.putBooleanOpaque(base, offset, false);
+            boolean x = UNSAFE.getBooleanOpaque(base, offset);
+            assertEquals(x, false, "putOpaque boolean value");
+        }
+
 
 
     }

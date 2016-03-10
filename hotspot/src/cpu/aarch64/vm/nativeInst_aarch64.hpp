@@ -105,13 +105,20 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   inline friend NativeInstruction* nativeInstruction_at(address address);
 
   static bool is_adrp_at(address instr);
+
   static bool is_ldr_literal_at(address instr);
+
+  bool is_ldr_literal() {
+    return is_ldr_literal_at(addr_at(0));
+  }
+
   static bool is_ldrw_to_zr(address instr);
 
   static bool is_call_at(address instr) {
     const uint32_t insn = (*(uint32_t*)instr);
     return (insn >> 26) == 0b100101;
   }
+
   bool is_call() {
     return is_call_at(addr_at(0));
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,19 +51,14 @@ class G1EvacStats : public PLABStats {
     _failure_waste = 0;
   }
 
+  virtual void log_plab_allocation();
+
  public:
-  G1EvacStats(size_t desired_plab_sz_, unsigned wt) : PLABStats(desired_plab_sz_, wt),
-    _region_end_waste(0), _regions_filled(0), _direct_allocated(0),
-    _failure_used(0), _failure_waste(0) {
-  }
+  G1EvacStats(const char* description, size_t desired_plab_sz_, unsigned wt);
+
+  ~G1EvacStats();
 
   virtual void adjust_desired_plab_sz();
-
-  size_t allocated() const { return _allocated; }
-  size_t wasted() const { return _wasted; }
-  size_t unused() const { return _unused; }
-  size_t used() const { return allocated() - (wasted() + unused()); }
-  size_t undo_wasted() const { return _undo_wasted; }
 
   uint regions_filled() const { return _regions_filled; }
   size_t region_end_waste() const { return _region_end_waste; }
@@ -77,8 +72,6 @@ class G1EvacStats : public PLABStats {
   inline void add_direct_allocated(size_t value);
   inline void add_region_end_waste(size_t value);
   inline void add_failure_used_and_waste(size_t used, size_t waste);
-
-  ~G1EvacStats();
 };
 
 #endif // SHARE_VM_GC_G1_G1EVACSTATS_HPP

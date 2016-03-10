@@ -511,6 +511,9 @@ protected:
   // allocated block, or else "NULL".
   HeapWord* expand_and_allocate(size_t word_size, AllocationContext_t context);
 
+  // Preserve any referents discovered by concurrent marking that have not yet been
+  // copied by the STW pause.
+  void preserve_cm_referents(G1ParScanThreadStateSet* per_thread_states);
   // Process any reference objects discovered during
   // an incremental evacuation pause.
   void process_discovered_references(G1ParScanThreadStateSet* per_thread_states);
@@ -519,6 +522,9 @@ protected:
   // after processing.
   void enqueue_discovered_references(G1ParScanThreadStateSet* per_thread_states);
 
+  // Merges the information gathered on a per-thread basis for all worker threads
+  // during GC into global variables.
+  void merge_per_thread_state_info(G1ParScanThreadStateSet* per_thread_states);
 public:
   WorkGang* workers() const { return _workers; }
 
@@ -1333,8 +1339,7 @@ public:
     return _young_list->check_list_well_formed();
   }
 
-  bool check_young_list_empty(bool check_heap,
-                              bool check_sample = true);
+  bool check_young_list_empty(bool check_heap);
 
   // *** Stuff related to concurrent marking.  It's not clear to me that so
   // many of these need to be public.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,26 @@
 #include "logging/log.hpp"
 #include "trace/tracing.hpp"
 
+void G1EvacStats::log_plab_allocation() {
+  PLABStats::log_plab_allocation();
+  log_debug(gc, plab)("%s other allocation: "
+                      "region end waste: " SIZE_FORMAT "B, "
+                      "regions filled: %u, "
+                      "direct allocated: " SIZE_FORMAT "B, "
+                      "failure used: " SIZE_FORMAT "B, "
+                      "failure wasted: " SIZE_FORMAT "B",
+                      _description,
+                      _region_end_waste * HeapWordSize,
+                      _regions_filled,
+                      _direct_allocated * HeapWordSize,
+                      _failure_used * HeapWordSize,
+                      _failure_waste * HeapWordSize);
+}
+
 void G1EvacStats::adjust_desired_plab_sz() {
+  log_plab_allocation();
+
   if (!ResizePLAB) {
-    log_debug(gc, plab)(" (allocated = " SIZE_FORMAT " wasted = " SIZE_FORMAT " "
-                        "unused = " SIZE_FORMAT " used = " SIZE_FORMAT " "
-                        "undo_waste = " SIZE_FORMAT " region_end_waste = " SIZE_FORMAT " "
-                        "regions filled = %u direct_allocated = " SIZE_FORMAT " "
-                        "failure_used = " SIZE_FORMAT " failure_waste = " SIZE_FORMAT ") ",
-                        _allocated, _wasted, _unused, used(), _undo_wasted, _region_end_waste,
-                        _regions_filled, _direct_allocated, _failure_used, _failure_waste);
     // Clear accumulators for next round.
     reset();
     return;
@@ -107,18 +118,19 @@ void G1EvacStats::adjust_desired_plab_sz() {
   // Latch the result
   _desired_net_plab_sz = plab_sz;
 
-  log_debug(gc, plab)(" (allocated = " SIZE_FORMAT " wasted = " SIZE_FORMAT " "
-                      "unused = " SIZE_FORMAT " used = " SIZE_FORMAT " "
-                      "undo_waste = " SIZE_FORMAT " region_end_waste = " SIZE_FORMAT " "
-                      "regions filled = %u direct_allocated = " SIZE_FORMAT " "
-                      "failure_used = " SIZE_FORMAT " failure_waste = " SIZE_FORMAT ") "
-                      " (plab_sz = " SIZE_FORMAT " desired_plab_sz = " SIZE_FORMAT ")",
-                      _allocated, _wasted, _unused, used(), _undo_wasted, _region_end_waste,
-                      _regions_filled, _direct_allocated, _failure_used, _failure_waste,
-                      cur_plab_sz, plab_sz);
-
+  log_sizing(cur_plab_sz, plab_sz);
   // Clear accumulators for next round.
   reset();
 }
+
+G1EvacStats::G1EvacStats(const char* description, size_t desired_plab_sz_, unsigned wt) :
+  PLABStats(description, desired_plab_sz_, wt),
+  _region_end_waste(0),
+  _regions_filled(0),
+  _direct_allocated(0),
+  _failure_used(0),
+  _failure_waste(0) {
+}
+
 
 G1EvacStats::~G1EvacStats() { }
