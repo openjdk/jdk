@@ -43,16 +43,12 @@ PtrQueue::~PtrQueue() {
 
 void PtrQueue::flush_impl() {
   if (!_permanent && _buf != NULL) {
-    if (_index == _sz) {
+    BufferNode* node = BufferNode::make_node_from_buffer(_buf, _index);
+    if (is_empty()) {
       // No work to do.
-      qset()->deallocate_buffer(_buf);
+      qset()->deallocate_buffer(node);
     } else {
-      // We must NULL out the unused entries, then enqueue.
-      size_t limit = byte_index_to_index(_index);
-      for (size_t i = 0; i < limit; ++i) {
-        _buf[i] = NULL;
-      }
-      qset()->enqueue_complete_buffer(_buf);
+      qset()->enqueue_complete_buffer(node);
     }
     _buf = NULL;
     _index = 0;
@@ -74,7 +70,7 @@ void PtrQueue::enqueue_known_active(void* ptr) {
   assert(_index <= _sz, "Invariant.");
 }
 
-void PtrQueue::locking_enqueue_completed_buffer(void** buf) {
+void PtrQueue::locking_enqueue_completed_buffer(BufferNode* node) {
   assert(_lock->owned_by_self(), "Required.");
 
   // We have to unlock _lock (which may be Shared_DirtyCardQ_lock) before
@@ -82,7 +78,7 @@ void PtrQueue::locking_enqueue_completed_buffer(void** buf) {
   // have the same rank and we may get the "possible deadlock" message
   _lock->unlock();
 
-  qset()->enqueue_complete_buffer(buf);
+  qset()->enqueue_complete_buffer(node);
   // We must relock only because the caller will unlock, for the normal
   // case.
   _lock->lock_without_safepoint_check();
@@ -157,10 +153,9 @@ void** PtrQueueSet::allocate_buffer() {
   return BufferNode::make_buffer_from_node(node);
 }
 
-void PtrQueueSet::deallocate_buffer(void** buf) {
+void PtrQueueSet::deallocate_buffer(BufferNode* node) {
   assert(_sz > 0, "Didn't set a buffer size.");
   MutexLockerEx x(_fl_owner->_fl_lock, Mutex::_no_safepoint_check_flag);
-  BufferNode *node = BufferNode::make_node_from_buffer(buf);
   node->set_next(_fl_owner->_buf_free_list);
   _fl_owner->_buf_free_list = node;
   _fl_owner->_buf_free_list_sz++;
@@ -211,10 +206,10 @@ void PtrQueue::handle_zero_index() {
       // preventing the subsequent the multiple enqueue, and
       // install a newly allocated buffer below.
 
-      void** buf = _buf;   // local pointer to completed buffer
+      BufferNode* node = BufferNode::make_node_from_buffer(_buf, _index);
       _buf = NULL;         // clear shared _buf field
 
-      locking_enqueue_completed_buffer(buf);  // enqueue completed buffer
+      locking_enqueue_completed_buffer(node); // enqueue completed buffer
 
       // While the current thread was enqueueing the buffer another thread
       // may have a allocated a new buffer and inserted it into this pointer
@@ -224,9 +219,11 @@ void PtrQueue::handle_zero_index() {
 
       if (_buf != NULL) return;
     } else {
-      if (qset()->process_or_enqueue_complete_buffer(_buf)) {
+      BufferNode* node = BufferNode::make_node_from_buffer(_buf, _index);
+      if (qset()->process_or_enqueue_complete_buffer(node)) {
         // Recycle the buffer. No allocation.
-        _sz = qset()->buffer_size();
+        assert(_buf == BufferNode::make_buffer_from_node(node), "invariant");
+        assert(_sz == qset()->buffer_size(), "invariant");
         _index = _sz;
         return;
       }
@@ -238,12 +235,12 @@ void PtrQueue::handle_zero_index() {
   _index = _sz;
 }
 
-bool PtrQueueSet::process_or_enqueue_complete_buffer(void** buf) {
+bool PtrQueueSet::process_or_enqueue_complete_buffer(BufferNode* node) {
   if (Thread::current()->is_Java_thread()) {
     // We don't lock. It is fine to be epsilon-precise here.
     if (_max_completed_queue == 0 || _max_completed_queue > 0 &&
         _n_completed_buffers >= _max_completed_queue + _completed_queue_padding) {
-      bool b = mut_process_buffer(buf);
+      bool b = mut_process_buffer(node);
       if (b) {
         // True here means that the buffer hasn't been deallocated and the caller may reuse it.
         return true;
@@ -251,14 +248,12 @@ bool PtrQueueSet::process_or_enqueue_complete_buffer(void** buf) {
     }
   }
   // The buffer will be enqueued. The caller will have to get a new one.
-  enqueue_complete_buffer(buf);
+  enqueue_complete_buffer(node);
   return false;
 }
 
-void PtrQueueSet::enqueue_complete_buffer(void** buf, size_t index) {
+void PtrQueueSet::enqueue_complete_buffer(BufferNode* cbn) {
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
-  BufferNode* cbn = BufferNode::make_node_from_buffer(buf);
-  cbn->set_index(index);
   cbn->set_next(NULL);
   if (_completed_buffers_tail == NULL) {
     assert(_completed_buffers_head == NULL, "Well-formedness");
