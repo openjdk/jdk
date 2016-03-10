@@ -76,6 +76,7 @@
   LOG_TAG(safepointcleanup) \
   LOG_TAG(scavenge) \
   LOG_TAG(scrub) \
+  LOG_TAG(stacktrace) \
   LOG_TAG(start) \
   LOG_TAG(startuptime) \
   LOG_TAG(state) \
