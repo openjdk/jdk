@@ -26,44 +26,108 @@
 #ifndef OS_CPU_LINUX_AARCH64_VM_COPY_LINUX_AARCH64_INLINE_HPP
 #define OS_CPU_LINUX_AARCH64_VM_COPY_LINUX_AARCH64_INLINE_HPP
 
+#define COPY_SMALL(from, to, count)                                     \
+{                                                                       \
+        long tmp0, tmp1, tmp2, tmp3;                                    \
+        long tmp4, tmp5, tmp6, tmp7;                                    \
+  __asm volatile(                                                       \
+"       adr     %[t0], 0f;"                                             \
+"       add     %[t0], %[t0], %[cnt], lsl #5;"                          \
+"       br      %[t0];"                                                 \
+"       .align  5;"                                                     \
+"0:"                                                                    \
+"       b       1f;"                                                    \
+"       .align  5;"                                                     \
+"       ldr     %[t0], [%[s], #0];"                                     \
+"       str     %[t0], [%[d], #0];"                                     \
+"       b       1f;"                                                    \
+"       .align  5;"                                                     \
+"       ldp     %[t0], %[t1], [%[s], #0];"                              \
+"       stp     %[t0], %[t1], [%[d], #0];"                              \
+"       b       1f;"                                                    \
+"       .align  5;"                                                     \
+"       ldp     %[t0], %[t1], [%[s], #0];"                              \
+"       ldr     %[t2], [%[s], #16];"                                    \
+"       stp     %[t0], %[t1], [%[d], #0];"                              \
+"       str     %[t2], [%[d], #16];"                                    \
+"       b       1f;"                                                    \
+"       .align  5;"                                                     \
+"       ldp     %[t0], %[t1], [%[s], #0];"                              \
+"       ldp     %[t2], %[t3], [%[s], #16];"                             \
+"       stp     %[t0], %[t1], [%[d], #0];"                              \
+"       stp     %[t2], %[t3], [%[d], #16];"                             \
+"       b       1f;"                                                    \
+"       .align  5;"                                                     \
+"       ldp     %[t0], %[t1], [%[s], #0];"                              \
+"       ldp     %[t2], %[t3], [%[s], #16];"                             \
+"       ldr     %[t4], [%[s], #32];"                                    \
+"       stp     %[t0], %[t1], [%[d], #0];"                              \
+"       stp     %[t2], %[t3], [%[d], #16];"                             \
+"       str     %[t4], [%[d], #32];"                                    \
+"       b       1f;"                                                    \
+"       .align  5;"                                                     \
+"       ldp     %[t0], %[t1], [%[s], #0];"                              \
+"       ldp     %[t2], %[t3], [%[s], #16];"                             \
+"       ldp     %[t4], %[t5], [%[s], #32];"                             \
+"2:"                                                                    \
+"       stp     %[t0], %[t1], [%[d], #0];"                              \
+"       stp     %[t2], %[t3], [%[d], #16];"                             \
+"       stp     %[t4], %[t5], [%[d], #32];"                             \
+"       b       1f;"                                                    \
+"       .align  5;"                                                     \
+"       ldr     %[t6], [%[s], #0];"                                     \
+"       ldp     %[t0], %[t1], [%[s], #8];"                              \
+"       ldp     %[t2], %[t3], [%[s], #24];"                             \
+"       ldp     %[t4], %[t5], [%[s], #40];"                             \
+"       str     %[t6], [%[d]], #8;"                                     \
+"       b       2b;"                                                    \
+"       .align  5;"                                                     \
+"       ldp     %[t0], %[t1], [%[s], #0];"                              \
+"       ldp     %[t2], %[t3], [%[s], #16];"                             \
+"       ldp     %[t4], %[t5], [%[s], #32];"                             \
+"       ldp     %[t6], %[t7], [%[s], #48];"                             \
+"       stp     %[t0], %[t1], [%[d], #0];"                              \
+"       stp     %[t2], %[t3], [%[d], #16];"                             \
+"       stp     %[t4], %[t5], [%[d], #32];"                             \
+"       stp     %[t6], %[t7], [%[d], #48];"                             \
+"1:"                                                                    \
+                                                                        \
+  : [s]"+r"(from), [d]"+r"(to), [cnt]"+r"(count),                       \
+    [t0]"=&r"(tmp0), [t1]"=&r"(tmp1), [t2]"=&r"(tmp2), [t3]"=&r"(tmp3), \
+    [t4]"=&r"(tmp4), [t5]"=&r"(tmp5), [t6]"=&r"(tmp6), [t7]"=&r"(tmp7)  \
+  :                                                                     \
+  : "memory", "cc");                                                    \
+}
+
 static void pd_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
-  (void)memmove(to, from, count * HeapWordSize);
+  __asm volatile( "prfm pldl1strm, [%[s], #0];" :: [s]"r"(from) : "memory");
+  if (__builtin_expect(count <= 8, 1)) {
+    COPY_SMALL(from, to, count);
+    return;
+  }
+  _Copy_conjoint_words(from, to, count);
 }
 
 static void pd_disjoint_words(HeapWord* from, HeapWord* to, size_t count) {
-  switch (count) {
-  case 8:  to[7] = from[7];
-  case 7:  to[6] = from[6];
-  case 6:  to[5] = from[5];
-  case 5:  to[4] = from[4];
-  case 4:  to[3] = from[3];
-  case 3:  to[2] = from[2];
-  case 2:  to[1] = from[1];
-  case 1:  to[0] = from[0];
-  case 0:  break;
-  default:
-    (void)memcpy(to, from, count * HeapWordSize);
-    break;
+  if (__builtin_constant_p(count)) {
+    memcpy(to, from, count * sizeof(HeapWord));
+    return;
   }
+  __asm volatile( "prfm pldl1strm, [%[s], #0];" :: [s]"r"(from) : "memory");
+  if (__builtin_expect(count <= 8, 1)) {
+    COPY_SMALL(from, to, count);
+    return;
+  }
+  _Copy_disjoint_words(from, to, count);
 }
 
 static void pd_disjoint_words_atomic(HeapWord* from, HeapWord* to, size_t count) {
-  switch (count) {
-  case 8:  to[7] = from[7];
-  case 7:  to[6] = from[6];
-  case 6:  to[5] = from[5];
-  case 5:  to[4] = from[4];
-  case 4:  to[3] = from[3];
-  case 3:  to[2] = from[2];
-  case 2:  to[1] = from[1];
-  case 1:  to[0] = from[0];
-  case 0:  break;
-  default:
-    while (count-- > 0) {
-      *to++ = *from++;
-    }
-    break;
+  __asm volatile( "prfm pldl1strm, [%[s], #0];" :: [s]"r"(from) : "memory");
+  if (__builtin_expect(count <= 8, 1)) {
+    COPY_SMALL(from, to, count);
+    return;
   }
+  _Copy_disjoint_words(from, to, count);
 }
 
 static void pd_aligned_conjoint_words(HeapWord* from, HeapWord* to, size_t count) {
