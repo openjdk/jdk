@@ -849,8 +849,8 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L1);
 
       if (direction == copy_forwards) {
-        __ add(s, s, 2 * wordSize);
-        __ add(d, d, 2 * wordSize);
+        __ add(s, s, bias);
+        __ add(d, d, bias);
       }
 
       __ tbz(count, 1, L2);
