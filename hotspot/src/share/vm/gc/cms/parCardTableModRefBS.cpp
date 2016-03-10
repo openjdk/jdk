@@ -161,15 +161,6 @@ process_stride(Space* sp,
   }
 }
 
-
-// If you want a talkative process_chunk_boundaries,
-// then #define NOISY(x) x
-#ifdef NOISY
-#error "Encountered a global preprocessor flag, NOISY, which might clash with local definition to follow"
-#else
-#define NOISY(x)
-#endif
-
 void
 CardTableModRefBSForCTRS::
 process_chunk_boundaries(Space* sp,
@@ -196,10 +187,6 @@ process_chunk_boundaries(Space* sp,
   uintptr_t start_chunk_index = addr_to_chunk_index(chunk_mr.start());
   assert(start_chunk_index >= lowest_non_clean_base_chunk_index, "Bounds error.");
   uintptr_t cur_chunk_index   = start_chunk_index - lowest_non_clean_base_chunk_index;
-
-  NOISY(tty->print_cr("===========================================================================");)
-  NOISY(tty->print_cr(" process_chunk_boundary: Called with [" PTR_FORMAT "," PTR_FORMAT ")",
-                      chunk_mr.start(), chunk_mr.end());)
 
   // First, set "our" lowest_non_clean entry, which would be
   // used by the thread scanning an adjoining left chunk with
@@ -239,36 +226,18 @@ process_chunk_boundaries(Space* sp,
       }
     }
     if (first_dirty_card != NULL) {
-      NOISY(tty->print_cr(" LNC: Found a dirty card at " PTR_FORMAT " in current chunk",
-                    first_dirty_card);)
       assert(cur_chunk_index < lowest_non_clean_chunk_size, "Bounds error.");
       assert(lowest_non_clean[cur_chunk_index] == NULL,
              "Write exactly once : value should be stable hereafter for this round");
       lowest_non_clean[cur_chunk_index] = first_dirty_card;
-    } NOISY(else {
-      tty->print_cr(" LNC: Found no dirty card in current chunk; leaving LNC entry NULL");
-      // In the future, we could have this thread look for a non-NULL value to copy from its
-      // right neighbor (up to the end of the first object).
-      if (last_card_of_cur_chunk < last_card_of_first_obj) {
-        tty->print_cr(" LNC: BEWARE!!! first obj straddles past right end of chunk:\n"
-                      "   might be efficient to get value from right neighbor?");
-      }
-    })
+    }
   } else {
     // In this case we can help our neighbor by just asking them
     // to stop at our first card (even though it may not be dirty).
-    NOISY(tty->print_cr(" LNC: first block is not a non-array object; setting LNC to first card of current chunk");)
     assert(lowest_non_clean[cur_chunk_index] == NULL, "Write once : value should be stable hereafter");
     jbyte* first_card_of_cur_chunk = byte_for(chunk_mr.start());
     lowest_non_clean[cur_chunk_index] = first_card_of_cur_chunk;
   }
-  NOISY(tty->print_cr(" process_chunk_boundary: lowest_non_clean[" INTPTR_FORMAT "] = " PTR_FORMAT
-                "   which corresponds to the heap address " PTR_FORMAT,
-                cur_chunk_index, lowest_non_clean[cur_chunk_index],
-                (lowest_non_clean[cur_chunk_index] != NULL)
-                ? addr_for(lowest_non_clean[cur_chunk_index])
-                : NULL);)
-  NOISY(tty->print_cr("---------------------------------------------------------------------------");)
 
   // Next, set our own max_to_do, which will strictly/exclusively bound
   // the highest address that we will scan past the right end of our chunk.
@@ -285,8 +254,6 @@ process_chunk_boundaries(Space* sp,
         || oop(last_block)->is_objArray()  // last_block is an array (precisely marked)
         || oop(last_block)->is_typeArray()) {
       max_to_do = chunk_mr.end();
-      NOISY(tty->print_cr(" process_chunk_boundary: Last block on this card is not a non-array object;\n"
-                         "   max_to_do left at " PTR_FORMAT, max_to_do);)
     } else {
       assert(last_block < chunk_mr.end(), "Tautology");
       // It is a non-array object that straddles the right boundary of this chunk.
@@ -301,9 +268,6 @@ process_chunk_boundaries(Space* sp,
         // subsequent cards still in this chunk must have been made
         // precisely; we can cap processing at the end of our chunk.
         max_to_do = chunk_mr.end();
-        NOISY(tty->print_cr(" process_chunk_boundary: Head of last object on this card is not dirty;\n"
-                            "   max_to_do left at " PTR_FORMAT,
-                            max_to_do);)
       } else {
         // The last object must be considered dirty, and extends onto the
         // following chunk.  Look for a dirty card in that chunk that will
@@ -323,8 +287,6 @@ process_chunk_boundaries(Space* sp,
              cur <= last_card_of_last_obj; cur++) {
           const jbyte val = *cur;
           if (card_will_be_scanned(val)) {
-            NOISY(tty->print_cr(" Found a non-clean card " PTR_FORMAT " with value 0x%x",
-                                cur, (int)val);)
             limit_card = cur; break;
           } else {
             assert(!card_may_have_been_dirty(val), "Error: card can't be skipped");
@@ -333,10 +295,6 @@ process_chunk_boundaries(Space* sp,
         if (limit_card != NULL) {
           max_to_do = addr_for(limit_card);
           assert(limit_card != NULL && max_to_do != NULL, "Error");
-          NOISY(tty->print_cr(" process_chunk_boundary: Found a dirty card at " PTR_FORMAT
-                        "   max_to_do set at " PTR_FORMAT " which is before end of last block in chunk: "
-                        PTR_FORMAT " + " PTR_FORMAT " = " PTR_FORMAT,
-                        limit_card, max_to_do, last_block, last_block_size, (last_block+last_block_size));)
         } else {
           // The following is a pessimistic value, because it's possible
           // that a dirty card on a subsequent chunk has been cleared by
@@ -346,10 +304,6 @@ process_chunk_boundaries(Space* sp,
           limit_card = last_card_of_last_obj;
           max_to_do = last_block + last_block_size;
           assert(limit_card != NULL && max_to_do != NULL, "Error");
-          NOISY(tty->print_cr(" process_chunk_boundary: Found no dirty card before end of last block in chunk\n"
-                              "   Setting limit_card to " PTR_FORMAT
-                              " and max_to_do " PTR_FORMAT " + " PTR_FORMAT " = " PTR_FORMAT,
-                              limit_card, last_block, last_block_size, max_to_do);)
         }
         assert(0 < cur_chunk_index+1 && cur_chunk_index+1 < lowest_non_clean_chunk_size,
                "Bounds error.");
@@ -382,7 +336,6 @@ process_chunk_boundaries(Space* sp,
                  "[" PTR_FORMAT "," PTR_FORMAT ") -> [" PTR_FORMAT "," PTR_FORMAT ")",
                  p2i(sp->used_region().start()), p2i(sp->used_region().end()),
                  p2i(used.start()), p2i(used.end()));
-          NOISY(tty->print_cr(" process_chunk_boundary: heap expanded; explicitly bounding last_chunk");)
           last_chunk_index_to_check = last_chunk_index;
         }
         for (uintptr_t lnc_index = cur_chunk_index + 1;
@@ -392,9 +345,6 @@ process_chunk_boundaries(Space* sp,
           if (lnc_card != NULL) {
             // we can stop at the first non-NULL entry we find
             if (lnc_card <= limit_card) {
-              NOISY(tty->print_cr(" process_chunk_boundary: LNC card " PTR_FORMAT " is lower than limit_card " PTR_FORMAT,
-                                  "   max_to_do will be lowered to " PTR_FORMAT " from " PTR_FORMAT,
-                                  lnc_card, limit_card, addr_for(lnc_card), max_to_do);)
               limit_card = lnc_card;
               max_to_do = addr_for(limit_card);
               assert(limit_card != NULL && max_to_do != NULL, "Error");
@@ -410,9 +360,6 @@ process_chunk_boundaries(Space* sp,
     assert(max_to_do != NULL, "OOPS 2!");
   } else {
     max_to_do = used.end();
-    NOISY(tty->print_cr(" process_chunk_boundary: Last chunk of this space;\n"
-                  "   max_to_do left at " PTR_FORMAT,
-                  max_to_do);)
   }
   assert(max_to_do != NULL, "OOPS 3!");
   // Now we can set the closure we're using so it doesn't to beyond
@@ -421,10 +368,7 @@ process_chunk_boundaries(Space* sp,
 #ifndef PRODUCT
   dcto_cl->set_last_bottom(max_to_do);
 #endif
-  NOISY(tty->print_cr("===========================================================================\n");)
 }
-
-#undef NOISY
 
 void
 CardTableModRefBSForCTRS::
