@@ -29,19 +29,25 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 
-BitMap::BitMap(bm_word_t* map, idx_t size_in_bits) :
-  _map(map), _size(size_in_bits), _map_allocator(false)
-{
-  assert(sizeof(bm_word_t) == BytesPerWord, "Implementation assumption.");
-}
-
+STATIC_ASSERT(sizeof(BitMap::bm_word_t) == BytesPerWord); // "Implementation assumption."
 
 BitMap::BitMap(idx_t size_in_bits, bool in_resource_area) :
-  _map(NULL), _size(0), _map_allocator(false)
+  _map(NULL), _size(0)
 {
-  assert(sizeof(bm_word_t) == BytesPerWord, "Implementation assumption.");
   resize(size_in_bits, in_resource_area);
 }
+
+#ifdef ASSERT
+void BitMap::verify_index(idx_t index) const {
+  assert(index < _size, "BitMap index out of bounds");
+}
+
+void BitMap::verify_range(idx_t beg_index, idx_t end_index) const {
+  assert(beg_index <= end_index, "BitMap range error");
+  // Note that [0,0) and [size,size) are both valid ranges.
+  if (end_index != _size) verify_index(end_index);
+}
+#endif // #ifdef ASSERT
 
 void BitMap::resize(idx_t size_in_bits, bool in_resource_area) {
   idx_t old_size_in_words = size_in_words();
@@ -54,7 +60,7 @@ void BitMap::resize(idx_t size_in_bits, bool in_resource_area) {
     Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) _map,
                          MIN2(old_size_in_words, new_size_in_words));
   } else {
-    _map = _map_allocator.reallocate(new_size_in_words);
+    _map = ArrayAllocator<bm_word_t, mtInternal>::reallocate(old_map, old_size_in_words, new_size_in_words);
   }
 
   if (new_size_in_words > old_size_in_words) {
