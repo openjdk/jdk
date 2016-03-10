@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Reader;
-import java.io.StreamTokenizer;
 import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.file.AccessDeniedException;
@@ -66,24 +64,25 @@ import java.util.stream.StreamSupport;
 
 import jdk.internal.jshell.debug.InternalDebugControl;
 import jdk.internal.jshell.tool.IOContext.InputInterruptedException;
+import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.Diag;
 import jdk.jshell.EvalException;
+import jdk.jshell.ExpressionSnippet;
+import jdk.jshell.ImportSnippet;
 import jdk.jshell.JShell;
-import jdk.jshell.Snippet;
-import jdk.jshell.DeclarationSnippet;
-import jdk.jshell.TypeDeclSnippet;
+import jdk.jshell.JShell.Subscription;
 import jdk.jshell.MethodSnippet;
 import jdk.jshell.PersistentSnippet;
-import jdk.jshell.VarSnippet;
-import jdk.jshell.ExpressionSnippet;
+import jdk.jshell.Snippet;
 import jdk.jshell.Snippet.Status;
+import jdk.jshell.Snippet.SubKind;
+import jdk.jshell.SnippetEvent;
 import jdk.jshell.SourceCodeAnalysis;
 import jdk.jshell.SourceCodeAnalysis.CompletionInfo;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
-import jdk.jshell.SnippetEvent;
+import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.UnresolvedReferenceException;
-import jdk.jshell.Snippet.SubKind;
-import jdk.jshell.JShell.Subscription;
+import jdk.jshell.VarSnippet;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
@@ -94,7 +93,12 @@ import java.util.ResourceBundle;
 import java.util.Spliterators;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import jdk.internal.jshell.tool.Feedback.FormatAction;
+import jdk.internal.jshell.tool.Feedback.FormatCase;
+import jdk.internal.jshell.tool.Feedback.FormatResolve;
+import jdk.internal.jshell.tool.Feedback.FormatWhen;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static jdk.jshell.Snippet.SubKind.VAR_VALUE_SUBKIND;
 
 /**
@@ -103,6 +107,7 @@ import static jdk.jshell.Snippet.SubKind.VAR_VALUE_SUBKIND;
  */
 public class JShellTool {
 
+    private static final String LINE_SEP = System.getProperty("line.separator");
     private static final Pattern LINEBREAK = Pattern.compile("\\R");
     private static final Pattern HISTORY_ALL_START_FILENAME = Pattern.compile(
             "((?<cmd>(all|history|start))(\\z|\\p{javaWhitespace}+))?(?<filename>.*)");
@@ -115,6 +120,8 @@ public class JShellTool {
     final InputStream userin;
     final PrintStream userout;
     final PrintStream usererr;
+
+    final Feedback feedback = new Feedback();
 
     /**
      * The constructor for the tool (used by tool launch via main and by test
@@ -137,6 +144,70 @@ public class JShellTool {
         this.userin = userin;
         this.userout = userout;
         this.usererr = usererr;
+        initializeFeedbackModes();
+    }
+
+    /**
+     * Create the default set of feedback modes
+     */
+    final void initializeFeedbackModes() {
+        // Initialize normal feedback mode
+        cmdSet("newmode normal command");
+        cmdSet("prompt normal '\n-> ' '>> '");
+        cmdSet("field normal pre '|  '");
+        cmdSet("field normal post '%n'");
+        cmdSet("field normal errorpre '|  '");
+        cmdSet("field normal errorpost '%n'");
+        cmdSet("field normal action 'Added' added-primary");
+        cmdSet("field normal action 'Modified' modified-primary");
+        cmdSet("field normal action 'Replaced' replaced-primary");
+        cmdSet("field normal action 'Overwrote' overwrote-primary");
+        cmdSet("field normal action 'Dropped' dropped-primary");
+        cmdSet("field normal action 'Rejected' rejected-primary");
+        cmdSet("field normal action '  Update added' added-update");
+        cmdSet("field normal action '  Update modified' modified-update");
+        cmdSet("field normal action '  Update replaced' replaced-update");
+        cmdSet("field normal action '  Update overwrote' overwrote-update");
+        cmdSet("field normal action '  Update dropped' dropped-update");
+        cmdSet("field normal action '  Update rejected' rejected-update");
+        cmdSet("field normal resolve '' ok-*");
+        cmdSet("field normal resolve ', however, it cannot be invoked until%s is declared' defined-primary");
+        cmdSet("field normal resolve ', however, it cannot be referenced until%s is declared' notdefined-primary");
+        cmdSet("field normal resolve ' which cannot be invoked until%s is declared' defined-update");
+        cmdSet("field normal resolve ' which cannot be referenced until%s is declared' notdefined-update");
+        cmdSet("field normal name '%s'");
+        cmdSet("field normal type '%s'");
+        cmdSet("field normal result '%s'");
+
+        cmdSet("format normal '' *-*-*");
+
+        cmdSet("format normal '{pre}{action} class {name}{resolve}{post}' class");
+        cmdSet("format normal '{pre}{action} interface {name}{resolve}{post}' interface");
+        cmdSet("format normal '{pre}{action} enum {name}{resolve}{post}' enum");
+        cmdSet("format normal '{pre}{action} annotation interface {name}{resolve}{post}' annotation");
+
+        cmdSet("format normal '{pre}{action} method {name}({type}){resolve}{post}' method");
+
+        cmdSet("format normal '{pre}{action} variable {name} of type {type}{resolve}{post}' vardecl");
+        cmdSet("format normal '{pre}{action} variable {name} of type {type} with initial value {result}{resolve}{post}' varinit");
+        cmdSet("format normal '{pre}{action} variable {name}{resolve}{post}' vardeclrecoverable");
+        cmdSet("format normal '{pre}{action} variable {name}, reset to null{post}' varreset-*-update");
+
+        cmdSet("format normal '{pre}Expression value is: {result}{post}" +
+                "{pre}  assigned to temporary variable {name} of type {type}{post}' expression");
+        cmdSet("format normal '{pre}Variable {name} of type {type} has value {result}{post}' varvalue");
+        cmdSet("format normal '{pre}Variable {name} has been assigned the value {result}{post}' assignment");
+
+        cmdSet("feedback normal");
+
+        // Initialize off feedback mode
+        cmdSet("newmode off quiet");
+        cmdSet("prompt off '-> ' '>> '");
+        cmdSet("field off pre '|  '");
+        cmdSet("field off post '%n'");
+        cmdSet("field off errorpre '|  '");
+        cmdSet("field off errorpost '%n'");
+        cmdSet("format off '' *-*-*");
     }
 
     private IOContext input = null;
@@ -150,7 +221,6 @@ public class JShellTool {
     private boolean debug = false;
     private boolean displayPrompt = true;
     public boolean testPrompt = false;
-    private Feedback feedback = Feedback.Default;
     private String cmdlineClasspath = null;
     private String cmdlineStartup = null;
     private String[] editor = null;
@@ -185,6 +255,15 @@ public class JShellTool {
 
     Map<Snippet,SnippetInfo> mapSnippet;
 
+    /**
+     * Is the input/output currently interactive
+     *
+     * @return true if console
+     */
+    boolean interactive() {
+        return input != null && input.interactiveOutput();
+    }
+
     void debug(String format, Object... args) {
         if (debug) {
             cmderr.printf(format + "\n", args);
@@ -192,38 +271,98 @@ public class JShellTool {
     }
 
     /**
-     * For more verbose feedback modes
-     * @param format printf format
-     * @param args printf args
+     * Base output for command output -- no pre- or post-fix
+     *
+     * @param printf format
+     * @param printf args
      */
-    void fluff(String format, Object... args) {
-        if (feedback() != Feedback.Off && feedback() != Feedback.Concise) {
-            hard(format, args);
-        }
+    void rawout(String format, Object... args) {
+        cmdout.printf(format, args);
     }
 
     /**
-     * For concise feedback mode only
-     * @param format printf format
-     * @param args printf args
-     */
-    void concise(String format, Object... args) {
-        if (feedback() == Feedback.Concise) {
-            hard(format, args);
-        }
-    }
-
-    /**
-     * For all feedback modes -- must show
+     * Must show command output
+     *
      * @param format printf format
      * @param args printf args
      */
     void hard(String format, Object... args) {
-        cmdout.printf("|  " + format + "\n", args);
+        rawout(feedback.getPre() + format + feedback.getPost(), args);
+    }
+
+    /**
+     * Error command output
+     *
+     * @param format printf format
+     * @param args printf args
+     */
+    void error(String format, Object... args) {
+        rawout(feedback.getErrorPre() + format + feedback.getErrorPost(), args);
+    }
+
+    /**
+     * Optional output
+     *
+     * @param format printf format
+     * @param args printf args
+     */
+    void fluff(String format, Object... args) {
+        if (feedback.shouldDisplayCommandFluff() && interactive()) {
+            hard(format, args);
+        }
+    }
+
+    /**
+     * Optional output -- with embedded per- and post-fix
+     *
+     * @param format printf format
+     * @param args printf args
+     */
+    void fluffRaw(String format, Object... args) {
+        if (feedback.shouldDisplayCommandFluff() && interactive()) {
+            rawout(format, args);
+        }
+    }
+
+    <T> void hardPairs(Stream<T> stream, Function<T, String> a, Function<T, String> b) {
+        Map<String, String> a2b = stream.collect(toMap(a, b,
+                (m1, m2) -> m1,
+                () -> new LinkedHashMap<>()));
+        int aLen = 0;
+        for (String av : a2b.keySet()) {
+            aLen = Math.max(aLen, av.length());
+        }
+        String format = "   %-" + aLen + "s -- %s";
+        String indentedNewLine = LINE_SEP + feedback.getPre()
+                + String.format("   %-" + (aLen + 4) + "s", "");
+        for (Entry<String, String> e : a2b.entrySet()) {
+            hard(format, e.getKey(), e.getValue().replaceAll("\n", indentedNewLine));
+        }
+    }
+
+    /**
+     * User custom feedback mode only
+     *
+     * @param fcase Event to report
+     * @param update Is this an update (rather than primary)
+     * @param fa Action
+     * @param fr Resolution status
+     * @param name Name string
+     * @param type Type string or null
+     * @param result Result value or null
+     * @param unresolved The unresolved symbols
+     */
+    void custom(FormatCase fcase, boolean update, FormatAction fa, FormatResolve fr,
+            String name, String type, String unresolved, String result) {
+        String format = feedback.getFormat(fcase,
+                (update ? FormatWhen.UPDATE : FormatWhen.PRIMARY), fa, fr,
+                name != null, type != null, result != null);
+        fluffRaw(format, unresolved, name, type, result);
     }
 
     /**
      * Trim whitespace off end of string
+     *
      * @param s
      * @return
      */
@@ -276,8 +415,8 @@ public class JShellTool {
         }
 
         if (regenerateOnDeath) {
-            fluff("Welcome to JShell -- Version %s", version());
-            fluff("Type /help for help");
+            hard("Welcome to JShell -- Version %s", version());
+            hard("Type /help for help");
         }
 
         try {
@@ -369,14 +508,14 @@ public class JShellTool {
     }
 
     private void printUsage() {
-        cmdout.printf("Usage:   jshell <options> <load files>\n");
-        cmdout.printf("where possible options include:\n");
-        cmdout.printf("  -classpath <path>          Specify where to find user class files\n");
-        cmdout.printf("  -cp <path>                 Specify where to find user class files\n");
-        cmdout.printf("  -startup <file>            One run replacement for the start-up definitions\n");
-        cmdout.printf("  -nostartup                 Do not run the start-up definitions\n");
-        cmdout.printf("  -help                      Print a synopsis of standard options\n");
-        cmdout.printf("  -version                   Version information\n");
+        rawout("Usage:   jshell <options> <load files>\n");
+        rawout("where possible options include:\n");
+        rawout("  -classpath <path>          Specify where to find user class files\n");
+        rawout("  -cp <path>                 Specify where to find user class files\n");
+        rawout("  -startup <file>            One run replacement for the start-up definitions\n");
+        rawout("  -nostartup                 Do not run the start-up definitions\n");
+        rawout("  -help                      Print a synopsis of standard options\n");
+        rawout("  -version                   Version information\n");
     }
 
     private void resetState() {
@@ -460,10 +599,8 @@ public class JShellTool {
                                             ? "\u0005" //ENQ
                                             : "\u0006" //ACK
                                     : incomplete.isEmpty()
-                                            ? feedback() == Feedback.Concise
-                                                    ? "-> "
-                                                    : "\n-> "
-                                            : ">> "
+                                            ? feedback.getPrompt(currentNameSpace.tidNext())
+                                            : feedback.getContinuationPrompt(currentNameSpace.tidNext())
                     ;
                 } else {
                     prompt = "";
@@ -541,7 +678,7 @@ public class JShellTool {
         Command[] candidates = findCommand(cmd, c -> c.kind.isRealCommand);
         if (candidates.length == 0) {
             if (!rerunHistoryEntryById(cmd.substring(1))) {
-                hard("No such command or snippet id: %s", cmd);
+                error("No such command or snippet id: %s", cmd);
                 fluff("Type /help for help.");
             }
         } else if (candidates.length == 1) {
@@ -552,7 +689,7 @@ public class JShellTool {
                 addToReplayHistory((command.command + " " + arg).trim());
             }
         } else {
-            hard("Command: %s is ambiguous: %s", cmd, Arrays.stream(candidates).map(c -> c.command).collect(Collectors.joining(", ")));
+            error("Command: %s is ambiguous: %s", cmd, Arrays.stream(candidates).map(c -> c.command).collect(Collectors.joining(", ")));
             fluff("Type /help for help.");
         }
     }
@@ -632,45 +769,6 @@ public class JShellTool {
             this.isRealCommand = isRealCommand;
             this.showInHelp = showInHelp;
             this.shouldSuggestCompletions = shouldSuggestCompletions;
-        }
-    }
-
-    class ArgTokenizer extends StreamTokenizer {
-
-        ArgTokenizer(String arg) {
-            super(new StringReader(arg));
-            resetSyntax();
-            wordChars(0x00, 0xFF);
-            quoteChar('"');
-            quoteChar('\'');
-
-            whitespaceChars(0x09, 0x0D);
-            whitespaceChars(0x1C, 0x20);
-            whitespaceChars(0x85, 0x85);
-            whitespaceChars(0xA0, 0xA0);
-            whitespaceChars(0x1680, 0x1680);
-            whitespaceChars(0x180E, 0x180E);
-            whitespaceChars(0x2000, 0x200A);
-            whitespaceChars(0x202F, 0x202F);
-            whitespaceChars(0x205F, 0x205F);
-            whitespaceChars(0x3000, 0x3000);
-        }
-
-        String next() {
-            try {
-                nextToken();
-            } catch (Throwable t) {
-                return null;
-            }
-            return sval;
-        }
-
-        String val() {
-            return sval;
-        }
-
-        boolean isQuoted() {
-            return ttype == '\'' || ttype == '"';
         }
     }
 
@@ -801,16 +899,9 @@ public class JShellTool {
                 "  -- List the snippet with the specified snippet id\n",
                 arg -> cmdList(arg),
                 editKeywordCompletion()));
-        registerCommand(new Command("/seteditor", "<command>", "set the external editor command to use",
-                "Specify the command to launch for the /edit command.\n" +
-                "The command is an operating system dependent string.\n" +
-                "The command may include space-separated arguments (such as flags).\n" +
-                "When /edit is used, temporary file to edit will be appended as the last argument.\n",
-                arg -> cmdSetEditor(arg),
-                EMPTY_COMPLETION_PROVIDER));
         registerCommand(new Command("/edit", "<name or id>", "edit a source entry referenced by name or id",
                 "Edit a snippet or snippets of source in an external editor.\n" +
-                "The editor to use is set with /seteditor.\n" +
+                "The editor to use is set with /set editor.\n" +
                 "If no editor has been set, a simple editor will be launched.\n\n" +
                 "/edit <name>\n" +
                 "  -- Edit the snippet or snippets with the specified name (preference for active snippets)\n" +
@@ -875,7 +966,7 @@ public class JShellTool {
                 "   * Start-up code is re-executed.\n" +
                 "   * The execution state is restarted.\n" +
                 "   * The classpath is cleared.\n" +
-                "Tool settings are maintained: /feedback, /prompt, and /seteditor\n" +
+                "Tool settings are maintained, as set with: /set ...\n" +
                 "Save any work before using this command\n",
                 arg -> cmdReset(),
                 EMPTY_COMPLETION_PROVIDER));
@@ -895,25 +986,6 @@ public class JShellTool {
                 "  -- With the 'quiet' argument the replay is not shown.  Errors will display.\n",
                 arg -> cmdReload(arg),
                 reloadCompletion()));
-        registerCommand(new Command("/feedback", "<level>", "feedback information: off, concise, normal, verbose, default, or ?",
-                "Set the level of feedback describing the effect of commands and snippets.\n\n" +
-                "/feedback off\n" +
-                "  -- Give no feedback\n" +
-                "/feedback concise\n" +
-                "  -- Brief and generally symbolic feedback\n" +
-                "/feedback normal\n" +
-                "  -- Give a natural language description of the actions\n" +
-                "/feedback verbose\n" +
-                "  -- Like normal but with side-effects described\n" +
-                "/feedback default\n" +
-                "  -- Same as normal for user input, off for input from a file\n",
-                arg -> cmdFeedback(arg),
-                new FixedCompletionProvider("off", "concise", "normal", "verbose", "default", "?")));
-        registerCommand(new Command("/prompt", null, "toggle display of a prompt",
-                "Toggle between displaying an input prompt and not displaying a prompt.\n" +
-                "Particularly useful when pasting large amounts of text.\n",
-                arg -> cmdPrompt(),
-                EMPTY_COMPLETION_PROVIDER));
         registerCommand(new Command("/classpath", "<path>", "add a path to the classpath",
                 "Append a additional path to the classpath.\n",
                 arg -> cmdClasspath(arg),
@@ -923,10 +995,6 @@ public class JShellTool {
                 "Display the history of snippet and command input since this jshell was launched.\n",
                 arg -> cmdHistory(),
                 EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/setstart", "<file>", "read file and set as the new start-up definitions",
-                "The contents of the specified file become the default start-up snippets and commands.\n",
-                arg -> cmdSetStart(arg),
-                FILE_COMPLETION_PROVIDER));
         registerCommand(new Command("/debug", null, "toggle debugging of the jshell",
                 "Display debugging information for the jshelll implementation.\n" +
                 "0: Debugging off\n" +
@@ -951,6 +1019,37 @@ public class JShellTool {
                 "  -- Display information about the specified help subject. Example: /help intro\n",
                 arg -> cmdHelp(arg),
                 EMPTY_COMPLETION_PROVIDER));
+        registerCommand(new Command("/set", "editor|start|feedback|newmode|prompt|format|field ...", "set jshell configuration information",
+                "Set jshell configuration information, including:\n" +
+                "the external editor to use, the start-up definitions to use, a new feedback mode,\n" +
+                "the command prompt, the feedback mode to use, or the format of output.\n" +
+                "\n" +
+                "/set editor <command> <optional-arg>...\n" +
+                "  -- Specify the command to launch for the /edit command.\n" +
+                "     The <command> is an operating system dependent string.\n" +
+                "\n" +
+                "/set start <file>\n" +
+                "  -- The contents of the specified <file> become the default start-up snippets and commands.\n" +
+                "\n" +
+                "/set feedback <mode>\n" +
+                "  -- Set the feedback mode describing displayed feedback for entered snippets and commands.\n" +
+                "\n" +
+                "/set newmode <new-mode> [command|quiet [<old-mode>]]\n" +
+                "  -- Create a user-defined feedback mode, optionally copying from an existing mode.\n" +
+                "\n" +
+                "/set prompt <mode> \"<prompt>\" \"<continuation-prompt>\"\n" +
+                "  -- Set the displayed prompts for a given feedback mode.\n" +
+                "\n" +
+                "/set format <mode> \"<format>\" <selector>...\n" +
+                "  -- Configure a feedback mode by setting the format to use in a specified set of cases.\n" +
+                "\n" +
+                "/set field name|type|result|when|action|resolve|pre|post|errorpre|errorpost \"<format>\"  <format-case>...\n" +
+                "  -- Set the format of a field within the <format-string> of a \"/set format\" command\n" +
+                "\n" +
+                "To get more information about one of these forms, use /help with the form specified.\n" +
+                "For example:   /help /set format\n",
+                arg -> cmdSet(arg),
+                new FixedCompletionProvider("format", "field", "feedback", "prompt", "newmode", "start", "editor")));
         registerCommand(new Command("/?", "", "get information about jshell",
                 "Display information about jshell (abbreviation for /help).\n" +
                 "/?\n" +
@@ -1051,19 +1150,136 @@ public class JShellTool {
 
     // --- Command implementations ---
 
-    boolean cmdSetEditor(String arg) {
-        if (arg.isEmpty()) {
-            hard("/seteditor requires a path argument");
+    private static final String[] setSub = new String[]{
+        "format", "field", "feedback", "newmode", "prompt", "editor", "start"};
+
+    // The /set command.  Currently /set format, /set field and /set feedback.
+    // Other commands will fold here, see: 8148317
+    final boolean cmdSet(String arg) {
+        ArgTokenizer at = new ArgTokenizer(arg.trim());
+        String which = setSubCommand(at);
+        if (which == null) {
             return false;
-        } else {
-            List<String> ed = new ArrayList<>();
-            ArgTokenizer at = new ArgTokenizer(arg);
-            String n;
-            while ((n = at.next()) != null) ed.add(n);
-            editor = ed.toArray(new String[ed.size()]);
-            fluff("Editor set to: %s", arg);
-            return true;
         }
+        switch (which) {
+            case "format":
+                return feedback.setFormat(this, at);
+            case "field":
+                return feedback.setField(this, at);
+            case "feedback":
+                return feedback.setFeedback(this, at);
+            case "newmode":
+                return feedback.setNewMode(this, at);
+            case "prompt":
+                return feedback.setPrompt(this, at);
+            case "editor": {
+                String prog = at.next();
+                if (prog == null) {
+                    hard("The '/set editor' command requires a path argument");
+                    return false;
+                } else {
+                    List<String> ed = new ArrayList<>();
+                    ed.add(prog);
+                    String n;
+                    while ((n = at.next()) != null) {
+                        ed.add(n);
+                    }
+                    editor = ed.toArray(new String[ed.size()]);
+                    fluff("Editor set to: %s", arg);
+                    return true;
+                }
+            }
+            case "start": {
+                String filename = at.next();
+                if (filename == null) {
+                    hard("The '/set start' command requires a filename argument.");
+                } else {
+                    try {
+                        byte[] encoded = Files.readAllBytes(toPathResolvingUserHome(filename));
+                        String init = new String(encoded);
+                        PREFS.put(STARTUP_KEY, init);
+                    } catch (AccessDeniedException e) {
+                        hard("File '%s' for /set start is not accessible.", filename);
+                        return false;
+                    } catch (NoSuchFileException e) {
+                        hard("File '%s' for /set start is not found.", filename);
+                        return false;
+                    } catch (Exception e) {
+                        hard("Exception while reading start set file: %s", e);
+                        return false;
+                    }
+                }
+                return true;
+            }
+            default:
+                hard("Error: Invalid /set argument: %s", which);
+                return false;
+        }
+    }
+
+    boolean printSetHelp(ArgTokenizer at) {
+        String which = setSubCommand(at);
+        if (which == null) {
+            return false;
+        }
+        switch (which) {
+            case "format":
+                feedback.printFormatHelp(this);
+                return true;
+            case "field":
+                feedback.printFieldHelp(this);
+                return true;
+            case "feedback":
+                feedback.printFeedbackHelp(this);
+                return true;
+            case "newmode":
+                feedback.printNewModeHelp(this);
+                return true;
+            case "prompt":
+                feedback.printPromptHelp(this);
+                return true;
+            case "editor":
+                hard("Specify the command to launch for the /edit command.");
+                hard("");
+                hard("/set editor <command> <optional-arg>...");
+                hard("");
+                hard("The <command> is an operating system dependent string.");
+                hard("The <command> may include space-separated arguments (such as flags) -- <optional-arg>....");
+                hard("When /edit is used, the temporary file to edit will be appended as the last argument.");
+                return true;
+            case "start":
+                hard("Set the start-up configuration -- a sequence of snippets and commands read at start-up.");
+                hard("");
+                hard("/set start <file>");
+                hard("");
+                hard("The contents of the specified <file> become the default start-up snippets and commands --");
+                hard("which are run when the jshell tool is started or reset.");
+                return true;
+            default:
+                hard("Error: Invalid /set argument: %s", which);
+                return false;
+        }
+    }
+
+    String setSubCommand(ArgTokenizer at) {
+        String[] matches = at.next(setSub);
+        if (matches == null) {
+            error("The /set command requires arguments. See: /help /set");
+            return null;
+        } else if (matches.length == 0) {
+            error("Not a valid argument to /set: %s", at.val());
+            fluff("/set is followed by one of: %s", Arrays.stream(setSub)
+                    .collect(Collectors.joining(", "))
+            );
+            return null;
+        } else if (matches.length > 1) {
+            error("Ambiguous argument to /set: %s", at.val());
+            fluff("Use one of: %s", Arrays.stream(matches)
+                    .collect(Collectors.joining(", "))
+            );
+            return null;
+        }
+        return matches[0];
     }
 
     boolean cmdClasspath(String arg) {
@@ -1137,91 +1353,50 @@ public class JShellTool {
         return true;
     }
 
-    private boolean cmdFeedback(String arg) {
-        switch (arg) {
-            case "":
-            case "d":
-            case "default":
-                feedback = Feedback.Default;
-                break;
-            case "o":
-            case "off":
-                feedback = Feedback.Off;
-                break;
-            case "c":
-            case "concise":
-                feedback = Feedback.Concise;
-                break;
-            case "n":
-            case "normal":
-                feedback = Feedback.Normal;
-                break;
-            case "v":
-            case "verbose":
-                feedback = Feedback.Verbose;
-                break;
-            default:
-                hard("Follow /feedback with of the following:");
-                hard("  off       (errors and critical output only)");
-                hard("  concise");
-                hard("  normal");
-                hard("  verbose");
-                hard("  default");
-                hard("You may also use just the first letter, for example: /f c");
-                hard("In interactive mode 'default' is the same as 'normal', from a file it is the same as 'off'");
-                return false;
-        }
-        fluff("Feedback mode: %s", feedback.name().toLowerCase());
-        return true;
-    }
-
     boolean cmdHelp(String arg) {
-        if (!arg.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            commands.values().stream()
-                    .filter(c -> c.command.startsWith(arg))
-                    .forEach(c -> {
-                        sb.append("\n");
-                        sb.append(c.command);
-                        sb.append("\n\n");
-                        sb.append(c.help);
-                        sb.append("\n");
-                    });
-            if (sb.length() > 0) {
-                cmdout.print(sb);
-                return true;
+        ArgTokenizer at = new ArgTokenizer(arg);
+        String subject = at.next();
+        if (subject != null) {
+            Command[] matches = commands.values().stream()
+                    .filter(c -> c.command.startsWith(subject))
+                    .toArray(size -> new Command[size]);
+            at.mark();
+            String sub = at.next();
+            if (sub != null && matches.length == 1 && matches[0].command.equals("/set")) {
+                at.rewind();
+                return printSetHelp(at);
             }
-            cmdout.printf("No commands or subjects start with the provided argument: %s\n\n", arg);
+            if (matches.length > 0) {
+                for (Command c : matches) {
+                    hard("");
+                    hard("%s", c.command);
+                    hard("");
+                    hard("%s", c.help.replaceAll("\n", LINE_SEP + feedback.getPre()));
+                }
+                return true;
+            } else {
+                error("No commands or subjects start with the provided argument: %s\n\n", arg);
+            }
         }
-        int synopsisLen = 0;
-        Map<String, String> synopsis2Description = new LinkedHashMap<>();
-        for (Command cmd : new LinkedHashSet<>(commands.values())) {
-            if (!cmd.kind.showInHelp)
-                continue;
-            StringBuilder synopsis = new StringBuilder();
-            synopsis.append(cmd.command);
-            if (cmd.params != null)
-                synopsis.append(" ").append(cmd.params);
-            synopsis2Description.put(synopsis.toString(), cmd.description);
-            synopsisLen = Math.max(synopsisLen, synopsis.length());
-        }
-        cmdout.println("Type a Java language expression, statement, or declaration.");
-        cmdout.println("Or type one of the following commands:\n");
-        for (Entry<String, String> e : synopsis2Description.entrySet()) {
-            cmdout.print(String.format("%-" + synopsisLen + "s", e.getKey()));
-            cmdout.print(" -- ");
-            String indentedNewLine = System.getProperty("line.separator") +
-                                     String.format("%-" + (synopsisLen + 4) + "s", "");
-            cmdout.println(e.getValue().replace("\n", indentedNewLine));
-        }
-        cmdout.println();
-        cmdout.println("For more information type '/help' followed by the name of command or a subject.");
-        cmdout.println("For example '/help /list' or '/help intro'.  Subjects:\n");
-        commands.values().stream()
-                .filter(c -> c.kind == CommandKind.HELP_SUBJECT)
-                .forEach(c -> {
-            cmdout.printf("%-12s -- %s\n", c.command, c.description);
-        });
+        hard("Type a Java language expression, statement, or declaration.");
+        hard("Or type one of the following commands:");
+        hard("");
+        hardPairs(commands.values().stream()
+                .filter(cmd -> cmd.kind.showInHelp),
+                cmd -> (cmd.params != null)
+                            ? cmd.command + " " + cmd.params
+                            : cmd.command,
+                cmd -> cmd.description
+        );
+        hard("");
+        hard("For more information type '/help' followed by the name of command or a subject.");
+        hard("For example '/help /list' or '/help intro'.  Subjects:");
+        hard("");
+        hardPairs(commands.values().stream()
+                .filter(cmd -> cmd.kind == CommandKind.HELP_SUBJECT),
+                cmd -> cmd.command,
+                cmd -> cmd.description
+        );
         return true;
     }
 
@@ -1482,13 +1657,6 @@ public class JShellTool {
         return true;
     }
 
-    private boolean cmdPrompt() {
-        displayPrompt = !displayPrompt;
-        fluff("Prompt will %sdisplay. Use /prompt to toggle.", displayPrompt ? "" : "NOT ");
-        concise("Prompt: %s", displayPrompt ? "on" : "off");
-        return true;
-    }
-
     private boolean cmdReset() {
         live = false;
         fluff("Resetting state.");
@@ -1573,28 +1741,6 @@ public class JShellTool {
         } catch (Exception e) {
             hard("Exception while saving: %s", e);
             return false;
-        }
-        return true;
-    }
-
-    private boolean cmdSetStart(String filename) {
-        if (filename.isEmpty()) {
-            hard("The /setstart command requires a filename argument.");
-        } else {
-            try {
-                byte[] encoded = Files.readAllBytes(toPathResolvingUserHome(filename));
-                String init = new String(encoded);
-                PREFS.put(STARTUP_KEY, init);
-            } catch (AccessDeniedException e) {
-                hard("File '%s' for /setstart is not accessible.", filename);
-                return false;
-            } catch (NoSuchFileException e) {
-                hard("File '%s' for /setstart is not found.", filename);
-                return false;
-            } catch (Exception e) {
-                hard("Exception while reading start set file: %s", e);
-                return false;
-            }
         }
         return true;
     }
@@ -1831,14 +1977,10 @@ public class JShellTool {
             printDiagnostics(source, diagnostics, true);
         } else {
             // Update
-            SubKind subkind = sn.subKind();
-            if (sn instanceof DeclarationSnippet
-                    && (feedback() == Feedback.Verbose
-                    || ste.status() == Status.OVERWRITTEN
-                    || subkind == SubKind.VAR_DECLARATION_SUBKIND
-                    || subkind == SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND)) {
-                // Under the conditions, display update information
-                displayDeclarationAndValue(ste, true, null);
+            if (sn instanceof DeclarationSnippet) {
+                // display update information
+                displayDeclarationAndValue(ste, true, ste.value());
+
                 List<Diag> other = errorsOnly(diagnostics);
                 if (other.size() > 0) {
                     printDiagnostics(source, other, true);
@@ -1851,118 +1993,117 @@ public class JShellTool {
     @SuppressWarnings("fallthrough")
     private void displayDeclarationAndValue(SnippetEvent ste, boolean update, String value) {
         Snippet key = ste.snippet();
-        String declared;
+        FormatAction action;
         Status status = ste.status();
         switch (status) {
             case VALID:
             case RECOVERABLE_DEFINED:
             case RECOVERABLE_NOT_DEFINED:
                 if (ste.previousStatus().isActive) {
-                    declared = ste.isSignatureChange()
-                        ? "Replaced"
-                        : "Modified";
+                    action = ste.isSignatureChange()
+                        ? FormatAction.REPLACED
+                        : FormatAction.MODIFIED;
                 } else {
-                    declared = "Added";
+                    action = FormatAction.ADDED;
                 }
                 break;
             case OVERWRITTEN:
-                declared = "Overwrote";
+                action = FormatAction.OVERWROTE;
                 break;
             case DROPPED:
-                declared = "Dropped";
+                action = FormatAction.DROPPED;
                 break;
             case REJECTED:
-                declared = "Rejected";
+                action = FormatAction.REJECTED;
                 break;
             case NONEXISTENT:
             default:
                 // Should not occur
-                declared = ste.previousStatus().toString() + "=>" + status.toString();
+                error("Unexpected status: " + ste.previousStatus().toString() + "=>" + status.toString());
+                return;
         }
-        if (update) {
-            declared = "  Update " + declared.toLowerCase();
-        }
-        String however;
+        FormatResolve resolution;
+        String unresolved;
         if (key instanceof DeclarationSnippet && (status == Status.RECOVERABLE_DEFINED || status == Status.RECOVERABLE_NOT_DEFINED)) {
-            String cannotUntil = (status == Status.RECOVERABLE_NOT_DEFINED)
-                    ? " cannot be referenced until"
-                    : " cannot be invoked until";
-            however = (update? " which" : ", however, it") + cannotUntil + unresolved((DeclarationSnippet) key);
+            resolution = (status == Status.RECOVERABLE_NOT_DEFINED)
+                    ? FormatResolve.NOTDEFINED
+                    : FormatResolve.DEFINED;
+            unresolved = unresolved((DeclarationSnippet) key);
         } else {
-            however = "";
+            resolution = FormatResolve.OK;
+            unresolved = "";
         }
         switch (key.subKind()) {
             case CLASS_SUBKIND:
-                fluff("%s class %s%s", declared, ((TypeDeclSnippet) key).name(), however);
+                custom(FormatCase.CLASS, update, action, resolution,
+                        ((TypeDeclSnippet) key).name(), null, unresolved, null);
                 break;
             case INTERFACE_SUBKIND:
-                fluff("%s interface %s%s", declared, ((TypeDeclSnippet) key).name(), however);
+                custom(FormatCase.INTERFACE, update, action, resolution,
+                        ((TypeDeclSnippet) key).name(), null, unresolved, null);
                 break;
             case ENUM_SUBKIND:
-                fluff("%s enum %s%s", declared, ((TypeDeclSnippet) key).name(), however);
+                custom(FormatCase.ENUM, update, action, resolution,
+                        ((TypeDeclSnippet) key).name(), null, unresolved, null);
                 break;
             case ANNOTATION_TYPE_SUBKIND:
-                fluff("%s annotation interface %s%s", declared, ((TypeDeclSnippet) key).name(), however);
+                custom(FormatCase.ANNOTATION, update, action, resolution,
+                        ((TypeDeclSnippet) key).name(), null, unresolved, null);
                 break;
             case METHOD_SUBKIND:
-                fluff("%s method %s(%s)%s", declared, ((MethodSnippet) key).name(),
-                        ((MethodSnippet) key).parameterTypes(), however);
+                custom(FormatCase.METHOD, update, action, resolution,
+                        ((MethodSnippet) key).name(), ((MethodSnippet) key).parameterTypes(), unresolved, null);
                 break;
             case VAR_DECLARATION_SUBKIND:
-                if (!update) {
-                    VarSnippet vk = (VarSnippet) key;
-                    if (status == Status.RECOVERABLE_NOT_DEFINED) {
-                        fluff("%s variable %s%s", declared, vk.name(), however);
-                    } else {
-                        fluff("%s variable %s of type %s%s", declared, vk.name(), vk.typeName(), however);
-                    }
-                    break;
-                }
-            // Fall through
             case VAR_DECLARATION_WITH_INITIALIZER_SUBKIND: {
                 VarSnippet vk = (VarSnippet) key;
                 if (status == Status.RECOVERABLE_NOT_DEFINED) {
-                    if (!update) {
-                        fluff("%s variable %s%s", declared, vk.name(), however);
-                        break;
-                    }
-                } else if (update) {
-                    if (ste.isSignatureChange()) {
-                        hard("%s variable %s, reset to null", declared, vk.name());
-                    }
+                    custom(FormatCase.VARDECLRECOVERABLE, update, action, resolution,
+                            vk.name(), null, unresolved, null);
+                } else if (update && ste.isSignatureChange()) {
+                    custom(FormatCase.VARRESET, update, action, resolution,
+                            vk.name(), null, unresolved, value);
+                } else if (key.subKind() == SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND) {
+                    custom(FormatCase.VARINIT, update, action, resolution,
+                            vk.name(), vk.typeName(), unresolved, value);
                 } else {
-                    fluff("%s variable %s of type %s with initial value %s",
-                            declared, vk.name(), vk.typeName(), value);
-                    concise("%s : %s", vk.name(), value);
+                    custom(FormatCase.VARDECL, update, action, resolution,
+                            vk.name(), vk.typeName(), unresolved, value);
                 }
                 break;
             }
             case TEMP_VAR_EXPRESSION_SUBKIND: {
                 VarSnippet vk = (VarSnippet) key;
-                if (update) {
-                    hard("%s temporary variable %s, reset to null", declared, vk.name());
-                 } else {
-                    fluff("Expression value is: %s", (value));
-                    fluff("  assigned to temporary variable %s of type %s", vk.name(), vk.typeName());
-                    concise("%s : %s", vk.name(), value);
-                }
+                custom(FormatCase.EXPRESSION, update, action, resolution,
+                        vk.name(), vk.typeName(), null, value);
                 break;
             }
             case OTHER_EXPRESSION_SUBKIND:
-                fluff("Expression value is: %s", (value));
+                error("Unexpected expression form -- value is: %s", (value));
                 break;
             case VAR_VALUE_SUBKIND: {
                 ExpressionSnippet ek = (ExpressionSnippet) key;
-                fluff("Variable %s of type %s has value %s", ek.name(), ek.typeName(), (value));
-                concise("%s : %s", ek.name(), value);
+                custom(FormatCase.VARVALUE, update, action, resolution,
+                        ek.name(), ek.typeName(), null, value);
                 break;
             }
             case ASSIGNMENT_SUBKIND: {
                 ExpressionSnippet ek = (ExpressionSnippet) key;
-                fluff("Variable %s has been assigned the value %s", ek.name(), (value));
-                concise("%s : %s", ek.name(), value);
+                custom(FormatCase.ASSIGNMENT, update, action, resolution,
+                        ek.name(), ek.typeName(), null, value);
                 break;
             }
+            case SINGLE_TYPE_IMPORT_SUBKIND:
+            case TYPE_IMPORT_ON_DEMAND_SUBKIND:
+            case SINGLE_STATIC_IMPORT_SUBKIND:
+            case STATIC_IMPORT_ON_DEMAND_SUBKIND:
+                custom(FormatCase.IMPORT, update, action, resolution,
+                        ((ImportSnippet) key).name(), null, null, null);
+                break;
+            case STATEMENT_SUBKIND:
+                custom(FormatCase.STATEMENT, update, action, resolution,
+                        null, null, null, null);
+                break;
         }
     }
     //where
@@ -2048,32 +2189,7 @@ public class JShellTool {
                 sb.append(", ");
             }
         }
-        switch (unr.size()) {
-            case 0:
-                break;
-            case 1:
-                sb.append(" is declared");
-                break;
-            default:
-                sb.append(" are declared");
-                break;
-        }
         return sb.toString();
-    }
-
-    enum Feedback {
-        Default,
-        Off,
-        Concise,
-        Normal,
-        Verbose
-    }
-
-    Feedback feedback() {
-        if (feedback == Feedback.Default) {
-            return input == null || input.interactiveOutput() ? Feedback.Normal : Feedback.Off;
-        }
-        return feedback;
     }
 
     /** The current version number as a string.
