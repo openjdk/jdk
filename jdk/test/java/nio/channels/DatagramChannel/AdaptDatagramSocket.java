@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313882 4981129
+ * @bug 4313882 4981129 8143610
  * @summary Unit test for datagram-socket-channel adaptors
  * @library ..
  * @key randomness
@@ -137,7 +137,7 @@ public class AdaptDatagramSocket {
                                         echoServer.getPort());
             test(address, 0, false, false);
             test(address, 0, false, true);
-            test(address, 15000, false, false);
+            test(address, Integer.MAX_VALUE, false, false);
         }
         try (TestServers.UdpDiscardServer discardServer
                 = TestServers.UdpDiscardServer.startNewServer()) {

@@ -29,6 +29,7 @@ include LibCommon.gmk
 $(eval $(call FillCacheFind, $(wildcard $(JDK_TOPDIR)/src/java.desktop/*/native \
     $(JDK_TOPDIR)/src/*/java.desktop/*/native)))
 
+include LibosxLibraries.gmk
 include PlatformLibraries.gmk
 include Awt2dLibraries.gmk
 include SoundLibraries.gmk
