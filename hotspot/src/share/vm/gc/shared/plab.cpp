@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,30 @@ void PLAB::undo_allocation(HeapWord* obj, size_t word_sz) {
   }
 }
 
+void PLABStats::log_plab_allocation() {
+  log_debug(gc, plab)("%s PLAB allocation: "
+                      "allocated: " SIZE_FORMAT "B, "
+                      "wasted: " SIZE_FORMAT "B, "
+                      "unused: " SIZE_FORMAT "B, "
+                      "used: " SIZE_FORMAT "B, "
+                      "undo waste: " SIZE_FORMAT "B, ",
+                      _description,
+                      _allocated * HeapWordSize,
+                      _wasted * HeapWordSize,
+                      _unused * HeapWordSize,
+                      used() * HeapWordSize,
+                      _undo_wasted * HeapWordSize);
+}
+
+void PLABStats::log_sizing(size_t calculated_words, size_t net_desired_words) {
+  log_debug(gc, plab)("%s sizing: "
+                      "calculated: " SIZE_FORMAT "B, "
+                      "actual: " SIZE_FORMAT "B",
+                      _description,
+                      calculated_words * HeapWordSize,
+                      net_desired_words * HeapWordSize);
+}
+
 // Calculates plab size for current number of gc worker threads.
 size_t PLABStats::desired_plab_sz(uint no_of_gc_workers) {
   return MAX2(min_size(), (size_t)align_object_size(_desired_net_plab_sz / no_of_gc_workers));
@@ -119,7 +143,13 @@ size_t PLABStats::desired_plab_sz(uint no_of_gc_workers) {
 // use. This should be called once at the end of parallel
 // scavenge; it clears the sensor accumulators.
 void PLABStats::adjust_desired_plab_sz() {
-  assert(ResizePLAB, "Not set");
+  log_plab_allocation();
+
+  if (!ResizePLAB) {
+    // Clear accumulators for next round.
+    reset();
+    return;
+  }
 
   assert(is_object_aligned(max_size()) && min_size() <= max_size(),
          "PLAB clipping computation may be incorrect");
@@ -150,8 +180,9 @@ void PLABStats::adjust_desired_plab_sz() {
   new_plab_sz = MIN2(max_size(), new_plab_sz);
   new_plab_sz = align_object_size(new_plab_sz);
   // Latch the result
-  log_trace(gc, plab)("plab_size = " SIZE_FORMAT " desired_net_plab_sz = " SIZE_FORMAT ") ", recent_plab_sz, new_plab_sz);
   _desired_net_plab_sz = new_plab_sz;
+
+  log_sizing(recent_plab_sz, new_plab_sz);
 
   reset();
 }

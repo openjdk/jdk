@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@
 // forward declaration for class -- see below for definition
 class BreakpointInfo;
 class ClassFileParser;
-class DepChange;
+class KlassDepChange;
 class DependencyContext;
 class fieldDescriptor;
 class jniIdMapBase;
@@ -821,7 +821,7 @@ public:
 
   // maintenance of deoptimization dependencies
   inline DependencyContext dependencies();
-  int  mark_dependent_nmethods(DepChange& changes);
+  int  mark_dependent_nmethods(KlassDepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
   void remove_dependent_nmethod(nmethod* nm, bool delete_immediately);
 
@@ -839,7 +839,7 @@ public:
 
   // support for stub routines
   static ByteSize init_state_offset()  { return in_ByteSize(offset_of(InstanceKlass, _init_state)); }
-  TRACE_DEFINE_OFFSET;
+  TRACE_DEFINE_KLASS_TRACE_ID_OFFSET;
   static ByteSize init_thread_offset() { return in_ByteSize(offset_of(InstanceKlass, _init_thread)); }
 
   // subclass/subinterface checks
