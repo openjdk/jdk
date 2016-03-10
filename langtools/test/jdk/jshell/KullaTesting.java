@@ -191,14 +191,14 @@ public class KullaTesting {
         return key;
     }
 
-    public MethodSnippet assertEvalUnresolvedException(String input, String name, int unresolvedSize, int diagnosticsSize) {
+    public DeclarationSnippet assertEvalUnresolvedException(String input, String name, int unresolvedSize, int diagnosticsSize) {
         List<SnippetEvent> events = assertEval(input, null, UnresolvedReferenceException.class, DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, null);
         SnippetEvent ste = events.get(0);
-        MethodSnippet methodKey = ((UnresolvedReferenceException) ste.exception()).getMethodSnippet();
-        assertEquals(methodKey.name(), name, "Given input: " + input + ", checking name");
-        assertEquals(getState().unresolvedDependencies(methodKey).size(), unresolvedSize, "Given input: " + input + ", checking unresolved");
-        assertEquals(getState().diagnostics(methodKey).size(), diagnosticsSize, "Given input: " + input + ", checking diagnostics");
-        return methodKey;
+        DeclarationSnippet sn = ((UnresolvedReferenceException) ste.exception()).getSnippet();
+        assertEquals(sn.name(), name, "Given input: " + input + ", checking name");
+        assertEquals(getState().unresolvedDependencies(sn).size(), unresolvedSize, "Given input: " + input + ", checking unresolved");
+        assertEquals(getState().diagnostics(sn).size(), diagnosticsSize, "Given input: " + input + ", checking diagnostics");
+        return sn;
     }
 
     public Snippet assertKeyMatch(String input, boolean isExecutable, SubKind expectedSubKind, STEInfo mainInfo, STEInfo... updates) {

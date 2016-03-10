@@ -53,6 +53,7 @@ import java.util.Set;
 import jdk.jshell.ClassTracker.ClassInfo;
 import jdk.jshell.Key.ErroneousKey;
 import jdk.jshell.Key.MethodKey;
+import jdk.jshell.Key.TypeDeclKey;
 import jdk.jshell.Snippet.SubKind;
 import jdk.jshell.TaskFactory.AnalyzeTask;
 import jdk.jshell.TaskFactory.BaseTask;
@@ -300,7 +301,8 @@ class Eval {
         ClassTree klassTree = (ClassTree) unitTree;
         String name = klassTree.getSimpleName().toString();
         Wrap guts = Wrap.classMemberWrap(compileSource);
-        Wrap corralled = null; //TODO
+        TypeDeclKey key = state.keyMap.keyForClass(name);
+        Wrap corralled = new Corraller(key.index(), compileSource, dis).corralType(klassTree, 1);
         Snippet snip = new TypeDeclSnippet(state.keyMap.keyForClass(name), userSource, guts,
                 name, snippetKind,
                 corralled, tds.declareReferences(), tds.bodyReferences());
@@ -362,12 +364,8 @@ class Eval {
         String unitName = mt.getName().toString();
         Wrap guts = Wrap.classMemberWrap(compileSource);
 
-        Range modRange = dis.treeToRange(mt.getModifiers());
-        Range tpRange = dis.treeListToRange(mt.getTypeParameters());
         Range typeRange = dis.treeToRange(mt.getReturnType());
         String name = mt.getName().toString();
-        Range paramRange = dis.treeListToRange(mt.getParameters());
-        Range throwsRange = dis.treeListToRange(mt.getThrows());
 
         String parameterTypes
                 = mt.getParameters()
@@ -378,8 +376,7 @@ class Eval {
 
         MethodKey key = state.keyMap.keyForMethod(name, parameterTypes);
         // rewrap with correct Key index
-        Wrap corralled = Wrap.corralledMethod(compileSource,
-                modRange, tpRange, typeRange, name, paramRange, throwsRange, key.index());
+        Wrap corralled = new Corraller(key.index(), compileSource, dis).corralMethod(mt);
         Snippet snip = new MethodSnippet(key, userSource, guts,
                 unitName, signature,
                 corralled, tds.declareReferences(), tds.bodyReferences());
