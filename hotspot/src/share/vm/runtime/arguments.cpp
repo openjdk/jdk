@@ -221,8 +221,6 @@ void Arguments::init_system_properties() {
 
   // Set OS specific system properties values
   os::init_system_properties_values();
-
-  JVMCI_ONLY(JVMCIRuntime::init_system_properties(&_system_properties);)
 }
 
 // Update/Initialize System properties after JDK version number is known
