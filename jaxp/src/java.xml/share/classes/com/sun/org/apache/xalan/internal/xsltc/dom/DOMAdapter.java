@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,9 +16,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: DOMAdapter.java,v 1.2.4.1 2005/09/06 06:07:28 pvedula Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.dom;
@@ -55,8 +52,6 @@ public final class DOMAdapter implements DOM {
     private int[]   _reverse = null;
     private short[] _NSmapping = null;
     private short[] _NSreverse = null;
-
-    private StripFilter _filter = null;
 
     private int _multiDOMMask;
 
@@ -165,9 +160,7 @@ public final class DOMAdapter implements DOM {
         }
     }
 
-    public void setFilter(StripFilter filter) {
-        _filter = filter;
-    }
+    public void setFilter(StripFilter filter) {}
 
     public DTMAxisIterator getTypedChildren(final int type) {
         final int[] reverse = getReverse();
@@ -463,5 +456,9 @@ public final class DOMAdapter implements DOM {
 
     public Map<String, Integer> getElementsWithIDs() {
         return _dom.getElementsWithIDs();
+    }
+
+    public void release() {
+        _dom.release();
     }
 }
