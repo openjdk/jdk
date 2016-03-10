@@ -74,6 +74,10 @@ if [ ! -d $DEVKIT_ROOT/VC ]; then
     cp $DEVKIT_ROOT/VC/redist/x86/$MSVCP_DLL $DEVKIT_ROOT/VC/bin/
     cp $DEVKIT_ROOT/VC/redist/x64/$MSVCR_DLL $DEVKIT_ROOT/VC/bin/amd64/
     cp $DEVKIT_ROOT/VC/redist/x64/$MSVCP_DLL $DEVKIT_ROOT/VC/bin/amd64/
+    # The msvcdis dll is needed to run some of the tools in VC/bin but is not
+    # shipped in that directory. Copy it from the common dir.
+    cp "$VS_INSTALL_DIR/Common7/IDE/msvcdis${VS_VERSION_NUM_NODOT}.dll" \
+        $DEVKIT_ROOT/VC/bin/
 fi
 
 ################################################################################
