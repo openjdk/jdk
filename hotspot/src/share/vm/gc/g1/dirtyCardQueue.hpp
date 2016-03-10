@@ -52,21 +52,24 @@ public:
   // Process queue entries and release resources.
   void flush() { flush_impl(); }
 
-  // Apply the closure to all elements, and reset the index to make the
-  // buffer empty.  If a closure application returns "false", return
-  // "false" immediately, halting the iteration.  If "consume" is true,
-  // deletes processed entries from logs.
+  // Apply the closure to the elements from _index to _sz.  If all
+  // closure applications return true, then returns true.  Stops
+  // processing after the first closure application that returns
+  // false, and returns false from this function.  If "consume" is
+  // true, _index is updated to follow the last processed element.
   bool apply_closure(CardTableEntryClosure* cl,
                      bool consume = true,
                      uint worker_i = 0);
 
-  // Apply the closure to all elements of "buf", down to "index"
-  // (inclusive.)  If returns "false", then a closure application returned
-  // "false", and we return immediately.  If "consume" is true, entries are
-  // set to NULL as they are processed, so they will not be processed again
-  // later.
+  // Apply the closure to the elements of "node" from it's index to
+  // buffer_size.  If all closure applications return true, then
+  // returns true.  Stops processing after the first closure
+  // application that returns false, and returns false from this
+  // function.  If "consume" is true, the node's index is updated to
+  // follow the last processed element.
   static bool apply_closure_to_buffer(CardTableEntryClosure* cl,
-                                      void** buf, size_t index, size_t sz,
+                                      BufferNode* node,
+                                      size_t buffer_size,
                                       bool consume = true,
                                       uint worker_i = 0);
   void **get_buf() { return _buf;}
@@ -94,8 +97,7 @@ class DirtyCardQueueSet: public PtrQueueSet {
 
   DirtyCardQueue _shared_dirty_card_queue;
 
-  // Override.
-  bool mut_process_buffer(void** buf);
+  bool mut_process_buffer(BufferNode* node);
 
   // Protected by the _cbl_mon.
   FreeIdSet* _free_ids;
@@ -107,6 +109,9 @@ class DirtyCardQueueSet: public PtrQueueSet {
 
   // Current buffer node used for parallel iteration.
   BufferNode* volatile _cur_par_buffer_node;
+
+  void concatenate_log(DirtyCardQueue& dcq);
+
 public:
   DirtyCardQueueSet(bool notify_when_complete = true);
 
@@ -126,12 +131,13 @@ public:
   static void handle_zero_index_for_thread(JavaThread* t);
 
   // If there exists some completed buffer, pop it, then apply the
-  // specified closure to all its elements, nulling out those elements
-  // processed.  If all elements are processed, returns "true".  If no
-  // completed buffers exist, returns false.  If a completed buffer exists,
-  // but is only partially completed before a "yield" happens, the
-  // partially completed buffer (with its processed elements set to NULL)
-  // is returned to the completed buffer set, and this call returns false.
+  // specified closure to its active elements.  If all active elements
+  // are processed, returns "true".  If no completed buffers exist,
+  // returns false.  If a completed buffer exists, but is only
+  // partially completed before a "yield" happens, the partially
+  // completed buffer (with its index updated to exclude the processed
+  // elements) is returned to the completed buffer set, and this call
+  // returns false.
   bool apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
                                          uint worker_i,
                                          size_t stop_at,
@@ -139,13 +145,10 @@ public:
 
   BufferNode* get_completed_buffer(size_t stop_at);
 
-  // Applies the current closure to all completed buffers,
-  // non-consumptively.
-  void apply_closure_to_all_completed_buffers(CardTableEntryClosure* cl);
-
   void reset_for_par_iteration() { _cur_par_buffer_node = _completed_buffers_head; }
   // Applies the current closure to all completed buffers, non-consumptively.
-  // Parallel version.
+  // Can be used in parallel, all callers using the iteration state initialized
+  // by reset_for_par_iteration.
   void par_apply_closure_to_all_completed_buffers(CardTableEntryClosure* cl);
 
   DirtyCardQueue* shared_dirty_card_queue() {
