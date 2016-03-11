@@ -39,6 +39,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
@@ -1783,6 +1784,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _verifier = new G1HeapVerifier(this);
 
   _allocator = G1Allocator::create_allocator(this);
+
+  _heap_sizing_policy = G1HeapSizingPolicy::create(this, _g1_policy->analytics());
+
   _humongous_object_threshold_in_words = humongous_threshold_for(HeapRegion::GrainWords);
 
   // Override the default _filler_array_max_size so that no humongous filler
@@ -3408,7 +3412,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         _allocator->init_mutator_alloc_region();
 
         {
-          size_t expand_bytes = g1_policy()->expansion_amount();
+          size_t expand_bytes = _heap_sizing_policy->expansion_amount();
           if (expand_bytes > 0) {
             size_t bytes_before = capacity();
             // No need for an ergo logging here,

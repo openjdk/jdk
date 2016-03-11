@@ -88,6 +88,10 @@ public:
     return _last_pause_time_ratio;
   }
 
+  uint number_of_recorded_pause_times() const {
+    return NumPrevPausesForHeuristics;
+  }
+
   void append_prev_collection_pause_end_ms(double ms) {
     _prev_collection_pause_end_ms += ms;
   }
