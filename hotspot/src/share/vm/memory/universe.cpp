@@ -376,8 +376,7 @@ void Universe::genesis(TRAPS) {
     // We can allocate directly in the permanent generation, so we do.
     int size;
     if (UseConcMarkSweepGC) {
-      warning("Using +FullGCALot with concurrent mark sweep gc "
-              "will not force all objects to relocate");
+      log_warning(gc)("Using +FullGCALot with concurrent mark sweep gc will not force all objects to relocate");
       size = FullGCALotDummies;
     } else {
       size = FullGCALotDummies * 2;

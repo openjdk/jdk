@@ -2467,9 +2467,8 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
   for (cur_region = beg_region; cur_region < new_top_region; ++cur_region) {
     const RegionData* const c = sd.region(cur_region);
     if (!c->completed()) {
-      warning("region " SIZE_FORMAT " not filled:  "
-              "destination_count=%u",
-              cur_region, c->destination_count());
+      log_warning(gc)("region " SIZE_FORMAT " not filled: destination_count=%u",
+                      cur_region, c->destination_count());
       issued_a_warning = true;
     }
   }
@@ -2477,9 +2476,8 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
   for (cur_region = new_top_region; cur_region < old_top_region; ++cur_region) {
     const RegionData* const c = sd.region(cur_region);
     if (!c->available()) {
-      warning("region " SIZE_FORMAT " not empty:   "
-              "destination_count=%u",
-              cur_region, c->destination_count());
+      log_warning(gc)("region " SIZE_FORMAT " not empty: destination_count=%u",
+                      cur_region, c->destination_count());
       issued_a_warning = true;
     }
   }
@@ -3013,7 +3011,7 @@ jlong PSParallelCompact::millis_since_last_gc() {
   jlong ret_val = now - _time_of_last_gc;
   // XXX See note in genCollectedHeap::millis_since_last_gc().
   if (ret_val < 0) {
-    NOT_PRODUCT(warning("time warp: " JLONG_FORMAT, ret_val);)
+    NOT_PRODUCT(log_warning(gc)("time warp: " JLONG_FORMAT, ret_val);)
     return 0;
   }
   return ret_val;

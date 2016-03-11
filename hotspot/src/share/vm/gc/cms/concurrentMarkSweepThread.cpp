@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ void ConcurrentMarkSweepThread::run() {
   // From this time Thread::current() should be working.
   assert(this == Thread::current(), "just checking");
   if (BindCMSThreadToCPU && !os::bind_to_processor(CPUForCMSThread)) {
-    warning("Couldn't bind CMS thread to processor " UINTX_FORMAT, CPUForCMSThread);
+    log_warning(gc)("Couldn't bind CMS thread to processor " UINTX_FORMAT, CPUForCMSThread);
   }
   // Wait until Universe::is_fully_initialized()
   {
@@ -358,7 +358,7 @@ void ConcurrentMarkSweepThread::wait_on_cms_lock_for_scavenge(long t_millis) {
 
     // Too many loops warning
     if(++loop_count == 0) {
-      warning("wait_on_cms_lock_for_scavenge() has looped %u times", loop_count - 1);
+      log_warning(gc)("wait_on_cms_lock_for_scavenge() has looped %u times", loop_count - 1);
     }
   }
 }

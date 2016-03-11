@@ -502,7 +502,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   {
     MutexLockerEx x(_markBitMap.lock(), Mutex::_no_safepoint_check_flag);
     if (!_markBitMap.allocate(_span)) {
-      warning("Failed to allocate CMS Bit Map");
+      log_warning(gc)("Failed to allocate CMS Bit Map");
       return;
     }
     assert(_markBitMap.covers(_span), "_markBitMap inconsistency?");
@@ -513,7 +513,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   }
 
   if (!_markStack.allocate(MarkStackSize)) {
-    warning("Failed to allocate CMS Marking Stack");
+    log_warning(gc)("Failed to allocate CMS Marking Stack");
     return;
   }
 
@@ -527,8 +527,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
       _conc_workers = new YieldingFlexibleWorkGang("CMS Thread",
                                  ConcGCThreads, true);
       if (_conc_workers == NULL) {
-        warning("GC/CMS: _conc_workers allocation failure: "
-              "forcing -CMSConcurrentMTEnabled");
+        log_warning(gc)("GC/CMS: _conc_workers allocation failure: forcing -CMSConcurrentMTEnabled");
         CMSConcurrentMTEnabled = false;
       } else {
         _conc_workers->initialize_workers();
@@ -559,7 +558,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
         && num_queues > 0) {
       _task_queues = new OopTaskQueueSet(num_queues);
       if (_task_queues == NULL) {
-        warning("task_queues allocation failure.");
+        log_warning(gc)("task_queues allocation failure.");
         return;
       }
       _hash_seed = NEW_C_HEAP_ARRAY(int, num_queues, mtGC);
@@ -567,7 +566,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
       for (i = 0; i < num_queues; i++) {
         PaddedOopTaskQueue *q = new PaddedOopTaskQueue();
         if (q == NULL) {
-          warning("work_queue allocation failure.");
+          log_warning(gc)("work_queue allocation failure.");
           return;
         }
         _task_queues->register_queue(i, q);
@@ -5657,13 +5656,13 @@ bool CMSBitMap::allocate(MemRegion mr) {
   ReservedSpace brs(ReservedSpace::allocation_align_size_up(
                      (_bmWordSize >> (_shifter + LogBitsPerByte)) + 1));
   if (!brs.is_reserved()) {
-    warning("CMS bit map allocation failure");
+    log_warning(gc)("CMS bit map allocation failure");
     return false;
   }
   // For now we'll just commit all of the bit map up front.
   // Later on we'll try to be more parsimonious with swap.
   if (!_virtual_space.initialize(brs, brs.size())) {
-    warning("CMS bit map backing store failure");
+    log_warning(gc)("CMS bit map backing store failure");
     return false;
   }
   assert(_virtual_space.committed_size() == brs.size(),
@@ -5749,11 +5748,11 @@ bool CMSMarkStack::allocate(size_t size) {
   ReservedSpace rs(ReservedSpace::allocation_align_size_up(
                    size * sizeof(oop)));
   if (!rs.is_reserved()) {
-    warning("CMSMarkStack allocation failure");
+    log_warning(gc)("CMSMarkStack allocation failure");
     return false;
   }
   if (!_virtual_space.initialize(rs, rs.size())) {
-    warning("CMSMarkStack backing store failure");
+    log_warning(gc)("CMSMarkStack backing store failure");
     return false;
   }
   assert(_virtual_space.committed_size() == rs.size(),
