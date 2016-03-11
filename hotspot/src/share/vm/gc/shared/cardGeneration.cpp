@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ bool CardGeneration::grow_to_reserved() {
   const size_t remaining_bytes = _virtual_space.uncommitted_size();
   if (remaining_bytes > 0) {
     success = grow_by(remaining_bytes);
-    DEBUG_ONLY(if (!success) warning("grow to reserved failed");)
+    DEBUG_ONLY(if (!success) log_warning(gc)("grow to reserved failed");)
   }
   return success;
 }

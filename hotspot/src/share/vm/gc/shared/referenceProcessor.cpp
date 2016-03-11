@@ -161,8 +161,8 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
 
   NOT_PRODUCT(
   if (now < _soft_ref_timestamp_clock) {
-    warning("time warp: " JLONG_FORMAT " to " JLONG_FORMAT,
-            _soft_ref_timestamp_clock, now);
+    log_warning(gc)("time warp: " JLONG_FORMAT " to " JLONG_FORMAT,
+                    _soft_ref_timestamp_clock, now);
   }
   )
   // The values of now and _soft_ref_timestamp_clock are set using
