@@ -118,9 +118,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _max_survivor_regions(0),
 
   // add here any more surv rate groups
-  _recorded_survivor_regions(0),
-  _recorded_survivor_head(NULL),
-  _recorded_survivor_tail(NULL),
   _survivors_age_table(true),
 
   _gc_overhead_perc(0.0),
@@ -430,7 +427,7 @@ G1CollectorPolicy::YoungTargetLengths G1CollectorPolicy::young_list_target_lengt
   // Calculate the absolute and desired min bounds first.
 
   // This is how many young regions we already have (currently: the survivors).
-  uint base_min_length = recorded_survivor_regions();
+  const uint base_min_length = _g1->young_list()->survivor_length();
   uint desired_min_length = calculate_young_list_desired_min_length(base_min_length);
   // This is the absolute minimum young length. Ensure that we
   // will at least have one eden region available for allocation.
@@ -481,7 +478,7 @@ G1CollectorPolicy::YoungTargetLengths G1CollectorPolicy::young_list_target_lengt
     young_list_target_length = desired_min_length;
   }
 
-  assert(young_list_target_length > recorded_survivor_regions(),
+  assert(young_list_target_length > base_min_length,
          "we should be able to allocate at least one eden region");
   assert(young_list_target_length >= absolute_min_length, "post-condition");
 
@@ -595,8 +592,8 @@ G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
 
 double G1CollectorPolicy::predict_survivor_regions_evac_time() const {
   double survivor_regions_evac_time = 0.0;
-  for (HeapRegion * r = _recorded_survivor_head;
-       r != NULL && r != _recorded_survivor_tail->get_next_young_region();
+  for (HeapRegion * r = _g1->young_list()->first_survivor_region();
+       r != NULL && r != _g1->young_list()->last_survivor_region()->get_next_young_region();
        r = r->get_next_young_region()) {
     survivor_regions_evac_time += predict_region_elapsed_time_ms(r, collector_state()->gcs_are_young());
   }
@@ -699,8 +696,6 @@ void G1CollectorPolicy::record_full_collection_end() {
 
   _short_lived_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups
-
-  record_survivor_regions(0, NULL, NULL);
 
   _free_regions_at_end_of_collection = _g1->num_free_regions();
   // Reset survivors SurvRateGroup.
