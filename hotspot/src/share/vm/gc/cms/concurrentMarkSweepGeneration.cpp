@@ -1412,7 +1412,7 @@ void CMSCollector::acquire_control_and_collect(bool full,
     if (_foregroundGCShouldWait) {
       // We are going to be waiting for action for the CMS thread;
       // it had better not be gone (for instance at shutdown)!
-      assert(ConcurrentMarkSweepThread::cmst() != NULL,
+      assert(ConcurrentMarkSweepThread::cmst() != NULL && !ConcurrentMarkSweepThread::cmst()->has_terminated(),
              "CMS thread must be running");
       // Wait here until the background collector gives us the go-ahead
       ConcurrentMarkSweepThread::clear_CMS_flag(
@@ -3648,7 +3648,7 @@ void CMSCollector::abortable_preclean() {
     // XXX FIX ME!!! YSR
     size_t loops = 0, workdone = 0, cumworkdone = 0, waited = 0;
     while (!(should_abort_preclean() ||
-             ConcurrentMarkSweepThread::should_terminate())) {
+             ConcurrentMarkSweepThread::cmst()->should_terminate())) {
       workdone = preclean_work(CMSPrecleanRefLists2, CMSPrecleanSurvivors2);
       cumworkdone += workdone;
       loops++;
