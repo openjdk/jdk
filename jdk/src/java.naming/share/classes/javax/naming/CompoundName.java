@@ -82,7 +82,7 @@ import java.util.Properties;
  *      attribute-value-assertions when specifying multiple attribute/value
  *      pairs. (e.g. ","  in age=65,gender=male).
  *  <dt>jndi.syntax.separator.typeval
- *  <dd>If present, specifies the string that separators attribute
+ *  <dd>If present, specifies the string that separates attribute
  *              from value (e.g. "=" in "age=65")
  *</dl>
  * These properties are interpreted according to the following rules:
