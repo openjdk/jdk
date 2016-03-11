@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,6 @@ void CollectionSetChooser::sort_regions() {
   verify();
 }
 
-
 void CollectionSetChooser::add_region(HeapRegion* hr) {
   assert(!hr->is_pinned(),
          "Pinned region shouldn't be added to the collection set (index %u)", hr->hrm_index());
@@ -210,4 +209,67 @@ void CollectionSetChooser::clear() {
   _front = 0;
   _end = 0;
   _remaining_reclaimable_bytes = 0;
+}
+
+class ParKnownGarbageHRClosure: public HeapRegionClosure {
+  G1CollectedHeap* _g1h;
+  CSetChooserParUpdater _cset_updater;
+
+public:
+  ParKnownGarbageHRClosure(CollectionSetChooser* hrSorted,
+                           uint chunk_size) :
+    _g1h(G1CollectedHeap::heap()),
+    _cset_updater(hrSorted, true /* parallel */, chunk_size) { }
+
+  bool doHeapRegion(HeapRegion* r) {
+    // Do we have any marking information for this region?
+    if (r->is_marked()) {
+      // We will skip any region that's currently used as an old GC
+      // alloc region (we should not consider those for collection
+      // before we fill them up).
+      if (_cset_updater.should_add(r) && !_g1h->is_old_gc_alloc_region(r)) {
+        _cset_updater.add_region(r);
+      }
+    }
+    return false;
+  }
 };
+
+class ParKnownGarbageTask: public AbstractGangTask {
+  CollectionSetChooser* _hrSorted;
+  uint _chunk_size;
+  G1CollectedHeap* _g1;
+  HeapRegionClaimer _hrclaimer;
+
+public:
+  ParKnownGarbageTask(CollectionSetChooser* hrSorted, uint chunk_size, uint n_workers) :
+      AbstractGangTask("ParKnownGarbageTask"),
+      _hrSorted(hrSorted), _chunk_size(chunk_size),
+      _g1(G1CollectedHeap::heap()), _hrclaimer(n_workers) {}
+
+  void work(uint worker_id) {
+    ParKnownGarbageHRClosure parKnownGarbageCl(_hrSorted, _chunk_size);
+    _g1->heap_region_par_iterate(&parKnownGarbageCl, worker_id, &_hrclaimer);
+  }
+};
+
+uint CollectionSetChooser::calculate_parallel_work_chunk_size(uint n_workers, uint n_regions) const {
+  assert(n_workers > 0, "Active gc workers should be greater than 0");
+  const uint overpartition_factor = 4;
+  const uint min_chunk_size = MAX2(n_regions / n_workers, 1U);
+  return MAX2(n_regions / (n_workers * overpartition_factor), min_chunk_size);
+}
+
+void CollectionSetChooser::rebuild(WorkGang* workers, uint n_regions) {
+  clear();
+
+  uint n_workers = workers->active_workers();
+
+  uint chunk_size = calculate_parallel_work_chunk_size(n_workers, n_regions);
+  prepare_for_par_region_addition(n_workers, n_regions, chunk_size);
+
+  ParKnownGarbageTask par_known_garbage_task(this, chunk_size, n_workers);
+  workers->run_task(&par_known_garbage_task);
+
+  sort_regions();
+}
