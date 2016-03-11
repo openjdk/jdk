@@ -38,13 +38,8 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
 
   double _vtime_start;  // Initial virtual time.
   double _vtime_accum;  // Accumulated virtual time.
-
   double _vtime_mark_accum;
 
- public:
-  virtual void run();
-
- private:
   G1ConcurrentMark*                _cm;
 
   enum State {
@@ -93,9 +88,6 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   // as the CM thread might take some time to wake up before noticing
   // that started() is set and set in_progress().
   bool during_cycle()      { return !idle(); }
-
-  // shutdown
-  void stop();
 };
 
 #endif // SHARE_VM_GC_G1_CONCURRENTMARKTHREAD_HPP

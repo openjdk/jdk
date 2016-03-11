@@ -72,7 +72,6 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   void stop_service();
 
 public:
-  virtual void run();
   // Constructor
   ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread* next,
                            CardTableEntryClosure* refine_closure,
@@ -84,9 +83,6 @@ public:
   double vtime_accum() { return _vtime_accum; }
 
   ConcurrentG1Refine* cg1r() { return _cg1r;     }
-
-  // shutdown
-  void stop();
 };
 
 #endif // SHARE_VM_GC_G1_CONCURRENTG1REFINETHREAD_HPP
