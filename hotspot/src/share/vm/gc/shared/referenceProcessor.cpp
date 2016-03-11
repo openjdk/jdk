@@ -645,9 +645,7 @@ public:
                     OopClosure& keep_alive,
                     VoidClosure& complete_gc)
   {
-    Thread* thr = Thread::current();
-    int refs_list_index = ((WorkerThread*)thr)->id();
-    _ref_processor.process_phase1(_refs_lists[refs_list_index], _policy,
+    _ref_processor.process_phase1(_refs_lists[i], _policy,
                                   &is_alive, &keep_alive, &complete_gc);
   }
 private:
@@ -683,11 +681,6 @@ public:
                     OopClosure& keep_alive,
                     VoidClosure& complete_gc)
   {
-    // Don't use "refs_list_index" calculated in this way because
-    // balance_queues() has moved the Ref's into the first n queues.
-    // Thread* thr = Thread::current();
-    // int refs_list_index = ((WorkerThread*)thr)->id();
-    // _ref_processor.process_phase3(_refs_lists[refs_list_index], _clear_referent,
     _ref_processor.process_phase3(_refs_lists[i], _clear_referent,
                                   &is_alive, &keep_alive, &complete_gc);
   }
