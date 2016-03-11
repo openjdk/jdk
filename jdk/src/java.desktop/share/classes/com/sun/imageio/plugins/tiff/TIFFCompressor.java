@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,13 @@ import javax.imageio.stream.ImageOutputStream;
 public abstract class TIFFCompressor {
 
     /**
-     * The <code>ImageWriter</code> calling this
-     * <code>TIFFCompressor</code>.
+     * The {@code ImageWriter} calling this
+     * {@code TIFFCompressor}.
      */
     protected ImageWriter writer;
 
     /**
-     * The <code>IIOMetadata</code> object containing metadata for the
+     * The {@code IIOMetadata} object containing metadata for the
      * current image.
      */
     protected IIOMetadata metadata;
@@ -63,7 +63,7 @@ public abstract class TIFFCompressor {
     protected boolean isCompressionLossless;
 
     /**
-     * The <code>ImageOutputStream</code> to be written.
+     * The {@code ImageOutputStream} to be written.
      */
     protected ImageOutputStream stream;
 
@@ -75,26 +75,26 @@ public abstract class TIFFCompressor {
      * to provide the implementation of the compression algorithm of an
      * unsupported compression type.
      *
-     * <p>The parameters <code>compressionTagValue</code> and
-     * <code>isCompressionLossless</code> are provided to accomodate
+     * <p>The parameters {@code compressionTagValue} and
+     * {@code isCompressionLossless} are provided to accomodate
      * compression types which are unknown. A compression type is
      * "known" if it is either among those already supported by the
      * TIFF writer (see {@link TIFFImageWriteParam}), or is listed in
      * the TIFF 6.0 specification but not supported. If the compression
-     * type is unknown, the <code>compressionTagValue</code> and
-     * <code>isCompressionLossless</code> parameters are ignored.</p>
+     * type is unknown, the {@code compressionTagValue} and
+     * {@code isCompressionLossless} parameters are ignored.</p>
      *
      * @param compressionType The name of the compression type.
      * @param compressionTagValue The value to be assigned to the TIFF
      * <i>Compression</i> tag in the TIFF image metadata; ignored if
-     * <code>compressionType</code> is a known type.
+     * {@code compressionType} is a known type.
      * @param isCompressionLossless Whether the compression is lossless;
-     * ignored if <code>compressionType</code> is a known type.
+     * ignored if {@code compressionType} is a known type.
      *
-     * @throws NullPointerException if <code>compressionType</code> is
-     * <code>null</code>.
-     * @throws IllegalArgumentException if <code>compressionTagValue</code> is
-     * less <code>1</code>.
+     * @throws NullPointerException if {@code compressionType} is
+     * {@code null}.
+     * @throws IllegalArgumentException if {@code compressionTagValue} is
+     * less {@code 1}.
      */
     public TIFFCompressor(String compressionType,
                           int compressionTagValue,
@@ -163,9 +163,9 @@ public abstract class TIFFCompressor {
     }
 
     /**
-     * Sets the <code>ImageOutputStream</code> to be written.
+     * Sets the {@code ImageOutputStream} to be written.
      *
-     * @param stream an <code>ImageOutputStream</code> to be written.
+     * @param stream an {@code ImageOutputStream} to be written.
      *
      * @see #getStream
      */
@@ -174,9 +174,9 @@ public abstract class TIFFCompressor {
     }
 
     /**
-     * Returns the <code>ImageOutputStream</code> that will be written.
+     * Returns the {@code ImageOutputStream} that will be written.
      *
-     * @return an <code>ImageOutputStream</code>.
+     * @return an {@code ImageOutputStream}.
      *
      * @see #setStream(ImageOutputStream)
      */
@@ -185,9 +185,9 @@ public abstract class TIFFCompressor {
     }
 
     /**
-     * Sets the value of the <code>writer</code> field.
+     * Sets the value of the {@code writer} field.
      *
-     * @param writer the current <code>ImageWriter</code>.
+     * @param writer the current {@code ImageWriter}.
      *
      * @see #getWriter()
      */
@@ -196,9 +196,9 @@ public abstract class TIFFCompressor {
     }
 
     /**
-     * Returns the current <code>ImageWriter</code>.
+     * Returns the current {@code ImageWriter}.
      *
-     * @return an <code>ImageWriter</code>.
+     * @return an {@code ImageWriter}.
      *
      * @see #setWriter(ImageWriter)
      */
@@ -207,9 +207,9 @@ public abstract class TIFFCompressor {
     }
 
     /**
-     * Sets the value of the <code>metadata</code> field.
+     * Sets the value of the {@code metadata} field.
      *
-     * @param metadata the <code>IIOMetadata</code> object for the
+     * @param metadata the {@code IIOMetadata} object for the
      * image being written.
      *
      * @see #getMetadata()
@@ -219,9 +219,9 @@ public abstract class TIFFCompressor {
     }
 
     /**
-     * Returns the current <code>IIOMetadata</code> object.
+     * Returns the current {@code IIOMetadata} object.
      *
-     * @return the <code>IIOMetadata</code> object for the image being
+     * @return the {@code IIOMetadata} object for the image being
      * written.
      *
      * @see #setMetadata(IIOMetadata)
@@ -232,15 +232,15 @@ public abstract class TIFFCompressor {
 
     /**
      * Encodes the supplied image data, writing to the currently set
-     * <code>ImageOutputStream</code>.
+     * {@code ImageOutputStream}.
      *
-     * @param b an array of <code>byte</code>s containing the packed
+     * @param b an array of {@code byte}s containing the packed
      * but uncompressed image data.
      * @param off the starting offset of the data to be written in the
-     * array <code>b</code>.
+     * array {@code b}.
      * @param width the width of the rectangle of pixels to be written.
      * @param height the height of the rectangle of pixels to be written.
-     * @param bitsPerSample an array of <code>int</code>s indicting
+     * @param bitsPerSample an array of {@code int}s indicting
      * the number of bits used to represent each image sample within
      * a pixel.
      * @param scanlineStride the number of bytes separating each
@@ -249,7 +249,7 @@ public abstract class TIFFCompressor {
      * @return the number of bytes written.
      *
      * @throws IOException if the supplied data cannot be encoded by
-     * this <code>TIFFCompressor</code>, or if any I/O error occurs
+     * this {@code TIFFCompressor}, or if any I/O error occurs
      * during writing.
      */
     public abstract int encode(byte[] b, int off,

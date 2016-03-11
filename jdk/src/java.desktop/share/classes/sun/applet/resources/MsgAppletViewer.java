@@ -74,7 +74,7 @@ public class MsgAppletViewer extends ListResourceBundle {
             {"appletviewer.parse.warning.embed.requireswidth", "Warning: <embed> tag requires width attribute."},
             {"appletviewer.parse.warning.appnotLongersupported", "Warning: <app> tag no longer supported, use <applet> instead:"},
             {"appletviewer.deprecated", "AppletViewer is deprecated."},
-            {"appletviewer.usage", "Usage: appletviewer <options> url(s)\n\nwhere <options> include:\n  -debug                  Start the applet viewer in the Java debugger\n  -encoding <encoding>    Specify character encoding used by HTML files\n  -J<runtime flag>        Pass argument to the java interpreter\n\nThe -J option is non-standard and subject to change without notice."},
+            {"appletviewer.usage", "Usage: appletviewer <options> url(s)\n\nwhere <options> include:\n  -encoding <encoding>    Specify character encoding used by HTML files\n  -J<runtime flag>        Pass argument to the java interpreter\n\nThe -J option is non-standard and subject to change without notice."},
             {"appletviewer.main.err.unsupportedopt", "Unsupported option: {0}"},
             {"appletviewer.main.err.unrecognizedarg", "Unrecognized argument: {0}"},
             {"appletviewer.main.err.dupoption", "Duplicate use of option: {0}"},

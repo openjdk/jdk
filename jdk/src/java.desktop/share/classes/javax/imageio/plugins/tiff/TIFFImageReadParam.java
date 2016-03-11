@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,11 @@ import javax.imageio.ImageReadParam;
  * be provided by this interface.
  *
  * <p> Additional TIFF tags must be organized into
- * <code>TIFFTagSet</code>s.  A <code>TIFFTagSet</code> may be
+ * {@code TIFFTagSet}s.  A {@code TIFFTagSet} may be
  * provided to the reader by means of the
- * <code>addAllowedTagSet</code> method.  By default, the tag sets
- * <code>BaselineTIFFTagSet</code>, <code>FaxTIFFTagSet</code>,
- * <code>ExifParentTIFFTagSet</code>, and <code>GeoTIFFTagSet</code>
+ * {@code addAllowedTagSet} method.  By default, the tag sets
+ * {@code BaselineTIFFTagSet}, {@code FaxTIFFTagSet},
+ * {@code ExifParentTIFFTagSet}, and {@code GeoTIFFTagSet}
  * are included.
  *
  * @since 9
@@ -53,10 +53,10 @@ public class TIFFImageReadParam extends ImageReadParam {
     private List<TIFFTagSet> allowedTagSets = new ArrayList<TIFFTagSet>(4);
 
     /**
-     * Constructs a <code>TIFFImageReadParam</code>.  Tags defined by
-     * the <code>TIFFTagSet</code>s <code>BaselineTIFFTagSet</code>,
-     * <code>FaxTIFFTagSet</code>, <code>ExifParentTIFFTagSet</code>, and
-     * <code>GeoTIFFTagSet</code> will be supported.
+     * Constructs a {@code TIFFImageReadParam}.  Tags defined by
+     * the {@code TIFFTagSet}s {@code BaselineTIFFTagSet},
+     * {@code FaxTIFFTagSet}, {@code ExifParentTIFFTagSet}, and
+     * {@code GeoTIFFTagSet} will be supported.
      *
      * @see BaselineTIFFTagSet
      * @see FaxTIFFTagSet
@@ -71,13 +71,13 @@ public class TIFFImageReadParam extends ImageReadParam {
     }
 
     /**
-     * Adds a <code>TIFFTagSet</code> object to the list of allowed
+     * Adds a {@code TIFFTagSet} object to the list of allowed
      * tag sets.
      *
-     * @param tagSet a <code>TIFFTagSet</code>.
+     * @param tagSet a {@code TIFFTagSet}.
      *
-     * @throws IllegalArgumentException if <code>tagSet</code> is
-     * <code>null</code>.
+     * @throws IllegalArgumentException if {@code tagSet} is
+     * {@code null}.
      */
     public void addAllowedTagSet(TIFFTagSet tagSet) {
         if (tagSet == null) {
@@ -87,15 +87,15 @@ public class TIFFImageReadParam extends ImageReadParam {
     }
 
     /**
-     * Removes a <code>TIFFTagSet</code> object from the list of
-     * allowed tag sets.  Removal is based on the <code>equals</code>
-     * method of the <code>TIFFTagSet</code>, which is normally
+     * Removes a {@code TIFFTagSet} object from the list of
+     * allowed tag sets.  Removal is based on the {@code equals}
+     * method of the {@code TIFFTagSet}, which is normally
      * defined as reference equality.
      *
-     * @param tagSet a <code>TIFFTagSet</code>.
+     * @param tagSet a {@code TIFFTagSet}.
      *
-     * @throws IllegalArgumentException if <code>tagSet</code> is
-     * <code>null</code>.
+     * @throws IllegalArgumentException if {@code tagSet} is
+     * {@code null}.
      */
     public void removeAllowedTagSet(TIFFTagSet tagSet) {
         if (tagSet == null) {
@@ -105,10 +105,10 @@ public class TIFFImageReadParam extends ImageReadParam {
     }
 
     /**
-     * Returns a <code>List</code> containing the allowed
-     * <code>TIFFTagSet</code> objects.
+     * Returns a {@code List} containing the allowed
+     * {@code TIFFTagSet} objects.
      *
-     * @return a <code>List</code> of <code>TIFFTagSet</code>s.
+     * @return a {@code List} of {@code TIFFTagSet}s.
      */
     public List<TIFFTagSet> getAllowedTagSets() {
         return allowedTagSets;
