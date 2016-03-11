@@ -802,5 +802,51 @@ SplashGetScaledImageName(const char* jarName, const char* fileName,
                            float *scaleFactor)
 {
     *scaleFactor = 1;
+#ifndef __linux__
+    return NULL;
+#endif
+    *scaleFactor = getNativeScaleFactor();
+    if (*scaleFactor == 2.0) {
+        char *scaledImgName = NULL;
+        size_t length = 0;
+        char *stringToAppend = ".java-scale2x";
+        char *dupFileName = strdup(fileName);
+        char *fileExtension = strrchr(dupFileName, '.');
+        if (fileExtension == NULL) {
+            length = strlen(dupFileName) + strlen(stringToAppend) + 1;
+            scaledImgName = SAFE_SIZE_ARRAY_ALLOC(malloc, length, sizeof (char));
+            int retVal = snprintf(scaledImgName, length, "%s%s",
+                    dupFileName, stringToAppend);
+            if(retVal < 0 || (retVal != length - 1)) {
+                free(scaledImgName);
+                free(dupFileName);
+                *scaleFactor = 1;
+                return NULL;
+            }
+        } else {
+            int length_without_ext = fileExtension - dupFileName;
+            length = length_without_ext +
+                    strlen(stringToAppend) + strlen(fileExtension) + 1;
+            scaledImgName = SAFE_SIZE_ARRAY_ALLOC(malloc, length, sizeof (char));
+            int retVal = snprintf(scaledImgName, length, "%.*s%s%s",
+                    length_without_ext, dupFileName, stringToAppend, fileExtension);
+            if(retVal < 0 || retVal != length - 1) {
+                free(scaledImgName);
+                free(dupFileName);
+                *scaleFactor = 1;
+                return NULL;
+            }
+        }
+        free(dupFileName);
+        FILE *fp;
+        if (!(fp = fopen(scaledImgName, "r"))) {
+            *scaleFactor = 1;
+            free(scaledImgName);
+            return NULL;
+        }
+        fclose(fp);
+        return scaledImgName;
+    }
     return NULL;
 }
+

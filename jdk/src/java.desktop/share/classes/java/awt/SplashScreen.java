@@ -251,7 +251,7 @@ public final class SplashScreen {
             assert scale > 0;
             if (scale > 0 && scale != 1) {
                 bounds.setSize((int) (bounds.getWidth() / scale),
-                        (int) (bounds.getWidth() / scale));
+                        (int) (bounds.getHeight() / scale));
             }
             return bounds;
         }

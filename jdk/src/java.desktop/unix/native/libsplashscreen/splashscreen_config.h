@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "systemScale.h"
 
 typedef uint32_t rgbquad_t;
 typedef uint16_t word_t;
@@ -57,5 +58,4 @@ typedef XRectangle RECT_T;
 #define INLINE static
 
 #define SPLASHEXPORT
-
 #endif
