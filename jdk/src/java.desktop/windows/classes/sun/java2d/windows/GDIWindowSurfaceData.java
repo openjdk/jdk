@@ -311,13 +311,10 @@ public class GDIWindowSurfaceData extends SurfaceData {
                             int x, int y, int w, int h, int dx, int dy)
     {
         CompositeType comptype = sg2d.imageComp;
-        if (sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE &&
-            sg2d.clipState != SunGraphics2D.CLIP_SHAPE &&
+        if (sg2d.clipState != SunGraphics2D.CLIP_SHAPE &&
             (CompositeType.SrcOverNoEa.equals(comptype) ||
              CompositeType.SrcNoEa.equals(comptype)))
         {
-            x += sg2d.transX;
-            y += sg2d.transY;
             int dstx1 = x + dx;
             int dsty1 = y + dy;
             int dstx2 = dstx1 + w;
