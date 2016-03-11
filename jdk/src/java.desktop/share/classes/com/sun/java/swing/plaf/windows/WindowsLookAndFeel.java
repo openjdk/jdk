@@ -698,7 +698,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
             // DeskTop.
             "Desktop.background", new DesktopProperty(
-                                                 "win.desktop.backgroundColor",
+                                                 "win.mdi.backgroundColor",
                                                   table.get("desktop")),
             "Desktop.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
