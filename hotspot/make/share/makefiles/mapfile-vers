@@ -109,8 +109,7 @@
                 JVM_GetPrimitiveArrayElement;
                 JVM_GetProtectionDomain;
                 JVM_GetStackAccessControlContext;
-                JVM_GetStackTraceDepth;
-                JVM_GetStackTraceElement;
+                JVM_GetStackTraceElements;
                 JVM_GetSystemPackage;
                 JVM_GetSystemPackages;
                 JVM_GetTemporaryDirectory;

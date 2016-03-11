@@ -1049,9 +1049,6 @@ public:
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  develop(size_t, HeapDumpSegmentSize, 1*G,                                 \
-          "Approximate segment size when generating a segmented heap dump") \
-                                                                            \
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
                                                                             \
@@ -2065,9 +2062,6 @@ public:
   develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
           "Metadata allocation failure a lot interval")                     \
                                                                             \
-  develop(bool, TraceMetadataChunkAllocation, false,                        \
-          "Trace chunk metadata allocations")                               \
-                                                                            \
   notproduct(bool, ExecuteInternalVMTests, false,                           \
           "Enable execution of internal VM tests")                          \
                                                                             \
@@ -2774,10 +2768,6 @@ public:
           "Produce histogram of IC misses")                                 \
                                                                             \
   /* interpreter */                                                         \
-  develop(bool, ClearInterpreterLocals, false,                              \
-          "Always clear local variables of interpreter activations upon "   \
-          "entry")                                                          \
-                                                                            \
   product_pd(bool, RewriteBytecodes,                                        \
           "Allow rewriting of bytecodes (bytecodes are not immutable)")     \
                                                                             \

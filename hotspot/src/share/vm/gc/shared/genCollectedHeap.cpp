@@ -1272,7 +1272,7 @@ jlong GenCollectedHeap::millis_since_last_gc() {
   // back a time later than 'now'.
   jlong retVal = now - tolgc_cl.time();
   if (retVal < 0) {
-    NOT_PRODUCT(warning("time warp: " JLONG_FORMAT, retVal);)
+    NOT_PRODUCT(log_warning(gc)("time warp: " JLONG_FORMAT, retVal);)
     return 0;
   }
   return retVal;

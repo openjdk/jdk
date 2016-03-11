@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,19 +514,13 @@ JVM_ENTRY(void, JVM_FillInStackTrace(JNIEnv *env, jobject receiver))
 JVM_END
 
 
-JVM_ENTRY(jint, JVM_GetStackTraceDepth(JNIEnv *env, jobject throwable))
-  JVMWrapper("JVM_GetStackTraceDepth");
-  oop exception = JNIHandles::resolve(throwable);
-  return java_lang_Throwable::get_stack_trace_depth(exception, THREAD);
-JVM_END
-
-
-JVM_ENTRY(jobject, JVM_GetStackTraceElement(JNIEnv *env, jobject throwable, jint index))
-  JVMWrapper("JVM_GetStackTraceElement");
-  JvmtiVMObjectAllocEventCollector oam; // This ctor (throughout this module) may trigger a safepoint/GC
-  oop exception = JNIHandles::resolve(throwable);
-  oop element = java_lang_Throwable::get_stack_trace_element(exception, index, CHECK_NULL);
-  return JNIHandles::make_local(env, element);
+JVM_ENTRY(void, JVM_GetStackTraceElements(JNIEnv *env, jobject throwable, jobjectArray stackTrace))
+  JVMWrapper("JVM_GetStackTraceElements");
+  Handle exception(THREAD, JNIHandles::resolve(throwable));
+  objArrayOop st = objArrayOop(JNIHandles::resolve(stackTrace));
+  objArrayHandle stack_trace(THREAD, st);
+  // Fill in the allocated stack trace
+  java_lang_Throwable::get_stack_trace_elements(exception, stack_trace, CHECK);
 JVM_END
 
 

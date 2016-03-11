@@ -567,7 +567,7 @@ G1CollectedHeap::mem_allocate(size_t word_size,
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-      warning("G1CollectedHeap::mem_allocate retries %d times", try_count);
+      log_warning(gc)("G1CollectedHeap::mem_allocate retries %d times", try_count);
     }
   }
 
@@ -676,8 +676,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-      warning("G1CollectedHeap::attempt_allocation_slow() "
-              "retries %d times", try_count);
+      log_warning(gc)("G1CollectedHeap::attempt_allocation_slow() "
+                      "retries %d times", try_count);
     }
   }
 
@@ -1092,8 +1092,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
 
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-      warning("G1CollectedHeap::attempt_allocation_humongous() "
-              "retries %d times", try_count);
+      log_warning(gc)("G1CollectedHeap::attempt_allocation_humongous() "
+                      "retries %d times", try_count);
     }
   }
 
@@ -2731,7 +2731,7 @@ void G1CollectedHeap::print_on(outputStream* st) const {
   uint young_regions = _young_list->length();
   st->print("%u young (" SIZE_FORMAT "K), ", young_regions,
             (size_t) young_regions * HeapRegion::GrainBytes / K);
-  uint survivor_regions = g1_policy()->recorded_survivor_regions();
+  uint survivor_regions = _young_list->survivor_length();
   st->print("%u survivors (" SIZE_FORMAT "K)", survivor_regions,
             (size_t) survivor_regions * HeapRegion::GrainBytes / K);
   st->cr();
@@ -3404,10 +3404,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // Survivor regions will fail the !is_young() check.
         assert(check_young_list_empty(false /* check_heap */),
           "young list should be empty");
-
-        g1_policy()->record_survivor_regions(_young_list->survivor_length(),
-                                             _young_list->first_survivor_region(),
-                                             _young_list->last_survivor_region());
 
         _young_list->reset_auxilary_lists();
 
