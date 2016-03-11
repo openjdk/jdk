@@ -44,7 +44,6 @@ import java.util.ServiceConfigurationError;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import jdk.internal.misc.VM;
-import sun.misc.ASCIICaseInsensitiveComparator;
 import sun.nio.cs.StandardCharsets;
 import sun.nio.cs.ThreadLocalCoders;
 import sun.security.action.GetPropertyAction;
@@ -579,7 +578,7 @@ public abstract class Charset
                 public SortedMap<String,Charset> run() {
                     TreeMap<String,Charset> m =
                         new TreeMap<>(
-                            ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
+                            String.CASE_INSENSITIVE_ORDER);
                     put(standardProvider.charsets(), m);
                     CharsetProvider[] ecps = ExtendedProviderHolder.extendedProviders;
                     for (CharsetProvider ecp :ecps) {

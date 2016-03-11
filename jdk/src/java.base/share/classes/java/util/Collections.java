@@ -2728,7 +2728,7 @@ public class Collections {
      *  Set s2 = m2.keySet();  // Needn't be in synchronized block
      *      ...
      *  synchronized (m) {  // Synchronizing on m, not m2 or s2!
-     *      Iterator i = s.iterator(); // Must be in synchronized block
+     *      Iterator i = s2.iterator(); // Must be in synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
      *  }
