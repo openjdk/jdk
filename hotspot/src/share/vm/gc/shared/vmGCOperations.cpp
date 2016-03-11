@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ void VM_GC_HeapInspection::doit() {
       // be about to attempt holds value for us only
       // if it happens now and not if it happens in the eventual
       // future.
-      warning("GC locker is held; pre-dump GC was skipped");
+      log_warning(gc)("GC locker is held; pre-dump GC was skipped");
     }
   }
   HeapInspection inspect(_csv_format, _print_help, _print_class_stats,

@@ -170,7 +170,7 @@ class CMSLoopCountWarn: public StackObj {
   inline void tick() {
     _ticks++;
     if (CMSLoopWarn && _ticks % _threshold == 0) {
-      warning("%s has looped " INTX_FORMAT " times %s", _src, _ticks, _msg);
+      log_warning(gc)("%s has looped " INTX_FORMAT " times %s", _src, _ticks, _msg);
     }
   }
 };
