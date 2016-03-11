@@ -83,6 +83,7 @@ class WorkGang;
 class G1Allocator;
 class G1ArchiveAllocator;
 class G1HeapVerifier;
+class G1HeapSizingPolicy;
 
 typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
@@ -360,6 +361,7 @@ protected:
 
   // The current policy object for the collector.
   G1CollectorPolicy* _g1_policy;
+  G1HeapSizingPolicy* _heap_sizing_policy;
 
   G1CollectionSet _collection_set;
 

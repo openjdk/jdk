@@ -59,18 +59,12 @@ class G1CollectorPolicy: public CollectorPolicy {
 
   G1Predictions _predictor;
   G1Analytics* _analytics;
-
   G1MMUTracker* _mmu_tracker;
 
   void initialize_alignments();
   void initialize_flags();
 
   double _full_collection_start_sec;
-
-  // Ratio check data for determining if heap growth is necessary.
-  uint _ratio_over_threshold_count;
-  double _ratio_over_threshold_sum;
-  uint _pauses_since_start;
 
   uint _young_list_target_length;
   uint _young_list_fixed_length;
@@ -82,18 +76,9 @@ class G1CollectorPolicy: public CollectorPolicy {
   SurvRateGroup* _short_lived_surv_rate_group;
   SurvRateGroup* _survivor_surv_rate_group;
 
-  double _gc_overhead_perc;
-
   double _reserve_factor;
   uint   _reserve_regions;
 
-  enum PredictionConstants {
-    NumPrevPausesForHeuristics = 10,
-    // MinOverThresholdForGrowth must be less than NumPrevPausesForHeuristics,
-    // representing the minimum number of pause time ratios that exceed
-    // GCTimeRatio before a heap expansion will be triggered.
-    MinOverThresholdForGrowth = 4
-  };
   G1YoungGenSizer* _young_gen_sizer;
 
   uint _free_regions_at_end_of_collection;
@@ -390,13 +375,6 @@ public:
   // it will set during_initial_mark_pause() to so that the pause does
   // the initial-mark work and start a marking cycle.
   void decide_on_conc_mark_initiation();
-
-  // If an expansion would be appropriate, because recent GC overhead had
-  // exceeded the desired limit, return an amount to expand by.
-  virtual size_t expansion_amount();
-
-  // Clear ratio tracking data used by expansion_amount().
-  void clear_ratio_check_data();
 
   // Print stats on young survival ratio
   void print_yg_surv_rate_info() const;
