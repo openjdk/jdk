@@ -362,9 +362,6 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
                 setWasIcon(f, Boolean.TRUE);
             }
 
-            if (!f.isMaximum()) {
-                f.setNormalBounds(f.getBounds());
-            }
             c.remove(f);
             c.repaint(f.getX(), f.getY(), f.getWidth(), f.getHeight());
             try {
