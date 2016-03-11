@@ -26,11 +26,11 @@ import java.lang.reflect.Field;
 
 /*
  * @test
- * @summary Test Unsafe.copySwapMemory
+ * @summary Test Unsafe.copyMemory
  * @modules java.base/jdk.internal.misc
  */
-public class CopySwap {
-    private static final boolean DEBUG = Boolean.getBoolean("CopySwap.DEBUG");
+public class CopyMemory {
+    private static final boolean DEBUG = Boolean.getBoolean("CopyMemory.DEBUG");
 
     public static final long KB = 1024;
     public static final long MB = KB * 1024;
@@ -62,7 +62,7 @@ public class CopySwap {
         return value == alignDown(value, alignment);
     }
 
-    private CopySwap() {
+    private CopyMemory() {
     }
 
     /**
@@ -166,6 +166,7 @@ public class CopySwap {
         int length = (int)(size / elemSize);
 
         switch ((int)elemSize) {
+        case 1: return new byte[length];
         case 2: return new short[length];
         case 4: return new int[length];
         case 8: return new long[length];
@@ -259,7 +260,7 @@ public class CopySwap {
     }
 
     /**
-     * Verify data in a heap array which has *not* been byte swapped
+     * Verify data which has *not* been byte swapped
      *
      * @param ptr the data to verify
      * @param startOffset the offset (in bytes) at which to start the verification
@@ -267,21 +268,22 @@ public class CopySwap {
      *
      * @throws RuntimeException if an error is found
      */
-    private void verifyUnswappedData(GenericPointer ptr, long startOffset, long size) {
-        for (long elemOffset = startOffset; elemOffset < startOffset + size; elemOffset++) {
-            byte expected = (byte)getVerificationDataForOffset(elemOffset, 1);
+    private void verifyUnswappedData(GenericPointer ptr, long startOffset, long srcOffset, long size) {
+        for (long i = 0; i <  size; i++) {
+            byte expected = (byte)getVerificationDataForOffset(srcOffset + i, 1);
 
             byte actual;
             if (ptr.isOnHeap()) {
-                actual = UNSAFE.getByte(ptr.getObject(), ptr.getOffset() + elemOffset);
+                actual = UNSAFE.getByte(ptr.getObject(), ptr.getOffset() + startOffset + i);
             } else {
-                actual = UNSAFE.getByte(ptr.getOffset() + elemOffset);
+                actual = UNSAFE.getByte(ptr.getOffset() + startOffset + i);
             }
 
             if (expected != actual) {
                 throw new RuntimeException("startOffset: 0x" + Long.toHexString(startOffset) +
+                                           " srcOffset: 0x" + Long.toHexString(srcOffset) +
                                            " size: 0x" + Long.toHexString(size) +
-                                           " elemOffset: 0x" + Long.toHexString(elemOffset) +
+                                           " i: 0x" + Long.toHexString(i) +
                                            " expected: 0x" + Long.toHexString(expected) +
                                            " != actual: 0x" + Long.toHexString(actual));
             }
@@ -294,8 +296,8 @@ public class CopySwap {
      *
      * This method will pre-populate the whole source and destination
      * buffers with verification friendly data. It will then use
-     * copySwapMemory to fill part of the destination buffer with
-     * swapped data from the source. Some space (padding) will be
+     * copypMemory to fill part of the destination buffer with
+     * data from the source. Some space (padding) will be
      * left before and after the data in the destination buffer, which
      * should not be touched/overwritten by the copy call.
      *
@@ -311,25 +313,12 @@ public class CopySwap {
      * @param bufSize the size (in bytes) of the src and dst arrays
      * @param copyBytes the size (in bytes) of the copy to perform,
      *        must be a multiple of elemSize
-     * @param elemSize the size (in bytes) of the elements to byte swap
      *
      * @throws RuntimeException if an error is found
      */
-    private void testCopySwap(GenericPointer src, long srcOffset,
-                              GenericPointer dst, long dstOffset,
-                              long bufSize, long copyBytes, long elemSize) {
-        if (!isAligned(copyBytes, elemSize)) {
-            throw new IllegalArgumentException(
-                "copyBytes (" + copyBytes + ") must be a multiple of elemSize (" + elemSize + ")");
-        }
-        if (src.isOnHeap() && !isAligned(srcOffset, elemSize)) {
-            throw new IllegalArgumentException(
-                "srcOffset (" + srcOffset + ") must be a multiple of elemSize (" + elemSize + ")");
-        }
-        if (dst.isOnHeap() && !isAligned(dstOffset, elemSize)) {
-            throw new IllegalArgumentException(
-                "dstOffset (" + dstOffset + ") must be a multiple of elemSize (" + elemSize + ")");
-        }
+    private void testCopy(GenericPointer src, long srcOffset,
+                          GenericPointer dst, long dstOffset,
+                          long bufSize, long copyBytes) {
         if (srcOffset + copyBytes > bufSize) {
             throw new IllegalArgumentException(
                 "srcOffset (" + srcOffset + ") + copyBytes (" + copyBytes + ") > bufSize (" + bufSize + ")");
@@ -340,16 +329,16 @@ public class CopySwap {
         }
 
         // Initialize the whole source buffer with a verification friendly pattern (no 0x00 bytes)
-        initVerificationData(src, bufSize, elemSize);
+        initVerificationData(src, bufSize, 1);
         if (!src.equals(dst)) {
-            initVerificationData(dst, bufSize, elemSize);
+            initVerificationData(dst, bufSize, 1);
         }
 
         if (DEBUG) {
             System.out.println("===before===");
-            for (int offset = 0; offset < bufSize; offset += elemSize) {
-                long srcValue = getArrayElem(src, offset, elemSize);
-                long dstValue = getArrayElem(dst, offset, elemSize);
+            for (int offset = 0; offset < bufSize; offset++) {
+                long srcValue = getArrayElem(src, offset, 1);
+                long dstValue = getArrayElem(dst, offset, 1);
 
                 System.out.println("offs=0x" + Long.toHexString(Integer.toUnsignedLong(offset)) +
                                  " src=0x" + Long.toHexString(srcValue) +
@@ -358,18 +347,17 @@ public class CopySwap {
         }
 
         // Copy & swap data into the middle of the destination buffer
-        UNSAFE.copySwapMemory(src.getObject(),
-                              src.getOffset() + srcOffset,
-                              dst.getObject(),
-                              dst.getOffset() + dstOffset,
-                              copyBytes,
-                              elemSize);
+        UNSAFE.copyMemory(src.getObject(),
+                          src.getOffset() + srcOffset,
+                          dst.getObject(),
+                          dst.getOffset() + dstOffset,
+                          copyBytes);
 
         if (DEBUG) {
             System.out.println("===after===");
-            for (int offset = 0; offset < bufSize; offset += elemSize) {
-                long srcValue = getArrayElem(src, offset, elemSize);
-                long dstValue = getArrayElem(dst, offset, elemSize);
+            for (int offset = 0; offset < bufSize; offset++) {
+                long srcValue = getArrayElem(src, offset, 1);
+                long dstValue = getArrayElem(dst, offset, 1);
 
                 System.out.println("offs=0x" + Long.toHexString(Integer.toUnsignedLong(offset)) +
                                  " src=0x" + Long.toHexString(srcValue) +
@@ -378,19 +366,19 @@ public class CopySwap {
         }
 
         // Verify the the front padding is unchanged
-        verifyUnswappedData(dst, 0, dstOffset);
+        verifyUnswappedData(dst, 0, 0, dstOffset);
 
-        // Verify swapped data
-        verifySwappedData(dst, srcOffset, dstOffset, copyBytes, elemSize);
+        // Verify copied data
+        verifyUnswappedData(dst, dstOffset, srcOffset, copyBytes);
 
         // Verify that the back back padding is unchanged
         long frontAndDataBytes = dstOffset + copyBytes;
         long trailingBytes = bufSize - frontAndDataBytes;
-        verifyUnswappedData(dst, frontAndDataBytes, trailingBytes);
+        verifyUnswappedData(dst, frontAndDataBytes, frontAndDataBytes, trailingBytes);
     }
 
     /**
-     * Test various configurations copy-swapping from one buffer to the other
+     * Test various configurations copying from one buffer to the other
      *
      * @param src the source buffer to copy from
      * @param dst the destination buffer to copy to
@@ -410,7 +398,7 @@ public class CopySwap {
                 long maxCopyBytes = Math.min(size - srcOffset, size - dstOffset);
                 for (long copyBytes = 0; copyBytes < maxCopyBytes; copyBytes += elemSize) {
                     try {
-                        testCopySwap(src, srcOffset, dst, dstOffset, size, copyBytes, elemSize);
+                        testCopy(src, srcOffset, dst, dstOffset, size, copyBytes);
                     } catch (RuntimeException e) {
                         // Wrap the exception in another exception to catch the relevant configuration data
                         throw new RuntimeException("testBufferPair: " +
@@ -482,20 +470,17 @@ public class CopySwap {
     }
 
     /**
-     * Verify that small copy swaps work
+     * Verify that small copies work
      */
     private void testSmallCopy() {
         int smallBufSize = SMALL_COPY_SIZE;
 
-        // Test various element types and heap/native combinations
-        for (long elemSize = 2; elemSize <= 8; elemSize <<= 1) {
-            testElemSize(smallBufSize, elemSize);
-        }
+        testElemSize(smallBufSize, 1);
     }
 
 
     /**
-     * Verify that large copy swaps work
+     * Verify that large copies work
      */
     private void testLargeCopy() {
         long size = 2 * GB + 8;
@@ -512,9 +497,9 @@ public class CopySwap {
 
             long buf = alignUp(bufRaw, BASE_ALIGNMENT);
 
-            UNSAFE.copySwapMemory(null, buf, null, buf, size, 8);
+            UNSAFE.copyMemory(null, buf, null, buf, size);
         } catch (Exception e) {
-            throw new RuntimeException("copySwapMemory of large buffer failed");
+            throw new RuntimeException("copyMemory of large buffer failed");
         } finally {
             if (bufRaw != 0) {
                 UNSAFE.freeMemory(bufRaw);
@@ -545,51 +530,38 @@ public class CopySwap {
             long buf = alignUp(bufRaw, BASE_ALIGNMENT);
             short[] arr = new short[16];
 
-            // Check various illegal element sizes
-            for (int elemSize = 2; elemSize <= 8; elemSize <<= 1) {
-                long[] illegalSizes = { -1, 1, elemSize - 1, elemSize + 1, elemSize * 2 - 1 };
-                for (long size : illegalSizes) {
-                    try {
-                        // Check that illegal elemSize throws an IAE
-                        UNSAFE.copySwapMemory(null, buf, null, buf, size, elemSize);
-                        throw new RuntimeException("copySwapMemory failed to throw IAE for size=" + size + " elemSize=" + elemSize);
-                    } catch (IllegalArgumentException e) {
-                        // good
-                    }
-                }
+            // Check illegal sizes
+            System.out.println("Testing negative size");
+            try {
+                UNSAFE.copyMemory(null, buf, null, buf, -1);
+                throw new RuntimeException("copyMemory failed to throw IAE for size=-1");
+            } catch (IllegalArgumentException e) {
+                // good
             }
 
+            System.out.println("Testing negative srcOffset");
             try {
                 // Check that negative srcOffset throws an IAE
-                UNSAFE.copySwapMemory(arr, -1, arr, UNSAFE.arrayBaseOffset(arr.getClass()), 16, 2);
-                throw new RuntimeException("copySwapMemory failed to throw IAE for srcOffset=-1");
+                UNSAFE.copyMemory(arr, -1, arr, UNSAFE.arrayBaseOffset(arr.getClass()), 16);
+                throw new RuntimeException("copyMemory failed to throw IAE for srcOffset=-1");
             } catch (IllegalArgumentException e) {
                 // good
             }
 
+            System.out.println("Testing negative destOffset");
             try {
                 // Check that negative dstOffset throws an IAE
-                UNSAFE.copySwapMemory(arr, UNSAFE.arrayBaseOffset(arr.getClass()), arr, -1, 16, 2);
-                throw new RuntimeException("copySwapMemory failed to throw IAE for destOffset=-1");
+                UNSAFE.copyMemory(arr, UNSAFE.arrayBaseOffset(arr.getClass()), arr, -1, 16);
+                throw new RuntimeException("copyMemory failed to throw IAE for destOffset=-1");
             } catch (IllegalArgumentException e) {
                 // good
             }
 
-            long illegalElemSizes[] = { 0, 1, 3, 5, 6, 7, 9, 10, -1 };
-            for (long elemSize : illegalElemSizes) {
-                try {
-                    // Check that elemSize 1 throws an IAE
-                    UNSAFE.copySwapMemory(null, buf, null, buf, 16, elemSize);
-                    throw new RuntimeException("copySwapMemory failed to throw NPE");
-                } catch (IllegalArgumentException e) {
-                    // good
-                }
-            }
-
+            System.out.println("Testing reference array");
             try {
                 // Check that a reference array destination throws IAE
-                UNSAFE.copySwapMemory(null, buf, new Object[16], UNSAFE.arrayBaseOffset(Object[].class), 16, 8);
-                throw new RuntimeException("copySwapMemory failed to throw NPE");
+                UNSAFE.copyMemory(null, buf, new Object[16], UNSAFE.arrayBaseOffset(Object[].class), 16);
+                throw new RuntimeException("copyMemory failed to throw IAE");
             } catch (IllegalArgumentException e) {
                 // good
             }
@@ -600,8 +572,8 @@ public class CopySwap {
 
                 try {
                     // Check that an invalid (not 32-bit clean) source pointer throws IAE
-                    UNSAFE.copySwapMemory(null, invalidPtr, null, buf, 16, 2);
-                    throw new RuntimeException("copySwapMemory failed to throw IAE for srcOffset 0x" +
+                    UNSAFE.copyMemory(null, invalidPtr, null, buf, 16);
+                    throw new RuntimeException("copyMemory failed to throw IAE for srcOffset 0x" +
                                                Long.toHexString(invalidPtr));
                 } catch (IllegalArgumentException e) {
                     // good
@@ -609,8 +581,8 @@ public class CopySwap {
 
                 try {
                     // Check that an invalid (not 32-bit clean) source pointer throws IAE
-                    UNSAFE.copySwapMemory(null, buf, null, invalidPtr, 16, 2);
-                    throw new RuntimeException("copySwapMemory failed to throw IAE for destOffset 0x" +
+                    UNSAFE.copyMemory(null, buf, null, invalidPtr, 16);
+                    throw new RuntimeException("copyMemory failed to throw IAE for destOffset 0x" +
                                                Long.toHexString(invalidPtr));
                 } catch (IllegalArgumentException e) {
                     // good
@@ -634,7 +606,7 @@ public class CopySwap {
     }
 
     public static void main(String[] args) {
-        CopySwap cs = new CopySwap();
+        CopyMemory cs = new CopyMemory();
         cs.test();
     }
 
