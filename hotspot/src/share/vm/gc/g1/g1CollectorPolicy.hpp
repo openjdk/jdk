@@ -91,10 +91,6 @@ class G1CollectorPolicy: public CollectorPolicy {
   bool verify_young_ages(HeapRegion* head, SurvRateGroup *surv_rate_group);
 #endif // PRODUCT
 
-  void adjust_concurrent_refinement(double update_rs_time,
-                                    double update_rs_processed_buffers,
-                                    double goal_ms);
-
   double _pause_time_target_ms;
 
   size_t _pending_cards;

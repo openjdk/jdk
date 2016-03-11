@@ -27,11 +27,13 @@
 #include "gc/g1/concurrentG1RefineThread.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
+#include "gc/g1/g1Predictions.hpp"
 #include "runtime/java.hpp"
 
-ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h) :
+ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h, const G1Predictions* predictor) :
   _threads(NULL),
   _sample_thread(NULL),
+  _predictor_sigma(predictor->sigma()),
   _hot_card_cache(g1h)
 {
   // Ergonomically select initial concurrent refinement parameters
@@ -49,10 +51,12 @@ ConcurrentG1Refine::ConcurrentG1Refine(G1CollectedHeap* g1h) :
     FLAG_SET_DEFAULT(G1ConcRefinementRedZone, yellow_zone() * 2);
   }
   set_red_zone(MAX2(G1ConcRefinementRedZone, yellow_zone()));
+
 }
 
 ConcurrentG1Refine* ConcurrentG1Refine::create(G1CollectedHeap* g1h, CardTableEntryClosure* refine_closure, jint* ecode) {
-  ConcurrentG1Refine* cg1r = new ConcurrentG1Refine(g1h);
+  G1CollectorPolicy* policy = g1h->g1_policy();
+  ConcurrentG1Refine* cg1r = new ConcurrentG1Refine(g1h, &policy->predictor());
   if (cg1r == NULL) {
     *ecode = JNI_ENOMEM;
     vm_shutdown_during_initialization("Could not create ConcurrentG1Refine");
@@ -154,4 +158,44 @@ void ConcurrentG1Refine::print_worker_threads_on(outputStream* st) const {
   }
   _sample_thread->print_on(st);
   st->cr();
+}
+
+void ConcurrentG1Refine::adjust(double update_rs_time,
+                                double update_rs_processed_buffers,
+                                double goal_ms) {
+  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
+
+  if (G1UseAdaptiveConcRefinement) {
+    const int k_gy = 3, k_gr = 6;
+    const double inc_k = 1.1, dec_k = 0.9;
+
+    size_t g = green_zone();
+    if (update_rs_time > goal_ms) {
+      g = (size_t)(g * dec_k);  // Can become 0, that's OK. That would mean a mutator-only processing.
+    } else {
+      if (update_rs_time < goal_ms && update_rs_processed_buffers > g) {
+        g = (size_t)MAX2(g * inc_k, g + 1.0);
+      }
+    }
+    // Change the refinement threads params
+    set_green_zone(g);
+    set_yellow_zone(g * k_gy);
+    set_red_zone(g * k_gr);
+    reinitialize_threads();
+
+    size_t processing_threshold_delta = MAX2<size_t>(green_zone() * _predictor_sigma, 1);
+    size_t processing_threshold = MIN2(green_zone() + processing_threshold_delta,
+                                    yellow_zone());
+    // Change the barrier params
+    dcqs.set_process_completed_threshold((int)processing_threshold);
+    dcqs.set_max_completed_queue((int)red_zone());
+  }
+
+  size_t curr_queue_size = dcqs.completed_buffers_num();
+  if (curr_queue_size >= yellow_zone()) {
+    dcqs.set_completed_queue_padding(curr_queue_size);
+  } else {
+    dcqs.set_completed_queue_padding(0);
+  }
+  dcqs.notify_if_necessary();
 }
