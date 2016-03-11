@@ -522,16 +522,6 @@ private:
   // The limit on the number of regions allocated for survivors.
   uint _max_survivor_regions;
 
-  // For reporting purposes.
-  // The value of _heap_bytes_before_gc is also used to calculate
-  // the cost of copying.
-
-  // The amount of survivor regions after a collection.
-  uint _recorded_survivor_regions;
-  // List of survivor regions.
-  HeapRegion* _recorded_survivor_head;
-  HeapRegion* _recorded_survivor_tail;
-
   AgeTable _survivors_age_table;
 
 public:
@@ -563,18 +553,6 @@ public:
 
   void note_stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
-  }
-
-  void record_survivor_regions(uint regions,
-                               HeapRegion* head,
-                               HeapRegion* tail) {
-    _recorded_survivor_regions = regions;
-    _recorded_survivor_head    = head;
-    _recorded_survivor_tail    = tail;
-  }
-
-  uint recorded_survivor_regions() const {
-    return _recorded_survivor_regions;
   }
 
   void record_age_table(AgeTable* age_table) {
