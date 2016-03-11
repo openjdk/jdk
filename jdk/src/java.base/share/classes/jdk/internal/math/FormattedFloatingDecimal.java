@@ -106,10 +106,28 @@ public class FormattedFloatingDecimal{
         return decExponentRounded - 1;
     }
 
+    /**
+     * Returns the mantissa as a {@code char[]}.  Note that the returned value
+     * is a reference to the internal {@code char[]} containing the mantissa,
+     * therefore code invoking this method should not pass the return value to
+     * external code but should in that case make a copy.
+     *
+     * @return a reference to the internal {@code char[]} representing the
+     *         mantissa.
+     */
     public char[] getMantissa(){
         return mantissa;
     }
 
+    /**
+     * Returns the exponent as a {@code char[]}.  Note that the returned value
+     * is a reference to the internal {@code char[]} containing the exponent,
+     * therefore code invoking this method should not pass the return value to
+     * external code but should in that case make a copy.
+     *
+     * @return a reference to the internal {@code char[]} representing the
+     *         exponent.
+     */
     public char[] getExponent(){
         return exponent;
     }
