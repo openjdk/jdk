@@ -24,6 +24,7 @@
 #ifndef SHARE_VM_LOGGING_LOGTAG_HPP
 #define SHARE_VM_LOGGING_LOGTAG_HPP
 
+#include "logging/logTag_ext.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -76,6 +77,7 @@
   LOG_TAG(safepointcleanup) \
   LOG_TAG(scavenge) \
   LOG_TAG(scrub) \
+  LOG_TAG(stacktrace) \
   LOG_TAG(start) \
   LOG_TAG(startuptime) \
   LOG_TAG(state) \
@@ -90,7 +92,8 @@
   LOG_TAG(verboseverification) \
   LOG_TAG(verify) \
   LOG_TAG(vmoperation) \
-  LOG_TAG(vtables)
+  LOG_TAG(vtables) \
+  LOG_TAG_LIST_EXT
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)
 

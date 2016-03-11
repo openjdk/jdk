@@ -1931,11 +1931,6 @@ CompactibleFreeListSpace::refillLinearAllocBlockIfNeeded(LinearAllocBlock* blk) 
   if (blk->_ptr == NULL) {
     refillLinearAllocBlock(blk);
   }
-  if (PrintMiscellaneous && Verbose) {
-    if (blk->_word_size == 0) {
-      warning("CompactibleFreeListSpace(prologue):: Linear allocation failure");
-    }
-  }
 }
 
 void

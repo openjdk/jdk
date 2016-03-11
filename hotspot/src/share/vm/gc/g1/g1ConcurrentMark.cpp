@@ -203,12 +203,12 @@ bool G1CMMarkStack::allocate(size_t capacity) {
   // allocate a stack of the requisite depth
   ReservedSpace rs(ReservedSpace::allocation_align_size_up(capacity * sizeof(oop)));
   if (!rs.is_reserved()) {
-    warning("ConcurrentMark MarkStack allocation failure");
+    log_warning(gc)("ConcurrentMark MarkStack allocation failure");
     return false;
   }
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
   if (!_virtual_space.initialize(rs, rs.size())) {
-    warning("ConcurrentMark MarkStack backing store failure");
+    log_warning(gc)("ConcurrentMark MarkStack backing store failure");
     // Release the virtual memory reserved for the marking stack
     rs.release();
     return false;
@@ -478,9 +478,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   _root_regions.init(_g1h, this);
 
   if (ConcGCThreads > ParallelGCThreads) {
-    warning("Can't have more ConcGCThreads (%u) "
-            "than ParallelGCThreads (%u).",
-            ConcGCThreads, ParallelGCThreads);
+    log_warning(gc)("Can't have more ConcGCThreads (%u) than ParallelGCThreads (%u).",
+                    ConcGCThreads, ParallelGCThreads);
     return;
   }
   if (!FLAG_IS_DEFAULT(ConcGCThreads) && ConcGCThreads > 0) {
@@ -534,9 +533,9 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
     // Verify that the calculated value for MarkStackSize is in range.
     // It would be nice to use the private utility routine from Arguments.
     if (!(mark_stack_size >= 1 && mark_stack_size <= MarkStackSizeMax)) {
-      warning("Invalid value calculated for MarkStackSize (" SIZE_FORMAT "): "
-              "must be between 1 and " SIZE_FORMAT,
-              mark_stack_size, MarkStackSizeMax);
+      log_warning(gc)("Invalid value calculated for MarkStackSize (" SIZE_FORMAT "): "
+                      "must be between 1 and " SIZE_FORMAT,
+                      mark_stack_size, MarkStackSizeMax);
       return;
     }
     FLAG_SET_ERGO(size_t, MarkStackSize, mark_stack_size);
@@ -545,16 +544,16 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
     if (FLAG_IS_CMDLINE(MarkStackSize)) {
       if (FLAG_IS_DEFAULT(MarkStackSizeMax)) {
         if (!(MarkStackSize >= 1 && MarkStackSize <= MarkStackSizeMax)) {
-          warning("Invalid value specified for MarkStackSize (" SIZE_FORMAT "): "
-                  "must be between 1 and " SIZE_FORMAT,
-                  MarkStackSize, MarkStackSizeMax);
+          log_warning(gc)("Invalid value specified for MarkStackSize (" SIZE_FORMAT "): "
+                          "must be between 1 and " SIZE_FORMAT,
+                          MarkStackSize, MarkStackSizeMax);
           return;
         }
       } else if (FLAG_IS_CMDLINE(MarkStackSizeMax)) {
         if (!(MarkStackSize >= 1 && MarkStackSize <= MarkStackSizeMax)) {
-          warning("Invalid value specified for MarkStackSize (" SIZE_FORMAT ")"
-                  " or for MarkStackSizeMax (" SIZE_FORMAT ")",
-                  MarkStackSize, MarkStackSizeMax);
+          log_warning(gc)("Invalid value specified for MarkStackSize (" SIZE_FORMAT ")"
+                          " or for MarkStackSizeMax (" SIZE_FORMAT ")",
+                          MarkStackSize, MarkStackSizeMax);
           return;
         }
       }
@@ -562,7 +561,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   }
 
   if (!_markStack.allocate(MarkStackSize)) {
-    warning("Failed to allocate CM marking stack");
+    log_warning(gc)("Failed to allocate CM marking stack");
     return;
   }
 

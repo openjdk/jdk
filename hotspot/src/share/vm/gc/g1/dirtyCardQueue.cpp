@@ -115,9 +115,8 @@ bool DirtyCardQueue::apply_closure(CardTableEntryClosure* cl,
                                    uint worker_i) {
   bool res = true;
   if (_buf != NULL) {
-    res = apply_closure_to_buffer(cl, _buf, _index, _sz,
-                                  consume,
-                                  worker_i);
+    BufferNode* node = BufferNode::make_node_from_buffer(_buf, _index);
+    res = apply_closure_to_buffer(cl, node, _sz, consume, worker_i);
     if (res && consume) {
       _index = _sz;
     }
@@ -126,24 +125,27 @@ bool DirtyCardQueue::apply_closure(CardTableEntryClosure* cl,
 }
 
 bool DirtyCardQueue::apply_closure_to_buffer(CardTableEntryClosure* cl,
-                                             void** buf,
-                                             size_t index, size_t sz,
+                                             BufferNode* node,
+                                             size_t buffer_size,
                                              bool consume,
                                              uint worker_i) {
   if (cl == NULL) return true;
-  size_t limit = byte_index_to_index(sz);
-  for (size_t i = byte_index_to_index(index); i < limit; ++i) {
+  void** buf = BufferNode::make_buffer_from_node(node);
+  size_t limit = byte_index_to_index(buffer_size);
+  for (size_t i = byte_index_to_index(node->index()); i < limit; ++i) {
     jbyte* card_ptr = static_cast<jbyte*>(buf[i]);
-    if (card_ptr != NULL) {
-      // Set the entry to null, so we don't do it again (via the test
-      // above) if we reconsider this buffer.
+    assert(card_ptr != NULL, "invariant");
+    if (!cl->do_card_ptr(card_ptr, worker_i)) {
       if (consume) {
-        buf[i] = NULL;
+        size_t new_index = index_to_byte_index(i + 1);
+        assert(new_index <= buffer_size, "invariant");
+        node->set_index(new_index);
       }
-      if (!cl->do_card_ptr(card_ptr, worker_i)) {
-        return false;
-      }
+      return false;
     }
+  }
+  if (consume) {
+    node->set_index(buffer_size);
   }
   return true;
 }
@@ -188,14 +190,15 @@ void DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
   t->dirty_card_queue().handle_zero_index();
 }
 
-bool DirtyCardQueueSet::mut_process_buffer(void** buf) {
+bool DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
   guarantee(_free_ids != NULL, "must be");
 
   // claim a par id
   uint worker_i = _free_ids->claim_par_id();
 
-  bool b = DirtyCardQueue::apply_closure_to_buffer(_mut_process_closure, buf, 0,
-                                                   _sz, true, worker_i);
+  bool b = DirtyCardQueue::apply_closure_to_buffer(_mut_process_closure,
+                                                   node, _sz,
+                                                   true, worker_i);
   if (b) {
     Atomic::inc(&_processed_buffers_mut);
   }
@@ -239,49 +242,30 @@ bool DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure*
   if (nd == NULL) {
     return false;
   } else {
-    void** buf = BufferNode::make_buffer_from_node(nd);
-    size_t index = nd->index();
-    if (DirtyCardQueue::apply_closure_to_buffer(cl,
-                                                buf, index, _sz,
-                                                true, worker_i)) {
+    if (DirtyCardQueue::apply_closure_to_buffer(cl, nd, _sz, true, worker_i)) {
       // Done with fully processed buffer.
-      deallocate_buffer(buf);
+      deallocate_buffer(nd);
       Atomic::inc(&_processed_buffers_rs_thread);
       return true;
     } else {
       // Return partially processed buffer to the queue.
-      enqueue_complete_buffer(buf, index);
+      enqueue_complete_buffer(nd);
       return false;
     }
-  }
-}
-
-void DirtyCardQueueSet::apply_closure_to_all_completed_buffers(CardTableEntryClosure* cl) {
-  BufferNode* nd = _completed_buffers_head;
-  while (nd != NULL) {
-    bool b =
-      DirtyCardQueue::apply_closure_to_buffer(cl,
-                                              BufferNode::make_buffer_from_node(nd),
-                                              0, _sz, false);
-    guarantee(b, "Should not stop early.");
-    nd = nd->next();
   }
 }
 
 void DirtyCardQueueSet::par_apply_closure_to_all_completed_buffers(CardTableEntryClosure* cl) {
   BufferNode* nd = _cur_par_buffer_node;
   while (nd != NULL) {
-    BufferNode* next = (BufferNode*)nd->next();
-    BufferNode* actual = (BufferNode*)Atomic::cmpxchg_ptr((void*)next, (volatile void*)&_cur_par_buffer_node, (void*)nd);
+    BufferNode* next = nd->next();
+    void* actual = Atomic::cmpxchg_ptr(next, &_cur_par_buffer_node, nd);
     if (actual == nd) {
-      bool b =
-        DirtyCardQueue::apply_closure_to_buffer(cl,
-                                                BufferNode::make_buffer_from_node(actual),
-                                                0, _sz, false);
+      bool b = DirtyCardQueue::apply_closure_to_buffer(cl, nd, _sz, false);
       guarantee(b, "Should not stop early.");
       nd = next;
     } else {
-      nd = actual;
+      nd = static_cast<BufferNode*>(actual);
     }
   }
 }
@@ -304,7 +288,7 @@ void DirtyCardQueueSet::clear() {
   while (buffers_to_delete != NULL) {
     BufferNode* nd = buffers_to_delete;
     buffers_to_delete = nd->next();
-    deallocate_buffer(BufferNode::make_buffer_from_node(nd));
+    deallocate_buffer(nd);
   }
 
 }
@@ -320,6 +304,13 @@ void DirtyCardQueueSet::abandon_logs() {
   shared_dirty_card_queue()->reset();
 }
 
+void DirtyCardQueueSet::concatenate_log(DirtyCardQueue& dcq) {
+  if (!dcq.is_empty()) {
+    enqueue_complete_buffer(
+      BufferNode::make_node_from_buffer(dcq.get_buf(), dcq.get_index()));
+    dcq.reinitialize();
+  }
+}
 
 void DirtyCardQueueSet::concatenate_logs() {
   // Iterate over all the threads, if we find a partial log add it to
@@ -329,23 +320,9 @@ void DirtyCardQueueSet::concatenate_logs() {
   _max_completed_queue = max_jint;
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   for (JavaThread* t = Threads::first(); t; t = t->next()) {
-    DirtyCardQueue& dcq = t->dirty_card_queue();
-    if (dcq.size() != 0) {
-      void** buf = dcq.get_buf();
-      // We must NULL out the unused entries, then enqueue.
-      size_t limit = dcq.byte_index_to_index(dcq.get_index());
-      for (size_t i = 0; i < limit; ++i) {
-        buf[i] = NULL;
-      }
-      enqueue_complete_buffer(dcq.get_buf(), dcq.get_index());
-      dcq.reinitialize();
-    }
+    concatenate_log(t->dirty_card_queue());
   }
-  if (_shared_dirty_card_queue.size() != 0) {
-    enqueue_complete_buffer(_shared_dirty_card_queue.get_buf(),
-                            _shared_dirty_card_queue.get_index());
-    _shared_dirty_card_queue.reinitialize();
-  }
+  concatenate_log(_shared_dirty_card_queue);
   // Restore the completed buffer queue limit.
   _max_completed_queue = save_max_completed_queue;
 }
