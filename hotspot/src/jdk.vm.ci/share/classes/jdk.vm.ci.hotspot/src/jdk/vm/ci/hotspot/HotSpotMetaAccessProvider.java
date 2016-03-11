@@ -41,7 +41,6 @@ import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -111,23 +110,26 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider, HotSpotPro
     }
 
     public ResolvedJavaField lookupJavaField(Field reflectionField) {
-        String name = reflectionField.getName();
         Class<?> fieldHolder = reflectionField.getDeclaringClass();
-        Class<?> fieldType = reflectionField.getType();
-        // java.lang.reflect.Field's modifiers should be enough here since VM internal modifier bits
-        // are not used (yet).
-        final int modifiers = reflectionField.getModifiers();
-        final long offset = Modifier.isStatic(modifiers) ? UNSAFE.staticFieldOffset(reflectionField) : UNSAFE.objectFieldOffset(reflectionField);
 
         HotSpotResolvedObjectType holder = fromObjectClass(fieldHolder);
-        JavaType type = runtime.fromClass(fieldType);
-
-        if (offset != -1) {
-            HotSpotResolvedObjectType resolved = holder;
-            return resolved.createField(name, type, offset, modifiers);
+        if (Modifier.isStatic(reflectionField.getModifiers())) {
+            final long offset = UNSAFE.staticFieldOffset(reflectionField);
+            for (ResolvedJavaField field : holder.getStaticFields()) {
+                if (offset == ((HotSpotResolvedJavaField) field).offset()) {
+                    return field;
+                }
+            }
         } else {
-            throw new JVMCIError("unresolved field %s", reflectionField);
+            final long offset = UNSAFE.objectFieldOffset(reflectionField);
+            for (ResolvedJavaField field : holder.getInstanceFields(false)) {
+                if (offset == ((HotSpotResolvedJavaField) field).offset()) {
+                    return field;
+                }
+            }
         }
+
+        throw new JVMCIError("unresolved field %s", reflectionField);
     }
 
     private static int intMaskRight(int n) {

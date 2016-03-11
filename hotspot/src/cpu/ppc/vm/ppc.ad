@@ -2137,8 +2137,6 @@ MachTypeNode *Matcher::make_decode_node() {
   return decode;
 }
 */
-// Threshold size for cleararray.
-const int Matcher::init_array_short_size = 8 * BytesPerLong;
 
 // false => size gets scaled to BytesPerLong, ok.
 const bool Matcher::init_array_count_is_in_bytes = false;
