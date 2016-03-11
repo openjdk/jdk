@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,9 @@ class CollectionSetChooser: public CHeapObj<mtGC> {
   // The sum of reclaimable bytes over all the regions in the CSet chooser.
   size_t _remaining_reclaimable_bytes;
 
+  // Calculate and return chunk size (in number of regions) for parallel
+  // addition of regions
+  uint calculate_parallel_work_chunk_size(uint n_workers, uint n_regions) const;
 public:
 
   // Return the current candidate region to be considered for
@@ -131,6 +134,8 @@ public:
   void update_totals(uint region_num, size_t reclaimable_bytes);
 
   void clear();
+
+  void rebuild(WorkGang* workers, uint n_regions);
 
   // Return the number of candidate regions that remain to be collected.
   uint remaining_regions() { return _end - _front; }

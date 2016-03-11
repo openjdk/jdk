@@ -255,10 +255,6 @@ private:
   void update_rs_lengths_prediction();
   void update_rs_lengths_prediction(size_t prediction);
 
-  // Calculate and return chunk size (in number of regions) for parallel
-  // concurrent mark cleanup.
-  uint calculate_parallel_work_chunk_size(uint n_workers, uint n_regions) const;
-
   // Check whether a given young length (young_length) fits into the
   // given target pause time and whether the prediction for the amount
   // of objects to be copied for the given length will fit into the
