@@ -110,15 +110,9 @@ void G1EvacStats::adjust_desired_plab_sz() {
   size_t const cur_plab_sz = (size_t)((double)total_waste_allowed / G1LastPLABAverageOccupancy);
   // Take historical weighted average
   _filter.sample(cur_plab_sz);
-  // Clip from above and below, and align to object boundary
-  size_t plab_sz;
-  plab_sz = MAX2(min_size(), (size_t)_filter.average());
-  plab_sz = MIN2(max_size(), plab_sz);
-  plab_sz = align_object_size(plab_sz);
-  // Latch the result
-  _desired_net_plab_sz = plab_sz;
+  _desired_net_plab_sz = MAX2(min_size(), (size_t)_filter.average());
 
-  log_sizing(cur_plab_sz, plab_sz);
+  log_sizing(cur_plab_sz, _desired_net_plab_sz);
   // Clear accumulators for next round.
   reset();
 }
