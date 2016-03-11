@@ -878,9 +878,9 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   } else {
     update_rs_time_goal_ms -= scan_hcc_time_ms;
   }
-  adjust_concurrent_refinement(average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms,
-                               phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS),
-                               update_rs_time_goal_ms);
+  _g1->concurrent_g1_refine()->adjust(average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms,
+                                      phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS),
+                                      update_rs_time_goal_ms);
 
   cset_chooser()->verify();
 }
@@ -940,47 +940,6 @@ void G1CollectorPolicy::report_ihop_statistics() {
 
 void G1CollectorPolicy::print_phases() {
   phase_times()->print();
-}
-
-void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
-                                                     double update_rs_processed_buffers,
-                                                     double goal_ms) {
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-  ConcurrentG1Refine *cg1r = G1CollectedHeap::heap()->concurrent_g1_refine();
-
-  if (G1UseAdaptiveConcRefinement) {
-    const int k_gy = 3, k_gr = 6;
-    const double inc_k = 1.1, dec_k = 0.9;
-
-    size_t g = cg1r->green_zone();
-    if (update_rs_time > goal_ms) {
-      g = (size_t)(g * dec_k);  // Can become 0, that's OK. That would mean a mutator-only processing.
-    } else {
-      if (update_rs_time < goal_ms && update_rs_processed_buffers > g) {
-        g = (size_t)MAX2(g * inc_k, g + 1.0);
-      }
-    }
-    // Change the refinement threads params
-    cg1r->set_green_zone(g);
-    cg1r->set_yellow_zone(g * k_gy);
-    cg1r->set_red_zone(g * k_gr);
-    cg1r->reinitialize_threads();
-
-    size_t processing_threshold_delta = MAX2<size_t>(cg1r->green_zone() * _predictor.sigma(), 1);
-    size_t processing_threshold = MIN2(cg1r->green_zone() + processing_threshold_delta,
-                                    cg1r->yellow_zone());
-    // Change the barrier params
-    dcqs.set_process_completed_threshold((int)processing_threshold);
-    dcqs.set_max_completed_queue((int)cg1r->red_zone());
-  }
-
-  size_t curr_queue_size = dcqs.completed_buffers_num();
-  if (curr_queue_size >= cg1r->yellow_zone()) {
-    dcqs.set_completed_queue_padding(curr_queue_size);
-  } else {
-    dcqs.set_completed_queue_padding(0);
-  }
-  dcqs.notify_if_necessary();
 }
 
 double G1CollectorPolicy::predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const {
