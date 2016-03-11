@@ -567,7 +567,7 @@ G1CollectedHeap::mem_allocate(size_t word_size,
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-      warning("G1CollectedHeap::mem_allocate retries %d times", try_count);
+      log_warning(gc)("G1CollectedHeap::mem_allocate retries %d times", try_count);
     }
   }
 
@@ -676,8 +676,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-      warning("G1CollectedHeap::attempt_allocation_slow() "
-              "retries %d times", try_count);
+      log_warning(gc)("G1CollectedHeap::attempt_allocation_slow() "
+                      "retries %d times", try_count);
     }
   }
 
@@ -1092,8 +1092,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
 
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-      warning("G1CollectedHeap::attempt_allocation_humongous() "
-              "retries %d times", try_count);
+      log_warning(gc)("G1CollectedHeap::attempt_allocation_humongous() "
+                      "retries %d times", try_count);
     }
   }
 
