@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,13 @@
  */
 
 /*
-  test
-  @bug 6497109
+  @test
+  @bug 6497109 6734341
   @summary TextArea must have selection expanding, and also be autoscrolled, if mouse is dragged from inside.
+  @library ../../regtesthelpers
+  @build Util
   @author Konstantin Voloshin: area=TextArea
-  @run applet SelectionAutoscrollTest.html
+  @run main SelectionAutoscrollTest
 */
 
 /**
@@ -38,12 +40,10 @@
  */
 
 
-import java.applet.Applet;
 import java.awt.Frame;
 import java.awt.Panel;
 import java.awt.GridLayout;
 import java.awt.TextArea;
-
 import java.awt.Point;
 import java.awt.Dimension;
 import java.awt.event.MouseEvent;
@@ -52,16 +52,18 @@ import java.awt.Toolkit;
 import test.java.awt.regtesthelpers.Util;
 
 
-public class SelectionAutoscrollTest extends Applet {
+public class SelectionAutoscrollTest {
     TextArea textArea;
     Robot robot;
     final int desiredSelectionEnd = ('z'-'a'+1)*2;  // 52
     final static int SCROLL_DELAY = 10; // ms
 
-    public void start () {
-        createObjects();
-        manipulateMouse();
-        checkResults();
+    public static void main(String[] args) {
+        SelectionAutoscrollTest selectionAutoscrollTest
+                = new SelectionAutoscrollTest();
+        selectionAutoscrollTest.createObjects();
+        selectionAutoscrollTest.manipulateMouse();
+        selectionAutoscrollTest.checkResults();
     }
 
     void createObjects() {
@@ -102,7 +104,7 @@ public class SelectionAutoscrollTest extends Applet {
         robot.mousePress( MouseEvent.BUTTON1_MASK );
         Util.waitForIdle( robot );
 
-        for( int tremble=0; tremble < desiredSelectionEnd; ++tremble ) {
+        for( int tremble=0; tremble < 10; ++tremble ) {
             // Mouse is moved repeatedly here (with conservatively chosen
             // ammount of times), to give some time/chance for TextArea to
             // autoscroll and for text-selection to expand to the end.
@@ -125,7 +127,7 @@ public class SelectionAutoscrollTest extends Applet {
             //   and this is probably a bug). But, starting with 2nd iteration,
             //   all events received will be mouse-dragged events.
 
-            moveMouseBelowTextArea( tremble%2!=0 );
+            moveMouseBelowTextArea( tremble );
             Util.waitForIdle( robot );
             // it is needed to add some small delay on Gnome
             waitUntilScrollIsPerformed(robot);
@@ -138,16 +140,28 @@ public class SelectionAutoscrollTest extends Applet {
     void moveMouseToCenterOfTextArea() {
         Dimension d = textArea.getSize();
         Point l = textArea.getLocationOnScreen();
-        robot.mouseMove( (int)(l.x+d.width*.5), (int)(l.y+d.height*.5) );
+        Util.mouseMove(robot, l, new Point((int) (l.x + d.width * .5),
+                (int) (l.y + d.height * .5)));
     }
 
-    void moveMouseBelowTextArea( boolean shift ) {
+    void moveMouseBelowTextArea(int tremble) {
         Dimension d = textArea.getSize();
         Point l = textArea.getLocationOnScreen();
-        int x = (int)(l.x+d.width*.5);
-        int y = (int)(l.y+d.height*1.5);
-        if( shift ) y+=15;
-        robot.mouseMove( x, y );
+        Point p1;
+        if (tremble == 0) {
+            p1 = new Point((int) (l.x + d.width * .5),
+                    (int) (l.y + d.height * 0.5));
+        } else {
+            p1 = new Point((int) (l.x + d.width * .5),
+                    (int) (l.y + d.height * 1.5));
+        }
+        Point p2 = new Point((int) (l.x + d.width * .5),
+                (int) (l.y + d.height * 1.5) + 15);
+        if (tremble % 2 == 0) {
+            Util.mouseMove(robot, p1, p2);
+        } else {
+            Util.mouseMove(robot, p2, p1);
+        }
     }
 
     void waitUntilScrollIsPerformed(Robot robot) {
@@ -160,15 +174,11 @@ public class SelectionAutoscrollTest extends Applet {
     }
 
     void checkResults() {
-        //try { Thread.sleep( 30*1000 ); }
-        //catch( Exception e ) { throw new RuntimeException( e ); }
-
         final int currentSelectionEnd = textArea.getSelectionEnd();
-
         System.out.println(
-            "TEST: Selection range after test is: ( "
-            + textArea.getSelectionStart() + ", "
-            + currentSelectionEnd + " )"
+                "TEST: Selection range after test is: ( "
+                + textArea.getSelectionStart() + ", "
+                + currentSelectionEnd + " )"
         );
 
         boolean resultOk = ( currentSelectionEnd == desiredSelectionEnd );
