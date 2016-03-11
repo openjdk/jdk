@@ -703,20 +703,13 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
     }
 
     @Override
-    public boolean copyArea(SunGraphics2D sg2d,
-                            int x, int y, int w, int h, int dx, int dy)
-    {
-        if (sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE &&
-            sg2d.compositeState < SunGraphics2D.COMP_XOR)
-        {
-            x += sg2d.transX;
-            y += sg2d.transY;
-
-            d3dRenderPipe.copyArea(sg2d, x, y, w, h, dx, dy);
-
-            return true;
+    public boolean copyArea(SunGraphics2D sg2d, int x, int y, int w, int h,
+                            int dx, int dy) {
+        if (sg2d.compositeState >= SunGraphics2D.COMP_XOR) {
+            return false;
         }
-        return false;
+        d3dRenderPipe.copyArea(sg2d, x, y, w, h, dx, dy);
+        return true;
     }
 
     @Override
