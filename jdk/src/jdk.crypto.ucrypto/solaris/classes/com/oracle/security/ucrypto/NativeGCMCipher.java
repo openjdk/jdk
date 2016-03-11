@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,10 @@ class NativeGCMCipher extends NativeCipher {
 
     // buffer for storing AAD data; if null, meaning buffer content has been
     // supplied to native context
-    private ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
+    private ByteArrayOutputStream aadBuffer;
 
     // buffer for storing input in decryption, not used for encryption
-    private ByteArrayOutputStream ibuffer = null;
+    private ByteArrayOutputStream ibuffer;
 
     private int tagLen = DEFAULT_TAG_LEN;
 
@@ -75,7 +75,7 @@ class NativeGCMCipher extends NativeCipher {
      * key + iv values used in previous encryption.
      * For decryption operations, no checking is necessary.
      */
-    private boolean requireReinit = false;
+    private boolean requireReinit;
     private byte[] lastEncKey = null;
     private byte[] lastEncIv = null;
 
@@ -86,12 +86,14 @@ class NativeGCMCipher extends NativeCipher {
     @Override
     protected void ensureInitialized() {
         if (!initialized) {
-            if (aadBuffer != null && aadBuffer.size() > 0) {
-                init(encrypt, keyValue, iv, tagLen, aadBuffer.toByteArray());
-                aadBuffer = null;
-            } else {
-                init(encrypt, keyValue, iv, tagLen, null);
+            byte[] aad = null;
+            if (aadBuffer != null) {
+                if (aadBuffer.size() > 0) {
+                    aad = aadBuffer.toByteArray();
+                }
             }
+            init(encrypt, keyValue, iv, tagLen, aad);
+            aadBuffer = null;
             if (!initialized) {
                 throw new UcryptoException("Cannot initialize Cipher");
             }
@@ -185,6 +187,7 @@ class NativeGCMCipher extends NativeCipher {
             throw new InvalidAlgorithmParameterException
                 ("Unsupported mode: " + opmode);
         }
+        aadBuffer = new ByteArrayOutputStream();
         boolean doEncrypt = (opmode == Cipher.ENCRYPT_MODE || opmode == Cipher.WRAP_MODE);
         byte[] keyBytes = key.getEncoded().clone();
         byte[] ivBytes = null;
@@ -219,6 +222,7 @@ class NativeGCMCipher extends NativeCipher {
             }
             lastEncIv = ivBytes;
             lastEncKey = keyBytes;
+            ibuffer = null;
         } else {
             requireReinit = false;
             ibuffer = new ByteArrayOutputStream();
@@ -246,9 +250,11 @@ class NativeGCMCipher extends NativeCipher {
     // see JCE spec
     @Override
     protected synchronized byte[] engineUpdate(byte[] in, int inOfs, int inLen) {
-        if (aadBuffer != null && aadBuffer.size() > 0) {
-            // init again with AAD data
-            init(encrypt, keyValue, iv, tagLen, aadBuffer.toByteArray());
+        if (aadBuffer != null) {
+            if (aadBuffer.size() > 0) {
+                // init again with AAD data
+                init(encrypt, keyValue, iv, tagLen, aadBuffer.toByteArray());
+            }
             aadBuffer = null;
         }
         if (requireReinit) {
@@ -274,9 +280,11 @@ class NativeGCMCipher extends NativeCipher {
                  "(at least) " + len + " bytes long. Got: " +
                  (out.length - outOfs));
         }
-        if (aadBuffer != null && aadBuffer.size() > 0) {
-            // init again with AAD data
-            init(encrypt, keyValue, iv, tagLen, aadBuffer.toByteArray());
+        if (aadBuffer != null) {
+            if (aadBuffer.size() > 0) {
+                // init again with AAD data
+                init(encrypt, keyValue, iv, tagLen, aadBuffer.toByteArray());
+            }
             aadBuffer = null;
         }
         if (requireReinit) {
@@ -374,9 +382,11 @@ class NativeGCMCipher extends NativeCipher {
                 + "(at least) " + len + " bytes long. Got: " +
                 (out.length - outOfs));
         }
-        if (aadBuffer != null && aadBuffer.size() > 0) {
-            // init again with AAD data
-            init(encrypt, keyValue, iv, tagLen, aadBuffer.toByteArray());
+        if (aadBuffer != null) {
+            if (aadBuffer.size() > 0) {
+                // init again with AAD data
+                init(encrypt, keyValue, iv, tagLen, aadBuffer.toByteArray());
+            }
             aadBuffer = null;
         }
         if (requireReinit) {

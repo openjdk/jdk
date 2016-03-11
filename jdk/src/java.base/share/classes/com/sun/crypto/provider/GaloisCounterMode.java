@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,20 +319,22 @@ final class GaloisCounterMode extends FeedbackCipher {
 
     // Feed the AAD data to GHASH, pad if necessary
     void processAAD() {
-        if (aadBuffer != null && aadBuffer.size() > 0) {
-            byte[] aad = aadBuffer.toByteArray();
-            sizeOfAAD = aad.length;
-            aadBuffer = null;
+        if (aadBuffer != null) {
+            if (aadBuffer.size() > 0) {
+                byte[] aad = aadBuffer.toByteArray();
+                sizeOfAAD = aad.length;
 
-            int lastLen = aad.length % AES_BLOCK_SIZE;
-            if (lastLen != 0) {
-                ghashAllToS.update(aad, 0, aad.length - lastLen);
-                byte[] padded = expandToOneBlock(aad, aad.length - lastLen,
-                                                 lastLen);
-                ghashAllToS.update(padded);
-            } else {
-                ghashAllToS.update(aad);
+                int lastLen = aad.length % AES_BLOCK_SIZE;
+                if (lastLen != 0) {
+                    ghashAllToS.update(aad, 0, aad.length - lastLen);
+                    byte[] padded = expandToOneBlock(aad, aad.length - lastLen,
+                                                     lastLen);
+                    ghashAllToS.update(padded);
+                } else {
+                    ghashAllToS.update(aad);
+                }
             }
+            aadBuffer = null;
         }
     }
 

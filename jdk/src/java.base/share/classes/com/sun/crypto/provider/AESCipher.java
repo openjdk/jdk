@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,11 @@ abstract class AESCipher extends CipherSpi {
      */
     private final int fixedKeySize; // in bytes, -1 if no restriction
 
+    /*
+     * needed to enforce ISE thrown when updateAAD is called after update for GCM mode.
+     */
+    private boolean updateCalled;
+
     /**
      * Creates an instance of AES cipher with default ECB mode and
      * PKCS5Padding.
@@ -304,6 +309,7 @@ abstract class AESCipher extends CipherSpi {
     protected void engineInit(int opmode, Key key, SecureRandom random)
         throws InvalidKeyException {
         checkKeySize(key, fixedKeySize);
+        updateCalled = false;
         core.init(opmode, key, random);
     }
 
@@ -336,6 +342,7 @@ abstract class AESCipher extends CipherSpi {
                               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
         checkKeySize(key, fixedKeySize);
+        updateCalled = false;
         core.init(opmode, key, params, random);
     }
 
@@ -344,6 +351,7 @@ abstract class AESCipher extends CipherSpi {
                               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
         checkKeySize(key, fixedKeySize);
+        updateCalled = false;
         core.init(opmode, key, params, random);
     }
 
@@ -368,6 +376,7 @@ abstract class AESCipher extends CipherSpi {
      */
     protected byte[] engineUpdate(byte[] input, int inputOffset,
                                   int inputLen) {
+        updateCalled = true;
         return core.update(input, inputOffset, inputLen);
     }
 
@@ -397,6 +406,7 @@ abstract class AESCipher extends CipherSpi {
     protected int engineUpdate(byte[] input, int inputOffset, int inputLen,
                                byte[] output, int outputOffset)
         throws ShortBufferException {
+        updateCalled = true;
         return core.update(input, inputOffset, inputLen, output,
                            outputOffset);
     }
@@ -433,7 +443,9 @@ abstract class AESCipher extends CipherSpi {
      */
     protected byte[] engineDoFinal(byte[] input, int inputOffset, int inputLen)
         throws IllegalBlockSizeException, BadPaddingException {
-        return core.doFinal(input, inputOffset, inputLen);
+        byte[] out = core.doFinal(input, inputOffset, inputLen);
+        updateCalled = false;
+        return out;
     }
 
     /**
@@ -476,8 +488,10 @@ abstract class AESCipher extends CipherSpi {
                                 byte[] output, int outputOffset)
         throws IllegalBlockSizeException, ShortBufferException,
                BadPaddingException {
-        return core.doFinal(input, inputOffset, inputLen, output,
-                            outputOffset);
+        int outLen = core.doFinal(input, inputOffset, inputLen, output,
+                                  outputOffset);
+        updateCalled = false;
+        return outLen;
     }
 
     /**
@@ -574,6 +588,9 @@ abstract class AESCipher extends CipherSpi {
      */
     @Override
     protected void engineUpdateAAD(byte[] src, int offset, int len) {
+        if (core.getMode() == CipherCore.GCM_MODE && updateCalled) {
+            throw new IllegalStateException("AAD must be supplied before encryption/decryption starts");
+        }
         core.updateAAD(src, offset, len);
     }
 
@@ -606,6 +623,9 @@ abstract class AESCipher extends CipherSpi {
      */
     @Override
     protected void engineUpdateAAD(ByteBuffer src) {
+        if (core.getMode() == CipherCore.GCM_MODE && updateCalled) {
+            throw new IllegalStateException("AAD must be supplied before encryption/decryption starts");
+        }
         if (src != null) {
             int aadLen = src.limit() - src.position();
             if (aadLen != 0) {
