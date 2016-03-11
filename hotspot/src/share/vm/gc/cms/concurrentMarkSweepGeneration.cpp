@@ -7047,13 +7047,13 @@ SweepClosure::SweepClosure(CMSCollector* collector,
 }
 
 void SweepClosure::print_on(outputStream* st) const {
-  tty->print_cr("_sp = [" PTR_FORMAT "," PTR_FORMAT ")",
-                p2i(_sp->bottom()), p2i(_sp->end()));
-  tty->print_cr("_limit = " PTR_FORMAT, p2i(_limit));
-  tty->print_cr("_freeFinger = " PTR_FORMAT, p2i(_freeFinger));
-  NOT_PRODUCT(tty->print_cr("_last_fc = " PTR_FORMAT, p2i(_last_fc));)
-  tty->print_cr("_inFreeRange = %d, _freeRangeInFreeLists = %d, _lastFreeRangeCoalesced = %d",
-                _inFreeRange, _freeRangeInFreeLists, _lastFreeRangeCoalesced);
+  st->print_cr("_sp = [" PTR_FORMAT "," PTR_FORMAT ")",
+               p2i(_sp->bottom()), p2i(_sp->end()));
+  st->print_cr("_limit = " PTR_FORMAT, p2i(_limit));
+  st->print_cr("_freeFinger = " PTR_FORMAT, p2i(_freeFinger));
+  NOT_PRODUCT(st->print_cr("_last_fc = " PTR_FORMAT, p2i(_last_fc));)
+  st->print_cr("_inFreeRange = %d, _freeRangeInFreeLists = %d, _lastFreeRangeCoalesced = %d",
+               _inFreeRange, _freeRangeInFreeLists, _lastFreeRangeCoalesced);
 }
 
 #ifndef PRODUCT
@@ -7066,8 +7066,10 @@ SweepClosure::~SweepClosure() {
   assert(_limit >= _sp->bottom() && _limit <= _sp->end(),
          "sweep _limit out of bounds");
   if (inFreeRange()) {
-    warning("inFreeRange() should have been reset; dumping state of SweepClosure");
-    print();
+    LogHandle(gc, sweep) log;
+    log.error("inFreeRange() should have been reset; dumping state of SweepClosure");
+    ResourceMark rm;
+    print_on(log.error_stream());
     ShouldNotReachHere();
   }
 
