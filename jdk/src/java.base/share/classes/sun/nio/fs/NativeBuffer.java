@@ -71,8 +71,8 @@ class NativeBuffer {
         return size;
     }
 
-    Cleaner cleaner() {
-        return cleaner;
+    void free() {
+        cleaner.clean();
     }
 
     // not synchronized; only safe for use by thread-local caches
