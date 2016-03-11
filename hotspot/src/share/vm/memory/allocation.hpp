@@ -41,18 +41,6 @@
 #define ARENA_ALIGN_MASK (~((size_t)ARENA_ALIGN_M1))
 #define ARENA_ALIGN(x) ((((size_t)(x)) + ARENA_ALIGN_M1) & ARENA_ALIGN_MASK)
 
-
-// noinline attribute
-#ifdef _WINDOWS
-  #define _NOINLINE_  __declspec(noinline)
-#else
-  #if __GNUC__ < 3    // gcc 2.x does not support noinline attribute
-    #define _NOINLINE_
-  #else
-    #define _NOINLINE_ __attribute__ ((noinline))
-  #endif
-#endif
-
 class AllocFailStrategy {
 public:
   enum AllocFailEnum { EXIT_OOM, RETURN_NULL };
@@ -178,17 +166,17 @@ class NativeCallStack;
 
 template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
  public:
-  _NOINLINE_ void* operator new(size_t size, const NativeCallStack& stack) throw();
-  _NOINLINE_ void* operator new(size_t size) throw();
-  _NOINLINE_ void* operator new (size_t size, const std::nothrow_t&  nothrow_constant,
+  NOINLINE void* operator new(size_t size, const NativeCallStack& stack) throw();
+  NOINLINE void* operator new(size_t size) throw();
+  NOINLINE void* operator new (size_t size, const std::nothrow_t&  nothrow_constant,
                                const NativeCallStack& stack) throw();
-  _NOINLINE_ void* operator new (size_t size, const std::nothrow_t&  nothrow_constant)
+  NOINLINE void* operator new (size_t size, const std::nothrow_t&  nothrow_constant)
                                throw();
-  _NOINLINE_ void* operator new [](size_t size, const NativeCallStack& stack) throw();
-  _NOINLINE_ void* operator new [](size_t size) throw();
-  _NOINLINE_ void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
+  NOINLINE void* operator new [](size_t size, const NativeCallStack& stack) throw();
+  NOINLINE void* operator new [](size_t size) throw();
+  NOINLINE void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
                                const NativeCallStack& stack) throw();
-  _NOINLINE_ void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant)
+  NOINLINE void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant)
                                throw();
   void  operator delete(void* p);
   void  operator delete [] (void* p);

@@ -322,4 +322,8 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #define THREAD_LOCAL_DECL __thread
 #endif
 
+// Inlining support
+#define NOINLINE     __attribute__ ((noinline))
+#define ALWAYSINLINE __attribute__ ((always_inline))
+
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_GCC_HPP
