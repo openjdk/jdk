@@ -789,7 +789,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
         (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     } else {
       log_warning(os, thread)("Failed to start thread - pthread_create failed (%s) for attributes: %s.",
-        strerror(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+        os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     }
 
     pthread_attr_destroy(&attr);
@@ -1122,7 +1122,7 @@ void os::die() {
 size_t os::lasterror(char *buf, size_t len) {
   if (errno == 0)  return 0;
 
-  const char *s = ::strerror(errno);
+  const char *s = os::strerror(errno);
   size_t n = ::strlen(s);
   if (n >= len) {
     n = len - 1;
@@ -2141,7 +2141,7 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
   warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
           ", %d) failed; error='%s' (errno=%d)", addr, size, exec,
-          strerror(err), err);
+          os::errno_name(err), err);
 }
 
 // NOTE: Bsd kernel does not really reserve the pages for us.
@@ -3422,7 +3422,7 @@ void os::init(void) {
 
   Bsd::set_page_size(getpagesize());
   if (Bsd::page_size() == -1) {
-    fatal("os_bsd.cpp: os::init: sysconf failed (%s)", strerror(errno));
+    fatal("os_bsd.cpp: os::init: sysconf failed (%s)", os::strerror(errno));
   }
   init_page_sizes((size_t) Bsd::page_size());
 

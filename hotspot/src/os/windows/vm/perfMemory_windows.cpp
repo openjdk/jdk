@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ static void save_memory_to_file(char* addr, size_t size) {
   if (fd == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
       warning("Could not create Perfdata save file: %s: %s\n",
-              destfile, strerror(errno));
+              destfile, os::strerror(errno));
     }
   } else {
     for (size_t remaining = size; remaining > 0;) {
@@ -105,7 +105,7 @@ static void save_memory_to_file(char* addr, size_t size) {
       if (nbytes == OS_ERR) {
         if (PrintMiscellaneous && Verbose) {
           warning("Could not write Perfdata save file: %s: %s\n",
-                  destfile, strerror(errno));
+                  destfile, os::strerror(errno));
         }
         break;
       }
@@ -117,7 +117,7 @@ static void save_memory_to_file(char* addr, size_t size) {
     int result = ::_close(fd);
     if (PrintMiscellaneous && Verbose) {
       if (result == OS_ERR) {
-        warning("Could not close %s: %s\n", destfile, strerror(errno));
+        warning("Could not close %s: %s\n", destfile, os::strerror(errno));
       }
     }
   }
@@ -497,7 +497,7 @@ static void remove_file(const char* dirname, const char* filename) {
     if (PrintMiscellaneous && Verbose) {
       if (errno != ENOENT) {
         warning("Could not unlink shared memory backing"
-                " store file %s : %s\n", path, strerror(errno));
+                " store file %s : %s\n", path, os::strerror(errno));
       }
     }
   }
@@ -1358,7 +1358,7 @@ static HANDLE create_sharedmem_resources(const char* dirname, const char* filena
     if (ret_code == OS_ERR) {
       if (PrintMiscellaneous && Verbose) {
         warning("Could not get status information from file %s: %s\n",
-            filename, strerror(errno));
+            filename, os::strerror(errno));
       }
       CloseHandle(fmh);
       CloseHandle(fh);
@@ -1553,7 +1553,7 @@ static size_t sharedmem_filesize(const char* filename, TRAPS) {
   //
   if (::stat(filename, &statbuf) == OS_ERR) {
     if (PrintMiscellaneous && Verbose) {
-      warning("stat %s failed: %s\n", filename, strerror(errno));
+      warning("stat %s failed: %s\n", filename, os::strerror(errno));
     }
     THROW_MSG_0(vmSymbols::java_io_IOException(),
                 "Could not determine PerfMemory size");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,13 @@ do {                                                                           \
 // an extra arg and use strerror to convert it to a meaningful string
 // like "Invalid argument", "out of memory" etc
 #define vmassert_status(p, status, msg) \
-  vmassert(p, "error %s(%d), %s", strerror(status), status, msg)
+do {                                                                           \
+  if (!(p)) {                                                                  \
+    report_vm_status_error(__FILE__, __LINE__, "assert(" #p ") failed",        \
+                           status, msg);                                       \
+    BREAKPOINT;                                                                \
+  }                                                                            \
+} while (0)
 
 // For backward compatibility.
 #define assert_status(p, status, msg) vmassert_status(p, status, msg)
@@ -209,6 +215,8 @@ void report_vm_error(const char* file, int line, const char* error_msg,
 void report_vm_error(const char* file, int line, const char* error_msg,
                      const char* detail_fmt, ...);
 #endif
+void report_vm_status_error(const char* file, int line, const char* error_msg,
+                            int status, const char* detail);
 void report_fatal(const char* file, int line, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 void report_vm_out_of_memory(const char* file, int line, size_t size, VMErrorType vm_err_type,
                              const char* detail_fmt, ...) ATTRIBUTE_PRINTF(5, 6);
