@@ -2286,17 +2286,16 @@ bool CMSCollector::verify_after_remark() {
     // all marking, then check if the new marks-vector is
     // a subset of the CMS marks-vector.
     verify_after_remark_work_1();
-  } else if (CMSRemarkVerifyVariant == 2) {
+  } else {
+    guarantee(CMSRemarkVerifyVariant == 2, "Range checking for CMSRemarkVerifyVariant should guarantee 1 or 2");
     // In this second variant of verification, we flag an error
     // (i.e. an object reachable in the new marks-vector not reachable
     // in the CMS marks-vector) immediately, also indicating the
     // identify of an object (A) that references the unmarked object (B) --
     // presumably, a mutation to A failed to be picked up by preclean/remark?
     verify_after_remark_work_2();
-  } else {
-    warning("Unrecognized value " UINTX_FORMAT " for CMSRemarkVerifyVariant",
-            CMSRemarkVerifyVariant);
   }
+
   return true;
 }
 
