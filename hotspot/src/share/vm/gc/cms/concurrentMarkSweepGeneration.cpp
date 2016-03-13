@@ -1412,7 +1412,7 @@ void CMSCollector::acquire_control_and_collect(bool full,
     if (_foregroundGCShouldWait) {
       // We are going to be waiting for action for the CMS thread;
       // it had better not be gone (for instance at shutdown)!
-      assert(ConcurrentMarkSweepThread::cmst() != NULL,
+      assert(ConcurrentMarkSweepThread::cmst() != NULL && !ConcurrentMarkSweepThread::cmst()->has_terminated(),
              "CMS thread must be running");
       // Wait here until the background collector gives us the go-ahead
       ConcurrentMarkSweepThread::clear_CMS_flag(
@@ -2286,17 +2286,16 @@ bool CMSCollector::verify_after_remark() {
     // all marking, then check if the new marks-vector is
     // a subset of the CMS marks-vector.
     verify_after_remark_work_1();
-  } else if (CMSRemarkVerifyVariant == 2) {
+  } else {
+    guarantee(CMSRemarkVerifyVariant == 2, "Range checking for CMSRemarkVerifyVariant should guarantee 1 or 2");
     // In this second variant of verification, we flag an error
     // (i.e. an object reachable in the new marks-vector not reachable
     // in the CMS marks-vector) immediately, also indicating the
     // identify of an object (A) that references the unmarked object (B) --
     // presumably, a mutation to A failed to be picked up by preclean/remark?
     verify_after_remark_work_2();
-  } else {
-    warning("Unrecognized value " UINTX_FORMAT " for CMSRemarkVerifyVariant",
-            CMSRemarkVerifyVariant);
   }
+
   return true;
 }
 
@@ -3649,7 +3648,7 @@ void CMSCollector::abortable_preclean() {
     // XXX FIX ME!!! YSR
     size_t loops = 0, workdone = 0, cumworkdone = 0, waited = 0;
     while (!(should_abort_preclean() ||
-             ConcurrentMarkSweepThread::should_terminate())) {
+             ConcurrentMarkSweepThread::cmst()->should_terminate())) {
       workdone = preclean_work(CMSPrecleanRefLists2, CMSPrecleanSurvivors2);
       cumworkdone += workdone;
       loops++;
