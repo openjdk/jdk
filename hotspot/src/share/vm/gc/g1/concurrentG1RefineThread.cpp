@@ -78,7 +78,7 @@ void ConcurrentG1RefineThread::initialize() {
 void ConcurrentG1RefineThread::wait_for_completed_buffers() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
-  while (!_should_terminate && !is_active()) {
+  while (!should_terminate() && !is_active()) {
     _monitor->wait(Mutex::_no_safepoint_check_flag);
   }
 }
@@ -109,22 +109,13 @@ void ConcurrentG1RefineThread::deactivate() {
   }
 }
 
-void ConcurrentG1RefineThread::run() {
-  initialize_in_thread();
-  wait_for_universe_init();
-
-  run_service();
-
-  terminate();
-}
-
 void ConcurrentG1RefineThread::run_service() {
   _vtime_start = os::elapsedVTime();
 
-  while (!_should_terminate) {
+  while (!should_terminate()) {
     // Wait for work
     wait_for_completed_buffers();
-    if (_should_terminate) {
+    if (should_terminate()) {
       break;
     }
 
@@ -166,23 +157,6 @@ void ConcurrentG1RefineThread::run_service() {
   }
 
   log_debug(gc, refine)("Stopping %d", _worker_id);
-}
-
-void ConcurrentG1RefineThread::stop() {
-  // it is ok to take late safepoints here, if needed
-  {
-    MutexLockerEx mu(Terminator_lock);
-    _should_terminate = true;
-  }
-
-  stop_service();
-
-  {
-    MutexLockerEx mu(Terminator_lock);
-    while (!_has_terminated) {
-      Terminator_lock->wait();
-    }
-  }
 }
 
 void ConcurrentG1RefineThread::stop_service() {

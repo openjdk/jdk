@@ -37,12 +37,12 @@ ConcurrentGCThread::ConcurrentGCThread() :
   _should_terminate(false), _has_terminated(false) {
 };
 
-void ConcurrentGCThread::create_and_start() {
+void ConcurrentGCThread::create_and_start(ThreadPriority prio) {
   if (os::create_thread(this, os::cgc_thread)) {
     // XXX: need to set this to low priority
     // unless "aggressive mode" set; priority
     // should be just less than that of VMThread.
-    os::set_priority(this, NearMaxPriority);
+    os::set_priority(this, prio);
     if (!_should_terminate && !DisableStartThread) {
       os::start_thread(this);
     }
@@ -72,6 +72,34 @@ void ConcurrentGCThread::terminate() {
                      Mutex::_no_safepoint_check_flag);
     _has_terminated = true;
     Terminator_lock->notify();
+  }
+}
+
+void ConcurrentGCThread::run() {
+  initialize_in_thread();
+  wait_for_universe_init();
+
+  run_service();
+
+  terminate();
+}
+
+void ConcurrentGCThread::stop() {
+  // it is ok to take late safepoints here, if needed
+  {
+    MutexLockerEx mu(Terminator_lock);
+    assert(!_has_terminated,   "stop should only be called once");
+    assert(!_should_terminate, "stop should only be called once");
+    _should_terminate = true;
+  }
+
+  stop_service();
+
+  {
+    MutexLockerEx mu(Terminator_lock);
+    while (!_has_terminated) {
+      Terminator_lock->wait();
+    }
   }
 }
 
