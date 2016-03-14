@@ -105,25 +105,16 @@ class GCConcPhaseTimer : StackObj {
   }
 };
 
-void ConcurrentMarkThread::run() {
-  initialize_in_thread();
-  wait_for_universe_init();
-
-  run_service();
-
-  terminate();
-}
-
 void ConcurrentMarkThread::run_service() {
   _vtime_start = os::elapsedVTime();
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   G1CollectorPolicy* g1_policy = g1h->g1_policy();
 
-  while (!_should_terminate) {
+  while (!should_terminate()) {
     // wait until started is set.
     sleepBeforeNextCycle();
-    if (_should_terminate) {
+    if (should_terminate()) {
       _cm->root_regions()->cancel_scan();
       break;
     }
@@ -293,22 +284,6 @@ void ConcurrentMarkThread::run_service() {
   }
 }
 
-void ConcurrentMarkThread::stop() {
-  {
-    MutexLockerEx ml(Terminator_lock);
-    _should_terminate = true;
-  }
-
-  stop_service();
-
-  {
-    MutexLockerEx ml(Terminator_lock);
-    while (!_has_terminated) {
-      Terminator_lock->wait();
-    }
-  }
-}
-
 void ConcurrentMarkThread::stop_service() {
   MutexLockerEx ml(CGC_lock, Mutex::_no_safepoint_check_flag);
   CGC_lock->notify_all();
@@ -320,7 +295,7 @@ void ConcurrentMarkThread::sleepBeforeNextCycle() {
   assert(!in_progress(), "should have been cleared");
 
   MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
-  while (!started() && !_should_terminate) {
+  while (!started() && !should_terminate()) {
     CGC_lock->wait(Mutex::_no_safepoint_check_flag);
   }
 

@@ -96,6 +96,9 @@ void CollectorPolicy::initialize_flags() {
   }
 
   // Check heap parameter properties
+  if (MaxHeapSize < 2 * M) {
+    vm_exit_during_initialization("Too small maximum heap");
+  }
   if (InitialHeapSize < M) {
     vm_exit_during_initialization("Too small initial heap");
   }

@@ -180,18 +180,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   // First make sure that, if either parameter is set, its value is
   // reasonable.
-  if (!FLAG_IS_DEFAULT(MaxGCPauseMillis)) {
-    if (MaxGCPauseMillis < 1) {
-      vm_exit_during_initialization("MaxGCPauseMillis should be "
-                                    "greater than 0");
-    }
-  }
-  if (!FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
-    if (GCPauseIntervalMillis < 1) {
-      vm_exit_during_initialization("GCPauseIntervalMillis should be "
-                                    "greater than 0");
-    }
-  }
+  guarantee(MaxGCPauseMillis >= 1, "Range checking for MaxGCPauseMillis should guarantee that value is >= 1");
 
   // Then, if the pause time target parameter was not set, set it to
   // the default value.
@@ -213,16 +202,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
   if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
     FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
   }
-
-  // Finally, make sure that the two parameters are consistent.
-  if (MaxGCPauseMillis >= GCPauseIntervalMillis) {
-    char buffer[256];
-    jio_snprintf(buffer, 256,
-                 "MaxGCPauseMillis (%u) should be less than "
-                 "GCPauseIntervalMillis (%u)",
-                 MaxGCPauseMillis, GCPauseIntervalMillis);
-    vm_exit_during_initialization(buffer);
-  }
+  guarantee(GCPauseIntervalMillis >= 1, "Constraint for GCPauseIntervalMillis should guarantee that value is >= 1");
+  guarantee(GCPauseIntervalMillis > MaxGCPauseMillis, "Constraint for GCPauseIntervalMillis should guarantee that GCPauseIntervalMillis > MaxGCPauseMillis");
 
   double max_gc_time = (double) MaxGCPauseMillis / 1000.0;
   double time_slice  = (double) GCPauseIntervalMillis / 1000.0;
@@ -238,14 +219,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
          "if a user set it to 0");
   _gc_overhead_perc = 100.0 * (1.0 / (1.0 + GCTimeRatio));
 
-  uintx reserve_perc = G1ReservePercent;
-  // Put an artificial ceiling on this so that it's not set to a silly value.
-  if (reserve_perc > 50) {
-    reserve_perc = 50;
-    warning("G1ReservePercent is set to a value that is too large, "
-            "it's been updated to " UINTX_FORMAT, reserve_perc);
-  }
-  _reserve_factor = (double) reserve_perc / 100.0;
+  guarantee(G1ReservePercent <= 50, "Range checking should not allow values over 50.");
+  _reserve_factor = (double) G1ReservePercent / 100.0;
   // This will be set when the heap is expanded
   // for the first time during initialization.
   _reserve_regions = 0;
@@ -287,9 +262,8 @@ void G1CollectorPolicy::initialize_flags() {
     FLAG_SET_ERGO(size_t, G1HeapRegionSize, HeapRegion::GrainBytes);
   }
 
-  if (SurvivorRatio < 1) {
-    vm_exit_during_initialization("Invalid survivor ratio specified");
-  }
+  guarantee(SurvivorRatio >= 1, "Range checking for SurvivorRatio should guarantee that value is >= 1");
+
   CollectorPolicy::initialize_flags();
   _young_gen_sizer = new G1YoungGenSizer(); // Must be after call to initialize_flags
 }

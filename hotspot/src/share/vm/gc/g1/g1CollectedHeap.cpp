@@ -1229,6 +1229,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   ResourceMark rm;
 
   print_heap_before_gc();
+  print_heap_regions();
   trace_heap_before_gc(gc_tracer);
 
   size_t metadata_prev_used = MetaspaceAux::used_bytes();
@@ -1447,6 +1448,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       heap_transition.print();
 
       print_heap_after_gc();
+      print_heap_regions();
       trace_heap_after_gc(gc_tracer);
 
       post_full_gc_dump(gc_timer);
@@ -2718,6 +2720,14 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
   return false; // keep some compilers happy
 }
 
+void G1CollectedHeap::print_heap_regions() const {
+  LogHandle(gc, heap, region) log;
+  if (log.is_trace()) {
+    ResourceMark rm;
+    print_regions_on(log.trace_stream());
+  }
+}
+
 void G1CollectedHeap::print_on(outputStream* st) const {
   st->print(" %-20s", "garbage-first heap");
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
@@ -2738,11 +2748,7 @@ void G1CollectedHeap::print_on(outputStream* st) const {
   MetaspaceAux::print_on(st);
 }
 
-void G1CollectedHeap::print_extended_on(outputStream* st) const {
-  print_on(st);
-
-  // Print the per-region information.
-  st->cr();
+void G1CollectedHeap::print_regions_on(outputStream* st) const {
   st->print_cr("Heap Regions: E=young(eden), S=young(survivor), O=old, "
                "HS=humongous(starts), HC=humongous(continues), "
                "CS=collection set, F=free, A=archive, TS=gc time stamp, "
@@ -2750,6 +2756,13 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
                "TAMS=top-at-mark-start (previous, next)");
   PrintRegionClosure blk(st);
   heap_region_iterate(&blk);
+}
+
+void G1CollectedHeap::print_extended_on(outputStream* st) const {
+  print_on(st);
+
+  // Print the per-region information.
+  print_regions_on(st);
 }
 
 void G1CollectedHeap::print_on_error(outputStream* st) const {
@@ -3203,6 +3216,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   wait_for_root_region_scanning();
 
   print_heap_before_gc();
+  print_heap_regions();
   trace_heap_before_gc(_gc_tracer_stw);
 
   _verifier->verify_region_sets_optional();
@@ -3535,6 +3549,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
 
     print_heap_after_gc();
+    print_heap_regions();
     trace_heap_after_gc(_gc_tracer_stw);
 
     // We must call G1MonitoringSupport::update_sizes() in the same scoping level

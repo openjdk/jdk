@@ -42,7 +42,6 @@
 
 ConcurrentMarkSweepThread* ConcurrentMarkSweepThread::_cmst = NULL;
 CMSCollector* ConcurrentMarkSweepThread::_collector         = NULL;
-bool ConcurrentMarkSweepThread::_should_terminate           = false;
 int  ConcurrentMarkSweepThread::_CMS_flag                   = CMS_nil;
 
 volatile jint ConcurrentMarkSweepThread::_pending_yields    = 0;
@@ -62,88 +61,60 @@ ConcurrentMarkSweepThread::ConcurrentMarkSweepThread(CMSCollector* collector)
 
   set_name("CMS Main Thread");
 
-  if (os::create_thread(this, os::cgc_thread)) {
-    // An old comment here said: "Priority should be just less
-    // than that of VMThread".  Since the VMThread runs at
-    // NearMaxPriority, the old comment was inaccurate, but
-    // changing the default priority to NearMaxPriority-1
-    // could change current behavior, so the default of
-    // NearMaxPriority stays in place.
-    //
-    // Note that there's a possibility of the VMThread
-    // starving if UseCriticalCMSThreadPriority is on.
-    // That won't happen on Solaris for various reasons,
-    // but may well happen on non-Solaris platforms.
-    int native_prio;
-    if (UseCriticalCMSThreadPriority) {
-      native_prio = os::java_to_os_priority[CriticalPriority];
-    } else {
-      native_prio = os::java_to_os_priority[NearMaxPriority];
-    }
-    os::set_native_priority(this, native_prio);
+  // An old comment here said: "Priority should be just less
+  // than that of VMThread".  Since the VMThread runs at
+  // NearMaxPriority, the old comment was inaccurate, but
+  // changing the default priority to NearMaxPriority-1
+  // could change current behavior, so the default of
+  // NearMaxPriority stays in place.
+  //
+  // Note that there's a possibility of the VMThread
+  // starving if UseCriticalCMSThreadPriority is on.
+  // That won't happen on Solaris for various reasons,
+  // but may well happen on non-Solaris platforms.
+  create_and_start(UseCriticalCMSThreadPriority ? CriticalPriority : NearMaxPriority);
 
-    if (!DisableStartThread) {
-      os::start_thread(this);
-    }
-  }
   _sltMonitor = SLT_lock;
 }
 
-void ConcurrentMarkSweepThread::run() {
+void ConcurrentMarkSweepThread::run_service() {
   assert(this == cmst(), "just checking");
 
-  initialize_in_thread();
-  // From this time Thread::current() should be working.
-  assert(this == Thread::current(), "just checking");
   if (BindCMSThreadToCPU && !os::bind_to_processor(CPUForCMSThread)) {
     log_warning(gc)("Couldn't bind CMS thread to processor " UINTX_FORMAT, CPUForCMSThread);
   }
-  // Wait until Universe::is_fully_initialized()
+
   {
-    CMSLoopCountWarn loopX("CMS::run", "waiting for "
-                           "Universe::is_fully_initialized()", 2);
     MutexLockerEx x(CGC_lock, true);
     set_CMS_flag(CMS_cms_wants_token);
-    // Wait until Universe is initialized and all initialization is completed.
-    while (!is_init_completed() && !Universe::is_fully_initialized() &&
-           !_should_terminate) {
-      CGC_lock->wait(true, 200);
-      loopX.tick();
-    }
+    assert(is_init_completed() && Universe::is_fully_initialized(), "ConcurrentGCThread::run() should have waited for this.");
+
     // Wait until the surrogate locker thread that will do
     // pending list locking on our behalf has been created.
     // We cannot start the SLT thread ourselves since we need
     // to be a JavaThread to do so.
     CMSLoopCountWarn loopY("CMS::run", "waiting for SLT installation", 2);
-    while (_slt == NULL && !_should_terminate) {
+    while (_slt == NULL && !should_terminate()) {
       CGC_lock->wait(true, 200);
       loopY.tick();
     }
     clear_CMS_flag(CMS_cms_wants_token);
   }
 
-  while (!_should_terminate) {
+  while (!should_terminate()) {
     sleepBeforeNextCycle();
-    if (_should_terminate) break;
+    if (should_terminate()) break;
     GCIdMark gc_id_mark;
     GCCause::Cause cause = _collector->_full_gc_requested ?
       _collector->_full_gc_cause : GCCause::_cms_concurrent_mark;
     _collector->collect_in_background(cause);
   }
-  assert(_should_terminate, "just checking");
+
   // Check that the state of any protocol for synchronization
   // between background (CMS) and foreground collector is "clean"
   // (i.e. will not potentially block the foreground collector,
   // requiring action by us).
   verify_ok_to_terminate();
-  // Signal that it is terminated
-  {
-    MutexLockerEx mu(Terminator_lock,
-                     Mutex::_no_safepoint_check_flag);
-    assert(_cmst == this, "Weird!");
-    _cmst = NULL;
-    Terminator_lock->notify();
-  }
 }
 
 #ifndef PRODUCT
@@ -157,39 +128,24 @@ void ConcurrentMarkSweepThread::verify_ok_to_terminate() const {
 
 // create and start a new ConcurrentMarkSweep Thread for given CMS generation
 ConcurrentMarkSweepThread* ConcurrentMarkSweepThread::start(CMSCollector* collector) {
-  if (!_should_terminate) {
-    assert(cmst() == NULL, "start() called twice?");
-    ConcurrentMarkSweepThread* th = new ConcurrentMarkSweepThread(collector);
-    assert(cmst() == th, "Where did the just-created CMS thread go?");
-    return th;
-  }
-  return NULL;
+  guarantee(_cmst == NULL, "start() called twice!");
+  ConcurrentMarkSweepThread* th = new ConcurrentMarkSweepThread(collector);
+  assert(_cmst == th, "Where did the just-created CMS thread go?");
+  return th;
 }
 
-void ConcurrentMarkSweepThread::stop() {
-  // it is ok to take late safepoints here, if needed
-  {
-    MutexLockerEx x(Terminator_lock);
-    _should_terminate = true;
-  }
-  { // Now post a notify on CGC_lock so as to nudge
-    // CMS thread(s) that might be slumbering in
-    // sleepBeforeNextCycle.
-    MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
-    CGC_lock->notify_all();
-  }
-  { // Now wait until (all) CMS thread(s) have exited
-    MutexLockerEx x(Terminator_lock);
-    while(cmst() != NULL) {
-      Terminator_lock->wait();
-    }
-  }
+void ConcurrentMarkSweepThread::stop_service() {
+  // Now post a notify on CGC_lock so as to nudge
+  // CMS thread(s) that might be slumbering in
+  // sleepBeforeNextCycle.
+  MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
+  CGC_lock->notify_all();
 }
 
 void ConcurrentMarkSweepThread::threads_do(ThreadClosure* tc) {
   assert(tc != NULL, "Null ThreadClosure");
-  if (_cmst != NULL) {
-    tc->do_thread(_cmst);
+  if (cmst() != NULL && !cmst()->has_terminated()) {
+    tc->do_thread(cmst());
   }
   assert(Universe::is_fully_initialized(),
          "Called too early, make sure heap is fully initialized");
@@ -202,8 +158,8 @@ void ConcurrentMarkSweepThread::threads_do(ThreadClosure* tc) {
 }
 
 void ConcurrentMarkSweepThread::print_all_on(outputStream* st) {
-  if (_cmst != NULL) {
-    _cmst->print_on(st);
+  if (cmst() != NULL && !cmst()->has_terminated()) {
+    cmst()->print_on(st);
     st->cr();
   }
   if (_collector != NULL) {
@@ -278,7 +234,7 @@ void ConcurrentMarkSweepThread::desynchronize(bool is_cms_thread) {
 void ConcurrentMarkSweepThread::wait_on_cms_lock(long t_millis) {
   MutexLockerEx x(CGC_lock,
                   Mutex::_no_safepoint_check_flag);
-  if (_should_terminate || _collector->_full_gc_requested) {
+  if (should_terminate() || _collector->_full_gc_requested) {
     return;
   }
   set_CMS_flag(CMS_cms_wants_token);   // to provoke notifies
@@ -307,7 +263,7 @@ void ConcurrentMarkSweepThread::wait_on_cms_lock_for_scavenge(long t_millis) {
 
   unsigned int loop_count = 0;
 
-  while(!_should_terminate) {
+  while(!should_terminate()) {
     double now_time = os::elapsedTime();
     long wait_time_millis;
 
@@ -327,7 +283,7 @@ void ConcurrentMarkSweepThread::wait_on_cms_lock_for_scavenge(long t_millis) {
     {
       MutexLockerEx x(CGC_lock, Mutex::_no_safepoint_check_flag);
 
-      if (_should_terminate || _collector->_full_gc_requested) {
+      if (should_terminate() || _collector->_full_gc_requested) {
         return;
       }
       set_CMS_flag(CMS_cms_wants_token);   // to provoke notifies
@@ -364,7 +320,7 @@ void ConcurrentMarkSweepThread::wait_on_cms_lock_for_scavenge(long t_millis) {
 }
 
 void ConcurrentMarkSweepThread::sleepBeforeNextCycle() {
-  while (!_should_terminate) {
+  while (!should_terminate()) {
     if(CMSWaitDuration >= 0) {
       // Wait until the next synchronous GC, a concurrent full gc
       // request or a timeout, whichever is earlier.

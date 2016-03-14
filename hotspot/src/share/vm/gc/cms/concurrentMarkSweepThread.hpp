@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,6 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   friend class VMStructs;
   friend class ConcurrentMarkSweepGeneration;   // XXX should remove friendship
   friend class CMSCollector;
- public:
-  virtual void run();
 
  private:
   static ConcurrentMarkSweepThread*     _cmst;
@@ -46,8 +44,6 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   static SurrogateLockerThread*         _slt;
   static SurrogateLockerThread::SLT_msg_type _sltBuffer;
   static Monitor*                       _sltMonitor;
-
-  static bool _should_terminate;
 
   enum CMS_flag_type {
     CMS_nil             = NoBits,
@@ -72,6 +68,9 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   // debugging
   void verify_ok_to_terminate() const PRODUCT_RETURN;
 
+  void run_service();
+  void stop_service();
+
  public:
   // Constructor
   ConcurrentMarkSweepThread(CMSCollector* collector);
@@ -91,8 +90,6 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
 
   // Create and start the CMS Thread, or stop it on shutdown
   static ConcurrentMarkSweepThread* start(CMSCollector* collector);
-  static void stop();
-  static bool should_terminate() { return _should_terminate; }
 
   // Synchronization using CMS token
   static void synchronize(bool is_cms_thread);
