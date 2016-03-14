@@ -81,7 +81,7 @@ ciMethodData::ciMethodData() : ciMetadata(NULL) {
 void ciMethodData::load_extra_data() {
   MethodData* mdo = get_MethodData();
 
-  MutexLocker(mdo->extra_data_lock());
+  MutexLocker ml(mdo->extra_data_lock());
 
   // speculative trap entries also hold a pointer to a Method so need to be translated
   DataLayout* dp_src  = mdo->extra_data_base();
@@ -103,16 +103,13 @@ void ciMethodData::load_extra_data() {
 
     switch(tag) {
     case DataLayout::speculative_trap_data_tag: {
-      ciSpeculativeTrapData* data_dst = new ciSpeculativeTrapData(dp_dst);
-      SpeculativeTrapData* data_src = new SpeculativeTrapData(dp_src);
+      ciSpeculativeTrapData data_dst(dp_dst);
+      SpeculativeTrapData   data_src(dp_src);
 
-      data_dst->translate_from(data_src);
-
-#ifdef ASSERT
-      SpeculativeTrapData* data_src2 = new SpeculativeTrapData(dp_src);
-      assert(data_src2->method() == data_src->method() && data_src2->bci() == data_src->bci(), "entries changed while translating");
-#endif
-
+      { // During translation a safepoint can happen or VM lock can be taken (e.g., Compile_lock).
+        MutexUnlocker ml(mdo->extra_data_lock());
+        data_dst.translate_from(&data_src);
+      }
       break;
     }
     case DataLayout::bit_data_tag:
@@ -120,9 +117,11 @@ void ciMethodData::load_extra_data() {
     case DataLayout::no_tag:
     case DataLayout::arg_info_data_tag:
       // An empty slot or ArgInfoData entry marks the end of the trap data
-      return;
+      {
+        return; // Need a block to avoid SS compiler bug
+      }
     default:
-      fatal("bad tag = %d", dp_dst->tag());
+      fatal("bad tag = %d", tag);
     }
   }
 }
