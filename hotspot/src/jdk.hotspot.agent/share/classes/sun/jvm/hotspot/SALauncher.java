@@ -30,6 +30,7 @@ import java.util.Arrays;
 import sun.jvm.hotspot.tools.JStack;
 import sun.jvm.hotspot.tools.JMap;
 import sun.jvm.hotspot.tools.JInfo;
+import sun.jvm.hotspot.tools.JSnap;
 
 public class SALauncher {
 
@@ -39,6 +40,7 @@ public class SALauncher {
         System.out.println("    jstack --help\tto get more information");
         System.out.println("    jmap   --help\tto get more information");
         System.out.println("    jinfo  --help\tto get more information");
+        System.out.println("    jsnap  --help\tto get more information");
         return false;
     }
 
@@ -85,6 +87,11 @@ public class SALauncher {
         return commonHelp();
     }
 
+    private static boolean jsnapHelp() {
+        System.out.println(" <no option>\tdump performance counters");
+        return commonHelp();
+    }
+
     private static boolean toolHelp(String toolName) {
         if (toolName.equals("jstack")) {
             return jstackHelp();
@@ -94,6 +101,9 @@ public class SALauncher {
         }
         if (toolName.equals("jmap")) {
             return jmapHelp();
+        }
+        if (toolName.equals("jsnap")) {
+            return jsnapHelp();
         }
         if (toolName.equals("hsdb") || toolName.equals("clhsdb")) {
             return commonHelp();
@@ -308,6 +318,40 @@ public class SALauncher {
         JInfo.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
+    private static void runJSNAP(String[] oldArgs) {
+        SAGetopt sg = new SAGetopt(oldArgs);
+        String[] longOpts = {"exe=", "core=", "pid="};
+
+        ArrayList<String> newArgs = new ArrayList();
+        String exeORpid = null;
+        String core = null;
+        String s = null;
+
+        while((s = sg.next(null, longOpts)) != null) {
+            if (s.equals("exe")) {
+                exeORpid = sg.getOptarg();
+                continue;
+            }
+            if (s.equals("core")) {
+                core = sg.getOptarg();
+                continue;
+            }
+            if (s.equals("pid")) {
+                exeORpid = sg.getOptarg();
+                continue;
+            }
+        }
+
+        if (exeORpid != null) {
+            newArgs.add(exeORpid);
+            if (core != null) {
+                newArgs.add(core);
+            }
+        }
+
+        JSnap.main(newArgs.toArray(new String[newArgs.size()]));
+    }
+
     public static void main(String[] args) {
         // Provide a help
         if (args.length == 0) {
@@ -353,6 +397,11 @@ public class SALauncher {
 
         if (args[0].equals("jinfo")) {
             runJINFO(oldArgs);
+            return;
+        }
+
+        if (args[0].equals("jsnap")) {
+            runJSNAP(oldArgs);
             return;
         }
     }
