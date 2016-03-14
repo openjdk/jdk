@@ -24,6 +24,7 @@
  */
 
 /* @test
+ * @compile TestLookup.java TestCls.java
  * @run testng/othervm -ea -esa test.java.lang.invoke.t8150782.TestLookup
  */
 package test.java.lang.invoke.t8150782;
