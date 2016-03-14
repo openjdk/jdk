@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 2001-2004 The Apache Software Foundation.
@@ -17,18 +16,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: CallTemplate.java,v 1.2.4.1 2005/09/12 10:02:41 pvedula Exp $
- */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import com.sun.org.apache.bcel.internal.generic.ALOAD;
-import com.sun.org.apache.bcel.internal.generic.ASTORE;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.INVOKEVIRTUAL;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
-import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
@@ -56,7 +49,7 @@ final class CallTemplate extends Instruction {
      * this array can be either a WithParam or a Param if no WithParam
      * exists for a particular parameter.
      */
-    private Object[] _parameters = null;
+    private SyntaxTreeNode[] _parameters = null;
 
     /**
      * The corresponding template which this CallTemplate calls.
@@ -147,11 +140,10 @@ final class CallTemplate extends Instruction {
 
         // If calling a simply named template, push actual arguments
         if (_calleeTemplate != null) {
-            Vector calleeParams = _calleeTemplate.getParameters();
             int numParams = _parameters.length;
 
             for (int i = 0; i < numParams; i++) {
-                SyntaxTreeNode node = (SyntaxTreeNode)_parameters[i];
+                SyntaxTreeNode node = _parameters[i];
                 methodSig.append(OBJECT_SIG);   // append Object to signature
 
                 // Push 'null' if Param to indicate no actual parameter specified
@@ -169,6 +161,15 @@ final class CallTemplate extends Instruction {
         il.append(new INVOKEVIRTUAL(cpg.addMethodref(className,
                                                      methodName,
                                                      methodSig.toString())));
+
+        // release temporary result trees
+        if (_parameters != null) {
+            for (int i = 0; i < _parameters.length; i++) {
+                if (_parameters[i] instanceof WithParam) {
+                    ((WithParam)_parameters[i]).releaseResultTree(classGen, methodGen);
+                }
+            }
+        }
 
         // Do not need to call Translet.popParamFrame() if we are
         // calling a simple named template.
@@ -203,9 +204,9 @@ final class CallTemplate extends Instruction {
     private void buildParameterList() {
         // Put the parameters from the called template into the array first.
         // This is to ensure the order of the parameters.
-        Vector defaultParams = _calleeTemplate.getParameters();
+        Vector<Param> defaultParams = _calleeTemplate.getParameters();
         int numParams = defaultParams.size();
-        _parameters = new Object[numParams];
+        _parameters = new SyntaxTreeNode[numParams];
         for (int i = 0; i < numParams; i++) {
             _parameters[i] = defaultParams.elementAt(i);
         }
@@ -222,15 +223,15 @@ final class CallTemplate extends Instruction {
 
                 // Search for a Param with the same name
                 for (int k = 0; k < numParams; k++) {
-                    Object object = _parameters[k];
-                    if (object instanceof Param
-                        && ((Param)object).getName().equals(name)) {
+                    SyntaxTreeNode parm = _parameters[k];
+                    if (parm instanceof Param
+                        && ((Param)parm).getName().equals(name)) {
                         withParam.setDoParameterOptimization(true);
                         _parameters[k] = withParam;
                         break;
                     }
-                    else if (object instanceof WithParam
-                        && ((WithParam)object).getName().equals(name)) {
+                    else if (parm instanceof WithParam
+                        && ((WithParam)parm).getName().equals(name)) {
                         withParam.setDoParameterOptimization(true);
                         _parameters[k] = withParam;
                         break;

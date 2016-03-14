@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,12 +232,12 @@ abstract class TIFFFaxCompressor extends TIFFCompressor {
     }
 
     /**
-     * Sets the value of the <code>metadata</code> field.
+     * Sets the value of the {@code metadata} field.
      *
      * <p> The implementation in this class also sets local options
      * from the FILL_ORDER field if it exists.</p>
      *
-     * @param metadata the <code>IIOMetadata</code> object for the
+     * @param metadata the {@code IIOMetadata} object for the
      * image being written.
      *
      * @see #getMetadata()
@@ -253,8 +253,8 @@ abstract class TIFFFaxCompressor extends TIFFCompressor {
     }
 
     /**
-     * Return min of <code>maxOffset</code> or offset of first pixel
-     * different from pixel at <code>bitOffset</code>.
+     * Return min of {@code maxOffset} or offset of first pixel
+     * different from pixel at {@code bitOffset}.
      */
     public int nextState(byte[] data,
                           int    base,

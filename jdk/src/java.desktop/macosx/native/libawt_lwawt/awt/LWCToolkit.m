@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -743,9 +743,10 @@ Java_sun_lwawt_macosx_LWCToolkit_initAppkit
 JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
     OSXAPP_SetJavaVM(vm);
 
-    // We need to let Foundation know that this is a multithreaded application, if it isn't already.
+    // We need to let Foundation know that this is a multithreaded application,
+    // if it isn't already.
     if (![NSThread isMultiThreaded]) {
-        [NSThread detachNewThreadSelector:nil toTarget:nil withObject:nil];
+        [[[[NSThread alloc] init] autorelease] start];
     }
 
     return JNI_VERSION_1_4;

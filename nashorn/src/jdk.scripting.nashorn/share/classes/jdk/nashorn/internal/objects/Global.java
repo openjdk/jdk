@@ -2724,12 +2724,9 @@ public final class Global extends Scope {
             // Retrieve current state of ENV variables.
             env.putAll(System.getenv(), scriptEnv._strict);
 
-            // Some platforms, e.g., Windows, do not define the PWD environment
-            // variable, so that the $ENV.PWD property needs to be explicitly
-            // set.
-            if (!env.containsKey(ScriptingFunctions.PWD_NAME)) {
-                env.put(ScriptingFunctions.PWD_NAME, System.getProperty("user.dir"), scriptEnv._strict);
-            }
+            // Set the PWD variable to a value that is guaranteed to be understood
+            // by the underlying platform.
+            env.put(ScriptingFunctions.PWD_NAME, System.getProperty("user.dir"), scriptEnv._strict);
         }
         addOwnProperty(ScriptingFunctions.ENV_NAME, Attribute.NOT_ENUMERABLE, env);
 

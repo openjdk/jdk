@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,15 +85,15 @@ public class TIFFRenderedImage implements RenderedImage {
     }
 
     /**
-     * Creates a copy of <code>param</code>. The source subsampling and
+     * Creates a copy of {@code param}. The source subsampling and
      * and bands settings and the destination bands and offset settings
-     * are copied. If <code>param</code> is a <code>TIFFImageReadParam</code>
-     * then the <code>TIFFDecompressor</code> and
-     * <code>TIFFColorConverter</code> settings are also copied; otherwise
-     * they are explicitly set to <code>null</code>.
+     * are copied. If {@code param} is a {@code TIFFImageReadParam}
+     * then the {@code TIFFDecompressor} and
+     * {@code TIFFColorConverter} settings are also copied; otherwise
+     * they are explicitly set to {@code null}.
      *
      * @param param the parameters to be copied.
-     * @param copyTagSets whether the <code>TIFFTagSet</code> settings
+     * @param copyTagSets whether the {@code TIFFTagSet} settings
      * should be copied if set.
      * @return copied parameters.
      */
