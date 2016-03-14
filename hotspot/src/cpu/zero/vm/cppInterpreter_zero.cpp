@@ -773,7 +773,7 @@ InterpreterFrame *InterpreterFrame::build(int size, TRAPS) {
 }
 
 BasicType CppInterpreter::result_type_of(Method* method) {
-  BasicType t;
+  BasicType t = T_ILLEGAL; // silence compiler warnings
   switch (method->result_index()) {
     case 0 : t = T_BOOLEAN; break;
     case 1 : t = T_CHAR;    break;

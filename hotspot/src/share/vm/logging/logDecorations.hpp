@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ class LogDecorations VALUE_OBJ_CLASS_SPEC {
   LogTagSet _tagset;
   jlong _millis;
   static jlong _vm_start_time_millis;
+  static const char* _host_name;
 
   jlong java_millis();
   void create_decorations(const LogDecorators& decorators);
@@ -48,14 +49,12 @@ class LogDecorations VALUE_OBJ_CLASS_SPEC {
 #undef DECORATOR
 
  public:
+  static void initialize(jlong vm_start_time);
+
   LogDecorations(LogLevelType level, const LogTagSet& tagset, const LogDecorators& decorators);
 
   const char* decoration(LogDecorators::Decorator decorator) const {
     return _decoration_offset[decorator];
-  }
-
-  static void set_vm_start_time_millis(jlong start_time) {
-    _vm_start_time_millis = start_time;
   }
 };
 

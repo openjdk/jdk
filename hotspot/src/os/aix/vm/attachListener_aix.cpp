@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,7 @@ int AixAttachListener::init() {
   // We must call bind with the actual socketaddr length. This is obligatory for AS400.
   int res = ::bind(listener, (struct sockaddr*)&addr, SUN_LEN(&addr));
   if (res == -1) {
-    RESTARTABLE(::close(listener), res);
+    ::close(listener);
     return -1;
   }
 
@@ -238,7 +238,7 @@ int AixAttachListener::init() {
       }
   }
   if (res == -1) {
-    RESTARTABLE(::close(listener), res);
+    ::close(listener);
     ::unlink(initial_path);
     return -1;
   }
@@ -400,7 +400,7 @@ AixAttachOperation* AixAttachListener::dequeue() {
     AixAttachOperation* op = read_request(s);
     if (op == NULL) {
       int res;
-      RESTARTABLE(::close(s), res);
+      ::close(s);
       continue;
     } else {
       return op;
@@ -452,7 +452,7 @@ void AixAttachOperation::complete(jint result, bufferedStream* st) {
   }
 
   // done
-  RESTARTABLE(::close(this->socket()), rc);
+  ::close(this->socket());
 
   // were we externally suspended while we were waiting?
   thread->check_and_wait_while_suspended();

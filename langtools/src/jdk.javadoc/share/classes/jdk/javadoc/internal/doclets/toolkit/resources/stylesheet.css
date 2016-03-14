@@ -610,8 +610,9 @@ h1.hidden {
     color:#474747;
 }
 .deprecatedLabel, .descfrmTypeLabel, .memberNameLabel, .memberNameLink,
-.overrideSpecifyLabel, .packageHierarchyLabel, .paramLabel, .returnLabel,
-.seeLabel, .simpleTagLabel, .throwsLabel, .typeNameLabel, .typeNameLink, .searchTagLink {
+.overrideSpecifyLabel, .packageLabelInClass, .packageHierarchyLabel,
+.paramLabel, .returnLabel, .seeLabel, .simpleTagLabel, .throwsLabel,
+.typeNameLabel, .typeNameLink, .searchTagLink {
     font-weight:bold;
 }
 .deprecationComment, .emphasizedPhrase, .interfaceName {

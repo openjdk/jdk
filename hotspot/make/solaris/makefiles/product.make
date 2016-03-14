@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,21 @@ OPT_CFLAGS/BYFILE = $(OPT_CFLAGS/$@)$(OPT_CFLAGS/DEFAULT$(OPT_CFLAGS/$@))
 # for this method for now. (fix this when dtrace bug 6258412 is fixed)
 ifndef USE_GCC
 OPT_CFLAGS/ciEnv.o = $(OPT_CFLAGS) -xinline=no%__1cFciEnvbFpost_compiled_method_load_event6MpnHnmethod__v_
+# The debug flag is added to OPT_CFLAGS, but lost in case of per-file overrides
+# of OPT_CFLAGS. Restore it here.
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+   OPT_CFLAGS/ciEnv.o += -g0 -xs
+endif
 endif
 
 # Need extra inlining to get oop_ps_push_contents functions to perform well enough.
 ifndef USE_GCC
 OPT_CFLAGS/psPromotionManager.o = $(OPT_CFLAGS) -W2,-Ainline:inc=1000
+# The debug flag is added to OPT_CFLAGS, but lost in case of per-file overrides
+# of OPT_CFLAGS. Restore it here.
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+   OPT_CFLAGS/psPromotionManager.o += -g0 -xs
+endif
 endif
 
 # (OPT_CFLAGS/SLOWER is also available, to alter compilation of buggy files)
@@ -55,6 +65,12 @@ endif # COMPILER_REV_NUMERIC == 510
 ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 509), 1)
 # dtrace cannot handle tail call optimization (6672627, 6693876)
 OPT_CFLAGS/jni.o = $(OPT_CFLAGS/DEFAULT) $(OPT_CCFLAGS/NO_TAIL_CALL_OPT)
+# The -g0 -xs flag is added to OPT_CFLAGS in sparcWorks.make, but lost in case of
+# per-file overrides of OPT_CFLAGS. Restore it here. This is mainly needed
+# to provide a good baseline to compare the new build against.
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+   OPT_CFLAGS/jni.o += -g0 -xs
+endif
 endif # COMPILER_NUMERIC_REV >= 509
 
 # Workaround SS11 bug 6345274 (all platforms) (Fixed in SS11 patch and SS12)

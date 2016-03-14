@@ -758,9 +758,13 @@ public class URLClassPath {
 
             final URL url;
             try {
-                // add #runtime fragment to tell JarURLConnection to use
-                // runtime versioning if the underlying jar file is multi-release
-                url = new URL(getBaseURL(), ParseUtil.encodePath(name, false) + "#runtime");
+                if (jar.isMultiRelease()) {
+                    // add #runtime fragment to tell JarURLConnection to use
+                    // runtime versioning if the underlying jar file is multi-release
+                    url = new URL(getBaseURL(), ParseUtil.encodePath(name, false) + "#runtime");
+                } else {
+                    url = new URL(getBaseURL(), ParseUtil.encodePath(name, false));
+                }
                 if (check) {
                     URLClassPath.check(url);
                 }

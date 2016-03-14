@@ -2001,10 +2001,11 @@ public class Check {
             }
         }
 
+        final boolean explicitOverride = m.attribute(syms.overrideType.tsym) != null;
         // Check if this method must override a super method due to being annotated with @Override
         // or by virtue of being a member of a diamond inferred anonymous class. Latter case is to
         // be treated "as if as they were annotated" with @Override.
-        boolean mustOverride = m.attribute(syms.overrideType.tsym) != null ||
+        boolean mustOverride = explicitOverride ||
                 (env.info.isAnonymousDiamond && !m.isConstructor() && !m.isPrivate());
         if (mustOverride && !isOverrider(m)) {
             DiagnosticPosition pos = tree.pos();
@@ -2014,7 +2015,9 @@ public class Check {
                     break;
                 }
             }
-            log.error(pos, "method.does.not.override.superclass");
+            log.error(pos,
+                      explicitOverride ? Errors.MethodDoesNotOverrideSuperclass :
+                                Errors.AnonymousDiamondMethodDoesNotOverrideSuperclass(Fragments.DiamondAnonymousMethodsImplicitlyOverride));
         }
     }
 

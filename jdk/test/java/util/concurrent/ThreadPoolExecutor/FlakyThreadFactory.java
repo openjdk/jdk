@@ -35,14 +35,20 @@
 /*
  * @test
  * @summary Should be able to shutdown a pool when worker creation failed.
+ * @library /lib/testlibrary/
  */
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import jdk.testlibrary.Utils;
 
 public class FlakyThreadFactory {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
+
     void test(String[] args) throws Throwable {
         test(NullPointerException.class,
              new ThreadFactory() {
@@ -89,7 +95,7 @@ public class FlakyThreadFactory {
             check(exceptionClass.isInstance(t));
         }
         pool.shutdown();
-        check(pool.awaitTermination(10L, TimeUnit.SECONDS));
+        check(pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
     }
 
     //--------------------- Infrastructure ---------------------------
