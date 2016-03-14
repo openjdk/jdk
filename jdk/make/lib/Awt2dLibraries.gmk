@@ -203,13 +203,11 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBAWT_DIRS += $(JDK_TOPDIR)/src/java.desktop/share/native/common/font \
-  $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt/systemscale \
-  $(JDK_TOPDIR)/src/java.desktop/share/native/common/java2d/opengl \
+      $(JDK_TOPDIR)/src/java.desktop/share/native/common/java2d/opengl \
   # Why does libawt need java.base headers?
   LIBAWT_CFLAGS += -I$(JDK_TOPDIR)/src/java.desktop/share/native/common/font \
       -I$(JDK_TOPDIR)/src/java.desktop/share/native/common/java2d/opengl \
       -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/java2d/opengl \
-      -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt/systemscale \
       -I$(JDK_TOPDIR)/src/java.desktop/windows/native/include \
       -I$(JDK_TOPDIR)/src/java.desktop/share/native/include \
       -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
@@ -313,6 +311,10 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
         $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \
         #
 
+    ifneq ($(filter $(OPENJDK_TARGET_OS),linux solaris), )
+      LIBAWT_XAWT_DIRS += $(JDK_TOPDIR)/src/java.desktop/unix/native/common/awt/systemscale
+    endif
+
     LIBAWT_XAWT_EXCLUDES := medialib
 
     LIBAWT_XAWT_CFLAGS := $(addprefix -I, $(shell $(FIND) $(LIBAWT_XAWT_DIRS) -type d)) \
@@ -330,14 +332,10 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
         -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/font \
         $(LIBJAVA_HEADER_FLAGS)
         #
-    
+
     LIBAWT_XAWT_CFLAGS += -DXAWT -DXAWT_HACK \
         -DPACKAGE_PATH=\"$(PACKAGE_PATH)\" \
         $(CUPS_CFLAGS)
-    ifneq (,$(filter $(OPENJDK_TARGET_OS),linux solaris))
-        LIBAWT_XAWT_DIRS += $(JDK_TOPDIR)/src/java.desktop/unix/native/common/awt/systemscale
-        LIBAWT_XAWT_CFLAGS += -I$(JDK_TOPDIR)/src/java.desktop/unix/native/common/awt/systemscale
-    endif
 
     ifeq ($(OPENJDK_TARGET_OS), solaris)
       LIBAWT_XAWT_CFLAGS += -DFUNCPROTO=15
@@ -888,21 +886,16 @@ ifndef BUILD_HEADLESS_ONLY
   else
     LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/java.desktop/macosx/native/libsplashscreen
   endif
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-    LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/java.desktop/windows/native/common/awt/systemscale
-    LIBSPLASHSCREEN_CFLAGS += -I$(JDK_TOPDIR)/src/java.desktop/windows/native/common/awt/systemscale
+
+  ifneq ($(filter $(OPENJDK_TARGET_OS),linux solaris), )
+    LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/java.desktop/unix/native/common/awt/systemscale
   endif
-  
+
   LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN -DPNG_NO_MMX_CODE -DPNG_ARM_NEON_OPT=0 \
       $(addprefix -I, $(LIBSPLASHSCREEN_DIRS)) \
       $(LIBJAVA_HEADER_FLAGS) \
       #
 
-  ifneq (,$(filter $(OPENJDK_TARGET_OS),linux solaris))
-      LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/java.desktop/unix/native/common/awt/systemscale
-      LIBSPLASHSCREEN_CFLAGS += -I$(JDK_TOPDIR)/src/java.desktop/unix/native/common/awt/systemscale
-  endif
-	  
   ifeq ($(OPENJDK_TARGET_OS), macosx)
     LIBSPLASHSCREEN_CFLAGS += -DWITH_MACOSX
     LIBSPLASHSCREEN_CFLAGS += -I$(JDK_TOPDIR)/src/java.desktop/macosx/native/libosxapp
@@ -938,7 +931,7 @@ ifndef BUILD_HEADLESS_ONLY
         -framework JavaNativeFoundation
   else ifeq ($(OPENJDK_TARGET_OS), windows)
     LIBSPLASHSCREEN_LDFLAGS := -delayload:user32.dll
-    LIBSPLASHSCREEN_LIBS += kernel32.lib user32.lib gdi32.lib delayimp.lib $(WIN_JAVA_LIB) jvm.lib
+    LIBSPLASHSCREEN_LIBS += kernel32.lib user32.lib gdi32.lib delayimp.lib
   else
     LIBSPLASHSCREEN_LIBS += $(X_LIBS) -lX11 -lXext $(LIBM) -lpthread
   endif
