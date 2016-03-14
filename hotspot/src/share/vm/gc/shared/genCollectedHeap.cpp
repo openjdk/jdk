@@ -1281,7 +1281,7 @@ jlong GenCollectedHeap::millis_since_last_gc() {
 void GenCollectedHeap::stop() {
 #if INCLUDE_ALL_GCS
   if (UseConcMarkSweepGC) {
-    ConcurrentMarkSweepThread::stop();
+    ConcurrentMarkSweepThread::cmst()->stop();
   }
 #endif
 }

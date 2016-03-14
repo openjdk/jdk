@@ -61,7 +61,7 @@ bool VerificationType::is_reference_assignable_from(
     Klass* obj = SystemDictionary::resolve_or_fail(
         name(), Handle(THREAD, klass->class_loader()),
         Handle(THREAD, klass->protection_domain()), true, CHECK_false);
-    if (log_is_enabled(Info, classresolve)) {
+    if (log_is_enabled(Debug, classresolve)) {
       Verifier::trace_class_resolution(obj, klass());
     }
 
@@ -80,7 +80,7 @@ bool VerificationType::is_reference_assignable_from(
       Klass* from_class = SystemDictionary::resolve_or_fail(
           from.name(), Handle(THREAD, klass->class_loader()),
           Handle(THREAD, klass->protection_domain()), true, CHECK_false);
-      if (log_is_enabled(Info, classresolve)) {
+      if (log_is_enabled(Debug, classresolve)) {
         Verifier::trace_class_resolution(from_class, klass());
       }
       return InstanceKlass::cast(from_class)->is_subclass_of(this_class());

@@ -52,6 +52,7 @@
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ergo, heap)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ergo, ihop)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, heap)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, heap, region)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, freelist)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ihop)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, liveness)) \
