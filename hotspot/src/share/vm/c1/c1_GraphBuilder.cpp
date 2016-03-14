@@ -1519,6 +1519,29 @@ void GraphBuilder::method_return(Value x) {
   append(new Return(x));
 }
 
+Value GraphBuilder::make_constant(ciConstant field_value, ciField* field) {
+  BasicType field_type = field_value.basic_type();
+  ValueType* value = as_ValueType(field_value);
+
+  // Attach dimension info to stable arrays.
+  if (FoldStableValues &&
+      field->is_stable() && field_type == T_ARRAY && !field_value.is_null_or_zero()) {
+    ciArray* array = field_value.as_object()->as_array();
+    jint dimension = field->type()->as_array_klass()->dimension();
+    value = new StableArrayConstant(array, dimension);
+  }
+
+  switch (field_type) {
+    case T_ARRAY:
+    case T_OBJECT:
+      if (field_value.as_object()->should_be_constant()) {
+        return new Constant(value);
+      }
+      return NULL; // Not a constant.
+    default:
+      return new Constant(value);
+  }
+}
 
 void GraphBuilder::access_field(Bytecodes::Code code) {
   bool will_link;
@@ -1563,22 +1586,13 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
   switch (code) {
     case Bytecodes::_getstatic: {
       // check for compile-time constants, i.e., initialized static final fields
-      Instruction* constant = NULL;
+      Value constant = NULL;
       if (field->is_constant() && !PatchALot) {
-        ciConstant field_val = field->constant_value();
-        BasicType field_type = field_val.basic_type();
-        switch (field_type) {
-        case T_ARRAY:
-        case T_OBJECT:
-          if (field_val.as_object()->should_be_constant()) {
-            constant = new Constant(as_ValueType(field_val));
-          }
-          break;
-
-        default:
-          constant = new Constant(as_ValueType(field_val));
-        }
+        ciConstant field_value = field->constant_value();
         // Stable static fields are checked for non-default values in ciField::initialize_from().
+        assert(!field->is_stable() || !field_value.is_null_or_zero(),
+               "stable static w/ default value shouldn't be a constant");
+        constant = make_constant(field_value, field);
       }
       if (constant != NULL) {
         push(type, append(constant));
@@ -1591,38 +1605,29 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
       }
       break;
     }
-    case Bytecodes::_putstatic:
-      { Value val = pop(type);
-        if (state_before == NULL) {
-          state_before = copy_state_for_exception();
-        }
-        append(new StoreField(append(obj), offset, field, val, true, state_before, needs_patching));
+    case Bytecodes::_putstatic: {
+      Value val = pop(type);
+      if (state_before == NULL) {
+        state_before = copy_state_for_exception();
       }
+      append(new StoreField(append(obj), offset, field, val, true, state_before, needs_patching));
       break;
+    }
     case Bytecodes::_getfield: {
       // Check for compile-time constants, i.e., trusted final non-static fields.
-      Instruction* constant = NULL;
+      Value constant = NULL;
       obj = apop();
       ObjectType* obj_type = obj->type()->as_ObjectType();
       if (obj_type->is_constant() && !PatchALot) {
         ciObject* const_oop = obj_type->constant_value();
         if (!const_oop->is_null_object() && const_oop->is_loaded()) {
           if (field->is_constant()) {
-            ciConstant field_val = field->constant_value_of(const_oop);
-            BasicType field_type = field_val.basic_type();
-            switch (field_type) {
-            case T_ARRAY:
-            case T_OBJECT:
-              if (field_val.as_object()->should_be_constant()) {
-                constant = new Constant(as_ValueType(field_val));
-              }
-              break;
-            default:
-              constant = new Constant(as_ValueType(field_val));
-            }
-            if (FoldStableValues && field->is_stable() && field_val.is_null_or_zero()) {
+            ciConstant field_value = field->constant_value_of(const_oop);
+            if (FoldStableValues && field->is_stable() && field_value.is_null_or_zero()) {
               // Stable field with default value can't be constant.
               constant = NULL;
+            } else {
+              constant = make_constant(field_value, field);
             }
           } else {
             // For CallSite objects treat the target field as a compile time constant.
