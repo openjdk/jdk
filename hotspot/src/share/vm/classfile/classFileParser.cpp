@@ -5684,15 +5684,16 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   }
 
   if (!is_internal()) {
-    if (TraceClassLoadingPreorder) {
-      tty->print("[Loading %s",
-        _class_name->as_klass_external_name());
-
+    if (log_is_enabled(Debug, classload, preorder)){
+      ResourceMark rm(THREAD);
+      outputStream* log = LogHandle(classload, preorder)::debug_stream();
+      log->print("%s", _class_name->as_klass_external_name());
       if (stream->source() != NULL) {
-        tty->print(" from %s", stream->source());
+        log->print(" source: %s", stream->source());
       }
-      tty->print_cr("]");
+      log->cr();
     }
+
 #if INCLUDE_CDS
     if (DumpLoadedClassList != NULL && stream->source() != NULL && classlist_file->is_open()) {
       // Only dump the classes that can be stored into CDS archive

@@ -405,15 +405,16 @@ static AliasedFlag const aliased_jvm_flags[] = {
 };
 
 static AliasedLoggingFlag const aliased_logging_flags[] = {
-  { "TraceBiasedLocking",        LogLevel::Info,  true,  LogTag::_biasedlocking },
-  { "TraceClassLoading",         LogLevel::Info,  true,  LogTag::_classload },
-  { "TraceClassPaths",           LogLevel::Info,  true,  LogTag::_classpath },
-  { "TraceClassResolution",      LogLevel::Debug, true,  LogTag::_classresolve },
-  { "TraceClassUnloading",       LogLevel::Info,  true,  LogTag::_classunload },
-  { "TraceExceptions",           LogLevel::Info,  true,  LogTag::_exceptions },
-  { "TraceMonitorInflation",     LogLevel::Debug, true,  LogTag::_monitorinflation },
-  { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LogTag::_safepointcleanup },
-  { NULL,                        LogLevel::Off,   false, LogTag::__NO_TAG }
+  { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
+  { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(classload) },
+  { "TraceClassLoadingPreorder", LogLevel::Debug,  true,  LOG_TAGS(classload, preorder) },
+  { "TraceClassPaths",           LogLevel::Info,  true,  LOG_TAGS(classpath) },
+  { "TraceClassResolution",      LogLevel::Debug, true,  LOG_TAGS(classresolve) },
+  { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(classunload) },
+  { "TraceExceptions",           LogLevel::Info,  true,  LOG_TAGS(exceptions) },
+  { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
+  { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepointcleanup) },
+  { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
 
 // Return true if "v" is less than "other", where "other" may be "undefined".
@@ -953,7 +954,7 @@ AliasedLoggingFlag Arguments::catch_logging_aliases(const char* name){
       return alf;
     }
   }
-  AliasedLoggingFlag a = {NULL, LogLevel::Off, false, LogTag::__NO_TAG};
+  AliasedLoggingFlag a = {NULL, LogLevel::Off, false, LOG_TAGS(_NO_TAG)};
   return a;
 }
 
@@ -966,12 +967,11 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
   char dummy;
   const char* real_name;
   bool warn_if_deprecated = true;
-  AliasedLoggingFlag alf;
 
   if (sscanf(arg, "-%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
-    alf = catch_logging_aliases(name);
+    AliasedLoggingFlag alf = catch_logging_aliases(name);
     if (alf.alias_name != NULL){
-      LogConfiguration::configure_stdout(LogLevel::Off, alf.exactMatch, alf.tag, LogTag::__NO_TAG);
+      LogConfiguration::configure_stdout(LogLevel::Off, alf.exactMatch, alf.tag0, alf.tag1, alf.tag2, alf.tag3, alf.tag4, alf.tag5);
       return true;
     }
     real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
@@ -981,9 +981,9 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
     return set_bool_flag(real_name, false, origin);
   }
   if (sscanf(arg, "+%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
-    alf = catch_logging_aliases(name);
+    AliasedLoggingFlag alf = catch_logging_aliases(name);
     if (alf.alias_name != NULL){
-      LogConfiguration::configure_stdout(alf.level, alf.exactMatch, alf.tag, LogTag::__NO_TAG);
+      LogConfiguration::configure_stdout(alf.level, alf.exactMatch, alf.tag0, alf.tag1, alf.tag2, alf.tag3, alf.tag4, alf.tag5);
       return true;
     }
     real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
