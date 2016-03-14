@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,16 @@ public class TIFFNullDecompressor extends TIFFDecompressor {
      */
     private boolean isReadActiveOnly = false;
 
-    /** The original value of <code>srcMinX</code>. */
+    /** The original value of {@code srcMinX}. */
     private int originalSrcMinX;
 
-    /** The original value of <code>srcMinY</code>. */
+    /** The original value of {@code srcMinY}. */
     private int originalSrcMinY;
 
-    /** The original value of <code>srcWidth</code>. */
+    /** The original value of {@code srcWidth}. */
     private int originalSrcWidth;
 
-    /** The original value of <code>srcHeight</code>. */
+    /** The original value of {@code srcHeight}. */
     private int originalSrcHeight;
 
     public TIFFNullDecompressor() {}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,9 @@ import org.testng.annotations.Test;
 public class CommandCompletionTest extends ReplToolTesting {
 
     public void testCommand() {
-        assertCompletion("/f|", false, "/feedback ");
         assertCompletion("/deb|", false);
-        assertCompletion("/feedback v|", false, "verbose");
         assertCompletion("/c|", false, "/classes ", "/classpath ");
         assertCompletion("/h|", false, "/help ", "/history ");
-        assertCompletion("/feedback |", false,
-                "?", "concise", "default", "normal", "off", "verbose");
     }
 
     public void testList() {
@@ -108,7 +104,7 @@ public class CommandCompletionTest extends ReplToolTesting {
 
     public void testSave() throws IOException {
         Compiler compiler = new Compiler();
-        assertCompletion("/s|", false, "/save ", "/seteditor ", "/setstart ");
+        assertCompletion("/s|", false, "/save ", "/set ");
         List<String> p1 = listFiles(Paths.get(""));
         Collections.addAll(p1, "all ", "history ", "start ");
         FileSystems.getDefault().getRootDirectories().forEach(s -> p1.add(s.toString()));

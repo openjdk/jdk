@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,13 @@ public class TIFFT4Compressor extends TIFFFaxCompressor {
     }
 
     /**
-     * Sets the value of the <code>metadata</code> field.
+     * Sets the value of the {@code metadata} field.
      *
      * <p> The implementation in this class also sets local options
      * from the T4_OPTIONS field if it exists, and if it doesn't, adds
      * it with default values.</p>
      *
-     * @param metadata the <code>IIOMetadata</code> object for the
+     * @param metadata the {@code IIOMetadata} object for the
      * image being written.
      *
      * @see #getMetadata()
@@ -86,7 +86,7 @@ public class TIFFT4Compressor extends TIFFFaxCompressor {
      * @param isEOLAligned Whether EOL bit sequences should be padded.
      * @param data         The row of data to compress.
      * @param lineStride   Byte step between the same sample in different rows.
-     * @param colOffset    Bit offset within first <code>data[rowOffset]</code>.
+     * @param colOffset    Bit offset within first {@code data[rowOffset]}.
      * @param width        Number of bits in the row.
      * @param height       Number of rows in the buffer.
      * @param compData     The compressed data.

@@ -4005,7 +4005,7 @@ apt_help() {
     devkit)
       PKGHANDLER_COMMAND="sudo apt-get install build-essential" ;;
     openjdk)
-      PKGHANDLER_COMMAND="sudo apt-get install openjdk-7-jdk" ;;
+      PKGHANDLER_COMMAND="sudo apt-get install openjdk-8-jdk" ;;
     alsa)
       PKGHANDLER_COMMAND="sudo apt-get install libasound2-dev" ;;
     cups)
@@ -4026,7 +4026,7 @@ yum_help() {
     devkit)
       PKGHANDLER_COMMAND="sudo yum groupinstall \"Development Tools\"" ;;
     openjdk)
-      PKGHANDLER_COMMAND="sudo yum install java-1.7.0-openjdk" ;;
+      PKGHANDLER_COMMAND="sudo yum install java-1.8.0-openjdk-devel" ;;
     alsa)
       PKGHANDLER_COMMAND="sudo yum install alsa-lib-devel" ;;
     cups)
@@ -4862,7 +4862,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1456136781
+DATE_WHEN_GENERATED=1457684806
 
 ###############################################################################
 #
@@ -15117,6 +15117,10 @@ $as_echo "$COMPILE_TYPE" >&6; }
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     REQUIRED_OS_NAME=Darwin
     REQUIRED_OS_VERSION=11.2
+  fi
+  if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    REQUIRED_OS_NAME=AIX
+    REQUIRED_OS_VERSION=7.1
   fi
 
 

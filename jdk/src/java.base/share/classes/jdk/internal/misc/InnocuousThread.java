@@ -128,8 +128,12 @@ public final class InnocuousThread extends Thread {
             }
             final ThreadGroup root = group;
             INNOCUOUSTHREADGROUP = AccessController.doPrivileged(
-                (PrivilegedAction<ThreadGroup>) () ->
-                    { return new ThreadGroup(root, "InnocuousThreadGroup"); });
+                new PrivilegedAction<ThreadGroup>() {
+                    @Override
+                    public ThreadGroup run() {
+                        return new ThreadGroup(root, "InnocuousThreadGroup");
+                    }
+                });
         } catch (Exception e) {
             throw new Error(e);
         }

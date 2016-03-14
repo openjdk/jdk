@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class StringContent extends Content {
      *
      * @param initialContent initial content for the object
      */
-    public StringContent(String initialContent) {
+    public StringContent(CharSequence initialContent) {
         stringContent = new StringBuilder();
         appendChars(initialContent);
     }
@@ -83,7 +83,7 @@ public class StringContent extends Content {
      * @param strContent string content to be added
      */
     @Override
-    public void addContent(String strContent) {
+    public void addContent(CharSequence strContent) {
         appendChars(strContent);
     }
 
@@ -118,7 +118,7 @@ public class StringContent extends Content {
         return s.endsWith(DocletConstants.NL);
     }
 
-    private void appendChars(String s) {
+    private void appendChars(CharSequence s) {
         for (int i = 0; i < s.length(); i++) {
             char ch = s.charAt(i);
             switch (ch) {

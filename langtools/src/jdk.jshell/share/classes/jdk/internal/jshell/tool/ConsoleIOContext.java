@@ -48,6 +48,7 @@ import java.util.function.Supplier;
 import jdk.internal.jline.NoInterruptUnixTerminal;
 import jdk.internal.jline.Terminal;
 import jdk.internal.jline.TerminalFactory;
+import jdk.internal.jline.UnsupportedTerminal;
 import jdk.internal.jline.WindowsTerminal;
 import jdk.internal.jline.console.ConsoleReader;
 import jdk.internal.jline.console.KeyMap;
@@ -68,7 +69,9 @@ class ConsoleIOContext extends IOContext {
         this.repl = repl;
         this.input = new StopDetectingInputStream(() -> repl.state.stop(), ex -> repl.hard("Error on input: %s", ex));
         Terminal term;
-        if (System.getProperty("os.name").toLowerCase(Locale.US).contains(TerminalFactory.WINDOWS)) {
+        if (System.getProperty("test.jdk") != null) {
+            term = new UnsupportedTerminal();
+        } else if (System.getProperty("os.name").toLowerCase(Locale.US).contains(TerminalFactory.WINDOWS)) {
             term = new JShellWindowsTerminal(input);
         } else {
             term = new JShellUnixTerminal(input);

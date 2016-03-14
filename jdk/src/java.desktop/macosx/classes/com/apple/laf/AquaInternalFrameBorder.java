@@ -40,6 +40,7 @@ import apple.laf.JRSUIState.TitleBarHeightState;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaInternalFrameBorderMetrics;
+import java.awt.geom.AffineTransform;
 
 public class AquaInternalFrameBorder implements Border, UIResource {
     private static final int kCloseButton = 0;
@@ -309,18 +310,40 @@ public class AquaInternalFrameBorder implements Border, UIResource {
         return isInsideYButtonArea(i, y) && x >= startX && x <= endX;
     }
 
-    protected void paintTitleIcon(final Graphics g, final JInternalFrame frame, final int x, final int y) {
-        Icon icon = frame.getFrameIcon();
-        if (icon == null) icon = UIManager.getIcon("InternalFrame.icon");
-        if (icon == null) return;
+    protected void paintTitleIcon(final Graphics g, final JInternalFrame frame,
+            final int x, final int y) {
 
-        // Resize to 16x16 if necessary.
-        if (icon instanceof ImageIcon && (icon.getIconWidth() > sMaxIconWidth || icon.getIconHeight() > sMaxIconHeight)) {
-            final Image img = ((ImageIcon)icon).getImage();
-            ((ImageIcon)icon).setImage(img.getScaledInstance(sMaxIconWidth, sMaxIconHeight, Image.SCALE_SMOOTH));
+        Icon icon = frame.getFrameIcon();
+        if (icon == null) {
+            icon = UIManager.getIcon("InternalFrame.icon");
         }
 
-        icon.paintIcon(frame, g, x, y);
+        if (icon == null) {
+            return;
+        }
+
+        if (icon.getIconWidth() > sMaxIconWidth
+                || icon.getIconHeight() > sMaxIconHeight) {
+            final Graphics2D g2 = (Graphics2D) g;
+            final AffineTransform savedAT = g2.getTransform();
+            double xScaleFactor = (double) sMaxIconWidth / icon.getIconWidth();
+            double yScaleFactor = (double) sMaxIconHeight / icon.getIconHeight();
+
+            //Coordinates are after a translation hence relative origin shifts
+            g2.translate(x, y);
+
+            //scaling factor is needed to scale while maintaining aspect ratio
+            double scaleMaintainAspectRatio = Math.min(xScaleFactor, yScaleFactor);
+
+            //minimum value is taken to set to a maximum Icon Dimension
+            g2.scale(scaleMaintainAspectRatio, scaleMaintainAspectRatio);
+
+            icon.paintIcon(frame, g2, 0, 0);
+            g2.setTransform(savedAT);
+
+        } else {
+            icon.paintIcon(frame, g, x, y);
+        }
     }
 
     protected int getIconWidth(final JInternalFrame frame) {
@@ -330,9 +353,7 @@ public class AquaInternalFrameBorder implements Border, UIResource {
         if (icon == null) {
             icon = UIManager.getIcon("InternalFrame.icon");
         }
-
-        if (icon != null && icon instanceof ImageIcon) {
-            // Resize to 16x16 if necessary.
+        if (icon != null) {
             width = Math.min(icon.getIconWidth(), sMaxIconWidth);
         }
 
@@ -346,9 +367,7 @@ public class AquaInternalFrameBorder implements Border, UIResource {
         if (icon == null) {
             icon = UIManager.getIcon("InternalFrame.icon");
         }
-
-        if (icon != null && icon instanceof ImageIcon) {
-            // Resize to 16x16 if necessary.
+        if (icon != null) {
             height = Math.min(icon.getIconHeight(), sMaxIconHeight);
         }
 
