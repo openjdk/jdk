@@ -88,7 +88,6 @@ import java.lang.reflect.InvocationTargetException;
 
 public class TestStableDouble {
     static final boolean isStableEnabled    = StableConfiguration.isStableEnabled;
-    static final boolean isServerWithStable = StableConfiguration.isServerWithStable;
 
     public static void main(String[] args) throws Exception {
         run(DefaultValue.class);
@@ -209,10 +208,10 @@ public class TestStableDouble {
                 c.v = new double[1]; c.v[0] = 1.0; double val1 = get();
                                      c.v[0] = 2.0; double val2 = get();
                 assertEquals(val1, 1.0);
-                assertEquals(val2, (isServerWithStable ? 1.0 : 2.0));
+                assertEquals(val2, (isStableEnabled ? 1.0 : 2.0));
 
                 c.v = new double[1]; c.v[0] = 3.0; double val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0 : 2.0)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0 : 2.0)
                                                     : 3.0));
             }
 
@@ -220,10 +219,10 @@ public class TestStableDouble {
                 c.v = new double[20]; c.v[10] = 1.0; double val1 = get1();
                                       c.v[10] = 2.0; double val2 = get1();
                 assertEquals(val1, 1.0);
-                assertEquals(val2, (isServerWithStable ? 1.0 : 2.0));
+                assertEquals(val2, (isStableEnabled ? 1.0 : 2.0));
 
                 c.v = new double[20]; c.v[10] = 3.0; double val3 = get1();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0 : 2.0)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0 : 2.0)
                                                     : 3.0));
             }
 
@@ -249,21 +248,21 @@ public class TestStableDouble {
                 c.v = new double[1][1]; c.v[0][0] = 1.0; double val1 = get();
                                         c.v[0][0] = 2.0; double val2 = get();
                 assertEquals(val1, 1.0);
-                assertEquals(val2, (isServerWithStable ? 1.0 : 2.0));
+                assertEquals(val2, (isStableEnabled ? 1.0 : 2.0));
 
                 c.v = new double[1][1]; c.v[0][0] = 3.0; double val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0 : 2.0)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0 : 2.0)
                                                     : 3.0));
 
                 c.v[0] = new double[1]; c.v[0][0] = 4.0; double val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1.0 : 2.0)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1.0 : 2.0)
                                                     : 4.0));
             }
 
             {
                 c.v = new double[1][1]; double[] val1 = get1();
                 c.v[0] = new double[1]; double[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -289,31 +288,31 @@ public class TestStableDouble {
                 c.v = new double[1][1][1]; c.v[0][0][0] = 1.0; double val1 = get();
                                            c.v[0][0][0] = 2.0; double val2 = get();
                 assertEquals(val1, 1.0);
-                assertEquals(val2, (isServerWithStable ? 1.0 : 2.0));
+                assertEquals(val2, (isStableEnabled ? 1.0 : 2.0));
 
                 c.v = new double[1][1][1]; c.v[0][0][0] = 3.0; double val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0 : 2.0)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0 : 2.0)
                                                     : 3.0));
 
                 c.v[0] = new double[1][1]; c.v[0][0][0] = 4.0; double val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1.0 : 2.0)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1.0 : 2.0)
                                                     : 4.0));
 
                 c.v[0][0] = new double[1]; c.v[0][0][0] = 5.0; double val5 = get();
-                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 1.0 : 2.0)
+                assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 1.0 : 2.0)
                                                     : 5.0));
             }
 
             {
                 c.v = new double[1][1][1]; double[] val1 = get1();
                 c.v[0][0] = new double[1]; double[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new double[1][1][1]; double[][] val1 = get2();
                 c.v[0] = new double[1][1]; double[][] val2 = get2();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -340,41 +339,41 @@ public class TestStableDouble {
                 c.v = new double[1][1][1][1]; c.v[0][0][0][0] = 1.0; double val1 = get();
                                               c.v[0][0][0][0] = 2.0; double val2 = get();
                 assertEquals(val1, 1.0);
-                assertEquals(val2, (isServerWithStable ? 1.0 : 2.0));
+                assertEquals(val2, (isStableEnabled ? 1.0 : 2.0));
 
                 c.v = new double[1][1][1][1]; c.v[0][0][0][0] = 3.0; double val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1.0 : 2.0)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0 : 2.0)
                                                     : 3.0));
 
                 c.v[0] = new double[1][1][1]; c.v[0][0][0][0] = 4.0; double val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1.0 : 2.0)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1.0 : 2.0)
                                                     : 4.0));
 
                 c.v[0][0] = new double[1][1]; c.v[0][0][0][0] = 5.0; double val5 = get();
-                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 1.0 : 2.0)
+                assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 1.0 : 2.0)
                                                     : 5.0));
 
                 c.v[0][0][0] = new double[1]; c.v[0][0][0][0] = 6.0; double val6 = get();
-                assertEquals(val6, (isStableEnabled ? (isServerWithStable ? 1.0 : 2.0)
+                assertEquals(val6, (isStableEnabled ? (isStableEnabled ? 1.0 : 2.0)
                                                     : 6.0));
             }
 
             {
                 c.v = new double[1][1][1][1]; double[] val1 = get1();
                 c.v[0][0][0] = new double[1]; double[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new double[1][1][1][1]; double[][] val1 = get2();
                 c.v[0][0] = new double[1][1]; double[][] val2 = get2();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new double[1][1][1][1]; double[][][] val1 = get3();
                 c.v[0] = new double[1][1][1]; double[][][] val2 = get3();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -434,7 +433,7 @@ public class TestStableDouble {
                 c.v = new double[1][1]; c.v[0] = new double[0]; double[] val1 = get1();
                                         c.v[0] = new double[0]; double[] val2 = get1();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -470,14 +469,14 @@ public class TestStableDouble {
                 c.v = new double[1][1][1]; c.v[0][0] = new double[0]; double[] val1 = get1();
                                            c.v[0][0] = new double[0]; double[] val2 = get1();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new double[1][1][1]; c.v[0] = new double[0][0]; double[][] val1 = get2();
                                            c.v[0] = new double[0][0]; double[][] val2 = get2();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -612,7 +611,7 @@ public class TestStableDouble {
                                elem.a = 2.0; double val3 = get(); double val4 = get1();
 
                 assertEquals(val1, 1.0);
-                assertEquals(val3, (isServerWithStable ? 1.0 : 2.0));
+                assertEquals(val3, (isStableEnabled ? 1.0 : 2.0));
 
                 assertEquals(val2, 1.0);
                 assertEquals(val4, 2.0);
