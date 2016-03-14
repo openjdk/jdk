@@ -593,15 +593,7 @@ void os::Linux::libpthread_init() {
 // _expand_stack_to() assumes its frame size is less than page size, which
 // should always be true if the function is not inlined.
 
-#if __GNUC__ < 3    // gcc 2.x does not support noinline attribute
-  #define NOINLINE
-#else
-  #define NOINLINE __attribute__ ((noinline))
-#endif
-
-static void _expand_stack_to(address bottom) NOINLINE;
-
-static void _expand_stack_to(address bottom) {
+static void NOINLINE _expand_stack_to(address bottom) {
   address sp;
   size_t size;
   volatile char *p;

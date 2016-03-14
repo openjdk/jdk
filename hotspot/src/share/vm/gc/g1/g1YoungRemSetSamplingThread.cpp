@@ -32,32 +32,6 @@
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "runtime/mutexLocker.hpp"
 
-void G1YoungRemSetSamplingThread::run() {
-  initialize_in_thread();
-  wait_for_universe_init();
-
-  run_service();
-
-  terminate();
-}
-
-void G1YoungRemSetSamplingThread::stop() {
-  // it is ok to take late safepoints here, if needed
-  {
-    MutexLockerEx mu(Terminator_lock);
-    _should_terminate = true;
-  }
-
-  stop_service();
-
-  {
-    MutexLockerEx mu(Terminator_lock);
-    while (!_has_terminated) {
-      Terminator_lock->wait();
-    }
-  }
-}
-
 G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() :
     ConcurrentGCThread(),
     _monitor(Mutex::nonleaf,
@@ -70,7 +44,7 @@ G1YoungRemSetSamplingThread::G1YoungRemSetSamplingThread() :
 
 void G1YoungRemSetSamplingThread::sleep_before_next_cycle() {
   MutexLockerEx x(&_monitor, Mutex::_no_safepoint_check_flag);
-  if (!_should_terminate) {
+  if (!should_terminate()) {
     uintx waitms = G1ConcRefinementServiceIntervalMillis; // 300, really should be?
     _monitor.wait(Mutex::_no_safepoint_check_flag, waitms);
   }
@@ -79,7 +53,7 @@ void G1YoungRemSetSamplingThread::sleep_before_next_cycle() {
 void G1YoungRemSetSamplingThread::run_service() {
   double vtime_start = os::elapsedVTime();
 
-  while (!_should_terminate) {
+  while (!should_terminate()) {
     sample_young_list_rs_lengths();
 
     if (os::supports_vtime()) {
