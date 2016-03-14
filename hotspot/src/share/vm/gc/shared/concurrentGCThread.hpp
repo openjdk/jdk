@@ -31,12 +31,8 @@
 class ConcurrentGCThread: public NamedThread {
   friend class VMStructs;
 
-protected:
   bool volatile _should_terminate;
   bool _has_terminated;
-
-  // Create and start the thread (setting it's priority high.)
-  void create_and_start();
 
   // Do initialization steps in the thread: record stack base and size,
   // init thread local storage, set JNI handle block.
@@ -49,11 +45,29 @@ protected:
   // concurrent work.
   void terminate();
 
+protected:
+  // Create and start the thread (setting it's priority.)
+  void create_and_start(ThreadPriority prio = NearMaxPriority);
+
+  // Do the specific GC work. Called by run() after initialization complete.
+  virtual void run_service() = 0;
+
+  // Shut down the specific GC work. Called by stop() as part of termination protocol.
+  virtual void stop_service()  = 0;
+
 public:
   ConcurrentGCThread();
 
   // Tester
   bool is_ConcurrentGC_thread() const { return true; }
+
+  virtual void run();
+
+  // shutdown following termination protocol
+  virtual void stop();
+
+  bool should_terminate() { return _should_terminate; }
+  bool has_terminated()   { return _has_terminated; }
 };
 
 // The SurrogateLockerThread is used by concurrent GC threads for

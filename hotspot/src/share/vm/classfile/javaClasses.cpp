@@ -1687,7 +1687,7 @@ class BacktraceIterator : public StackObj {
  public:
   BacktraceIterator(objArrayHandle result, Thread* thread) {
     init(result, thread);
-    assert(_methods->length() == java_lang_Throwable::trace_chunk_size, "lengths don't match");
+    assert(_methods.is_null() || _methods->length() == java_lang_Throwable::trace_chunk_size, "lengths don't match");
   }
 
   BacktraceElement next(Thread* thread) {

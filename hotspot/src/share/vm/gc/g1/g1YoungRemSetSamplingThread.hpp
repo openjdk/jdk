@@ -55,9 +55,6 @@ private:
 public:
   G1YoungRemSetSamplingThread();
   double vtime_accum() { return _vtime_accum; }
-
-  virtual void run();
-  void stop();
 };
 
 #endif // SHARE_VM_GC_G1_G1YOUNGREMSETSAMPLINGTHREAD_HPP
