@@ -107,6 +107,9 @@ CONSTANT_REGISTER_DECLARATION(Register, r31_sp, (31));
 CONSTANT_REGISTER_DECLARATION(Register, zr,  (32));
 CONSTANT_REGISTER_DECLARATION(Register, sp,  (33));
 
+// Used as a filler in instructions where a register field is unused.
+const Register dummy_reg = r31_sp;
+
 // Use FloatRegister as shortcut
 class FloatRegisterImpl;
 typedef FloatRegisterImpl* FloatRegister;
