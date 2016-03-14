@@ -1093,19 +1093,19 @@ void Universe::print_heap_at_SIGBREAK() {
 
 void Universe::print_heap_before_gc() {
   LogHandle(gc, heap) log;
-  if (log.is_trace()) {
-    log.trace("Heap before GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
+  if (log.is_debug()) {
+    log.debug("Heap before GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
     ResourceMark rm;
-    heap()->print_on(log.trace_stream());
+    heap()->print_on(log.debug_stream());
   }
 }
 
 void Universe::print_heap_after_gc() {
   LogHandle(gc, heap) log;
-  if (log.is_trace()) {
-    log.trace("Heap after GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
+  if (log.is_debug()) {
+    log.debug("Heap after GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
     ResourceMark rm;
-    heap()->print_on(log.trace_stream());
+    heap()->print_on(log.debug_stream());
   }
 }
 
