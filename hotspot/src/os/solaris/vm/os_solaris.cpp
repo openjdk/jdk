@@ -1898,7 +1898,7 @@ static bool check_addr0(outputStream* st) {
   int fd = ::open("/proc/self/map",O_RDONLY);
   if (fd >= 0) {
     prmap_t *p = NULL;
-    char *mbuff = (char *) calloc(read_chunk, sizeof(prmap_t) + 1);
+    char *mbuff = (char *) calloc(read_chunk, sizeof(prmap_t));
     if (NULL == mbuff) {
       ::close(fd);
       return status;
@@ -1912,7 +1912,7 @@ static bool check_addr0(outputStream* st) {
       p = (prmap_t *)mbuff;
       for(int i = 0; i < nmap; i++){
         if (p->pr_vaddr == 0x0) {
-          st->print("Warning: Address: " PTR_FORMAT ", Size: %dK, ",p->pr_vaddr, p->pr_size/1024);
+          st->print("Warning: Address: " PTR_FORMAT ", Size: " SIZE_FORMAT "K, ",p->pr_vaddr, p->pr_size/1024);
           st->print("Mapped file: %s, ", p->pr_mapname[0] == '\0' ? "None" : p->pr_mapname);
           st->print("Access: ");
           st->print("%s",(p->pr_mflags & MA_READ)  ? "r" : "-");
@@ -1921,13 +1921,12 @@ static bool check_addr0(outputStream* st) {
           st->cr();
           status = true;
         }
-        p = (prmap_t *)(mbuff + sizeof(prmap_t));
+        p++;
       }
-      memset(mbuff, 0, read_chunk*sizeof(prmap_t)+1);
     }
     free(mbuff);
+    ::close(fd);
   }
-  ::close(fd);
   return status;
 }
 
