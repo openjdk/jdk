@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,4 +28,10 @@
  * @tag-with-hyphens a tag that contains hyphens.
  */
 
-public class C {}
+public class C {
+    /**
+     * @param arg this is an int argument.
+     */
+    public void m(int arg) {
+    }
+}

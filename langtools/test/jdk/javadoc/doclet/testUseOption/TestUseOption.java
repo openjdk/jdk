@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854
+ * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982
  * @summary A simple test to ensure class-use files are correct.
  * @author jamieh
  * @library ../lib
@@ -121,6 +121,21 @@ public class TestUseOption extends JavadocTester {
             "<a href=\"../../pkg1/C10.html#withTypeParametersOfType-java.lang.Class-\">" +
             "withTypeParametersOfType</a>"
         );
+        checkOutput("pkg1/class-use/UsedInterface.html", true,
+            "Subinterfaces of <a href=\"../../pkg1/UsedInterface.html\" title=\"interface in pkg1\">"
+            + "UsedInterface</a> in <a href=\"../../pkg1/package-summary.html\">pkg1",
+            "<td class=\"colFirst\"><code>interface&nbsp;</code></td>\n<td class=\"colLast\">"
+            + "<code><span class=\"memberNameLink\"><a href=\"../../pkg1/SubInterface.html\" "
+            + "title=\"interface in pkg1\">SubInterface</a>&lt;T&gt;</span></code>&nbsp;</td>"
+        );
+        checkOutput("pkg1/class-use/UsedThrowable.html", true,
+            "Methods in <a href=\"../../pkg1/package-summary.html\">pkg1</a> that throw "
+            + "<a href=\"../../pkg1/UsedThrowable.html\" title=\"class in pkg1\">UsedThrowable</a>",
+            "<td class=\"colFirst\"><code>void</code></td>\n<td class=\"colLast\"><span class="
+            + "\"typeNameLabel\">C1.</span><code><span class=\"memberNameLink\">"
+            + "<a href=\"../../pkg1/C1.html#methodInC1ThrowsThrowable--\">methodInC1ThrowsThrowable"
+            + "</a></span>()</code>&nbsp;</td>"
+        );
     }
 
     @Test
@@ -128,7 +143,7 @@ public class TestUseOption extends JavadocTester {
         javadoc("-d", "out-2",
                 "-sourcepath", testSrc,
                 "-use",
-                testSrc("C.java"), testSrc("UsedInC.java"));
+                testSrc("C.java"), testSrc("UsedInC.java"), "pkg3");
         checkExit(Exit.OK);
 
         checkOutput("class-use/UsedInC.html", true,
@@ -140,7 +155,9 @@ public class TestUseOption extends JavadocTester {
         );
         checkOutput("package-use.html", true,
                 "<td class=\"colOne\">"
-                + "<a href=\"class-use/UsedInC.html#unnamed.package\">UsedInC</a>&nbsp;</td>"
+                + "<a href=\"class-use/UsedInC.html#unnamed.package\">UsedInC</a>&nbsp;</td>",
+                "<td class=\"colFirst\"><a href=\"#-Unnamed-\">&lt;Unnamed&gt;</a></td>\n"
+                + "<td class=\"colLast\">&nbsp;</td>"
         );
     }
 
