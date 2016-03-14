@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4695326 4750173 4920381 8078320
+ * @bug 4695326 4750173 4920381 8078320 8071982
  * @summary Test the declaration of simple tags using -tag. Verify that
  * "-tag name" is a shortcut for "-tag name:a:Name:".  Also verity that
  * you can escape the ":" character with a back slash so that it is not
@@ -46,6 +46,7 @@ public class TestSimpleTag extends JavadocTester {
     void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
+                "-tag", "param",
                 "-tag", "todo",
                 "-tag", "ejb\\:bean:a:EJB Beans:",
                 "-tag", "regular:a:Regular Tag:",
@@ -57,6 +58,8 @@ public class TestSimpleTag extends JavadocTester {
                 "<span class=\"simpleTagLabel\">Todo:</span>",
                 "<span class=\"simpleTagLabel\">EJB Beans:</span>",
                 "<span class=\"simpleTagLabel\">Regular Tag:</span>",
-                "<span class=\"simpleTagLabel\">Tag-With-Hyphens:</span>");
+                "<span class=\"simpleTagLabel\">Tag-With-Hyphens:</span>",
+                "<dt><span class=\"paramLabel\">Parameters:</span></dt>\n"
+                + "<dd><code>arg</code> - this is an int argument.</dd>");
     }
 }

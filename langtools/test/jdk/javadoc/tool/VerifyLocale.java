@@ -25,6 +25,7 @@
  * @test
  * @bug 8035473
  * @summary Verify that init method works correctly.
+ * @ignore 8149565
  * @modules jdk.javadoc
  */
 
@@ -40,6 +41,10 @@ import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.doclet.DocletEnvironment;
 
 public class VerifyLocale implements Doclet {
+    static String language;
+    static String country;
+    static String variant;
+
     Locale locale;
     Reporter reporter;
 
@@ -48,20 +53,29 @@ public class VerifyLocale implements Doclet {
             new java.io.File(System.getProperty("test.src", "."),
                              "VerifyLocale.java");
 
-        String[] argarray = {
-            // jumble the options in some weird order
-            "-doclet", "VerifyLocale",
-            "-locale", "ja",
-            "-docletpath", System.getProperty("test.classes", "."),
-            thisFile
-        };
-        if (jdk.javadoc.internal.tool.Main.execute(argarray) != 0)
-            throw new Error("Javadoc encountered warnings or errors.");
+        for (Locale loc : Locale.getAvailableLocales()) {
+            language = loc.getLanguage();
+            country = loc.getCountry();
+            variant = loc.getVariant();
+            if (!language.equals("")) {
+                String[] command_line = {
+                    // jumble the options in some weird order
+                    "-doclet", "VerifyLocale",
+                    "-locale", language + (country.equals("") ? "" : ("_" + country + (variant.equals("") ? "" : "_" + variant))),
+                    "-docletpath", System.getProperty("test.classes", "."),
+                    thisFile
+                };
+                if (jdk.javadoc.internal.tool.Main.execute(command_line) != 0)
+                    throw new Error("Javadoc encountered warnings or errors.");
+            }
+        }
     }
 
     public boolean run(DocletEnvironment root) {
         reporter.print(Kind.NOTE, "just a test: Locale is: " + locale.getDisplayName());
-        return locale.getDisplayName(Locale.ENGLISH).contains("Japan");
+        return language.equals(locale.getLanguage())
+               && country.equals(locale.getCountry())
+               && variant.equals(locale.getVariant());
     }
 
     @Override
