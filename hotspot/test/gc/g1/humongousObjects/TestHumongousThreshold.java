@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015,2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class TestHumongousThreshold {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final int REGION_SIZE = WHITE_BOX.g1RegionSize();
     private static final int MAX_CONTINUOUS_SIZE_CHECK = 129;
-    private static final int NON_HUMONGOUS_DIVIDER = 10;
+    private static final int NON_HUMONGOUS_STEPS = 10;
 
     /**
      * The method allocates byte[] with specified size and checks that:
@@ -84,7 +84,7 @@ public class TestHumongousThreshold {
      * @return allocated byte array
      */
 
-    private static byte[] allocateAndCheck(int arraySize, boolean expectedHumongous) {
+    private static void allocateAndCheck(int arraySize, boolean expectedHumongous) {
         byte[] storage = new byte[arraySize];
         long objectSize = WHITE_BOX.getObjectSize(storage);
         boolean shouldBeHumongous = objectSize > (REGION_SIZE / 2);
@@ -98,7 +98,6 @@ public class TestHumongousThreshold {
                 "Object should be allocated as " + (shouldBeHumongous ? "humongous"
                         : "non-humongous") + " but it wasn't; Allocation size = " + arraySize + "; Object size = "
                         + objectSize + "; region size = " + REGION_SIZE);
-        return storage;
     }
 
     public static void main(String[] args) {
@@ -108,7 +107,7 @@ public class TestHumongousThreshold {
         int maxByteArrayNonHumongousSize = (REGION_SIZE / 2) - byteArrayMemoryOverhead;
 
         // Increment for non-humongous testing
-        int nonHumongousStep = maxByteArrayNonHumongousSize / NON_HUMONGOUS_DIVIDER;
+        int nonHumongousStep = maxByteArrayNonHumongousSize / NON_HUMONGOUS_STEPS;
 
         // Maximum byte[] that takes one region
         int maxByteArrayOneRegionSize = REGION_SIZE - byteArrayMemoryOverhead;
@@ -131,10 +130,10 @@ public class TestHumongousThreshold {
             allocateAndCheck(i, false);
         }
 
-        // Testing allocations with byte[] with length from 0 to nonHumongousStep * NON_HUMONGOUS_DIVIDER
+        // Testing allocations with byte[] with length from 0 to nonHumongousStep * NON_HUMONGOUS_STEPS
         System.out.format("Testing allocations with byte[] with length from 0 to %d with step %d%n",
-                nonHumongousStep * NON_HUMONGOUS_DIVIDER, nonHumongousStep);
-        for (int i = 0; i < NON_HUMONGOUS_DIVIDER; ++i) {
+                nonHumongousStep * NON_HUMONGOUS_STEPS, nonHumongousStep);
+        for (int i = 0; i < NON_HUMONGOUS_STEPS; ++i) {
             allocateAndCheck(i * nonHumongousStep, false);
         }
 
