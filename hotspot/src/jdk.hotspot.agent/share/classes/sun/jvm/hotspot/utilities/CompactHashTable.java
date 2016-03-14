@@ -81,6 +81,12 @@ public class CompactHashTable extends VMObject {
   }
 
   public Symbol probe(byte[] name, long hash) {
+
+    if (bucketCount() == 0) {
+      // The table is invalid, so don't try to lookup
+      return null;
+    }
+
     long    symOffset;
     Symbol  sym;
     Address baseAddress = baseAddressField.getValue(addr);
