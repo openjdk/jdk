@@ -27,24 +27,11 @@
 
 #include "gc/g1/g1OopClosures.hpp"
 #include "gc/g1/heapRegionManager.hpp"
+ #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class G1CollectedHeap;
-
-class OopAndMarkOop {
-  oop _o;
-  markOop _m;
- public:
-  OopAndMarkOop(oop obj, markOop m) : _o(obj), _m(m) {
-  }
-
-  void set_mark() {
-    _o->set_mark(_m);
-  }
-};
-
-typedef Stack<OopAndMarkOop,mtGC> OopAndMarkOopStack;
 
 // Task to fixup self-forwarding pointers
 // installed as a result of an evacuation failure.

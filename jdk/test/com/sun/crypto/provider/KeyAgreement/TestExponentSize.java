@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,10 +83,10 @@ public class TestExponentSize {
         KeyPair kp;
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", "SunJCE");
 
-        // Sun's default uses a default psize of 1024 and
+        // Sun's default uses a default psize of 2048 and
         // lsize of (pSize / 2) but at least 384 bits
         kp = kpg.generateKeyPair();
-        checkKeyPair(kp, Sizes.ten24, Sizes.five12);
+        checkKeyPair(kp, Sizes.twenty48, Sizes.ten24);
 
         DHPublicKey publicKey = (DHPublicKey)kp.getPublic();
         BigInteger p = publicKey.getParams().getP();
@@ -98,15 +98,15 @@ public class TestExponentSize {
 
         kpg.initialize(new DHParameterSpec(p, g, Sizes.ten24.getIntSize()));
         kp = kpg.generateKeyPair();
-        checkKeyPair(kp, Sizes.ten24, Sizes.ten24);
+        checkKeyPair(kp, Sizes.twenty48, Sizes.ten24);
 
         kpg.initialize(new DHParameterSpec(p, g, Sizes.five12.getIntSize()));
         kp = kpg.generateKeyPair();
-        checkKeyPair(kp, Sizes.ten24, Sizes.five12);
+        checkKeyPair(kp, Sizes.twenty48, Sizes.five12);
 
         kpg.initialize(new DHParameterSpec(p, g, Sizes.two56.getIntSize()));
         kp = kpg.generateKeyPair();
-        checkKeyPair(kp, Sizes.ten24, Sizes.two56);
+        checkKeyPair(kp, Sizes.twenty48, Sizes.two56);
 
         kpg.initialize(Sizes.five12.getIntSize());
         kp = kpg.generateKeyPair();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.util.stream.Stream;
  * @bug     8140364
  * @summary Tests the default implementation of System.Logger, when
  *          JUL is the default backend.
+ * @modules java.logging
  * @build AccessSystemLogger DefaultLoggerFinderTest
  * @run  driver AccessSystemLogger
  * @run  main/othervm -Xbootclasspath/a:boot DefaultLoggerFinderTest NOSECURITY

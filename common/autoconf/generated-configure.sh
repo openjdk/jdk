@@ -4862,7 +4862,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1456136781
+DATE_WHEN_GENERATED=1457518447
 
 ###############################################################################
 #
@@ -15117,6 +15117,10 @@ $as_echo "$COMPILE_TYPE" >&6; }
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     REQUIRED_OS_NAME=Darwin
     REQUIRED_OS_VERSION=11.2
+  fi
+  if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    REQUIRED_OS_NAME=AIX
+    REQUIRED_OS_VERSION=7.1
   fi
 
 

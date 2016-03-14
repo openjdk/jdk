@@ -42,27 +42,40 @@ import java.util.jar.JarFile;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class MultiReleaseJarURLConnection {
     String userdir = System.getProperty("user.dir",".");
-    String urlFile = "jar:file:" + userdir + "/multi-release.jar!/";
-    String urlEntry = urlFile + "version/Version.java";
+    String file = userdir + "/signed-multi-release.jar";
 
     @BeforeClass
     public void initialize() throws Exception {
         CreateMultiReleaseTestJars creator = new CreateMultiReleaseTestJars();
         creator.compileEntries();
         creator.buildMultiReleaseJar();
+        creator.buildSignedMultiReleaseJar();
     }
 
     @AfterClass
     public void close() throws IOException {
         Files.delete(Paths.get(userdir, "multi-release.jar"));
+        Files.delete(Paths.get(userdir, "signed-multi-release.jar"));
     }
 
-    @Test
-    public void testRuntimeVersioning() throws Exception {
+    @DataProvider(name = "data")
+    public Object[][] createData() {
+        return new Object[][]{
+                {"unsigned file", userdir + "/multi-release.jar"},
+                {"signed file", userdir + "/signed-multi-release.jar"},
+        };
+    }
+
+    @Test(dataProvider = "data")
+    public void testRuntimeVersioning(String ignore, String file) throws Exception {
+        String urlFile = "jar:file:" + file + "!/";
+        String urlEntry = urlFile + "version/Version.java";
+
         Assert.assertTrue(readAndCompare(new URL(urlEntry), "return 8"));
         // #runtime is "magic"
         Assert.assertTrue(readAndCompare(new URL(urlEntry + "#runtime"), "return 9"));
@@ -72,8 +85,10 @@ public class MultiReleaseJarURLConnection {
         Assert.assertTrue(readAndCompare(new URL(urlEntry), "return 8"));
     }
 
-    @Test
-    public void testCachedJars() throws Exception {
+    @Test(dataProvider = "data")
+    public void testCachedJars(String ignore, String file) throws Exception {
+        String urlFile = "jar:file:" + file + "!/";
+
         URL rootUrl = new URL(urlFile);
         JarURLConnection juc = (JarURLConnection)rootUrl.openConnection();
         JarFile rootJar = juc.getJarFile();

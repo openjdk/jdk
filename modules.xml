@@ -317,7 +317,6 @@
       <to>java.xml</to>
       <to>jdk.charsets</to>
       <to>jdk.crypto.pkcs11</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.httpserver</to>
       <to>jdk.jartool</to>
       <to>jdk.jconsole</to>
@@ -439,7 +438,6 @@
     <export>
       <name>sun.security.pkcs</name>
       <to>jdk.crypto.ec</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.jartool</to>
     </export>
     <export>
@@ -480,7 +478,6 @@
       <to>jdk.crypto.mscapi</to>
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.crypto.ucrypto</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.jartool</to>
       <to>jdk.policytool</to>
       <to>jdk.security.auth</to>
@@ -491,7 +488,6 @@
       <to>java.naming</to>
       <to>jdk.crypto.ec</to>
       <to>jdk.crypto.pkcs11</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.jartool</to>
       <to>jdk.security.auth</to>
     </export>
@@ -859,6 +855,18 @@
     <depend>jdk.internal.le</depend>
     <export>
       <name>jdk.jshell</name>
+    </export>
+  </module>
+  <module>
+    <name>jdk.jsobject</name>
+    <depend>java.base</depend>
+    <depend re-exports="true">java.desktop</depend>
+    <export>
+      <name>netscape.javascript</name>
+    </export>
+    <export>
+      <name>jdk.internal.netscape.javascript.spi</name>
+      <to>jdk.plugin</to>
     </export>
   </module>
   <module>
@@ -1714,11 +1722,6 @@
     <depend>java.base</depend>
   </module>
   <module>
-    <name>jdk.deploy.osx</name>
-    <depend>java.base</depend>
-    <depend>java.desktop</depend>
-  </module>
-  <module>
     <name>jdk.dev</name>
     <depend>java.base</depend>
   </module>
@@ -1821,10 +1824,10 @@
       <name>com.sun.tools.javadoc</name>
     </export>
     <export>
-      <name>jdk.javadoc.doclet</name>  
+      <name>jdk.javadoc.doclet</name>
     </export>
     <export>
-      <name>jdk.javadoc.doclet.taglet</name>  
+      <name>jdk.javadoc.doclet.taglet</name>
     </export>
   </module>
   <module>
