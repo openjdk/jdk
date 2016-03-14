@@ -2382,9 +2382,6 @@ public:
   product(bool, IgnoreEmptyClassPaths, false,                               \
           "Ignore empty path elements in -classpath")                       \
                                                                             \
-  product(bool, TraceClassLoadingPreorder, false,                           \
-          "Trace all classes loaded in order referenced (not loaded)")      \
-                                                                            \
   product_rw(bool, TraceLoaderConstraints, false,                           \
           "Trace loader constraints")                                       \
                                                                             \
