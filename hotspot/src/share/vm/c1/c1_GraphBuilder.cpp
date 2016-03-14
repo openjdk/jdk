@@ -3942,7 +3942,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
 
 
 bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
-  ValueStack* state_before = state()->copy_for_parsing();
+  ValueStack* state_before = copy_state_before();
   vmIntrinsics::ID iid = callee->intrinsic_id();
   switch (iid) {
   case vmIntrinsics::_invokeBasic:
@@ -4032,7 +4032,7 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
     fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
     break;
   }
-  set_state(state_before);
+  set_state(state_before->copy_for_parsing());
   return false;
 }
 
