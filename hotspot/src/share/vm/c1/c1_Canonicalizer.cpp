@@ -471,7 +471,7 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
     InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
     if (c != NULL && !c->value()->is_null_object()) {
       // ciInstance::java_mirror_type() returns non-NULL only for Java mirrors
-      ciType* t = c->value()->as_instance()->java_mirror_type();
+      ciType* t = c->value()->java_mirror_type();
       if (t->is_klass()) {
         // substitute cls.isInstance(obj) of a constant Class into
         // an InstantOf instruction
@@ -484,6 +484,17 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
         // cls.isInstance(obj) always returns false for primitive classes
         set_constant(0);
       }
+    }
+    break;
+  }
+  case vmIntrinsics::_isPrimitive        : {
+    assert(x->number_of_arguments() == 1, "wrong type");
+
+    // Class.isPrimitive is known on constant classes:
+    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
+    if (c != NULL && !c->value()->is_null_object()) {
+      ciType* t = c->value()->java_mirror_type();
+      set_constant(t->is_primitive_type());
     }
     break;
   }
