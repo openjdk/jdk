@@ -68,7 +68,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
  * <ul>
  * <li><i>ClassSignature</i> = ( <tt>visitFormalTypeParameter</tt>
  * <tt>visitClassBound</tt>? <tt>visitInterfaceBound</tt>* )* (
- * <tt>visitSuperClass</tt> <tt>visitInterface</tt>* )</li>
+ * <tt>visitSuperclass</tt> <tt>visitInterface</tt>* )</li>
  * <li><i>MethodSignature</i> = ( <tt>visitFormalTypeParameter</tt>
  * <tt>visitClassBound</tt>? <tt>visitInterfaceBound</tt>* )* (
  * <tt>visitParameterType</tt>* <tt>visitReturnType</tt>
@@ -88,17 +88,17 @@ public abstract class SignatureVisitor {
     /**
      * Wildcard for an "extends" type argument.
      */
-    public static final char EXTENDS = '+';
+    public final static char EXTENDS = '+';
 
     /**
      * Wildcard for a "super" type argument.
      */
-    public static final char SUPER = '-';
+    public final static char SUPER = '-';
 
     /**
      * Wildcard for a normal type argument.
      */
-    public static final char INSTANCEOF = '=';
+    public final static char INSTANCEOF = '=';
 
     /**
      * The ASM API version implemented by this visitor. The value of this field
