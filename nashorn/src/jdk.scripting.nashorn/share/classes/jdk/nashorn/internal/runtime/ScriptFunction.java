@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -45,6 +46,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.LongAdder;
 import jdk.dynalink.CallSiteDescriptor;
+import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.dynalink.linker.support.Guards;
@@ -129,7 +131,7 @@ public class ScriptFunction extends ScriptObject {
     private static final Object LAZY_PROTOTYPE = new Object();
 
     private static final AccessControlContext GET_LOOKUP_PERMISSION_CONTEXT =
-            AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION_NAME);
+            AccessControlContextFactory.createAccessControlContext(SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
 
     private static PropertyMap createStrictModeMap(final PropertyMap map) {
         final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
@@ -955,10 +957,14 @@ public class ScriptFunction extends ScriptObject {
                 // It's already (callee, this, args...), just what we need
                 boundHandle = callHandle;
             }
-        } else if (data.isBuiltin() && "extend".equals(data.getName())) {
-            // NOTE: the only built-in named "extend" is NativeJava.extend. As a special-case we're binding the
-            // current lookup as its "this" so it can do security-sensitive creation of adapter classes.
+        } else if (data.isBuiltin() && Global.isBuiltInJavaExtend(this)) {
+            // We're binding the current lookup as "self" so the function can do
+            // security-sensitive creation of adapter classes.
             boundHandle = MH.dropArguments(MH.bindTo(callHandle, getLookupPrivileged(desc)), 0, type.parameterType(0), type.parameterType(1));
+        } else if (data.isBuiltin() && Global.isBuiltInJavaTo(this)) {
+            // We're binding the current call site descriptor as "self" so the function can do
+            // security-sensitive creation of adapter classes.
+            boundHandle = MH.dropArguments(MH.bindTo(callHandle, desc), 0, type.parameterType(0), type.parameterType(1));
         } else if (scopeCall && needsWrappedThis()) {
             // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
             // (this, args...) => ([this], args...)

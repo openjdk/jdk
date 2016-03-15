@@ -86,8 +86,10 @@ package jdk.dynalink.linker;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.function.Supplier;
 import jdk.dynalink.DynamicLinker;
 import jdk.dynalink.DynamicLinkerFactory;
+import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.linker.ConversionComparator.Comparison;
 import jdk.dynalink.linker.support.TypeUtilities;
 
@@ -217,4 +219,34 @@ public interface LinkerServices {
      * filtered for wrapping and unwrapping.
      */
     public MethodHandle filterInternalObjects(final MethodHandle target);
+
+    /**
+     * Executes an operation within the context of a particular
+     * {@code MethodHandles.Lookup} lookup object. Normally, methods on
+     * {@code LinkerServices} are invoked as part of the linking mechanism in
+     * which case Dynalink internally maintains a per-thread current lookup
+     * (the one belonging to the descriptor of the call site being linked). This
+     * lookup can be retrieved by any {@link GuardingTypeConverterFactory}
+     * involved in linking if it needs to generate lookup-sensitive converters.
+     * However, linker services' methods can be invoked outside the linking
+     * process too when implementing invocation-time dispatch schemes, invoking
+     * conversions at runtime, etc. If it becomes necessary to use any type
+     * converter in this situation, and it needs a lookup, it will normally only
+     * get {@link MethodHandles#publicLookup()} as the thread is not engaged in
+     * a linking operation. If there is a way to meaningfully associate the
+     * operation to the context of some caller class, consider performing it
+     * within an invocation of this method and passing a full-strength lookup
+     * for that class, as it will associate that lookup with the current thread
+     * for the duration of the operation. Note that since you are passing a
+     * {@link SecureLookupSupplier}, any invoked type converter factories will
+     * still need to hold the necessary runtime permission to be able to get the
+     * lookup should they need it.
+     * @param <T> the type of the return value provided by the passed-in supplier.
+     * @param operation the operation to execute in context of the specified lookup.
+     * @param lookupSupplier secure supplier of the lookup
+     * @return the return value of the action
+     * @throws NullPointerException if either action or lookupSupplier are null.
+     * @see GuardingTypeConverterFactory#convertToType(Class, Class, Supplier)
+     */
+    public <T> T getWithLookup(final Supplier<T> operation, final SecureLookupSupplier lookupSupplier);
 }
