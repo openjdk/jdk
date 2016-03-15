@@ -85,7 +85,7 @@ package jdk.dynalink.linker;
 
 import java.lang.invoke.MethodHandles;
 import java.util.function.Supplier;
-import jdk.dynalink.CallSiteDescriptor;
+import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.beans.BeansLinker;
 import jdk.dynalink.linker.support.TypeUtilities;
 
@@ -132,7 +132,7 @@ public interface GuardingTypeConverterFactory {
      * (e.g. to convert some object from the dynamic language into a Java
      * interface for interoperability). Invoking the {@link Supplier#get()}
      * method on the passed supplier will be subject to the same security checks
-     * as {@link CallSiteDescriptor#getLookup()}. An implementation should avoid
+     * as {@link SecureLookupSupplier#getLookup()}. An implementation should avoid
      * retrieving the lookup if it is not needed so as to avoid the expense of
      * {@code AccessController.doPrivileged} call.
      * @return a guarded invocation that can take an object (if it passes guard)
@@ -142,6 +142,7 @@ public interface GuardingTypeConverterFactory {
      * can always handle the conversion, it can return an unconditional
      * invocation (one whose guard is null).
      * @throws Exception if there was an error during creation of the converter
+     * @see LinkerServices#getWithLookup(Supplier, SecureLookupSupplier)
      */
     public GuardedInvocation convertToType(Class<?> sourceType, Class<?> targetType, Supplier<MethodHandles.Lookup> lookupSupplier) throws Exception;
 }

@@ -37,6 +37,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.beans.BeansLinker;
 import jdk.dynalink.beans.StaticClass;
 import jdk.dynalink.linker.support.TypeUtilities;
@@ -64,7 +65,6 @@ import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
  */
 @ScriptClass("Java")
 public final class NativeJava {
-
     // initialized by nasgen
     @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
@@ -391,6 +391,9 @@ public final class NativeJava {
 
         if(targetClass.isArray()) {
             try {
+                if (self instanceof SecureLookupSupplier) {
+                    return JSType.toJavaArrayWithLookup(obj, targetClass.getComponentType(), (SecureLookupSupplier)self);
+                }
                 return JSType.toJavaArray(obj, targetClass.getComponentType());
             } catch (final Exception exp) {
                 throw typeError(exp, "java.array.conversion.failed", targetClass.getName());
@@ -468,7 +471,7 @@ public final class NativeJava {
                 // Usually writable properties are a subset as 'write-only' properties are rare
                 props.addAll(BeansLinker.getReadableStaticPropertyNames(clazz));
                 props.addAll(BeansLinker.getStaticMethodNames(clazz));
-            } catch (Exception ignored) {}
+            } catch (final Exception ignored) {}
             return props;
         } else if (object instanceof JSObject) {
             final JSObject jsObj = ((JSObject)object);
@@ -484,7 +487,7 @@ public final class NativeJava {
                 // Usually writable properties are a subset as 'write-only' properties are rare
                 props.addAll(BeansLinker.getReadableInstancePropertyNames(clazz));
                 props.addAll(BeansLinker.getInstanceMethodNames(clazz));
-            } catch (Exception ignored) {}
+            } catch (final Exception ignored) {}
             return props;
         }
 
