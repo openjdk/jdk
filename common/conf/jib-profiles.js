@@ -217,6 +217,7 @@ var getJibProfilesCommon = function (input) {
         configure_args: ["--with-default-make-target=all"],
         configure_args_32bit: ["--with-target-bits=32", "--with-jvm-variants=client,server"],
         configure_args_debug: ["--enable-debug"],
+        configure_args_slowdebug: ["--with-debug-level=slowdebug"],
         organization: "jpg.infra.builddeps"
     };
 
@@ -297,50 +298,12 @@ var getJibProfilesProfiles = function (input, common) {
     profiles = concatObjects(profiles, mainProfiles);
     // Generate debug versions of all the main profiles
     profiles = concatObjects(profiles, generateDebugProfiles(common, mainProfiles));
+    // Generate slowdebug versions of all the main profiles
+    profiles = concatObjects(profiles, generateSlowdebugProfiles(common, mainProfiles));
 
-    // Specific open profiles needed for JPRT testing
-    var jprtOpenProfiles = {
-
-        "linux-x64-open": {
-            target_os: mainProfiles["linux-x64"].target_os,
-            target_cpu: mainProfiles["linux-x64"].target_cpu,
-            dependencies: mainProfiles["linux-x64"].dependencies,
-            configure_args: concat(mainProfiles["linux-x64"].configure_args,
-                "--enable-openjdk-only"),
-            make_args: mainProfiles["linux-x64"].make_args,
-            labels: [ "open" ]
-        },
-
-        "linux-x86-open": {
-            target_os: mainProfiles["linux-x86"].target_os,
-            target_cpu: mainProfiles["linux-x86"].target_cpu,
-            dependencies: mainProfiles["linux-x86"].dependencies,
-            configure_args: concat(mainProfiles["linux-x86"].configure_args,
-                "--enable-openjdk-only"),
-            make_args: mainProfiles["linux-x86"].make_args,
-            labels: [ "open" ]
-        },
-
-        "solaris-x64-open": {
-            target_os: mainProfiles["solaris-x64"].target_os,
-            target_cpu: mainProfiles["solaris-x64"].target_cpu,
-            dependencies: mainProfiles["solaris-x64"].dependencies,
-            configure_args: concat(mainProfiles["solaris-x64"].configure_args,
-                "--enable-openjdk-only"),
-            make_args: mainProfiles["solaris-x64"].make_args,
-            labels: [ "open" ]
-        },
-
-        "windows-x86-open": {
-            target_os: mainProfiles["windows-x86"].target_os,
-            target_cpu: mainProfiles["windows-x86"].target_cpu,
-            dependencies: mainProfiles["windows-x86"].dependencies,
-            configure_args: concat(mainProfiles["windows-x86"].configure_args,
-                "--enable-openjdk-only"),
-            make_args: mainProfiles["windows-x86"].make_args,
-            labels: [ "open" ]
-        }
-    };
+    // Generate open only profiles for all the main profiles for JPRT and reference
+    // implementation builds.
+    var jprtOpenProfiles = generateOpenOnlyProfiles(common, mainProfiles);
     profiles = concatObjects(profiles, jprtOpenProfiles);
     // Generate debug profiles for the open jprt profiles
     profiles = concatObjects(profiles, generateDebugProfiles(common, jprtOpenProfiles));
@@ -497,6 +460,51 @@ var generateDebugProfiles = function (common, profiles) {
             newProfiles[debugProfile].configure_args
                 = concat(newProfiles[debugProfile].configure_args,
                 common.configure_args_debug);
+    }
+    return newProfiles;
+};
+
+/**
+ * Generates slowdebug versions of profiles. Clones the given profiles and adds
+ * debug metadata.
+ *
+ * @param common Common values
+ * @param profiles Profiles map to generate debug profiles for
+ * @returns {{}} New map of profiles containing debug profiles
+ */
+var generateSlowdebugProfiles = function (common, profiles) {
+    var newProfiles = {};
+    for (var profile in profiles) {
+        var debugProfile = profile + "-slowdebug";
+        newProfiles[debugProfile] = clone(profiles[profile]);
+        newProfiles[debugProfile].debug_level = "slowdebug";
+        newProfiles[debugProfile].labels
+            = concat(newProfiles[debugProfile].labels || [], "slowdebug"),
+            newProfiles[debugProfile].configure_args
+                = concat(newProfiles[debugProfile].configure_args,
+                common.configure_args_slowdebug);
+    }
+    return newProfiles;
+};
+
+/**
+ * Generates open only versions of profiles. Clones the given profiles and adds
+ * open metadata.
+ *
+ * @param common Common values
+ * @param profiles Profiles map to generate open only profiles for
+ * @returns {{}} New map of profiles containing open only profiles
+ */
+var generateOpenOnlyProfiles = function (common, profiles) {
+    var newProfiles = {};
+    for (var profile in profiles) {
+        var openProfile = profile + "-open";
+        newProfiles[openProfile] = clone(profiles[profile]);
+        newProfiles[openProfile].labels
+            = concat(newProfiles[openProfile].labels || [], "open"),
+            newProfiles[openProfile].configure_args
+                = concat(newProfiles[openProfile].configure_args,
+                "--enable-openjdk-only");
     }
     return newProfiles;
 };

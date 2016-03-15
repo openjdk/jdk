@@ -234,7 +234,10 @@ define add_native_source
       -include $$($1_$2_DEP_TARGETS)
 
       ifeq ($(TOOLCHAIN_TYPE), microsoft)
-        $1_$2_DEBUG_OUT_FLAGS:=-Fd$$(patsubst %$(OBJ_SUFFIX),%.pdb,$$($1_$2_OBJ))
+        # To avoid name clashes between pdbs for objects and libs/execs, put
+        # object pdbs in a separate subdir.
+        $1_$2_DEBUG_OUT_FLAGS:=-Fd$$(strip $$(patsubst $$($1_OBJECT_DIR)/%, \
+            $$($1_OBJECT_DIR)/pdb/%, $$(patsubst %$(OBJ_SUFFIX),%.pdb,$$($1_$2_OBJ))))
       endif
     endif
 
@@ -246,7 +249,7 @@ define add_native_source
 
     $$($1_$2_OBJ) : $2 $$($1_COMPILE_VARDEPS_FILE) $$($1_$2_VARDEPS_FILE) | $$($1_BUILD_INFO)
 	$$(call LogInfo, Compiling $$(notdir $2) (for $$(notdir $$($1_TARGET))))
-	$$(call MakeDir, $$(@D))
+	$$(call MakeDir, $$(@D) $$(@D)/pdb)
         ifneq ($(TOOLCHAIN_TYPE), microsoft)
           ifeq ($(TOOLCHAIN_TYPE)$$(filter %.s,$2), solstudio)
             # The Solaris studio compiler doesn't output the full path to the object file in the
@@ -706,7 +709,7 @@ define SetupNativeCompilationBody
 
         # Generate debuginfo files.
         ifeq ($(OPENJDK_TARGET_OS), windows)
-          $1_EXTRA_LDFLAGS += "-pdb:$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb" \
+          $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb" \
               "-map:$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).map"
           $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).pdb \
               $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).map

@@ -4862,7 +4862,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1457684806
+DATE_WHEN_GENERATED=1457953189
 
 ###############################################################################
 #
@@ -46304,6 +46304,9 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_DEBUG_SYMBOLS="-g"
     CXXFLAGS_DEBUG_SYMBOLS="-g"
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    CFLAGS_DEBUG_SYMBOLS="-Zi"
+    CXXFLAGS_DEBUG_SYMBOLS="-Zi"
   fi
 
 
@@ -46649,7 +46652,7 @@ $as_echo "$supports" >&6; }
     CXXFLAGS_JDK="$CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK \
-        -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
+        -MD -Zc:wchar_t- -W3 -wd4800 \
         -DWIN32_LEAN_AND_MEAN \
         -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
         -D_WINSOCK_DEPRECATED_NO_WARNINGS \
@@ -46796,9 +46799,6 @@ $as_echo "$supports" >&6; }
       LDFLAGS_SAFESH="-safeseh"
       LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SAFESH"
     fi
-    # TODO: make -debug optional "--disable-full-debug-symbols"
-    LDFLAGS_MICROSOFT_DEBUG="-debug"
-    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_MICROSOFT_DEBUG"
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     # We have previously set HAS_GNU_HASH if this is the case
