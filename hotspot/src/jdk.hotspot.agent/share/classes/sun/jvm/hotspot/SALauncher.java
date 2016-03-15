@@ -111,18 +111,53 @@ public class SALauncher {
         return launcherHelp();
     }
 
+    private static void buildAttachArgs(ArrayList<String> newArgs,
+                                        String pid, String exe, String core) {
+        if ((pid == null) && (exe == null)) {
+            throw new IllegalArgumentException(
+                                     "You have to set --pid or --exe.");
+        }
+
+        if (pid != null) { // Attach to live process
+            if (exe != null) {
+                throw new IllegalArgumentException(
+                                             "Unnecessary argument: --exe");
+            } else if (core != null) {
+                throw new IllegalArgumentException(
+                                             "Unnecessary argument: --core");
+            } else if (!pid.matches("^\\d+$")) {
+                throw new IllegalArgumentException("Invalid pid: " + pid);
+            }
+
+            newArgs.add(pid);
+        } else {
+            if (exe.length() == 0) {
+                throw new IllegalArgumentException("You have to set --exe.");
+            }
+
+            newArgs.add(exe);
+
+            if ((core == null) || (core.length() == 0)) {
+                throw new IllegalArgumentException("You have to set --core.");
+            }
+
+            newArgs.add(core);
+        }
+    }
+
     private static void runCLHSDB(String[] oldArgs) {
         SAGetopt sg = new SAGetopt(oldArgs);
         String[] longOpts = {"exe=", "core=", "pid="};
 
         ArrayList<String> newArgs = new ArrayList();
-        String exeORpid = null;
+        String pid = null;
+        String exe = null;
         String core = null;
         String s = null;
 
         while((s = sg.next(null, longOpts)) != null) {
             if (s.equals("exe")) {
-                exeORpid = sg.getOptarg();
+                exe = sg.getOptarg();
                 continue;
             }
             if (s.equals("core")) {
@@ -130,17 +165,12 @@ public class SALauncher {
                 continue;
             }
             if (s.equals("pid")) {
-                exeORpid = sg.getOptarg();
+                pid = sg.getOptarg();
                 continue;
             }
         }
 
-        if (exeORpid != null) {
-            newArgs.add(exeORpid);
-            if (core != null) {
-                newArgs.add(core);
-            }
-        }
+        buildAttachArgs(newArgs, pid, exe, core);
         CLHSDB.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -149,13 +179,14 @@ public class SALauncher {
         String[] longOpts = {"exe=", "core=", "pid="};
 
         ArrayList<String> newArgs = new ArrayList();
-        String exeORpid = null;
+        String pid = null;
+        String exe = null;
         String core = null;
         String s = null;
 
         while((s = sg.next(null, longOpts)) != null) {
             if (s.equals("exe")) {
-                exeORpid = sg.getOptarg();
+                exe = sg.getOptarg();
                 continue;
             }
             if (s.equals("core")) {
@@ -163,17 +194,12 @@ public class SALauncher {
                 continue;
             }
             if (s.equals("pid")) {
-                exeORpid = sg.getOptarg();
+                pid = sg.getOptarg();
                 continue;
             }
         }
 
-        if (exeORpid != null) {
-            newArgs.add(exeORpid);
-            if (core != null) {
-                newArgs.add(core);
-            }
-        }
+        buildAttachArgs(newArgs, pid, exe, core);
         HSDB.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -183,13 +209,14 @@ public class SALauncher {
                                  "mixed", "locks"};
 
         ArrayList<String> newArgs = new ArrayList();
-        String exeORpid = null;
+        String pid = null;
+        String exe = null;
         String core = null;
         String s = null;
 
         while((s = sg.next(null, longOpts)) != null) {
             if (s.equals("exe")) {
-                exeORpid = sg.getOptarg();
+                exe = sg.getOptarg();
                 continue;
             }
             if (s.equals("core")) {
@@ -197,7 +224,7 @@ public class SALauncher {
                 continue;
             }
             if (s.equals("pid")) {
-                exeORpid = sg.getOptarg();
+                pid = sg.getOptarg();
                 continue;
             }
             if (s.equals("mixed")) {
@@ -210,13 +237,7 @@ public class SALauncher {
             }
         }
 
-        if (exeORpid != null) {
-            newArgs.add(exeORpid);
-            if (core != null) {
-                newArgs.add(core);
-            }
-        }
-
+        buildAttachArgs(newArgs, pid, exe, core);
         JStack.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -226,13 +247,14 @@ public class SALauncher {
               "heap", "binaryheap", "histo", "clstats", "finalizerinfo"};
 
         ArrayList<String> newArgs = new ArrayList();
-        String exeORpid = null;
+        String pid = null;
+        String exe = null;
         String core = null;
         String s = null;
 
         while((s = sg.next(null, longOpts)) != null) {
             if (s.equals("exe")) {
-                exeORpid = sg.getOptarg();
+                exe = sg.getOptarg();
                 continue;
             }
             if (s.equals("core")) {
@@ -240,7 +262,7 @@ public class SALauncher {
                 continue;
             }
             if (s.equals("pid")) {
-                exeORpid = sg.getOptarg();
+                pid = sg.getOptarg();
                 continue;
             }
             if (s.equals("heap")) {
@@ -265,13 +287,7 @@ public class SALauncher {
             }
         }
 
-        if (exeORpid != null) {
-            newArgs.add(exeORpid);
-            if (core != null) {
-                newArgs.add(core);
-            }
-        }
-
+        buildAttachArgs(newArgs, pid, exe, core);
         JMap.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -281,13 +297,14 @@ public class SALauncher {
                                      "flags", "sysprops"};
 
         ArrayList<String> newArgs = new ArrayList();
-        String exeORpid = null;
+        String exe = null;
+        String pid = null;
         String core = null;
         String s = null;
 
         while((s = sg.next(null, longOpts)) != null) {
             if (s.equals("exe")) {
-                exeORpid = sg.getOptarg();
+                exe = sg.getOptarg();
                 continue;
             }
             if (s.equals("core")) {
@@ -295,7 +312,7 @@ public class SALauncher {
                 continue;
             }
             if (s.equals("pid")) {
-                exeORpid = sg.getOptarg();
+                pid = sg.getOptarg();
                 continue;
             }
             if (s.equals("flags")) {
@@ -308,13 +325,7 @@ public class SALauncher {
             }
         }
 
-        if (exeORpid != null) {
-            newArgs.add(exeORpid);
-            if (core != null) {
-                newArgs.add(core);
-            }
-        }
-
+        buildAttachArgs(newArgs, pid, exe, core);
         JInfo.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -323,13 +334,14 @@ public class SALauncher {
         String[] longOpts = {"exe=", "core=", "pid="};
 
         ArrayList<String> newArgs = new ArrayList();
-        String exeORpid = null;
+        String exe = null;
+        String pid = null;
         String core = null;
         String s = null;
 
         while((s = sg.next(null, longOpts)) != null) {
             if (s.equals("exe")) {
-                exeORpid = sg.getOptarg();
+                exe = sg.getOptarg();
                 continue;
             }
             if (s.equals("core")) {
@@ -337,18 +349,12 @@ public class SALauncher {
                 continue;
             }
             if (s.equals("pid")) {
-                exeORpid = sg.getOptarg();
+                pid = sg.getOptarg();
                 continue;
             }
         }
 
-        if (exeORpid != null) {
-            newArgs.add(exeORpid);
-            if (core != null) {
-                newArgs.add(core);
-            }
-        }
-
+        buildAttachArgs(newArgs, pid, exe, core);
         JSnap.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -373,36 +379,43 @@ public class SALauncher {
 
         String[] oldArgs = Arrays.copyOfRange(args, 1, args.length);
 
-        // Run SA interactive mode
-        if (args[0].equals("clhsdb")) {
-            runCLHSDB(oldArgs);
-            return;
-        }
+        try {
+            // Run SA interactive mode
+            if (args[0].equals("clhsdb")) {
+                runCLHSDB(oldArgs);
+                return;
+            }
 
-        if (args[0].equals("hsdb")) {
-            runHSDB(oldArgs);
-            return;
-        }
+            if (args[0].equals("hsdb")) {
+                runHSDB(oldArgs);
+                return;
+            }
 
-        // Run SA tmtools mode
-        if (args[0].equals("jstack")) {
-            runJSTACK(oldArgs);
-            return;
-        }
+            // Run SA tmtools mode
+            if (args[0].equals("jstack")) {
+                runJSTACK(oldArgs);
+                return;
+            }
 
-        if (args[0].equals("jmap")) {
-            runJMAP(oldArgs);
-            return;
-        }
+            if (args[0].equals("jmap")) {
+                runJMAP(oldArgs);
+                return;
+            }
 
-        if (args[0].equals("jinfo")) {
-            runJINFO(oldArgs);
-            return;
-        }
+            if (args[0].equals("jinfo")) {
+                runJINFO(oldArgs);
+                return;
+            }
 
-        if (args[0].equals("jsnap")) {
-            runJSNAP(oldArgs);
-            return;
+            if (args[0].equals("jsnap")) {
+                runJSNAP(oldArgs);
+                return;
+            }
+
+            throw new IllegalArgumentException("Unknown tool: " + args[0]);
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            toolHelp(args[0]);
         }
     }
 }
