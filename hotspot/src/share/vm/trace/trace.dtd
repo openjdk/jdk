@@ -23,7 +23,7 @@
   
 -->
 
-<!ELEMENT trace (xi:include, relation_decls, events*, xi:include, xi:include)>
+<!ELEMENT trace (xi:include*)>
 <!ELEMENT types (content_types, primary_types)>
 <!ELEMENT content_types (content_type|struct_type)*>
 <!ELEMENT content_type (value|structvalue|structarray|array)*>
