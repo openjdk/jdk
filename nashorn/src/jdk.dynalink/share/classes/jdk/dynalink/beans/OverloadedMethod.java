@@ -91,6 +91,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.internal.InternalTypeUtilities;
 import jdk.dynalink.linker.LinkerServices;
 import jdk.dynalink.linker.support.Lookup;
@@ -108,6 +109,7 @@ class OverloadedMethod {
     private final MethodType callSiteType;
     private final MethodHandle invoker;
     private final LinkerServices linkerServices;
+    private final SecureLookupSupplier lookupSupplier;
     private final ArrayList<MethodHandle> fixArgMethods;
     private final ArrayList<MethodHandle> varArgMethods;
 
@@ -115,12 +117,14 @@ class OverloadedMethod {
             final OverloadedDynamicMethod parent,
             final ClassLoader callSiteClassLoader,
             final MethodType callSiteType,
-            final LinkerServices linkerServices) {
+            final LinkerServices linkerServices,
+            final SecureLookupSupplier lookupSupplier) {
         this.parent = parent;
         this.callSiteClassLoader = callSiteClassLoader;
         final Class<?> commonRetType = getCommonReturnType(methodHandles);
         this.callSiteType = callSiteType.changeReturnType(commonRetType);
         this.linkerServices = linkerServices;
+        this.lookupSupplier = lookupSupplier;
 
         fixArgMethods = new ArrayList<>(methodHandles.size());
         varArgMethods = new ArrayList<>(methodHandles.size());
@@ -173,11 +177,14 @@ class OverloadedMethod {
                     break;
                 }
                 case 1: {
-                    method = SingleDynamicMethod.getInvocation(methods.get(0), callSiteType, linkerServices);
+                    final List<MethodHandle> fmethods = methods;
+                    method = linkerServices.getWithLookup(
+                            ()->SingleDynamicMethod.getInvocation(fmethods.get(0), callSiteType, linkerServices),
+                            lookupSupplier);
                     break;
                 }
                 default: {
-                    // This is unfortunate - invocation time ambiguity. We can still save the day if
+                    // This is unfortunate - invocation time ambiguity.
                     method = getAmbiguousMethodThrower(argTypes, methods);
                     break;
                 }

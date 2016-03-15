@@ -95,6 +95,7 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import jdk.dynalink.CallSiteDescriptor;
+import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.internal.AccessControlContextFactory;
 import jdk.dynalink.linker.support.Lookup;
 
@@ -107,7 +108,7 @@ import jdk.dynalink.linker.support.Lookup;
 class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
     private static final AccessControlContext GET_LOOKUP_CONTEXT =
             AccessControlContextFactory.createAccessControlContext(
-                    CallSiteDescriptor.GET_LOOKUP_PERMISSION_NAME);
+                    SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
 
     // Typed as "AccessibleObject" as it can be either a method or a constructor.
     // If we were Java8-only, we could use java.lang.reflect.Executable
