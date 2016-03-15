@@ -31,13 +31,12 @@
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  *
- * @run main/othervm
+ * @run main/othervm/timeout=60
  *        -Xbootclasspath/a:.
  *        -Xmixed
  *        -XX:+UnlockDiagnosticVMOptions
  *        -XX:+WhiteBoxAPI
  *        -XX:+PrintCompilation
- *        -XX:CompileCommand=option,BlockingCompilation::foo,PrintInlining
  *        BlockingCompilation
  */
 
@@ -56,82 +55,102 @@ public class BlockingCompilation {
     }
 
     public static void main(String[] args) throws Exception {
-        long sum = 0;
-        int level = 0;
-        boolean enqued = false;
         Method m = BlockingCompilation.class.getMethod("foo");
         int[] levels = CompilerUtils.getAvailableCompilationLevels();
+        int highest_level = levels[levels.length-1];
 
         // If there are no compilers available these tests don't make any sense.
         if (levels.length == 0) return;
-        int max_level = levels[levels.length - 1];
 
-        // Normal, non-blocking compilation
-        for (int i = 0; i < 500_000; i++) {
-            sum += foo();
-            if (!enqued && WB.isMethodQueuedForCompilation(m)) {
-                System.out.println("==> " + m + " enqued for compilation in iteration " + i);
-                enqued = true;
-            }
-            if (WB.isMethodCompiled(m)) {
-                if (WB.getMethodCompilationLevel(m) != level) {
-                    level = WB.getMethodCompilationLevel(m);
-                    System.out.println("==> " + m + " compiled at level " + level + " in iteration " + i);
-                    enqued = false;
-                    if (level == max_level) break;
-                }
-            }
+        // Make sure no compilations can progress, blocking compiles will hang
+        WB.lockCompilation();
+
+        // Verify method state before test
+        if (WB.isMethodCompiled(m)) {
+            throw new Exception("Should not be compiled after deoptimization");
+        }
+        if (WB.isMethodQueuedForCompilation(m)) {
+            throw new Exception("Should not be enqueued on any level");
         }
 
-        // This is necessarry because WB.deoptimizeMethod doesn't clear the methods
-        // MDO and therefore level 3 compilations will be downgraded to level 2.
+        // Try compiling on highest available comp level.
+        // If the compiles are blocking, this call will block until the test time out,
+        // Progress == success
+        // (Don't run with -Xcomp since that can cause long timeouts due to many compiles)
+        WB.enqueueMethodForCompilation(m, highest_level);
+
+        // restore state
+        WB.unlockCompilation();
+        while (!WB.isMethodCompiled(m)) {
+          Thread.sleep(100);
+        }
+        WB.deoptimizeMethod(m);
         WB.clearMethodState(m);
 
         // Blocking compilations on all levels, using the default versions of
         // WB.enqueueMethodForCompilation() and manually setting compiler directives.
         String directive = "[{ match: \"BlockingCompilation.foo\", BackgroundCompilation: false }]";
-        WB.addCompilerDirective(directive);
-
-        for (int l : levels) {
-            WB.deoptimizeMethod(m);
-            WB.enqueueMethodForCompilation(m, l);
-
-            if (!WB.isMethodCompiled(m) || WB.getMethodCompilationLevel(m) != l) {
-                String msg = m + " should be compiled at level " + l +
-                             "(but is actually compiled at level " +
-                             WB.getMethodCompilationLevel(m) + ")";
-                System.out.println("==> " + msg);
-                throw new Exception(msg);
-            }
+        if (WB.addCompilerDirective(directive) != 1) {
+            throw new Exception("Failed to add compiler directive");
         }
 
-        WB.removeCompilerDirective(1);
+        try {
+            for (int l : levels) {
+                // Make uncompiled
+                WB.deoptimizeMethod(m);
 
-        WB.deoptimizeMethod(m);
-        WB.clearMethodState(m);
-        level = 0;
-        enqued = false;
-        int iteration = 0;
+                // Verify that it's not compiled
+                if (WB.isMethodCompiled(m)) {
+                    throw new Exception("Should not be compiled after deoptimization");
+                }
+                if (WB.isMethodQueuedForCompilation(m)) {
+                    throw new Exception("Should not be enqueued on any level");
+                }
 
-        // Normal, non-blocking compilation
-        for (int i = 0; i < 500_000; i++) {
-            sum += foo();
-            if (!enqued && WB.isMethodQueuedForCompilation(m)) {
-                System.out.println("==> " + m + " enqued for compilation in iteration " + i);
-                iteration = i;
-                enqued = true;
-            }
-            if (WB.isMethodCompiled(m)) {
-                if (WB.getMethodCompilationLevel(m) != level) {
-                    level = WB.getMethodCompilationLevel(m);
-                    System.out.println("==> " + m + " compiled at level " + level + " in iteration " + i);
-                    if (level == 4 && iteration == i) {
-                        throw new Exception("This seems to be a blocking compilation although it shouldn't.");
-                    }
-                    enqued = false;
-                    if (level == max_level) break;
+                // Add to queue and verify that it went well
+                if (!WB.enqueueMethodForCompilation(m, l)) {
+                    throw new Exception("Could not be enqueued for compilation");
+                }
+
+                // Verify that it is compiled
+                if (!WB.isMethodCompiled(m)) {
+                    throw new Exception("Must be compiled here");
+                }
+                // And verify the level
+                if (WB.getMethodCompilationLevel(m) != l) {
+                    String msg = m + " should be compiled at level " + l +
+                                 "(but is actually compiled at level " +
+                                 WB.getMethodCompilationLevel(m) + ")";
+                    System.out.println("==> " + msg);
+                    throw new Exception(msg);
                 }
             }
+        } finally {
+            WB.removeCompilerDirective(1);
         }
+
+        // Clean up
+        WB.deoptimizeMethod(m);
+        WB.clearMethodState(m);
+
+        // Make sure no compilations can progress, blocking compiles will hang
+        WB.lockCompilation();
+
+        // Verify method state before test
+        if (WB.isMethodCompiled(m)) {
+            throw new Exception("Should not be compiled after deoptimization");
+        }
+        if (WB.isMethodQueuedForCompilation(m)) {
+            throw new Exception("Should not be enqueued on any level");
+        }
+
+        // Try compiling on highest available comp level.
+        // If the compiles are blocking, this call will block until the test time out,
+        // Progress == success
+        // (Don't run with -Xcomp since that can cause long timeouts due to many compiles)
+        WB.enqueueMethodForCompilation(m, highest_level);
+
+        // restore state
+        WB.unlockCompilation();
     }
 }
