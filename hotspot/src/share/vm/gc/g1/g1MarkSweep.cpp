@@ -220,12 +220,6 @@ class G1AdjustPointersClosure: public HeapRegionClosure {
   }
 };
 
-class G1AlwaysTrueClosure: public BoolObjectClosure {
-public:
-  bool do_object_b(oop p) { return true; }
-};
-static G1AlwaysTrueClosure always_true;
-
 void G1MarkSweep::mark_sweep_phase3() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
@@ -248,7 +242,7 @@ void G1MarkSweep::mark_sweep_phase3() {
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
-  JNIHandles::weak_oops_do(&always_true, &GenMarkSweep::adjust_pointer_closure);
+  JNIHandles::weak_oops_do(&GenMarkSweep::adjust_pointer_closure);
 
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::oops_do(&GenMarkSweep::adjust_pointer_closure);
