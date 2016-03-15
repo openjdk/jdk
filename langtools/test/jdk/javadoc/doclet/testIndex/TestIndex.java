@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4852280 4517115 4973608 4994589 8026567
+ * @bug      4852280 4517115 4973608 4994589 8026567 8071982
  * @summary  Perform tests on index.html file.
  *           Also test that index-all.html has the appropriate output.
  *           Test for unnamed package in index.
@@ -75,6 +75,8 @@ public class TestIndex extends JavadocTester {
                 + "- Static variable in class pkg.<a href=\"pkg/C.html\" title=\"class in pkg\">"
                 + "C</a></dt>\n"
                 + "<dd>&nbsp;</dd>\n"
-                + "</dl>");
+                + "</dl>",
+                "<dt><span class=\"searchTagLink\"><a href=\"pkg/Coin.html#Enum\">Enum</a>"
+                + "</span> - Search tag in pkg.Coin</dt>");
     }
 }
