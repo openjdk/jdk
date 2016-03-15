@@ -31,6 +31,8 @@
 #include "awt_Object.h"
 #include "awt_Component.h"
 
+#include "math.h"
+
 // Important note about VC6 and VC7 (or XP Platform SDK)   !
 //
 // These type definitions have been imported from UxTheme.h
@@ -745,6 +747,23 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getPosition
     return NULL;
 }
 
+void rescale(SIZE *size) {
+    HWND hWnd = ::GetDesktopWindow();
+    HDC hDC = ::GetDC(hWnd);
+    int dpiX = ::GetDeviceCaps(hDC, LOGPIXELSX);
+    int dpiY = ::GetDeviceCaps(hDC, LOGPIXELSY);
+
+    if (dpiX !=0 && dpiX != 96) {
+        float invScaleX = 96.0f / dpiX;
+        size->cx = (int)round(size->cx * invScaleX);
+    }
+    if (dpiY != 0 && dpiY != 96) {
+        float invScaleY = 96.0f / dpiY;
+        size->cy = (int)round(size->cy * invScaleY);
+    }
+    ::ReleaseDC(hWnd, hDC);
+}
+
 /*
  * Class:     sun_awt_windows_ThemeReader
  * Method:    getPartSize
@@ -770,6 +789,8 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getPartSize
                 dimMID = env->GetMethodID(dimClassID, "<init>", "(II)V");
                 CHECK_NULL_RETURN(dimMID, NULL);
             }
+
+            rescale(&size);
             jobject dimObj = env->NewObject(dimClassID, dimMID, size.cx, size.cy);
             if (safe_ExceptionOccurred(env)) {
                 env->ExceptionDescribe();

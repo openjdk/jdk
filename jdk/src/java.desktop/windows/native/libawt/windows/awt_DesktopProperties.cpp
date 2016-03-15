@@ -35,6 +35,8 @@
 #include <shellapi.h>
 #include <shlobj.h>
 
+#include "math.h"
+
 // WDesktopProperties fields
 jfieldID AwtDesktopProperties::pDataID = 0;
 jmethodID AwtDesktopProperties::setBooleanPropertyID = 0;
@@ -79,18 +81,35 @@ void AwtDesktopProperties::GetWindowsParameters() {
     }
 }
 
+void getInvScale(float &invScaleX, float &invScaleY) {
+    HWND hWnd = ::GetDesktopWindow();
+    HDC hDC = ::GetDC(hWnd);
+    int dpiX = ::GetDeviceCaps(hDC, LOGPIXELSX);
+    int dpiY = ::GetDeviceCaps(hDC, LOGPIXELSY);
+    ::ReleaseDC(hWnd, hDC);
+    invScaleX = (dpiX == 0.0f) ? 1.0f : 96.0f / dpiX;
+    invScaleY = (dpiY == 0.0f) ? 1.0f : 96.0f / dpiY;
+}
+
+int rescale(int value, float invScale){
+    return invScale == 1.0f ? value : (int)round(value * invScale);
+}
+
 void AwtDesktopProperties::GetSystemProperties() {
     HDC dc = CreateDC(TEXT("DISPLAY"), NULL, NULL, NULL);
 
     if (dc != NULL) {
         try {
-            SetFontProperty(dc, ANSI_FIXED_FONT, TEXT("win.ansiFixed.font"));
-            SetFontProperty(dc, ANSI_VAR_FONT, TEXT("win.ansiVar.font"));
-            SetFontProperty(dc, DEVICE_DEFAULT_FONT, TEXT("win.deviceDefault.font"));
-            SetFontProperty(dc, DEFAULT_GUI_FONT, TEXT("win.defaultGUI.font"));
-            SetFontProperty(dc, OEM_FIXED_FONT, TEXT("win.oemFixed.font"));
-            SetFontProperty(dc, SYSTEM_FONT, TEXT("win.system.font"));
-            SetFontProperty(dc, SYSTEM_FIXED_FONT, TEXT("win.systemFixed.font"));
+            float invScaleX;
+            float invScaleY;
+            getInvScale(invScaleX, invScaleY);
+            SetFontProperty(dc, ANSI_FIXED_FONT, TEXT("win.ansiFixed.font"), 1.0f);
+            SetFontProperty(dc, ANSI_VAR_FONT, TEXT("win.ansiVar.font"), 1.0f);
+            SetFontProperty(dc, DEVICE_DEFAULT_FONT, TEXT("win.deviceDefault.font"), 1.0f);
+            SetFontProperty(dc, DEFAULT_GUI_FONT, TEXT("win.defaultGUI.font"), invScaleY);
+            SetFontProperty(dc, OEM_FIXED_FONT, TEXT("win.oemFixed.font"), 1.0f);
+            SetFontProperty(dc, SYSTEM_FONT, TEXT("win.system.font"), 1.0f);
+            SetFontProperty(dc, SYSTEM_FIXED_FONT, TEXT("win.systemFixed.font"), 1.0f);
         }
         catch (std::bad_alloc&) {
             DeleteDC(dc);
@@ -266,31 +285,35 @@ void AwtDesktopProperties::GetNonClientParameters() {
     }
     VERIFY( SystemParametersInfo(SPI_GETNONCLIENTMETRICS, ncmetrics.cbSize, &ncmetrics, FALSE) );
 
-    SetFontProperty( TEXT("win.frame.captionFont"), ncmetrics.lfCaptionFont );
-    SetIntegerProperty( TEXT("win.frame.captionHeight"), ncmetrics.iCaptionHeight );
-    SetIntegerProperty( TEXT("win.frame.captionButtonWidth"), ncmetrics.iCaptionWidth );
-    SetIntegerProperty( TEXT("win.frame.captionButtonHeight"), ncmetrics.iCaptionHeight );
-    SetFontProperty( TEXT("win.frame.smallCaptionFont"), ncmetrics.lfSmCaptionFont );
-    SetIntegerProperty( TEXT("win.frame.smallCaptionHeight"), ncmetrics.iSmCaptionHeight );
-    SetIntegerProperty( TEXT("win.frame.smallCaptionButtonWidth"), ncmetrics.iSmCaptionWidth );
-    SetIntegerProperty( TEXT("win.frame.smallCaptionButtonHeight"), ncmetrics.iSmCaptionHeight );
-    SetIntegerProperty( TEXT("win.frame.sizingBorderWidth"), ncmetrics.iBorderWidth );
+    float invScaleX;
+    float invScaleY;
+    getInvScale(invScaleX, invScaleY);
+
+    SetFontProperty(TEXT("win.frame.captionFont"), ncmetrics.lfCaptionFont, invScaleY);
+    SetIntegerProperty(TEXT("win.frame.captionHeight"), rescale(ncmetrics.iCaptionHeight, invScaleY));
+    SetIntegerProperty(TEXT("win.frame.captionButtonWidth"), rescale(ncmetrics.iCaptionWidth, invScaleX));
+    SetIntegerProperty(TEXT("win.frame.captionButtonHeight"), rescale(ncmetrics.iCaptionHeight, invScaleY));
+    SetFontProperty(TEXT("win.frame.smallCaptionFont"), ncmetrics.lfSmCaptionFont, invScaleY);
+    SetIntegerProperty(TEXT("win.frame.smallCaptionHeight"), rescale(ncmetrics.iSmCaptionHeight, invScaleY));
+    SetIntegerProperty(TEXT("win.frame.smallCaptionButtonWidth"), rescale(ncmetrics.iSmCaptionWidth, invScaleX));
+    SetIntegerProperty(TEXT("win.frame.smallCaptionButtonHeight"), rescale(ncmetrics.iSmCaptionHeight, invScaleY));
+    SetIntegerProperty(TEXT("win.frame.sizingBorderWidth"), rescale(ncmetrics.iBorderWidth, invScaleX));
 
     // menu properties
-    SetFontProperty( TEXT("win.menu.font"), ncmetrics.lfMenuFont );
-    SetIntegerProperty( TEXT("win.menu.height"), ncmetrics.iMenuHeight );
-    SetIntegerProperty( TEXT("win.menu.buttonWidth"), ncmetrics.iMenuWidth );
+    SetFontProperty(TEXT("win.menu.font"), ncmetrics.lfMenuFont, invScaleY);
+    SetIntegerProperty(TEXT("win.menu.height"), rescale(ncmetrics.iMenuHeight, invScaleY));
+    SetIntegerProperty(TEXT("win.menu.buttonWidth"), rescale(ncmetrics.iMenuWidth, invScaleX));
 
     // scrollbar properties
-    SetIntegerProperty( TEXT("win.scrollbar.width"), ncmetrics.iScrollWidth );
-    SetIntegerProperty( TEXT("win.scrollbar.height"), ncmetrics.iScrollHeight );
+    SetIntegerProperty(TEXT("win.scrollbar.width"), rescale(ncmetrics.iScrollWidth, invScaleX));
+    SetIntegerProperty(TEXT("win.scrollbar.height"), rescale(ncmetrics.iScrollHeight, invScaleY));
 
     // status bar and tooltip properties
-    SetFontProperty( TEXT("win.status.font"), ncmetrics.lfStatusFont );
-    SetFontProperty( TEXT("win.tooltip.font"), ncmetrics.lfStatusFont );
+    SetFontProperty(TEXT("win.status.font"), ncmetrics.lfStatusFont, invScaleY);
+    SetFontProperty(TEXT("win.tooltip.font"), ncmetrics.lfStatusFont, invScaleY);
 
     // message box properties
-    SetFontProperty( TEXT("win.messagebox.font"), ncmetrics.lfMessageFont );
+    SetFontProperty(TEXT("win.messagebox.font"), ncmetrics.lfMessageFont, invScaleY);
 }
 
 void AwtDesktopProperties::GetIconParameters() {
@@ -302,10 +325,13 @@ void AwtDesktopProperties::GetIconParameters() {
     iconmetrics.cbSize = sizeof(iconmetrics);
     VERIFY( SystemParametersInfo(SPI_GETICONMETRICS, iconmetrics.cbSize, &iconmetrics, FALSE) );
 
-    SetIntegerProperty(TEXT("win.icon.hspacing"), iconmetrics.iHorzSpacing);
-    SetIntegerProperty(TEXT("win.icon.vspacing"), iconmetrics.iVertSpacing);
+    float invScaleX;
+    float invScaleY;
+    getInvScale(invScaleX, invScaleY);
+    SetIntegerProperty(TEXT("win.icon.hspacing"), rescale(iconmetrics.iHorzSpacing, invScaleX));
+    SetIntegerProperty(TEXT("win.icon.vspacing"), rescale(iconmetrics.iVertSpacing, invScaleY));
     SetBooleanProperty(TEXT("win.icon.titleWrappingOn"), iconmetrics.iTitleWrap != 0);
-    SetFontProperty(TEXT("win.icon.font"), iconmetrics.lfFont);
+    SetFontProperty(TEXT("win.icon.font"), iconmetrics.lfFont, invScaleY);
 }
 /*
  Windows settings for these are also in the registry
@@ -718,6 +744,7 @@ void AwtDesktopProperties::SetStringProperty(LPCTSTR propName, LPTSTR value) {
 }
 
 void AwtDesktopProperties::SetIntegerProperty(LPCTSTR propName, int value) {
+
     jstring key = JNU_NewStringPlatform(GetEnv(), propName);
     if (key == NULL) {
         throw std::bad_alloc();
@@ -752,8 +779,8 @@ void AwtDesktopProperties::SetColorProperty(LPCTSTR propName, DWORD value) {
 }
 
 void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
-                                           LPCTSTR propName) {
-    HGDIOBJ font = GetStockObject(fontID);
+    LPCTSTR propName, float invScale) {
+        HGDIOBJ font = GetStockObject(fontID);
     if (font != NULL && SelectObject(dc, font) != NULL) {
         int length = GetTextFace(dc, 0, NULL);
 
@@ -789,8 +816,8 @@ void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
                         throw std::bad_alloc();
                     }
 
-                    jint pointSize = metrics.tmHeight -
-                                     metrics.tmInternalLeading;
+                    jint pointSize = rescale(metrics.tmHeight -
+                                     metrics.tmInternalLeading, invScale);
                     jint style = java_awt_Font_PLAIN;
 
                     if (metrics.tmWeight >= FW_BOLD) {
@@ -818,7 +845,8 @@ void AwtDesktopProperties::SetFontProperty(HDC dc, int fontID,
     }
 }
 
-void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & font) {
+void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & font,
+    float invScale) {
     jstring fontName;
     jint pointSize;
     jint style;
@@ -836,7 +864,7 @@ void AwtDesktopProperties::SetFontProperty(LPCTSTR propName, const LOGFONT & fon
     ReleaseDC(NULL, hdc);
 #endif
     // Java uses point sizes, but assumes 1 pixel = 1 point
-    pointSize = -font.lfHeight;
+    pointSize = rescale(-font.lfHeight, invScale);
 
     // convert Windows font style to Java style
     style = java_awt_Font_PLAIN;
