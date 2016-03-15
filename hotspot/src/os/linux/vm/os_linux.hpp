@@ -56,6 +56,15 @@ class Linux {
 
   static GrowableArray<int>* _cpu_to_node;
 
+  // 0x00000000 = uninitialized,
+  // 0x01000000 = kernel version unknown,
+  // otherwise a 32-bit number:
+  // Ox00AABBCC
+  // AA, Major Version
+  // BB, Minor Version
+  // CC, Fix   Version
+  static uint32_t _os_version;
+
  protected:
 
   static julong _physical_memory;
@@ -197,6 +206,10 @@ class Linux {
   }
 
   static jlong fast_thread_cpu_time(clockid_t clockid);
+
+  static void initialize_os_info();
+  static bool os_version_is_known();
+  static uint32_t os_version();
 
   // pthread_cond clock suppport
  private:

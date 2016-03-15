@@ -972,7 +972,7 @@ public:
 
   // System
   void system(int op0, int op1, int CRn, int CRm, int op2,
-              Register rt = (Register)0b11111)
+              Register rt = dummy_reg)
   {
     starti;
     f(0b11010101000, 31, 21);
@@ -1082,7 +1082,7 @@ public:
 
 #define INSN(NAME, opc)                         \
   void NAME() {                 \
-    branch_reg((Register)0b11111, opc);         \
+    branch_reg(dummy_reg, opc);         \
   }
 
   INSN(eret, 0b0100);
@@ -1094,10 +1094,22 @@ public:
   enum operand_size { byte, halfword, word, xword };
 
   void load_store_exclusive(Register Rs, Register Rt1, Register Rt2,
-    Register Rn, enum operand_size sz, int op, int o0) {
+    Register Rn, enum operand_size sz, int op, bool ordered) {
     starti;
     f(sz, 31, 30), f(0b001000, 29, 24), f(op, 23, 21);
-    rf(Rs, 16), f(o0, 15), rf(Rt2, 10), rf(Rn, 5), rf(Rt1, 0);
+    rf(Rs, 16), f(ordered, 15), rf(Rt2, 10), rf(Rn, 5), rf(Rt1, 0);
+  }
+
+  void load_exclusive(Register dst, Register addr,
+                      enum operand_size sz, bool ordered) {
+    load_store_exclusive(dummy_reg, dst, dummy_reg, addr,
+                         sz, 0b010, ordered);
+  }
+
+  void store_exclusive(Register status, Register new_val, Register addr,
+                       enum operand_size sz, bool ordered) {
+    load_store_exclusive(status, new_val, dummy_reg, addr,
+                         sz, 0b000, ordered);
   }
 
 #define INSN4(NAME, sz, op, o0) /* Four registers */                    \
@@ -1109,19 +1121,19 @@ public:
 #define INSN3(NAME, sz, op, o0) /* Three registers */                   \
   void NAME(Register Rs, Register Rt, Register Rn) {                    \
     guarantee(Rs != Rn && Rs != Rt, "unpredictable instruction");       \
-    load_store_exclusive(Rs, Rt, (Register)0b11111, Rn, sz, op, o0);    \
+    load_store_exclusive(Rs, Rt, dummy_reg, Rn, sz, op, o0); \
   }
 
 #define INSN2(NAME, sz, op, o0) /* Two registers */                     \
   void NAME(Register Rt, Register Rn) {                                 \
-    load_store_exclusive((Register)0b11111, Rt, (Register)0b11111,      \
+    load_store_exclusive(dummy_reg, Rt, dummy_reg, \
                          Rn, sz, op, o0);                               \
   }
 
 #define INSN_FOO(NAME, sz, op, o0) /* Three registers, encoded differently */ \
   void NAME(Register Rt1, Register Rt2, Register Rn) {                  \
     guarantee(Rt1 != Rt2, "unpredictable instruction");                 \
-    load_store_exclusive((Register)0b11111, Rt1, Rt2, Rn, sz, op, o0);  \
+    load_store_exclusive(dummy_reg, Rt1, Rt2, Rn, sz, op, o0);          \
   }
 
   // bytes
@@ -1168,6 +1180,46 @@ public:
 #undef INSN3
 #undef INSN4
 #undef INSN_FOO
+
+  // 8.1 Compare and swap extensions
+  void lse_cas(Register Rs, Register Rt, Register Rn,
+                        enum operand_size sz, bool a, bool r, bool not_pair) {
+    starti;
+    if (! not_pair) { // Pair
+      assert(sz == word || sz == xword, "invalid size");
+      /* The size bit is in bit 30, not 31 */
+      sz = (operand_size)(sz == word ? 0b00:0b01);
+    }
+    f(sz, 31, 30), f(0b001000, 29, 24), f(1, 23), f(a, 22), f(1, 21);
+    rf(Rs, 16), f(r, 15), f(0b11111, 14, 10), rf(Rn, 5), rf(Rt, 0);
+  }
+
+  // CAS
+#define INSN(NAME, a, r)                                                \
+  void NAME(operand_size sz, Register Rs, Register Rt, Register Rn) {   \
+    assert(Rs != Rn && Rs != Rt, "unpredictable instruction");          \
+    lse_cas(Rs, Rt, Rn, sz, a, r, true);                                \
+  }
+  INSN(cas,    false, false)
+  INSN(casa,   true,  false)
+  INSN(casl,   false, true)
+  INSN(casal,  true,  true)
+#undef INSN
+
+  // CASP
+#define INSN(NAME, a, r)                                                \
+  void NAME(operand_size sz, Register Rs, Register Rs1,                 \
+            Register Rt, Register Rt1, Register Rn) {                   \
+    assert((Rs->encoding() & 1) == 0 && (Rt->encoding() & 1) == 0 &&    \
+           Rs->successor() == Rs1 && Rt->successor() == Rt1 &&          \
+           Rs != Rn && Rs1 != Rn && Rs != Rt, "invalid registers");     \
+    lse_cas(Rs, Rt, Rn, sz, a, r, false);                               \
+  }
+  INSN(casp,    false, false)
+  INSN(caspa,   true,  false)
+  INSN(caspl,   false, true)
+  INSN(caspal,  true,  true)
+#undef INSN
 
   // Load register (literal)
 #define INSN(NAME, opc, V)                                              \
