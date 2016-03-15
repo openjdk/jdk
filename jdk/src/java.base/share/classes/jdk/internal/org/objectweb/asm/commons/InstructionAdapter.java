@@ -73,7 +73,7 @@ import jdk.internal.org.objectweb.asm.Type;
  */
 public class InstructionAdapter extends MethodVisitor {
 
-    public static final Type OBJECT_TYPE = Type.getType("Ljava/lang/Object;");
+    public final static Type OBJECT_TYPE = Type.getType("Ljava/lang/Object;");
 
     /**
      * Creates a new {@link InstructionAdapter}. <i>Subclasses must not use this
