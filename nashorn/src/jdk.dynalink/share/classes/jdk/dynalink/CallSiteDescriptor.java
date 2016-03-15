@@ -83,7 +83,6 @@
 
 package jdk.dynalink;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
@@ -105,28 +104,28 @@ import java.util.Objects;
  * descriptors (typically, values passed in additional parameters to the
  * bootstrap method. Since the descriptors must be immutable, you can set up a
  * cache for equivalent descriptors to have the call sites share them.
+ * <p>
+ * The class extends {@link SecureLookupSupplier} for security-checked access to
+ * the {@code MethodHandles.Lookup} object it carries. This lookup should be used
+ * to find method handles to set as targets of the call site described by this
+ * descriptor.
  */
-public class CallSiteDescriptor {
-    private final MethodHandles.Lookup lookup;
+public class CallSiteDescriptor extends SecureLookupSupplier {
     private final Operation operation;
     private final MethodType methodType;
 
     /**
-     * The name of a runtime permission to invoke the {@link #getLookup()}
-     * method.
-     */
-    public static final String GET_LOOKUP_PERMISSION_NAME = "dynalink.getLookup";
-
-    private static final RuntimePermission GET_LOOKUP_PERMISSION = new RuntimePermission(GET_LOOKUP_PERMISSION_NAME);
-
-    /**
      * Creates a new call site descriptor.
      * @param lookup the lookup object describing the class the call site belongs to.
+     * When creating descriptors from a {@link java.lang.invoke} bootstrap method,
+     * it should be the lookup passed to the bootstrap.
      * @param operation the dynamic operation at the call site.
-     * @param methodType the method type of the call site.
+     * @param methodType the method type of the call site. When creating
+     * descriptors from a {@link java.lang.invoke} bootstrap method, it should be
+     * the method type passed to the bootstrap.
      */
     public CallSiteDescriptor(final Lookup lookup, final Operation operation, final MethodType methodType) {
-        this.lookup = Objects.requireNonNull(lookup, "lookup");
+        super(lookup);
         this.operation = Objects.requireNonNull(operation, "name");
         this.methodType = Objects.requireNonNull(methodType, "methodType");
     }
@@ -146,34 +145,6 @@ public class CallSiteDescriptor {
      */
     public final MethodType getMethodType() {
         return methodType;
-    }
-
-    /**
-     * Returns the lookup that should be used to find method handles to set as
-     * targets of the call site described by this descriptor. When creating
-     * descriptors from a {@link java.lang.invoke} bootstrap method, it should
-     * be the lookup passed to the bootstrap.
-     * @return the lookup that should be used to find method handles to set as
-     * targets of the call site described by this descriptor.
-     * @throws SecurityException if the lookup isn't the
-     * {@link MethodHandles#publicLookup()} and a security manager is present,
-     * and a check for {@code RuntimePermission("dynalink.getLookup")} fails.
-     */
-    public final Lookup getLookup() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null && lookup != MethodHandles.publicLookup()) {
-            sm.checkPermission(GET_LOOKUP_PERMISSION);
-        }
-        return lookup;
-    }
-
-    /**
-     * Returns the value of {@link #getLookup()} without a security check. Can
-     * be used by subclasses to access the lookup quickly.
-     * @return same as returned value of {@link #getLookup()}.
-     */
-    protected final Lookup getLookupPrivileged() {
-        return lookup;
     }
 
     /**
@@ -211,7 +182,7 @@ public class CallSiteDescriptor {
      * @return a new call site descriptor, with the method type changed.
      */
     protected CallSiteDescriptor changeMethodTypeInternal(final MethodType newMethodType) {
-        return new CallSiteDescriptor(lookup, operation, newMethodType);
+        return new CallSiteDescriptor(getLookupPrivileged(), operation, newMethodType);
     }
 
     /**
@@ -233,7 +204,7 @@ public class CallSiteDescriptor {
         final CallSiteDescriptor other = (CallSiteDescriptor)obj;
         return operation.equals(other.operation) &&
                methodType.equals(other.methodType) &&
-               lookupsEqual(lookup, other.lookup);
+               lookupsEqual(getLookupPrivileged(), other.getLookupPrivileged());
     }
 
     /**
@@ -257,7 +228,7 @@ public class CallSiteDescriptor {
      */
     @Override
     public int hashCode() {
-        return operation.hashCode() + 31 * methodType.hashCode() + 31 * 31 * lookupHashCode(lookup);
+        return operation.hashCode() + 31 * methodType.hashCode() + 31 * 31 * lookupHashCode(getLookupPrivileged());
     }
 
     /**
@@ -279,7 +250,7 @@ public class CallSiteDescriptor {
     @Override
     public String toString() {
         final String mt = methodType.toString();
-        final String l = lookup.toString();
+        final String l = getLookupPrivileged().toString();
         final String o = operation.toString();
         final StringBuilder b = new StringBuilder(o.length() + mt.length() + 1 + l.length());
         return b.append(o).append(mt).append('@').append(l).toString();

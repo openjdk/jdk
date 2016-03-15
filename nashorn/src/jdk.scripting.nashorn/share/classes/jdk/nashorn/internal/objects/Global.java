@@ -1057,6 +1057,9 @@ public final class Global extends Scope {
     private ScriptObject   builtinArrayIteratorPrototype;
     private ScriptObject   builtinStringIteratorPrototype;
 
+    private ScriptFunction builtInJavaExtend;
+    private ScriptFunction builtInJavaTo;
+
     /*
      * ECMA section 13.2.3 The [[ThrowTypeError]] Function Object
      */
@@ -2085,9 +2088,38 @@ public final class Global extends Scope {
     private synchronized ScriptObject getBuiltinJavaApi() {
         if (this.builtinJavaApi == null) {
             this.builtinJavaApi = initConstructor("Java", ScriptObject.class);
+            this.builtInJavaExtend = (ScriptFunction)builtinJavaApi.get("extend");
+            this.builtInJavaTo = (ScriptFunction)builtinJavaApi.get("to");
         }
         return this.builtinJavaApi;
     }
+
+    /**
+     * Returns true if the passed function is the built-in "Java.extend".
+     * @param fn the function in question
+     * @return true if the function is built-in "Java.extend"
+     */
+    public static boolean isBuiltInJavaExtend(final ScriptFunction fn) {
+        if(!"extend".equals(fn.getName())) {
+            // Avoid hitting the thread local if the name doesn't match.
+            return false;
+        }
+        return fn == Context.getGlobal().builtInJavaExtend;
+    }
+
+    /**
+     * Returns true if the passed function is the built-in "Java.to".
+     * @param fn the function in question
+     * @return true if the function is built-in "Java.to"
+     */
+    public static boolean isBuiltInJavaTo(final ScriptFunction fn) {
+        if(!"to".equals(fn.getName())) {
+            // Avoid hitting the thread local if the name doesn't match.
+            return false;
+        }
+        return fn == Context.getGlobal().builtInJavaTo;
+    }
+
 
     private synchronized ScriptFunction getBuiltinRangeError() {
         if (this.builtinRangeError == null) {
