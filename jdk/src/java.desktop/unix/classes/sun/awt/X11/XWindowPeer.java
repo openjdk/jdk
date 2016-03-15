@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -803,23 +803,31 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
      */
     @Override
     public void handleConfigureNotifyEvent(XEvent xev) {
+        assert (SunToolkit.isAWTLockHeldByCurrentThread());
         XConfigureEvent xe = xev.get_xconfigure();
-        /*
-         * Correct window location which could be wrong in some cases.
-         * See getNewLocation() for the details.
-         */
-        Point newLocation = getNewLocation(xe, 0, 0);
-        xe.set_x(scaleUp(newLocation.x));
-        xe.set_y(scaleUp(newLocation.y));
-        checkIfOnNewScreen(new Rectangle(newLocation.x,
-                                         newLocation.y,
-                                         scaleDown(xe.get_width()),
-                                         scaleDown(xe.get_height())));
+        if (insLog.isLoggable(PlatformLogger.Level.FINE)) {
+            insLog.fine(xe.toString());
+        }
+        checkIfOnNewScreen(toGlobal(new Rectangle(scaleDown(xe.get_x()),
+                scaleDown(xe.get_y()),
+                scaleDown(xe.get_width()),
+                scaleDown(xe.get_height()))));
 
-        // Don't call super until we've handled a screen change.  Otherwise
-        // there could be a race condition in which a ComponentListener could
-        // see the old screen.
-        super.handleConfigureNotifyEvent(xev);
+        Rectangle oldBounds = getBounds();
+
+        x = scaleDown(xe.get_x());
+        y = scaleDown(xe.get_y());
+        width = scaleDown(xe.get_width());
+        height = scaleDown(xe.get_height());
+
+        if (!getBounds().getSize().equals(oldBounds.getSize())) {
+            AWTAccessor.getComponentAccessor().setSize(target, width, height);
+            postEvent(new ComponentEvent(target, ComponentEvent.COMPONENT_RESIZED));
+        }
+        if (!getBounds().getLocation().equals(oldBounds.getLocation())) {
+            AWTAccessor.getComponentAccessor().setLocation(target, x, y);
+            postEvent(new ComponentEvent(target, ComponentEvent.COMPONENT_MOVED));
+        }
         repositionSecurityWarning();
     }
 
