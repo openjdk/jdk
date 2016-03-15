@@ -28,7 +28,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
-#include "runtime/logTimer.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/copy.hpp"
@@ -183,7 +183,7 @@ extern void StubGenerator_generate(CodeBuffer* code, bool all); // only interfac
 void StubRoutines::initialize1() {
   if (_code1 == NULL) {
     ResourceMark rm;
-    TraceStartupTime timer("StubRoutines generation 1");
+    TraceTime timer("StubRoutines generation 1", TRACETIME_LOG(Info, startuptime));
     _code1 = BufferBlob::create("StubRoutines (1)", code_size1);
     if (_code1 == NULL) {
       vm_exit_out_of_memory(code_size1, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (1)");
@@ -276,7 +276,7 @@ static void test_safefetchN() {
 void StubRoutines::initialize2() {
   if (_code2 == NULL) {
     ResourceMark rm;
-    TraceStartupTime timer("StubRoutines generation 2");
+    TraceTime timer("StubRoutines generation 2", TRACETIME_LOG(Info, startuptime));
     _code2 = BufferBlob::create("StubRoutines (2)", code_size2);
     if (_code2 == NULL) {
       vm_exit_out_of_memory(code_size2, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (2)");

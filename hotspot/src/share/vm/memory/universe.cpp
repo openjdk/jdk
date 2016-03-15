@@ -64,11 +64,10 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/logTimer.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/timer.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/copy.hpp"
@@ -627,7 +626,7 @@ jint universe_init() {
   guarantee(sizeof(oop) % sizeof(HeapWord) == 0,
             "oop size is not not a multiple of HeapWord size");
 
-  TraceStartupTime timer("Genesis");
+  TraceTime timer("Genesis", TRACETIME_LOG(Info, startuptime));
 
   JavaClasses::compute_hard_coded_offsets();
 

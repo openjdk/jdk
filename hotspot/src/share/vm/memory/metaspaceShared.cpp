@@ -40,7 +40,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/logTimer.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/os.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vmThread.hpp"
@@ -772,7 +772,7 @@ void MetaspaceShared::prepare_for_dumping() {
 // Preload classes from a list, populate the shared spaces and dump to a
 // file.
 void MetaspaceShared::preload_and_dump(TRAPS) {
-  { TraceStartupTime timer("Dump Shared Spaces");
+  { TraceTime timer("Dump Shared Spaces", TRACETIME_LOG(Info, startuptime));
     ResourceMark rm;
     char class_list_path_str[JVM_MAXPATHLEN];
 

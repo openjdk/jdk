@@ -39,6 +39,7 @@
 #include "opto/phase.hpp"
 #include "opto/regmask.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/ticks.hpp"
