@@ -32,6 +32,7 @@
 #include "c1/c1_LinearScan.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/vmreg.inline.hpp"
+#include "runtime/timerTrace.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 #ifndef PRODUCT
