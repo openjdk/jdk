@@ -48,6 +48,7 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "prims/nativeLookup.hpp"
+#include "prims/unsafe.hpp"
 #include "runtime/sharedRuntime.hpp"
 #ifdef TRACE_HAVE_INTRINSICS
 #include "trace/traceMacros.hpp"
@@ -248,6 +249,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_access(bool is_native_ptr, bool is_store, BasicType type, AccessKind kind, bool is_unaligned);
   static bool klass_needs_init_guard(Node* kls);
   bool inline_unsafe_allocate();
+  bool inline_unsafe_newArray(bool uninitialized);
   bool inline_unsafe_copyMemory();
   bool inline_native_currentThread();
 
@@ -255,8 +257,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_isInterrupted();
   bool inline_native_Class_query(vmIntrinsics::ID id);
   bool inline_native_subtype_check();
-
-  bool inline_native_newArray();
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
   bool inline_array_equals(StrIntrinsicNode::ArgEnc ae);
@@ -711,7 +711,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
   case vmIntrinsics::_allocateInstance:         return inline_unsafe_allocate();
   case vmIntrinsics::_copyMemory:               return inline_unsafe_copyMemory();
-  case vmIntrinsics::_newArray:                 return inline_native_newArray();
   case vmIntrinsics::_getLength:                return inline_native_getLength();
   case vmIntrinsics::_copyOf:                   return inline_array_copyOf(false);
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
@@ -719,6 +718,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
   case vmIntrinsics::_Objects_checkIndex:       return inline_objects_checkIndex();
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
+
+  case vmIntrinsics::_allocateUninitializedArray: return inline_unsafe_newArray(true);
+  case vmIntrinsics::_newArray:                   return inline_unsafe_newArray(false);
 
   case vmIntrinsics::_isAssignableFrom:         return inline_native_subtype_check();
 
@@ -2303,9 +2305,6 @@ void LibraryCallKit::insert_pre_barrier(Node* base_oop, Node* offset,
 }
 
 
-// Interpret Unsafe.fieldOffset cookies correctly:
-extern jlong Unsafe_field_offset_to_byte_offset(jlong field_offset);
-
 const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type, bool is_native_ptr) {
   // Attempt to infer a sharper value type from the offset and base type.
   ciKlass* sharpened_klass = NULL;
@@ -3782,9 +3781,17 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
 
 //-----------------------inline_native_newArray--------------------------
 // private static native Object java.lang.reflect.newArray(Class<?> componentType, int length);
-bool LibraryCallKit::inline_native_newArray() {
-  Node* mirror    = argument(0);
-  Node* count_val = argument(1);
+// private        native Object Unsafe.allocateUninitializedArray0(Class<?> cls, int size);
+bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
+  Node* mirror;
+  Node* count_val;
+  if (uninitialized) {
+    mirror    = argument(1);
+    count_val = argument(2);
+  } else {
+    mirror    = argument(0);
+    count_val = argument(1);
+  }
 
   mirror = null_check(mirror);
   // If mirror or obj is dead, only null-path is taken.
@@ -3829,6 +3836,12 @@ bool LibraryCallKit::inline_native_newArray() {
     result_val->init_req(_normal_path, obj);
     result_io ->init_req(_normal_path, i_o());
     result_mem->init_req(_normal_path, reset_memory());
+
+    if (uninitialized) {
+      // Mark the allocation so that zeroing is skipped
+      AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(obj, &_gvn);
+      alloc->maybe_set_complete(&_gvn);
+    }
   }
 
   // Return the combined state.
@@ -4417,7 +4430,7 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
 }
 
 //----------------------inline_unsafe_copyMemory-------------------------
-// public native void Unsafe.copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
+// public native void Unsafe.copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
 bool LibraryCallKit::inline_unsafe_copyMemory() {
   if (callee()->is_static())  return false;  // caller must have the capability!
   null_check_receiver();  // null-check receiver
