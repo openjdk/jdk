@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 
 /**
  * Test package. Testing search tag for package. Single {@index SingleWord} search tag.
- * Search {@index "phrase with spaces"}.
+ * Search tag 1 {@index "phrase with spaces"}.
+ * Search tag 2 {@index "pkg"}.
+ * Search tag 3 {@index "pkg2.5"}.
+ * Search tag 5 {@index "r"}.
  */
 package pkg;
