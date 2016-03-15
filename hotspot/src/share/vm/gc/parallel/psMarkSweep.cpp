@@ -570,13 +570,6 @@ void PSMarkSweep::mark_sweep_phase2() {
   old_gen->precompact();
 }
 
-// This should be moved to the shared markSweep code!
-class PSAlwaysTrueClosure: public BoolObjectClosure {
-public:
-  bool do_object_b(oop p) { return true; }
-};
-static PSAlwaysTrueClosure always_true;
-
 void PSMarkSweep::mark_sweep_phase3() {
   // Adjust the pointers to reflect the new locations
   GCTraceTime(Trace, gc) tm("Phase 3: Adjust pointers", _gc_timer);
@@ -603,7 +596,7 @@ void PSMarkSweep::mark_sweep_phase3() {
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   // Global (weak) JNI handles
-  JNIHandles::weak_oops_do(&always_true, adjust_pointer_closure());
+  JNIHandles::weak_oops_do(adjust_pointer_closure());
 
   CodeBlobToOopClosure adjust_from_blobs(adjust_pointer_closure(), CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);
