@@ -32,15 +32,21 @@
 # #########################################################################
 
 
-TraceAltSrcDir = $(WorkSpace)/src/closed/share/vm/trace
-TraceSrcDir = $(WorkSpace)/src/share/vm/trace
+TraceAltSrcDir = $(WorkSpace)\src\closed\share\vm\trace
+TraceSrcDir = $(WorkSpace)\src\share\vm\trace
+
+!ifndef OPENJDK
+!if EXISTS($(TraceAltSrcDir))
+HAS_ALT_SRC = true
+!endif
+!endif
 
 TraceGeneratedNames =     \
     traceEventClasses.hpp \
     traceEventIds.hpp     \
     traceTypes.hpp
 
-!if EXISTS($(TraceAltSrcDir))
+!ifdef HAS_ALT_SRC
 TraceGeneratedNames = $(TraceGeneratedNames) \
     traceRequestables.hpp \
     traceEventControl.hpp
@@ -51,22 +57,30 @@ TraceGeneratedNames = $(TraceGeneratedNames) \
 #Should be equivalent to "TraceGeneratedFiles = $(TraceGeneratedNames:%=$(TraceOutDir)/%)"
 TraceGeneratedFiles = \
     $(TraceOutDir)/traceEventClasses.hpp \
-	$(TraceOutDir)/traceEventIds.hpp     \
-	$(TraceOutDir)/traceTypes.hpp
+    $(TraceOutDir)/traceEventIds.hpp     \
+    $(TraceOutDir)/traceTypes.hpp
 
-!if EXISTS($(TraceAltSrcDir))
+!ifdef HAS_ALT_SRC
 TraceGeneratedFiles = $(TraceGeneratedFiles) \
-	$(TraceOutDir)/traceRequestables.hpp \
+    $(TraceOutDir)/traceRequestables.hpp \
     $(TraceOutDir)/traceEventControl.hpp
 !endif
 
 XSLT = $(QUIETLY) $(REMOTE) $(RUN_JAVA) -classpath $(JvmtiOutDir) jvmtiGen
 
-XML_DEPS = $(TraceSrcDir)/trace.xml $(TraceSrcDir)/tracetypes.xml \
-    $(TraceSrcDir)/trace.dtd $(TraceSrcDir)/xinclude.mod
+TraceXml = $(TraceSrcDir)/trace.xml
 
-!if EXISTS($(TraceAltSrcDir))
-XML_DEPS = $(XML_DEPS) $(TraceAltSrcDir)/traceevents.xml
+!ifdef HAS_ALT_SRC
+TraceXml = $(TraceAltSrcDir)/trace.xml
+!endif
+
+XML_DEPS = $(TraceXml) $(TraceSrcDir)/tracetypes.xml \
+    $(TraceSrcDir)/trace.dtd $(TraceSrcDir)/xinclude.mod \
+    $(TraceSrcDir)/tracerelationdecls.xml $(TraceSrcDir)/traceevents.xml
+
+!ifdef HAS_ALT_SRC
+XML_DEPS = $(XML_DEPS) $(TraceAltSrcDir)/traceeventscustom.xml \
+    $(TraceAltSrcDir)/traceeventtypes.xml
 !endif
 
 .PHONY: all clean cleanall
@@ -76,33 +90,33 @@ XML_DEPS = $(XML_DEPS) $(TraceAltSrcDir)/traceevents.xml
 default::
 	@if not exist $(TraceOutDir) mkdir $(TraceOutDir)
 
-$(TraceOutDir)/traceEventIds.hpp: $(TraceSrcDir)/trace.xml $(TraceSrcDir)/traceEventIds.xsl $(XML_DEPS)
+$(TraceOutDir)/traceEventIds.hpp: $(TraceSrcDir)/traceEventIds.xsl $(XML_DEPS)
 	@echo Generating $@
-	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceSrcDir)/traceEventIds.xsl -OUT $(TraceOutDir)/traceEventIds.hpp
+	$(XSLT) -IN $(TraceXml) -XSL $(TraceSrcDir)/traceEventIds.xsl -OUT $(TraceOutDir)/traceEventIds.hpp
 
-$(TraceOutDir)/traceTypes.hpp: $(TraceSrcDir)/trace.xml $(TraceSrcDir)/traceTypes.xsl $(XML_DEPS)
+$(TraceOutDir)/traceTypes.hpp: $(TraceSrcDir)/traceTypes.xsl $(XML_DEPS)
 	@echo Generating $@
-	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceSrcDir)/traceTypes.xsl -OUT $(TraceOutDir)/traceTypes.hpp
+	$(XSLT) -IN $(TraceXml) -XSL $(TraceSrcDir)/traceTypes.xsl -OUT $(TraceOutDir)/traceTypes.hpp
 
-!if !EXISTS($(TraceAltSrcDir))
+!ifndef HAS_ALT_SRC
 
-$(TraceOutDir)/traceEventClasses.hpp: $(TraceSrcDir)/trace.xml $(TraceSrcDir)/traceEventClasses.xsl $(XML_DEPS)
+$(TraceOutDir)/traceEventClasses.hpp: $(TraceSrcDir)/traceEventClasses.xsl $(XML_DEPS)
 	@echo Generating OpenJDK $@
-	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceSrcDir)/traceEventClasses.xsl -OUT $(TraceOutDir)/traceEventClasses.hpp
+	$(XSLT) -IN $(TraceXml) -XSL $(TraceSrcDir)/traceEventClasses.xsl -OUT $(TraceOutDir)/traceEventClasses.hpp
 
 !else
 
-$(TraceOutDir)/traceEventClasses.hpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceEventClasses.xsl $(XML_DEPS)
+$(TraceOutDir)/traceEventClasses.hpp: $(TraceAltSrcDir)/traceEventClasses.xsl $(XML_DEPS)
 	@echo Generating AltSrc $@
-	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceAltSrcDir)/traceEventClasses.xsl -OUT $(TraceOutDir)/traceEventClasses.hpp
+	$(XSLT) -IN $(TraceXml) -XSL $(TraceAltSrcDir)/traceEventClasses.xsl -OUT $(TraceOutDir)/traceEventClasses.hpp
 
-$(TraceOutDir)/traceRequestables.hpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceRequestables.xsl $(XML_DEPS)
+$(TraceOutDir)/traceRequestables.hpp: $(TraceAltSrcDir)/traceRequestables.xsl $(XML_DEPS)
 	@echo Generating AltSrc $@
-	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceAltSrcDir)/traceRequestables.xsl -OUT $(TraceOutDir)/traceRequestables.hpp
+	$(XSLT) -IN $(TraceXml) -XSL $(TraceAltSrcDir)/traceRequestables.xsl -OUT $(TraceOutDir)/traceRequestables.hpp
 
-$(TraceOutDir)/traceEventControl.hpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceEventControl.xsl $(XML_DEPS)
+$(TraceOutDir)/traceEventControl.hpp: $(TraceAltSrcDir)/traceEventControl.xsl $(XML_DEPS)
 	@echo Generating AltSrc $@
-	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceAltSrcDir)/traceEventControl.xsl -OUT $(TraceOutDir)/traceEventControl.hpp
+	$(XSLT) -IN $(TraceXml) -XSL $(TraceAltSrcDir)/traceEventControl.xsl -OUT $(TraceOutDir)/traceEventControl.hpp
 
 !endif
 
@@ -110,5 +124,3 @@ $(TraceOutDir)/traceEventControl.hpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)
 
 cleanall :
 	rm $(TraceGeneratedFiles)
-
-
