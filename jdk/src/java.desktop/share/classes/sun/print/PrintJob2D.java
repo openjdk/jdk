@@ -995,6 +995,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
     public void run() {
 
         try {
+            attributes.remove(PageRanges.class);
             printerJob.print(attributes);
         } catch (PrinterException e) {
             //REMIND: need to store this away and not rethrow it.
