@@ -115,7 +115,6 @@ void ConcurrentMarkThread::run_service() {
     // wait until started is set.
     sleepBeforeNextCycle();
     if (should_terminate()) {
-      _cm->root_regions()->cancel_scan();
       break;
     }
 
@@ -282,6 +281,7 @@ void ConcurrentMarkThread::run_service() {
       g1h->register_concurrent_cycle_end();
     }
   }
+  _cm->root_regions()->cancel_scan();
 }
 
 void ConcurrentMarkThread::stop_service() {

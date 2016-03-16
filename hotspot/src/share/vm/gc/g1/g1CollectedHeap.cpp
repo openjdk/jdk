@@ -3222,10 +3222,13 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   _verifier->verify_region_sets_optional();
   _verifier->verify_dirty_young_regions();
 
-  // This call will decide whether this pause is an initial-mark
-  // pause. If it is, during_initial_mark_pause() will return true
-  // for the duration of this pause.
-  g1_policy()->decide_on_conc_mark_initiation();
+  // We should not be doing initial mark unless the conc mark thread is running
+  if (!_cmThread->should_terminate()) {
+    // This call will decide whether this pause is an initial-mark
+    // pause. If it is, during_initial_mark_pause() will return true
+    // for the duration of this pause.
+    g1_policy()->decide_on_conc_mark_initiation();
+  }
 
   // We do not allow initial-mark to be piggy-backed on a mixed GC.
   assert(!collector_state()->during_initial_mark_pause() ||
