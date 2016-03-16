@@ -760,7 +760,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
         (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     } else {
       log_warning(os, thread)("Failed to start thread - pthread_create failed (%s) for attributes: %s.",
-        strerror(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+        os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     }
 
     pthread_attr_destroy(&attr);
@@ -1393,7 +1393,7 @@ void os::die() {
 size_t os::lasterror(char *buf, size_t len) {
   if (errno == 0)  return 0;
 
-  const char *s = ::strerror(errno);
+  const char *s = os::strerror(errno);
   size_t n = ::strlen(s);
   if (n >= len) {
     n = len - 1;
@@ -2599,7 +2599,7 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
   warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
           ", %d) failed; error='%s' (errno=%d)", p2i(addr), size, exec,
-          strerror(err), err);
+          os::strerror(err), err);
 }
 
 static void warn_fail_commit_memory(char* addr, size_t size,
@@ -2607,7 +2607,7 @@ static void warn_fail_commit_memory(char* addr, size_t size,
                                     int err) {
   warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
           ", " SIZE_FORMAT ", %d) failed; error='%s' (errno=%d)", p2i(addr), size,
-          alignment_hint, exec, strerror(err), err);
+          alignment_hint, exec, os::strerror(err), err);
 }
 
 // NOTE: Linux kernel does not really reserve the pages for us.
@@ -4573,7 +4573,7 @@ void os::init(void) {
   Linux::set_page_size(sysconf(_SC_PAGESIZE));
   if (Linux::page_size() == -1) {
     fatal("os_linux.cpp: os::init: sysconf failed (%s)",
-          strerror(errno));
+          os::strerror(errno));
   }
   init_page_sizes((size_t) Linux::page_size());
 
@@ -4589,7 +4589,7 @@ void os::init(void) {
   int status;
   pthread_condattr_t* _condattr = os::Linux::condAttr();
   if ((status = pthread_condattr_init(_condattr)) != 0) {
-    fatal("pthread_condattr_init: %s", strerror(status));
+    fatal("pthread_condattr_init: %s", os::strerror(status));
   }
   // Only set the clock if CLOCK_MONOTONIC is available
   if (os::supports_monotonic_clock()) {
@@ -4598,7 +4598,7 @@ void os::init(void) {
         warning("Unable to use monotonic clock with relative timed-waits" \
                 " - changes to the time-of-day clock may have adverse affects");
       } else {
-        fatal("pthread_condattr_setclock: %s", strerror(status));
+        fatal("pthread_condattr_setclock: %s", os::strerror(status));
       }
     }
   }
@@ -4844,7 +4844,7 @@ int os::active_processor_count() {
        log_trace(os)("active_processor_count: "
                      "CPU_ALLOC failed (%s) - using "
                      "online processor count: %d",
-                     strerror(errno), online_cpus);
+                     os::strerror(errno), online_cpus);
        return online_cpus;
     }
   }
@@ -4874,7 +4874,7 @@ int os::active_processor_count() {
   else {
     cpu_count = ::sysconf(_SC_NPROCESSORS_ONLN);
     warning("sched_getaffinity failed (%s)- using online processor count (%d) "
-            "which may exceed available processors", strerror(errno), cpu_count);
+            "which may exceed available processors", os::strerror(errno), cpu_count);
   }
 
   if (cpus_p != &cpus) { // can only be true when CPU_ALLOC used

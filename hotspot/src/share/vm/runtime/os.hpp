@@ -617,6 +617,22 @@ class os: AllStatic {
   static size_t lasterror(char *buf, size_t len);
   static int get_last_error();
 
+  // Replacement for strerror().
+  // Will return the english description of the error (e.g. "File not found", as
+  //  suggested in the POSIX standard.
+  // Will return "Unknown error" for an unknown errno value.
+  // Will not attempt to localize the returned string.
+  // Will always return a valid string which is a static constant.
+  // Will not change the value of errno.
+  static const char* strerror(int e);
+
+  // Will return the literalized version of the given errno (e.g. "EINVAL"
+  //  for EINVAL).
+  // Will return "Unknown error" for an unknown errno value.
+  // Will always return a valid string which is a static constant.
+  // Will not change the value of errno.
+  static const char* errno_name(int e);
+
   // Determines whether the calling process is being debugged by a user-mode debugger.
   static bool is_debugger_attached();
 
