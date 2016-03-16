@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,4 +136,27 @@ void Test_configure_stdout() {
   LogConfiguration::parse_log_arguments("stdout", saved_config, NULL, NULL, log.error_stream());
   os::free(saved_config);
 }
+
+static int Test_logconfiguration_subscribe_triggered = 0;
+
+static void Test_logconfiguration_subscribe_helper() {
+  Test_logconfiguration_subscribe_triggered++;
+}
+
+void Test_logconfiguration_subscribe() {
+  ResourceMark rm;
+  LogHandle(logging) log;
+
+  LogConfiguration::register_update_listener(&Test_logconfiguration_subscribe_helper);
+
+  LogConfiguration::parse_log_arguments("stdout", "logging=trace", NULL, NULL, log.error_stream());
+  assert(Test_logconfiguration_subscribe_triggered == 1, "subscription not triggered (1)");
+
+  LogConfiguration::configure_stdout(LogLevel::Debug, true, LOG_TAGS(gc));
+  assert(Test_logconfiguration_subscribe_triggered == 2, "subscription not triggered (2)");
+
+  LogConfiguration::disable_logging();
+  assert(Test_logconfiguration_subscribe_triggered == 3, "subscription not triggered (3)");
+}
+
 #endif // PRODUCT
