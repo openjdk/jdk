@@ -107,18 +107,25 @@ class Log VALUE_OBJ_CLASS_SPEC {
     return LogTagSetMapping<T0, T1, T2, T3, T4>::tagset().is_level(level);
   }
 
+  ATTRIBUTE_PRINTF(2, 3)
+  static void write(LogLevelType level, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vwrite(level, fmt, args);
+    va_end(args);
+  };
+
   template <LogLevelType Level>
   ATTRIBUTE_PRINTF(1, 2)
   static void write(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    vwrite<Level>(fmt, args);
+    vwrite(Level, fmt, args);
     va_end(args);
   };
 
-  template <LogLevelType Level>
-  ATTRIBUTE_PRINTF(1, 0)
-  static void vwrite(const char* fmt, va_list args) {
+  ATTRIBUTE_PRINTF(2, 0)
+  static void vwrite(LogLevelType level, const char* fmt, va_list args) {
     char buf[LogBufferSize];
     va_list saved_args;         // For re-format on buf overflow.
     va_copy(saved_args, args);
@@ -132,27 +139,26 @@ class Log VALUE_OBJ_CLASS_SPEC {
       prefix_len = LogPrefix<T0, T1, T2, T3, T4>::prefix(newbuf, newbuf_len);
       ret = os::log_vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
       assert(ret >= 0, "Log message buffer issue");
-      puts<Level>(newbuf);
+      puts(level, newbuf);
       FREE_C_HEAP_ARRAY(char, newbuf);
     } else {
-      puts<Level>(buf);
+      puts(level, buf);
     }
   }
 
-  template <LogLevelType Level>
-  static void puts(const char* string) {
-    LogTagSetMapping<T0, T1, T2, T3, T4>::tagset().log(Level, string);
+  static void puts(LogLevelType level, const char* string) {
+    LogTagSetMapping<T0, T1, T2, T3, T4>::tagset().log(level, string);
   }
 
 #define LOG_LEVEL(level, name) ATTRIBUTE_PRINTF(2, 0) \
   Log& v##name(const char* fmt, va_list args) { \
-    vwrite<LogLevel::level>(fmt, args); \
+    vwrite(LogLevel::level, fmt, args); \
     return *this; \
   } \
   Log& name(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) { \
     va_list args; \
     va_start(args, fmt); \
-    vwrite<LogLevel::level>(fmt, args); \
+    vwrite(LogLevel::level, fmt, args); \
     va_end(args); \
     return *this; \
   } \
