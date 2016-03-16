@@ -1423,7 +1423,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       // the full GC has compacted objects and updated TAMS but not updated
       // the prev bitmap.
       if (G1VerifyBitmaps) {
-        ((G1CMBitMap*) concurrent_mark()->prevMarkBitMap())->clearAll();
+        _cm->clear_prev_bitmap(workers());
       }
       _verifier->check_bitmaps("Full GC End");
 
