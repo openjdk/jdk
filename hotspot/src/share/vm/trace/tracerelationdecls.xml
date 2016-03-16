@@ -24,16 +24,11 @@
 -->
 
 
-<!DOCTYPE trace SYSTEM "trace.dtd" [
-<!ENTITY % xinclude SYSTEM "xinclude.mod">
-%xinclude;
-]>
+<!DOCTYPE relation_decls SYSTEM "trace.dtd">
 
-<trace>
-  <xi:include href="tracetypes.xml"
-              xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="tracerelationdecls.xml"
-              xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <xi:include href="traceevents.xml"
-              xmlns:xi="http://www.w3.org/2001/XInclude"/>
-</trace>
+<relation_decls>
+  <relation_decl id="GC_ID" uri="vm/gc/id"/>
+  <relation_decl id="COMP_ID" uri="vm/compiler/id"/>
+  <relation_decl id="SWEEP_ID" uri="vm/code_sweeper/id"/>
+  <relation_decl id="JAVA_MONITOR_ADDRESS" uri="java/monitor/address"/>
+</relation_decls>

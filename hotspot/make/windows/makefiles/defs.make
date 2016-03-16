@@ -276,3 +276,7 @@ ifneq ($(SPEC),)
     MAKE_ARGS += MT="$(subst /,\\,$(MT))"
   endif
 endif
+
+ifdef OPENJDK
+  MAKE_ARGS += OPENJDK="$(OPENJDK)"
+endif
