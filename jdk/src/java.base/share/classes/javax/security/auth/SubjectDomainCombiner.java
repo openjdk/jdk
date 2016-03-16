@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,16 +110,18 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
      * {@code SubjectDomainCombiner}.
      *
      * <p> A new {@code ProtectionDomain} instance is created
-     * for each {@code ProtectionDomain} in the
-     * {@code currentDomains} array.  Each new {@code ProtectionDomain}
+     * for each non-static {@code ProtectionDomain} (
+     * (staticPermissionsOnly() == false)
+     * in the {@code currentDomains} array.  Each new {@code ProtectionDomain}
      * instance is created using the {@code CodeSource},
      * {@code Permission}s and {@code ClassLoader}
      * from the corresponding {@code ProtectionDomain} in
      * {@code currentDomains}, as well as with the Principals from
      * the {@code Subject} associated with this
-     * {@code SubjectDomainCombiner}.
+     * {@code SubjectDomainCombiner}. Static ProtectionDomains are
+     * combined as-is and no new instance is created.
      *
-     * <p> All of the newly instantiated ProtectionDomains are
+     * <p> All of the ProtectionDomains (static and newly instantiated) are
      * combined into a new array.  The ProtectionDomains from the
      * {@code assignedDomains} array are appended to this new array,
      * and the result is returned.
@@ -340,60 +342,62 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
                 ProtectionDomain subjectPd = cachedPDs.getValue(pd);
 
                 if (subjectPd == null) {
+                    if (pd.staticPermissionsOnly()) {
+                        // keep static ProtectionDomain objects static
+                        subjectPd = pd;
+                    } else {
+                        // XXX
+                        // we must first add the original permissions.
+                        // that way when we later add the new JAAS permissions,
+                        // any unresolved JAAS-related permissions will
+                        // automatically get resolved.
 
-                    // XXX
-                    // we must first add the original permissions.
-                    // that way when we later add the new JAAS permissions,
-                    // any unresolved JAAS-related permissions will
-                    // automatically get resolved.
-
-                    // get the original perms
-                    Permissions perms = new Permissions();
-                    PermissionCollection coll = pd.getPermissions();
-                    java.util.Enumeration<Permission> e;
-                    if (coll != null) {
-                        synchronized (coll) {
-                            e = coll.elements();
-                            while (e.hasMoreElements()) {
-                                Permission newPerm =
+                        // get the original perms
+                        Permissions perms = new Permissions();
+                        PermissionCollection coll = pd.getPermissions();
+                        java.util.Enumeration<Permission> e;
+                        if (coll != null) {
+                            synchronized (coll) {
+                                e = coll.elements();
+                                while (e.hasMoreElements()) {
+                                    Permission newPerm =
                                         e.nextElement();
-                                 perms.add(newPerm);
+                                    perms.add(newPerm);
+                                }
                             }
                         }
-                    }
 
-                    // get perms from the policy
+                        // get perms from the policy
+                        final java.security.CodeSource finalCs = pd.getCodeSource();
+                        final Subject finalS = subject;
+                        PermissionCollection newPerms =
+                            java.security.AccessController.doPrivileged
+                            (new PrivilegedAction<PermissionCollection>() {
+                            @SuppressWarnings("deprecation")
+                            public PermissionCollection run() {
+                                return
+                                    javax.security.auth.Policy.getPolicy().getPermissions
+                                    (finalS, finalCs);
+                            }
+                        });
 
-                    final java.security.CodeSource finalCs = pd.getCodeSource();
-                    final Subject finalS = subject;
-                    PermissionCollection newPerms =
-                        java.security.AccessController.doPrivileged
-                        (new PrivilegedAction<PermissionCollection>() {
-                        @SuppressWarnings("deprecation")
-                        public PermissionCollection run() {
-                          return
-                          javax.security.auth.Policy.getPolicy().getPermissions
-                                (finalS, finalCs);
-                        }
-                    });
-
-                    // add the newly granted perms,
-                    // avoiding duplicates
-                    synchronized (newPerms) {
-                        e = newPerms.elements();
-                        while (e.hasMoreElements()) {
-                            Permission newPerm = e.nextElement();
-                            if (!perms.implies(newPerm)) {
-                                perms.add(newPerm);
-                                if (debug != null)
-                                    debug.println (
-                                        "Adding perm " + newPerm + "\n");
+                        // add the newly granted perms,
+                        // avoiding duplicates
+                        synchronized (newPerms) {
+                            e = newPerms.elements();
+                            while (e.hasMoreElements()) {
+                                Permission newPerm = e.nextElement();
+                                if (!perms.implies(newPerm)) {
+                                    perms.add(newPerm);
+                                    if (debug != null)
+                                        debug.println (
+                                            "Adding perm " + newPerm + "\n");
+                                }
                             }
                         }
+                        subjectPd = new ProtectionDomain
+                            (finalCs, perms, pd.getClassLoader(), principals);
                     }
-                    subjectPd = new ProtectionDomain
-                        (finalCs, perms, pd.getClassLoader(), principals);
-
                     if (allowCaching)
                         cachedPDs.putValue(pd, subjectPd);
                 }
