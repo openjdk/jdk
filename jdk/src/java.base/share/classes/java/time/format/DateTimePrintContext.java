@@ -218,6 +218,13 @@ final class DateTimePrintContext {
                 }
                 return query.queryFrom(this);
             }
+
+            @Override
+            public String toString() {
+                return temporal +
+                        (effectiveChrono != null ? " with chronology " + effectiveChrono : "") +
+                        (effectiveZone != null ? " with zone " + effectiveZone : "");
+            }
         };
     }
 
@@ -279,7 +286,8 @@ final class DateTimePrintContext {
     <R> R getValue(TemporalQuery<R> query) {
         R result = temporal.query(query);
         if (result == null && optional == 0) {
-            throw new DateTimeException("Unable to extract value: " + temporal.getClass());
+            throw new DateTimeException("Unable to extract " +
+                    query + " from temporal " + temporal);
         }
         return result;
     }

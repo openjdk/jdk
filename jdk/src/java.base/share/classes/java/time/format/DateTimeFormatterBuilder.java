@@ -1256,6 +1256,9 @@ public final class DateTimeFormatterBuilder {
      * During formatting, the chronology is obtained from the temporal object
      * being formatted, which may have been overridden by
      * {@link DateTimeFormatter#withChronology(Chronology)}.
+     * The {@code FULL} and {@code LONG} styles typically require a time-zone.
+     * When formatting using these styles, a {@code ZoneId} must be available,
+     * either by using {@code ZonedDateTime} or {@link DateTimeFormatter#withZone}.
      * <p>
      * During parsing, if a chronology has already been parsed, then it is used.
      * Otherwise the default from {@code DateTimeFormatter.withChronology(Chronology)}
