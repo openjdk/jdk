@@ -951,11 +951,11 @@ bool os::getTimesSecs(double* process_real_time,
     FILETIME wt;
     GetSystemTimeAsFileTime(&wt);
     jlong rtc_millis = windows_to_java_time(wt);
-    jlong user_millis = windows_to_java_time(user_time);
-    jlong system_millis = windows_to_java_time(kernel_time);
     *process_real_time = ((double) rtc_millis) / ((double) MILLIUNITS);
-    *process_user_time = ((double) user_millis) / ((double) MILLIUNITS);
-    *process_system_time = ((double) system_millis) / ((double) MILLIUNITS);
+    *process_user_time =
+      (double) jlong_from(user_time.dwHighDateTime, user_time.dwLowDateTime) / (10 * MICROUNITS);
+    *process_system_time =
+      (double) jlong_from(kernel_time.dwHighDateTime, kernel_time.dwLowDateTime) / (10 * MICROUNITS);
     return true;
   } else {
     return false;

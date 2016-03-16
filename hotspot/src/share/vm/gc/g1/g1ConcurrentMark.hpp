@@ -352,8 +352,17 @@ protected:
   // time of remark.
   volatile bool           _concurrent_marking_in_progress;
 
-  // Keep track of whether we have started concurrent phase or not.
-  bool                    _concurrent_phase_started;
+  // There would be a race between ConcurrentMarkThread and VMThread(ConcurrentMark::abort())
+  // to call ConcurrentGCTimer::register_gc_concurrent_end().
+  // And this variable is used to keep track of concurrent phase.
+  volatile uint           _concurrent_phase_status;
+  // Concurrent phase is not yet started.
+  static const uint       ConcPhaseNotStarted = 0;
+  // Concurrent phase is started.
+  static const uint       ConcPhaseStarted = 1;
+  // Caller thread of ConcurrentGCTimer::register_gc_concurrent_end() is ending concurrent phase.
+  // So other thread should wait until the status to be changed to ConcPhaseNotStarted.
+  static const uint       ConcPhaseStopping = 2;
 
   // All of these times are in ms
   NumberSeq _init_times;
@@ -485,6 +494,9 @@ protected:
   // Set to true when initialization is complete
   bool _completed_initialization;
 
+  // end_timer, true to end gc timer after ending concurrent phase.
+  void register_concurrent_phase_end_common(bool end_timer);
+
 public:
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
@@ -520,6 +532,8 @@ public:
 
   void register_concurrent_phase_start(const char* title);
   void register_concurrent_phase_end();
+  // Ends both concurrent phase and timer.
+  void register_concurrent_gc_end_and_stop_timer();
 
   void update_accum_task_vtime(int i, double vtime) {
     _accum_task_vtime[i] += vtime;

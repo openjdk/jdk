@@ -561,7 +561,7 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
                                      OopClosure* weak_roots,
                                      CLDClosure* strong_cld_closure,
                                      CLDClosure* weak_cld_closure,
-                                     CodeBlobClosure* code_roots) {
+                                     CodeBlobToOopClosure* code_roots) {
   // General roots.
   assert(Threads::thread_claim_parity() != 0, "must have called prologue code");
   assert(code_roots != NULL, "code root closure should always be set");
@@ -578,7 +578,7 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   // Don't process them if they will be processed during the ClassLoaderDataGraph phase.
   CLDClosure* roots_from_clds_p = (strong_cld_closure != weak_cld_closure) ? strong_cld_closure : NULL;
   // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
-  CodeBlobClosure* roots_from_code_p = (so & SO_AllCodeCache) ? NULL : code_roots;
+  CodeBlobToOopClosure* roots_from_code_p = (so & SO_AllCodeCache) ? NULL : code_roots;
 
   bool is_par = scope->n_threads() > 1;
   Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_clds_p, roots_from_code_p);
