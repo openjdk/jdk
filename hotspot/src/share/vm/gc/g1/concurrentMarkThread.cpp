@@ -266,7 +266,7 @@ void ConcurrentMarkThread::run_service() {
       // bitmap then, as it has been done during mark abort.
       if (!cm()->has_aborted()) {
         GCConcPhaseTimer(_cm, "Concurrent Bitmap Clearing");
-        _cm->clearNextBitmap();
+        _cm->cleanup_for_next_mark();
       } else {
         assert(!G1VerifyBitmaps || _cm->nextMarkBitmapIsClear(), "Next mark bitmap must be clear");
       }
