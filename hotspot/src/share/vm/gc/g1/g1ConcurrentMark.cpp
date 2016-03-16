@@ -853,7 +853,7 @@ void G1ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
       // marking.
       reset_marking_state(true /* clear_overflow */);
 
-      log_info(gc)("Concurrent Mark reset for overflow");
+      log_info(gc, marking)("Concurrent Mark reset for overflow");
     }
   }
 
@@ -988,13 +988,12 @@ public:
   }
 };
 
-void G1ConcurrentMark::scanRootRegions() {
+void G1ConcurrentMark::scan_root_regions() {
   // scan_in_progress() will have been set to true only if there was
   // at least one root region to scan. So, if it's false, we
   // should not attempt to do any further work.
   if (root_regions()->scan_in_progress()) {
     assert(!has_aborted(), "Aborting before root region scanning is finished not supported.");
-    GCTraceConcTime(Info, gc) tt("Concurrent Root Region Scan");
 
     _parallel_marking_threads = calc_parallel_marking_threads();
     assert(parallel_marking_threads() <= max_parallel_marking_threads(),
@@ -1052,7 +1051,7 @@ void G1ConcurrentMark::register_concurrent_gc_end_and_stop_timer() {
   register_concurrent_phase_end_common(true);
 }
 
-void G1ConcurrentMark::markFromRoots() {
+void G1ConcurrentMark::mark_from_roots() {
   // we might be tempted to assert that:
   // assert(asynch == !SafepointSynchronize::is_at_safepoint(),
   //        "inconsistent argument?");
@@ -1115,7 +1114,6 @@ void G1ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   if (has_overflown()) {
     // Oops.  We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
-    log_develop_trace(gc)("Remark led to restart for overflow.");
 
     // Verify the heap w.r.t. the previous marking bitmap.
     if (VerifyDuringGC) {
@@ -1761,7 +1759,7 @@ void G1ConcurrentMark::cleanup() {
   g1h->trace_heap_after_concurrent_cycle();
 }
 
-void G1ConcurrentMark::completeCleanup() {
+void G1ConcurrentMark::complete_cleanup() {
   if (has_aborted()) return;
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();

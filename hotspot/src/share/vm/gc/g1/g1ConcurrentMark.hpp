@@ -608,18 +608,18 @@ public:
 
   // Scan all the root regions and mark everything reachable from
   // them.
-  void scanRootRegions();
+  void scan_root_regions();
 
   // Scan a single root region and mark everything reachable from it.
   void scanRootRegion(HeapRegion* hr, uint worker_id);
 
   // Do concurrent phase of marking, to a tentative transitive closure.
-  void markFromRoots();
+  void mark_from_roots();
 
   void checkpointRootsFinal(bool clear_all_soft_refs);
   void checkpointRootsFinalWork();
   void cleanup();
-  void completeCleanup();
+  void complete_cleanup();
 
   // Mark in the previous bitmap.  NB: this is usually read-only, so use
   // this carefully!

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, freelist)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ihop)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, liveness)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, marking)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, metaspace)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, start)) \
