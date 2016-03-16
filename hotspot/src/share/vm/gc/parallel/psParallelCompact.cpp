@@ -2125,13 +2125,6 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   _gc_tracer.report_object_count_after_gc(is_alive_closure());
 }
 
-// This should be moved to the shared markSweep code!
-class PSAlwaysTrueClosure: public BoolObjectClosure {
-public:
-  bool do_object_b(oop p) { return true; }
-};
-static PSAlwaysTrueClosure always_true;
-
 void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   // Adjust the pointers to reflect the new locations
   GCTraceTime(Trace, gc, phases) tm("Adjust Roots", &_gc_timer);
@@ -2157,7 +2150,7 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   // Global (weak) JNI handles
-  JNIHandles::weak_oops_do(&always_true, &oop_closure);
+  JNIHandles::weak_oops_do(&oop_closure);
 
   CodeBlobToOopClosure adjust_from_blobs(&oop_closure, CodeBlobToOopClosure::FixRelocations);
   CodeCache::blobs_do(&adjust_from_blobs);

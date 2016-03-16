@@ -37,7 +37,7 @@ class CardTableEntryClosure: public CHeapObj<mtGC> {
 public:
   // Process the card whose card table entry is "card_ptr".  If returns
   // "false", terminate the iteration early.
-  virtual bool do_card_ptr(jbyte* card_ptr, uint worker_i = 0) = 0;
+  virtual bool do_card_ptr(jbyte* card_ptr, uint worker_i) = 0;
 };
 
 // A ptrQueue whose elements are "oops", pointers to object heads.
@@ -52,26 +52,6 @@ public:
   // Process queue entries and release resources.
   void flush() { flush_impl(); }
 
-  // Apply the closure to the elements from _index to _sz.  If all
-  // closure applications return true, then returns true.  Stops
-  // processing after the first closure application that returns
-  // false, and returns false from this function.  If "consume" is
-  // true, _index is updated to follow the last processed element.
-  bool apply_closure(CardTableEntryClosure* cl,
-                     bool consume = true,
-                     uint worker_i = 0);
-
-  // Apply the closure to the elements of "node" from it's index to
-  // buffer_size.  If all closure applications return true, then
-  // returns true.  Stops processing after the first closure
-  // application that returns false, and returns false from this
-  // function.  If "consume" is true, the node's index is updated to
-  // follow the last processed element.
-  static bool apply_closure_to_buffer(CardTableEntryClosure* cl,
-                                      BufferNode* node,
-                                      size_t buffer_size,
-                                      bool consume = true,
-                                      uint worker_i = 0);
   void **get_buf() { return _buf;}
   size_t get_index() { return _index;}
   void reinitialize() { _buf = 0; _sz = 0; _index = 0;}
@@ -96,6 +76,17 @@ class DirtyCardQueueSet: public PtrQueueSet {
   CardTableEntryClosure* _mut_process_closure;
 
   DirtyCardQueue _shared_dirty_card_queue;
+
+  // Apply the closure to the elements of "node" from it's index to
+  // buffer_size.  If all closure applications return true, then
+  // returns true.  Stops processing after the first closure
+  // application that returns false, and returns false from this
+  // function.  If "consume" is true, the node's index is updated to
+  // follow the last processed element.
+  bool apply_closure_to_buffer(CardTableEntryClosure* cl,
+                               BufferNode* node,
+                               bool consume,
+                               uint worker_i = 0);
 
   bool mut_process_buffer(BufferNode* node);
 
