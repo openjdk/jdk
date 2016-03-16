@@ -1466,9 +1466,6 @@ public:
   develop(bool, TraceCompiledIC, false,                                     \
           "Trace changes of compiled IC")                                   \
                                                                             \
-  develop(bool, TraceClearedExceptions, false,                              \
-          "Print when an exception is forcibly cleared")                    \
-                                                                            \
   /* gc */                                                                  \
                                                                             \
   product(bool, UseSerialGC, false,                                         \

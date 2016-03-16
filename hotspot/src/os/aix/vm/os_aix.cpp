@@ -910,8 +910,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
     log_info(os, thread)("Thread started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
       (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
   } else {
-    log_warning(os, thread)("Failed to start thread - pthread_create failed (%s) for attributes: %s.",
-      strerror(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+    log_warning(os, thread)("Failed to start thread - pthread_create failed (%d=%s) for attributes: %s.",
+      ret, os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
   }
 
   pthread_attr_destroy(&attr);
@@ -1178,7 +1178,7 @@ void os::die() {
 size_t os::lasterror(char *buf, size_t len) {
   if (errno == 0) return 0;
 
-  const char *s = ::strerror(errno);
+  const char *s = os::strerror(errno);
   size_t n = ::strlen(s);
   if (n >= len) {
     n = len - 1;
@@ -1714,14 +1714,14 @@ static void local_sem_post() {
   if (os::Aix::on_aix()) {
     int rc = ::sem_post(&sig_sem);
     if (rc == -1 && !warn_only_once) {
-      trcVerbose("sem_post failed (errno = %d, %s)", errno, strerror(errno));
+      trcVerbose("sem_post failed (errno = %d, %s)", errno, os::errno_name(errno));
       warn_only_once = true;
     }
   } else {
     guarantee0(p_sig_msem != NULL);
     int rc = ::msem_unlock(p_sig_msem, 0);
     if (rc == -1 && !warn_only_once) {
-      trcVerbose("msem_unlock failed (errno = %d, %s)", errno, strerror(errno));
+      trcVerbose("msem_unlock failed (errno = %d, %s)", errno, os::errno_name(errno));
       warn_only_once = true;
     }
   }
@@ -1732,14 +1732,14 @@ static void local_sem_wait() {
   if (os::Aix::on_aix()) {
     int rc = ::sem_wait(&sig_sem);
     if (rc == -1 && !warn_only_once) {
-      trcVerbose("sem_wait failed (errno = %d, %s)", errno, strerror(errno));
+      trcVerbose("sem_wait failed (errno = %d, %s)", errno, os::errno_name(errno));
       warn_only_once = true;
     }
   } else {
     guarantee0(p_sig_msem != NULL); // must init before use
     int rc = ::msem_lock(p_sig_msem, 0);
     if (rc == -1 && !warn_only_once) {
-      trcVerbose("msem_lock failed (errno = %d, %s)", errno, strerror(errno));
+      trcVerbose("msem_lock failed (errno = %d, %s)", errno, os::errno_name(errno));
       warn_only_once = true;
     }
   }
@@ -2203,7 +2203,7 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
   warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
           ", %d) failed; error='%s' (errno=%d)", addr, size, exec,
-          strerror(err), err);
+          os::errno_name(err), err);
 }
 #endif
 
@@ -2412,7 +2412,7 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
   bool rc = ::mprotect(addr, size, prot) == 0 ? true : false;
 
   if (!rc) {
-    const char* const s_errno = strerror(errno);
+    const char* const s_errno = os::errno_name(errno);
     warning("mprotect(" PTR_FORMAT "-" PTR_FORMAT ", 0x%X) failed (%s).", addr, addr + size, prot, s_errno);
     return false;
   }
@@ -2634,7 +2634,7 @@ OSReturn os::set_native_priority(Thread* thread, int newpri) {
 
   if (ret != 0) {
     trcVerbose("Could not change priority for thread %d to %d (error %d, %s)",
-        (int)thr, newpri, ret, strerror(ret));
+        (int)thr, newpri, ret, os::errno_name(ret));
   }
   return (ret == 0) ? OS_OK : OS_ERR;
 }

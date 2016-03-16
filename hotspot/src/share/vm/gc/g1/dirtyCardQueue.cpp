@@ -110,46 +110,6 @@ DirtyCardQueue::~DirtyCardQueue() {
   }
 }
 
-bool DirtyCardQueue::apply_closure(CardTableEntryClosure* cl,
-                                   bool consume,
-                                   uint worker_i) {
-  bool res = true;
-  if (_buf != NULL) {
-    BufferNode* node = BufferNode::make_node_from_buffer(_buf, _index);
-    res = apply_closure_to_buffer(cl, node, _sz, consume, worker_i);
-    if (res && consume) {
-      _index = _sz;
-    }
-  }
-  return res;
-}
-
-bool DirtyCardQueue::apply_closure_to_buffer(CardTableEntryClosure* cl,
-                                             BufferNode* node,
-                                             size_t buffer_size,
-                                             bool consume,
-                                             uint worker_i) {
-  if (cl == NULL) return true;
-  void** buf = BufferNode::make_buffer_from_node(node);
-  size_t limit = byte_index_to_index(buffer_size);
-  for (size_t i = byte_index_to_index(node->index()); i < limit; ++i) {
-    jbyte* card_ptr = static_cast<jbyte*>(buf[i]);
-    assert(card_ptr != NULL, "invariant");
-    if (!cl->do_card_ptr(card_ptr, worker_i)) {
-      if (consume) {
-        size_t new_index = index_to_byte_index(i + 1);
-        assert(new_index <= buffer_size, "invariant");
-        node->set_index(new_index);
-      }
-      return false;
-    }
-  }
-  if (consume) {
-    node->set_index(buffer_size);
-  }
-  return true;
-}
-
 DirtyCardQueueSet::DirtyCardQueueSet(bool notify_when_complete) :
   PtrQueueSet(notify_when_complete),
   _mut_process_closure(NULL),
@@ -190,15 +150,39 @@ void DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
   t->dirty_card_queue().handle_zero_index();
 }
 
+bool DirtyCardQueueSet::apply_closure_to_buffer(CardTableEntryClosure* cl,
+                                                BufferNode* node,
+                                                bool consume,
+                                                uint worker_i) {
+  if (cl == NULL) return true;
+  void** buf = BufferNode::make_buffer_from_node(node);
+  size_t limit = DirtyCardQueue::byte_index_to_index(buffer_size());
+  size_t start = DirtyCardQueue::byte_index_to_index(node->index());
+  for (size_t i = start; i < limit; ++i) {
+    jbyte* card_ptr = static_cast<jbyte*>(buf[i]);
+    assert(card_ptr != NULL, "invariant");
+    if (!cl->do_card_ptr(card_ptr, worker_i)) {
+      if (consume) {
+        size_t new_index = DirtyCardQueue::index_to_byte_index(i + 1);
+        assert(new_index <= buffer_size(), "invariant");
+        node->set_index(new_index);
+      }
+      return false;
+    }
+  }
+  if (consume) {
+    node->set_index(buffer_size());
+  }
+  return true;
+}
+
 bool DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
   guarantee(_free_ids != NULL, "must be");
 
   // claim a par id
   uint worker_i = _free_ids->claim_par_id();
 
-  bool b = DirtyCardQueue::apply_closure_to_buffer(_mut_process_closure,
-                                                   node, _sz,
-                                                   true, worker_i);
+  bool b = apply_closure_to_buffer(_mut_process_closure, node, true, worker_i);
   if (b) {
     Atomic::inc(&_processed_buffers_mut);
   }
@@ -242,7 +226,7 @@ bool DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure*
   if (nd == NULL) {
     return false;
   } else {
-    if (DirtyCardQueue::apply_closure_to_buffer(cl, nd, _sz, true, worker_i)) {
+    if (apply_closure_to_buffer(cl, nd, true, worker_i)) {
       // Done with fully processed buffer.
       deallocate_buffer(nd);
       Atomic::inc(&_processed_buffers_rs_thread);
@@ -261,7 +245,7 @@ void DirtyCardQueueSet::par_apply_closure_to_all_completed_buffers(CardTableEntr
     BufferNode* next = nd->next();
     void* actual = Atomic::cmpxchg_ptr(next, &_cur_par_buffer_node, nd);
     if (actual == nd) {
-      bool b = DirtyCardQueue::apply_closure_to_buffer(cl, nd, _sz, false);
+      bool b = apply_closure_to_buffer(cl, nd, false);
       guarantee(b, "Should not stop early.");
       nd = next;
     } else {

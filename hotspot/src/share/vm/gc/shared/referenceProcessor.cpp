@@ -266,11 +266,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
 #ifndef PRODUCT
 // Calculate the number of jni handles.
 size_t ReferenceProcessor::count_jni_refs() {
-  class AlwaysAliveClosure: public BoolObjectClosure {
-  public:
-    virtual bool do_object_b(oop obj) { return true; }
-  };
-
   class CountHandleClosure: public OopClosure {
   private:
     size_t _count;
@@ -281,8 +276,7 @@ size_t ReferenceProcessor::count_jni_refs() {
     size_t count() { return _count; }
   };
   CountHandleClosure global_handle_count;
-  AlwaysAliveClosure always_alive;
-  JNIHandles::weak_oops_do(&always_alive, &global_handle_count);
+  JNIHandles::weak_oops_do(&global_handle_count);
   return global_handle_count.count();
 }
 #endif
