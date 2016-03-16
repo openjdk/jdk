@@ -684,15 +684,8 @@ void GenCollectedHeap::gen_process_roots(StrongRootsScope* scope,
   _process_strong_tasks->all_tasks_completed(scope->n_threads());
 }
 
-
-class AlwaysTrueClosure: public BoolObjectClosure {
-public:
-  bool do_object_b(oop p) { return true; }
-};
-static AlwaysTrueClosure always_true;
-
 void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
-  JNIHandles::weak_oops_do(&always_true, root_closure);
+  JNIHandles::weak_oops_do(root_closure);
   _young_gen->ref_processor()->weak_oops_do(root_closure);
   _old_gen->ref_processor()->weak_oops_do(root_closure);
 }

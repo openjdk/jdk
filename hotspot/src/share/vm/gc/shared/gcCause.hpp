@@ -33,6 +33,9 @@
 // use of this class grows, we should split it into public
 // and implementation-private "causes".
 //
+// The definitions in the SA code should be kept in sync
+// with the definitions here.
+//
 
 class GCCause : public AllStatic {
  public:

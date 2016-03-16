@@ -61,6 +61,7 @@
 #include "utilities/events.hpp"
 
 # include <signal.h>
+# include <errno.h>
 
 OSThread*         os::_starting_thread    = NULL;
 address           os::_polling_page       = NULL;
@@ -1425,6 +1426,131 @@ size_t os::page_size_for_region_aligned(size_t region_size, size_t min_pages) {
 
 size_t os::page_size_for_region_unaligned(size_t region_size, size_t min_pages) {
   return page_size_for_region(region_size, min_pages, false);
+}
+
+static const char* errno_to_string (int e, bool short_text) {
+  #define ALL_SHARED_ENUMS(X) \
+    X(E2BIG, "Argument list too long") \
+    X(EACCES, "Permission denied") \
+    X(EADDRINUSE, "Address in use") \
+    X(EADDRNOTAVAIL, "Address not available") \
+    X(EAFNOSUPPORT, "Address family not supported") \
+    X(EAGAIN, "Resource unavailable, try again") \
+    X(EALREADY, "Connection already in progress") \
+    X(EBADF, "Bad file descriptor") \
+    X(EBADMSG, "Bad message") \
+    X(EBUSY, "Device or resource busy") \
+    X(ECANCELED, "Operation canceled") \
+    X(ECHILD, "No child processes") \
+    X(ECONNABORTED, "Connection aborted") \
+    X(ECONNREFUSED, "Connection refused") \
+    X(ECONNRESET, "Connection reset") \
+    X(EDEADLK, "Resource deadlock would occur") \
+    X(EDESTADDRREQ, "Destination address required") \
+    X(EDOM, "Mathematics argument out of domain of function") \
+    X(EEXIST, "File exists") \
+    X(EFAULT, "Bad address") \
+    X(EFBIG, "File too large") \
+    X(EHOSTUNREACH, "Host is unreachable") \
+    X(EIDRM, "Identifier removed") \
+    X(EILSEQ, "Illegal byte sequence") \
+    X(EINPROGRESS, "Operation in progress") \
+    X(EINTR, "Interrupted function") \
+    X(EINVAL, "Invalid argument") \
+    X(EIO, "I/O error") \
+    X(EISCONN, "Socket is connected") \
+    X(EISDIR, "Is a directory") \
+    X(ELOOP, "Too many levels of symbolic links") \
+    X(EMFILE, "Too many open files") \
+    X(EMLINK, "Too many links") \
+    X(EMSGSIZE, "Message too large") \
+    X(ENAMETOOLONG, "Filename too long") \
+    X(ENETDOWN, "Network is down") \
+    X(ENETRESET, "Connection aborted by network") \
+    X(ENETUNREACH, "Network unreachable") \
+    X(ENFILE, "Too many files open in system") \
+    X(ENOBUFS, "No buffer space available") \
+    X(ENODATA, "No message is available on the STREAM head read queue") \
+    X(ENODEV, "No such device") \
+    X(ENOENT, "No such file or directory") \
+    X(ENOEXEC, "Executable file format error") \
+    X(ENOLCK, "No locks available") \
+    X(ENOLINK, "Reserved") \
+    X(ENOMEM, "Not enough space") \
+    X(ENOMSG, "No message of the desired type") \
+    X(ENOPROTOOPT, "Protocol not available") \
+    X(ENOSPC, "No space left on device") \
+    X(ENOSR, "No STREAM resources") \
+    X(ENOSTR, "Not a STREAM") \
+    X(ENOSYS, "Function not supported") \
+    X(ENOTCONN, "The socket is not connected") \
+    X(ENOTDIR, "Not a directory") \
+    X(ENOTEMPTY, "Directory not empty") \
+    X(ENOTSOCK, "Not a socket") \
+    X(ENOTSUP, "Not supported") \
+    X(ENOTTY, "Inappropriate I/O control operation") \
+    X(ENXIO, "No such device or address") \
+    X(EOPNOTSUPP, "Operation not supported on socket") \
+    X(EOVERFLOW, "Value too large to be stored in data type") \
+    X(EPERM, "Operation not permitted") \
+    X(EPIPE, "Broken pipe") \
+    X(EPROTO, "Protocol error") \
+    X(EPROTONOSUPPORT, "Protocol not supported") \
+    X(EPROTOTYPE, "Protocol wrong type for socket") \
+    X(ERANGE, "Result too large") \
+    X(EROFS, "Read-only file system") \
+    X(ESPIPE, "Invalid seek") \
+    X(ESRCH, "No such process") \
+    X(ETIME, "Stream ioctl() timeout") \
+    X(ETIMEDOUT, "Connection timed out") \
+    X(ETXTBSY, "Text file busy") \
+    X(EWOULDBLOCK, "Operation would block") \
+    X(EXDEV, "Cross-device link")
+
+  #define DEFINE_ENTRY(e, text) { e, #e, text },
+
+  static const struct {
+    int v;
+    const char* short_text;
+    const char* long_text;
+  } table [] = {
+
+    ALL_SHARED_ENUMS(DEFINE_ENTRY)
+
+    // The following enums are not defined on all platforms.
+    #ifdef ESTALE
+    DEFINE_ENTRY(ESTALE, "Reserved")
+    #endif
+    #ifdef EDQUOT
+    DEFINE_ENTRY(EDQUOT, "Reserved")
+    #endif
+    #ifdef EMULTIHOP
+    DEFINE_ENTRY(EMULTIHOP, "Reserved")
+    #endif
+
+    // End marker.
+    { -1, "Unknown errno", "Unknown error" }
+
+  };
+
+  #undef DEFINE_ENTRY
+  #undef ALL_FLAGS
+
+  int i = 0;
+  while (table[i].v != -1 && table[i].v != e) {
+    i ++;
+  }
+
+  return short_text ? table[i].short_text : table[i].long_text;
+
+}
+
+const char* os::strerror(int e) {
+  return errno_to_string(e, false);
+}
+
+const char* os::errno_name(int e) {
+  return errno_to_string(e, true);
 }
 
 #ifndef PRODUCT
