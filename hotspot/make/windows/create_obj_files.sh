@@ -55,7 +55,11 @@ COMMONSRC_REL=src
 ALTSRC_REL=src/closed # Change this to pick up alt sources from somewhere else
 
 COMMONSRC=${WorkSpace}/${COMMONSRC_REL}
-ALTSRC=${WorkSpace}/${ALTSRC_REL}
+if [ "x$OPENJDK" != "xtrue" ]; then
+  ALTSRC=${WorkSpace}/${ALTSRC_REL}
+else
+  ALTSRC=PATH_THAT_DOES_NOT_EXIST
+fi
 
 BASE_PATHS="`if [ -d ${ALTSRC}/share/vm ]; then $FIND ${ALTSRC}/share/vm ! -name vm -prune -type d \! \( -name adlc -o -name c1 -o -name gc -o -name opto -o -name shark -o -name libadt \); fi`"
 BASE_PATHS="${BASE_PATHS} ` $FIND ${COMMONSRC}/share/vm ! -name vm -prune -type d \! \( -name adlc -o -name c1 -o -name gc -o -name opto -o -name shark -o -name libadt \)`"
