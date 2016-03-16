@@ -120,74 +120,10 @@ void G1CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_r
   }
   // We need to clear the bitmap on commit, removing any existing information.
   MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * HeapRegion::GrainWords);
-  _bm->clearRange(mr);
+  _bm->clear_range(mr);
 }
 
-// Closure used for clearing the given mark bitmap.
-class ClearBitmapHRClosure : public HeapRegionClosure {
- private:
-  G1ConcurrentMark* _cm;
-  G1CMBitMap* _bitmap;
-  bool _may_yield;      // The closure may yield during iteration. If yielded, abort the iteration.
- public:
-  ClearBitmapHRClosure(G1ConcurrentMark* cm, G1CMBitMap* bitmap, bool may_yield) : HeapRegionClosure(), _cm(cm), _bitmap(bitmap), _may_yield(may_yield) {
-    assert(!may_yield || cm != NULL, "CM must be non-NULL if this closure is expected to yield.");
-  }
-
-  virtual bool doHeapRegion(HeapRegion* r) {
-    size_t const chunk_size_in_words = M / HeapWordSize;
-
-    HeapWord* cur = r->bottom();
-    HeapWord* const end = r->end();
-
-    while (cur < end) {
-      MemRegion mr(cur, MIN2(cur + chunk_size_in_words, end));
-      _bitmap->clearRange(mr);
-
-      cur += chunk_size_in_words;
-
-      // Abort iteration if after yielding the marking has been aborted.
-      if (_may_yield && _cm->do_yield_check() && _cm->has_aborted()) {
-        return true;
-      }
-      // Repeat the asserts from before the start of the closure. We will do them
-      // as asserts here to minimize their overhead on the product. However, we
-      // will have them as guarantees at the beginning / end of the bitmap
-      // clearing to get some checking in the product.
-      assert(!_may_yield || _cm->cmThread()->during_cycle(), "invariant");
-      assert(!_may_yield || !G1CollectedHeap::heap()->collector_state()->mark_in_progress(), "invariant");
-    }
-
-    return false;
-  }
-};
-
-class ParClearNextMarkBitmapTask : public AbstractGangTask {
-  ClearBitmapHRClosure* _cl;
-  HeapRegionClaimer     _hrclaimer;
-  bool                  _suspendible; // If the task is suspendible, workers must join the STS.
-
-public:
-  ParClearNextMarkBitmapTask(ClearBitmapHRClosure *cl, uint n_workers, bool suspendible) :
-      _cl(cl), _suspendible(suspendible), AbstractGangTask("Parallel Clear Bitmap Task"), _hrclaimer(n_workers) {}
-
-  void work(uint worker_id) {
-    SuspendibleThreadSetJoiner sts_join(_suspendible);
-    G1CollectedHeap::heap()->heap_region_par_iterate(_cl, worker_id, &_hrclaimer, true);
-  }
-};
-
-void G1CMBitMap::clearAll() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  ClearBitmapHRClosure cl(NULL, this, false /* may_yield */);
-  uint n_workers = g1h->workers()->active_workers();
-  ParClearNextMarkBitmapTask task(&cl, n_workers, false);
-  g1h->workers()->run_task(&task);
-  guarantee(cl.complete(), "Must have completed iteration.");
-  return;
-}
-
-void G1CMBitMap::clearRange(MemRegion mr) {
+void G1CMBitMap::clear_range(MemRegion mr) {
   mr.intersection(MemRegion(_bmStartWord, _bmWordSize));
   assert(!mr.is_empty(), "unexpected empty region");
   // convert address range into offset range
@@ -697,9 +633,76 @@ G1ConcurrentMark::~G1ConcurrentMark() {
   ShouldNotReachHere();
 }
 
-void G1ConcurrentMark::clearNextBitmap() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+class G1ClearBitMapTask : public AbstractGangTask {
+  // Heap region closure used for clearing the given mark bitmap.
+  class G1ClearBitmapHRClosure : public HeapRegionClosure {
+  private:
+    G1CMBitMap* _bitmap;
+    G1ConcurrentMark* _cm;
+  public:
+    G1ClearBitmapHRClosure(G1CMBitMap* bitmap, G1ConcurrentMark* cm) : HeapRegionClosure(), _cm(cm), _bitmap(bitmap) {
+    }
 
+    virtual bool doHeapRegion(HeapRegion* r) {
+      size_t const chunk_size_in_words = M / HeapWordSize;
+
+      HeapWord* cur = r->bottom();
+      HeapWord* const end = r->end();
+
+      while (cur < end) {
+        MemRegion mr(cur, MIN2(cur + chunk_size_in_words, end));
+        _bitmap->clear_range(mr);
+
+        cur += chunk_size_in_words;
+
+        // Abort iteration if after yielding the marking has been aborted.
+        if (_cm != NULL && _cm->do_yield_check() && _cm->has_aborted()) {
+          return true;
+        }
+        // Repeat the asserts from before the start of the closure. We will do them
+        // as asserts here to minimize their overhead on the product. However, we
+        // will have them as guarantees at the beginning / end of the bitmap
+        // clearing to get some checking in the product.
+        assert(_cm == NULL || _cm->cmThread()->during_cycle(), "invariant");
+        assert(_cm == NULL || !G1CollectedHeap::heap()->collector_state()->mark_in_progress(), "invariant");
+      }
+      assert(cur == end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
+
+      return false;
+    }
+  };
+
+  G1ClearBitmapHRClosure _cl;
+  HeapRegionClaimer _hr_claimer;
+  bool _suspendible; // If the task is suspendible, workers must join the STS.
+
+public:
+  G1ClearBitMapTask(G1CMBitMap* bitmap, G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
+    AbstractGangTask("Parallel Clear Bitmap Task"),
+    _cl(bitmap, suspendible ? cm : NULL),
+    _hr_claimer(n_workers),
+    _suspendible(suspendible)
+  { }
+
+  void work(uint worker_id) {
+    SuspendibleThreadSetJoiner sts_join(_suspendible);
+    G1CollectedHeap::heap()->heap_region_par_iterate(&_cl, worker_id, &_hr_claimer, true);
+  }
+
+  bool is_complete() {
+    return _cl.complete();
+  }
+};
+
+void G1ConcurrentMark::clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield) {
+  assert(may_yield || SafepointSynchronize::is_at_safepoint(), "Non-yielding bitmap clear only allowed at safepoint.");
+
+  G1ClearBitMapTask task(bitmap, this, workers->active_workers(), may_yield);
+  workers->run_task(&task);
+  guarantee(!may_yield || task.is_complete(), "Must have completed iteration when not yielding.");
+}
+
+void G1ConcurrentMark::cleanup_for_next_mark() {
   // Make sure that the concurrent mark thread looks to still be in
   // the current cycle.
   guarantee(cmThread()->during_cycle(), "invariant");
@@ -708,21 +711,24 @@ void G1ConcurrentMark::clearNextBitmap() {
   // marking bitmap and getting it ready for the next cycle. During
   // this time no other cycle can start. So, let's make sure that this
   // is the case.
-  guarantee(!g1h->collector_state()->mark_in_progress(), "invariant");
+  guarantee(!_g1h->collector_state()->mark_in_progress(), "invariant");
 
-  ClearBitmapHRClosure cl(this, _nextMarkBitMap, true /* may_yield */);
-  ParClearNextMarkBitmapTask task(&cl, parallel_marking_threads(), true);
-  _parallel_workers->run_task(&task);
+  clear_bitmap(_nextMarkBitMap, _parallel_workers, true);
 
   // Clear the liveness counting data. If the marking has been aborted, the abort()
   // call already did that.
-  if (cl.complete()) {
+  if (!has_aborted()) {
     clear_all_count_data();
   }
 
   // Repeat the asserts from above.
   guarantee(cmThread()->during_cycle(), "invariant");
-  guarantee(!g1h->collector_state()->mark_in_progress(), "invariant");
+  guarantee(!_g1h->collector_state()->mark_in_progress(), "invariant");
+}
+
+void G1ConcurrentMark::clear_prev_bitmap(WorkGang* workers) {
+  assert(SafepointSynchronize::is_at_safepoint(), "Should only clear the entire prev bitmap at a safepoint.");
+  clear_bitmap((G1CMBitMap*)_prevMarkBitMap, workers, false);
 }
 
 class CheckBitmapClearHRClosure : public HeapRegionClosure {
@@ -847,7 +853,7 @@ void G1ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
       // marking.
       reset_marking_state(true /* clear_overflow */);
 
-      log_info(gc)("Concurrent Mark reset for overflow");
+      log_info(gc, marking)("Concurrent Mark reset for overflow");
     }
   }
 
@@ -982,13 +988,12 @@ public:
   }
 };
 
-void G1ConcurrentMark::scanRootRegions() {
+void G1ConcurrentMark::scan_root_regions() {
   // scan_in_progress() will have been set to true only if there was
   // at least one root region to scan. So, if it's false, we
   // should not attempt to do any further work.
   if (root_regions()->scan_in_progress()) {
     assert(!has_aborted(), "Aborting before root region scanning is finished not supported.");
-    GCTraceConcTime(Info, gc) tt("Concurrent Root Region Scan");
 
     _parallel_marking_threads = calc_parallel_marking_threads();
     assert(parallel_marking_threads() <= max_parallel_marking_threads(),
@@ -1046,7 +1051,7 @@ void G1ConcurrentMark::register_concurrent_gc_end_and_stop_timer() {
   register_concurrent_phase_end_common(true);
 }
 
-void G1ConcurrentMark::markFromRoots() {
+void G1ConcurrentMark::mark_from_roots() {
   // we might be tempted to assert that:
   // assert(asynch == !SafepointSynchronize::is_at_safepoint(),
   //        "inconsistent argument?");
@@ -1109,7 +1114,6 @@ void G1ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   if (has_overflown()) {
     // Oops.  We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
-    log_develop_trace(gc)("Remark led to restart for overflow.");
 
     // Verify the heap w.r.t. the previous marking bitmap.
     if (VerifyDuringGC) {
@@ -1755,7 +1759,7 @@ void G1ConcurrentMark::cleanup() {
   g1h->trace_heap_after_concurrent_cycle();
 }
 
-void G1ConcurrentMark::completeCleanup() {
+void G1ConcurrentMark::complete_cleanup() {
   if (has_aborted()) return;
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -2307,7 +2311,7 @@ void G1ConcurrentMark::checkpointRootsFinalWork() {
 void G1ConcurrentMark::clearRangePrevBitmap(MemRegion mr) {
   // Note we are overriding the read-only view of the prev map here, via
   // the cast.
-  ((G1CMBitMap*)_prevMarkBitMap)->clearRange(mr);
+  ((G1CMBitMap*)_prevMarkBitMap)->clear_range(mr);
 }
 
 HeapRegion*
@@ -2604,7 +2608,7 @@ void G1ConcurrentMark::abort() {
 
   // Clear all marks in the next bitmap for the next marking cycle. This will allow us to skip the next
   // concurrent bitmap clearing.
-  _nextMarkBitMap->clearAll();
+  clear_bitmap(_nextMarkBitMap, _g1h->workers(), false);
 
   // Note we cannot clear the previous marking bitmap here
   // since VerifyDuringGC verifies the objects marked during
