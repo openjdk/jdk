@@ -139,10 +139,7 @@ class G1CMBitMap : public G1CMBitMapRO {
   inline void clear(HeapWord* addr);
   inline bool parMark(HeapWord* addr);
 
-  void clearRange(MemRegion mr);
-
-  // Clear the whole mark bitmap.
-  void clearAll();
+  void clear_range(MemRegion mr);
 };
 
 // Represents a marking stack used by ConcurrentMarking in the G1 collector.
@@ -497,6 +494,9 @@ protected:
   // end_timer, true to end gc timer after ending concurrent phase.
   void register_concurrent_phase_end_common(bool end_timer);
 
+  // Clear the given bitmap in parallel using the given WorkGang. If may_yield is
+  // true, periodically insert checks to see if this method should exit prematurely.
+  void clear_bitmap(G1CMBitMap* bitmap, WorkGang* workers, bool may_yield);
 public:
   // Manipulation of the global mark stack.
   // The push and pop operations are used by tasks for transfers
@@ -585,8 +585,13 @@ public:
                        uint worker_id,
                        HeapRegion* hr = NULL);
 
-  // Clear the next marking bitmap (will be called concurrently).
-  void clearNextBitmap();
+  // Prepare internal data structures for the next mark cycle. This includes clearing
+  // the next mark bitmap and some internal data structures. This method is intended
+  // to be called concurrently to the mutator. It will yield to safepoint requests.
+  void cleanup_for_next_mark();
+
+  // Clear the previous marking bitmap during safepoint.
+  void clear_prev_bitmap(WorkGang* workers);
 
   // Return whether the next mark bitmap has no marks set. To be used for assertions
   // only. Will not yield to pause requests.
@@ -603,18 +608,18 @@ public:
 
   // Scan all the root regions and mark everything reachable from
   // them.
-  void scanRootRegions();
+  void scan_root_regions();
 
   // Scan a single root region and mark everything reachable from it.
   void scanRootRegion(HeapRegion* hr, uint worker_id);
 
   // Do concurrent phase of marking, to a tentative transitive closure.
-  void markFromRoots();
+  void mark_from_roots();
 
   void checkpointRootsFinal(bool clear_all_soft_refs);
   void checkpointRootsFinalWork();
   void cleanup();
-  void completeCleanup();
+  void complete_cleanup();
 
   // Mark in the previous bitmap.  NB: this is usually read-only, so use
   // this carefully!
