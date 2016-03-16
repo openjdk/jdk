@@ -303,10 +303,23 @@ var getJibProfilesProfiles = function (input, common) {
 
     // Generate open only profiles for all the main profiles for JPRT and reference
     // implementation builds.
-    var jprtOpenProfiles = generateOpenOnlyProfiles(common, mainProfiles);
-    profiles = concatObjects(profiles, jprtOpenProfiles);
+    var openOnlyProfiles = generateOpenOnlyProfiles(common, mainProfiles);
+    // The open only profiles on linux are used for reference builds and should
+    // produce the compact profile images by default.
+    var openOnlyProfilesExtra = {
+        "linux-x64-open": {
+            configure_args: ["--with-default-make-target=all profiles"],
+        },
+
+        "linux-x86-open": {
+            configure_args: ["--with-default-make-target=all profiles"],
+        }
+    };
+    var openOnlyProfiles = concatObjects(openOnlyProfiles, openOnlyProfilesExtra);
+
+    profiles = concatObjects(profiles, openOnlyProfiles);
     // Generate debug profiles for the open jprt profiles
-    profiles = concatObjects(profiles, generateDebugProfiles(common, jprtOpenProfiles));
+    profiles = concatObjects(profiles, generateDebugProfiles(common, openOnlyProfiles));
 
     // Profiles used to run tests. Used in JPRT.
     var testOnlyProfiles = {
