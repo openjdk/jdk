@@ -26,6 +26,10 @@
  * @bug 8131915
  * @summary Verify that CompletionFailure thrown during listing of import content is handled properly.
  * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.javap
  */
 
 import java.nio.file.Files;

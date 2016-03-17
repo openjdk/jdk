@@ -112,7 +112,7 @@ class ReusableContext extends Context implements TaskListener {
         public Void visitClass(ClassTree node, Symtab syms) {
             Symbol sym = ((JCClassDecl)node).sym;
             if (sym != null) {
-                syms.classes.remove(sym.flatName());
+                syms.removeClass(sym.packge().modle, sym.flatName());
                 Type sup = supertype(sym);
                 if (isCoreClass(sym) ||
                         (sup != null && isCoreClass(sup.tsym) && sup.tsym.kind != Kinds.Kind.TYP)) {

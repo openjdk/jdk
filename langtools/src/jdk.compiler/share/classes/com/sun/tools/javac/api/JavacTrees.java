@@ -76,6 +76,7 @@ import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -92,6 +93,7 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.MemberEnter;
+import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.comp.Resolve;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.model.JavacElements;
@@ -156,6 +158,7 @@ import static com.sun.tools.javac.code.TypeTag.*;
 public class JavacTrees extends DocTrees {
 
     // in a world of a single context per compilation, these would all be final
+    private Modules modules;
     private Resolve resolve;
     private Enter enter;
     private Log log;
@@ -206,6 +209,7 @@ public class JavacTrees extends DocTrees {
     }
 
     private void init(Context context) {
+        modules = Modules.instance(context);
         attr = Attr.instance(context);
         enter = Enter.instance(context);
         elements = JavacElements.instance(context);
@@ -434,21 +438,31 @@ public class JavacTrees extends DocTrees {
                 // and if not, then we check to see if it identifies a package.
                 Type t = attr.attribType(ref.qualifierExpression, env);
                 if (t.isErroneous()) {
-                    if (ref.memberName == null) {
-                        // Attr/Resolve assume packages exist and create symbols as needed
-                        // so use getPackageElement to restrict search to existing packages
-                        PackageSymbol pck = elements.getPackageElement(ref.qualifierExpression.toString());
-                        if (pck != null) {
-                            return pck;
-                        } else if (ref.qualifierExpression.hasTag(JCTree.Tag.IDENT)) {
+                    JCCompilationUnit toplevel =
+                        treeMaker.TopLevel(List.<JCTree>nil());
+                    final ModuleSymbol msym = modules.getDefaultModule();
+                    toplevel.modle = msym;
+                    toplevel.packge = msym.unnamedPackage;
+                    Symbol sym = attr.attribIdent(ref.qualifierExpression, toplevel);
+
+                    sym.complete();
+
+                    if ((sym.kind == PCK || sym.kind == TYP) && sym.exists()) {
+                        tsym = (TypeSymbol) sym;
+                        memberName = (Name) ref.memberName;
+                        if (sym.kind == PCK && memberName != null) {
+                            //cannot refer to a package "member"
+                            return null;
+                        }
+                    } else {
+                        if (ref.qualifierExpression.hasTag(JCTree.Tag.IDENT)) {
                             // fixup:  allow "identifier" instead of "#identifier"
                             // for compatibility with javadoc
                             tsym = env.enclClass.sym;
                             memberName = ((JCIdent) ref.qualifierExpression).name;
-                        } else
+                        } else {
                             return null;
-                    } else {
-                        return null;
+                        }
                     }
                 } else {
                     tsym = t.tsym;
@@ -1179,7 +1193,8 @@ public class JavacTrees extends DocTrees {
             }
         };
 
-        PackageSymbol psym = javaFileObjectToPackageMap.getOrDefault(jfo, syms.unnamedPackage);
+        PackageSymbol psym = javaFileObjectToPackageMap.getOrDefault(jfo,
+                syms.unnamedModule.unnamedPackage);
 
         jcCompilationUnit.docComments = new DocCommentTable() {
             @Override
@@ -1209,13 +1224,12 @@ public class JavacTrees extends DocTrees {
 
         };
         jcCompilationUnit.lineMap = jcCompilationUnit.getLineMap();
+        jcCompilationUnit.modle = psym.modle;
+        jcCompilationUnit.sourcefile = jfo;
         jcCompilationUnit.namedImportScope = new NamedImportScope(psym, jcCompilationUnit.toplevelScope);
         jcCompilationUnit.packge = psym;
-        jcCompilationUnit.starImportScope = null;
-        jcCompilationUnit.sourcefile = jfo;
         jcCompilationUnit.starImportScope = new StarImportScope(psym);
         jcCompilationUnit.toplevelScope = WriteableScope.create(psym);
-
         return new TreePath(jcCompilationUnit);
     }
 }

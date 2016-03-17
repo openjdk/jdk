@@ -657,7 +657,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private PackageElement createPackageElement(AnalyzeTask at, String packageName) {
         Names names = Names.instance(at.getContext());
         Symtab syms = Symtab.instance(at.getContext());
-        PackageElement existing = syms.enterPackage(names.fromString(packageName));
+        PackageElement existing = syms.enterPackage(syms.unnamedModule, names.fromString(packageName));
 
         return existing;
     }
@@ -1297,7 +1297,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     static boolean isJRTMarkerFile(Path path) {
-        return path.equals(Paths.get("JRT_MARKER_FILE"));
+        return path.equals(Paths.get(System.getProperty("java.home"), "lib", "modules"));
     }
 
     //create an index based on the content of the given dirs; the original JavaFileManager entry is originalPath.

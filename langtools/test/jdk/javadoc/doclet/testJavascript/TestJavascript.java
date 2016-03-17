@@ -27,7 +27,7 @@
  * @summary  Verify that the output has the right javascript.
  * @author   jamieh
  * @library  ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    JavadocTester
  * @run main TestJavascript
  */

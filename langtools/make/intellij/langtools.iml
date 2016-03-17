@@ -8,12 +8,11 @@
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.compiler/share/classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.javadoc/share/classes" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.jdeps/share/classes" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/java.compiler/gensrc" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/jdk.compiler/gensrc" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/jdk.javadoc/gensrc" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/jdk.jdeps/gensrc" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/jdk.jshell/share/classes" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/build/gensrc/jdk.compiler" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/gensrc/jdk.javadoc" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/build/gensrc/jdk.jdeps" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />

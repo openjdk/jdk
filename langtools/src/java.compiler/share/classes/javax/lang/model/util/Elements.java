@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.lang.model.element.*;
-import javax.lang.model.type.*;
 
 
 /**
@@ -62,6 +61,15 @@ public interface Elements {
      * @return the named type element, or {@code null} if it cannot be found
      */
     TypeElement getTypeElement(CharSequence name);
+
+    /**
+     * Returns a module element given its fully qualified name.
+     *
+     * @param name  the name
+     * @return the named module element, or {@code null} if it cannot be found
+     * @since 9
+     */
+    ModuleElement getModuleElement(CharSequence name);
 
     /**
      * Returns the values of an annotation's elements, including defaults.
@@ -127,6 +135,16 @@ public interface Elements {
      * @return the package of an element
      */
     PackageElement getPackageOf(Element type);
+
+    /**
+     * Returns the module of an element.  The module of a module is
+     * itself.
+     *
+     * @param type the element being examined
+     * @return the module of an element
+     * @since 9
+     */
+    ModuleElement getModuleOf(Element type);
 
     /**
      * Returns all members of a type element, whether inherited or

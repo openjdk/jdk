@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 7018098
  * @summary CacheFSInfo persists too long
@@ -60,6 +60,11 @@ public class T7018098 extends JavacTestingAbstractProcessor {
         _assert(!testDir.exists());
 
         compile(
+            "-XaddExports:"
+                + "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+            "-XDaccessInternalAPI",
             "-proc:only",
             "-processor", myName,
             "-Aexpect=false",
@@ -69,6 +74,11 @@ public class T7018098 extends JavacTestingAbstractProcessor {
         _assert(testDir.exists());
 
         compile(
+            "-XaddExports:"
+                + "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+            "-XDaccessInternalAPI",
             "-proc:only",
             "-processor", myName,
             "-Aexpect=true",
