@@ -208,6 +208,10 @@ public final class Scenario {
             jcmdStateBuilder = new JcmdStateBuilder(Type.JCMD.fileName);
         }
 
+        public void addFlag(String flag) {
+            vmopts.add(flag);
+        }
+
         public void add(CompileCommand compileCommand) {
             String[] vmOptions = compileCommand.command.vmOpts;
             Collections.addAll(vmopts, vmOptions);
