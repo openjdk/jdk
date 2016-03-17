@@ -1,4 +1,4 @@
-/* Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1057,8 +1057,6 @@ void* ciReplay::load_inline_data(ciMethod* method, int entry_bci, int comp_level
 int ciReplay::replay_impl(TRAPS) {
   HandleMark hm;
   ResourceMark rm;
-  // Make sure we don't run with background compilation
-  BackgroundCompilation = false;
 
   if (ReplaySuppressInitializers > 2) {
     // ReplaySuppressInitializers > 2 means that we want to allow

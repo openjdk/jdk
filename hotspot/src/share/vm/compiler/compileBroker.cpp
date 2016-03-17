@@ -1170,7 +1170,8 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
       CompilationPolicy::policy()->delay_compilation(method());
       return NULL;
     }
-    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, !directive->BackgroundCompilationOption, THREAD);
+    bool is_blocking = !directive->BackgroundCompilationOption || CompileTheWorld || ReplayCompiles;
+    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, is_blocking, THREAD);
   }
 
   // return requested nmethod
