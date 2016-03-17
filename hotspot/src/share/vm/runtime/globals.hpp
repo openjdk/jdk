@@ -891,9 +891,6 @@ public:
   notproduct(bool, VerifyLastFrame, false,                                  \
           "Verify oops on last frame on entry to VM")                       \
                                                                             \
-  develop(bool, TraceHandleAllocation, false,                               \
-          "Print out warnings when suspiciously many handles are allocated")\
-                                                                            \
   product(bool, FailOverToOldVerifier, true,                                \
           "Fail over to old verifier when split verifier fails")            \
                                                                             \
@@ -1603,10 +1600,10 @@ public:
   product(bool, ResizePLAB, true,                                           \
           "Dynamically resize (survivor space) promotion LAB's")            \
                                                                             \
-  product(intx, ParGCArrayScanChunk, 50,                                    \
+  product(int, ParGCArrayScanChunk, 50,                                     \
           "Scan a subset of object array and push remainder, if array is "  \
           "bigger than this")                                               \
-          range(1, max_intx)                                                \
+          range(1, max_jint/3)                                              \
                                                                             \
   product(bool, ParGCUseLocalOverflow, false,                               \
           "Instead of a global overflow list, use local overflow stacks")   \
@@ -3023,14 +3020,6 @@ public:
                                                                             \
   notproduct(ccstrlist, SuppressErrorAt, "",                                \
           "List of assertions (file:line) to muzzle")                       \
-                                                                            \
-  notproduct(size_t, HandleAllocationLimit, 1024,                           \
-          "Threshold for HandleMark allocation when +TraceHandleAllocation "\
-          "is used")                                                        \
-                                                                            \
-  develop(size_t, TotalHandleAllocationLimit, 1024,                         \
-          "Threshold for total handle allocation when "                     \
-          "+TraceHandleAllocation is used")                                 \
                                                                             \
   develop(intx, StackPrintLimit, 100,                                       \
           "number of stack frames to print in VM-level stack dump")         \

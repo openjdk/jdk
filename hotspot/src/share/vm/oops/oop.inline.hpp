@@ -295,7 +295,7 @@ address*   oopDesc::address_field_addr(int offset)  const { return (address*)  f
 // in inner GC loops so these are separated.
 
 inline bool check_obj_alignment(oop obj) {
-  return cast_from_oop<intptr_t>(obj) % MinObjAlignmentInBytes == 0;
+  return (cast_from_oop<intptr_t>(obj) & MinObjAlignmentInBytesMask) == 0;
 }
 
 oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
