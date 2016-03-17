@@ -643,8 +643,10 @@ final class Obj {
                  classObjs[i] = cl;
              }
              try {
-                 return Proxy.getProxyClass(hasNonPublicInterface ?
+                 @SuppressWarnings("deprecation")
+                 Class<?> proxyClass = Proxy.getProxyClass(hasNonPublicInterface ?
                         nonPublicLoader : classLoader, classObjs);
+                 return proxyClass;
              } catch (IllegalArgumentException e) {
                  throw new ClassNotFoundException(null, e);
              }

@@ -956,34 +956,17 @@ public abstract class IIOMetadataFormatImpl implements IIOMetadataFormat {
         }
 
         /**
-         * If an applet supplies an implementation of IIOMetadataFormat and
-         * resource bundles, then the resource bundle will need to be
-         * accessed via the applet class loader. So first try the context
-         * class loader to locate the resource bundle.
-         * If that throws MissingResourceException, then try the
-         * system class loader.
+         * Per the class documentation, resource bundles, including localized ones
+         * are intended to be delivered by the subclasser - ie supplier of the
+         * metadataformat. For the standard format and all standard plugins that
+         * is the JDK. For 3rd party plugins that they will supply their own.
+         * This includes plugins bundled with applets/applications.
+         * In all cases this means it is sufficient to search for those resource
+         * in the module that is providing the MetadataFormatImpl subclass.
          */
-        ClassLoader loader =
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<ClassLoader>() {
-                   public ClassLoader run() {
-                       return Thread.currentThread().getContextClassLoader();
-                   }
-            });
-
-        ResourceBundle bundle = null;
         try {
-            bundle = ResourceBundle.getBundle(resourceBaseName,
-                                              locale, loader);
-        } catch (MissingResourceException mre) {
-            try {
-                bundle = ResourceBundle.getBundle(resourceBaseName, locale);
-            } catch (MissingResourceException mre1) {
-                return null;
-            }
-        }
-
-        try {
+            ResourceBundle bundle = ResourceBundle.getBundle(resourceBaseName, locale,
+                                                            this.getClass().getModule());
             return bundle.getString(key);
         } catch (MissingResourceException e) {
             return null;

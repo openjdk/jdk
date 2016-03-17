@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@
 #include "FrameID.h"
 
 static char *versionName = "Java Debug Wire Protocol (Reference Implementation)";
-static int majorVersion = 1;  /* JDWP major version */
-static int minorVersion = 8;  /* JDWP minor version */
+static int majorVersion = 9;  /* JDWP major version */
+static int minorVersion = 0;  /* JDWP minor version */
 
 static jboolean
 version(PacketInputStream *in, PacketOutputStream *out)
@@ -185,6 +185,41 @@ classesForSignature(PacketInputStream *in, PacketOutputStream *out)
     } END_WITH_LOCAL_REFS(env);
 
     jvmtiDeallocate(signature);
+
+    return JNI_TRUE;
+}
+
+static jboolean
+allModules(PacketInputStream *in, PacketOutputStream *out)
+{
+    JNIEnv *env;
+
+    if (gdata->vmDead) {
+        outStream_setError(out, JDWP_ERROR(VM_DEAD));
+        return JNI_TRUE;
+    }
+
+    env = getEnv();
+
+    WITH_LOCAL_REFS(env, 1) {
+
+        jint count = 0;
+        jint i = 0;
+        jobject* modules = NULL;
+        jvmtiError error = JVMTI_ERROR_NONE;
+
+        error = JVMTI_FUNC_PTR(gdata->jvmti, GetAllModules) (gdata->jvmti, &count, &modules);
+        if (error != JVMTI_ERROR_NONE) {
+            outStream_setError(out, map2jdwpError(error));
+        } else {
+            (void)outStream_writeInt(out, count);
+            for (i = 0; i < count; i++) {
+                (void)outStream_writeModuleRef(env, out, modules[i]);
+            }
+            jvmtiDeallocate(modules);
+        }
+
+    } END_WITH_LOCAL_REFS(env);
 
     return JNI_TRUE;
 }
@@ -747,6 +782,7 @@ capabilitiesNew(PacketInputStream *in, PacketOutputStream *out)
     (void)outStream_writeBoolean(out, (jboolean)caps.can_get_constant_pool);
     /* 21 Can force early return */
     (void)outStream_writeBoolean(out, (jboolean)caps.can_force_early_return);
+
     (void)outStream_writeBoolean(out, (jboolean)JNI_FALSE); /* 22 */
     (void)outStream_writeBoolean(out, (jboolean)JNI_FALSE); /* 23 */
     (void)outStream_writeBoolean(out, (jboolean)JNI_FALSE); /* 24 */
@@ -823,7 +859,6 @@ static jboolean
 classPaths(PacketInputStream *in, PacketOutputStream *out)
 {
     char *ud;
-    char *bp;
     char *cp;
 
     ud = gdata->property_user_dir;
@@ -834,13 +869,9 @@ classPaths(PacketInputStream *in, PacketOutputStream *out)
     if ( cp == NULL ) {
         cp = "";
     }
-    bp = gdata->property_sun_boot_class_path;
-    if ( bp == NULL ) {
-        bp = "";
-    }
     (void)outStream_writeString(out, ud);
     writePaths(out, cp);
-    writePaths(out, bp);
+    (void)outStream_writeInt(out, 0); // no bootclasspath
     return JNI_TRUE;
 }
 
@@ -890,7 +921,7 @@ releaseEvents(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-void *VirtualMachine_Cmds[] = { (void *)21
+void *VirtualMachine_Cmds[] = { (void *)22
     ,(void *)version
     ,(void *)classesForSignature
     ,(void *)allClasses
@@ -912,4 +943,5 @@ void *VirtualMachine_Cmds[] = { (void *)21
     ,(void *)setDefaultStratum
     ,(void *)allClassesWithGeneric
     ,(void *)instanceCounts
+    ,(void *)allModules
 };

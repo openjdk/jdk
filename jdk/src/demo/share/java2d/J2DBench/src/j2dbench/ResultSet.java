@@ -84,7 +84,6 @@ public class ResultSet {
         "java.util.prefs.PreferencesFactory",
         "sun.java2d.fontpath",
         "sun.boot.library.path",
-        "sun.boot.class.path",
     };
 
     /*

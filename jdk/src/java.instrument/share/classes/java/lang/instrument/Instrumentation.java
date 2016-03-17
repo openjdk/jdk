@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package java.lang.instrument;
 
-import  java.io.File;
-import  java.io.IOException;
-import  java.util.jar.JarFile;
+import java.lang.reflect.Module;
+import java.security.ProtectionDomain;
+import java.util.jar.JarFile;
 
 /*
  * Copyright 2003 Wily Technology, Inc.
@@ -74,9 +74,8 @@ public interface Instrumentation {
      * The transformer is called when classes are loaded, when they are
      * {@linkplain #redefineClasses redefined}. and if <code>canRetransform</code> is true,
      * when they are {@linkplain #retransformClasses retransformed}.
-     * See {@link java.lang.instrument.ClassFileTransformer#transform
-     * ClassFileTransformer.transform} for the order
-     * of transform calls.
+     * {@link ClassFileTransformer} defines the order of transform calls.
+     *
      * If a transformer throws
      * an exception during execution, the JVM will still call the other registered
      * transformers in order. The same transformer may be added more than once,
@@ -163,18 +162,16 @@ public interface Instrumentation {
      *    </li>
      *    <li>for each transformer that was added with <code>canRetransform</code>
      *      false, the bytes returned by
-     *      {@link java.lang.instrument.ClassFileTransformer#transform transform}
-     *      during the last class load or redefine are
+     *      {@link ClassFileTransformer#transform(Module,String,Class,ProtectionDomain,byte[])
+     *      transform} during the last class load or redefine are
      *      reused as the output of the transformation; note that this is
      *      equivalent to reapplying the previous transformation, unaltered;
-     *      except that
-     *      {@link java.lang.instrument.ClassFileTransformer#transform transform}
-     *      is not called
+     *      except that {@code transform} method is not called.
      *    </li>
      *    <li>for each transformer that was added with <code>canRetransform</code>
      *      true, the
-     *      {@link java.lang.instrument.ClassFileTransformer#transform transform}
-     *      method is called in these transformers
+     *      {@link ClassFileTransformer#transform(Module,String,Class,ProtectionDomain,byte[])
+     *      transform} method is called in these transformers
      *    </li>
      *    <li>the transformed class file bytes are installed as the new
      *      definition of the class
@@ -182,10 +179,9 @@ public interface Instrumentation {
      *  </ul>
      * <P>
      *
-     * The order of transformation is described in the
-     * {@link java.lang.instrument.ClassFileTransformer#transform transform} method.
-     * This same order is used in the automatic reapplication of retransformation
-     * incapable transforms.
+     * The order of transformation is described in {@link ClassFileTransformer}.
+     * This same order is used in the automatic reapplication of
+     * retransformation incapable transforms.
      * <P>
      *
      * The initial class file bytes represent the bytes passed to
@@ -662,4 +658,21 @@ public interface Instrumentation {
      */
     void
     setNativeMethodPrefix(ClassFileTransformer transformer, String prefix);
+
+    /**
+     * Updates a module to read another module.
+     *
+     * Agents that instrument code in named modules may need to arrange for the
+     * modules to read other modules. This method is equivalent to code in {@code
+     * module} calling {@link Module#addReads(Module) addReads} to read {@code
+     * other}.
+     *
+     * @param module the module to update
+     * @param other the module to read
+     * @throws NullPointerException if either module is {@code null}
+     *
+     * @since 9
+     * @see Module#canRead(Module)
+     */
+    void addModuleReads(Module module, Module other);
 }

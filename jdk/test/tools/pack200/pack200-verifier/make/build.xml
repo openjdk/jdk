@@ -1,4 +1,4 @@
-<project name="PackageVerify" default="dist" basedir="..">
+<project name="PackageVerify" default="jar-file" basedir="..">
   <!-- Requires ant 1.6.1+ and JDK 1.7+-->
 
   <!-- set global properties for this build -->
@@ -21,30 +21,35 @@
 
   <target name="compile" depends="init">
     <!-- Compile the java code from ${src} into ${build} -->
-    <javac 
-	source="1.7"
-	srcdir="${src}"
-	destdir="${build}/classes"
-	verbose="no"
-	debug="on"
-    />
+     <javac 
+	   source="1.8"
+	   srcdir="${src}"
+	   destdir="${build}/classes"
+	   verbose="no"
+	   debug="on">
+       <compilerarg value="-XaddExports:jdk.jdeps/com.sun.tools.classfile"/>
+     </javac>
   </target>
 
   <target name="doc" depends="init, compile">
       <javadoc
-        source="1.7"
+        source="1.8"
         sourcepath="${src}"
         destdir="${api}"
       />
   </target>
-  <target name="dist" depends="compile, doc">
-    <!-- Put everything in jar file -->
+  
+  <target name="jar-file" depends="compile">
+  <!-- Put everything in jar file -->
     <jar destfile="${dist}/pack200-verifier.jar">
-	<manifest>
-	   <attribute name="Main-Class" value="sun.tools.pack.verify.Main"/>
-	</manifest>
-	<fileset dir="${classes}"/>
+      <manifest>
+        <attribute name="Main-Class" value="sun.tools.pack.verify.Main"/>
+      </manifest>
+      <fileset dir="${classes}"/>
     </jar>
+</target>
+  
+  <target name="all" depends="jar-file">
     <zip destfile="dist/pack200-verifier-doc.zip">
         <fileset dir="${api}"/>
     </zip>

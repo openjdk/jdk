@@ -33,6 +33,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Module;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -475,8 +476,9 @@ import java.util.Objects;
 
     /** Utility method to query whether this member is accessible from a given lookup class. */
     public boolean isAccessibleFrom(Class<?> lookupClass) {
+        int mode = (ALL_ACCESS|MethodHandles.Lookup.PACKAGE|MethodHandles.Lookup.MODULE);
         return VerifyAccess.isMemberAccessible(this.getDeclaringClass(), this.getDeclaringClass(), flags,
-                                               lookupClass, ALL_ACCESS|MethodHandles.Lookup.PACKAGE);
+                                               lookupClass, mode);
     }
 
     /** Initialize a query.   It is not resolved. */
@@ -851,7 +853,20 @@ import java.util.Objects;
 
     public IllegalAccessException makeAccessException(String message, Object from) {
         message = message + ": "+ toString();
-        if (from != null)  message += ", from " + from;
+        if (from != null)  {
+            if (from == MethodHandles.publicLookup()) {
+                message += ", from public Lookup";
+            } else {
+                Module m;
+                if (from instanceof MethodHandles.Lookup) {
+                    MethodHandles.Lookup lookup = (MethodHandles.Lookup)from;
+                    m = lookup.lookupClass().getModule();
+                } else {
+                    m = from.getClass().getModule();
+                }
+                message += ", from " + from + " (" + m + ")";
+            }
+        }
         return new IllegalAccessException(message);
     }
     private String message() {

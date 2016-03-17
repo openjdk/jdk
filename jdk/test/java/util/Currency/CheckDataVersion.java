@@ -29,6 +29,7 @@
 import java.io.*;
 import java.lang.reflect.*;
 import java.security.*;
+import java.util.Currency;
 
 class CheckDataVersion {
     static final String datafile = "tablea1.txt";
@@ -63,9 +64,9 @@ class CheckDataVersion {
             AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 public Object run() {
                     try {
+                        InputStream in = Currency.class.getModule().getResourceAsStream("java/util/currency.data");
                         String sep = File.separator;
-                        DataInputStream dis = new DataInputStream(
-                             new BufferedInputStream(getClass().getResourceAsStream("/java/util/currency.data")));
+                        DataInputStream dis = new DataInputStream(in);
                         int magic = dis.readInt();
                         if (magic != 0x43757244) {
                             throw new RuntimeException("The magic number in the JRE's currency data is incorrect.  Expected: 0x43757244, Got: 0x"+magic);

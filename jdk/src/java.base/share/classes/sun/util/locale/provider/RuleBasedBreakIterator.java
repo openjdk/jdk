@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@
 package sun.util.locale.provider;
 
 import java.io.BufferedInputStream;
+import java.io.InputStream;
 import java.io.IOException;
+import java.lang.reflect.Module;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -313,12 +315,12 @@ class RuleBasedBreakIterator extends BreakIterator {
     //=======================================================================
 
     /**
-     * Constructs a RuleBasedBreakIterator according to the datafile
+     * Constructs a RuleBasedBreakIterator according to the module and the datafile
      * provided.
      */
-    RuleBasedBreakIterator(String datafile)
+    RuleBasedBreakIterator(Module module, String datafile)
         throws IOException, MissingResourceException {
-        readTables(datafile);
+        readTables(module, datafile);
     }
 
     /**
@@ -369,10 +371,10 @@ class RuleBasedBreakIterator extends BreakIterator {
      *   }
      * </pre>
      */
-    protected final void readTables(String datafile)
+    protected final void readTables(Module module, String datafile)
         throws IOException, MissingResourceException {
 
-        byte[] buffer = readFile(datafile);
+        byte[] buffer = readFile(module, datafile);
 
         /* Read header_info. */
         int stateTableLength = getInt(buffer, 0);
@@ -436,21 +438,24 @@ class RuleBasedBreakIterator extends BreakIterator {
         numCategories = stateTable.length / endStates.length;
     }
 
-    protected byte[] readFile(final String datafile)
+    protected byte[] readFile(final Module module, final String datafile)
         throws IOException, MissingResourceException {
 
         BufferedInputStream is;
         try {
-            is = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<BufferedInputStream>() {
-                    @Override
-                    public BufferedInputStream run() throws Exception {
-                        return new BufferedInputStream(getClass().getResourceAsStream("/sun/text/resources/" + datafile));
-                    }
+            PrivilegedExceptionAction<BufferedInputStream> pa = () -> {
+                InputStream in = module.getResourceAsStream("sun/text/resources/" + datafile);
+                if (in == null) {
+                    // Try to load the file with "java.base" module instance. Assumption
+                    // here is that the fall back data files to be read should reside in
+                    // java.base.
+                    in = RuleBasedBreakIterator.class.getModule().getResourceAsStream("sun/text/resources/" + datafile);
                 }
-            );
-        }
-        catch (PrivilegedActionException e) {
+
+                return new BufferedInputStream(in);
+            };
+            is = AccessController.doPrivileged(pa);
+        } catch (PrivilegedActionException e) {
             throw new InternalError(e.toString(), e);
         }
 

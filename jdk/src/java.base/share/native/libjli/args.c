@@ -105,9 +105,15 @@ static void checkArg(const char *arg) {
     if (*arg++ == '-') {
         expectingNoDashArg = JNI_FALSE;
         if (JLI_StrCmp(arg, "cp") == 0 ||
-            JLI_StrCmp(arg, "classpath") == 0) {
+            JLI_StrCmp(arg, "classpath") == 0 ||
+            JLI_StrCmp(arg, "addmods") == 0 ||
+            JLI_StrCmp(arg, "limitmods") == 0 ||
+            JLI_StrCmp(arg, "mp") == 0 ||
+            JLI_StrCmp(arg, "modulepath") == 0 ||
+            JLI_StrCmp(arg, "upgrademodulepath") == 0) {
             expectingNoDashArg = JNI_TRUE;
-        } else if (JLI_StrCmp(arg, "jar") == 0) {
+        } else if (JLI_StrCmp(arg, "jar") == 0 ||
+                   JLI_StrCmp(arg, "m") == 0) {
             // This is tricky, we do expect NoDashArg
             // But that is considered main class to stop expansion
             expectingNoDashArg = JNI_FALSE;
