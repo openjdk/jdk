@@ -28,8 +28,7 @@ package jdk.vm.ci.runtime;
 public interface JVMCICompilerFactory {
 
     /**
-     * Get the name of this compiler. The compiler will be selected when the jvmci.compiler system
-     * property is equal to this name.
+     * Get the name of this compiler.
      */
     String getCompilerName();
 
