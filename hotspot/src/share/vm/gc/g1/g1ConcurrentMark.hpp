@@ -34,6 +34,8 @@ class G1CollectedHeap;
 class G1CMBitMap;
 class G1CMTask;
 class G1ConcurrentMark;
+class ConcurrentGCTimer;
+class G1OldTracer;
 typedef GenericTaskQueue<oop, mtGC>              G1CMTaskQueue;
 typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 
@@ -349,17 +351,9 @@ protected:
   // time of remark.
   volatile bool           _concurrent_marking_in_progress;
 
-  // There would be a race between ConcurrentMarkThread and VMThread(ConcurrentMark::abort())
-  // to call ConcurrentGCTimer::register_gc_concurrent_end().
-  // And this variable is used to keep track of concurrent phase.
-  volatile uint           _concurrent_phase_status;
-  // Concurrent phase is not yet started.
-  static const uint       ConcPhaseNotStarted = 0;
-  // Concurrent phase is started.
-  static const uint       ConcPhaseStarted = 1;
-  // Caller thread of ConcurrentGCTimer::register_gc_concurrent_end() is ending concurrent phase.
-  // So other thread should wait until the status to be changed to ConcPhaseNotStarted.
-  static const uint       ConcPhaseStopping = 2;
+  ConcurrentGCTimer*      _gc_timer_cm;
+
+  G1OldTracer*            _gc_tracer_cm;
 
   // All of these times are in ms
   NumberSeq _init_times;
@@ -530,10 +524,8 @@ public:
     _concurrent_marking_in_progress = false;
   }
 
-  void register_concurrent_phase_start(const char* title);
-  void register_concurrent_phase_end();
-  // Ends both concurrent phase and timer.
-  void register_concurrent_gc_end_and_stop_timer();
+  void concurrent_cycle_start();
+  void concurrent_cycle_end();
 
   void update_accum_task_vtime(int i, double vtime) {
     _accum_task_vtime[i] += vtime;
@@ -734,6 +726,9 @@ public:
   bool completed_initialization() const {
     return _completed_initialization;
   }
+
+  ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
+  G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }
 
 protected:
   // Clear all the per-task bitmaps and arrays used to store the
