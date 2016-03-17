@@ -759,7 +759,6 @@ class SpaceManager : public CHeapObj<mtClass> {
 
   void verify();
   void verify_chunk_size(Metachunk* chunk);
-  NOT_PRODUCT(void mangle_freed_chunks();)
 #ifdef ASSERT
   void verify_allocated_blocks_words();
 #endif
@@ -2518,20 +2517,6 @@ void SpaceManager::dump(outputStream* const out) const {
                 " free " SIZE_FORMAT " capacity " SIZE_FORMAT
                 " waste " SIZE_FORMAT, curr_total, used, free, capacity, waste);
 }
-
-#ifndef PRODUCT
-void SpaceManager::mangle_freed_chunks() {
-  for (ChunkIndex index = ZeroIndex;
-       index < NumberOfInUseLists;
-       index = next_chunk_index(index)) {
-    for (Metachunk* curr = chunks_in_use(index);
-         curr != NULL;
-         curr = curr->next()) {
-      curr->mangle();
-    }
-  }
-}
-#endif // PRODUCT
 
 // MetaspaceAux
 
