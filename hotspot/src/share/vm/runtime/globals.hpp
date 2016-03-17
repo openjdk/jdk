@@ -3245,7 +3245,8 @@ public:
           range(0, max_uintx)                                               \
                                                                             \
   product_pd(size_t, MetaspaceSize,                                         \
-          "Initial size of Metaspaces (in bytes)")                          \
+          "Initial threshold (in bytes) at which a garbage collection "     \
+          "is done to reduce Metaspace usage")                              \
           constraint(MetaspaceSizeConstraintFunc,AfterErgo)                 \
                                                                             \
   product(size_t, MaxMetaspaceSize, max_uintx,                              \
