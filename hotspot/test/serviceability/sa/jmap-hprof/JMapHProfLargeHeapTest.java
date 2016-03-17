@@ -95,7 +95,7 @@ public class JMapHProfLargeHeapTest {
             String expectedFormat) throws Exception, IOException,
             InterruptedException, FileNotFoundException {
         ProcessBuilder procBuilder = ProcessTools.createJavaProcessBuilder(
-                vmArgs, "JMapHProfLargeHeapProc", String.valueOf(heapSize));
+                "-XaddExports:java.management/sun.management=ALL-UNNAMED", vmArgs, "JMapHProfLargeHeapProc", String.valueOf(heapSize));
         procBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         Process largeHeapProc = procBuilder.start();
 

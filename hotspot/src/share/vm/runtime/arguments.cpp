@@ -94,6 +94,9 @@ const char*  Arguments::_java_vendor_url_bug    = DEFAULT_VENDOR_URL_BUG;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 int    Arguments::_sun_java_launcher_pid        = -1;
 bool   Arguments::_sun_java_launcher_is_altjvm  = false;
+int    Arguments::_patch_dirs_count          = 0;
+char** Arguments::_patch_dirs                = NULL;
+int    Arguments::_bootclassloader_append_index = -1;
 
 // These parameters are reset in method parse_vm_init_args()
 bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
@@ -117,7 +120,9 @@ SystemProperty *Arguments::_sun_boot_library_path = NULL;
 SystemProperty *Arguments::_java_library_path = NULL;
 SystemProperty *Arguments::_java_home = NULL;
 SystemProperty *Arguments::_java_class_path = NULL;
-SystemProperty *Arguments::_sun_boot_class_path = NULL;
+SystemProperty *Arguments::_jdk_boot_class_path_append = NULL;
+
+PathString *Arguments::_system_boot_class_path = NULL;
 
 char* Arguments::_ext_dirs = NULL;
 
@@ -195,6 +200,12 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
 
 // Initialize system properties key and value.
 void Arguments::init_system_properties() {
+
+  // Set up _system_boot_class_path which is not a property but
+  // relies heavily on argument processing and the jdk.boot.class.path.append
+  // property. It is used to store the underlying system boot class path.
+  _system_boot_class_path = new PathString(NULL);
+
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
                                                                  "Java Virtual Machine Specification",  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.version", VM_Version::vm_release(),  false));
@@ -208,16 +219,19 @@ void Arguments::init_system_properties() {
   _sun_boot_library_path = new SystemProperty("sun.boot.library.path", NULL,  true);
   _java_library_path = new SystemProperty("java.library.path", NULL,  true);
   _java_home =  new SystemProperty("java.home", NULL,  true);
-  _sun_boot_class_path = new SystemProperty("sun.boot.class.path", NULL,  true);
-
   _java_class_path = new SystemProperty("java.class.path", "",  true);
+  // jdk.boot.class.path.append is a non-writeable, internal property.
+  // It can only be set by either:
+  //    - -Xbootclasspath/a:
+  //    - AddToBootstrapClassLoaderSearch during JVMTI OnLoad phase
+  _jdk_boot_class_path_append = new SystemProperty("jdk.boot.class.path.append", "", false, true);
 
   // Add to System Property list.
   PropertyList_add(&_system_properties, _sun_boot_library_path);
   PropertyList_add(&_system_properties, _java_library_path);
   PropertyList_add(&_system_properties, _java_home);
   PropertyList_add(&_system_properties, _java_class_path);
-  PropertyList_add(&_system_properties, _sun_boot_class_path);
+  PropertyList_add(&_system_properties, _jdk_boot_class_path_append);
 
   // Set OS specific system properties values
   os::init_system_properties_values();
@@ -542,19 +556,19 @@ static bool verify_special_jvm_flags() {
 }
 #endif
 
-// Constructs the system class path (aka boot class path) from the following
-// components, in order:
+// Constructs the system boot class path from the following components, in order:
 //
-//     prefix           // from -Xbootclasspath/p:...
-//     base             // from os::get_system_properties() or -Xbootclasspath=
+//     prefix           // from -Xpatch:...
+//     base             // from os::get_system_properties()
 //     suffix           // from -Xbootclasspath/a:...
 //
 // This could be AllStatic, but it isn't needed after argument processing is
-// complete.
-class SysClassPath: public StackObj {
+// complete. After argument processing, the combined components are copied
+// to Arguments::_system_boot_class_path via a call to Arguments::set_sysclasspath.
+class ArgumentBootClassPath: public StackObj {
 public:
-  SysClassPath(const char* base);
-  ~SysClassPath();
+  ArgumentBootClassPath(const char* base);
+  ~ArgumentBootClassPath();
 
   inline void set_base(const char* base);
   inline void add_prefix(const char* prefix);
@@ -562,9 +576,9 @@ public:
   inline void add_suffix(const char* suffix);
   inline void reset_path(const char* base);
 
-  inline const char* get_base()     const { return _items[_scp_base]; }
-  inline const char* get_prefix()   const { return _items[_scp_prefix]; }
-  inline const char* get_suffix()   const { return _items[_scp_suffix]; }
+  inline const char* get_base()     const { return _items[_bcp_base]; }
+  inline const char* get_prefix()   const { return _items[_bcp_prefix]; }
+  inline const char* get_suffix()   const { return _items[_bcp_suffix]; }
 
   // Combine all the components into a single c-heap-allocated string; caller
   // must free the string if/when no longer needed.
@@ -580,55 +594,55 @@ private:
   // Array indices for the items that make up the sysclasspath.  All except the
   // base are allocated in the C heap and freed by this class.
   enum {
-    _scp_prefix,        // from -Xbootclasspath/p:...
-    _scp_base,          // the default sysclasspath
-    _scp_suffix,        // from -Xbootclasspath/a:...
-    _scp_nitems         // the number of items, must be last.
+    _bcp_prefix,        // was -Xpatch:...
+    _bcp_base,          // the default system boot class path
+    _bcp_suffix,        // from -Xbootclasspath/a:...
+    _bcp_nitems         // the number of items, must be last.
   };
 
-  const char* _items[_scp_nitems];
+  const char* _items[_bcp_nitems];
 };
 
-SysClassPath::SysClassPath(const char* base) {
+ArgumentBootClassPath::ArgumentBootClassPath(const char* base) {
   memset(_items, 0, sizeof(_items));
-  _items[_scp_base] = base;
+  _items[_bcp_base] = base;
 }
 
-SysClassPath::~SysClassPath() {
+ArgumentBootClassPath::~ArgumentBootClassPath() {
   // Free everything except the base.
-  for (int i = 0; i < _scp_nitems; ++i) {
-    if (i != _scp_base) reset_item_at(i);
+  for (int i = 0; i < _bcp_nitems; ++i) {
+    if (i != _bcp_base) reset_item_at(i);
   }
 }
 
-inline void SysClassPath::set_base(const char* base) {
-  _items[_scp_base] = base;
+inline void ArgumentBootClassPath::set_base(const char* base) {
+  _items[_bcp_base] = base;
 }
 
-inline void SysClassPath::add_prefix(const char* prefix) {
-  _items[_scp_prefix] = add_to_path(_items[_scp_prefix], prefix, true);
+inline void ArgumentBootClassPath::add_prefix(const char* prefix) {
+  _items[_bcp_prefix] = add_to_path(_items[_bcp_prefix], prefix, true);
 }
 
-inline void SysClassPath::add_suffix_to_prefix(const char* suffix) {
-  _items[_scp_prefix] = add_to_path(_items[_scp_prefix], suffix, false);
+inline void ArgumentBootClassPath::add_suffix_to_prefix(const char* suffix) {
+  _items[_bcp_prefix] = add_to_path(_items[_bcp_prefix], suffix, false);
 }
 
-inline void SysClassPath::add_suffix(const char* suffix) {
-  _items[_scp_suffix] = add_to_path(_items[_scp_suffix], suffix, false);
+inline void ArgumentBootClassPath::add_suffix(const char* suffix) {
+  _items[_bcp_suffix] = add_to_path(_items[_bcp_suffix], suffix, false);
 }
 
-inline void SysClassPath::reset_item_at(int index) {
-  assert(index < _scp_nitems && index != _scp_base, "just checking");
+inline void ArgumentBootClassPath::reset_item_at(int index) {
+  assert(index < _bcp_nitems && index != _bcp_base, "just checking");
   if (_items[index] != NULL) {
     FREE_C_HEAP_ARRAY(char, _items[index]);
     _items[index] = NULL;
   }
 }
 
-inline void SysClassPath::reset_path(const char* base) {
+inline void ArgumentBootClassPath::reset_path(const char* base) {
   // Clear the prefix and suffix.
-  reset_item_at(_scp_prefix);
-  reset_item_at(_scp_suffix);
+  reset_item_at(_bcp_prefix);
+  reset_item_at(_bcp_suffix);
   set_base(base);
 }
 
@@ -637,17 +651,21 @@ inline void SysClassPath::reset_path(const char* base) {
 
 // Combine the bootclasspath elements, some of which may be null, into a single
 // c-heap-allocated string.
-char* SysClassPath::combined_path() {
-  assert(_items[_scp_base] != NULL, "empty default sysclasspath");
+char* ArgumentBootClassPath::combined_path() {
+  assert(_items[_bcp_base] != NULL, "empty default sysclasspath");
 
-  size_t lengths[_scp_nitems];
+  size_t lengths[_bcp_nitems];
   size_t total_len = 0;
 
   const char separator = *os::path_separator();
 
   // Get the lengths.
   int i;
-  for (i = 0; i < _scp_nitems; ++i) {
+  for (i = 0; i < _bcp_nitems; ++i) {
+    if (i == _bcp_suffix) {
+      // Record index of boot loader's append path.
+      Arguments::set_bootclassloader_append_index((int)total_len);
+    }
     if (_items[i] != NULL) {
       lengths[i] = strlen(_items[i]);
       // Include space for the separator char (or a NULL for the last item).
@@ -659,7 +677,7 @@ char* SysClassPath::combined_path() {
   // Copy the _items to a single string.
   char* cp = NEW_C_HEAP_ARRAY(char, total_len, mtInternal);
   char* cp_tmp = cp;
-  for (i = 0; i < _scp_nitems; ++i) {
+  for (i = 0; i < _bcp_nitems; ++i) {
     if (_items[i] != NULL) {
       memcpy(cp_tmp, _items[i], lengths[i]);
       cp_tmp += lengths[i];
@@ -672,7 +690,7 @@ char* SysClassPath::combined_path() {
 
 // Note:  path must be c-heap-allocated (or NULL); it is freed if non-null.
 char*
-SysClassPath::add_to_path(const char* path, const char* str, bool prepend) {
+ArgumentBootClassPath::add_to_path(const char* path, const char* str, bool prepend) {
   char *cp;
 
   assert(str != NULL, "just checking");
@@ -706,7 +724,7 @@ SysClassPath::add_to_path(const char* path, const char* str, bool prepend) {
 
 // Scan the directory and append any jar or zip files found to path.
 // Note:  path must be c-heap-allocated (or NULL); it is freed if non-null.
-char* SysClassPath::add_jars_to_path(char* path, const char* directory) {
+char* ArgumentBootClassPath::add_jars_to_path(char* path, const char* directory) {
   DIR* dir = os::opendir(directory);
   if (dir == NULL) return path;
 
@@ -1374,6 +1392,54 @@ bool Arguments::add_property(const char* prop) {
 
   return true;
 }
+
+// sets or adds a module name to the jdk.launcher.addmods property
+bool Arguments::append_to_addmods_property(const char* module_name) {
+  const char* key = "jdk.launcher.addmods";
+  const char* old_value = Arguments::get_property(key);
+  size_t buf_len = strlen(key) + strlen(module_name) + 2;
+  if (old_value != NULL) {
+    buf_len += strlen(old_value) + 1;
+  }
+  char* new_value = AllocateHeap(buf_len, mtInternal);
+  if (new_value == NULL) {
+    return false;
+  }
+  if (old_value == NULL) {
+    jio_snprintf(new_value, buf_len, "%s=%s", key, module_name);
+  } else {
+    jio_snprintf(new_value, buf_len, "%s=%s,%s", key, old_value, module_name);
+  }
+  bool added = add_property(new_value);
+  FreeHeap(new_value);
+  return added;
+}
+
+#if INCLUDE_CDS
+void Arguments::check_unsupported_dumping_properties() {
+  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
+  const char* unsupported_properties[5] = { "jdk.module.main",
+                                           "jdk.module.path",
+                                           "jdk.upgrade.module.path",
+                                           "jdk.launcher.addmods",
+                                           "jdk.launcher.limitmods" };
+  const char* unsupported_options[5] = { "-m",
+                                        "-modulepath",
+                                        "-upgrademodulepath",
+                                        "-addmods",
+                                        "-limitmods" };
+  SystemProperty* sp = system_properties();
+  while (sp != NULL) {
+    for (int i = 0; i < 5; i++) {
+      if (strcmp(sp->key(), unsupported_properties[i]) == 0) {
+          vm_exit_during_initialization(
+            "Cannot use the following option when dumping the shared archive", unsupported_options[i]);
+      }
+    }
+    sp = sp->next();
+  }
+}
+#endif
 
 //===========================================================================================================
 // Setting int/mixed/comp mode flags
@@ -2553,8 +2619,8 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
                                    const JavaVMInitArgs *java_options_args,
                                    const JavaVMInitArgs *cmd_line_args) {
   // For components of the system classpath.
-  SysClassPath scp(Arguments::get_sysclasspath());
-  bool scp_assembly_required = false;
+  ArgumentBootClassPath bcp(Arguments::get_sysclasspath());
+  bool bcp_assembly_required = false;
 
   // Save default settings for some mode flags
   Arguments::_AlwaysCompileLoopMethods = AlwaysCompileLoopMethods;
@@ -2572,13 +2638,13 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
   // Parse args structure generated from JAVA_TOOL_OPTIONS environment
   // variable (if present).
   jint result = parse_each_vm_init_arg(
-      java_tool_options_args, &scp, &scp_assembly_required, Flag::ENVIRON_VAR);
+      java_tool_options_args, &bcp, &bcp_assembly_required, Flag::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }
 
   // Parse args structure generated from the command line flags.
-  result = parse_each_vm_init_arg(cmd_line_args, &scp, &scp_assembly_required,
+  result = parse_each_vm_init_arg(cmd_line_args, &bcp, &bcp_assembly_required,
                                   Flag::COMMAND_LINE);
   if (result != JNI_OK) {
     return result;
@@ -2587,13 +2653,13 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
   // Parse args structure generated from the _JAVA_OPTIONS environment
   // variable (if present) (mimics classic VM)
   result = parse_each_vm_init_arg(
-      java_options_args, &scp, &scp_assembly_required, Flag::ENVIRON_VAR);
+      java_options_args, &bcp, &bcp_assembly_required, Flag::ENVIRON_VAR);
   if (result != JNI_OK) {
     return result;
   }
 
   // Do final processing now that all arguments have been parsed
-  result = finalize_vm_init_args(&scp, scp_assembly_required);
+  result = finalize_vm_init_args(&bcp, bcp_assembly_required);
   if (result != JNI_OK) {
     return result;
   }
@@ -2647,8 +2713,8 @@ bool valid_jdwp_agent(char *name, bool is_path) {
 }
 
 jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
-                                       SysClassPath* scp_p,
-                                       bool* scp_assembly_required_p,
+                                       ArgumentBootClassPath* bcp_p,
+                                       bool* bcp_assembly_required_p,
                                        Flag::Flags origin) {
   // For match_option to return remaining or value part of option string
   const char* tail;
@@ -2700,16 +2766,18 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       JavaAssertions::setSystemClassDefault(enable);
     // -bootclasspath:
     } else if (match_option(option, "-Xbootclasspath:", &tail)) {
-      scp_p->reset_path(tail);
-      *scp_assembly_required_p = true;
+        jio_fprintf(defaultStream::output_stream(),
+          "-Xbootclasspath is no longer a supported option.\n");
+        return JNI_EINVAL;
     // -bootclasspath/a:
     } else if (match_option(option, "-Xbootclasspath/a:", &tail)) {
-      scp_p->add_suffix(tail);
-      *scp_assembly_required_p = true;
+      bcp_p->add_suffix(tail);
+      *bcp_assembly_required_p = true;
     // -bootclasspath/p:
     } else if (match_option(option, "-Xbootclasspath/p:", &tail)) {
-      scp_p->add_prefix(tail);
-      *scp_assembly_required_p = true;
+        jio_fprintf(defaultStream::output_stream(),
+          "-Xbootclasspath/p is no longer a supported option.\n");
+        return JNI_EINVAL;
     // -Xrun
     } else if (match_option(option, "-Xrun", &tail)) {
       if (tail != NULL) {
@@ -2761,9 +2829,14 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         "Instrumentation agents are not supported in this VM\n");
       return JNI_ERR;
 #else
-      if(tail != NULL) {
+      if (tail != NULL) {
         char *options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(tail) + 1, mtInternal), tail);
         add_init_agent("instrument", options, false);
+        // java agents need module java.instrument. Also -addmods ALL-SYSTEM because
+        // the java agent is in the unmamed module of the application class loader
+        if (!Arguments::append_to_addmods_property("java.instrument,ALL-SYSTEM")) {
+          return JNI_ENOMEM;
+        }
       }
 #endif // !INCLUDE_JVMTI
     // -Xnoclassgc
@@ -3029,11 +3102,49 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         if (FLAG_SET_CMDLINE(bool, ManagementServer, true) != Flag::SUCCESS) {
           return JNI_EINVAL;
         }
+        // management agent in module java.management
+        if (!Arguments::append_to_addmods_property("java.management")) {
+          return JNI_ENOMEM;
+        }
 #else
         jio_fprintf(defaultStream::output_stream(),
           "-Dcom.sun.management is not supported in this VM.\n");
         return JNI_ERR;
 #endif
+      }
+      if (match_option(option, "-Djdk.launcher.patch.0=", &tail)) {
+        // -Xpatch
+        int dir_count;
+        char** patch_dirs = os::split_path(tail, &dir_count);
+        if (patch_dirs == NULL) {
+          jio_fprintf(defaultStream::output_stream(),
+            "Bad value for -Xpatch.\n");
+          return JNI_ERR;
+        }
+        set_patch_dirs(patch_dirs);
+        set_patch_dirs_count(dir_count);
+
+        // Create a path for each patch dir consisting of dir/java.base.
+        char file_sep = os::file_separator()[0];
+        for (int x = 0; x < dir_count; x++) {
+          // Really shouldn't be NULL, but check can't hurt
+          if (patch_dirs[x] != NULL) {
+            size_t len = strlen(patch_dirs[x]);
+            if (len != 0) { // Ignore empty strings.
+              len += 11; // file_sep + "java.base" + null terminator.
+              char* dir = NEW_C_HEAP_ARRAY(char, len, mtInternal);
+              jio_snprintf(dir, len, "%s%cjava.base", patch_dirs[x], file_sep);
+
+              // See if Xpatch module path exists.
+              struct stat st;
+              if ((os::stat(dir, &st) == 0)) {
+                bcp_p->add_prefix(dir);
+                *bcp_assembly_required_p = true;
+              }
+              FREE_C_HEAP_ARRAY(char, dir);
+            }
+          }
+        }
       }
     // -Xint
     } else if (match_option(option, "-Xint")) {
@@ -3294,6 +3405,18 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
   return JNI_OK;
 }
 
+// Set property jdk.boot.class.path.append to the contents of the bootclasspath
+// that follows either the jimage file or exploded module directories.  The
+// property will contain -Xbootclasspath/a and/or jvmti appended additions.
+void Arguments::set_jdkbootclasspath_append() {
+  char *sysclasspath = get_sysclasspath();
+  assert(sysclasspath != NULL, "NULL sysclasspath");
+  int bcp_a_idx = bootclassloader_append_index();
+  if (bcp_a_idx != -1 && bcp_a_idx < (int)strlen(sysclasspath)) {
+    _jdk_boot_class_path_append->set_value(sysclasspath + bcp_a_idx);
+  }
+}
+
 // Remove all empty paths from the app classpath (if IgnoreEmptyClassPaths is enabled)
 //
 // This is necessary because some apps like to specify classpath like -cp foo.jar:${XYZ}:bar.jar
@@ -3329,7 +3452,7 @@ void Arguments::fix_appclasspath() {
       // Keep replacing ";;" -> ";" until we have no more ";;" (windows)
     }
 
-    _java_class_path->set_value(copy);
+    _java_class_path->set_writeable_value(copy);
     FreeHeap(copy); // a copy was made by set_value, so don't need this anymore
   }
 }
@@ -3380,7 +3503,7 @@ static int check_non_empty_dirs(const char* path) {
   return nonEmptyDirs;
 }
 
-jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_required) {
+jint Arguments::finalize_vm_init_args(ArgumentBootClassPath* bcp_p, bool bcp_assembly_required) {
   // check if the default lib/endorsed directory exists; if so, error
   char path[JVM_MAXPATHLEN];
   const char* fileSep = os::file_separator();
@@ -3416,11 +3539,16 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     return JNI_ERR;
   }
 
-  if (scp_assembly_required) {
+  if (bcp_assembly_required) {
     // Assemble the bootclasspath elements into the final path.
-    char *combined_path = scp_p->combined_path();
+    char *combined_path = bcp_p->combined_path();
     Arguments::set_sysclasspath(combined_path);
     FREE_C_HEAP_ARRAY(char, combined_path);
+  } else {
+    // At this point in sysclasspath processing anything
+    // added would be considered in the boot loader's append path.
+    // Record this index, including +1 for the file separator character.
+    Arguments::set_bootclassloader_append_index(((int)strlen(Arguments::get_sysclasspath()))+1);
   }
 
   // This must be done after all arguments have been processed.
@@ -3766,6 +3894,11 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
 
 void Arguments::set_shared_spaces_flags() {
   if (DumpSharedSpaces) {
+    if (Arguments::patch_dirs() != NULL) {
+      vm_exit_during_initialization(
+        "Cannot use the following option when dumping the shared archive", "-Xpatch");
+    }
+
     if (RequireSharedSpaces) {
       warning("Cannot dump shared archive while using shared archive");
     }
@@ -4455,7 +4588,7 @@ void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, c
       if (append) {
         prop->append_value(v);
       } else {
-        prop->set_value(v);
+        prop->set_writeable_value(v);
       }
       return;
     }

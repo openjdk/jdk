@@ -27,14 +27,20 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library /testlibrary /test/lib /
- * @compile ../common/CompilerToVMHelper.java
+ * @library ../common/patches
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.org.objectweb.asm.tree
+ *          jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.code
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @build compiler.jvmci.compilerToVM.DoNotInlineOrCompileTest
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- *                              jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *      compiler.jvmci.compilerToVM.DoNotInlineOrCompileTest
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   compiler.jvmci.compilerToVM.DoNotInlineOrCompileTest
  */
 
 package compiler.jvmci.compilerToVM;
