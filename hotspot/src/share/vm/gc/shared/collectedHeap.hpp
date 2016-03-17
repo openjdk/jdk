@@ -438,6 +438,12 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // remembered set.
   virtual void flush_deferred_store_barrier(JavaThread* thread);
 
+  // Should return true if the reference pending list lock is
+  // acquired from non-Java threads, such as a concurrent GC thread.
+  virtual bool needs_reference_pending_list_locker_thread() const {
+    return false;
+  }
+
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the
   // "CollectedHeap" supports.

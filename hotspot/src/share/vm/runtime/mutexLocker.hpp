@@ -65,7 +65,6 @@ extern Monitor* Threads_lock;                    // a lock on the Threads table 
 extern Monitor* CGC_lock;                        // used for coordination between
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
-extern Monitor* SLT_lock;                        // used in CMS GC for acquiring PLL
 extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
 extern Mutex*   SATB_Q_FL_lock;                  // Protects SATB Q
                                                  // buffer free list.

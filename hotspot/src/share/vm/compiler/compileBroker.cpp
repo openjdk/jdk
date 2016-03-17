@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
+#include "gc/shared/referencePendingListLocker.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/methodData.hpp"
@@ -904,7 +905,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
   // the pending list lock or a 3-way deadlock may occur
   // between the reference handler thread, a GC (instigated
   // by a compiler thread), and compiled method registration.
-  if (InstanceRefKlass::owns_pending_list_lock(JavaThread::current())) {
+  if (ReferencePendingListLocker::is_locked_by_self()) {
     return;
   }
 
@@ -1309,7 +1310,7 @@ uint CompileBroker::assign_compile_id_unlocked(Thread* thread, const methodHandl
  * has been fulfilled?
  */
 bool CompileBroker::is_compile_blocking() {
-  assert(!InstanceRefKlass::owns_pending_list_lock(JavaThread::current()), "possible deadlock");
+  assert(!ReferencePendingListLocker::is_locked_by_self(), "possible deadlock");
   return !BackgroundCompilation;
 }
 

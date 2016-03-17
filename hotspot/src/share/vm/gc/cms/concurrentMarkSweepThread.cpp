@@ -28,7 +28,7 @@
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "oops/instanceRefKlass.hpp"
+#include "gc/shared/referencePendingListLocker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -45,11 +45,6 @@ CMSCollector* ConcurrentMarkSweepThread::_collector         = NULL;
 int  ConcurrentMarkSweepThread::_CMS_flag                   = CMS_nil;
 
 volatile jint ConcurrentMarkSweepThread::_pending_yields    = 0;
-
-SurrogateLockerThread* ConcurrentMarkSweepThread::_slt      = NULL;
-SurrogateLockerThread::SLT_msg_type
-     ConcurrentMarkSweepThread::_sltBuffer = SurrogateLockerThread::empty;
-Monitor* ConcurrentMarkSweepThread::_sltMonitor             = NULL;
 
 ConcurrentMarkSweepThread::ConcurrentMarkSweepThread(CMSCollector* collector)
   : ConcurrentGCThread() {
@@ -73,8 +68,6 @@ ConcurrentMarkSweepThread::ConcurrentMarkSweepThread(CMSCollector* collector)
   // That won't happen on Solaris for various reasons,
   // but may well happen on non-Solaris platforms.
   create_and_start(UseCriticalCMSThreadPriority ? CriticalPriority : NearMaxPriority);
-
-  _sltMonitor = SLT_lock;
 }
 
 void ConcurrentMarkSweepThread::run_service() {
@@ -94,7 +87,7 @@ void ConcurrentMarkSweepThread::run_service() {
     // We cannot start the SLT thread ourselves since we need
     // to be a JavaThread to do so.
     CMSLoopCountWarn loopY("CMS::run", "waiting for SLT installation", 2);
-    while (_slt == NULL && !should_terminate()) {
+    while (!ReferencePendingListLocker::is_initialized() && !should_terminate()) {
       CGC_lock->wait(true, 200);
       loopY.tick();
     }
@@ -336,16 +329,4 @@ void ConcurrentMarkSweepThread::sleepBeforeNextCycle() {
     // .. collection criterion not yet met, let's go back
     // and wait some more
   }
-}
-
-// Note: this method, although exported by the ConcurrentMarkSweepThread,
-// which is a non-JavaThread, can only be called by a JavaThread.
-// Currently this is done at vm creation time (post-vm-init) by the
-// main/Primordial (Java)Thread.
-// XXX Consider changing this in the future to allow the CMS thread
-// itself to create this thread?
-void ConcurrentMarkSweepThread::makeSurrogateLockerThread(TRAPS) {
-  assert(UseConcMarkSweepGC, "SLT thread needed only for CMS GC");
-  assert(_slt == NULL, "SLT already created");
-  _slt = SurrogateLockerThread::make(THREAD);
 }

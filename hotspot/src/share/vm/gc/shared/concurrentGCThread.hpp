@@ -70,37 +70,4 @@ public:
   bool has_terminated()   { return _has_terminated; }
 };
 
-// The SurrogateLockerThread is used by concurrent GC threads for
-// manipulating Java monitors, in particular, currently for
-// manipulating the pending_list_lock. XXX
-class SurrogateLockerThread: public JavaThread {
-  friend class VMStructs;
- public:
-  enum SLT_msg_type {
-    empty = 0,           // no message
-    acquirePLL,          // acquire pending list lock
-    releaseAndNotifyPLL  // notify and release pending list lock
-  };
- private:
-  // the following are shared with the CMSThread
-  SLT_msg_type  _buffer;  // communication buffer
-  Monitor       _monitor; // monitor controlling buffer
-  BasicLock     _basicLock; // used for PLL locking
-
- public:
-  static SurrogateLockerThread* make(TRAPS);
-
-  // Terminate VM with error message that SLT needed but not yet created.
-  static void report_missing_slt();
-
-  SurrogateLockerThread();
-
-  bool is_hidden_from_external_view() const     { return true; }
-
-  void loop(); // main method
-
-  void manipulatePLL(SLT_msg_type msg);
-
-};
-
 #endif // SHARE_VM_GC_SHARED_CONCURRENTGCTHREAD_HPP
