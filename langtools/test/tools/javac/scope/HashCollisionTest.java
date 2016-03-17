@@ -67,7 +67,7 @@ public class HashCollisionTest {
         types = Types.instance(context);
 
         // determine hashMask for an empty scope
-        Scope emptyScope = WriteableScope.create(symtab.unnamedPackage); // any owner will do
+        Scope emptyScope = WriteableScope.create(symtab.unnamedModule.unnamedPackage); // any owner will do
         Field field = emptyScope.getClass().getDeclaredField("hashMask");
         field.setAccessible(true);
         scopeHashMask = field.getInt(emptyScope);
@@ -105,7 +105,7 @@ public class HashCollisionTest {
          */
 
         // 3. Create a nested class named Entry
-        ClassSymbol cc = createClass(names.fromString("C"), symtab.unnamedPackage);
+        ClassSymbol cc = createClass(names.fromString("C"), symtab.unnamedModule.unnamedPackage);
         ClassSymbol ce = createClass(entry, cc);
 
         // 4. Create a package containing a nested class using the name from 2
@@ -174,7 +174,7 @@ public class HashCollisionTest {
     ClassSymbol createClass(Name name, Symbol owner) {
         ClassSymbol sym = new ClassSymbol(0, name, owner);
         sym.members_field = WriteableScope.create(sym);
-        if (owner != symtab.unnamedPackage)
+        if (owner != symtab.unnamedModule.unnamedPackage)
             owner.members().enter(sym);
         return sym;
     }

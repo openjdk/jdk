@@ -107,6 +107,7 @@ public class Flags {
     public static final int ACC_SUPER    = 0x0020;
     public static final int ACC_BRIDGE   = 0x0040;
     public static final int ACC_VARARGS  = 0x0080;
+    public static final int ACC_MODULE   = 0x8000;
 
     /*****************************************
      * Internal compiler flags (no bits in the lower 16).
@@ -277,6 +278,21 @@ public class Flags {
      */
     public static final long TYPE_TRANSLATED = 1L<<50;
 
+    /**
+     * Flag to indicate class symbol is for module-info
+     */
+    public static final long MODULE = 1L<<51;
+
+    /**
+     * Flag to indicate the given ModuleSymbol is an automatic module.
+     */
+    public static final long AUTOMATIC_MODULE = 1L<<52;
+
+    /**
+     * Flag to indicate the given ModuleSymbol is a system module.
+     */
+    public static final long SYSTEM_MODULE = 1L<<53;
+
     /** Modifier masks.
      */
     public static final int
@@ -385,7 +401,8 @@ public class Flags {
         SIGNATURE_POLYMORPHIC(Flags.SIGNATURE_POLYMORPHIC),
         THROWS(Flags.THROWS),
         LAMBDA_METHOD(Flags.LAMBDA_METHOD),
-        TYPE_TRANSLATED(Flags.TYPE_TRANSLATED);
+        TYPE_TRANSLATED(Flags.TYPE_TRANSLATED),
+        MODULE(Flags.MODULE);
 
         Flag(long flag) {
             this.value = flag;

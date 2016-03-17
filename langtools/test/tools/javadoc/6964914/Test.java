@@ -48,7 +48,6 @@ public class Test {
         String[] args = {
             "-Xdoclint:none",
             "-source", "8",
-            "-bootclasspath", System.getProperty("sun.boot.class.path"),
             "-classpath", ".",
             "-package",
             new File(testSrc, path).getPath()

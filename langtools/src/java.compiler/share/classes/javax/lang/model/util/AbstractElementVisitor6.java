@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,5 +131,20 @@ public abstract class AbstractElementVisitor6<R, P> implements ElementVisitor<R,
      */
     public R visitUnknown(Element e, P p) {
         throw new UnknownElementException(e, p);
+    }
+
+    /**
+     * Visits a {@code ModuleElement} by calling {@code
+     * visitUnknown}.
+
+     * @param e  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of {@code visitUnknown}
+     *
+     * @since 9
+     */
+    @Override
+    public R visitModule(ModuleElement e, P p) {
+        return visitUnknown(e, p);
     }
 }

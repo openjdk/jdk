@@ -257,8 +257,7 @@ class ExecutionControl {
 
         String connectorName = "com.sun.jdi.CommandLineLaunch";
         String classPath = System.getProperty("java.class.path");
-        String bootclassPath = System.getProperty("sun.boot.class.path");
-        String javaArgs = "-classpath \"" + classPath + "\" -Xbootclasspath:\"" + bootclassPath + "\"";
+        String javaArgs = "-classpath " + classPath;
         Map<String, String> argumentName2Value = new HashMap<>();
         argumentName2Value.put("main", "jdk.internal.jshell.remote.RemoteAgent " + port);
         argumentName2Value.put("options", javaArgs);

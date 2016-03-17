@@ -45,14 +45,15 @@ import java.util.stream.Stream;
  *          are found within the same archive. For each testcase, compare the
  *          result obtained from jdeps with the expected result.
  * @modules jdk.jdeps/com.sun.tools.jdeps
- * @build use.indirect.DontUseUnsafe2
- * @build use.indirect.UseUnsafeIndirectly
- * @build use.indirect2.DontUseUnsafe3
- * @build use.indirect2.UseUnsafeIndirectly2
- * @build use.unsafe.DontUseUnsafe
- * @build use.unsafe.UseClassWithUnsafe
- * @build use.unsafe.UseUnsafeClass
- * @build use.unsafe.UseUnsafeClass2
+ *          java.base/sun.security.x509
+ * @build use.indirect.DontUseJdkInternal2
+ * @build use.indirect.UseJdkInternalIndirectly
+ * @build use.indirect2.DontUseJdkInternal3
+ * @build use.indirect2.UseJdkInternalIndirectly2
+ * @build use.internal.DontUseJdkInternal
+ * @build use.internal.UseClassWithJdkInternal
+ * @build use.internal.UseJdkInternalClass
+ * @build use.internal.UseJdkInternalClass2
  * @run main JdepsDependencyClosure --test:0
  * @run main JdepsDependencyClosure --test:1
  * @run main JdepsDependencyClosure --test:2
@@ -170,15 +171,15 @@ public class JdepsDependencyClosure {
         final String arcPath = System.getProperty("test.classes", "build/classes");
         final String arcName = Paths.get(arcPath).getFileName().toString();
         final String[][] classes = new String[][] {
-            {"use.indirect2.UseUnsafeIndirectly2", "use.unsafe.UseClassWithUnsafe"},
+            {"use.indirect2.UseJdkInternalIndirectly2", "use.internal.UseClassWithJdkInternal"},
         };
         final String[][] dependencies = new String[][] {
-            {"use.unsafe.UseUnsafeClass"},
+            {"use.internal.UseJdkInternalClass"},
         };
         final String[][] archives = new String[][] {
             {arcName, arcPath, arcName, arcPath},
         };
-        return TestCaseData.make("use.unsafe.UseUnsafeClass", arcPath, classes,
+        return TestCaseData.make("use.internal.UseJdkInternalClass", arcPath, classes,
                 dependencies, archives, false);
     }
 
@@ -186,15 +187,15 @@ public class JdepsDependencyClosure {
         String arcPath = System.getProperty("test.classes", "build/classes");
         String arcName = Paths.get(arcPath).getFileName().toString();
         String[][] classes = new String[][] {
-            {"use.unsafe.UseUnsafeClass", "use.unsafe.UseUnsafeClass2"}
+            {"use.internal.UseJdkInternalClass", "use.internal.UseJdkInternalClass2"}
         };
         String[][] dependencies = new String[][] {
-            {"sun.misc.Unsafe"}
+            {"sun.security.x509.X509CertInfo"}
         };
         String[][] archive = new String[][] {
             {arcName, arcPath, "JDK internal API (java.base)", "java.base"},
         };
-        return TestCaseData.make("sun.misc.Unsafe", arcPath, classes,
+        return TestCaseData.make("sun.security.x509.X509CertInfo", arcPath, classes,
                 dependencies, archive, false);
     }
 
@@ -202,18 +203,18 @@ public class JdepsDependencyClosure {
         final String arcPath = System.getProperty("test.classes", "build/classes");
         final String arcName = Paths.get(arcPath).getFileName().toString();
         final String[][] classes = new String[][] {
-            {"use.indirect2.UseUnsafeIndirectly2", "use.unsafe.UseClassWithUnsafe"},
-            {"use.indirect.UseUnsafeIndirectly"}
+            {"use.indirect2.UseJdkInternalIndirectly2", "use.internal.UseClassWithJdkInternal"},
+            {"use.indirect.UseJdkInternalIndirectly"}
         };
         final String[][] dependencies = new String[][] {
-            {"use.unsafe.UseUnsafeClass"},
-            {"use.unsafe.UseClassWithUnsafe"}
+            {"use.internal.UseJdkInternalClass"},
+            {"use.internal.UseClassWithJdkInternal"}
         };
         final String[][] archives = new String[][] {
             {arcName, arcPath, arcName, arcPath},
             {arcName, arcPath, arcName, arcPath}
         };
-        return TestCaseData.make("use.unsafe.UseUnsafeClass", arcPath, classes,
+        return TestCaseData.make("use.internal.UseJdkInternalClass", arcPath, classes,
                 dependencies, archives, true);
     }
 
@@ -222,21 +223,21 @@ public class JdepsDependencyClosure {
         final String arcPath = System.getProperty("test.classes", "build/classes");
         final String arcName = Paths.get(arcPath).getFileName().toString();
         final String[][] classes = new String[][] {
-            {"use.unsafe.UseUnsafeClass", "use.unsafe.UseUnsafeClass2"},
-            {"use.indirect2.UseUnsafeIndirectly2", "use.unsafe.UseClassWithUnsafe"},
-            {"use.indirect.UseUnsafeIndirectly"}
+            {"use.internal.UseJdkInternalClass", "use.internal.UseJdkInternalClass2"},
+            {"use.indirect2.UseJdkInternalIndirectly2", "use.internal.UseClassWithJdkInternal"},
+            {"use.indirect.UseJdkInternalIndirectly"}
         };
         final String[][] dependencies = new String[][] {
-            {"sun.misc.Unsafe"},
-            {"use.unsafe.UseUnsafeClass"},
-            {"use.unsafe.UseClassWithUnsafe"}
+            {"sun.security.x509.X509CertInfo"},
+            {"use.internal.UseJdkInternalClass"},
+            {"use.internal.UseClassWithJdkInternal"}
         };
         final String[][] archives = new String[][] {
             {arcName, arcPath, "JDK internal API (java.base)", "java.base"},
             {arcName, arcPath, arcName, arcPath},
             {arcName, arcPath, arcName, arcPath}
         };
-        return TestCaseData.make("sun.misc.Unsafe", arcPath, classes, dependencies,
+        return TestCaseData.make("sun.security.x509.X509CertInfo", arcPath, classes, dependencies,
                 archives, true);
     }
 

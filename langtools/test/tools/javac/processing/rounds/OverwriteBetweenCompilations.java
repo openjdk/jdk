@@ -32,11 +32,12 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.processing
  *          jdk.compiler/com.sun.tools.javac.util
+ *          jdk.jdeps/com.sun.tools.javap
  * @clean *
  * @build OverwriteBetweenCompilations ToolBox JavacTestingAbstractProcessor
- * @compile/ref=OverwriteBetweenCompilations_1.out -processor OverwriteBetweenCompilations -Apass=1 -parameters -XDrawDiagnostics OverwriteBetweenCompilationsSource.java
- * @compile/ref=OverwriteBetweenCompilations_2.out -processor OverwriteBetweenCompilations -Apass=2 -parameters -XDrawDiagnostics OverwriteBetweenCompilationsSource.java
- * @compile/ref=OverwriteBetweenCompilations_3.out -processor OverwriteBetweenCompilations -Apass=3 -parameters -XDrawDiagnostics OverwriteBetweenCompilationsSource.java
+ * @compile/ref=OverwriteBetweenCompilations_1.out -XDaccessInternalAPI -processor OverwriteBetweenCompilations -Apass=1 -parameters -XDrawDiagnostics OverwriteBetweenCompilationsSource.java
+ * @compile/ref=OverwriteBetweenCompilations_2.out -XDaccessInternalAPI -processor OverwriteBetweenCompilations -Apass=2 -parameters -XDrawDiagnostics OverwriteBetweenCompilationsSource.java
+ * @compile/ref=OverwriteBetweenCompilations_3.out -XDaccessInternalAPI -processor OverwriteBetweenCompilations -Apass=3 -parameters -XDrawDiagnostics OverwriteBetweenCompilationsSource.java
  */
 
 import java.io.*;

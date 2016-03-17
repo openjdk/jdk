@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,4 +143,13 @@ public interface ElementVisitor<R, P> {
      *  a visitor implementation may optionally throw this exception
      */
     R visitUnknown(Element e, P p);
+
+    /**
+     * Visits a module element.
+     * @param e  the element to visit
+     * @param p  a visitor-specified parameter
+     * @return a visitor-specified result
+     * @since 9
+     */
+    R visitModule(ModuleElement e, P p);
 }

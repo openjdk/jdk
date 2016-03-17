@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,19 @@ class AttributeVisitor<R, P> implements Attribute.Visitor<R, P> {
     public R visitCharacterRangeTable(CharacterRangeTable_attribute attr, P p) { return null; }
     public R visitCode(Code_attribute attr, P p) { return null; }
     public R visitCompilationID(CompilationID_attribute attr, P p) { return null; }
+    public R visitConcealedPackages(ConcealedPackages_attribute attr, P p) { return null; }
     public R visitConstantValue(ConstantValue_attribute attr, P p) { return null; }
     public R visitDeprecated(Deprecated_attribute attr, P p) { return null; }
     public R visitEnclosingMethod(EnclosingMethod_attribute attr, P p) { return null; }
     public R visitExceptions(Exceptions_attribute attr, P p) { return null; }
+    public R visitHashes(Hashes_attribute attr, P p) { return null; }
     public R visitInnerClasses(InnerClasses_attribute attr, P p) { return null; }
     public R visitLineNumberTable(LineNumberTable_attribute attr, P p) { return null; }
     public R visitLocalVariableTable(LocalVariableTable_attribute attr, P p) { return null; }
     public R visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr, P p) { return null; }
+    public R visitMainClass(MainClass_attribute attr, P p) { return null; }
     public R visitMethodParameters(MethodParameters_attribute attr, P p) { return null; }
+    public R visitModule(Module_attribute attr, P p) { return null; }
     public R visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr, P p) { return null; }
     public R visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr, P p) { return null; }
     public R visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, P p) { return null; }
@@ -56,4 +60,6 @@ class AttributeVisitor<R, P> implements Attribute.Visitor<R, P> {
     public R visitStackMap(StackMap_attribute attr, P p) { return null; }
     public R visitStackMapTable(StackMapTable_attribute attr, P p) { return null; }
     public R visitSynthetic(Synthetic_attribute attr, P p) { return null; }
+    public R visitTargetPlatform(TargetPlatform_attribute attr, P p) { return null; }
+    public R visitVersion(Version_attribute attr, P p) { return null; }
 }

@@ -68,10 +68,6 @@ public class Test extends Doclet {
         String thisClassName = Test.class.getName();
         File testSrc = new File(System.getProperty("test.src"));
         String[] args = {
-            "-bootclasspath",
-                System.getProperty("java.class.path")
-                + File.pathSeparator
-                + System.getProperty("sun.boot.class.path"),
             "-classpath", ".",
             "-package",
             "-overview", file.getPath(),
