@@ -3557,8 +3557,6 @@ G1PrintRegionLivenessInfoClosure::
 G1PrintRegionLivenessInfoClosure(const char* phase_name)
   : _total_used_bytes(0), _total_capacity_bytes(0),
     _total_prev_live_bytes(0), _total_next_live_bytes(0),
-    _hum_used_bytes(0), _hum_capacity_bytes(0),
-    _hum_prev_live_bytes(0), _hum_next_live_bytes(0),
     _total_remset_bytes(0), _total_strong_code_roots_bytes(0) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   MemRegion g1_reserved = g1h->g1_reserved();
@@ -3598,36 +3596,6 @@ G1PrintRegionLivenessInfoClosure(const char* phase_name)
                           "(bytes)", "(bytes)");
 }
 
-// It takes as a parameter a reference to one of the _hum_* fields, it
-// deduces the corresponding value for a region in a humongous region
-// series (either the region size, or what's left if the _hum_* field
-// is < the region size), and updates the _hum_* field accordingly.
-size_t G1PrintRegionLivenessInfoClosure::get_hum_bytes(size_t* hum_bytes) {
-  size_t bytes = 0;
-  // The > 0 check is to deal with the prev and next live bytes which
-  // could be 0.
-  if (*hum_bytes > 0) {
-    bytes = MIN2(HeapRegion::GrainBytes, *hum_bytes);
-    *hum_bytes -= bytes;
-  }
-  return bytes;
-}
-
-// It deduces the values for a region in a humongous region series
-// from the _hum_* fields and updates those accordingly. It assumes
-// that that _hum_* fields have already been set up from the "starts
-// humongous" region and we visit the regions in address order.
-void G1PrintRegionLivenessInfoClosure::get_hum_bytes(size_t* used_bytes,
-                                                     size_t* capacity_bytes,
-                                                     size_t* prev_live_bytes,
-                                                     size_t* next_live_bytes) {
-  assert(_hum_used_bytes > 0 && _hum_capacity_bytes > 0, "pre-condition");
-  *used_bytes      = get_hum_bytes(&_hum_used_bytes);
-  *capacity_bytes  = get_hum_bytes(&_hum_capacity_bytes);
-  *prev_live_bytes = get_hum_bytes(&_hum_prev_live_bytes);
-  *next_live_bytes = get_hum_bytes(&_hum_next_live_bytes);
-}
-
 bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
   const char* type       = r->get_type_str();
   HeapWord* bottom       = r->bottom();
@@ -3639,24 +3607,6 @@ bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
   double gc_eff          = r->gc_efficiency();
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t strong_code_roots_bytes = r->rem_set()->strong_code_roots_mem_size();
-
-  if (r->is_starts_humongous()) {
-    assert(_hum_used_bytes == 0 && _hum_capacity_bytes == 0 &&
-           _hum_prev_live_bytes == 0 && _hum_next_live_bytes == 0,
-           "they should have been zeroed after the last time we used them");
-    // Set up the _hum_* fields.
-    _hum_capacity_bytes  = capacity_bytes;
-    _hum_used_bytes      = used_bytes;
-    _hum_prev_live_bytes = prev_live_bytes;
-    _hum_next_live_bytes = next_live_bytes;
-    get_hum_bytes(&used_bytes, &capacity_bytes,
-                  &prev_live_bytes, &next_live_bytes);
-    end = bottom + HeapRegion::GrainWords;
-  } else if (r->is_continues_humongous()) {
-    get_hum_bytes(&used_bytes, &capacity_bytes,
-                  &prev_live_bytes, &next_live_bytes);
-    assert(end == bottom + HeapRegion::GrainWords, "invariant");
-  }
 
   _total_used_bytes      += used_bytes;
   _total_capacity_bytes  += capacity_bytes;
