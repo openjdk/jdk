@@ -997,7 +997,7 @@ public class ImageTypeSpecifier {
      * negative or greater than the largest band index.
      */
     public int getBitsPerBand(int band) {
-        if (band < 0 | band >= getNumBands()) {
+        if (band < 0 || band >= getNumBands()) {
             throw new IllegalArgumentException("band out of range!");
         }
         return sampleModel.getSampleSize(band);
