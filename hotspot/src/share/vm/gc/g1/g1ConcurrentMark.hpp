@@ -1001,18 +1001,6 @@ private:
   size_t _total_prev_live_bytes;
   size_t _total_next_live_bytes;
 
-  // These are set up when we come across a "stars humongous" region
-  // (as this is where most of this information is stored, not in the
-  // subsequent "continues humongous" regions). After that, for every
-  // region in a given humongous region series we deduce the right
-  // values for it by simply subtracting the appropriate amount from
-  // these fields. All these values should reach 0 after we've visited
-  // the last region in the series.
-  size_t _hum_used_bytes;
-  size_t _hum_capacity_bytes;
-  size_t _hum_prev_live_bytes;
-  size_t _hum_next_live_bytes;
-
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
 
@@ -1030,11 +1018,6 @@ private:
   static double bytes_to_mb(size_t val) {
     return (double) val / (double) M;
   }
-
-  // See the .cpp file.
-  size_t get_hum_bytes(size_t* hum_bytes);
-  void get_hum_bytes(size_t* used_bytes, size_t* capacity_bytes,
-                     size_t* prev_live_bytes, size_t* next_live_bytes);
 
 public:
   // The header and footer are printed in the constructor and
