@@ -1358,8 +1358,7 @@ void ClassLoader::compile_the_world() {
   EXCEPTION_MARK;
   HandleMark hm(THREAD);
   ResourceMark rm(THREAD);
-  // Make sure we don't run with background compilation
-  BackgroundCompilation = false;
+
   // Find bootstrap loader
   Handle system_class_loader (THREAD, SystemDictionary::java_system_loader());
   // Iterate over all bootstrap class path entries
