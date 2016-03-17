@@ -25,10 +25,11 @@
 
 package java.lang.ref;
 
+import jdk.internal.ref.CleanerImpl;
+
 import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
-
-import jdk.internal.ref.CleanerImpl;
+import java.util.function.Function;
 
 /**
  * {@code Cleaner} manages a set of object references and corresponding cleaning actions.
@@ -135,7 +136,12 @@ public final class Cleaner {
     final CleanerImpl impl;
 
     static {
-        CleanerImpl.setCleanerImplAccess((Cleaner c) -> c.impl);
+        CleanerImpl.setCleanerImplAccess(new Function<Cleaner, CleanerImpl>() {
+            @Override
+            public CleanerImpl apply(Cleaner cleaner) {
+                return cleaner.impl;
+            }
+        });
     }
 
     /**

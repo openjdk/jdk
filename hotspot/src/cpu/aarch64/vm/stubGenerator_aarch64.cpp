@@ -163,30 +163,20 @@ class StubGenerator: public StubCodeGenerator {
     sp_after_call_off = -26,
 
     d15_off            = -26,
-    d14_off            = -25,
     d13_off            = -24,
-    d12_off            = -23,
     d11_off            = -22,
-    d10_off            = -21,
     d9_off             = -20,
-    d8_off             = -19,
 
     r28_off            = -18,
-    r27_off            = -17,
     r26_off            = -16,
-    r25_off            = -15,
     r24_off            = -14,
-    r23_off            = -13,
     r22_off            = -12,
-    r21_off            = -11,
     r20_off            = -10,
-    r19_off            =  -9,
     call_wrapper_off   =  -8,
     result_off         =  -7,
     result_type_off    =  -6,
     method_off         =  -5,
     entry_point_off    =  -4,
-    parameters_off     =  -3,
     parameter_size_off =  -2,
     thread_off         =  -1,
     fp_f               =   0,
@@ -208,30 +198,20 @@ class StubGenerator: public StubCodeGenerator {
     const Address result_type   (rfp, result_type_off    * wordSize);
     const Address method        (rfp, method_off         * wordSize);
     const Address entry_point   (rfp, entry_point_off    * wordSize);
-    const Address parameters    (rfp, parameters_off     * wordSize);
     const Address parameter_size(rfp, parameter_size_off * wordSize);
 
     const Address thread        (rfp, thread_off         * wordSize);
 
     const Address d15_save      (rfp, d15_off * wordSize);
-    const Address d14_save      (rfp, d14_off * wordSize);
     const Address d13_save      (rfp, d13_off * wordSize);
-    const Address d12_save      (rfp, d12_off * wordSize);
     const Address d11_save      (rfp, d11_off * wordSize);
-    const Address d10_save      (rfp, d10_off * wordSize);
     const Address d9_save       (rfp, d9_off * wordSize);
-    const Address d8_save       (rfp, d8_off * wordSize);
 
     const Address r28_save      (rfp, r28_off * wordSize);
-    const Address r27_save      (rfp, r27_off * wordSize);
     const Address r26_save      (rfp, r26_off * wordSize);
-    const Address r25_save      (rfp, r25_off * wordSize);
     const Address r24_save      (rfp, r24_off * wordSize);
-    const Address r23_save      (rfp, r23_off * wordSize);
     const Address r22_save      (rfp, r22_off * wordSize);
-    const Address r21_save      (rfp, r21_off * wordSize);
     const Address r20_save      (rfp, r20_off * wordSize);
-    const Address r19_save      (rfp, r19_off * wordSize);
 
     // stub code
 
@@ -254,31 +234,20 @@ class StubGenerator: public StubCodeGenerator {
     // rthread because we want to sanity check rthread later
     __ str(c_rarg7,  thread);
     __ strw(c_rarg6, parameter_size);
-    __ str(c_rarg5,  parameters);
-    __ str(c_rarg4,  entry_point);
-    __ str(c_rarg3,  method);
-    __ str(c_rarg2,  result_type);
-    __ str(c_rarg1,  result);
-    __ str(c_rarg0,  call_wrapper);
-    __ str(r19,      r19_save);
-    __ str(r20,      r20_save);
-    __ str(r21,      r21_save);
-    __ str(r22,      r22_save);
-    __ str(r23,      r23_save);
-    __ str(r24,      r24_save);
-    __ str(r25,      r25_save);
-    __ str(r26,      r26_save);
-    __ str(r27,      r27_save);
-    __ str(r28,      r28_save);
+    __ stp(c_rarg4, c_rarg5,  entry_point);
+    __ stp(c_rarg2, c_rarg3,  result_type);
+    __ stp(c_rarg0, c_rarg1,  call_wrapper);
 
-    __ strd(v8,      d8_save);
-    __ strd(v9,      d9_save);
-    __ strd(v10,     d10_save);
-    __ strd(v11,     d11_save);
-    __ strd(v12,     d12_save);
-    __ strd(v13,     d13_save);
-    __ strd(v14,     d14_save);
-    __ strd(v15,     d15_save);
+    __ stp(r20, r19,   r20_save);
+    __ stp(r22, r21,   r22_save);
+    __ stp(r24, r23,   r24_save);
+    __ stp(r26, r25,   r26_save);
+    __ stp(r28, r27,   r28_save);
+
+    __ stpd(v9,  v8,   d9_save);
+    __ stpd(v11, v10,  d11_save);
+    __ stpd(v13, v12,  d13_save);
+    __ stpd(v15, v14,  d15_save);
 
     // install Java thread in global register now we have saved
     // whatever value it held
@@ -385,33 +354,22 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     // restore callee-save registers
-    __ ldrd(v15,      d15_save);
-    __ ldrd(v14,      d14_save);
-    __ ldrd(v13,      d13_save);
-    __ ldrd(v12,      d12_save);
-    __ ldrd(v11,      d11_save);
-    __ ldrd(v10,      d10_save);
-    __ ldrd(v9,       d9_save);
-    __ ldrd(v8,       d8_save);
+    __ ldpd(v15, v14,  d15_save);
+    __ ldpd(v13, v12,  d13_save);
+    __ ldpd(v11, v10,  d11_save);
+    __ ldpd(v9,  v8,   d9_save);
 
-    __ ldr(r28,      r28_save);
-    __ ldr(r27,      r27_save);
-    __ ldr(r26,      r26_save);
-    __ ldr(r25,      r25_save);
-    __ ldr(r24,      r24_save);
-    __ ldr(r23,      r23_save);
-    __ ldr(r22,      r22_save);
-    __ ldr(r21,      r21_save);
-    __ ldr(r20,      r20_save);
-    __ ldr(r19,      r19_save);
-    __ ldr(c_rarg0,  call_wrapper);
-    __ ldr(c_rarg1,  result);
+    __ ldp(r28, r27,   r28_save);
+    __ ldp(r26, r25,   r26_save);
+    __ ldp(r24, r23,   r24_save);
+    __ ldp(r22, r21,   r22_save);
+    __ ldp(r20, r19,   r20_save);
+
+    __ ldp(c_rarg0, c_rarg1,  call_wrapper);
     __ ldrw(c_rarg2, result_type);
     __ ldr(c_rarg3,  method);
-    __ ldr(c_rarg4,  entry_point);
-    __ ldr(c_rarg5,  parameters);
-    __ ldr(c_rarg6,  parameter_size);
-    __ ldr(c_rarg7,  thread);
+    __ ldp(c_rarg4, c_rarg5,  entry_point);
+    __ ldp(c_rarg6, c_rarg7,  parameter_size);
 
 #ifndef PRODUCT
     // tell the simulator we are about to end Java execution
@@ -771,7 +729,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // count is a count of words.
   //
-  // Precondition: count >= 2
+  // Precondition: count >= 8
   //
   // Postconditions:
   //
@@ -783,6 +741,7 @@ class StubGenerator: public StubCodeGenerator {
   void generate_copy_longs(Label &start, Register s, Register d, Register count,
                            copy_direction direction) {
     int unit = wordSize * direction;
+    int bias = (UseSIMDForMemoryOps ? 4:2) * wordSize;
 
     int offset;
     const Register t0 = r3, t1 = r4, t2 = r5, t3 = r6,
@@ -792,7 +751,7 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(rscratch1, t0, t1, t2, t3, t4, t5, t6, t7);
     assert_different_registers(s, d, count, rscratch1);
 
-    Label again, large, small;
+    Label again, drain;
     const char *stub_name;
     if (direction == copy_forwards)
       stub_name = "foward_copy_longs";
@@ -801,57 +760,35 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", stub_name);
     __ align(CodeEntryAlignment);
     __ bind(start);
-    __ cmp(count, 8);
-    __ br(Assembler::LO, small);
     if (direction == copy_forwards) {
-      __ sub(s, s, 2 * wordSize);
-      __ sub(d, d, 2 * wordSize);
-    }
-    __ subs(count, count, 16);
-    __ br(Assembler::GE, large);
-
-    // 8 <= count < 16 words.  Copy 8.
-    __ ldp(t0, t1, Address(s, 2 * unit));
-    __ ldp(t2, t3, Address(s, 4 * unit));
-    __ ldp(t4, t5, Address(s, 6 * unit));
-    __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
-
-    __ stp(t0, t1, Address(d, 2 * unit));
-    __ stp(t2, t3, Address(d, 4 * unit));
-    __ stp(t4, t5, Address(d, 6 * unit));
-    __ stp(t6, t7, Address(__ pre(d, 8 * unit)));
-
-    if (direction == copy_forwards) {
-      __ add(s, s, 2 * wordSize);
-      __ add(d, d, 2 * wordSize);
+      __ sub(s, s, bias);
+      __ sub(d, d, bias);
     }
 
+#ifdef ASSERT
+    // Make sure we are never given < 8 words
     {
-      Label L1, L2;
-      __ bind(small);
-      __ tbz(count, exact_log2(4), L1);
-      __ ldp(t0, t1, Address(__ adjust(s, 2 * unit, direction == copy_backwards)));
-      __ ldp(t2, t3, Address(__ adjust(s, 2 * unit, direction == copy_backwards)));
-      __ stp(t0, t1, Address(__ adjust(d, 2 * unit, direction == copy_backwards)));
-      __ stp(t2, t3, Address(__ adjust(d, 2 * unit, direction == copy_backwards)));
-      __ bind(L1);
-
-      __ tbz(count, 1, L2);
-      __ ldp(t0, t1, Address(__ adjust(s, 2 * unit, direction == copy_backwards)));
-      __ stp(t0, t1, Address(__ adjust(d, 2 * unit, direction == copy_backwards)));
-      __ bind(L2);
+      Label L;
+      __ cmp(count, 8);
+      __ br(Assembler::GE, L);
+      __ stop("genrate_copy_longs called with < 8 words");
+      __ bind(L);
     }
-
-    __ ret(lr);
-
-    __ align(CodeEntryAlignment);
-    __ bind(large);
+#endif
 
     // Fill 8 registers
-    __ ldp(t0, t1, Address(s, 2 * unit));
-    __ ldp(t2, t3, Address(s, 4 * unit));
-    __ ldp(t4, t5, Address(s, 6 * unit));
-    __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
+    if (UseSIMDForMemoryOps) {
+      __ ldpq(v0, v1, Address(s, 4 * unit));
+      __ ldpq(v2, v3, Address(__ pre(s, 8 * unit)));
+    } else {
+      __ ldp(t0, t1, Address(s, 2 * unit));
+      __ ldp(t2, t3, Address(s, 4 * unit));
+      __ ldp(t4, t5, Address(s, 6 * unit));
+      __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
+    }
+
+    __ subs(count, count, 16);
+    __ br(Assembler::LO, drain);
 
     int prefetch = PrefetchCopyIntervalInBytes;
     bool use_stride = false;
@@ -866,37 +803,55 @@ class StubGenerator: public StubCodeGenerator {
     if (PrefetchCopyIntervalInBytes > 0)
       __ prfm(use_stride ? Address(s, stride) : Address(s, prefetch), PLDL1KEEP);
 
-    __ stp(t0, t1, Address(d, 2 * unit));
-    __ ldp(t0, t1, Address(s, 2 * unit));
-    __ stp(t2, t3, Address(d, 4 * unit));
-    __ ldp(t2, t3, Address(s, 4 * unit));
-    __ stp(t4, t5, Address(d, 6 * unit));
-    __ ldp(t4, t5, Address(s, 6 * unit));
-    __ stp(t6, t7, Address(__ pre(d, 8 * unit)));
-    __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
+    if (UseSIMDForMemoryOps) {
+      __ stpq(v0, v1, Address(d, 4 * unit));
+      __ ldpq(v0, v1, Address(s, 4 * unit));
+      __ stpq(v2, v3, Address(__ pre(d, 8 * unit)));
+      __ ldpq(v2, v3, Address(__ pre(s, 8 * unit)));
+    } else {
+      __ stp(t0, t1, Address(d, 2 * unit));
+      __ ldp(t0, t1, Address(s, 2 * unit));
+      __ stp(t2, t3, Address(d, 4 * unit));
+      __ ldp(t2, t3, Address(s, 4 * unit));
+      __ stp(t4, t5, Address(d, 6 * unit));
+      __ ldp(t4, t5, Address(s, 6 * unit));
+      __ stp(t6, t7, Address(__ pre(d, 8 * unit)));
+      __ ldp(t6, t7, Address(__ pre(s, 8 * unit)));
+    }
 
     __ subs(count, count, 8);
     __ br(Assembler::HS, again);
 
     // Drain
-    __ stp(t0, t1, Address(d, 2 * unit));
-    __ stp(t2, t3, Address(d, 4 * unit));
-    __ stp(t4, t5, Address(d, 6 * unit));
-    __ stp(t6, t7, Address(__ pre(d, 8 * unit)));
-
-    if (direction == copy_forwards) {
-      __ add(s, s, 2 * wordSize);
-      __ add(d, d, 2 * wordSize);
+    __ bind(drain);
+    if (UseSIMDForMemoryOps) {
+      __ stpq(v0, v1, Address(d, 4 * unit));
+      __ stpq(v2, v3, Address(__ pre(d, 8 * unit)));
+    } else {
+      __ stp(t0, t1, Address(d, 2 * unit));
+      __ stp(t2, t3, Address(d, 4 * unit));
+      __ stp(t4, t5, Address(d, 6 * unit));
+      __ stp(t6, t7, Address(__ pre(d, 8 * unit)));
     }
 
     {
       Label L1, L2;
       __ tbz(count, exact_log2(4), L1);
-      __ ldp(t0, t1, Address(__ adjust(s, 2 * unit, direction == copy_backwards)));
-      __ ldp(t2, t3, Address(__ adjust(s, 2 * unit, direction == copy_backwards)));
-      __ stp(t0, t1, Address(__ adjust(d, 2 * unit, direction == copy_backwards)));
-      __ stp(t2, t3, Address(__ adjust(d, 2 * unit, direction == copy_backwards)));
+      if (UseSIMDForMemoryOps) {
+        __ ldpq(v0, v1, Address(__ pre(s, 4 * unit)));
+        __ stpq(v0, v1, Address(__ pre(d, 4 * unit)));
+      } else {
+        __ ldp(t0, t1, Address(s, 2 * unit));
+        __ ldp(t2, t3, Address(__ pre(s, 4 * unit)));
+        __ stp(t0, t1, Address(d, 2 * unit));
+        __ stp(t2, t3, Address(__ pre(d, 4 * unit)));
+      }
       __ bind(L1);
+
+      if (direction == copy_forwards) {
+        __ add(s, s, bias);
+        __ add(d, d, bias);
+      }
 
       __ tbz(count, 1, L2);
       __ ldp(t0, t1, Address(__ adjust(s, 2 * unit, direction == copy_backwards)));
@@ -973,15 +928,134 @@ class StubGenerator: public StubCodeGenerator {
     int granularity = uabs(step);
     const Register t0 = r3, t1 = r4;
 
+    // <= 96 bytes do inline. Direction doesn't matter because we always
+    // load all the data before writing anything
+    Label copy4, copy8, copy16, copy32, copy80, copy128, copy_big, finish;
+    const Register t2 = r5, t3 = r6, t4 = r7, t5 = r8;
+    const Register t6 = r9, t7 = r10, t8 = r11, t9 = r12;
+    const Register send = r17, dend = r18;
+
+    if (PrefetchCopyIntervalInBytes > 0)
+      __ prfm(Address(s, 0), PLDL1KEEP);
+    __ cmp(count, (UseSIMDForMemoryOps ? 96:80)/granularity);
+    __ br(Assembler::HI, copy_big);
+
+    __ lea(send, Address(s, count, Address::lsl(exact_log2(granularity))));
+    __ lea(dend, Address(d, count, Address::lsl(exact_log2(granularity))));
+
+    __ cmp(count, 16/granularity);
+    __ br(Assembler::LS, copy16);
+
+    __ cmp(count, 64/granularity);
+    __ br(Assembler::HI, copy80);
+
+    __ cmp(count, 32/granularity);
+    __ br(Assembler::LS, copy32);
+
+    // 33..64 bytes
+    if (UseSIMDForMemoryOps) {
+      __ ldpq(v0, v1, Address(s, 0));
+      __ ldpq(v2, v3, Address(send, -32));
+      __ stpq(v0, v1, Address(d, 0));
+      __ stpq(v2, v3, Address(dend, -32));
+    } else {
+      __ ldp(t0, t1, Address(s, 0));
+      __ ldp(t2, t3, Address(s, 16));
+      __ ldp(t4, t5, Address(send, -32));
+      __ ldp(t6, t7, Address(send, -16));
+
+      __ stp(t0, t1, Address(d, 0));
+      __ stp(t2, t3, Address(d, 16));
+      __ stp(t4, t5, Address(dend, -32));
+      __ stp(t6, t7, Address(dend, -16));
+    }
+    __ b(finish);
+
+    // 17..32 bytes
+    __ bind(copy32);
+    __ ldp(t0, t1, Address(s, 0));
+    __ ldp(t2, t3, Address(send, -16));
+    __ stp(t0, t1, Address(d, 0));
+    __ stp(t2, t3, Address(dend, -16));
+    __ b(finish);
+
+    // 65..80/96 bytes
+    // (96 bytes if SIMD because we do 32 byes per instruction)
+    __ bind(copy80);
+    if (UseSIMDForMemoryOps) {
+      __ ldpq(v0, v1, Address(s, 0));
+      __ ldpq(v2, v3, Address(s, 32));
+      __ ldpq(v4, v5, Address(send, -32));
+      __ stpq(v0, v1, Address(d, 0));
+      __ stpq(v2, v3, Address(d, 32));
+      __ stpq(v4, v5, Address(dend, -32));
+    } else {
+      __ ldp(t0, t1, Address(s, 0));
+      __ ldp(t2, t3, Address(s, 16));
+      __ ldp(t4, t5, Address(s, 32));
+      __ ldp(t6, t7, Address(s, 48));
+      __ ldp(t8, t9, Address(send, -16));
+
+      __ stp(t0, t1, Address(d, 0));
+      __ stp(t2, t3, Address(d, 16));
+      __ stp(t4, t5, Address(d, 32));
+      __ stp(t6, t7, Address(d, 48));
+      __ stp(t8, t9, Address(dend, -16));
+    }
+    __ b(finish);
+
+    // 0..16 bytes
+    __ bind(copy16);
+    __ cmp(count, 8/granularity);
+    __ br(Assembler::LO, copy8);
+
+    // 8..16 bytes
+    __ ldr(t0, Address(s, 0));
+    __ ldr(t1, Address(send, -8));
+    __ str(t0, Address(d, 0));
+    __ str(t1, Address(dend, -8));
+    __ b(finish);
+
+    if (granularity < 8) {
+      // 4..7 bytes
+      __ bind(copy8);
+      __ tbz(count, 2 - exact_log2(granularity), copy4);
+      __ ldrw(t0, Address(s, 0));
+      __ ldrw(t1, Address(send, -4));
+      __ strw(t0, Address(d, 0));
+      __ strw(t1, Address(dend, -4));
+      __ b(finish);
+      if (granularity < 4) {
+        // 0..3 bytes
+        __ bind(copy4);
+        __ cbz(count, finish); // get rid of 0 case
+        if (granularity == 2) {
+          __ ldrh(t0, Address(s, 0));
+          __ strh(t0, Address(d, 0));
+        } else { // granularity == 1
+          // Now 1..3 bytes. Handle the 1 and 2 byte case by copying
+          // the first and last byte.
+          // Handle the 3 byte case by loading and storing base + count/2
+          // (count == 1 (s+0)->(d+0), count == 2,3 (s+1) -> (d+1))
+          // This does means in the 1 byte case we load/store the same
+          // byte 3 times.
+          __ lsr(count, count, 1);
+          __ ldrb(t0, Address(s, 0));
+          __ ldrb(t1, Address(send, -1));
+          __ ldrb(t2, Address(s, count));
+          __ strb(t0, Address(d, 0));
+          __ strb(t1, Address(dend, -1));
+          __ strb(t2, Address(d, count));
+        }
+        __ b(finish);
+      }
+    }
+
+    __ bind(copy_big);
     if (is_backwards) {
       __ lea(s, Address(s, count, Address::lsl(exact_log2(-step))));
       __ lea(d, Address(d, count, Address::lsl(exact_log2(-step))));
     }
-
-    Label tail;
-
-    __ cmp(count, 16/granularity);
-    __ br(Assembler::LO, tail);
 
     // Now we've got the small case out of the way we can align the
     // source address on a 2-word boundary.
@@ -1028,8 +1102,6 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     }
 
-    __ cmp(count, 16/granularity);
-    __ br(Assembler::LT, tail);
     __ bind(aligned);
 
     // s is now 2-word-aligned.
@@ -1043,9 +1115,11 @@ class StubGenerator: public StubCodeGenerator {
       __ bl(copy_b);
 
     // And the tail.
-
-    __ bind(tail);
     copy_memory_small(s, d, count, tmp, step);
+
+    if (granularity >= 8) __ bind(copy8);
+    if (granularity >= 4) __ bind(copy4);
+    __ bind(finish);
   }
 
 

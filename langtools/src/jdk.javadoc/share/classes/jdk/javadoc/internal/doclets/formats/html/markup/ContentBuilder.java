@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ public class ContentBuilder extends Content {
     }
 
     @Override
-    public void addContent(String text) {
-        if (text.isEmpty())
+    public void addContent(CharSequence text) {
+        if (text.length() == 0)
             return;
         ensureMutableContents();
         Content c = contents.isEmpty() ? null : contents.get(contents.size() - 1);

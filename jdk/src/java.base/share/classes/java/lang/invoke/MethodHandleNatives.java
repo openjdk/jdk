@@ -30,7 +30,7 @@ import java.lang.reflect.Field;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
-import jdk.internal.ref.Cleaner;
+import jdk.internal.ref.CleanerFactory;
 
 /**
  * The JVM interface for the method handles package is all here.
@@ -68,10 +68,12 @@ class MethodHandleNatives {
 
         static CallSiteContext make(CallSite cs) {
             final CallSiteContext newContext = new CallSiteContext();
-            // Cleaner is attached to CallSite instance and it clears native structures allocated for CallSite context.
-            // Though the CallSite can become unreachable, its Context is retained by the Cleaner instance (which is
-            // referenced from Cleaner class) until cleanup is performed.
-            Cleaner.create(cs, newContext);
+            // CallSite instance is tracked by a Cleanable which clears native
+            // structures allocated for CallSite context. Though the CallSite can
+            // become unreachable, its Context is retained by the Cleanable instance
+            // (which is referenced from Cleaner instance which is referenced from
+            // CleanerFactory class) until cleanup is performed.
+            CleanerFactory.cleaner().register(cs, newContext);
             return newContext;
         }
 

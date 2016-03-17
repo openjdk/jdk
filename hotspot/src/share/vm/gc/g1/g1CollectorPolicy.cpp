@@ -81,10 +81,8 @@ static double non_young_other_cost_per_region_ms_defaults[] = {
 
 G1CollectorPolicy::G1CollectorPolicy() :
   _predictor(G1ConfidencePercent / 100.0),
-  _parallel_gc_threads(ParallelGCThreads),
 
   _recent_gc_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
-  _stop_world_start(0.0),
 
   _concurrent_mark_remark_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
   _concurrent_mark_cleanup_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
@@ -129,7 +127,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _inc_cset_head(NULL),
   _inc_cset_tail(NULL),
   _inc_cset_bytes_used_before(0),
-  _inc_cset_max_finger(NULL),
   _inc_cset_recorded_rs_lengths(0),
   _inc_cset_recorded_rs_lengths_diffs(0),
   _inc_cset_predicted_elapsed_time_ms(0.0),
@@ -172,9 +169,9 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
   clear_ratio_check_data();
 
-  _phase_times = new G1GCPhaseTimes(_parallel_gc_threads);
+  _phase_times = new G1GCPhaseTimes(ParallelGCThreads);
 
-  int index = MIN2(_parallel_gc_threads - 1, 7);
+  int index = MIN2(ParallelGCThreads - 1, 7u);
 
   _rs_length_diff_seq->add(rs_length_diff_defaults[index]);
   _cost_per_card_ms_seq->add(cost_per_card_ms_defaults[index]);
@@ -790,10 +787,9 @@ double G1CollectorPolicy::predict_survivor_regions_evac_time() const {
   return survivor_regions_evac_time;
 }
 
-void G1CollectorPolicy::revise_young_list_target_length_if_necessary() {
+void G1CollectorPolicy::revise_young_list_target_length_if_necessary(size_t rs_lengths) {
   guarantee( adaptive_young_list_length(), "should not call this otherwise" );
 
-  size_t rs_lengths = _g1->young_list()->sampled_rs_lengths();
   if (rs_lengths > _rs_lengths_prediction) {
     // add 10% to avoid having to recalculate often
     size_t rs_lengths_prediction = rs_lengths * 1100 / 1000;
@@ -872,8 +868,6 @@ void G1CollectorPolicy::record_full_collection_end() {
   double full_gc_time_sec = end_sec - _full_collection_start_sec;
   double full_gc_time_ms = full_gc_time_sec * 1000.0;
 
-  _trace_old_gen_time_data.record_full_collection(full_gc_time_ms);
-
   update_recent_gc_times(end_sec, full_gc_time_ms);
 
   collector_state()->set_full_collection(false);
@@ -904,10 +898,6 @@ void G1CollectorPolicy::record_full_collection_end() {
   record_pause(FullGC, _full_collection_start_sec, end_sec);
 }
 
-void G1CollectorPolicy::record_stop_world_start() {
-  _stop_world_start = os::elapsedTime();
-}
-
 void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
   // We only need to do this here as the policy will only be applied
   // to the GC we're about to start. so, no point is calculating this
@@ -917,10 +907,6 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
   assert(_g1->used() == _g1->recalculate_used(),
          "sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
          _g1->used(), _g1->recalculate_used());
-
-  double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
-  _trace_young_gen_time_data.record_start_collection(s_w_t_ms);
-  _stop_world_start = 0.0;
 
   phase_times()->record_cur_collection_start_sec(start_time_sec);
   _pending_cards = _g1->pending_card_num();
@@ -971,13 +957,6 @@ void G1CollectorPolicy::record_concurrent_mark_cleanup_completed() {
     abort_time_to_mixed_tracking();
   }
   collector_state()->set_in_marking_window(false);
-}
-
-void G1CollectorPolicy::record_concurrent_pause() {
-  if (_stop_world_start > 0.0) {
-    double yield_ms = (os::elapsedTime() - _stop_world_start) * 1000.0;
-    _trace_young_gen_time_data.record_yield_time(yield_ms);
-  }
 }
 
 double G1CollectorPolicy::average_time_ms(G1GCPhaseTimes::GCParPhases phase) const {
@@ -1064,7 +1043,6 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   }
 
   if (update_stats) {
-    _trace_young_gen_time_data.record_end_collection(pause_time_ms, phase_times());
     // We maintain the invariant that all objects allocated by mutator
     // threads will be allocated out of eden regions. So, we can use
     // the eden region number allocated since the previous GC to
@@ -1139,14 +1117,15 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   _short_lived_surv_rate_group->start_adding_regions();
   // Do that for any other surv rate groups
 
+  double scan_hcc_time_ms = ConcurrentG1Refine::hot_card_cache_enabled() ? average_time_ms(G1GCPhaseTimes::ScanHCC) : 0.0;
+
   if (update_stats) {
     double cost_per_card_ms = 0.0;
-    double cost_scan_hcc = average_time_ms(G1GCPhaseTimes::ScanHCC);
     if (_pending_cards > 0) {
-      cost_per_card_ms = (average_time_ms(G1GCPhaseTimes::UpdateRS) - cost_scan_hcc) / (double) _pending_cards;
+      cost_per_card_ms = (average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms) / (double) _pending_cards;
       _cost_per_card_ms_seq->add(cost_per_card_ms);
     }
-    _cost_scan_hcc_seq->add(cost_scan_hcc);
+    _cost_scan_hcc_seq->add(scan_hcc_time_ms);
 
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
@@ -1236,8 +1215,6 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 
-  double scan_hcc_time_ms = average_time_ms(G1GCPhaseTimes::ScanHCC);
-
   if (update_rs_time_goal_ms < scan_hcc_time_ms) {
     log_debug(gc, ergo, refine)("Adjust concurrent refinement thresholds (scanning the HCC expected to take longer than Update RS time goal)."
                                 "Update RS time goal: %1.2fms Scan HCC time: %1.2fms",
@@ -1323,12 +1300,12 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
     const int k_gy = 3, k_gr = 6;
     const double inc_k = 1.1, dec_k = 0.9;
 
-    int g = cg1r->green_zone();
+    size_t g = cg1r->green_zone();
     if (update_rs_time > goal_ms) {
-      g = (int)(g * dec_k);  // Can become 0, that's OK. That would mean a mutator-only processing.
+      g = (size_t)(g * dec_k);  // Can become 0, that's OK. That would mean a mutator-only processing.
     } else {
       if (update_rs_time < goal_ms && update_rs_processed_buffers > g) {
-        g = (int)MAX2(g * inc_k, g + 1.0);
+        g = (size_t)MAX2(g * inc_k, g + 1.0);
       }
     }
     // Change the refinement threads params
@@ -1337,15 +1314,15 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
     cg1r->set_red_zone(g * k_gr);
     cg1r->reinitialize_threads();
 
-    int processing_threshold_delta = MAX2((int)(cg1r->green_zone() * _predictor.sigma()), 1);
-    int processing_threshold = MIN2(cg1r->green_zone() + processing_threshold_delta,
+    size_t processing_threshold_delta = MAX2<size_t>(cg1r->green_zone() * _predictor.sigma(), 1);
+    size_t processing_threshold = MIN2(cg1r->green_zone() + processing_threshold_delta,
                                     cg1r->yellow_zone());
     // Change the barrier params
-    dcqs.set_process_completed_threshold(processing_threshold);
-    dcqs.set_max_completed_queue(cg1r->red_zone());
+    dcqs.set_process_completed_threshold((int)processing_threshold);
+    dcqs.set_max_completed_queue((int)cg1r->red_zone());
   }
 
-  int curr_queue_size = dcqs.completed_buffers_num();
+  size_t curr_queue_size = dcqs.completed_buffers_num();
   if (curr_queue_size >= cg1r->yellow_zone()) {
     dcqs.set_completed_queue_padding(curr_queue_size);
   } else {
@@ -1654,11 +1631,6 @@ size_t G1CollectorPolicy::expansion_amount() {
   return expand_bytes;
 }
 
-void G1CollectorPolicy::print_tracing_info() const {
-  _trace_young_gen_time_data.print();
-  _trace_old_gen_time_data.print();
-}
-
 void G1CollectorPolicy::print_yg_surv_rate_info() const {
 #ifndef PRODUCT
   _short_lived_surv_rate_group->print_surv_rate_summary();
@@ -1869,7 +1841,6 @@ void G1CollectorPolicy::start_incremental_cset_building() {
   _inc_cset_tail = NULL;
   _inc_cset_bytes_used_before = 0;
 
-  _inc_cset_max_finger = 0;
   _inc_cset_recorded_rs_lengths = 0;
   _inc_cset_recorded_rs_lengths_diffs = 0;
   _inc_cset_predicted_elapsed_time_ms = 0.0;
@@ -1980,9 +1951,6 @@ void G1CollectorPolicy::add_region_to_incremental_cset_common(HeapRegion* hr) {
 
   size_t rs_length = hr->rem_set()->occupied();
   add_to_incremental_cset_info(hr, rs_length);
-
-  HeapWord* hr_end = hr->end();
-  _inc_cset_max_finger = MAX2(_inc_cset_max_finger, hr_end);
 
   assert(!hr->in_collection_set(), "invariant");
   _g1->register_young_region_with_cset(hr);
@@ -2190,12 +2158,6 @@ double G1CollectorPolicy::finalize_young_cset_part(double target_pause_time_ms) 
 
   collector_state()->set_last_gc_was_young(collector_state()->gcs_are_young());
 
-  if (collector_state()->last_gc_was_young()) {
-    _trace_young_gen_time_data.increment_young_collection_count();
-  } else {
-    _trace_young_gen_time_data.increment_mixed_collection_count();
-  }
-
   // The young list is laid with the survivor regions from the previous
   // pause are appended to the RHS of the young list, i.e.
   //   [Newly Young Regions ++ Survivors from last pause].
@@ -2334,128 +2296,4 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
 
   double non_young_end_time_sec = os::elapsedTime();
   phase_times()->record_non_young_cset_choice_time_ms((non_young_end_time_sec - non_young_start_time_sec) * 1000.0);
-}
-
-void TraceYoungGenTimeData::record_start_collection(double time_to_stop_the_world_ms) {
-  if(TraceYoungGenTime) {
-    _all_stop_world_times_ms.add(time_to_stop_the_world_ms);
-  }
-}
-
-void TraceYoungGenTimeData::record_yield_time(double yield_time_ms) {
-  if(TraceYoungGenTime) {
-    _all_yield_times_ms.add(yield_time_ms);
-  }
-}
-
-void TraceYoungGenTimeData::record_end_collection(double pause_time_ms, G1GCPhaseTimes* phase_times) {
-  if(TraceYoungGenTime) {
-    _total.add(pause_time_ms);
-    _other.add(pause_time_ms - phase_times->accounted_time_ms());
-    _root_region_scan_wait.add(phase_times->root_region_scan_wait_time_ms());
-    _parallel.add(phase_times->cur_collection_par_time_ms());
-    _ext_root_scan.add(phase_times->average_time_ms(G1GCPhaseTimes::ExtRootScan));
-    _satb_filtering.add(phase_times->average_time_ms(G1GCPhaseTimes::SATBFiltering));
-    _update_rs.add(phase_times->average_time_ms(G1GCPhaseTimes::UpdateRS));
-    _scan_rs.add(phase_times->average_time_ms(G1GCPhaseTimes::ScanRS));
-    _obj_copy.add(phase_times->average_time_ms(G1GCPhaseTimes::ObjCopy));
-    _termination.add(phase_times->average_time_ms(G1GCPhaseTimes::Termination));
-
-    double parallel_known_time = phase_times->average_time_ms(G1GCPhaseTimes::ExtRootScan) +
-      phase_times->average_time_ms(G1GCPhaseTimes::SATBFiltering) +
-      phase_times->average_time_ms(G1GCPhaseTimes::UpdateRS) +
-      phase_times->average_time_ms(G1GCPhaseTimes::ScanRS) +
-      phase_times->average_time_ms(G1GCPhaseTimes::ObjCopy) +
-      phase_times->average_time_ms(G1GCPhaseTimes::Termination);
-
-    double parallel_other_time = phase_times->cur_collection_par_time_ms() - parallel_known_time;
-    _parallel_other.add(parallel_other_time);
-    _clear_ct.add(phase_times->cur_clear_ct_time_ms());
-  }
-}
-
-void TraceYoungGenTimeData::increment_young_collection_count() {
-  if(TraceYoungGenTime) {
-    ++_young_pause_num;
-  }
-}
-
-void TraceYoungGenTimeData::increment_mixed_collection_count() {
-  if(TraceYoungGenTime) {
-    ++_mixed_pause_num;
-  }
-}
-
-void TraceYoungGenTimeData::print_summary(const char* str,
-                                          const NumberSeq* seq) const {
-  double sum = seq->sum();
-  tty->print_cr("%-27s = %8.2lf s (avg = %8.2lf ms)",
-                str, sum / 1000.0, seq->avg());
-}
-
-void TraceYoungGenTimeData::print_summary_sd(const char* str,
-                                             const NumberSeq* seq) const {
-  print_summary(str, seq);
-  tty->print_cr("%45s = %5d, std dev = %8.2lf ms, max = %8.2lf ms)",
-                "(num", seq->num(), seq->sd(), seq->maximum());
-}
-
-void TraceYoungGenTimeData::print() const {
-  if (!TraceYoungGenTime) {
-    return;
-  }
-
-  tty->print_cr("ALL PAUSES");
-  print_summary_sd("   Total", &_total);
-  tty->cr();
-  tty->cr();
-  tty->print_cr("   Young GC Pauses: %8d", _young_pause_num);
-  tty->print_cr("   Mixed GC Pauses: %8d", _mixed_pause_num);
-  tty->cr();
-
-  tty->print_cr("EVACUATION PAUSES");
-
-  if (_young_pause_num == 0 && _mixed_pause_num == 0) {
-    tty->print_cr("none");
-  } else {
-    print_summary_sd("   Evacuation Pauses", &_total);
-    print_summary("      Root Region Scan Wait", &_root_region_scan_wait);
-    print_summary("      Parallel Time", &_parallel);
-    print_summary("         Ext Root Scanning", &_ext_root_scan);
-    print_summary("         SATB Filtering", &_satb_filtering);
-    print_summary("         Update RS", &_update_rs);
-    print_summary("         Scan RS", &_scan_rs);
-    print_summary("         Object Copy", &_obj_copy);
-    print_summary("         Termination", &_termination);
-    print_summary("         Parallel Other", &_parallel_other);
-    print_summary("      Clear CT", &_clear_ct);
-    print_summary("      Other", &_other);
-  }
-  tty->cr();
-
-  tty->print_cr("MISC");
-  print_summary_sd("   Stop World", &_all_stop_world_times_ms);
-  print_summary_sd("   Yields", &_all_yield_times_ms);
-}
-
-void TraceOldGenTimeData::record_full_collection(double full_gc_time_ms) {
-  if (TraceOldGenTime) {
-    _all_full_gc_times.add(full_gc_time_ms);
-  }
-}
-
-void TraceOldGenTimeData::print() const {
-  if (!TraceOldGenTime) {
-    return;
-  }
-
-  if (_all_full_gc_times.num() > 0) {
-    tty->print("\n%4d full_gcs: total time = %8.2f s",
-      _all_full_gc_times.num(),
-      _all_full_gc_times.sum() / 1000.0);
-    tty->print_cr(" (avg = %8.2fms).", _all_full_gc_times.avg());
-    tty->print_cr("                     [std. dev = %8.2f ms, max = %8.2f ms]",
-      _all_full_gc_times.sd(),
-      _all_full_gc_times.maximum());
-  }
 }

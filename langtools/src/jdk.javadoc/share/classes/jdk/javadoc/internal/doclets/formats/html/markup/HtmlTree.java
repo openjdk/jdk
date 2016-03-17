@@ -132,7 +132,8 @@ public class HtmlTree extends Content {
      *
      * @param stringContent string content that needs to be added
      */
-    public void addContent(String stringContent) {
+    @Override
+    public void addContent(CharSequence stringContent) {
         if (!content.isEmpty()) {
             Content lastContent = content.get(content.size() - 1);
             if (lastContent instanceof StringContent)

@@ -39,6 +39,7 @@
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/plab.inline.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/spaceDecorator.hpp"
@@ -64,6 +65,7 @@ ParScanThreadState::ParScanThreadState(Space* to_space_,
                                        int thread_num_,
                                        ObjToScanQueueSet* work_queue_set_,
                                        Stack<oop, mtGC>* overflow_stacks_,
+                                       PreservedMarks* preserved_marks_,
                                        size_t desired_plab_sz_,
                                        ParallelTaskTerminator& term_) :
   _to_space(to_space_),
@@ -73,6 +75,7 @@ ParScanThreadState::ParScanThreadState(Space* to_space_,
   _work_queue(work_queue_set_->queue(thread_num_)),
   _to_space_full(false),
   _overflow_stack(overflow_stacks_ ? overflow_stacks_ + thread_num_ : NULL),
+  _preserved_marks(preserved_marks_),
   _ageTable(false), // false ==> not the global age table, no perf data.
   _to_space_alloc_buffer(desired_plab_sz_),
   _to_space_closure(young_gen_, this),
@@ -286,6 +289,7 @@ public:
                         Generation&             old_gen,
                         ObjToScanQueueSet&      queue_set,
                         Stack<oop, mtGC>*       overflow_stacks_,
+                        PreservedMarksSet&      preserved_marks_set,
                         size_t                  desired_plab_sz,
                         ParallelTaskTerminator& term);
 
@@ -322,6 +326,7 @@ ParScanThreadStateSet::ParScanThreadStateSet(int num_threads,
                                              Generation& old_gen,
                                              ObjToScanQueueSet& queue_set,
                                              Stack<oop, mtGC>* overflow_stacks,
+                                             PreservedMarksSet& preserved_marks_set,
                                              size_t desired_plab_sz,
                                              ParallelTaskTerminator& term)
   : ResourceArray(sizeof(ParScanThreadState), num_threads),
@@ -336,7 +341,8 @@ ParScanThreadStateSet::ParScanThreadStateSet(int num_threads,
   for (int i = 0; i < num_threads; ++i) {
     new ((ParScanThreadState*)_data + i)
         ParScanThreadState(&to_space, &young_gen, &old_gen, i, &queue_set,
-                           overflow_stacks, desired_plab_sz, term);
+                           overflow_stacks, preserved_marks_set.get(i),
+                           desired_plab_sz, term);
   }
 }
 
@@ -609,7 +615,7 @@ ParNewGeneration::ParNewGeneration(ReservedSpace rs, size_t initial_byte_size)
   : DefNewGeneration(rs, initial_byte_size, "PCopy"),
   _overflow_list(NULL),
   _is_alive_closure(this),
-  _plab_stats(YoungPLABSize, PLABWeight)
+  _plab_stats("Young", YoungPLABSize, PLABWeight)
 {
   NOT_PRODUCT(_overflow_counter = ParGCWorkQueueOverflowInterval;)
   NOT_PRODUCT(_num_par_pushes = 0;)
@@ -905,12 +911,16 @@ void ParNewGeneration::collect(bool   full,
   // Set the correct parallelism (number of queues) in the reference processor
   ref_processor()->set_active_mt_degree(active_workers);
 
+  // Need to initialize the preserved marks before the ThreadStateSet c'tor.
+  _preserved_marks_set.init(active_workers);
+
   // Always set the terminator for the active number of workers
   // because only those workers go through the termination protocol.
   ParallelTaskTerminator _term(active_workers, task_queues());
   ParScanThreadStateSet thread_state_set(active_workers,
                                          *to(), *this, *_old_gen, *task_queues(),
-                                         _overflow_stacks, desired_plab_sz(), _term);
+                                         _overflow_stacks, _preserved_marks_set,
+                                         desired_plab_sz(), _term);
 
   thread_state_set.reset(active_workers, promotion_failed());
 
@@ -993,13 +1003,12 @@ void ParNewGeneration::collect(bool   full,
   } else {
     handle_promotion_failed(gch, thread_state_set);
   }
+  _preserved_marks_set.reclaim();
   // set new iteration safe limit for the survivor spaces
   from()->set_concurrent_iteration_safe_limit(from()->top());
   to()->set_concurrent_iteration_safe_limit(to()->top());
 
-  if (ResizePLAB) {
-    plab_stats()->adjust_desired_plab_sz();
-  }
+  plab_stats()->adjust_desired_plab_sz();
 
   TASKQUEUE_STATS_ONLY(thread_state_set.print_termination_stats());
   TASKQUEUE_STATS_ONLY(thread_state_set.print_taskqueue_stats());
@@ -1070,15 +1079,6 @@ oop ParNewGeneration::real_forwardee_slow(oop obj) {
   return forward_ptr;
 }
 
-void ParNewGeneration::preserve_mark_if_necessary(oop obj, markOop m) {
-  if (m->must_be_preserved_for_promotion_failure(obj)) {
-    // We should really have separate per-worker stacks, rather
-    // than use locking of a common pair of stacks.
-    MutexLocker ml(ParGCRareEvent_lock);
-    preserve_mark(obj, m);
-  }
-}
-
 // Multiple GC threads may try to promote an object.  If the object
 // is successfully promoted, a forwarding pointer will be installed in
 // the object in the young generation.  This method claims the right
@@ -1136,7 +1136,7 @@ oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
       _promotion_failed = true;
       new_obj = old;
 
-      preserve_mark_if_necessary(old, m);
+      par_scan_state->preserved_marks()->push_if_necessary(old, m);
       par_scan_state->register_promotion_failure(sz);
     }
 

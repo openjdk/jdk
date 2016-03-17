@@ -89,7 +89,6 @@ import java.lang.reflect.InvocationTargetException;
 
 public class TestStableObject {
     static final boolean isStableEnabled    = StableConfiguration.isStableEnabled;
-    static final boolean isServerWithStable = StableConfiguration.isServerWithStable;
 
     public static void main(String[] args) throws Exception {
         run(DefaultValue.class);
@@ -212,10 +211,10 @@ public class TestStableObject {
                 c.v = new Object[1]; c.v[0] = Values.A; Object val1 = get();
                                      c.v[0] = Values.B; Object val2 = get();
                 assertEquals(val1, Values.A);
-                assertEquals(val2, (isServerWithStable ? Values.A : Values.B));
+                assertEquals(val2, (isStableEnabled ? Values.A : Values.B));
 
                 c.v = new Object[1]; c.v[0] = Values.C; Object val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? Values.A : Values.B)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? Values.A : Values.B)
                                                     : Values.C));
             }
 
@@ -223,10 +222,10 @@ public class TestStableObject {
                 c.v = new Object[20]; c.v[10] = Values.A; Object val1 = get1();
                                       c.v[10] = Values.B; Object val2 = get1();
                 assertEquals(val1, Values.A);
-                assertEquals(val2, (isServerWithStable ? Values.A : Values.B));
+                assertEquals(val2, (isStableEnabled ? Values.A : Values.B));
 
                 c.v = new Object[20]; c.v[10] = Values.C; Object val3 = get1();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? Values.A : Values.B)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? Values.A : Values.B)
                                                     : Values.C));
             }
 
@@ -252,21 +251,21 @@ public class TestStableObject {
                 c.v = new Object[1][1]; c.v[0][0] = Values.A; Object val1 = get();
                                         c.v[0][0] = Values.B; Object val2 = get();
                 assertEquals(val1, Values.A);
-                assertEquals(val2, (isServerWithStable ? Values.A : Values.B));
+                assertEquals(val2, (isStableEnabled ? Values.A : Values.B));
 
                 c.v = new Object[1][1]; c.v[0][0] = Values.C; Object val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? Values.A : Values.B)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? Values.A : Values.B)
                                                     : Values.C));
 
                 c.v[0] = new Object[1]; c.v[0][0] = Values.D; Object val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? Values.A : Values.B)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? Values.A : Values.B)
                                                     : Values.D));
             }
 
             {
                 c.v = new Object[1][1]; Object[] val1 = get1();
                 c.v[0] = new Object[1]; Object[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -292,31 +291,31 @@ public class TestStableObject {
                 c.v = new Object[1][1][1]; c.v[0][0][0] = Values.A; Object val1 = get();
                                            c.v[0][0][0] = Values.B; Object val2 = get();
                 assertEquals(val1, Values.A);
-                assertEquals(val2, (isServerWithStable ? Values.A : Values.B));
+                assertEquals(val2, (isStableEnabled ? Values.A : Values.B));
 
                 c.v = new Object[1][1][1]; c.v[0][0][0] = Values.C; Object val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? Values.A : Values.B)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? Values.A : Values.B)
                                                     : Values.C));
 
                 c.v[0] = new Object[1][1]; c.v[0][0][0] = Values.D; Object val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? Values.A : Values.B)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? Values.A : Values.B)
                                                     : Values.D));
 
                 c.v[0][0] = new Object[1]; c.v[0][0][0] = Values.E; Object val5 = get();
-                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? Values.A : Values.B)
+                assertEquals(val5, (isStableEnabled ? (isStableEnabled ? Values.A : Values.B)
                                                     : Values.E));
             }
 
             {
                 c.v = new Object[1][1][1]; Object[] val1 = get1();
                 c.v[0][0] = new Object[1]; Object[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new Object[1][1][1]; Object[][] val1 = get2();
                 c.v[0] = new Object[1][1]; Object[][] val2 = get2();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -343,41 +342,41 @@ public class TestStableObject {
                 c.v = new Object[1][1][1][1]; c.v[0][0][0][0] = Values.A; Object val1 = get();
                                               c.v[0][0][0][0] = Values.B; Object val2 = get();
                 assertEquals(val1, Values.A);
-                assertEquals(val2, (isServerWithStable ? Values.A : Values.B));
+                assertEquals(val2, (isStableEnabled ? Values.A : Values.B));
 
                 c.v = new Object[1][1][1][1]; c.v[0][0][0][0] = Values.C; Object val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? Values.A : Values.B)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? Values.A : Values.B)
                                                     : Values.C));
 
                 c.v[0] = new Object[1][1][1]; c.v[0][0][0][0] = Values.D; Object val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? Values.A : Values.B)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? Values.A : Values.B)
                                                     : Values.D));
 
                 c.v[0][0] = new Object[1][1]; c.v[0][0][0][0] = Values.E; Object val5 = get();
-                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? Values.A : Values.B)
+                assertEquals(val5, (isStableEnabled ? (isStableEnabled ? Values.A : Values.B)
                                                     : Values.E));
 
                 c.v[0][0][0] = new Object[1]; c.v[0][0][0][0] = Values.F; Object val6 = get();
-                assertEquals(val6, (isStableEnabled ? (isServerWithStable ? Values.A : Values.B)
+                assertEquals(val6, (isStableEnabled ? (isStableEnabled ? Values.A : Values.B)
                                                     : Values.F));
             }
 
             {
                 c.v = new Object[1][1][1][1]; Object[] val1 = get1();
                 c.v[0][0][0] = new Object[1]; Object[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new Object[1][1][1][1]; Object[][] val1 = get2();
                 c.v[0][0] = new Object[1][1]; Object[][] val2 = get2();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new Object[1][1][1][1]; Object[][][] val1 = get3();
                 c.v[0] = new Object[1][1][1]; Object[][][] val2 = get3();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -437,7 +436,7 @@ public class TestStableObject {
                 c.v = new Object[1][1]; c.v[0] = new Object[0]; Object[] val1 = get1();
                                      c.v[0] = new Object[0]; Object[] val2 = get1();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -473,14 +472,14 @@ public class TestStableObject {
                 c.v = new Object[1][1][1]; c.v[0][0] = new Object[0]; Object[] val1 = get1();
                                            c.v[0][0] = new Object[0]; Object[] val2 = get1();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new Object[1][1][1]; c.v[0] = new Object[0][0]; Object[][] val1 = get2();
                                            c.v[0] = new Object[0][0]; Object[][] val2 = get2();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -615,7 +614,7 @@ public class TestStableObject {
                                elem.a = Values.B; Object val3 = get(); Object val4 = get1();
 
                 assertEquals(val1, Values.A);
-                assertEquals(val3, (isServerWithStable ? Values.A : Values.B));
+                assertEquals(val3, (isStableEnabled ? Values.A : Values.B));
 
                 assertEquals(val2, Values.A);
                 assertEquals(val4, Values.B);

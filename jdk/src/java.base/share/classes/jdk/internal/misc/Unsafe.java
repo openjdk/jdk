@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -458,6 +458,78 @@ public final class Unsafe {
         copyMemory(null, srcAddress, null, destAddress, bytes);
     }
 
+    private boolean isPrimitiveArray(Class<?> c) {
+        Class<?> componentType = c.getComponentType();
+        return componentType != null && componentType.isPrimitive();
+    }
+
+    private native void copySwapMemory0(Object srcBase, long srcOffset,
+                                        Object destBase, long destOffset,
+                                        long bytes, long elemSize);
+
+    /**
+     * Copies all elements from one block of memory to another block,
+     * *unconditionally* byte swapping the elements on the fly.
+     *
+     * <p>This method determines each block's base address by means of two parameters,
+     * and so it provides (in effect) a <em>double-register</em> addressing mode,
+     * as discussed in {@link #getInt(Object,long)}.  When the object reference is null,
+     * the offset supplies an absolute base address.
+     *
+     * @since 9
+     */
+    public void copySwapMemory(Object srcBase, long srcOffset,
+                               Object destBase, long destOffset,
+                               long bytes, long elemSize) {
+        if (bytes < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (elemSize != 2 && elemSize != 4 && elemSize != 8) {
+            throw new IllegalArgumentException();
+        }
+        if (bytes % elemSize != 0) {
+            throw new IllegalArgumentException();
+        }
+        if ((srcBase == null && srcOffset == 0) ||
+            (destBase == null && destOffset == 0)) {
+            throw new NullPointerException();
+        }
+
+        // Must be off-heap, or primitive heap arrays
+        if (srcBase != null && (srcOffset < 0 || !isPrimitiveArray(srcBase.getClass()))) {
+            throw new IllegalArgumentException();
+        }
+        if (destBase != null && (destOffset < 0 || !isPrimitiveArray(destBase.getClass()))) {
+            throw new IllegalArgumentException();
+        }
+
+        // Sanity check size and offsets on 32-bit platforms. Most
+        // significant 32 bits must be zero.
+        if (ADDRESS_SIZE == 4 &&
+            (bytes >>> 32 != 0 || srcOffset >>> 32 != 0 || destOffset >>> 32 != 0)) {
+            throw new IllegalArgumentException();
+        }
+
+        if (bytes == 0) {
+            return;
+        }
+
+        copySwapMemory0(srcBase, srcOffset, destBase, destOffset, bytes, elemSize);
+    }
+
+   /**
+     * Copies all elements from one block of memory to another block, byte swapping the
+     * elements on the fly.
+     *
+     * This provides a <em>single-register</em> addressing mode, as
+     * discussed in {@link #getInt(Object,long)}.
+     *
+     * Equivalent to {@code copySwapMemory(null, srcAddress, null, destAddress, bytes, elemSize)}.
+     */
+    public void copySwapMemory(long srcAddress, long destAddress, long bytes, long elemSize) {
+        copySwapMemory(null, srcAddress, null, destAddress, bytes, elemSize);
+    }
+
     /**
      * Disposes of a block of native memory, as obtained from {@link
      * #allocateMemory} or {@link #reallocateMemory}.  The address passed to
@@ -710,6 +782,46 @@ public final class Unsafe {
                                                      Object expected,
                                                      Object x);
 
+    @HotSpotIntrinsicCandidate
+    public final native Object compareAndExchangeObjectVolatile(Object o, long offset,
+                                                                Object expected,
+                                                                Object x);
+
+    @HotSpotIntrinsicCandidate
+    public final Object compareAndExchangeObjectAcquire(Object o, long offset,
+                                                               Object expected,
+                                                               Object x) {
+        return compareAndExchangeObjectVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final Object compareAndExchangeObjectRelease(Object o, long offset,
+                                                               Object expected,
+                                                               Object x) {
+        return compareAndExchangeObjectVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapObject(Object o, long offset,
+                                                         Object expected,
+                                                         Object x) {
+        return compareAndSwapObject(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapObjectAcquire(Object o, long offset,
+                                                                Object expected,
+                                                                Object x) {
+        return compareAndSwapObject(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapObjectRelease(Object o, long offset,
+                                                                Object expected,
+                                                                Object x) {
+        return compareAndSwapObject(o, offset, expected, x);
+    }
+
     /**
      * Atomically updates Java variable to {@code x} if it is currently
      * holding {@code expected}.
@@ -724,6 +836,46 @@ public final class Unsafe {
                                                   int expected,
                                                   int x);
 
+    @HotSpotIntrinsicCandidate
+    public final native int compareAndExchangeIntVolatile(Object o, long offset,
+                                                          int expected,
+                                                          int x);
+
+    @HotSpotIntrinsicCandidate
+    public final int compareAndExchangeIntAcquire(Object o, long offset,
+                                                         int expected,
+                                                         int x) {
+        return compareAndExchangeIntVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final int compareAndExchangeIntRelease(Object o, long offset,
+                                                         int expected,
+                                                         int x) {
+        return compareAndExchangeIntVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapInt(Object o, long offset,
+                                                      int expected,
+                                                      int x) {
+        return compareAndSwapInt(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapIntAcquire(Object o, long offset,
+                                                             int expected,
+                                                             int x) {
+        return compareAndSwapInt(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapIntRelease(Object o, long offset,
+                                                             int expected,
+                                                             int x) {
+        return compareAndSwapInt(o, offset, expected, x);
+    }
+
     /**
      * Atomically updates Java variable to {@code x} if it is currently
      * holding {@code expected}.
@@ -737,6 +889,46 @@ public final class Unsafe {
     public final native boolean compareAndSwapLong(Object o, long offset,
                                                    long expected,
                                                    long x);
+
+    @HotSpotIntrinsicCandidate
+    public final native long compareAndExchangeLongVolatile(Object o, long offset,
+                                                            long expected,
+                                                            long x);
+
+    @HotSpotIntrinsicCandidate
+    public final long compareAndExchangeLongAcquire(Object o, long offset,
+                                                           long expected,
+                                                           long x) {
+        return compareAndExchangeLongVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final long compareAndExchangeLongRelease(Object o, long offset,
+                                                           long expected,
+                                                           long x) {
+        return compareAndExchangeLongVolatile(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapLong(Object o, long offset,
+                                                       long expected,
+                                                       long x) {
+        return compareAndSwapLong(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapLongAcquire(Object o, long offset,
+                                                              long expected,
+                                                              long x) {
+        return compareAndSwapLong(o, offset, expected, x);
+    }
+
+    @HotSpotIntrinsicCandidate
+    public final boolean weakCompareAndSwapLongRelease(Object o, long offset,
+                                                              long expected,
+                                                              long x) {
+        return compareAndSwapLong(o, offset, expected, x);
+    }
 
     /**
      * Fetches a reference value from a given Java variable, with volatile
@@ -835,6 +1027,224 @@ public final class Unsafe {
     /** Ordered/Lazy version of {@link #putLongVolatile(Object, long, long)} */
     @HotSpotIntrinsicCandidate
     public native void    putOrderedLong(Object o, long offset, long x);
+
+    /** Acquire version of {@link #getObjectVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final Object getObjectAcquire(Object o, long offset) {
+        return getObjectVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getBooleanVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final boolean getBooleanAcquire(Object o, long offset) {
+        return getBooleanVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getByteVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final byte getByteAcquire(Object o, long offset) {
+        return getByteVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getShortVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final short getShortAcquire(Object o, long offset) {
+        return getShortVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getCharVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final char getCharAcquire(Object o, long offset) {
+        return getCharVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getIntVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final int getIntAcquire(Object o, long offset) {
+        return getIntVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getFloatVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final float getFloatAcquire(Object o, long offset) {
+        return getFloatVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getLongVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final long getLongAcquire(Object o, long offset) {
+        return getLongVolatile(o, offset);
+    }
+
+    /** Acquire version of {@link #getDoubleVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final double getDoubleAcquire(Object o, long offset) {
+        return getDoubleVolatile(o, offset);
+    }
+
+    /** Release version of {@link #putObjectVolatile(Object, long, Object)} */
+    @HotSpotIntrinsicCandidate
+    public final void putObjectRelease(Object o, long offset, Object x) {
+        putObjectVolatile(o, offset, x);
+    }
+
+    /** Release version of {@link #putBooleanVolatile(Object, long, boolean)} */
+    @HotSpotIntrinsicCandidate
+    public final void putBooleanRelease(Object o, long offset, boolean x) {
+        putBooleanVolatile(o, offset, x);
+    }
+
+    /** Release version of {@link #putByteVolatile(Object, long, byte)} */
+    @HotSpotIntrinsicCandidate
+    public final void putByteRelease(Object o, long offset, byte x) {
+        putByteVolatile(o, offset, x);
+    }
+
+    /** Release version of {@link #putShortVolatile(Object, long, short)} */
+    @HotSpotIntrinsicCandidate
+    public final void putShortRelease(Object o, long offset, short x) {
+        putShortVolatile(o, offset, x);
+    }
+
+    /** Release version of {@link #putCharVolatile(Object, long, char)} */
+    @HotSpotIntrinsicCandidate
+    public final void putCharRelease(Object o, long offset, char x) {
+        putCharVolatile(o, offset, x);
+    }
+
+    /** Release version of {@link #putIntVolatile(Object, long, int)} */
+    @HotSpotIntrinsicCandidate
+    public final void putIntRelease(Object o, long offset, int x) {
+        putIntVolatile(o, offset, x);
+    }
+
+    /** Release version of {@link #putFloatVolatile(Object, long, float)} */
+    @HotSpotIntrinsicCandidate
+    public final void putFloatRelease(Object o, long offset, float x) {
+        putFloatVolatile(o, offset, x);
+    }
+
+    /** Release version of {@link #putLongVolatile(Object, long, long)} */
+    @HotSpotIntrinsicCandidate
+    public final void putLongRelease(Object o, long offset, long x) {
+        putLongVolatile(o, offset, x);
+    }
+
+    /** Release version of {@link #putDoubleVolatile(Object, long, double)} */
+    @HotSpotIntrinsicCandidate
+    public final void putDoubleRelease(Object o, long offset, double x) {
+        putDoubleVolatile(o, offset, x);
+    }
+
+    // ------------------------------ Opaque --------------------------------------
+
+    /** Opaque version of {@link #getObjectVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final Object getObjectOpaque(Object o, long offset) {
+        return getObjectVolatile(o, offset);
+    }
+
+    /** Opaque version of {@link #getBooleanVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final boolean getBooleanOpaque(Object o, long offset) {
+        return getBooleanVolatile(o, offset);
+    }
+
+    /** Opaque version of {@link #getByteVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final byte getByteOpaque(Object o, long offset) {
+        return getByteVolatile(o, offset);
+    }
+
+    /** Opaque version of {@link #getShortVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final short getShortOpaque(Object o, long offset) {
+        return getShortVolatile(o, offset);
+    }
+
+    /** Opaque version of {@link #getCharVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final char getCharOpaque(Object o, long offset) {
+        return getCharVolatile(o, offset);
+    }
+
+    /** Opaque version of {@link #getIntVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final int getIntOpaque(Object o, long offset) {
+        return getIntVolatile(o, offset);
+    }
+
+    /** Opaque version of {@link #getFloatVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final float getFloatOpaque(Object o, long offset) {
+        return getFloatVolatile(o, offset);
+    }
+
+    /** Opaque version of {@link #getLongVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final long getLongOpaque(Object o, long offset) {
+        return getLongVolatile(o, offset);
+    }
+
+    /** Opaque version of {@link #getDoubleVolatile(Object, long)} */
+    @HotSpotIntrinsicCandidate
+    public final double getDoubleOpaque(Object o, long offset) {
+        return getDoubleVolatile(o, offset);
+    }
+
+    /** Opaque version of {@link #putObjectVolatile(Object, long, Object)} */
+    @HotSpotIntrinsicCandidate
+    public final void putObjectOpaque(Object o, long offset, Object x) {
+        putObjectVolatile(o, offset, x);
+    }
+
+    /** Opaque version of {@link #putBooleanVolatile(Object, long, boolean)} */
+    @HotSpotIntrinsicCandidate
+    public final void putBooleanOpaque(Object o, long offset, boolean x) {
+        putBooleanVolatile(o, offset, x);
+    }
+
+    /** Opaque version of {@link #putByteVolatile(Object, long, byte)} */
+    @HotSpotIntrinsicCandidate
+    public final void putByteOpaque(Object o, long offset, byte x) {
+        putByteVolatile(o, offset, x);
+    }
+
+    /** Opaque version of {@link #putShortVolatile(Object, long, short)} */
+    @HotSpotIntrinsicCandidate
+    public final void putShortOpaque(Object o, long offset, short x) {
+        putShortVolatile(o, offset, x);
+    }
+
+    /** Opaque version of {@link #putCharVolatile(Object, long, char)} */
+    @HotSpotIntrinsicCandidate
+    public final void putCharOpaque(Object o, long offset, char x) {
+        putCharVolatile(o, offset, x);
+    }
+
+    /** Opaque version of {@link #putIntVolatile(Object, long, int)} */
+    @HotSpotIntrinsicCandidate
+    public final void putIntOpaque(Object o, long offset, int x) {
+        putIntVolatile(o, offset, x);
+    }
+
+    /** Opaque version of {@link #putFloatVolatile(Object, long, float)} */
+    @HotSpotIntrinsicCandidate
+    public final void putFloatOpaque(Object o, long offset, float x) {
+        putFloatVolatile(o, offset, x);
+    }
+
+    /** Opaque version of {@link #putLongVolatile(Object, long, long)} */
+    @HotSpotIntrinsicCandidate
+    public final void putLongOpaque(Object o, long offset, long x) {
+        putLongVolatile(o, offset, x);
+    }
+
+    /** Opaque version of {@link #putDoubleVolatile(Object, long, double)} */
+    @HotSpotIntrinsicCandidate
+    public final void putDoubleOpaque(Object o, long offset, double x) {
+        putDoubleVolatile(o, offset, x);
+    }
 
     /**
      * Unblocks the given thread blocked on {@code park}, or, if it is
@@ -1029,6 +1439,23 @@ public final class Unsafe {
     public native void fullFence();
 
     /**
+     * Ensures that loads before the fence will not be reordered with
+     * loads after the fence.
+     */
+    public final void loadLoadFence() {
+        loadFence();
+    }
+
+    /**
+     * Ensures that stores before the fence will not be reordered with
+     * stores after the fence.
+     */
+    public final void storeStoreFence() {
+        storeFence();
+    }
+
+
+    /**
      * Throws IllegalAccessError; for use by the VM for access control
      * error support.
      * @since 1.8
@@ -1159,7 +1586,12 @@ public final class Unsafe {
     /** @see #getLongUnaligned(Object, long) */
     @HotSpotIntrinsicCandidate
     public final char getCharUnaligned(Object o, long offset) {
-        return (char)getShortUnaligned(o, offset);
+        if ((offset & 1) == 0) {
+            return getChar(o, offset);
+        } else {
+            return (char)makeShort(getByte(o, offset),
+                                   getByte(o, offset + 1));
+        }
     }
 
     /** @see #getLongUnaligned(Object, long, boolean) */

@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.nashorn.internal.runtime.test;
+package jdk.nashorn.api.scripting.test;
 
 import java.util.Arrays;
 import javax.script.ScriptEngine;

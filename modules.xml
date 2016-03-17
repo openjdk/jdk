@@ -239,6 +239,7 @@
       <to>java.xml</to>
       <to>jdk.charsets</to>
       <to>jdk.management.resource</to>
+      <to>jdk.jfr</to>
       <to>jdk.net</to>
       <to>jdk.scripting.nashorn</to>
       <to>jdk.vm.ci</to>
@@ -248,6 +249,22 @@
       <to>java.desktop</to>
       <to>java.management</to>
       <to>jdk.jvmstat</to>
+    </export>
+    <export>
+      <name>jdk.internal.org.xml.sax</name>
+      <to>jdk.jfr</to>
+    </export>
+    <export>
+      <name>jdk.internal.org.xml.sax.helpers</name>
+      <to>jdk.jfr</to>
+    </export>
+    <export>
+      <name>jdk.internal.util.xml</name>
+      <to>jdk.jfr</to>
+    </export>
+    <export>
+      <name>jdk.internal.util.xml.impl</name>
+      <to>jdk.jfr</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm</name>
@@ -300,7 +317,6 @@
       <to>java.xml</to>
       <to>jdk.charsets</to>
       <to>jdk.crypto.pkcs11</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.httpserver</to>
       <to>jdk.jartool</to>
       <to>jdk.jconsole</to>
@@ -314,6 +330,11 @@
       <to>jdk.vm.ci</to>
       <to>jdk.zipfs</to>
       <to>java.instrument</to>
+      <to>jdk.jfr</to>
+    </export>
+    <export>
+      <name>sun.net</name>
+      <to>java.httpclient</to>
     </export>
     <export>
       <name>sun.net.dns</name>
@@ -417,7 +438,6 @@
     <export>
       <name>sun.security.pkcs</name>
       <to>jdk.crypto.ec</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.jartool</to>
     </export>
     <export>
@@ -458,7 +478,6 @@
       <to>jdk.crypto.mscapi</to>
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.crypto.ucrypto</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.jartool</to>
       <to>jdk.policytool</to>
       <to>jdk.security.auth</to>
@@ -469,7 +488,6 @@
       <to>java.naming</to>
       <to>jdk.crypto.ec</to>
       <to>jdk.crypto.pkcs11</to>
-      <to>jdk.deploy.osx</to>
       <to>jdk.jartool</to>
       <to>jdk.security.auth</to>
     </export>
@@ -496,6 +514,7 @@
       <to>java.logging</to>
       <to>java.management</to>
       <to>java.prefs</to>
+      <to>java.httpclient</to>
     </export>
     <export>
       <name>sun.util.resources</name>
@@ -520,6 +539,7 @@
     <depend re-exports="true">java.compact2</depend>
     <depend re-exports="true">java.compiler</depend>
     <depend re-exports="true">java.instrument</depend>
+    <depend re-exports="true">java.httpclient</depend>
     <depend re-exports="true">java.management</depend>
     <depend re-exports="true">java.naming</depend>
     <depend re-exports="true">java.prefs</depend>
@@ -838,6 +858,25 @@
     </export>
   </module>
   <module>
+    <name>jdk.jsobject</name>
+    <depend>java.base</depend>
+    <depend re-exports="true">java.desktop</depend>
+    <export>
+      <name>netscape.javascript</name>
+    </export>
+    <export>
+      <name>jdk.internal.netscape.javascript.spi</name>
+      <to>jdk.plugin</to>
+    </export>
+  </module>
+  <module>
+    <name>java.httpclient</name>
+    <depend>java.base</depend>
+    <export>
+      <name>java.net.http</name>
+    </export>
+  </module>
+  <module>
     <name>java.instrument</name>
     <depend>java.base</depend>
     <export>
@@ -901,6 +940,7 @@
       <name>sun.management.spi</name>
       <to>jdk.management</to>
       <to>jdk.management.cmm</to>
+      <to>jdk.management.jfr</to>
     </export>
   </module>
   <module>
@@ -1682,11 +1722,6 @@
     <depend>java.base</depend>
   </module>
   <module>
-    <name>jdk.deploy.osx</name>
-    <depend>java.base</depend>
-    <depend>java.desktop</depend>
-  </module>
-  <module>
     <name>jdk.dev</name>
     <depend>java.base</depend>
   </module>
@@ -1789,10 +1824,10 @@
       <name>com.sun.tools.javadoc</name>
     </export>
     <export>
-      <name>jdk.javadoc.doclet</name>  
+      <name>jdk.javadoc.doclet</name>
     </export>
     <export>
-      <name>jdk.javadoc.doclet.taglet</name>  
+      <name>jdk.javadoc.doclet.taglet</name>
     </export>
   </module>
   <module>

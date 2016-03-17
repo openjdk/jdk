@@ -25,8 +25,11 @@
  * @test
  * @bug 6277663
  * @summary Test TPE extensibility framework
+ * @library /lib/testlibrary/
  * @author Martin Buchholz
  */
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
@@ -37,8 +40,11 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
+import jdk.testlibrary.Utils;
 
 public class Custom {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static volatile int passed = 0, failed = 0;
     static void pass() { passed++; }
     static void fail() { failed++; Thread.dumpStack(); }
@@ -97,6 +103,22 @@ public class Custom {
 
     private static final int threadCount = 10;
 
+    static long millisElapsedSince(long startTime) {
+        return (System.nanoTime() - startTime) / (1000L * 1000L);
+    }
+
+    static void spinWaitUntil(BooleanSupplier predicate, long timeoutMillis) {
+        long startTime = -1L;
+        while (!predicate.getAsBoolean()) {
+            if (startTime == -1L)
+                startTime = System.nanoTime();
+            else if (millisElapsedSince(startTime) > timeoutMillis)
+                throw new AssertionError(
+                    String.format("timed out after %s ms", timeoutMillis));
+            Thread.yield();
+        }
+    }
+
     public static void main(String[] args) throws Throwable {
         CustomTPE tpe = new CustomTPE();
         equal(tpe.getCorePoolSize(), threadCount);
@@ -106,9 +128,8 @@ public class Custom {
         equal(countExecutorThreads(), threadCount);
         equal(CustomTask.births.get(), threadCount);
         tpe.shutdown();
-        tpe.awaitTermination(120L, TimeUnit.SECONDS);
-        Thread.sleep(1000);
-        equal(countExecutorThreads(), 0);
+        tpe.awaitTermination(LONG_DELAY_MS, MILLISECONDS);
+        spinWaitUntil(() -> countExecutorThreads() == 0, LONG_DELAY_MS);
 
         CustomSTPE stpe = new CustomSTPE();
         for (int i = 0; i < threadCount; i++)
@@ -116,9 +137,8 @@ public class Custom {
         equal(CustomSTPE.decorations.get(), threadCount);
         equal(countExecutorThreads(), threadCount);
         stpe.shutdown();
-        stpe.awaitTermination(120L, TimeUnit.SECONDS);
-        Thread.sleep(1000);
-        equal(countExecutorThreads(), 0);
+        stpe.awaitTermination(LONG_DELAY_MS, MILLISECONDS);
+        spinWaitUntil(() -> countExecutorThreads() == 0, LONG_DELAY_MS);
 
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new Exception("Some tests failed");

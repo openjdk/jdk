@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ package java.net;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.util.Set;
-import java.util.HashSet;
 
 /**
  * Abstract datagram and multicast socket implementation base class.
@@ -287,6 +285,9 @@ public abstract class DatagramSocketImpl implements SocketOptions {
             setOption(SocketOptions.SO_RCVBUF, value);
         } else if (name == StandardSocketOptions.SO_REUSEADDR) {
             setOption(SocketOptions.SO_REUSEADDR, value);
+        } else if (name == StandardSocketOptions.SO_REUSEPORT &&
+            supportedOptions().contains(name)) {
+            setOption(SocketOptions.SO_REUSEPORT, value);
         } else if (name == StandardSocketOptions.IP_TOS) {
             setOption(SocketOptions.IP_TOS, value);
         } else if (name == StandardSocketOptions.IP_MULTICAST_IF &&
@@ -329,6 +330,9 @@ public abstract class DatagramSocketImpl implements SocketOptions {
             return (T) getOption(SocketOptions.SO_RCVBUF);
         } else if (name == StandardSocketOptions.SO_REUSEADDR) {
             return (T) getOption(SocketOptions.SO_REUSEADDR);
+        } else if (name == StandardSocketOptions.SO_REUSEPORT &&
+            supportedOptions().contains(name)) {
+            return (T) getOption(SocketOptions.SO_REUSEPORT);
         } else if (name == StandardSocketOptions.IP_TOS) {
             return (T) getOption(SocketOptions.IP_TOS);
         } else if (name == StandardSocketOptions.IP_MULTICAST_IF &&
@@ -346,32 +350,32 @@ public abstract class DatagramSocketImpl implements SocketOptions {
         }
     }
 
-    private static final  Set<SocketOption<?>> dgSocketOptions =
-        new HashSet<>();
+    private static final Set<SocketOption<?>> dgSocketOptions;
 
-    private static final  Set<SocketOption<?>> mcSocketOptions =
-        new HashSet<>();
+    private static final Set<SocketOption<?>> mcSocketOptions;
 
     static {
-        dgSocketOptions.add(StandardSocketOptions.SO_SNDBUF);
-        dgSocketOptions.add(StandardSocketOptions.SO_RCVBUF);
-        dgSocketOptions.add(StandardSocketOptions.SO_REUSEADDR);
-        dgSocketOptions.add(StandardSocketOptions.IP_TOS);
+        dgSocketOptions = Set.of(StandardSocketOptions.SO_SNDBUF,
+                                 StandardSocketOptions.SO_RCVBUF,
+                                 StandardSocketOptions.SO_REUSEADDR,
+                                 StandardSocketOptions.IP_TOS);
 
-        mcSocketOptions.add(StandardSocketOptions.SO_SNDBUF);
-        mcSocketOptions.add(StandardSocketOptions.SO_RCVBUF);
-        mcSocketOptions.add(StandardSocketOptions.SO_REUSEADDR);
-        mcSocketOptions.add(StandardSocketOptions.IP_TOS);
-        mcSocketOptions.add(StandardSocketOptions.IP_MULTICAST_IF);
-        mcSocketOptions.add(StandardSocketOptions.IP_MULTICAST_TTL);
-        mcSocketOptions.add(StandardSocketOptions.IP_MULTICAST_LOOP);
-    };
+        mcSocketOptions = Set.of(StandardSocketOptions.SO_SNDBUF,
+                                 StandardSocketOptions.SO_RCVBUF,
+                                 StandardSocketOptions.SO_REUSEADDR,
+                                 StandardSocketOptions.IP_TOS,
+                                 StandardSocketOptions.IP_MULTICAST_IF,
+                                 StandardSocketOptions.IP_MULTICAST_TTL,
+                                 StandardSocketOptions.IP_MULTICAST_LOOP);
+    }
 
     /**
      * Returns a set of SocketOptions supported by this impl
      * and by this impl's socket (DatagramSocket or MulticastSocket)
      *
      * @return a Set of SocketOptions
+     *
+     * @since 9
      */
     protected Set<SocketOption<?>> supportedOptions() {
         if (getDatagramSocket() instanceof MulticastSocket) {

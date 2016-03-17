@@ -48,8 +48,11 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "prims/nativeLookup.hpp"
+#include "prims/unsafe.hpp"
 #include "runtime/sharedRuntime.hpp"
+#ifdef TRACE_HAVE_INTRINSICS
 #include "trace/traceMacros.hpp"
+#endif
 
 class LibraryIntrinsic : public InlineCallGenerator {
   // Extend the set of intrinsics known to the runtime:
@@ -246,18 +249,14 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_access(bool is_native_ptr, bool is_store, BasicType type, AccessKind kind, bool is_unaligned);
   static bool klass_needs_init_guard(Node* kls);
   bool inline_unsafe_allocate();
+  bool inline_unsafe_newArray(bool uninitialized);
   bool inline_unsafe_copyMemory();
   bool inline_native_currentThread();
-#ifdef TRACE_HAVE_INTRINSICS
-  bool inline_native_classID();
-  bool inline_native_threadID();
-#endif
+
   bool inline_native_time_funcs(address method, const char* funcName);
   bool inline_native_isInterrupted();
   bool inline_native_Class_query(vmIntrinsics::ID id);
   bool inline_native_subtype_check();
-
-  bool inline_native_newArray();
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
   bool inline_array_equals(StrIntrinsicNode::ArgEnc ae);
@@ -706,15 +705,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isInterrupted:            return inline_native_isInterrupted();
 
 #ifdef TRACE_HAVE_INTRINSICS
-  case vmIntrinsics::_classID:                  return inline_native_classID();
-  case vmIntrinsics::_threadID:                 return inline_native_threadID();
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, TRACE_TIME_METHOD), "counterTime");
 #endif
   case vmIntrinsics::_currentTimeMillis:        return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeMillis), "currentTimeMillis");
   case vmIntrinsics::_nanoTime:                 return inline_native_time_funcs(CAST_FROM_FN_PTR(address, os::javaTimeNanos), "nanoTime");
   case vmIntrinsics::_allocateInstance:         return inline_unsafe_allocate();
   case vmIntrinsics::_copyMemory:               return inline_unsafe_copyMemory();
-  case vmIntrinsics::_newArray:                 return inline_native_newArray();
   case vmIntrinsics::_getLength:                return inline_native_getLength();
   case vmIntrinsics::_copyOf:                   return inline_array_copyOf(false);
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
@@ -722,6 +718,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
   case vmIntrinsics::_Objects_checkIndex:       return inline_objects_checkIndex();
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
+
+  case vmIntrinsics::_allocateUninitializedArray: return inline_unsafe_newArray(true);
+  case vmIntrinsics::_newArray:                   return inline_unsafe_newArray(false);
 
   case vmIntrinsics::_isAssignableFrom:         return inline_native_subtype_check();
 
@@ -2306,9 +2305,6 @@ void LibraryCallKit::insert_pre_barrier(Node* base_oop, Node* offset,
 }
 
 
-// Interpret Unsafe.fieldOffset cookies correctly:
-extern jlong Unsafe_field_offset_to_byte_offset(jlong field_offset);
-
 const TypeOopPtr* LibraryCallKit::sharpen_unsafe_type(Compile::AliasType* alias_type, const TypePtr *adr_type, bool is_native_ptr) {
   // Attempt to infer a sharper value type from the offset and base type.
   ciKlass* sharpened_klass = NULL;
@@ -2541,10 +2537,12 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
   if (alias_type->element() != NULL || alias_type->field() != NULL) {
     BasicType bt;
     if (alias_type->element() != NULL) {
-      const Type* element = alias_type->element();
+      // Use address type to get the element type. Alias type doesn't provide
+      // enough information (e.g., doesn't differentiate between byte[] and boolean[]).
+      const Type* element = adr_type->is_aryptr()->elem();
       bt = element->isa_narrowoop() ? T_OBJECT : element->array_element_basic_type();
     } else {
-      bt = alias_type->field()->type()->basic_type();
+      bt = alias_type->field()->layout_type();
     }
     if (bt == T_ARRAY) {
       // accessing an array field with getObject is not a mismatch
@@ -2561,7 +2559,7 @@ bool LibraryCallKit::inline_unsafe_access(const bool is_native_ptr, bool is_stor
     // Try to constant fold a load from a constant field
     ciField* field = alias_type->field();
     if (heap_base_oop != top() &&
-        field != NULL && field->is_constant() && field->layout_type() == type) {
+        field != NULL && field->is_constant() && !mismatched) {
       // final or stable field
       const Type* con_type = Type::make_constant(alias_type->field(), heap_base_oop);
       if (con_type != NULL) {
@@ -3182,52 +3180,6 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   return true;
 }
 
-#ifdef TRACE_HAVE_INTRINSICS
-/*
- * oop -> myklass
- * myklass->trace_id |= USED
- * return myklass->trace_id & ~0x3
- */
-bool LibraryCallKit::inline_native_classID() {
-  null_check_receiver();  // null-check, then ignore
-  Node* cls = null_check(argument(1), T_OBJECT);
-  Node* kls = load_klass_from_mirror(cls, false, NULL, 0);
-  kls = null_check(kls, T_OBJECT);
-  ByteSize offset = TRACE_ID_OFFSET;
-  Node* insp = basic_plus_adr(kls, in_bytes(offset));
-  Node* tvalue = make_load(NULL, insp, TypeLong::LONG, T_LONG, MemNode::unordered);
-  Node* bits = longcon(~0x03l); // ignore bit 0 & 1
-  Node* andl = _gvn.transform(new AndLNode(tvalue, bits));
-  Node* clsused = longcon(0x01l); // set the class bit
-  Node* orl = _gvn.transform(new OrLNode(tvalue, clsused));
-
-  const TypePtr *adr_type = _gvn.type(insp)->isa_ptr();
-  store_to_memory(control(), insp, orl, T_LONG, adr_type, MemNode::unordered);
-  set_result(andl);
-  return true;
-}
-
-bool LibraryCallKit::inline_native_threadID() {
-  Node* tls_ptr = NULL;
-  Node* cur_thr = generate_current_thread(tls_ptr);
-  Node* p = basic_plus_adr(top()/*!oop*/, tls_ptr, in_bytes(JavaThread::osthread_offset()));
-  Node* osthread = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered);
-  p = basic_plus_adr(top()/*!oop*/, osthread, in_bytes(OSThread::thread_id_offset()));
-
-  Node* threadid = NULL;
-  size_t thread_id_size = OSThread::thread_id_size();
-  if (thread_id_size == (size_t) BytesPerLong) {
-    threadid = ConvL2I(make_load(control(), p, TypeLong::LONG, T_LONG, MemNode::unordered));
-  } else if (thread_id_size == (size_t) BytesPerInt) {
-    threadid = make_load(control(), p, TypeInt::INT, T_INT, MemNode::unordered);
-  } else {
-    ShouldNotReachHere();
-  }
-  set_result(threadid);
-  return true;
-}
-#endif
-
 //------------------------inline_native_time_funcs--------------
 // inline code for System.currentTimeMillis() and System.nanoTime()
 // these have the same type and signature
@@ -3829,9 +3781,17 @@ Node* LibraryCallKit::generate_array_guard_common(Node* kls, RegionNode* region,
 
 //-----------------------inline_native_newArray--------------------------
 // private static native Object java.lang.reflect.newArray(Class<?> componentType, int length);
-bool LibraryCallKit::inline_native_newArray() {
-  Node* mirror    = argument(0);
-  Node* count_val = argument(1);
+// private        native Object Unsafe.allocateUninitializedArray0(Class<?> cls, int size);
+bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
+  Node* mirror;
+  Node* count_val;
+  if (uninitialized) {
+    mirror    = argument(1);
+    count_val = argument(2);
+  } else {
+    mirror    = argument(0);
+    count_val = argument(1);
+  }
 
   mirror = null_check(mirror);
   // If mirror or obj is dead, only null-path is taken.
@@ -3876,6 +3836,12 @@ bool LibraryCallKit::inline_native_newArray() {
     result_val->init_req(_normal_path, obj);
     result_io ->init_req(_normal_path, i_o());
     result_mem->init_req(_normal_path, reset_memory());
+
+    if (uninitialized) {
+      // Mark the allocation so that zeroing is skipped
+      AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(obj, &_gvn);
+      alloc->maybe_set_complete(&_gvn);
+    }
   }
 
   // Return the combined state.
@@ -4464,7 +4430,7 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
 }
 
 //----------------------inline_unsafe_copyMemory-------------------------
-// public native void Unsafe.copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
+// public native void Unsafe.copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
 bool LibraryCallKit::inline_unsafe_copyMemory() {
   if (callee()->is_static())  return false;  // caller must have the capability!
   null_check_receiver();  // null-check receiver

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,9 @@ import java.util.Set;
 import java.util.Collection;
 import java.util.AbstractSet;
 import java.util.Iterator;
+import java.util.Locale;
 import sun.util.logging.PlatformLogger;
 import java.util.Comparator;
-import sun.misc.ASCIICaseInsensitiveComparator;
 
 /**
  * The Attributes class maps Manifest attribute names to associated string
@@ -501,7 +501,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          */
         public boolean equals(Object o) {
             if (o instanceof Name) {
-                Comparator<String> c = ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER;
+                Comparator<String> c = String.CASE_INSENSITIVE_ORDER;
                 return c.compare(name, ((Name)o).name) == 0;
             } else {
                 return false;
@@ -513,7 +513,7 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          */
         public int hashCode() {
             if (hashCode == -1) {
-                hashCode = ASCIICaseInsensitiveComparator.lowerCaseHashCode(name);
+                hashCode = name.toLowerCase(Locale.ROOT).hashCode();
             }
             return hashCode;
         }
@@ -646,5 +646,13 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          * manifest attribute used for package versioning.
          */
         public static final Name SPECIFICATION_VENDOR = new Name("Specification-Vendor");
+
+        /**
+         * {@code Name} object for {@code Multi-Release}
+         * manifest attribute that indicates this is a multi-release JAR file.
+         *
+         * @since   9
+         */
+        public static final Name MULTI_RELEASE = new Name("Multi-Release");
     }
 }

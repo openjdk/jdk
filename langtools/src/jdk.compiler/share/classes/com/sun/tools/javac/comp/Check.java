@@ -81,8 +81,6 @@ public class Check {
     private final Types types;
     private final TypeAnnotations typeAnnotations;
     private final JCDiagnostic.Factory diags;
-    private boolean warnOnSyntheticConflicts;
-    private boolean suppressAbortOnBadClassFile;
     private final JavaFileManager fileManager;
     private final Source source;
     private final Profile profile;
@@ -130,8 +128,6 @@ public class Check {
         allowStrictMethodClashCheck = source.allowStrictMethodClashCheck();
         allowPrivateSafeVarargs = source.allowPrivateSafeVarargs();
         allowDiamondWithAnonymousClassCreation = source.allowDiamondWithAnonymousClassCreation();
-        warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
-        suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
         warnOnAccessToSensitiveMembers = options.isSet("warnOnAccessToSensitiveMembers");
 
         Target target = Target.instance(context);
@@ -269,8 +265,7 @@ public class Check {
      */
     public Type completionError(DiagnosticPosition pos, CompletionFailure ex) {
         log.error(JCDiagnostic.DiagnosticFlag.NON_DEFERRABLE, pos, "cant.access", ex.sym, ex.getDetailValue());
-        if (ex instanceof ClassFinder.BadClassFile
-                && !suppressAbortOnBadClassFile) throw new Abort();
+        if (ex instanceof ClassFinder.BadClassFile) throw new Abort();
         else return syms.errType;
     }
 
@@ -2006,10 +2001,11 @@ public class Check {
             }
         }
 
+        final boolean explicitOverride = m.attribute(syms.overrideType.tsym) != null;
         // Check if this method must override a super method due to being annotated with @Override
         // or by virtue of being a member of a diamond inferred anonymous class. Latter case is to
         // be treated "as if as they were annotated" with @Override.
-        boolean mustOverride = m.attribute(syms.overrideType.tsym) != null ||
+        boolean mustOverride = explicitOverride ||
                 (env.info.isAnonymousDiamond && !m.isConstructor() && !m.isPrivate());
         if (mustOverride && !isOverrider(m)) {
             DiagnosticPosition pos = tree.pos();
@@ -2019,7 +2015,9 @@ public class Check {
                     break;
                 }
             }
-            log.error(pos, "method.does.not.override.superclass");
+            log.error(pos,
+                      explicitOverride ? Errors.MethodDoesNotOverrideSuperclass :
+                                Errors.AnonymousDiamondMethodDoesNotOverrideSuperclass(Fragments.DiamondAnonymousMethodsImplicitlyOverride));
         }
     }
 
@@ -2632,12 +2630,7 @@ public class Check {
      */
     private void syntheticError(DiagnosticPosition pos, Symbol sym) {
         if (!sym.type.isErroneous()) {
-            if (warnOnSyntheticConflicts) {
-                log.warning(pos, "synthetic.name.conflict", sym, sym.location());
-            }
-            else {
-                log.error(pos, "synthetic.name.conflict", sym, sym.location());
-            }
+            log.error(pos, "synthetic.name.conflict", sym, sym.location());
         }
     }
 

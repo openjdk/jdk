@@ -1400,7 +1400,6 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       JavaThread::dirty_card_queue_set().abandon_logs();
       assert(dirty_card_queue_set().completed_buffers_num() == 0, "DCQS should be empty");
 
-      _young_list->reset_sampled_info();
       // At this point there should be no regions in the
       // entire heap tagged as young.
       assert(check_young_list_empty(true /* check_heap */),
@@ -1761,8 +1760,8 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
   _summary_bytes_used(0),
-  _survivor_evac_stats(YoungPLABSize, PLABWeight),
-  _old_evac_stats(OldPLABSize, PLABWeight),
+  _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
+  _old_evac_stats("Old", OldPLABSize, PLABWeight),
   _expand_heap_after_alloc_failure(true),
   _old_marking_cycles_started(0),
   _old_marking_cycles_completed(0),
@@ -1985,8 +1984,8 @@ jint G1CollectedHeap::initialize() {
   JavaThread::dirty_card_queue_set().initialize(_refine_cte_cl,
                                                 DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
-                                                concurrent_g1_refine()->yellow_zone(),
-                                                concurrent_g1_refine()->red_zone(),
+                                                (int)concurrent_g1_refine()->yellow_zone(),
+                                                (int)concurrent_g1_refine()->red_zone(),
                                                 Shared_DirtyCardQ_lock,
                                                 NULL,  // fl_owner
                                                 true); // init_free_ids
@@ -2777,12 +2776,6 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 }
 
 void G1CollectedHeap::print_tracing_info() const {
-  // We'll overload this to mean "trace GC pause statistics."
-  if (TraceYoungGenTime || TraceOldGenTime) {
-    // The "G1CollectorPolicy" is keeping track of these stats, so delegate
-    // to that.
-    g1_policy()->print_tracing_info();
-  }
   g1_rem_set()->print_summary_info();
   concurrent_mark()->print_summary_info();
   g1_policy()->print_yg_surv_rate_info();
@@ -2908,7 +2901,6 @@ HeapWord* G1CollectedHeap::do_collection_pause(size_t word_size,
                                                bool* succeeded,
                                                GCCause::Cause gc_cause) {
   assert_heap_not_locked_and_not_at_safepoint();
-  g1_policy()->record_stop_world_start();
   VM_G1IncCollectionPause op(gc_count_before,
                              word_size,
                              false, /* should_initiate_conc_mark */
@@ -3242,10 +3234,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
     GCTraceCPUTime tcpu;
 
-    uint active_workers = AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
-                                                                  workers()->active_workers(),
-                                                                  Threads::number_of_non_daemon_threads());
-    workers()->set_active_workers(active_workers);
     FormatBuffer<> gc_string("Pause ");
     if (collector_state()->during_initial_mark_pause()) {
       gc_string.append("Initial Mark");
@@ -3255,6 +3243,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       gc_string.append("Mixed");
     }
     GCTraceTime(Info, gc) tm(gc_string, NULL, gc_cause(), true);
+
+    uint active_workers = AdaptiveSizePolicy::calc_active_workers(workers()->total_workers(),
+                                                                  workers()->active_workers(),
+                                                                  Threads::number_of_non_daemon_threads());
+    workers()->set_active_workers(active_workers);
 
     g1_policy()->note_gc_start(active_workers);
 
@@ -3391,12 +3384,14 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         g1_policy()->clear_collection_set();
 
+        record_obj_copy_mem_stats();
+        _survivor_evac_stats.adjust_desired_plab_sz();
+        _old_evac_stats.adjust_desired_plab_sz();
+
         // Start a new incremental collection set for the next pause.
         g1_policy()->start_incremental_cset_building();
 
         clear_cset_fast_test();
-
-        _young_list->reset_sampled_info();
 
         // Don't check the whole heap at this point as the
         // GC alloc regions from this pause have been tagged
@@ -4404,6 +4399,8 @@ public:
   { }
 
   void work(uint worker_id) {
+    G1GCParPhaseTimesTracker x(_g1h->g1_policy()->phase_times(), G1GCPhaseTimes::PreserveCMReferents, worker_id);
+
     ResourceMark rm;
     HandleMark   hm;
 
@@ -4467,13 +4464,8 @@ void G1CollectedHeap::process_weak_jni_handles() {
   g1_policy()->phase_times()->record_ref_proc_time(ref_proc_time * 1000.0);
 }
 
-// Weak Reference processing during an evacuation pause (part 1).
-void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per_thread_states) {
-  double ref_proc_start = os::elapsedTime();
-
-  ReferenceProcessor* rp = _ref_processor_stw;
-  assert(rp->discovery_enabled(), "should have been enabled");
-
+void G1CollectedHeap::preserve_cm_referents(G1ParScanThreadStateSet* per_thread_states) {
+  double preserve_cm_referents_start = os::elapsedTime();
   // Any reference objects, in the collection set, that were 'discovered'
   // by the CM ref processor should have already been copied (either by
   // applying the external root copy closure to the discovered lists, or
@@ -4501,8 +4493,17 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
                                                  per_thread_states,
                                                  no_of_gc_workers,
                                                  _task_queues);
-
   workers()->run_task(&keep_cm_referents);
+
+  g1_policy()->phase_times()->record_preserve_cm_referents_time_ms((os::elapsedTime() - preserve_cm_referents_start) * 1000.0);
+}
+
+// Weak Reference processing during an evacuation pause (part 1).
+void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per_thread_states) {
+  double ref_proc_start = os::elapsedTime();
+
+  ReferenceProcessor* rp = _ref_processor_stw;
+  assert(rp->discovery_enabled(), "should have been enabled");
 
   // Closure to test whether a referent is alive.
   G1STWIsAliveClosure is_alive(this);
@@ -4535,6 +4536,8 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
                                               NULL,
                                               _gc_timer_stw);
   } else {
+    uint no_of_gc_workers = workers()->active_workers();
+
     // Parallel reference processing
     assert(rp->num_q() == no_of_gc_workers, "sanity");
     assert(no_of_gc_workers <= rp->max_num_q(), "sanity");
@@ -4590,6 +4593,12 @@ void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadStateSet* per
 
   double ref_enq_time = os::elapsedTime() - ref_enq_start;
   g1_policy()->phase_times()->record_ref_enq_time(ref_enq_time * 1000.0);
+}
+
+void G1CollectedHeap::merge_per_thread_state_info(G1ParScanThreadStateSet* per_thread_states) {
+  double merge_pss_time_start = os::elapsedTime();
+  per_thread_states->flush();
+  g1_policy()->phase_times()->record_merge_pss_time_ms((os::elapsedTime() - merge_pss_time_start) * 1000.0);
 }
 
 void G1CollectedHeap::pre_evacuate_collection_set() {
@@ -4650,6 +4659,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   // objects (and their reachable sub-graphs) that were
   // not copied during the pause.
   if (g1_policy()->should_process_references()) {
+    preserve_cm_referents(per_thread_states);
     process_discovered_references(per_thread_states);
   } else {
     ref_processor_stw()->verify_no_references_recorded();
@@ -4693,12 +4703,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
 
   _allocator->release_gc_alloc_regions(evacuation_info);
 
-  per_thread_states->flush();
-
-  record_obj_copy_mem_stats();
-
-  _survivor_evac_stats.adjust_desired_plab_sz();
-  _old_evac_stats.adjust_desired_plab_sz();
+  merge_per_thread_state_info(per_thread_states);
 
   // Reset and re-enable the hot card cache.
   // Note the counts for the cards in the regions in the
@@ -5194,8 +5199,8 @@ public:
   bool success() { return _success; }
 };
 
-bool G1CollectedHeap::check_young_list_empty(bool check_heap, bool check_sample) {
-  bool ret = _young_list->check_list_empty(check_sample);
+bool G1CollectedHeap::check_young_list_empty(bool check_heap) {
+  bool ret = _young_list->check_list_empty();
 
   if (check_heap) {
     NoYoungRegionsClosure closure;

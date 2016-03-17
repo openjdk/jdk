@@ -200,6 +200,9 @@ java/nio/channels/Selector/OutOfBand.java                       macosx-all
 java/nio/file/WatchService/Basic.java				solaris-all
 java/nio/file/WatchService/LotsOfEvents.java			solaris-all
 
+# 8149712
+java/nio/charset/coders/BashStreams.java                        generic-all
+
 ############################################################################
 
 # jdk_rmi
@@ -330,9 +333,6 @@ javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       generic-all
 ############################################################################
 
 # jdk_time
-
-# 8134979
-java/time/tck/java/time/chrono/TCKJapaneseChronology.java       generic-all
 
 ############################################################################
 

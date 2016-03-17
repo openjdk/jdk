@@ -35,6 +35,7 @@
  * @test
  * @bug 8005697
  * @summary Basic tests for StampedLock
+ * @library /lib/testlibrary/
  * @author Chris Hegarty
  */
 
@@ -49,8 +50,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.StampedLock;
+import jdk.testlibrary.Utils;
 
 public class Basic {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
 
     static void checkResult(Locker l, Class<? extends Throwable> c) {
         Throwable t = l.thrown();
@@ -268,7 +271,7 @@ public class Basic {
                     case 2: case 5:
                         return interruptibleReader(sl, -1, SECONDS, gate, view ^= true);
                     default:
-                        return interruptibleReader(sl, 30, SECONDS, gate, view ^= true); }}
+                        return interruptibleReader(sl, LONG_DELAY_MS, MILLISECONDS, gate, view ^= true); }}
             public void remove() {throw new UnsupportedOperationException();}};
     }
 
@@ -286,7 +289,7 @@ public class Basic {
                     case 2: case 5:
                         return interruptibleWriter(sl, -1, SECONDS, gate, view ^= true);
                     default:
-                        return interruptibleWriter(sl, 30, SECONDS, gate, view ^= true); }}
+                        return interruptibleWriter(sl, LONG_DELAY_MS, MILLISECONDS, gate, view ^= true); }}
             public void remove() {throw new UnsupportedOperationException();}};
     }
 
@@ -454,13 +457,13 @@ public class Basic {
             // We test interrupting both before and after trying to acquire
             boolean view = false;
             StampedLock sl = new StampedLock();
-            for (long timeout : new long[] { -1L, 30L, -1L, 30L }) {
+            for (long timeout : new long[] { -1L, LONG_DELAY_MS, -1L, LONG_DELAY_MS }) {
                 long stamp;
                 Thread.State state;
 
                 stamp = sl.writeLock();
                 try {
-                    Reader r = interruptibleReader(sl, timeout, SECONDS, null, view);
+                    Reader r = interruptibleReader(sl, timeout, MILLISECONDS, null, view);
                     r.start();
                     r.interrupt();
                     r.join();
@@ -471,7 +474,7 @@ public class Basic {
 
                 stamp = sl.writeLock();
                 try {
-                    Reader r = interruptibleReader(sl, timeout, SECONDS, null, view);
+                    Reader r = interruptibleReader(sl, timeout, MILLISECONDS, null, view);
                     r.start();
                     waitForThreadToBlock(r);
                     r.interrupt();
@@ -483,7 +486,7 @@ public class Basic {
 
                 stamp = sl.readLock();
                 try {
-                    Writer w = interruptibleWriter(sl, timeout, SECONDS, null, view);
+                    Writer w = interruptibleWriter(sl, timeout, MILLISECONDS, null, view);
                     w.start();
                     w.interrupt();
                     w.join();
@@ -494,7 +497,7 @@ public class Basic {
 
                 stamp = sl.readLock();
                 try {
-                    Writer w = interruptibleWriter(sl, timeout, SECONDS, null, view);
+                    Writer w = interruptibleWriter(sl, timeout, MILLISECONDS, null, view);
                     w.start();
                     waitForThreadToBlock(w);
                     w.interrupt();
@@ -509,7 +512,7 @@ public class Basic {
                 check(!sl.tryUnlockRead());
                 check(!sl.tryUnlockWrite());
                 check(sl.tryOptimisticRead() != 0L);
-                if (timeout == 30L)
+                if (timeout == LONG_DELAY_MS)
                     view = true;
             }
         } catch (Throwable t) { unexpected(t); }

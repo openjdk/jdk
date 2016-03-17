@@ -500,6 +500,7 @@ class D3DRTTSurfaceToSurfaceTransform extends TransformBlit {
 class D3DSurfaceToSwBlit extends Blit {
 
     private int typeval;
+    private WeakReference<SurfaceData> srcTmp;
 
     // REMIND: destination will actually be opaque/premultiplied...
     D3DSurfaceToSwBlit(SurfaceType dstType, int typeval) {
@@ -509,11 +510,97 @@ class D3DSurfaceToSwBlit extends Blit {
         this.typeval = typeval;
     }
 
+    /*
+     * Clip value is ignored in D3D SurfaceToSw blit.
+     * Root Cause: The native interfaces to D3D use StretchRect API followed
+     * by custom copy of pixels from Surface to Sysmem. As a result, clipping
+     * in D3DSurfaceToSw works 'only' for Rect clips, provided, proper srcX,
+     * srcY, dstX, dstY, width and height are passed to native interfaces.
+     * Non rect clips (For example: Shape clips) are ignored completely.
+     *
+     * Solution: There are three solutions possible to fix this issue.
+     * 1. Convert the entire Surface to Sysmem and perform regular Blit.
+     *    An optimized version of this is to take up the conversion only
+     *    when Shape clips are needed. Existing native interface will suffice
+     *    for supporting Rect clips.
+     * 2. With help of existing classes we could perform SwToSurface,
+     *    SurfaceToSurface (implements clip) and SurfaceToSw (complete copy)
+     *    in order.
+     * 3. Modify the native D3D interface to accept clip and perform same logic
+     *    as the second approach but at native side.
+     *
+     * Upon multiple experiments, the first approach has been found to be
+     * faster than the others as it deploys 1-draw/copy operation for rect clip
+     * and 2-draw/copy operations for shape clip compared to 3-draws/copy
+     * operations deployed by the remaining approaches.
+     *
+     * complexClipBlit method helps to convert or copy the contents from
+     * D3DSurface onto Sysmem and perform a regular Blit with the clip
+     * information as required. This method is used when non-rectangular
+     * clip is needed.
+     */
+    private synchronized void complexClipBlit(SurfaceData src, SurfaceData dst,
+                                              Composite comp, Region clip,
+                                              int sx, int sy, int dx, int dy,
+                                              int w, int h) {
+        SurfaceData cachedSrc = null;
+        if (srcTmp != null) {
+            // use cached intermediate surface, if available
+            cachedSrc = srcTmp.get();
+        }
+
+        // Type- indicates the pixel format of Sysmem based BufferedImage.
+        // Native d3d interfaces support on the fly conversion of pixels from
+        // d3d surface to destination sysmem memory of type IntARGB only.
+        final int type = BufferedImage.TYPE_INT_ARGB;
+        src = convertFrom(this, src, sx, sy, w, h, cachedSrc, type);
+
+        // copy intermediate SW to destination SW using complex clip
+        final Blit performop = Blit.getFromCache(src.getSurfaceType(),
+                                                 CompositeType.SrcNoEa,
+                                                 dst.getSurfaceType());
+        performop.Blit(src, dst, comp, clip, 0, 0, dx, dy, w, h);
+
+        if (src != cachedSrc) {
+            // cache the intermediate surface
+            srcTmp = new WeakReference<>(src);
+        }
+    }
+
     public void Blit(SurfaceData src, SurfaceData dst,
                      Composite comp, Region clip,
                      int sx, int sy, int dx, int dy,
                      int w, int h)
     {
+        if (clip != null) {
+            clip = clip.getIntersectionXYWH(dx, dy, w, h);
+            // At the end this method will flush the RenderQueue, we should exit
+            // from it as soon as possible.
+            if (clip.isEmpty()) {
+                return;
+            }
+
+            // Adjust final dst(x,y) and src(x,y) based on the clip. The
+            // logic is that, when clip limits drawing on the destination,
+            // corresponding pixels from the src should be skipped.
+            sx += clip.getLoX() - dx;
+            sy += clip.getLoY() - dy;
+            dx = clip.getLoX();
+            dy = clip.getLoY();
+            w = clip.getWidth();
+            h = clip.getHeight();
+
+            // Check if the clip is Rectangular. For non-rectangular clips
+            // complexClipBlit will convert Surface To Sysmem and perform
+            // regular Blit.
+            if (!clip.isRectangular()) {
+                complexClipBlit(src, dst, comp, clip,
+                                sx, sy, dx, dy,
+                                w, h);
+                return;
+            }
+        }
+
         D3DRenderQueue rq = D3DRenderQueue.getInstance();
         rq.lock();
         try {

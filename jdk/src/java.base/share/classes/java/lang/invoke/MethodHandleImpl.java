@@ -778,8 +778,21 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             return (asTypeCache = wrapper);
         }
 
+        // Customize target if counting happens for too long.
+        private int invocations = CUSTOMIZE_THRESHOLD;
+        private void maybeCustomizeTarget() {
+            int c = invocations;
+            if (c >= 0) {
+                if (c == 1) {
+                    target.customize();
+                }
+                invocations = c - 1;
+            }
+        }
+
         boolean countDown() {
             int c = count;
+            maybeCustomizeTarget();
             if (c <= 1) {
                 // Try to limit number of updates. MethodHandle.updateForm() doesn't guarantee LF update visibility.
                 if (isCounting) {

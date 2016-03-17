@@ -43,7 +43,7 @@ enum TraceEventId {
   _traceeventbase = (NUM_RESERVED_EVENTS-1), // Make sure we start at right index.
   
   // Events -> enum entry
-<xsl:for-each select="trace/events/event">
+<xsl:for-each select="trace/events/*">
   <xsl:value-of select="concat('  Trace', @id, 'Event,', $newline)"/>
 </xsl:for-each>
   MaxTraceEventId

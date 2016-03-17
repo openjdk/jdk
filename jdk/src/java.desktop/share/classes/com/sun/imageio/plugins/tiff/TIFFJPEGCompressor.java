@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,14 +102,14 @@ public class TIFFJPEGCompressor extends TIFFBaseJPEGCompressor {
     }
 
     /**
-     * Sets the value of the <code>metadata</code> field.
+     * Sets the value of the {@code metadata} field.
      *
      * <p>The implementation in this class also adds the TIFF fields
      * JPEGTables, YCbCrSubSampling, YCbCrPositioning, and
      * ReferenceBlackWhite superseding any prior settings of those
      * fields.</p>
      *
-     * @param metadata the <code>IIOMetadata</code> object for the
+     * @param metadata the {@code IIOMetadata} object for the
      * image being written.
      *
      * @see #getMetadata()

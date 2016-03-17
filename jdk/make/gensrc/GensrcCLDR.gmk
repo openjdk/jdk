@@ -30,7 +30,7 @@ GENSRC_BASEDIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base
 GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata
 
 CLDR_BASEMETAINFO_FILE := $(GENSRC_BASEDIR)/sun/util/cldr/CLDRBaseLocaleDataMetaInfo.java
-CLDR_METAINFO_FILE := $(GENSRC_DIR)/sun/util/resources/cldr/provider/CLDRLocaleDataMetaInfo_jdk_localedata.java
+CLDR_METAINFO_FILE := $(GENSRC_DIR)/sun/util/resources/cldr/provider/CLDRLocaleDataMetaInfo.java
 
 CLDR_BASE_LOCALES := "en-US"
 

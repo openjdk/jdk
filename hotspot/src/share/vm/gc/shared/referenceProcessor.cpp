@@ -339,7 +339,7 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
   // all linked Reference objects. Note that it is important to not dirty any
   // cards during reference processing since this will cause card table
   // verification to fail for G1.
-  log_develop_trace(gc, ref)("ReferenceProcessor::enqueue_discovered_reflist list " INTPTR_FORMAT, p2i(refs_list.head()));
+  log_develop_trace(gc, ref)("ReferenceProcessor::enqueue_discovered_reflist list " INTPTR_FORMAT, p2i(&refs_list));
 
   oop obj = NULL;
   oop next_d = refs_list.head();
@@ -502,7 +502,7 @@ ReferenceProcessor::process_phase1(DiscoveredList&    refs_list,
   // Close the reachable set
   complete_gc->do_void();
   log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " dead Refs out of " SIZE_FORMAT " discovered Refs by policy, from list " INTPTR_FORMAT,
-                             iter.removed(), iter.processed(), p2i(refs_list.head()));
+                             iter.removed(), iter.processed(), p2i(&refs_list));
     }
 
 // Traverse the list and remove any Refs that are not active, or
@@ -536,7 +536,7 @@ ReferenceProcessor::pp2_work(DiscoveredList&    refs_list,
     if (iter.processed() > 0) {
       log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " active Refs out of " SIZE_FORMAT
         " Refs in discovered list " INTPTR_FORMAT,
-        iter.removed(), iter.processed(), p2i(refs_list.head()));
+        iter.removed(), iter.processed(), p2i(&refs_list));
     }
   )
 }
@@ -575,7 +575,7 @@ ReferenceProcessor::pp2_work_concurrent_discovery(DiscoveredList&    refs_list,
     if (iter.processed() > 0) {
       log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " active Refs out of " SIZE_FORMAT
         " Refs in discovered list " INTPTR_FORMAT,
-        iter.removed(), iter.processed(), p2i(refs_list.head()));
+        iter.removed(), iter.processed(), p2i(&refs_list));
     }
   )
 }
@@ -1198,7 +1198,7 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
   NOT_PRODUCT(
     if (iter.processed() > 0) {
       log_develop_trace(gc, ref)(" Dropped " SIZE_FORMAT " Refs out of " SIZE_FORMAT " Refs in discovered list " INTPTR_FORMAT,
-        iter.removed(), iter.processed(), p2i(refs_list.head()));
+        iter.removed(), iter.processed(), p2i(&refs_list));
     }
   )
 }

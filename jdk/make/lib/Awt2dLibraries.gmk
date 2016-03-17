@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -593,8 +593,8 @@ ifeq ($(BUILD_HEADLESS), true)
         LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
         REORDER := $(LIBAWT_HEADLESS_REORDER), \
         LIBS_unix := -lawt -ljvm -ljava, \
-        LIBS_linux := -lm $(LIBDL), \
-        LIBS_solaris := -lm $(LIBDL) $(LIBCXX) -lc, \
+        LIBS_linux := $(LIBM) $(LIBDL), \
+        LIBS_solaris := $(LIBM) $(LIBDL) $(LIBCXX) -lc, \
         OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libawt_headless, \
     ))
 

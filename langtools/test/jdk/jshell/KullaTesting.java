@@ -24,6 +24,7 @@
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,6 +62,7 @@ import jdk.jshell.SnippetEvent;
 import jdk.jshell.SourceCodeAnalysis;
 import jdk.jshell.SourceCodeAnalysis.CompletionInfo;
 import jdk.jshell.SourceCodeAnalysis.Completeness;
+import jdk.jshell.SourceCodeAnalysis.QualifiedNames;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
 import jdk.jshell.UnresolvedReferenceException;
 import org.testng.annotations.AfterMethod;
@@ -189,14 +191,14 @@ public class KullaTesting {
         return key;
     }
 
-    public MethodSnippet assertEvalUnresolvedException(String input, String name, int unresolvedSize, int diagnosticsSize) {
+    public DeclarationSnippet assertEvalUnresolvedException(String input, String name, int unresolvedSize, int diagnosticsSize) {
         List<SnippetEvent> events = assertEval(input, null, UnresolvedReferenceException.class, DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, null);
         SnippetEvent ste = events.get(0);
-        MethodSnippet methodKey = ((UnresolvedReferenceException) ste.exception()).getMethodSnippet();
-        assertEquals(methodKey.name(), name, "Given input: " + input + ", checking name");
-        assertEquals(getState().unresolvedDependencies(methodKey).size(), unresolvedSize, "Given input: " + input + ", checking unresolved");
-        assertEquals(getState().diagnostics(methodKey).size(), diagnosticsSize, "Given input: " + input + ", checking diagnostics");
-        return methodKey;
+        DeclarationSnippet sn = ((UnresolvedReferenceException) ste.exception()).getSnippet();
+        assertEquals(sn.name(), name, "Given input: " + input + ", checking name");
+        assertEquals(getState().unresolvedDependencies(sn).size(), unresolvedSize, "Given input: " + input + ", checking unresolved");
+        assertEquals(getState().diagnostics(sn).size(), diagnosticsSize, "Given input: " + input + ", checking diagnostics");
+        return sn;
     }
 
     public Snippet assertKeyMatch(String input, boolean isExecutable, SubKind expectedSubKind, STEInfo mainInfo, STEInfo... updates) {
@@ -862,6 +864,8 @@ public class KullaTesting {
     }
 
     private List<String> computeCompletions(String code, Boolean isSmart) {
+        waitIndexingFinished();
+
         int cursor =  code.indexOf('|');
         code = code.replace("|", "");
         assertTrue(cursor > -1, "'|' expected, but not found in: " + code);
@@ -872,6 +876,37 @@ public class KullaTesting {
                           .map(s -> s.continuation)
                           .distinct()
                           .collect(Collectors.toList());
+    }
+
+    public void assertInferredType(String code, String expectedType) {
+        String inferredType = getAnalysis().analyzeType(code, code.length());
+
+        assertEquals(inferredType, expectedType, "Input: " + code + ", " + inferredType);
+    }
+
+    public void assertInferredFQNs(String code, String... fqns) {
+        assertInferredFQNs(code, code.length(), false, fqns);
+    }
+
+    public void assertInferredFQNs(String code, int simpleNameLen, boolean resolvable, String... fqns) {
+        waitIndexingFinished();
+
+        QualifiedNames candidates = getAnalysis().listQualifiedNames(code, code.length());
+
+        assertEquals(candidates.getNames(), Arrays.asList(fqns), "Input: " + code + ", candidates=" + candidates.getNames());
+        assertEquals(candidates.getSimpleNameLength(), simpleNameLen, "Input: " + code + ", simpleNameLen=" + candidates.getSimpleNameLength());
+        assertEquals(candidates.isResolvable(), resolvable, "Input: " + code + ", resolvable=" + candidates.isResolvable());
+    }
+
+    protected void waitIndexingFinished() {
+        try {
+            Method waitBackgroundTaskFinished = getAnalysis().getClass().getDeclaredMethod("waitBackgroundTaskFinished");
+
+            waitBackgroundTaskFinished.setAccessible(true);
+            waitBackgroundTaskFinished.invoke(getAnalysis());
+        } catch (Exception ex) {
+            throw new AssertionError("Cannot wait for indexing end.", ex);
+        }
     }
 
     public void assertDocumentation(String code, String... expected) {

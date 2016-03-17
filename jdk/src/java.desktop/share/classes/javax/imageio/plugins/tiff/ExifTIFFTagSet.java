@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.List;
  * standard for annotating images used by most digital camera
  * manufacturers.  The Exif specification may be found at
  * <a href="http://www.exif.org/Exif2-2.PDF">
- * <code>http://www.exif.org/Exif2-2.PDF</code>
+ * {@code http://www.exif.org/Exif2-2.PDF}
  * </a>.
  *
  * <p> The definitions of the data types referenced by the field
@@ -67,7 +67,7 @@ public class ExifTIFFTagSet extends TIFFTagSet {
     /**
      * A value to be used with the "ExifVersion" tag to indicate Exif version
      * 2.1.  The value equals the US-ASCII encoding of the byte array
-     * <code>{'0', '2', '1', '0'}</code>.
+     * {@code {'0', '2', '1', '0'}}.
      *
      * @see #TAG_EXIF_VERSION
      */
@@ -78,7 +78,7 @@ public class ExifTIFFTagSet extends TIFFTagSet {
     /**
      * A value to be used with the "ExifVersion" tag to indicate Exif version
      * 2.2.  The value equals the US-ASCII encoding of the byte array
-     * <code>{'0', '2', '2', '0'}</code>.
+     * {@code {'0', '2', '2', '0'}}.
      *
      * @see #TAG_EXIF_VERSION
      */
@@ -94,7 +94,7 @@ public class ExifTIFFTagSet extends TIFFTagSet {
 
     /**
      * A tag indicating the color space information (type SHORT).  The
-     * legal values are given by the <code>COLOR_SPACE_*</code>
+     * legal values are given by the {@code COLOR_SPACE_*}
      * constants.
      *
      * @see #COLOR_SPACE_SRGB
@@ -1256,7 +1256,7 @@ public class ExifTIFFTagSet extends TIFFTagSet {
     static class ExifVersion extends TIFFTag {
 
         public ExifVersion() {
-            super("Exifversion",
+            super("ExifVersion",
                   TAG_EXIF_VERSION,
                   1 << TIFFTag.TIFF_UNDEFINED,
                   4);
@@ -1992,9 +1992,9 @@ public class ExifTIFFTagSet extends TIFFTagSet {
     }
 
     /**
-     * Returns a shared instance of an <code>ExifTIFFTagSet</code>.
+     * Returns a shared instance of an {@code ExifTIFFTagSet}.
      *
-     * @return an <code>ExifTIFFTagSet</code> instance.
+     * @return an {@code ExifTIFFTagSet} instance.
      */
     public synchronized static ExifTIFFTagSet getInstance() {
         if (theInstance == null) {

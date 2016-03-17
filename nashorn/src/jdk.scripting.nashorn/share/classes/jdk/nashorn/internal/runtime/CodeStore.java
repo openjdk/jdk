@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,10 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.ServiceLoader;
 import jdk.nashorn.internal.codegen.OptimisticTypesPersistence;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -53,11 +50,6 @@ import jdk.nashorn.internal.runtime.options.Options;
  */
 @Logger(name="codestore")
 public abstract class CodeStore implements Loggable {
-
-    /**
-     * Permission needed to provide a CodeStore instance via ServiceLoader.
-     */
-    public final static String NASHORN_PROVIDE_CODE_STORE = "nashorn.provideCodeStore";
 
     private DebugLogger log;
 
@@ -85,23 +77,6 @@ public abstract class CodeStore implements Loggable {
      * @return The instance, or null if code store could not be created
      */
     public static CodeStore newCodeStore(final Context context) {
-        final Class<CodeStore> baseClass = CodeStore.class;
-        try {
-            // security check first
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(new RuntimePermission(NASHORN_PROVIDE_CODE_STORE));
-            }
-            final ServiceLoader<CodeStore> services = ServiceLoader.load(baseClass);
-            final Iterator<CodeStore> iterator = services.iterator();
-            if (iterator.hasNext()) {
-                final CodeStore store = iterator.next();
-                store.initLogger(context).info("using code store provider ", store.getClass().getCanonicalName());
-                return store;
-            }
-        } catch (final AccessControlException e) {
-            context.getLogger(CodeStore.class).warning("failed to load code store provider ", e);
-        }
         try {
             final CodeStore store = new DirectoryCodeStore(context);
             store.initLogger(context);

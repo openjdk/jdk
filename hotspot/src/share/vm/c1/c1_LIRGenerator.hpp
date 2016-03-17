@@ -246,6 +246,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   void do_RegisterFinalizer(Intrinsic* x);
   void do_isInstance(Intrinsic* x);
+  void do_isPrimitive(Intrinsic* x);
   void do_getClass(Intrinsic* x);
   void do_currentThread(Intrinsic* x);
   void do_MathIntrinsic(Intrinsic* x);
@@ -440,10 +441,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_SwitchRanges(SwitchRangeArray* x, LIR_Opr value, BlockBegin* default_sux);
 
   void do_RuntimeCall(address routine, Intrinsic* x);
-#ifdef TRACE_HAVE_INTRINSICS
-  void do_ThreadIDIntrinsic(Intrinsic* x);
-  void do_ClassIDIntrinsic(Intrinsic* x);
-#endif
+
   ciKlass* profile_type(ciMethodData* md, int md_first_offset, int md_offset, intptr_t profiled_k,
                         Value arg, LIR_Opr& mdp, bool not_null, ciKlass* signature_at_call_k,
                         ciKlass* callee_signature_k);

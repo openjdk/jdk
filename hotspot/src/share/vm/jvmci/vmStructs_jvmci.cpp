@@ -592,6 +592,14 @@
 #endif // TARGET_OS_FAMILY_bsd
 
 
+#ifdef TARGET_ARCH_aarch64
+
+#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
+  volatile_nonstatic_field(JavaFrameAnchor, _last_Java_fp, intptr_t*)
+
+#endif // TARGET_ARCH_aarch64
+
+
 #ifdef TARGET_ARCH_x86
 
 #define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
@@ -631,11 +639,12 @@
   declare_constant(VM_Version::CPU_AVX512DQ)                        \
   declare_constant(VM_Version::CPU_AVX512PF)                        \
   declare_constant(VM_Version::CPU_AVX512ER)                        \
-  declare_constant(VM_Version::CPU_AVX512CD)                        \
-  declare_constant(VM_Version::CPU_AVX512BW)
+  declare_constant(VM_Version::CPU_AVX512CD)
 
 #define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
-  declare_preprocessor_constant("VM_Version::CPU_AVX512VL", CPU_AVX512VL)
+  declare_preprocessor_constant("VM_Version::CPU_AVX512BW", CPU_AVX512BW) \
+  declare_preprocessor_constant("VM_Version::CPU_AVX512VL", CPU_AVX512VL) \
+  declare_preprocessor_constant("VM_Version::CPU_SHA", CPU_SHA)
 
 #endif // TARGET_ARCH_x86
 

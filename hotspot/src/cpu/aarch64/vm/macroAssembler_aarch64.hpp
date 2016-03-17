@@ -971,21 +971,10 @@ public:
   }
 
   // A generic CAS; success or failure is in the EQ flag.
-  template <typename T1, typename T2>
   void cmpxchg(Register addr, Register expected, Register new_val,
-               T1 load_insn,
-               void (MacroAssembler::*cmp_insn)(Register, Register),
-               T2 store_insn,
-               Register tmp = rscratch1) {
-    Label retry_load, done;
-    bind(retry_load);
-    (this->*load_insn)(tmp, addr);
-    (this->*cmp_insn)(tmp, expected);
-    br(Assembler::NE, done);
-    (this->*store_insn)(tmp, new_val, addr);
-    cbnzw(tmp, retry_load);
-    bind(done);
-  }
+               enum operand_size size,
+               bool acquire, bool release,
+               Register tmp = rscratch1);
 
   // Calls
 
@@ -1186,13 +1175,11 @@ public:
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1);
-  void string_equals(Register str1, Register str2,
-                     Register cnt, Register result,
-                     Register tmp1);
-  void char_arrays_equals(Register ary1, Register ary2,
-                          Register result, Register tmp1);
-  void byte_arrays_equals(Register ary1, Register ary2,
-                          Register result, Register tmp1);
+
+  void arrays_equals(Register a1, Register a2,
+                     Register result, Register cnt1,
+                     int elem_size, bool is_string);
+
   void encode_iso_array(Register src, Register dst,
                         Register len, Register result,
                         FloatRegister Vtmp1, FloatRegister Vtmp2,

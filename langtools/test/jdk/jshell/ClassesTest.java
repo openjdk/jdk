@@ -43,12 +43,13 @@ import org.testng.annotations.Test;
 import jdk.jshell.Diag;
 import static jdk.jshell.Snippet.Status.VALID;
 import static jdk.jshell.Snippet.Status.RECOVERABLE_NOT_DEFINED;
+import static jdk.jshell.Snippet.Status.RECOVERABLE_DEFINED;
 import static jdk.jshell.Snippet.Status.DROPPED;
 import static jdk.jshell.Snippet.Status.REJECTED;
+import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 import static jdk.jshell.Snippet.SubKind.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
-import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 
 @Test
 public class ClassesTest extends KullaTesting {
@@ -82,10 +83,10 @@ public class ClassesTest extends KullaTesting {
         TypeDeclSnippet c1 = (TypeDeclSnippet) assertDeclareFail("class A { void f() { return g(); } }", "compiler.err.prob.found.req");
         assertTypeDeclSnippet(c1, "A", REJECTED, CLASS_SUBKIND, 0, 2);
         TypeDeclSnippet c2 = classKey(assertEval("class A { int f() { return g(); } }",
-                ste(c1, REJECTED, RECOVERABLE_NOT_DEFINED, false, null)));
-        assertTypeDeclSnippet(c2, "A", RECOVERABLE_NOT_DEFINED, CLASS_SUBKIND, 1, 0);
+                ste(c1, REJECTED, RECOVERABLE_DEFINED, true, null)));
+        assertTypeDeclSnippet(c2, "A", RECOVERABLE_DEFINED, CLASS_SUBKIND, 1, 0);
         assertDrop(c2,
-                ste(c2, RECOVERABLE_NOT_DEFINED, DROPPED, false, null));
+                ste(c2, RECOVERABLE_DEFINED, DROPPED, true, null));
     }
 
     public void classDeclaration() {

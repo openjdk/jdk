@@ -3425,9 +3425,6 @@ const bool Matcher::misaligned_vectors_ok() {
 // false => size gets scaled to BytesPerLong, ok.
 const bool Matcher::init_array_count_is_in_bytes = false;
 
-// Threshold size for cleararray.
-const int Matcher::init_array_short_size = 18 * BytesPerLong;
-
 // Use conditional move (CMOVL)
 const int Matcher::long_cmove_cost() {
   // long cmoves are no more expensive than int cmoves
@@ -4135,14 +4132,14 @@ encode %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               &Assembler::ldxr, &MacroAssembler::cmp, &Assembler::stlxr);
+               Assembler::xword, /*acquire*/ false, /*release*/ true);
   %}
 
   enc_class aarch64_enc_cmpxchgw(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               &Assembler::ldxrw, &MacroAssembler::cmpw, &Assembler::stlxrw);
+               Assembler::word, /*acquire*/ false, /*release*/ true);
   %}
 
 
@@ -4154,14 +4151,14 @@ encode %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               &Assembler::ldaxr, &MacroAssembler::cmp, &Assembler::stlxr);
+               Assembler::xword, /*acquire*/ true, /*release*/ true);
   %}
 
   enc_class aarch64_enc_cmpxchgw_acq(memory mem, iRegINoSp oldval, iRegINoSp newval) %{
     MacroAssembler _masm(&cbuf);
     guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
     __ cmpxchg($mem$$base$$Register, $oldval$$Register, $newval$$Register,
-               &Assembler::ldaxrw, &MacroAssembler::cmpw, &Assembler::stlxrw);
+               Assembler::word, /*acquire*/ true, /*release*/ true);
   %}
 
 
@@ -4679,8 +4676,14 @@ encode %{
 
     // Compare object markOop with mark and if equal exchange scratch1
     // with object markOop.
-    {
+    if (UseLSE) {
+      __ mov(tmp, disp_hdr);
+      __ casal(Assembler::xword, tmp, box, oop);
+      __ cmp(tmp, disp_hdr);
+      __ br(Assembler::EQ, cont);
+    } else {
       Label retry_load;
+      __ prfm(Address(oop), PSTL1STRM);
       __ bind(retry_load);
       __ ldaxr(tmp, oop);
       __ cmp(tmp, disp_hdr);
@@ -4729,8 +4732,13 @@ encode %{
       __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markOopDesc::monitor_value));
       __ mov(disp_hdr, zr);
 
-      {
+      if (UseLSE) {
+        __ mov(rscratch1, disp_hdr);
+        __ casal(Assembler::xword, rscratch1, rthread, tmp);
+        __ cmp(rscratch1, disp_hdr);
+      } else {
         Label retry_load, fail;
+        __ prfm(Address(tmp), PSTL1STRM);
         __ bind(retry_load);
         __ ldaxr(rscratch1, tmp);
         __ cmp(disp_hdr, rscratch1);
@@ -4818,8 +4826,13 @@ encode %{
     // see the stack address of the basicLock in the markOop of the
     // object.
 
-      {
+      if (UseLSE) {
+        __ mov(tmp, box);
+        __ casl(Assembler::xword, tmp, disp_hdr, oop);
+        __ cmp(tmp, box);
+      } else {
         Label retry_load;
+        __ prfm(Address(oop), PSTL1STRM);
         __ bind(retry_load);
         __ ldxr(tmp, oop);
         __ cmp(box, tmp);
@@ -13281,7 +13294,7 @@ instruct MoveF2I_reg_reg(iRegINoSp dst, vRegF src) %{
     __ fmovs($dst$$Register, as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_f2i);
 
 %}
 
@@ -13299,7 +13312,7 @@ instruct MoveI2F_reg_reg(vRegF dst, iRegI src) %{
     __ fmovs(as_FloatRegister($dst$$reg), $src$$Register);
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_i2f);
 
 %}
 
@@ -13317,7 +13330,7 @@ instruct MoveD2L_reg_reg(iRegLNoSp dst, vRegD src) %{
     __ fmovd($dst$$Register, as_FloatRegister($src$$reg));
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_d2l);
 
 %}
 
@@ -13335,7 +13348,7 @@ instruct MoveL2D_reg_reg(vRegD dst, iRegL src) %{
     __ fmovd(as_FloatRegister($dst$$reg), $src$$Register);
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_l2d);
 
 %}
 
@@ -14191,6 +14204,25 @@ instruct cmpP_imm0_branch(cmpOp cmp, iRegP op1, immP0 op2, label labl, rFlagsReg
   ins_pipe(pipe_cmp_branch);
 %}
 
+instruct cmpN_imm0_branch(cmpOp cmp, iRegN op1, immN0 op2, label labl, rFlagsReg cr) %{
+  match(If cmp (CmpN op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::ne
+	    || n->in(1)->as_Bool()->_test._test == BoolTest::eq);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "cbw$cmp   $op1, $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    if (cond == Assembler::EQ)
+      __ cbzw($op1$$Register, *L);
+    else
+      __ cbnzw($op1$$Register, *L);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
 instruct cmpP_narrowOop_imm0_branch(cmpOp cmp, iRegN oop, immP0 zero, label labl, rFlagsReg cr) %{
   match(If cmp (CmpP (DecodeN oop) zero));
   predicate(n->in(1)->as_Bool()->_test._test == BoolTest::ne
@@ -14783,19 +14815,19 @@ instruct string_indexof_con(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_equals(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
-                        iRegI_R0 result, iRegP_R10 tmp, rFlagsReg cr)
+                        iRegI_R0 result, rFlagsReg cr)
 %{
   predicate(!CompactStrings);
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(KILL tmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
+  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
 
-  format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp" %}
+  format %{ "String Equals $str1,$str2,$cnt -> $result" %}
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ asrw($cnt$$Register, $cnt$$Register, 1);
-    __ string_equals($str1$$Register, $str2$$Register,
-                      $cnt$$Register, $result$$Register,
-                      $tmp$$Register);
+    __ arrays_equals($str1$$Register, $str2$$Register,
+                     $result$$Register, $cnt$$Register,
+                     2, /*is_string*/true);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -14809,9 +14841,10 @@ instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 
   format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
   ins_encode %{
-    __ byte_arrays_equals($ary1$$Register, $ary2$$Register,
-                          $result$$Register, $tmp$$Register);
-  %}
+    __ arrays_equals($ary1$$Register, $ary2$$Register,
+                     $result$$Register, $tmp$$Register,
+                     1, /*is_string*/false);
+    %}
   ins_pipe(pipe_class_memory);
 %}
 
@@ -14824,11 +14857,13 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 
   format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
   ins_encode %{
-    __ char_arrays_equals($ary1$$Register, $ary2$$Register,
-                          $result$$Register, $tmp$$Register);
+    __ arrays_equals($ary1$$Register, $ary2$$Register,
+                     $result$$Register, $tmp$$Register,
+                     2, /*is_string*/false);
   %}
   ins_pipe(pipe_class_memory);
 %}
+
 
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
@@ -16480,7 +16515,7 @@ instruct vsll2I(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift64_imm);
+  ins_pipe(vshift64);
 %}
 
 instruct vsll4I(vecX dst, vecX src, vecX shift) %{
@@ -16494,7 +16529,7 @@ instruct vsll4I(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift128_imm);
+  ins_pipe(vshift128);
 %}
 
 instruct vsrl2I(vecD dst, vecD src, vecX shift) %{
@@ -16507,7 +16542,7 @@ instruct vsrl2I(vecD dst, vecD src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift64_imm);
+  ins_pipe(vshift64);
 %}
 
 instruct vsrl4I(vecX dst, vecX src, vecX shift) %{
@@ -16520,7 +16555,7 @@ instruct vsrl4I(vecX dst, vecX src, vecX shift) %{
             as_FloatRegister($src$$reg),
             as_FloatRegister($shift$$reg));
   %}
-  ins_pipe(vshift128_imm);
+  ins_pipe(vshift128);
 %}
 
 instruct vsll2I_imm(vecD dst, vecD src, immI shift) %{
@@ -16638,7 +16673,7 @@ instruct vsll2L_imm(vecX dst, vecX src, immI shift) %{
            as_FloatRegister($src$$reg),
            (int)$shift$$constant & 63);
   %}
-  ins_pipe(vshift128);
+  ins_pipe(vshift128_imm);
 %}
 
 instruct vsra2L_imm(vecX dst, vecX src, immI shift) %{

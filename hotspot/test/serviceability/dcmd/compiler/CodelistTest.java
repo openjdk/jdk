@@ -24,26 +24,39 @@
 /*
  * @test CodelistTest
  * @bug 8054889
- * @library /testlibrary
+ * @library /testlibrary /test/lib /
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @build jdk.test.lib.*
- * @build jdk.test.lib.dcmd.*
- * @build MethodIdentifierParser
- * @run testng CodelistTest
+ *        jdk.test.lib.dcmd.*
+ *        sun.hotspot.WhiteBox
+ *        compiler.testlibrary.CompilerUtils
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -Xmixed CodelistTest
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -Xint CodelistTest
  * @summary Test of diagnostic command Compiler.codelist
+ *
+ * Flag comment:
+ * -XX:-UseCodeCacheFlushing - to prevent methods from being removed from the code cache before we have checked the results
+ *
+ * This test should never run in the same VM as other tests - the code cache may get huge which will
+ * create an enormous amount of output to parse. Same for -Xcomp.
  */
 
-import org.testng.annotations.Test;
-import org.testng.Assert;
-
+import compiler.testlibrary.CompilerUtils;
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
+import org.testng.annotations.Test;
+import org.testng.Assert;
+import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
+import java.util.Iterator;
 
 public class CodelistTest {
 
@@ -62,63 +75,107 @@ public class CodelistTest {
      *
      */
 
+    protected static final WhiteBox WB = WhiteBox.getWhiteBox();
+
     public void run(CommandExecutor executor) {
-        int ok   = 0;
-        int fail = 0;
+
+        TestCase[] testcases = {
+                new TestCase(CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE, "testcaseMethod1"),
+                new TestCase(CompilerWhiteBoxTest.COMP_LEVEL_LIMITED_PROFILE, "testcaseMethod2"),
+                new TestCase(CompilerWhiteBoxTest.COMP_LEVEL_FULL_PROFILE, "testcaseMethod3"),
+                new TestCase(CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION, "testcaseMethod4"),
+        };
+
+        String directive = "{ match: \"CodelistTest.testcaseMethod*\", " +
+                "BackgroundCompilation: false }";
+        Assert.assertTrue(
+                WB.addCompilerDirective(directive) == 1,
+                "Must succeed");
+
+        try {
+            // Enqueue one test method for each available level
+            int[] complevels = CompilerUtils.getAvailableCompilationLevels();
+            for (int level : complevels) {
+                // Only test comp level 1 and 4 - level 1, 2 and 3 may interfere with each other
+                if (level == 1 || level == 4) {
+                    TestCase testcase = testcases[level - 1];
+                    WB.enqueueMethodForCompilation(testcase.method, testcase.level);
+                    // Set results to false for those methods we must to find
+                    // We will also assert if we find any test method we don't expect
+                    testcase.check = false;
+                }
+            }
+        } finally {
+            WB.removeCompilerDirective(1);
+        }
 
         // Get output from dcmd (diagnostic command)
         OutputAnalyzer output = executor.execute("Compiler.codelist");
+        Iterator<String> lines = output.asLines().iterator();
 
-        // Grab a method name from the output
-        int count = 0;
+        // Loop over output set result for all found methods
+        while (lines.hasNext()) {
+            String line = lines.next();
 
-        for (String line : output.asLines()) {
-            count++;
+            // Fast check for common part of method name
+            if (line.contains("CodelistTest.testcaseMethod")) {
+                String[] parts = line.split(" ");
+                int compileID = Integer.parseInt(parts[0]);
+                int compileLevel = Integer.parseInt(parts[1]);
+                String str = parts[2];
 
-            String[] parts = line.split(" ");
-            // int compileID = Integer.parseInt(parts[0]);
-            // int compileLevel = Integer.parseInt(parts[1]);
-            String methodPrintedInLogFormat = parts[2];
+                for (TestCase testcase : testcases) {
+                    if (str.contains(testcase.methodName)) {
+                        Assert.assertFalse(testcase.check, "Must not be found or already found.");
+                        Assert.assertTrue(testcase.level == compileLevel, "Must have correct level");
+                        testcase.check = true;
+                    }
+                }
+            }
+        }
 
-            // skip inits, clinits, methodHandles and getUnsafe -
-            // they can not be reflected
-            if (methodPrintedInLogFormat.contains("<init>")) {
-                continue;
-            }
-            if (methodPrintedInLogFormat.contains("<clinit>")) {
-                continue;
-            }
-            if (methodPrintedInLogFormat.contains("MethodHandle")) {
-                continue;
-            }
-            if (methodPrintedInLogFormat.contains("sun.misc.Unsafe.getUnsafe")) {
-                continue;
-            }
-            if (methodPrintedInLogFormat.contains("jdk.internal.misc.Unsafe.getUnsafe")) {
-                continue;
-            }
-
-            MethodIdentifierParser mf = new MethodIdentifierParser(methodPrintedInLogFormat);
-            Method m = null;
-            try {
-                m = mf.getMethod();
-            } catch (NoSuchMethodException e) {
-                m = null;
-            } catch (ClassNotFoundException e) {
-                Assert.fail("Test error: Caught unexpected exception", e);
-            }
-            if (m == null) {
-                Assert.fail("Test failed on: " + methodPrintedInLogFormat);
-            }
-            if (count > 10) {
-                // Testing 10 entries is enough. Lets not waste time.
-                break;
-            }
+        // Check all testcases that was run
+        for (TestCase testcase : testcases) {
+            Assert.assertTrue(testcase.check, "Missing testcase " + testcase.methodName);
         }
     }
 
     @Test
     public void jmx() {
         run(new JMXExecutor());
+    }
+
+    public void testcaseMethod1() {
+    }
+
+    public void testcaseMethod2() {
+    }
+
+    public void testcaseMethod3() {
+    }
+
+    public void testcaseMethod4() {
+    }
+
+    public static Method getMethod(Class klass, String name, Class<?>... parameterTypes) {
+        try {
+            return klass.getDeclaredMethod(name, parameterTypes);
+        } catch (NoSuchMethodException | SecurityException e) {
+            throw new RuntimeException("exception on getting method Helper." + name, e);
+        }
+    }
+
+    class TestCase {
+        Method method;
+        int level;
+        String methodName;
+        Boolean check;
+
+        public TestCase(int level, String methodName) {
+            this.method = getMethod(CodelistTest.class, methodName);
+            this.level = level;
+            this.methodName = methodName;
+            this.check = true;
+        }
     }
 }

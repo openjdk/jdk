@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,17 +42,30 @@ void AdvancedThresholdPolicy::print_specific(EventType type, methodHandle mh, me
 }
 
 void AdvancedThresholdPolicy::initialize() {
+  int count = CICompilerCount;
+#ifdef _LP64
   // Turn on ergonomic compiler count selection
   if (FLAG_IS_DEFAULT(CICompilerCountPerCPU) && FLAG_IS_DEFAULT(CICompilerCount)) {
     FLAG_SET_DEFAULT(CICompilerCountPerCPU, true);
   }
-  int count = CICompilerCount;
   if (CICompilerCountPerCPU) {
     // Simple log n seems to grow too slowly for tiered, try something faster: log n * log log n
     int log_cpu = log2_intptr(os::active_processor_count());
     int loglog_cpu = log2_intptr(MAX2(log_cpu, 1));
     count = MAX2(log_cpu * loglog_cpu, 1) * 3 / 2;
   }
+#else
+  // On 32-bit systems, the number of compiler threads is limited to 3.
+  // On these systems, the virtual address space available to the JVM
+  // is usually limited to 2-4 GB (the exact value depends on the platform).
+  // As the compilers (especially C2) can consume a large amount of
+  // memory, scaling the number of compiler threads with the number of
+  // available cores can result in the exhaustion of the address space
+  /// available to the VM and thus cause the VM to crash.
+  if (FLAG_IS_DEFAULT(CICompilerCount)) {
+    count = 3;
+  }
+#endif
 
   set_c1_count(MAX2(count / 3, 1));
   set_c2_count(MAX2(count - c1_count(), 1));
@@ -164,9 +177,7 @@ bool AdvancedThresholdPolicy::is_method_profiled(Method* method) {
 
 // Called with the queue locked and with at least one element
 CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
-#if INCLUDE_JVMCI
   CompileTask *max_blocking_task = NULL;
-#endif
   CompileTask *max_task = NULL;
   Method* max_method = NULL;
   jlong t = os::javaTimeMillis();
@@ -180,7 +191,8 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
       max_method = method;
     } else {
       // If a method has been stale for some time, remove it from the queue.
-      if (is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method)) {
+      // Blocking tasks don't become stale
+      if (!task->is_blocking() && is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method)) {
         if (PrintTieredEvents) {
           print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel)task->comp_level());
         }
@@ -197,29 +209,25 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
         max_method = method;
       }
     }
-#if INCLUDE_JVMCI
-    if (UseJVMCICompiler && task->is_blocking()) {
+
+    if (task->is_blocking()) {
       if (max_blocking_task == NULL || compare_methods(method, max_blocking_task->method())) {
         max_blocking_task = task;
       }
     }
-#endif
+
     task = next_task;
   }
 
-#if INCLUDE_JVMCI
-  if (UseJVMCICompiler) {
-    if (max_blocking_task != NULL) {
-      // In blocking compilation mode, the CompileBroker will make
-      // compilations submitted by a JVMCI compiler thread non-blocking. These
-      // compilations should be scheduled after all blocking compilations
-      // to service non-compiler related compilations sooner and reduce the
-      // chance of such compilations timing out.
-      max_task = max_blocking_task;
-      max_method = max_task->method();
-    }
+  if (max_blocking_task != NULL) {
+    // In blocking compilation mode, the CompileBroker will make
+    // compilations submitted by a JVMCI compiler thread non-blocking. These
+    // compilations should be scheduled after all blocking compilations
+    // to service non-compiler related compilations sooner and reduce the
+    // chance of such compilations timing out.
+    max_task = max_blocking_task;
+    max_method = max_task->method();
   }
-#endif
 
   if (max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile
       && is_method_profiled(max_method)) {

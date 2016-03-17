@@ -35,11 +35,12 @@
  * @test
  * @bug 8074773
  * @summary Stress test looks for lost unparks
+ * @library /lib/testlibrary/
  * @modules java.management
- * @run main/timeout=1200 ParkLoops
  */
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.util.SplittableRandom;
@@ -49,13 +50,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
+import jdk.testlibrary.Utils;
 
 public final class ParkLoops {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static final int THREADS = 4;
-    // static final int ITERS = 2_000_000;
-    // static final int TIMEOUT = 3500;  // in seconds
-    static final int ITERS = 100_000;
-    static final int TIMEOUT = 1000;  // in seconds
+    static final int ITERS = 30_000;
 
     static class Parker implements Runnable {
         static {
@@ -130,13 +130,13 @@ public final class ParkLoops {
             pool.submit(unparker);
         }
         try {
-          if (!done.await(TIMEOUT, SECONDS)) {
+          if (!done.await(LONG_DELAY_MS, MILLISECONDS)) {
             dumpAllStacks();
             throw new AssertionError("lost unpark");
           }
         } finally {
           pool.shutdown();
-          pool.awaitTermination(10L, SECONDS);
+          pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS);
         }
     }
 

@@ -144,6 +144,7 @@ pthread_t os::Linux::_main_thread;
 int os::Linux::_page_size = -1;
 const int os::Linux::_vm_default_page_size = (8 * K);
 bool os::Linux::_supports_fast_thread_cpu_time = false;
+uint32_t os::Linux::_os_version = 0;
 const char * os::Linux::_glibc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
 pthread_condattr_t os::Linux::_condattr[1];
@@ -662,6 +663,9 @@ static void *java_start(Thread *thread) {
 
   osthread->set_thread_id(os::current_thread_id());
 
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+    os::current_thread_id(), (uintx) pthread_self());
+
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
     if (lgrp_id != -1) {
@@ -690,6 +694,9 @@ static void *java_start(Thread *thread) {
 
   // call one more level start routine
   thread->run();
+
+  log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+    os::current_thread_id(), (uintx) pthread_self());
 
   return 0;
 }
@@ -756,12 +763,18 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     pthread_t tid;
     int ret = pthread_create(&tid, &attr, (void* (*)(void*)) java_start, thread);
 
+    char buf[64];
+    if (ret == 0) {
+      log_info(os, thread)("Thread started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+        (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+    } else {
+      log_warning(os, thread)("Failed to start thread - pthread_create failed (%s) for attributes: %s.",
+        strerror(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+    }
+
     pthread_attr_destroy(&attr);
 
     if (ret != 0) {
-      if (PrintMiscellaneous && (Verbose || WizardMode)) {
-        perror("pthread_create()");
-      }
       // Need to clean up stuff we've allocated so far
       thread->set_osthread(NULL);
       delete osthread;
@@ -857,6 +870,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   // initialize signal mask for this thread
   // and save the caller's signal mask
   os::Linux::hotspot_sigmask(thread);
+
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+    os::current_thread_id(), (uintx) pthread_self());
 
   return true;
 }
@@ -4341,6 +4357,48 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
 }
 
+void os::Linux::initialize_os_info() {
+  assert(_os_version == 0, "OS info already initialized");
+
+  struct utsname _uname;
+
+  uint32_t major;
+  uint32_t minor;
+  uint32_t fix;
+
+  int rc;
+
+  // Kernel version is unknown if
+  // verification below fails.
+  _os_version = 0x01000000;
+
+  rc = uname(&_uname);
+  if (rc != -1) {
+
+    rc = sscanf(_uname.release,"%d.%d.%d", &major, &minor, &fix);
+    if (rc == 3) {
+
+      if (major < 256 && minor < 256 && fix < 256) {
+        // Kernel version format is as expected,
+        // set it overriding unknown state.
+        _os_version = (major << 16) |
+                      (minor << 8 ) |
+                      (fix   << 0 ) ;
+      }
+    }
+  }
+}
+
+uint32_t os::Linux::os_version() {
+  assert(_os_version != 0, "not initialized");
+  return _os_version & 0x00FFFFFF;
+}
+
+bool os::Linux::os_version_is_known() {
+  assert(_os_version != 0, "not initialized");
+  return _os_version & 0x01000000 ? false : true;
+}
+
 /////
 // glibc on Linux platform uses non-documented flag
 // to indicate, that some special sort of signal
@@ -4562,6 +4620,8 @@ void os::init(void) {
   init_page_sizes((size_t) Linux::page_size());
 
   Linux::initialize_system_info();
+
+  Linux::initialize_os_info();
 
   // main_thread points to the aboriginal thread
   Linux::_main_thread = pthread_self();

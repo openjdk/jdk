@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,14 +238,12 @@ void os::Posix::print_uname_info(outputStream* st) {
   st->cr();
 }
 
-#ifndef PRODUCT
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
   uname(&name);
   jio_snprintf(buf, buflen, "%s", name.nodename);
   return true;
 }
-#endif // PRODUCT
 
 bool os::has_allocatable_memory_limit(julong* limit) {
   struct rlimit rlim;
@@ -1071,6 +1069,19 @@ void os::Posix::ucontext_set_pc(ucontext_t* ctx, address pc) {
 #else
    VMError::report_and_die("unimplemented ucontext_get_pc");
 #endif
+}
+
+char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr) {
+  size_t stack_size = 0;
+  size_t guard_size = 0;
+  int detachstate = 0;
+  pthread_attr_getstacksize(attr, &stack_size);
+  pthread_attr_getguardsize(attr, &guard_size);
+  pthread_attr_getdetachstate(attr, &detachstate);
+  jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
+    stack_size / 1024, guard_size / 1024,
+    (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
+  return buf;
 }
 
 
