@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,8 @@ class FactoryFinder {
         } catch (Exception ignored) {
             logger.log(Level.SEVERE, "Error reading JAX-WS configuration from ["  + path +
                     "] file. Check it is accessible and has correct format.", ignored);
-        }        return null;
+        }
+        return null;
     }
 
     private static final String OSGI_SERVICE_LOADER_CLASS_NAME = "com.sun.org.glassfish.hk2.osgiresourcelocator.ServiceLoader";

@@ -27,21 +27,19 @@
  * @summary Tests jcmd to be able to add a lot of huge directive files with
  *          parallel executed jcmds until timeout has reached
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
- * @ignore 8148563
  * @build compiler.compilercontrol.jcmd.StressAddMultiThreadedTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils
  *        compiler.compilercontrol.share.actions.*
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=360 compiler.compilercontrol.jcmd.StressAddMultiThreadedTest
+ * @run driver compiler.compilercontrol.jcmd.StressAddMultiThreadedTest
  */
 
 package compiler.compilercontrol.jcmd;
 
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 
-import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -49,15 +47,14 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class StressAddMultiThreadedTest extends StressAddJcmdBase {
-    private static final int THREADS;
+    private static final int THREADS = Integer.getInteger(
+            "compiler.compilercontrol.jcmd.StressAddMultiThreadedTest.threads",
+            5);
+    private volatile int commands = Integer.getInteger(
+            "compiler.compilercontrol.jcmd.StressAddMultiThreadedTest.commands",
+            20);
     private final BlockingQueue<Runnable> queue;
     private final ExecutorService executor;
-
-    static {
-        THREADS = Runtime.getRuntime().availableProcessors()
-                * Integer.getInteger("compiler.compilercontrol.jcmd" +
-                        ".StressAddMultiThreadedTest.threadFactor", 10);
-    }
 
     public StressAddMultiThreadedTest() {
         queue = new ArrayBlockingQueue<>(THREADS);
@@ -71,14 +68,10 @@ public class StressAddMultiThreadedTest extends StressAddJcmdBase {
     }
 
     @Override
-    protected boolean makeConnection(int pid, List<String> commands) {
-        commands.forEach(command -> {
-            if (!executor.isShutdown()) {
-                executor.submit(() -> new PidJcmdExecutor(String.valueOf(pid))
-                        .execute(command));
-            }
-        });
-        return !executor.isShutdown();
+    protected boolean makeConnection(int pid) {
+        executor.submit(() -> new PidJcmdExecutor(String.valueOf(pid))
+                .execute(nextCommand()));
+        return (--commands != 0);
     }
 
     @Override

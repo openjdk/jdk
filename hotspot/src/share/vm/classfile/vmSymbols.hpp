@@ -123,7 +123,7 @@
   template(sun_misc_Launcher_ExtClassLoader,          "sun/misc/Launcher$ExtClassLoader")         \
                                                                                                   \
   /* Java runtime version access */                                                               \
-  template(sun_misc_Version,                          "sun/misc/Version")                         \
+  template(java_lang_VersionProps,                    "java/lang/VersionProps")                   \
   template(java_runtime_name_name,                    "java_runtime_name")                        \
   template(java_runtime_version_name,                 "java_runtime_version")                     \
                                                                                                   \
@@ -1035,14 +1035,15 @@
    do_name(     updateByteBuffer_A_name,                          "updateByteBuffer")                                   \
                                                                                                                         \
   /* support for Unsafe */                                                                                              \
-  do_class(sun_misc_Unsafe,                        "sun/misc/Unsafe")                                                   \
   do_class(jdk_internal_misc_Unsafe,               "jdk/internal/misc/Unsafe")                                          \
                                                                                                                         \
   do_intrinsic(_allocateInstance,         jdk_internal_misc_Unsafe,     allocateInstance_name, allocateInstance_signature, F_RN) \
    do_name(     allocateInstance_name,                                  "allocateInstance")                                      \
    do_signature(allocateInstance_signature,                             "(Ljava/lang/Class;)Ljava/lang/Object;")                 \
+  do_intrinsic(_allocateUninitializedArray, jdk_internal_misc_Unsafe,   allocateUninitializedArray_name, newArray_signature,  F_R) \
+   do_name(     allocateUninitializedArray_name,                        "allocateUninitializedArray0")                           \
   do_intrinsic(_copyMemory,               jdk_internal_misc_Unsafe,     copyMemory_name, copyMemory_signature,         F_RN)     \
-   do_name(     copyMemory_name,                                        "copyMemory")                                            \
+   do_name(     copyMemory_name,                                        "copyMemory0")                                           \
    do_signature(copyMemory_signature,                                   "(Ljava/lang/Object;JLjava/lang/Object;JJ)V")            \
   do_intrinsic(_loadFence,                jdk_internal_misc_Unsafe,     loadFence_name, loadFence_signature,           F_RN)     \
    do_name(     loadFence_name,                                         "loadFence")                                             \

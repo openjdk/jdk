@@ -23,7 +23,7 @@
 
  /*
  * @test TestPLABResize
- * @bug 8141278
+ * @bug 8141278 8141141
  * @summary Test for PLAB resizing
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires vm.opt.FlightRecorder != true
@@ -35,6 +35,7 @@
  *        gc.g1.plab.lib.MemoryConsumer
  *        gc.g1.plab.lib.PLABUtils
  *        gc.g1.plab.lib.AppPLABResize
+ * @ignore 8150183
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main gc.g1.plab.TestPLABResize
@@ -116,7 +117,7 @@ public class TestPLABResize {
                 .map(item -> {
                     return item.getValue()
                             .get(LogParser.ReportType.SURVIVOR_STATS)
-                            .get("desired_plab_sz");
+                            .get("actual");
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
 

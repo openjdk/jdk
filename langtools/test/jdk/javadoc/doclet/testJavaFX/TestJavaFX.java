@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7112427 8012295 8025633 8026567 8061305 8081854
+ * @bug 7112427 8012295 8025633 8026567 8061305 8081854 8150130
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib
@@ -137,6 +137,7 @@ public class TestJavaFX extends JavadocTester {
                 + "</ul>\n"
                 + "</li>");
     }
+
     /*
      * Test without -javafx option, to ensure property getters and setters
      * are treated just like any other java method.
@@ -180,5 +181,23 @@ public class TestJavaFX extends JavadocTester {
                 + "<a href=\"../pkg2/Test.html#gammaProperty--\">gammaProperty</a>"
                 + "</span>()</code>&nbsp;</td>"
         );
+    }
+
+    /*
+     * Force the doclet to emit a warning when processing a synthesized,
+     * DocComment, and ensure that the run succeeds.
+     */
+    @Test
+    void test4() {
+        javadoc("-d", "out4",
+                "-javafx",
+                "-Xdoclint:none",
+                "-sourcepath", testSrc,
+                "-package",
+                "pkg4");
+        checkExit(Exit.OK);
+
+        // make sure the doclet indeed emits the warning
+        checkOutput(Output.OUT, true, "C.java:0: warning - invalid usage of tag >");
     }
 }

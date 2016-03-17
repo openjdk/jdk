@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ final class PKCS12PBECipherCore {
     private CipherCore cipher;
     private int blockSize;
     private int keySize;
+    private int keyLength; // in bits
     private String algo = null;
     private String pbeAlgo = null;
     private byte[] salt = null;
@@ -166,16 +167,18 @@ final class PKCS12PBECipherCore {
         throws NoSuchAlgorithmException {
 
         algo = symmCipherAlg;
+        keyLength = defKeySize * 8;
         if (algo.equals("RC4")) {
-            pbeAlgo = "PBEWithSHA1AndRC4_" + defKeySize * 8;
+            pbeAlgo = "PBEWithSHA1AndRC4_" + keyLength;
         } else {
             SymmetricCipher symmCipher = null;
             if (algo.equals("DESede")) {
                 symmCipher = new DESedeCrypt();
                 pbeAlgo = "PBEWithSHA1AndDESede";
+                keyLength = 112; // effective key length
             } else if (algo.equals("RC2")) {
                 symmCipher = new RC2Crypt();
-                pbeAlgo = "PBEWithSHA1AndRC2_" + defKeySize * 8;
+                pbeAlgo = "PBEWithSHA1AndRC2_" + keyLength;
             } else {
                 throw new NoSuchAlgorithmException("No Cipher implementation " +
                        "for PBEWithSHA1And" + algo);
@@ -406,7 +409,7 @@ final class PKCS12PBECipherCore {
     }
 
     int implGetKeySize(Key key) throws InvalidKeyException {
-        return keySize;
+        return keyLength;
     }
 
     byte[] implWrap(Key key) throws IllegalBlockSizeException,

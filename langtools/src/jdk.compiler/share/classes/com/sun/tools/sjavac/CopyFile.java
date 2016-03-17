@@ -70,9 +70,7 @@ public class CopyFile implements Transformer {
                              Map<String, PubApi> dependencyPubapis,
                              int debugLevel,
                              boolean incremental,
-                             int numCores,
-                             Writer out,
-                             Writer err)
+                             int numCores)
     {
         boolean rc = true;
         String dest_filename;

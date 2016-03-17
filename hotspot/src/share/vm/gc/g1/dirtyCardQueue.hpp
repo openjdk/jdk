@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,16 +133,11 @@ public:
   // partially completed buffer (with its processed elements set to NULL)
   // is returned to the completed buffer set, and this call returns false.
   bool apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
-                                         uint worker_i = 0,
-                                         int stop_at = 0,
-                                         bool during_pause = false);
+                                         uint worker_i,
+                                         size_t stop_at,
+                                         bool during_pause);
 
-  // Helper routine for the above.
-  bool apply_closure_to_completed_buffer_helper(CardTableEntryClosure* cl,
-                                                uint worker_i,
-                                                BufferNode* nd);
-
-  BufferNode* get_completed_buffer(int stop_at);
+  BufferNode* get_completed_buffer(size_t stop_at);
 
   // Applies the current closure to all completed buffers,
   // non-consumptively.

@@ -51,7 +51,6 @@
 jobject JVMCIRuntime::_HotSpotJVMCIRuntime_instance = NULL;
 bool JVMCIRuntime::_HotSpotJVMCIRuntime_initialized = false;
 bool JVMCIRuntime::_well_known_classes_initialized = false;
-const char* JVMCIRuntime::_compiler = NULL;
 int JVMCIRuntime::_trivial_prefixes_count = 0;
 char** JVMCIRuntime::_trivial_prefixes = NULL;
 bool JVMCIRuntime::_shutdown_called = false;
@@ -104,6 +103,7 @@ static void deopt_caller() {
 JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_instance(JavaThread* thread, Klass* klass))
   JRT_BLOCK;
   assert(klass->is_klass(), "not a class");
+  Handle holder(THREAD, klass->klass_holder()); // keep the klass alive
   instanceKlassHandle h(thread, klass);
   h->check_valid_for_instantiation(true, CHECK);
   // make sure klass is initialized
@@ -129,6 +129,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array(JavaThread* thread, Klass* array_k
     BasicType elt_type = TypeArrayKlass::cast(array_klass)->element_type();
     obj = oopFactory::new_typeArray(elt_type, length, CHECK);
   } else {
+    Handle holder(THREAD, array_klass->klass_holder()); // keep the klass alive
     Klass* elem_klass = ObjArrayKlass::cast(array_klass)->element_klass();
     obj = oopFactory::new_objArray(elem_klass, length, CHECK);
   }
@@ -172,6 +173,7 @@ void JVMCIRuntime::new_store_pre_barrier(JavaThread* thread) {
 JRT_ENTRY(void, JVMCIRuntime::new_multi_array(JavaThread* thread, Klass* klass, int rank, jint* dims))
   assert(klass->is_klass(), "not a class");
   assert(rank >= 1, "rank must be nonzero");
+  Handle holder(THREAD, klass->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(klass)->multi_allocate(rank, dims, CHECK);
   thread->set_vm_result(obj);
 JRT_END
@@ -293,13 +295,11 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     // tracing
     if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm;
-      log_info(exceptions)("Exception <%s> (" INTPTR_FORMAT ") thrown in"
-                           " compiled method <%s> at PC " INTPTR_FORMAT
-                           " for thread " INTPTR_FORMAT,
-                           exception->print_value_string(),
-                           p2i((address)exception()),
-                           nm->method()->print_value_string(), p2i(pc),
-                           p2i(thread));
+      stringStream tempst;
+      tempst.print("compiled method <%s>\n"
+                   " at PC" INTPTR_FORMAT " for thread " INTPTR_FORMAT,
+                   nm->method()->print_value_string(), p2i(pc), p2i(thread));
+      Exceptions::log_exception(exception, tempst);
     }
     // for AbortVMOnException flag
     NOT_PRODUCT(Exceptions::debug_check_abort(exception));
@@ -644,15 +644,6 @@ void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
            "HotSpotJVMCIRuntime initialization should only be triggered through JVMCI initialization");
 #endif
 
-    if (_compiler != NULL) {
-      JavaCallArguments args;
-      oop compiler = java_lang_String::create_oop_from_str(_compiler, CHECK);
-      args.push_oop(compiler);
-      callStatic("jdk/vm/ci/hotspot/HotSpotJVMCICompilerConfig",
-                 "selectCompiler",
-                 "(Ljava/lang/String;)Ljava/lang/Boolean;", &args, CHECK);
-    }
-
     Handle result = callStatic("jdk/vm/ci/hotspot/HotSpotJVMCIRuntime",
                                "runtime",
                                "()Ljdk/vm/ci/hotspot/HotSpotJVMCIRuntime;", NULL, CHECK);
@@ -785,66 +776,6 @@ JVM_ENTRY(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
   }
 JVM_END
 
-/**
- * Closure for parsing a line from a *.properties file in jre/lib/jvmci/properties.
- * The line must match the regular expression "[^=]+=.*". That is one or more
- * characters other than '=' followed by '=' followed by zero or more characters.
- * Everything before the '=' is the property name and everything after '=' is the value.
- * Lines that start with '#' are treated as comments and ignored.
- * No special processing of whitespace or any escape characters is performed.
- * The last definition of a property "wins" (i.e., it overrides all earlier
- * definitions of the property).
- */
-class JVMCIPropertiesFileClosure : public ParseClosure {
-  SystemProperty** _plist;
-public:
-  JVMCIPropertiesFileClosure(SystemProperty** plist) : _plist(plist) {}
-  void do_line(char* line) {
-    if (line[0] == '#') {
-      // skip comment
-      return;
-    }
-    size_t len = strlen(line);
-    char* sep = strchr(line, '=');
-    if (sep == NULL) {
-      warn_and_abort("invalid format: could not find '=' character");
-      return;
-    }
-    if (sep == line) {
-      warn_and_abort("invalid format: name cannot be empty");
-      return;
-    }
-    *sep = '\0';
-    const char* name = line;
-    char* value = sep + 1;
-    Arguments::PropertyList_unique_add(_plist, name, value);
-  }
-};
-
-void JVMCIRuntime::init_system_properties(SystemProperty** plist) {
-  char jvmciDir[JVM_MAXPATHLEN];
-  const char* fileSep = os::file_separator();
-  jio_snprintf(jvmciDir, sizeof(jvmciDir), "%s%slib%sjvmci",
-               Arguments::get_java_home(), fileSep, fileSep, fileSep);
-  DIR* dir = os::opendir(jvmciDir);
-  if (dir != NULL) {
-    struct dirent *entry;
-    char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(jvmciDir), mtInternal);
-    JVMCIPropertiesFileClosure closure(plist);
-    const unsigned suffix_len = (unsigned)strlen(".properties");
-    while ((entry = os::readdir(dir, (dirent *) dbuf)) != NULL && !closure.is_aborted()) {
-      const char* name = entry->d_name;
-      if (strlen(name) > suffix_len && strcmp(name + strlen(name) - suffix_len, ".properties") == 0) {
-        char propertiesFilePath[JVM_MAXPATHLEN];
-        jio_snprintf(propertiesFilePath, sizeof(propertiesFilePath), "%s%s%s",jvmciDir, fileSep, name);
-        JVMCIRuntime::parse_lines(propertiesFilePath, &closure, false);
-      }
-    }
-    FREE_C_HEAP_ARRAY(char, dbuf);
-    os::closedir(dir);
-  }
-}
-
 #define CHECK_WARN_ABORT_(message) THREAD); \
   if (HAS_PENDING_EXCEPTION) { \
     warning(message); \
@@ -854,12 +785,6 @@ void JVMCIRuntime::init_system_properties(SystemProperty** plist) {
     return; \
   } \
   (void)(0
-
-void JVMCIRuntime::save_compiler(const char* compiler) {
-  assert(compiler != NULL, "npe");
-  assert(_compiler == NULL, "cannot reassign JVMCI compiler");
-  _compiler = compiler;
-}
 
 void JVMCIRuntime::shutdown(TRAPS) {
   if (_HotSpotJVMCIRuntime_instance != NULL) {
@@ -885,70 +810,4 @@ bool JVMCIRuntime::treat_as_trivial(Method* method) {
     }
   }
   return false;
-}
-
-void JVMCIRuntime::parse_lines(char* path, ParseClosure* closure, bool warnStatFailure) {
-  struct stat st;
-  if (::stat(path, &st) == 0 && (st.st_mode & S_IFREG) == S_IFREG) { // exists & is regular file
-    int file_handle = ::open(path, os::default_file_open_flags(), 0);
-    if (file_handle != -1) {
-      char* buffer = NEW_C_HEAP_ARRAY(char, st.st_size + 1, mtInternal);
-      int num_read;
-      num_read = (int) ::read(file_handle, (char*) buffer, st.st_size);
-      if (num_read == -1) {
-        warning("Error reading file %s due to %s", path, strerror(errno));
-      } else if (num_read != st.st_size) {
-        warning("Only read %d of " SIZE_FORMAT " bytes from %s", num_read, (size_t) st.st_size, path);
-      }
-      ::close(file_handle);
-      closure->set_filename(path);
-      if (num_read == st.st_size) {
-        buffer[num_read] = '\0';
-
-        char* line = buffer;
-        while (line - buffer < num_read && !closure->is_aborted()) {
-          // find line end (\r, \n or \r\n)
-          char* nextline = NULL;
-          char* cr = strchr(line, '\r');
-          char* lf = strchr(line, '\n');
-          if (cr != NULL && lf != NULL) {
-            char* min = MIN2(cr, lf);
-            *min = '\0';
-            if (lf == cr + 1) {
-              nextline = lf + 1;
-            } else {
-              nextline = min + 1;
-            }
-          } else if (cr != NULL) {
-            *cr = '\0';
-            nextline = cr + 1;
-          } else if (lf != NULL) {
-            *lf = '\0';
-            nextline = lf + 1;
-          }
-          // trim left
-          while (*line == ' ' || *line == '\t') line++;
-          char* end = line + strlen(line);
-          // trim right
-          while (end > line && (*(end -1) == ' ' || *(end -1) == '\t')) end--;
-          *end = '\0';
-          // skip comments and empty lines
-          if (*line != '#' && strlen(line) > 0) {
-            closure->parse_line(line);
-          }
-          if (nextline != NULL) {
-            line = nextline;
-          } else {
-            // File without newline at the end
-            break;
-          }
-        }
-      }
-      FREE_C_HEAP_ARRAY(char, buffer);
-    } else {
-      warning("Error opening file %s due to %s", path, strerror(errno));
-    }
-  } else if (warnStatFailure) {
-    warning("Could not stat file %s due to %s", path, strerror(errno));
-  }
 }

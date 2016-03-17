@@ -45,6 +45,7 @@ class   ObjectType;
 class     ObjectConstant;
 class     ArrayType;
 class       ArrayConstant;
+class         StableArrayConstant;
 class     InstanceType;
 class       InstanceConstant;
 class   MetadataType;
@@ -168,6 +169,7 @@ class ValueType: public CompilationResourceObj {
   virtual MethodConstant*   as_MethodConstant()  { return NULL; }
   virtual MethodDataConstant* as_MethodDataConstant() { return NULL; }
   virtual ArrayConstant*    as_ArrayConstant()   { return NULL; }
+  virtual StableArrayConstant* as_StableArrayConstant()   { return NULL; }
   virtual AddressConstant*  as_AddressConstant() { return NULL; }
 
   // type operations
@@ -355,6 +357,20 @@ class ArrayConstant: public ArrayType {
   virtual ciType* exact_type() const;
 };
 
+class StableArrayConstant: public ArrayConstant {
+ private:
+  jint _dimension;
+
+ public:
+  StableArrayConstant(ciArray* value, jint dimension) : ArrayConstant(value) {
+    assert(dimension > 0, "not a stable array");
+    _dimension = dimension;
+  }
+
+  jint dimension() const                              { return _dimension; }
+
+  virtual StableArrayConstant* as_StableArrayConstant() { return this; }
+};
 
 class InstanceType: public ObjectType {
  public:

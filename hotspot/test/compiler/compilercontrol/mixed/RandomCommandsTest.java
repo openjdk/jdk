@@ -29,9 +29,9 @@
  * @build compiler.compilercontrol.mixed.RandomCommandsTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=600 compiler.compilercontrol.mixed.RandomCommandsTest
+ * @run driver/timeout=600 compiler.compilercontrol.mixed.RandomCommandsTest
  */
 
 package compiler.compilercontrol.mixed;

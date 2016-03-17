@@ -1134,12 +1134,19 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
         MethodHandles::is_signature_polymorphic_intrinsic(id)) {
       bc = MethodHandles::signature_polymorphic_intrinsic_bytecode(id);
 
-      // Need to adjust invokehandle since inlining through signature-polymorphic
-      // method happened.
-      if (bc == Bytecodes::_invokehandle &&
-          !MethodHandles::is_signature_polymorphic_method(attached_method())) {
-        bc = attached_method->is_static() ? Bytecodes::_invokestatic
-                                          : Bytecodes::_invokevirtual;
+      // Adjust invocation mode according to the attached method.
+      switch (bc) {
+        case Bytecodes::_invokeinterface:
+          if (!attached_method->method_holder()->is_interface()) {
+            bc = Bytecodes::_invokevirtual;
+          }
+          break;
+        case Bytecodes::_invokehandle:
+          if (!MethodHandles::is_signature_polymorphic_method(attached_method())) {
+            bc = attached_method->is_static() ? Bytecodes::_invokestatic
+                                              : Bytecodes::_invokevirtual;
+          }
+          break;
       }
     }
   } else {

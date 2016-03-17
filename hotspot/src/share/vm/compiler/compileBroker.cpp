@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -838,12 +838,8 @@ void CompileBroker::compile_method_base(const methodHandle& method,
                                         const methodHandle& hot_method,
                                         int hot_count,
                                         const char* comment,
+                                        bool blocking,
                                         Thread* thread) {
-  // do nothing if compiler thread(s) is not available
-  if (!_initialized) {
-    return;
-  }
-
   guarantee(!method->is_abstract(), "cannot compile abstract methods");
   assert(method->method_holder()->is_instance_klass(),
          "sanity check");
@@ -916,7 +912,6 @@ void CompileBroker::compile_method_base(const methodHandle& method,
 
   // Outputs from the following MutexLocker block:
   CompileTask* task     = NULL;
-  bool         blocking = false;
   CompileQueue* queue  = compile_queue(comp_level);
 
   // Acquire our lock.
@@ -945,9 +940,6 @@ void CompileBroker::compile_method_base(const methodHandle& method,
       // The compilation falls outside the allowed range.
       return;
     }
-
-    // Should this thread wait for completion of the compile?
-    blocking = is_compile_blocking();
 
 #if INCLUDE_JVMCI
     if (UseJVMCICompiler) {
@@ -1034,11 +1026,28 @@ void CompileBroker::compile_method_base(const methodHandle& method,
   }
 }
 
-
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        int comp_level,
                                        const methodHandle& hot_method, int hot_count,
                                        const char* comment, Thread* THREAD) {
+  // do nothing if compilebroker is not available
+  if (!_initialized) {
+    return NULL;
+  }
+  AbstractCompiler *comp = CompileBroker::compiler(comp_level);
+  assert(comp != NULL, "Ensure we don't compile before compilebroker init");
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
+  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, comment, directive, THREAD);
+  DirectivesStack::release(directive);
+  return nm;
+}
+
+nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
+                                         int comp_level,
+                                         const methodHandle& hot_method, int hot_count,
+                                         const char* comment, DirectiveSet* directive,
+                                         Thread* THREAD) {
+
   // make sure arguments make sense
   assert(method->method_holder()->is_instance_klass(), "not an instance method");
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
@@ -1051,8 +1060,8 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // lock, make sure that the compilation
   // isn't prohibited in a straightforward way.
   AbstractCompiler *comp = CompileBroker::compiler(comp_level);
-  if (comp == NULL || !comp->can_compile_method(method) ||
-      compilation_is_prohibited(method, osr_bci, comp_level)) {
+  if (!comp->can_compile_method(method) ||
+      compilation_is_prohibited(method, osr_bci, comp_level, directive->ExcludeOption)) {
     return NULL;
   }
 
@@ -1160,7 +1169,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
       CompilationPolicy::policy()->delay_compilation(method());
       return NULL;
     }
-    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, THREAD);
+    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, !directive->BackgroundCompilationOption, THREAD);
   }
 
   // return requested nmethod
@@ -1217,7 +1226,7 @@ bool CompileBroker::compilation_is_in_queue(const methodHandle& method) {
 // CompileBroker::compilation_is_prohibited
 //
 // See if this compilation is not allowed.
-bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level) {
+bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded) {
   bool is_native = method->is_native();
   // Some compilers may not support the compilation of natives.
   AbstractCompiler *comp = compiler(comp_level);
@@ -1234,11 +1243,6 @@ bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int os
     method->set_not_osr_compilable(comp_level);
     return true;
   }
-
-  // Breaking the abstraction - directives are only used inside a compilation otherwise.
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
-  bool excluded = directive->ExcludeOption;
-  DirectivesStack::release(directive);
 
   // The method may be explicitly excluded by the user.
   double scale;
@@ -1303,16 +1307,6 @@ uint CompileBroker::assign_compile_id_unlocked(Thread* thread, const methodHandl
   MutexLocker locker(MethodCompileQueue_lock, thread);
   return assign_compile_id(method, osr_bci);
 }
-
-/**
- * Should the current thread block until this compilation request
- * has been fulfilled?
- */
-bool CompileBroker::is_compile_blocking() {
-  assert(!InstanceRefKlass::owns_pending_list_lock(JavaThread::current()), "possible deadlock");
-  return !BackgroundCompilation;
-}
-
 
 // ------------------------------------------------------------------
 // CompileBroker::preload_classes

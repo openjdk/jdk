@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ void DCmdRegistrant::register_dcmds(){
 #endif // INCLUDE_SERVICES
 #if INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIAgentLoadDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
@@ -251,6 +252,66 @@ int SetVMFlagDCmd::num_arguments() {
 void JVMTIDataDumpDCmd::execute(DCmdSource source, TRAPS) {
   if (JvmtiExport::should_post_data_dump()) {
     JvmtiExport::post_data_dump();
+  }
+}
+
+JVMTIAgentLoadDCmd::JVMTIAgentLoadDCmd(outputStream* output, bool heap) :
+                                       DCmdWithParser(output, heap),
+  _libpath("library path", "Absolute path of the JVMTI agent to load.",
+           "STRING", true),
+  _option("agent option", "Option string to pass the agent.", "STRING", false) {
+  _dcmdparser.add_dcmd_argument(&_libpath);
+  _dcmdparser.add_dcmd_argument(&_option);
+}
+
+void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
+
+  if (_libpath.value() == NULL) {
+    output()->print_cr("JVMTI.agent_load dcmd needs library path.");
+    return;
+  }
+
+  char *suffix = strrchr(_libpath.value(), '.');
+  bool is_java_agent = (suffix != NULL) && (strncmp(".jar", suffix, 4) == 0);
+
+  if (is_java_agent) {
+    if (_option.value() == NULL) {
+      JvmtiExport::load_agent_library("instrument", "false",
+                                      _libpath.value(), output());
+    } else {
+      size_t opt_len = strlen(_libpath.value()) + strlen(_option.value()) + 2;
+      if (opt_len > 4096) {
+        output()->print_cr("JVMTI agent attach failed: Options is too long.");
+        return;
+      }
+
+      char *opt = (char *)os::malloc(opt_len, mtInternal);
+      if (opt == NULL) {
+        output()->print_cr("JVMTI agent attach failed: "
+                           "Could not allocate %zu bytes for argument.",
+                           opt_len);
+        return;
+      }
+
+      jio_snprintf(opt, opt_len, "%s=%s", _libpath.value(), _option.value());
+      JvmtiExport::load_agent_library("instrument", "false", opt, output());
+
+      os::free(opt);
+    }
+  } else {
+    JvmtiExport::load_agent_library(_libpath.value(), "true",
+                                    _option.value(), output());
+  }
+}
+
+int JVMTIAgentLoadDCmd::num_arguments() {
+  ResourceMark rm;
+  JVMTIAgentLoadDCmd* dcmd = new JVMTIAgentLoadDCmd(NULL, false);
+  if (dcmd != NULL) {
+    DCmdMark mark(dcmd);
+    return dcmd->_dcmdparser.num_arguments();
+  } else {
+    return 0;
   }
 }
 
@@ -870,7 +931,7 @@ int CompilerDirectivesAddDCmd::num_arguments() {
 }
 
 void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
-  DirectivesStack::pop();
+  DirectivesStack::pop(1);
 }
 
 void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {

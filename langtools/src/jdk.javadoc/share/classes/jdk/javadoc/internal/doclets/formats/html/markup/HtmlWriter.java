@@ -401,6 +401,10 @@ public class HtmlWriter {
                 "            }" + DocletConstants.NL +
                 "        }" + DocletConstants.NL +
                 "        return true;" + DocletConstants.NL +
+                "    }" + DocletConstants.NL +
+                "    function loadFrames() {" + DocletConstants.NL +
+                "        if (targetPage != \"\" && targetPage != \"undefined\")" + DocletConstants.NL +
+                "             top.classFrame.location = top.targetPage;" + DocletConstants.NL +
                 "    }" + DocletConstants.NL;
         RawHtml scriptContent = new RawHtml(scriptCode);
         script.addContent(scriptContent);
@@ -471,7 +475,7 @@ public class HtmlWriter {
         addStyles(HtmlStyle.rowColor, vars);
         addStyles(HtmlStyle.tableTab, vars);
         addStyles(HtmlStyle.activeTableTab, vars);
-        script.addContent(new RawHtml(vars.toString()));
+        script.addContent(new RawHtml(vars));
     }
 
     /**

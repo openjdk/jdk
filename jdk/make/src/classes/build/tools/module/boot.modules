@@ -2,6 +2,7 @@ java.base
 java.compiler
 java.datatransfer
 java.desktop
+java.httpclient
 java.instrument
 java.logging
 java.management
@@ -18,14 +19,15 @@ java.xml
 java.xml.crypto
 jdk.charsets
 jdk.deploy
-jdk.deploy.osx
 jdk.httpserver
 jdk.jfr
+jdk.jsobject
 jdk.net
 jdk.vm.cds
 jdk.vm.ci
 jdk.management
 jdk.management.cmm
+jdk.management.jfr
 jdk.management.resource
 jdk.naming.rmi
 jdk.sctp

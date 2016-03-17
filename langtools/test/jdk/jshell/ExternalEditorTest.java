@@ -113,7 +113,7 @@ public class ExternalEditorTest extends EditorTestBase {
     @Override
     public void testEditor(boolean defaultStartup, String[] args, ReplTest... tests) {
         ReplTest[] t = new ReplTest[tests.length + 1];
-        t[0] = a -> assertCommandCheckOutput(a, "/seteditor " + executionScript,
+        t[0] = a -> assertCommandCheckOutput(a, "/set editor " + executionScript,
                 assertStartsWith("|  Editor set to: " + executionScript));
         System.arraycopy(tests, 0, t, 1, tests.length);
         super.testEditor(defaultStartup, args, t);
@@ -193,8 +193,8 @@ public class ExternalEditorTest extends EditorTestBase {
     @Test
     public void setUnknownEditor() {
         test(
-                a -> assertCommand(a, "/seteditor", "|  /seteditor requires a path argument\n"),
-                a -> assertCommand(a, "/seteditor UNKNOWN", "|  Editor set to: UNKNOWN\n"),
+                a -> assertCommand(a, "/set editor", "|  /set editor requires a path argument\n"),
+                a -> assertCommand(a, "/set editor UNKNOWN", "|  Editor set to: UNKNOWN\n"),
                 a -> assertCommand(a, "int a;", null),
                 a -> assertCommand(a, "/e 1",
                         "|  Edit Error: process IO failure: Cannot run program \"UNKNOWN\": error=2, No such file or directory\n")
@@ -204,7 +204,7 @@ public class ExternalEditorTest extends EditorTestBase {
     @Test(enabled = false)
     public void testRemoveTempFile() {
         test(new String[]{"-nostartup"},
-                a -> assertCommandCheckOutput(a, "/seteditor " + executionScript,
+                a -> assertCommandCheckOutput(a, "/set editor " + executionScript,
                         assertStartsWith("|  Editor set to: " + executionScript)),
                 a -> assertVariable(a, "int", "a", "0", "0"),
                 a -> assertEditOutput(a, "/e 1", assertStartsWith("|  Edit Error: Failure read edit file:"), () -> {

@@ -200,6 +200,7 @@ public final class Scenario {
         private final List<JcmdCommand> jcmdCommands = new ArrayList<>();
 
         public Builder() {
+            addFlag("-Xmixed");
             builders.put(Type.FILE, new CommandFileBuilder(Type.FILE.fileName));
             builders.put(Type.OPTION, new CommandOptionsBuilder());
             builders.put(Type.DIRECTIVE, new DirectiveBuilder(

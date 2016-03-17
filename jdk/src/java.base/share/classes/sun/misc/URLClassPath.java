@@ -63,6 +63,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
+import java.util.zip.ZipFile;
 
 import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
@@ -727,9 +728,10 @@ public class URLClassPath {
                 if (!p.exists()) {
                     throw new FileNotFoundException(p.getPath());
                 }
-                return checkJar(new JarFile(p.getPath()));
+                return checkJar(new JarFile(new File(p.getPath()), true, ZipFile.OPEN_READ,
+                        JarFile.Release.RUNTIME));
             }
-            URLConnection uc = getBaseURL().openConnection();
+            URLConnection uc = (new URL(getBaseURL(), "#runtime")).openConnection();
             uc.setRequestProperty(USER_AGENT_JAVA_VERSION, JAVA_VERSION);
             JarFile jarFile = ((JarURLConnection)uc).getJarFile();
             return checkJar(jarFile);
@@ -756,7 +758,13 @@ public class URLClassPath {
 
             final URL url;
             try {
-                url = new URL(getBaseURL(), ParseUtil.encodePath(name, false));
+                if (jar.isMultiRelease()) {
+                    // add #runtime fragment to tell JarURLConnection to use
+                    // runtime versioning if the underlying jar file is multi-release
+                    url = new URL(getBaseURL(), ParseUtil.encodePath(name, false) + "#runtime");
+                } else {
+                    url = new URL(getBaseURL(), ParseUtil.encodePath(name, false));
+                }
                 if (check) {
                     URLClassPath.check(url);
                 }

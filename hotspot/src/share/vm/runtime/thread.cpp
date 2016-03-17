@@ -67,6 +67,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
+#include "runtime/logTimer.hpp"
 #include "runtime/memprofiler.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -169,11 +170,10 @@ void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
     assert(((uintptr_t) aligned_addr + (uintptr_t) size) <=
            ((uintptr_t) real_malloc_addr + (uintptr_t) aligned_size),
            "JavaThread alignment code overflowed allocated storage");
-    if (TraceBiasedLocking) {
-      if (aligned_addr != real_malloc_addr) {
-        tty->print_cr("Aligned thread " INTPTR_FORMAT " to " INTPTR_FORMAT,
-                      p2i(real_malloc_addr), p2i(aligned_addr));
-      }
+    if (aligned_addr != real_malloc_addr) {
+      log_info(biasedlocking)("Aligned thread " INTPTR_FORMAT " to " INTPTR_FORMAT,
+                              p2i(real_malloc_addr),
+                              p2i(aligned_addr));
     }
     ((Thread*) aligned_addr)->_real_malloc_address = real_malloc_addr;
     return aligned_addr;
@@ -324,6 +324,10 @@ void Thread::record_stack_base_and_size() {
   // record thread's native stack, stack grows downward
   MemTracker::record_thread_stack(stack_end(), stack_size());
 #endif // INCLUDE_NMT
+  log_debug(os, thread)("Thread " UINTX_FORMAT " stack dimensions: "
+    PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT "k).",
+    os::current_thread_id(), p2i(stack_base() - stack_size()),
+    p2i(stack_base()), stack_size()/1024);
 }
 
 
@@ -1005,9 +1009,9 @@ static void call_initializeSystemClass(TRAPS) {
 char java_runtime_name[128] = "";
 char java_runtime_version[128] = "";
 
-// extract the JRE name from sun.misc.Version.java_runtime_name
+// extract the JRE name from java.lang.VersionProps.java_runtime_name
 static const char* get_java_runtime_name(TRAPS) {
-  Klass* k = SystemDictionary::find(vmSymbols::sun_misc_Version(),
+  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
                                     Handle(), Handle(), CHECK_AND_CLEAR_NULL);
   fieldDescriptor fd;
   bool found = k != NULL &&
@@ -1027,9 +1031,9 @@ static const char* get_java_runtime_name(TRAPS) {
   }
 }
 
-// extract the JRE version from sun.misc.Version.java_runtime_version
+// extract the JRE version from java.lang.VersionProps.java_runtime_version
 static const char* get_java_runtime_version(TRAPS) {
-  Klass* k = SystemDictionary::find(vmSymbols::sun_misc_Version(),
+  Klass* k = SystemDictionary::find(vmSymbols::java_lang_VersionProps(),
                                     Handle(), Handle(), CHECK_AND_CLEAR_NULL);
   fieldDescriptor fd;
   bool found = k != NULL &&
@@ -1690,7 +1694,7 @@ void JavaThread::run() {
 
   EventThreadStart event;
   if (event.should_commit()) {
-    event.set_javalangthread(java_lang_Thread::thread_id(this->threadObj()));
+    event.set_thread(THREAD_TRACE_ID(this));
     event.commit();
   }
 
@@ -1795,7 +1799,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     // from java_lang_Thread object
     EventThreadEnd event;
     if (event.should_commit()) {
-      event.set_javalangthread(java_lang_Thread::thread_id(this->threadObj()));
+      event.set_thread(THREAD_TRACE_ID(this));
       event.commit();
     }
 
@@ -1923,6 +1927,10 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     flush_barrier_queues();
   }
 #endif // INCLUDE_ALL_GCS
+
+  log_info(os, thread)("JavaThread %s (tid: " UINTX_FORMAT ").",
+    exit_type == JavaThread::normal_exit ? "exiting" : "detaching",
+    os::current_thread_id());
 
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread
   Threads::remove(this);
@@ -2491,18 +2499,25 @@ void JavaThread::create_stack_guard_pages() {
   // warning("Guarding at " PTR_FORMAT " for len " SIZE_FORMAT "\n", low_addr, len);
 
   if (allocate && !os::create_stack_guard_pages((char *) low_addr, len)) {
-    warning("Attempt to allocate stack guard pages failed.");
+    log_warning(os, thread)("Attempt to allocate stack guard pages failed.");
     return;
   }
 
   if (os::guard_memory((char *) low_addr, len)) {
     _stack_guard_state = stack_guard_enabled;
   } else {
-    warning("Attempt to protect stack guard pages failed.");
+    log_warning(os, thread)("Attempt to protect stack guard pages failed ("
+      PTR_FORMAT "-" PTR_FORMAT ").", p2i(low_addr), p2i(low_addr + len));
     if (os::uncommit_memory((char *) low_addr, len)) {
-      warning("Attempt to deallocate stack guard pages failed.");
+      log_warning(os, thread)("Attempt to deallocate stack guard pages failed.");
     }
+    return;
   }
+
+  log_debug(os, thread)("Thread " UINTX_FORMAT " stack guard pages activated: "
+    PTR_FORMAT "-" PTR_FORMAT ".",
+    os::current_thread_id(), p2i(low_addr), p2i(low_addr + len));
+
 }
 
 void JavaThread::remove_stack_guard_pages() {
@@ -2515,16 +2530,25 @@ void JavaThread::remove_stack_guard_pages() {
     if (os::remove_stack_guard_pages((char *) low_addr, len)) {
       _stack_guard_state = stack_guard_unused;
     } else {
-      warning("Attempt to deallocate stack guard pages failed.");
+      log_warning(os, thread)("Attempt to deallocate stack guard pages failed ("
+        PTR_FORMAT "-" PTR_FORMAT ").", p2i(low_addr), p2i(low_addr + len));
+      return;
     }
   } else {
     if (_stack_guard_state == stack_guard_unused) return;
     if (os::unguard_memory((char *) low_addr, len)) {
       _stack_guard_state = stack_guard_unused;
     } else {
-      warning("Attempt to unprotect stack guard pages failed.");
+      log_warning(os, thread)("Attempt to unprotect stack guard pages failed ("
+        PTR_FORMAT "-" PTR_FORMAT ").", p2i(low_addr), p2i(low_addr + len));
+      return;
     }
   }
+
+  log_debug(os, thread)("Thread " UINTX_FORMAT " stack guard pages removed: "
+    PTR_FORMAT "-" PTR_FORMAT ".",
+    os::current_thread_id(), p2i(low_addr), p2i(low_addr + len));
+
 }
 
 void JavaThread::enable_stack_reserved_zone() {
@@ -3341,7 +3365,7 @@ void Threads::threads_do(ThreadClosure* tc) {
 }
 
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
-  TraceTime timer("Initialize java.lang classes", TraceStartupTime);
+  TraceStartupTime timer("Initialize java.lang classes");
 
   if (EagerXrunInit && Arguments::init_libraries_at_startup()) {
     create_vm_init_libraries();
@@ -3388,6 +3412,8 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
 }
 
 void Threads::initialize_jsr292_core_classes(TRAPS) {
+  TraceStartupTime timer("Initialize java.lang.invoke classes");
+
   initialize_class(vmSymbols::java_lang_invoke_MethodHandle(), CHECK);
   initialize_class(vmSymbols::java_lang_invoke_MemberName(), CHECK);
   initialize_class(vmSymbols::java_lang_invoke_MethodHandleNatives(), CHECK);
@@ -3457,7 +3483,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   HOTSPOT_VM_INIT_BEGIN();
 
   // Timing (must come after argument parsing)
-  TraceTime timer("Create VM", TraceStartupTime);
+  TraceStartupTime timer("Create VM");
 
   // Initialize the os module after parsing the args
   jint os_init_2_result = os::init_2();
@@ -3528,6 +3554,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return status;
   }
 
+  if (TRACE_INITIALIZE() != JNI_OK) {
+    vm_exit_during_initialization("Failed to initialize tracing backend");
+  }
+
   // Should be done after the heap is fully created
   main_thread->cache_global_variables();
 
@@ -3542,8 +3572,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   JvmtiExport::transition_pending_onload_raw_monitors();
 
   // Create the VMThread
-  { TraceTime timer("Start VMThread", TraceStartupTime);
-    VMThread::create();
+  { TraceStartupTime timer("Start VMThread");
+
+  VMThread::create();
     Thread* vmthread = VMThread::vm_thread();
 
     if (!os::create_thread(vmthread, os::vm_thread)) {
@@ -3594,11 +3625,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   reset_vm_info_property(CHECK_JNI_ERR);
 
   quicken_jni_functions();
-
-  // Must be run after init_ft which initializes ft_enabled
-  if (TRACE_INITIALIZE() != JNI_OK) {
-    vm_exit_during_initialization("Failed to initialize tracing backend");
-  }
 
   // No more stub generation allowed after that point.
   StubCodeDesc::freeze();
@@ -3669,15 +3695,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CleanChunkPoolAsync) {
     Chunk::start_chunk_pool_cleaner_task();
   }
-
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    const char* jvmciCompiler = Arguments::PropertyList_get_value(Arguments::system_properties(), "jvmci.compiler");
-    if (jvmciCompiler != NULL) {
-      JVMCIRuntime::save_compiler(jvmciCompiler);
-    }
-  }
-#endif // INCLUDE_JVMCI
 
   // initialize compiler(s)
 #if defined(COMPILER1) || defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
@@ -4107,6 +4124,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_1_4) return JNI_TRUE;
   if (version == JNI_VERSION_1_6) return JNI_TRUE;
   if (version == JNI_VERSION_1_8) return JNI_TRUE;
+  if (version == JNI_VERSION_9) return JNI_TRUE;
   return JNI_FALSE;
 }
 

@@ -231,7 +231,9 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
             // Before all the checks below we first see if it's an FTP provider or a focus cycle root.
             // If it's the case just go down cycle (if it's set to "implicit").
             Component comp = getComponentDownCycle(aComponent, FORWARD_TRAVERSAL);
-            if (comp != null) {
+            // Check if aComponent is focus-cycle-root's default Component, i.e.
+            // focus cycle root & focus-cycle-root's default Component is same.
+            if (comp != null && comp != aComponent) {
                 return comp;
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
   LOG_TAG(alloc) \
   LOG_TAG(age) \
   LOG_TAG(barrier) \
+  LOG_TAG(biasedlocking) \
   LOG_TAG(bot) \
   LOG_TAG(census) \
   LOG_TAG(classhisto) \
@@ -42,6 +43,7 @@
   LOG_TAG(classload) /* Trace all classes loaded */ \
   LOG_TAG(classloaderdata) /* class loader loader_data lifetime */ \
   LOG_TAG(classunload) /* Trace unloading of classes */ \
+  LOG_TAG(classpath) \
   LOG_TAG(compaction) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
@@ -65,6 +67,7 @@
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(promotion) \
+  LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
   LOG_TAG(ref) \
   LOG_TAG(refine) \
   LOG_TAG(region) \
@@ -73,12 +76,14 @@
   LOG_TAG(scavenge) \
   LOG_TAG(scrub) \
   LOG_TAG(start) \
+  LOG_TAG(startuptime) \
   LOG_TAG(state) \
   LOG_TAG(stats) \
   LOG_TAG(stringdedup) \
   LOG_TAG(survivor) \
   LOG_TAG(sweep) \
   LOG_TAG(task) \
+  LOG_TAG(thread) \
   LOG_TAG(tlab) \
   LOG_TAG(time) \
   LOG_TAG(verify) \

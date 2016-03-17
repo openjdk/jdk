@@ -41,17 +41,20 @@
  * inserts it, and if present, with probability premove it removes
  * it.  (pinsert and premove are expressed as percentages to simplify
  * parsing from command line.)
+ * @library /lib/testlibrary/
  */
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.Map;
 import java.util.SplittableRandom;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import jdk.testlibrary.Utils;
 
 public class MapLoops {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static final int NKEYS = 100000;
     static int pinsert     = 60;
     static int premove     = 2;
@@ -125,7 +128,7 @@ public class MapLoops {
             map.clear();
         }
         pool.shutdown();
-        if (! pool.awaitTermination(10L, SECONDS))
+        if (! pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
             throw new Error();
     }
 

@@ -725,7 +725,7 @@ public:
                                                                             \
   product(bool, UseSHA, false,                                              \
           "Control whether SHA instructions can be used "                   \
-          "on SPARC and on ARM")                                            \
+          "on SPARC, on ARM and on x86")                                    \
                                                                             \
   product(bool, UseGHASHIntrinsics, false,                                  \
           "Use intrinsics for GHASH versions of crypto")                    \
@@ -1054,10 +1054,6 @@ public:
           "When HeapDumpOnOutOfMemoryError is on, the path (filename or "   \
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
-                                                                            \
-  develop(size_t, SegmentedHeapDumpThreshold, 2*G,                          \
-          "Generate a segmented heap dump (JAVA PROFILE 1.0.2 format) "     \
-          "when the heap usage is larger than this")                        \
                                                                             \
   develop(size_t, HeapDumpSegmentSize, 1*G,                                 \
           "Approximate segment size when generating a segmented heap dump") \
@@ -1437,9 +1433,6 @@ public:
   product(bool, VerifyMergedCPBytecodes, true,                              \
           "Verify bytecodes after RedefineClasses constant pool merging")   \
                                                                             \
-  develop(bool, TraceJNIHandleAllocation, false,                            \
-          "Trace allocation/deallocation of JNI handle blocks")             \
-                                                                            \
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
                                                                             \
@@ -1482,17 +1475,8 @@ public:
   develop(bool, TraceCompiledIC, false,                                     \
           "Trace changes of compiled IC")                                   \
                                                                             \
-  develop(bool, TraceStartupTime, false,                                    \
-          "Trace setup time")                                               \
-                                                                            \
-  develop(bool, TraceProtectionDomainVerification, false,                   \
-          "Trace protection domain verification")                           \
-                                                                            \
   develop(bool, TraceClearedExceptions, false,                              \
           "Print when an exception is forcibly cleared")                    \
-                                                                            \
-  product(bool, TraceBiasedLocking, false,                                  \
-          "Trace biased locking in JVM")                                    \
                                                                             \
   /* gc */                                                                  \
                                                                             \
@@ -2409,9 +2393,6 @@ public:
   product(bool, IgnoreEmptyClassPaths, false,                               \
           "Ignore empty path elements in -classpath")                       \
                                                                             \
-  product(bool, TraceClassPaths, false,                                     \
-          "Trace processing of class paths")                                \
-                                                                            \
   product(bool, TraceClassLoadingPreorder, false,                           \
           "Trace all classes loaded in order referenced (not loaded)")      \
                                                                             \
@@ -3098,16 +3079,16 @@ public:
   develop(intx, MethodHistogramCutoff, 100,                                 \
           "The cutoff value for method invocation histogram (+CountCalls)") \
                                                                             \
-  develop(intx, ProfilerNumberOfInterpretedMethods, 25,                     \
+  diagnostic(intx, ProfilerNumberOfInterpretedMethods, 25,                  \
           "Number of interpreted methods to show in profile")               \
                                                                             \
-  develop(intx, ProfilerNumberOfCompiledMethods, 25,                        \
+  diagnostic(intx, ProfilerNumberOfCompiledMethods, 25,                     \
           "Number of compiled methods to show in profile")                  \
                                                                             \
-  develop(intx, ProfilerNumberOfStubMethods, 25,                            \
+  diagnostic(intx, ProfilerNumberOfStubMethods, 25,                         \
           "Number of stub methods to show in profile")                      \
                                                                             \
-  develop(intx, ProfilerNumberOfRuntimeStubNodes, 25,                       \
+  diagnostic(intx, ProfilerNumberOfRuntimeStubNodes, 25,                    \
           "Number of runtime stub nodes to show in profile")                \
                                                                             \
   product(intx, ProfileIntervalsTicks, 100,                                 \
@@ -4167,6 +4148,13 @@ public:
              "which the VM declares an intrinsic but that are not declared "\
              "in the loaded class C. "                                      \
              "Check (3) is available only in debug builds.")                \
+                                                                            \
+  develop_pd(intx, InitArrayShortSize,                                      \
+          "Threshold small size (in bytes) for clearing arrays. "           \
+          "Anything this size or smaller may get converted to discrete "    \
+          "scalar stores.")                                                 \
+          range(0, max_intx)                                                \
+          constraint(InitArrayShortSizeConstraintFunc, AfterErgo)           \
                                                                             \
   diagnostic(bool, CompilerDirectivesIgnoreCompileCommands, false,          \
              "Disable backwards compatibility for compile commands.")       \

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 
 ##########################################################################################
 # Install the launcher name, release version string, full version
-# string and the runtime name into the Version.java file.
+# string and the runtime name into the VersionProps.java file.
 
 $(eval $(call SetupTextFileProcessing, BUILD_VERSION_JAVA, \
-    SOURCE_FILES := $(JDK_TOPDIR)/src/java.base/share/classes/sun/misc/Version.java.template, \
-    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java, \
+    SOURCE_FILES := $(JDK_TOPDIR)/src/java.base/share/classes/java/lang/VersionProps.java.template, \
+    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/VersionProps.java, \
     REPLACEMENTS := \
         @@LAUNCHER_NAME@@ => $(LAUNCHER_NAME) ; \
         @@RUNTIME_NAME@@ => $(RUNTIME_NAME) ; \
@@ -53,6 +53,8 @@ SOR_COPYRIGHT_YEARS = $(shell $(CAT) $(GENSRC_SOR_SRC)/$(GENSRC_SOR_SRC_FILE) | 
 $(eval $(call SetupNativeCompilation, BUILD_GENSRC_SOR_EXE, \
     SRC := $(GENSRC_SOR_SRC), \
     INCLUDE_FILES := $(GENSRC_SOR_SRC_FILE), \
+    CFLAGS_windows := -nologo, \
+    LDFLAGS_windows := -nologo, \
     TOOLCHAIN := TOOLCHAIN_BUILD, \
     OBJECT_DIR := $(GENSRC_SOR_BIN), \
     OUTPUT_DIR := $(GENSRC_SOR_BIN), \
@@ -61,12 +63,12 @@ $(eval $(call SetupNativeCompilation, BUILD_GENSRC_SOR_EXE, \
 SOR_PREGEN_FILE := $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/classes/sun/nio/ch/SocketOptionRegistry-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java.template
 
 ifeq ($(wildcard $(SOR_PREGEN_FILE)), )
-  $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java: $(BUILD_GENSRC_SOR_EXE)
+  $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java: $(BUILD_GENSRC_SOR_EXE_TARGET)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e \
 	    $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(SOR_COPYRIGHT_YEARS)" > $@.tmp
-	$(BUILD_GENSRC_SOR_EXE) >> $@.tmp
+	$(BUILD_GENSRC_SOR_EXE_TARGET) >> $@.tmp
 	$(MV) $@.tmp $@
 else
   $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java: $(SOR_PREGEN_FILE)
@@ -97,12 +99,12 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   UC_PREGEN_FILE := $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/classes/sun/nio/fs/UnixConstants-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java.template
 
   ifeq ($(wildcard $(UC_PREGEN_FILE)), )
-    $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java: $(BUILD_GENSRC_UC_EXE)
+    $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java: $(BUILD_GENSRC_UC_EXE_TARGET)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e \
 	    $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(UC_COPYRIGHT_YEARS)" > $@.tmp
-	$(BUILD_GENSRC_UC_EXE) >> $@.tmp
+	$(BUILD_GENSRC_UC_EXE_TARGET) >> $@.tmp
 	$(MV) $@.tmp $@
   else
     $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java: $(UC_PREGEN_FILE)
@@ -132,12 +134,12 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       OUTPUT_DIR := $(GENSRC_SOL_BIN), \
       PROGRAM := genSolarisConstants))
 
-  $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/SolarisConstants.java: $(BUILD_GENSRC_SOL_EXE)
+  $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/SolarisConstants.java: $(BUILD_GENSRC_SOL_EXE_TARGET)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e \
 	    $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(SOL_COPYRIGHT_YEARS)" > $@.tmp
-	$(BUILD_GENSRC_SOL_EXE) >> $@.tmp
+	$(BUILD_GENSRC_SOL_EXE_TARGET) >> $@.tmp
 	$(MV) $@.tmp $@
 
 

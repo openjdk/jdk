@@ -88,7 +88,6 @@ import java.lang.reflect.InvocationTargetException;
 
 public class TestStableByte {
     static final boolean isStableEnabled    = StableConfiguration.isStableEnabled;
-    static final boolean isServerWithStable = StableConfiguration.isServerWithStable;
 
     public static void main(String[] args) throws Exception {
         run(DefaultValue.class);
@@ -209,10 +208,10 @@ public class TestStableByte {
                 c.v = new byte[1]; c.v[0] = 1; byte val1 = get();
                                    c.v[0] = 2; byte val2 = get();
                 assertEquals(val1, 1);
-                assertEquals(val2, (isServerWithStable ? 1 : 2));
+                assertEquals(val2, (isStableEnabled ? 1 : 2));
 
                 c.v = new byte[1]; c.v[0] = 3; byte val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1 : 2)
                                                     : 3));
             }
 
@@ -220,10 +219,10 @@ public class TestStableByte {
                 c.v = new byte[20]; c.v[10] = 1; byte val1 = get1();
                                     c.v[10] = 2; byte val2 = get1();
                 assertEquals(val1, 1);
-                assertEquals(val2, (isServerWithStable ? 1 : 2));
+                assertEquals(val2, (isStableEnabled ? 1 : 2));
 
                 c.v = new byte[20]; c.v[10] = 3; byte val3 = get1();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1 : 2)
                                                     : 3));
             }
 
@@ -249,21 +248,21 @@ public class TestStableByte {
                 c.v = new byte[1][1]; c.v[0][0] = 1; byte val1 = get();
                                       c.v[0][0] = 2; byte val2 = get();
                 assertEquals(val1, 1);
-                assertEquals(val2, (isServerWithStable ? 1 : 2));
+                assertEquals(val2, (isStableEnabled ? 1 : 2));
 
                 c.v = new byte[1][1]; c.v[0][0] = 3; byte val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1 : 2)
                                                     : 3));
 
                 c.v[0] = new byte[1]; c.v[0][0] = 4; byte val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1 : 2)
                                                     : 4));
             }
 
             {
                 c.v = new byte[1][1]; byte[] val1 = get1();
                 c.v[0] = new byte[1]; byte[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -289,31 +288,31 @@ public class TestStableByte {
                 c.v = new byte[1][1][1]; c.v[0][0][0] = 1; byte val1 = get();
                                          c.v[0][0][0] = 2; byte val2 = get();
                 assertEquals(val1, 1);
-                assertEquals(val2, (isServerWithStable ? 1 : 2));
+                assertEquals(val2, (isStableEnabled ? 1 : 2));
 
                 c.v = new byte[1][1][1]; c.v[0][0][0] = 3; byte val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1 : 2)
                                                     : 3));
 
                 c.v[0] = new byte[1][1]; c.v[0][0][0] = 4; byte val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1 : 2)
                                                     : 4));
 
                 c.v[0][0] = new byte[1]; c.v[0][0][0] = 5; byte val5 = get();
-                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 1 : 2)
                                                     : 5));
             }
 
             {
                 c.v = new byte[1][1][1]; byte[] val1 = get1();
                 c.v[0][0] = new byte[1]; byte[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new byte[1][1][1]; byte[][] val1 = get2();
                 c.v[0] = new byte[1][1]; byte[][] val2 = get2();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -340,41 +339,41 @@ public class TestStableByte {
                 c.v = new byte[1][1][1][1]; c.v[0][0][0][0] = 1; byte val1 = get();
                                             c.v[0][0][0][0] = 2; byte val2 = get();
                 assertEquals(val1, 1);
-                assertEquals(val2, (isServerWithStable ? 1 : 2));
+                assertEquals(val2, (isStableEnabled ? 1 : 2));
 
                 c.v = new byte[1][1][1][1]; c.v[0][0][0][0] = 3; byte val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1 : 2)
                                                     : 3));
 
                 c.v[0] = new byte[1][1][1]; c.v[0][0][0][0] = 4; byte val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1 : 2)
                                                     : 4));
 
                 c.v[0][0] = new byte[1][1]; c.v[0][0][0][0] = 5; byte val5 = get();
-                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 1 : 2)
                                                     : 5));
 
                 c.v[0][0][0] = new byte[1]; c.v[0][0][0][0] = 6; byte val6 = get();
-                assertEquals(val6, (isStableEnabled ? (isServerWithStable ? 1 : 2)
+                assertEquals(val6, (isStableEnabled ? (isStableEnabled ? 1 : 2)
                                                     : 6));
             }
 
             {
                 c.v = new byte[1][1][1][1]; byte[] val1 = get1();
                 c.v[0][0][0] = new byte[1]; byte[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new byte[1][1][1][1]; byte[][] val1 = get2();
                 c.v[0][0] = new byte[1][1]; byte[][] val2 = get2();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new byte[1][1][1][1]; byte[][][] val1 = get3();
                 c.v[0] = new byte[1][1][1]; byte[][][] val2 = get3();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -436,7 +435,7 @@ public class TestStableByte {
                 c.v = new byte[1][1]; c.v[0] = new byte[0]; byte[] val1 = get1();
                                      c.v[0] = new byte[0]; byte[] val2 = get1();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -472,14 +471,14 @@ public class TestStableByte {
                 c.v = new byte[1][1][1]; c.v[0][0] = new byte[0]; byte[] val1 = get1();
                                          c.v[0][0] = new byte[0]; byte[] val2 = get1();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new byte[1][1][1]; c.v[0] = new byte[0][0]; byte[][] val1 = get2();
                                          c.v[0] = new byte[0][0]; byte[][] val2 = get2();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -614,7 +613,7 @@ public class TestStableByte {
                                elem.a = 2; byte val3 = get(); byte val4 = get1();
 
                 assertEquals(val1, 1);
-                assertEquals(val3, (isServerWithStable ? 1 : 2));
+                assertEquals(val3, (isStableEnabled ? 1 : 2));
 
                 assertEquals(val2, 1);
                 assertEquals(val4, 2);

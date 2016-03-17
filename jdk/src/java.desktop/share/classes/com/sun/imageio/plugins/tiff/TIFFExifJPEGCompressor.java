@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.plugins.tiff.BaselineTIFFTagSet;
 
 /**
- * A <code>TIFFCompressor</code> for the JPEG variant of Exif.
+ * A {@code TIFFCompressor} for the JPEG variant of Exif.
  */
 public class TIFFExifJPEGCompressor extends TIFFBaseJPEGCompressor {
     public TIFFExifJPEGCompressor(ImageWriteParam param) {
