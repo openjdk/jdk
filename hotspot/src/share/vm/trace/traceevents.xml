@@ -436,27 +436,27 @@ Declares a structure type that can be used in other events.
     <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
   </event>
 
-  <event id="GCPhasePause" path="vm/gc/phases/pause" label="GC Phase Pause">
+  <event id="GCPhasePause" path="vm/gc/phases/pause" label="GC Phase Pause" has_thread="true">
     <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
     <value type="UTF8" field="name" label="Name" />
   </event>
 
-  <event id="GCPhasePauseLevel1" path="vm/gc/phases/pause_level_1" label="GC Phase Pause Level 1">
+  <event id="GCPhasePauseLevel1" path="vm/gc/phases/pause_level_1" label="GC Phase Pause Level 1" has_thread="true">
     <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
     <value type="UTF8" field="name" label="Name" />
   </event>
 
-  <event id="GCPhasePauseLevel2" path="vm/gc/phases/pause_level_2" label="GC Phase Pause Level 2">
+  <event id="GCPhasePauseLevel2" path="vm/gc/phases/pause_level_2" label="GC Phase Pause Level 2" has_thread="true">
     <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
     <value type="UTF8" field="name" label="Name" />
   </event>
 
-  <event id="GCPhasePauseLevel3" path="vm/gc/phases/pause_level_3" label="GC Phase Pause Level 3">
+  <event id="GCPhasePauseLevel3" path="vm/gc/phases/pause_level_3" label="GC Phase Pause Level 3" has_thread="true">
     <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
     <value type="UTF8" field="name" label="Name" />
   </event>
 
-  <event id="GCPhaseConcurrent" path="vm/gc/phases/concurrent" label="GC Phase Concurrent">
+  <event id="GCPhaseConcurrent" path="vm/gc/phases/concurrent" label="GC Phase Concurrent" has_thread="true">
     <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
     <value type="UTF8" field="name" label="Name" />
   </event>
