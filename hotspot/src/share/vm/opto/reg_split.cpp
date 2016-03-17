@@ -287,7 +287,7 @@ uint PhaseChaitin::split_USE(MachSpillCopyNode::SpillType spill_type, Node *def,
 Node* clone_node(Node* def, Block *b, Compile* C) {
   if (def->needs_anti_dependence_check()) {
 #ifdef ASSERT
-    if (Verbose) {
+    if (PrintOpto && WizardMode) {
       tty->print_cr("RA attempts to clone node with anti_dependence:");
       def->dump(-1); tty->cr();
       tty->print_cr("into block:");
