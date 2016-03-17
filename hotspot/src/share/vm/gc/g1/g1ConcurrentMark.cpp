@@ -377,7 +377,8 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   _has_aborted(false),
   _restart_for_overflow(false),
   _concurrent_marking_in_progress(false),
-  _concurrent_phase_status(ConcPhaseNotStarted),
+  _gc_timer_cm(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
+  _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) G1OldTracer()),
 
   // _verbose_level set below
 
@@ -1011,44 +1012,24 @@ void G1ConcurrentMark::scan_root_regions() {
   }
 }
 
-void G1ConcurrentMark::register_concurrent_phase_start(const char* title) {
-  uint old_val = 0;
-  do {
-    old_val = Atomic::cmpxchg(ConcPhaseStarted, &_concurrent_phase_status, ConcPhaseNotStarted);
-  } while (old_val != ConcPhaseNotStarted);
-  _g1h->gc_timer_cm()->register_gc_concurrent_start(title);
+void G1ConcurrentMark::concurrent_cycle_start() {
+  _gc_timer_cm->register_gc_start();
+
+  _gc_tracer_cm->report_gc_start(GCCause::_no_gc /* first parameter is not used */, _gc_timer_cm->gc_start());
+
+  _g1h->trace_heap_before_gc(_gc_tracer_cm);
 }
 
-void G1ConcurrentMark::register_concurrent_phase_end_common(bool end_timer) {
-  if (_concurrent_phase_status == ConcPhaseNotStarted) {
-    return;
+void G1ConcurrentMark::concurrent_cycle_end() {
+  _g1h->trace_heap_after_gc(_gc_tracer_cm);
+
+  if (has_aborted()) {
+    _gc_tracer_cm->report_concurrent_mode_failure();
   }
 
-  uint old_val = Atomic::cmpxchg(ConcPhaseStopping, &_concurrent_phase_status, ConcPhaseStarted);
-  if (old_val == ConcPhaseStarted) {
-    _g1h->gc_timer_cm()->register_gc_concurrent_end();
-    // If 'end_timer' is true, we came here to end timer which needs concurrent phase ended.
-    // We need to end it before changing the status to 'ConcPhaseNotStarted' to prevent
-    // starting a new concurrent phase by 'ConcurrentMarkThread'.
-    if (end_timer) {
-      _g1h->gc_timer_cm()->register_gc_end();
-    }
-    old_val = Atomic::cmpxchg(ConcPhaseNotStarted, &_concurrent_phase_status, ConcPhaseStopping);
-    assert(old_val == ConcPhaseStopping, "Should not have changed since we entered this scope.");
-  } else {
-    do {
-      // Let other thread finish changing '_concurrent_phase_status' to 'ConcPhaseNotStarted'.
-      os::naked_short_sleep(1);
-    } while (_concurrent_phase_status != ConcPhaseNotStarted);
-  }
-}
+  _gc_timer_cm->register_gc_end();
 
-void G1ConcurrentMark::register_concurrent_phase_end() {
-  register_concurrent_phase_end_common(false);
-}
-
-void G1ConcurrentMark::register_concurrent_gc_end_and_stop_timer() {
-  register_concurrent_phase_end_common(true);
+  _gc_tracer_cm->report_gc_end(_gc_timer_cm->gc_end(), _gc_timer_cm->time_partitions());
 }
 
 void G1ConcurrentMark::mark_from_roots() {
@@ -1127,7 +1108,7 @@ void G1ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     reset_marking_state();
   } else {
     {
-      GCTraceTime(Debug, gc) trace("Aggregate Data", g1h->gc_timer_cm());
+      GCTraceTime(Debug, gc) trace("Aggregate Data", _gc_timer_cm);
 
       // Aggregate the per-task counting data that we have accumulated
       // while marking.
@@ -1166,7 +1147,7 @@ void G1ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   g1p->record_concurrent_mark_remark_end();
 
   G1CMIsAliveClosure is_alive(g1h);
-  g1h->gc_tracer_cm()->report_object_count_after_gc(&is_alive);
+  _gc_tracer_cm->report_object_count_after_gc(&is_alive);
 }
 
 // Base class of the closures that finalize and verify the
@@ -1755,8 +1736,6 @@ void G1ConcurrentMark::cleanup() {
   // sure we update the old gen/space data.
   g1h->g1mm()->update_sizes();
   g1h->allocation_context_stats().update_after_mark();
-
-  g1h->trace_heap_after_concurrent_cycle();
 }
 
 void G1ConcurrentMark::complete_cleanup() {
@@ -2048,7 +2027,7 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   // Inner scope to exclude the cleaning of the string and symbol
   // tables from the displayed time.
   {
-    GCTraceTime(Debug, gc) trace("Reference Processing", g1h->gc_timer_cm());
+    GCTraceTime(Debug, gc) trace("Reference Processing", _gc_timer_cm);
 
     ReferenceProcessor* rp = g1h->ref_processor_cm();
 
@@ -2105,8 +2084,8 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
                                           &g1_keep_alive,
                                           &g1_drain_mark_stack,
                                           executor,
-                                          g1h->gc_timer_cm());
-    g1h->gc_tracer_cm()->report_gc_reference_stats(stats);
+                                          _gc_timer_cm);
+    _gc_tracer_cm->report_gc_reference_stats(stats);
 
     // The do_oop work routines of the keep_alive and drain_marking_stack
     // oop closures will set the has_overflown flag if we overflow the
@@ -2138,24 +2117,24 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
 
   // Unload Klasses, String, Symbols, Code Cache, etc.
   {
-    GCTraceTime(Debug, gc) trace("Unloading", g1h->gc_timer_cm());
+    GCTraceTime(Debug, gc) trace("Unloading", _gc_timer_cm);
 
     if (ClassUnloadingWithConcurrentMark) {
       bool purged_classes;
 
       {
-        GCTraceTime(Trace, gc) trace("System Dictionary Unloading", g1h->gc_timer_cm());
+        GCTraceTime(Trace, gc) trace("System Dictionary Unloading", _gc_timer_cm);
         purged_classes = SystemDictionary::do_unloading(&g1_is_alive, false /* Defer klass cleaning */);
       }
 
       {
-        GCTraceTime(Trace, gc) trace("Parallel Unloading", g1h->gc_timer_cm());
+        GCTraceTime(Trace, gc) trace("Parallel Unloading", _gc_timer_cm);
         weakRefsWorkParallelPart(&g1_is_alive, purged_classes);
       }
     }
 
     if (G1StringDedup::is_enabled()) {
-      GCTraceTime(Trace, gc) trace("String Deduplication Unlink", g1h->gc_timer_cm());
+      GCTraceTime(Trace, gc) trace("String Deduplication Unlink", _gc_timer_cm);
       G1StringDedup::unlink(&g1_is_alive);
     }
   }
@@ -2276,7 +2255,7 @@ void G1ConcurrentMark::checkpointRootsFinalWork() {
   HandleMark   hm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  GCTraceTime(Debug, gc) trace("Finalize Marking", g1h->gc_timer_cm());
+  GCTraceTime(Debug, gc) trace("Finalize Marking", _gc_timer_cm);
 
   g1h->ensure_parsability(false);
 
@@ -2632,10 +2611,6 @@ void G1ConcurrentMark::abort() {
   satb_mq_set.set_active_all_threads(
                                  false, /* new active value */
                                  satb_mq_set.is_active() /* expected_active */);
-
-  _g1h->trace_heap_after_concurrent_cycle();
-
-  _g1h->register_concurrent_cycle_end();
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,

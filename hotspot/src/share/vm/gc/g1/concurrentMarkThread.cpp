@@ -98,11 +98,11 @@ class G1ConcPhaseTimer : public GCTraceConcTimeImpl<LogLevel::Info, LOG_TAGS(gc,
   G1ConcPhaseTimer(G1ConcurrentMark* cm, const char* title) :
      GCTraceConcTimeImpl<LogLevel::Info,  LogTag::_gc, LogTag::_marking>(title),
      _cm(cm) {
-    _cm->register_concurrent_phase_start(title);
+    _cm->gc_timer_cm()->register_gc_concurrent_start(title);
   }
 
   ~G1ConcPhaseTimer() {
-    _cm->register_concurrent_phase_end();
+    _cm->gc_timer_cm()->register_gc_concurrent_end();
   }
 };
 
@@ -118,6 +118,10 @@ void ConcurrentMarkThread::run_service() {
     if (should_terminate()) {
       break;
     }
+
+    GCIdMark gc_id_mark;
+
+    cm()->concurrent_cycle_start();
 
     assert(GCId::current() != GCId::undefined(), "GC id should have been set up by the initial mark GC.");
 
@@ -279,7 +283,8 @@ void ConcurrentMarkThread::run_service() {
     {
       SuspendibleThreadSetJoiner sts_join;
       g1h->increment_old_marking_cycles_completed(true /* concurrent */);
-      g1h->register_concurrent_cycle_end();
+
+      cm()->concurrent_cycle_end();
     }
   }
   _cm->root_regions()->cancel_scan();
