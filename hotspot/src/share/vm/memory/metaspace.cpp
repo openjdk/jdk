@@ -1573,7 +1573,7 @@ void MetaspaceGC::compute_new_size() {
       } else {
         _shrink_factor = MIN2(current_shrink_factor * 4, (uint) 100);
       }
-      log_trace(gc, metaspace)("    shrinking:  initSize: %.1fK  maximum_desired_capacity: %.1fK",
+      log_trace(gc, metaspace)("    shrinking:  initThreshold: %.1fK  maximum_desired_capacity: %.1fK",
                                MetaspaceSize / (double) K, maximum_desired_capacity / (double) K);
       log_trace(gc, metaspace)("    shrink_bytes: %.1fK  current_shrink_factor: %d  new shrink factor: %d  MinMetaspaceExpansion: %.1fK",
                                shrink_bytes / (double) K, current_shrink_factor, _shrink_factor, MinMetaspaceExpansion / (double) K);
