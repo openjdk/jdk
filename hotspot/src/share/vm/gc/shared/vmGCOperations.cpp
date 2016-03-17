@@ -30,10 +30,8 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/vmGCOperations.hpp"
-#include "memory/oopFactory.hpp"
 #include "logging/log.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/instanceRefKlass.hpp"
+#include "memory/oopFactory.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -64,14 +62,11 @@ void VM_GC_Operation::notify_gc_end() {
 }
 
 void VM_GC_Operation::acquire_pending_list_lock() {
-  // we may enter this with pending exception set
-  InstanceRefKlass::acquire_pending_list_lock(&_pending_list_basic_lock);
+  _pending_list_locker.lock();
 }
 
-
 void VM_GC_Operation::release_and_notify_pending_list_lock() {
-
-  InstanceRefKlass::release_and_notify_pending_list_lock(&_pending_list_basic_lock);
+  _pending_list_locker.unlock();
 }
 
 // Allocations may fail in several threads at about the same time,

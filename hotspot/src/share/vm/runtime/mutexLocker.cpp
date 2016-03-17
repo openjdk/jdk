@@ -70,7 +70,6 @@ Monitor* SerializePage_lock           = NULL;
 Monitor* Threads_lock                 = NULL;
 Monitor* CGC_lock                     = NULL;
 Monitor* STS_lock                     = NULL;
-Monitor* SLT_lock                     = NULL;
 Monitor* FullGCCount_lock             = NULL;
 Mutex*   SATB_Q_FL_lock               = NULL;
 Monitor* SATB_Q_CBL_mon               = NULL;
@@ -242,9 +241,6 @@ void mutex_init() {
   def(JNIGlobalHandle_lock         , Mutex  , nonleaf,     true,  Monitor::_safepoint_check_always);     // locks JNIHandleBlockFreeList_lock
   def(JNICritical_lock             , Monitor, nonleaf,     true,  Monitor::_safepoint_check_always);     // used for JNI critical regions
   def(AdapterHandlerLibrary_lock   , Mutex  , nonleaf,     true,  Monitor::_safepoint_check_always);
-  if (UseConcMarkSweepGC) {
-    def(SLT_lock                   , Monitor, nonleaf,     false, Monitor::_safepoint_check_never);      // used in CMS GC for locking PLL lock
-  }
 
   def(Heap_lock                    , Monitor, nonleaf+1,   false, Monitor::_safepoint_check_sometimes);
   def(JfieldIdCreation_lock        , Mutex  , nonleaf+1,   true,  Monitor::_safepoint_check_always);     // jfieldID, Used in VM_Operation

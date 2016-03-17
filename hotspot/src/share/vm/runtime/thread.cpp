@@ -34,6 +34,7 @@
 #include "compiler/compileTask.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
+#include "gc/shared/referencePendingListLocker.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -3650,18 +3651,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // anymore. We call vm_exit_during_initialization directly instead.
   SystemDictionary::compute_java_system_loader(CHECK_(JNI_ERR));
 
-#if INCLUDE_ALL_GCS
-  // Support for ConcurrentMarkSweep. This should be cleaned up
-  // and better encapsulated. The ugly nested if test would go away
-  // once things are properly refactored. XXX YSR
-  if (UseConcMarkSweepGC || UseG1GC) {
-    if (UseConcMarkSweepGC) {
-      ConcurrentMarkSweepThread::makeSurrogateLockerThread(CHECK_JNI_ERR);
-    } else {
-      ConcurrentMarkThread::makeSurrogateLockerThread(CHECK_JNI_ERR);
-    }
-  }
-#endif // INCLUDE_ALL_GCS
+  // Initialize reference pending list locker
+  bool needs_locker_thread = Universe::heap()->needs_reference_pending_list_locker_thread();
+  ReferencePendingListLocker::initialize(needs_locker_thread, CHECK_JNI_ERR);
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution

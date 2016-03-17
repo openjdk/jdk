@@ -41,9 +41,6 @@
 
 // The CM thread is created when the G1 garbage collector is used
 
-SurrogateLockerThread*
-     ConcurrentMarkThread::_slt = NULL;
-
 ConcurrentMarkThread::ConcurrentMarkThread(G1ConcurrentMark* cm) :
   ConcurrentGCThread(),
   _cm(cm),
@@ -304,17 +301,4 @@ void ConcurrentMarkThread::sleepBeforeNextCycle() {
   if (started()) {
     set_in_progress();
   }
-}
-
-// Note: As is the case with CMS - this method, although exported
-// by the ConcurrentMarkThread, which is a non-JavaThread, can only
-// be called by a JavaThread. Currently this is done at vm creation
-// time (post-vm-init) by the main/Primordial (Java)Thread.
-// XXX Consider changing this in the future to allow the CM thread
-// itself to create this thread?
-void ConcurrentMarkThread::makeSurrogateLockerThread(TRAPS) {
-  assert(UseG1GC, "SLT thread needed only for concurrent GC");
-  assert(THREAD->is_Java_thread(), "must be a Java thread");
-  assert(_slt == NULL, "SLT already created");
-  _slt = SurrogateLockerThread::make(THREAD);
 }

@@ -56,14 +56,9 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   void run_service();
   void stop_service();
 
-  static SurrogateLockerThread*         _slt;
-
  public:
   // Constructor
   ConcurrentMarkThread(G1ConcurrentMark* cm);
-
-  static void makeSurrogateLockerThread(TRAPS);
-  static SurrogateLockerThread* slt() { return _slt; }
 
   // Total virtual time so far for this thread and concurrent marking tasks.
   double vtime_accum();

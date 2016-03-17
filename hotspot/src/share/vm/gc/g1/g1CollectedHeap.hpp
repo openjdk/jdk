@@ -1292,6 +1292,12 @@ public:
     return true;
   }
 
+  // The reference pending list lock is acquired from from the
+  // ConcurrentMarkThread.
+  virtual bool needs_reference_pending_list_locker_thread() const {
+    return true;
+  }
+
   inline bool is_in_young(const oop obj);
 
   virtual bool is_scavengable(const void* addr);

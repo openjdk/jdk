@@ -39,11 +39,8 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   friend class CMSCollector;
 
  private:
-  static ConcurrentMarkSweepThread*     _cmst;
-  static CMSCollector*                  _collector;
-  static SurrogateLockerThread*         _slt;
-  static SurrogateLockerThread::SLT_msg_type _sltBuffer;
-  static Monitor*                       _sltMonitor;
+  static ConcurrentMarkSweepThread* _cmst;
+  static CMSCollector*              _collector;
 
   enum CMS_flag_type {
     CMS_nil             = NoBits,
@@ -74,9 +71,6 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
  public:
   // Constructor
   ConcurrentMarkSweepThread(CMSCollector* collector);
-
-  static void makeSurrogateLockerThread(TRAPS);
-  static SurrogateLockerThread* slt() { return _slt; }
 
   static void threads_do(ThreadClosure* tc);
 

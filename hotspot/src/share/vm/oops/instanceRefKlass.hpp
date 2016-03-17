@@ -118,10 +118,6 @@ private:
   ALL_OOP_OOP_ITERATE_CLOSURES_2(OOP_OOP_ITERATE_DECL_BACKWARDS)
 #endif // INCLUDE_ALL_GCS
 
-  static void release_and_notify_pending_list_lock(BasicLock *pending_list_basic_lock);
-  static void acquire_pending_list_lock(BasicLock *pending_list_basic_lock);
-  static bool owns_pending_list_lock(JavaThread* thread);
-
   // Update non-static oop maps so 'referent', 'nextPending' and
   // 'discovered' will look like non-oops
   static void update_nonstatic_oop_maps(Klass* k);
