@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,4 +23,70 @@
 #
 ###########################################################################
 
-# No langtools tests are on the problem list.
+###########################################################################
+#
+# javadoc
+
+com/sun/javadoc/testTypeAnnotations/TestTypeAnnotations.java                    8006735    generic-all    output type annotations in javadoc
+com/sun/javadoc/typeAnnotations/smoke/TestSmoke.java                            8013406    generic-all    Test cases fail in javadoc test TestSmoke.java
+
+jdk/javadoc/tool/6176978/T6176978.java                                          8152049    generic-all    no longer applicable, should delete
+jdk/javadoc/tool/InlineTagsWithBraces.java                                      8152050    generic-all    API, re-evaluate @bold, @maybe causes doclint to throw up.
+jdk/javadoc/tool/LangVers.java                                                  8152051    generic-all    API, re-evaluate, unsure of this test.
+jdk/javadoc/tool/VerifyLocale.java                                              8149565    generic-all    -locale option issues
+jdk/javadoc/tool/enum/docComments/Main.java                                     8152054    generic-all    API modifications
+jdk/javadoc/tool/enum/enumType/Main.java                                        8152054    generic-all    API modifications
+jdk/javadoc/tool/generics/genericClass/Main.java                                8152054    generic-all    API modifications
+jdk/javadoc/tool/generics/genericInnerAndOuter/Main.java                        8152054    generic-all    API modifications
+jdk/javadoc/tool/generics/genericInterface/Main.java                            8152054    generic-all    API modifications
+jdk/javadoc/tool/generics/genericMethod/Main.java                               8152054    generic-all    API modifications
+jdk/javadoc/tool/generics/genericSuper/Main.java                                8152054    generic-all    API modifications
+jdk/javadoc/tool/generics/supertypes/Main.java                                  8152054    generic-all    API modifications
+jdk/javadoc/tool/generics/throwsGeneric/Main.java                               8152054    generic-all    API modifications
+jdk/javadoc/tool/generics/tparamCycle/Main.java                                 8152054    generic-all    API modifications
+jdk/javadoc/tool/generics/tparamTagOnMethod/Main.java                           8152054    generic-all    API modifications
+jdk/javadoc/tool/generics/tparamTagOnType/Main.java                             8152054    generic-all    API modifications
+jdk/javadoc/tool/generics/wildcards/Main.java                                   8152054    generic-all    API modifications
+jdk/javadoc/tool/imports/MissingImport.java                                     8152054    generic-all    API modifications, testing deprecated APIs.
+jdk/javadoc/tool/sourceOnly/Test.java                                           8152054    generic-all    API modifications
+jdk/javadoc/tool/sourceOption/SourceOption.java                                 8152054    generic-all    API modifications
+jdk/javadoc/tool/subpackageIgnore/SubpackageIgnore.java                         8152054    generic-all    API modifications
+jdk/javadoc/tool/varArgs/Main.java                                              8152054    generic-all    API modifications
+
+###########################################################################
+#
+# jshell
+
+jdk/jshell/EditorPadTest.java                                                   8139872    generic-all    test requires a non-headless environment
+jdk/jshell/ExternalEditorTest.java                                              8080843    generic-all    invalid key error occurs when external editor is used.
+jdk/jshell/ToolBasicTest.java                                                   8139873    generic-all    JShell tests failing
+
+###########################################################################
+#
+# javac
+
+tools/javac/Paths/AbsolutePathTest.java                                         8055768    generic-all    ToolBox does not close opened files
+tools/javac/annotations/typeAnnotations/failures/CantAnnotatePackages.java      8057679    generic-all    clarify error messages trying to annotate scoping
+tools/javac/annotations/typeAnnotations/failures/CantAnnotateScoping.java       8057679    generic-all    clarify error messages trying to annotate scoping
+tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass2.java  8057679    generic-all    clarify error messages trying to annotate scoping
+tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass2.java  8057683    generic-all    improve ordering of errors with type annotations
+tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass3.java  8057679    generic-all    clarify error messages trying to annotate scoping
+tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass3.java  8057683    generic-all    improve order of errors with type annotations
+tools/javac/annotations/typeAnnotations/newlocations/RepeatingTypeAnnotations.java 8057683 generic-all    improve ordering of errors with type annotations
+tools/javac/annotations/typeAnnotations/referenceinfos/Lambda.java              8057687    generic-all    emit correct byte code an attributes for type annotations
+tools/javac/annotations/typeAnnotations/referenceinfos/NestedTypes.java         8057687    generic-all    emit correct byte code an attributes for type annotations
+tools/javac/warnings/suppress/TypeAnnotations.java                              8057683    generic-all    improve ordering of errors with type annotations
+
+###########################################################################
+#
+# javap
+
+tools/javap/output/RepeatingTypeAnnotations.java                                8057687    generic-all    emit correct byte code an attributes for type annotations
+
+###########################################################################
+#
+# sjavac
+
+tools/sjavac/IncCompileFullyQualifiedRef.java                                   8152055    generic-all    Requires dependency code to deal with in-method dependencies.
+tools/sjavac/IncCompileWithChanges.java                                         8152055    generic-all    Requires dependency code to deal with in-method dependencies.
+
