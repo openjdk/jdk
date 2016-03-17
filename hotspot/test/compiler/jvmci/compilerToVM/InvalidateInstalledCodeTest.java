@@ -27,16 +27,22 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library /testlibrary /test/lib /
+ * @library ../common/patches
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.org.objectweb.asm.tree
+ *          jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.code
+ *          jdk.vm.ci/jdk.vm.ci.runtime
  * @ignore 8139700
- * @compile ../common/CompilerToVMHelper.java
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @build compiler.jvmci.compilerToVM.InvalidateInstalledCodeTest
  * @build sun.hotspot.WhiteBox
- *        compiler.jvmci.compilerToVM.InvalidateInstalledCodeTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- *                              jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
- *      compiler.jvmci.compilerToVM.InvalidateInstalledCodeTest
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   compiler.jvmci.compilerToVM.InvalidateInstalledCodeTest
  */
 
 package compiler.jvmci.compilerToVM;
@@ -86,6 +92,7 @@ public class InvalidateInstalledCodeTest {
         CompilationResult compResult = new CompilationResult(name);
         // to pass sanity check of default -1
         compResult.setTotalFrameSize(0);
+        compResult.close();
         InstalledCode installedCode = CACHE_PROVIDER.installCode(
                 compRequest, compResult,
                 new InstalledCode(name), /* speculationLog = */ null,
