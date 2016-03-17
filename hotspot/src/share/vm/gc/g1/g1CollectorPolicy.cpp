@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/g1/concurrentG1Refine.hpp"
 #include "gc/g1/concurrentMarkThread.inline.hpp"
+#include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
@@ -41,85 +42,13 @@
 #include "utilities/debug.hpp"
 #include "utilities/pair.hpp"
 
-// Different defaults for different number of GC threads
-// They were chosen by running GCOld and SPECjbb on debris with different
-//   numbers of GC threads and choosing them based on the results
-
-// all the same
-static double rs_length_diff_defaults[] = {
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-};
-
-static double cost_per_card_ms_defaults[] = {
-  0.01, 0.005, 0.005, 0.003, 0.003, 0.002, 0.002, 0.0015
-};
-
-// all the same
-static double young_cards_per_entry_ratio_defaults[] = {
-  1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0
-};
-
-static double cost_per_entry_ms_defaults[] = {
-  0.015, 0.01, 0.01, 0.008, 0.008, 0.0055, 0.0055, 0.005
-};
-
-static double cost_per_byte_ms_defaults[] = {
-  0.00006, 0.00003, 0.00003, 0.000015, 0.000015, 0.00001, 0.00001, 0.000009
-};
-
-// these should be pretty consistent
-static double constant_other_time_ms_defaults[] = {
-  5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0
-};
-
-
-static double young_other_cost_per_region_ms_defaults[] = {
-  0.3, 0.2, 0.2, 0.15, 0.15, 0.12, 0.12, 0.1
-};
-
-static double non_young_other_cost_per_region_ms_defaults[] = {
-  1.0, 0.7, 0.7, 0.5, 0.5, 0.42, 0.42, 0.30
-};
-
 G1CollectorPolicy::G1CollectorPolicy() :
   _predictor(G1ConfidencePercent / 100.0),
-
-  _recent_gc_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
-
-  _concurrent_mark_remark_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
-  _concurrent_mark_cleanup_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
-
-  _alloc_rate_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _prev_collection_pause_end_ms(0.0),
-  _rs_length_diff_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _cost_per_card_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _cost_scan_hcc_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _young_cards_per_entry_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _mixed_cards_per_entry_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _cost_per_entry_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _mixed_cost_per_entry_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _cost_per_byte_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _cost_per_byte_ms_during_cm_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _constant_other_time_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _young_other_cost_per_region_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _non_young_other_cost_per_region_ms_seq(
-                                         new TruncatedSeq(TruncatedSeqLength)),
-
-  _pending_cards_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _rs_lengths_seq(new TruncatedSeq(TruncatedSeqLength)),
-
+  _analytics(new G1Analytics(&_predictor)),
   _pause_time_target_ms((double) MaxGCPauseMillis),
-
-  _recent_prev_end_times_for_all_gcs_sec(
-                                new TruncatedSeq(NumPrevPausesForHeuristics)),
-
-  _recent_avg_pause_time_ratio(0.0),
   _rs_lengths_prediction(0),
   _max_survivor_regions(0),
-
-  // add here any more surv rate groups
   _survivors_age_table(true),
-
   _gc_overhead_perc(0.0),
 
   _bytes_allocated_in_old_since_last_gc(0),
@@ -147,26 +76,9 @@ G1CollectorPolicy::G1CollectorPolicy() :
   HeapRegion::setup_heap_region_size(InitialHeapSize, MaxHeapSize);
   HeapRegionRemSet::setup_remset_size();
 
-  _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
-  _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
   clear_ratio_check_data();
 
   _phase_times = new G1GCPhaseTimes(ParallelGCThreads);
-
-  int index = MIN2(ParallelGCThreads - 1, 7u);
-
-  _rs_length_diff_seq->add(rs_length_diff_defaults[index]);
-  _cost_per_card_ms_seq->add(cost_per_card_ms_defaults[index]);
-  _cost_scan_hcc_seq->add(0.0);
-  _young_cards_per_entry_ratio_seq->add(
-                                  young_cards_per_entry_ratio_defaults[index]);
-  _cost_per_entry_ms_seq->add(cost_per_entry_ms_defaults[index]);
-  _cost_per_byte_ms_seq->add(cost_per_byte_ms_defaults[index]);
-  _constant_other_time_ms_seq->add(constant_other_time_ms_defaults[index]);
-  _young_other_cost_per_region_ms_seq->add(
-                               young_other_cost_per_region_ms_defaults[index]);
-  _non_young_other_cost_per_region_ms_seq->add(
-                           non_young_other_cost_per_region_ms_defaults[index]);
 
   // Below, we might need to calculate the pause time target based on
   // the pause interval. When we do so we are going to give G1 maximum
@@ -209,9 +121,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   double time_slice  = (double) GCPauseIntervalMillis / 1000.0;
   _mmu_tracker = new G1MMUTrackerQueue(time_slice, max_gc_time);
 
-  // start conservatively (around 50ms is about right)
-  _concurrent_mark_remark_times_ms->add(0.05);
-  _concurrent_mark_cleanup_times_ms->add(0.20);
   _tenuring_threshold = MaxTenuringThreshold;
 
   assert(GCTimeRatio > 0,
@@ -230,14 +139,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
 G1CollectorPolicy::~G1CollectorPolicy() {
   delete _ihop_control;
-}
-
-double G1CollectorPolicy::get_new_prediction(TruncatedSeq const* seq) const {
-  return _predictor.get_new_prediction(seq);
-}
-
-size_t G1CollectorPolicy::get_new_size_prediction(TruncatedSeq const* seq) const {
-  return (size_t)get_new_prediction(seq);
 }
 
 void G1CollectorPolicy::initialize_alignments() {
@@ -313,8 +214,9 @@ bool G1CollectorPolicy::predict_will_fit(uint young_length,
   double accum_surv_rate = accum_yg_surv_rate_pred((int) young_length - 1);
   size_t bytes_to_copy =
                (size_t) (accum_surv_rate * (double) HeapRegion::GrainBytes);
-  double copy_time_ms = predict_object_copy_time_ms(bytes_to_copy);
-  double young_other_time_ms = predict_young_other_time_ms(young_length);
+  double copy_time_ms = _analytics->predict_object_copy_time_ms(bytes_to_copy,
+                                                                collector_state()->during_concurrent_mark());
+  double young_other_time_ms = _analytics->predict_young_other_time_ms(young_length);
   double pause_time_ms = base_time_ms + copy_time_ms + young_other_time_ms;
   if (pause_time_ms > target_pause_time_ms) {
     // end condition 2: prediction is over the target pause time
@@ -358,10 +260,10 @@ uint G1CollectorPolicy::calculate_young_list_desired_min_length(
                                                        uint base_min_length) const {
   uint desired_min_length = 0;
   if (adaptive_young_list_length()) {
-    if (_alloc_rate_ms_seq->num() > 3) {
+    if (_analytics->num_alloc_rate_ms() > 3) {
       double now_sec = os::elapsedTime();
       double when_ms = _mmu_tracker->when_max_gc_sec(now_sec) * 1000.0;
-      double alloc_rate_ms = predict_alloc_rate_ms();
+      double alloc_rate_ms = _analytics->predict_alloc_rate_ms();
       desired_min_length = (uint) ceil(alloc_rate_ms * when_ms);
     } else {
       // otherwise we don't have enough info to make the prediction
@@ -380,7 +282,7 @@ uint G1CollectorPolicy::calculate_young_list_desired_max_length() const {
 }
 
 uint G1CollectorPolicy::update_young_list_max_and_target_length() {
-  return update_young_list_max_and_target_length(predict_rs_lengths());
+  return update_young_list_max_and_target_length(_analytics->predict_rs_lengths());
 }
 
 uint G1CollectorPolicy::update_young_list_max_and_target_length(size_t rs_lengths) {
@@ -485,9 +387,9 @@ G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
 
   double target_pause_time_ms = _mmu_tracker->max_gc_time() * 1000.0;
   double survivor_regions_evac_time = predict_survivor_regions_evac_time();
-  size_t pending_cards = get_new_size_prediction(_pending_cards_seq);
-  size_t adj_rs_lengths = rs_lengths + predict_rs_length_diff();
-  size_t scanned_cards = predict_young_card_num(adj_rs_lengths);
+  size_t pending_cards = _analytics->predict_pending_cards();
+  size_t adj_rs_lengths = rs_lengths + _analytics->predict_rs_length_diff();
+  size_t scanned_cards = _analytics->predict_card_num(adj_rs_lengths, /* gcs_are_young */ true);
   double base_time_ms =
     predict_base_elapsed_time_ms(pending_cards, scanned_cards) +
     survivor_regions_evac_time;
@@ -587,7 +489,7 @@ void G1CollectorPolicy::revise_young_list_target_length_if_necessary(size_t rs_l
 }
 
 void G1CollectorPolicy::update_rs_lengths_prediction() {
-  update_rs_lengths_prediction(predict_rs_lengths());
+  update_rs_lengths_prediction(_analytics->predict_rs_lengths());
 }
 
 void G1CollectorPolicy::update_rs_lengths_prediction(size_t prediction) {
@@ -655,7 +557,7 @@ void G1CollectorPolicy::record_full_collection_end() {
   double full_gc_time_sec = end_sec - _full_collection_start_sec;
   double full_gc_time_ms = full_gc_time_sec * 1000.0;
 
-  update_recent_gc_times(end_sec, full_gc_time_ms);
+  _analytics->update_recent_gc_times(end_sec, full_gc_time_ms);
 
   collector_state()->set_full_collection(false);
 
@@ -723,8 +625,8 @@ void G1CollectorPolicy::record_concurrent_mark_remark_start() {
 void G1CollectorPolicy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
-  _concurrent_mark_remark_times_ms->add(elapsed_time_ms);
-  _prev_collection_pause_end_ms += elapsed_time_ms;
+  _analytics->report_concurrent_mark_remark_times_ms(elapsed_time_ms);
+  _analytics->append_prev_collection_pause_end_ms(elapsed_time_ms);
 
   record_pause(Remark, _mark_remark_start_sec, end_time_sec);
 }
@@ -823,7 +725,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     maybe_start_marking();
   }
 
-  double app_time_ms = (phase_times()->cur_collection_start_sec() * 1000.0 - _prev_collection_pause_end_ms);
+  double app_time_ms = (phase_times()->cur_collection_start_sec() * 1000.0 - _analytics->prev_collection_pause_end_ms());
   if (app_time_ms < MIN_TIMER_GRANULARITY) {
     // This usually happens due to the timer not having the required
     // granularity. Some Linuxes are the usual culprits.
@@ -842,31 +744,12 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     // place we can safely ignore them here.
     uint regions_allocated = _collection_set->eden_region_length();
     double alloc_rate_ms = (double) regions_allocated / app_time_ms;
-    _alloc_rate_ms_seq->add(alloc_rate_ms);
+    _analytics->report_alloc_rate_ms(alloc_rate_ms);
 
     double interval_ms =
-      (end_time_sec - _recent_prev_end_times_for_all_gcs_sec->oldest()) * 1000.0;
-    update_recent_gc_times(end_time_sec, pause_time_ms);
-    _recent_avg_pause_time_ratio = _recent_gc_times_ms->sum()/interval_ms;
-    if (recent_avg_pause_time_ratio() < 0.0 ||
-        (recent_avg_pause_time_ratio() - 1.0 > 0.0)) {
-      // Clip ratio between 0.0 and 1.0, and continue. This will be fixed in
-      // CR 6902692 by redoing the manner in which the ratio is incrementally computed.
-      if (_recent_avg_pause_time_ratio < 0.0) {
-        _recent_avg_pause_time_ratio = 0.0;
-      } else {
-        assert(_recent_avg_pause_time_ratio - 1.0 > 0.0, "Ctl-point invariant");
-        _recent_avg_pause_time_ratio = 1.0;
-      }
-    }
-
-    // Compute the ratio of just this last pause time to the entire time range stored
-    // in the vectors. Comparing this pause to the entire range, rather than only the
-    // most recent interval, has the effect of smoothing over a possible transient 'burst'
-    // of more frequent pauses that don't really reflect a change in heap occupancy.
-    // This reduces the likelihood of a needless heap expansion being triggered.
-    _last_pause_time_ratio =
-      (pause_time_ms * _recent_prev_end_times_for_all_gcs_sec->num()) / interval_ms;
+      (end_time_sec - _analytics->last_known_gc_end_time_sec()) * 1000.0;
+    _analytics->update_recent_gc_times(end_time_sec, pause_time_ms);
+    _analytics->compute_pause_time_ratio(interval_ms, pause_time_ms);
   }
 
   bool new_in_marking_window = collector_state()->in_marking_window();
@@ -912,28 +795,20 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     double cost_per_card_ms = 0.0;
     if (_pending_cards > 0) {
       cost_per_card_ms = (average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms) / (double) _pending_cards;
-      _cost_per_card_ms_seq->add(cost_per_card_ms);
+      _analytics->report_cost_per_card_ms(cost_per_card_ms);
     }
-    _cost_scan_hcc_seq->add(scan_hcc_time_ms);
+    _analytics->report_cost_scan_hcc(scan_hcc_time_ms);
 
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
       cost_per_entry_ms = average_time_ms(G1GCPhaseTimes::ScanRS) / (double) cards_scanned;
-      if (collector_state()->last_gc_was_young()) {
-        _cost_per_entry_ms_seq->add(cost_per_entry_ms);
-      } else {
-        _mixed_cost_per_entry_ms_seq->add(cost_per_entry_ms);
-      }
+      _analytics->report_cost_per_entry_ms(cost_per_entry_ms, collector_state()->last_gc_was_young());
     }
 
     if (_max_rs_lengths > 0) {
       double cards_per_entry_ratio =
         (double) cards_scanned / (double) _max_rs_lengths;
-      if (collector_state()->last_gc_was_young()) {
-        _young_cards_per_entry_ratio_seq->add(cards_per_entry_ratio);
-      } else {
-        _mixed_cards_per_entry_ratio_seq->add(cards_per_entry_ratio);
-      }
+      _analytics->report_cards_per_entry_ratio(cards_per_entry_ratio, collector_state()->last_gc_was_young());
     }
 
     // This is defensive. For a while _max_rs_lengths could get
@@ -954,7 +829,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     if (_max_rs_lengths > recorded_rs_lengths) {
       rs_length_diff = _max_rs_lengths - recorded_rs_lengths;
     }
-    _rs_length_diff_seq->add((double) rs_length_diff);
+    _analytics->report_rs_length_diff((double) rs_length_diff);
 
     size_t freed_bytes = heap_used_bytes_before_gc - cur_used_bytes;
     size_t copied_bytes = _collection_set->bytes_used_before() - freed_bytes;
@@ -962,27 +837,23 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
 
     if (copied_bytes > 0) {
       cost_per_byte_ms = average_time_ms(G1GCPhaseTimes::ObjCopy) / (double) copied_bytes;
-      if (collector_state()->in_marking_window()) {
-        _cost_per_byte_ms_during_cm_seq->add(cost_per_byte_ms);
-      } else {
-        _cost_per_byte_ms_seq->add(cost_per_byte_ms);
-      }
+      _analytics->report_cost_per_byte_ms(cost_per_byte_ms, collector_state()->in_marking_window());
     }
 
     if (_collection_set->young_region_length() > 0) {
-      _young_other_cost_per_region_ms_seq->add(young_other_time_ms() /
-                                               _collection_set->young_region_length());
+      _analytics->report_young_other_cost_per_region_ms(young_other_time_ms() /
+                                                        _collection_set->young_region_length());
     }
 
     if (_collection_set->old_region_length() > 0) {
-      _non_young_other_cost_per_region_ms_seq->add(non_young_other_time_ms() /
-                                                   _collection_set->old_region_length());
+      _analytics->report_non_young_other_cost_per_region_ms(non_young_other_time_ms() /
+                                                            _collection_set->old_region_length());
     }
 
-    _constant_other_time_ms_seq->add(constant_other_time_ms(pause_time_ms));
+    _analytics->report_constant_other_time_ms(constant_other_time_ms(pause_time_ms));
 
-    _pending_cards_seq->add((double) _pending_cards);
-    _rs_lengths_seq->add((double) _max_rs_lengths);
+    _analytics->report_pending_cards((double) _pending_cards);
+    _analytics->report_rs_lengths((double) _max_rs_lengths);
   }
 
   collector_state()->set_in_marking_window(new_in_marking_window);
@@ -1119,106 +990,10 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
   dcqs.notify_if_necessary();
 }
 
-size_t G1CollectorPolicy::predict_rs_lengths() const {
-  return get_new_size_prediction(_rs_lengths_seq);
-}
-
-size_t G1CollectorPolicy::predict_rs_length_diff() const {
-  return get_new_size_prediction(_rs_length_diff_seq);
-}
-
-double G1CollectorPolicy::predict_alloc_rate_ms() const {
-  return get_new_prediction(_alloc_rate_ms_seq);
-}
-
-double G1CollectorPolicy::predict_cost_per_card_ms() const {
-  return get_new_prediction(_cost_per_card_ms_seq);
-}
-
-double G1CollectorPolicy::predict_scan_hcc_ms() const {
-  return get_new_prediction(_cost_scan_hcc_seq);
-}
-
-double G1CollectorPolicy::predict_rs_update_time_ms(size_t pending_cards) const {
-  return pending_cards * predict_cost_per_card_ms() + predict_scan_hcc_ms();
-}
-
-double G1CollectorPolicy::predict_young_cards_per_entry_ratio() const {
-  return get_new_prediction(_young_cards_per_entry_ratio_seq);
-}
-
-double G1CollectorPolicy::predict_mixed_cards_per_entry_ratio() const {
-  if (_mixed_cards_per_entry_ratio_seq->num() < 2) {
-    return predict_young_cards_per_entry_ratio();
-  } else {
-    return get_new_prediction(_mixed_cards_per_entry_ratio_seq);
-  }
-}
-
-size_t G1CollectorPolicy::predict_young_card_num(size_t rs_length) const {
-  return (size_t) (rs_length * predict_young_cards_per_entry_ratio());
-}
-
-size_t G1CollectorPolicy::predict_non_young_card_num(size_t rs_length) const {
-  return (size_t)(rs_length * predict_mixed_cards_per_entry_ratio());
-}
-
-double G1CollectorPolicy::predict_rs_scan_time_ms(size_t card_num) const {
-  if (collector_state()->gcs_are_young()) {
-    return card_num * get_new_prediction(_cost_per_entry_ms_seq);
-  } else {
-    return predict_mixed_rs_scan_time_ms(card_num);
-  }
-}
-
-double G1CollectorPolicy::predict_mixed_rs_scan_time_ms(size_t card_num) const {
-  if (_mixed_cost_per_entry_ms_seq->num() < 3) {
-    return card_num * get_new_prediction(_cost_per_entry_ms_seq);
-  } else {
-    return card_num * get_new_prediction(_mixed_cost_per_entry_ms_seq);
-  }
-}
-
-double G1CollectorPolicy::predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const {
-  if (_cost_per_byte_ms_during_cm_seq->num() < 3) {
-    return (1.1 * bytes_to_copy) * get_new_prediction(_cost_per_byte_ms_seq);
-  } else {
-    return bytes_to_copy * get_new_prediction(_cost_per_byte_ms_during_cm_seq);
-  }
-}
-
-double G1CollectorPolicy::predict_object_copy_time_ms(size_t bytes_to_copy) const {
-  if (collector_state()->during_concurrent_mark()) {
-    return predict_object_copy_time_ms_during_cm(bytes_to_copy);
-  } else {
-    return bytes_to_copy * get_new_prediction(_cost_per_byte_ms_seq);
-  }
-}
-
-double G1CollectorPolicy::predict_constant_other_time_ms() const {
-  return get_new_prediction(_constant_other_time_ms_seq);
-}
-
-double G1CollectorPolicy::predict_young_other_time_ms(size_t young_num) const {
-  return young_num * get_new_prediction(_young_other_cost_per_region_ms_seq);
-}
-
-double G1CollectorPolicy::predict_non_young_other_time_ms(size_t non_young_num) const {
-  return non_young_num * get_new_prediction(_non_young_other_cost_per_region_ms_seq);
-}
-
-double G1CollectorPolicy::predict_remark_time_ms() const {
-  return get_new_prediction(_concurrent_mark_remark_times_ms);
-}
-
-double G1CollectorPolicy::predict_cleanup_time_ms() const {
-  return get_new_prediction(_concurrent_mark_cleanup_times_ms);
-}
-
 double G1CollectorPolicy::predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const {
   TruncatedSeq* seq = surv_rate_group->get_seq(age);
   guarantee(seq->num() > 0, "There should be some young gen survivor samples available. Tried to access with age %d", age);
-  double pred = get_new_prediction(seq);
+  double pred = _predictor.get_new_prediction(seq);
   if (pred > 1.0) {
     pred = 1.0;
   }
@@ -1236,19 +1011,14 @@ double G1CollectorPolicy::accum_yg_surv_rate_pred(int age) const {
 double G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards,
                                                        size_t scanned_cards) const {
   return
-    predict_rs_update_time_ms(pending_cards) +
-    predict_rs_scan_time_ms(scanned_cards) +
-    predict_constant_other_time_ms();
+    _analytics->predict_rs_update_time_ms(pending_cards) +
+    _analytics->predict_rs_scan_time_ms(scanned_cards, collector_state()->gcs_are_young()) +
+    _analytics->predict_constant_other_time_ms();
 }
 
 double G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) const {
-  size_t rs_length = predict_rs_lengths() + predict_rs_length_diff();
-  size_t card_num;
-  if (collector_state()->gcs_are_young()) {
-    card_num = predict_young_card_num(rs_length);
-  } else {
-    card_num = predict_non_young_card_num(rs_length);
-  }
+  size_t rs_length = _analytics->predict_rs_lengths() + _analytics->predict_rs_length_diff();
+  size_t card_num = _analytics->predict_card_num(rs_length, collector_state()->gcs_are_young());
   return predict_base_elapsed_time_ms(pending_cards, card_num);
 }
 
@@ -1268,36 +1038,23 @@ size_t G1CollectorPolicy::predict_bytes_to_copy(HeapRegion* hr) const {
 double G1CollectorPolicy::predict_region_elapsed_time_ms(HeapRegion* hr,
                                                          bool for_young_gc) const {
   size_t rs_length = hr->rem_set()->occupied();
-  size_t card_num;
-
   // Predicting the number of cards is based on which type of GC
   // we're predicting for.
-  if (for_young_gc) {
-    card_num = predict_young_card_num(rs_length);
-  } else {
-    card_num = predict_non_young_card_num(rs_length);
-  }
+  size_t card_num = _analytics->predict_card_num(rs_length, for_young_gc);
   size_t bytes_to_copy = predict_bytes_to_copy(hr);
 
   double region_elapsed_time_ms =
-    predict_rs_scan_time_ms(card_num) +
-    predict_object_copy_time_ms(bytes_to_copy);
+    _analytics->predict_rs_scan_time_ms(card_num, collector_state()->gcs_are_young()) +
+    _analytics->predict_object_copy_time_ms(bytes_to_copy, collector_state()->during_concurrent_mark());
 
   // The prediction of the "other" time for this region is based
   // upon the region type and NOT the GC type.
   if (hr->is_young()) {
-    region_elapsed_time_ms += predict_young_other_time_ms(1);
+    region_elapsed_time_ms += _analytics->predict_young_other_time_ms(1);
   } else {
-    region_elapsed_time_ms += predict_non_young_other_time_ms(1);
+    region_elapsed_time_ms += _analytics->predict_non_young_other_time_ms(1);
   }
   return region_elapsed_time_ms;
-}
-
-void G1CollectorPolicy::update_recent_gc_times(double end_time_sec,
-                                               double elapsed_ms) {
-  _recent_gc_times_ms->add(elapsed_ms);
-  _recent_prev_end_times_for_all_gcs_sec->add(end_time_sec);
-  _prev_collection_pause_end_ms = end_time_sec * 1000.0;
 }
 
 void G1CollectorPolicy::clear_ratio_check_data() {
@@ -1307,8 +1064,8 @@ void G1CollectorPolicy::clear_ratio_check_data() {
 }
 
 size_t G1CollectorPolicy::expansion_amount() {
-  double recent_gc_overhead = recent_avg_pause_time_ratio() * 100.0;
-  double last_gc_overhead = _last_pause_time_ratio * 100.0;
+  double recent_gc_overhead = _analytics->recent_avg_pause_time_ratio() * 100.0;
+  double last_gc_overhead = _analytics->last_pause_time_ratio() * 100.0;
   double threshold = _gc_overhead_perc;
   size_t expand_bytes = 0;
 
@@ -1593,8 +1350,8 @@ void G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
 
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
-  _concurrent_mark_cleanup_times_ms->add(elapsed_time_ms);
-  _prev_collection_pause_end_ms += elapsed_time_ms;
+  _analytics->report_concurrent_mark_cleanup_times_ms(elapsed_time_ms);
+  _analytics->append_prev_collection_pause_end_ms(elapsed_time_ms);
 
   record_pause(Cleanup, _mark_cleanup_start_sec, end_sec);
 }
@@ -1732,4 +1489,3 @@ void G1CollectorPolicy::finalize_collection_set(double target_pause_time_ms) {
   double time_remaining_ms = _collection_set->finalize_young_part(target_pause_time_ms);
   _collection_set->finalize_old_part(time_remaining_ms);
 }
-
