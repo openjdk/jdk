@@ -4050,13 +4050,9 @@ void G1CollectedHeap::parallel_cleaning(BoolObjectClosure* is_alive,
 
 void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive,
                                                      bool process_strings, bool process_symbols) {
-  {
+  { // Timing scope
     G1StringSymbolTableUnlinkTask g1_unlink_task(is_alive, process_strings, process_symbols);
     workers()->run_task(&g1_unlink_task);
-  }
-
-  if (G1StringDedup::is_enabled()) {
-    G1StringDedup::unlink(is_alive);
   }
 }
 
