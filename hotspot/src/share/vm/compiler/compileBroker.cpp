@@ -773,7 +773,8 @@ void CompileBroker::init_compiler_sweeper_threads(int c1_compiler_count, int c2_
 #endif // !ZERO && !SHARK
   // Initialize the compilation queue
   if (c2_compiler_count > 0) {
-    _c2_compile_queue  = new CompileQueue("C2 compile queue");
+    const char* name = JVMCI_ONLY(UseJVMCICompiler ? "JVMCI compile queue" :) "C2 compile queue";
+    _c2_compile_queue  = new CompileQueue(name);
     _compilers[1]->set_num_compiler_threads(c2_compiler_count);
   }
   if (c1_compiler_count > 0) {
