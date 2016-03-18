@@ -138,11 +138,11 @@
     BytecodeHistogram::_counters[(Bytecodes::Code)opcode]++;                                         \
     if (StopInterpreterAt && StopInterpreterAt == BytecodeCounter::_counter_value) os::breakpoint(); \
     if (TraceBytecodes) {                                                                            \
-      CALL_VM((void)SharedRuntime::trace_bytecode(THREAD, 0,               \
-                                   topOfStack[Interpreter::expr_index_at(1)],   \
-                                   topOfStack[Interpreter::expr_index_at(2)]),  \
-                                   handle_exception);                      \
-    }                                                                      \
+      CALL_VM((void)InterpreterRuntime::trace_bytecode(THREAD, 0,                    \
+                                        topOfStack[Interpreter::expr_index_at(1)],   \
+                                        topOfStack[Interpreter::expr_index_at(2)]),  \
+                                        handle_exception);                           \
+    }                                                                                \
 }
 #endif
 
