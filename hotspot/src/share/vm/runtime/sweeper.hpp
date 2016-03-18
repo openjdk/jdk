@@ -45,12 +45,12 @@ class WhiteBox;
 //     and sweep_code_cache() cannot execute at the same time.
 //     To reclaim memory, nmethods are first marked as 'not-entrant'. Methods can
 //     be made not-entrant by (i) the sweeper, (ii) deoptimization, (iii) dependency
-//     invalidation, and (iv) being replaced be a different method version (tiered
-//     compilation). Not-entrant nmethod cannot be called by Java threads, but they
-//     can still be active on the stack. To ensure that active nmethod are not reclaimed,
+//     invalidation, and (iv) being replaced by a different method version (tiered
+//     compilation). Not-entrant nmethods cannot be called by Java threads, but they
+//     can still be active on the stack. To ensure that active nmethods are not reclaimed,
 //     we have to wait until the next marking phase has completed. If a not-entrant
 //     nmethod was NOT marked as active, it can be converted to 'zombie' state. To safely
-//     remove the nmethod, all inline caches (IC) that point to the the nmethod must be
+//     remove the nmethod, all inline caches (IC) that point to the nmethod must be
 //     cleared. After that, the nmethod can be evicted from the code cache. Each nmethod's
 //     state change happens during separate sweeps. It may take at least 3 sweeps before an
 //     nmethod's space is freed.
