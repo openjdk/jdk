@@ -207,7 +207,7 @@ class nmethod : public CodeBlob {
   unsigned int _has_wide_vectors:1;          // Preserve wide vectors at safepoints
 
   // Protected by Patching_lock
-  volatile unsigned char _state;             // {alive, not_entrant, zombie, unloaded}
+  volatile unsigned char _state;             // {in_use, not_entrant, zombie, unloaded}
 
   volatile unsigned char _unloading_clock;   // Incremented after GC unloaded/cleaned the nmethod
 
@@ -438,7 +438,20 @@ class nmethod : public CodeBlob {
   bool  is_alive() const                          { return _state == in_use || _state == not_entrant; }
   bool  is_not_entrant() const                    { return _state == not_entrant; }
   bool  is_zombie() const                         { return _state == zombie; }
-  bool  is_unloaded() const                       { return _state == unloaded;   }
+  bool  is_unloaded() const                       { return _state == unloaded; }
+
+  // returns a string version of the nmethod state
+  const char* state() const {
+    switch(_state) {
+      case in_use:      return "in use";
+      case not_entrant: return "not_entrant";
+      case zombie:      return "zombie";
+      case unloaded:    return "unloaded";
+      default:
+        fatal("unexpected nmethod state: %d", _state);
+        return NULL;
+    }
+  }
 
 #if INCLUDE_RTM_OPT
   // rtm state accessing and manipulating
