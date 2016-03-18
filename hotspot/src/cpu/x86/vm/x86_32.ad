@@ -7236,6 +7236,7 @@ instruct storeLConditional( memory mem, eADXRegL oldval, eBCXRegL newval, eFlags
 instruct compareAndSwapL( rRegI res, eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
   predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapL mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
   format %{ "CMPXCHG8 [$mem_ptr],$newval\t# If EDX:EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t"
             "MOV    $res,0\n\t"
@@ -7249,6 +7250,7 @@ instruct compareAndSwapL( rRegI res, eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL 
 
 instruct compareAndSwapP( rRegI res,  pRegP mem_ptr, eAXRegP oldval, eCXRegP newval, eFlagsReg cr) %{
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapP mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
   format %{ "CMPXCHG [$mem_ptr],$newval\t# If EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t"
             "MOV    $res,0\n\t"
@@ -7261,6 +7263,7 @@ instruct compareAndSwapP( rRegI res,  pRegP mem_ptr, eAXRegP oldval, eCXRegP new
 
 instruct compareAndSwapI( rRegI res, pRegP mem_ptr, eAXRegI oldval, eCXRegI newval, eFlagsReg cr) %{
   match(Set res (CompareAndSwapI mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapI mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
   format %{ "CMPXCHG [$mem_ptr],$newval\t# If EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t"
             "MOV    $res,0\n\t"
@@ -7268,6 +7271,31 @@ instruct compareAndSwapI( rRegI res, pRegP mem_ptr, eAXRegI oldval, eCXRegI newv
             "MOV    $res,1\n"
           "fail:" %}
   ins_encode( enc_cmpxchg(mem_ptr), enc_flags_ne_to_boolean(res) );
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct compareAndExchangeL( eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
+  predicate(VM_Version::supports_cx8());
+  match(Set oldval (CompareAndExchangeL mem_ptr (Binary oldval newval)));
+  effect(KILL cr);
+  format %{ "CMPXCHG8 [$mem_ptr],$newval\t# If EDX:EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t" %}
+  ins_encode( enc_cmpxchg8(mem_ptr) );
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct compareAndExchangeP( pRegP mem_ptr, eAXRegP oldval, eCXRegP newval, eFlagsReg cr) %{
+  match(Set oldval (CompareAndExchangeP mem_ptr (Binary oldval newval)));
+  effect(KILL cr);
+  format %{ "CMPXCHG [$mem_ptr],$newval\t# If EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t" %}
+  ins_encode( enc_cmpxchg(mem_ptr) );
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct compareAndExchangeI( pRegP mem_ptr, eAXRegI oldval, eCXRegI newval, eFlagsReg cr) %{
+  match(Set oldval (CompareAndExchangeI mem_ptr (Binary oldval newval)));
+  effect(KILL cr);
+  format %{ "CMPXCHG [$mem_ptr],$newval\t# If EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t" %}
+  ins_encode( enc_cmpxchg(mem_ptr) );
   ins_pipe( pipe_cmpxchg );
 %}
 

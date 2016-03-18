@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,11 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   // The closure applied to completed log buffers.
   CardTableEntryClosure* _refine_closure;
 
-  int _thread_threshold_step;
+  size_t _thread_threshold_step;
   // This thread activation threshold
-  int _threshold;
+  size_t _threshold;
   // This thread deactivation threshold
-  int _deactivation_threshold;
+  size_t _deactivation_threshold;
 
   void wait_for_completed_buffers();
 

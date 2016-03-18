@@ -1055,10 +1055,6 @@ public:
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  develop(size_t, SegmentedHeapDumpThreshold, 2*G,                          \
-          "Generate a segmented heap dump (JAVA PROFILE 1.0.2 format) "     \
-          "when the heap usage is larger than this")                        \
-                                                                            \
   develop(size_t, HeapDumpSegmentSize, 1*G,                                 \
           "Approximate segment size when generating a segmented heap dump") \
                                                                             \
@@ -1437,9 +1433,6 @@ public:
   product(bool, VerifyMergedCPBytecodes, true,                              \
           "Verify bytecodes after RedefineClasses constant pool merging")   \
                                                                             \
-  develop(bool, TraceJNIHandleAllocation, false,                            \
-          "Trace allocation/deallocation of JNI handle blocks")             \
-                                                                            \
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
                                                                             \
@@ -1481,9 +1474,6 @@ public:
                                                                             \
   develop(bool, TraceCompiledIC, false,                                     \
           "Trace changes of compiled IC")                                   \
-                                                                            \
-  develop(bool, TraceProtectionDomainVerification, false,                   \
-          "Trace protection domain verification")                           \
                                                                             \
   develop(bool, TraceClearedExceptions, false,                              \
           "Print when an exception is forcibly cleared")                    \
@@ -2402,9 +2392,6 @@ public:
                                                                             \
   product(bool, IgnoreEmptyClassPaths, false,                               \
           "Ignore empty path elements in -classpath")                       \
-                                                                            \
-  product(bool, TraceClassPaths, false,                                     \
-          "Trace processing of class paths")                                \
                                                                             \
   product(bool, TraceClassLoadingPreorder, false,                           \
           "Trace all classes loaded in order referenced (not loaded)")      \

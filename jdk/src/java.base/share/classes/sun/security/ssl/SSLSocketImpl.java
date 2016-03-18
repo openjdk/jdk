@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,17 +364,6 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
 
     /* Class and subclass dynamic debugging support */
     private static final Debug debug = Debug.getInstance("ssl");
-
-    /*
-     * Is it the first application record to write?
-     */
-    private boolean isFirstAppOutputRecord = true;
-
-    /*
-     * If AppOutputStream needs to delay writes of small packets, we
-     * will use this to store the data until we actually do the write.
-     */
-    private ByteArrayOutputStream heldRecordBuffer = null;
 
     /*
      * Whether local cipher suites preference in server side should be
@@ -998,9 +987,21 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
             Plaintext plainText = null;
             while (((state = getConnectionState()) != cs_CLOSED) &&
                     (state != cs_ERROR) && (state != cs_APP_CLOSED)) {
-                // clean the buffer
+
+                /*
+                 * clean the buffer and check if it is too small, e.g. because
+                 * the AppInputStream did not have the chance to see the
+                 * current packet length but rather something like that of the
+                 * handshake before. In that case we return 0 at this point to
+                 * give the caller the chance to adjust the buffer.
+                 */
                 if (buffer != null) {
                     buffer.clear();
+
+                    if (buffer.remaining() <
+                            inputRecord.bytesInCompletePacket(sockInput)) {
+                        return 0;
+                    }
                 }
 
                 /*

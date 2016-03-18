@@ -781,7 +781,9 @@ public:
           ResourceMark rm;
           _containing_obj->print_on(log.error_stream());
           log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT, p2i(obj), HR_FORMAT_PARAMS(to));
-          obj->print_on(log.error_stream());
+          if (obj->is_oop()) {
+            obj->print_on(log.error_stream());
+          }
           log.error("Obj head CTE = %d, field CTE = %d.", cv_obj, cv_field);
           log.error("----------");
           _failures = true;

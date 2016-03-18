@@ -431,7 +431,7 @@ public:
 // Phase for iteratively performing local, pessimistic GVN-style optimizations.
 // and ideal transformations on the graph.
 class PhaseIterGVN : public PhaseGVN {
- private:
+private:
   bool _delay_transform;  // When true simply register the node when calling transform
                           // instead of actually optimizing it
 

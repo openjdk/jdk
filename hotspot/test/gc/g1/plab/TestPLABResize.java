@@ -23,7 +23,7 @@
 
  /*
  * @test TestPLABResize
- * @bug 8141278
+ * @bug 8141278 8141141
  * @summary Test for PLAB resizing
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires vm.opt.FlightRecorder != true
@@ -117,7 +117,7 @@ public class TestPLABResize {
                 .map(item -> {
                     return item.getValue()
                             .get(LogParser.ReportType.SURVIVOR_STATS)
-                            .get("desired_plab_sz");
+                            .get("actual");
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
 

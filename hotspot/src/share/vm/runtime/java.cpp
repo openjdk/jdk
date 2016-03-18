@@ -64,6 +64,7 @@
 #include "runtime/timer.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memTracker.hpp"
+#include "trace/traceMacros.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -485,7 +486,7 @@ void before_exit(JavaThread* thread) {
 
   EventThreadEnd event;
   if (event.should_commit()) {
-      event.set_javalangthread(java_lang_Thread::thread_id(thread->threadObj()));
+      event.set_thread(THREAD_TRACE_ID(thread));
       event.commit();
   }
 

@@ -2307,6 +2307,14 @@ void Matcher::find_shared( Node *n ) {
       case Op_StorePConditional:
       case Op_StoreIConditional:
       case Op_StoreLConditional:
+      case Op_CompareAndExchangeI:
+      case Op_CompareAndExchangeL:
+      case Op_CompareAndExchangeP:
+      case Op_CompareAndExchangeN:
+      case Op_WeakCompareAndSwapI:
+      case Op_WeakCompareAndSwapL:
+      case Op_WeakCompareAndSwapP:
+      case Op_WeakCompareAndSwapN:
       case Op_CompareAndSwapI:
       case Op_CompareAndSwapL:
       case Op_CompareAndSwapP:
@@ -2407,8 +2415,10 @@ void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
 
       bool push_it = false;
       if( proj->Opcode() == Op_IfTrue ) {
+#ifndef PRODUCT
         extern int all_null_checks_found;
         all_null_checks_found++;
+#endif
         if( b->_test._test == BoolTest::ne ) {
           push_it = true;
         }
@@ -2522,6 +2532,14 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
     // that a monitor exit operation contains a serializing instruction.
 
     if (xop == Op_MemBarVolatile ||
+        xop == Op_CompareAndExchangeI ||
+        xop == Op_CompareAndExchangeL ||
+        xop == Op_CompareAndExchangeP ||
+        xop == Op_CompareAndExchangeN ||
+        xop == Op_WeakCompareAndSwapL ||
+        xop == Op_WeakCompareAndSwapP ||
+        xop == Op_WeakCompareAndSwapN ||
+        xop == Op_WeakCompareAndSwapI ||
         xop == Op_CompareAndSwapL ||
         xop == Op_CompareAndSwapP ||
         xop == Op_CompareAndSwapN ||

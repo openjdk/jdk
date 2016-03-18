@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,9 +16,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: DOM.java,v 1.2.4.1 2005/08/31 10:18:49 pvedula Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc;
@@ -102,4 +99,5 @@ public interface DOM {
     public int getDocument();
     public String getUnparsedEntityURI(String name);
     public Map<String, Integer> getElementsWithIDs();
+    public void release();
 }
