@@ -216,7 +216,7 @@ void VM_CGC_Operation::doit() {
   GCIdMark gc_id_mark(_gc_id);
   GCTraceCPUTime tcpu;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  GCTraceTime(Info, gc) t(_printGCMessage, g1h->gc_timer_cm(), GCCause::_no_gc, true);
+  GCTraceTime(Info, gc) t(_printGCMessage, g1h->concurrent_mark()->gc_timer_cm(), GCCause::_no_gc, true);
   IsGCActiveMark x;
   _cl->do_void();
 }

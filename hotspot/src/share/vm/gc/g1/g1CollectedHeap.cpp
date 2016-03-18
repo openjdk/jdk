@@ -1769,15 +1769,12 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _expand_heap_after_alloc_failure(true),
   _old_marking_cycles_started(0),
   _old_marking_cycles_completed(0),
-  _heap_summary_sent(false),
   _in_cset_fast_test(),
   _dirty_cards_region_list(NULL),
   _worker_cset_start_region(NULL),
   _worker_cset_start_region_time_stamp(NULL),
   _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
-  _gc_timer_cm(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
-  _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
-  _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) G1OldTracer()) {
+  _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()) {
 
   _workers = new WorkGang("GC Thread", ParallelGCThreads,
                           /* are_GC_task_threads */true,
@@ -2318,52 +2315,6 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
   FullGCCount_lock->notify_all();
 }
 
-void G1CollectedHeap::register_concurrent_cycle_start(const Ticks& start_time) {
-  GCIdMarkAndRestore conc_gc_id_mark;
-  collector_state()->set_concurrent_cycle_started(true);
-  _gc_timer_cm->register_gc_start(start_time);
-
-  _gc_tracer_cm->report_gc_start(gc_cause(), _gc_timer_cm->gc_start());
-  trace_heap_before_gc(_gc_tracer_cm);
-  _cmThread->set_gc_id(GCId::current());
-}
-
-void G1CollectedHeap::register_concurrent_cycle_end() {
-  if (collector_state()->concurrent_cycle_started()) {
-    GCIdMarkAndRestore conc_gc_id_mark(_cmThread->gc_id());
-    if (_cm->has_aborted()) {
-      _gc_tracer_cm->report_concurrent_mode_failure();
-
-      // ConcurrentGCTimer will be ended as well.
-      _cm->register_concurrent_gc_end_and_stop_timer();
-    } else {
-      _gc_timer_cm->register_gc_end();
-    }
-
-    _gc_tracer_cm->report_gc_end(_gc_timer_cm->gc_end(), _gc_timer_cm->time_partitions());
-
-    // Clear state variables to prepare for the next concurrent cycle.
-    collector_state()->set_concurrent_cycle_started(false);
-    _heap_summary_sent = false;
-  }
-}
-
-void G1CollectedHeap::trace_heap_after_concurrent_cycle() {
-  if (collector_state()->concurrent_cycle_started()) {
-    // This function can be called when:
-    //  the cleanup pause is run
-    //  the concurrent cycle is aborted before the cleanup pause.
-    //  the concurrent cycle is aborted after the cleanup pause,
-    //   but before the concurrent cycle end has been registered.
-    // Make sure that we only send the heap information once.
-    if (!_heap_summary_sent) {
-      GCIdMarkAndRestore conc_gc_id_mark(_cmThread->gc_id());
-      trace_heap_after_gc(_gc_tracer_cm);
-      _heap_summary_sent = true;
-    }
-  }
-}
-
 void G1CollectedHeap::collect(GCCause::Cause cause) {
   assert_heap_not_locked();
 
@@ -2854,12 +2805,14 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 
   size_t eden_used_bytes = young_list->eden_used_bytes();
   size_t survivor_used_bytes = young_list->survivor_used_bytes();
+  size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
 
   size_t eden_capacity_bytes =
     (g1_policy()->young_list_target_length() * HeapRegion::GrainBytes) - survivor_used_bytes;
 
   VirtualSpaceSummary heap_summary = create_heap_space_summary();
-  return G1HeapSummary(heap_summary, used(), eden_used_bytes, eden_capacity_bytes, survivor_used_bytes, num_regions());
+  return G1HeapSummary(heap_summary, heap_used, eden_used_bytes,
+                       eden_capacity_bytes, survivor_used_bytes, num_regions());
 }
 
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
@@ -2876,7 +2829,6 @@ void G1CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const MetaspaceSummary& metaspace_summary = create_metaspace_summary();
   gc_tracer->report_metaspace_summary(when, metaspace_summary);
 }
-
 
 G1CollectedHeap* G1CollectedHeap::heap() {
   CollectedHeap* heap = Universe::heap();
@@ -3250,7 +3202,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // We are about to start a marking cycle, so we increment the
       // full collection counter.
       increment_old_marking_cycles_started();
-      register_concurrent_cycle_start(_gc_timer_stw->gc_start());
+      _cm->gc_tracer_cm()->set_gc_cause(gc_cause());
     }
 
     _gc_tracer_stw->report_yc_type(collector_state()->yc_type());
