@@ -27,7 +27,6 @@
 #include "gc/g1/concurrentG1RefineThread.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HotCardCache.hpp"
-#include "gc/g1/g1Predictions.hpp"
 #include "runtime/java.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

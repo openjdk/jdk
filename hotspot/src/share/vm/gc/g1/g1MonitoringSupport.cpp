@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
+#include "gc/g1/g1Policy.hpp"
 
 G1GenerationCounters::G1GenerationCounters(G1MonitoringSupport* g1mm,
                                            const char* name,
