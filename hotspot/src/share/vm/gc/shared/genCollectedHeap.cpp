@@ -295,7 +295,8 @@ HeapWord* GenCollectedHeap::mem_allocate(size_t size,
 }
 
 bool GenCollectedHeap::must_clear_all_soft_refs() {
-  return _gc_cause == GCCause::_last_ditch_collection;
+  return _gc_cause == GCCause::_metadata_GC_clear_soft_refs ||
+         _gc_cause == GCCause::_wb_full_gc;
 }
 
 bool GenCollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
