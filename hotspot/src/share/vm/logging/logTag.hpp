@@ -84,6 +84,7 @@
   LOG_TAG(state) \
   LOG_TAG(stats) \
   LOG_TAG(stringdedup) \
+  LOG_TAG(stringtable) \
   LOG_TAG(survivor) \
   LOG_TAG(sweep) \
   LOG_TAG(task) \
