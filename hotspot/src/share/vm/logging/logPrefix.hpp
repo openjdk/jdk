@@ -45,7 +45,6 @@
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, barrier)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, classhisto)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, compaction)) \
-  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, compaction, phases)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, cpu)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ergo)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ergo, cset)) \

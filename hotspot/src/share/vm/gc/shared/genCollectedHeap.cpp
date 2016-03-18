@@ -315,7 +315,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
                                           bool is_tlab, bool run_verification, bool clear_soft_refs,
                                           bool restore_marks_for_biased_locking) {
   FormatBuffer<> title("Collect gen: %s", gen->short_name());
-  GCTraceTime(Debug, gc) t1(title);
+  GCTraceTime(Trace, gc, phases) t1(title);
   TraceCollectorStats tcs(gen->counters());
   TraceMemoryManagerStats tmms(gen->kind(),gc_cause());
 

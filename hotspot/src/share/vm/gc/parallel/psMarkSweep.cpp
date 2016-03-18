@@ -493,7 +493,7 @@ void PSMarkSweep::deallocate_stacks() {
 
 void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  GCTraceTime(Trace, gc) tm("Phase 1: Mark live objects", _gc_timer);
+  GCTraceTime(Info, gc, phases) tm("Phase 1: Mark live objects", _gc_timer);
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -523,6 +523,8 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   // Process reference objects found during marking
   {
+    GCTraceTime(Debug, gc, phases) t("Reference Processing", _gc_timer);
+
     ref_processor()->setup_policy(clear_all_softrefs);
     const ReferenceProcessorStats& stats =
       ref_processor()->process_discovered_references(
@@ -534,7 +536,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   assert(_marking_stack.is_empty(), "Marking should have completed");
 
   {
-    GCTraceTime(Debug, gc) t("Class Unloading", _gc_timer);
+    GCTraceTime(Debug, gc, phases) t("Class Unloading", _gc_timer);
 
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
@@ -547,13 +549,13 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   }
 
   {
-    GCTraceTime(Debug, gc) t("Scrub String Table", _gc_timer);
+    GCTraceTime(Debug, gc, phases) t("Scrub String Table", _gc_timer);
     // Delete entries for dead interned strings.
     StringTable::unlink(is_alive_closure());
   }
 
   {
-    GCTraceTime(Debug, gc) t("Scrub Symbol Table", _gc_timer);
+    GCTraceTime(Debug, gc, phases) t("Scrub Symbol Table", _gc_timer);
     // Clean up unreferenced symbols in symbol table.
     SymbolTable::unlink();
   }
@@ -563,7 +565,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
 
 void PSMarkSweep::mark_sweep_phase2() {
-  GCTraceTime(Trace, gc) tm("Phase 2: Compute new object addresses", _gc_timer);
+  GCTraceTime(Info, gc, phases) tm("Phase 2: Compute new object addresses", _gc_timer);
 
   // Now all live objects are marked, compute the new object addresses.
 
@@ -583,7 +585,7 @@ void PSMarkSweep::mark_sweep_phase2() {
 
 void PSMarkSweep::mark_sweep_phase3() {
   // Adjust the pointers to reflect the new locations
-  GCTraceTime(Trace, gc) tm("Phase 3: Adjust pointers", _gc_timer);
+  GCTraceTime(Info, gc, phases) tm("Phase 3: Adjust pointers", _gc_timer);
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
@@ -623,7 +625,7 @@ void PSMarkSweep::mark_sweep_phase3() {
 
 void PSMarkSweep::mark_sweep_phase4() {
   EventMark m("4 compact heap");
-  GCTraceTime(Trace, gc) tm("Phase 4: Move objects", _gc_timer);
+  GCTraceTime(Info, gc, phases) tm("Phase 4: Move objects", _gc_timer);
 
   // All pointers are now adjusted, move objects accordingly
 
