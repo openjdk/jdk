@@ -987,7 +987,7 @@ WB_END
 
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->collector_policy()->set_should_clear_all_soft_refs(true);
-  Universe::heap()->collect(GCCause::_last_ditch_collection);
+  Universe::heap()->collect(GCCause::_wb_full_gc);
 #if INCLUDE_ALL_GCS
   if (UseG1GC) {
     // Needs to be cleared explicitly for G1

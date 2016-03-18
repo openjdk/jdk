@@ -51,6 +51,7 @@ class GCCause : public AllStatic {
     _heap_dump,
     _wb_young_gc,
     _wb_conc_mark,
+    _wb_full_gc,
     _update_allocation_context_stats_inc,
     _update_allocation_context_stats_full,
 
@@ -63,6 +64,7 @@ class GCCause : public AllStatic {
 
     _tenured_generation_full,
     _metadata_GC_threshold,
+    _metadata_GC_clear_soft_refs,
 
     _cms_generation_full,
     _cms_initial_mark,
@@ -75,8 +77,6 @@ class GCCause : public AllStatic {
 
     _g1_inc_collection_pause,
     _g1_humongous_allocation,
-
-    _last_ditch_collection,
 
     _dcmd_gc_run,
 
@@ -106,22 +106,18 @@ class GCCause : public AllStatic {
     // _allocation_failure is the generic cause a collection which could result
     // in the collection of the tenured generation if there is not enough space
     // in the tenured generation to support a young GC.
-    // _last_ditch_collection is a collection done to include SoftReferences.
     return (cause == GCCause::_tenured_generation_full ||
             cause == GCCause::_cms_generation_full ||
             cause == GCCause::_adaptive_size_policy ||
-            cause == GCCause::_allocation_failure ||
-            cause == GCCause::_last_ditch_collection);
+            cause == GCCause::_allocation_failure);
   }
 
   // Causes for collection of the young generation
   inline static bool is_allocation_failure_gc(GCCause::Cause cause) {
     // _allocation_failure is the generic cause a collection for allocation failure
     // _adaptive_size_policy is for a collecton done before a full GC
-    // _last_ditch_collection is a collection done to include SoftReferences.
     return (cause == GCCause::_allocation_failure ||
-            cause == GCCause::_adaptive_size_policy ||
-            cause == GCCause::_last_ditch_collection);
+            cause == GCCause::_adaptive_size_policy);
   }
 
   // Return a string describing the GCCause.
