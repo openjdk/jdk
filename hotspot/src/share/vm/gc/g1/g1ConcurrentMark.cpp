@@ -1108,7 +1108,7 @@ void G1ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     reset_marking_state();
   } else {
     {
-      GCTraceTime(Debug, gc) trace("Aggregate Data", _gc_timer_cm);
+      GCTraceTime(Debug, gc, phases) trace("Aggregate Data", _gc_timer_cm);
 
       // Aggregate the per-task counting data that we have accumulated
       // while marking.
@@ -2027,7 +2027,7 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   // Inner scope to exclude the cleaning of the string and symbol
   // tables from the displayed time.
   {
-    GCTraceTime(Debug, gc) trace("Reference Processing", _gc_timer_cm);
+    GCTraceTime(Debug, gc, phases) trace("Reference Processing", _gc_timer_cm);
 
     ReferenceProcessor* rp = g1h->ref_processor_cm();
 
@@ -2116,27 +2116,23 @@ void G1ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   assert(_markStack.isEmpty(), "Marking should have completed");
 
   // Unload Klasses, String, Symbols, Code Cache, etc.
-  {
-    GCTraceTime(Debug, gc) trace("Unloading", _gc_timer_cm);
+  if (ClassUnloadingWithConcurrentMark) {
+    bool purged_classes;
 
-    if (ClassUnloadingWithConcurrentMark) {
-      bool purged_classes;
-
-      {
-        GCTraceTime(Trace, gc) trace("System Dictionary Unloading", _gc_timer_cm);
-        purged_classes = SystemDictionary::do_unloading(&g1_is_alive, false /* Defer klass cleaning */);
-      }
-
-      {
-        GCTraceTime(Trace, gc) trace("Parallel Unloading", _gc_timer_cm);
-        weakRefsWorkParallelPart(&g1_is_alive, purged_classes);
-      }
+    {
+      GCTraceTime(Debug, gc, phases) trace("System Dictionary Unloading", _gc_timer_cm);
+      purged_classes = SystemDictionary::do_unloading(&g1_is_alive, false /* Defer klass cleaning */);
     }
 
-    if (G1StringDedup::is_enabled()) {
-      GCTraceTime(Trace, gc) trace("String Deduplication Unlink", _gc_timer_cm);
-      G1StringDedup::unlink(&g1_is_alive);
+    {
+      GCTraceTime(Debug, gc, phases) trace("Parallel Unloading", _gc_timer_cm);
+      weakRefsWorkParallelPart(&g1_is_alive, purged_classes);
     }
+  }
+
+  if (G1StringDedup::is_enabled()) {
+    GCTraceTime(Debug, gc, phases) trace("String Deduplication Unlink", _gc_timer_cm);
+    G1StringDedup::unlink(&g1_is_alive);
   }
 }
 
@@ -2255,7 +2251,7 @@ void G1ConcurrentMark::checkpointRootsFinalWork() {
   HandleMark   hm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  GCTraceTime(Debug, gc) trace("Finalize Marking", _gc_timer_cm);
+  GCTraceTime(Debug, gc, phases) trace("Finalize Marking", _gc_timer_cm);
 
   g1h->ensure_parsability(false);
 

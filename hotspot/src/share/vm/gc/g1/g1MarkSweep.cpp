@@ -122,7 +122,7 @@ void G1MarkSweep::allocate_stacks() {
 void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                     bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  GCTraceTime(Trace, gc) tm("Phase 1: Mark live objects", gc_timer());
+  GCTraceTime(Info, gc, phases) tm("Phase 1: Mark live objects", gc_timer());
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
@@ -137,25 +137,28 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                         &follow_code_closure);
   }
 
-  // Process reference objects found during marking
-  ReferenceProcessor* rp = GenMarkSweep::ref_processor();
-  assert(rp == g1h->ref_processor_stw(), "Sanity");
+  {
+    GCTraceTime(Debug, gc, phases) trace("Reference Processing", gc_timer());
 
-  rp->setup_policy(clear_all_softrefs);
-  const ReferenceProcessorStats& stats =
-    rp->process_discovered_references(&GenMarkSweep::is_alive,
-                                      &GenMarkSweep::keep_alive,
-                                      &GenMarkSweep::follow_stack_closure,
-                                      NULL,
-                                      gc_timer());
-  gc_tracer()->report_gc_reference_stats(stats);
+    // Process reference objects found during marking
+    ReferenceProcessor* rp = GenMarkSweep::ref_processor();
+    assert(rp == g1h->ref_processor_stw(), "Sanity");
 
+    rp->setup_policy(clear_all_softrefs);
+    const ReferenceProcessorStats& stats =
+        rp->process_discovered_references(&GenMarkSweep::is_alive,
+                                          &GenMarkSweep::keep_alive,
+                                          &GenMarkSweep::follow_stack_closure,
+                                          NULL,
+                                          gc_timer());
+    gc_tracer()->report_gc_reference_stats(stats);
+  }
 
   // This is the point where the entire marking should have completed.
   assert(GenMarkSweep::_marking_stack.is_empty(), "Marking should have completed");
 
   {
-    GCTraceTime(Debug, gc) trace("Class Unloading", gc_timer());
+    GCTraceTime(Debug, gc, phases) trace("Class Unloading", gc_timer());
 
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(&GenMarkSweep::is_alive);
@@ -168,13 +171,13 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
   }
 
   {
-    GCTraceTime(Debug, gc) trace("Scrub String and Symbol Tables", gc_timer());
+    GCTraceTime(Debug, gc, phases) trace("Scrub String and Symbol Tables", gc_timer());
     // Delete entries for dead interned string and clean up unreferenced symbols in symbol table.
     g1h->unlink_string_and_symbol_table(&GenMarkSweep::is_alive);
   }
 
   if (G1StringDedup::is_enabled()) {
-    GCTraceTime(Debug, gc) trace("String Deduplication Unlink", gc_timer());
+    GCTraceTime(Debug, gc, phases) trace("String Deduplication Unlink", gc_timer());
     G1StringDedup::unlink(&GenMarkSweep::is_alive);
   }
 
@@ -209,7 +212,7 @@ void G1MarkSweep::mark_sweep_phase2() {
   // phase2, phase3 and phase4, but the ValidateMarkSweep live oops
   // tracking expects us to do so. See comment under phase4.
 
-  GCTraceTime(Trace, gc) tm("Phase 2: Compute new object addresses", gc_timer());
+  GCTraceTime(Info, gc, phases) tm("Phase 2: Compute new object addresses", gc_timer());
 
   prepare_compaction();
 }
@@ -236,7 +239,7 @@ void G1MarkSweep::mark_sweep_phase3() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   // Adjust the pointers to reflect the new locations
-  GCTraceTime(Trace, gc) tm("Phase 3: Adjust pointers", gc_timer());
+  GCTraceTime(Info, gc, phases) tm("Phase 3: Adjust pointers", gc_timer());
 
   // Need cleared claim bits for the roots processing
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -297,7 +300,7 @@ void G1MarkSweep::mark_sweep_phase4() {
   // to use a higher index (saved from phase2) when verifying perm_gen.
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  GCTraceTime(Trace, gc) tm("Phase 4: Move objects", gc_timer());
+  GCTraceTime(Info, gc, phases) tm("Phase 4: Move objects", gc_timer());
 
   G1SpaceCompactClosure blk;
   g1h->heap_region_iterate(&blk);

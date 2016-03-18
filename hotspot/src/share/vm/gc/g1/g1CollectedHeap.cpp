@@ -3747,11 +3747,12 @@ public:
               "claim value %d after unlink less than initial symbol table size %d",
               SymbolTable::parallel_claimed_index(), _initial_symbol_table_size);
 
-    log_debug(gc, stringdedup)("Cleaned string and symbol table, "
-                               "strings: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed, "
-                               "symbols: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed",
-                               strings_processed(), strings_removed(),
-                               symbols_processed(), symbols_removed());
+    log_info(gc, stringtable)(
+        "Cleaned string and symbol table, "
+        "strings: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed, "
+        "symbols: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed",
+        strings_processed(), strings_removed(),
+        symbols_processed(), symbols_removed());
   }
 
   void work(uint worker_id) {
