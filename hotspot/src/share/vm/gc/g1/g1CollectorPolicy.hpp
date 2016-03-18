@@ -43,6 +43,7 @@ class HeapRegion;
 class G1CollectionSet;
 class CollectionSetChooser;
 class G1IHOPControl;
+class G1Analytics;
 class G1YoungGenSizer;
 
 class G1CollectorPolicy: public CollectorPolicy {
@@ -57,27 +58,13 @@ class G1CollectorPolicy: public CollectorPolicy {
   void report_ihop_statistics();
 
   G1Predictions _predictor;
-
-  double get_new_prediction(TruncatedSeq const* seq) const;
-  size_t get_new_size_prediction(TruncatedSeq const* seq) const;
-
+  G1Analytics* _analytics;
   G1MMUTracker* _mmu_tracker;
 
   void initialize_alignments();
   void initialize_flags();
 
   double _full_collection_start_sec;
-
-  // These exclude marking times.
-  TruncatedSeq* _recent_gc_times_ms;
-
-  TruncatedSeq* _concurrent_mark_remark_times_ms;
-  TruncatedSeq* _concurrent_mark_cleanup_times_ms;
-
-  // Ratio check data for determining if heap growth is necessary.
-  uint _ratio_over_threshold_count;
-  double _ratio_over_threshold_sum;
-  uint _pauses_since_start;
 
   uint _young_list_target_length;
   uint _young_list_fixed_length;
@@ -88,41 +75,9 @@ class G1CollectorPolicy: public CollectorPolicy {
 
   SurvRateGroup* _short_lived_surv_rate_group;
   SurvRateGroup* _survivor_surv_rate_group;
-  // add here any more surv rate groups
-
-  double _gc_overhead_perc;
 
   double _reserve_factor;
   uint   _reserve_regions;
-
-  enum PredictionConstants {
-    TruncatedSeqLength = 10,
-    NumPrevPausesForHeuristics = 10,
-    // MinOverThresholdForGrowth must be less than NumPrevPausesForHeuristics,
-    // representing the minimum number of pause time ratios that exceed
-    // GCTimeRatio before a heap expansion will be triggered.
-    MinOverThresholdForGrowth = 4
-  };
-
-  TruncatedSeq* _alloc_rate_ms_seq;
-  double        _prev_collection_pause_end_ms;
-
-  TruncatedSeq* _rs_length_diff_seq;
-  TruncatedSeq* _cost_per_card_ms_seq;
-  TruncatedSeq* _cost_scan_hcc_seq;
-  TruncatedSeq* _young_cards_per_entry_ratio_seq;
-  TruncatedSeq* _mixed_cards_per_entry_ratio_seq;
-  TruncatedSeq* _cost_per_entry_ms_seq;
-  TruncatedSeq* _mixed_cost_per_entry_ms_seq;
-  TruncatedSeq* _cost_per_byte_ms_seq;
-  TruncatedSeq* _constant_other_time_ms_seq;
-  TruncatedSeq* _young_other_cost_per_region_ms_seq;
-  TruncatedSeq* _non_young_other_cost_per_region_ms_seq;
-
-  TruncatedSeq* _pending_cards_seq;
-  TruncatedSeq* _rs_lengths_seq;
-
-  TruncatedSeq* _cost_per_byte_ms_during_cm_seq;
 
   G1YoungGenSizer* _young_gen_sizer;
 
@@ -151,6 +106,7 @@ class G1CollectorPolicy: public CollectorPolicy {
   G1InitialMarkToMixedTimeTracker _initial_mark_to_mixed;
 public:
   const G1Predictions& predictor() const { return _predictor; }
+  const G1Analytics* analytics()   const { return const_cast<const G1Analytics*>(_analytics); }
 
   // Add the given number of bytes to the total number of allocated bytes in the old gen.
   void add_bytes_allocated_in_old_since_last_gc(size_t bytes) { _bytes_allocated_in_old_since_last_gc += bytes; }
@@ -177,39 +133,6 @@ public:
     _max_rs_lengths = rs_lengths;
   }
 
-  size_t predict_rs_lengths() const;
-
-  size_t predict_rs_length_diff() const;
-
-  double predict_alloc_rate_ms() const;
-
-  double predict_cost_per_card_ms() const;
-
-  double predict_scan_hcc_ms() const;
-
-  double predict_rs_update_time_ms(size_t pending_cards) const;
-
-  double predict_young_cards_per_entry_ratio() const;
-
-  double predict_mixed_cards_per_entry_ratio() const;
-
-  size_t predict_young_card_num(size_t rs_length) const;
-
-  size_t predict_non_young_card_num(size_t rs_length) const;
-
-  double predict_rs_scan_time_ms(size_t card_num) const;
-
-  double predict_mixed_rs_scan_time_ms(size_t card_num) const;
-
-  double predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const;
-
-  double predict_object_copy_time_ms(size_t bytes_to_copy) const;
-
-  double predict_constant_other_time_ms() const;
-
-  double predict_young_other_time_ms(size_t young_num) const;
-
-  double predict_non_young_other_time_ms(size_t non_young_num) const;
 
   double predict_base_elapsed_time_ms(size_t pending_cards) const;
   double predict_base_elapsed_time_ms(size_t pending_cards,
@@ -242,10 +165,6 @@ public:
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
-  double predict_remark_time_ms() const;
-
-  double predict_cleanup_time_ms() const;
-
   // Returns an estimate of the survival rate of the region at yg-age
   // "yg_age".
   double predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const;
@@ -265,11 +184,6 @@ protected:
 
   CollectionSetChooser* cset_chooser() const;
 private:
-  // Statistics kept per GC stoppage, pause or full.
-  TruncatedSeq* _recent_prev_end_times_for_all_gcs_sec;
-
-  // Add a new GC of the given duration and end time to the record.
-  void update_recent_gc_times(double end_time_sec, double elapsed_ms);
 
   // The number of bytes copied during the GC.
   size_t _bytes_copied_during_gc;
@@ -278,15 +192,6 @@ private:
   G1CollectedHeap* _g1;
 
   G1GCPhaseTimes* _phase_times;
-
-  // The ratio of gc time to elapsed time, computed over recent pauses,
-  // and the ratio for just the last pause.
-  double _recent_avg_pause_time_ratio;
-  double _last_pause_time_ratio;
-
-  double recent_avg_pause_time_ratio() const {
-    return _recent_avg_pause_time_ratio;
-  }
 
   // This set of variables tracks the collector efficiency, in order to
   // determine whether we should initiate a new marking.
@@ -334,10 +239,6 @@ private:
 
   void update_rs_lengths_prediction();
   void update_rs_lengths_prediction(size_t prediction);
-
-  // Calculate and return chunk size (in number of regions) for parallel
-  // concurrent mark cleanup.
-  uint calculate_parallel_work_chunk_size(uint n_workers, uint n_regions) const;
 
   // Check whether a given young length (young_length) fits into the
   // given target pause time and whether the prediction for the amount
@@ -475,13 +376,6 @@ public:
   // the initial-mark work and start a marking cycle.
   void decide_on_conc_mark_initiation();
 
-  // If an expansion would be appropriate, because recent GC overhead had
-  // exceeded the desired limit, return an amount to expand by.
-  virtual size_t expansion_amount();
-
-  // Clear ratio tracking data used by expansion_amount().
-  void clear_ratio_check_data();
-
   // Print stats on young survival ratio
   void print_yg_surv_rate_info() const;
 
@@ -491,7 +385,6 @@ public:
     } else {
       _short_lived_surv_rate_group->finished_recalculating_age_indexes();
     }
-    // do that for any other surv rate groups
   }
 
   size_t young_list_target_length() const { return _young_list_target_length; }
@@ -521,16 +414,6 @@ private:
 
   // The limit on the number of regions allocated for survivors.
   uint _max_survivor_regions;
-
-  // For reporting purposes.
-  // The value of _heap_bytes_before_gc is also used to calculate
-  // the cost of copying.
-
-  // The amount of survivor regions after a collection.
-  uint _recorded_survivor_regions;
-  // List of survivor regions.
-  HeapRegion* _recorded_survivor_head;
-  HeapRegion* _recorded_survivor_tail;
 
   AgeTable _survivors_age_table;
 
@@ -563,18 +446,6 @@ public:
 
   void note_stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
-  }
-
-  void record_survivor_regions(uint regions,
-                               HeapRegion* head,
-                               HeapRegion* tail) {
-    _recorded_survivor_regions = regions;
-    _recorded_survivor_head    = head;
-    _recorded_survivor_tail    = tail;
-  }
-
-  uint recorded_survivor_regions() const {
-    return _recorded_survivor_regions;
   }
 
   void record_age_table(AgeTable* age_table) {

@@ -161,8 +161,8 @@ void ReferenceProcessor::update_soft_ref_master_clock() {
 
   NOT_PRODUCT(
   if (now < _soft_ref_timestamp_clock) {
-    warning("time warp: " JLONG_FORMAT " to " JLONG_FORMAT,
-            _soft_ref_timestamp_clock, now);
+    log_warning(gc)("time warp: " JLONG_FORMAT " to " JLONG_FORMAT,
+                    _soft_ref_timestamp_clock, now);
   }
   )
   // The values of now and _soft_ref_timestamp_clock are set using
@@ -266,11 +266,6 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
 #ifndef PRODUCT
 // Calculate the number of jni handles.
 size_t ReferenceProcessor::count_jni_refs() {
-  class AlwaysAliveClosure: public BoolObjectClosure {
-  public:
-    virtual bool do_object_b(oop obj) { return true; }
-  };
-
   class CountHandleClosure: public OopClosure {
   private:
     size_t _count;
@@ -281,8 +276,7 @@ size_t ReferenceProcessor::count_jni_refs() {
     size_t count() { return _count; }
   };
   CountHandleClosure global_handle_count;
-  AlwaysAliveClosure always_alive;
-  JNIHandles::weak_oops_do(&always_alive, &global_handle_count);
+  JNIHandles::weak_oops_do(&global_handle_count);
   return global_handle_count.count();
 }
 #endif
@@ -645,9 +639,7 @@ public:
                     OopClosure& keep_alive,
                     VoidClosure& complete_gc)
   {
-    Thread* thr = Thread::current();
-    int refs_list_index = ((WorkerThread*)thr)->id();
-    _ref_processor.process_phase1(_refs_lists[refs_list_index], _policy,
+    _ref_processor.process_phase1(_refs_lists[i], _policy,
                                   &is_alive, &keep_alive, &complete_gc);
   }
 private:
@@ -683,11 +675,6 @@ public:
                     OopClosure& keep_alive,
                     VoidClosure& complete_gc)
   {
-    // Don't use "refs_list_index" calculated in this way because
-    // balance_queues() has moved the Ref's into the first n queues.
-    // Thread* thr = Thread::current();
-    // int refs_list_index = ((WorkerThread*)thr)->id();
-    // _ref_processor.process_phase3(_refs_lists[refs_list_index], _clear_referent,
     _ref_processor.process_phase3(_refs_lists[i], _clear_referent,
                                   &is_alive, &keep_alive, &complete_gc);
   }

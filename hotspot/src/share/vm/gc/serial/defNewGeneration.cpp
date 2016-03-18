@@ -594,7 +594,7 @@ void DefNewGeneration::collect(bool   full,
 
   init_assuming_no_promotion_failure();
 
-  GCTraceTime(Trace, gc) tm("DefNew", NULL, gch->gc_cause());
+  GCTraceTime(Trace, gc, phases) tm("DefNew", NULL, gch->gc_cause());
 
   gch->trace_heap_before_gc(&gc_tracer);
 

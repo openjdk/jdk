@@ -30,6 +30,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/generation.hpp"
+#include "gc/shared/referencePendingListLocker.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -374,7 +375,7 @@ void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
 
   // Do not profile method if current thread holds the pending list lock,
   // which avoids deadlock for acquiring the MethodData_lock.
-  if (InstanceRefKlass::owns_pending_list_lock((JavaThread*)THREAD)) {
+  if (ReferencePendingListLocker::is_locked_by_self()) {
     return;
   }
 

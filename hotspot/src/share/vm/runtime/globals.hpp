@@ -1049,9 +1049,6 @@ public:
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
                                                                             \
-  develop(size_t, HeapDumpSegmentSize, 1*G,                                 \
-          "Approximate segment size when generating a segmented heap dump") \
-                                                                            \
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
                                                                             \
@@ -1468,9 +1465,6 @@ public:
                                                                             \
   develop(bool, TraceCompiledIC, false,                                     \
           "Trace changes of compiled IC")                                   \
-                                                                            \
-  develop(bool, TraceClearedExceptions, false,                              \
-          "Print when an exception is forcibly cleared")                    \
                                                                             \
   /* gc */                                                                  \
                                                                             \
@@ -1901,7 +1895,8 @@ public:
                                                                             \
   product(uintx, CMSSamplingGrain, 16*K,                                    \
           "The minimum distance between eden samples for CMS (see above)")  \
-          range(1, max_uintx)                                               \
+          range(ObjectAlignmentInBytes, max_uintx)                          \
+          constraint(CMSSamplingGrainConstraintFunc,AfterMemoryInit)        \
                                                                             \
   product(bool, CMSScavengeBeforeRemark, false,                             \
           "Attempt scavenge before the CMS remark step")                    \
@@ -2064,9 +2059,6 @@ public:
   develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
           "Metadata allocation failure a lot interval")                     \
                                                                             \
-  develop(bool, TraceMetadataChunkAllocation, false,                        \
-          "Trace chunk metadata allocations")                               \
-                                                                            \
   notproduct(bool, ExecuteInternalVMTests, false,                           \
           "Enable execution of internal VM tests")                          \
                                                                             \
@@ -2220,10 +2212,10 @@ public:
           "Decay factor to TenuredGenerationSizeIncrement")                 \
           range(1, max_uintx)                                               \
                                                                             \
-  product(uintx, MaxGCPauseMillis, max_uintx,                               \
+  product(uintx, MaxGCPauseMillis, max_uintx - 1,                           \
           "Adaptive size policy maximum GC pause time goal in millisecond, "\
           "or (G1 Only) the maximum GC time per MMU time slice")            \
-          range(1, max_uintx)                                               \
+          range(1, max_uintx - 1)                                           \
           constraint(MaxGCPauseMillisConstraintFunc,AfterMemoryInit)        \
                                                                             \
   product(uintx, GCPauseIntervalMillis, 0,                                  \
@@ -2386,9 +2378,6 @@ public:
                                                                             \
   product(bool, IgnoreEmptyClassPaths, false,                               \
           "Ignore empty path elements in -classpath")                       \
-                                                                            \
-  product(bool, TraceClassLoadingPreorder, false,                           \
-          "Trace all classes loaded in order referenced (not loaded)")      \
                                                                             \
   product_rw(bool, TraceLoaderConstraints, false,                           \
           "Trace loader constraints")                                       \
@@ -2773,10 +2762,6 @@ public:
           "Produce histogram of IC misses")                                 \
                                                                             \
   /* interpreter */                                                         \
-  develop(bool, ClearInterpreterLocals, false,                              \
-          "Always clear local variables of interpreter activations upon "   \
-          "entry")                                                          \
-                                                                            \
   product_pd(bool, RewriteBytecodes,                                        \
           "Allow rewriting of bytecodes (bytecodes are not immutable)")     \
                                                                             \
