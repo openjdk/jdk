@@ -2103,25 +2103,34 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
     gc_tracer->report_gc_reference_stats(stats);
   }
 
-  GCTraceTime(Trace, gc) tm_m("Class Unloading", &_gc_timer);
-
   // This is the point where the entire marking should have completed.
   assert(cm->marking_stacks_empty(), "Marking should have completed");
 
-  // Follow system dictionary roots and unload classes.
-  bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
+  {
+    GCTraceTime(Debug, gc) tm_m("Class Unloading", &_gc_timer);
 
-  // Unload nmethods.
-  CodeCache::do_unloading(is_alive_closure(), purged_class);
+    // Follow system dictionary roots and unload classes.
+    bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
 
-  // Prune dead klasses from subklass/sibling/implementor lists.
-  Klass::clean_weak_klass_links(is_alive_closure());
+    // Unload nmethods.
+    CodeCache::do_unloading(is_alive_closure(), purged_class);
 
-  // Delete entries for dead interned strings.
-  StringTable::unlink(is_alive_closure());
+    // Prune dead klasses from subklass/sibling/implementor lists.
+    Klass::clean_weak_klass_links(is_alive_closure());
+  }
 
-  // Clean up unreferenced symbols in symbol table.
-  SymbolTable::unlink();
+  {
+    GCTraceTime(Debug, gc) t("Scrub String Table", &_gc_timer);
+    // Delete entries for dead interned strings.
+    StringTable::unlink(is_alive_closure());
+  }
+
+  {
+    GCTraceTime(Debug, gc) t("Scrub Symbol Table", &_gc_timer);
+    // Clean up unreferenced symbols in symbol table.
+    SymbolTable::unlink();
+  }
+
   _gc_tracer.report_object_count_after_gc(is_alive_closure());
 }
 
