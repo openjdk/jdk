@@ -5361,33 +5361,43 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
 
 // Methods for the GC alloc regions
 
-HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
-                                                 uint count,
-                                                 InCSetState dest) {
+bool G1CollectedHeap::has_more_regions(InCSetState dest) {
+  if (dest.is_old()) {
+    return true;
+  } else {
+    return young_list()->survivor_length() < g1_policy()->max_survivor_regions();
+  }
+}
+
+HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, InCSetState dest) {
   assert(FreeList_lock->owned_by_self(), "pre-condition");
 
-  if (count < g1_policy()->max_regions(dest)) {
-    const bool is_survivor = (dest.is_young());
-    HeapRegion* new_alloc_region = new_region(word_size,
-                                              !is_survivor,
-                                              true /* do_expand */);
-    if (new_alloc_region != NULL) {
-      // We really only need to do this for old regions given that we
-      // should never scan survivors. But it doesn't hurt to do it
-      // for survivors too.
-      new_alloc_region->record_timestamp();
-      if (is_survivor) {
-        new_alloc_region->set_survivor();
-        _verifier->check_bitmaps("Survivor Region Allocation", new_alloc_region);
-      } else {
-        new_alloc_region->set_old();
-        _verifier->check_bitmaps("Old Region Allocation", new_alloc_region);
-      }
-      _hr_printer.alloc(new_alloc_region);
-      bool during_im = collector_state()->during_initial_mark_pause();
-      new_alloc_region->note_start_of_copying(during_im);
-      return new_alloc_region;
+  if (!has_more_regions(dest)) {
+    return NULL;
+  }
+
+  const bool is_survivor = dest.is_young();
+
+  HeapRegion* new_alloc_region = new_region(word_size,
+                                            !is_survivor,
+                                            true /* do_expand */);
+  if (new_alloc_region != NULL) {
+    // We really only need to do this for old regions given that we
+    // should never scan survivors. But it doesn't hurt to do it
+    // for survivors too.
+    new_alloc_region->record_timestamp();
+    if (is_survivor) {
+      new_alloc_region->set_survivor();
+      young_list()->add_survivor_region(new_alloc_region);
+      _verifier->check_bitmaps("Survivor Region Allocation", new_alloc_region);
+    } else {
+      new_alloc_region->set_old();
+      _verifier->check_bitmaps("Old Region Allocation", new_alloc_region);
     }
+    _hr_printer.alloc(new_alloc_region);
+    bool during_im = collector_state()->during_initial_mark_pause();
+    new_alloc_region->note_start_of_copying(during_im);
+    return new_alloc_region;
   }
   return NULL;
 }
@@ -5398,9 +5408,7 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
   bool during_im = collector_state()->during_initial_mark_pause();
   alloc_region->note_end_of_copying(during_im);
   g1_policy()->record_bytes_copied_during_gc(allocated_bytes);
-  if (dest.is_young()) {
-    young_list()->add_survivor_region(alloc_region);
-  } else {
+  if (dest.is_old()) {
     _old_set.add(alloc_region);
   }
   _hr_printer.retire(alloc_region);

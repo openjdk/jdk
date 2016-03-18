@@ -471,8 +471,8 @@ protected:
                                    size_t allocated_bytes);
 
   // For GC alloc regions.
-  HeapRegion* new_gc_alloc_region(size_t word_size, uint count,
-                                  InCSetState dest);
+  bool has_more_regions(InCSetState dest);
+  HeapRegion* new_gc_alloc_region(size_t word_size, InCSetState dest);
   void retire_gc_alloc_region(HeapRegion* alloc_region,
                               size_t allocated_bytes, InCSetState dest);
 
