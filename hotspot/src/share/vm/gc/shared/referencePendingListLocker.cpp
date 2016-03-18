@@ -176,8 +176,6 @@ void ReferencePendingListLocker::lock() {
     HandleMark hm;
     Handle handle(THREAD, java_lang_ref_Reference::pending_list_lock());
 
-    assert(!is_locked_by_self(), "Should not be locked by self");
-
     // Lock
     ObjectSynchronizer::fast_enter(handle, &_basic_lock, false, THREAD);
 
@@ -212,8 +210,6 @@ void ReferencePendingListLocker::unlock() {
 
     // Unlock
     ObjectSynchronizer::fast_exit(handle(), &_basic_lock, THREAD);
-
-    assert(!is_locked_by_self(), "Unlocking failed");
 
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
