@@ -576,17 +576,11 @@ void Node::setup_is_top() {
 
 //------------------------------~Node------------------------------------------
 // Fancy destructor; eagerly attempt to reclaim Node numberings and storage
-extern int reclaim_idx ;
-extern int reclaim_in  ;
-extern int reclaim_node;
 void Node::destruct() {
   // Eagerly reclaim unique Node numberings
   Compile* compile = Compile::current();
   if ((uint)_idx+1 == compile->unique()) {
     compile->set_unique(compile->unique()-1);
-#ifdef ASSERT
-    reclaim_idx++;
-#endif
   }
   // Clear debug info:
   Node_Notes* nn = compile->node_notes_at(_idx);
@@ -604,43 +598,25 @@ void Node::destruct() {
   int out_edge_size = _outmax*sizeof(void*);
   char *edge_end = ((char*)_in) + edge_size;
   char *out_array = (char*)(_out == NO_OUT_ARRAY? NULL: _out);
-  char *out_edge_end = out_array + out_edge_size;
   int node_size = size_of();
 
   // Free the output edge array
   if (out_edge_size > 0) {
-#ifdef ASSERT
-    if( out_edge_end == compile->node_arena()->hwm() )
-      reclaim_in  += out_edge_size;  // count reclaimed out edges with in edges
-#endif
     compile->node_arena()->Afree(out_array, out_edge_size);
   }
 
   // Free the input edge array and the node itself
   if( edge_end == (char*)this ) {
-#ifdef ASSERT
-    if( edge_end+node_size == compile->node_arena()->hwm() ) {
-      reclaim_in  += edge_size;
-      reclaim_node+= node_size;
-    }
-#else
     // It was; free the input array and object all in one hit
+#ifndef ASSERT
     compile->node_arena()->Afree(_in,edge_size+node_size);
 #endif
   } else {
-
     // Free just the input array
-#ifdef ASSERT
-    if( edge_end == compile->node_arena()->hwm() )
-      reclaim_in  += edge_size;
-#endif
     compile->node_arena()->Afree(_in,edge_size);
 
     // Free just the object
-#ifdef ASSERT
-    if( ((char*)this) + node_size == compile->node_arena()->hwm() )
-      reclaim_node+= node_size;
-#else
+#ifndef ASSERT
     compile->node_arena()->Afree(this,node_size);
 #endif
   }

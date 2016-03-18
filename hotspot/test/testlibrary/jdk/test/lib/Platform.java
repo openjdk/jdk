@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,5 +202,32 @@ public class Platform {
      */
     public static boolean canAttachOSX() throws Exception {
         return userName.equals("root");
+    }
+
+    /**
+     * return path to library inside jdk tree
+     */
+    public static String jdkLibPath() {
+        if (isWindows()) {
+            return "bin";
+        }
+        if (isOSX()) {
+            return "lib";
+        }
+
+        return "lib/" + getOsArch();
+    }
+
+    /**
+     * Build name of shared object according to platform rules
+     */
+    public static String sharedObjectName(String name) {
+        if (isWindows()) {
+            return name + ".dll";
+        }
+        if (isOSX()) {
+            return "lib" + name + ".dylib";
+        }
+        return "lib" + name + ".so";
     }
 }

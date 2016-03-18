@@ -91,8 +91,7 @@ public class TagletWriterImpl extends TagletWriter {
      */
     protected Content codeTagOutput(Element element, DocTree tag) {
         CommentHelper ch = utils.getCommentHelper(element);
-        String str = utils.normalizeNewlines(ch.getText(tag));
-        StringContent content = new StringContent(str);
+        StringContent content = new StringContent(utils.normalizeNewlines(ch.getText(tag)));
         Content result = HtmlTree.CODE(content);
         return result;
     }

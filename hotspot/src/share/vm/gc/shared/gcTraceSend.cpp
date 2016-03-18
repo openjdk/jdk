@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ void YoungGCTracer::send_promotion_failed_event(const PromotionFailedInfo& pf_in
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
     e.set_data(to_trace_struct(pf_info));
-    e.set_thread(pf_info.thread()->thread_id());
+    e.set_thread(pf_info.thread_trace_id());
     e.commit();
   }
 }

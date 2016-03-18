@@ -51,8 +51,9 @@ public abstract class AbstractTestBase {
         for (int i = 0; !md.isValid() && i < ATTEMPTS; i++) {
             md = METHOD_GEN.generateRandomDescriptor(exec);
         }
-        if (!md.isValid()) {
-            System.out.println("WARN: Using predefined pattern");
+        if (!md.isValid() || "any.method()".matches(md.getRegexp())) {
+            /* if we haven't got a valid pattern or it matches any method
+               leading to timeouts, then use plain standard descriptor */
             md = MethodGenerator.commandDescriptor(exec);
         }
         return md;

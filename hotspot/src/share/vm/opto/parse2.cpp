@@ -44,8 +44,10 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 
+#ifndef PRODUCT
 extern int explicit_null_checks_inserted,
            explicit_null_checks_elided;
+#endif
 
 //---------------------------------array_load----------------------------------
 void Parse::array_load(BasicType elem_type) {
@@ -997,7 +999,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
     return;
   }
 
-  explicit_null_checks_inserted++;
+  NOT_PRODUCT(explicit_null_checks_inserted++);
 
   // Generate real control flow
   Node   *tst = _gvn.transform( new BoolNode( c, btest ) );
@@ -1013,7 +1015,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
     set_control(iftrue);
 
     if (stopped()) {            // Path is dead?
-      explicit_null_checks_elided++;
+      NOT_PRODUCT(explicit_null_checks_elided++);
       if (C->eliminate_boxing()) {
         // Mark the successor block as parsed
         branch_block->next_path_num();
@@ -1033,7 +1035,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   set_control(iffalse);
 
   if (stopped()) {              // Path is dead?
-    explicit_null_checks_elided++;
+    NOT_PRODUCT(explicit_null_checks_elided++);
     if (C->eliminate_boxing()) {
       // Mark the successor block as parsed
       next_block->next_path_num();

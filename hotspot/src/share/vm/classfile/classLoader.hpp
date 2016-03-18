@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -331,7 +331,7 @@ class ClassLoader: AllStatic {
   static void  exit_with_path_failure(const char* error, const char* message);
 #endif
 
-  static void  trace_class_path(outputStream* out, const char* msg, const char* name = NULL);
+  static void  trace_class_path(const char* msg, const char* name = NULL);
 
   // VM monitoring and management support
   static jlong classloader_time_ms();

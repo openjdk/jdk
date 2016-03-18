@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ class TraceEvent : public StackObj {
     _endTime = time;
   }
 
- public:
   TraceEvent(EventStartTime timing=TIMED) :
     _startTime(0),
     _endTime(0),
@@ -76,10 +75,19 @@ class TraceEvent : public StackObj {
   {
     if (T::is_enabled()) {
       _started = true;
-      if (timing == TIMED && !T::isInstant) {
-        static_cast<T *>(this)->set_starttime(Tracing::time());
+      if (TIMED == timing && !T::isInstant) {
+        static_cast<T*>(this)->set_starttime(Tracing::time());
       }
     }
+  }
+
+ public:
+  void set_starttime(const Ticks& time) {
+    _startTime = time.value();
+  }
+
+  void set_endtime(const Ticks& time) {
+    _endTime = time.value();
   }
 
   static bool is_enabled() {
@@ -90,67 +98,68 @@ class TraceEvent : public StackObj {
     return _started;
   }
 
-  void ignoreCheck() {
-    DEBUG_ONLY(_ignore_check = true);
-  }
-
   void commit() {
     if (!should_commit()) {
-        cancel();
-        return;
+      DEBUG_ONLY(cancel());
+      return;
     }
-    if (_endTime == 0) {
+    assert(!_cancelled, "Committing an event that has already been cancelled");
+    if (_startTime == 0) {
+      static_cast<T*>(this)->set_starttime(Tracing::time());
+    } else if (_endTime == 0) {
       static_cast<T*>(this)->set_endtime(Tracing::time());
     }
     if (static_cast<T*>(this)->should_write()) {
       static_cast<T*>(this)->writeEvent();
     }
-    set_commited();
+    DEBUG_ONLY(set_commited());
   }
 
-  void set_starttime(const Ticks& time) {
-    _startTime = time.value();
-  }
-
-  void set_endtime(const Ticks& time) {
-    _endTime = time.value();
-  }
-
-  TraceEventId id() const {
+  static TraceEventId id() {
     return T::eventId;
   }
 
-  bool is_instant() const {
+  static bool is_instant() {
     return T::isInstant;
   }
 
-  bool is_requestable() const {
+  static bool is_requestable() {
     return T::isRequestable;
   }
 
-  bool has_thread() const {
+  static bool has_thread() {
     return T::hasThread;
   }
 
-  bool has_stacktrace() const {
+  static bool has_stacktrace() {
     return T::hasStackTrace;
   }
 
   void cancel() {
-    assert(!_committed && !_cancelled, "event was already committed/cancelled");
+    assert(!_committed && !_cancelled,
+      "event was already committed/cancelled");
     DEBUG_ONLY(_cancelled = true);
-  }
-
-  void set_commited() {
-    assert(!_committed, "event has already been committed");
-    DEBUG_ONLY(_committed = true);
   }
 
   ~TraceEvent() {
     if (_started) {
-      assert(_ignore_check || _committed || _cancelled, "event was not committed/cancelled");
+      assert(_ignore_check || _committed || _cancelled,
+        "event was not committed/cancelled");
     }
   }
+
+#ifdef ASSERT
+ protected:
+  void ignoreCheck() {
+    _ignore_check = true;
+  }
+
+ private:
+  void set_commited() {
+    assert(!_committed, "event has already been committed");
+    _committed = true;
+  }
+#endif // ASSERT
 };
 
 #endif // INCLUDE_TRACE

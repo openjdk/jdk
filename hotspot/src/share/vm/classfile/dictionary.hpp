@@ -29,6 +29,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/ostream.hpp"
 
 class DictionaryEntry;
 class PSPromotionManager;
@@ -323,14 +324,14 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
     return (klass->name() == class_name && _loader_data == loader_data);
   }
 
-  void print() {
+  void print_count(outputStream *st) {
     int count = 0;
     for (ProtectionDomainEntry* current = _pd_set;
                                 current != NULL;
                                 current = current->_next) {
       count++;
     }
-    tty->print_cr("pd set = #%d", count);
+    st->print_cr("pd set count = #%d", count);
   }
 };
 

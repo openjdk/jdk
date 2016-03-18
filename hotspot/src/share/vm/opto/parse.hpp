@@ -104,13 +104,6 @@ public:
   // For temporary (stack-allocated, stateless) ilts:
   InlineTree(Compile* c, ciMethod* callee_method, JVMState* caller_jvms, float site_invoke_ratio, int max_inline_level);
 
-  // InlineTree enum
-  enum InlineStyle {
-    Inline_do_not_inline             =   0, //
-    Inline_cha_is_monomorphic        =   1, //
-    Inline_type_profile_monomorphic  =   2  //
-  };
-
   // See if it is OK to inline.
   // The receiver is the inline tree for the caller.
   //
@@ -348,9 +341,6 @@ class Parse : public GraphKit {
 
   Block*            _block;     // block currently getting parsed
   ciBytecodeStream  _iter;      // stream of this method's bytecodes
-
-  int           _blocks_merged; // Progress meter: state merges from BB preds
-  int           _blocks_parsed; // Progress meter: BBs actually parsed
 
   const FastLockNode* _synch_lock; // FastLockNode for synchronized method
 

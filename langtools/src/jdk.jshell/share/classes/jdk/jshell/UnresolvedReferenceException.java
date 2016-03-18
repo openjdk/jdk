@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,33 +28,33 @@ package jdk.jshell;
 /**
  * Exception reported on attempting to execute a
  * {@link jdk.jshell.Snippet.Status#RECOVERABLE_DEFINED RECOVERABLE_DEFINED}
- * method.
+ * snippet.
  * <p>
  * The stack can be queried by methods on <code>Exception</code>.
  * Note that in stack trace frames representing JShell Snippets,
  * <code>StackTraceElement.getFileName()</code> will return "#" followed by
  * the Snippet id and for snippets without a method name (for example an
- * expression) <code>StackTraceElement.getMethodName()</code> will be the
+ * expression) <code>StackTraceElement.getName()</code> will be the
  * empty string.
  */
 @SuppressWarnings("serial")             // serialVersionUID intentionally omitted
 public class UnresolvedReferenceException extends Exception {
 
-    final MethodSnippet methodSnippet;
+    final DeclarationSnippet snippet;
 
-    UnresolvedReferenceException(MethodSnippet methodSnippet, StackTraceElement[] stackElements) {
-        super("Attempt to invoke method with unresolved references");
-        this.methodSnippet = methodSnippet;
+    UnresolvedReferenceException(DeclarationSnippet snippet, StackTraceElement[] stackElements) {
+        super("Attempt to use definition snippet with unresolved references");
+        this.snippet = snippet;
         this.setStackTrace(stackElements);
     }
 
     /**
-     * Return the method Snippet which has the unresolved reference(s).
-     * @return the <code>MethodSnippet</code> of the
+     * Return the Snippet which has the unresolved reference(s).
+     * @return the <code>Snippet</code> of the
      * {@link jdk.jshell.Snippet.Status#RECOVERABLE_DEFINED RECOVERABLE_DEFINED}
-     * method.
+     * definition snippet.
      */
-    public MethodSnippet getMethodSnippet() {
-        return methodSnippet;
+    public DeclarationSnippet getSnippet() {
+        return snippet;
     }
 }

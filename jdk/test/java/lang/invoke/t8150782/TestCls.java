@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,22 +21,18 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package test.java.lang.invoke.t8150782;
 
-#ifndef SHARE_VM_JVMCI_COMMANDLINEFLAGCONSTRAINTSJVMCI_HPP
-#define SHARE_VM_JVMCI_COMMANDLINEFLAGCONSTRAINTSJVMCI_HPP
+import static java.lang.invoke.MethodHandles.*;
 
-#include "runtime/globals.hpp"
-#include "utilities/globalDefinitions.hpp"
+public class TestCls {
 
-/*
- * Here we have JVMCI arguments constraints functions, which are called automatically
- * whenever flag's value changes. If the constraint fails the function should return
- * an appropriate error value.
- */
+    public static final Lookup LOOKUP = lookup();
 
-Flag::Error EnableJVMCIMustBeEnabledConstraintFunc(bool value, bool verbose);
-Flag::Error EnableJVMCIMustBeEnabledConstraintFunc(intx value, bool verbose);
+    private static class PrivateSIC {}
+    public static Class getPrivateSIC() { return PrivateSIC.class; }
+    public static Lookup getLookupForPrivateSIC() { return lookup(); }
 
-#endif /* SHARE_VM_JVMCI_COMMANDLINEFLAGCONSTRAINTSJVMCI_HPP */
+}
+
