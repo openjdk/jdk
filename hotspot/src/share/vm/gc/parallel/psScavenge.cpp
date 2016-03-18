@@ -404,7 +404,7 @@ bool PSScavenge::invoke_no_policy() {
 
     // Process reference objects discovered during scavenge
     {
-      GCTraceTime(Debug, gc, phases) tm("References", &_gc_timer);
+      GCTraceTime(Debug, gc, phases) tm("Reference Processing", &_gc_timer);
 
       reference_processor()->setup_policy(false); // not always_clear
       reference_processor()->set_active_mt_degree(active_workers);
@@ -433,7 +433,7 @@ bool PSScavenge::invoke_no_policy() {
     }
 
     {
-      GCTraceTime(Debug, gc, phases) tm("StringTable", &_gc_timer);
+      GCTraceTime(Debug, gc, phases) tm("Scrub String Table", &_gc_timer);
       // Unlink any dead interned Strings and process the remaining live ones.
       PSScavengeRootsClosure root_closure(promotion_manager);
       StringTable::unlink_or_oops_do(&_is_alive_closure, &root_closure);

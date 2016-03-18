@@ -1518,7 +1518,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
 
   gch->pre_full_gc_dump(gc_timer);
 
-  GCTraceTime(Trace, gc) t("CMS:MSC");
+  GCTraceTime(Trace, gc, phases) t("CMS:MSC");
 
   // Temporarily widen the span of the weak reference processing to
   // the entire heap.
@@ -2234,7 +2234,7 @@ class VerifyMarkedClosure: public BitMapClosure {
 };
 
 bool CMSCollector::verify_after_remark() {
-  GCTraceTime(Info, gc, verify) tm("Verifying CMS Marking.");
+  GCTraceTime(Info, gc, phases, verify) tm("Verifying CMS Marking.");
   MutexLockerEx ml(verification_mark_bm()->lock(), Mutex::_no_safepoint_check_flag);
   static bool init = false;
 
@@ -2818,7 +2818,7 @@ void CMSCollector::checkpointRootsInitialWork() {
   // CMS collection cycle.
   setup_cms_unloading_and_verification_state();
 
-  GCTraceTime(Trace, gc) ts("checkpointRootsInitialWork", _gc_timer_cm);
+  GCTraceTime(Trace, gc, phases) ts("checkpointRootsInitialWork", _gc_timer_cm);
 
   // Reset all the PLAB chunk arrays if necessary.
   if (_survivor_plab_array != NULL && !CMSPLABRecordAlways) {
@@ -4102,8 +4102,6 @@ void CMSCollector::checkpointRootsFinal() {
       // expect it to be false and set to true
       FlagSetting fl(gch->_is_gc_active, false);
 
-      GCTraceTime(Trace, gc) tm("Pause Scavenge Before Remark", _gc_timer_cm);
-
       gch->do_collection(true,                      // full (i.e. force, see below)
                          false,                     // !clear_all_soft_refs
                          0,                         // size
@@ -4121,7 +4119,7 @@ void CMSCollector::checkpointRootsFinal() {
 }
 
 void CMSCollector::checkpointRootsFinalWork() {
-  GCTraceTime(Trace, gc) tm("checkpointRootsFinalWork", _gc_timer_cm);
+  GCTraceTime(Trace, gc, phases) tm("checkpointRootsFinalWork", _gc_timer_cm);
 
   assert(haveFreelistLocks(), "must have free list locks");
   assert_lock_strong(bitMapLock());
@@ -4171,10 +4169,10 @@ void CMSCollector::checkpointRootsFinalWork() {
     // the most recent young generation GC, minus those cleaned up by the
     // concurrent precleaning.
     if (CMSParallelRemarkEnabled) {
-      GCTraceTime(Debug, gc) t("Rescan (parallel)", _gc_timer_cm);
+      GCTraceTime(Debug, gc, phases) t("Rescan (parallel)", _gc_timer_cm);
       do_remark_parallel();
     } else {
-      GCTraceTime(Debug, gc) t("Rescan (non-parallel)", _gc_timer_cm);
+      GCTraceTime(Debug, gc, phases) t("Rescan (non-parallel)", _gc_timer_cm);
       do_remark_non_parallel();
     }
   }
@@ -4182,7 +4180,7 @@ void CMSCollector::checkpointRootsFinalWork() {
   verify_overflow_empty();
 
   {
-    GCTraceTime(Trace, gc) ts("refProcessingWork", _gc_timer_cm);
+    GCTraceTime(Trace, gc, phases) ts("refProcessingWork", _gc_timer_cm);
     refProcessingWork();
   }
   verify_work_stacks_empty();
@@ -4905,7 +4903,7 @@ void CMSCollector::do_remark_non_parallel() {
                               NULL,  // space is set further below
                               &_markBitMap, &_markStack, &mrias_cl);
   {
-    GCTraceTime(Trace, gc) t("Grey Object Rescan", _gc_timer_cm);
+    GCTraceTime(Trace, gc, phases) t("Grey Object Rescan", _gc_timer_cm);
     // Iterate over the dirty cards, setting the corresponding bits in the
     // mod union table.
     {
@@ -4939,7 +4937,7 @@ void CMSCollector::do_remark_non_parallel() {
     Universe::verify();
   }
   {
-    GCTraceTime(Trace, gc) t("Root Rescan", _gc_timer_cm);
+    GCTraceTime(Trace, gc, phases) t("Root Rescan", _gc_timer_cm);
 
     verify_work_stacks_empty();
 
@@ -4961,7 +4959,7 @@ void CMSCollector::do_remark_non_parallel() {
   }
 
   {
-    GCTraceTime(Trace, gc) t("Visit Unhandled CLDs", _gc_timer_cm);
+    GCTraceTime(Trace, gc, phases) t("Visit Unhandled CLDs", _gc_timer_cm);
 
     verify_work_stacks_empty();
 
@@ -4980,7 +4978,7 @@ void CMSCollector::do_remark_non_parallel() {
   }
 
   {
-    GCTraceTime(Trace, gc) t("Dirty Klass Scan", _gc_timer_cm);
+    GCTraceTime(Trace, gc, phases) t("Dirty Klass Scan", _gc_timer_cm);
 
     verify_work_stacks_empty();
 
@@ -5184,7 +5182,7 @@ void CMSCollector::refProcessingWork() {
                                 _span, &_markBitMap, &_markStack,
                                 &cmsKeepAliveClosure, false /* !preclean */);
   {
-    GCTraceTime(Debug, gc) t("Weak Refs Processing", _gc_timer_cm);
+    GCTraceTime(Debug, gc, phases) t("Reference Processing", _gc_timer_cm);
 
     ReferenceProcessorStats stats;
     if (rp->processing_is_mt()) {
@@ -5226,7 +5224,7 @@ void CMSCollector::refProcessingWork() {
 
   if (should_unload_classes()) {
     {
-      GCTraceTime(Debug, gc) t("Class Unloading", _gc_timer_cm);
+      GCTraceTime(Debug, gc, phases) t("Class Unloading", _gc_timer_cm);
 
       // Unload classes and purge the SystemDictionary.
       bool purged_class = SystemDictionary::do_unloading(&_is_alive_closure);
@@ -5239,13 +5237,13 @@ void CMSCollector::refProcessingWork() {
     }
 
     {
-      GCTraceTime(Debug, gc) t("Scrub Symbol Table", _gc_timer_cm);
+      GCTraceTime(Debug, gc, phases) t("Scrub Symbol Table", _gc_timer_cm);
       // Clean up unreferenced symbols in symbol table.
       SymbolTable::unlink();
     }
 
     {
-      GCTraceTime(Debug, gc) t("Scrub String Table", _gc_timer_cm);
+      GCTraceTime(Debug, gc, phases) t("Scrub String Table", _gc_timer_cm);
       // Delete entries for dead interned strings.
       StringTable::unlink(&_is_alive_closure);
     }
