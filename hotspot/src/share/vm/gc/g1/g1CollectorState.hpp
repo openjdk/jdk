@@ -72,7 +72,6 @@ class G1CollectorState VALUE_OBJ_CLASS_SPEC {
   bool _in_marking_window;
   bool _in_marking_window_im;
 
-  bool _concurrent_cycle_started;
   bool _full_collection;
 
   public:
@@ -88,7 +87,6 @@ class G1CollectorState VALUE_OBJ_CLASS_SPEC {
       _mark_in_progress(false),
       _in_marking_window(false),
       _in_marking_window_im(false),
-      _concurrent_cycle_started(false),
       _full_collection(false) {}
 
   // Setters
@@ -101,7 +99,6 @@ class G1CollectorState VALUE_OBJ_CLASS_SPEC {
   void set_mark_in_progress(bool v) { _mark_in_progress = v; }
   void set_in_marking_window(bool v) { _in_marking_window = v; }
   void set_in_marking_window_im(bool v) { _in_marking_window_im = v; }
-  void set_concurrent_cycle_started(bool v) { _concurrent_cycle_started = v; }
   void set_full_collection(bool v) { _full_collection = v; }
 
   // Getters
@@ -114,7 +111,6 @@ class G1CollectorState VALUE_OBJ_CLASS_SPEC {
   bool mark_in_progress() const { return _mark_in_progress; }
   bool in_marking_window() const { return _in_marking_window; }
   bool in_marking_window_im() const { return _in_marking_window_im; }
-  bool concurrent_cycle_started() const { return _concurrent_cycle_started; }
   bool full_collection() const { return _full_collection; }
 
   // Composite booleans (clients worry about flickering)
