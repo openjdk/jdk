@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 

@@ -38,3 +38,7 @@ HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
                                              MemRegion mr) {
   return new HeapRegion(hrs_index, bot(), mr);
 }
+
+G1Policy* G1CollectedHeap::create_g1_policy() {
+  return new G1Policy;
+}
