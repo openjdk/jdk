@@ -39,6 +39,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
@@ -567,7 +568,7 @@ G1CollectedHeap::mem_allocate(size_t word_size,
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-      warning("G1CollectedHeap::mem_allocate retries %d times", try_count);
+      log_warning(gc)("G1CollectedHeap::mem_allocate retries %d times", try_count);
     }
   }
 
@@ -676,8 +677,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-      warning("G1CollectedHeap::attempt_allocation_slow() "
-              "retries %d times", try_count);
+      log_warning(gc)("G1CollectedHeap::attempt_allocation_slow() "
+                      "retries %d times", try_count);
     }
   }
 
@@ -1092,8 +1093,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
 
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-      warning("G1CollectedHeap::attempt_allocation_humongous() "
-              "retries %d times", try_count);
+      log_warning(gc)("G1CollectedHeap::attempt_allocation_humongous() "
+                      "retries %d times", try_count);
     }
   }
 
@@ -1229,6 +1230,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   ResourceMark rm;
 
   print_heap_before_gc();
+  print_heap_regions();
   trace_heap_before_gc(gc_tracer);
 
   size_t metadata_prev_used = MetaspaceAux::used_bytes();
@@ -1422,7 +1424,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       // the full GC has compacted objects and updated TAMS but not updated
       // the prev bitmap.
       if (G1VerifyBitmaps) {
-        ((G1CMBitMap*) concurrent_mark()->prevMarkBitMap())->clearAll();
+        _cm->clear_prev_bitmap(workers());
       }
       _verifier->check_bitmaps("Full GC End");
 
@@ -1447,6 +1449,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
       heap_transition.print();
 
       print_heap_after_gc();
+      print_heap_regions();
       trace_heap_after_gc(gc_tracer);
 
       post_full_gc_dump(gc_timer);
@@ -1767,15 +1770,12 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _expand_heap_after_alloc_failure(true),
   _old_marking_cycles_started(0),
   _old_marking_cycles_completed(0),
-  _heap_summary_sent(false),
   _in_cset_fast_test(),
   _dirty_cards_region_list(NULL),
   _worker_cset_start_region(NULL),
   _worker_cset_start_region_time_stamp(NULL),
   _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
-  _gc_timer_cm(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
-  _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
-  _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) G1OldTracer()) {
+  _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()) {
 
   _workers = new WorkGang("GC Thread", ParallelGCThreads,
                           /* are_GC_task_threads */true,
@@ -1784,6 +1784,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _verifier = new G1HeapVerifier(this);
 
   _allocator = G1Allocator::create_allocator(this);
+
+  _heap_sizing_policy = G1HeapSizingPolicy::create(this, _g1_policy->analytics());
+
   _humongous_object_threshold_in_words = humongous_threshold_for(HeapRegion::GrainWords);
 
   // Override the default _filler_array_max_size so that no humongous filler
@@ -2316,52 +2319,6 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
   FullGCCount_lock->notify_all();
 }
 
-void G1CollectedHeap::register_concurrent_cycle_start(const Ticks& start_time) {
-  GCIdMarkAndRestore conc_gc_id_mark;
-  collector_state()->set_concurrent_cycle_started(true);
-  _gc_timer_cm->register_gc_start(start_time);
-
-  _gc_tracer_cm->report_gc_start(gc_cause(), _gc_timer_cm->gc_start());
-  trace_heap_before_gc(_gc_tracer_cm);
-  _cmThread->set_gc_id(GCId::current());
-}
-
-void G1CollectedHeap::register_concurrent_cycle_end() {
-  if (collector_state()->concurrent_cycle_started()) {
-    GCIdMarkAndRestore conc_gc_id_mark(_cmThread->gc_id());
-    if (_cm->has_aborted()) {
-      _gc_tracer_cm->report_concurrent_mode_failure();
-
-      // ConcurrentGCTimer will be ended as well.
-      _cm->register_concurrent_gc_end_and_stop_timer();
-    } else {
-      _gc_timer_cm->register_gc_end();
-    }
-
-    _gc_tracer_cm->report_gc_end(_gc_timer_cm->gc_end(), _gc_timer_cm->time_partitions());
-
-    // Clear state variables to prepare for the next concurrent cycle.
-    collector_state()->set_concurrent_cycle_started(false);
-    _heap_summary_sent = false;
-  }
-}
-
-void G1CollectedHeap::trace_heap_after_concurrent_cycle() {
-  if (collector_state()->concurrent_cycle_started()) {
-    // This function can be called when:
-    //  the cleanup pause is run
-    //  the concurrent cycle is aborted before the cleanup pause.
-    //  the concurrent cycle is aborted after the cleanup pause,
-    //   but before the concurrent cycle end has been registered.
-    // Make sure that we only send the heap information once.
-    if (!_heap_summary_sent) {
-      GCIdMarkAndRestore conc_gc_id_mark(_cmThread->gc_id());
-      trace_heap_after_gc(_gc_tracer_cm);
-      _heap_summary_sent = true;
-    }
-  }
-}
-
 void G1CollectedHeap::collect(GCCause::Cause cause) {
   assert_heap_not_locked();
 
@@ -2718,6 +2675,14 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
   return false; // keep some compilers happy
 }
 
+void G1CollectedHeap::print_heap_regions() const {
+  LogHandle(gc, heap, region) log;
+  if (log.is_trace()) {
+    ResourceMark rm;
+    print_regions_on(log.trace_stream());
+  }
+}
+
 void G1CollectedHeap::print_on(outputStream* st) const {
   st->print(" %-20s", "garbage-first heap");
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
@@ -2731,18 +2696,14 @@ void G1CollectedHeap::print_on(outputStream* st) const {
   uint young_regions = _young_list->length();
   st->print("%u young (" SIZE_FORMAT "K), ", young_regions,
             (size_t) young_regions * HeapRegion::GrainBytes / K);
-  uint survivor_regions = g1_policy()->recorded_survivor_regions();
+  uint survivor_regions = _young_list->survivor_length();
   st->print("%u survivors (" SIZE_FORMAT "K)", survivor_regions,
             (size_t) survivor_regions * HeapRegion::GrainBytes / K);
   st->cr();
   MetaspaceAux::print_on(st);
 }
 
-void G1CollectedHeap::print_extended_on(outputStream* st) const {
-  print_on(st);
-
-  // Print the per-region information.
-  st->cr();
+void G1CollectedHeap::print_regions_on(outputStream* st) const {
   st->print_cr("Heap Regions: E=young(eden), S=young(survivor), O=old, "
                "HS=humongous(starts), HC=humongous(continues), "
                "CS=collection set, F=free, A=archive, TS=gc time stamp, "
@@ -2750,6 +2711,13 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
                "TAMS=top-at-mark-start (previous, next)");
   PrintRegionClosure blk(st);
   heap_region_iterate(&blk);
+}
+
+void G1CollectedHeap::print_extended_on(outputStream* st) const {
+  print_on(st);
+
+  // Print the per-region information.
+  print_regions_on(st);
 }
 
 void G1CollectedHeap::print_on_error(outputStream* st) const {
@@ -2841,12 +2809,14 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 
   size_t eden_used_bytes = young_list->eden_used_bytes();
   size_t survivor_used_bytes = young_list->survivor_used_bytes();
+  size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
 
   size_t eden_capacity_bytes =
     (g1_policy()->young_list_target_length() * HeapRegion::GrainBytes) - survivor_used_bytes;
 
   VirtualSpaceSummary heap_summary = create_heap_space_summary();
-  return G1HeapSummary(heap_summary, used(), eden_used_bytes, eden_capacity_bytes, survivor_used_bytes, num_regions());
+  return G1HeapSummary(heap_summary, heap_used, eden_used_bytes,
+                       eden_capacity_bytes, survivor_used_bytes, num_regions());
 }
 
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
@@ -2863,7 +2833,6 @@ void G1CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
   const MetaspaceSummary& metaspace_summary = create_metaspace_summary();
   gc_tracer->report_metaspace_summary(when, metaspace_summary);
 }
-
 
 G1CollectedHeap* G1CollectedHeap::heap() {
   CollectedHeap* heap = Universe::heap();
@@ -3203,15 +3172,19 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   wait_for_root_region_scanning();
 
   print_heap_before_gc();
+  print_heap_regions();
   trace_heap_before_gc(_gc_tracer_stw);
 
   _verifier->verify_region_sets_optional();
   _verifier->verify_dirty_young_regions();
 
-  // This call will decide whether this pause is an initial-mark
-  // pause. If it is, during_initial_mark_pause() will return true
-  // for the duration of this pause.
-  g1_policy()->decide_on_conc_mark_initiation();
+  // We should not be doing initial mark unless the conc mark thread is running
+  if (!_cmThread->should_terminate()) {
+    // This call will decide whether this pause is an initial-mark
+    // pause. If it is, during_initial_mark_pause() will return true
+    // for the duration of this pause.
+    g1_policy()->decide_on_conc_mark_initiation();
+  }
 
   // We do not allow initial-mark to be piggy-backed on a mixed GC.
   assert(!collector_state()->during_initial_mark_pause() ||
@@ -3233,7 +3206,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // We are about to start a marking cycle, so we increment the
       // full collection counter.
       increment_old_marking_cycles_started();
-      register_concurrent_cycle_start(_gc_timer_stw->gc_start());
+      _cm->gc_tracer_cm()->set_gc_cause(gc_cause());
     }
 
     _gc_tracer_stw->report_yc_type(collector_state()->yc_type());
@@ -3405,10 +3378,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         assert(check_young_list_empty(false /* check_heap */),
           "young list should be empty");
 
-        g1_policy()->record_survivor_regions(_young_list->survivor_length(),
-                                             _young_list->first_survivor_region(),
-                                             _young_list->last_survivor_region());
-
         _young_list->reset_auxilary_lists();
 
         if (evacuation_failed()) {
@@ -3443,7 +3412,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         _allocator->init_mutator_alloc_region();
 
         {
-          size_t expand_bytes = g1_policy()->expansion_amount();
+          size_t expand_bytes = _heap_sizing_policy->expansion_amount();
           if (expand_bytes > 0) {
             size_t bytes_before = capacity();
             // No need for an ergo logging here,
@@ -3539,6 +3508,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
 
     print_heap_after_gc();
+    print_heap_regions();
     trace_heap_after_gc(_gc_tracer_stw);
 
     // We must call G1MonitoringSupport::update_sizes() in the same scoping level
@@ -3777,11 +3747,12 @@ public:
               "claim value %d after unlink less than initial symbol table size %d",
               SymbolTable::parallel_claimed_index(), _initial_symbol_table_size);
 
-    log_debug(gc, stringdedup)("Cleaned string and symbol table, "
-                               "strings: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed, "
-                               "symbols: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed",
-                               strings_processed(), strings_removed(),
-                               symbols_processed(), symbols_removed());
+    log_info(gc, stringtable)(
+        "Cleaned string and symbol table, "
+        "strings: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed, "
+        "symbols: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed",
+        strings_processed(), strings_removed(),
+        symbols_processed(), symbols_removed());
   }
 
   void work(uint worker_id) {
@@ -4084,13 +4055,9 @@ void G1CollectedHeap::parallel_cleaning(BoolObjectClosure* is_alive,
 
 void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive,
                                                      bool process_strings, bool process_symbols) {
-  {
+  { // Timing scope
     G1StringSymbolTableUnlinkTask g1_unlink_task(is_alive, process_strings, process_symbols);
     workers()->run_task(&g1_unlink_task);
-  }
-
-  if (G1StringDedup::is_enabled()) {
-    G1StringDedup::unlink(is_alive);
   }
 }
 

@@ -33,6 +33,7 @@
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/iterator.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/oop.inline.hpp"
@@ -711,11 +712,6 @@ WB_ENTRY(jint, WB_MatchesMethod(JNIEnv* env, jobject o, jobject method, jstring 
   return result;
 WB_END
 
-class AlwaysFalseClosure : public BoolObjectClosure {
- public:
-  bool do_object_b(oop p) { return false; }
-};
-
 static AlwaysFalseClosure always_false;
 
 WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
@@ -991,7 +987,7 @@ WB_END
 
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->collector_policy()->set_should_clear_all_soft_refs(true);
-  Universe::heap()->collect(GCCause::_last_ditch_collection);
+  Universe::heap()->collect(GCCause::_wb_full_gc);
 #if INCLUDE_ALL_GCS
   if (UseG1GC) {
     // Needs to be cleared explicitly for G1

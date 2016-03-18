@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,6 +240,14 @@ void G1NewTracer::report_adaptive_ihop_statistics(size_t threshold,
                                 predicted_allocation_rate,
                                 predicted_marking_length,
                                 prediction_active);
+}
+
+void G1OldTracer::report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp) {
+  _shared_gc_info.set_start_timestamp(timestamp);
+}
+
+void G1OldTracer::set_gc_cause(GCCause::Cause cause) {
+  _shared_gc_info.set_cause(cause);
 }
 
 #endif

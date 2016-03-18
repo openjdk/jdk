@@ -642,7 +642,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       thread_id, describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
   } else {
     log_warning(os, thread)("Failed to start thread - _beginthreadex failed (%s) for attributes: %s.",
-      strerror(errno), describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
+      os::errno_name(errno), describe_beginthreadex_attributes(buf, sizeof(buf), stack_size, initflag));
   }
 
   if (thread_handle == NULL) {
@@ -1898,7 +1898,7 @@ size_t os::lasterror(char* buf, size_t len) {
 
   if (errno != 0) {
     // C runtime error that has no corresponding DOS error code
-    const char* s = strerror(errno);
+    const char* s = os::strerror(errno);
     size_t n = strlen(s);
     if (n >= len) n = len - 1;
     strncpy(buf, s, n);
@@ -2441,7 +2441,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             jio_snprintf(buf, sizeof(buf), "Execution protection violation "
                          "at " INTPTR_FORMAT
                          ", unguarding " INTPTR_FORMAT ": %s", addr,
-                         page_start, (res ? "success" : strerror(errno)));
+                         page_start, (res ? "success" : os::strerror(errno)));
             tty->print_raw_cr(buf);
           }
 

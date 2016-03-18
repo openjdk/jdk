@@ -5358,12 +5358,12 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
       ik->print_loading_log(LogLevel::Debug, _loader_data, _stream);
     }
 
-    if (log_is_enabled(Info, classresolve))  {
+    if (log_is_enabled(Debug, classresolve))  {
       ResourceMark rm;
       // print out the superclass.
       const char * from = ik->external_name();
       if (ik->java_super() != NULL) {
-        log_info(classresolve)("%s %s (super)",
+        log_debug(classresolve)("%s %s (super)",
                    from,
                    ik->java_super()->external_name());
       }
@@ -5374,7 +5374,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
         for (int i = 0; i < length; i++) {
           const Klass* const k = local_interfaces->at(i);
           const char * to = k->external_name();
-          log_info(classresolve)("%s %s (interface)", from, to);
+          log_debug(classresolve)("%s %s (interface)", from, to);
         }
       }
     }
@@ -5684,15 +5684,16 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   }
 
   if (!is_internal()) {
-    if (TraceClassLoadingPreorder) {
-      tty->print("[Loading %s",
-        _class_name->as_klass_external_name());
-
+    if (log_is_enabled(Debug, classload, preorder)){
+      ResourceMark rm(THREAD);
+      outputStream* log = LogHandle(classload, preorder)::debug_stream();
+      log->print("%s", _class_name->as_klass_external_name());
       if (stream->source() != NULL) {
-        tty->print(" from %s", stream->source());
+        log->print(" source: %s", stream->source());
       }
-      tty->print_cr("]");
+      log->cr();
     }
+
 #if INCLUDE_CDS
     if (DumpLoadedClassList != NULL && stream->source() != NULL && classlist_file->is_open()) {
       // Only dump the classes that can be stored into CDS archive
