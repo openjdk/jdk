@@ -153,6 +153,9 @@ TraceTime::~TraceTime() {
         case LogTag::_startuptime :
           log_info(startuptime)("%s, %3.7f secs", _title, _t.seconds());
           break;
+        case LogTag::_safepointcleanup :
+          log_info(safepointcleanup)("%s, %3.7f secs", _title, _t.seconds());
+          break;
         case LogTag::__NO_TAG :
        default :
           tty->print_cr("[%s, %3.7f secs]", _title, _t.seconds());

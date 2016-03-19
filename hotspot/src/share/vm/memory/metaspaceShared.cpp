@@ -879,7 +879,7 @@ int MetaspaceShared::preload_and_dump(const char* class_list_path,
 
         InstanceKlass* ik = InstanceKlass::cast(klass);
 
-        // Should be class load order as per -XX:+TraceClassLoadingPreorder
+        // Should be class load order as per -Xlog:classload+preorder
         class_promote_order->append(ik);
 
         // Link the class to cause the bytecodes to be rewritten and the

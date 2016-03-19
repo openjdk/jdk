@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/logTimer.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
@@ -221,7 +222,7 @@ void SafepointSynchronize::begin() {
         }
         if (log_is_enabled(Trace, safepoint)) {
           ResourceMark rm;
-          cur_state->print_on(LogHandle(safepoint)::debug_stream());
+          cur_state->print_on(LogHandle(safepoint)::trace_stream());
         }
       }
     }
@@ -487,38 +488,38 @@ bool SafepointSynchronize::is_cleanup_needed() {
 // Various cleaning tasks that should be done periodically at safepoints
 void SafepointSynchronize::do_cleanup_tasks() {
   {
-    TraceTime t1("deflating idle monitors", TraceSafepointCleanupTime);
+    TraceSafepointTime t1("deflating idle monitors");
     ObjectSynchronizer::deflate_idle_monitors();
   }
 
   {
-    TraceTime t2("updating inline caches", TraceSafepointCleanupTime);
+    TraceSafepointTime t2("updating inline caches");
     InlineCacheBuffer::update_inline_caches();
   }
   {
-    TraceTime t3("compilation policy safepoint handler", TraceSafepointCleanupTime);
+    TraceSafepointTime t3("compilation policy safepoint handler");
     CompilationPolicy::policy()->do_safepoint_work();
   }
 
   {
-    TraceTime t4("mark nmethods", TraceSafepointCleanupTime);
+    TraceSafepointTime t4("mark nmethods");
     NMethodSweeper::mark_active_nmethods();
   }
 
   if (SymbolTable::needs_rehashing()) {
-    TraceTime t5("rehashing symbol table", TraceSafepointCleanupTime);
+    TraceSafepointTime t5("rehashing symbol table");
     SymbolTable::rehash_table();
   }
 
   if (StringTable::needs_rehashing()) {
-    TraceTime t6("rehashing string table", TraceSafepointCleanupTime);
+    TraceSafepointTime t6("rehashing string table");
     StringTable::rehash_table();
   }
 
   {
     // CMS delays purging the CLDG until the beginning of the next safepoint and to
     // make sure concurrent sweep is done
-    TraceTime t7("purging class loader data graph", TraceSafepointCleanupTime);
+    TraceSafepointTime t7("purging class loader data graph");
     ClassLoaderDataGraph::purge_if_needed();
   }
 }

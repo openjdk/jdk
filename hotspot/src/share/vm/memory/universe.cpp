@@ -376,8 +376,7 @@ void Universe::genesis(TRAPS) {
     // We can allocate directly in the permanent generation, so we do.
     int size;
     if (UseConcMarkSweepGC) {
-      warning("Using +FullGCALot with concurrent mark sweep gc "
-              "will not force all objects to relocate");
+      log_warning(gc)("Using +FullGCALot with concurrent mark sweep gc will not force all objects to relocate");
       size = FullGCALotDummies;
     } else {
       size = FullGCALotDummies * 2;
@@ -1094,19 +1093,19 @@ void Universe::print_heap_at_SIGBREAK() {
 
 void Universe::print_heap_before_gc() {
   LogHandle(gc, heap) log;
-  if (log.is_trace()) {
-    log.trace("Heap before GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
+  if (log.is_debug()) {
+    log.debug("Heap before GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
     ResourceMark rm;
-    heap()->print_on(log.trace_stream());
+    heap()->print_on(log.debug_stream());
   }
 }
 
 void Universe::print_heap_after_gc() {
   LogHandle(gc, heap) log;
-  if (log.is_trace()) {
-    log.trace("Heap after GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
+  if (log.is_debug()) {
+    log.debug("Heap after GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
     ResourceMark rm;
-    heap()->print_on(log.trace_stream());
+    heap()->print_on(log.debug_stream());
   }
 }
 

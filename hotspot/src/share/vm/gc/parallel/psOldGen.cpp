@@ -309,7 +309,7 @@ bool PSOldGen::expand_to_reserved() {
   const size_t remaining_bytes = virtual_space()->uncommitted_size();
   if (remaining_bytes > 0) {
     result = expand_by(remaining_bytes);
-    DEBUG_ONLY(if (!result) warning("grow to reserve failed"));
+    DEBUG_ONLY(if (!result) log_warning(gc)("grow to reserve failed"));
   }
   return result;
 }
