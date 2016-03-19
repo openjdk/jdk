@@ -144,6 +144,7 @@ pthread_t os::Linux::_main_thread;
 int os::Linux::_page_size = -1;
 const int os::Linux::_vm_default_page_size = (8 * K);
 bool os::Linux::_supports_fast_thread_cpu_time = false;
+uint32_t os::Linux::_os_version = 0;
 const char * os::Linux::_glibc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
 pthread_condattr_t os::Linux::_condattr[1];
@@ -4357,6 +4358,48 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
 }
 
+void os::Linux::initialize_os_info() {
+  assert(_os_version == 0, "OS info already initialized");
+
+  struct utsname _uname;
+
+  uint32_t major;
+  uint32_t minor;
+  uint32_t fix;
+
+  int rc;
+
+  // Kernel version is unknown if
+  // verification below fails.
+  _os_version = 0x01000000;
+
+  rc = uname(&_uname);
+  if (rc != -1) {
+
+    rc = sscanf(_uname.release,"%d.%d.%d", &major, &minor, &fix);
+    if (rc == 3) {
+
+      if (major < 256 && minor < 256 && fix < 256) {
+        // Kernel version format is as expected,
+        // set it overriding unknown state.
+        _os_version = (major << 16) |
+                      (minor << 8 ) |
+                      (fix   << 0 ) ;
+      }
+    }
+  }
+}
+
+uint32_t os::Linux::os_version() {
+  assert(_os_version != 0, "not initialized");
+  return _os_version & 0x00FFFFFF;
+}
+
+bool os::Linux::os_version_is_known() {
+  assert(_os_version != 0, "not initialized");
+  return _os_version & 0x01000000 ? false : true;
+}
+
 /////
 // glibc on Linux platform uses non-documented flag
 // to indicate, that some special sort of signal
@@ -4578,6 +4621,8 @@ void os::init(void) {
   init_page_sizes((size_t) Linux::page_size());
 
   Linux::initialize_system_info();
+
+  Linux::initialize_os_info();
 
   // main_thread points to the aboriginal thread
   Linux::_main_thread = pthread_self();

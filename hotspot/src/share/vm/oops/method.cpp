@@ -1339,73 +1339,6 @@ vmSymbols::SID Method::klass_id_for_intrinsics(const Klass* holder) {
   return vmSymbols::find_sid(klass_name);
 }
 
-static bool is_unsafe_alias(vmSymbols::SID name_id) {
-  // All 70 intrinsic candidate methods from sun.misc.Unsafe in 1.8.
-  // Some have the same method name but different signature, e.g.
-  // getByte(long), getByte(Object,long)
-  switch (name_id) {
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(allocateInstance_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(copyMemory_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(loadFence_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(storeFence_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(fullFence_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getObject_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getBoolean_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getByte_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getShort_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getChar_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getInt_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getLong_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getFloat_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getDouble_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putObject_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putBoolean_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putByte_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putShort_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putChar_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putInt_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putLong_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putFloat_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putDouble_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getObjectVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getBooleanVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getByteVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getShortVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getCharVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getIntVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getLongVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getFloatVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getDoubleVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putObjectVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putBooleanVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putByteVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putShortVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putCharVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putIntVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putLongVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putFloatVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putDoubleVolatile_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getAddress_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putAddress_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(compareAndSwapObject_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(compareAndSwapLong_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(compareAndSwapInt_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putOrderedObject_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putOrderedLong_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(putOrderedInt_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getAndAddInt_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getAndAddLong_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getAndSetInt_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getAndSetLong_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(getAndSetObject_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(park_name):
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(unpark_name):
-      return true;
-  }
-
-  return false;
-}
-
 void Method::init_intrinsic_id() {
   assert(_intrinsic_id == vmIntrinsics::_none, "do this just once");
   const uintptr_t max_id_uint = right_n_bits((int)(sizeof(_intrinsic_id) * BitsPerByte));
@@ -1457,14 +1390,6 @@ void Method::init_intrinsic_id() {
     id = MethodHandles::signature_polymorphic_name_id(method_holder(), name());
     if (is_static() != MethodHandles::is_signature_polymorphic_static(id))
       id = vmIntrinsics::_none;
-    break;
-
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_misc_Unsafe):
-    // Map sun.misc.Unsafe to jdk.internal.misc.Unsafe
-    if (!is_unsafe_alias(name_id))  break;
-    // pretend it is the corresponding method in the internal Unsafe class:
-    klass_id = vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_misc_Unsafe);
-    id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
     break;
   }
 

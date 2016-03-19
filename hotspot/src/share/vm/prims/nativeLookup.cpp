@@ -35,6 +35,7 @@
 #include "oops/symbol.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/nativeLookup.hpp"
+#include "prims/unsafe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -107,8 +108,6 @@ char* NativeLookup::long_jni_name(const methodHandle& method) {
 }
 
 extern "C" {
-  void JNICALL JVM_RegisterJDKInternalMiscUnsafeMethods(JNIEnv *env, jclass unsafecls);
-  void JNICALL JVM_RegisterSunMiscUnsafeMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass unsafecls);
   void JNICALL JVM_RegisterPerfMethods(JNIEnv *env, jclass perfclass);
   void JNICALL JVM_RegisterWhiteBoxMethods(JNIEnv *env, jclass wbclass);
@@ -123,7 +122,6 @@ extern "C" {
 
 static JNINativeMethod lookup_special_native_methods[] = {
   { CC"Java_jdk_internal_misc_Unsafe_registerNatives",             NULL, FN_PTR(JVM_RegisterJDKInternalMiscUnsafeMethods) },
-  { CC"Java_sun_misc_Unsafe_registerNatives",                      NULL, FN_PTR(JVM_RegisterSunMiscUnsafeMethods)         },
   { CC"Java_java_lang_invoke_MethodHandleNatives_registerNatives", NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },
   { CC"Java_jdk_internal_perf_Perf_registerNatives",               NULL, FN_PTR(JVM_RegisterPerfMethods)         },
   { CC"Java_sun_hotspot_WhiteBox_registerNatives",                 NULL, FN_PTR(JVM_RegisterWhiteBoxMethods)     },

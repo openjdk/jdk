@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@ package java.beans;
 
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.io.InputStream;
+import java.awt.image.ImageProducer;
+import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -171,19 +172,24 @@ public class SimpleBeanInfo implements BeanInfo {
     }
 
     /**
-     * This is a utility method to help in loading icon images.
-     * It takes the name of a resource file associated with the
-     * current object's class file and loads an image object
-     * from that file.  Typically images will be GIFs.
+     * This is a utility method to help in loading icon images. It takes the
+     * name of a resource file associated with the current object's class file
+     * and loads an image object from that file. Typically images will be GIFs.
      *
-     * @param resourceName  A pathname relative to the directory
-     *          holding the class file of the current class.  For example,
-     *          "wombat.gif".
-     * @return  an image object.  May be null if the load failed.
+     * @param  resourceName A pathname relative to the directory holding the
+     *         class file of the current class. For example, "wombat.gif".
+     * @return an image object or null if the resource is not found or the
+     *         resource could not be loaded as an Image
      */
     public Image loadImage(final String resourceName) {
-        try (InputStream in = getClass().getResourceAsStream(resourceName)) {
-            return Toolkit.getDefaultToolkit().createImage(in.readAllBytes());
+        try {
+            final URL url = getClass().getResource(resourceName);
+            if (url != null) {
+                final ImageProducer ip = (ImageProducer) url.getContent();
+                if (ip != null) {
+                    return Toolkit.getDefaultToolkit().createImage(ip);
+                }
+            }
         } catch (final Exception ignored) {
         }
         return null;

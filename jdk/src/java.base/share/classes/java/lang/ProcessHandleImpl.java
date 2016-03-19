@@ -81,9 +81,8 @@ final class ProcessHandleImpl implements ProcessHandle {
                 ThreadGroup systemThreadGroup = tg;
 
                 ThreadFactory threadFactory = grimReaper -> {
-                    // Our thread stack requirement is quite modest.
-                    Thread t = new Thread(systemThreadGroup, grimReaper,
-                            "process reaper", 32768);
+                    long stackSize = Boolean.getBoolean("jdk.lang.processReaperUseDefaultStackSize") ? 0 : 32768;
+                    Thread t = new Thread(systemThreadGroup, grimReaper, "process reaper", stackSize);
                     t.setDaemon(true);
                     // A small attempt (probably futile) to avoid priority inversion
                     t.setPriority(Thread.MAX_PRIORITY);

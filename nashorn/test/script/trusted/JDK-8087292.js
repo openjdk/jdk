@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,26 +29,58 @@
  * @run
  */
 
+load(__DIR__ + "JDK-util.js")
+
+var jHomePath = System.getenv("JAVA_HOME")
+var jLauncher = "${jHomePath}/bin/java"
+var altjLauncher = which('java')
+
+if (windows) {
+    if(winCyg) {
+        jLauncher = "${jHomePath}" + "/bin/java.exe"
+        jLauncher = cygpath(jLauncher,outPath.windows) 
+    }
+    else {
+        jLauncher = "${jHomePath}" + "\\bin\\java.exe"
+        altjLauncher = which('java.exe')
+        altjLauncher = cygpath(altjLauncher,outPath.windows)
+    }
+}
+
+function exists(f) {
+    return Files.exists(Paths.get(f))
+}
+
+var javaLauncher = exists(jLauncher) ? jLauncher : altjLauncher
+
+
+if (!exists(javaLauncher)) {
+    throw "no java launcher found; tried ${jLauncher} and ${altjLauncher}"
+}
+
 function tryExec() {
     try {
-        `java`
+	$EXEC("${javaLauncher}")
     } catch (e) {
-        print(e);
+      print(e)
     }
 
     // make sure we got non-zero ("failure") exit code!
     if ($EXIT == 0) {
-        print("Error: expected $EXIT code to be non-zero");
+        print("Error: expected $EXIT code to be non-zero")
     }
 }
+//convert windows paths to cygwin
+if (windows)
+    javaLauncher = (winCyg) ? cygpath(javaLauncher,outPath.mixed).trim() : cygpath(javaLauncher,outPath.windows).trim()
 
 // no exception now!
-tryExec();
+tryExec()
 
 // turn on error with non-zero exit code
-$ENV.JJS_THROW_ON_EXIT = "1";
-tryExec();
+$ENV.JJS_THROW_ON_EXIT = "1"
+tryExec()
 
 // no exception after this
-$ENV.JJS_THROW_ON_EXIT = "0";
-tryExec();
+$ENV.JJS_THROW_ON_EXIT = "0"
+tryExec()

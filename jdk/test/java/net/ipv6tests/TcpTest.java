@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4868820
+ * @key intermittent
  * @summary IPv6 support for Windows XP and 2003 server
  */
 

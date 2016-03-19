@@ -38,7 +38,7 @@ enum Profile {
                             "jdk.httpserver", "jdk.security.auth",
                             "jdk.naming.dns", "jdk.naming.rmi",
                             "jdk.management"),
-    FULL_JRE("Full JRE", 4, "java.se", "jdk.deploy.osx", "jdk.charsets",
+    FULL_JRE("Full JRE", 4, "java.se", "jdk.charsets",
                             "jdk.crypto.ec", "jdk.crypto.pkcs11",
                             "jdk.crypto.mscapi", "jdk.crypto.ucrypto", "jdk.jvmstat",
                             "jdk.localedata", "jdk.scripting.nashorn", "jdk.zipfs");

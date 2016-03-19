@@ -30,19 +30,17 @@ import java.net.ProxySelector;
 import java.net.URI;
 import static java.net.http.Utils.BUFSIZE;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_CONNECT;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.nio.channels.Selector;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Stream;
 import java.util.concurrent.ExecutorService;
 import java.security.NoSuchAlgorithmException;
-import java.util.ListIterator;
-import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import javax.net.ssl.SSLContext;
@@ -71,12 +69,6 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
     private final Http2ClientImpl client2;
     private static final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
     private final LinkedList<TimeoutEvent> timeouts;
-
-    //@Override
-    void debugPrint() {
-        selmgr.debugPrint();
-        client2.debugPrint();
-    }
 
     public static HttpClientImpl create(HttpClientBuilderImpl builder) {
         HttpClientImpl impl = new HttpClientImpl(builder);
@@ -173,19 +165,15 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
     // Main loop for this client's selector
 
     class SelectorManager extends Thread {
-
         final Selector selector;
         boolean closed;
 
         final List<AsyncEvent> readyList;
         final List<AsyncEvent> registrations;
 
-        List<AsyncEvent> debugList;
-
         SelectorManager() throws IOException {
             readyList = new LinkedList<>();
             registrations = new LinkedList<>();
-            debugList = new LinkedList<>();
             selector = Selector.open();
         }
 
@@ -216,13 +204,6 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
             return c;
         }
 
-        synchronized void debugPrint() {
-            System.err.println("Selecting on:");
-            for (AsyncEvent e : debugList) {
-                System.err.println(opvals(e.interestOps()));
-            }
-        }
-
         String opvals(int i) {
             StringBuilder sb = new StringBuilder();
             if ((i & OP_READ) != 0)
@@ -239,14 +220,18 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
             try {
                 while (true) {
                     synchronized (this) {
-                        debugList = copy(registrations);
                         for (AsyncEvent exchange : registrations) {
                             SelectableChannel c = exchange.channel();
                             try {
                                 c.configureBlocking(false);
-                                c.register(selector,
-                                           exchange.interestOps(),
-                                           exchange);
+                                SelectionKey key = c.keyFor(selector);
+                                SelectorAttachment sa;
+                                if (key == null) {
+                                    sa = new SelectorAttachment(c, selector);
+                                } else {
+                                    sa = (SelectorAttachment)key.attachment();
+                                }
+                                sa.register(exchange);
                             } catch (IOException e) {
                                 Log.logError("HttpClientImpl: " + e);
                                 c.close();
@@ -266,11 +251,10 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
                     Set<SelectionKey> keys = selector.selectedKeys();
 
                     for (SelectionKey key : keys) {
-                        if (key.isReadable() || key.isConnectable() || key.isWritable()) {
-                            key.cancel();
-                            AsyncEvent exchange = (AsyncEvent) key.attachment();
-                            readyList.add(exchange);
-                        }
+                        SelectorAttachment sa = (SelectorAttachment)key.attachment();
+                        int eventsOccurred = key.readyOps();
+                        sa.events(eventsOccurred).forEach(readyList::add);
+                        sa.resetInterestOps(eventsOccurred);
                     }
                     selector.selectNow(); // complete cancellation
                     selector.selectedKeys().clear();
@@ -301,6 +285,80 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
                 e.abort();
             } else {
                 e.handle();
+            }
+        }
+    }
+
+    /**
+     * Tracks multiple user level registrations associated with one NIO
+     * registration (SelectionKey). In this implementation, registrations
+     * are one-off and when an event is posted the registration is cancelled
+     * until explicitly registered again.
+     *
+     * <p> No external synchronization required as this class is only used
+     * by the SelectorManager thread. One of these objects required per
+     * connection.
+     */
+    private static class SelectorAttachment {
+        private final SelectableChannel chan;
+        private final Selector selector;
+        private final ArrayList<AsyncEvent> pending;
+        private int interestops;
+
+        SelectorAttachment(SelectableChannel chan, Selector selector) {
+            this.pending = new ArrayList<>();
+            this.chan = chan;
+            this.selector = selector;
+        }
+
+        void register(AsyncEvent e) throws ClosedChannelException {
+            int newops = e.interestOps();
+            boolean reRegister = (interestops & newops) != newops;
+            interestops |= newops;
+            pending.add(e);
+            if (reRegister) {
+                // first time registration happens here also
+                chan.register(selector, interestops, this);
+            }
+        }
+
+        int interestOps() {
+            return interestops;
+        }
+
+        /**
+         * Returns a Stream<AsyncEvents> containing only events that are
+         * registered with the given {@code interestop}.
+         */
+        Stream<AsyncEvent> events(int interestop) {
+            return pending.stream()
+                          .filter(ev -> (ev.interestOps() & interestop) != 0);
+        }
+
+        /**
+         * Removes any events with the given {@code interestop}, and if no
+         * events remaining, cancels the associated SelectionKey.
+         */
+        void resetInterestOps(int interestop) {
+            int newops = 0;
+
+            Iterator<AsyncEvent> itr = pending.iterator();
+            while (itr.hasNext()) {
+                AsyncEvent event = itr.next();
+                int evops = event.interestOps();
+                if ((evops & interestop) != 0) {
+                    itr.remove();
+                } else {
+                    newops |= evops;
+                }
+            }
+
+            interestops = newops;
+            SelectionKey key = chan.keyFor(selector);
+            if (newops == 0) {
+                key.cancel();
+            } else {
+                key.interestOps(newops);
             }
         }
     }
@@ -425,16 +483,7 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
             }
         }
         iter.add(event);
-        //debugPrintList("register");
         selmgr.wakeupSelector();
-    }
-
-    void debugPrintList(String s) {
-        System.err.printf("%s: {", s);
-        for (TimeoutEvent e : timeouts) {
-            System.err.printf("(%d,%d) ", e.delta, e.timeval);
-        }
-        System.err.println("}");
     }
 
     synchronized void signalTimeouts(long then) {
@@ -462,7 +511,6 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
                 break;
             }
         }
-        //debugPrintList("signalTimeouts");
     }
 
     synchronized void cancelTimer(TimeoutEvent event) {

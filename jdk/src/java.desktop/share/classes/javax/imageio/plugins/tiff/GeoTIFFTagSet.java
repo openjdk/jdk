@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.List;
  * standard for annotating georeferenced or geocoded raster imagery.
  * The GeoTIFF specification may be found at <a
  * href="http://www.remotesensing.org/geotiff/spec/geotiffhome.html">
- * <code>http://www.remotesensing.org/geotiff/spec/geotiffhome.html</code>
+ * {@code http://www.remotesensing.org/geotiff/spec/geotiffhome.html}
  * </a>. This class does <i>not</i> handle the <i>GeoKey</i>s referenced
  * from a <i>GeoKeyDirectoryTag</i> as those are not TIFF tags per se.
  *
@@ -63,7 +63,7 @@ public class GeoTIFFTagSet extends TIFFTagSet {
     /** A tag used to store the <i>GeoKey</i> directory. */
     public static final int TAG_GEO_KEY_DIRECTORY = 34735;
 
-    /** A tag used to store all <code>double</code>-values <i>GeoKey</i>s. */
+    /** A tag used to store all {@code double}-values <i>GeoKey</i>s. */
     public static final int TAG_GEO_DOUBLE_PARAMS = 34736;
 
     /** A tag used to store all ASCII-values <i>GeoKey</i>s. */
@@ -97,7 +97,7 @@ public class GeoTIFFTagSet extends TIFFTagSet {
 
     static class GeoKeyDirectory extends TIFFTag {
         public GeoKeyDirectory() {
-            super("GeoKeyDirectory",
+            super("GeoKeyDirectoryTag",
                   TAG_GEO_KEY_DIRECTORY,
                   1 << TIFFTag.TIFF_SHORT);
         }
@@ -105,7 +105,7 @@ public class GeoTIFFTagSet extends TIFFTagSet {
 
     static class GeoDoubleParams extends TIFFTag {
         public GeoDoubleParams() {
-            super("GeoDoubleParams",
+            super("GeoDoubleParamsTag",
                   TAG_GEO_DOUBLE_PARAMS,
                   1 << TIFFTag.TIFF_DOUBLE);
         }
@@ -113,7 +113,7 @@ public class GeoTIFFTagSet extends TIFFTagSet {
 
     static class GeoAsciiParams extends TIFFTag {
         public GeoAsciiParams() {
-            super("GeoAsciiParams",
+            super("GeoAsciiParamsTag",
                   TAG_GEO_ASCII_PARAMS,
                   1 << TIFFTag.TIFF_ASCII);
         }
@@ -137,9 +137,9 @@ public class GeoTIFFTagSet extends TIFFTagSet {
     }
 
     /**
-     * Returns a shared instance of a <code>GeoTIFFTagSet</code>.
+     * Returns a shared instance of a {@code GeoTIFFTagSet}.
      *
-     * @return a <code>GeoTIFFTagSet</code> instance.
+     * @return a {@code GeoTIFFTagSet} instance.
      */
     public synchronized static GeoTIFFTagSet getInstance() {
         if (theInstance == null) {

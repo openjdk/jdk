@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -624,7 +624,8 @@ AWT_ASSERT_APPKIT_THREAD;
 {
     NSString *selectedText = [self accessibleSelectedText];
     NSAttributedString *styledText = [[NSAttributedString alloc] initWithString:selectedText];
-    NSData *rtfdData = [styledText RTFDFromRange:NSMakeRange(0, [styledText length]) documentAttributes:nil];
+    NSData *rtfdData = [styledText RTFDFromRange:NSMakeRange(0, [styledText length])
+                              documentAttributes:@{NSDocumentTypeDocumentAttribute: NSRTFTextDocumentType}];
     [styledText release];
     return rtfdData;
 }
@@ -681,7 +682,7 @@ AWT_ASSERT_APPKIT_THREAD;
     if ([[pboard types] containsObject:NSRTFDPboardType])
     {
         NSData *rtfdData = [pboard dataForType:NSRTFDPboardType];
-        NSAttributedString *styledText = [[NSAttributedString alloc] initWithRTFD:rtfdData documentAttributes:nil];
+        NSAttributedString *styledText = [[NSAttributedString alloc] initWithRTFD:rtfdData documentAttributes:NULL];
         NSString *text = [styledText string];
         [styledText release];
 

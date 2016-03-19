@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,9 +80,9 @@ public class ExifParentTIFFTagSet extends TIFFTagSet {
     }
 
     /**
-     * Returns a shared instance of an <code>ExifParentTIFFTagSet</code>.
+     * Returns a shared instance of an {@code ExifParentTIFFTagSet}.
      *
-     * @return an <code>ExifParentTIFFTagSet</code> instance.
+     * @return an {@code ExifParentTIFFTagSet} instance.
      */
     public synchronized static ExifParentTIFFTagSet getInstance() {
         if (theInstance == null) {

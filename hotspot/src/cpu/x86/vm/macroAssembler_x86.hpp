@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ class MacroAssembler: public Assembler {
   // This is the base routine called by the different versions of call_VM_leaf. The interpreter
   // may customize this version by overriding it for its purposes (e.g., to save/restore
   // additional registers when doing a VM call).
-#define COMMA ,
 
   virtual void call_VM_leaf_base(
     address entry_point,               // the entry point
@@ -903,35 +902,66 @@ class MacroAssembler: public Assembler {
   void ldmxcsr(Address src) { Assembler::ldmxcsr(src); }
   void ldmxcsr(AddressLiteral src);
 
+  void fast_sha1(XMMRegister abcd, XMMRegister e0, XMMRegister e1, XMMRegister msg0,
+                 XMMRegister msg1, XMMRegister msg2, XMMRegister msg3, XMMRegister shuf_mask,
+                 Register buf, Register state, Register ofs, Register limit, Register rsp,
+                 bool multi_block);
+
+#ifdef _LP64
+  void fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
+                   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
+                   Register buf, Register state, Register ofs, Register limit, Register rsp,
+                   bool multi_block, XMMRegister shuf_mask);
+#else
+  void fast_sha256(XMMRegister msg, XMMRegister state0, XMMRegister state1, XMMRegister msgtmp0,
+                   XMMRegister msgtmp1, XMMRegister msgtmp2, XMMRegister msgtmp3, XMMRegister msgtmp4,
+                   Register buf, Register state, Register ofs, Register limit, Register rsp,
+                   bool multi_block);
+#endif
+
   void fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp);
 
+#ifdef _LP64
   void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rcx, Register rdx, Register tmp1 LP64_ONLY(COMMA Register tmp2));
+                Register rax, Register rcx, Register rdx, Register tmp1, Register tmp2);
 
   void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
                 XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
-                Register rdx NOT_LP64(COMMA  Register tmp) LP64_ONLY(COMMA  Register tmp1)
-                LP64_ONLY(COMMA  Register tmp2) LP64_ONLY(COMMA  Register tmp3) LP64_ONLY(COMMA  Register tmp4));
+                Register rdx, Register tmp1, Register tmp2, Register tmp3, Register tmp4);
 
   void fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rbx LP64_ONLY(COMMA  Register rcx), Register rdx
-                LP64_ONLY(COMMA Register tmp1) LP64_ONLY(COMMA Register tmp2)
-                LP64_ONLY(COMMA Register tmp3) LP64_ONLY(COMMA Register tmp4));
+                Register rax, Register rbx, Register rcx, Register rdx, Register tmp1, Register tmp2,
+                Register tmp3, Register tmp4);
 
   void fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
-                Register rax, Register rcx, Register rdx NOT_LP64(COMMA Register tmp)
-                LP64_ONLY(COMMA Register r8) LP64_ONLY(COMMA Register r9)
-                LP64_ONLY(COMMA Register r10) LP64_ONLY(COMMA Register r11));
+                Register rax, Register rcx, Register rdx, Register tmp1,
+                Register tmp2, Register tmp3, Register tmp4);
+#else
+  void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp1);
 
-#ifndef _LP64
+  void fast_pow(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4,
+                XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register rax, Register rcx,
+                Register rdx, Register tmp);
+
+  void fast_sin(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rbx, Register rdx);
+
+  void fast_cos(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp);
+
   void libm_sincos_huge(XMMRegister xmm0, XMMRegister xmm1, Register eax, Register ecx,
                         Register edx, Register ebx, Register esi, Register edi,
                         Register ebp, Register esp);
+
   void libm_reduce_pi04l(Register eax, Register ecx, Register edx, Register ebx,
                          Register esi, Register edi, Register ebp, Register esp);
 #endif
@@ -1185,13 +1215,130 @@ public:
   void vpxor(XMMRegister dst, XMMRegister src) { Assembler::vpxor(dst, dst, src, true); }
   void vpxor(XMMRegister dst, Address src) { Assembler::vpxor(dst, dst, src, true); }
 
-  // Move packed integer values from low 128 bit to hign 128 bit in 256 bit vector.
-  void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
-    if (UseAVX > 1) // vinserti128h is available only in AVX2
-      Assembler::vinserti128h(dst, nds, src);
-    else
-      Assembler::vinsertf128h(dst, nds, src);
+  void vinserti128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8) {
+    if (UseAVX > 1) { // vinserti128 is available only in AVX2
+      Assembler::vinserti128(dst, nds, src, imm8);
+    } else {
+      Assembler::vinsertf128(dst, nds, src, imm8);
+    }
   }
+
+  void vinserti128(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8) {
+    if (UseAVX > 1) { // vinserti128 is available only in AVX2
+      Assembler::vinserti128(dst, nds, src, imm8);
+    } else {
+      Assembler::vinsertf128(dst, nds, src, imm8);
+    }
+  }
+
+  void vextracti128(XMMRegister dst, XMMRegister src, uint8_t imm8) {
+    if (UseAVX > 1) { // vextracti128 is available only in AVX2
+      Assembler::vextracti128(dst, src, imm8);
+    } else {
+      Assembler::vextractf128(dst, src, imm8);
+    }
+  }
+
+  void vextracti128(Address dst, XMMRegister src, uint8_t imm8) {
+    if (UseAVX > 1) { // vextracti128 is available only in AVX2
+      Assembler::vextracti128(dst, src, imm8);
+    } else {
+      Assembler::vextractf128(dst, src, imm8);
+    }
+  }
+
+  // 128bit copy to/from high 128 bits of 256bit (YMM) vector registers
+  void vinserti128_high(XMMRegister dst, XMMRegister src) {
+    vinserti128(dst, dst, src, 1);
+  }
+  void vinserti128_high(XMMRegister dst, Address src) {
+    vinserti128(dst, dst, src, 1);
+  }
+  void vextracti128_high(XMMRegister dst, XMMRegister src) {
+    vextracti128(dst, src, 1);
+  }
+  void vextracti128_high(Address dst, XMMRegister src) {
+    vextracti128(dst, src, 1);
+  }
+  void vinsertf128_high(XMMRegister dst, XMMRegister src) {
+    vinsertf128(dst, dst, src, 1);
+  }
+  void vinsertf128_high(XMMRegister dst, Address src) {
+    vinsertf128(dst, dst, src, 1);
+  }
+  void vextractf128_high(XMMRegister dst, XMMRegister src) {
+    vextractf128(dst, src, 1);
+  }
+  void vextractf128_high(Address dst, XMMRegister src) {
+    vextractf128(dst, src, 1);
+  }
+
+  // 256bit copy to/from high 256 bits of 512bit (ZMM) vector registers
+  void vinserti64x4_high(XMMRegister dst, XMMRegister src) {
+    vinserti64x4(dst, dst, src, 1);
+  }
+  void vinsertf64x4_high(XMMRegister dst, XMMRegister src) {
+    vinsertf64x4(dst, dst, src, 1);
+  }
+  void vextracti64x4_high(XMMRegister dst, XMMRegister src) {
+    vextracti64x4(dst, src, 1);
+  }
+  void vextractf64x4_high(XMMRegister dst, XMMRegister src) {
+    vextractf64x4(dst, src, 1);
+  }
+  void vextractf64x4_high(Address dst, XMMRegister src) {
+    vextractf64x4(dst, src, 1);
+  }
+  void vinsertf64x4_high(XMMRegister dst, Address src) {
+    vinsertf64x4(dst, dst, src, 1);
+  }
+
+  // 128bit copy to/from low 128 bits of 256bit (YMM) vector registers
+  void vinserti128_low(XMMRegister dst, XMMRegister src) {
+    vinserti128(dst, dst, src, 0);
+  }
+  void vinserti128_low(XMMRegister dst, Address src) {
+    vinserti128(dst, dst, src, 0);
+  }
+  void vextracti128_low(XMMRegister dst, XMMRegister src) {
+    vextracti128(dst, src, 0);
+  }
+  void vextracti128_low(Address dst, XMMRegister src) {
+    vextracti128(dst, src, 0);
+  }
+  void vinsertf128_low(XMMRegister dst, XMMRegister src) {
+    vinsertf128(dst, dst, src, 0);
+  }
+  void vinsertf128_low(XMMRegister dst, Address src) {
+    vinsertf128(dst, dst, src, 0);
+  }
+  void vextractf128_low(XMMRegister dst, XMMRegister src) {
+    vextractf128(dst, src, 0);
+  }
+  void vextractf128_low(Address dst, XMMRegister src) {
+    vextractf128(dst, src, 0);
+  }
+
+  // 256bit copy to/from low 256 bits of 512bit (ZMM) vector registers
+  void vinserti64x4_low(XMMRegister dst, XMMRegister src) {
+    vinserti64x4(dst, dst, src, 0);
+  }
+  void vinsertf64x4_low(XMMRegister dst, XMMRegister src) {
+    vinsertf64x4(dst, dst, src, 0);
+  }
+  void vextracti64x4_low(XMMRegister dst, XMMRegister src) {
+    vextracti64x4(dst, src, 0);
+  }
+  void vextractf64x4_low(XMMRegister dst, XMMRegister src) {
+    vextractf64x4(dst, src, 0);
+  }
+  void vextractf64x4_low(Address dst, XMMRegister src) {
+    vextractf64x4(dst, src, 0);
+  }
+  void vinsertf64x4_low(XMMRegister dst, Address src) {
+    vinsertf64x4(dst, dst, src, 0);
+  }
+
 
   // Carry-Less Multiplication Quadword
   void vpclmulldq(XMMRegister dst, XMMRegister nds, XMMRegister src) {
@@ -1284,8 +1431,9 @@ public:
   // C2 compiled method's prolog code.
   void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b);
 
-  // clear memory of size 'cnt' qwords, starting at 'base'.
-  void clear_mem(Register base, Register cnt, Register rtmp);
+  // clear memory of size 'cnt' qwords, starting at 'base';
+  // if 'is_large' is set, do not try to produce short loop
+  void clear_mem(Register base, Register cnt, Register rtmp, bool is_large);
 
 #ifdef COMPILER2
   void string_indexof_char(Register str1, Register cnt1, Register ch, Register result,

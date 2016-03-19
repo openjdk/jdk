@@ -31,6 +31,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.*;
 import java.util.stream.Collectors;
@@ -42,6 +43,7 @@ import javax.lang.model.util.*;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
+
 import static javax.tools.StandardLocation.*;
 
 import com.sun.source.util.TaskEvent;
@@ -79,6 +81,7 @@ import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.ServiceLoader;
+
 import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.main.Option.*;
@@ -317,9 +320,9 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
         if (fileManager instanceof JavacFileManager) {
             StandardJavaFileManager standardFileManager = (JavacFileManager) fileManager;
-            Iterable<? extends File> workingPath = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
-                ? standardFileManager.getLocation(ANNOTATION_PROCESSOR_PATH)
-                : standardFileManager.getLocation(CLASS_PATH);
+            Iterable<? extends Path> workingPath = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
+                ? standardFileManager.getLocationAsPaths(ANNOTATION_PROCESSOR_PATH)
+                : standardFileManager.getLocationAsPaths(CLASS_PATH);
 
             if (needClassLoader(options.get(PROCESSOR), workingPath) )
                 handleException(key, e);
@@ -1298,14 +1301,14 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * Called retroactively to determine if a class loader was required,
      * after we have failed to create one.
      */
-    private boolean needClassLoader(String procNames, Iterable<? extends File> workingpath) {
+    private boolean needClassLoader(String procNames, Iterable<? extends Path> workingpath) {
         if (procNames != null)
             return true;
 
         URL[] urls = new URL[1];
-        for(File pathElement : workingpath) {
+        for(Path pathElement : workingpath) {
             try {
-                urls[0] = pathElement.toURI().toURL();
+                urls[0] = pathElement.toUri().toURL();
                 if (ServiceProxy.hasService(Processor.class, urls))
                     return true;
             } catch (MalformedURLException ex) {

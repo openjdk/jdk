@@ -36,7 +36,6 @@ import java.security.spec.ECParameterSpec;
 import java.math.BigInteger;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.*;
 
 import sun.security.action.GetLongAction;
@@ -67,7 +66,6 @@ final class ServerHandshaker extends Handshaker {
 
     // our authentication info
     private X509Certificate[]   certs;
-    private Map<X509Certificate, byte[]> responseMap;
     private PrivateKey          privateKey;
 
     private Object              serviceCreds;
@@ -118,7 +116,6 @@ final class ServerHandshaker extends Handshaker {
                     LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS,
                     new SSLAlgorithmDecomposer());
 
-    private boolean staplingActive = false;
     private long statusRespTimeout;
 
     static {
@@ -578,16 +575,6 @@ final class ServerHandshaker extends Handshaker {
             }
         }
 
-        // Check if the client has asserted the status_request[_v2] extension(s)
-        CertStatusReqExtension statReqExt = (CertStatusReqExtension)
-                    mesg.extensions.get(ExtensionType.EXT_STATUS_REQUEST);
-        CertStatusReqListV2Extension statReqExtV2 =
-                (CertStatusReqListV2Extension)mesg.extensions.get(
-                        ExtensionType.EXT_STATUS_REQUEST_V2);
-        // Keep stapling active if at least one of the extensions has been set
-        staplingActive = sslContext.isStaplingEnabled(false) &&
-                (statReqExt != null || statReqExtV2 != null);
-
         /*
          * FIRST, construct the ServerHello using the options and priorities
          * from the ClientHello.  Update the (pending) cipher spec as we do
@@ -883,79 +870,17 @@ final class ServerHandshaker extends Handshaker {
             m1.extensions.add(maxFragLenExt);
         }
 
-        StatusRequestType statReqType = null;
-        StatusRequest statReqData = null;
-        if (staplingActive && !resumingSession) {
-            ExtensionType statusRespExt = ExtensionType.EXT_STATUS_REQUEST;
-
-            // Determine which type of stapling we are doing and assert the
-            // proper extension in the server hello.
-            // Favor status_request_v2 over status_request and ocsp_multi
-            // over ocsp.
-            // If multiple ocsp or ocsp_multi types exist, select the first
-            // instance of a given type
-            if (statReqExtV2 != null) {             // RFC 6961 stapling
-                statusRespExt = ExtensionType.EXT_STATUS_REQUEST_V2;
-                List<CertStatusReqItemV2> reqItems =
-                        statReqExtV2.getRequestItems();
-                int ocspIdx = -1;
-                int ocspMultiIdx = -1;
-                for (int pos = 0; pos < reqItems.size(); pos++) {
-                    CertStatusReqItemV2 item = reqItems.get(pos);
-                    if (ocspIdx < 0 && item.getType() ==
-                            StatusRequestType.OCSP) {
-                        ocspIdx = pos;
-                    } else if (ocspMultiIdx < 0 && item.getType() ==
-                            StatusRequestType.OCSP_MULTI) {
-                        ocspMultiIdx = pos;
-                    }
-                }
-                if (ocspMultiIdx >= 0) {
-                    statReqType = reqItems.get(ocspMultiIdx).getType();
-                    statReqData = reqItems.get(ocspMultiIdx).getRequest();
-                } else if (ocspIdx >= 0) {
-                    statReqType = reqItems.get(ocspIdx).getType();
-                    statReqData = reqItems.get(ocspIdx).getRequest();
-                } else {
-                    // Some unknown type.  We will not do stapling for
-                    // this connection since we cannot understand the
-                    // requested type.
-                    staplingActive = false;
-                }
-            } else {                                // RFC 6066 stapling
-                statReqType = StatusRequestType.OCSP;
-                statReqData = statReqExt.getRequest();
-            }
-
-            if (statReqType != null && statReqData != null) {
-                StatusResponseManager statRespMgr =
-                        sslContext.getStatusResponseManager();
-                if (statRespMgr != null) {
-                    responseMap = statRespMgr.get(statReqType, statReqData,
-                            certs, statusRespTimeout, TimeUnit.MILLISECONDS);
-                    if (!responseMap.isEmpty()) {
-                        // We now can safely assert status_request[_v2] in our
-                        // ServerHello, and know for certain that we can provide
-                        // responses back to this client for this connection.
-                        if (statusRespExt == ExtensionType.EXT_STATUS_REQUEST) {
-                            m1.extensions.add(new CertStatusReqExtension());
-                        } else if (statusRespExt ==
-                                ExtensionType.EXT_STATUS_REQUEST_V2) {
-                            m1.extensions.add(
-                                    new CertStatusReqListV2Extension());
-                        }
-                    }
-                } else {
-                    // This should not happen if stapling is active, but
-                    // if lazy initialization of the StatusResponseManager
-                    // doesn't occur we should turn off stapling.
-                    if (debug != null && Debug.isOn("handshake")) {
-                        System.out.println("Warning: lazy initialization " +
-                                "of the StatusResponseManager failed.  " +
-                                "Stapling has been disabled.");
-                        staplingActive = false;
-                    }
-                }
+        StaplingParameters staplingParams = processStapling(mesg);
+        if (staplingParams != null) {
+            // We now can safely assert status_request[_v2] in our
+            // ServerHello, and know for certain that we can provide
+            // responses back to this client for this connection.
+            if (staplingParams.statusRespExt ==
+                    ExtensionType.EXT_STATUS_REQUEST) {
+                m1.extensions.add(new CertStatusReqExtension());
+            } else if (staplingParams.statusRespExt ==
+                    ExtensionType.EXT_STATUS_REQUEST_V2) {
+                m1.extensions.add(new CertStatusReqListV2Extension());
             }
         }
 
@@ -1031,24 +956,15 @@ final class ServerHandshaker extends Handshaker {
          * supports status stapling and there is at least one response to
          * return to the client.
          */
-        if (staplingActive && !responseMap.isEmpty()) {
-            try {
-                CertificateStatus csMsg = new CertificateStatus(statReqType,
-                        certs, responseMap);
-                if (debug != null && Debug.isOn("handshake")) {
-                    csMsg.print(System.out);
-                }
-                csMsg.write(output);
-                handshakeState.update(csMsg, resumingSession);
-                responseMap = null;
-            } catch (SSLException ssle) {
-                // We don't want the exception to be fatal, we just won't
-                // send the message if we fail on construction.
-                if (debug != null && Debug.isOn("handshake")) {
-                    System.out.println("Failed during CertificateStatus " +
-                            "construction: " + ssle);
-                }
+        if (staplingParams != null) {
+            CertificateStatus csMsg = new CertificateStatus(
+                    staplingParams.statReqType, certs,
+                    staplingParams.responseMap);
+            if (debug != null && Debug.isOn("handshake")) {
+                csMsg.print(System.out);
             }
+            csMsg.write(output);
+            handshakeState.update(csMsg, resumingSession);
         }
 
         /*
@@ -2077,5 +1993,122 @@ final class ServerHandshaker extends Handshaker {
         needClientVerify = true;
 
         session.setPeerCertificates(peerCerts);
+    }
+
+    private StaplingParameters processStapling(ClientHello mesg) {
+        StaplingParameters params = null;
+        ExtensionType ext;
+        StatusRequestType type = null;
+        StatusRequest req = null;
+        Map<X509Certificate, byte[]> responses;
+
+        // If this feature has not been enabled, then no more processing
+        // is necessary.  Also we will only staple if we're doing a full
+        // handshake.
+        if (!sslContext.isStaplingEnabled(false) || resumingSession) {
+            return null;
+        }
+
+        // Check if the client has asserted the status_request[_v2] extension(s)
+        CertStatusReqExtension statReqExt = (CertStatusReqExtension)
+                    mesg.extensions.get(ExtensionType.EXT_STATUS_REQUEST);
+        CertStatusReqListV2Extension statReqExtV2 =
+                (CertStatusReqListV2Extension)mesg.extensions.get(
+                        ExtensionType.EXT_STATUS_REQUEST_V2);
+        // Keep processing only if either status_request or status_request_v2
+        // has been sent in the ClientHello.
+        if (statReqExt == null && statReqExtV2 == null) {
+            return null;
+        }
+
+        // Determine which type of stapling we are doing and assert the
+        // proper extension in the server hello.
+        // Favor status_request_v2 over status_request and ocsp_multi
+        // over ocsp.
+        // If multiple ocsp or ocsp_multi types exist, select the first
+        // instance of a given type
+        ext = ExtensionType.EXT_STATUS_REQUEST;
+        if (statReqExtV2 != null) {             // RFC 6961 stapling
+            ext = ExtensionType.EXT_STATUS_REQUEST_V2;
+            List<CertStatusReqItemV2> reqItems =
+                    statReqExtV2.getRequestItems();
+            int ocspIdx = -1;
+            int ocspMultiIdx = -1;
+            for (int pos = 0; pos < reqItems.size(); pos++) {
+                CertStatusReqItemV2 item = reqItems.get(pos);
+                if (ocspIdx < 0 && item.getType() ==
+                        StatusRequestType.OCSP) {
+                    ocspIdx = pos;
+                } else if (ocspMultiIdx < 0 && item.getType() ==
+                        StatusRequestType.OCSP_MULTI) {
+                    ocspMultiIdx = pos;
+                }
+            }
+            if (ocspMultiIdx >= 0) {
+                type = reqItems.get(ocspMultiIdx).getType();
+                req = reqItems.get(ocspMultiIdx).getRequest();
+            } else if (ocspIdx >= 0) {
+                type = reqItems.get(ocspIdx).getType();
+                req = reqItems.get(ocspIdx).getRequest();
+            }
+        } else {                                // RFC 6066 stapling
+            type = StatusRequestType.OCSP;
+            req = statReqExt.getRequest();
+        }
+
+        // If, after walking through the extensions we were unable to
+        // find a suitable StatusRequest, then stapling is disabled.
+        // Both statReqType and statReqData must have been set to continue.
+        if (type == null || req == null) {
+            return null;
+        }
+
+        // Get the OCSP responses from the StatusResponseManager
+        StatusResponseManager statRespMgr =
+                sslContext.getStatusResponseManager();
+        if (statRespMgr != null) {
+            responses = statRespMgr.get(type, req, certs, statusRespTimeout,
+                    TimeUnit.MILLISECONDS);
+            if (!responses.isEmpty()) {
+                // If this RFC 6066-style stapling (SSL cert only) then the
+                // response cannot be zero length
+                if (type == StatusRequestType.OCSP) {
+                    byte[] respDER = responses.get(certs[0]);
+                    if (respDER == null || respDER.length <= 0) {
+                        return null;
+                    }
+                }
+                params = new StaplingParameters(ext, type, req, responses);
+            }
+        } else {
+            // This should not happen, but if lazy initialization of the
+            // StatusResponseManager doesn't occur we should turn off stapling.
+            if (debug != null && Debug.isOn("handshake")) {
+                System.out.println("Warning: lazy initialization " +
+                        "of the StatusResponseManager failed.  " +
+                        "Stapling has been disabled.");
+            }
+        }
+
+        return params;
+    }
+
+    /**
+     * Inner class used to hold stapling parameters needed by the handshaker
+     * when stapling is active.
+     */
+    private class StaplingParameters {
+        private final ExtensionType statusRespExt;
+        private final StatusRequestType statReqType;
+        private final StatusRequest statReqData;
+        private final Map<X509Certificate, byte[]> responseMap;
+
+        StaplingParameters(ExtensionType ext, StatusRequestType type,
+                StatusRequest req, Map<X509Certificate, byte[]> responses) {
+            statusRespExt = ext;
+            statReqType = type;
+            statReqData = req;
+            responseMap = responses;
+        }
     }
 }

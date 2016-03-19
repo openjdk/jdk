@@ -225,7 +225,7 @@ class ExecutionControl {
                 int id = in.readInt();
                 StackTraceElement[] elems = readStackTrace();
                 Snippet si = maps.getSnippet(id);
-                throw new UnresolvedReferenceException((MethodSnippet) si, elems);
+                throw new UnresolvedReferenceException((DeclarationSnippet) si, elems);
             }
             case RESULT_KILLED: {
                 proc.out.println("Killed.");
