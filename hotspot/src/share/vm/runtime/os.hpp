@@ -325,7 +325,7 @@ class os: AllStatic {
   // to make the OS back the memory range with actual memory.
   // Current implementation may not touch the last page if unaligned addresses
   // are passed.
-  static void   pretouch_memory(char* start, char* end);
+  static void   pretouch_memory(void* start, void* end);
 
   enum ProtType { MEM_PROT_NONE, MEM_PROT_READ, MEM_PROT_RW, MEM_PROT_RWX };
   static bool   protect_memory(char* addr, size_t bytes, ProtType prot,
@@ -616,6 +616,22 @@ class os: AllStatic {
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
   static size_t lasterror(char *buf, size_t len);
   static int get_last_error();
+
+  // Replacement for strerror().
+  // Will return the english description of the error (e.g. "File not found", as
+  //  suggested in the POSIX standard.
+  // Will return "Unknown error" for an unknown errno value.
+  // Will not attempt to localize the returned string.
+  // Will always return a valid string which is a static constant.
+  // Will not change the value of errno.
+  static const char* strerror(int e);
+
+  // Will return the literalized version of the given errno (e.g. "EINVAL"
+  //  for EINVAL).
+  // Will return "Unknown error" for an unknown errno value.
+  // Will always return a valid string which is a static constant.
+  // Will not change the value of errno.
+  static const char* errno_name(int e);
 
   // Determines whether the calling process is being debugged by a user-mode debugger.
   static bool is_debugger_attached();

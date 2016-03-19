@@ -27,7 +27,7 @@
  * @summary Test for PLAB resizing
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires vm.opt.FlightRecorder != true
- * @library /testlibrary /../../test/lib /
+ * @library /testlibrary /test/lib /
  * @modules java.management
  * @build ClassFileInstaller
  *        sun.hotspot.WhiteBox
@@ -122,29 +122,23 @@ public class TestPLABResize {
                 .collect(Collectors.toCollection(ArrayList::new));
 
         // Check that desired plab size was changed during iterations.
-        // It should decrease during first half of iterations
-        // and increase after.
-        List<Long> decreasedPlabs = plabSizes.subList(testCase.getIterations(), testCase.getIterations() * 2);
-        List<Long> increasedPlabs = plabSizes.subList(testCase.getIterations() * 2, testCase.getIterations() * 3);
+        // The test case does 3 rounds of allocations.  The second round of N allocations and GC's
+        // has a decreasing size of allocations so that iterations N to 2*N -1 will be of decreasing size.
+        // The third round with iterations 2*N to 3*N -1 has increasing sizes of allocation.
+        long startDesiredPLABSize = plabSizes.get(testCase.getIterations());
+        long endDesiredPLABSize = plabSizes.get(testCase.getIterations() * 2 - 1);
 
-        Long prev = decreasedPlabs.get(0);
-        for (int index = 1; index < decreasedPlabs.size(); ++index) {
-            Long current = decreasedPlabs.get(index);
-            if (prev < current) {
-                System.out.println(output);
-                throw new RuntimeException("Test failed! Expect that previous PLAB size should be greater than current. Prev.size: " + prev + " Current size:" + current);
-            }
-            prev = current;
+        if (startDesiredPLABSize < endDesiredPLABSize) {
+            System.out.println(output);
+            throw new RuntimeException("Test failed! Expect that initial PLAB size should be greater than checked. Initial size: " + startDesiredPLABSize + " Checked size:" + endDesiredPLABSize);
         }
 
-        prev = increasedPlabs.get(0);
-        for (int index = 1; index < increasedPlabs.size(); ++index) {
-            Long current = increasedPlabs.get(index);
-            if (prev > current) {
-                System.out.println(output);
-                throw new RuntimeException("Test failed! Expect that previous PLAB size should be less than current. Prev.size: " + prev + " Current size:" + current);
-            }
-            prev = current;
+        startDesiredPLABSize = plabSizes.get(testCase.getIterations() * 2);
+        endDesiredPLABSize = plabSizes.get(testCase.getIterations() * 3 - 1);
+
+        if (startDesiredPLABSize > endDesiredPLABSize) {
+            System.out.println(output);
+            throw new RuntimeException("Test failed! Expect that initial PLAB size should be less than checked. Initial size: " + startDesiredPLABSize + " Checked size:" + endDesiredPLABSize);
         }
 
         System.out.println("Test passed!");
@@ -195,7 +189,6 @@ public class TestPLABResize {
             return Arrays.asList("-XX:ParallelGCThreads=" + parGCThreads,
                     "-XX:ParallelGCBufferWastePct=" + wastePct,
                     "-XX:+ResizePLAB",
-                    "-Dthreads=" + parGCThreads,
                     "-Dchunk.size=" + chunkSize,
                     "-Diterations=" + iterations,
                     "-XX:NewSize=16m",

@@ -230,7 +230,12 @@ typedef struct {
   const char* alias_name;
   LogLevelType level;
   bool exactMatch;
-  LogTagType tag;
+  LogTagType tag0;
+  LogTagType tag1;
+  LogTagType tag2;
+  LogTagType tag3;
+  LogTagType tag4;
+  LogTagType tag5;
 } AliasedLoggingFlag;
 
 class Arguments : AllStatic {

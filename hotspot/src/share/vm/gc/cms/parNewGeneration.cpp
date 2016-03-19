@@ -901,7 +901,7 @@ void ParNewGeneration::collect(bool   full,
     size_policy->minor_collection_begin();
   }
 
-  GCTraceTime(Trace, gc) t1("ParNew", NULL, gch->gc_cause());
+  GCTraceTime(Trace, gc, phases) t1("ParNew", NULL, gch->gc_cause());
 
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);

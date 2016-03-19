@@ -28,18 +28,6 @@
 #include "runtime/atomic.inline.hpp"
 #include "utilities/bitMap.hpp"
 
-#ifdef ASSERT
-inline void BitMap::verify_index(idx_t index) const {
-  assert(index < _size, "BitMap index out of bounds");
-}
-
-inline void BitMap::verify_range(idx_t beg_index, idx_t end_index) const {
-  assert(beg_index <= end_index, "BitMap range error");
-  // Note that [0,0) and [size,size) are both valid ranges.
-  if (end_index != _size) verify_index(end_index);
-}
-#endif // #ifdef ASSERT
-
 inline void BitMap::set_bit(idx_t bit) {
   verify_index(bit);
   *word_addr(bit) |= bit_mask(bit);
@@ -342,6 +330,36 @@ inline BitMap::idx_t BitMap::get_next_one_offset(idx_t l_offset,
 inline BitMap::idx_t BitMap::get_next_zero_offset(idx_t l_offset,
                                            idx_t r_offset) const {
   return get_next_zero_offset_inline(l_offset, r_offset);
+}
+
+inline bool BitMap2D::is_valid_index(idx_t slot_index, idx_t bit_within_slot_index) {
+  verify_bit_within_slot_index(bit_within_slot_index);
+  return (bit_index(slot_index, bit_within_slot_index) < size_in_bits());
+}
+
+inline bool BitMap2D::at(idx_t slot_index, idx_t bit_within_slot_index) const {
+  verify_bit_within_slot_index(bit_within_slot_index);
+  return _map.at(bit_index(slot_index, bit_within_slot_index));
+}
+
+inline void BitMap2D::set_bit(idx_t slot_index, idx_t bit_within_slot_index) {
+  verify_bit_within_slot_index(bit_within_slot_index);
+  _map.set_bit(bit_index(slot_index, bit_within_slot_index));
+}
+
+inline void BitMap2D::clear_bit(idx_t slot_index, idx_t bit_within_slot_index) {
+  verify_bit_within_slot_index(bit_within_slot_index);
+  _map.clear_bit(bit_index(slot_index, bit_within_slot_index));
+}
+
+inline void BitMap2D::at_put(idx_t slot_index, idx_t bit_within_slot_index, bool value) {
+  verify_bit_within_slot_index(bit_within_slot_index);
+  _map.at_put(bit_index(slot_index, bit_within_slot_index), value);
+}
+
+inline void BitMap2D::at_put_grow(idx_t slot_index, idx_t bit_within_slot_index, bool value) {
+  verify_bit_within_slot_index(bit_within_slot_index);
+  _map.at_put_grow(bit_index(slot_index, bit_within_slot_index), value);
 }
 
 inline void BitMap2D::clear() {

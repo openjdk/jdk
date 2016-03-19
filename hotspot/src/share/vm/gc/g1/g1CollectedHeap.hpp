@@ -28,6 +28,7 @@
 #include "gc/g1/evacuationInfo.hpp"
 #include "gc/g1/g1AllocationContext.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
+#include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
@@ -65,17 +66,16 @@ class ObjectClosure;
 class SpaceClosure;
 class CompactibleSpaceClosure;
 class Space;
+class G1CollectionSet;
 class G1CollectorPolicy;
 class G1RemSet;
 class HeapRegionRemSetIterator;
 class G1ConcurrentMark;
 class ConcurrentMarkThread;
 class ConcurrentG1Refine;
-class ConcurrentGCTimer;
 class GenerationCounters;
 class STWGCTimer;
 class G1NewTracer;
-class G1OldTracer;
 class EvacuationFailedInfo;
 class nmethod;
 class Ticks;
@@ -83,6 +83,7 @@ class WorkGang;
 class G1Allocator;
 class G1ArchiveAllocator;
 class G1HeapVerifier;
+class G1HeapSizingPolicy;
 
 typedef OverflowTaskQueue<StarTask, mtGC>         RefToScanQueue;
 typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
@@ -268,8 +269,6 @@ private:
   // concurrent cycles) we have completed.
   volatile uint _old_marking_cycles_completed;
 
-  bool _heap_summary_sent;
-
   // This is a non-product method that is helpful for testing. It is
   // called at the end of a GC and artificially expands the heap by
   // allocating a number of dead regions. This way we can induce very
@@ -362,6 +361,9 @@ protected:
 
   // The current policy object for the collector.
   G1CollectorPolicy* _g1_policy;
+  G1HeapSizingPolicy* _heap_sizing_policy;
+
+  G1CollectionSet _collection_set;
 
   // This is the second level of trying to allocate a new region. If
   // new_region() didn't find a region on the free_list, this call will
@@ -617,10 +619,6 @@ public:
   uint old_marking_cycles_completed() {
     return _old_marking_cycles_completed;
   }
-
-  void register_concurrent_cycle_start(const Ticks& start_time);
-  void register_concurrent_cycle_end();
-  void trace_heap_after_concurrent_cycle();
 
   G1HRPrinter* hr_printer() { return &_hr_printer; }
 
@@ -896,9 +894,7 @@ protected:
   ReferenceProcessor* _ref_processor_stw;
 
   STWGCTimer* _gc_timer_stw;
-  ConcurrentGCTimer* _gc_timer_cm;
 
-  G1OldTracer* _gc_tracer_cm;
   G1NewTracer* _gc_tracer_stw;
 
   // During reference object discovery, the _is_alive_non_header
@@ -985,6 +981,9 @@ public:
   // The current policy object for the collector.
   G1CollectorPolicy* g1_policy() const { return _g1_policy; }
 
+  const G1CollectionSet* collection_set() const { return &_collection_set; }
+  G1CollectionSet* collection_set() { return &_collection_set; }
+
   virtual CollectorPolicy* collector_policy() const;
 
   // Adaptive size policy.  No such thing for g1.
@@ -1028,9 +1027,6 @@ public:
 
   // The Concurrent Marking reference processor...
   ReferenceProcessor* ref_processor_cm() const { return _ref_processor_cm; }
-
-  ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
-  G1OldTracer* gc_tracer_cm() const { return _gc_tracer_cm; }
 
   virtual size_t capacity() const;
   virtual size_t used() const;
@@ -1285,6 +1281,12 @@ public:
     return true;
   }
 
+  // The reference pending list lock is acquired from from the
+  // ConcurrentMarkThread.
+  virtual bool needs_reference_pending_list_locker_thread() const {
+    return true;
+  }
+
   inline bool is_in_young(const oop obj);
 
   virtual bool is_scavengable(const void* addr);
@@ -1463,7 +1465,11 @@ public:
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
 
   // Printing
+private:
+  void print_heap_regions() const;
+  void print_regions_on(outputStream* st) const;
 
+public:
   virtual void print_on(outputStream* st) const;
   virtual void print_extended_on(outputStream* st) const;
   virtual void print_on_error(outputStream* st) const;

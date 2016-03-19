@@ -44,14 +44,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
 
-#if defined(__GNUC__) && !defined(IA64) && !defined(PPC64)
-// Need to inhibit inlining for older versions of GCC to avoid build-time failures
-  #define NOINLINE __attribute__((noinline))
-#else
-  #define NOINLINE
-#endif
-
-
 #ifdef DTRACE_ENABLED
 
 // Only bother with this argument setup if dtrace is available
@@ -254,7 +246,7 @@ static volatile int InitDone        = 0;
 // -----------------------------------------------------------------------------
 // Enter support
 
-void NOINLINE ObjectMonitor::enter(TRAPS) {
+void ObjectMonitor::enter(TRAPS) {
   // The following code is ordered to check the most common cases first
   // and to reduce RTS->RTO cache line upgrades on SPARC and IA32 processors.
   Thread * const Self = THREAD;
@@ -431,7 +423,7 @@ int ObjectMonitor::TryLock(Thread * Self) {
 
 #define MAX_RECHECK_INTERVAL 1000
 
-void NOINLINE ObjectMonitor::EnterI(TRAPS) {
+void ObjectMonitor::EnterI(TRAPS) {
   Thread * const Self = THREAD;
   assert(Self->is_Java_thread(), "invariant");
   assert(((JavaThread *) Self)->thread_state() == _thread_blocked, "invariant");
@@ -681,7 +673,7 @@ void NOINLINE ObjectMonitor::EnterI(TRAPS) {
 // Knob_Reset and Knob_SpinAfterFutile support and restructuring the
 // loop accordingly.
 
-void NOINLINE ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
+void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   assert(Self != NULL, "invariant");
   assert(SelfNode != NULL, "invariant");
   assert(SelfNode->_thread == Self, "invariant");
@@ -894,7 +886,7 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
 // structured the code so the windows are short and the frequency
 // of such futile wakups is low.
 
-void NOINLINE ObjectMonitor::exit(bool not_suspended, TRAPS) {
+void ObjectMonitor::exit(bool not_suspended, TRAPS) {
   Thread * const Self = THREAD;
   if (THREAD != _owner) {
     if (THREAD->is_lock_owned((address) _owner)) {

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -112,10 +112,12 @@ class TestMaxHeapSizeTools {
   }
 
   private static void checkInvalidMinInitialHeapCombinations(String gcflag) throws Exception {
+    expectError(new String[] { gcflag, "-XX:InitialHeapSize=1023K", "-version" });
     expectError(new String[] { gcflag, "-Xms64M", "-XX:InitialHeapSize=32M", "-version" });
   }
 
   private static void checkValidMinInitialHeapCombinations(String gcflag) throws Exception {
+    expectValid(new String[] { gcflag, "-XX:InitialHeapSize=1024K", "-version" });
     expectValid(new String[] { gcflag, "-XX:InitialHeapSize=8M", "-Xms4M", "-version" });
     expectValid(new String[] { gcflag, "-Xms4M", "-XX:InitialHeapSize=8M", "-version" });
     expectValid(new String[] { gcflag, "-XX:InitialHeapSize=8M", "-Xms8M", "-version" });
@@ -124,11 +126,13 @@ class TestMaxHeapSizeTools {
   }
 
   private static void checkInvalidInitialMaxHeapCombinations(String gcflag) throws Exception {
+    expectError(new String[] { gcflag, "-XX:MaxHeapSize=2047K", "-version" });
     expectError(new String[] { gcflag, "-XX:MaxHeapSize=4M", "-XX:InitialHeapSize=8M", "-version" });
     expectError(new String[] { gcflag, "-XX:InitialHeapSize=8M", "-XX:MaxHeapSize=4M", "-version" });
   }
 
   private static void checkValidInitialMaxHeapCombinations(String gcflag) throws Exception {
+    expectValid(new String[] { gcflag, "-XX:MaxHeapSize=2048K", "-version" });
     expectValid(new String[] { gcflag, "-XX:InitialHeapSize=4M", "-XX:MaxHeapSize=8M", "-version" });
     expectValid(new String[] { gcflag, "-XX:MaxHeapSize=8M", "-XX:InitialHeapSize=4M", "-version" });
     expectValid(new String[] { gcflag, "-XX:MaxHeapSize=4M", "-XX:InitialHeapSize=4M", "-version" });

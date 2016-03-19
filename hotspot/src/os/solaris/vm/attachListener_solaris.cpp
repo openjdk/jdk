@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,7 +461,7 @@ SolarisAttachOperation* SolarisAttachListener::dequeue() {
     while ((res = ::sema_wait(wakeup())) == EINTR)
       ;
     if (res) {
-      warning("sema_wait failed: %s", strerror(res));
+      warning("sema_wait failed: %s", os::strerror(res));
       return NULL;
     }
 
