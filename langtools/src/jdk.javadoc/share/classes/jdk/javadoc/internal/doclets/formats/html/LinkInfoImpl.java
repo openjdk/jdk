@@ -294,7 +294,7 @@ public class LinkInfoImpl extends LinkInfo {
      * Set the label for the link.
      * @param label plain-text label for the link
      */
-    public LinkInfoImpl label(String label) {
+    public LinkInfoImpl label(CharSequence label) {
         this.label = new StringContent(label);
         return this;
     }

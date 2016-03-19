@@ -463,7 +463,7 @@ class WindowsWatchService
             }
             CloseHandle(key.handle());
             closeAttachedEvent(key.overlappedAddress());
-            key.buffer().cleaner().clean();
+            key.buffer().free();
         }
 
         /**

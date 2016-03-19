@@ -42,11 +42,11 @@ import static java.awt.geom.Rectangle2D.Double;
 
 /**
  * @test
- * @bug 8041644
+ * @bug 8041644 8044788
  * @summary Tests drawing volatile image to BI using different clip.
  *          Results of the blit compatibleImage to BI used for comparison.
  * @author Sergey Bylokhov
- * @run main/othervm -Dsun.java2d.d3d=false IncorrectClipSurface2SW
+ * @run main/othervm IncorrectClipSurface2SW
  */
 public final class IncorrectClipSurface2SW {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8149524
  * @summary Test SourceCodeAnalysis
  * @build KullaTesting TestingInputStream
  * @run testng CompletenessTest
@@ -60,6 +61,7 @@ public class CompletenessTest extends KullaTesting {
         "try { } finally { }",
         "try (java.util.zip.ZipFile zf = new java.util.zip.ZipFile(zipFileName)) { }",
         "foo: while (true) { printf(\"Innn\"); break foo; }",
+        "class Case<E1 extends Enum<E1>, E2 extends Enum<E2>, E3 extends Enum<E3>> {}",
         ";",
     };
 

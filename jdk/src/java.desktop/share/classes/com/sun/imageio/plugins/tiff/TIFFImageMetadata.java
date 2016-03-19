@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1620,8 +1620,8 @@ public class TIFFImageMetadata extends IIOMetadata {
     }
 
     /**
-     * Returns a <code>TIFFImageMetadata</code> wherein all fields in the
-     * root IFD from the <code>BaselineTIFFTagSet</code> are copied by value
+     * Returns a {@code TIFFImageMetadata} wherein all fields in the
+     * root IFD from the {@code BaselineTIFFTagSet} are copied by value
      * and all other fields copied by reference.
      */
     public TIFFImageMetadata getShallowClone() {

@@ -33,7 +33,6 @@ import java.util.TreeMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
-import sun.misc.ASCIICaseInsensitiveComparator;
 
 
 /**
@@ -49,22 +48,22 @@ public class AbstractCharsetProvider
     /* Maps canonical names to class names
      */
     private Map<String,String> classMap
-        = new TreeMap<>(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
+        = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     /* Maps alias names to canonical names
      */
     private Map<String,String> aliasMap
-        = new TreeMap<>(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
+        = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     /* Maps canonical names to alias-name arrays
      */
     private Map<String,String[]> aliasNameMap
-        = new TreeMap<>(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
+        = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     /* Maps canonical names to soft references that hold cached instances
      */
     private Map<String,SoftReference<Charset>> cache
-        = new TreeMap<>(ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
+        = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     private String packagePrefix;
 

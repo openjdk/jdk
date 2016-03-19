@@ -42,6 +42,7 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * The {@code String} class represents character strings. All
@@ -119,7 +120,18 @@ import jdk.internal.HotSpotIntrinsicCandidate;
 public final class String
     implements java.io.Serializable, Comparable<String>, CharSequence {
 
-    /** The value is used for character storage. */
+    /**
+     * The value is used for character storage.
+     *
+     * @implNote This field is trusted by the VM, and is a subject to
+     * constant folding if String instance is constant. Overwriting this
+     * field after construction will cause problems.
+     *
+     * Additionally, it is marked with {@link Stable} to trust the contents
+     * of the array. No other facility in JDK provides this functionality (yet).
+     * {@link Stable} is safe here, because value is never null.
+     */
+    @Stable
     private final byte[] value;
 
     /**
@@ -129,6 +141,9 @@ public final class String
      * LATIN1
      * UTF16
      *
+     * @implNote This field is trusted by the VM, and is a subject to
+     * constant folding if String instance is constant. Overwriting this
+     * field after construction will cause problems.
      */
     private final byte coder;
 
@@ -1222,30 +1237,12 @@ public final class String
         public int compare(String s1, String s2) {
             byte v1[] = s1.value;
             byte v2[] = s2.value;
-            int n1 = s1.length();
-            int n2 = s2.length();
-            boolean s1IsLatin1 = s1.isLatin1();
-            boolean s2IsLatin1 = s2.isLatin1();
-            int min = Math.min(n1, n2);
-            for (int i = 0; i < min; i++) {
-                char c1 = s1IsLatin1 ? StringLatin1.getChar(v1, i)
-                                     : StringUTF16.getChar(v1, i);
-                char c2 = s2IsLatin1 ? StringLatin1.getChar(v2, i)
-                                     : StringUTF16.getChar(v2, i);
-                if (c1 != c2) {
-                    c1 = Character.toUpperCase(c1);
-                    c2 = Character.toUpperCase(c2);
-                    if (c1 != c2) {
-                        c1 = Character.toLowerCase(c1);
-                        c2 = Character.toLowerCase(c2);
-                        if (c1 != c2) {
-                            // No overflow because of numeric promotion
-                            return c1 - c2;
-                        }
-                    }
-                }
+            if (s1.coder() == s2.coder()) {
+                return s1.isLatin1() ? StringLatin1.compareToCI(v1, v2)
+                                     : StringUTF16.compareToCI(v1, v2);
             }
-            return n1 - n2;
+            return s1.isLatin1() ? StringLatin1.compareToCI_UTF16(v1, v2)
+                                 : StringUTF16.compareToCI_Latin1(v1, v2);
         }
 
         /** Replaces the de-serialized object. */

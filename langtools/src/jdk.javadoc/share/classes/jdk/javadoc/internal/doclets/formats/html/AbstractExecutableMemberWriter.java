@@ -104,11 +104,11 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         sb.append(utils.getFullyQualifiedName(member));
         if (!utils.isConstructor(member)) {
             sb.append(".");
-            sb.append(member.getSimpleName().toString());
+            sb.append(member.getSimpleName());
         }
         sb.append(utils.flatSignature((ExecutableElement) member));
 
-        return writer.getDocLink(MEMBER, member, sb.toString());
+        return writer.getDocLink(MEMBER, member, sb);
     }
 
     /**
@@ -204,7 +204,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         htmltree.addContent("(");
         String sep = "";
         List<? extends VariableElement> parameters = member.getParameters();
-        String indent = makeSpace(indentSize + 1);
+        CharSequence indent = makeSpace(indentSize + 1);
         TypeMirror rcvrType = member.getReceiverType();
         if (includeAnnotations && rcvrType != null && utils.isAnnotated(rcvrType)) {
             List<? extends AnnotationMirror> annotationMirrors = rcvrType.getAnnotationMirrors();
@@ -260,7 +260,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     protected void addExceptions(ExecutableElement member, Content htmltree, int indentSize) {
         List<? extends TypeMirror> exceptions = member.getThrownTypes();
         if (!exceptions.isEmpty()) {
-            String indent = makeSpace(indentSize + 1 - 7);
+            CharSequence indent = makeSpace(indentSize + 1 - 7);
             htmltree.addContent(DocletConstants.NL);
             htmltree.addContent(indent);
             htmltree.addContent("throws ");
@@ -336,7 +336,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
 
                 @Override @DefinedBy(Api.LANGUAGE_MODEL)
                 protected Boolean defaultAction(TypeMirror e, Void p) {
-                    buf.append(e.toString());
+                    buf.append(e);
                     return foundTypeVariable;
                 }
             };

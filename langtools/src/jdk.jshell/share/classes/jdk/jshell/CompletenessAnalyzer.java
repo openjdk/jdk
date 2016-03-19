@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ class CompletenessAnalyzer {
 
         // Declarations and type parameters (thus expressions)
         EXTENDS(TokenKind.EXTENDS, XEXPR|XDECL),  //  extends
-        COMMA(TokenKind.COMMA, XEXPR|XDECL|XSTART),  //  ,
+        COMMA(TokenKind.COMMA, XEXPR|XDECL),  //  ,
         AMP(TokenKind.AMP, XEXPR|XDECL),  //  &
         GT(TokenKind.GT, XEXPR|XDECL),  //  >
         LT(TokenKind.LT, XEXPR|XDECL1),  //  <
