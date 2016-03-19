@@ -716,6 +716,9 @@ CXXFLAGS_JDKLIB
 CFLAGS_JDKEXE
 CFLAGS_JDKLIB
 MACOSX_VERSION_MIN
+NO_LIFETIME_DSE_CFLAG
+NO_NULL_POINTER_CHECK_CFLAG
+CXXSTD_CXXFLAG
 CXX_O_FLAG_NONE
 CXX_O_FLAG_DEBUG
 CXX_O_FLAG_NORM
@@ -3912,10 +3915,26 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
-# FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
-#                                   IF_FALSE: [RUN-IF-FALSE])
+# FLAGS_C_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                  IF_FALSE: [RUN-IF-FALSE])
 # ------------------------------------------------------------
-# Check that the c and c++ compilers support an argument
+# Check that the C compiler supports an argument
+
+
+
+
+# FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                    IF_FALSE: [RUN-IF-FALSE])
+# ------------------------------------------------------------
+# Check that the C++ compiler supports an argument
+
+
+
+
+# FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                IF_FALSE: [RUN-IF-FALSE])
+# ------------------------------------------------------------
+# Check that the C and C++ compilers support an argument
 
 
 
@@ -3924,6 +3943,8 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 #                                   IF_FALSE: [RUN-IF-FALSE])
 # ------------------------------------------------------------
 # Check that the linker support an argument
+
+
 
 
 
@@ -4862,7 +4883,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1457953189
+DATE_WHEN_GENERATED=1458350662
 
 ###############################################################################
 #
@@ -32210,7 +32231,7 @@ $as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSIO
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
         $SED -e 's/ *Copyright .*//'`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.* \([1-9]\.[0-9.]*\) .*$/\1/'`
+        $SED -e 's/^.* \([1-9]\.[0-9.]*\)[^0-9.].*$/\1/'`
   elif test  "x$TOOLCHAIN_TYPE" = xclang; then
     # clang --version output typically looks like
     #    Apple LLVM version 5.0 (clang-500.2.79) (based on LLVM 3.3svn)
@@ -33507,7 +33528,7 @@ $as_echo "$as_me: The result from running with --version was: \"$COMPILER_VERSIO
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
         $SED -e 's/ *Copyright .*//'`
     COMPILER_VERSION_NUMBER=`$ECHO $COMPILER_VERSION_OUTPUT | \
-        $SED -e 's/^.* \([1-9]\.[0-9.]*\) .*$/\1/'`
+        $SED -e 's/^.* \([1-9]\.[0-9.]*\)[^0-9.].*$/\1/'`
   elif test  "x$TOOLCHAIN_TYPE" = xclang; then
     # clang --version output typically looks like
     #    Apple LLVM version 5.0 (clang-500.2.79) (based on LLVM 3.3svn)
@@ -33876,11 +33897,11 @@ $as_echo "$as_me: WARNING: C compiler version number has a part larger than 9999
   REFERENCE_VERSION=$TOOLCHAIN_MINIMUM_VERSION
 
   if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
-    as_fn_error $? "Internal errror: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only three parts (X.Y.Z) is supported" "$LINENO" 5
+    as_fn_error $? "Internal error: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only three parts (X.Y.Z) is supported" "$LINENO" 5
   fi
 
   if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
-    as_fn_error $? "Internal errror: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only parts < 99999 is supported" "$LINENO" 5
+    as_fn_error $? "Internal error: Cannot compare to $TOOLCHAIN_MINIMUM_VERSION, only parts < 99999 is supported" "$LINENO" 5
   fi
 
   # Version comparison method inspired by http://stackoverflow.com/a/24067243
@@ -44687,8 +44708,57 @@ $as_echo "$as_me: Rewriting BUILD_AR to \"$new_complete\"" >&6;}
 
     # Execute function body
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"" >&5
-$as_echo_n "checking if compiler supports \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"... " >&6; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C compiler supports \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"" >&5
+$as_echo_n "checking if the C compiler supports \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"... " >&6; }
   supports=yes
 
   saved_cflags="$CFLAGS"
@@ -44716,6 +44786,80 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
   CFLAGS="$saved_cflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    C_COMP_SUPPORTS="yes"
+  else
+    :
+    C_COMP_SUPPORTS="no"
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C++ compiler supports \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"" >&5
+$as_echo_n "checking if the C++ compiler supports \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"... " >&6; }
+  supports=yes
 
   saved_cxxflags="$CXXFLAGS"
   CXXFLAGS="$CXXFLAG $CFLAG_OPTIMIZE_DEBUG_FLAG"
@@ -44747,10 +44891,10 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
     :
-    HAS_CFLAG_OPTIMIZE_DEBUG=true
+    CXX_COMP_SUPPORTS="yes"
   else
     :
-    HAS_CFLAG_OPTIMIZE_DEBUG=false
+    CXX_COMP_SUPPORTS="no"
   fi
 
 
@@ -44758,6 +44902,27 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if both compilers support \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"" >&5
+$as_echo_n "checking if both compilers support \"$CFLAG_OPTIMIZE_DEBUG_FLAG\"... " >&6; }
+  supports=no
+  if test "x$C_COMP_SUPPORTS" = "xyes" -a "x$CXX_COMP_SUPPORTS" = "xyes"; then supports=yes; fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    HAS_CFLAG_OPTIMIZE_DEBUG=true
+  else
+    :
+    HAS_CFLAG_OPTIMIZE_DEBUG=false
+  fi
 
 
 
@@ -46372,8 +46537,57 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
 
     # Execute function body
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"" >&5
-$as_echo_n "checking if compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"... " >&6; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"" >&5
+$as_echo_n "checking if the C compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"... " >&6; }
   supports=yes
 
   saved_cflags="$CFLAGS"
@@ -46401,6 +46615,80 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
   CFLAGS="$saved_cflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    C_COMP_SUPPORTS="yes"
+  else
+    :
+    C_COMP_SUPPORTS="no"
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C++ compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"" >&5
+$as_echo_n "checking if the C++ compiler supports \"$STACK_PROTECTOR_CFLAG -Werror\"... " >&6; }
+  supports=yes
 
   saved_cxxflags="$CXXFLAGS"
   CXXFLAGS="$CXXFLAG $STACK_PROTECTOR_CFLAG -Werror"
@@ -46432,10 +46720,10 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
     :
-
+    CXX_COMP_SUPPORTS="yes"
   else
     :
-    STACK_PROTECTOR_CFLAG=""
+    CXX_COMP_SUPPORTS="no"
   fi
 
 
@@ -46443,6 +46731,27 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if both compilers support \"$STACK_PROTECTOR_CFLAG -Werror\"" >&5
+$as_echo_n "checking if both compilers support \"$STACK_PROTECTOR_CFLAG -Werror\"... " >&6; }
+  supports=no
+  if test "x$C_COMP_SUPPORTS" = "xyes" -a "x$CXX_COMP_SUPPORTS" = "xyes"; then supports=yes; fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+
+  else
+    :
+    STACK_PROTECTOR_CFLAG=""
+  fi
 
 
 
@@ -46583,6 +46892,105 @@ $as_echo "$supports" >&6; }
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
     CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
+  elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+    CXXSTD_CXXFLAG="-std=gnu++98"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C++ compiler supports \"$CXXSTD_CXXFLAG -Werror\"" >&5
+$as_echo_n "checking if the C++ compiler supports \"$CXXSTD_CXXFLAG -Werror\"... " >&6; }
+  supports=yes
+
+  saved_cxxflags="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAG $CXXSTD_CXXFLAG -Werror"
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int i;
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CXXFLAGS="$saved_cxxflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+
+  else
+    :
+    CXXSTD_CXXFLAG=""
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+    CXXFLAGS_JDK="${CXXFLAGS_JDK} ${CXXSTD_CXXFLAG}"
+
   fi
 
   CFLAGS_JDK="${CFLAGS_JDK} $EXTRA_CFLAGS"
@@ -46620,6 +47028,624 @@ $as_echo "$supports" >&6; }
         CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
     esac
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  # Need to assign to a variable since m4 is blocked from modifying parts in [].
+  REFERENCE_VERSION=6
+
+  if  [[ "$REFERENCE_VERSION" =~ (.*\.){3} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 6, only three parts (X.Y.Z) is supported" "$LINENO" 5
+  fi
+
+  if  [[ "$REFERENCE_VERSION" =~ [0-9]{6} ]] ; then
+    as_fn_error $? "Internal error: Cannot compare to 6, only parts < 99999 is supported" "$LINENO" 5
+  fi
+
+  # Version comparison method inspired by http://stackoverflow.com/a/24067243
+  COMPARABLE_REFERENCE_VERSION=`$AWK -F. '{ printf("%05d%05d%05d\n", $1, $2, $3) }' <<< "$REFERENCE_VERSION"`
+
+  if test $COMPARABLE_ACTUAL_VERSION -ge $COMPARABLE_REFERENCE_VERSION ; then
+    :
+
+  # These flags are required for GCC 6 builds as undefined behaviour in OpenJDK code
+  # runs afoul of the more aggressive versions of these optimisations.
+  # Notably, value range propagation now assumes that the this pointer of C++
+  # member functions is non-null.
+  NO_NULL_POINTER_CHECK_CFLAG="-fno-delete-null-pointer-checks"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C compiler supports \"$NO_NULL_POINTER_CHECK_CFLAG -Werror\"" >&5
+$as_echo_n "checking if the C compiler supports \"$NO_NULL_POINTER_CHECK_CFLAG -Werror\"... " >&6; }
+  supports=yes
+
+  saved_cflags="$CFLAGS"
+  CFLAGS="$CFLAGS $NO_NULL_POINTER_CHECK_CFLAG -Werror"
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int i;
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CFLAGS="$saved_cflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    C_COMP_SUPPORTS="yes"
+  else
+    :
+    C_COMP_SUPPORTS="no"
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C++ compiler supports \"$NO_NULL_POINTER_CHECK_CFLAG -Werror\"" >&5
+$as_echo_n "checking if the C++ compiler supports \"$NO_NULL_POINTER_CHECK_CFLAG -Werror\"... " >&6; }
+  supports=yes
+
+  saved_cxxflags="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAG $NO_NULL_POINTER_CHECK_CFLAG -Werror"
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int i;
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CXXFLAGS="$saved_cxxflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    CXX_COMP_SUPPORTS="yes"
+  else
+    :
+    CXX_COMP_SUPPORTS="no"
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if both compilers support \"$NO_NULL_POINTER_CHECK_CFLAG -Werror\"" >&5
+$as_echo_n "checking if both compilers support \"$NO_NULL_POINTER_CHECK_CFLAG -Werror\"... " >&6; }
+  supports=no
+  if test "x$C_COMP_SUPPORTS" = "xyes" -a "x$CXX_COMP_SUPPORTS" = "xyes"; then supports=yes; fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+
+  else
+    :
+    NO_NULL_POINTER_CHECK_CFLAG=""
+  fi
+
+
+
+
+
+
+
+  NO_LIFETIME_DSE_CFLAG="-fno-lifetime-dse"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C compiler supports \"$NO_LIFETIME_DSE_CFLAG -Werror\"" >&5
+$as_echo_n "checking if the C compiler supports \"$NO_LIFETIME_DSE_CFLAG -Werror\"... " >&6; }
+  supports=yes
+
+  saved_cflags="$CFLAGS"
+  CFLAGS="$CFLAGS $NO_LIFETIME_DSE_CFLAG -Werror"
+  ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int i;
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CFLAGS="$saved_cflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    C_COMP_SUPPORTS="yes"
+  else
+    :
+    C_COMP_SUPPORTS="no"
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C++ compiler supports \"$NO_LIFETIME_DSE_CFLAG -Werror\"" >&5
+$as_echo_n "checking if the C++ compiler supports \"$NO_LIFETIME_DSE_CFLAG -Werror\"... " >&6; }
+  supports=yes
+
+  saved_cxxflags="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAG $NO_LIFETIME_DSE_CFLAG -Werror"
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int i;
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+
+else
+  supports=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  CXXFLAGS="$saved_cxxflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    CXX_COMP_SUPPORTS="yes"
+  else
+    :
+    CXX_COMP_SUPPORTS="no"
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if both compilers support \"$NO_LIFETIME_DSE_CFLAG -Werror\"" >&5
+$as_echo_n "checking if both compilers support \"$NO_LIFETIME_DSE_CFLAG -Werror\"... " >&6; }
+  supports=no
+  if test "x$C_COMP_SUPPORTS" = "xyes" -a "x$CXX_COMP_SUPPORTS" = "xyes"; then supports=yes; fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+
+  else
+    :
+    NO_LIFETIME_DSE_CFLAG=""
+  fi
+
+
+
+
+
+
+  CFLAGS_JDK="${CFLAGS_JDK} ${NO_NULL_POINTER_CHECK_CFLAG} ${NO_LIFETIME_DSE_CFLAG}"
+
+
+
+  else
+    :
+
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       if test "x$OPENJDK_TARGET_CPU" = xx86; then
@@ -46966,8 +47992,57 @@ $as_echo "$supports" >&6; }
 
     # Execute function body
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$ZERO_ARCHFLAG\"" >&5
-$as_echo_n "checking if compiler supports \"$ZERO_ARCHFLAG\"... " >&6; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C compiler supports \"$ZERO_ARCHFLAG\"" >&5
+$as_echo_n "checking if the C compiler supports \"$ZERO_ARCHFLAG\"... " >&6; }
   supports=yes
 
   saved_cflags="$CFLAGS"
@@ -46995,6 +48070,80 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
   CFLAGS="$saved_cflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    C_COMP_SUPPORTS="yes"
+  else
+    :
+    C_COMP_SUPPORTS="no"
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C++ compiler supports \"$ZERO_ARCHFLAG\"" >&5
+$as_echo_n "checking if the C++ compiler supports \"$ZERO_ARCHFLAG\"... " >&6; }
+  supports=yes
 
   saved_cxxflags="$CXXFLAGS"
   CXXFLAGS="$CXXFLAG $ZERO_ARCHFLAG"
@@ -47026,10 +48175,10 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
     :
-
+    CXX_COMP_SUPPORTS="yes"
   else
     :
-    ZERO_ARCHFLAG=""
+    CXX_COMP_SUPPORTS="no"
   fi
 
 
@@ -47037,6 +48186,27 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if both compilers support \"$ZERO_ARCHFLAG\"" >&5
+$as_echo_n "checking if both compilers support \"$ZERO_ARCHFLAG\"... " >&6; }
+  supports=no
+  if test "x$C_COMP_SUPPORTS" = "xyes" -a "x$CXX_COMP_SUPPORTS" = "xyes"; then supports=yes; fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+
+  else
+    :
+    ZERO_ARCHFLAG=""
+  fi
 
 
 
@@ -47096,8 +48266,57 @@ $as_echo "$supports" >&6; }
 
     # Execute function body
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"" >&5
-$as_echo_n "checking if compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"... " >&6; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"" >&5
+$as_echo_n "checking if the C compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"... " >&6; }
   supports=yes
 
   saved_cflags="$CFLAGS"
@@ -47125,6 +48344,80 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
   CFLAGS="$saved_cflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    C_COMP_SUPPORTS="yes"
+  else
+    :
+    C_COMP_SUPPORTS="no"
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C++ compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"" >&5
+$as_echo_n "checking if the C++ compiler supports \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"... " >&6; }
+  supports=yes
 
   saved_cxxflags="$CXXFLAGS"
   CXXFLAGS="$CXXFLAG ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}"
@@ -47156,10 +48449,10 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
     :
-    COMPILER_SUPPORTS_TARGET_BITS_FLAG=true
+    CXX_COMP_SUPPORTS="yes"
   else
     :
-    COMPILER_SUPPORTS_TARGET_BITS_FLAG=false
+    CXX_COMP_SUPPORTS="no"
   fi
 
 
@@ -47167,6 +48460,27 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if both compilers support \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"" >&5
+$as_echo_n "checking if both compilers support \"${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}\"... " >&6; }
+  supports=no
+  if test "x$C_COMP_SUPPORTS" = "xyes" -a "x$CXX_COMP_SUPPORTS" = "xyes"; then supports=yes; fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    COMPILER_SUPPORTS_TARGET_BITS_FLAG=true
+  else
+    :
+    COMPILER_SUPPORTS_TARGET_BITS_FLAG=false
+  fi
 
 
 
@@ -47269,8 +48583,57 @@ $as_echo "yes (default)" >&6; }
 
     # Execute function body
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
-$as_echo_n "checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
+$as_echo_n "checking if the C compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
   supports=yes
 
   saved_cflags="$CFLAGS"
@@ -47298,6 +48661,80 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
   CFLAGS="$saved_cflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    C_COMP_SUPPORTS="yes"
+  else
+    :
+    C_COMP_SUPPORTS="no"
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C++ compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
+$as_echo_n "checking if the C++ compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
+  supports=yes
 
   saved_cxxflags="$CXXFLAGS"
   CXXFLAGS="$CXXFLAG -Wno-this-is-a-warning-that-do-not-exist"
@@ -47329,11 +48766,10 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
     :
-    GCC_CAN_DISABLE_WARNINGS=true
+    CXX_COMP_SUPPORTS="yes"
   else
     :
-    GCC_CAN_DISABLE_WARNINGS=false
-
+    CXX_COMP_SUPPORTS="no"
   fi
 
 
@@ -47341,6 +48777,28 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if both compilers support \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
+$as_echo_n "checking if both compilers support \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
+  supports=no
+  if test "x$C_COMP_SUPPORTS" = "xyes" -a "x$CXX_COMP_SUPPORTS" = "xyes"; then supports=yes; fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    GCC_CAN_DISABLE_WARNINGS=true
+  else
+    :
+    GCC_CAN_DISABLE_WARNINGS=false
+
+  fi
 
 
 
@@ -47405,8 +48863,57 @@ $as_echo "$supports" >&6; }
 
     # Execute function body
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
-$as_echo_n "checking if compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
+$as_echo_n "checking if the C compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
   supports=yes
 
   saved_cflags="$CFLAGS"
@@ -47434,6 +48941,80 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
   CFLAGS="$saved_cflags"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    C_COMP_SUPPORTS="yes"
+  else
+    :
+    C_COMP_SUPPORTS="no"
+  fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # Execute function body
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the C++ compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
+$as_echo_n "checking if the C++ compiler supports \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
+  supports=yes
 
   saved_cxxflags="$CXXFLAGS"
   CXXFLAGS="$CXXFLAG -Wno-this-is-a-warning-that-do-not-exist"
@@ -47465,11 +49046,10 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 $as_echo "$supports" >&6; }
   if test "x$supports" = "xyes" ; then
     :
-    BUILD_CC_CAN_DISABLE_WARNINGS=true
+    CXX_COMP_SUPPORTS="yes"
   else
     :
-    BUILD_CC_CAN_DISABLE_WARNINGS=false
-
+    CXX_COMP_SUPPORTS="no"
   fi
 
 
@@ -47477,6 +49057,28 @@ $as_echo "$supports" >&6; }
 
 
 
+
+
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if both compilers support \"-Wno-this-is-a-warning-that-do-not-exist\"" >&5
+$as_echo_n "checking if both compilers support \"-Wno-this-is-a-warning-that-do-not-exist\"... " >&6; }
+  supports=no
+  if test "x$C_COMP_SUPPORTS" = "xyes" -a "x$CXX_COMP_SUPPORTS" = "xyes"; then supports=yes; fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
+$as_echo "$supports" >&6; }
+  if test "x$supports" = "xyes" ; then
+    :
+    BUILD_CC_CAN_DISABLE_WARNINGS=true
+  else
+    :
+    BUILD_CC_CAN_DISABLE_WARNINGS=false
+
+  fi
 
 
 
