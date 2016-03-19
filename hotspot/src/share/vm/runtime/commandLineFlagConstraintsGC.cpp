@@ -606,9 +606,15 @@ Flag::Error MinTLABSizeConstraintFunc(size_t value, bool verbose) {
                             "greater than or equal to reserved area in TLAB (" SIZE_FORMAT ")\n",
                             value, ThreadLocalAllocBuffer::alignment_reserve_in_bytes());
     return Flag::VIOLATES_CONSTRAINT;
-  } else {
-    return Flag::SUCCESS;
   }
+  if (value > (ThreadLocalAllocBuffer::max_size() * HeapWordSize)) {
+    CommandLineError::print(verbose,
+                            "MinTLABSize (" SIZE_FORMAT ") must be "
+                            "less than or equal to ergonomic TLAB maximum (" SIZE_FORMAT ")\n",
+                            value, ThreadLocalAllocBuffer::max_size() * HeapWordSize);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+  return Flag::SUCCESS;
 }
 
 Flag::Error TLABSizeConstraintFunc(size_t value, bool verbose) {
