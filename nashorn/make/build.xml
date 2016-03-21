@@ -96,7 +96,21 @@
         <os family="windows"/>
       </not>
     </condition>
-  </target>
+
+    <!--set windows cygwin/cmd specific properties-->
+    <property environment="env"/>
+    <condition property="test-sys-prop-no-security.os.not.windows.cmd">
+     <not>
+      <and>
+        <os family="windows"/>
+        <not>
+          <isset property="env.SHELL"/>
+        </not>
+      </and>
+     </not>
+    </condition>
+   </target>
+  
 
   <!-- check minimum ant version required to be 1.8.4 -->
   <target name="check-ant-version">
