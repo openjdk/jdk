@@ -44,7 +44,6 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
-#include "runtime/logTimer.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/osThread.hpp"
@@ -55,6 +54,7 @@
 #include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/timerTrace.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
@@ -488,38 +488,38 @@ bool SafepointSynchronize::is_cleanup_needed() {
 // Various cleaning tasks that should be done periodically at safepoints
 void SafepointSynchronize::do_cleanup_tasks() {
   {
-    TraceSafepointTime t1("deflating idle monitors");
+    TraceTime timer("deflating idle monitors", TRACETIME_LOG(Info, safepointcleanup));
     ObjectSynchronizer::deflate_idle_monitors();
   }
 
   {
-    TraceSafepointTime t2("updating inline caches");
+    TraceTime timer("updating inline caches", TRACETIME_LOG(Info, safepointcleanup));
     InlineCacheBuffer::update_inline_caches();
   }
   {
-    TraceSafepointTime t3("compilation policy safepoint handler");
+    TraceTime timer("compilation policy safepoint handler", TRACETIME_LOG(Info, safepointcleanup));
     CompilationPolicy::policy()->do_safepoint_work();
   }
 
   {
-    TraceSafepointTime t4("mark nmethods");
+    TraceTime timer("mark nmethods", TRACETIME_LOG(Info, safepointcleanup));
     NMethodSweeper::mark_active_nmethods();
   }
 
   if (SymbolTable::needs_rehashing()) {
-    TraceSafepointTime t5("rehashing symbol table");
+    TraceTime timer("rehashing symbol table", TRACETIME_LOG(Info, safepointcleanup));
     SymbolTable::rehash_table();
   }
 
   if (StringTable::needs_rehashing()) {
-    TraceSafepointTime t6("rehashing string table");
+    TraceTime timer("rehashing string table", TRACETIME_LOG(Info, safepointcleanup));
     StringTable::rehash_table();
   }
 
   {
     // CMS delays purging the CLDG until the beginning of the next safepoint and to
     // make sure concurrent sweep is done
-    TraceSafepointTime t7("purging class loader data graph");
+    TraceTime timer("purging class loader data graph", TRACETIME_LOG(Info, safepointcleanup));
     ClassLoaderDataGraph::purge_if_needed();
   }
 }
