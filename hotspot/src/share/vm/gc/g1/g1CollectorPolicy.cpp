@@ -221,12 +221,7 @@ bool G1CollectorPolicy::predict_will_fit(uint young_length,
   // When copying, we will likely need more bytes free than is live in the region.
   // Add some safety margin to factor in the confidence of our guess, and the
   // natural expected waste.
-  // (100.0 / G1ConfidencePercent) is a scale factor that expresses the uncertainty
-  // of the calculation: the lower the confidence, the more headroom.
-  // (100 + TargetPLABWastePct) represents the increase in expected bytes during
-  // copying due to anticipated waste in the PLABs.
-  double safety_factor = (100.0 / G1ConfidencePercent) * (100 + TargetPLABWastePct) / 100.0;
-  size_t expected_bytes_to_copy = (size_t)(safety_factor * bytes_to_copy);
+  size_t expected_bytes_to_copy = (size_t)(bytes_to_copy * safety_factor());
 
   if (expected_bytes_to_copy > free_bytes) {
     // end condition 3: out-of-space
@@ -592,6 +587,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
   _pending_cards = _g1->pending_card_num();
 
   _collection_set->reset_bytes_used_before();
+  _collection_set->reset_bytes_live_before();
   _bytes_copied_during_gc = 0;
 
   collector_state()->set_last_gc_was_young(false);
@@ -1264,6 +1260,15 @@ uint G1CollectorPolicy::calc_max_old_cset_length() const {
     result += 1;
   }
   return (uint) result;
+}
+
+size_t G1CollectorPolicy::available_bytes_estimate() {
+  size_t estimated_available_bytes = 0;
+  if (_free_regions_at_end_of_collection > _reserve_regions) {
+    uint available_regions = _free_regions_at_end_of_collection - _reserve_regions;
+    estimated_available_bytes = (size_t)((available_regions * HeapRegion::GrainBytes) / safety_factor());
+  }
+  return estimated_available_bytes;
 }
 
 void G1CollectorPolicy::finalize_collection_set(double target_pause_time_ms) {
