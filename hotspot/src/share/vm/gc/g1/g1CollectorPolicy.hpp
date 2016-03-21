@@ -420,22 +420,6 @@ public:
     return _max_survivor_regions;
   }
 
-  static const uint REGIONS_UNLIMITED = (uint) -1;
-
-  uint max_regions(InCSetState dest) const {
-    switch (dest.value()) {
-      case InCSetState::Young:
-        return _max_survivor_regions;
-      case InCSetState::Old:
-        return REGIONS_UNLIMITED;
-      default:
-        assert(false, "Unknown dest state: " CSETSTATE_FORMAT, dest.value());
-        break;
-    }
-    // keep some compilers happy
-    return 0;
-  }
-
   void note_start_adding_survivor_regions() {
     _survivor_surv_rate_group->start_adding_regions();
   }

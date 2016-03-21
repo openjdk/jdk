@@ -253,7 +253,7 @@ void MutatorAllocRegion::retire_region(HeapRegion* alloc_region,
 HeapRegion* G1GCAllocRegion::allocate_new_region(size_t word_size,
                                                  bool force) {
   assert(!force, "not supported for GC alloc regions");
-  return _g1h->new_gc_alloc_region(word_size, count(), _purpose);
+  return _g1h->new_gc_alloc_region(word_size, _purpose);
 }
 
 void G1GCAllocRegion::retire_region(HeapRegion* alloc_region,
