@@ -40,7 +40,7 @@
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/logTimer.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -73,7 +73,7 @@ void MethodHandles::generate_adapters() {
   assert(_adapter_code == NULL, "generate only once");
 
   ResourceMark rm;
-  TraceStartupTime timer("MethodHandles adapters generation");
+  TraceTime timer("MethodHandles adapters generation", TRACETIME_LOG(Info, startuptime));
   _adapter_code = MethodHandlesAdapterBlob::create(adapter_code_size);
   CodeBuffer code(_adapter_code);
   MethodHandlesAdapterGenerator g(&code);
