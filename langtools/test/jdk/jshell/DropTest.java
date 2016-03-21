@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8081431
+ * @bug 8081431 8080069
  * @summary Test of JShell#drop().
  * @build KullaTesting TestingInputStream
  * @run testng DropTest
@@ -31,6 +31,7 @@
 
 import jdk.jshell.DeclarationSnippet;
 import jdk.jshell.PersistentSnippet;
+import jdk.jshell.VarSnippet;
 import org.testng.annotations.Test;
 
 import static jdk.jshell.Snippet.Status.*;
@@ -45,21 +46,27 @@ public class DropTest extends KullaTesting {
         assertDrop(var,
                 ste(var, VALID, DROPPED, true, null),
                 ste(method, VALID, RECOVERABLE_DEFINED, false, var));
-        //assertDrop(method,
-        //        ste(method, RECOVERABLE_DEFINED, DROPPED, false, null),
-        //        ste(clazz, RECOVERABLE_NOT_DEFINED, RECOVERABLE_NOT_DEFINED, false, method));
-        //assertDeclareFail("new C();", "compiler.err.cant.resolve.location");
+        assertDrop(method,
+                ste(method, RECOVERABLE_DEFINED, DROPPED, true, null),
+                ste(clazz, VALID, RECOVERABLE_DEFINED, false, method));
+        VarSnippet cc = varKey(assertEval("C c;"));
+        assertEvalUnresolvedException("new C();", "C", 1, 0);
         assertVariables();
         assertMethods();
         assertClasses();
         assertActiveKeys();
 
+        method = methodKey(assertEval("int mu() { return x * 4; }",
+                ste(MAIN_SNIPPET, DROPPED, RECOVERABLE_DEFINED, true, null),
+                ste(clazz, RECOVERABLE_DEFINED, VALID, false, MAIN_SNIPPET)));
         assertEval("int x = 10;", "10",
-                ste(var, DROPPED, VALID, true, null),
+                ste(MAIN_SNIPPET, DROPPED, VALID, true, null),
                 ste(method, RECOVERABLE_DEFINED, VALID, false, MAIN_SNIPPET));
         PersistentSnippet c0 = varKey(assertEval("C c0 = new C();"));
         assertEval("c0.v();", "\"#40\"");
-        assertEval("C c = new C();");
+        assertEval("C c = new C();",
+                ste(MAIN_SNIPPET, VALID, VALID, false, null),
+                ste(cc, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
         assertEval("c.v();", "\"#40\"");
         assertEval("int mu() { return x * 3; }",
                 ste(MAIN_SNIPPET, VALID, VALID, false, null),
@@ -144,9 +151,10 @@ public class DropTest extends KullaTesting {
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 ste(x, VALID, DROPPED, true, null),
-                ste(a, VALID, RECOVERABLE_NOT_DEFINED, true, x));
-        assertUnresolvedDependencies1(a, RECOVERABLE_NOT_DEFINED, "variable x");
-        assertDeclareFail("new A().a;", "compiler.err.cant.resolve.location");
+                ste(a, VALID, RECOVERABLE_DEFINED, false, x));
+        assertEval("A foo() { return null; }");
+        assertUnresolvedDependencies1(a, RECOVERABLE_DEFINED, "variable x");
+        assertEvalUnresolvedException("new A();", "A", 1, 0);
         assertVariables();
         assertActiveKeys();
     }
@@ -158,9 +166,9 @@ public class DropTest extends KullaTesting {
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 ste(x, VALID, DROPPED, true, null),
-                ste(a, VALID, RECOVERABLE_NOT_DEFINED, true, x));
-        assertUnresolvedDependencies1(a, RECOVERABLE_NOT_DEFINED, "method x()");
-        assertDeclareFail("new A().a;", "compiler.err.cant.resolve.location");
+                ste(a, VALID, RECOVERABLE_DEFINED, false, x));
+        assertUnresolvedDependencies1(a, RECOVERABLE_DEFINED, "method x()");
+        assertEvalUnresolvedException("new A();", "A", 1, 0);
         assertMethods();
         assertActiveKeys();
     }

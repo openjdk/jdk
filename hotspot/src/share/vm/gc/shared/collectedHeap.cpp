@@ -405,7 +405,9 @@ size_t CollectedHeap::max_tlab_size() const {
 oop CollectedHeap::new_store_pre_barrier(JavaThread* thread, oop new_obj) {
   // If a previous card-mark was deferred, flush it now.
   flush_deferred_store_barrier(thread);
-  if (can_elide_initializing_store_barrier(new_obj)) {
+  if (can_elide_initializing_store_barrier(new_obj) ||
+      new_obj->is_typeArray()) {
+    // Arrays of non-references don't need a pre-barrier.
     // The deferred_card_mark region should be empty
     // following the flush above.
     assert(thread->deferred_card_mark().is_empty(), "Error");

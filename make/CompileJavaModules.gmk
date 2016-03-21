@@ -368,21 +368,7 @@ jdk.compiler_CLEAN_FILES := $(wildcard \
 ################################################################################
 
 jdk.hotspot.agent_ADD_JAVAC_FLAGS := $(DISABLE_WARNINGS),-overrides
-jdk.hotspot.agent_COPY := .png sa.js .properties
-
-ifeq ($(MODULE), jdk.hotspot.agent)
-  ### Copy gif files
-  # Special handling to copy gif files in images/toolbarButtonGraphics \
-  #   -> classes/toolbarButtonGraphics.
-  # These can't be handled by COPY to SetupJavaCompilation since they chop off
-  # one directory level.
-  $(eval $(call SetupCopyFiles, COPY_SA_IMAGES, \
-      SRC := $(HOTSPOT_TOPDIR)/src/jdk.hotspot.agent/share/classes/images, \
-      DEST := $(JDK_OUTPUTDIR)/modules/$(MODULE), \
-      FILES := $(wildcard $(HOTSPOT_TOPDIR)/src/jdk.hotspot.agent/share/classes/images/*/*/*.gif), \
-  ))
-  jdk.hotspot.agent: $(COPY_SA_IMAGES)
-endif
+jdk.hotspot.agent_COPY := .gif .png sa.js .properties
 
 ################################################################################
 

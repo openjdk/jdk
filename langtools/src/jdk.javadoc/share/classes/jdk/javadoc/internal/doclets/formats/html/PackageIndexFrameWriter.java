@@ -123,7 +123,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
             packageLinkContent = getHyperLink(DocPaths.PACKAGE_FRAME,
                     packageLabel, "", "packageFrame");
         } else {
-            packageLabel = getPackageLabel(pe.getQualifiedName().toString());
+            packageLabel = getPackageLabel(pe.getQualifiedName());
             packageLinkContent = getHyperLink(pathString(pe,
                      DocPaths.PACKAGE_FRAME), packageLabel, "",
                     "packageFrame");

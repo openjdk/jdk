@@ -1141,7 +1141,7 @@ public class HotSpotVMConfig {
 
     @HotSpotVMField(name = "JavaFrameAnchor::_last_Java_sp", type = "intptr_t*", get = HotSpotVMField.Type.OFFSET) @Stable private int javaFrameAnchorLastJavaSpOffset;
     @HotSpotVMField(name = "JavaFrameAnchor::_last_Java_pc", type = "address", get = HotSpotVMField.Type.OFFSET) @Stable private int javaFrameAnchorLastJavaPcOffset;
-    @HotSpotVMField(name = "JavaFrameAnchor::_last_Java_fp", type = "intptr_t*", get = HotSpotVMField.Type.OFFSET, archs = {"amd64"}) @Stable private int javaFrameAnchorLastJavaFpOffset;
+    @HotSpotVMField(name = "JavaFrameAnchor::_last_Java_fp", type = "intptr_t*", get = HotSpotVMField.Type.OFFSET, archs = {"aarch64, amd64"}) @Stable private int javaFrameAnchorLastJavaFpOffset;
     @HotSpotVMField(name = "JavaFrameAnchor::_flags", type = "int", get = HotSpotVMField.Type.OFFSET, archs = {"sparc"}) @Stable private int javaFrameAnchorFlagsOffset;
 
     public int threadLastJavaSpOffset() {
@@ -1152,11 +1152,8 @@ public class HotSpotVMConfig {
         return javaThreadAnchorOffset + javaFrameAnchorLastJavaPcOffset;
     }
 
-    /**
-     * This value is only valid on AMD64.
-     */
     public int threadLastJavaFpOffset() {
-        // TODO add an assert for AMD64
+        assert getHostArchitectureName().equals("aarch64") || getHostArchitectureName().equals("amd64");
         return javaThreadAnchorOffset + javaFrameAnchorLastJavaFpOffset;
     }
 

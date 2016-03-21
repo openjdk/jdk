@@ -105,6 +105,7 @@
   template(DumpHashtable)                         \
   template(DumpTouchedMethods)                    \
   template(MarkActiveNMethods)                    \
+  template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
 
 class VM_Operation: public CHeapObj<mtInternal> {
@@ -418,6 +419,17 @@ class VM_Exit: public VM_Operation {
     }
   }
   VMOp_Type type() const { return VMOp_Exit; }
+  void doit();
+};
+
+class VM_PrintCompileQueue: public VM_Operation {
+ private:
+  outputStream* _out;
+
+ public:
+  VM_PrintCompileQueue(outputStream* st) : _out(st) {}
+  VMOp_Type type() const { return VMOp_PrintCompileQueue; }
+  Mode evaluation_mode() const { return _safepoint; }
   void doit();
 };
 

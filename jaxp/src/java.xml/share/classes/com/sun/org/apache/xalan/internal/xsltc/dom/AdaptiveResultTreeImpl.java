@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,9 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: AdaptiveResultTreeImpl.java,v 1.2.4.1 2005/09/06 05:52:18 pvedula Exp $
- */
+
 package com.sun.org.apache.xalan.internal.xsltc.dom;
 
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
@@ -1338,4 +1336,11 @@ public class AdaptiveResultTreeImpl extends SimpleResultTreeImpl
         }
     }
 
+    public void release() {
+        if (_dom != null) {
+            _dom.release();
+            _dom = null;
+        }
+        super.release();
+    }
 }

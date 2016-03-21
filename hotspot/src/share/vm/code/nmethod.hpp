@@ -107,6 +107,7 @@ class PcDescCache VALUE_OBJ_CLASS_SPEC {
 //  [Implicit Null Pointer exception table]
 //  - implicit null table array
 
+class DepChange;
 class Dependencies;
 class ExceptionHandlerTable;
 class ImplicitExceptionTable;
@@ -188,7 +189,13 @@ class nmethod : public CodeBlob {
   bool _has_flushed_dependencies;            // Used for maintenance of dependencies (CodeCache_lock)
 
   bool _marked_for_reclamation;              // Used by NMethodSweeper (set only by sweeper)
-  bool _marked_for_deoptimization;           // Used for stack deoptimization
+
+  enum MarkForDeoptimizationStatus {
+    not_marked,
+    deoptimize,
+    deoptimize_noupdate };
+
+  MarkForDeoptimizationStatus _mark_for_deoptimization_status; // Used for stack deoptimization
 
   // used by jvmti to track if an unload event has been posted for this nmethod.
   bool _unload_reported;
@@ -462,8 +469,16 @@ class nmethod : public CodeBlob {
   void set_unloading_clock(unsigned char unloading_clock);
   unsigned char unloading_clock();
 
-  bool  is_marked_for_deoptimization() const      { return _marked_for_deoptimization; }
-  void  mark_for_deoptimization()                 { _marked_for_deoptimization = true; }
+  bool  is_marked_for_deoptimization() const      { return _mark_for_deoptimization_status != not_marked; }
+  void  mark_for_deoptimization(bool inc_recompile_counts = true) {
+    _mark_for_deoptimization_status = (inc_recompile_counts ? deoptimize : deoptimize_noupdate);
+  }
+  bool update_recompile_counts() const {
+    // Update recompile counts when either the update is explicitly requested (deoptimize)
+    // or the nmethod is not marked for deoptimization at all (not_marked).
+    // The latter happens during uncommon traps when deoptimized nmethod is made not entrant.
+    return _mark_for_deoptimization_status != deoptimize_noupdate;
+  }
 
   void  make_unloaded(BoolObjectClosure* is_alive, oop cause);
 

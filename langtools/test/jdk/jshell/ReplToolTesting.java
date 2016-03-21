@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -397,6 +397,15 @@ public class ReplToolTesting {
         assertCommand(after, cmd, out, "", null, "", "");
     }
 
+    public void assertCommandOutputContains(boolean after, String cmd, String has) {
+        assertCommandCheckOutput(after, cmd, (s) ->
+                        assertTrue(s.contains(has), "Output: \'" + s + "' does not contain: " + has));
+    }
+
+    public void assertCommandOutputStartsWith(boolean after, String cmd, String starts) {
+        assertCommandCheckOutput(after, cmd, assertStartsWith(starts));
+    }
+
     public void assertCommandCheckOutput(boolean after, String cmd, Consumer<String> check) {
         if (!after) {
             assertCommand(false, cmd, null);
@@ -437,13 +446,13 @@ public class ReplToolTesting {
     }
 
     private List<String> computeCompletions(String code, boolean isSmart) {
-        JShellTool repl = this.repl != null ? this.repl
+        JShellTool js = this.repl != null ? this.repl
                                       : new JShellTool(null, null, null, null, null, null, null);
         int cursor =  code.indexOf('|');
         code = code.replace("|", "");
         assertTrue(cursor > -1, "'|' not found: " + code);
         List<Suggestion> completions =
-                repl.commandCompletionSuggestions(code, cursor, new int[1]); //XXX: ignoring anchor for now
+                js.commandCompletionSuggestions(code, cursor, new int[1]); //XXX: ignoring anchor for now
         return completions.stream()
                           .filter(s -> isSmart == s.isSmart)
                           .map(s -> s.continuation)
@@ -479,6 +488,15 @@ public class ReplToolTesting {
         @Override
         public int hashCode() {
             return name.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof MemberInfo) {
+                MemberInfo mi = (MemberInfo) o;
+                return name.equals(mi.name);
+            }
+            return false;
         }
 
         public abstract Consumer<String> checkOutput();
@@ -537,6 +555,11 @@ public class ReplToolTesting {
         }
 
         @Override
+        public int hashCode() {
+            return name.hashCode();
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (o instanceof VariableInfo) {
                 VariableInfo v = (VariableInfo) o;
@@ -585,6 +608,10 @@ public class ReplToolTesting {
             return s -> assertTrue(checkOutput.test(s), "Expected: '" + expectedOutput + "', actual: " + s);
         }
 
+        @Override
+        public int hashCode() {
+            return (name.hashCode() << 2) ^ type.hashCode() ;
+        }
 
         @Override
         public boolean equals(Object o) {
@@ -616,6 +643,11 @@ public class ReplToolTesting {
         }
 
         @Override
+        public int hashCode() {
+            return name.hashCode() ;
+        }
+
+        @Override
         public boolean equals(Object o) {
             if (o instanceof ClassInfo) {
                 ClassInfo c = (ClassInfo) o;
@@ -638,6 +670,11 @@ public class ReplToolTesting {
         @Override
         public Consumer<String> checkOutput() {
             return s -> assertTrue("".equals(s), "Expected: '', actual: " + s);
+        }
+
+        @Override
+        public int hashCode() {
+            return (name.hashCode() << 2) ^ type.hashCode() ;
         }
 
         @Override

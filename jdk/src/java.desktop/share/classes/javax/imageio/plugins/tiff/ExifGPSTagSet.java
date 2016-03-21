@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class ExifGPSTagSet extends TIFFTagSet {
     /**
      * A value to be used with the "GPSVersionID" tag to indicate GPS version
      * 2.2.  The value equals the US-ASCII encoding of the byte array
-     * <code>{'2', '2', '0', '0'}</code>.
+     * {@code {'2', '2', '0', '0'}}.
      *
      * @see #TAG_GPS_VERSION_ID
      */
@@ -711,9 +711,9 @@ public class ExifGPSTagSet extends TIFFTagSet {
     }
 
     /**
-     * Returns a shared instance of an <code>ExifGPSTagSet</code>.
+     * Returns a shared instance of an {@code ExifGPSTagSet}.
      *
-     * @return an <code>ExifGPSTagSet</code> instance.
+     * @return an {@code ExifGPSTagSet} instance.
      */
     public synchronized static ExifGPSTagSet getInstance() {
         if (theInstance == null) {

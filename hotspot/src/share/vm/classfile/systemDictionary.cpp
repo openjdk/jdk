@@ -430,12 +430,15 @@ void SystemDictionary::validate_protection_domain(instanceKlassHandle klass,
 
   // Now we have to call back to java to check if the initating class has access
   JavaValue result(T_VOID);
-  if (TraceProtectionDomainVerification) {
+  if (log_is_enabled(Debug, protectiondomain)) {
+    ResourceMark rm;
     // Print out trace information
-    tty->print_cr("Checking package access");
-    tty->print(" - class loader:      "); class_loader()->print_value_on(tty);      tty->cr();
-    tty->print(" - protection domain: "); protection_domain()->print_value_on(tty); tty->cr();
-    tty->print(" - loading:           "); klass()->print_value_on(tty);             tty->cr();
+    outputStream* log = LogHandle(protectiondomain)::debug_stream();
+    log->print_cr("Checking package access");
+    log->print("class loader: "); class_loader()->print_value_on(log);
+    log->print(" protection domain: "); protection_domain()->print_value_on(log);
+    log->print(" loading: "); klass()->print_value_on(log);
+    log->cr();
   }
 
   KlassHandle system_loader(THREAD, SystemDictionary::ClassLoader_klass());
@@ -448,13 +451,10 @@ void SystemDictionary::validate_protection_domain(instanceKlassHandle klass,
                          protection_domain,
                          THREAD);
 
-  if (TraceProtectionDomainVerification) {
-    if (HAS_PENDING_EXCEPTION) {
-      tty->print_cr(" -> DENIED !!!!!!!!!!!!!!!!!!!!!");
-    } else {
-     tty->print_cr(" -> granted");
-    }
-    tty->cr();
+  if (HAS_PENDING_EXCEPTION) {
+    log_debug(protectiondomain)("DENIED !!!!!!!!!!!!!!!!!!!!!");
+  } else {
+   log_debug(protectiondomain)("granted");
   }
 
   if (HAS_PENDING_EXCEPTION) return;
