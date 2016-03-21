@@ -254,19 +254,22 @@ void CardGeneration::compute_new_size() {
     if (capacity_after_gc > maximum_desired_capacity) {
       // Capacity too large, compute shrinking size
       shrink_bytes = capacity_after_gc - maximum_desired_capacity;
-      // We don't want shrink all the way back to initSize if people call
-      // System.gc(), because some programs do that between "phases" and then
-      // we'd just have to grow the heap up again for the next phase.  So we
-      // damp the shrinking: 0% on the first call, 10% on the second call, 40%
-      // on the third call, and 100% by the fourth call.  But if we recompute
-      // size without shrinking, it goes back to 0%.
-      shrink_bytes = shrink_bytes / 100 * current_shrink_factor;
-      assert(shrink_bytes <= max_shrink_bytes, "invalid shrink size");
-      if (current_shrink_factor == 0) {
-        _shrink_factor = 10;
-      } else {
-        _shrink_factor = MIN2(current_shrink_factor * 4, (size_t) 100);
+      if (ShrinkHeapInSteps) {
+        // If ShrinkHeapInSteps is true (the default),
+        // we don't want to shrink all the way back to initSize if people call
+        // System.gc(), because some programs do that between "phases" and then
+        // we'd just have to grow the heap up again for the next phase.  So we
+        // damp the shrinking: 0% on the first call, 10% on the second call, 40%
+        // on the third call, and 100% by the fourth call.  But if we recompute
+        // size without shrinking, it goes back to 0%.
+        shrink_bytes = shrink_bytes / 100 * current_shrink_factor;
+        if (current_shrink_factor == 0) {
+          _shrink_factor = 10;
+        } else {
+          _shrink_factor = MIN2(current_shrink_factor * 4, (size_t) 100);
+        }
       }
+      assert(shrink_bytes <= max_shrink_bytes, "invalid shrink size");
       log_trace(gc, heap)("    shrinking:  initSize: %.1fK  maximum_desired_capacity: %.1fK",
                                initial_size() / (double) K, maximum_desired_capacity / (double) K);
       log_trace(gc, heap)("    shrink_bytes: %.1fK  current_shrink_factor: " SIZE_FORMAT "  new shrink factor: " SIZE_FORMAT "  _min_heap_delta_bytes: %.1fK",
