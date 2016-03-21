@@ -163,6 +163,20 @@ public class JdkInternalMiscUnsafeAccessTestInt {
             assertEquals(x, 1, "putRelease int value");
         }
 
+        // Lazy
+        {
+            UNSAFE.putIntRelease(base, offset, 1);
+            int x = UNSAFE.getIntAcquire(base, offset);
+            assertEquals(x, 1, "putRelease int value");
+        }
+
+        // Opaque
+        {
+            UNSAFE.putIntOpaque(base, offset, 2);
+            int x = UNSAFE.getIntOpaque(base, offset);
+            assertEquals(x, 2, "putOpaque int value");
+        }
+
         // Unaligned
         {
             UNSAFE.putIntUnaligned(base, offset, 2);
@@ -197,6 +211,70 @@ public class JdkInternalMiscUnsafeAccessTestInt {
             assertEquals(r, false, "failing compareAndSwap int");
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 2, "failing compareAndSwap int value");
+        }
+
+        // Advanced compare
+        {
+            int r = UNSAFE.compareAndExchangeIntVolatile(base, offset, 2, 1);
+            assertEquals(r, 2, "success compareAndExchangeVolatile int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 1, "success compareAndExchangeVolatile int value");
+        }
+
+        {
+            int r = UNSAFE.compareAndExchangeIntVolatile(base, offset, 2, 3);
+            assertEquals(r, 1, "failing compareAndExchangeVolatile int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 1, "failing compareAndExchangeVolatile int value");
+        }
+
+        {
+            int r = UNSAFE.compareAndExchangeIntAcquire(base, offset, 1, 2);
+            assertEquals(r, 1, "success compareAndExchangeAcquire int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 2, "success compareAndExchangeAcquire int value");
+        }
+
+        {
+            int r = UNSAFE.compareAndExchangeIntAcquire(base, offset, 1, 3);
+            assertEquals(r, 2, "failing compareAndExchangeAcquire int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 2, "failing compareAndExchangeAcquire int value");
+        }
+
+        {
+            int r = UNSAFE.compareAndExchangeIntRelease(base, offset, 2, 1);
+            assertEquals(r, 2, "success compareAndExchangeRelease int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 1, "success compareAndExchangeRelease int value");
+        }
+
+        {
+            int r = UNSAFE.compareAndExchangeIntRelease(base, offset, 2, 3);
+            assertEquals(r, 1, "failing compareAndExchangeRelease int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 1, "failing compareAndExchangeRelease int value");
+        }
+
+        {
+            boolean r = UNSAFE.weakCompareAndSwapInt(base, offset, 1, 2);
+            assertEquals(r, true, "weakCompareAndSwap int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 2, "weakCompareAndSwap int value");
+        }
+
+        {
+            boolean r = UNSAFE.weakCompareAndSwapIntAcquire(base, offset, 2, 1);
+            assertEquals(r, true, "weakCompareAndSwapAcquire int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 1, "weakCompareAndSwapAcquire int");
+        }
+
+        {
+            boolean r = UNSAFE.weakCompareAndSwapIntRelease(base, offset, 1, 2);
+            assertEquals(r, true, "weakCompareAndSwapRelease int");
+            int x = UNSAFE.getInt(base, offset);
+            assertEquals(x, 2, "weakCompareAndSwapRelease int");
         }
 
         // Compare set and get

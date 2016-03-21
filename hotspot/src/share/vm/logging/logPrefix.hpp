@@ -58,6 +58,7 @@
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, metaspace)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, start)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, phases, task)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, plab)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, region)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, remset)) \

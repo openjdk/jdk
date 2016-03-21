@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class TIFFT6Compressor extends TIFFFaxCompressor {
      *
      * @param data        The row of data to compress.
      * @param lineStride  Byte step between the same sample in different rows.
-     * @param colOffset   Bit offset within first <code>data[rowOffset]</code>.
+     * @param colOffset   Bit offset within first {@code data[rowOffset]}.
      * @param width       Number of bits in the row.
      * @param height      Number of rows in the buffer.
      * @param compData    The compressed data.

@@ -91,7 +91,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * can call with more than 255 slots. This limits the number of static and
  * dynamic arguments one can pass to bootstrap method. Since there are potential
  * concatenation strategies that use {@code MethodHandle} combinators, we need
- * to reserve a few empty slots on the parameter lists to to capture the
+ * to reserve a few empty slots on the parameter lists to capture the
  * temporal results. This is why bootstrap methods in this factory do not accept
  * more than 200 argument slots. Users requiring more than 200 argument slots in
  * concatenation are expected to split the large concatenation in smaller

@@ -95,16 +95,17 @@ public final class WaveFloatFileReader extends SunFileReader {
     public AudioInputStream getAudioInputStream(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
 
-        AudioFileFormat format = getAudioFileFormat(stream);
+        final AudioFileFormat format = getAudioFileFormat(stream);
         // we've got everything, the stream is supported and it is at the
         // beginning of the header, so find the data chunk again and return an
         // AudioInputStream
-        RIFFReader riffiterator = new RIFFReader(stream);
+        final RIFFReader riffiterator = new RIFFReader(stream);
         while (riffiterator.hasNextChunk()) {
             RIFFReader chunk = riffiterator.nextChunk();
             if (chunk.getFormat().equals("data")) {
-                return new AudioInputStream(chunk, format.getFormat(),
-                        chunk.getSize());
+                final AudioFormat af = format.getFormat();
+                final long length = chunk.getSize() / af.getFrameSize();
+                return new AudioInputStream(chunk, af, length);
             }
         }
         throw new UnsupportedAudioFileException();

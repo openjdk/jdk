@@ -1071,6 +1071,19 @@ void os::Posix::ucontext_set_pc(ucontext_t* ctx, address pc) {
 #endif
 }
 
+char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr) {
+  size_t stack_size = 0;
+  size_t guard_size = 0;
+  int detachstate = 0;
+  pthread_attr_getstacksize(attr, &stack_size);
+  pthread_attr_getguardsize(attr, &guard_size);
+  pthread_attr_getdetachstate(attr, &detachstate);
+  jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
+    stack_size / 1024, guard_size / 1024,
+    (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
+  return buf;
+}
+
 
 os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
   assert(Thread::current()->is_Watcher_thread(), "Must be WatcherThread");

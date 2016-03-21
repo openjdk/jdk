@@ -1582,6 +1582,21 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
   return NULL;
 }
 
+static bool is_mismatched_access(ciConstant con, BasicType loadbt) {
+  BasicType conbt = con.basic_type();
+  switch (conbt) {
+    case T_BOOLEAN: conbt = T_BYTE;   break;
+    case T_ARRAY:   conbt = T_OBJECT; break;
+  }
+  switch (loadbt) {
+    case T_BOOLEAN:   loadbt = T_BYTE;   break;
+    case T_NARROWOOP: loadbt = T_OBJECT; break;
+    case T_ARRAY:     loadbt = T_OBJECT; break;
+    case T_ADDRESS:   loadbt = T_OBJECT; break;
+  }
+  return (conbt != loadbt);
+}
+
 // Try to constant-fold a stable array element.
 static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicType loadbt) {
   assert(ary->const_oop(), "array should be constant");
@@ -1590,10 +1605,12 @@ static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicTyp
   // Decode the results of GraphKit::array_element_address.
   ciArray* aobj = ary->const_oop()->as_array();
   ciConstant con = aobj->element_value_by_offset(off);
-
   if (con.basic_type() != T_ILLEGAL && !con.is_null_or_zero()) {
+    bool is_mismatched = is_mismatched_access(con, loadbt);
+    assert(!is_mismatched, "conbt=%s; loadbt=%s", type2name(con.basic_type()), type2name(loadbt));
     const Type* con_type = Type::make_from_constant(con);
-    if (con_type != NULL) {
+    // Guard against erroneous constant folding.
+    if (!is_mismatched && con_type != NULL) {
       if (con_type->isa_aryptr()) {
         // Join with the array element type, in case it is also stable.
         int dim = ary->stable_dimension();
@@ -1642,7 +1659,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     const bool off_beyond_header = ((uint)off >= (uint)min_base_off);
 
     // Try to constant-fold a stable array element.
-    if (FoldStableValues && ary->is_stable() && ary->const_oop() != NULL) {
+    if (FoldStableValues && !is_mismatched_access() && ary->is_stable() && ary->const_oop() != NULL) {
       // Make sure the reference is not into the header and the offset is constant
       if (off_beyond_header && adr->is_AddP() && off != Type::OffsetBot) {
         const Type* con_type = fold_stable_ary_elem(ary, off, memory_type());

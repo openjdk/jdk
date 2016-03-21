@@ -37,6 +37,7 @@
 #include "gc/shared/generation.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "logging/logTag.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/oopFactory.hpp"
@@ -417,34 +418,30 @@ bool ClassPathImageEntry::is_jrt() {
 #if INCLUDE_CDS
 void ClassLoader::exit_with_path_failure(const char* error, const char* message) {
   assert(DumpSharedSpaces, "only called at dump time");
-  tty->print_cr("Hint: enable -XX:+TraceClassPaths to diagnose the failure");
+  tty->print_cr("Hint: enable -Xlog:classpath=info to diagnose the failure");
   vm_exit_during_initialization(error, message);
 }
 #endif
 
-void ClassLoader::trace_class_path(outputStream* out, const char* msg, const char* name) {
-  if (!TraceClassPaths) {
-    return;
-  }
-
-  if (msg) {
-    out->print("%s", msg);
-  }
-  if (name) {
-    if (strlen(name) < 256) {
-      out->print("%s", name);
-    } else {
-      // For very long paths, we need to print each character separately,
-      // as print_cr() has a length limit
-      while (name[0] != '\0') {
-        out->print("%c", name[0]);
-        name++;
+void ClassLoader::trace_class_path(const char* msg, const char* name) {
+  if (log_is_enabled(Info, classpath)) {
+    ResourceMark rm;
+    outputStream* out = LogHandle(classpath)::info_stream();
+    if (msg) {
+      out->print("%s", msg);
+    }
+    if (name) {
+      if (strlen(name) < 256) {
+        out->print("%s", name);
+      } else {
+        // For very long paths, we need to print each character separately,
+        // as print_cr() has a length limit
+        while (name[0] != '\0') {
+          out->print("%c", name[0]);
+          name++;
+        }
       }
     }
-  }
-  if (msg && msg[0] == '[') {
-    out->print_cr("]");
-  } else {
     out->cr();
   }
 }
@@ -470,11 +467,13 @@ void ClassLoader::check_shared_classpath(const char *path) {
 void ClassLoader::setup_bootstrap_search_path() {
   assert(_first_entry == NULL, "should not setup bootstrap class search path twice");
   const char* sys_class_path = Arguments::get_sysclasspath();
+  const char* java_class_path = Arguments::get_appclasspath();
   if (PrintSharedArchiveAndExit) {
     // Don't print sys_class_path - this is the bootcp of this current VM process, not necessarily
     // the same as the bootcp of the shared archive.
   } else {
-    trace_class_path(tty, "[Bootstrap loader class path=", sys_class_path);
+    trace_class_path("bootstrap loader class path=", sys_class_path);
+    trace_class_path("classpath: ", java_class_path);
   }
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
@@ -578,9 +577,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
         }
       }
     }
-    if (TraceClassPaths) {
-      tty->print_cr("[Opened %s]", path);
-    }
+    log_info(classpath)("opened: %s", path);
     log_info(classload)("opened: %s", path);
   } else {
     // Directory

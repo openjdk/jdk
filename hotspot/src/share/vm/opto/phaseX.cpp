@@ -1471,6 +1471,27 @@ void PhaseIterGVN::add_users_to_worklist0( Node *n ) {
   }
 }
 
+// Return counted loop Phi if as a counted loop exit condition, cmp
+// compares the the induction variable with n
+static PhiNode* countedloop_phi_from_cmp(CmpINode* cmp, Node* n) {
+  for (DUIterator_Fast imax, i = cmp->fast_outs(imax); i < imax; i++) {
+    Node* bol = cmp->fast_out(i);
+    for (DUIterator_Fast i2max, i2 = bol->fast_outs(i2max); i2 < i2max; i2++) {
+      Node* iff = bol->fast_out(i2);
+      if (iff->is_CountedLoopEnd()) {
+        CountedLoopEndNode* cle = iff->as_CountedLoopEnd();
+        if (cle->limit() == n) {
+          PhiNode* phi = cle->phi();
+          if (phi != NULL) {
+            return phi;
+          }
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
 void PhaseIterGVN::add_users_to_worklist( Node *n ) {
   add_users_to_worklist0(n);
 
@@ -1500,18 +1521,7 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         Node* bol = use->raw_out(0);
         if (bol->outcnt() > 0) {
           Node* iff = bol->raw_out(0);
-          if (use_op == Op_CmpI &&
-              iff->is_CountedLoopEnd()) {
-            CountedLoopEndNode* cle = iff->as_CountedLoopEnd();
-            if (cle->limit() == n && cle->phi() != NULL) {
-              // If an opaque node feeds into the limit condition of a
-              // CountedLoop, we need to process the Phi node for the
-              // induction variable when the opaque node is removed:
-              // the range of values taken by the Phi is now known and
-              // so its type is also known.
-              _worklist.push(cle->phi());
-            }
-          } else if (iff->outcnt() == 2) {
+          if (iff->outcnt() == 2) {
             // Look for the 'is_x2logic' pattern: "x ? : 0 : 1" and put the
             // phi merging either 0 or 1 onto the worklist
             Node* ifproj0 = iff->raw_out(0);
@@ -1526,6 +1536,15 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         }
       }
       if (use_op == Op_CmpI) {
+        Node* phi = countedloop_phi_from_cmp((CmpINode*)use, n);
+        if (phi != NULL) {
+          // If an opaque node feeds into the limit condition of a
+          // CountedLoop, we need to process the Phi node for the
+          // induction variable when the opaque node is removed:
+          // the range of values taken by the Phi is now known and
+          // so its type is also known.
+          _worklist.push(phi);
+        }
         Node* in1 = use->in(1);
         for (uint i = 0; i < in1->outcnt(); i++) {
           if (in1->raw_out(i)->Opcode() == Op_CastII) {
@@ -1712,6 +1731,15 @@ void PhaseCCP::analyze() {
                 worklist.push(p); // Propagate change to user
               }
             }
+          }
+        }
+        // If n is used in a counted loop exit condition then the type
+        // of the counted loop's Phi depends on the type of n. See
+        // PhiNode::Value().
+        if (m_op == Op_CmpI) {
+          PhiNode* phi = countedloop_phi_from_cmp((CmpINode*)m, n);
+          if (phi != NULL) {
+            worklist.push(phi);
           }
         }
       }

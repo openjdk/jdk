@@ -437,6 +437,9 @@ public class CheckMethodAdapter extends MethodVisitor {
      * will not perform any data flow check (see
      * {@link #CheckMethodAdapter(int,String,String,MethodVisitor,Map)}).
      *
+     * @param api
+     *            the ASM API version implemented by this CheckMethodAdapter.
+     *            Must be one of {@link Opcodes#ASM4} or {@link Opcodes#ASM5}.
      * @param mv
      *            the method visitor to which this adapter must delegate calls.
      * @param labels

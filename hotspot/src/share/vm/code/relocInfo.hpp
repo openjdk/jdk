@@ -707,10 +707,6 @@ class Relocation VALUE_OBJ_CLASS_SPEC {
     assert(datalen()==0 || type()==relocInfo::none, "no data here");
   }
 
-  static bool is_reloc_index(intptr_t index) {
-    return 0 < index && index < os::vm_page_size();
-  }
-
  protected:
   // Helper functions for pack_data_to() and unpack_data().
 
@@ -805,10 +801,6 @@ class Relocation VALUE_OBJ_CLASS_SPEC {
     int byte_offset = -( offset * relocInfo::addr_unit() );
     return base + byte_offset;
   }
-
-  // these convert between indexes and addresses in the runtime system
-  static int32_t runtime_address_to_index(address runtime_address);
-  static address index_to_runtime_address(int32_t index);
 
   // helpers for mapping between old and new addresses after a move or resize
   address old_addr_for(address newa, const CodeBuffer* src, CodeBuffer* dest);
@@ -1253,7 +1245,8 @@ class external_word_Relocation : public DataRelocation {
   // Some address looking values aren't safe to treat as relocations
   // and should just be treated as constants.
   static bool can_be_relocated(address target) {
-    return target != NULL && !is_reloc_index((intptr_t)target);
+    assert(target == NULL || (uintptr_t)target >= (uintptr_t)os::vm_page_size(), INTPTR_FORMAT, (intptr_t)target);
+    return target != NULL;
   }
 
  private:

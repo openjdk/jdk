@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,9 +16,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: SAXImpl.java,v 1.5 2005/09/28 13:48:37 pvedula Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.dom;
@@ -82,7 +79,7 @@ public final class SAXImpl extends SAX2DTM2
 
     // Namespace prefix-to-uri mapping stuff
     private int       _uriCount     = 0;
-    private int       _prefixCount  = 0;
+    // private int       _prefixCount  = 0;
 
     // Stack used to keep track of what whitespace text nodes are protected
     // by xml:space="preserve" attributes and which nodes that are not.
@@ -90,11 +87,11 @@ public final class SAXImpl extends SAX2DTM2
     private int     _idx = 1;
     private boolean _preserve = false;
 
-    private static final String XML_STRING = "xml:";
+    // private static final String XML_STRING = "xml:";
     private static final String XML_PREFIX   = "xml";
     private static final String XMLSPACE_STRING = "xml:space";
     private static final String PRESERVE_STRING = "preserve";
-    private static final String XMLNS_PREFIX = "xmlns";
+    // private static final String XMLNS_PREFIX = "xmlns";
     private static final String XML_URI = "http://www.w3.org/XML/1998/namespace";
 
     private boolean _escaping = true;
@@ -123,7 +120,7 @@ public final class SAXImpl extends SAX2DTM2
     private BitArray  _dontEscape = null;
 
     // The URI to this document
-    private String    _documentURI = null;
+    // private String _documentURI = null;
     static private int _documentURIIndex = 0;
 
     // The owner Document when the input source is DOMSource.
@@ -143,8 +140,7 @@ public final class SAXImpl extends SAX2DTM2
     // Support for access/navigation through org.w3c.dom API
     private Node[] _nodes;
     private NodeList[] _nodeLists;
-    private final static String XML_LANG_ATTRIBUTE =
-        "http://www.w3.org/XML/1998/namespace:@lang";
+    // private final static String XML_LANG_ATTRIBUTE = "http://www.w3.org/XML/1998/namespace:@lang";
 
     /**
      * Define the origin of the document from which the tree was built
@@ -491,6 +487,7 @@ public final class SAXImpl extends SAX2DTM2
     /**
      * Sets up a translet-to-dom type mapping table
      */
+    /*
     private int[] setupMapping(String[] names, String[] uris, int[] types, int nNames) {
         // Padding with number of names, because they
         // may need to be added, i.e for RTFs. See copy03
@@ -502,6 +499,7 @@ public final class SAXImpl extends SAX2DTM2
         }
         return result;
     }
+    */
 
     /**
      * Returns the internal type associated with an expanded QName
@@ -1230,9 +1228,6 @@ public final class SAXImpl extends SAX2DTM2
      */
     public DTMAxisIterator getNamespaceAxisIterator(int axis, int ns)
     {
-
-        DTMAxisIterator iterator = null;
-
         if (ns == NO_TYPE) {
             return EMPTYITERATOR;
         }
@@ -1546,7 +1541,6 @@ public final class SAXImpl extends SAX2DTM2
      */
     public DTMAxisIterator getNthDescendant(int type, int n, boolean includeself)
     {
-        DTMAxisIterator source = (DTMAxisIterator) new TypedDescendantIterator(type);
         return new NthDescendantIterator(n);
     }
 
@@ -1882,4 +1876,7 @@ public final class SAXImpl extends SAX2DTM2
         }
     }
 
+    public void release() {
+        _dtmManager.release(this, true);
+    }
 }

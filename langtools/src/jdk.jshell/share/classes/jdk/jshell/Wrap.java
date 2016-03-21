@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.jshell;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.sun.source.tree.Tree;
 import static jdk.internal.jshell.remote.RemoteCodes.DOIT_METHOD_NAME;
 
 /**
@@ -58,9 +59,18 @@ abstract class Wrap implements GeneralWrap {
         return methodWrap("", source, "");
     }
 
-    public static Wrap corralledMethod(String source, Range modRange, Range tpRange, Range typeRange, String name, Range paramRange, Range throwsRange, int id) {
+    private static String indent(int n) {
+        return "                              ".substring(0, n * 4);
+    }
+
+    private static String nlindent(int n) {
+        return "\n" + indent(n);
+    }
+
+    public static Wrap corralledMethod(String source, Range modRange, Range tpRange,
+            Range typeRange, String name, Range paramRange, Range throwsRange, int id, int indent) {
         List<Object> l = new ArrayList<>();
-        l.add("    public static\n    ");
+        l.add(indent(indent) + ((indent == 1) ? "public static" + nlindent(indent) : ""));
         if (!modRange.isEmpty()) {
             l.add(new RangeWrap(source, modRange));
             l.add(" ");
@@ -70,17 +80,81 @@ abstract class Wrap implements GeneralWrap {
             l.add(new RangeWrap(source, tpRange));
             l.add("> ");
         }
-        l.add(new RangeWrap(source, typeRange));
-        l.add(" " + name + "(\n        ");
-        if (paramRange != null) {
+        if (!typeRange.isEmpty()) {
+            l.add(new RangeWrap(source, typeRange));
+            l.add(" ");
+        }
+        l.add(name + "(");
+        if (paramRange != null && !paramRange.isEmpty()) {
+            l.add(nlindent(indent + 1));
             l.add(new RangeWrap(source, paramRange));
         }
-        l.add(") ");
+        l.add(")");
         if (throwsRange != null) {
-            l.add("throws ");
+            l.add(" throws ");
             l.add(new RangeWrap(source, throwsRange));
         }
-        l.add(" {\n        throw new jdk.internal.jshell.remote.RemoteResolutionException(" + id + ");\n}\n");
+        l.add(" {"
+                + nlindent(indent+1)
+                + "throw new jdk.internal.jshell.remote.RemoteResolutionException(" + id + ");"
+                + nlindent(indent)
+                + "}\n");
+        return new CompoundWrap(l.toArray());
+    }
+
+    public static Wrap corralledType(String source, Range modRange, Tree.Kind kind, String name, Range tpRange,
+            Range extendsRange, List<Range> implementsRanges, List<Wrap> members,
+            boolean defaultConstructor, int id, int indent) {
+        boolean isInterface = kind == Tree.Kind.INTERFACE;
+        List<Object> l = new ArrayList<>();
+        l.add(indent(indent) + ((indent == 1) ? "public static" + nlindent(indent) : ""));
+        if (!modRange.isEmpty()) {
+            l.add(new RangeWrap(source, modRange));
+            l.add(" ");
+        }
+        l.add((isInterface ? "interface " : "class ") + name);
+        if (tpRange != null) {
+            l.add("<");
+            l.add(new RangeWrap(source, tpRange));
+            l.add("> ");
+        }
+        if (extendsRange != null && !extendsRange.isEmpty()) {
+            l.add(" extends ");
+            l.add(new RangeWrap(source, extendsRange));
+        }
+        for (int i = 0; i < implementsRanges.size(); ++i) {
+            Range ir = implementsRanges.get(i);
+            l.add(i == 0 ? " implements " : ", ");
+            l.add(new RangeWrap(source, ir));
+        }
+        if (defaultConstructor) {
+            l.add(" {"
+                + nlindent(indent+1)
+                + ((indent == 1)? "public " : "") + name + "()  {"
+                + nlindent(indent+2)
+                + "throw new jdk.internal.jshell.remote.RemoteResolutionException(" + id + ");"
+                + nlindent(indent+1)
+                + "}\n");
+        } else {
+            l.add(" {\n");
+        }
+        l.addAll(members);
+        l.add(indent(indent) + "}\n");
+        return new CompoundWrap(l.toArray());
+    }
+
+    public static Wrap corralledVar(String source, Range modRange, Range typeRange, String brackets, Range nameRange, int indent) {
+        RangeWrap wname = new RangeWrap(source, nameRange);
+        List<Object> l = new ArrayList<>();
+        l.add(indent(indent) + ((indent == 1) ? "public static" + nlindent(indent) : ""));
+        if (!modRange.isEmpty()) {
+            l.add(new RangeWrap(source, modRange));
+            l.add(" ");
+        }
+        l.add(new RangeWrap(source, typeRange));
+        l.add(" ");
+        l.add(wname);
+        l.add(semi(wname));
         return new CompoundWrap(l.toArray());
     }
 

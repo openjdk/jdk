@@ -24,16 +24,17 @@
 /*
  * @test TestCompilerDirectivesCompatibilityFlag
  * @bug 8137167
- * @library /testlibrary /test/lib
+ * @library /testlibrary /test/lib /
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management
  * @build jdk.test.lib.*
- * @build jdk.test.lib.dcmd.*
- * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *        jdk.test.lib.dcmd.*
+ *        sun.hotspot.WhiteBox
+ *        compiler.testlibrary.CompilerUtils
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run testng/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions
  *      -XX:+PrintAssembly -XX:+WhiteBoxAPI TestCompilerDirectivesCompatibilityFlag
  * @summary Test compiler control compatibility with compile command
  */
@@ -54,28 +55,28 @@ import java.util.Objects;
 
 public class TestCompilerDirectivesCompatibilityFlag extends TestCompilerDirectivesCompatibilityBase {
 
-    public void testCompatibility(CommandExecutor executor) throws Exception {
+    public void testCompatibility(CommandExecutor executor, int comp_level) throws Exception {
 
         // Call all validation twice to catch error when overwriting a directive
         // Flag is default on
         expect(WB.getBooleanVMFlag("PrintAssembly"));
-        expect(WB.shouldPrintAssembly(method));
-        expect(WB.shouldPrintAssembly(nomatch));
-        expect(WB.shouldPrintAssembly(method));
-        expect(WB.shouldPrintAssembly(nomatch));
+        expect(WB.shouldPrintAssembly(method, comp_level));
+        expect(WB.shouldPrintAssembly(nomatch, comp_level));
+        expect(WB.shouldPrintAssembly(method, comp_level));
+        expect(WB.shouldPrintAssembly(nomatch, comp_level));
 
         // load directives that turn it off
         executor.execute("Compiler.directives_add " + control_off);
-        expect(!WB.shouldPrintAssembly(method));
-        expect(WB.shouldPrintAssembly(nomatch));
-        expect(!WB.shouldPrintAssembly(method));
-        expect(WB.shouldPrintAssembly(nomatch));
+        expect(!WB.shouldPrintAssembly(method, comp_level));
+        expect(WB.shouldPrintAssembly(nomatch, comp_level));
+        expect(!WB.shouldPrintAssembly(method, comp_level));
+        expect(WB.shouldPrintAssembly(nomatch, comp_level));
 
         // remove and see that it is true again
         executor.execute("Compiler.directives_remove");
-        expect(WB.shouldPrintAssembly(method));
-        expect(WB.shouldPrintAssembly(nomatch));
-        expect(WB.shouldPrintAssembly(method));
-        expect(WB.shouldPrintAssembly(nomatch));
+        expect(WB.shouldPrintAssembly(method, comp_level));
+        expect(WB.shouldPrintAssembly(nomatch, comp_level));
+        expect(WB.shouldPrintAssembly(method, comp_level));
+        expect(WB.shouldPrintAssembly(nomatch, comp_level));
     }
 }

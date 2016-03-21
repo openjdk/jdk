@@ -718,7 +718,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Returns a shallow copy of this enum map.  (The values themselves
+     * Returns a shallow copy of this enum map. The values themselves
      * are not cloned.
      *
      * @return a shallow copy of this enum map
