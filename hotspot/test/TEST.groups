@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -230,8 +230,10 @@ compact1_minimal = \
 #
 needs_g1gc = \
   compiler/regalloc/C1ObjectSpillInLogicOp.java \
+  gc/TestSmallHeap.java \
   gc/TestSystemGC.java \
   gc/arguments/TestAlignmentToUseLargePages.java \
+  gc/arguments/TestG1ConcRefinementThreads.java \
   gc/arguments/TestG1HeapRegionSize.java \
   gc/arguments/TestG1HeapSizeFlags.java \
   gc/arguments/TestG1PercentageOptions.java \
@@ -242,11 +244,11 @@ needs_g1gc = \
   gc/class_unloading/TestG1ClassUnloadingHWM.java \
   gc/ergonomics/TestDynamicNumberOfGCThreads.java \
   gc/g1/ \
+  gc/logging/TestGCId.java \
   gc/metaspace/G1AddMetaspaceDependency.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   gc/startup_warnings/TestG1.java \
-  gc/whitebox/TestConcMarkCycleWB.java \
-  gc/arguments/TestG1ConcRefinementThreads.java
+  gc/whitebox/TestConcMarkCycleWB.java 
 
 hotspot_native_sanity = \
   native_sanity
