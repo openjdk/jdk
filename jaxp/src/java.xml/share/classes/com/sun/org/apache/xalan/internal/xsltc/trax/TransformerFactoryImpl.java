@@ -137,7 +137,8 @@ public class TransformerFactoryImpl
     /**
      * The package name prefix for all generated translet classes
      */
-    private String _packageName = null;
+    private static final String DEFAULT_TRANSLATE_PACKAGE = "die.verwandlung";
+    private String _packageName = DEFAULT_TRANSLATE_PACKAGE;
 
     /**
      * The jar file name which the translet classes are packaged into
@@ -305,6 +306,13 @@ public class TransformerFactoryImpl
     @Override
     public ErrorListener getErrorListener() {
         return _errorListener;
+    }
+
+    /**
+     * Returns the package name.
+     */
+    String getPackageName() {
+        return _packageName;
     }
 
     /**
@@ -884,7 +892,7 @@ public class TransformerFactoryImpl
             String transletClassName = getTransletBaseName(source);
 
             if (_packageName != null)
-                transletClassName = _packageName + "." + transletClassName;
+               transletClassName = _packageName + "." + transletClassName;
 
             if (_jarFileName != null)
                 bytecodes = getBytecodesFromJar(source, transletClassName);
@@ -1286,7 +1294,7 @@ public class TransformerFactoryImpl
     private void resetTransientAttributes() {
         _transletName = DEFAULT_TRANSLET_NAME;
         _destinationDirectory = null;
-        _packageName = null;
+        _packageName = DEFAULT_TRANSLATE_PACKAGE;
         _jarFileName = null;
     }
 

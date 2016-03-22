@@ -30,6 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.classfile
+ *          jdk.jdeps/com.sun.tools.javap
  * @build EnclosingMethodTest TestBase TestResult InMemoryFileManager ToolBox
  * @run main EnclosingMethodTest
  */

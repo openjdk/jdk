@@ -25,7 +25,11 @@
  * @test
  * @bug 8077605
  * @summary Check that when an exception occurs during Attr.visitLambda, an attempt to attribute
-            the lambda again is avoided rather than falling into an infinite recursion.
+ *          the lambda again is avoided rather than falling into an infinite recursion.
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.comp
+ *          jdk.compiler/com.sun.tools.javac.tree
+ *          jdk.compiler/com.sun.tools.javac.util
  */
 
 import java.io.IOException;

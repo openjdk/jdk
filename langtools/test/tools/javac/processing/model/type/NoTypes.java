@@ -69,8 +69,21 @@ public class NoTypes extends JavacTestingAbstractProcessor {
         Element pkg = i.getEnclosingElement().getEnclosingElement();
         verifyKind(PACKAGE, pkg.asType());
 
-        // A package isn't enclosed.  Not yet, anyway.
-        if (pkg.getEnclosingElement() != null)
+        Element module = pkg.getEnclosingElement();
+
+        if (module == null)
+            throw new AssertionError();
+
+        if (module.getKind() != ElementKind.MODULE)
+            throw new AssertionError();
+
+        ModuleElement modle = (ModuleElement) module;
+
+        if (!modle.isUnnamed())
+            throw new AssertionError();
+
+        // A module isn't enclosed.
+        if (module.getEnclosingElement() != null)
             throw new AssertionError();
 
         verifyKind(VOID, types.getNoType(VOID));

@@ -28,6 +28,7 @@
  *          the javadoc API clients.
  * @library /tools/lib
  * @modules jdk.javadoc com.sun.tools.javac.api
+ *          jdk.jdeps/com.sun.tools.javap
  * @run main CompletionError
  */
 

@@ -89,7 +89,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
 public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
 
     public final ClassType type;        // protected->public for debugging
-    protected final ClassSymbol tsym;
+    public final ClassSymbol tsym;
 
     boolean isIncluded = false;         // Set in RootDocImpl
 
@@ -1137,7 +1137,7 @@ public class ClassDocImpl extends ProgramElementDocImpl implements ClassDoc {
 
         //### Add the implicit "import java.lang.*" to the result
         Names names = tsym.name.table.names;
-        importedPackages.append(env.getPackageDoc(env.syms.enterPackage(names.java_lang)));
+        importedPackages.append(env.getPackageDoc(env.syms.enterPackage(env.syms.java_base, names.java_lang)));
 
         Env<AttrContext> compenv = env.enter.getEnv(tsym);
         if (compenv == null) return new PackageDocImpl[0];

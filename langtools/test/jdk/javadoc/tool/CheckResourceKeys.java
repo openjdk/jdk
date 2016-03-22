@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@
  * @test
  * @bug 8000612
  * @summary need test program to validate javadoc resource bundles
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
+ *          jdk.jdeps/com.sun.tools.classfile
  */
 
 import java.io.*;
+import java.lang.reflect.Layer;
+import java.lang.reflect.Module;
 import java.util.*;
 import javax.tools.*;
 import com.sun.tools.classfile.*;
@@ -253,6 +256,7 @@ public class CheckResourceKeys {
      * Get the set of keys from the javadoc resource bundles.
      */
     Set<String> getResourceKeys() {
+        Module jdk_javadoc = Layer.boot().findModule("jdk.javadoc").get();
         String[] names = {
                 "jdk.javadoc.internal.doclets.formats.html.resources.standard",
                 "jdk.javadoc.internal.doclets.toolkit.resources.doclets",
@@ -260,7 +264,7 @@ public class CheckResourceKeys {
         };
         Set<String> results = new TreeSet<String>();
         for (String name : names) {
-            ResourceBundle b = ResourceBundle.getBundle(name);
+            ResourceBundle b = ResourceBundle.getBundle(name, jdk_javadoc);
             results.addAll(b.keySet());
         }
         return results;

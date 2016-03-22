@@ -73,7 +73,7 @@ public class DupUnsharedTest {
     void runScopeContentTest() throws Exception {
         Set<Symbol> expected = Collections.newSetFromMap(new IdentityHashMap<>() {});
         Set<Symbol> notExpected = Collections.newSetFromMap(new IdentityHashMap<>());
-        WriteableScope s1 = WriteableScope.create(symtab.rootPackage);
+        WriteableScope s1 = WriteableScope.create(symtab.unnamedModule.unnamedPackage);
         ClassSymbol acceptSym = symtab.arrayClass;
         s1.enter(acceptSym);
         expected.add(acceptSym);
@@ -140,7 +140,7 @@ public class DupUnsharedTest {
      *   'A' and would stop the search prematurely.
      */
     void runClashTest() throws Exception {
-        WriteableScope emptyScope = WriteableScope.create(symtab.unnamedPackage);
+        WriteableScope emptyScope = WriteableScope.create(symtab.unnamedModule.unnamedPackage);
         Field tableField = emptyScope.getClass().getDeclaredField("table");
         tableField.setAccessible(true);
         Method dble = emptyScope.getClass().getDeclaredMethod("dble");
@@ -165,7 +165,7 @@ public class DupUnsharedTest {
         System.out.println("first name: " + first);
 
         //now, find another name, that will clash with the first one both in the empty and a doubled scope:
-        Scope doubledEmptyScope = WriteableScope.create(symtab.unnamedPackage);
+        Scope doubledEmptyScope = WriteableScope.create(symtab.unnamedModule.unnamedPackage);
         dble.invoke(doubledEmptyScope);
         Integer firstNameTestScopeIndex = (Integer) getIndex.invoke(emptyScope, first);
         Integer firstNameDoubleScopeIndex = (Integer) getIndex.invoke(doubledEmptyScope, first);
@@ -186,7 +186,7 @@ public class DupUnsharedTest {
         Symbol otherSymbol = new VarSymbol(0, other, Type.noType, null);
 
         //test the situation described above:
-        WriteableScope testScope1 = WriteableScope.create(symtab.unnamedPackage);
+        WriteableScope testScope1 = WriteableScope.create(symtab.unnamedModule.unnamedPackage);
         testScope1.enter(firstSymbol);
 
         WriteableScope dupped1 = testScope1.dup();
@@ -200,7 +200,7 @@ public class DupUnsharedTest {
         }
 
         //also check a situation where the clashing Symbol is removed from the dupped scope:
-        WriteableScope testScope2 = WriteableScope.create(symtab.unnamedPackage);
+        WriteableScope testScope2 = WriteableScope.create(symtab.unnamedModule.unnamedPackage);
         testScope2.enter(firstSymbol);
 
         WriteableScope dupped2 = testScope2.dup();
