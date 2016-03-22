@@ -1104,12 +1104,14 @@ loop:
                 } finally {
                     defaultNames.pop();
                 }
-            } else if (varType == CONST) {
+            } else if (varType == CONST && isStatement) {
                 throw error(AbstractParser.message("missing.const.assignment", name.getName()));
             }
 
+            // Only set declaration flag on lexically scoped let/const as it adds runtime overhead.
+            final IdentNode actualName = varType == LET || varType == CONST ? name.setIsDeclaredHere() : name;
             // Allocate var node.
-            final VarNode var = new VarNode(varLine, varToken, sourceOrder, finish, name.setIsDeclaredHere(), init, varFlags);
+            final VarNode var = new VarNode(varLine, varToken, sourceOrder, finish, actualName, init, varFlags);
             vars.add(var);
             appendStatement(var);
 
@@ -1246,7 +1248,6 @@ loop:
             }
 
             expect(LPAREN);
-
 
             switch (type) {
             case VAR:
