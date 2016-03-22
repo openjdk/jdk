@@ -29,7 +29,7 @@
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @build   JavacTestingAbstractProcessor TestQualifiedNameUsed p.Q p.QQ p.R p.RR
- * @run compile -processor TestQualifiedNameUsed -proc:only TestQualifiedNameUsed.java
+ * @run compile -XDaccessInternalAPI -processor TestQualifiedNameUsed -proc:only TestQualifiedNameUsed.java
  */
 
 import java.lang.annotation.Repeatable;
@@ -40,9 +40,8 @@ import static javax.lang.model.util.ElementFilter.*;
 
 import com.sun.tools.javac.util.Assert;
 
-import java.util.Arrays;
-
 public class TestQualifiedNameUsed extends JavacTestingAbstractProcessor {
+
     @Q
     @p.Q
     @p.R.Q

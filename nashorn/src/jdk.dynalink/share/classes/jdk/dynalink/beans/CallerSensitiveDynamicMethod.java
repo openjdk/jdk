@@ -159,13 +159,13 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
                 GET_LOOKUP_CONTEXT);
 
         if(target instanceof Method) {
-            final MethodHandle mh = Lookup.unreflect(lookup, (Method)target);
+            final MethodHandle mh = Lookup.unreflectCallerSensitive(lookup, (Method)target);
             if(Modifier.isStatic(((Member)target).getModifiers())) {
                 return StaticClassIntrospector.editStaticMethodHandle(mh);
             }
             return mh;
         }
-        return StaticClassIntrospector.editConstructorMethodHandle(Lookup.unreflectConstructor(lookup,
+        return StaticClassIntrospector.editConstructorMethodHandle(Lookup.unreflectConstructorCallerSensitive(lookup,
                 (Constructor<?>)target));
     }
 

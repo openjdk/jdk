@@ -66,28 +66,28 @@
 # List of providers and their preference orders (see above):
 #
 #ifdef solaris
-security.provider.tbd=com.oracle.security.ucrypto.UcryptoProvider
-security.provider.tbd=sun.security.pkcs11.SunPKCS11 ${java.home}/conf/security/sunpkcs11-solaris.cfg
+security.provider.tbd=OracleUcrypto
+security.provider.tbd=SunPKCS11 ${java.home}/conf/security/sunpkcs11-solaris.cfg
 #endif
-security.provider.tbd=sun.security.provider.Sun
-security.provider.tbd=sun.security.rsa.SunRsaSign
-security.provider.tbd=sun.security.ec.SunEC
-security.provider.tbd=com.sun.net.ssl.internal.ssl.Provider
-security.provider.tbd=com.sun.crypto.provider.SunJCE
-security.provider.tbd=sun.security.jgss.SunProvider
-security.provider.tbd=com.sun.security.sasl.Provider
-security.provider.tbd=org.jcp.xml.dsig.internal.dom.XMLDSigRI
-security.provider.tbd=sun.security.smartcardio.SunPCSC
-security.provider.tbd=sun.security.provider.certpath.ldap.JdkLDAP
-security.provider.tbd=com.sun.security.sasl.gsskerb.JdkSASL
+security.provider.tbd=SUN
+security.provider.tbd=SunRsaSign
+security.provider.tbd=SunEC
+security.provider.tbd=SunJSSE
+security.provider.tbd=SunJCE
+security.provider.tbd=SunJGSS
+security.provider.tbd=SunSASL
+security.provider.tbd=XMLDSig
+security.provider.tbd=SunPCSC
+security.provider.tbd=JdkLDAP
+security.provider.tbd=JdkSASL
 #ifdef windows
-security.provider.tbd=sun.security.mscapi.SunMSCAPI
+security.provider.tbd=SunMSCAPI
 #endif
 #ifdef macosx
-security.provider.tbd=apple.security.AppleProvider
+security.provider.tbd=Apple
 #endif
 #ifndef solaris
-security.provider.tbd=sun.security.pkcs11.SunPKCS11
+security.provider.tbd=SunPKCS11
 #endif
 
 #
@@ -271,6 +271,7 @@ package.access=sun.,\
                jdk.internal.,\
                jdk.nashorn.internal.,\
                jdk.nashorn.tools.,\
+               jdk.rmi.rmic.,\
                jdk.tools.jimage.,\
                com.sun.activation.registries.,\
                com.sun.java.accessibility.util.internal.,\
@@ -327,6 +328,7 @@ package.definition=sun.,\
                    jdk.internal.,\
                    jdk.nashorn.internal.,\
                    jdk.nashorn.tools.,\
+                   jdk.rmi.rmic.,\
                    jdk.tools.jimage.,\
                    com.sun.activation.registries.,\
                    com.sun.java.accessibility.util.internal.,\

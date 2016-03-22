@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.text.BreakIterator;
 import java.util.ArrayList;
@@ -39,7 +40,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+
 import static javax.tools.DocumentationTool.Location.*;
+
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
@@ -249,6 +252,7 @@ public class Start extends ToolOption.Helper {
             try {
                 doclet = (Doclet) docletClass.newInstance();
             } catch (InstantiationException | IllegalAccessException exc) {
+                exc.printStackTrace();
                 if (!apiMode) {
                     error("main.could_not_instantiate_class", docletClass);
                     messager.exit();
@@ -303,6 +307,27 @@ public class Start extends ToolOption.Helper {
             messager.flush();
         }
         return !failed;
+    }
+
+    /**
+     * Ensures that the module of the given class is readable to this
+     * module.
+     * @param targetClass class in module to be made readable
+     */
+    private void ensureReadable(Class<?> targetClass) {
+        try {
+            Method getModuleMethod = Class.class.getMethod("getModule");
+            Object thisModule = getModuleMethod.invoke(this.getClass());
+            Object targetModule = getModuleMethod.invoke(targetClass);
+
+            Class<?> moduleClass = getModuleMethod.getReturnType();
+            Method addReadsMethod = moduleClass.getMethod("addReads", moduleClass);
+            addReadsMethod.invoke(thisModule, targetModule);
+        } catch (NoSuchMethodException e) {
+            // ignore
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
     }
 
     /**
@@ -490,7 +515,9 @@ public class Start extends ToolOption.Helper {
                     return null; // keep compiler happy
                 }
                 try {
-                    return cl.loadClass(userDocletName);
+                    Class<?> klass = cl.loadClass(userDocletName);
+                    ensureReadable(klass);
+                    return klass;
                 } catch (ClassNotFoundException cnfe) {
                     panic("main.doclet_class_not_found", userDocletName);
                     return null; // keep compiler happy

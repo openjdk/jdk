@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,8 @@ public class AccessFlags {
     public static final int ACC_SYNTHETIC     = 0x1000; // class, inner, field, method
     public static final int ACC_ANNOTATION    = 0x2000; // class, inner
     public static final int ACC_ENUM          = 0x4000; // class, inner, field
-    public static final int ACC_MANDATED      = 0x8000; // class, inner, field, method
+    public static final int ACC_MANDATED      = 0x8000; //                          method parameter
+    public static final int ACC_MODULE        = 0x8000; // class
 
     public static enum Kind { Class, InnerClass, Field, Method}
 
@@ -86,7 +87,7 @@ public class AccessFlags {
 
     private static final int[] classFlags = {
         ACC_PUBLIC, ACC_FINAL, ACC_SUPER, ACC_INTERFACE, ACC_ABSTRACT,
-        ACC_SYNTHETIC, ACC_ANNOTATION, ACC_ENUM
+        ACC_SYNTHETIC, ACC_ANNOTATION, ACC_ENUM, ACC_MODULE
     };
 
     public Set<String> getClassModifiers() {
@@ -247,8 +248,8 @@ public class AccessFlags {
             return "ACC_ANNOTATION";
         case ACC_ENUM:
             return "ACC_ENUM";
-        case ACC_MANDATED:
-            return "ACC_MANDATED";
+        case 0x8000:
+            return (t == Kind.Class ? "ACC_MODULE" : "ACC_MANDATED");
         default:
             return null;
         }

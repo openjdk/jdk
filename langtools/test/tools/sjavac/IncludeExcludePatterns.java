@@ -27,6 +27,7 @@
  * @summary Ensures that sjavac can handle various exclusion patterns.
  *
  * @modules jdk.compiler/com.sun.tools.sjavac
+ *          jdk.jdeps/com.sun.tools.javap
  * @library /tools/lib
  * @build Wrapper ToolBox
  * @run main Wrapper IncludeExcludePatterns

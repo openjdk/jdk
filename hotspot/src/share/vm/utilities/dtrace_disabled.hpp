@@ -1084,6 +1084,12 @@
 #define HOTSPOT_JNI_UNREGISTERNATIVES_RETURN(arg0)
 #define HOTSPOT_JNI_UNREGISTERNATIVES_RETURN_ENABLED()  0
 
+/* Modules */
+#define HOTSPOT_JNI_GETMODULE_ENTRY(arg0, arg1)
+#define HOTSPOT_JNI_GETMODULE_ENTRY_ENABLED()  0
+#define HOTSPOT_JNI_GETMODULE_RETURN(arg0)
+#define HOTSPOT_JNI_GETMODULE_RETURN_ENABLED()
+
 #else /* !defined(DTRACE_ENABLED) */
 #error This file should only be included when dtrace is not enabled
 #endif /* !defined(DTRACE_ENABLED) */

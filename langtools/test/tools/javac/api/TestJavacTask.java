@@ -31,10 +31,11 @@
  */
 
 import com.sun.tools.javac.api.JavacTaskImpl;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.Element;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
@@ -53,7 +54,7 @@ public class TestJavacTask {
         String srcdir = System.getProperty("test.src");
         File file = new File(srcdir, args[0]);
         JavacTaskImpl task = getTask(file);
-        for (TypeElement clazz : task.enter(task.parse()))
+        for (Element clazz : task.enter(task.parse()))
             System.out.println(clazz.getSimpleName());
     }
 

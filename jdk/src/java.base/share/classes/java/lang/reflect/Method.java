@@ -176,6 +176,19 @@ public final class Method extends Executable {
         return res;
     }
 
+    @Override
+    @CallerSensitive
+    public void setAccessible(boolean flag) {
+        AccessibleObject.checkPermission();
+        if (flag) checkCanSetAccessible(Reflection.getCallerClass());
+        setAccessible0(flag);
+    }
+
+    @Override
+    void checkCanSetAccessible(Class<?> caller) {
+        checkCanSetAccessible(caller, clazz);
+    }
+
     /**
      * Used by Excecutable for annotation sharing.
      */
@@ -508,10 +521,8 @@ public final class Method extends Executable {
            InvocationTargetException
     {
         if (!override) {
-            if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
-                Class<?> caller = Reflection.getCallerClass();
-                checkAccess(caller, clazz, obj, modifiers);
-            }
+            Class<?> caller = Reflection.getCallerClass();
+            checkAccess(caller, clazz, obj, modifiers);
         }
         MethodAccessor ma = methodAccessor;             // read volatile
         if (ma == null) {

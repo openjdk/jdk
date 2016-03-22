@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
-
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JavacMessages;
@@ -60,6 +59,10 @@ public class T6597678 extends JavacTestingAbstractProcessor {
         PrintWriter pw = new PrintWriter(sw);
 
         compile(sw, pw,
+            "-XaddExports:"
+                + "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+            "-XDaccessInternalAPI",
             "-proc:only",
             "-processor", myName,
             "-AWriterString=" + pw.toString(),

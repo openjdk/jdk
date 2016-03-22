@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ public class TestTaglets extends JavadocTester {
                 "-tagletpath", testSrc, // TODO: probably does no good
                 "-taglet", "taglets.Foo",
                 "-sourcepath", testSrc,
+                "-XDaccessInternalAPI",
                 testSrc("C.java"));
         checkExit(Exit.OK);
 

@@ -28,7 +28,7 @@
  *          which will make the current interface functional
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @build GenerateSuperInterfaceProcessor
- * @compile -processor GenerateSuperInterfaceProcessor GenerateFunctionalInterface.java
+ * @compile -XDaccessInternalAPI -processor GenerateSuperInterfaceProcessor GenerateFunctionalInterface.java
  */
 
 import java.lang.FunctionalInterface;

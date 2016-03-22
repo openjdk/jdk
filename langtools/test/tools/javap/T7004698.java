@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 7004698
  * @summary javap does not output CharacterRangeTable attributes correctly
- * @modules jdk.jdeps
+ * @modules jdk.jdeps/com.sun.tools.javap
  */
 
 import java.io.*;
@@ -41,7 +41,10 @@ public class T7004698 {
         File srcDir = new File(System.getProperty("test.src"));
         File srcFile = new File(srcDir, T7004698.class.getSimpleName() + ".java");
         File classesDir = new File(".");
-        compile("-Xjcov", "-d", classesDir.getPath(), srcFile.getPath());
+        compile("-Xjcov",
+                "-XaddExports:jdk.jdeps/com.sun.tools.javap=ALL-UNNAMED",
+                "-d", classesDir.getPath(),
+                srcFile.getPath());
 
         File classFile = new File(classesDir, T7004698.class.getSimpleName() + ".class");
         String out = javap("-v", classFile.getPath());

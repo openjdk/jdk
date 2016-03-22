@@ -66,6 +66,7 @@ public class JavadocClassFinder extends ClassFinder {
                                                           JavaFileObject.Kind.HTML);
     private EnumSet<JavaFileObject.Kind> noSource = EnumSet.of(JavaFileObject.Kind.CLASS,
                                                                JavaFileObject.Kind.HTML);
+    private JavacTrees jctrees;
 
     private final JavacTrees trees;
 

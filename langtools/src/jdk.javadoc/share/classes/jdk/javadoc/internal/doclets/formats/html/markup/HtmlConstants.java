@@ -192,6 +192,11 @@ public class HtmlConstants {
     public static final HtmlTag PACKAGE_HEADING = HtmlTag.H2;
 
     /**
+     * Html tag for the module name heading.
+     */
+    public static final HtmlTag MODULE_HEADING = HtmlTag.H2;
+
+    /**
      * Html tag for the member summary heading.
      */
     public static final HtmlTag SUMMARY_HEADING = HtmlTag.H3;
