@@ -26,7 +26,13 @@
 package java.lang.invoke;
 
 import java.lang.reflect.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Arrays;
+import java.util.Objects;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
@@ -43,6 +49,9 @@ import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Opcodes;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -94,11 +103,11 @@ public class MethodHandles {
 
     /**
      * Returns a {@link Lookup lookup object} which is trusted minimally.
-     * It can only be used to create method handles to
-     * publicly accessible fields and methods.
+     * It can only be used to create method handles to public members in
+     * public classes in packages that are exported unconditionally.
      * <p>
-     * As a matter of pure convention, the {@linkplain Lookup#lookupClass lookup class}
-     * of this lookup object will be {@link java.lang.Object}.
+     * For now, the {@linkplain Lookup#lookupClass lookup class} of this lookup
+     * object is in an unnamed module.
      * Consequently, the lookup context of this lookup object will be the bootstrap
      * class loader, which means it cannot find user classes.
      *
@@ -106,8 +115,6 @@ public class MethodHandles {
      * <em>Discussion:</em>
      * The lookup class can be changed to any other class {@code C} using an expression of the form
      * {@link Lookup#in publicLookup().in(C.class)}.
-     * Since all classes have equal access to public names,
-     * such a change would confer no new access rights,
      * but may change the lookup context by virtue of changing the class loader.
      * A public lookup object is always subject to
      * <a href="MethodHandles.Lookup.html#secmgr">security manager checks</a>.
@@ -116,7 +123,15 @@ public class MethodHandles {
      * @return a lookup object which is trusted minimally
      */
     public static Lookup publicLookup() {
-        return Lookup.PUBLIC_LOOKUP;
+        // During VM startup then only classes in the java.base module can be
+        // loaded and linked. This is because java.base exports aren't setup until
+        // the module system is initialized, hence types in the unnamed module
+        // (or any named module) can't link to java/lang/Object.
+        if (!jdk.internal.misc.VM.isModuleSystemInited()) {
+            return new Lookup(Object.class, Lookup.PUBLIC);
+        } else {
+            return LookupHelper.PUBLIC_LOOKUP;
+        }
     }
 
     /**
@@ -389,7 +404,7 @@ public class MethodHandles {
      * to a subset of members normally accessible to the lookup class.
      * For example, the {@link MethodHandles#publicLookup publicLookup}
      * method produces a lookup object which is only allowed to access
-     * public members in public classes.
+     * public members in public classes of exported packages.
      * The caller sensitive method {@link MethodHandles#lookup lookup}
      * produces a lookup object with full capabilities relative to
      * its caller class, to emulate all supported bytecode behaviors.
@@ -561,12 +576,24 @@ public class MethodHandles {
          */
         public static final int PACKAGE = Modifier.STATIC;
 
-        private static final int ALL_MODES = (PUBLIC | PRIVATE | PROTECTED | PACKAGE);
+        /** A single-bit mask representing {@code module} access (default access),
+         *  which may contribute to the result of {@link #lookupModes lookupModes}.
+         *  The value is {@code 0x10}, which does not correspond meaningfully to
+         *  any particular {@linkplain java.lang.reflect.Modifier modifier bit}.
+         *  In conjunction with the {@code PUBLIC} modifier bit, a {@code Lookup}
+         *  with this lookup mode can access all public types in the module of the
+         *  lookup class and public types in packages exported by other modules
+         *  to the module of the lookup class.
+         *  @since 9
+         */
+        public static final int MODULE = PACKAGE << 1;
+
+        private static final int ALL_MODES = (PUBLIC | PRIVATE | PROTECTED | PACKAGE | MODULE);
         private static final int TRUSTED   = -1;
 
         private static int fixmods(int mods) {
-            mods &= (ALL_MODES - PACKAGE);
-            return (mods != 0) ? mods : PACKAGE;
+            mods &= (ALL_MODES - PACKAGE - MODULE);
+            return (mods != 0) ? mods : (PACKAGE | MODULE);
         }
 
         /** Tells which class is performing the lookup.  It is this class against
@@ -592,11 +619,14 @@ public class MethodHandles {
          *  {@linkplain #PUBLIC PUBLIC (0x01)},
          *  {@linkplain #PRIVATE PRIVATE (0x02)},
          *  {@linkplain #PROTECTED PROTECTED (0x04)},
-         *  and {@linkplain #PACKAGE PACKAGE (0x08)}.
+         *  {@linkplain #PACKAGE PACKAGE (0x08)},
+         *  and {@linkplain #MODULE MODULE (0x10)}.
          *  <p>
          *  A freshly-created lookup object
          *  on the {@linkplain java.lang.invoke.MethodHandles#lookup() caller's class}
-         *  has all possible bits set, since the caller class can access all its own members.
+         *  has all possible bits set, since the caller class can access all its own members,
+         *  all public types in the caller's module, and all public types in packages exported
+         *  by other modules to the caller's module.
          *  A lookup object on a new lookup class
          *  {@linkplain java.lang.invoke.MethodHandles.Lookup#in created from a previous lookup object}
          *  may have some mode bits set to zero.
@@ -633,6 +663,12 @@ public class MethodHandles {
          * However, the resulting {@code Lookup} object is guaranteed
          * to have no more access capabilities than the original.
          * In particular, access capabilities can be lost as follows:<ul>
+         * <li>If the lookup class for this {@code Lookup} is not in a named module,
+         * and the new lookup class is in a named module {@code M}, then no members in
+         * {@code M}'s non-exported packages will be accessible.
+         * <li>If the lookup for this {@code Lookup} is in a named module, and the
+         * new lookup class is in a different module {@code M}, then no members, not even
+         * public members in {@code M}'s exported packages, will be accessible.
          * <li>If the new lookup class differs from the old one,
          * protected members will not be accessible by virtue of inheritance.
          * (Protected members may continue to be accessible because of package sharing.)
@@ -660,7 +696,17 @@ public class MethodHandles {
                 return new Lookup(requestedLookupClass, ALL_MODES);
             if (requestedLookupClass == this.lookupClass)
                 return this;  // keep same capabilities
+
             int newModes = (allowedModes & (ALL_MODES & ~PROTECTED));
+            if (!VerifyAccess.isSameModule(this.lookupClass, requestedLookupClass)) {
+                // Allowed to teleport from an unnamed to a named module but resulting
+                // Lookup has no access to module private members
+                if (this.lookupClass.getModule().isNamed()) {
+                    newModes = 0;
+                } else {
+                    newModes &= ~MODULE;
+                }
+            }
             if ((newModes & PACKAGE) != 0
                 && !VerifyAccess.isSamePackage(this.lookupClass, requestedLookupClass)) {
                 newModes &= ~(PACKAGE|PRIVATE);
@@ -676,18 +722,13 @@ public class MethodHandles {
                 // No permissions.
                 newModes = 0;
             }
+
             checkUnprivilegedlookupClass(requestedLookupClass, newModes);
             return new Lookup(requestedLookupClass, newModes);
         }
 
         // Make sure outer class is initialized first.
         static { IMPL_NAMES.getClass(); }
-
-        /** Version of lookup which is trusted minimally.
-         *  It can only be used to create method handles to
-         *  publicly accessible members.
-         */
-        static final Lookup PUBLIC_LOOKUP = new Lookup(Object.class, PUBLIC);
 
         /** Package-private version of lookup which is trusted. */
         static final Lookup IMPL_LOOKUP = new Lookup(Object.class, TRUSTED);
@@ -716,12 +757,13 @@ public class MethodHandles {
          * allowed access, and is chosen as follows:
          * <ul>
          * <li>If no access is allowed, the suffix is "/noaccess".
-         * <li>If only public access is allowed, the suffix is "/public".
-         * <li>If only public and package access are allowed, the suffix is "/package".
-         * <li>If only public, package, and private access are allowed, the suffix is "/private".
+         * <li>If only public access to types in exported packages is allowed, the suffix is "/public".
+         * <li>If only public and module access are allowed, the suffix is "/module".
+         * <li>If only public, module and package access are allowed, the suffix is "/package".
+         * <li>If only public, module, package, and private access are allowed, the suffix is "/private".
          * </ul>
          * If none of the above cases apply, it is the case that full
-         * access (public, package, private, and protected) is allowed.
+         * access (public, module, package, private, and protected) is allowed.
          * In this case, no suffix is added.
          * This is true only of an object obtained originally from
          * {@link java.lang.invoke.MethodHandles#lookup MethodHandles.lookup}.
@@ -743,7 +785,9 @@ public class MethodHandles {
                 return cname + "/noaccess";
             case PUBLIC:
                 return cname + "/public";
-            case PUBLIC|PACKAGE:
+            case PUBLIC|MODULE:
+                return cname + "/module";
+            case PUBLIC|MODULE|PACKAGE:
                 return cname + "/package";
             case ALL_MODES & ~PROTECTED:
                 return cname + "/private";
@@ -1470,7 +1514,7 @@ return mh1;
             Objects.requireNonNull(refc);
             Class<?> caller = lookupClassOrNull();
             if (caller != null && !VerifyAccess.isClassAccessible(refc, caller, allowedModes))
-                throw new MemberName(refc).makeAccessException("symbolic reference class is not public", this);
+                throw new MemberName(refc).makeAccessException("symbolic reference class is not accessible", this);
         }
 
         /** Check name for an illegal leading "&lt;" character. */
@@ -1599,8 +1643,6 @@ return mh1;
             if (Modifier.isFinal(mods) &&
                     MethodHandleNatives.refKindIsSetter(refKind))
                 throw m.makeAccessException("unexpected set of a final field", this);
-            if (Modifier.isPublic(mods) && Modifier.isPublic(refc.getModifiers()) && allowedModes != 0)
-                return;  // common case
             int requestedModes = fixmods(mods);  // adjust 0 => PACKAGE
             if ((requestedModes & allowedModes) != 0) {
                 if (VerifyAccess.isMemberAccessible(refc, m.getDeclaringClass(),
@@ -1630,7 +1672,7 @@ return mh1;
             if (!classOK)
                 return "class is not public";
             if (Modifier.isPublic(mods))
-                return "access to public member failed";  // (how?)
+                return "access to public member failed";  // (how?, module not readable?)
             if (Modifier.isPrivate(mods))
                 return "member is private";
             if (Modifier.isProtected(mods))
@@ -1889,6 +1931,61 @@ return mh1;
         }
 
         static ConcurrentHashMap<MemberName, DirectMethodHandle> LOOKASIDE_TABLE = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * Helper class used to lazily create PUBLIC_LOOKUP with a lookup class
+     * in an <em>unnamed module</em>.
+     *
+     * @see Lookup#publicLookup
+     */
+    private static class LookupHelper {
+        private static final String UNNAMED = "Unnamed";
+        private static final String OBJECT  = "java/lang/Object";
+
+        private static Class<?> createClass() {
+            try {
+                ClassWriter cw = new ClassWriter(0);
+                cw.visit(Opcodes.V1_8,
+                         Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
+                         UNNAMED,
+                         null,
+                         OBJECT,
+                         null);
+                cw.visitSource(UNNAMED, null);
+                cw.visitEnd();
+                byte[] bytes = cw.toByteArray();
+                ClassLoader loader = new ClassLoader(null) {
+                    @Override
+                    protected Class<?> findClass(String cn) throws ClassNotFoundException {
+                        if (cn.equals(UNNAMED))
+                            return super.defineClass(UNNAMED, bytes, 0, bytes.length);
+                        throw new ClassNotFoundException(cn);
+                    }
+                };
+                return loader.loadClass(UNNAMED);
+            } catch (Exception e) {
+                throw new InternalError(e);
+            }
+        }
+
+        private static final Class<?> PUBLIC_LOOKUP_CLASS;
+        static {
+            PrivilegedAction<Class<?>> pa = new PrivilegedAction<Class<?>>() {
+                public Class<?> run() {
+                    return createClass();
+                }
+            };
+            PUBLIC_LOOKUP_CLASS = AccessController.doPrivileged(pa);
+        }
+
+        /**
+         * Lookup that is trusted minimally. It can only be used to create
+         * method handles to publicly accessible members in exported packages.
+         *
+         * @see MethodHandles#publicLookup
+         */
+        static final Lookup PUBLIC_LOOKUP = new Lookup(PUBLIC_LOOKUP_CLASS, Lookup.PUBLIC);
     }
 
     /**

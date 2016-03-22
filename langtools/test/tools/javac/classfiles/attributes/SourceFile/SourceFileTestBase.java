@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import com.sun.tools.classfile.Attribute;
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.SourceFile_attribute;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,16 @@ public class SourceFileTestBase extends TestBase {
      */
     protected void test(String classToTest, String fileName) throws Exception {
         assertAttributePresent(ClassFile.read(getClassFile(classToTest + ".class")), fileName);
+    }
+
+    /**
+     * Checks expected fileName for the specified class in the SourceFile attribute.
+     *
+     * @param classToTest path of class to check its SourceFile attribute
+     * @param fileName    expected name of the file from which the test file is compiled.
+     */
+    protected void test(Path classToTest, String fileName) throws Exception {
+        assertAttributePresent(ClassFile.read(classToTest), fileName);
     }
 
     /**

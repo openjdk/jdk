@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,14 @@ import java.util.List;
 
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
+import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
@@ -81,6 +83,12 @@ public class JNIWriter {
     /** Switch: check all nested classes of top level class
      */
     private boolean checkAll;
+
+    /**
+     * If true, class files will be written in module-specific subdirectories
+     * of the NATIVE_HEADER_OUTPUT location.
+     */
+    public boolean multiModuleMode;
 
     private Context context;
 
@@ -168,8 +176,15 @@ public class JNIWriter {
      */
     public FileObject write(ClassSymbol c) throws IOException {
         String className = c.flatName().toString();
+        Location outLocn;
+        if (multiModuleMode) {
+            ModuleSymbol msym = c.owner.kind == MDL ? (ModuleSymbol) c.owner : c.packge().modle;
+            outLocn = fileManager.getModuleLocation(StandardLocation.NATIVE_HEADER_OUTPUT, msym.name.toString());
+        } else {
+            outLocn = StandardLocation.NATIVE_HEADER_OUTPUT;
+        }
         FileObject outFile
-            = fileManager.getFileForOutput(StandardLocation.NATIVE_HEADER_OUTPUT,
+            = fileManager.getFileForOutput(outLocn,
                 "", className.replaceAll("[.$]", "_") + ".h", null);
         PrintWriter out = new PrintWriter(outFile.openWriter());
         try {
@@ -673,6 +688,11 @@ public class JNIWriter {
 
         @Override
         public R visitType(Type t, P p) {
+            return defaultAction(t, p);
+        }
+
+        @Override
+        public R visitModuleType(Type.ModuleType t, P p) {
             return defaultAction(t, p);
         }
     }

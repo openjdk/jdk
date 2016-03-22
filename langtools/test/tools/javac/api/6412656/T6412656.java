@@ -34,11 +34,9 @@
  */
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.Collections;
+import java.util.*;
 import javax.lang.model.element.TypeElement;
 import javax.annotation.processing.*;
-import com.sun.tools.javac.processing.AnnotationProcessingError;
 
 
 public class T6412656 extends ToolTester {
@@ -67,6 +65,7 @@ public class T6412656 extends ToolTester {
         MyProc(T6412656 test) {
             this.test = test;
         }
+
         public boolean process(Set<? extends TypeElement> annotations,
                                RoundEnvironment roundEnv) {
             test.count++;

@@ -144,34 +144,65 @@ public class VM {
     // public native static void writeJavaProfilerReport();
 
 
-    private static volatile boolean booted = false;
+    // the init level when the VM is fully initialized
+    private static final int JAVA_LANG_SYSTEM_INITED     = 1;
+    private static final int MODULE_SYSTEM_INITED        = 2;
+    private static final int SYSTEM_LOADER_INITIALIZING  = 3;
+    private static final int SYSTEM_BOOTED               = 4;
+
+    // 0, 1, 2, ...
+    private static volatile int initLevel;
     private static final Object lock = new Object();
 
-    // Invoked by System.initializeSystemClass just before returning.
-    // Subsystems that are invoked during initialization can check this
-    // property in order to avoid doing things that should wait until the
-    // application class loader has been set up.
-    //
-    public static void booted() {
+    /**
+     * Sets the init level.
+     *
+     * @see java.lang.System#initPhase1
+     * @see java.lang.System#initPhase2
+     * @see java.lang.System#initPhase3
+     */
+    public static void initLevel(int value) {
         synchronized (lock) {
-            booted = true;
+            if (value <= initLevel || value > SYSTEM_BOOTED)
+                throw new InternalError();
+            initLevel = value;
             lock.notifyAll();
         }
     }
 
-    public static boolean isBooted() {
-        return booted;
+    /**
+     * Returns the current init level.
+     */
+    public static int initLevel() {
+        return initLevel;
     }
 
-    // Waits until VM completes initialization
-    //
-    // This method is invoked by the Finalizer thread
-    public static void awaitBooted() throws InterruptedException {
+    /**
+     * Waits for the init level to get the given value.
+     *
+     * @see java.lang.ref.Finalizer
+     */
+    public static void awaitInitLevel(int value) throws InterruptedException {
         synchronized (lock) {
-            while (!booted) {
+            while (initLevel < value) {
                 lock.wait();
             }
         }
+    }
+
+    /**
+     * Returns {@code true} if the module system has been initialized.
+     * @see java.lang.System#initPhase2
+     */
+    public static boolean isModuleSystemInited() {
+        return VM.initLevel() >= MODULE_SYSTEM_INITED;
+    }
+
+    /**
+     * Returns {@code true} if the VM is fully initialized.
+     */
+    public static boolean isBooted() {
+        return initLevel >= SYSTEM_BOOTED;
     }
 
     // A user-settable upper limit on the maximum amount of allocatable direct
@@ -240,8 +271,8 @@ public class VM {
     //
     // This method can only be invoked during system initialization.
     public static void saveAndRemoveProperties(Properties props) {
-        if (booted)
-            throw new IllegalStateException("System initialization has completed");
+        if (initLevel() != 0)
+            throw new IllegalStateException("Wrong init level");
 
         savedProps.putAll(props);
 
@@ -273,13 +304,16 @@ public class VM {
 
         // used by sun.launcher.LauncherHelper
         props.remove("sun.java.launcher.diag");
+
+        // used by jdk.internal.loader.ClassLoaders
+        props.remove("jdk.boot.class.path.append");
     }
 
-    // Initialize any miscellenous operating system settings that need to be
+    // Initialize any miscellaneous operating system settings that need to be
     // set for the class libraries.
     //
     public static void initializeOSEnvironment() {
-        if (!booted) {
+        if (initLevel() == 0) {
             OSEnvironment.initialize();
         }
     }

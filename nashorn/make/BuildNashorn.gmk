@@ -38,11 +38,14 @@ JDK_CLASSES := $(call PathList, $(strip $(addprefix $(JDK_OUTPUTDIR)/modules/, \
 
 NASHORN_JAR := $(IMAGES_OUTPUTDIR)/nashorn.jar
 
+MODULESOURCEPATH := $(NASHORN_TOPDIR)/src/*/share/classes
+
 # Need to use source and target 8 for nasgen to work.
 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
     JVM := $(JAVA), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -g -source 8 -target 8 -bootclasspath $(JDK_CLASSES), \
+    FLAGS := -g -source 9 -target 9 -upgrademodulepath "$(JDK_OUTPUTDIR)/modules/" \
+         -system none -modulesourcepath "$(MODULESOURCEPATH)", \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
@@ -52,10 +55,11 @@ $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
 # seamlessly.
 $(eval $(call SetupJavaCompilation,jdk.scripting.nashorn, \
     SETUP := GENERATE_NEWBYTECODE_DEBUG, \
+    MODULE := jdk.scripting.nashorn, \
     SRC := $(NASHORN_TOPDIR)/src/jdk.scripting.nashorn/share/classes, \
     EXCLUDE_FILES := META-INF/MANIFEST.MF, \
     COPY := .properties .js, \
-    BIN := $(SUPPORT_OUTPUTDIR)/special_classes/jdk.scripting.nashorn/classes))
+    BIN := $(SUPPORT_OUTPUTDIR)/special_classes))
 
 NASGEN_SRC := $(NASHORN_TOPDIR)/buildtools/nasgen/src
 ASM_SRC := $(JDK_TOPDIR)/src/java.base/share/classes/jdk/internal/org/objectweb/asm
@@ -64,24 +68,31 @@ ASM_SRC := $(JDK_TOPDIR)/src/java.base/share/classes/jdk/internal/org/objectweb/
 $(eval $(call SetupJavaCompilation,BUILD_NASGEN, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(NASGEN_SRC) $(ASM_SRC), \
-    BIN := $(BUILDTOOLS_OUTPUTDIR)/nasgen_classes, \
-    ADD_JAVAC_FLAGS := -Xbootclasspath/p:"$(SUPPORT_OUTPUTDIR)/special_classes/jdk.scripting.nashorn/classes"))
-
-# Nasgen needs nashorn classes
-$(BUILD_NASGEN): $(jdk.scripting.nashorn)
+    BIN := $(BUILDTOOLS_OUTPUTDIR)/nasgen_classes))
 
 NASHORN_CLASSES_DIR := $(JDK_OUTPUTDIR)/modules/jdk.scripting.nashorn
 NASGEN_RUN_FILE := $(NASHORN_CLASSES_DIR)/_the.nasgen.run
 
+ifeq ($(BOOT_JDK_MODULAR), true)
+  NASGEN_OPTIONS := \
+      -cp $(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
+      -Xpatch:$(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
+      -XaddExports:$(subst $(SPACE),$(COMMA),$(strip \
+          java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+          java.base/jdk.internal.org.objectweb.asm.util=ALL-UNNAMED \
+      ))
+else
+  NASGEN_OPTIONS := \
+      -Xbootclasspath/p:$(BUILDTOOLS_OUTPUTDIR)/nasgen_classes
+endif
+
 # Copy classes to final classes dir and run nasgen to modify classes in jdk.nashorn.internal.objects package
-$(NASGEN_RUN_FILE): $(BUILD_NASGEN)
+$(NASGEN_RUN_FILE): $(BUILD_NASGEN) $(jdk.scripting.nashorn)
 	$(ECHO) Running nasgen
 	$(MKDIR) -p $(@D)
 	$(RM) -rf $(@D)/jdk $(@D)/netscape
-	$(CP) -R -p $(SUPPORT_OUTPUTDIR)/special_classes/jdk.scripting.nashorn/classes/* $(@D)/
-	$(FIXPATH) $(JAVA) \
-	    -Xbootclasspath/p:$(call PathList, $(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
-            $(SUPPORT_OUTPUTDIR)/special_classes/jdk.scripting.nashorn/classes) \
+	$(CP) -R -p $(SUPPORT_OUTPUTDIR)/special_classes/jdk.scripting.nashorn/* $(@D)/
+	$(JAVA) $(NASGEN_OPTIONS) \
 	    jdk.nashorn.internal.tools.nasgen.Main $(@D) jdk.nashorn.internal.objects $(@D)
 	$(TOUCH) $@
 

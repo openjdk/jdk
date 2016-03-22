@@ -30,6 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.classfile
+ *          jdk.jdeps/com.sun.tools.javap
  * @build ToolBox TestBase InMemoryFileManager LineNumberTestBase Container TestCase
  * @run main LineNumberTest
  */

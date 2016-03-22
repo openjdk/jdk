@@ -1,0 +1,21 @@
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:tns="http://testns_package"
+            xmlns:jaxb="http://java.sun.com/xml/ns/jaxb" jaxb:version="2.0"
+            targetNamespace="http://testns_package">
+    <!-- Simple type list -->
+    <xsd:simpleType name="LongList">
+        <xsd:list>
+            <xsd:simpleType>
+                <xsd:restriction base="xsd:unsignedInt"/>
+            </xsd:simpleType>
+        </xsd:list>
+    </xsd:simpleType>
+    <!--- Complex test type -->
+    <xsd:element name="typesLongList">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element name="in" type="tns:LongList"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>

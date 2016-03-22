@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ class Parse {
         kindMap.put("field", new FieldTypeNode());
         kindMap.put("frame", new FrameTypeNode());
         kindMap.put("string", new StringTypeNode());
+        kindMap.put("moduleID", new ModuleTypeNode());
         kindMap.put("value", new ValueTypeNode());
         kindMap.put("byte", new ByteTypeNode());
         kindMap.put("location", new LocationTypeNode());

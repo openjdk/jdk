@@ -113,7 +113,6 @@ public final class ClassFactory {
 
             m.put(clazz,new WeakReference<Constructor>(cons));
         }
-
         return cons.newInstance(emptyObject);
     }
 

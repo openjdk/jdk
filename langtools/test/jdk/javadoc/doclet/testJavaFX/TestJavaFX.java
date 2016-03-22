@@ -27,7 +27,7 @@
  * @summary Test of the JavaFX doclet features.
  * @author jvalenta
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @run main TestJavaFX
  */

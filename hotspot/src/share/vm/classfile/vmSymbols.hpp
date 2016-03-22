@@ -49,10 +49,12 @@
 // Mapping function names to values. New entries should be added below.
 
 #define VM_SYMBOLS_DO(template, do_alias)                                                         \
-  /* commonly used class names */                                                                 \
+  /* commonly used class, package, module names */                                                \
+  template(java_base,                                 "java.base")                                \
   template(java_lang_System,                          "java/lang/System")                         \
   template(java_lang_Object,                          "java/lang/Object")                         \
   template(java_lang_Class,                           "java/lang/Class")                          \
+  template(java_lang_Package,                         "java/lang/Package")                        \
   template(java_lang_String,                          "java/lang/String")                         \
   template(java_lang_StringLatin1,                    "java/lang/StringLatin1")                   \
   template(java_lang_StringUTF16,                     "java/lang/StringUTF16")                    \
@@ -87,6 +89,7 @@
   template(java_lang_reflect_Method,                  "java/lang/reflect/Method")                 \
   template(java_lang_reflect_Constructor,             "java/lang/reflect/Constructor")            \
   template(java_lang_reflect_Field,                   "java/lang/reflect/Field")                  \
+  template(java_lang_reflect_Module,                  "java/lang/reflect/Module")                 \
   template(java_lang_reflect_Parameter,               "java/lang/reflect/Parameter")              \
   template(java_lang_reflect_Array,                   "java/lang/reflect/Array")                  \
   template(java_lang_StringBuffer,                    "java/lang/StringBuffer")                   \
@@ -97,7 +100,6 @@
   template(java_security_CodeSource,                  "java/security/CodeSource")                 \
   template(java_security_ProtectionDomain,            "java/security/ProtectionDomain")           \
   template(java_security_SecureClassLoader,           "java/security/SecureClassLoader")          \
-  template(java_net_URLClassLoader,                   "java/net/URLClassLoader")                  \
   template(java_net_URL,                              "java/net/URL")                             \
   template(java_util_jar_Manifest,                    "java/util/jar/Manifest")                   \
   template(impliesCreateAccessControlContext_name,    "impliesCreateAccessControlContext")        \
@@ -116,16 +118,24 @@
   template(java_util_Hashtable,                       "java/util/Hashtable")                      \
   template(java_lang_Compiler,                        "java/lang/Compiler")                       \
   template(jdk_internal_misc_Signal,                  "jdk/internal/misc/Signal")                 \
-  template(sun_misc_Launcher,                         "sun/misc/Launcher")                        \
   template(java_lang_AssertionStatusDirectives,       "java/lang/AssertionStatusDirectives")      \
   template(getBootClassPathEntryForClass_name,        "getBootClassPathEntryForClass")            \
   template(sun_misc_PostVMInitHook,                   "sun/misc/PostVMInitHook")                  \
-  template(sun_misc_Launcher_ExtClassLoader,          "sun/misc/Launcher$ExtClassLoader")         \
+  template(sun_net_www_ParseUtil,                     "sun/net/www/ParseUtil")                    \
+                                                                                                  \
+  template(jdk_internal_loader_ClassLoaders_AppClassLoader,      "jdk/internal/loader/ClassLoaders$AppClassLoader")      \
+  template(jdk_internal_loader_ClassLoaders_PlatformClassLoader, "jdk/internal/loader/ClassLoaders$PlatformClassLoader") \
                                                                                                   \
   /* Java runtime version access */                                                               \
   template(java_lang_VersionProps,                    "java/lang/VersionProps")                   \
   template(java_runtime_name_name,                    "java_runtime_name")                        \
   template(java_runtime_version_name,                 "java_runtime_version")                     \
+                                                                                                  \
+  /* system initialization */                                                                     \
+  template(initPhase1_name,                           "initPhase1")                               \
+  template(initPhase2_name,                           "initPhase2")                               \
+  template(initPhase3_name,                           "initPhase3")                               \
+  template(java_lang_reflect_module_init_signature,   "(Ljava/lang/ClassLoader;Ljava/lang/String;)V") \
                                                                                                   \
   /* class file format tags */                                                                    \
   template(tag_source_file,                           "SourceFile")                               \
@@ -360,7 +370,6 @@
   template(run_finalization_name,                     "runFinalization")                          \
   template(run_finalizers_on_exit_name,               "runFinalizersOnExit")                      \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \
-  template(initializeSystemClass_name,                "initializeSystemClass")                    \
   template(loadClass_name,                            "loadClass")                                \
   template(loadClassInternal_name,                    "loadClassInternal")                        \
   template(get_name,                                  "get")                                      \
@@ -446,14 +455,22 @@
   template(signers_name,                              "signers_name")                             \
   template(loader_data_name,                          "loader_data")                              \
   template(vmdependencies_name,                       "vmdependencies")                           \
+  template(loader_name,                               "loader")                                   \
+  template(module_name,                               "module")                                   \
+  template(getModule_name,                            "getModule")                                \
+  template(addReads_name,                             "addReads")                                 \
+  template(addReads_signature,                        "(Ljava/lang/reflect/Module;Ljava/lang/reflect/Module;)V")           \
   template(input_stream_void_signature,               "(Ljava/io/InputStream;)V")                 \
-  template(getFileURL_name,                           "getFileURL")                               \
-  template(getFileURL_signature,                      "(Ljava/io/File;)Ljava/net/URL;")           \
-  template(definePackageInternal_name,                "definePackageInternal")                    \
-  template(definePackageInternal_signature,           "(Ljava/lang/String;Ljava/util/jar/Manifest;Ljava/net/URL;)V") \
+  template(definePackage_name,                        "definePackage")                            \
+  template(definePackage_signature,                   "(Ljava/lang/String;Ljava/lang/reflect/Module;)Ljava/lang/Package;") \
+  template(defineOrCheckPackage_name,                 "defineOrCheckPackage")                     \
+  template(defineOrCheckPackage_signature,            "(Ljava/lang/String;Ljava/util/jar/Manifest;Ljava/net/URL;)Ljava/lang/Package;") \
+  template(fileToEncodedURL_name,                     "fileToEncodedURL")                         \
+  template(fileToEncodedURL_signature,                "(Ljava/io/File;)Ljava/net/URL;")           \
   template(getProtectionDomain_name,                  "getProtectionDomain")                      \
   template(getProtectionDomain_signature,             "(Ljava/security/CodeSource;)Ljava/security/ProtectionDomain;") \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
+  template(module_entry_name,                         "module_entry")                             \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \
   template(register_method_name,                      "register")                                 \
@@ -531,6 +548,7 @@
   template(void_class_signature,                      "()Ljava/lang/Class;")                                      \
   template(void_class_array_signature,                "()[Ljava/lang/Class;")                                     \
   template(void_string_signature,                     "()Ljava/lang/String;")                                     \
+  template(void_module_signature,                     "()Ljava/lang/reflect/Module;")                             \
   template(object_array_object_signature,             "([Ljava/lang/Object;)Ljava/lang/Object;")                  \
   template(object_object_array_object_signature,      "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")\
   template(exception_void_signature,                  "(Ljava/lang/Exception;)V")                                 \
@@ -550,6 +568,7 @@
   template(reference_signature,                       "Ljava/lang/ref/Reference;")                                \
   template(sun_misc_Cleaner_signature,                "Lsun/misc/Cleaner;")                                       \
   template(executable_signature,                      "Ljava/lang/reflect/Executable;")                           \
+  template(module_signature,                          "Ljava/lang/reflect/Module;")                               \
   template(concurrenthashmap_signature,               "Ljava/util/concurrent/ConcurrentHashMap;")                 \
   template(String_StringBuilder_signature,            "(Ljava/lang/String;)Ljava/lang/StringBuilder;")            \
   template(int_StringBuilder_signature,               "(I)Ljava/lang/StringBuilder;")                             \
@@ -573,6 +592,9 @@
                                                                                                                   \
   /* used to identify class loaders handling parallel class loading */                                            \
   template(parallelCapable_name,                      "parallelLockMap")                                          \
+                                                                                                                  \
+  /* used to return a class loader's unnamed module */                                                            \
+  template(unnamedModule_name,                        "unnamedModule")                                            \
                                                                                                                   \
   /* JVM monitoring and management support */                                                                     \
   template(java_lang_StackTraceElement_array,          "[Ljava/lang/StackTraceElement;")                          \
@@ -632,7 +654,10 @@
   template(addThreadDumpForSynchronizers_signature,    "(Ljava/lang/management/ThreadInfo;[Ljava/lang/Object;)V")   \
                                                                                                                   \
   /* JVMTI/java.lang.instrument support and VM Attach mechanism */                                                \
+  template(jdk_internal_module_Modules,                "jdk/internal/module/Modules")                             \
   template(sun_misc_VMSupport,                         "sun/misc/VMSupport")                                      \
+  template(transformedByAgent_name,                    "transformedByAgent")                                      \
+  template(transformedByAgent_signature,               "(Ljava/lang/reflect/Module;)V")                           \
   template(appendToClassPathForInstrumentation_name,   "appendToClassPathForInstrumentation")                     \
   do_alias(appendToClassPathForInstrumentation_signature, string_void_signature)                                  \
   template(serializePropertiesToByteArray_name,        "serializePropertiesToByteArray")                          \
@@ -1062,11 +1087,6 @@
   do_intrinsic(_isCompileConstant, java_lang_invoke_MethodHandleImpl, isCompileConstant_name, isCompileConstant_signature, F_S) \
    do_name(     isCompileConstant_name,                          "isCompileConstant")                                   \
    do_alias(    isCompileConstant_signature,                      object_boolean_signature)                             \
-                                                                                                                        \
-  do_class(sun_hotspot_WhiteBox,                                 "sun/hotspot/WhiteBox")                                \
-  do_intrinsic(_deoptimize,          sun_hotspot_WhiteBox,        deoptimize_name, deoptimize_signature, F_R)           \
-   do_name(     deoptimize_name,                                 "deoptimize")                                          \
-   do_alias(    deoptimize_signature,                             void_method_signature)                                \
                                                                                                                         \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getObject_signature,       "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \

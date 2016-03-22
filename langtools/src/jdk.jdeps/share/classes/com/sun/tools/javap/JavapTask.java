@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,14 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileManager;
+import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
@@ -300,6 +302,13 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                         task.options.tabColumn = i;
                 } catch (NumberFormatException e) {
                 }
+            }
+        },
+
+        new Option(true, "-m") {
+            @Override
+            void process(JavapTask task, String opt, String arg) throws BadArgs {
+                task.options.moduleName = arg;
             }
         }
 
@@ -557,6 +566,19 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         ClassWriter classWriter = ClassWriter.instance(context);
         SourceWriter sourceWriter = SourceWriter.instance(context);
         sourceWriter.setFileManager(fileManager);
+
+        if (options.moduleName != null) {
+            try {
+                moduleLocation = findModule(options.moduleName);
+                if (moduleLocation == null) {
+                    reportError("err.cant.find.module", options.moduleName);
+                    return EXIT_ERROR;
+                }
+            } catch (IOException e) {
+                reportError("err.cant.find.module.ex", options.moduleName, e);
+                return EXIT_ERROR;
+            }
+        }
 
         int result = EXIT_OK;
 
@@ -866,13 +888,42 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
     private JavaFileObject getClassFileObject(String className) throws IOException {
         try {
             JavaFileObject fo;
-            fo = fileManager.getJavaFileForInput(StandardLocation.PLATFORM_CLASS_PATH, className, JavaFileObject.Kind.CLASS);
-            if (fo == null)
-                fo = fileManager.getJavaFileForInput(StandardLocation.CLASS_PATH, className, JavaFileObject.Kind.CLASS);
+            if (moduleLocation != null) {
+                fo = fileManager.getJavaFileForInput(moduleLocation, className, JavaFileObject.Kind.CLASS);
+            } else {
+                fo = fileManager.getJavaFileForInput(StandardLocation.PLATFORM_CLASS_PATH, className, JavaFileObject.Kind.CLASS);
+                if (fo == null)
+                    fo = fileManager.getJavaFileForInput(StandardLocation.CLASS_PATH, className, JavaFileObject.Kind.CLASS);
+            }
             return fo;
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    private Location findModule(String moduleName) throws IOException {
+        Location[] locns = {
+            StandardLocation.UPGRADE_MODULE_PATH,
+            StandardLocation.SYSTEM_MODULES,
+            StandardLocation.MODULE_PATH
+        };
+        for (Location segment: locns) {
+            for (Set<Location> set: fileManager.listModuleLocations(segment)) {
+                Location result = null;
+                for (Location l: set) {
+                    String name = fileManager.inferModuleName(l);
+                    if (name.equals(moduleName)) {
+                        if (result == null)
+                            result = l;
+                        else
+                            throw new IOException("multiple definitions found for " + moduleName);
+                    }
+                }
+                if (result != null)
+                    return result;
+            }
+        }
+        return null;
     }
 
     private void showHelp() {
@@ -883,7 +934,9 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 continue;
             printLines(getMessage("main.opt." + name));
         }
-        String[] fmOptions = { "-classpath", "-cp", "-bootclasspath" };
+        String[] fmOptions = {
+            "-classpath", "-cp", "-bootclasspath",
+            "-upgrademodulepath", "-system", "-modulepath" };
         for (String o: fmOptions) {
             if (fileManager.isSupportedOption(o) == -1)
                 continue;
@@ -1031,6 +1084,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
     PrintWriter log;
     DiagnosticListener<? super JavaFileObject> diagnosticListener;
     List<String> classes;
+    Location moduleLocation;
     Options options;
     //ResourceBundle bundle;
     Locale task_locale;
