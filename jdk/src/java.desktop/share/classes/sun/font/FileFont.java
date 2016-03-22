@@ -36,6 +36,7 @@ import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
 import java.io.IOException;
+import java.util.List;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -116,17 +117,17 @@ public abstract class FileFont extends PhysicalFont {
         return true;
     }
 
-    void setFileToRemove(File file, CreatedFontTracker tracker) {
-        Disposer.addObjectRecord(this,
-                         new CreatedFontFileDisposerRecord(file, tracker));
-    }
+    static void setFileToRemove(List<Font2D> fonts,
+                                File file, int cnt,
+                                CreatedFontTracker tracker)
+    {
+        CreatedFontFileDisposerRecord dr =
+            new CreatedFontFileDisposerRecord(file, cnt, tracker);
 
-    // MACOSX begin -- Make this static so that we can pass in CFont
-    static void setFileToRemove(Object font, File file, CreatedFontTracker tracker) {
-        Disposer.addObjectRecord(font,
-                         new CreatedFontFileDisposerRecord(file, tracker));
+        for (Font2D f : fonts) {
+            Disposer.addObjectRecord(f, dr);
+        }
     }
-    // MACOSX - end
 
     /* This is called when a font scaler is determined to
      * be unusable (ie bad).
@@ -251,11 +252,13 @@ public abstract class FileFont extends PhysicalFont {
         implements DisposerRecord {
 
         File fontFile = null;
+        int count = 0; // number of fonts referencing this file object.
         CreatedFontTracker tracker;
 
-        private CreatedFontFileDisposerRecord(File file,
+        private CreatedFontFileDisposerRecord(File file, int cnt,
                                               CreatedFontTracker tracker) {
             fontFile = file;
+            count = (cnt > 0) ? cnt : 1;
             this.tracker = tracker;
         }
 
@@ -263,6 +266,12 @@ public abstract class FileFont extends PhysicalFont {
             java.security.AccessController.doPrivileged(
                  new java.security.PrivilegedAction<Object>() {
                       public Object run() {
+                          synchronized (fontFile) {
+                              count--;
+                              if (count > 0) {
+                                  return null;
+                              }
+                          }
                           if (fontFile != null) {
                               try {
                                   if (tracker != null) {
