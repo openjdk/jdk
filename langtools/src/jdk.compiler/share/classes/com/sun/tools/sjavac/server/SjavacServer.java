@@ -40,6 +40,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.Main.Result;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Util;
 import com.sun.tools.sjavac.client.PortFileInaccessibleException;
@@ -167,7 +169,7 @@ public class SjavacServer implements Terminable {
             if (portFile.containsPortInfo()) {
                 Log.debug("Javac server not started because portfile exists!");
                 portFile.unlock();
-                return -1;
+                return Result.ERROR.exitCode;
             }
 
             //           .-----------.   .--------.   .------.
@@ -221,7 +223,7 @@ public class SjavacServer implements Terminable {
         // Shut down
         sjavac.shutdown();
 
-        return 0;
+        return Result.OK.exitCode;
     }
 
     @Override
