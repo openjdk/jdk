@@ -462,6 +462,19 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
         return next;
     }
 
+    /**
+     * Determine whether this block needs to provide its scope object creator for use by its child nodes.
+     * This is only necessary for synthetic parent blocks of for-in loops with lexical declarations.
+     *
+     * @see ForNode#needsScopeCreator()
+     * @return true if child nodes need access to this block's scope creator
+     */
+    public boolean providesScopeCreator() {
+        return needsScope() && isSynthetic()
+                && (getLastStatement() instanceof ForNode)
+                && ((ForNode) getLastStatement()).needsScopeCreator();
+    }
+
     @Override
     public boolean isBreakableWithoutLabel() {
         return false;
