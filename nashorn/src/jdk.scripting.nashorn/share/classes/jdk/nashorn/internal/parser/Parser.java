@@ -1258,9 +1258,7 @@ loop:
                 break;
             default:
                 if (useBlockScope() && (type == LET || type == CONST)) {
-                    if (type == LET) {
-                        flags |= ForNode.PER_ITERATION_SCOPE;
-                    }
+                    flags |= ForNode.PER_ITERATION_SCOPE;
                     // LET/CONST declaration captured in container block created above.
                     vars = variableStatement(type, false, forStart);
                     break;

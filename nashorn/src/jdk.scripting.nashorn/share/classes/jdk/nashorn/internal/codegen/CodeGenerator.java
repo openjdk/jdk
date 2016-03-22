@@ -3312,8 +3312,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final boolean needsScope = identSymbol.isScope();
 
         if (init == null) {
-            if (needsScope && varNode.isBlockScoped()) {
-                // block scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ)
+            // Block-scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ).
+            // However, don't do this for CONST which always has an initializer except in the special case of
+            // for-in/of loops, in which it is initialized in the loop header and should be left untouched here.
+            if (needsScope && varNode.isLet()) {
                 method.loadCompilerConstant(SCOPE);
                 method.loadUndefined(Type.OBJECT);
                 final int flags = getScopeCallSiteFlags(identSymbol) | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
