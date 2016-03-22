@@ -200,11 +200,10 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @param summariesTree the tree to which the package header will be added
      */
     public void buildPackageHeader(XMLNode node, Content summariesTree) {
-        String parsedPackageName = utils.parsePackageName(currentPackage);
-        PackageElement p = utils.elementUtils.getPackageElement(parsedPackageName);
-        if (!printedPackageHeaders.contains(p)) {
+        PackageElement abbrevPkg = configuration.workArounds.getAbbreviatedPackageElement(currentPackage);
+        if (!printedPackageHeaders.contains(abbrevPkg)) {
             writer.addPackageName(currentPackage, summariesTree, first);
-            printedPackageHeaders.add(p);
+            printedPackageHeaders.add(abbrevPkg);
         }
     }
 

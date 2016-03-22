@@ -75,13 +75,13 @@ define add_file_to_copy
   ifneq ($$($1_COPY_$$($2_TARGET)), 1)
     $1_COPY_$$($2_TARGET) := 1
     # Now we can setup the dependency that will trigger the copying.
-    $$($1_BIN)$$($2_TARGET) : $2
+    $$($1_BIN)$$($1_MODULE_SUBDIR)$$($2_TARGET) : $2
 	$(MKDIR) -p $$(@D)
 	$(CP) $$< $$@
 	$(CHMOD) -f ug+w $$@
 
     # And do not forget this target
-    $1_ALL_COPY_TARGETS += $$($1_BIN)$$($2_TARGET)
+    $1_ALL_COPY_TARGETS += $$($1_BIN)$$($1_MODULE_SUBDIR)$$($2_TARGET)
   endif
 endef
 
@@ -133,7 +133,7 @@ define add_file_to_clean
 	$(CHMOD) -f ug+w $$@
 
     # And do not forget this target
-    $1_ALL_COPY_CLEAN_TARGETS += $$($1_BIN)$$($2_TARGET)
+    $1_ALL_COPY_CLEAN_TARGETS += $$($1_BIN)$$($1_MODULE_SUBDIR)$$($2_TARGET)
   endif
 endef
 
@@ -154,6 +154,7 @@ endef
 #   SRC:=one or more directories to search for sources. The order of the source roots
 #        is significant. The first found file of a certain name has priority.
 #   BIN:=store classes here
+#   MODULE:=Name of module being compiled. If set, classes are put in BIN/MODULE.
 #   CLASSPATH:=a list of additional entries to set as classpath to javac
 #   INCLUDES:=myapp.foo means will only compile java files in myapp.foo or any of its sub-packages.
 #   EXCLUDES:=myapp.foo means will do not compile java files in myapp.foo or any of its sub-packages.
@@ -190,6 +191,10 @@ define SetupJavaCompilationBody
   $1_SJAVAC_PORTFILE := $$($$($1_SETUP)_SJAVAC_PORTFILE)
   $1_SERVER_JVM := $$($$($1_SETUP)_SERVER_JVM)
   $1_DISABLE_SJAVAC := $$($$($1_SETUP)_DISABLE_SJAVAC)
+ 
+  ifneq ($$($1_MODULE), )
+    $1_MODULE_SUBDIR := /$$($1_MODULE)
+  endif
 
   # Make sure the dirs exist.
   $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupJavaCompilation $1 contains missing directory >$$d<)))
@@ -303,7 +308,7 @@ define SetupJavaCompilationBody
   $1_REMOTE:=--server:portfile=$$($1_SJAVAC_PORTFILE),id=$1,sjavac=$$(subst \
       $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_SERVER_JVM) $$($1_SJAVAC))))
 
-  $1_COMPILE_TARGET := $$($1_BIN)/_the.$1_batch
+  $1_COMPILE_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch
 
   ifeq ($$($1_DISABLE_SJAVAC)x$$(ENABLE_SJAVAC),xyes)
     # Using sjavac to compile.
@@ -336,7 +341,8 @@ define SetupJavaCompilationBody
     $1_VARDEPS := $$($1_JVM) $$($1_SJAVAC) $$($1_SJAVAC_ARGS_STRING) $$($1_FLAGS) \
         $$($1_HEADERS_ARG) $$($1_BIN) $$($1_EXCLUDES) $$($1_INCLUDES) \
         $$($1_EXCLUDE_FILES) $$($1_INCLUDE_FILES)
-    $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_BIN)/_the.$1.vardeps)
+    $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+        $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1.vardeps)
 
     $$($1_COMPILE_TARGET): $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
 	$$(call MakeDir, $$(@D) $$(dir $$($1_SJAVAC_PORTFILE)))
@@ -345,7 +351,7 @@ define SetupJavaCompilationBody
 	  $$(eval $$(call ListPathsSafely,$1_SJAVAC_ARGS_STRING, $$($1_SJAVAC_ARGS_FILE)))
         endif
 	$$(call LogWarn, Compiling $1)
-	$$(call ExecuteWithLog, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch, \
+	$$(call ExecuteWithLog, $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$$($1_SAFE_NAME)_batch, \
 	    $$($1_JVM) $$($1_SJAVAC) \
 	        $$($1_REMOTE) \
 	        -j 1 \
@@ -353,7 +359,7 @@ define SetupJavaCompilationBody
 	        --permit-sources-without-package \
 	        --compare-found-sources $$@.tmp \
 	        --log=$(LOG_LEVEL) \
-	        --state-dir=$$($1_BIN) \
+	        --state-dir=$$($1_BIN)$$($1_MODULE_SUBDIR) \
 	        $$($1_SJAVAC_ARGS) \
 	        $$($1_FLAGS) \
 	        $$($1_HEADERS_ARG) \
@@ -362,11 +368,13 @@ define SetupJavaCompilationBody
         # Create a pubapi file that only changes when the pubapi changes. Dependent
         # compilations can use this file to only get recompiled when pubapi has changed.
         # Grep returns 1 if no matching lines are found. Do not fail for this.
-	$(GREP) -e "^I" $$($1_BIN)/javac_state > $$($1_BIN)/_the.$1_pubapi.tmp \
+	$(GREP) -e "^I" $$($1_BIN)$$($1_MODULE_SUBDIR)/javac_state > $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi.tmp \
 	    || test "$$$$?" = "1"
-	if [ ! -f $$($1_BIN)/_the.$1_pubapi ] \
-	    || [ "`$(DIFF) $$($1_BIN)/_the.$1_pubapi $$($1_BIN)/_the.$1_pubapi.tmp`" != "" ]; then \
-	  $(MV) $$($1_BIN)/_the.$1_pubapi.tmp $$($1_BIN)/_the.$1_pubapi; \
+	if [ ! -f $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi ] \
+	    || [ "`$(DIFF) $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi \
+	        $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi.tmp`" != "" ]; then \
+	  $(MV) $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi.tmp \
+	      $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi; \
 	fi
 
   else
@@ -380,11 +388,12 @@ define SetupJavaCompilationBody
       $$($1_HEADERS)/_the.$1_headers: $$($1_COMPILE_TARGET)
 		$(MKDIR) -p $$(@D)
 		if [ -d "$$($1_HEADERS).$1.tmp" ]; then \
-		  for f in `ls $$($1_HEADERS).$1.tmp`; do \
+		  for f in `$(CD) $$($1_HEADERS).$1.tmp && $(FIND) . -type f`; do \
 		    if [ ! -f "$$($1_HEADERS)/$$$$f" ] \
 		        || [ "`$(DIFF) $$($1_HEADERS)/$$$$f $$($1_HEADERS).$1.tmp/$$$$f`" != "" ]; then \
-		    $(CP) -f $$($1_HEADERS).$1.tmp/$$$$f $$($1_HEADERS)/$$$$f; \
-		  fi; \
+		      $(MKDIR) -p `$(DIRNAME) $$($1_HEADERS)/$$$$f`; \
+		      $(CP) -f $$($1_HEADERS).$1.tmp/$$$$f $$($1_HEADERS)/$$$$f; \
+		    fi; \
 		  done; \
 		fi
 		$(RM) -r $$($1_HEADERS).$1.tmp
@@ -396,7 +405,8 @@ define SetupJavaCompilationBody
     $1_VARDEPS := $$($1_JVM) $$($1_JAVAC) $$($1_FLAGS) $$($1_BIN) \
         $$($1_HEADERS_ARG) $$($1_EXCLUDES) $$($1_INCLUDES) \
         $$($1_EXCLUDE_FILES) $$($1_INCLUDE_FILES)
-    $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_BIN)/_the.$1.vardeps)
+    $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+        $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1.vardeps)
 
     ifeq ($$($1_DISABLE_SJAVAC)x$(ENABLE_JAVAC_SERVER), xyes)
       $1_JAVAC_CMD := $$($1_SJAVAC) $$($1_REMOTE)
@@ -409,7 +419,7 @@ define SetupJavaCompilationBody
 	$$(call MakeDir, $$(@D))
 	$$(eval $$(call ListPathsSafely,$1_SRCS, $$@.tmp))
 	$$(call LogWarn, Compiling $$(words $$($1_SRCS)) files for $1)
-	$$(call ExecuteWithLog, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch, \
+	$$(call ExecuteWithLog, $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$$($1_SAFE_NAME)_batch, \
 	    $$($1_JVM) $$($1_JAVAC_CMD) $$($1_FLAGS) \
 	        -implicit:none \
 		-d $$($1_BIN) $$($1_HEADERS_ARG) @$$@.tmp) && \
@@ -431,7 +441,7 @@ define SetupJavaCompilationBody
 
     $$(eval $$(call SetupJarArchive, ARCHIVE_$1, \
         DEPENDENCIES:=$$($1), \
-        SRCS:=$$($1_BIN), \
+        SRCS:=$$($1_BIN)$$($1_MODULE_SUBDIR), \
         SUFFIXES:=$$($1_SUFFIXES), \
         EXCLUDE:=$$($1_EXCLUDES), \
         INCLUDES:=$$($1_INCLUDES), \

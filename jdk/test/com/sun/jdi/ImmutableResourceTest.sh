@@ -93,18 +93,18 @@ fi
 echo "JDK under test is: $TESTJAVA"
 #
 CP="-classpath ${TESTCLASSES}"
-# Compile the test class using the classpath we need:
 #
 env
 #
 set -vx
 #
-#Compile.  tools.jar is required on the classpath.
-${TESTJAVA}/bin/javac -d "${TESTCLASSES}" ${CP} -g \
-                         "${TESTSRC}"/"${TARGETCLASS}".java
+# Compile test class
+${TESTJAVA}/bin/javac -XaddExports:jdk.jdi/com.sun.tools.example.debug.tty=ALL-UNNAMED \
+   -d "${TESTCLASSES}" ${CP} -g "${TESTSRC}"/"${TARGETCLASS}".java
 #
-#Run the test class, again with the classpath we need:
-${TESTJAVA}/bin/java ${CP} ${TARGETCLASS}
+# Run the test class, again with the classpath we need:
+${TESTJAVA}/bin/java -XaddExports:jdk.jdi/com.sun.tools.example.debug.tty=ALL-UNNAMED \
+    ${CP} ${TARGETCLASS}
 status=$?
 echo "test status was: $status"
 if [ $status -eq "0" ];

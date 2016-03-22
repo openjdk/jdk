@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,7 @@
  * questions.
  */
 
-    /* AUTOMATICALLY GENERATED FILE - DO NOT EDIT */
-
+ /* AUTOMATICALLY GENERATED FILE - DO NOT EDIT */
 
     /* Include file for the Java(tm) Virtual Machine Tool Interface */
 
@@ -42,8 +41,9 @@ enum {
     JVMTI_VERSION_1_0 = 0x30010000,
     JVMTI_VERSION_1_1 = 0x30010100,
     JVMTI_VERSION_1_2 = 0x30010200,
+    JVMTI_VERSION_9   = 0x30090000,
 
-    JVMTI_VERSION = 0x30000000 + (1 * 0x10000) + (2 * 0x100) + 1  /* version: 1.2.1 */
+    JVMTI_VERSION = 0x30000000 + (9 * 0x10000) + (0 * 0x100) + 0  /* version: 9.0.0 */
 };
 
 JNIEXPORT jint JNICALL
@@ -703,7 +703,8 @@ typedef struct {
     unsigned int can_retransform_any_class : 1;
     unsigned int can_generate_resource_exhaustion_heap_events : 1;
     unsigned int can_generate_resource_exhaustion_threads_events : 1;
-    unsigned int : 7;
+    unsigned int can_generate_early_vmstart : 1;
+    unsigned int : 6;
     unsigned int : 16;
     unsigned int : 16;
     unsigned int : 16;
@@ -1011,8 +1012,10 @@ typedef struct jvmtiInterface_1_ {
     jthread event_thread,
      ...);
 
-  /*   3 :  RESERVED */
-  void *reserved3;
+  /*   3 : Get All Modules */
+  jvmtiError (JNICALL *GetAllModules) (jvmtiEnv* env,
+    jint* module_count_ptr,
+    jobject** modules_ptr);
 
   /*   4 : Get All Threads */
   jvmtiError (JNICALL *GetAllThreads) (jvmtiEnv* env,
@@ -1675,7 +1678,7 @@ typedef struct jvmtiInterface_1_ {
   /*   132 : Set System Property */
   jvmtiError (JNICALL *SetSystemProperty) (jvmtiEnv* env,
     const char* property,
-    const char* value);
+    const char* value_ptr);
 
   /*   133 : Get Phase */
   jvmtiError (JNICALL *GetPhase) (jvmtiEnv* env,
@@ -2137,6 +2140,11 @@ struct _jvmtiEnv {
     return functions->ClearFieldModificationWatch(this, klass, field);
   }
 
+  jvmtiError GetAllModules(jint* module_count_ptr,
+            jobject** modules_ptr) {
+    return functions->GetAllModules(this, module_count_ptr, modules_ptr);
+  }
+
   jvmtiError GetLoadedClasses(jint* class_count_ptr,
             jclass** classes_ptr) {
     return functions->GetLoadedClasses(this, class_count_ptr, classes_ptr);
@@ -2484,8 +2492,8 @@ struct _jvmtiEnv {
   }
 
   jvmtiError SetSystemProperty(const char* property,
-            const char* value) {
-    return functions->SetSystemProperty(this, property, value);
+            const char* value_ptr) {
+    return functions->SetSystemProperty(this, property, value_ptr);
   }
 
   jvmtiError GetPhase(jvmtiPhase* phase_ptr) {
@@ -2531,4 +2539,3 @@ struct _jvmtiEnv {
 #endif /* __cplusplus */
 
 #endif /* !_JAVA_JVMTI_H_ */
-

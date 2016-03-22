@@ -28,19 +28,13 @@
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @build   JavacTestingAbstractProcessor EnsureOrder
- * @compile -processor EnsureOrder -proc:only EnsureOrder.java
+ * @compile -XDaccessInternalAPI -processor EnsureOrder -proc:only EnsureOrder.java
  */
 
 import java.util.Set;
 import java.lang.annotation.*;
 import javax.annotation.processing.*;
-import javax.lang.model.SourceVersion;
-import static javax.lang.model.SourceVersion.*;
 import javax.lang.model.element.*;
-import javax.lang.model.util.*;
-import static javax.lang.model.util.ElementFilter.*;
-import static javax.tools.Diagnostic.Kind.*;
-import static javax.tools.StandardLocation.*;
 import com.sun.tools.javac.util.Assert;
 
 @Target({ElementType.TYPE_PARAMETER, ElementType.TYPE})
@@ -64,6 +58,7 @@ class Base {}
 class Sub extends Base {}
 
 public class EnsureOrder<@Foos({@Foo(0), @Foo(1)}) @Foo(2)T> extends JavacTestingAbstractProcessor {
+
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {

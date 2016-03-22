@@ -1,4 +1,0 @@
-WarnClass.java:13:49: compiler.warn.sun.proprietary: sun.security.x509.X509CertInfo
-- compiler.err.warnings.and.werror
-1 error
-1 warning

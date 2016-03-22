@@ -304,6 +304,18 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   # When compiling code to be executed by the Boot JDK, force jdk8 compatibility.
   BOOT_JDK_SOURCETARGET="-source 8 -target 8"
   AC_SUBST(BOOT_JDK_SOURCETARGET)
+
+  ADD_JVM_ARG_IF_OK([-Xpatch:], dummy, [$JAVA])
+  AC_MSG_CHECKING([if Boot JDK supports modules])
+  if test "x$JVM_ARG_OK" = "xtrue"; then
+    AC_MSG_RESULT([yes])
+    BOOT_JDK_MODULAR="true"
+  else
+    AC_MSG_RESULT([no])
+    BOOT_JDK_MODULAR="false"
+  fi
+  AC_SUBST(BOOT_JDK_MODULAR)
+
   AC_SUBST(JAVAC_FLAGS)
 
   # Check if the boot jdk is 32 or 64 bit
@@ -396,4 +408,101 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
     JAVA_TOOL_FLAGS_SMALL="$JAVA_TOOL_FLAGS_SMALL -J$f"
   done
   AC_SUBST(JAVA_TOOL_FLAGS_SMALL)
+])
+
+# BUILD_JDK: the location of the latest JDK that can run
+#   on the host system and supports the target class file version
+#   generated in this JDK build.  This variable should only be
+#   used after the launchers are built.
+#
+
+# Execute the check given as argument, and verify the result.
+# If the JDK was previously found, do nothing.
+# $1 A command line (typically autoconf macro) to execute
+AC_DEFUN([BOOTJDK_CHECK_BUILD_JDK],
+[
+  if test "x$BUILD_JDK_FOUND" = xno; then
+    # Execute the test
+    $1
+
+    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
+    if test "x$BUILD_JDK_FOUND" = xmaybe; then
+      # Do we have a bin/java?
+      if test ! -x "$BUILD_JDK/bin/java"; then
+        AC_MSG_NOTICE([Potential Build JDK found at $BUILD_JDK did not contain bin/java; ignoring])
+        BUILD_JDK_FOUND=no
+      elif test ! -x "$BUILD_JDK/bin/jlink"; then
+        AC_MSG_NOTICE([Potential Build JDK found at $BUILD_JDK did not contain bin/jlink; ignoring])
+        BUILD_JDK_FOUND=no
+      elif test ! -x "$BUILD_JDK/bin/javac"; then
+        # Do we have a bin/javac?
+        AC_MSG_NOTICE([Potential Build JDK found at $BUILD_JDK did not contain bin/javac; ignoring])
+        AC_MSG_NOTICE([(This might be a JRE instead of an JDK)])
+        BUILD_JDK_FOUND=no
+      else
+        # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+        BUILD_JDK_VERSION=`"$BUILD_JDK/bin/java" -version 2>&1 | head -n 1`
+
+        # Extra M4 quote needed to protect [] in grep expression.
+        [FOUND_CORRECT_VERSION=`echo $BUILD_JDK_VERSION | grep  '\"1\.[9]\.'`]
+        if test "x$FOUND_CORRECT_VERSION" = x; then
+          AC_MSG_NOTICE([Potential Boot JDK found at $BUILD_JDK is incorrect JDK version ($BUILD_JDK_VERSION); ignoring])
+          AC_MSG_NOTICE([(Your Build JDK must be version 9)])
+          BUILD_JDK_FOUND=no
+        else
+          # We're done!
+          BUILD_JDK_FOUND=yes
+          BASIC_FIXUP_PATH(BUILD_JDK)
+          AC_MSG_CHECKING([for Build JDK])
+          AC_MSG_RESULT([$BUILD_JDK])
+          AC_MSG_CHECKING([Build JDK version])
+          BUILD_JDK_VERSION=`"$BUILD_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
+          AC_MSG_RESULT([$BUILD_JDK_VERSION])
+        fi # end check jdk version
+      fi # end check java
+    fi # end check build jdk found
+  fi
+])
+
+# By default the BUILD_JDK is the JDK_OUTPUTDIR.  If the target architecture
+# is different than the host system doing the build (e.g. cross-compilation),
+# a special BUILD_JDK is built as part of the build process.  An external
+# prebuilt BUILD_JDK can also be supplied.
+AC_DEFUN([BOOTJDK_SETUP_BUILD_JDK],
+[
+  AC_ARG_WITH(build-jdk, [AS_HELP_STRING([--with-build-jdk],
+      [path to JDK of same version as is being built@<:@the newly built JDK@:>@])])
+
+  CREATE_BUILDJDK_FOR_HOST=false
+  BUILD_JDK_FOUND="no"
+  if test "x$with_build_jdk" != "x"; then
+    BOOTJDK_CHECK_BUILD_JDK([
+       if test "x$with_build_jdk" != x; then
+         BUILD_JDK=$with_build_jdk
+         BUILD_JDK_FOUND=maybe
+         AC_MSG_NOTICE([Found potential Build JDK using configure arguments])
+       fi])
+  else
+    if test "x$COMPILE_TYPE" = "xcross"; then
+      BUILD_JDK="\$(BUILDJDK_OUTPUTDIR)/jdk"
+      BUILD_JDK_FOUND=yes
+      CREATE_BUILDJDK=true
+      AC_MSG_CHECKING([for Build JDK])
+      AC_MSG_RESULT([yes, will build it for the host platform])
+    else
+      BUILD_JDK="\$(JDK_OUTPUTDIR)"
+      BUILD_JDK_FOUND=yes
+      AC_MSG_CHECKING([for Build JDK])
+      AC_MSG_RESULT([yes, will use output dir])
+    fi
+  fi
+
+  if test "x$BUILD_JDK_FOUND" != "xyes"; then
+    AC_MSG_CHECKING([for Build JDK])
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([Could not find a suitable Build JDK])
+  fi
+
+  AC_SUBST(CREATE_BUILDJDK)
+  AC_SUBST(BUILD_JDK)
 ])

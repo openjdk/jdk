@@ -25,6 +25,7 @@
  * @test
  * @bug 4954921 8009259
  * @library /test/lib/share/classes
+ * @modules java.base/jdk.internal.ref
  * @build jdk.test.lib.*
  * @build jdk.test.lib.process.*
  * @run main ExitOnThrow

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.parser.Tokens.*;
 import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
@@ -158,6 +159,7 @@ public class JavacParser implements Parser {
         this.allowStaticInterfaceMethods = source.allowStaticInterfaceMethods();
         this.allowIntersectionTypesInCast = source.allowIntersectionTypesInCast();
         this.allowTypeAnnotations = source.allowTypeAnnotations();
+        this.allowModules = source.allowModules();
         this.allowAnnotationsAfterTypeParams = source.allowAnnotationsAfterTypeParams();
         this.allowUnderscoreIdentifier = source.allowUnderscoreIdentifier();
         this.allowPrivateInterfaceMethods = source.allowPrivateInterfaceMethods();
@@ -205,6 +207,10 @@ public class JavacParser implements Parser {
     /** Switch: should we allow method/constructor references?
      */
     boolean allowMethodReferences;
+
+    /** Switch: should we recognize modules?
+     */
+    boolean allowModules;
 
     /** Switch: should we allow default methods in interfaces?
      */
@@ -3096,59 +3102,65 @@ public class JavacParser implements Parser {
         Token firstToken = token;
         JCModifiers mods = null;
         boolean consumedToplevelDoc = false;
-        boolean seenImport = false;
-        boolean seenPackage = false;
         ListBuffer<JCTree> defs = new ListBuffer<>();
-        if (token.kind == MONKEYS_AT)
-            mods = modifiersOpt();
 
-        if (token.kind == PACKAGE) {
-            int packagePos = token.pos;
-            List<JCAnnotation> annotations = List.nil();
-            seenPackage = true;
-            if (mods != null) {
-                checkNoMods(mods.flags);
-                annotations = mods.annotations;
-                mods = null;
-            }
-            nextToken();
-            JCExpression pid = qualident(false);
-            accept(SEMI);
-            JCPackageDecl pd = F.at(packagePos).PackageDecl(annotations, pid);
-            attach(pd, firstToken.comment(CommentStyle.JAVADOC));
+        if (token.kind == IDENTIFIER && token.name() == names.module) {
+            defs.append(moduleDecl(token.comment(CommentStyle.JAVADOC)));
             consumedToplevelDoc = true;
-            storeEnd(pd, token.pos);
-            defs.append(pd);
+        } else {
+            boolean seenImport = false;
+            boolean seenPackage = false;
+            if (token.kind == MONKEYS_AT)
+                mods = modifiersOpt();
+
+            if (token.kind == PACKAGE) {
+                int packagePos = token.pos;
+                List<JCAnnotation> annotations = List.nil();
+                seenPackage = true;
+                if (mods != null) {
+                    checkNoMods(mods.flags);
+                    annotations = mods.annotations;
+                    mods = null;
+                }
+                nextToken();
+                JCExpression pid = qualident(false);
+                accept(SEMI);
+                JCPackageDecl pd = F.at(packagePos).PackageDecl(annotations, pid);
+                attach(pd, firstToken.comment(CommentStyle.JAVADOC));
+                consumedToplevelDoc = true;
+                storeEnd(pd, token.pos);
+                defs.append(pd);
+            }
+            boolean checkForImports = true;
+            boolean firstTypeDecl = true;
+            while (token.kind != EOF) {
+                if (token.pos <= endPosTable.errorEndPos) {
+                    // error recovery
+                    skip(checkForImports, false, false, false);
+                    if (token.kind == EOF)
+                        break;
+                }
+                if (checkForImports && mods == null && token.kind == IMPORT) {
+                    seenImport = true;
+                    defs.append(importDeclaration());
+                } else {
+                    Comment docComment = token.comment(CommentStyle.JAVADOC);
+                    if (firstTypeDecl && !seenImport && !seenPackage) {
+                        docComment = firstToken.comment(CommentStyle.JAVADOC);
+                        consumedToplevelDoc = true;
+                    }
+                    JCTree def = typeDeclaration(mods, docComment);
+                    if (def instanceof JCExpressionStatement)
+                        def = ((JCExpressionStatement)def).expr;
+                    defs.append(def);
+                    if (def instanceof JCClassDecl)
+                        checkForImports = false;
+                    mods = null;
+                    firstTypeDecl = false;
+                }
+            }
         }
 
-        boolean checkForImports = true;
-        boolean firstTypeDecl = true;
-        while (token.kind != EOF) {
-            if (token.pos <= endPosTable.errorEndPos) {
-                // error recovery
-                skip(checkForImports, false, false, false);
-                if (token.kind == EOF)
-                    break;
-            }
-            if (checkForImports && mods == null && token.kind == IMPORT) {
-                seenImport = true;
-                defs.append(importDeclaration());
-            } else {
-                Comment docComment = token.comment(CommentStyle.JAVADOC);
-                if (firstTypeDecl && !seenImport && !seenPackage) {
-                    docComment = firstToken.comment(CommentStyle.JAVADOC);
-                    consumedToplevelDoc = true;
-                }
-                JCTree def = typeDeclaration(mods, docComment);
-                if (def instanceof JCExpressionStatement)
-                    def = ((JCExpressionStatement)def).expr;
-                defs.append(def);
-                if (def instanceof JCClassDecl)
-                    checkForImports = false;
-                mods = null;
-                firstTypeDecl = false;
-            }
-        }
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(defs.toList());
         if (!consumedToplevelDoc)
             attach(toplevel, firstToken.comment(CommentStyle.JAVADOC));
@@ -3161,6 +3173,75 @@ public class JavacParser implements Parser {
         this.endPosTable.setParser(null); // remove reference to parser
         toplevel.endPositions = this.endPosTable;
         return toplevel;
+    }
+
+    JCModuleDecl moduleDecl(Comment dc) {
+        int pos = token.pos;
+        if (!allowModules) {
+            log.error(pos, Errors.ModulesNotSupportedInSource(source.name));
+            allowModules = true;
+        }
+
+        nextToken();
+        JCExpression name = qualident(false);
+        List<JCDirective> directives = null;
+
+        accept(LBRACE);
+        directives = moduleDirectiveList();
+        accept(RBRACE);
+        accept(EOF);
+
+        JCModuleDecl result = toP(F.at(pos).ModuleDef(name, directives));
+        attach(result, dc);
+        return result;
+    }
+
+    List<JCDirective> moduleDirectiveList() {
+        ListBuffer<JCDirective> defs = new ListBuffer<>();
+        while (token.kind == IDENTIFIER) {
+            int pos = token.pos;
+            if (token.name() == names.requires) {
+                nextToken();
+                boolean isPublic = false;
+                if (token.kind == PUBLIC) {
+                    isPublic = true;
+                    nextToken();
+                }
+                JCExpression moduleName = qualident(false);
+                accept(SEMI);
+                defs.append(toP(F.at(pos).Requires(isPublic, moduleName)));
+            } else if (token.name() == names.exports) {
+                nextToken();
+                JCExpression pkgName = qualident(false);
+                List<JCExpression> moduleNames = null;
+                if (token.kind == IDENTIFIER && token.name() == names.to) {
+                    nextToken();
+                    moduleNames = qualidentList();
+                }
+                accept(SEMI);
+                defs.append(toP(F.at(pos).Exports(pkgName, moduleNames)));
+            } else if (token.name() == names.provides) {
+                nextToken();
+                JCExpression serviceName = qualident(false);
+                if (token.kind == IDENTIFIER && token.name() == names.with) {
+                    nextToken();
+                    JCExpression implName = qualident(false);
+                    accept(SEMI);
+                    defs.append(toP(F.at(pos).Provides(serviceName, implName)));
+                } else {
+                    error(token.pos, "expected", "'" + names.with + "'");
+                    skip(false, false, false, false);
+                }
+            } else if (token.name() == names.uses) {
+                nextToken();
+                JCExpression service = qualident(false);
+                accept(SEMI);
+                defs.append(toP(F.at(pos).Uses(service)));
+            } else {
+                break;
+            }
+        }
+        return defs.toList();
     }
 
     /** ImportDeclaration = IMPORT [ STATIC ] Ident { "." Ident } [ "." "*" ] ";"

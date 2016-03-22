@@ -63,6 +63,8 @@ JAVA_MANIFEST := $(JDK_TOPDIR)/src/java.base/windows/native/launcher/java.manife
 # used as the name of the executable.
 #
 # Remaining parameters are named arguments. These include:
+# MAIN_MODULE  The module of the main class to launch if different from the
+#     current module
 # MAIN_CLASS   The Java main class to launch
 # JAVA_ARGS   Processed into a -DJAVA_ARGS C flag
 # CFLAGS   Additional CFLAGS
@@ -97,9 +99,13 @@ define SetupBuildLauncherBody
     $1_JAVA_ARGS += -ms8m
   endif
 
+  ifeq ($$($1_MAIN_MODULE), )
+    $1_MAIN_MODULE := $(MODULE)
+  endif
+
   ifneq ($$($1_JAVA_ARGS), )
     $1_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
-        $$(addprefix -J, $$($1_JAVA_ARGS)) $$($1_MAIN_CLASS), "$$a"$(COMMA) )) }'
+        $$(addprefix -J, $$($1_JAVA_ARGS)) -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS), "$$a"$(COMMA) )) }'
     $1_CFLAGS += -DJAVA_ARGS=$$($1_JAVA_ARGS_STR)
   endif
 

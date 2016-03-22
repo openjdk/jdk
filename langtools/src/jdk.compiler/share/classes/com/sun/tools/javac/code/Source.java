@@ -137,6 +137,9 @@ public enum Source {
     public boolean allowImprovedCatchAnalysis() {
         return compareTo(JDK1_7) >= 0;
     }
+    public boolean allowModules() {
+        return compareTo(JDK1_9) >= 0;
+    }
     public boolean allowTryWithResources() {
         return compareTo(JDK1_7) >= 0;
     }

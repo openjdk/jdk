@@ -184,6 +184,23 @@ public enum Option {
 
     SOURCEPATH("-sourcepath", "opt.arg.path", "opt.sourcepath", STANDARD, FILEMANAGER),
 
+    MODULESOURCEPATH("-modulesourcepath", "opt.arg.mspath", "opt.modulesourcepath", STANDARD, FILEMANAGER),
+
+    MODULEPATH("-modulepath", "opt.arg.path", "opt.modulepath", STANDARD, FILEMANAGER),
+
+    MP("-mp", "opt.arg.path", "opt.modulepath", STANDARD, FILEMANAGER) {
+        @Override
+        public boolean process(OptionHelper helper, String option, String arg) {
+            return super.process(helper, "-modulepath", arg);
+        }
+    },
+
+    UPGRADEMODULEPATH("-upgrademodulepath", "opt.arg.path", "opt.upgrademodulepath", STANDARD, FILEMANAGER),
+
+    SYSTEM("-system", "opt.arg.jdk", "opt.system", STANDARD, FILEMANAGER),
+
+    XPATCH("-Xpatch:", "opt.arg.path", "opt.Xpatch", EXTENDED, FILEMANAGER),
+
     BOOTCLASSPATH("-bootclasspath", "opt.arg.path", "opt.bootclasspath", STANDARD, FILEMANAGER) {
         @Override
         public boolean process(OptionHelper helper, String option, String arg) {
@@ -229,6 +246,8 @@ public enum Option {
     PROCESSOR("-processor", "opt.arg.class.list", "opt.processor", STANDARD, BASIC),
 
     PROCESSORPATH("-processorpath", "opt.arg.path", "opt.processorpath", STANDARD, FILEMANAGER),
+
+    PROCESSORMODULEPATH("-processormodulepath", "opt.arg.path", "opt.processormodulepath", STANDARD, FILEMANAGER),
 
     PARAMETERS("-parameters","opt.parameters", STANDARD, BASIC),
 
@@ -478,9 +497,9 @@ public enum Option {
     PLUGIN("-Xplugin:", "opt.arg.plugin", "opt.plugin", EXTENDED, BASIC) {
         @Override
         public boolean process(OptionHelper helper, String option) {
-            String p = option.substring(option.indexOf(':') + 1);
+            String p = option.substring(option.indexOf(':') + 1).trim();
             String prev = helper.get(PLUGIN);
-            helper.put(PLUGIN.text, (prev == null) ? p : prev + '\0' + p.trim());
+            helper.put(PLUGIN.text, (prev == null) ? p : prev + '\0' + p);
             return false;
         }
     },
@@ -507,6 +526,106 @@ public enum Option {
         }
     },
 
+    XADDEXPORTS("-XaddExports:", "opt.arg.addExports", "opt.addExports", EXTENDED, BASIC) {
+        @Override
+        public boolean process(OptionHelper helper, String option) {
+            if (option.matches(".*,.*=.*")) { // temporary, for backwards compatibility
+                return processOldStyle(helper, option);
+            }
+            String p = option.substring(option.indexOf(':') + 1).trim();
+            String prev = helper.get(XADDEXPORTS);
+            helper.put(XADDEXPORTS.text, (prev == null) ? p : prev + '\0' + p);
+            return false;
+        }
+
+        // convert old style option into a series of new-style options
+        private boolean processOldStyle(OptionHelper helper, String option) {
+            String p = option.substring(option.indexOf(':') + 1).trim();
+            String[] entries = p.split("[ ,]+");
+            Map<String, String> map = new LinkedHashMap<>();
+            for (String e: entries) {
+                // Each entry is of the form   module/package=target
+                // we must group values for the same module/package together
+                int eq = e.indexOf('=');
+                if (eq == -1) {
+                    // don't bother with error message for backwards compatible support
+                    continue;
+                }
+                String modPkg = e.substring(0, eq);
+                String target = e.substring(eq + 1);
+                String targets = map.get(modPkg);
+                map.put(modPkg, (targets == null) ? target : targets + "," + target);
+            }
+            boolean ok = true;
+            for (Map.Entry<String, String> e: map.entrySet()) {
+                // process as new-style options
+                String key = e.getKey();
+                String value = e.getValue();
+                ok = ok & process(helper, XADDEXPORTS.text + key + "=" + value);
+            };
+            return ok;
+        }
+    },
+
+    XADDREADS("-XaddReads:", "opt.arg.addReads", "opt.addReads", EXTENDED, BASIC) {
+        @Override
+        public boolean process(OptionHelper helper, String option) {
+            if (option.matches(".*,.*=.*")) { // temporary, for backwards compatibility
+                return processOldStyle(helper, option);
+            }
+            String p = option.substring(option.indexOf(':') + 1).trim();
+            String prev = helper.get(XADDREADS);
+            helper.put(XADDREADS.text, (prev == null) ? p : prev + '\0' + p);
+            return false;
+        }
+
+        // convert old style option into a series of new-style options
+        private boolean processOldStyle(OptionHelper helper, String option) {
+            String p = option.substring(option.indexOf(':') + 1).trim();
+            String[] entries = p.split("[ ,]+");
+            Map<String, String> map = new LinkedHashMap<>();
+            for (String e: entries) {
+                // Each entry is of the form   module=target
+                // we must group values for the same module together
+                int eq = e.indexOf('=');
+                if (eq == -1) {
+                    // don't bother with error message for backwards compatible support
+                    continue;
+                }
+                String modPkg = e.substring(0, eq);
+                String target = e.substring(eq + 1);
+                String targets = map.get(modPkg);
+                map.put(modPkg, (targets == null) ? target : targets + "," + target);
+            }
+            boolean ok = true;
+            for (Map.Entry<String, String> e: map.entrySet()) {
+                // process as new-style options
+                String key = e.getKey();
+                String value = e.getValue();
+                ok = ok & process(helper, XADDEXPORTS.text + key + "=" + value);
+            };
+            return ok;
+        }
+    },
+
+    XMODULE("-Xmodule:", "opt.arg.module", "opt.module", EXTENDED, BASIC) {
+        @Override
+        public boolean process(OptionHelper helper, String option) {
+            String prev = helper.get(XMODULE);
+            if (prev != null) {
+                helper.error("err.option.too.many", XMODULE.text);
+            }
+            String p = option.substring(option.indexOf(':') + 1);
+            helper.put(XMODULE.text, p);
+            return false;
+        }
+    },
+
+    M("-m", "opt.arg.m", "opt.m", STANDARD, BASIC),
+
+    ADDMODS("-addmods", "opt.arg.addmods", "opt.addmods", STANDARD, BASIC),
+    LIMITMODS("-limitmods", "opt.arg.limitmods", "opt.limitmods", STANDARD, BASIC),
+
     // This option exists only for the purpose of documenting itself.
     // It's actually implemented by the CommandLine class.
     AT("@", "opt.arg.file", "opt.AT", STANDARD, INFO, true) {
@@ -516,19 +635,19 @@ public enum Option {
         }
     },
 
-    /*
-     * TODO: With apt, the matches method accepts anything if
-     * -XclassAsDecls is used; code elsewhere does the lookup to
-     * see if the class name is both legal and found.
-     *
-     * In apt, the process method adds the candidate class file
-     * name to a separate list.
-     */
+    // Standalone positional argument: source file or type name.
     SOURCEFILE("sourcefile", null, HIDDEN, INFO) {
         @Override
         public boolean matches(String s) {
-            return s.endsWith(".java")  // Java source file
-                || SourceVersion.isName(s);   // Legal type name
+            if (s.endsWith(".java"))  // Java source file
+                return true;
+            int sep = s.indexOf('/');
+            if (sep != -1) {
+                return SourceVersion.isName(s.substring(0, sep))
+                        && SourceVersion.isName(s.substring(sep + 1));
+            } else {
+                return SourceVersion.isName(s);   // Legal type name
+            }
         }
         @Override
         public boolean process(OptionHelper helper, String option) {

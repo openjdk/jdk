@@ -208,6 +208,7 @@ class MetaspaceShared : AllStatic {
   static bool try_link_class(InstanceKlass* ik, TRAPS);
   static void link_one_shared_class(Klass* obj, TRAPS);
   static void check_one_shared_class(Klass* obj);
+  static void check_shared_class_loader_type(Klass* obj);
   static void link_and_cleanup_shared_classes(TRAPS);
 
   static int count_class(const char* classlist_file);

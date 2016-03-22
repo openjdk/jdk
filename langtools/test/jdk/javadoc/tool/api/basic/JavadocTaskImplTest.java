@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
  * @summary javadoc should have a javax.tools.Tool service provider
  * @modules jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.javadoc/com.sun.tools.javadoc.api
+ *          jdk.javadoc/jdk.javadoc.internal.api
+ *          jdk.javadoc/jdk.javadoc.internal.tool
  * @build APITest
  * @run main JavadocTaskImplTest
  */

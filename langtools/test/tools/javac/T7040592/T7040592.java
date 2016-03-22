@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 7040592
  * @summary Verify that null can be assigned freely to array types without a checkcast
  * @modules jdk.compiler
+ *          jdk.jdeps/com.sun.tools.javap
  */
 
 import java.io.PrintWriter;

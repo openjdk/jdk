@@ -27,12 +27,15 @@
  * @summary javac should generate method parameters correctly.
  * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.model
  *          jdk.compiler/com.sun.tools.javac.util
  */
 // key: opt.arg.parameters
 import com.sun.tools.classfile.*;
+import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.Main;
 import com.sun.tools.javac.util.Context;
@@ -138,10 +141,11 @@ public class MethodParametersTest {
         com.sun.tools.javac.code.ClassFinder cf =
             com.sun.tools.javac.code.ClassFinder.instance(context);
         Name name = Names.instance(context).fromString(Baz_name);
+        Symtab syms = Symtab.instance(context);
 
         // Now walk down the language model and check the name of the
         // parameter.
-        final Element baz = cf.loadClass(name);
+        final Element baz = cf.loadClass(syms.unnamedModule, name);
         for (Element e : baz.getEnclosedElements()) {
             if (e instanceof ExecutableElement) {
                 final ExecutableElement ee = (ExecutableElement) e;

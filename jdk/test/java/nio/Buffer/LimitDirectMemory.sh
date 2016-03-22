@@ -27,8 +27,8 @@
 # @bug 4627316 6743526
 # @summary Test option to limit direct memory allocation
 #
+# @requires (os.arch == "x86_64") | (os.arch == "amd64") | (os.arch == "sparcv9")
 # @build LimitDirectMemory
-# @ignore JDK-8129343
 # @run shell LimitDirectMemory.sh
 
 TMP1=tmp_$$

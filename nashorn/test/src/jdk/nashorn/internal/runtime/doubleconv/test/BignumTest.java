@@ -69,6 +69,7 @@ import static org.testng.Assert.assertTrue;
  * Bignum class tests
  *
  * @test
+ * @modules jdk.scripting.nashorn/jdk.nashorn.internal.runtime.doubleconv
  * @run testng jdk.nashorn.internal.runtime.doubleconv.test.BignumTest
  */
 @SuppressWarnings("javadoc")

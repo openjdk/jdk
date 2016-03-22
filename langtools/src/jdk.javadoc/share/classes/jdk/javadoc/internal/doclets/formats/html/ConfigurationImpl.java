@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.io.IOException;
 import java.net.*;
 import java.util.*;
 
@@ -33,10 +34,15 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 
 import com.sun.source.util.DocTreePath;
 import com.sun.tools.doclint.DocLint;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
@@ -49,6 +55,7 @@ import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.DocletAbortException;
 import jdk.javadoc.internal.doclets.toolkit.util.MessageRetriever;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -505,6 +512,20 @@ public class ConfigurationImpl extends Configuration {
     @Override
     public Content newContent() {
         return new ContentBuilder();
+    }
+
+    @Override
+    public Location getLocationForPackage(PackageElement pd) {
+        JavaFileManager fm = getFileManager();
+        if (fm.hasLocation(StandardLocation.MODULE_SOURCE_PATH) && (pd instanceof PackageSymbol)) {
+            try {
+                ModuleSymbol msym = ((PackageSymbol) pd).modle;
+                return fm.getModuleLocation(StandardLocation.MODULE_SOURCE_PATH, msym.name.toString());
+            } catch (IOException e) {
+                throw new DocletAbortException(e);
+            }
+        }
+        return StandardLocation.SOURCE_PATH;
     }
 
     protected void buildSearchTagIndex() {

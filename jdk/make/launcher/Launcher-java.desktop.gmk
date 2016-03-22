@@ -31,6 +31,7 @@ $(eval $(call IncludeCustomExtension, jdk, launcher/Launcher-java.desktop.gmk))
 ifndef BUILD_HEADLESS_ONLY
   $(eval $(call SetupBuildLauncher, appletviewer, \
       MAIN_CLASS := sun.applet.Main, \
+      JAVA_ARGS := -addmods ALL-SYSTEM, \
       LIBS_unix := $(X_LIBS), \
   ))
 endif
