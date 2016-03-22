@@ -29,7 +29,7 @@
  * @compile -Werror T8078473_2.java -XDrawDiagnostics -XDfind=diamond
  */
 
-package java.util.stream;
+package p.q.r;
 
 class T8078473_2<P, Q> {
 

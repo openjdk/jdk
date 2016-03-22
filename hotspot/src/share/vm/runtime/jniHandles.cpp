@@ -467,6 +467,14 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
   return allocate_handle(obj);  // retry
 }
 
+void JNIHandleBlock::release_handle(jobject h) {
+  if (h != NULL) {
+    assert(chain_contains(h), "does not contain the JNI handle");
+    // Mark the handle as deleted, allocate will reuse it
+    *((oop*)h) = JNIHandles::deleted_handle();
+  }
+}
+
 
 void JNIHandleBlock::rebuild_free_list() {
   assert(_allocate_before_rebuild == 0 && _free_list == NULL, "just checking");

@@ -25,7 +25,10 @@
 
 # Include the legacy hotspot-spec.gmk (which in turns includes spec.gmk)
 BASE_SPEC:=$(SPEC)
-include $(dir $(SPEC))hotspot-spec.gmk
+# Assign to HOTSPOT_SPEC so that the variable HOTSPOT_SPEC can be
+# overridden when building the buildjdk.
+HOTSPOT_SPEC := $(dir $(SPEC))hotspot-spec.gmk
+include $(HOTSPOT_SPEC)
 include MakeBase.gmk
 
 # Inclusion of this pseudo-target will cause make to execute this file
@@ -45,7 +48,7 @@ HOTSPOT_FILES := $(shell $(FIND) -L \
 # not doing it breaks builds on msys.
 $(HOTSPOT_OUTPUTDIR)/_hotspot.timestamp: $(HOTSPOT_FILES)
 	@$(MKDIR) -p $(HOTSPOT_OUTPUTDIR)
-	@($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(HOTSPOT_MAKE_ARGS) \
+	($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(HOTSPOT_MAKE_ARGS) \
 	    LOG_LEVEL=$(LOG_LEVEL) SPEC=$(HOTSPOT_SPEC) BASE_SPEC=$(BASE_SPEC))
 	$(TOUCH) $@
 

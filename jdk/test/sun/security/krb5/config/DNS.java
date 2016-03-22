@@ -21,7 +21,14 @@
  * questions.
  */
 
-// See dns.sh.
+/*
+ * @test
+ * @bug 8002344
+ * @summary Krb5LoginModule config class does not return proper KDC list from DNS
+ * @modules java.security.jgss/sun.security.krb5
+ * @build java.naming/javax.naming.spi.NamingManager
+ * @run main/othervm DNS
+ */
 import sun.security.krb5.Config;
 import sun.security.krb5.KrbException;
 

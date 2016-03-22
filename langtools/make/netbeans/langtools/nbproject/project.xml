@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -408,9 +408,6 @@
                         </arity>
                     </context>
                 </action>
-                <action name="javadoc">
-                    <target>javadoc</target>
-                </action>
                 <action name="select-tool">
                     <target>select-tool</target>
                 </action>
@@ -477,7 +474,6 @@
                     <ide-action name="build"/>
                     <ide-action name="rebuild"/>
                     <ide-action name="clean"/>
-                    <ide-action name="javadoc"/>
                     <separator/>
                     <ide-action name="run"/>
                     <ide-action name="debug"/>
@@ -490,37 +486,35 @@
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/4">
             <compilation-unit>
                 <package-root>${root}/src/java.compiler/share/classes</package-root>
-                <package-root>${root}/build/bootstrap/java.compiler/gensrc</package-root>
+                <package-root>${root}/build/gensrc/java.compiler</package-root>
                 <built-to>${root}/build/java.compiler/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>${root}/src/jdk.compiler/share/classes</package-root>
-                <package-root>${root}/build/bootstrap/jdk.compiler/gensrc</package-root>
+                <package-root>${root}/build/gensrc/jdk.compiler</package-root>
                 <classpath mode="compile">${root}/build/java.compiler/classes</classpath>
                 <built-to>${root}/build/jdk.compiler/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>${root}/src/jdk.jdeps/share/classes</package-root>
-                <package-root>${root}/build/bootstrap/jdk.jdeps/gensrc</package-root>
+                <package-root>${root}/build/gensrc/jdk.jdeps</package-root>
                 <classpath mode="compile">${root}/build/java.compiler/classes:${root}/build/jdk.compiler/classes</classpath>
                 <built-to>${root}/build/jdk.jdeps/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>${root}/src/jdk.javadoc/share/classes</package-root>
-                <package-root>${root}/build/bootstrap/jdk.javadoc/gensrc</package-root>
+                <package-root>${root}/build/gensrc/jdk.javadoc</package-root>
                 <classpath mode="compile">${root}/build/java.compiler/classes:${root}/build/jdk.compiler/classes</classpath>
                 <built-to>${root}/build/jdk.javadoc/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>
             <compilation-unit>
                 <package-root>${root}/src/jdk.jshell/share/classes</package-root>
-                <package-root>${root}/build/bootstrap/jdk.jshell/gensrc</package-root>
-                <package-root>${root}/../jdk/src/jdk.internal.le/share/classes</package-root>
-                <package-root>${root}/../jdk/src/jdk.jdi/share/classes</package-root>
-                <classpath mode="compile">${root}/build/java.compiler/classes:${root}/build/jdk.compiler/classes:${root}/build/jdk.internal.le/classes:${root}/build/jdk.jdi/classes</classpath>
+                <package-root>${root}/build/gensrc/jdk.jshell</package-root>
+                <classpath mode="compile">${root}/build/java.compiler/classes:${root}/build/jdk.compiler/classes</classpath>
                 <built-to>${root}/build/jdk.jshell/classes</built-to>
                 <source-level>1.8</source-level>
             </compilation-unit>

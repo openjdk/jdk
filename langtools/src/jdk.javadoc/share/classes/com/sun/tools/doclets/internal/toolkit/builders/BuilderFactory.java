@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.sun.javadoc.*;
-import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -94,36 +93,6 @@ public class BuilderFactory {
             PackageDoc nextPkg) throws Exception {
         return PackageSummaryBuilder.getInstance(context, pkg,
             writerFactory.getPackageSummaryWriter(pkg, prevPkg, nextPkg));
-    }
-
-    /**
-     * Return the builder that builds the profile summary.
-     *
-     * @param profile the profile being documented.
-     * @param prevProfile the previous profile being documented.
-     * @param nextProfile the next profile being documented.
-     * @return the builder that builds the profile summary.
-     */
-    public AbstractBuilder getProfileSummaryBuilder(Profile profile, Profile prevProfile,
-            Profile nextProfile) throws Exception {
-        return ProfileSummaryBuilder.getInstance(context, profile,
-            writerFactory.getProfileSummaryWriter(profile, prevProfile, nextProfile));
-    }
-
-    /**
-     * Return the builder that builds the profile package summary.
-     *
-     * @param pkg the profile package being documented.
-     * @param prevPkg the previous profile package being documented.
-     * @param nextPkg the next profile package being documented.
-     * @param profile the profile being documented.
-     * @return the builder that builds the profile package summary.
-     */
-    public AbstractBuilder getProfilePackageSummaryBuilder(PackageDoc pkg, PackageDoc prevPkg,
-            PackageDoc nextPkg, Profile profile) throws Exception {
-        return ProfilePackageSummaryBuilder.getInstance(context, pkg,
-            writerFactory.getProfilePackageSummaryWriter(pkg, prevPkg, nextPkg,
-                profile), profile);
     }
 
     /**

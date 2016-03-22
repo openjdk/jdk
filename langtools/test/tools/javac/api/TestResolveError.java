@@ -37,6 +37,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.*;
@@ -69,7 +70,7 @@ public class TestResolveError extends ToolTester {
         types = task.getTypes();
 
         Iterable<? extends TypeElement> toplevels;
-        toplevels = task.enter(task.parse());
+        toplevels = ElementFilter.typesIn(task.enter(task.parse()));
 
         for (TypeElement clazz : toplevels) {
             System.out.format("Testing %s:%n%n", clazz.getSimpleName());

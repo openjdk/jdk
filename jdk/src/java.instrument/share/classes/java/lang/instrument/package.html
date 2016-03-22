@@ -1,5 +1,5 @@
 <!--
- Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -266,6 +266,24 @@ specifies the name of the agent class and the <code>Agent-Class</code> attribute
 ignored. Similarly, if the agent is started sometime after the VM has started, then
 the <code>Agent-Class</code> attribute specifies the name of the agent class
 (the value of <code>Premain-Class</code> attribute is ignored).
+
+
+<h3>Instrumenting code in modules</h3>
+
+Agents that instrument code in named modules may need to arrange for the
+modules to read other modules. If code is instrumented to invoke a method
+in a support class in another module, then the module of the instrumented
+code should read the module of the supporting class. Furthermore, the
+supporting class will only be accessible to the instrumented code if
+it is <code>public</code> and in a package that is exported by its module.
+Agents can use {@link Instrumentation#addModuleReads addModuleReads} to update
+a module to read another.
+<p>
+As an aid to agents that deploy supporting classes on the search path of the
+bootstrap class loader, or the search path of the class loader that loads
+the main agent class, the Java virtual machine arranges for the module of
+transformed classes to read the unnamed module of both class loaders.
+
 
 <h2>Related Documentation</h2>
 

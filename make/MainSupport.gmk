@@ -67,7 +67,6 @@ define Clean-gensrc
 	@$(PRINTF) "Cleaning gensrc $(if $1,for $(strip $1) )..."
 	@$(PRINTF) "\n" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/gensrc/$(strip $1)
-	$(RM) -r $(SUPPORT_OUTPUTDIR)/gensrc_no_docs/$(strip $1)
 	@$(PRINTF) " done\n"
 endef
 

@@ -28,9 +28,11 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.io.*;
 import java.util.*;
 
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
+import com.sun.javadoc.PackageDoc;
 import jdk.javadoc.doclet.Doclet.Option;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
@@ -248,6 +250,7 @@ public class HtmlDoclet extends AbstractDoclet {
             } catch (IOException e) {
                 throw new DocletAbortException(e);
             } catch (DocletAbortException de) {
+                de.printStackTrace();
                 throw de;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -256,6 +259,37 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    protected void generateModuleFiles() throws Exception {
+        if (configuration.showModules) {
+            ModuleIndexFrameWriter.generate(configuration);
+            ModuleElement prevModule = null, nextModule;
+            List<ModuleElement> mdles = new ArrayList<>(configuration.modulePackages.keySet());
+            int i = 0;
+            for (ModuleElement mdle : mdles) {
+                ModulePackageIndexFrameWriter.generate(configuration, mdle);
+                nextModule = (i + 1 < mdles.size()) ? mdles.get(i + 1) : null;
+                AbstractBuilder moduleSummaryBuilder =
+                        configuration.getBuilderFactory().getModuleSummaryBuilder(
+                        mdle, prevModule, nextModule);
+                moduleSummaryBuilder.build();
+                prevModule = mdle;
+                i++;
+            }
+        }
+    }
+
+    PackageElement getNamedPackage(List<PackageElement> list, int idx) {
+        if (idx < list.size()) {
+            PackageElement pkg = list.get(idx);
+            if (pkg != null && !pkg.isUnnamed()) {
+                return pkg;
+            }
+        }
+        return null;
+    }
 
     /**
      * {@inheritDoc}

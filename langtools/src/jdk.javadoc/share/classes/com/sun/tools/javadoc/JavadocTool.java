@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -44,7 +43,7 @@ import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.Symbol.Completer;
-import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
@@ -53,7 +52,6 @@ import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Position;
 
 
 /**
@@ -92,6 +90,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     /**
      * For javadoc, the parser needs to keep comments. Overrides method from JavaCompiler.
      */
+    @Override
     protected boolean keepComments() {
         return true;
     }
@@ -100,28 +99,22 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
      *  Construct a new javadoc tool.
      */
     public static JavadocTool make0(Context context) {
-        Messager messager = null;
-        try {
-            // force the use of Javadoc's class finder
-            JavadocClassFinder.preRegister(context);
+        // force the use of Javadoc's class finder
+        JavadocClassFinder.preRegister(context);
 
-            // force the use of Javadoc's own enter phase
-            JavadocEnter.preRegister(context);
+        // force the use of Javadoc's own enter phase
+        JavadocEnter.preRegister(context);
 
-            // force the use of Javadoc's own member enter phase
-            JavadocMemberEnter.preRegister(context);
+        // force the use of Javadoc's own member enter phase
+        JavadocMemberEnter.preRegister(context);
 
-            // force the use of Javadoc's own todo phase
-            JavadocTodo.preRegister(context);
+        // force the use of Javadoc's own todo phase
+        JavadocTodo.preRegister(context);
 
-            // force the use of Messager as a Log
-            messager = Messager.instance0(context);
+        // force the use of Messager as a Log
+        Messager.instance0(context);
 
-            return new JavadocTool(context);
-        } catch (CompletionFailure ex) {
-            messager.error(Position.NOPOS, ex.getMessage());
-            return null;
-        }
+        return new JavadocTool(context);
     }
 
     public RootDocImpl getRootDocImpl(String doclocale,
@@ -170,7 +163,11 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // Parse the files and collect the package names.
             for (String arg: args) {
                 if (fm != null && arg.endsWith(".java") && new File(arg).exists()) {
-                    parse(fm.getJavaFileObjects(arg), classTrees, true);
+                    if (new File(arg).getName().equals("module-info.java")) {
+                        docenv.warning(null, "main.file_ignored", arg);
+                    } else {
+                        parse(fm.getJavaFileObjects(arg), classTrees, true);
+                    }
                 } else if (isValidPackageName(arg)) {
                     packageNames.add(arg);
                 } else if (arg.endsWith(".java")) {
@@ -185,10 +182,15 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
             // Parse file objects provide via the DocumentationTool API
             parse(fileObjects, classTrees, true);
+            modules.enter(classTrees.toList(), null);
+
+            syms.unnamedModule.complete(); // TEMP to force reading all named modules
 
             // Build up the complete list of any packages to be documented
-            Location location = docenv.fileManager.hasLocation(StandardLocation.SOURCE_PATH)
-                ? StandardLocation.SOURCE_PATH : StandardLocation.CLASS_PATH;
+            Location location =
+                    modules.multiModuleMode && !modules.noModules ? StandardLocation.MODULE_SOURCE_PATH
+                    : docenv.fileManager.hasLocation(StandardLocation.SOURCE_PATH) ? StandardLocation.SOURCE_PATH
+                    : StandardLocation.CLASS_PATH;
 
             PackageTable t = new PackageTable(docenv.fileManager, location)
                     .packages(packageNames)
@@ -206,6 +208,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                     messager.warning(Messager.NOPOS, "main.no_source_files_for_package", packageName);
                 parse(files, packageTrees, false);
             }
+            modules.enter(packageTrees.toList(), null);
 
             if (messager.nerrors() != 0) {
                 return null;
@@ -214,6 +217,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // Enter symbols for all files
             docenv.notice("main.Building_tree");
             javadocEnter.main(classTrees.toList().appendList(packageTrees.toList()));
+            enterDone = true;
         } catch (Abort ex) {}
 
         if (messager.nerrors() != 0)
@@ -301,7 +305,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     /**
      * A table to manage included and excluded packages.
      */
-    static class PackageTable {
+    class PackageTable {
         private final Map<String, Entry> entries = new LinkedHashMap<>();
         private final Set<String> includedPackages = new LinkedHashSet<>();
         private final JavaFileManager fm;
@@ -331,8 +335,9 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             }
 
             for (String packageName: packageNames) {
-                for (JavaFileObject fo: fm.list(location, packageName, sourceKinds, true)) {
-                    String binaryName = fm.inferBinaryName(location, fo);
+                Location packageLocn = getLocation(packageName);
+                for (JavaFileObject fo: fm.list(packageLocn, packageName, sourceKinds, true)) {
+                    String binaryName = fm.inferBinaryName(packageLocn, fo);
                     String pn = getPackageName(binaryName);
                     String simpleName = getSimpleName(binaryName);
                     Entry e = getEntry(pn);
@@ -366,8 +371,9 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                 return e.files;
 
             ListBuffer<JavaFileObject> lb = new ListBuffer<>();
-            for (JavaFileObject fo: fm.list(location, packageName, sourceKinds, false)) {
-                String binaryName = fm.inferBinaryName(location, fo);
+            Location packageLocn = getLocation(packageName);
+            for (JavaFileObject fo: fm.list(packageLocn, packageName, sourceKinds, false)) {
+                String binaryName = fm.inferBinaryName(packageLocn, fo);
                 String simpleName = getSimpleName(binaryName);
                 if (isValidClassName(simpleName)) {
                     lb.append(fo);
@@ -377,6 +383,15 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             return lb.toList();
         }
 
+        private Location getLocation(String packageName) throws IOException {
+            if (location == StandardLocation.MODULE_SOURCE_PATH) {
+                // TODO: handle invalid results
+                ModuleSymbol msym = syms.inferModule(names.fromString(packageName));
+                return fm.getModuleLocation(location, msym.name.toString());
+            } else {
+                return location;
+            }
+        }
 
         private Entry getEntry(String name) {
             Entry e = entries.get(name);

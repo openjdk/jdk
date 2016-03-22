@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.jdi;
 
 import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.ModuleReference;
 import com.sun.jdi.request.EventRequestManager;
 
 import java.util.List;
@@ -71,6 +72,32 @@ import java.util.Map;
  * @since  1.3
  */
 public interface VirtualMachine extends Mirror {
+
+    /**
+     * Returns all modules. For each module in the target
+     * VM a {@link ModuleReference} will be placed in the returned list.
+     * <P>
+     *
+     * Not all target virtual machines support this operation.
+     * Use {@link VirtualMachine#canGetModuleInfo()}
+     * to determine if the operation is supported.
+     *
+     * @implSpec
+     * The default implementation throws {@code UnsupportedOperationException}.
+     *
+     * @return a list of {@link ModuleReference} objects, each mirroring
+     * a module in the target VM.
+     *
+     * @throws java.lang.UnsupportedOperationException if
+     * the target virtual machine does not support this
+     * operation.
+     *
+     * @since 9
+     */
+    default List<ModuleReference> allModules() {
+        throw new java.lang.UnsupportedOperationException(
+            "The method allModules() must be implemented");
+    }
 
     /**
      * Returns the loaded reference types that
@@ -731,6 +758,24 @@ public interface VirtualMachine extends Mirror {
      * @since 1.6
      */
     boolean canGetConstantPool();
+
+    /**
+     * Determines if the target VM supports getting information about modules.
+     *
+     * @return {@code true} if the feature is supported, {@code false} otherwise
+     *
+     * @implSpec
+     * The default implementation returns {@code false}.
+     *
+     * @see VirtualMachine#allModules()
+     * @see ReferenceType#module()
+     * @see ModuleReference
+     *
+     * @since 9
+     */
+    default boolean canGetModuleInfo() {
+        return false;
+    }
 
     /**
      * Set this VM's default stratum (see {@link Location} for a

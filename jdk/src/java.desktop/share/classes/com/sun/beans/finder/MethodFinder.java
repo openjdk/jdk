@@ -134,6 +134,10 @@ public final class MethodFinder extends AbstractFinder<Method> {
      */
     public static Method findAccessibleMethod(Method method) throws NoSuchMethodException {
         Class<?> type = method.getDeclaringClass();
+
+        if (!FinderUtils.isExported(type)) {
+            throw new NoSuchMethodException("Method '" + method.getName() + "' is not accessible");
+        }
         if (Modifier.isPublic(type.getModifiers()) && isPackageAccessible(type)) {
             return method;
         }

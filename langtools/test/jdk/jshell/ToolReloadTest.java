@@ -28,6 +28,7 @@
  * @summary Tests for /reload in JShell tool
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
  * @build KullaTesting TestingInputStream ToolBox Compiler
