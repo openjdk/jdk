@@ -58,11 +58,17 @@ fi
 echo "TESTJAVA=${TESTJAVA}"
 echo "TESTSRC=${TESTSRC}"
 echo "TESTCLASSES=${TESTCLASSES}"
-echo "NEW_EXT_DIR=${NEW_EXT_DIR}"
 
-cd ${TESTSRC}
+PATCHDIR=${TESTCLASSES}/patches
+rm -rf $PATCHDIR
+mkdir -p $PATCHDIR/java.desktop
+
+cd ${PATCHDIR}/java.desktop
+${TESTJAVA}/bin/jar xf ${TESTSRC}/awtres.jar
+
 echo 
-${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ${TESTCLASSES}${PATHSEP}${TESTSRC}${FILESEP}awtres.jar Bug6299235Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Xpatch:${PATCHDIR} \
+     -cp ${TESTCLASSES} Bug6299235Test
 
 if [ $? -ne 0 ]
     then

@@ -32,23 +32,35 @@ include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
 
 ################################################################################
-# Setup the rules to build the interim langtools jar, which is compiled by
-# the boot javac and can be run on the boot jdk. This will be used to compile
-# the rest of the product. Include the Genstubs build tool in this compilation
-# as it will be used together with the interim javac.
-$(eval $(call SetupJavaCompilation,BUILD_INTERIM_LANGTOOLS, \
-    SETUP := BOOT_JAVAC, \
-    DISABLE_SJAVAC := true, \
-    SRC := $(LANGTOOLS_TOPDIR)/src/java.compiler/share/classes \
-      $(LANGTOOLS_TOPDIR)/src/jdk.compiler/share/classes \
-      $(LANGTOOLS_TOPDIR)/src/jdk.javadoc/share/classes \
-      $(LANGTOOLS_TOPDIR)/src/jdk.jdeps/share/classes \
-      $(SUPPORT_OUTPUTDIR)/gensrc/jdk.compiler \
-      $(SUPPORT_OUTPUTDIR)/gensrc/jdk.javadoc \
-      $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdeps, \
-    EXCLUDES := sun, \
-    COPY := .gif .png .xml .css .js javax.tools.JavaCompilerTool, \
-    BIN := $(BUILDTOOLS_OUTPUTDIR)/langtools_interim_classes, \
-    JAR := $(INTERIM_LANGTOOLS_JAR)))
+# Setup the rules to build interim langtools, which is compiled by the boot 
+# javac and can be run on the boot jdk. This will be used to compile
+# the rest of the product. Each module is compiled separately to allow a modular
+# boot jdk to override system classes using -Xoverride:.
 
-all: $(BUILD_INTERIM_LANGTOOLS)
+# Param 1 - Name of module to compile
+# Param 2 - Name of modules to depend on
+define SetupInterimModule
+  $$(eval $$(call SetupJavaCompilation,BUILD_INTERIM_$(strip $1), \
+      SETUP := BOOT_JAVAC, \
+      DISABLE_SJAVAC := true, \
+      SRC := $(LANGTOOLS_TOPDIR)/src/$(strip $1)/share/classes \
+          $$(wildcard $(SUPPORT_OUTPUTDIR)/gensrc/$(strip $1)), \
+      EXCLUDES := sun com/sun/tools/jdeps com/sun/tools/javap, \
+      EXCLUDE_FILES := module-info.java, \
+      COPY := .gif .png .xml .css .js javax.tools.JavaCompilerTool, \
+      BIN := $(BUILDTOOLS_OUTPUTDIR)/override_modules/$(strip $1), \
+      ADD_JAVAC_FLAGS := -Xbootclasspath/p:$$(call PathList, \
+          $$(foreach m, $2, $(BUILDTOOLS_OUTPUTDIR)/override_modules/$$m)), \
+  ))
+
+  $$(BUILD_INTERIM_$(strip $1)): $$(foreach m, $2, $$(BUILD_INTERIM_$(strip $$m)))
+
+  TARGETS += $$(BUILD_INTERIM_$(strip $1))
+endef
+
+$(eval $(call SetupInterimModule, java.compiler))
+$(eval $(call SetupInterimModule, jdk.compiler, java.compiler))
+$(eval $(call SetupInterimModule, jdk.jdeps, jdk.compiler java.compiler))
+$(eval $(call SetupInterimModule, jdk.javadoc, java.compiler jdk.compiler))
+
+all: $(TARGETS)

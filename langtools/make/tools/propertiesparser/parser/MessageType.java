@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ public interface MessageType {
         MODIFIER("modifier", "Modifier", "javax.lang.model.element"),
         FILE("file", "File", "java.io"),
         FILE_OBJECT("file object", "JavaFileObject", "javax.tools"),
+        PATH("path", "Path", "java.nio.file"),
         NAME("name", "Name", "com.sun.tools.javac.util"),
         NUMBER("number", "int", null),
         OPTION_NAME("option name", "Option", "com.sun.tools.javac.main"),

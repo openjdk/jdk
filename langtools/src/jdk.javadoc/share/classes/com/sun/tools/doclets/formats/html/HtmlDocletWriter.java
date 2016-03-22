@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,106 +287,6 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Get Profile Package link, with target frame.
-     *
-     * @param pd the packageDoc object
-     * @param target name of the target frame
-     * @param label tag for the link
-     * @param profileName the name of the profile being documented
-     * @return a content for the target profile packages link
-     */
-    public Content getTargetProfilePackageLink(PackageDoc pd, String target,
-            Content label, String profileName) {
-        return getHyperLink(pathString(pd, DocPaths.profilePackageSummary(profileName)),
-                label, "", target);
-    }
-
-    /**
-     * Get Profile link, with target frame.
-     *
-     * @param target name of the target frame
-     * @param label tag for the link
-     * @param profileName the name of the profile being documented
-     * @return a content for the target profile link
-     */
-    public Content getTargetProfileLink(String target, Content label,
-            String profileName) {
-        return getHyperLink(pathToRoot.resolve(
-                DocPaths.profileSummary(profileName)), label, "", target);
-    }
-
-    /**
-     * Get the type name for profile search.
-     *
-     * @param cd the classDoc object for which the type name conversion is needed
-     * @return a type name string for the type
-     */
-    public String getTypeNameForProfile(ClassDoc cd) {
-        StringBuilder typeName =
-                new StringBuilder((cd.containingPackage()).name().replace(".", "/"));
-        typeName.append("/")
-                .append(cd.name().replace(".", "$"));
-        return typeName.toString();
-    }
-
-    /**
-     * Check if a type belongs to a profile.
-     *
-     * @param cd the classDoc object that needs to be checked
-     * @param profileValue the profile in which the type needs to be checked
-     * @return true if the type is in the profile
-     */
-    public boolean isTypeInProfile(ClassDoc cd, int profileValue) {
-        return (configuration.profiles.getProfile(getTypeNameForProfile(cd)) <= profileValue);
-    }
-
-    public void addClassesSummary(ClassDoc[] classes, String label,
-            String tableSummary, String[] tableHeader, Content summaryContentTree,
-            int profileValue) {
-        if(classes.length > 0) {
-            Arrays.sort(classes);
-            Content caption = getTableCaption(new RawHtml(label));
-            Content table = (configuration.isOutputHtml5())
-                    ? HtmlTree.TABLE(HtmlStyle.typeSummary, caption)
-                    : HtmlTree.TABLE(HtmlStyle.typeSummary, tableSummary, caption);
-            table.addContent(getSummaryTableHeader(tableHeader, "col"));
-            Content tbody = new HtmlTree(HtmlTag.TBODY);
-            for (int i = 0; i < classes.length; i++) {
-                if (!isTypeInProfile(classes[i], profileValue)) {
-                    continue;
-                }
-                if (!utils.isCoreClass(classes[i]) ||
-                    !configuration.isGeneratedDoc(classes[i])) {
-                    continue;
-                }
-                Content classContent = getLink(new LinkInfoImpl(
-                        configuration, LinkInfoImpl.Kind.PACKAGE, classes[i]));
-                Content tdClass = HtmlTree.TD(HtmlStyle.colFirst, classContent);
-                HtmlTree tr = HtmlTree.TR(tdClass);
-                if (i%2 == 0)
-                    tr.addStyle(HtmlStyle.altColor);
-                else
-                    tr.addStyle(HtmlStyle.rowColor);
-                HtmlTree tdClassDescription = new HtmlTree(HtmlTag.TD);
-                tdClassDescription.addStyle(HtmlStyle.colLast);
-                if (utils.isDeprecated(classes[i])) {
-                    tdClassDescription.addContent(deprecatedLabel);
-                    if (classes[i].tags("deprecated").length > 0) {
-                        addSummaryDeprecatedComment(classes[i],
-                            classes[i].tags("deprecated")[0], tdClassDescription);
-                    }
-                }
-                else
-                    addSummaryComment(classes[i], tdClassDescription);
-                tr.addContent(tdClassDescription);
-                tbody.addContent(tr);
-            }
-            table.addContent(tbody);
-            summaryContentTree.addContent(table);
-        }
-    }
-
-    /**
      * Generates the HTML document tree and prints it out.
      *
      * @param metakeywords Array of String keywords for META tag. Each element
@@ -593,6 +493,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 fixedNavDiv.addContent(subDiv);
                 fixedNavDiv.addContent(HtmlConstants.END_OF_TOP_NAVBAR);
                 tree.addContent(fixedNavDiv);
+                HtmlTree paddingDiv = HtmlTree.DIV(HtmlStyle.navPadding, getSpace());
+                tree.addContent(paddingDiv);
             } else {
                 subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_BOTTOM));
                 tree.addContent(subDiv);

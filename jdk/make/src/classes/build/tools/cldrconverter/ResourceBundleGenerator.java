@@ -343,9 +343,7 @@ class ResourceBundleGenerator implements BundleGenerator {
                 if (!all && CLDRConverter.isBaseModule ^ isBaseLocale(id)) {
                     continue;
                 }
-                if (sb.length() > 0) {
-                    sb.append(' ');
-                }
+                sb.append(' ');
                 sb.append(id);
             }
         }

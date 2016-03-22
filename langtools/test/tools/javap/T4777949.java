@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,18 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 4777949
+ * @summary Warn javap usage on package with simple name
+ * @modules jdk.jdeps/com.sun.tools.javap
+ */
+
 import java.io.*;
 import java.util.*;
 import javax.tools.*;
 import com.sun.tools.javap.*;
 
-/*
- * @test
- * @bug 4777949
- * @summary Warn javap usage on package with simple name
- * @modules jdk.jdeps
- */
 public class T4777949 {
     public static void main(String... args) throws Exception {
         new T4777949().run();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,5 +107,18 @@ public class ElementScanner9<R, P> extends ElementScanner8<R, P> {
      */
     protected ElementScanner9(R defaultValue){
         super(defaultValue);
+    }
+
+    /**
+     * Visits a {@code ModuleElement} by scanning the enclosed
+     * elements.
+     *
+     * @param e the element to visit
+     * @param p a visitor-specified parameter
+     * @return  the result of the scan
+     */
+    @Override
+    public R visitModule(ModuleElement e, P p) {
+        return scan(e.getEnclosedElements(), p); // TODO: Hmmm, this might not be right
     }
 }

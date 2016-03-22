@@ -87,10 +87,20 @@ endif
 ifdef JPRT_JTREG_HOME
   JTREG_HOME = $(JPRT_JTREG_HOME)
 else
-  JTREG_HOME = $(SLASH_JAVA)/re/jtreg/4.1/promoted/latest/binaries/jtreg
+  JTREG_HOME = $(SLASH_JAVA)/re/jtreg/4.1-jigsaw/nightly/binaries/jtreg/
 endif
 JTREG = $(JTREG_HOME)/bin/jtreg
 JTDIFF = $(JTREG_HOME)/bin/jtdiff
+
+# Problematic tests to be excluded
+PROBLEM_LISTS=ProblemList.txt
+
+# Create exclude list for this platform and arch
+ifdef NO_EXCLUDES
+  JTREG_EXCLUSIONS =
+else
+  JTREG_EXCLUSIONS = $(PROBLEM_LISTS:%=-exclude:%)
+endif
 
 # Default JCK to run
 ifdef JPRT_JCK_HOME
@@ -284,6 +294,7 @@ jtreg-tests: check-jtreg FRC
           -w:$(JTREG_OUTPUT_DIR)/JTwork \
           -jdk:$(TESTJAVA) \
           $(JAVA_ARGS:%=-vmoption:%) \
+          $(JTREG_EXCLUSIONS) \
 	  $(JTREG_OPTIONS) \
           $(JTREG_TESTDIRS) \
 	|| ( $(call EXIT_IF_FATAL,$(FATAL_JTREG_EXIT)) ; \

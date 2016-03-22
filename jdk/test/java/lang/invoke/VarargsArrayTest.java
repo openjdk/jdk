@@ -21,8 +21,10 @@
  * questions.
  */
 
-package java.lang.invoke;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleHelper;
+import java.lang.invoke.MethodType;
 import sun.invoke.util.Wrapper;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,14 +33,16 @@ import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
 /* @test
  * @summary unit tests for varargs array methods: MethodHandleInfo.varargsArray(int),
  *          MethodHandleInfo.varargsArray(Class,int) & MethodHandleInfo.varargsList(int)
+ * @modules java.base/sun.invoke.util
  * @library /lib/testlibrary /lib/testlibrary/jsr292
- * @run main/bootclasspath java.lang.invoke.VarargsArrayTest
+ * @compile/module=java.base java/lang/invoke/MethodHandleHelper.java
+ * @run main/bootclasspath VarargsArrayTest
  * @run main/bootclasspath -DVarargsArrayTest.MAX_ARITY=255 -DVarargsArrayTest.START_ARITY=250
- *                         java.lang.invoke.VarargsArrayTest
+ *                         VarargsArrayTest
  */
 
 /* This might take a while and burn lots of metadata:
- * @run main/bootclasspath -DVarargsArrayTest.MAX_ARITY=255 -DVarargsArrayTest.EXHAUSTIVE=true java.lang.invoke.VarargsArrayTest
+ * @run main/bootclasspath -DVarargsArrayTest.MAX_ARITY=255 -DVarargsArrayTest.EXHAUSTIVE=true VarargsArrayTest
  */
 public class VarargsArrayTest {
     private static final Class<?> CLASS = VarargsArrayTest.class;
@@ -60,7 +64,7 @@ public class VarargsArrayTest {
         final int MIN = START_ARITY;
         final int MAX = MAX_ARITY-2;  // 253+1 would cause parameter overflow with 'this' added
         for (int nargs = MIN; nargs <= MAX; nargs = nextArgCount(nargs, 17, MAX)) {
-            MethodHandle target = MethodHandleImpl.varargsArray(nargs);
+            MethodHandle target = MethodHandleHelper.varargsArray(nargs);
             Object[] args = new Object[nargs];
             for (int i = 0; i < nargs; i++)
                 args[i] = "#"+i;
@@ -110,7 +114,7 @@ public class VarargsArrayTest {
         if (elemType == long.class || elemType == double.class) { MAX /= 2; MIN /= 2; }
         for (int nargs = MIN; nargs <= MAX; nargs = nextArgCount(nargs, density, MAX)) {
             Object[] args = makeTestArray(elemType, nargs);
-            MethodHandle varargsArray = MethodHandleImpl.varargsArray(arrayType, nargs);
+            MethodHandle varargsArray = MethodHandleHelper.varargsArray(arrayType, nargs);
             MethodType vaType = varargsArray.type();
             assertEquals(arrayType, vaType.returnType());
             if (nargs != 0) {

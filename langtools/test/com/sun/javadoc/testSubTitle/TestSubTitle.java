@@ -50,7 +50,8 @@ public class TestSubTitle extends JavadocTester {
             "<div class=\"block\">This is the description of package pkg.</div>");
 
         checkOutput("pkg/C.html", true,
-            "<div class=\"subTitle\">pkg</div>");
+                "<div class=\"subTitle\"><span class=\"packageLabelInClass\">Package</span>&nbsp;"
+                + "<a href=\"../pkg/package-summary.html\" target=\"classFrame\">pkg</a></div>");
 
         checkOutput("pkg/package-summary.html", false,
             "<p class=\"subTitle\">\n" +

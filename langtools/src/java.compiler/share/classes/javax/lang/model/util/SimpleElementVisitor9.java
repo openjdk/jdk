@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.lang.model.util;
 
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.ModuleElement;
 import static javax.lang.model.SourceVersion.*;
 
 /**
@@ -89,5 +90,18 @@ public class SimpleElementVisitor9<R, P> extends SimpleElementVisitor8<R, P> {
      */
     protected SimpleElementVisitor9(R defaultValue){
         super(defaultValue);
+    }
+
+    /**
+     * Visits a {@code ModuleElement} by calling {@code
+     * defaultAction}.
+     *
+     * @param e the element to visit
+     * @param p a visitor-specified parameter
+     * @return  the result of {@code defaultAction}
+     */
+    @Override
+    public R visitModule(ModuleElement e, P p) {
+        return defaultAction(e, p);
     }
 }

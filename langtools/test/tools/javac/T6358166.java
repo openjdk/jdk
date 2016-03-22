@@ -56,9 +56,15 @@ public class T6358166 extends AbstractProcessor {
         JavacFileManager fm = new JavacFileManager(new Context(), false, null);
         JavaFileObject f = fm.getJavaFileObject(testSrc + File.separatorChar + self + ".java");
 
-        test(fm, f, "-verbose", "-d", ".");
+        String addExports = "-XaddExports:"
+                + "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED";
 
-        test(fm, f, "-verbose", "-d", ".", "-XprintRounds", "-processorpath", ".", "-processor", self);
+        test(fm, f, addExports, "-verbose", "-d", ".");
+
+        test(fm, f, addExports, "-verbose", "-d", ".", "-XprintRounds", "-processorpath", ".", "-processor", self);
     }
 
     static void test(JavacFileManager fm, JavaFileObject f, String... args) throws Throwable {

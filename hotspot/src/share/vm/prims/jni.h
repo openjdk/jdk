@@ -765,6 +765,17 @@ struct JNINativeInterface_ {
 
     jobjectRefType (JNICALL *GetObjectRefType)
         (JNIEnv* env, jobject obj);
+
+    /* Module Features */
+
+    jobject (JNICALL *GetModule)
+       (JNIEnv* env, jclass clazz);
+
+    void (JNICALL *AddModuleReads)
+       (JNIEnv* env, jobject m1, jobject m2);
+
+    jboolean (JNICALL *CanReadModule)
+       (JNIEnv* env, jobject m1, jobject m2);
 };
 
 /*
@@ -1855,6 +1866,20 @@ struct JNIEnv_ {
     }
     jobjectRefType GetObjectRefType(jobject obj) {
         return functions->GetObjectRefType(this, obj);
+    }
+
+    /* Module Features */
+
+    jobject GetModule(jclass clazz) {
+        return functions->GetModule(this, clazz);
+    }
+
+    void AddModuleReads(jobject fromModule, jobject sourceModule) {
+        functions->AddModuleReads(this, fromModule, sourceModule);
+    }
+
+    jboolean CanReadModule(jobject askingModule, jobject sourceModule) {
+        return functions->CanReadModule(this, askingModule, sourceModule);
     }
 
 #endif /* __cplusplus */

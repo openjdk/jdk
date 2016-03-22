@@ -505,4 +505,15 @@ public interface Constants extends InstructionConstants {
         = "com.sun.org.apache.xalan.internal.xsltc.compiler.Fallback";
 
     public static final int RTF_INITIAL_SIZE = 32;
+
+    // the API packages used by generated translet classes
+    public static String[] PKGS_USED_BY_TRANSLET_CLASSES = {
+        "com.sun.org.apache.xalan.internal.lib",
+        "com.sun.org.apache.xalan.internal.xsltc",
+        "com.sun.org.apache.xalan.internal.xsltc.runtime",
+        "com.sun.org.apache.xalan.internal.xsltc.dom",
+        "com.sun.org.apache.xml.internal.serializer",
+        "com.sun.org.apache.xml.internal.dtm",
+        "com.sun.org.apache.xml.internal.dtm.ref",
+    };
 }

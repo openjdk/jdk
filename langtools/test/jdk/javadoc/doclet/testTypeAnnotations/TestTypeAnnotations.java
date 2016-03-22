@@ -27,7 +27,7 @@
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
  * @library  ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    JavadocTester
  * @run main TestTypeAnnotations
  */

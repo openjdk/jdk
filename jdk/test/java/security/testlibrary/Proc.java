@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -182,15 +183,21 @@ public class Proc {
             cmd.add(new File(new File(System.getProperty("java.home"), "bin"),
                         "java").getPath());
         }
-        cmd.add("-cp");
-        StringBuilder cp = new StringBuilder();
-        for (URL url: ((URLClassLoader)Proc.class.getClassLoader()).getURLs()) {
-            if (cp.length() != 0) {
-                cp.append(File.pathSeparatorChar);
-            }
-            cp.append(url.getFile());
+
+        int n = 0;
+        String addexports;
+        while ((addexports = System.getProperty("jdk.launcher.addexports." + n)) != null) {
+            prop("jdk.launcher.addexports." + n, addexports);
+            n++;
         }
-        cmd.add(cp.toString());
+
+        Collections.addAll(cmd, splitProperty("test.vm.opts"));
+        Collections.addAll(cmd, splitProperty("test.java.opts"));
+
+        cmd.add("-cp");
+        cmd.add(System.getProperty("test.class.path") + File.pathSeparator +
+                System.getProperty("test.src.path"));
+
         for (Entry<String,String> e: prop.entrySet()) {
             cmd.add("-D" + e.getKey() + "=" + e.getValue());
         }
@@ -321,5 +328,13 @@ public class Proc {
     // Sends an exception to stderr
     public static void d(Throwable e) throws IOException {
         e.printStackTrace();
+    }
+
+    private static String[] splitProperty(String prop) {
+        String s = System.getProperty(prop);
+        if (s == null || s.trim().isEmpty()) {
+            return new String[] {};
+        }
+        return s.trim().split("\\s+");
     }
 }

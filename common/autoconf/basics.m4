@@ -843,6 +843,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
   AC_CONFIG_FILES([$OUTPUT_ROOT/hotspot-spec.gmk:$AUTOCONF_DIR/hotspot-spec.gmk.in])
   # The bootcycle-spec.gmk file contains support for boot cycle builds.
   AC_CONFIG_FILES([$OUTPUT_ROOT/bootcycle-spec.gmk:$AUTOCONF_DIR/bootcycle-spec.gmk.in])
+  # The buildjdk-spec.gmk file contains support for building a buildjdk when cross compiling.
+  AC_CONFIG_FILES([$OUTPUT_ROOT/buildjdk-spec.gmk:$AUTOCONF_DIR/buildjdk-spec.gmk.in])
   # The compare.sh is used to compare the build output to other builds.
   AC_CONFIG_FILES([$OUTPUT_ROOT/compare.sh:$AUTOCONF_DIR/compare.sh.in])
   # The generated Makefile knows where the spec.gmk is and where the source is.

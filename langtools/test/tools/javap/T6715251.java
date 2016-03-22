@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,15 @@
  * questions.
  */
 
-import java.io.*;
-import java.util.*;
-
 /*
  * @test
  * @bug 6715251
  * @summary javap should be consistent with javac and return 2 if given no arguments
- * @modules jdk.jdeps
+ * @modules jdk.jdeps/com.sun.tools.javap
  */
+
+import java.io.*;
+import java.util.*;
 
 public class T6715251 {
     public static void main(String... args) throws Exception {

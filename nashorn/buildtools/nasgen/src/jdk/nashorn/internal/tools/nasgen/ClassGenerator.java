@@ -143,6 +143,9 @@ public class ClassGenerator {
                 try {
                     return super.getCommonSuperClass(type1, type2);
                 } catch (final RuntimeException | LinkageError e) {
+                    if (MemberInfo.isScriptObject(type1) && MemberInfo.isScriptObject(type2)) {
+                        return StringConstants.SCRIPTOBJECT_TYPE;
+                    }
                     return StringConstants.OBJECT_TYPE;
                 }
             }

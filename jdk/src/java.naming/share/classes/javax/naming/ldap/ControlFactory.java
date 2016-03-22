@@ -112,8 +112,11 @@ public abstract class ControlFactory {
       *    exception is passed up to the caller.
       *</ul>
       * <p>
-      * Note that a control factory
-      * must be public and must have a public constructor that accepts no arguments.
+      * Note that a control factory must be public and must have a public
+      * constructor that accepts no arguments.
+      * In cases where the factory is in a named module then it must be in a
+      * package which is exported by that module to the {@code java.naming}
+      * module.
       *
       * @param ctl The non-null control object containing the OID and BER data.
       * @param ctx The possibly null context in which the control is being created.
