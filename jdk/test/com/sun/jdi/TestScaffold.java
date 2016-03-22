@@ -64,6 +64,7 @@ abstract public class TestScaffold extends TargetAdapter {
     boolean vmDisconnected = false;
     final String[] args;
     protected boolean testFailed = false;
+    protected long startTime;
 
     static private class ArgInfo {
         String targetVMArgs = "";
@@ -425,6 +426,7 @@ abstract public class TestScaffold extends TargetAdapter {
     abstract protected void runTests() throws Exception;
 
     final public void startTests() throws Exception {
+        startTime = System.currentTimeMillis();
         try {
             runTests();
         } finally {
@@ -433,7 +435,8 @@ abstract public class TestScaffold extends TargetAdapter {
     }
 
     protected void println(String str) {
-        System.err.println(str);
+        long elapsed = System.currentTimeMillis() - startTime;
+        System.err.println("[" + elapsed + "ms] " + str);
     }
 
     protected void print(String str) {
