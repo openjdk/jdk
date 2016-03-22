@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,17 @@
 package jdk.internal.jimage.decompressor;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 /**
  *
  * ZIP Decompressor
+ *
+ * @implNote This class needs to maintain JDK 8 source compatibility.
+ *
+ * It is used internally in the JDK to implement jimage/jrtfs access,
+ * but also compiled and delivered as part of the jrtfs.jar to support access
+ * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
 final class ZipDecompressor implements ResourceDecompressor {
 
@@ -40,29 +44,18 @@ final class ZipDecompressor implements ResourceDecompressor {
         return ZipDecompressorFactory.NAME;
     }
 
-    static byte[] decompress(byte[] bytesIn, int offset) {
+    static byte[] decompress(byte[] bytesIn, int offset) throws Exception {
         Inflater inflater = new Inflater();
         inflater.setInput(bytesIn, offset, bytesIn.length - offset);
         ByteArrayOutputStream stream = new ByteArrayOutputStream(bytesIn.length - offset);
         byte[] buffer = new byte[1024];
 
         while (!inflater.finished()) {
-            int count;
-
-            try {
-                count = inflater.inflate(buffer);
-            } catch (DataFormatException ex) {
-                return null;
-            }
-
+            int count = inflater.inflate(buffer);
             stream.write(buffer, 0, count);
         }
 
-        try {
-            stream.close();
-        } catch (IOException ex) {
-            return null;
-        }
+        stream.close();
 
         byte[] bytesOut = stream.toByteArray();
         inflater.end();
@@ -72,7 +65,7 @@ final class ZipDecompressor implements ResourceDecompressor {
 
     @Override
     public byte[] decompress(StringsProvider reader, byte[] content, int offset,
-            int originalSize) throws Exception {
+            long originalSize) throws Exception {
         byte[] decompressed = decompress(content, offset);
         return decompressed;
     }

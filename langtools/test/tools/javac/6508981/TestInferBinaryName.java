@@ -31,6 +31,7 @@
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
+ *          jdk.jdeps/com.sun.tools.javap
  * @build ToolBox p.A
  * @run main TestInferBinaryName
  */

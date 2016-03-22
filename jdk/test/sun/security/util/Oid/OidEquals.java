@@ -25,6 +25,7 @@
  * @test
  * @bug 8022444
  * @summary Test ObjectIdentifier.equals(Object obj)
+ * @modules java.base/sun.security.util
  */
 
 import sun.security.util.ObjectIdentifier;

@@ -1,5 +1,0 @@
-# Providers for writing audio files
-com.sun.media.sound.AuFileWriter
-com.sun.media.sound.AiffFileWriter
-com.sun.media.sound.WaveFileWriter
-com.sun.media.sound.WaveFloatFileWriter

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
  * @bug 6851834
  * @summary This test verifies the HTML document generation for javadoc output.
  * @library ../lib
- * @modules jdk.javadoc/com.sun.tools.doclets.formats.html.markup
- *          jdk.javadoc/com.sun.tools.doclets.internal.toolkit
+ * @modules jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
+ *          jdk.javadoc/jdk.javadoc.internal.doclets.toolkit.util
+ *          jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @author Bhavesh Patel
  * @run main TestHtmlDocument

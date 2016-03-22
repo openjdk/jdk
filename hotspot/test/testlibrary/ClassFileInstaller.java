@@ -23,6 +23,7 @@
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,22 +39,47 @@ public class ClassFileInstaller {
      */
     public static void main(String... args) throws Exception {
         for (String arg : args) {
-            ClassLoader cl = ClassFileInstaller.class.getClassLoader();
-
-            // Convert dotted class name to a path to a class file
-            String pathName = arg.replace('.', '/').concat(".class");
-            InputStream is = cl.getResourceAsStream(pathName);
-            if (is == null) {
-                throw new FileNotFoundException(pathName);
-            }
-
-            // Create the class file's package directory
-            Path p = Paths.get(pathName);
-            if (pathName.contains("/")) {
-                Files.createDirectories(p.getParent());
-            }
-            // Create the class file
-            Files.copy(is, p, StandardCopyOption.REPLACE_EXISTING);
+            writeClassToDisk(arg);
         }
+    }
+
+    public static void writeClassToDisk(String className) throws Exception {
+        writeClassToDisk(className, "");
+    }
+
+    public static void writeClassToDisk(String className, String prependPath) throws Exception {
+        ClassLoader cl = ClassFileInstaller.class.getClassLoader();
+
+        // Convert dotted class name to a path to a class file
+        String pathName = className.replace('.', '/').concat(".class");
+        InputStream is = cl.getResourceAsStream(pathName);
+        if (prependPath.length() > 0) {
+            pathName = prependPath + "/" + pathName;
+        }
+        writeToDisk(pathName, is);
+    }
+
+    public static void writeClassToDisk(String className, byte[] bytecode) throws Exception {
+        writeClassToDisk(className, bytecode, "");
+    }
+
+    public static void writeClassToDisk(String className, byte[] bytecode, String prependPath) throws Exception {
+        // Convert dotted class name to a path to a class file
+        String pathName = className.replace('.', '/').concat(".class");
+        if (prependPath.length() > 0) {
+            pathName = prependPath + "/" + pathName;
+        }
+        writeToDisk(pathName, new ByteArrayInputStream(bytecode));
+    }
+
+
+    private static void writeToDisk(String pathName, InputStream is) throws Exception {
+        // Create the class file's package directory
+        Path p = Paths.get(pathName);
+        if (pathName.contains("/")) {
+            Files.createDirectories(p.getParent());
+        }
+        // Create the class file
+        Files.copy(is, p, StandardCopyOption.REPLACE_EXISTING);
     }
 }

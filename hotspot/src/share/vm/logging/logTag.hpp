@@ -62,6 +62,7 @@
   LOG_TAG(logging) \
   LOG_TAG(marking) \
   LOG_TAG(metaspace) \
+  LOG_TAG(modules) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(os) \
   LOG_TAG(phases) \

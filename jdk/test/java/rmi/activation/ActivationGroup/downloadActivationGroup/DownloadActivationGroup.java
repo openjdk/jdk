@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,19 @@
  * @run main/othervm/policy=security.policy/timeout=240 DownloadActivationGroup
  */
 
-import java.io.*;
-import java.rmi.*;
-import java.net.*;
-import java.rmi.activation.*;
-import java.rmi.server.*;
-import java.rmi.registry.*;
-import java.util.Vector;
+import java.net.URL;
+import java.rmi.MarshalledObject;
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.rmi.activation.Activatable;
+import java.rmi.activation.ActivationDesc;
+import java.rmi.activation.ActivationException;
+import java.rmi.activation.ActivationGroup;
+import java.rmi.activation.ActivationGroupDesc;
+import java.rmi.activation.ActivationGroupDesc.CommandEnvironment;
+import java.rmi.activation.ActivationGroupID;
+import java.rmi.activation.ActivationID;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Properties;
 
 public class DownloadActivationGroup
@@ -130,11 +136,16 @@ public class DownloadActivationGroup
 
             Properties p = new Properties();
             p.put("java.security.policy", TestParams.defaultGroupPolicy);
+            CommandEnvironment cmd = new ActivationGroupDesc.CommandEnvironment(
+                    null,
+                    new String[] { "-XaddExports:java.rmi/sun.rmi.registry=ALL-UNNAMED,"
+                            + "java.rmi/sun.rmi.server=ALL-UNNAMED,java.rmi/sun.rmi.transport=ALL-UNNAMED,"
+                            + "java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED" });
 
             ActivationGroupDesc groupDesc =
                 new ActivationGroupDesc("MyActivationGroupImpl",
                                         groupURL.toExternalForm(),
-                                        null, p, null);
+                                        null, p, cmd);
             ActivationGroupID groupID =
                 ActivationGroup.getSystem().registerGroup(groupDesc);
 

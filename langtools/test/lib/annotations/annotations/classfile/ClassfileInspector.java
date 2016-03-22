@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@ package annotations.classfile;
 
 import java.io.*;
 import java.net.URL;
-import java.util.List;
 
 import com.sun.tools.classfile.*;
+import com.sun.tools.classfile.ConstantPool.InvalidIndex;
+import com.sun.tools.classfile.ConstantPool.UnexpectedEntry;
 
 /**
  * A class providing utilities for writing tests that inspect class
@@ -160,6 +161,7 @@ public class ClassfileInspector {
                  classTypeAnnos, methodTypeAnnos, fieldTypeAnnos);
         }
 
+        @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             final String newline = System.lineSeparator();
@@ -310,6 +312,7 @@ public class ClassfileInspector {
             this.expectedCount = expectedCount;
         }
 
+        @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             sb.append("Expected ");
@@ -356,7 +359,7 @@ public class ClassfileInspector {
                                      Annotation anno) {
             try {
                 return cpool.getUTF8Info(anno.type_index).value.equals("L" + expectedName + ";");
-            } catch(Exception e) {
+            } catch (InvalidIndex | UnexpectedEntry e) {
                 return false;
             }
         }
@@ -403,6 +406,7 @@ public class ClassfileInspector {
             this.methodname = methodname;
         }
 
+        @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             sb.append("Expected ");
@@ -454,6 +458,7 @@ public class ClassfileInspector {
             this.index = index;
         }
 
+        @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             sb.append("Expected ");
@@ -463,7 +468,8 @@ public class ClassfileInspector {
             sb.append(visibility ? ", runtime visibile " : ", runtime invisibile ");
             sb.append(" on method ");
             sb.append(methodname);
-            sb.append(" parameter " + index);
+            sb.append(" parameter ");
+            sb.append(index);
             return sb.toString();
         }
 
@@ -493,6 +499,7 @@ public class ClassfileInspector {
             this.fieldname = fieldname;
         }
 
+        @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             sb.append("Expected ").append(expectedCount)
@@ -564,6 +571,7 @@ public class ClassfileInspector {
             this.typePath = typePath;
         }
 
+        @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             sb.append("Expected ");
@@ -766,6 +774,7 @@ public class ClassfileInspector {
             this.methodname = methodname;
         }
 
+        @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             sb.append("Expected ");
@@ -839,8 +848,9 @@ public class ClassfileInspector {
              * parameters that have been provided.  The default values
              * will be used for those that have not.
              *
-             * @return The cretaed {@code ExpectedMethodTypeAnnotation}.
+             * @return The created {@code ExpectedMethodTypeAnnotation}.
              */
+            @Override
             public ExpectedMethodTypeAnnotation build() {
                 return new ExpectedMethodTypeAnnotation(methodname, expectedName,
                                                         visibility, expectedCount,
@@ -890,6 +900,7 @@ public class ClassfileInspector {
             this.fieldname = fieldname;
         }
 
+        @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             sb.append("Expected ").append(expectedCount)
@@ -957,8 +968,9 @@ public class ClassfileInspector {
              * parameters that have been provided.  The default values
              * will be used for those that have not.
              *
-             * @return The cretaed {@code ExpectedFieldTypeAnnotation}.
+             * @return The created {@code ExpectedFieldTypeAnnotation}.
              */
+            @Override
             public ExpectedFieldTypeAnnotation build() {
                 return new ExpectedFieldTypeAnnotation(fieldname, expectedName,
                                                        visibility, expectedCount,
@@ -1163,356 +1175,215 @@ public class ClassfileInspector {
                                          Class<?> host)
         throws IOException, ConstantPoolException {
         final URL url = host.getResource(name);
-        final InputStream in = url.openStream();
-        try {
+        try (InputStream in = url.openStream()) {
             return ClassFile.read(in);
-        } finally {
-            in.close();
         }
     }
 
-    private static final Attribute.Visitor<Void, ExpectedTypeAnnotation> typeAnnoMatcher =
-        new Attribute.Visitor<Void, ExpectedTypeAnnotation>() {
+    private static class AbstractAttributeVisitor<T> implements Attribute.Visitor<Void, T> {
 
         @Override
-        public Void visitBootstrapMethods(BootstrapMethods_attribute attr,
-                                          ExpectedTypeAnnotation expected) {
+        public Void visitBootstrapMethods(BootstrapMethods_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitDefault(DefaultAttribute attr,
-                                 ExpectedTypeAnnotation expected) {
+        public Void visitConcealedPackages(ConcealedPackages_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitAnnotationDefault(AnnotationDefault_attribute attr,
-                                           ExpectedTypeAnnotation expected) {
+        public Void visitDefault(DefaultAttribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitCharacterRangeTable(CharacterRangeTable_attribute attr,
-                                             ExpectedTypeAnnotation expected) {
+        public Void visitAnnotationDefault(AnnotationDefault_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitCode(Code_attribute attr,
-                              ExpectedTypeAnnotation expected) {
+        public Void visitCharacterRangeTable(CharacterRangeTable_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitCompilationID(CompilationID_attribute attr,
-                                       ExpectedTypeAnnotation expected) {
+        public Void visitCode(Code_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitConstantValue(ConstantValue_attribute attr,
-                                       ExpectedTypeAnnotation expected) {
+        public Void visitCompilationID(CompilationID_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitDeprecated(Deprecated_attribute attr,
-                                    ExpectedTypeAnnotation expected) {
+        public Void visitConstantValue(ConstantValue_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitEnclosingMethod(EnclosingMethod_attribute attr,
-                                         ExpectedTypeAnnotation expected) {
+        public Void visitDeprecated(Deprecated_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitExceptions(Exceptions_attribute attr,
-                                    ExpectedTypeAnnotation expected) {
+        public Void visitEnclosingMethod(EnclosingMethod_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitInnerClasses(InnerClasses_attribute attr,
-                                      ExpectedTypeAnnotation expected) {
+        public Void visitExceptions(Exceptions_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitLineNumberTable(LineNumberTable_attribute attr,
-                                         ExpectedTypeAnnotation expected) {
+        public Void visitHashes(Hashes_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitLocalVariableTable(LocalVariableTable_attribute attr,
-                                            ExpectedTypeAnnotation expected) {
+        public Void visitInnerClasses(InnerClasses_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr,
-                                                ExpectedTypeAnnotation expected) {
+        public Void visitLineNumberTable(LineNumberTable_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitMethodParameters(MethodParameters_attribute attr,
-                                          ExpectedTypeAnnotation expected) {
+        public Void visitLocalVariableTable(LocalVariableTable_attribute attr, T p) {
             return null;
         }
 
         @Override
-            public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr,
-                                                       ExpectedTypeAnnotation expected) {
+        public Void visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr,
-                                                     ExpectedTypeAnnotation expected) {
+        public Void visitMainClass(MainClass_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr,
-                                                            ExpectedTypeAnnotation expected) {
+        public Void visitMethodParameters(MethodParameters_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute attr,
-                                                              ExpectedTypeAnnotation expected) {
+        public Void visitModule(Module_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitSignature(Signature_attribute attr,
-                                   ExpectedTypeAnnotation expected) {
+        public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitSourceDebugExtension(SourceDebugExtension_attribute attr,
-                                              ExpectedTypeAnnotation expected) {
+        public Void visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitSourceFile(SourceFile_attribute attr,
-                                    ExpectedTypeAnnotation expected) {
+        public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitSourceID(SourceID_attribute attr,
-                                  ExpectedTypeAnnotation expected) {
+        public Void visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitStackMap(StackMap_attribute attr,
-                                  ExpectedTypeAnnotation expected) {
+        public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitStackMapTable(StackMapTable_attribute attr,
-                                       ExpectedTypeAnnotation expected) {
+        public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitSynthetic(Synthetic_attribute attr,
-                                   ExpectedTypeAnnotation expected) {
+        public Void visitSignature(Signature_attribute attr, T p) {
             return null;
         }
 
         @Override
-        public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr,
-                                                       ExpectedTypeAnnotation expected) {
-            if (expected.matchVisibility(true)) {
-                for(TypeAnnotation anno : attr.annotations) {
-                    expected.matchAnnotation(anno);
+        public Void visitSourceDebugExtension(SourceDebugExtension_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitSourceFile(SourceFile_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitSourceID(SourceID_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitStackMap(StackMap_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitStackMapTable(StackMapTable_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitSynthetic(Synthetic_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitTargetPlatform(TargetPlatform_attribute attr, T p) {
+            return null;
+        }
+
+        @Override
+        public Void visitVersion(Version_attribute attr, T p) {
+            return null;
+        }
+
+    }
+
+    private static final Attribute.Visitor<Void, ExpectedTypeAnnotation> typeAnnoMatcher
+            = new AbstractAttributeVisitor<ExpectedTypeAnnotation>() {
+
+                @Override
+                public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr,
+                        ExpectedTypeAnnotation expected) {
+                    if (expected.matchVisibility(true)) {
+                        for (TypeAnnotation anno : attr.annotations) {
+                            expected.matchAnnotation(anno);
+                        }
+                    }
+
+                    return null;
                 }
-            }
 
-            return null;
-        }
+                @Override
+                public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr,
+                        ExpectedTypeAnnotation expected) {
+                    if (expected.matchVisibility(false)) {
+                        for (TypeAnnotation anno : attr.annotations) {
+                            expected.matchAnnotation(anno);
+                        }
+                    }
 
-        @Override
-        public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr,
-                                                         ExpectedTypeAnnotation expected) {
-            if (expected.matchVisibility(false)) {
-                for(TypeAnnotation anno : attr.annotations) {
-                    expected.matchAnnotation(anno);
+                    return null;
                 }
-            }
-
-            return null;
-        }
-    };
+            };
 
     private static Attribute.Visitor<Void, ExpectedAnnotation> annoMatcher(ConstantPool cpool) {
-        return new Attribute.Visitor<Void, ExpectedAnnotation>() {
-
-            @Override
-                public Void visitBootstrapMethods(BootstrapMethods_attribute attr,
-                                                  ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitDefault(DefaultAttribute attr,
-                                         ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitAnnotationDefault(AnnotationDefault_attribute attr,
-                                                   ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitCharacterRangeTable(CharacterRangeTable_attribute attr,
-                                                     ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitCode(Code_attribute attr,
-                                      ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitCompilationID(CompilationID_attribute attr,
-                                               ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitConstantValue(ConstantValue_attribute attr,
-                                               ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitDeprecated(Deprecated_attribute attr,
-                                            ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitEnclosingMethod(EnclosingMethod_attribute attr,
-                                                 ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitExceptions(Exceptions_attribute attr,
-                                            ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitInnerClasses(InnerClasses_attribute attr,
-                                              ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitLineNumberTable(LineNumberTable_attribute attr,
-                                                 ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitLocalVariableTable(LocalVariableTable_attribute attr,
-                                                    ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr,
-                                                        ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitMethodParameters(MethodParameters_attribute attr,
-                                                  ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr,
-                                                                    ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute attr,
-                                                                      ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr,
-                                                               ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr,
-                                                                 ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitSignature(Signature_attribute attr,
-                                           ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitSourceDebugExtension(SourceDebugExtension_attribute attr,
-                                                      ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitSourceFile(SourceFile_attribute attr,
-                                            ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitSourceID(SourceID_attribute attr,
-                                          ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitStackMap(StackMap_attribute attr,
-                                          ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitStackMapTable(StackMapTable_attribute attr,
-                                               ExpectedAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitSynthetic(Synthetic_attribute attr,
-                                           ExpectedAnnotation expected) {
-                return null;
-            }
+        return new AbstractAttributeVisitor<ExpectedAnnotation>() {
 
             @Override
             public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr,
@@ -1541,163 +1412,7 @@ public class ClassfileInspector {
     }
 
     private static Attribute.Visitor<Void, ExpectedParameterAnnotation> paramMatcher(ConstantPool cpool) {
-        return new Attribute.Visitor<Void, ExpectedParameterAnnotation>() {
-
-            @Override
-                public Void visitBootstrapMethods(BootstrapMethods_attribute attr,
-                                                  ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitDefault(DefaultAttribute attr,
-                                         ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitAnnotationDefault(AnnotationDefault_attribute attr,
-                                                   ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitCharacterRangeTable(CharacterRangeTable_attribute attr,
-                                                     ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitCode(Code_attribute attr,
-                                      ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitCompilationID(CompilationID_attribute attr,
-                                               ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitConstantValue(ConstantValue_attribute attr,
-                                               ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitDeprecated(Deprecated_attribute attr,
-                                            ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitEnclosingMethod(EnclosingMethod_attribute attr,
-                                                 ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitExceptions(Exceptions_attribute attr,
-                                            ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitInnerClasses(InnerClasses_attribute attr,
-                                              ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitLineNumberTable(LineNumberTable_attribute attr,
-                                                 ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitLocalVariableTable(LocalVariableTable_attribute attr,
-                                                    ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr,
-                                                        ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitMethodParameters(MethodParameters_attribute attr,
-                                                  ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-            public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr,
-                                                       ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-            public Void visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr,
-                                                         ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr,
-                                                               ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr,
-                                                                 ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitSignature(Signature_attribute attr,
-                                           ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitSourceDebugExtension(SourceDebugExtension_attribute attr,
-                                                      ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitSourceFile(SourceFile_attribute attr,
-                                            ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitSourceID(SourceID_attribute attr,
-                                          ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitStackMap(StackMap_attribute attr,
-                                          ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitStackMapTable(StackMapTable_attribute attr,
-                                               ExpectedParameterAnnotation expected) {
-                return null;
-            }
-
-            @Override
-                public Void visitSynthetic(Synthetic_attribute attr,
-                                           ExpectedParameterAnnotation expected) {
-                return null;
-            }
+        return new AbstractAttributeVisitor<ExpectedParameterAnnotation>() {
 
             @Override
             public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr,

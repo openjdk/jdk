@@ -53,6 +53,7 @@ import com.sun.tools.sjavac.options.Option;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.options.SourceLocation;
 import com.sun.tools.sjavac.server.Sjavac;
+import java.io.UncheckedIOException;
 
 import javax.tools.JavaFileManager;
 
@@ -123,8 +124,8 @@ public class SjavacImpl implements Sjavac {
             if (fileManager instanceof JavacFileManager) {
                 try {
                     ((JavacFileManager) fileManager).close();
-                } catch (IOException e) {
-                    return RC_FATAL;
+                } catch (IOException es) {
+                    throw new UncheckedIOException(es);
                 }
             }
             return result.exitCode;

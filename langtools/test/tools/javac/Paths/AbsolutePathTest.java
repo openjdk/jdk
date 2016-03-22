@@ -30,6 +30,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.javap
  * @ignore 8055768 ToolBox does not close opened files
  * @build ToolBox
  * @run main AbsolutePathTest

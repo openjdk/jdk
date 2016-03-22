@@ -2797,7 +2797,12 @@ public class Window extends Container implements Accessible {
      */
     @Deprecated
     public void applyResourceBundle(String rbName) {
-        applyResourceBundle(ResourceBundle.getBundle(rbName));
+        // Use the unnamed module from the TCCL or system class loader.
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        if (cl == null) {
+            cl = ClassLoader.getSystemClassLoader();
+        }
+        applyResourceBundle(ResourceBundle.getBundle(rbName, cl.getUnnamedModule()));
     }
 
    /*

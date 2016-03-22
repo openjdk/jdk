@@ -28,6 +28,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include JarArchive.gmk
+include SetupJavaCompilers.gmk
 include TextFileProcessing.gmk
 
 # This rule will be depended on due to the MANIFEST line
@@ -40,10 +41,32 @@ $(eval $(call SetupTextFileProcessing, BUILD_JAVA_MANIFEST, \
       @@COMPANY_NAME@@ => $(COMPANY_NAME) , \
 ))
 
-$(eval $(call SetupJarArchive, JRTFS_JAR, \
-    SRCS := $(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes, \
+JIMAGE_PKGS := \
+    jdk/internal/jimage \
+    jdk/internal/jrtfs \
+    #
+
+$(eval $(call SetupJavaCompilation,BUILD_JRTFS, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    SRC := $(JDK_TOPDIR)/src/java.base/share/classes, \
+    EXCLUDE_FILES := module-info.java, \
+    INCLUDES := $(JIMAGE_PKGS), \
+    BIN := $(SUPPORT_OUTPUTDIR)/jrtfs_classes))
+
+# Because of the explicit INCLUDES in the compilation setup above, the service provider
+# file will not be copied unless META-INF/services would also be added to the INCLUDES.
+# Adding META-INF/services would include all files in that directory when only the one
+# is needed, which is why this explicit copy is defined instead.
+$(eval $(call SetupCopyFiles,COPY_JIMAGE_SERVICE_PROVIDER, \
+    SRC := $(JDK_TOPDIR)/src/java.base/share/classes, \
+    DEST := $(SUPPORT_OUTPUTDIR)/jrtfs_classes, \
+    FILES := META-INF/services/java.nio.file.spi.FileSystemProvider))
+
+$(eval $(call SetupJarArchive,BUILD_JRTFS_JAR, \
+    DEPENDENCIES := $(BUILD_JRTFS) $(COPY_JIMAGE_SERVICE_PROVIDER), \
+    SRCS := $(SUPPORT_OUTPUTDIR)/jrtfs_classes, \
     JAR := $(SUPPORT_OUTPUTDIR)/jrt-fs.jar, \
     MANIFEST := $(SUPPORT_OUTPUTDIR)/java-main-manifest.mf, \
 ))
 
-all: $(JRTFS_JAR)
+all: $(BUILD_JRTFS_JAR)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.lang.reflect.Layer;
+import java.lang.reflect.Module;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -95,6 +97,20 @@ public abstract class JavacTestingAbstractProcessor extends AbstractProcessor {
         filer     = processingEnv.getFiler();
         messager  = processingEnv.getMessager();
         options   = processingEnv.getOptions();
+    }
+
+    protected void addExports(String moduleName, String... packageNames) {
+        for (String packageName : packageNames) {
+            try {
+                Layer layer = Layer.boot();
+                Optional<Module> m = layer.findModule(moduleName);
+                if (!m.isPresent())
+                    throw new Error("module not found: " + moduleName);
+                m.get().addExports(packageName, getClass().getModule());
+            } catch (Exception e) {
+                throw new Error("failed to add exports for " + moduleName + "/" + packageName);
+            }
+        }
     }
 
     /*

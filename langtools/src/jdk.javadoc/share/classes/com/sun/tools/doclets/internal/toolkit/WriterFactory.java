@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.tools.doclets.internal.toolkit;
 
 import com.sun.javadoc.*;
-import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
@@ -64,33 +63,6 @@ public interface WriterFactory {
     public abstract PackageSummaryWriter getPackageSummaryWriter(PackageDoc
         packageDoc, PackageDoc prevPkg, PackageDoc nextPkg)
     throws Exception;
-
-    /**
-     * Return the writer for the profile summary.
-     *
-     * @param profile the profile being documented.
-     * @param prevProfile the previous profile that was documented.
-     * @param nextProfile the next profile being documented.
-     * @return the writer for the profile summary.  Return null if this
-     * writer is not supported by the doclet.
-     */
-    public abstract ProfileSummaryWriter getProfileSummaryWriter(Profile
-        profile, Profile prevProfile, Profile nextProfile)
-    throws Exception;
-
-    /**
-     * Return the writer for the profile package summary.
-     *
-     * @param packageDoc the profile package being documented.
-     * @param prevPkg the previous profile package that was documented.
-     * @param nextPkg the next profile package being documented.
-     * @param profile the profile being documented.
-     * @return the writer for the profile package summary.  Return null if this
-     * writer is not supported by the doclet.
-     */
-    public abstract ProfilePackageSummaryWriter getProfilePackageSummaryWriter(
-            PackageDoc packageDoc, PackageDoc prevPkg, PackageDoc nextPkg,
-            Profile profile) throws Exception;
 
     /**
      * Return the writer for a class.

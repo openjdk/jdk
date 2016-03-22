@@ -32,7 +32,7 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor MakeTypeTest
- * @compile/process/ref=MakeTypeTest.out -processor MakeTypeTest MakeTypeTest.java
+ * @compile/process/ref=MakeTypeTest.out -XDaccessInternalAPI -processor MakeTypeTest MakeTypeTest.java
  */
 
 import java.lang.annotation.*;
@@ -54,7 +54,6 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
 
 public class MakeTypeTest extends JavacTestingAbstractProcessor {
-
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver())
@@ -135,7 +134,7 @@ public class MakeTypeTest extends JavacTestingAbstractProcessor {
         }.scan(path, null);
 
         unseenTypeKinds.removeAll(Arrays.asList(TypeKind.NONE, TypeKind.NULL, TypeKind.ERROR,
-                TypeKind.PACKAGE, TypeKind.EXECUTABLE, TypeKind.OTHER));
+                TypeKind.PACKAGE, TypeKind.EXECUTABLE, TypeKind.OTHER, TypeKind.MODULE));
 
         if (!unseenTypeKinds.isEmpty())
             throw new IllegalStateException("Unhandled types=" + unseenTypeKinds);

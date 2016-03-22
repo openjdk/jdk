@@ -26,6 +26,7 @@
 include LauncherCommon.gmk
 
 $(eval $(call SetupBuildLauncher, pack200, \
+    MAIN_MODULE := java.base, \
     MAIN_CLASS := com.sun.java.util.jar.pack.Driver, \
 ))
 
