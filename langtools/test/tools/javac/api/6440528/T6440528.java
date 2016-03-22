@@ -28,7 +28,7 @@
  * @author  Peter von der Ah\u00e9
  * @library ../lib
  * @modules java.compiler
- *          jdk.compiler
+ *          jdk.compiler/com.sun.tools.javac.file
  * @build ToolTester
  * @compile T6440528.java
  * @run main T6440528

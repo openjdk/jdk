@@ -24,6 +24,7 @@
  */
 
 package java.util.logging;
+import java.lang.reflect.Module;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -262,9 +263,13 @@ public class Level implements java.io.Serializable {
     }
 
     private String computeLocalizedLevelName(Locale newLocale) {
-        ResourceBundle rb = ResourceBundle.getBundle(resourceBundleName, newLocale);
-        final String localizedName = rb.getString(name);
+        // Resource bundle should be loaded from the defining module
+        // or its defining class loader, if it's unnamed module,
+        // of this Level instance that can be a custom Level subclass;
+        Module module = this.getClass().getModule();
+        ResourceBundle rb = ResourceBundle.getBundle(resourceBundleName, newLocale, module);
 
+        final String localizedName = rb.getString(name);
         final boolean isDefaultBundle = defaultBundle.equals(resourceBundleName);
         if (!isDefaultBundle) return localizedName;
 

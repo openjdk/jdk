@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.instrument;
 
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.ClassFileTransformer;
+import java.lang.reflect.Module;
 import java.security.ProtectionDomain;
 
 /*
@@ -167,7 +168,7 @@ public class TransformerManager
     }
 
     public byte[]
-    transform(  ClassLoader         loader,
+    transform(  Module              module,
                 String              classname,
                 Class<?>            classBeingRedefined,
                 ProtectionDomain    protectionDomain,
@@ -185,7 +186,7 @@ public class TransformerManager
             byte[]                  transformedBytes = null;
 
             try {
-                transformedBytes = transformer.transform(   loader,
+                transformedBytes = transformer.transform(   module,
                                                             classname,
                                                             classBeingRedefined,
                                                             protectionDomain,

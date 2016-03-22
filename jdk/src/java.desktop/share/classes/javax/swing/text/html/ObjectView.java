@@ -24,7 +24,6 @@
  */
 package javax.swing.text.html;
 
-import java.util.Enumeration;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.text.*;

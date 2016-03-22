@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,9 +127,11 @@ public abstract class Name implements javax.lang.model.element.Name {
         int prefixOffset   = prefix.getByteOffset();
         int prefixLength   = prefix.getByteLength();
 
+        if (thisLength < prefixLength)
+            return false;
+
         int i = 0;
         while (i < prefixLength &&
-               i < thisLength &&
                thisBytes[thisOffset + i] == prefixBytes[prefixOffset + i])
             i++;
         return i == prefixLength;

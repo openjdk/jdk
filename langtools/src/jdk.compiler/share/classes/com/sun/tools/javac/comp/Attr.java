@@ -36,6 +36,7 @@ import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.TreeVisitor;
 import com.sun.source.util.SimpleTreeVisitor;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Directive.RequiresFlag;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
@@ -60,6 +61,7 @@ import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.List;
+
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
 import static com.sun.tools.javac.code.Flags.BLOCK;
@@ -332,7 +334,15 @@ public class Attr extends JCTree.Visitor {
                                            syms.errSymbol.name,
                                            null, null, null, null);
         localEnv.enclClass.sym = syms.errSymbol;
-        return tree.accept(identAttributer, localEnv);
+        return attribIdent(tree, localEnv);
+    }
+
+    /** Attribute a parsed identifier.
+     * @param tree Parsed identifier name
+     * @param env The env to use
+     */
+    public Symbol attribIdent(JCTree tree, Env<AttrContext> env) {
+        return tree.accept(identAttributer, env);
     }
     // where
         private TreeVisitor<Symbol,Env<AttrContext>> identAttributer = new IdentAttributer();
@@ -4238,13 +4248,19 @@ public class Attr extends JCTree.Visitor {
     }
 
     /**
-     * Attribute an env for either a top level tree or class declaration.
+     * Attribute an env for either a top level tree or class or module declaration.
      */
     public void attrib(Env<AttrContext> env) {
-        if (env.tree.hasTag(TOPLEVEL))
-            attribTopLevel(env);
-        else
-            attribClass(env.tree.pos(), env.enclClass.sym);
+        switch (env.tree.getTag()) {
+            case MODULEDEF:
+                attribModule(env.tree.pos(), ((JCModuleDecl)env.tree).sym);
+                break;
+            case TOPLEVEL:
+                attribTopLevel(env);
+                break;
+            default:
+                attribClass(env.tree.pos(), env.enclClass.sym);
+        }
     }
 
     /**
@@ -4258,6 +4274,21 @@ public class Attr extends JCTree.Visitor {
         } catch (CompletionFailure ex) {
             chk.completionError(toplevel.pos(), ex);
         }
+    }
+
+    public void attribModule(DiagnosticPosition pos, ModuleSymbol m) {
+        try {
+            annotate.flush();
+            attribModule(m);
+        } catch (CompletionFailure ex) {
+            chk.completionError(pos, ex);
+        }
+    }
+
+    void attribModule(ModuleSymbol m) {
+        // Get environment current at the point of module definition.
+        Env<AttrContext> env = enter.typeEnvs.get(m);
+        attribStat(env.tree, env);
     }
 
     /** Main method: attribute class definition associated with given class symbol.
@@ -4356,6 +4387,10 @@ public class Attr extends JCTree.Visitor {
 
     public void visitImport(JCImport tree) {
         // nothing to do
+    }
+
+    public void visitModuleDef(JCModuleDecl tree) {
+        tree.sym.completeUsesProvides();
     }
 
     /** Finish the attribution of a class. */
@@ -4929,4 +4964,22 @@ public class Attr extends JCTree.Visitor {
         }
     }
     // </editor-fold>
+
+    public void setPackageSymbols(JCExpression pid, Symbol pkg) {
+        new TreeScanner() {
+            Symbol packge = pkg;
+            @Override
+            public void visitIdent(JCIdent that) {
+                that.sym = packge;
+            }
+
+            @Override
+            public void visitSelect(JCFieldAccess that) {
+                that.sym = packge;
+                packge = packge.owner;
+                super.visitSelect(that);
+            }
+        }.scan(pid);
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug     7091528 8029145 8037484
  * @summary ensures javadoc parses unique source files and ignores all class files
- * @modules jdk.javadoc/jdk.javadoc.internal.doclets.standard
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @compile p/C1.java p/q/C2.java
  * @run main T7091528
  */

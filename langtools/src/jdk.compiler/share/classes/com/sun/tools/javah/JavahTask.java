@@ -497,7 +497,15 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         List<String> opts = new ArrayList<>();
         opts.add("-proc:only");
         opts.addAll(javac_extras);
-        CompilationTask t = c.getTask(log, fileManager, diagnosticListener, opts, classes, null);
+
+        CompilationTask t;
+        try {
+            t = c.getTask(log, fileManager, diagnosticListener, opts, classes, null);
+        } catch (IllegalArgumentException e) {
+            util.error("bad.arg", e.getMessage());
+            return false;
+        }
+
         JavahProcessor p = new JavahProcessor(g);
         t.setProcessors(Collections.singleton(p));
 
@@ -505,15 +513,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
         if (p.exit != null)
             throw new Util.Exit(p.exit);
         return ok;
-    }
 
-    private List<File> pathToFiles(String path) {
-        List<File> files = new ArrayList<>();
-        for (String f: path.split(File.pathSeparator)) {
-            if (f.length() > 0)
-                files.add(new File(f));
-        }
-        return files;
     }
 
     static StandardJavaFileManager getDefaultFileManager(final DiagnosticListener<? super JavaFileObject> dl, PrintWriter log) {

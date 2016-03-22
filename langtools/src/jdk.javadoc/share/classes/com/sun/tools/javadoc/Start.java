@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,7 +313,11 @@ public class Start extends ToolOption.Helper {
                     setOption(arg);
                     o.process(this);
                 }
-
+            } else if (arg.equals("-XDaccessInternalAPI")) {
+                // pass this hidden option down to the doclet, if it wants it
+                if (docletInvoker.optionLength("-XDaccessInternalAPI") == 1) {
+                    setOption(arg);
+                }
             } else if (arg.startsWith("-XD")) {
                 // hidden javac options
                 String s = arg.substring("-XD".length());
@@ -461,12 +465,7 @@ public class Start extends ToolOption.Helper {
      * @param argv Args containing -doclet and -docletpath, in case they are required.
      */
     private void setDocletInvoker(Class<?> docletClass, JavaFileManager fileManager, String[] argv) {
-        if (docletClass != null) {
-            docletInvoker = new DocletInvoker(messager, docletClass, apiMode);
-            // TODO, check no -doclet, -docletpath
-            return;
-        }
-
+        boolean exportInternalAPI = false;
         String docletClassName = null;
         String docletPath = null;
 
@@ -487,18 +486,26 @@ public class Start extends ToolOption.Helper {
                 } else {
                     docletPath += File.pathSeparator + argv[i];
                 }
+            } else if (arg.equals("-XDaccessInternalAPI")) {
+                exportInternalAPI = true;
             }
         }
 
-        if (docletClassName == null) {
-            docletClassName = defaultDocletClassName;
-        }
+        if (docletClass != null) {
+            // TODO, check no -doclet, -docletpath
+            docletInvoker = new DocletInvoker(messager, docletClass, apiMode, exportInternalAPI);
+        } else {
+            if (docletClassName == null) {
+                docletClassName = defaultDocletClassName;
+            }
 
-        // attempt to find doclet
-        docletInvoker = new DocletInvoker(messager, fileManager,
-                docletClassName, docletPath,
-                docletParentClassLoader,
-                apiMode);
+            // attempt to find doclet
+            docletInvoker = new DocletInvoker(messager, fileManager,
+                    docletClassName, docletPath,
+                    docletParentClassLoader,
+                    apiMode,
+                    exportInternalAPI);
+        }
     }
 
     /**

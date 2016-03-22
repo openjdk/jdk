@@ -32,10 +32,7 @@
  */
 
 import com.sun.source.util.*;
-import com.sun.tools.javac.api.*;
-import com.sun.tools.javac.file.*;
 import javax.annotation.processing.*;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.type.*;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.element.*;

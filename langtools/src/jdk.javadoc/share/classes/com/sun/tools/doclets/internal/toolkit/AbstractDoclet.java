@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package com.sun.tools.doclets.internal.toolkit;
+
+import javax.tools.StandardLocation;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.builders.*;
@@ -88,6 +90,7 @@ public abstract class AbstractDoclet {
             root.printError(f.getMessage());
             return false;
         } catch (DocletAbortException e) {
+            e.printStackTrace();
             Throwable cause = e.getCause();
             if (cause != null) {
                 if (cause.getLocalizedMessage() != null) {
@@ -138,11 +141,10 @@ public abstract class AbstractDoclet {
         ClassTree classtree = new ClassTree(configuration, configuration.nodeprecated);
 
         generateClassFiles(root, classtree);
-        configuration.utils.copyDocFiles(configuration, DocPaths.DOC_FILES);
+        configuration.utils.copyDocFiles(configuration, StandardLocation.SOURCE_PATH, DocPaths.DOC_FILES);
 
         PackageListWriter.generate(configuration);
         generatePackageFiles(classtree);
-        generateProfileFiles();
 
         generateOtherFiles(root, classtree);
         configuration.tagletManager.printReport();
@@ -161,12 +163,6 @@ public abstract class AbstractDoclet {
         AbstractBuilder serializedFormBuilder = builderFactory.getSerializedFormBuilder();
         serializedFormBuilder.build();
     }
-
-    /**
-     * Generate the profile documentation.
-     *
-     */
-    protected abstract void generateProfileFiles() throws Exception;
 
     /**
      * Generate the package documentation.

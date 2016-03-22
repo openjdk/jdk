@@ -1,0 +1,154 @@
+#
+# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file makes modifications to module-info.java files based on the build
+# configuration.
+#
+# Depending on build platform, imported modules and optional parts of the build
+# being active, some modules need to have extra exports, provides or uses
+# declarations added to them. These optional extras are defined in .extra files:
+#
+# src/<module>/<share,platform>/classes/module-info.java.extra
+#
+# The contents of the .extra files are simply extra lines that could fit into
+# the module-info file.
+#
+# This makefile is called once for each from-module with the variable
+# MODULE naming the from-module.
+#
+# The modified module-info.java files are put in the gensrc directory where
+# they will automatically override the static versions in the src tree.
+#
+################################################################################
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include Modules.gmk
+#include TextFileProcessing.gmk
+
+################################################################################
+# Define this here since jdk/make/Tools.gmk cannot be included from the top
+# make directory. Should probably move some tools away from the jdk repo.
+TOOL_GENMODULEINFOSOURCE = $(JAVA_SMALL) \
+    $(INTERIM_LANGTOOLS_ARGS) \
+    -cp "$(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes" \
+    build.tools.module.GenModuleInfoSource
+
+################################################################################
+
+# Name of data file. Keep module-info.java.ext until javafx has changed.
+MOD_FILENAME := module-info.java.extra module-info.java.ext
+
+# List all the possible sub directories inside a module source directory where
+# data might be stored.
+CLASSES_SUBDIRS += $(OPENJDK_TARGET_OS)/classes
+ifneq ($(OPENJDK_TARGET_OS), $(OPENJDK_TARGET_OS_TYPE))
+  CLASSES_SUBDIRS += $(OPENJDK_TARGET_OS_TYPE)/classes
+endif
+CLASSES_SUBDIRS += share/classes
+
+# TODO: When the deploy build is better integrated, this will get added globally
+# but for now need to add it here.
+ifeq ($(BUILD_DEPLOY), true)
+  ALL_TOP_SRC_DIRS += $(DEPLOY_TOPDIR)/src
+endif
+
+# Construct all possible src directories for the module.
+MODULE_CLASSES_DIRS := $(strip \
+    $(foreach sub, $(CLASSES_SUBDIRS), \
+        $(addsuffix /$(MODULE)/$(sub), $(ALL_TOP_SRC_DIRS))) \
+    $(addsuffix /$(MODULE), $(IMPORT_MODULES_SRC)))
+
+# Find all the .extra files in the src dirs.
+MOD_FILES := $(wildcard $(foreach f, $(MOD_FILENAME), $(addsuffix /$(f), \
+    $(MODULE_CLASSES_DIRS))))
+
+ifneq ($(MOD_FILES), )
+  # Only make this call if modification files are found for this module
+  ALL_MODULES := $(call FindAllModules)
+
+  # Read the contents of all the files into a variable. Replace space with / to
+  # let space represent new lines in the variable as $(shell) normalizes all
+  # whitespace.
+  $(foreach f, $(MOD_FILES), \
+    $(eval MOD_FILE_CONTENTS += $(shell $(GREP) -v ".\*" $f | $(TR) ' ' '/')))
+
+  # Filter the contents for modules that are actually being built
+  MODULES_FILTER := $(addprefix %/, $(addsuffix ;, $(ALL_MODULES)))
+  MODULES_FILTER += provides%
+  MODIFICATIONS := $(filter $(MODULES_FILTER), $(MOD_FILE_CONTENTS))
+
+  # Convert the modification lines into arguments for the modification tool.
+  # Filter out modifications for non existing to-modules.
+  $(foreach line, $(MODIFICATIONS), \
+    $(eval split_line := $(subst /,$(SPACE),$(line))) \
+    $(eval command := $(word 1, $(split_line))) \
+    $(eval package := $(word 2, $(split_line))) \
+    $(eval to_module := $(patsubst %;,%,$(word 4, $(split_line)))) \
+    $(eval ARGS += -$(command) $(package)/$(to_module)))
+
+  ifneq ($(ARGS), )
+    $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java: \
+        $(firstword $(call FindAllModuleInfos, $(MODULE))) \
+        $(BUILD_TOOLS_JDK) \
+        $(call DependOnVariable, ARGS)
+		$(MKDIR) -p $(@D)
+		$(RM) $@ $@.tmp
+		$(TOOL_GENMODULEINFOSOURCE) $(ARGS) -o $@.tmp $<
+		$(MV) $@.tmp $@
+
+    TARGETS += $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java
+  endif
+
+# This doesn't work because javac only accepts one single exports line per
+# exported package.
+  # Restore the modifications to separate lines with spaces
+#  MODIFICATIONS := $(subst /,$(SPACE),$(MODIFICATIONS))
+
+#  ifneq ($(MODIFICATIONS), )
+#    $(eval $(call SetupTextFileProcessing, PROCESS_MODULE_INFO, \
+#        SOURCE_FILES := $(firstword $(call FindAllModuleInfos, $(MODULE))), \
+#        OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java, \
+#        REPLACEMENTS := } => $(MODIFICATIONS) }, \
+#    ))
+
+#    TARGETS += $(PROCESS_MODULE_INFO)
+#  endif
+endif
+
+# If no modifications are found for this module, remove any module-info.java
+# created by a previous build since that is no longer valid.
+ifeq ($(MODIFICATIONS), )
+  ifneq ($(wildcard $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java), )
+    $(shell $(RM) $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java)
+  endif
+endif
+
+################################################################################
+
+all: $(TARGETS)

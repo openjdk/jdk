@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package com.sun.tools.javac.comp;
 
+import java.util.Map;
+import java.util.Optional;
+
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileManager;
 
@@ -34,12 +37,12 @@ import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.main.Option.PkgInfo;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
-
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
@@ -97,6 +100,8 @@ public class Enter extends JCTree.Visitor {
     JavaFileManager fileManager;
     PkgInfo pkginfoOpt;
     TypeEnvs typeEnvs;
+    Modules modules;
+    JCDiagnostic.Factory diags;
 
     private final Todo todo;
 
@@ -119,6 +124,8 @@ public class Enter extends JCTree.Visitor {
         annotate = Annotate.instance(context);
         lint = Lint.instance(context);
         names = Names.instance(context);
+        modules = Modules.instance(context);
+        diags = JCDiagnostic.Factory.instance(context);
 
         predefClassDef = make.ClassDef(
             make.Modifiers(PUBLIC),
@@ -229,6 +236,24 @@ public class Enter extends JCTree.Visitor {
             : env.info.scope;
     }
 
+    /** Create a fresh environment for modules.
+     *
+     *  @param tree     The module definition.
+     *  @param env      The environment current outside of the module definition.
+     */
+    public Env<AttrContext> moduleEnv(JCModuleDecl tree, Env<AttrContext> env) {
+        Assert.checkNonNull(tree.sym);
+        Env<AttrContext> localEnv =
+            env.dup(tree, env.info.dup(WriteableScope.create(tree.sym)));
+        localEnv.enclClass = predefClassDef;
+        localEnv.outer = env;
+        localEnv.info.isSelfCall = false;
+        localEnv.info.lint = null; // leave this to be filled in by Attr,
+                                   // when annotations have been processed
+        return localEnv;
+    }
+
+
 /* ************************************************************************
  * Visitor methods for phase 1: class enter
  *************************************************************************/
@@ -276,57 +301,80 @@ public class Enter extends JCTree.Visitor {
 
     @Override
     public void visitTopLevel(JCCompilationUnit tree) {
+//        Assert.checkNonNull(tree.modle, tree.sourcefile.toString());
+
         JavaFileObject prev = log.useSource(tree.sourcefile);
         boolean addEnv = false;
         boolean isPkgInfo = tree.sourcefile.isNameCompatible("package-info",
                                                              JavaFileObject.Kind.SOURCE);
-        JCPackageDecl pd = tree.getPackage();
-        if (pd != null) {
-            tree.packge = pd.packge = syms.enterPackage(TreeInfo.fullName(pd.pid));
-            if (   pd.annotations.nonEmpty()
-                || pkginfoOpt == PkgInfo.ALWAYS
-                || tree.docComments != null) {
-                if (isPkgInfo) {
-                    addEnv = true;
-                } else if (pd.annotations.nonEmpty()) {
-                    log.error(pd.annotations.head.pos(),
-                              "pkg.annotations.sb.in.package-info.java");
-                }
-            }
+        if (TreeInfo.isModuleInfo(tree)) {
+            tree.packge = syms.rootPackage;
+            Env<AttrContext> topEnv = topLevelEnv(tree);
+            classEnter(tree.defs, topEnv);
+            tree.modle.usesProvidesCompleter = modules.getUsesProvidesCompleter();
         } else {
-            tree.packge = syms.unnamedPackage;
-        }
-        tree.packge.complete(); // Find all classes in package.
-        Env<AttrContext> topEnv = topLevelEnv(tree);
-        Env<AttrContext> packageEnv = isPkgInfo ? topEnv.dup(pd) : null;
-
-        // Save environment of package-info.java file.
-        if (isPkgInfo) {
-            Env<AttrContext> env0 = typeEnvs.get(tree.packge);
-            if (env0 != null) {
-                JCCompilationUnit tree0 = env0.toplevel;
-                if (!fileManager.isSameFile(tree.sourcefile, tree0.sourcefile)) {
-                    log.warning(pd != null ? pd.pid.pos() : null,
-                                "pkg-info.already.seen",
-                                tree.packge);
+            JCPackageDecl pd = tree.getPackage();
+            if (pd != null) {
+                tree.packge = pd.packge = syms.enterPackage(tree.modle, TreeInfo.fullName(pd.pid));
+                if (   pd.annotations.nonEmpty()
+                    || pkginfoOpt == PkgInfo.ALWAYS
+                    || tree.docComments != null) {
+                    if (isPkgInfo) {
+                        addEnv = true;
+                    } else if (pd.annotations.nonEmpty()) {
+                        log.error(pd.annotations.head.pos(),
+                                  "pkg.annotations.sb.in.package-info.java");
+                    }
                 }
+            } else {
+                tree.packge = tree.modle.unnamedPackage;
             }
-            typeEnvs.put(tree.packge, packageEnv);
 
-            for (Symbol q = tree.packge; q != null && q.kind == PCK; q = q.owner)
-                q.flags_field |= EXISTS;
+            Map<Name, PackageSymbol> visiblePackages = tree.modle.visiblePackages;
+            Optional<ModuleSymbol> dependencyWithPackage =
+                syms.listPackageModules(tree.packge.fullname)
+                    .stream()
+                    .filter(m -> m != tree.modle)
+                    .filter(cand -> visiblePackages.get(tree.packge.fullname) == syms.getPackage(cand, tree.packge.fullname))
+                    .findAny();
 
-            Name name = names.package_info;
-            ClassSymbol c = syms.enterClass(name, tree.packge);
-            c.flatname = names.fromString(tree.packge + "." + name);
-            c.sourcefile = tree.sourcefile;
+            if (dependencyWithPackage.isPresent()) {
+                log.error(pd, Errors.PackageInOtherModule(dependencyWithPackage.get()));
+            }
+
+            tree.packge.complete(); // Find all classes in package.
+
+            Env<AttrContext> topEnv = topLevelEnv(tree);
+            Env<AttrContext> packageEnv = isPkgInfo ? topEnv.dup(pd) : null;
+
+            // Save environment of package-info.java file.
+            if (isPkgInfo) {
+                Env<AttrContext> env0 = typeEnvs.get(tree.packge);
+                if (env0 != null) {
+                    JCCompilationUnit tree0 = env0.toplevel;
+                    if (!fileManager.isSameFile(tree.sourcefile, tree0.sourcefile)) {
+                        log.warning(pd != null ? pd.pid.pos() : null,
+                                    "pkg-info.already.seen",
+                                    tree.packge);
+                    }
+                }
+                typeEnvs.put(tree.packge, packageEnv);
+
+                for (Symbol q = tree.packge; q != null && q.kind == PCK; q = q.owner)
+                    q.flags_field |= EXISTS;
+
+                Name name = names.package_info;
+                ClassSymbol c = syms.enterClass(tree.modle, name, tree.packge);
+                c.flatname = names.fromString(tree.packge + "." + name);
+                c.sourcefile = tree.sourcefile;
             c.completer = Completer.NULL_COMPLETER;
-            c.members_field = WriteableScope.create(c);
-            tree.packge.package_info = c;
-        }
-        classEnter(tree.defs, topEnv);
-        if (addEnv) {
-            todo.append(packageEnv);
+                c.members_field = WriteableScope.create(c);
+                tree.packge.package_info = c;
+            }
+            classEnter(tree.defs, topEnv);
+            if (addEnv) {
+                todo.append(packageEnv);
+            }
         }
         log.useSource(prev);
         result = null;
@@ -342,7 +390,7 @@ public class Enter extends JCTree.Visitor {
             PackageSymbol packge = (PackageSymbol)owner;
             for (Symbol q = packge; q != null && q.kind == PCK; q = q.owner)
                 q.flags_field |= EXISTS;
-            c = syms.enterClass(tree.name, packge);
+            c = syms.enterClass(env.toplevel.modle, tree.name, packge);
             packge.members().enterIfAbsent(c);
             if ((tree.mods.flags & PUBLIC) != 0 && !classNameMatchesFileName(c, env)) {
                 log.error(tree.pos(),
@@ -356,7 +404,7 @@ public class Enter extends JCTree.Visitor {
             }
             if (owner.kind == TYP) {
                 // We are seeing a member class.
-                c = syms.enterClass(tree.name, (TypeSymbol)owner);
+                c = syms.enterClass(env.toplevel.modle, tree.name, (TypeSymbol)owner);
                 if ((owner.flags_field & INTERFACE) != 0) {
                     tree.mods.flags |= PUBLIC | STATIC;
                 }
@@ -371,13 +419,13 @@ public class Enter extends JCTree.Visitor {
         tree.sym = c;
 
         // Enter class into `compiled' table and enclosing scope.
-        if (chk.compiled.get(c.flatname) != null) {
+        if (chk.getCompiled(c) != null) {
             duplicateClass(tree.pos(), c);
             result = types.createErrorType(tree.name, (TypeSymbol)owner, Type.noType);
             tree.sym = (ClassSymbol)result.tsym;
             return;
         }
-        chk.compiled.put(c.flatname, c);
+        chk.putCompiled(c);
         enclScope.enter(c);
 
         // Set up an environment for class block and store in `typeEnvs'
@@ -421,6 +469,8 @@ public class Enter extends JCTree.Visitor {
         // Recursively enter all member classes.
         classEnter(tree.defs, localEnv);
 
+//        Assert.checkNonNull(c.modle, c.sourcefile.toString());
+
         result = c.type;
     }
     //where
@@ -451,6 +501,13 @@ public class Enter extends JCTree.Visitor {
             env.info.scope.enter(a.tsym);
         }
         result = a;
+    }
+
+    @Override
+    public void visitModuleDef(JCModuleDecl tree) {
+        Env<AttrContext> moduleEnv = moduleEnv(tree, env);
+        typeEnvs.put(tree.sym, moduleEnv);
+        todo.append(moduleEnv);
     }
 
     /** Default class enter visitor method: do nothing.

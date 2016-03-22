@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.lang.model.util;
 
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.ModuleElement;
 import static javax.lang.model.SourceVersion.*;
 
 
@@ -71,4 +72,15 @@ public abstract class AbstractElementVisitor9<R, P> extends AbstractElementVisit
     protected AbstractElementVisitor9(){
         super();
     }
+
+    /**
+     * Visits a {@code ModuleElement} in a manner defined by a
+     * subclass.
+     *
+     * @param t  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of the visit as defined by a subclass
+     */
+    @Override
+    public abstract R visitModule(ModuleElement t, P p);
 }

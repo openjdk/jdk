@@ -108,8 +108,8 @@ public abstract class OverlappingTestBase {
     {    if (Toolkit.getDefaultToolkit().getClass().getName().matches(".*L.*Toolkit")) {
              // No EmbeddedFrame in LWToolkit/LWCToolkit, yet
              // And it should be programmed some other way, too, in any case
-             System.err.println("skipTestingEmbeddedFrame");
-             skipTestingEmbeddedFrame = true;
+             //System.err.println("skipTestingEmbeddedFrame");
+             //skipTestingEmbeddedFrame = true;
          }else {
              System.err.println("do not skipTestingEmbeddedFrame");
          }
@@ -241,21 +241,40 @@ public abstract class OverlappingTestBase {
                 container.setVisible(true); // create peer
 
                 long frameWindow = 0;
-                String getWindowMethodName = "getHWnd";
+                String getWindowMethodName = null;
+                String eframeClassName = null;
                 if (Toolkit.getDefaultToolkit().getClass().getName().contains("XToolkit")) {
+                    java.awt.Helper.addExports("sun.awt.X11", OverlappingTestBase.class.getModule());
                     getWindowMethodName = "getWindow";
+                    eframeClassName = "sun.awt.X11.XEmbeddedFrame";
+                }else if (Toolkit.getDefaultToolkit().getClass().getName().contains(".WToolkit")) {
+                    java.awt.Helper.addExports("sun.awt.windows", OverlappingTestBase.class.getModule());
+                    getWindowMethodName = "getHWnd";
+                    eframeClassName = "sun.awt.windows.WEmbeddedFrame";
+                }else if (isMac) {
+                    java.awt.Helper.addExports("sun.lwawt", OverlappingTestBase.class.getModule());
+                    java.awt.Helper.addExports("sun.lwawt.macosx", OverlappingTestBase.class.getModule());
+                    eframeClassName = "sun.lwawt.macosx.CViewEmbeddedFrame";
                 }
+
                 ComponentPeer peer = AWTAccessor.getComponentAccessor()
                                                 .getPeer(embedder);
-                //  System.err.println("Peer: " + peer);
-                Method getWindowMethod = peer.getClass().getMethod(getWindowMethodName);
-                frameWindow = (Long) getWindowMethod.invoke(peer);
-//                System.err.println("frame peer ID: " + frameWindow);
+                if (!isMac) {
+                    Method getWindowMethod = peer.getClass().getMethod(getWindowMethodName);
+                    frameWindow = (Long) getWindowMethod.invoke(peer);
+                } else {
+                    Method m_getPlatformWindowMethod = peer.getClass().getMethod("getPlatformWindow");
+                    Object platformWindow = m_getPlatformWindowMethod.invoke(peer);
+                    Class classPlatformWindow = Class.forName("sun.lwawt.macosx.CPlatformWindow");
 
-                String eframeClassName = "sun.awt.windows.WEmbeddedFrame";
-                if (Toolkit.getDefaultToolkit().getClass().getName().contains("XToolkit")) {
-                    eframeClassName = "sun.awt.X11.XEmbeddedFrame";
+                    Method m_getContentView = classPlatformWindow.getMethod("getContentView");
+                    Object contentView = m_getContentView.invoke(platformWindow);
+                    Class classContentView = Class.forName("sun.lwawt.macosx.CPlatformView");
+
+                    Method m_getAWTView = classContentView.getMethod("getAWTView");
+                    frameWindow = (Long) m_getAWTView.invoke(contentView);
                 }
+
                 Class eframeClass = Class.forName(eframeClassName);
                 Constructor eframeCtor = eframeClass.getConstructor(long.class);
                 EmbeddedFrame eframe = (EmbeddedFrame) eframeCtor.newInstance(frameWindow);
