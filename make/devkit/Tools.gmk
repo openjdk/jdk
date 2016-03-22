@@ -83,8 +83,9 @@ RPM_LIST := \
     libXdmcp libXdmcp-devel \
     libXau libXau-devel \
     libgcc \
-    elfutils elfutils-devel \
-    elfutils-libelf elfutils-libelf-devel
+    elfutils elfutils-libs elfutils-devel \
+    elfutils-libelf elfutils-libelf-devel \
+    zlib zlib-devel
 
 
 ifeq ($(ARCH),x86_64)
