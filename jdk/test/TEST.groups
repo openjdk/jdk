@@ -494,7 +494,8 @@ needs_jdk = \
   sun/reflect/CallerSensitive/MissingCallerSensitive.java \
   sun/security/util/Resources/NewNamesFormat.java \
   vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java \
-  javax/xml/ws/clientjar/TestWsImport.java
+  javax/xml/ws/clientjar/TestWsImport.java \
+  javax/xml/bind/xjc/8145039/JaxbMarshallTest.java
 
 # JRE adds further tests to compact3
 #
