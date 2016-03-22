@@ -42,6 +42,7 @@
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, age)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, alloc)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, alloc, region)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, barrier)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, classhisto)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, compaction)) \
