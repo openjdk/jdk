@@ -24,29 +24,38 @@
 /*
  * @test
  * @bug 8072008
- * @library /testlibrary /test/lib
- * @compile GCTest.java NonInlinedReinvoker.java
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- *                              java.lang.invoke.GCTest
- *                              java.lang.invoke.GCTest$T
- *                              java.lang.invoke.NonInlinedReinvoker
- *                              jdk.test.lib.Asserts
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
- *                      java.lang.invoke.GCTest
+ * @library /testlibrary /test/lib ../patches
+ * @modules java.base/jdk.internal.vm.annotation
+ * @build java.base/java.lang.invoke.MethodHandleHelper
+ * @build sun.hotspot.WhiteBox
+ * @run main/bootclasspath -XX:+IgnoreUnrecognizedVMOptions
+ *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                         -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
+ *                         -XX:+FoldStableValues
+ *                         compiler.jsr292.NonInlinedCall.GCTest
  */
-package java.lang.invoke;
 
-import sun.hotspot.WhiteBox;
+package compiler.jsr292.NonInlinedCall;
+
+import java.lang.invoke.MethodHandleHelper;
+import java.lang.invoke.MethodHandleHelper.NonInlinedReinvoker;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandle;
+
+import java.lang.invoke.MethodType;
+import java.lang.ref.PhantomReference;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.Stable;
-import java.lang.ref.*;
+
+import sun.hotspot.WhiteBox;
+
 import static jdk.test.lib.Asserts.*;
 
 public class GCTest {
-    static final MethodHandles.Lookup LOOKUP = MethodHandles.Lookup.IMPL_LOOKUP;
+    static final MethodHandles.Lookup LOOKUP = MethodHandleHelper.IMPL_LOOKUP;
 
     static class T {
         static int f1() { return 0; }
@@ -54,15 +63,15 @@ public class GCTest {
     }
 
     static @Stable MethodHandle mh;
-    static PhantomReference<LambdaForm> lform;
+    static PhantomReference<Object> lform;
 
-    static final ReferenceQueue<LambdaForm> rq = new ReferenceQueue<>();
+    static final ReferenceQueue<Object> rq = new ReferenceQueue<>();
     static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     @DontInline
     static int invokeBasic() {
         try {
-            return (int) mh.invokeBasic();
+            return MethodHandleHelper.invokeBasicI(mh);
         } catch (Throwable e) {
             throw new Error(e);
         }
@@ -80,7 +89,7 @@ public class GCTest {
                 LOOKUP.findStatic(T.class, "f1", MethodType.methodType(int.class)));
 
         // Monitor LambdaForm GC
-        lform = new PhantomReference<>(mh.form, rq);
+        lform = new PhantomReference<>(MethodHandleHelper.getLambdaForm(mh), rq);
 
         test(0);
         WB.clearInlineCaches();

@@ -66,6 +66,7 @@ jdk/jshell/ToolBasicTest.java                                                   
 # javac
 
 tools/javac/Paths/AbsolutePathTest.java                                         8055768    generic-all    ToolBox does not close opened files
+tools/javac/Paths/MineField.sh                                                  8149599	   generic-all    needs rewrite
 tools/javac/annotations/typeAnnotations/failures/CantAnnotatePackages.java      8057679    generic-all    clarify error messages trying to annotate scoping
 tools/javac/annotations/typeAnnotations/failures/CantAnnotateScoping.java       8057679    generic-all    clarify error messages trying to annotate scoping
 tools/javac/annotations/typeAnnotations/failures/CantAnnotateStaticClass2.java  8057679    generic-all    clarify error messages trying to annotate scoping

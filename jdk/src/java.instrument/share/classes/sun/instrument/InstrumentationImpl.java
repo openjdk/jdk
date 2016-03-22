@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 package sun.instrument;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Module;
 import java.lang.reflect.AccessibleObject;
 
 import java.lang.instrument.ClassFileTransformer;
@@ -37,6 +38,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 
+import java.util.Objects;
 import java.util.jar.JarFile;
 
 /*
@@ -225,6 +227,14 @@ public class InstrumentationImpl implements Instrumentation {
         setNativeMethodPrefixes(mNativeAgent, prefixes, mgr.isRetransformable());
     }
 
+    @Override
+    public void addModuleReads(Module module, Module other) {
+        Objects.requireNonNull(module);
+        Objects.requireNonNull(other);
+        jdk.internal.module.Modules.addReads(module, other);
+    }
+
+
     private TransformerManager
     findTransformerManager(ClassFileTransformer transformer) {
         if (mTransformerManager.includesTransformer(transformer)) {
@@ -387,9 +397,6 @@ public class InstrumentationImpl implements Instrumentation {
         } else {
             m.invoke(null, new Object[] { optionsString });
         }
-
-        // don't let others access a non-public premain method
-        setAccessible(m, false);
     }
 
     // WARNING: the native code knows the name & signature of this method
@@ -414,6 +421,7 @@ public class InstrumentationImpl implements Instrumentation {
     // WARNING: the native code knows the name & signature of this method
     private byte[]
     transform(  ClassLoader         loader,
+                Module              module,
                 String              classname,
                 Class<?>            classBeingRedefined,
                 ProtectionDomain    protectionDomain,
@@ -422,10 +430,19 @@ public class InstrumentationImpl implements Instrumentation {
         TransformerManager mgr = isRetransformer?
                                         mRetransfomableTransformerManager :
                                         mTransformerManager;
+        // module is null when not a class load or when loading a class in an
+        // unnamed module and this is the first type to be loaded in the package.
+        if (module == null) {
+            if (classBeingRedefined != null) {
+                module = classBeingRedefined.getModule();
+            } else {
+                module = loader.getUnnamedModule();
+            }
+        }
         if (mgr == null) {
             return null; // no manager, no transform
         } else {
-            return mgr.transform(   loader,
+            return mgr.transform(   module,
                                     classname,
                                     classBeingRedefined,
                                     protectionDomain,

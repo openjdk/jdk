@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.tools.doclets.formats.html;
 import java.io.IOException;
 
 import com.sun.javadoc.*;
-import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 
@@ -65,24 +64,6 @@ public class WriterFactoryImpl implements WriterFactory {
         PackageDoc prevPkg, PackageDoc nextPkg) throws Exception {
         return new PackageWriterImpl(configuration, packageDoc,
             prevPkg, nextPkg);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public ProfileSummaryWriter getProfileSummaryWriter(Profile profile,
-        Profile prevProfile, Profile nextProfile) throws Exception {
-        return new ProfileWriterImpl(configuration, profile,
-            prevProfile, nextProfile);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public ProfilePackageSummaryWriter getProfilePackageSummaryWriter(PackageDoc packageDoc,
-        PackageDoc prevPkg, PackageDoc nextPkg, Profile profile) throws Exception {
-        return new ProfilePackageWriterImpl(configuration, packageDoc,
-            prevPkg, nextPkg, profile);
     }
 
     /**

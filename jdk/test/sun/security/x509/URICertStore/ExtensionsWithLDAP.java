@@ -51,6 +51,7 @@ import sun.net.spi.nameservice.NameServiceDescriptor;
  * @test
  * @bug 8134708
  * @summary Check if LDAP resources from CRLDP and AIA extensions can be loaded
+ * @modules java.base/sun.net.spi.nameservice
  * @run main/othervm ExtensionsWithLDAP
  */
 public class ExtensionsWithLDAP {

@@ -27,7 +27,7 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @build DA TA Test TestProcessor
- * @compile -proc:only -processor TestProcessor AnnoTreeTests.java
+ * @compile -XDaccessInternalAPI -proc:only -processor TestProcessor AnnoTreeTests.java
  */
 
 @Test(4)

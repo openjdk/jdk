@@ -39,6 +39,7 @@
 import com.sun.org.apache.xml.internal.serializer.EncodingInfo;
 import com.sun.org.apache.xml.internal.serializer.Encodings;
 import java.io.InputStreamReader;
+import java.lang.reflect.Module;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -61,7 +62,8 @@ public class CheckEncodingPropertiesFile {
 
     public static void main(String[] args) throws Exception {
         Properties props = new Properties();
-        try (InputStreamReader is = new InputStreamReader(ClassLoader.getSystemResourceAsStream(ENCODINGS_FILE))) {
+        Module xmlModule = EncodingInfo.class.getModule();
+        try (InputStreamReader is = new InputStreamReader(xmlModule.getResourceAsStream(ENCODINGS_FILE))) {
             props.load(is);
         }
 
@@ -71,7 +73,7 @@ public class CheckEncodingPropertiesFile {
            // Check that the content of the Encodings.properties included in
            // the tested build image matches the content of the file in the source
            // jaxp tree of the jdk forest.
-           throw new RuntimeException("UTF8 key missing in " + ClassLoader.getSystemResource(ENCODINGS_FILE));
+           throw new RuntimeException("UTF8 key missing in " + ENCODINGS_FILE);
        }
 
         //printAllCharsets();

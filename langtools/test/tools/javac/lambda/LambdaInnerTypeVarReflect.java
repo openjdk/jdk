@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary A lambda containing an inner class referencing an external type var
  * @author  Robert Field
  * @modules jdk.compiler
+ *          jdk.jdeps/com.sun.tools.javap
  * @run main LambdaInnerTypeVarReflect
  */
 

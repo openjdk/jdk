@@ -25,7 +25,6 @@
  * @bug 4313887 7006126
  * @summary Unit test for java.nio.file.spi.FileSystemProvider
  * @build TestProvider SetDefaultProvider
- * @ignore JDK-8129343
  * @run main/othervm -Djava.nio.file.spi.DefaultFileSystemProvider=TestProvider SetDefaultProvider
  */
 

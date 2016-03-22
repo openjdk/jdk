@@ -433,8 +433,11 @@ public class Main {
         InputStream sysIn = null;
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         for (String ext : exts) {
-            sysIn = cl.getResourceAsStream("com/sun/tools/script/shell/init." +
-                    ext);
+            try {
+                sysIn = Main.class.getModule().getResourceAsStream("com/sun/tools/script/shell/init." + ext);
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
             if (sysIn != null) break;
         }
         if (sysIn != null) {

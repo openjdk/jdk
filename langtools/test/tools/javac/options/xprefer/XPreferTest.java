@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,7 @@ public class XPreferTest {
             com.sun.tools.javac.Main.compile(new String[] {
                     "-verbose",
                     option.optionString,
+                    "-source", "8", "-target", "8",
                     "-sourcepath", Dir.SOURCE_PATH.file.getPath(),
                     "-classpath", Dir.CLASS_PATH.file.getPath(),
                     "-Xbootclasspath/p:" + Dir.BOOT_PATH.file.getPath(),

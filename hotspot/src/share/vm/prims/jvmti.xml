@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  or visit www.oracle.com if you need additional information or have any
  questions.
-  
+
 -->
 
 <!DOCTYPE specification [
@@ -356,9 +356,9 @@
  ]>
 
 <specification label="JVM(TM) Tool Interface"
-        majorversion="1"
-        minorversion="2"
-        microversion="3">
+        majorversion="9"
+        minorversion="0"
+        microversion="0">
   <title subtitle="Version">
     <tm>JVM</tm> Tool Interface
   </title>
@@ -862,6 +862,23 @@ Agent_OnUnload_L(JavaVM *vm)</example>
     The <functionlink id="SetNativeMethodPrefix"/> allows native methods
     to be instrumented by the use of wrapper methods.
   </intro>
+
+<intro id="bcimodules" label="Bytecode Instrumentation of code in modules">
+  Agents that instrument code in named modules may need to arrange for those
+  modules to read other modules. If code is instrumented to invoke a method
+  in a support class in another module, then the module of the instrumented
+  code should read the module of the supporting class. Furthermore, the
+  supporting class will only be accessible to the instrumented code if
+  it is <code>public</code> and in a package that is exported by its module.
+  Agents can use the JNI functions <code>CanReadModule</code> and
+  <code>AddModuleReads</code> to test and update a module to read another.
+  <p/>
+  As an aid to agents that deploy supporting classes on the search path of
+  the bootstrap class loader, or the search path of the class loader that
+  loads the main class, the Java virtual machine arranges for the module
+  of classes transformed by the <eventlink id="ClassFileLoadHook"/> event to
+  read the unnamed module of both class loaders.
+</intro>
 
   <intro id="mUTF" label="Modified UTF-8 String Encoding">
     <jvmti/> uses modified UTF-8 to encode character strings.
@@ -1880,10 +1897,6 @@ jvmtiEnv *jvmti;
 	  <outptr><struct>jvmtiThreadInfo</struct></outptr>
 	  <description>
 	    On return, filled with information describing the specified thread.
-	    <p/>
-	    For JDK 1.1 implementations that don't
-	    recognize context class loaders, 
-	    the <code>context_class_loader</code> field will be NULL.
 	  </description>
 	</param>
       </parameters>
@@ -6460,6 +6473,43 @@ class C2 extends C1 implements I2 {
     </function>
   </category>
 
+  <category id="module" label="Module">
+
+    <intro>
+    </intro>
+
+    <function id="GetAllModules" num="3" since="9">
+      <synopsis>Get All Modules</synopsis>
+      <description>
+	Return an array of all modules loaded in the virtual machine.
+	The number of modules in the array is returned via
+	<code>module_count_ptr</code>, and the array itself via
+	<code>modules_ptr</code>.
+	<p/>
+      </description>
+      <origin>new</origin>
+      <capabilities>
+      </capabilities>
+      <parameters>
+	<param id="module_count_ptr">
+	  <outptr><jint/></outptr>
+	  <description>
+	    On return, points to the number of returned modules.
+	  </description>
+	</param>
+	<param id="modules_ptr">
+	  <allocbuf outcount="module_count_ptr"><jobject/></allocbuf>
+	    <description>
+	      On return, points to an array of references, one
+              for each module.
+	    </description>
+	</param>
+      </parameters>
+      <errors>
+      </errors>
+    </function>
+  </category>
+
   <category id="class" label="Class">
 
     <intro>
@@ -6508,9 +6558,6 @@ class C2 extends C1 implements I2 {
 	either by defining it directly or by delegation to another class loader.
 	See <vmspec chapter="5.3"/>.
 	<p/>
-	For JDK version 1.1 implementations that don't
-	recognize the distinction between initiating and defining class loaders,
-	this function should return all classes loaded in the virtual machine.
 	The number of classes in the array is returned via
 	<code>class_count_ptr</code>, and the array itself via
 	<code>classes_ptr</code>.
@@ -9941,6 +9988,12 @@ myInit() {
           See <eventlink id="ResourceExhausted"/>.
 	</description>
       </capabilityfield>
+      <capabilityfield id="can_generate_early_vmstart" since="9">
+        <description>
+          Can generate the <code>VMStart</code> event early.
+          See <eventlink id="VMStart"/>.
+        </description>
+      </capabilityfield>
     </capabilitiestypedef>
 
     <function id="GetPotentialCapabilities" jkernel="yes" phase="onload" num="140">
@@ -12351,7 +12404,7 @@ myInit() {
     </parameters>
   </event>
 
-  <event label="Class File Load Hook" phase="any"
+  <event label="Class File Load Hook" phase="start"
 	 id="ClassFileLoadHook" const="JVMTI_EVENT_CLASS_FILE_LOAD_HOOK" num="54">
     <description>
       This event is sent when the VM obtains class file data,
@@ -12367,9 +12420,9 @@ myInit() {
       <internallink id="bci">bytecode instrumentation</internallink>
       for usage information.
       <p/>
-    This event may be sent before the VM is initialized (the primordial 
-    <functionlink id="GetPhase">phase</functionlink>). During this time
-    no VM resources should be created.  Some classes might not be compatible
+    This event may be sent before the VM is initialized (the start 
+    <functionlink id="GetPhase">phase</functionlink>).
+    Some classes might not be compatible
     with the function (eg. ROMized classes) and this event will not be
     generated for these classes.
     <p/>
@@ -12378,9 +12431,7 @@ myInit() {
     using the memory allocation function 
     <functionlink id="Allocate"></functionlink> because the
     VM is responsible for freeing the new class file data buffer
-    using <functionlink id="Deallocate"></functionlink>.  
-    Note that <functionlink id="Allocate"></functionlink>
-    is permitted during the primordial phase.
+    using <functionlink id="Deallocate"></functionlink>.
     <p/>
     If the agent wishes to modify the class file, it must set 
     <code>new_class_data</code> to point
@@ -12427,8 +12478,6 @@ myInit() {
         </outptr>
           <description>
             The JNI environment of the event (current) thread.
-	    Will be <code>NULL</code> if sent during the primordial 
-            <functionlink id="GetPhase">phase</functionlink>.
           </description>
       </param>
       <param id="class_being_redefined">
@@ -12496,8 +12545,27 @@ myInit() {
       The VM initialization event signals the start of the VM.
       At this time JNI is live but the VM is not yet fully initialized.
       Once this event is generated, the agent is free to call any JNI function.
-      This event signals the beginning of the start phase, 
+      This event signals the beginning of the start phase,
       <jvmti/> functions permitted in the start phase may be called.
+      <p/>
+      The timing of this event may depend on whether the agent has added the
+      <internallink id="jvmtiCapabilities.can_generate_early_vmstart">
+      <code>can_generate_early_vmstart</code></internallink> capability or not.
+      If the capability has been added then the VM posts the event as early
+      as possible. The VM is capable of executing bytecode but it may not have
+      initialized to the point where it can load classes in modules other than
+      <code>java.base</code>. Agents that do load-time instrumentation in this
+      phase must take great care when instrumenting code that potentially
+      executes in this phase. Care should also be taken with JNI
+      <code>FindClass</code> as it may not be possible to load classes that are
+      not in the <code>java.base</code> module.
+      If the capability has not been added then the VM delays posting this
+      event until it is capable of loading classes in modules other than
+      <code>java.base</code> or the VM has completed its initialization.
+      Agents that create more than one JVM TI environment, where the
+      capability is added to some but not all environments, may observe the
+      start phase beginning earlier in the JVM TI environments that possess
+      the capabilty.
       <p/>
       In the case of VM start-up failure, this event will not be sent.
     </description>
@@ -12576,7 +12644,7 @@ myInit() {
     </parameters>
   </event>
 
-  <event label="Compiled Method Load"
+  <event label="Compiled Method Load" phase="start"
 	 id="CompiledMethodLoad" const="JVMTI_EVENT_COMPILED_METHOD_LOAD" num="68">
     <description>
       Sent when a method is compiled and loaded into memory by the VM.
@@ -12667,7 +12735,7 @@ myInit() {
     </parameters>
   </event>
 
-  <event label="Compiled Method Unload"
+  <event label="Compiled Method Unload" phase="start"
 	 id="CompiledMethodUnload" const="JVMTI_EVENT_COMPILED_METHOD_UNLOAD" num="69">
     <description>
       Sent when a compiled method is unloaded from memory.
@@ -14339,6 +14407,17 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="19 June 2013" version="1.2.3">
       Added support for statically linked agents.
+  </change>
+  <change date="20 January 2016" version="9.0.0">
+      Support for modules:
+       - The majorversion is 9 now
+       - The ClassFileLoadHook events are not sent during the primordial phase anymore.
+       - Add new function GetAllModules
+  </change>
+  <change date="17 February 2016" version="9.0.0">
+      Support for modules:
+       - Add new capability can_generate_early_vmstart
+       - Allow CompiledMethodLoad events at start phase
   </change>
 </changehistory>
 
