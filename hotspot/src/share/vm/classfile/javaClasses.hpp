@@ -155,11 +155,6 @@ class java_lang_String : AllStatic {
   }
 
   static unsigned int hash_code(oop java_string);
-  static unsigned int latin1_hash_code(typeArrayOop value, int len);
-
-  // This is the string hash code used by the StringTable, which may be
-  // the same as String.hashCode or an alternate hash code.
-  static unsigned int hash_string(oop java_string);
 
   static bool equals(oop java_string, jchar* chars, int len);
   static bool equals(oop str1, oop str2);
