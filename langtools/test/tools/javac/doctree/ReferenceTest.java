@@ -57,6 +57,7 @@ import javax.tools.Diagnostic.Kind;
 /**
  * {@link java.lang        Package}
  * {@link java.lang.ERROR  Bad}
+ * {@link java.lang#ERROR  Bad}
  *
  * {@link java.lang.String Class}
  * {@link           String Class}
@@ -81,6 +82,7 @@ import javax.tools.Diagnostic.Kind;
  *
  * @see java.lang        Package
  * @see java.lang.ERROR  Bad
+ * @see java.lang#ERROR  Bad
  *
  * @see java.lang.String Class
  * @see           String Class

@@ -41,9 +41,10 @@ import test.java.awt.regtesthelpers.Util;
 @bug 6777370
 @summary Issues when resizing the JFrame with HW components
 @author sergey.grinev@oracle.com: area=awt.mixing
-@library ../../regtesthelpers
+@library /java/awt/patchlib  ../../regtesthelpers
 @modules java.desktop/sun.awt
          java.desktop/java.awt.peer
+@build java.desktop/java.awt.Helper
 @build Util
 @run main MixingFrameResizing
  */

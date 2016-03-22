@@ -27,7 +27,7 @@
  * @summary This test verifies that class cross references work properly.
  * @author jamieh
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @build TestClassCrossReferences
  * @run main TestClassCrossReferences

@@ -28,8 +28,12 @@ public class T6589361 {
                 // Note: Zip/Jar entry names use '/', not File.separator, but just to be sure,
                 // we normalize the filename as well.
                 if (file.getName().replace(File.separatorChar, '/').contains("java/lang/Object.class")) {
-                    String str = fm.inferBinaryName(StandardLocation.CLASS_PATH, file);
+                    String str = fm.inferBinaryName(StandardLocation.PLATFORM_CLASS_PATH, file);
                     if (!str.equals("java.lang.Object")) {
+                        System.err.println("file object: " + file);
+                        System.err.println("      class: " + file.getClass());
+                        System.err.println("       name: " + file.getName());
+                        System.err.println("binary name: " + str);
                         throw new AssertionError("Error in JavacFileManager.inferBinaryName method!");
                     }
                     else {

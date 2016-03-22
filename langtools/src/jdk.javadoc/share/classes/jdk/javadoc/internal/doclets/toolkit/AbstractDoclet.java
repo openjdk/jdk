@@ -107,7 +107,6 @@ public abstract class AbstractDoclet {
             return false;
         } catch (DocletAbortException e) {
             Throwable cause = e.getCause();
-            // e.printStackTrace();
             if (cause != null) {
                 if (cause.getLocalizedMessage() != null) {
                     configuration.reporter.print(ERROR, cause.getLocalizedMessage());
@@ -163,6 +162,7 @@ public abstract class AbstractDoclet {
 
         PackageListWriter.generate(configuration);
         generatePackageFiles(classtree);
+        generateModuleFiles();
 
         generateOtherFiles(root, classtree);
         configuration.tagletManager.printReport();
@@ -181,6 +181,12 @@ public abstract class AbstractDoclet {
         AbstractBuilder serializedFormBuilder = builderFactory.getSerializedFormBuilder();
         serializedFormBuilder.build();
     }
+
+    /**
+     * Generate the module documentation.
+     *
+     */
+    protected abstract void generateModuleFiles() throws Exception;
 
     /**
      * Generate the package documentation.

@@ -93,6 +93,7 @@ public class ShellFolderMemoryLeak {
         String command = javaPath + File.separator + "bin" + File.separator
                 + "java -Xmx256M" + arg1 + " -cp "
                 + classPathDir
+                + " -XaddExports:java.desktop/sun.awt.shell=ALL-UNNAMED"
                 + " ShellFolderMemoryLeak " + arg2;
         process = Runtime.getRuntime().exec(command);
         BufferedReader input = null;

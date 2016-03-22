@@ -27,6 +27,13 @@
  * @summary Check the platform classpath contains the correct elements.
  * @library /tools/lib
  * @build ToolBox ElementStructureTest
+ * @modules jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.compiler/com.sun.tools.javac.platform
+ *          jdk.compiler/com.sun.tools.javac.util
+ *          jdk.jdeps/com.sun.tools.classfile
+ *          jdk.jdeps/com.sun.tools.javap
  * @run main ElementStructureTest
  */
 
@@ -70,6 +77,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -249,7 +257,7 @@ public class ElementStructureTest {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         JavacTaskImpl task = (JavacTaskImpl) compiler.getTask(null, null, null, options, null, files);
 
-        task.parse();
+        task.analyze();
 
         JavaFileManager fm = task.getContext().get(JavaFileManager.class);
 
@@ -479,6 +487,11 @@ public class ElementStructureTest {
                 ex.printStackTrace();
             }
             return null;
+        }
+
+        @Override
+        public Void visitModule(ModuleElement e, Void p) {
+            throw new IllegalStateException("Not supported yet.");
         }
 
         @Override

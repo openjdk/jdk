@@ -78,6 +78,7 @@ Now we can use the content + data type in declaring event fields.
                   type="U8" builtin_type="CLASS">
       <value type="CLASS" field="loaderClass" label="ClassLoader"/>
       <value type="SYMBOL" field="name" label="Name"/>
+      <value type="PACKAGE" field="package" label="Package"/>
       <value type="SHORT" field="modifiers" label="Access modifiers"/>
     </content_type>
 
@@ -173,6 +174,21 @@ Now we can use the content + data type in declaring event fields.
     <content_type id="InflateCause" hr_name="Inflation Cause"
                   type="U8" jvm_type="INFLATECAUSE">
       <value type="UTF8" field="cause" label="cause" />
+    </content_type>
+
+    <content_type id="Module" hr_name="Module"
+              type="U8" jvm_type="MODULE">
+      <value type="SYMBOL" field="name" label="Name"/>
+      <value type="SYMBOL" field="version" label="Version"/>
+      <value type="SYMBOL" field="location" label="Location"/>
+      <value type="CLASS" field="classLoader" label="ClassLoader"/>
+    </content_type>
+
+    <content_type id="Package" hr_name="Package"
+              type="U8" jvm_type="PACKAGE">
+      <value type="SYMBOL" field="name" label="Name"/>
+      <value type="MODULE" field="module" label="Module"/>
+      <value type="BOOLEAN" field="exported" label="Exported"/>
     </content_type>
   </content_types>
 
@@ -285,6 +301,12 @@ Now we can use the content + data type in declaring event fields.
          eventually be written into the recording constant pool -->
     <primary_type symbol="CLASS" datatype="U8" contenttype="CLASS"
                   type="const Klass*" sizeop="sizeof(u8)"/>
+
+    <primary_type symbol="MODULE" datatype="U8" contenttype="MODULE"
+                  type="const ModuleEntry*" sizeop="sizeof(u8)"/>
+
+    <primary_type symbol="PACKAGE" datatype="U8" contenttype="PACKAGE"
+              type="const PackageEntry*" sizeop="sizeof(u8)"/>
 
     <!-- A Method *. The method is marked as "used" and will eventually be
          written into the recording constant pool. -->

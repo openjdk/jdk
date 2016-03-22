@@ -28,7 +28,8 @@
   @author oleg.sukhodolsky area=awt.grab
   @modules java.desktop/java.awt.peer
            java.desktop/sun.awt
-  @library ../../regtesthelpers
+  @library /java/awt/patchlib  ../../regtesthelpers
+  @build java.desktop/java.awt.Helper
   @build Util UtilInternal
   @run main EmbeddedFrameTest1
 */

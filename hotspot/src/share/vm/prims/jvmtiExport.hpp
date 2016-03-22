@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,8 @@ class JvmtiExport : public AllStatic {
   JVMTI_SUPPORT_FLAG(can_post_method_exit)
   JVMTI_SUPPORT_FLAG(can_pop_frame)
   JVMTI_SUPPORT_FLAG(can_force_early_return)
+
+  JVMTI_SUPPORT_FLAG(early_vmstart_recorded)
 
   friend class JvmtiEventControllerPrivate;  // should only modify these flags
   JVMTI_SUPPORT_FLAG(should_post_single_step)
@@ -213,6 +215,8 @@ class JvmtiExport : public AllStatic {
     _all_dependencies_are_recorded = (on != 0);
   }
 
+  // Add read edges to the unnamed modules of the bootstrap and app class loaders
+  static void add_default_read_edges(Handle h_module, TRAPS) NOT_JVMTI_RETURN;
 
   // let JVMTI know that the JVM_OnLoad code is running
   static void enter_onload_phase() NOT_JVMTI_RETURN;
@@ -221,6 +225,7 @@ class JvmtiExport : public AllStatic {
   static void enter_primordial_phase() NOT_JVMTI_RETURN;
 
   // let JVMTI know that the VM isn't up yet but JNI is live
+  static void enter_early_start_phase() NOT_JVMTI_RETURN;
   static void enter_start_phase() NOT_JVMTI_RETURN;
 
   // let JVMTI know that the VM is fully up and running now
@@ -270,6 +275,7 @@ class JvmtiExport : public AllStatic {
   static bool hide_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN_(false);
 
   // Methods that notify the debugger that something interesting has happened in the VM.
+  static void post_early_vm_start        () NOT_JVMTI_RETURN;
   static void post_vm_start              () NOT_JVMTI_RETURN;
   static void post_vm_initialized        () NOT_JVMTI_RETURN;
   static void post_vm_death              () NOT_JVMTI_RETURN;

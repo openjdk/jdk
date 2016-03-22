@@ -26,7 +26,15 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library / /testlibrary
- * @compile ../common/CompilerToVMHelper.java
+ * @library ../common/patches
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.org.objectweb.asm.tree
+ *          jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.code
+ *          jdk.vm.ci/jdk.vm.ci.meta
+ *          jdk.vm.ci/jdk.vm.ci.runtime
+ * @ignore 8144964
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.common.JVMCIHelpers
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  * @run main jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
@@ -38,7 +46,6 @@
  *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  *     compiler.jvmci.common.CTVMUtilities
  *     compiler.jvmci.common.testcases.SimpleClass
- *     jdk.vm.ci.hotspot.CompilerToVMHelper
  *     jdk.test.lib.Asserts
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *     -Djvmci.compiler=EmptyCompiler -Xbootclasspath/a:. -Xmixed

@@ -142,6 +142,7 @@ public class DocLintTest {
         fm = javadoc.getStandardFileManager(null, null, null);
         try {
             fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(new File(".")));
+            fm.setLocation(StandardLocation.CLASS_PATH, Collections.<File>emptyList());
             files = Arrays.asList(new TestJFO("Test.java", code));
 
             test(Collections.<String>emptyList(),

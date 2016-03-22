@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.io.*;
  * @test
  * @bug 6863746
  * @summary javap should not scan ct.sym by default
- * @modules jdk.jdeps
+ * @modules jdk.jdeps/com.sun.tools.javap
  */
 
 public class T6863746 {

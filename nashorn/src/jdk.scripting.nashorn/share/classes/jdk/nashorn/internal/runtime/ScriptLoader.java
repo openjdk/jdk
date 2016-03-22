@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime;
 
+import java.lang.reflect.Module;
 import java.security.CodeSource;
 import java.util.Objects;
 
@@ -35,6 +36,8 @@ import java.util.Objects;
 final class ScriptLoader extends NashornLoader {
     private static final String NASHORN_PKG_PREFIX = "jdk.nashorn.internal.";
 
+    private volatile boolean structureAccessAdded;
+    private final Module scriptModule;
     private final Context context;
 
     /*package-private*/ Context getContext() {
@@ -47,13 +50,39 @@ final class ScriptLoader extends NashornLoader {
     ScriptLoader(final ClassLoader parent, final Context context) {
         super(parent);
         this.context = context;
+
+        // new scripts module, it's specific exports and read-edges
+        scriptModule = defineModule("jdk.scripting.nashorn.scripts", this);
+        addModuleExports(scriptModule, SCRIPTS_PKG, nashornModule);
+        addReadsModule(scriptModule, nashornModule);
+        addReadsModule(scriptModule, Object.class.getModule());
+
+        // specific exports from nashorn to new scripts module
+        nashornModule.addExports(OBJECTS_PKG, scriptModule);
+        nashornModule.addExports(RUNTIME_PKG, scriptModule);
+        nashornModule.addExports(RUNTIME_ARRAYS_PKG, scriptModule);
+        nashornModule.addExports(RUNTIME_LINKER_PKG, scriptModule);
+        nashornModule.addExports(SCRIPTS_PKG, scriptModule);
+
+        // nashorn needs to read scripts module methods,fields
+        nashornModule.addReads(scriptModule);
     }
 
     @Override
     protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
         checkPackageAccess(name);
         if (name.startsWith(NASHORN_PKG_PREFIX)) {
-            return context.getSharedLoader().loadClass(name);
+            final StructureLoader sharedCl = context.getSharedLoader();
+            final Class<?> cl = sharedCl.loadClass(name);
+            if (! structureAccessAdded) {
+                if (cl.getClassLoader() == sharedCl) {
+                    structureAccessAdded = true;
+                    final Module structModule = sharedCl.getModule();
+                    addModuleExports(structModule, SCRIPTS_PKG, scriptModule);
+                    addReadsModule(scriptModule, structModule);
+                }
+            }
+            return cl;
         }
         return super.loadClass(name, resolve);
     }

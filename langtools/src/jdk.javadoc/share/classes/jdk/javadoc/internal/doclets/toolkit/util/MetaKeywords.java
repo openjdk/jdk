@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 import java.util.*;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
@@ -106,6 +107,19 @@ public class MetaKeywords {
             result.add(pkgName + " " + "package");
         }
         return result;
+    }
+
+    /**
+     * Get the module keywords.
+     *
+     * @param mdle the module being documented
+     */
+    public List<String> getMetaKeywordsForModule(ModuleElement mdle) {
+        if (config.keywords) {
+            return Arrays.asList(mdle.getQualifiedName() + " " + "module");
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     /**

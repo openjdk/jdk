@@ -23,7 +23,7 @@
 
 package p;
 
-public class Bar extends javax.activity.NotCompactProfile {
+public class Bar {
     public String bar() {
         return "bar";
     }

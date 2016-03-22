@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,18 +74,7 @@ public class SelectToolTask extends Task {
 
     enum ToolChoices {
         NONE(""),
-        BOOSTRAP_JAVAC("bootstrap-javac", true) {
-            @Override
-            public ToolChoices baseTool() {
-                return JAVAC;
-            }
-        },
-        JAVAC("javac") {
-            @Override
-            public ToolChoices asBootstrap() {
-                return BOOSTRAP_JAVAC;
-            }
-        },
+        JAVAC("javac"),
         JAVADOC("javadoc"),
         JAVAH("javah"),
         JAVAP("javap"),
@@ -101,14 +90,6 @@ public class SelectToolTask extends Task {
         ToolChoices(String toolName, boolean bootstrap) {
             this.toolName = toolName;
             this.bootstrap = bootstrap;
-        }
-
-        public ToolChoices asBootstrap() {
-            return this;
-        }
-
-        public ToolChoices baseTool() {
-            return this;
         }
 
         @Override
@@ -146,15 +127,6 @@ public class SelectToolTask extends Task {
     }
 
     /**
-     * Set the name of the property which will be used to bootstrap the
-     * selected tool, if any. The property will remain unset.
-     * @param bootstrapProperty
-     */
-    public void setBootstrapProperty(String bootstrapProperty) {
-        this.bootstrapProperty = bootstrapProperty;
-    }
-
-    /**
      * Specify whether or not to pop up a dialog if the user has not specified
      * a default value for a property.
      * @param askIfUnset a boolean flag indicating to prompt the user or not
@@ -169,7 +141,6 @@ public class SelectToolTask extends Task {
 
         Properties props = readProperties(propertyFile);
         toolName = props.getProperty("tool.name");
-        toolBootstrap = props.getProperty("tool.bootstrap") != null;
         if (toolName != null) {
             toolArgs = props.getProperty(toolName + ".args", "");
         }
@@ -183,8 +154,6 @@ public class SelectToolTask extends Task {
         // finally, return required values, if any
         if (toolProperty != null && !(toolName == null || toolName.equals(""))) {
             p.setProperty(toolProperty, toolName);
-            if (toolBootstrap)
-                p.setProperty(bootstrapProperty, "true");
 
             if (argsProperty != null && toolArgs != null)
                 p.setProperty(argsProperty, toolArgs);
@@ -198,20 +167,15 @@ public class SelectToolTask extends Task {
 
         ToolChoices tool = (ToolChoices)toolChoice.getSelectedItem();
 
-        toolName = tool.baseTool().toolName;
-        toolBootstrap = tool.bootstrap;
+        toolName = tool.toolName;
         toolArgs = argsField.getText();
         if (defaultCheck.isSelected()) {
             if (toolName.equals("")) {
                 fileProps.remove("tool.name");
                 fileProps.remove("tool.bootstrap");
             } else {
+                fileProps.remove("tool.bootstrap");
                 fileProps.put("tool.name", toolName);
-                if (toolBootstrap) {
-                    fileProps.put("tool.bootstrap", "true");
-                } else {
-                    fileProps.remove("tool.bootstrap");
-                }
                 fileProps.put(toolName + ".args", toolArgs);
             }
             writeProperties(propertyFile, fileProps);
@@ -237,8 +201,6 @@ public class SelectToolTask extends Task {
         toolChoice = new JComboBox<>(toolChoices.toArray());
         ToolChoices tool = toolName != null ? ToolChoices.valueOf(toolName.toUpperCase()) : null;
         if (toolName != null) {
-            if (toolBootstrap)
-                tool = tool.asBootstrap();
             toolChoice.setSelectedItem(tool);
         }
         toolChoice.addItemListener(new ItemListener() {
@@ -348,14 +310,13 @@ public class SelectToolTask extends Task {
     String getDefaultArgsForTool(Properties props, ToolChoices tool) {
         if (tool == null)
             return "";
-        String toolName = tool.baseTool().toolName;
+        String toolName = tool.toolName;
         return toolName.equals("") ? "" : props.getProperty(toolName + ".args", "");
     }
 
     // Ant task parameters
     private boolean askIfUnset;
     private String toolProperty;
-    private String bootstrapProperty;
     private String argsProperty;
     private File propertyFile;
 
@@ -367,6 +328,5 @@ public class SelectToolTask extends Task {
 
     // Result values for the client
     private String toolName;
-    private boolean toolBootstrap;
     private String toolArgs;
 }

@@ -28,7 +28,7 @@
  *           non-qualified name, furthermore, ensure the right one is linked.
  * @author   jamieh
  * @library  ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    JavadocTester
  * @run main TestLinkTaglet
  */

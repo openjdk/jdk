@@ -32,13 +32,10 @@
     <property file="${user.home}/.nashorn.project.local.properties"/>
 
     <loadproperties srcFile="make/project.properties"/>
-    <path id="dist.path">
-         <pathelement location="${dist.dir}"/>
+    <path id="nashorn.jar.path">
+         <pathelement location="${nashorn.jar}"/>
     </path>
-    <path id="nashorn.boot.prefix.path">
-      <pathelement location="${dist.jar}"/>
-    </path>
-    <property name="boot.class.path" value="-Xbootclasspath/p:${toString:nashorn.boot.prefix.path}"/>
+    <property name="nashorn.override.option" value="-Xpatch:${build.classes.dir}"/>
     <condition property="svn.executable" value="/usr/local/bin/svn" else="svn">
       <available file="/usr/local/bin/svn"/>
     </condition>
@@ -136,7 +133,10 @@
   <target name="prepare" depends="init">
     <mkdir dir="${build.dir}"/>
     <mkdir dir="${build.classes.dir}"/>
-    <mkdir dir="${build.classes.dir}/META-INF/services"/>
+    <mkdir dir="${nashorn.module.classes.dir}"/>
+    <mkdir dir="${dynalink.module.classes.dir}"/>
+    <mkdir dir="${nashorn.shell.module.classes.dir}"/>
+    <mkdir dir="${nashorn.module.classes.dir}/META-INF/services"/>
     <mkdir dir="${build.test.classes.dir}"/>
     <mkdir dir="${dist.dir}"/>
     <mkdir dir="${dist.javadoc.dir}"/>
@@ -150,9 +150,8 @@
   </target>
 
   <target name="compile" depends="prepare" description="Compiles nashorn">
-    <javac srcdir="${src.dir}"
-           destdir="${build.classes.dir}"
-           classpath="${javac.classpath}"
+    <javac srcdir="${dynalink.module.src.dir}"
+           destdir="${dynalink.module.classes.dir}"
            source="${javac.source}"
            target="${javac.target}"
            debug="${javac.debug}"
@@ -163,36 +162,59 @@
       <compilerarg value="-Xdiags:verbose"/>
       <compilerarg value="-parameters"/>
     </javac>
-    <copy todir="${build.classes.dir}/META-INF/services">
-       <fileset dir="${meta.inf.dir}/services/"/>
-    </copy>
-     <copy todir="${build.classes.dir}/jdk/nashorn/api/scripting/resources">
+    <javac srcdir="${nashorn.module.src.dir}"
+           destdir="${nashorn.module.classes.dir}"
+           source="${javac.source}"
+           target="${javac.target}"
+           debug="${javac.debug}"
+           encoding="${javac.encoding}"
+           includeantruntime="false" fork="true">
+      <compilerarg value="-Xlint:all"/>
+      <compilerarg value="-XDignore.symbol.file"/>
+      <compilerarg value="-Xdiags:verbose"/>
+      <compilerarg value="-parameters"/>
+      <compilerarg value="${nashorn.override.option}"/>
+    </javac>
+    <javac srcdir="${nashorn.shell.module.src.dir}"
+           destdir="${nashorn.shell.module.classes.dir}"
+           source="${javac.source}"
+           target="${javac.target}"
+           debug="${javac.debug}"
+           encoding="${javac.encoding}"
+           includeantruntime="false" fork="true">
+      <compilerarg value="-Xlint:all"/>
+      <compilerarg value="-XDignore.symbol.file"/>
+      <compilerarg value="-Xdiags:verbose"/>
+      <compilerarg value="-parameters"/>
+      <compilerarg value="${nashorn.override.option}"/>
+    </javac>
+    <!-- -Xpatch does not like module-info.class files! -->
+    <delete>
+      <fileset dir="${build.classes.dir}" includes="**/module-info.class"/>
+    </delete>
+     <copy todir="${nashorn.module.classes.dir}/jdk/nashorn/api/scripting/resources">
        <fileset dir="${nashorn.module.src.dir}/jdk/nashorn/api/scripting/resources/"/>
     </copy>
-    <copy todir="${build.classes.dir}/jdk/nashorn/internal/runtime/resources">
+    <copy todir="${nashorn.module.classes.dir}/jdk/nashorn/internal/runtime/resources">
        <fileset dir="${nashorn.module.src.dir}/jdk/nashorn/internal/runtime/resources/"/>
     </copy>
-    <copy todir="${build.classes.dir}/jdk/nashorn/tools/resources">
+    <copy todir="${nashorn.module.classes.dir}/jdk/nashorn/tools/resources">
        <fileset dir="${nashorn.module.src.dir}/jdk/nashorn/tools/resources/"/>
     </copy>
-    <copy file="${dynalink.module.src.dir}/jdk/dynalink/support/messages.properties" todir="${build.classes.dir}/jdk/dynalink/support"/>
-    <copy file="${nashorn.module.src.dir}/jdk/nashorn/internal/codegen/anchor.properties" todir="${build.classes.dir}/jdk/nashorn/internal/codegen"/>
+    <copy file="${dynalink.module.src.dir}/jdk/dynalink/support/messages.properties" todir="${dynalink.module.classes.dir}/jdk/dynalink/support"/>
+    <copy file="${nashorn.module.src.dir}/jdk/nashorn/internal/codegen/anchor.properties" todir="${nashorn.module.classes.dir}/jdk/nashorn/internal/codegen"/>
 
-    <echo message="version_string=${nashorn.fullversion}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties"/>
-    <echo file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true">${line.separator}</echo>
-    <echo message="version_short=${nashorn.version}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true"/>
+    <echo message="version_string=${nashorn.fullversion}" file="${nashorn.module.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties"/>
+    <echo file="${nashorn.module.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true">${line.separator}</echo>
+    <echo message="version_short=${nashorn.version}" file="${nashorn.module.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true"/>
   </target>
 
   <target name="jar" depends="compile, run-nasgen, generate-cc-template" description="Creates nashorn.jar" unless="compile.suppress.jar">
-    <jar jarfile="${dist.jar}" manifest="${meta.inf.dir}/MANIFEST.MF" index="true" filesetmanifest="merge">
-      <!-- 
-        Exclude jjs classes from nashorn.jar to avoid desktop dependency.
-        We have a test to make sure basic nashorn code has only "compact1"
-        dependency - except for jjs shell code which has desktop dependency.
-      -->
-      <fileset dir="${build.classes.dir}">
-          <exclude name="**/jdk/nashorn/tools/jjs/*"/>
-      </fileset>
+    <jar jarfile="${dynalink.jar}">
+      <fileset dir="${dynalink.module.classes.dir}"/>
+    </jar>
+    <jar jarfile="${nashorn.jar}" index="true" filesetmanifest="merge">
+      <fileset dir="${nashorn.module.classes.dir}"/>
       <manifest>
         <attribute name="Archiver-Version" value="n/a"/>
         <attribute name="Build-Jdk" value="${java.runtime.version}"/>
@@ -204,6 +226,9 @@
         </section>
       </manifest>
     </jar>
+    <jar jarfile="${jjs.jar}">
+      <fileset dir="${nashorn.shell.module.classes.dir}"/>
+    </jar>
   </target>
 
   <target name="use-promoted-nashorn" depends="init">
@@ -212,35 +237,10 @@
     <property name="compile.suppress.jar" value="defined"/>
   </target>
 
-  <target name="build-fxshell" depends="jar">
-    <description>Builds the javafx shell.</description>
-    <mkdir dir="${fxshell.classes.dir}"/>
-    <javac srcdir="${fxshell.dir}"
-           destdir="${fxshell.classes.dir}"
-           classpath="${dist.jar}${path.separator}${javac.classpath}"
-           debug="${javac.debug}"
-           encoding="${javac.encoding}"
-           includeantruntime="false">
-    </javac>
-    <jar jarfile="${fxshell.jar}" manifest="${meta.inf.dir}/MANIFEST.MF" index="true" filesetmanifest="merge">
-      <fileset dir="${fxshell.classes.dir}"/>
-      <manifest>
-        <attribute name="Archiver-Version" value="n/a"/>
-        <attribute name="Build-Jdk" value="${java.runtime.version}"/>
-        <attribute name="Built-By" value="n/a"/>
-        <attribute name="Created-By" value="Ant jar task"/>
-        <section name="jdk/nashorn/">
-          <attribute name="Implementation-Title" value="Oracle Nashorn FXShell"/>
-          <attribute name="Implementation-Version" value="${nashorn.version}"/>
-        </section>
-      </manifest>
-    </jar>
-  </target>
-
   <!-- generate javadoc for all Nashorn and ASM classes -->
   <target name="javadoc" depends="jar">
     <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${nashorn.module.src.dir}/overview.html"
-        extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
+        windowtitle="${nashorn.product.name} ${nashorn.version}"
         additionalparam="-quiet" failonerror="true" useexternalfile="true">
       <arg value="${javadoc.option}"/>
       <classpath>
@@ -260,7 +260,7 @@
   <!-- generate javadoc for Nashorn classes -->
   <target name="javadocnh" depends="jar">
     <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="${nashorn.module.src.dir}/overview.html"
-        extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
+        windowtitle="${nashorn.product.name} ${nashorn.version}"
         additionalparam="-quiet" failonerror="true" useexternalfile="true">
       <arg value="${javadoc.option}"/>
       <classpath>
@@ -304,7 +304,7 @@
   <!-- generate shell.html for shell tool documentation -->
   <target name="shelldoc" depends="jar">
     <java classname="${nashorn.shell.tool}" dir="${basedir}" output="${dist.dir}/shell.html" failonerror="true" fork="true">
-      <jvmarg line="${boot.class.path}"/>
+      <jvmarg line="${nashorn.override.option}"/>
       <arg value="-scripting"/>
       <arg value="docs/genshelldoc.js"/>
     </java>
@@ -334,10 +334,11 @@
            debug="${javac.debug}"
            encoding="${javac.encoding}"
            includeantruntime="false" fork="true">
-        <compilerarg value="${boot.class.path}"/>
+        <compilerarg value="${nashorn.override.option}"/>
         <compilerarg value="-Xlint:unchecked"/>
         <compilerarg value="-Xlint:deprecation"/>
         <compilerarg value="-Xdiags:verbose"/>
+        <compilerarg value="-XaddExports:${test.module.imports}"/>
     </javac>
 
     <copy todir="${build.test.classes.dir}/META-INF/services">
@@ -379,7 +380,11 @@
   <target name="generate-policy-file" depends="prepare">
     <echo file="${build.dir}/nashorn.policy">
 
-grant codeBase "file:/${toString:dist.path}/nashorn.jar" {
+grant codeBase "file:/${basedir}/${dynalink.module.classes.dir}" {
+    permission java.security.AllPermission;
+};
+
+grant codeBase "file:/${basedir}/${nashorn.module.classes.dir}" {
     permission java.security.AllPermission;
 };
 
@@ -530,7 +535,6 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </fileset>
     <testng outputdir="${build.nosecurity.test.results.dir}/${testResultsSubDir}" classfilesetref="test.nosecurity.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
-      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} -Dbuild.dir=${build.dir}"/>
       <sysproperty key="nashorn.jar" value="${dist.dir}/nashorn.jar"/>
       <propertyset>
@@ -553,7 +557,6 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <property name="debug.test.jvmargs" value=""/>
     <testng outputdir="${build.test.results.dir}/${testResultsSubDir}" classfilesetref="test.classes"
             verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
-      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
       <jvmarg line="${debug.test.jvmargs}"/>
       <propertyset>
@@ -571,7 +574,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </testng>
   </target>
 
-  <target name="test" depends="prepare, javadocnh, test-pessimistic, test-optimistic"/>
+  <target name="test" depends="prepare, test-pessimistic, test-optimistic"/>
 
   <target name="test-optimistic" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <echo message="Running test suite in OPTIMISTIC mode..."/>
@@ -616,7 +619,6 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
-      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} -Dbuild.dir=${build.dir}"/>
       <propertyset>
         <propertyref prefix="testjfx-test-sys-prop."/>
@@ -636,7 +638,6 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
-      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
       <propertyset>
         <propertyref prefix="testmarkdown-test-sys-prop."/>
@@ -655,7 +656,6 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
-      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
       <propertyset>
         <propertyref prefix="nashorn."/>
@@ -675,7 +675,6 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   <target name="test262-parallel" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <!-- use just build.test.classes.dir to avoid referring to TestNG -->
     <java classname="${parallel.test.runner}" dir="${basedir}" fork="true" failonerror="true">
-      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
       <!-- avoid too many typeinfo cache files. Each script is run only once anyway -->
       <jvmarg line="-Dnashorn.typeInfo.disabled=true"/>
@@ -696,7 +695,6 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
       <java classname="${parallel.test.runner}" dir="${basedir}"
         failonerror="true"
         fork="true">
-      <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
       <classpath>
           <pathelement path="${run.test.classpath}"/>
@@ -715,7 +713,6 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   <target name="run" depends="jar"
       description="Run the shell with a sample script">
     <java classname="${nashorn.shell.tool}" fork="true" dir="samples">
-        <jvmarg line="${boot.class.path}"/>
         <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
         <arg value="-dump-on-error"/>
         <arg value="test.js"/>
@@ -725,7 +722,6 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   <target name="debug" depends="jar"
       description="Debug the shell with a sample script">
     <java classname="${nashorn.shell.tool}" fork="true" dir="samples">
-        <jvmarg line="${boot.class.path}"/>
         <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx}"/>
         <arg value="--print-code"/>
         <arg value="--verify-code"/>

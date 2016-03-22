@@ -46,7 +46,8 @@ public class T6403424 {
         // now compile B, which references A,
         // with TMP on classpath and tmp on bootclasspath
         File B_java = new File(testSrc, "B.java");
-        compile("-classpath",  TMP.getPath(),
+        compile("-source", "8", "-target", "8", // can't use -Xbootclasspath/p after 8
+                "-classpath",  TMP.getPath(),
                 "-Xbootclasspath/p:" + TMP.getPath().toLowerCase(),
                 "-d", ".",
                 B_java.getPath());

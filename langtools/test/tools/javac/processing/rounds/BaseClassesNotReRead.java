@@ -111,7 +111,8 @@ public class BaseClassesNotReRead extends AbstractProcessor {
         @Override
         public JavaFileObject getJavaFileForInput(Location location, String className, Kind kind)
                 throws IOException {
-            return new OnlyOneReadJavaFileObject(super.getJavaFileForInput(location, className, kind));
+            JavaFileObject fo = super.getJavaFileForInput(location, className, kind);
+            return (fo == null) ? null : new OnlyOneReadJavaFileObject(fo);
         }
 
         @Override
