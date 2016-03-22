@@ -513,21 +513,6 @@ char* java_lang_String::as_quoted_ascii(oop java_string) {
   return result;
 }
 
-unsigned int java_lang_String::hash_string(oop java_string) {
-  int          length = java_lang_String::length(java_string);
-  // Zero length string doesn't necessarily hash to zero.
-  if (length == 0) {
-    return StringTable::hash_string((jchar*) NULL, 0);
-  }
-
-  typeArrayOop value  = java_lang_String::value(java_string);
-  bool      is_latin1 = java_lang_String::is_latin1(java_string);
-  if (is_latin1) {
-    return StringTable::hash_string(value->byte_at_addr(0), length);
-  } else {
-    return StringTable::hash_string(value->char_at_addr(0), length);
-  }
-}
 
 Symbol* java_lang_String::as_symbol(Handle java_string, TRAPS) {
   oop          obj    = java_string();
