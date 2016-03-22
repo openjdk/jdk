@@ -1579,9 +1579,8 @@ public final class Files {
      * list of file type detectors. Installed file type detectors are loaded
      * using the service-provider loading facility defined by the {@link ServiceLoader}
      * class. Installed file type detectors are loaded using the system class
-     * loader. If the system class loader cannot be found then the extension class
-     * loader is used; If the extension class loader cannot be found then the
-     * bootstrap class loader is used. File type detectors are typically installed
+     * loader. If the system class loader cannot be found then the platform class
+     * loader is used. File type detectors are typically installed
      * by placing them in a JAR file on the application class path,
      * the JAR file contains a provider-configuration file
      * named {@code java.nio.file.spi.FileTypeDetector} in the resource directory

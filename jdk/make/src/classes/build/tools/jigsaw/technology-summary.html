@@ -1,0 +1,627 @@
+<html>
+<head>
+<title>JDK Technology Summary</title>
+<style type="text/css">
+table { border: 1px solid black; border-collapse: collapse; }
+tr.se-base { background-color: bisque; }
+tr.se-misc { background-color: lavender; }
+tr.se-ee   { background-color: lightgreen; }
+tr.se-ext  { background-color: pink; }
+td { font-family: monospace; padding: 4px; border: 1px solid; }
+</style>
+</head>
+
+<h1>JCP Technologies in the Modular JDK</h1>
+
+<p><em>Last updated 2015-03-06 (Added java.datatransfer. Assumes JNLP is modularized, and StAX joins the Java SE Platform.)</em></p>
+
+<p><a href="module-summary.html">JDK Module Summary</a> | Technologies in the <a href="https://docs.oracle.com/javase/8/docs/">Java SE Documentation</a></p>
+
+<table>
+<tr><th>Legend</th></tr>
+<tr class="se-base"><td><a href="https://jcp.org/en/jsr/platform?listBy=2&listByType=platform">JCP technology in the Java SE Platform only -- in java.base</a></td></tr>
+<tr class="se-misc"><td><a href="https://jcp.org/en/jsr/platform?listBy=2&listByType=platform">JCP technology in the Java SE Platform only -- not in java.base</a></td></tr>
+<tr class="se-ee"><td><a href="https://jcp.org/en/jsr/platform?listBy=3&listByType=platform">JCP technology in the Java SE Platform and the Java EE Platform</a></a></td></tr>
+<tr class="se-ext"><td><a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#endorsed-standards-apis">JCP technology in the Java SE Platform based on non-JCP standards</a></a></td></tr>
+<tr><td>JCP technology in neither the Java SE or EE Platforms</td></tr>
+</table>
+
+<p><em>An <strong>upgradeable</strong> module contains JCP technology that is in the Java SE Platform but is not exclusive to the Java SE Platform, i.e., the green and pink technologies. Most upgradeable modules are defined by loaders other than the bootstrap.</em></p>
+
+<br/>
+
+<table>
+<tr>
+<th>Technology</th>
+<th>Original JSR</th>
+<th><a href="https://jcp.org/en/procedures/jcp2#DEF">Original Target</a></th>
+<th>Module</th>
+<th><a href="https://jcp.org/en/procedures/jcp2#2.1.2">Evolved By</a></th>
+<th>History</th>
+<th>Profile/SE</th>
+<th>Loader</th>
+<th>Upg?</th>
+</tr>
+
+<tr class="se-misc">
+<td>JMX</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=3">3</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.management">java.management</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Print Service</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=6">6</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.desktop">java.desktop</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>SE</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Preferences</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=10">10</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.prefs">java.prefs</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Image I/O</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=15">15</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.desktop">java.desktop</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>SE</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>SASL</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=28">28</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.security.sasl"/>java.security.sasl</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Logging</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=47">47</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.logging">java.logging</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-base">
+<td>NIO</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=51">51</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.base"/>java.base</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr>
+<td>JNLP</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=56">56</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.desktop">java.jnlp</a></td>
+<td>Original JSR</td>
+<td></td>
+<td>N/A</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Beans Persistence</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=57">57</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.desktop">java.desktop</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>SE</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>GSS</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=72">72</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.security.jgss">java.security.jgss</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>XML Digital Signature</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=105">105</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.xml.crypto">java.xml.crypto</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>JDBC Rowset</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=114">114</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.sql.rowset">java.sql.rowset</a></td>
+<td>Original JSR</td>
+<td>Co-evolved with JDBC</td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>JMX Remote</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=160">160</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.management">java.management</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Profiling (Agent)</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=163">163</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.instrument">java.instrument</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Profiling (JMX)</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=163">163</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.management">java.management</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-base">
+<td>Concurrency Utilities</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=166">166</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.base"/>java.base</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-base">
+<td>Annotations</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=175">175</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.base"/>java.base</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>StAX</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=173">173</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.xml">java.xml</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a></td>
+<td>2</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Annotations (Language Model)</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=175">175</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.compiler"/>java.compiler</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Compiler</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=199">199</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.compiler">java.compiler</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-base">
+<td>Pack200</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=200">200</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.base"/>java.base</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-base">
+<td>NIO.2</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=203">203</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.base"/>java.base</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>JAXP</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=206">206</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.xml">java.xml</a></td>
+<td>UJSR for Java SE</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a></td>
+<td>2</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>JDBC</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=221">221</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.sql">java.sql</a></td>
+<td>Original JSR</td>
+<td>Co-evolved with JDBC Rowset</td>
+<td>2</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Scripting</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=223">223</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.scripting">java.scripting</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr>
+<td>Smart Card I/O</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=268">268</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.smartcardio">java.smartcardio</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
+<td>N/A</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Annotation Processing</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=269">269</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.compiler">java.compiler</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-base">
+<td>InvokeDynamic</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=292">292</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.base"/>java.base</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-base">
+<td>Type Annotations</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=308">308</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.base"/>java.base</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Type Annotations (Language Model)</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=308">308</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.compiler"/>java.compiler</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-base">
+<td>Date and Time</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=310">310</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.base"/>java.base</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-base">
+<td>Streams</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=335">335</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.base"/>java.base</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-base">
+<td>Collections, Math, I18N, I/O, Net, Reflection</td>
+<td>---</td>
+<td>---</td>
+<td><a href="module-summary.html#java.base"/>java.base</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-base">
+<td>JCA, JAAS, JSSE</td>
+<td>---</td>
+<td>---</td>
+<td><a href="module-summary.html#java.base"/>java.base</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>1</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Applet, AWT, Swing, Java 2D, Beans, A11Y, Sound</td>
+<td>---</td>
+<td>---</td>
+<td><a href="module-summary.html#java.desktop"/>java.desktop</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>SE</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>Data Transfer</td>
+<td>---</td>
+<td>---</td>
+<td><a href="module-summary.html#java.datatransfer"/>java.datatransfer</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>SE</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>JNDI</td>
+<td>---</td>
+<td>---</td>
+<td><a href="module-summary.html#java.naming"/>java.naming</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>3</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>RMI</td>
+<td>---</td>
+<td>---</td>
+<td><a href="module-summary.html#java.rmi"/>java.rmi</a></td>
+<td>UJSR for Java SE</td>
+<td></td>
+<td>2</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-misc">
+<td>JAF</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=925">925</a></td>
+<td>---</td>
+<td><a href="module-summary.html#java.activation">java.activation</a></a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
+<td>SE</td>
+<td>ext</td>
+<td>Yes</td>
+</tr>
+
+<tr class="se-ext">
+<td>RMI-IIOP, IDL</td>
+<td>(OMG)</td>
+<td>---</td>
+<td><a href="module-summary.html#java.corba"/>java.corba</a></td>
+<td>UJSR for Java SE</td>
+<td>Formerly an <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#endorsed-standards-apis">Endorsed Standard</a></td>
+<td>SE</td>
+<td>ext</td>
+<td>Yes</td>
+</tr>
+
+<tr class="se-ext">
+<td>DOM, SAX</td>
+<td>(W3C)</td>
+<td>---</td>
+<td><a href="module-summary.html#java.xml">java.xml</a></td>
+<td>UJSR for Java SE</td>
+<td>Formerly an <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#endorsed-standards-apis">Endorsed Standard</a></td>
+<td>2</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+<tr class="se-ee">
+<td>SAAJ</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=67">67</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.xml.ws">java.xml.ws</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (f.k.a. JAXM)</td>
+<td>SE</td>
+<td>ext</td>
+<td>Yes</td>
+</tr>
+
+<tr class="se-ee">
+<td>Web Services Metadata</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=181">181</a></td>
+<td>Java EE</td>
+<td><a href="module-summary.html#java.xml.ws">java.xml.ws</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
+<td>SE</td>
+<td>ext</td>
+<td>Yes</td>
+</tr>
+
+<tr class="se-ee">
+<td>JAXB</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=222">222</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.xml.bind">java.xml.bind</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a></td>
+<td>SE</td>
+<td>ext</td>
+<td>Yes</td>
+</tr>
+
+<tr class="se-ee">
+<td>JAXWS</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=224">224</a></td>
+<td>Java SE</td>
+<td><a href="module-summary.html#java.xml.ws">java.xml.ws</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a></td>
+<td>SE</td>
+<td>ext</td>
+<td>Yes</td>
+</tr>
+
+<!-- Alex: The Java SE Platform incorporates a cutdown version of the javax.annotation package from the Java EE Platform. -->
+<tr class="se-ee">
+<td>Common Annotations</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=250">250</a></td>
+<td>Java SE,EE</td>
+<td><a href="module-summary.html#java.annotations.common">java.annotations.common</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
+<td>SE</td>
+<td>ext</td>
+<td>Yes</td>
+</tr>
+
+<!-- Alex: The Java SE Platform incorporates a cutdown version of the javax.transaction package from the Java EE Platform. -->
+<tr class="se-ee">
+<td>JTA (non-XA)</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=907">907</a></td>
+<td>---</td>
+<td><a href="module-summary.html#java.transaction">java.transaction</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
+<td>SE</td>
+<td>ext</td>
+<td>Yes</td>
+</tr>
+
+<!-- Alex: The Java SE Platform incorporates the same version of the javax.transaction.xa package as the Java EE Platform. -->
+<tr class="se-ee">
+<td>JTA (XA)</td>
+<td><a href="https://jcp.org/en/jsr/detail?id=907">907</a></td>
+<td>---</td>
+<td><a href="module-summary.html#java.sql"/>java.sql</a></td>
+<td>Original JSR</td>
+<td>Formerly a <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/standards/#standalone-technologies">Standalone Technology</a> (unlisted)</td>
+<td>2</td>
+<td>boot</td>
+<td>No</td>
+</tr>
+
+</table>
+
+</html>

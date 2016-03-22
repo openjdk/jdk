@@ -57,7 +57,7 @@ public class TestUserDoclet extends Doclet {
         String thisClassName = TestUserDoclet.class.getName();
         Process p = new ProcessBuilder()
             .command(javadoc.getPath(),
-                "-J-Xbootclasspath:" + System.getProperty("sun.boot.class.path"),
+                "-J-Xpatch:" + System.getProperty("jdk.launcher.patch.0", ""),
                 "-doclet", thisClassName,
                 "-docletpath", testClasses.getPath(),
                 new File(testSrc, thisClassName + ".java").getPath())

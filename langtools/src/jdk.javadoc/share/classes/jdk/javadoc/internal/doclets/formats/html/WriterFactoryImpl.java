@@ -27,6 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.io.IOException;
 
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -38,6 +39,7 @@ import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeWriter;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
+import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
@@ -78,6 +80,15 @@ public class WriterFactoryImpl implements WriterFactory {
     public PackageSummaryWriter getPackageSummaryWriter(PackageElement packageElement,
             PackageElement prevPkg, PackageElement nextPkg) throws Exception {
         return new PackageWriterImpl(configuration, packageElement, prevPkg, nextPkg);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public ModuleSummaryWriter getModuleSummaryWriter(ModuleElement mdle,
+        ModuleElement prevModule, ModuleElement nextModule) throws Exception {
+        return new ModuleWriterImpl(configuration, mdle,
+            prevModule, nextModule);
     }
 
     /**

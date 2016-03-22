@@ -30,6 +30,7 @@ import static jdk.nashorn.internal.codegen.Compiler.binaryName;
 import static jdk.nashorn.internal.codegen.CompilerConstants.JS_OBJECT_DUAL_FIELD_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.JS_OBJECT_SINGLE_FIELD_PREFIX;
 
+import java.lang.reflect.Module;
 import java.security.ProtectionDomain;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 
@@ -40,11 +41,26 @@ final class StructureLoader extends NashornLoader {
     private static final String SINGLE_FIELD_PREFIX = binaryName(SCRIPTS_PACKAGE) + '.' + JS_OBJECT_SINGLE_FIELD_PREFIX.symbolName();
     private static final String DUAL_FIELD_PREFIX   = binaryName(SCRIPTS_PACKAGE) + '.' + JS_OBJECT_DUAL_FIELD_PREFIX.symbolName();
 
+    private final Module structuresModule;
+
     /**
      * Constructor.
      */
     StructureLoader(final ClassLoader parent) {
         super(parent);
+
+        // new structures module, it's exports, read edges
+        structuresModule = defineModule("jdk.scripting.nashorn.structures", this);
+        addModuleExports(structuresModule, SCRIPTS_PKG, nashornModule);
+        addReadsModule(structuresModule, nashornModule);
+        addReadsModule(structuresModule, Object.class.getModule());
+
+        // specific exports from nashorn to the structures module
+        nashornModule.addExports(SCRIPTS_PKG, structuresModule);
+        nashornModule.addExports(RUNTIME_PKG, structuresModule);
+
+        // nashorn has to read fields from classes of the new module
+        nashornModule.addReads(structuresModule);
     }
 
     /**
@@ -72,6 +88,10 @@ final class StructureLoader extends NashornLoader {
      */
     static boolean isStructureClass(final String name) {
         return isDualFieldStructure(name) || isSingleFieldStructure(name);
+    }
+
+    protected Module getModule() {
+        return structuresModule;
     }
 
     @Override

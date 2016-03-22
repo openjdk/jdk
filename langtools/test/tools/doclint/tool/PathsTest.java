@@ -31,6 +31,7 @@
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
+ *          jdk.jdeps/com.sun.tools.javap
  * @build ToolBox
  * @run main PathsTest
  */
@@ -70,7 +71,6 @@ public class PathsTest {
         test("src/Test.java", "-classpath", "classes1" + PS + "classes2");
 
         File testJar = createJar();
-        String sysBootClassPath = System.getProperty("sun.boot.class.path");
         test("src/Test.java", "-bootclasspath",
                 testJar + PS + "classes1" + PS + "classes2");
 
@@ -87,7 +87,12 @@ public class PathsTest {
         if (!pkgNotFound.matcher(out1).find())
             error("message not found: " + pkgNotFound);
 
-        String out2 = doclint("-Xmsgs", pathOpt, path, file);
+        String out2;
+        if (needTarget8(pathOpt)) {
+            out2 = doclint("-Xmsgs", "-source", "8", "-target", "8", pathOpt, path, file);
+        } else {
+            out2 = doclint("-Xmsgs", pathOpt, path, file);
+        }
         if (pkgNotFound.matcher(out2).find())
             error("unexpected message found: " + pkgNotFound);
         if (!badHtmlEntity.matcher(out1).find())
@@ -98,6 +103,15 @@ public class PathsTest {
             error("expected exception not thrown");
         } catch (BadArgs e) {
             System.err.println(e);
+        }
+    }
+
+    boolean needTarget8(String opt) {
+        switch (opt) {
+            case "-bootclasspath":
+                return true;
+            default:
+                return false;
         }
     }
 

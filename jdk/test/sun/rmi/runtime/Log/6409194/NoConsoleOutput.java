@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,13 @@ public class NoConsoleOutput {
 
         // We instantiate a JavaVM that should not produce any console output
         // (neither on standard output, nor on standard err streams).
-        JavaVM vm = new JavaVM(DoRMIStuff.class.getName(),
-            "-Djava.util.logging.config.file=" + loggingPropertiesFile,
-                               "", out, err);
+        JavaVM vm = new JavaVM(
+                DoRMIStuff.class.getName(),
+                "-XaddExports:java.rmi/sun.rmi.registry=ALL-UNNAMED,"
+                + "java.rmi/sun.rmi.server=ALL-UNNAMED,java.rmi/sun.rmi.transport=ALL-UNNAMED,"
+                + "java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED"
+                + " -Djava.util.logging.config.file="
+                + loggingPropertiesFile, "", out, err);
         vm.execute();
 
         /*

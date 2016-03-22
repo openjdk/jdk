@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +162,24 @@ inStream_readDouble(PacketInputStream *stream)
     jdouble val = 0;
     (void)readBytes(stream, &val, sizeof(val));
     return JAVA_TO_HOST_DOUBLE(val);
+}
+
+/*
+ * Read a module from the stream. The ID used in the wire protocol
+ * is converted to a reference which is returned. The reference is
+ * global and strong, but it should *not* be deleted by the caller
+ * since it is freed when this stream is destroyed.
+ */
+jobject
+inStream_readModuleRef(JNIEnv *env, PacketInputStream *stream)
+{
+    jobject ref = inStream_readObjectRef(env, stream);
+    if (ref == NULL && stream->error == JDWP_ERROR(INVALID_OBJECT)) {
+        stream->error = JDWP_ERROR(INVALID_MODULE);
+        return NULL;
+    }
+
+    return ref;
 }
 
 /*

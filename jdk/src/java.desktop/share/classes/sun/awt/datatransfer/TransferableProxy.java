@@ -208,9 +208,11 @@ final class ClassLoaderObjectInputStream extends ObjectInputStream {
             classObjs[i] = cl;
         }
         try {
-            return Proxy.getProxyClass(hasNonPublicInterface ?
-                                       nonPublicLoader : classLoader,
-                                       classObjs);
+            @SuppressWarnings("deprecation")
+            Class<?> proxyClass = Proxy.getProxyClass(hasNonPublicInterface ?
+                                                          nonPublicLoader : classLoader,
+                                                      classObjs);
+            return proxyClass;
         } catch (IllegalArgumentException e) {
             throw new ClassNotFoundException(null, e);
         }
