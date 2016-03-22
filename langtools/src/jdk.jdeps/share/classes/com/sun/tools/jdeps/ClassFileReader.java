@@ -28,22 +28,26 @@ package com.sun.tools.jdeps;
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * ClassFileReader reads ClassFile(s) of a given path that can be
@@ -74,8 +78,19 @@ public class ClassFileReader {
         return new JarFileReader(path, jf);
     }
 
+    /**
+     * Returns a ClassFileReader instance of a given FileSystem and path.
+     *
+     * This method is used for reading classes from jrtfs.
+     */
+    public static ClassFileReader newInstance(FileSystem fs, Path path) throws IOException {
+        return new DirectoryReader(fs, path);
+    }
+
     protected final Path path;
     protected final String baseFileName;
+    protected Set<String> entries; // binary names
+
     protected final List<String> skippedEntries = new ArrayList<>();
     protected ClassFileReader(Path path) {
         this.path = path;
@@ -90,6 +105,18 @@ public class ClassFileReader {
 
     public List<String> skippedEntries() {
         return skippedEntries;
+    }
+
+    /**
+     * Returns all entries in this archive.
+     */
+    public Set<String> entries() {
+        Set<String> es = this.entries;
+        if (es == null) {
+            // lazily scan the entries
+            this.entries = scan();
+        }
+        return this.entries;
     }
 
     /**
@@ -135,6 +162,20 @@ public class ClassFileReader {
         }
     }
 
+    protected Set<String> scan() {
+        try {
+            ClassFile cf = ClassFile.read(path);
+            return Collections.singleton(cf.getName());
+        } catch (ConstantPoolException|IOException e) {
+            throw new ClassFileError(e);
+        }
+    }
+
+    static boolean isClass(Path file) {
+        String fn = file.getFileName().toString();
+        return fn.endsWith(".class") && !fn.equals(MODULE_INFO);
+    }
+
     class FileIterator implements Iterator<ClassFile> {
         int count;
         FileIterator() {
@@ -176,6 +217,19 @@ public class ClassFileReader {
             this.fsSep = fs.getSeparator();
         }
 
+        protected Set<String> scan() {
+            try {
+                return Files.walk(path, Integer.MAX_VALUE)
+                        .filter(ClassFileReader::isClass)
+                        .map(f -> path.relativize(f))
+                        .map(Path::toString)
+                        .map(p -> p.replace(File.separatorChar, '/'))
+                        .collect(Collectors.toSet());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
         public ClassFile getClassFile(String name) throws IOException {
             if (name.indexOf('.') > 0) {
                 int i = name.lastIndexOf('.');
@@ -206,28 +260,13 @@ public class ClassFileReader {
             };
         }
 
-        private List<Path> entries;
-        protected synchronized List<Path> walkTree() throws IOException {
-            if (entries == null) {
-                entries = new ArrayList<>();
-                Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                            throws IOException {
-                        if (file.getFileName().toString().endsWith(".class")) {
-                            entries.add(file);
-                        }
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
-            }
-            return entries;
-        }
-
         class DirectoryIterator implements Iterator<ClassFile> {
             private List<Path> entries;
             private int index = 0;
             DirectoryIterator() throws IOException {
-                entries = walkTree();
+                entries = Files.walk(path, Integer.MAX_VALUE)
+                               .filter(ClassFileReader::isClass)
+                               .collect(Collectors.toList());
                 index = 0;
             }
 
@@ -262,6 +301,16 @@ public class ClassFileReader {
         JarFileReader(Path path, JarFile jf) throws IOException {
             super(path);
             this.jarfile = jf;
+        }
+
+        protected Set<String> scan() {
+            try (JarFile jf = new JarFile(path.toFile())) {
+                return jf.stream().map(JarEntry::getName)
+                         .filter(n -> n.endsWith(".class") && !n.endsWith(MODULE_INFO))
+                         .collect(Collectors.toSet());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
         public ClassFile getClassFile(String name) throws IOException {
@@ -360,7 +409,7 @@ public class ClassFileReader {
             while (entries.hasMoreElements()) {
                 JarEntry e = entries.nextElement();
                 String name = e.getName();
-                if (name.endsWith(".class")) {
+                if (name.endsWith(".class") && !name.equals(MODULE_INFO)) {
                     return e;
                 }
             }
@@ -371,29 +420,5 @@ public class ClassFileReader {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
-
-    /**
-     * ClassFileReader for modules.
-     */
-    static class ModuleClassReader extends DirectoryReader {
-        final String modulename;
-        ModuleClassReader(FileSystem fs, String mn, Path root) throws IOException {
-            super(fs, root);
-            this.modulename = mn;
-        }
-
-        public Set<String> packages() throws IOException {
-            return walkTree().stream()
-                             .map(this::toPackageName)
-                             .sorted()
-                             .collect(Collectors.toSet());
-        }
-
-        String toPackageName(Path p) {
-            if (p.getParent() == null) {
-                return "";
-            }
-            return path.relativize(p.getParent()).toString().replace(fsSep, ".");
-        }
-    }
+    private static final String MODULE_INFO = "module-info.class";
 }

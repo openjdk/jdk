@@ -453,9 +453,6 @@ public class SealedObject implements Serializable {
 }
 
 final class extObjectInputStream extends ObjectInputStream {
-
-    private static ClassLoader systemClassLoader = null;
-
     extObjectInputStream(InputStream in)
         throws IOException, StreamCorruptedException {
         super(in);
@@ -478,10 +475,7 @@ final class extObjectInputStream extends ObjectInputStream {
              */
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
             if (loader == null) {
-                if (systemClassLoader == null) {
-                    systemClassLoader = ClassLoader.getSystemClassLoader();
-                }
-                loader = systemClassLoader;
+                loader = ClassLoader.getSystemClassLoader();
                 if (loader == null) {
                     throw new ClassNotFoundException(v.getName());
                 }

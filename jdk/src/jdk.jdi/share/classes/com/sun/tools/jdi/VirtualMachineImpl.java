@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.tools.jdi;
 
 import com.sun.jdi.*;
+import com.sun.jdi.ModuleReference;
 import com.sun.jdi.connect.spi.Connection;
 import com.sun.jdi.request.EventRequestManager;
 import com.sun.jdi.request.EventRequest;
@@ -48,6 +49,7 @@ class VirtualMachineImpl extends MirrorImpl
     public final int sizeofObjectRef;
     public final int sizeofClassRef;
     public final int sizeofFrameRef;
+    public final int sizeofModuleRef;
 
     final int sequenceNumber;
 
@@ -74,6 +76,8 @@ class VirtualMachineImpl extends MirrorImpl
     private Map<Long, ReferenceType> typesByID;
     private TreeSet<ReferenceType> typesBySignature;
     private boolean retrievedAllTypes = false;
+
+    private Map<Long, ModuleReference> modulesByID;
 
     // For other languages support
     private String defaultStratum = null;
@@ -204,6 +208,7 @@ class VirtualMachineImpl extends MirrorImpl
         sizeofObjectRef = idSizes.objectIDSize;
         sizeofClassRef = idSizes.referenceTypeIDSize;
         sizeofFrameRef  = idSizes.frameIDSize;
+        sizeofModuleRef = idSizes.objectIDSize;
 
         /**
          * Set up requests needed by internal event handler.
@@ -263,6 +268,12 @@ class VirtualMachineImpl extends MirrorImpl
 
     public int hashCode() {
         return System.identityHashCode(this);
+    }
+
+    public List<ModuleReference> allModules() {
+        validateVM();
+        List<ModuleReference> modules = retrieveAllModules();
+        return Collections.unmodifiableList(modules);
     }
 
     public List<ReferenceType> classesByName(String className) {
@@ -585,7 +596,8 @@ class VirtualMachineImpl extends MirrorImpl
        } catch (JDWPException exc) {
            throw exc.toJDIException();
        }
-   }
+    }
+
     public String description() {
         validateVM();
 
@@ -674,20 +686,18 @@ class VirtualMachineImpl extends MirrorImpl
             versionInfo().jdwpMinor >= 6;
     }
     public boolean canGetInstanceInfo() {
-        if (versionInfo().jdwpMajor < 1 ||
-            versionInfo().jdwpMinor < 6) {
+        if (versionInfo().jdwpMajor > 1 ||
+            versionInfo().jdwpMinor >= 6) {
+            validateVM();
+            return hasNewCapabilities() &&
+                capabilitiesNew().canGetInstanceInfo;
+        } else {
             return false;
         }
-        validateVM();
-        return hasNewCapabilities() &&
-            capabilitiesNew().canGetInstanceInfo;
     }
     public boolean canUseSourceNameFilters() {
-        if (versionInfo().jdwpMajor < 1 ||
-            versionInfo().jdwpMinor < 6) {
-            return false;
-        }
-        return true;
+        return versionInfo().jdwpMajor > 1 ||
+            versionInfo().jdwpMinor >= 6;
     }
     public boolean canForceEarlyReturn() {
         validateVM();
@@ -703,12 +713,8 @@ class VirtualMachineImpl extends MirrorImpl
             capabilitiesNew().canGetSourceDebugExtension;
     }
     public boolean canGetClassFileVersion() {
-        if ( versionInfo().jdwpMajor < 1 &&
-             versionInfo().jdwpMinor  < 6) {
-            return false;
-        } else {
-            return true;
-        }
+        return versionInfo().jdwpMajor > 1 ||
+            versionInfo().jdwpMinor >= 6;
     }
     public boolean canGetConstantPool() {
         validateVM();
@@ -729,6 +735,10 @@ class VirtualMachineImpl extends MirrorImpl
         validateVM();
         return hasNewCapabilities() &&
             capabilitiesNew().canGetMonitorFrameInfo;
+    }
+    public boolean canGetModuleInfo() {
+        validateVM();
+        return versionInfo().jdwpMajor >= 9;
     }
 
     public void setDebugTraceMode(int traceFlags) {
@@ -927,6 +937,48 @@ class VirtualMachineImpl extends MirrorImpl
             }
         }
         return capabilitiesNew;
+    }
+
+    private synchronized ModuleReference addModule(long id) {
+        if (modulesByID == null) {
+            modulesByID = new HashMap<Long, ModuleReference>(77);
+        }
+        ModuleReference module = new ModuleReferenceImpl(vm, id);
+        modulesByID.put(id, module);
+        return module;
+    }
+
+    ModuleReference getModule(long id) {
+        if (id == 0) {
+            return null;
+        } else {
+            ModuleReference module = null;
+            synchronized (this) {
+                if (modulesByID != null) {
+                    module = modulesByID.get(id);
+                }
+                if (module == null) {
+                    module = addModule(id);
+                }
+            }
+            return module;
+        }
+    }
+
+    private synchronized List<ModuleReference> retrieveAllModules() {
+        ModuleReferenceImpl[] reqModules;
+        try {
+            reqModules = JDWP.VirtualMachine.AllModules.process(vm).modules;
+        } catch (JDWPException exc) {
+            throw exc.toJDIException();
+        }
+        ArrayList<ModuleReference> modules = new ArrayList<>();
+        for (int i = 0; i < reqModules.length; i++) {
+            long moduleRef = reqModules[i].ref();
+            ModuleReference module = getModule(moduleRef);
+            modules.add(module);
+        }
+        return modules;
     }
 
     private List<ReferenceType> retrieveClassesBySignature(String signature) {
@@ -1362,6 +1414,10 @@ class VirtualMachineImpl extends MirrorImpl
     ClassObjectReferenceImpl classObjectMirror(long id) {
         return (ClassObjectReferenceImpl)objectMirror(id,
                                                       JDWP.Tag.CLASS_OBJECT);
+    }
+
+    ModuleReferenceImpl moduleMirror(long id) {
+        return (ModuleReferenceImpl)getModule(id);
     }
 
     /*

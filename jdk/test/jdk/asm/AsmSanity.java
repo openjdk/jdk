@@ -32,7 +32,7 @@
  * - Verify that if user code is compiled without ct.sym, it can't access asm classes
  *   at runtime when a security manager is in use.
  *
- * @compile/fail AsmSanity.java
+ * @modules java.base/jdk.internal.org.objectweb.asm
  *
  * @compile -XDignore.symbol.file=true AsmSanity.java
  * @run main/othervm AsmSanity
@@ -44,11 +44,6 @@
 
 // Verify that the expected asm pkgs are present
 import jdk.internal.org.objectweb.asm.*;
-import jdk.internal.org.objectweb.asm.commons.*;
-import jdk.internal.org.objectweb.asm.signature.*;
-import jdk.internal.org.objectweb.asm.tree.*;
-import jdk.internal.org.objectweb.asm.tree.analysis.*;
-import jdk.internal.org.objectweb.asm.util.*;
 
 // Verify that we can actually run some of the asm code.
 public class AsmSanity {

@@ -44,30 +44,18 @@ public class VersionOpt {
         // Test functions by comparing the version string from javac against
         // a "golden" version generated automatically from the underlying JVM.
         // As such, it is only effective in testing the "standard" compiler,
-        // and not any development version being tested via -Xbootclasspath.
+        // and not any development version being tested via -Xpatch.
         // Check the version of the compiler being used, and let the test pass
         // automatically if is is a development version.
         Class<?> javacClass = com.sun.tools.javac.Main.class;
-        URL javacURL = getClass().getClassLoader().getResource(javacClass.getName().replace(".", "/") + ".class");
-        if (!javacURL.getProtocol().equals("jar") || !javacURL.getFile().contains("!")) {
-            System.err.println("javac not found in tools.jar: " + javacURL);
-            System.err.println("rest of test skipped");
-            return;
-        }
-        String javacHome = javacURL.getFile().substring(0, javacURL.getFile().indexOf("!"));
-
-        File javaHome = new File(System.getProperty("java.home"));
-        if (javaHome.getName().equals("jre"))
-            javaHome = javaHome.getParentFile();
-        File toolsJar = new File(new File(javaHome, "lib"), "tools.jar");
-
-        if (!javacHome.equalsIgnoreCase(toolsJar.toURI().toString())) {
-            System.err.println("javac not found in tools.jar: " + javacHome);
+        URL location = javacClass.getProtectionDomain().getCodeSource().getLocation();
+        if (!location.toString().equals("jrt:/jdk.compiler")) {
+            System.err.println("javac not found in system image: " + location);
             System.err.println("rest of test skipped");
             return;
         }
 
-        System.out.println("javac found in " + toolsJar);
+        System.out.println("javac found in " + location);
 
         String javaVersion = System.getProperty("java.version");
         String javaRuntimeVersion = System.getProperty("java.runtime.version");

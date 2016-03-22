@@ -27,9 +27,7 @@
  * @summary javac should correctly enforce binary comparison rules.
  * @modules jdk.compiler
  */
-import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.code.Symbol.*;
+
 import java.io.*;
 import java.lang.reflect.Array;
 import java.util.EnumSet;

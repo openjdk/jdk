@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "ArrayTypeImpl.h"
 #include "FieldImpl.h"
 #include "MethodImpl.h"
+#include "ModuleReferenceImpl.h"
 #include "ObjectReferenceImpl.h"
 #include "StringReferenceImpl.h"
 #include "ThreadReferenceImpl.h"
@@ -82,6 +83,7 @@ debugDispatch_initialize(void)
     l1Array[JDWP_COMMAND_SET(EventRequest)] = (void *)EventRequest_Cmds;
     l1Array[JDWP_COMMAND_SET(StackFrame)] = (void *)StackFrame_Cmds;
     l1Array[JDWP_COMMAND_SET(ClassObjectReference)] = (void *)ClassObjectReference_Cmds;
+    l1Array[JDWP_COMMAND_SET(ModuleReference)] = (void *)ModuleReference_Cmds;
 }
 
 void

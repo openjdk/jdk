@@ -788,7 +788,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         static void setSpeciesDataToConcreteBMHClass(Class<? extends BoundMethodHandle> cbmh, SpeciesData speciesData) {
             try {
                 Field F_SPECIES_DATA = cbmh.getDeclaredField("SPECIES_DATA");
-                assert F_SPECIES_DATA.getDeclaredAnnotation(Stable.class) != null;
+                // ## FIXME: annotation parser can't create proxy classes until module system is fully initialzed
+                // assert F_SPECIES_DATA.getDeclaredAnnotation(Stable.class) != null;
                 F_SPECIES_DATA.set(null, speciesData);
             } catch (ReflectiveOperationException ex) {
                 throw newInternalError(ex);

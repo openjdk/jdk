@@ -26,7 +26,9 @@
 # @bug 6336885 7196799 7197573 7198834 8000245 8000615 8001440 8008577
 #      8010666 8013086 8013233 8013903 8015960 8028771 8054482 8062006
 # @summary tests for "java.locale.providers" system property
-# @compile -XDignore.symbol.file LocaleProviders.java
+# @modules java.base/sun.util.locale
+#          java.base/sun.util.locale.provider
+# @compile LocaleProviders.java
 # @run shell/timeout=600 LocaleProviders.sh
 
 if [ "${TESTSRC}" = "" ]
@@ -118,18 +120,21 @@ mk ${SPIDIR}${FS}dest${FS}META-INF${FS}services${FS}java.util.spi.TimeZoneNamePr
 tznp
 tznp8013086
 EOF
+
+EXTRAOPTS="-XaddExports:java.base/sun.util.locale=ALL-UNNAMED,java.base/sun.util.locale.provider=ALL-UNNAMED"
+
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${SPIDIR}${FS}dest \
     ${SPIDIR}${FS}src${FS}tznp.java \
     ${SPIDIR}${FS}src${FS}tznp8013086.java
 ${COMPILEJAVA}${FS}bin${FS}jar ${TESTTOOLVMOPTS} cvf ${SPIDIR}${FS}tznp.jar -C ${SPIDIR}${FS}dest .
 
 # get the platform default locales
-PLATDEF=`${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSES} LocaleProviders getPlatformLocale display`
+PLATDEF=`${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${EXTRAOPTS} -classpath ${TESTCLASSES} LocaleProviders getPlatformLocale display`
 DEFLANG=`echo ${PLATDEF} | sed -e "s/,.*//"`
 DEFCTRY=`echo ${PLATDEF} | sed -e "s/.*,//"`
 echo "DEFLANG=${DEFLANG}"
 echo "DEFCTRY=${DEFCTRY}"
-PLATDEF=`${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSES} LocaleProviders getPlatformLocale format`
+PLATDEF=`${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${EXTRAOPTS} -classpath ${TESTCLASSES} LocaleProviders getPlatformLocale format`
 DEFFMTLANG=`echo ${PLATDEF} | sed -e "s/,.*//"`
 DEFFMTCTRY=`echo ${PLATDEF} | sed -e "s/.*,//"`
 echo "DEFFMTLANG=${DEFFMTLANG}"
@@ -137,7 +142,7 @@ echo "DEFFMTCTRY=${DEFFMTCTRY}"
 
 runTest()
 {
-    RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${TESTCLASSES}${PS}${SPICLASSES} -Djava.locale.providers=$PREFLIST LocaleProviders $METHODNAME $PARAM1 $PARAM2 $PARAM3"
+    RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${EXTRAOPTS} -classpath ${TESTCLASSES}${PS}${SPICLASSES} -Djava.locale.providers=$PREFLIST LocaleProviders $METHODNAME $PARAM1 $PARAM2 $PARAM3"
     echo ${RUNCMD}
     ${RUNCMD}
     result=$?

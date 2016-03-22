@@ -51,7 +51,7 @@ if (! new File(jjsCmd).isFile()) {
     jjsCmd = javahome + "/bin/jjs";
     jjsCmd = jjsCmd.toString().replace(/\//g, File.separator);
 }
-jjsCmd += " -J-Xbootclasspath/p:" + nashornJar;
+jjsCmd += " -J-Xpatch:" + nashornJar;
 
 $ENV.PWD=System.getProperty("user.dir") // to avoid RE on Cygwin
 $EXEC(jjsCmd, "var x = Object.create(null);\nx;\nprint('PASSED');\nexit(0)");

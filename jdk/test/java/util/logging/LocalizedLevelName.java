@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.lang.reflect.Module;
 import java.util.*;
 import java.util.logging.*;
 
@@ -97,7 +98,10 @@ public class LocalizedLevelName {
 
     private static final String RBNAME = "sun.util.logging.resources.logging";
     private static String getLocalizedMessage(Locale locale, String key) {
-        ResourceBundle rb = ResourceBundle.getBundle(RBNAME, locale);
+        // this test verifies if the logging.properties in the java.logging module
+        // is localized.
+        Module module = java.util.logging.Level.class.getModule();
+        ResourceBundle rb = ResourceBundle.getBundle(RBNAME, locale, module);
         return rb.getString(key);
     }
 }

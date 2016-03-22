@@ -83,7 +83,7 @@ char **__initenv;
 int WINAPI
 WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
 {
-    int margc;
+    int margc, appclassc;
     char** margv;
     const jboolean const_javaw = JNI_TRUE;
 
@@ -93,7 +93,7 @@ WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
 int
 main(int argc, char **argv)
 {
-    int margc;
+    int margc, appclassc;
     char** margv;
     const jboolean const_javaw = JNI_FALSE;
 #endif /* JAVAW */
@@ -148,9 +148,14 @@ main(int argc, char **argv)
         margv = args->elements;
     }
 #endif /* WIN32 */
+    if (const_appclasspath[0] == NULL) {
+        appclassc = 0;
+    } else {
+        appclassc = sizeof(const_appclasspath) / sizeof(char *);
+    }
     return JLI_Launch(margc, margv,
                    sizeof(const_jargs) / sizeof(char *), const_jargs,
-                   sizeof(const_appclasspath) / sizeof(char *), const_appclasspath,
+                   appclassc, const_appclasspath,
                    VERSION_STRING,
                    DOT_VERSION,
                    (const_progname != NULL) ? const_progname : *margv,

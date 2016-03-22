@@ -24,10 +24,13 @@
 /**
  * @test
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
- * @compile ConstantTest.java FieldUniverse.java TypeUniverse.java TestMetaAccessProvider.java
+ * @library ../../../../../
+ * @modules jdk.vm.ci/jdk.vm.ci.meta
+ *          jdk.vm.ci/jdk.vm.ci.runtime
+ * @build jdk.vm.ci.runtime.test.ConstantTest
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.runtime.test.ConstantTest
  */
-
+// * @compile ConstantTest.java FieldUniverse.java TypeUniverse.java TestMetaAccessProvider.java
 package jdk.vm.ci.runtime.test;
 
 import jdk.vm.ci.meta.JavaConstant;

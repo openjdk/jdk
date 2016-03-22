@@ -23,7 +23,11 @@
 
 import java.io.FilePermission;
 import java.io.IOException;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
+import java.lang.reflect.Module;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.ReflectPermission;
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -47,6 +51,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
+import jdk.internal.module.Modules;
+
 /**
  * @test
  * @bug 8065552
@@ -54,6 +60,7 @@ import java.util.stream.Stream;
  *          set accessible if the right permission is granted; this test
  *          loads all the classes in the BCL, get their declared fields,
  *          and call setAccessible(false) followed by setAccessible(true);
+ * @modules java.base/jdk.internal.module
  * @run main/othervm FieldSetAccessibleTest UNSECURE
  * @run main/othervm FieldSetAccessibleTest SECURE
  *
@@ -73,22 +80,47 @@ public class FieldSetAccessibleTest {
 
 
     // Test that all fields for any given class can be made accessibles
-    static void testSetFieldsAccessible(Class<?> c) {
+    static void testSetFieldsAccessible(Class<?> c, boolean expectException) {
         for (Field f : c.getDeclaredFields()) {
             fieldCount.incrementAndGet();
-            f.setAccessible(false);
-            f.setAccessible(true);
+            boolean expect = expectException;
+            if ((c == Module.class || c == AccessibleObject.class) &&
+                !Modifier.isPublic(f.getModifiers())) {
+                expect = true;
+            }
+            try {
+                f.setAccessible(false);
+                f.setAccessible(true);
+                if (expect) {
+                    throw new RuntimeException(
+                        String.format("Expected InaccessibleObjectException is not thrown "
+                                      + "for field %s in class %s%n", f.getName(), c.getName()));
+                }
+            } catch (InaccessibleObjectException expected) {
+                if (!expect) {
+                    throw new RuntimeException(expected);
+                }
+            }
         }
     }
 
     // Performs a series of test on the given class.
     // At this time, we only call testSetFieldsAccessible(c)
-    public static boolean test(Class<?> c) {
-        //System.out.println(c.getName());
+    public static boolean test(Class<?> c, boolean addExports) {
+        Module self = FieldSetAccessibleTest.class.getModule();
+        Module target = c.getModule();
+        String pn = c.getPackage().getName();
+        boolean exported = self.canRead(target) && target.isExported(pn, self);
+        if (addExports && !exported) {
+            Modules.addExports(target, pn, self);
+            exported = true;
+        }
+        boolean expectException = !exported;
+
         classCount.incrementAndGet();
 
         // Call getDeclaredFields() and try to set their accessible flag.
-        testSetFieldsAccessible(c);
+        testSetFieldsAccessible(c, expectException);
 
         // add more tests here...
 
@@ -154,17 +186,25 @@ public class FieldSetAccessibleTest {
         final long start = System.nanoTime();
         boolean classFound = false;
         int index = 0;
-        for (String s: iterable) {
+        for (String s : iterable) {
             if (index == maxIndex) break;
             try {
                 if (index < startIndex) continue;
-                if (test(s)) {
+                if (test(s, false)) {
                     classFound = true;
                 }
             } finally {
                 index++;
             }
         }
+
+        // Re-test with all packages exported
+        for (String s : iterable) {
+            test(s, true);
+        }
+
+        classCount.set(classCount.get() / 2);
+        fieldCount.set(fieldCount.get() / 2);
         long elapsed = System.nanoTime() - start;
         long secs = elapsed / 1000_000_000;
         long millis = (elapsed % 1000_000_000) / 1000_000;
@@ -187,17 +227,13 @@ public class FieldSetAccessibleTest {
         }
     }
 
-    static boolean test(String s) {
+    static boolean test(String s, boolean addExports) {
         try {
-            if (s.startsWith("WrapperGenerator")) {
-                System.out.println("Skipping "+ s);
-                return false;
-            }
             final Class<?> c = Class.forName(
                     s.replace('/', '.').substring(0, s.length() - 6),
                     false,
                     systemClassLoader);
-            return test(c);
+            return test(c, addExports);
         } catch (Exception t) {
             t.printStackTrace(System.err);
             failed.add(s);
@@ -224,7 +260,7 @@ public class FieldSetAccessibleTest {
                     .filter(x -> x.getNameCount() > 2)
                     .map( x-> x.subpath(2, x.getNameCount()))
                     .map( x -> x.toString())
-                    .filter(s -> s.endsWith(".class"));
+                    .filter(s -> s.endsWith(".class") && !s.endsWith("module-info.class"));
         }
 
         @Override

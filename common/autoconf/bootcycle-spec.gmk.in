@@ -25,6 +25,8 @@
 
 # Support for building boot cycle builds
 
+BOOT_JDK_MODULAR := true
+
 # First include the real base spec.gmk file
 include @SPEC@
 

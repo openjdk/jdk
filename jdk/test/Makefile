@@ -87,8 +87,8 @@ ABS_TEST_OUTPUT_DIR := $(ABS_PLATFORM_BUILD_ROOT)/testoutput/$(UNIQUE_DIR)
 
 # Expect JPRT to set PRODUCT_HOME (the product or jdk in this case to test)
 ifndef PRODUCT_HOME
-  # Try to use j2sdk-image if it exists
-  ABS_JDK_IMAGE = $(ABS_PLATFORM_BUILD_ROOT)/images/j2sdk-image
+  # Try to use images/jdk if it exists
+  ABS_JDK_IMAGE = $(ABS_PLATFORM_BUILD_ROOT)/images/jdk
   PRODUCT_HOME :=                       		\
     $(shell                             		\
       if [ -d $(ABS_JDK_IMAGE) ] ; then 		\
@@ -234,7 +234,7 @@ clean:
 
 # Expect JT_HOME to be set for jtreg tests. (home for jtreg)
 ifndef JT_HOME
-  JT_HOME = $(SLASH_JAVA)/re/jtreg/4.1/promoted/latest/binaries/jtreg
+  JT_HOME = $(SLASH_JAVA)/re/jtreg/4.2/promoted/latest/binaries/jtreg
   ifdef JPRT_JTREG_HOME
     JT_HOME = $(JPRT_JTREG_HOME)
   endif

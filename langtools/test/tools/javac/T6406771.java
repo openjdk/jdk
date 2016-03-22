@@ -8,25 +8,29 @@
  */
 
 // WARNING: White-space and layout is important in this file, especially tab characters.
+// Editing the imports and other leading text may affect the golden text in the tests field.
+// Also beware of scripts that auto-expand tabs to spaces.
 
 import java.io.*;
+import java.lang.reflect.Layer;
+import java.lang.reflect.Module;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
-import com.sun.tools.javac.api.*;
+
 import com.sun.source.tree.*;
 import com.sun.source.util.*;
+import com.sun.tools.javac.api.*;
 import com.sun.tools.javac.tree.JCTree;
-
 
 @SupportedAnnotationTypes("*")
 public class T6406771 extends AbstractProcessor {
     String[] tests = {
-        "line:27",
-        "line:28",
-        "line:29", "line:29",
+        "line:31",
+        "line:32",
+        "line:33", "line:33",
 //       1         2         3         4         5         6
 //3456789012345678901234567890123456789012345678901234567890
       "col:7", "col:16", "col:26",                 // this line uses spaces
@@ -41,13 +45,21 @@ public class T6406771 extends AbstractProcessor {
         String testSrc = System.getProperty("test.src");
         String testClasses = System.getProperty("test.classes");
 
-        JavacTool tool = JavacTool.create();
+        JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
             JavaFileObject f = fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, self+".java"))).iterator().next();
 
-            List<String> opts = Arrays.asList("-d", ".", "-processorpath", testClasses, "-processor", self, "-proc:only");
+            List<String> opts = Arrays.asList(
+                "-XaddExports:"
+                + "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+                "-XDaccessInternalAPI",
+                "-d", ".",
+                "-processorpath", testClasses,
+                "-processor", self,
+                "-proc:only");
 
-            JavacTask task = tool.getTask(null, fm, null, opts, null, Arrays.asList(f));
+            JavacTask task = (JavacTask)tool.getTask(null, fm, null, opts, null, Arrays.asList(f));
 
             if (!task.call())
                 throw new AssertionError("failed");

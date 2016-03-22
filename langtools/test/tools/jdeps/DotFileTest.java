@@ -27,7 +27,7 @@
  * @summary Basic tests for jdeps -dotoutput option
  * @modules java.management
  *          jdk.jdeps/com.sun.tools.jdeps
- * @build Test p.Foo p.Bar javax.activity.NotCompactProfile
+ * @build Test p.Foo p.Bar
  * @run main DotFileTest
  */
 
@@ -64,10 +64,9 @@ public class DotFileTest {
              new String[] {"java.lang", "p"},
              new String[] {"compact1", "not found"});
         // test a directory
-        // also test non-SE javax.activity class dependency
         test(new File(testDir, "p"),
-             new String[] {"java.lang", "java.util", "java.lang.management", "javax.activity", "javax.crypto"},
-             new String[] {"compact1", "compact1", "compact3", testDir.getName(), "compact1"},
+             new String[] {"java.lang", "java.util", "java.lang.management", "javax.crypto"},
+             new String[] {"compact1", "compact1", "compact3", "compact1"},
              new String[] {"-classpath", testDir.getPath()});
         // test class-level dependency output
         test(new File(testDir, "Test.class"),
@@ -76,13 +75,13 @@ public class DotFileTest {
              new String[] {"-verbose:class"});
         // test -filter:none option
         test(new File(testDir, "p"),
-             new String[] {"java.lang", "java.util", "java.lang.management", "javax.activity", "javax.crypto", "p"},
-             new String[] {"compact1", "compact1", "compact3", testDir.getName(), "compact1", "p"},
+             new String[] {"java.lang", "java.util", "java.lang.management", "javax.crypto", "p"},
+             new String[] {"compact1", "compact1", "compact3", "compact1", "p"},
              new String[] {"-classpath", testDir.getPath(), "-verbose:package", "-filter:none"});
         // test -filter:archive option
         test(new File(testDir, "p"),
-             new String[] {"java.lang", "java.util", "java.lang.management", "javax.activity", "javax.crypto"},
-             new String[] {"compact1", "compact1", "compact3", testDir.getName(), "compact1"},
+             new String[] {"java.lang", "java.util", "java.lang.management", "javax.crypto"},
+             new String[] {"compact1", "compact1", "compact3", "compact1"},
              new String[] {"-classpath", testDir.getPath(), "-verbose:package", "-filter:archive"});
         // test -p option
         test(new File(testDir, "Test.class"),

@@ -95,7 +95,14 @@ public class RunCodingRules {
 
             Path crulesTarget = targetDir.resolve("crules");
             Files.createDirectories(crulesTarget);
-            List<String> crulesOptions = Arrays.asList("-d", crulesTarget.toString());
+            List<String> crulesOptions = Arrays.asList(
+                    "-XaddExports:"
+                        + "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,"
+                        + "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED,"
+                        + "jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED,"
+                        + "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED,"
+                        + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                    "-d", crulesTarget.toString());
             javaCompiler.getTask(null, fm, noErrors, crulesOptions, null,
                     fm.getJavaFileObjectsFromFiles(crulesFiles)).call();
             Path registration = crulesTarget.resolve("META-INF/services/com.sun.source.util.Plugin");
@@ -113,8 +120,10 @@ public class RunCodingRules {
             Path sourceTarget = targetDir.resolve("classes");
             Files.createDirectories(sourceTarget);
             String processorPath = crulesTarget.toString() + File.pathSeparator + crulesDir.toString();
-            List<String> options = Arrays.asList("-d", sourceTarget.toString(),
-                    "-processorpath", processorPath, "-Xplugin:coding_rules");
+            List<String> options = Arrays.asList(
+                    "-d", sourceTarget.toString(),
+                    "-processorpath", processorPath,
+                    "-Xplugin:coding_rules");
             javaCompiler.getTask(null, fm, noErrors, options, null,
                     fm.getJavaFileObjectsFromFiles(sources)).call();
         }
