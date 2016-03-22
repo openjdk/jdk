@@ -257,6 +257,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     //is this a rest of compilation
     private final int[] continuationEntryPoints;
 
+    // Scope object creators needed for for-of and for-in loops
+    private Deque<FieldObjectCreator<?>> scopeObjectCreators = new ArrayDeque<>();
+
     /**
      * Constructor.
      *
@@ -1297,6 +1300,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private void popBlockScope(final Block block) {
         final Label breakLabel = block.getBreakLabel();
 
+        if (block.providesScopeCreator()) {
+            scopeObjectCreators.pop();
+        }
         if(!block.needsScope() || lc.isFunctionBody()) {
             emitBlockBreakLabel(breakLabel);
             return;
@@ -1812,6 +1818,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }.store();
         body.accept(this);
 
+        if (forNode.needsScopeCreator() && lc.getCurrentBlock().providesScopeCreator()) {
+            // for-in loops with lexical declaration need a new scope for each iteration.
+            final FieldObjectCreator<?> creator = scopeObjectCreators.peek();
+            assert creator != null;
+            creator.createForInIterationScope(method);
+            method.storeCompilerConstant(SCOPE);
+        }
+
         if(method.isReachable()) {
             method._goto(continueLabel);
         }
@@ -1923,12 +1937,16 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
              * Create a new object based on the symbols and values, generate
              * bootstrap code for object
              */
-            new FieldObjectCreator<Symbol>(this, tuples, true, hasArguments) {
+            final FieldObjectCreator<Symbol> creator = new FieldObjectCreator<Symbol>(this, tuples, true, hasArguments) {
                 @Override
                 protected void loadValue(final Symbol value, final Type type) {
                     method.load(value, type);
                 }
-            }.makeObject(method);
+            };
+            creator.makeObject(method);
+            if (block.providesScopeCreator()) {
+                scopeObjectCreators.push(creator);
+            }
             // program function: merge scope into global
             if (isFunctionBody && function.isProgram()) {
                 method.invoke(ScriptRuntime.MERGE_SCOPE);
@@ -3294,8 +3312,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final boolean needsScope = identSymbol.isScope();
 
         if (init == null) {
-            if (needsScope && varNode.isBlockScoped()) {
-                // block scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ)
+            // Block-scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ).
+            // However, don't do this for CONST which always has an initializer except in the special case of
+            // for-in/of loops, in which it is initialized in the loop header and should be left untouched here.
+            if (needsScope && varNode.isLet()) {
                 method.loadCompilerConstant(SCOPE);
                 method.loadUndefined(Type.OBJECT);
                 final int flags = getScopeCallSiteFlags(identSymbol) | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
@@ -4480,7 +4500,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     final Symbol symbol = node.getSymbol();
                     assert symbol != null;
                     if (symbol.isScope()) {
-                        final int flags = getScopeCallSiteFlags(symbol);
+                        final int flags = getScopeCallSiteFlags(symbol) | (node.isDeclaredHere() ? CALLSITE_DECLARE : 0);
                         if (isFastScope(symbol)) {
                             storeFastScopeVar(symbol, flags);
                         } else {
