@@ -21,97 +21,131 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8076359 8133151 8145344
- * @summary Test the value for new jdk.security.provider.preferred security property
- * @requires os.name == "SunOS"
- */
-
-import java.security.KeyFactory;
 import java.security.MessageDigest;
+import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
+import java.security.Provider;
 import java.util.Arrays;
 import java.util.List;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 
+/**
+ * @test
+ * @bug 8076359 8133151 8145344 8150512
+ * @summary Test the value for new jdk.security.provider.preferred
+ *          security property
+ */
 public class PreferredProviderTest {
 
-    private static final List<DataTuple> SPARC_DATA = Arrays.asList(
-            new DataTuple("SHA1", "SUN"), new DataTuple("SHA-1", "SUN"),
-            new DataTuple("SHA-224", "SUN"), new DataTuple("SHA-256", "SUN"),
-            new DataTuple("SHA-384", "SUN"), new DataTuple("SHA-512", "SUN"));
-    private static final List<DataTuple> X86_DATA = Arrays
-            .asList(new DataTuple("RSA", "SunRsaSign"));
-
-    public void RunTest(String type)
+    public void RunTest(String type, String os)
             throws NoSuchAlgorithmException, NoSuchPaddingException {
-        String preferredProvider = Security
-                .getProperty("jdk.security.provider.preferred");
+
         String actualProvider = null;
-        if (type.equals("sparcv9")) {
-            if (!preferredProvider.equals(
-                    "AES:SunJCE, SHA1:SUN, SHA-224:SUN, SHA-256:SUN, SHA-384:SUN, SHA-512:SUN")) {
-                throw new RuntimeException(
-                        "Test Failed: wrong jdk.security.provider.preferred "
-                                + "value on solaris-sparcv9");
-            }
-            for (DataTuple dataTuple : SPARC_DATA) {
-                MessageDigest md = MessageDigest
-                        .getInstance(dataTuple.algorithm);
-                actualProvider = md.getProvider().getName();
-                if (!actualProvider.equals(dataTuple.provider)) {
-                    throw new RuntimeException(String.format(
-                            "Test Failed:Got wrong "
-                                    + "provider from Solaris-sparcv9 platform,"
-                                    + "Expected Provider: %s, Returned Provider: %s",
-                            dataTuple.provider, actualProvider));
-                }
-            }
-        } else if (type.equals("amd64")) {
-            if (!preferredProvider.equals("AES:SunJCE, RSA:SunRsaSign")) {
-                throw new RuntimeException(
-                        "Test Failed: wrong jdk.security.provider.preferred "
-                                + "value on solaris-x86");
-            }
-            for (DataTuple dataTuple : X86_DATA) {
-                KeyFactory keyFactory = KeyFactory
-                        .getInstance(dataTuple.algorithm);
-                actualProvider = keyFactory.getProvider().getName();
-                if (!actualProvider.equals(dataTuple.provider)) {
-                    throw new RuntimeException(String.format(
-                            "Test Failed:Got wrong "
-                                    + "provider from Solaris-x86 platform,"
-                                    + "Expected Provider: %s, Returned Provider: %s",
-                            dataTuple.provider, actualProvider));
-                }
-            }
+        boolean solaris = os.contains("sun");
+        String preferredProp
+                = "AES/GCM/NoPadding:SunJCE, MessageDigest.SHA-256:SUN";
+        System.out.printf("%nExecuting test for the platform '%s'%n", os);
+        if (!solaris) {
+            //For other platform it will try to set the preferred algorithm and
+            //Provider and verify the usage of it.
+            Security.setProperty(
+                    "jdk.security.provider.preferred", preferredProp);
+            verifyPreferredProviderProperty(os, type, preferredProp);
+
+            verifyDigestProvider(os, type, Arrays.asList(
+                    new DataTuple("SHA-256", "SUN")));
         } else {
-            throw new RuntimeException("Test Failed: wrong platform value");
+            //For solaris the preferred algorithm/provider is already set in
+            //java.security file which will be verified.
+            switch (type) {
+                case "sparcv9":
+                    preferredProp = "AES:SunJCE, SHA1:SUN, SHA-224:SUN,"
+                            + " SHA-256:SUN, SHA-384:SUN, SHA-512:SUN";
+                    verifyPreferredProviderProperty(os, type, preferredProp);
+
+                    verifyDigestProvider(os, type, Arrays.asList(
+                            new DataTuple("SHA1", "SUN"),
+                            new DataTuple("SHA-1", "SUN"),
+                            new DataTuple("SHA-224", "SUN"),
+                            new DataTuple("SHA-256", "SUN"),
+                            new DataTuple("SHA-384", "SUN"),
+                            new DataTuple("SHA-512", "SUN")));
+                    break;
+                case "amd64":
+                    preferredProp = "AES:SunJCE, RSA:SunRsaSign";
+                    verifyPreferredProviderProperty(os, type, preferredProp);
+
+                    verifyKeyFactoryProvider(os, type, Arrays.asList(
+                            new DataTuple("RSA", "SunRsaSign")));
+                    break;
+            }
+            verifyDigestProvider(os, type, Arrays.asList(
+                    new DataTuple("MD5", "OracleUcrypto")));
         }
 
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         actualProvider = cipher.getProvider().getName();
         if (!actualProvider.equals("SunJCE")) {
-            throw new RuntimeException(String.format(
-                    "Test Failed:Got wrong provider from Solaris-%s platform, "
-                            + "Expected Provider: SunJCE, Returned Provider: %s",
-                    type, actualProvider));
+            throw new RuntimeException(String.format("Test Failed:Got wrong "
+                    + "provider from %s-%s platform, Expected Provider: SunJCE,"
+                    + " Returned Provider: %s", os, type, actualProvider));
         }
+    }
 
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        actualProvider = md.getProvider().getName();
-        if (!actualProvider.equals("OracleUcrypto")) {
+    private static void verifyPreferredProviderProperty(String os, String arch,
+            String preferred) {
+        String preferredProvider
+                = Security.getProperty("jdk.security.provider.preferred");
+        if (!preferredProvider.equals(preferred)) {
             throw new RuntimeException(String.format(
-                    "Test Failed:Got wrong provider from Solaris-%s platform,"
-                            + "Expected Provider: OracleUcrypto, Returned Provider: %s",
-                    type, actualProvider));
+                    "Test Failed: wrong jdk.security.provider.preferred value "
+                    + "on %s-%s", os, arch));
+        }
+        System.out.println(
+                "Preferred provider security property verification complete.");
+    }
+
+    private static void verifyDigestProvider(String os, String arch,
+            List<DataTuple> algoProviders) throws NoSuchAlgorithmException {
+        for (DataTuple dataTuple : algoProviders) {
+            System.out.printf(
+                    "Verifying MessageDigest for '%s'%n", dataTuple.algorithm);
+            MessageDigest md = MessageDigest.getInstance(dataTuple.algorithm);
+            matchProvider(md.getProvider(), dataTuple.provider,
+                    dataTuple.algorithm, os, arch);
+        }
+        System.out.println(
+                "Preferred MessageDigest algorithm verification successful.");
+    }
+
+    private static void verifyKeyFactoryProvider(String os, String arch,
+            List<DataTuple> algoProviders) throws NoSuchAlgorithmException {
+        for (DataTuple dataTuple : algoProviders) {
+            System.out.printf(
+                    "Verifying KeyFactory for '%s'%n", dataTuple.algorithm);
+            KeyFactory kf = KeyFactory.getInstance(dataTuple.algorithm);
+            matchProvider(kf.getProvider(), dataTuple.provider,
+                    dataTuple.algorithm, os, arch);
+        }
+        System.out.println(
+                "Preferred KeyFactory algorithm verification successful.");
+    }
+
+    private static void matchProvider(Provider provider, String expected,
+            String algo, String os, String arch) {
+        if (!provider.getName().equals(expected)) {
+            throw new RuntimeException(String.format(
+                    "Test Failed:Got wrong provider from %s-%s platform, "
+                    + "for algorithm %s. Expected Provider: %s,"
+                    + " Returned Provider: %s", os, arch, algo,
+                    expected, provider.getName()));
         }
     }
 
     private static class DataTuple {
+
         private final String provider;
         private final String algorithm;
 
@@ -123,10 +157,9 @@ public class PreferredProviderTest {
 
     public static void main(String[] args)
             throws NoSuchAlgorithmException, NoSuchPaddingException {
-
-        String arch = System.getProperty("os.arch");
+        String os = System.getProperty("os.name").toLowerCase();
+        String arch = System.getProperty("os.arch").toLowerCase();
         PreferredProviderTest pp = new PreferredProviderTest();
-        pp.RunTest(arch);
+        pp.RunTest(arch, os);
     }
 }
-
