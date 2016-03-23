@@ -115,13 +115,6 @@ public class MenuMultiresolutionIconTest extends JPanel {
         }
     }
 
-    private static boolean is2x() {
-
-        return GraphicsEnvironment.getLocalGraphicsEnvironment().
-            getDefaultScreenDevice().getDefaultConfiguration().
-            getDefaultTransform().getScaleX() > 1.001;
-    }
-
     private boolean eqColors(Color c1, Color c2) {
 
         int tol = 15;
@@ -133,7 +126,8 @@ public class MenuMultiresolutionIconTest extends JPanel {
 
     private void checkIconColor(Point p, String what) {
 
-        Color expected = is2x() ? C2X : C1X;
+        String scale = System.getProperty(SCALE);
+        Color expected = "2".equals(scale) ? C2X : C1X;
         Color c = r.getPixelColor(p.x + SZ / 2, p.y + SZ / 2);
         if (!eqColors(c, expected)) {
             frame.dispose();
@@ -177,9 +171,6 @@ public class MenuMultiresolutionIconTest extends JPanel {
 
     public static void main(String s[]) throws Exception {
 
-        // TODO: remove is2x() after JDK-8150844 fix
-        if (is2x() == "2".equals(System.getProperty(SCALE))) {
-            (new MenuMultiresolutionIconTest()).doTest();
-        }
+        (new MenuMultiresolutionIconTest()).doTest();
     }
 }

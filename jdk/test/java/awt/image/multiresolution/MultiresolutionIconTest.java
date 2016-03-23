@@ -28,8 +28,6 @@
  * @summary Check that correct resolution variants are chosen for icons
  *          when multiresolution image is used for their construction.
  *
- * @requires (os.family != "mac")
- *
  * @library ../../../../lib/testlibrary/
  * @build ExtendedRobot
  * @run main/othervm/timeout=240 -Dsun.java2d.uiScale=1 MultiresolutionIconTest
@@ -42,7 +40,6 @@
 
 import java.awt.*;
 import java.awt.event.InputEvent;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BaseMultiResolutionImage;
 import java.awt.image.BufferedImage;
 import javax.swing.*;
@@ -128,14 +125,6 @@ public class MultiresolutionIconTest extends JFrame {
         setVisible(true);
     }
 
-    private static boolean is2x() {
-
-        AffineTransform tr = GraphicsEnvironment.getLocalGraphicsEnvironment().
-            getDefaultScreenDevice().getDefaultConfiguration().
-            getDefaultTransform();
-        return (Math.min(tr.getScaleX(), tr.getScaleY()) > 1.001);
-    }
-
     private boolean checkPressedColor(int x, int y, Color ok) {
 
         r.mouseMove(x, y);
@@ -175,10 +164,9 @@ public class MultiresolutionIconTest extends JFrame {
 
         r.waitForIdle(2000);
         String scale = System.getProperty(SCALE);
-        System.out.println("scale = " + scale);
-        Color
-            expected   = is2x() ? C2X : C1X,
-            unexpected = is2x() ? C1X : C2X;
+        boolean is2x = "2".equals(scale);
+        Color expected = is2x ? C2X : C1X;
+        Color unexpected = is2x ? C1X : C2X;
 
         Point p = lbl.getLocationOnScreen();
         int x = p.x + lbl.getWidth() / 2;
@@ -226,9 +214,6 @@ public class MultiresolutionIconTest extends JFrame {
     }
 
     public static void main(String[] args) throws Exception {
-
-        // TODO: remove is2x() check after JDK-8150844 fix
-        if (is2x() != "2".equals(System.getProperty(SCALE))) { return; }
 
         for (UIManager.LookAndFeelInfo LF: UIManager.getInstalledLookAndFeels()) {
             System.out.println("\nL&F: " + LF.getName());

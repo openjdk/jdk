@@ -37,7 +37,6 @@
  */
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.io.*;
 
@@ -116,25 +115,11 @@ public class Corrupted2XImageTest extends Frame {
         dispose();
     }
 
-    private static boolean is2x() {
-
-        AffineTransform tr = GraphicsEnvironment.getLocalGraphicsEnvironment().
-            getDefaultScreenDevice().getDefaultConfiguration().
-            getDefaultTransform();
-        return Math.min(tr.getScaleX(), tr.getScaleY()) > 1.001;
-    }
-
     public static void main(String[] args) throws Exception {
 
-        // TODO: update the test with sun.java2d.uiScale option (remove is2x())
-        // after fix of JDK-8150844 enh. to run it on non-HiDPI machines as well
-        if (is2x()) {
-            // formats supported by Toolkit.getImage()
-            for (String format: new String[]{"gif", "jpg", "png"}) {
-                (new Corrupted2XImageTest(format)).doTest();
-            }
-        } else {
-            System.out.println("this test is for HiDPI only");
+        // formats supported by Toolkit.getImage()
+        for (String format : new String[]{"gif", "jpg", "png"}) {
+            (new Corrupted2XImageTest(format)).doTest();
         }
     }
 }
