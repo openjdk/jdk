@@ -356,6 +356,7 @@ class InferenceContext {
         ListBuffer<Type> minUndetVars = new ListBuffer<>();
         for (Type minVar : minVars) {
             UndetVar uv = (UndetVar)asUndetVar(minVar);
+            Assert.check(uv.incorporationActions.size() == 0);
             UndetVar uv2 = new UndetVar((TypeVar)minVar, infer.incorporationEngine(), types);
             for (InferenceBound ib : InferenceBound.values()) {
                 List<Type> newBounds = uv.getBounds(ib).stream()
@@ -403,15 +404,17 @@ class InferenceContext {
         public Void visitUndetVar(UndetVar t, Void _unused) {
             if (min.add(t.qtype)) {
                 Set<Type> deps = minMap.getOrDefault(t.qtype, new HashSet<>(Collections.singleton(t.qtype)));
-                for (Type b : t.getBounds(InferenceBound.values())) {
-                    Type undet = asUndetVar(b);
-                    if (!undet.hasTag(TypeTag.UNDETVAR)) {
-                        visit(undet);
-                    } else if (isEquiv((UndetVar)undet, b)){
-                        deps.add(b);
-                        equiv.add(b);
-                    } else {
-                        visit(undet);
+                for (InferenceBound boundKind : InferenceBound.values()) {
+                    for (Type b : t.getBounds(boundKind)) {
+                        Type undet = asUndetVar(b);
+                        if (!undet.hasTag(TypeTag.UNDETVAR)) {
+                            visit(undet);
+                        } else if (isEquiv(t, b, boundKind)) {
+                            deps.add(b);
+                            equiv.add(b);
+                        } else {
+                            visit(undet);
+                        }
                     }
                 }
                 minMap.put(t.qtype, deps);
@@ -447,11 +450,17 @@ class InferenceContext {
             return null;
         }
 
-        boolean isEquiv(UndetVar from, Type t) {
+        boolean isEquiv(UndetVar from, Type t, InferenceBound boundKind) {
             UndetVar uv = (UndetVar)asUndetVar(t);
             for (InferenceBound ib : InferenceBound.values()) {
-                List<Type> b1 = uv.getBounds(ib);
-                List<Type> b2 = from.getBounds(ib);
+                List<Type> b1 = from.getBounds(ib);
+                if (ib == boundKind) {
+                    b1 = b1.diff(List.of(t));
+                }
+                List<Type> b2 = uv.getBounds(ib);
+                if (ib == boundKind.complement()) {
+                    b2 = b2.diff(List.of(from.qtype));
+                }
                 if (!b1.containsAll(b2) || !b2.containsAll(b1)) {
                     return false;
                 }
