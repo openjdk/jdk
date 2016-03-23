@@ -800,12 +800,9 @@ void JVMCIRuntime::shutdown(TRAPS) {
 
 bool JVMCIRuntime::treat_as_trivial(Method* method) {
   if (_HotSpotJVMCIRuntime_initialized) {
-    oop loader = method->method_holder()->class_loader();
-    if (loader == NULL) {
-      for (int i = 0; i < _trivial_prefixes_count; i++) {
-        if (method->method_holder()->name()->starts_with(_trivial_prefixes[i])) {
-          return true;
-        }
+    for (int i = 0; i < _trivial_prefixes_count; i++) {
+      if (method->method_holder()->name()->starts_with(_trivial_prefixes[i])) {
+        return true;
       }
     }
   }

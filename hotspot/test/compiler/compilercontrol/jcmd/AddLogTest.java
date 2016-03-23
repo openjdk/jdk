@@ -29,9 +29,9 @@
  * @build compiler.compilercontrol.jcmd.AddLogTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm compiler.compilercontrol.jcmd.AddLogTest
+ * @run driver compiler.compilercontrol.jcmd.AddLogTest
  */
 
 package compiler.compilercontrol.jcmd;
