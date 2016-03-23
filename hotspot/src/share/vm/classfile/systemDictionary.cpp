@@ -65,6 +65,7 @@
 #include "runtime/signature.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/threadService.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ticks.hpp"
 #if INCLUDE_CDS
@@ -1496,6 +1497,8 @@ void SystemDictionary::define_instance_class(instanceKlassHandle k, TRAPS) {
       JvmtiExport::post_class_load((JavaThread *) THREAD, k());
 
   }
+
+  TRACE_KLASS_DEFINITION(k, THREAD);
 
 }
 
