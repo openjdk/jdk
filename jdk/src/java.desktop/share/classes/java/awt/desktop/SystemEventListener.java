@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,18 @@
  * questions.
  */
 
-package com.apple.eawt;
+package java.awt.desktop;
+
+import java.util.EventListener;
 
 /**
- * The strategy use to shut down the application, if Sudden Termination is not enabled.
+ * Common interface for all event listener sub-types.
  *
- * @see Application#setQuitHandler(QuitHandler)
- * @see Application#setQuitStrategy(QuitStrategy)
- * @see Application#enableSuddenTermination()
- * @see Application#disableSuddenTermination()
+ * Implementors may implement multiple sub-types, but only need to call
+ * {@link java.awt.Desktop#addAppEventListener(SystemEventListener)} once to
+ * receive all notifications.
  *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
+ * @since 9
  */
-public enum QuitStrategy {
-    /**
-     * Shuts down the application by calling {@code System.exit(0)}. This is the default strategy.
-     */
-    SYSTEM_EXIT_0,
-
-    /**
-     * Shuts down the application by closing each window from back-to-front.
-     */
-    CLOSE_ALL_WINDOWS
+public interface SystemEventListener extends EventListener {
 }

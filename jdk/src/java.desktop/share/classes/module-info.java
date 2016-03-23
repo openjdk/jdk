@@ -31,6 +31,7 @@ module java.desktop {
     exports java.applet;
     exports java.awt;
     exports java.awt.color;
+    exports java.awt.desktop;
     exports java.awt.dnd;
     exports java.awt.event;
     exports java.awt.font;

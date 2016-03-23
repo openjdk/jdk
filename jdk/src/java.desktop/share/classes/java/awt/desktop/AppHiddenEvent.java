@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,24 @@
  * questions.
  */
 
-package com.apple.eawt;
+package java.awt.desktop;
 
-import com.apple.eawt.AppEvent.OpenFilesEvent;
 
 /**
- * An implementor is notified when the application is asked to open a list of files.
- * This message is only sent if the application has registered that it handles CFBundleDocumentTypes in it's Info.plist.
+ * Event sent when the application has been hidden or shown.
  *
- * @see Application#setOpenFileHandler(OpenFilesHandler)
+ * @see AppHiddenListener#appHidden(AppEvent.AppHiddenEvent)
+ * @see AppHiddenListener#appUnhidden(AppEvent.AppHiddenEvent)
  *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
+ * @since 9
  */
-public interface OpenFilesHandler {
+public final class AppHiddenEvent extends AppEvent {
+    private static final long serialVersionUID = 2637465279476429224L;
+
     /**
-     * Called when the application is asked to open a list of files.
-     * @param e the request to open a list of files, and the search term used to find them, if any.
+     * Constructs an {@code AppHiddenEvent}
      */
-    public void openFiles(final OpenFilesEvent e);
+    public AppHiddenEvent() {
+    }
+
 }

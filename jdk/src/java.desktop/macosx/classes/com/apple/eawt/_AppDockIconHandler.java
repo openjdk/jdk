@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import sun.lwawt.macosx.CImage.Creator;
 class _AppDockIconHandler {
     private static native void nativeSetDockMenu(final long cmenu);
     private static native void nativeSetDockIconImage(final long image);
+    private static native void nativeSetDockIconProgress(final int value);
     private static native long nativeGetDockIconImage();
     private static native void nativeSetDockIconBadge(final String badge);
 
@@ -91,6 +92,10 @@ class _AppDockIconHandler {
 
     void setDockIconBadge(final String badge) {
         nativeSetDockIconBadge(badge);
+    }
+
+    void setDockIconProgress(int value) {
+        nativeSetDockIconProgress(value);
     }
 
     static Creator getCImageCreator() {

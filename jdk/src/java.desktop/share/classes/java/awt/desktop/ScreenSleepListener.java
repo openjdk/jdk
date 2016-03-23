@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,26 @@
  * questions.
  */
 
-package com.apple.eawt;
-
-import com.apple.eawt.AppEvent.UserSessionEvent;
+package java.awt.desktop;
 
 /**
- * Implementors receive notification when Fast User Switching changes the user session.
+ * Implementors receive notification when the displays attached to the system have entered power save sleep.
  *
  * This notification is useful for discontinuing a costly animation, or indicating that the user is no longer present on a network service.
  *
- * @see Application#addAppEventListener(AppEventListener)
- *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
+ * @since 9
  */
-public interface UserSessionListener extends AppEventListener {
-    /**
-     * Called when the user session has been switched away.
-     * @param e the user session switch event
-     */
-    public void userSessionDeactivated(final UserSessionEvent e);
+public interface ScreenSleepListener extends SystemEventListener {
 
     /**
-     * Called when the user session has been switched to.
-     * @param e the user session switch event
+     * Called when the system displays have entered power save sleep.
+     * @param e the screen sleep event
      */
-    public void userSessionActivated(final UserSessionEvent e);
+    public void screenAboutToSleep(final ScreenSleepEvent e);
+
+    /**
+     * Called when the system displays have awoken from power save sleep.
+     * @param e the screen sleep event
+     */
+    public void screenAwoke(final ScreenSleepEvent e);
 }
