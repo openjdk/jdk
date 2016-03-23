@@ -417,6 +417,22 @@ static AliasedLoggingFlag const aliased_logging_flags[] = {
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
 
+#ifndef PRODUCT
+// These options are removed in jdk9. Remove this code for jdk10.
+static AliasedFlag const removed_develop_logging_flags[] = {
+  { "TraceClassInitialization",   "-Xlog:classinit" },
+  { "TraceClassLoaderData",       "-Xlog:classloaderdata" },
+  { "TraceDefaultMethods",        "-Xlog:defaultmethods=debug" },
+  { "TraceItables",               "-Xlog:itables=debug" },
+  { "TraceSafepoint",             "-Xlog:safepoint=debug" },
+  { "TraceStartupTime",           "-Xlog:startuptime" },
+  { "TraceVMOperation",           "-Xlog:vmoperation=debug" },
+  { "PrintVtables",               "-Xlog:vtables=debug" },
+  { "VerboseVerification",        "-Xlog:verboseverification" },
+  { NULL, NULL }
+};
+#endif //PRODUCT
+
 // Return true if "v" is less than "other", where "other" may be "undefined".
 static bool version_less_than(JDK_Version v, JDK_Version other) {
   assert(!v.is_undefined(), "must be defined");
@@ -467,6 +483,18 @@ int Arguments::is_deprecated_flag(const char *flag_name, JDK_Version* version) {
   }
   return 0;
 }
+
+#ifndef PRODUCT
+const char* Arguments::removed_develop_logging_flag_name(const char* name){
+  for (size_t i = 0; removed_develop_logging_flags[i].alias_name != NULL; i++) {
+    const AliasedFlag& flag = removed_develop_logging_flags[i];
+    if (strcmp(flag.alias_name, name) == 0) {
+      return flag.real_name;
+    }
+  }
+  return NULL;
+}
+#endif // PRODUCT
 
 const char* Arguments::real_flag_name(const char *flag_name) {
   for (size_t i = 0; aliased_jvm_flags[i].alias_name != NULL; i++) {
@@ -1187,13 +1215,22 @@ bool Arguments::process_argument(const char* arg,
     char stripped_argname[BUFLEN+1];
     strncpy(stripped_argname, argname, arg_len);
     stripped_argname[arg_len] = '\0';  // strncpy may not null terminate.
-
     if (is_obsolete_flag(stripped_argname, &since)) {
       char version[256];
       since.to_string(version, sizeof(version));
       warning("Ignoring option %s; support was removed in %s", stripped_argname, version);
       return true;
     }
+#ifndef PRODUCT
+    else {
+      const char* replacement;
+      if ((replacement = removed_develop_logging_flag_name(stripped_argname)) != NULL){
+        jio_fprintf(defaultStream::error_stream(),
+                  "%s has been removed. Please use %s instead.\n", stripped_argname, replacement);
+        return false;
+      }
+    }
+#endif //PRODUCT
   }
 
   // For locked flags, report a custom error message if available.
