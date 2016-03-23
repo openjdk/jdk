@@ -26,6 +26,10 @@
  * @bug 8078600
  * @summary Make sure -XDcompletionDeps does not cause an infinite loop.
  * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.javap
  * @build ToolBox
  * @run main/othervm/timeout=10 DepsAndAnno
  */
