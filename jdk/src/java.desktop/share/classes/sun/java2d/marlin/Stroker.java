@@ -338,11 +338,6 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     }
 
     private void drawRoundCap(float cx, float cy, float mx, float my) {
-        // the first and second arguments of the following two calls
-        // are really will be ignored by emitCurveTo (because of the false),
-        // but we put them in anyway, as opposed to just giving it 4 zeroes,
-        // because it's just 4 additions and it's not good to rely on this
-        // sort of assumption (right now it's true, but that may change).
         emitCurveTo(cx+mx-C*my, cy+my+C*mx,
                     cx-my+C*mx, cy+mx+C*my,
                     cx-my,      cy+mx);

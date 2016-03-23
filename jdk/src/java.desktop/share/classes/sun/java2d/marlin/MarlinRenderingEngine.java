@@ -51,6 +51,9 @@ public class MarlinRenderingEngine extends RenderingEngine
 
     private static final float MIN_PEN_SIZE = 1f / NORM_SUBPIXELS;
 
+    static final float UPPER_BND = Float.MAX_VALUE / 2.0f;
+    static final float LOWER_BND = -UPPER_BND;
+
     /**
      * Public constructor
      */
@@ -279,7 +282,7 @@ public class MarlinRenderingEngine extends RenderingEngine
                         float dashphase,
                         PathConsumer2D pc2d)
     {
-        // We use strokerat and outat so that in Stroker and Dasher we can work only
+        // We use strokerat so that in Stroker and Dasher we can work only
         // with the pre-transformation coordinates. This will repeat a lot of
         // computations done in the path iterator, but the alternative is to
         // work with transformed paths and compute untransformed coordinates
@@ -289,15 +292,11 @@ public class MarlinRenderingEngine extends RenderingEngine
         // However, if a path's width is constant after a transformation,
         // we can skip all this untransforming.
 
-        // If normalization is off we save some transformations by not
-        // transforming the input to pisces. Instead, we apply the
-        // transformation after the path processing has been done.
-        // We can't do this if normalization is on, because it isn't a good
-        // idea to normalize before the transformation is applied.
+        // As pathTo() will check transformed coordinates for invalid values
+        // (NaN / Infinity) to ignore such points, it is necessary to apply the
+        // transformation before the path processing.
         AffineTransform strokerat = null;
-        AffineTransform outat = null;
 
-        PathIterator pi;
         int dashLen = -1;
         boolean recycleDashes = false;
 
@@ -333,6 +332,7 @@ public class MarlinRenderingEngine extends RenderingEngine
             // leave a bit of room for error.
             if (nearZero(a*b + c*d) && nearZero(a*a + c*c - (b*b + d*d))) {
                 final float scale = (float) Math.sqrt(a*a + c*c);
+
                 if (dashes != null) {
                     recycleDashes = true;
                     dashLen = dashes.length;
@@ -349,48 +349,35 @@ public class MarlinRenderingEngine extends RenderingEngine
                     System.arraycopy(dashes, 0, newDashes, 0, dashLen);
                     dashes = newDashes;
                     for (int i = 0; i < dashLen; i++) {
-                        dashes[i] = scale * dashes[i];
+                        dashes[i] *= scale;
                     }
-                    dashphase = scale * dashphase;
+                    dashphase *= scale;
                 }
-                width = scale * width;
-                pi = getNormalizingPathIterator(rdrCtx, normalize,
-                                                src.getPathIterator(at));
+                width *= scale;
 
-                // by now strokerat == null && outat == null. Input paths to
+                // by now strokerat == null. Input paths to
                 // stroker (and maybe dasher) will have the full transform at
                 // applied to them and nothing will happen to the output paths.
             } else {
-                if (normalize != NormMode.OFF) {
-                    strokerat = at;
-                    pi = getNormalizingPathIterator(rdrCtx, normalize,
-                                                    src.getPathIterator(at));
+                strokerat = at;
 
-                    // by now strokerat == at && outat == null. Input paths to
-                    // stroker (and maybe dasher) will have the full transform at
-                    // applied to them, then they will be normalized, and then
-                    // the inverse of *only the non translation part of at* will
-                    // be applied to the normalized paths. This won't cause problems
-                    // in stroker, because, suppose at = T*A, where T is just the
-                    // translation part of at, and A is the rest. T*A has already
-                    // been applied to Stroker/Dasher's input. Then Ainv will be
-                    // applied. Ainv*T*A is not equal to T, but it is a translation,
-                    // which means that none of stroker's assumptions about its
-                    // input will be violated. After all this, A will be applied
-                    // to stroker's output.
-                } else {
-                    outat = at;
-                    pi = src.getPathIterator(null);
-                    // outat == at && strokerat == null. This is because if no
-                    // normalization is done, we can just apply all our
-                    // transformations to stroker's output.
-                }
+                // by now strokerat == at. Input paths to
+                // stroker (and maybe dasher) will have the full transform at
+                // applied to them, then they will be normalized, and then
+                // the inverse of *only the non translation part of at* will
+                // be applied to the normalized paths. This won't cause problems
+                // in stroker, because, suppose at = T*A, where T is just the
+                // translation part of at, and A is the rest. T*A has already
+                // been applied to Stroker/Dasher's input. Then Ainv will be
+                // applied. Ainv*T*A is not equal to T, but it is a translation,
+                // which means that none of stroker's assumptions about its
+                // input will be violated. After all this, A will be applied
+                // to stroker's output.
             }
         } else {
             // either at is null or it's the identity. In either case
             // we don't transform the path.
-            pi = getNormalizingPathIterator(rdrCtx, normalize,
-                                            src.getPathIterator(null));
+            at = null;
         }
 
         if (useSimplifier) {
@@ -399,12 +386,7 @@ public class MarlinRenderingEngine extends RenderingEngine
             pc2d = rdrCtx.simplifier.init(pc2d);
         }
 
-        // by now, at least one of outat and strokerat will be null. Unless at is not
-        // a constant multiple of an orthogonal transformation, they will both be
-        // null. In other cases, outat == at if normalization is off, and if
-        // normalization is on, strokerat == at.
         final TransformingPathConsumer2D transformerPC2D = rdrCtx.transformerPC2D;
-        pc2d = transformerPC2D.transformConsumer(pc2d, outat);
         pc2d = transformerPC2D.deltaTransformConsumer(pc2d, strokerat);
 
         pc2d = rdrCtx.stroker.init(pc2d, width, caps, join, miterlimit);
@@ -417,18 +399,22 @@ public class MarlinRenderingEngine extends RenderingEngine
                                       recycleDashes);
         }
         pc2d = transformerPC2D.inverseDeltaTransformConsumer(pc2d, strokerat);
+
+        final PathIterator pi = getNormalizingPathIterator(rdrCtx, normalize,
+                                    src.getPathIterator(at));
+
         pathTo(rdrCtx, pi, pc2d);
 
         /*
          * Pipeline seems to be:
-         *    shape.getPathIterator
-         * -> NormalizingPathIterator
-         * -> inverseDeltaTransformConsumer
-         * -> Dasher
+         * shape.getPathIterator(at)
+         * -> (NormalizingPathIterator)
+         * -> (inverseDeltaTransformConsumer)
+         * -> (Dasher)
          * -> Stroker
-         * -> deltaTransformConsumer OR transformConsumer
+         * -> (deltaTransformConsumer)
          *
-         * -> CollinearSimplifier to remove redundant segments
+         * -> (CollinearSimplifier) to remove redundant segments
          *
          * -> pc2d = Renderer (bounding box)
          */
@@ -642,27 +628,109 @@ public class MarlinRenderingEngine extends RenderingEngine
     private static void pathToLoop(final float[] coords, final PathIterator pi,
                                    final PathConsumer2D pc2d)
     {
+        // ported from DuctusRenderingEngine.feedConsumer() but simplified:
+        // - removed skip flag = !subpathStarted
+        // - removed pathClosed (ie subpathStarted not set to false)
+        boolean subpathStarted = false;
+
         for (; !pi.isDone(); pi.next()) {
             switch (pi.currentSegment(coords)) {
-                case PathIterator.SEG_MOVETO:
+            case PathIterator.SEG_MOVETO:
+                /* Checking SEG_MOVETO coordinates if they are out of the
+                 * [LOWER_BND, UPPER_BND] range. This check also handles NaN
+                 * and Infinity values. Skipping next path segment in case of
+                 * invalid data.
+                 */
+                if (coords[0] < UPPER_BND && coords[0] > LOWER_BND &&
+                    coords[1] < UPPER_BND && coords[1] > LOWER_BND)
+                {
                     pc2d.moveTo(coords[0], coords[1]);
-                    continue;
-                case PathIterator.SEG_LINETO:
-                    pc2d.lineTo(coords[0], coords[1]);
-                    continue;
-                case PathIterator.SEG_QUADTO:
-                    pc2d.quadTo(coords[0], coords[1],
-                                coords[2], coords[3]);
-                    continue;
-                case PathIterator.SEG_CUBICTO:
-                    pc2d.curveTo(coords[0], coords[1],
-                                 coords[2], coords[3],
-                                 coords[4], coords[5]);
-                    continue;
-                case PathIterator.SEG_CLOSE:
+                    subpathStarted = true;
+                }
+                break;
+            case PathIterator.SEG_LINETO:
+                /* Checking SEG_LINETO coordinates if they are out of the
+                 * [LOWER_BND, UPPER_BND] range. This check also handles NaN
+                 * and Infinity values. Ignoring current path segment in case
+                 * of invalid data. If segment is skipped its endpoint
+                 * (if valid) is used to begin new subpath.
+                 */
+                if (coords[0] < UPPER_BND && coords[0] > LOWER_BND &&
+                    coords[1] < UPPER_BND && coords[1] > LOWER_BND)
+                {
+                    if (subpathStarted) {
+                        pc2d.lineTo(coords[0], coords[1]);
+                    } else {
+                        pc2d.moveTo(coords[0], coords[1]);
+                        subpathStarted = true;
+                    }
+                }
+                break;
+            case PathIterator.SEG_QUADTO:
+                // Quadratic curves take two points
+                /* Checking SEG_QUADTO coordinates if they are out of the
+                 * [LOWER_BND, UPPER_BND] range. This check also handles NaN
+                 * and Infinity values. Ignoring current path segment in case
+                 * of invalid endpoints's data. Equivalent to the SEG_LINETO
+                 * if endpoint coordinates are valid but there are invalid data
+                 * among other coordinates
+                 */
+                if (coords[2] < UPPER_BND && coords[2] > LOWER_BND &&
+                    coords[3] < UPPER_BND && coords[3] > LOWER_BND)
+                {
+                    if (subpathStarted) {
+                        if (coords[0] < UPPER_BND && coords[0] > LOWER_BND &&
+                            coords[1] < UPPER_BND && coords[1] > LOWER_BND)
+                        {
+                            pc2d.quadTo(coords[0], coords[1],
+                                        coords[2], coords[3]);
+                        } else {
+                            pc2d.lineTo(coords[2], coords[3]);
+                        }
+                    } else {
+                        pc2d.moveTo(coords[2], coords[3]);
+                        subpathStarted = true;
+                    }
+                }
+                break;
+            case PathIterator.SEG_CUBICTO:
+                // Cubic curves take three points
+                /* Checking SEG_CUBICTO coordinates if they are out of the
+                 * [LOWER_BND, UPPER_BND] range. This check also handles NaN
+                 * and Infinity values. Ignoring current path segment in case
+                 * of invalid endpoints's data. Equivalent to the SEG_LINETO
+                 * if endpoint coordinates are valid but there are invalid data
+                 * among other coordinates
+                 */
+                if (coords[4] < UPPER_BND && coords[4] > LOWER_BND &&
+                    coords[5] < UPPER_BND && coords[5] > LOWER_BND)
+                {
+                    if (subpathStarted) {
+                        if (coords[0] < UPPER_BND && coords[0] > LOWER_BND &&
+                            coords[1] < UPPER_BND && coords[1] > LOWER_BND &&
+                            coords[2] < UPPER_BND && coords[2] > LOWER_BND &&
+                            coords[3] < UPPER_BND && coords[3] > LOWER_BND)
+                        {
+                            pc2d.curveTo(coords[0], coords[1],
+                                         coords[2], coords[3],
+                                         coords[4], coords[5]);
+                        } else {
+                            pc2d.lineTo(coords[4], coords[5]);
+                        }
+                    } else {
+                        pc2d.moveTo(coords[4], coords[5]);
+                        subpathStarted = true;
+                    }
+                }
+                break;
+            case PathIterator.SEG_CLOSE:
+                if (subpathStarted) {
                     pc2d.closePath();
-                    continue;
-                default:
+                    // do not set subpathStarted to false
+                    // in case of missing moveTo() after close()
+                }
+                break;
+            default:
             }
         }
         pc2d.pathDone();
