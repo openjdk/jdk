@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,26 @@
  * questions.
  */
 
-package com.apple.eawt;
-
-import com.apple.eawt.AppEvent.PreferencesEvent;
+package java.awt.desktop;
 
 /**
- * An implementor is notified when the app is asked to show it's preferences UI.
+ * The strategy used to shut down the application, if Sudden Termination is not enabled.
  *
- * @see Application#setPreferencesHandler(PreferencesHandler)
+ * @see java.awt.Desktop#setQuitHandler(java.awt.desktop.QuitHandler)
+ * @see java.awt.Desktop#setQuitStrategy(java.awt.desktop.QuitStrategy)
+ * @see java.awt.Desktop#enableSuddenTermination()
+ * @see java.awt.Desktop#disableSuddenTermination()
  *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
+ * @since 9
  */
-public interface PreferencesHandler {
+public enum QuitStrategy {
     /**
-     * Called when the app is asked to show it's preferences UI.
-     * @param e the request to show preferences.
+     * Shuts down the application by calling {@code System.exit(0)}. This is the default strategy.
      */
-    public void handlePreferences(final PreferencesEvent e);
+    NORMAL_EXIT,
+
+    /**
+     * Shuts down the application by closing each window from back-to-front.
+     */
+    CLOSE_ALL_WINDOWS
 }

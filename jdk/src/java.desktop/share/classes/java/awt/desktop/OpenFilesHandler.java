@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,20 @@
  * questions.
  */
 
-package com.apple.eawt;
+package java.awt.desktop;
 
-import com.apple.eawt.AppEvent.AboutEvent;
 
 /**
- * An implementor receives notification when the app is asked to show it's about dialog.
+ * An implementor is notified when the application is asked to open a list of files.
  *
- * @see Application#setAboutHandler(AboutHandler)
+ * @see java.awt.Desktop#setOpenFileHandler(java.awt.desktop.OpenFilesHandler)
  *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
+ * @since 9
  */
-public interface AboutHandler {
+public interface OpenFilesHandler {
     /**
-     * Called when the application is asked to show it's about dialog.
-     * @param e the request to show the about dialog.
+     * Called when the application is asked to open a list of files.
+     * @param e the request to open a list of files, and the search term used to find them, if any.
      */
-    public void handleAbout(final AboutEvent e);
+    public void openFiles(final OpenFilesEvent e);
 }

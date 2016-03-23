@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,28 @@
  * questions.
  */
 
-package com.apple.eawt;
-
-import com.apple.eawt.event.FullScreenEvent;
+package java.awt.desktop;
 
 /**
- * Abstract adapter class for receiving fullscreen events. This class is provided
- * as a convenience for creating listeners.
+ * Implementors are notified when the app becomes the foreground app and when it
+ * is no longer the foreground app. This notification is useful for hiding and
+ * showing transient UI like palette windows which should be hidden when the app
+ * is in the background.
  *
- * Subclasses registered with {@link FullScreenUtilities#addFullScreenListenerTo(javax.swing.RootPaneContainer, FullScreenListener)}
- * will receive all entering/entered/exiting/exited full screen events.
- *
- * @see FullScreenUtilities
- *
- * @since Java for Mac OS X 10.7 Update 1
+ * @since 9
  */
-public abstract class FullScreenAdapter implements FullScreenListener {
-        public void windowEnteringFullScreen(final FullScreenEvent e) {}
-        public void windowEnteredFullScreen(final FullScreenEvent e) {}
-        public void windowExitingFullScreen(final FullScreenEvent e) {}
-        public void windowExitedFullScreen(final FullScreenEvent e) {}
+public interface AppForegroundListener extends SystemEventListener {
+    /**
+     * Called when the app becomes the foreground app.
+     * @param e event
+     */
+    public void appRaisedToForeground(final AppForegroundEvent e);
+
+    /**
+     * Called when the app becomes the background app and another app becomes
+     * the foreground app.
+     *
+     * @param e event
+     */
+    public void appMovedToBackground(final AppForegroundEvent e);
 }

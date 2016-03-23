@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,19 @@
  * questions.
  */
 
-package com.apple.eawt;
-
-import com.apple.eawt.event.FullScreenEvent;
+package java.awt.desktop;
 
 /**
- * Abstract adapter class for receiving fullscreen events. This class is provided
- * as a convenience for creating listeners.
+ * An implementor is notified when the application is asked to open a URI.
  *
- * Subclasses registered with {@link FullScreenUtilities#addFullScreenListenerTo(javax.swing.RootPaneContainer, FullScreenListener)}
- * will receive all entering/entered/exiting/exited full screen events.
+ * @see java.awt.Desktop#setOpenURIHandler(java.awt.desktop.OpenURIHandler)
  *
- * @see FullScreenUtilities
- *
- * @since Java for Mac OS X 10.7 Update 1
+ * @since 9
  */
-public abstract class FullScreenAdapter implements FullScreenListener {
-        public void windowEnteringFullScreen(final FullScreenEvent e) {}
-        public void windowEnteredFullScreen(final FullScreenEvent e) {}
-        public void windowExitingFullScreen(final FullScreenEvent e) {}
-        public void windowExitedFullScreen(final FullScreenEvent e) {}
+public interface OpenURIHandler {
+    /**
+     * Called when the application is asked to open a {@code URI}
+     * @param e the request to open a {@code URI}
+     */
+    public void openURI(final OpenURIEvent e);
 }

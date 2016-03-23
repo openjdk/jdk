@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,15 @@
  * questions.
  */
 
-package com.apple.eawt;
-
-import com.apple.eawt.AppEvent.QuitEvent;
+package java.awt.desktop;
 
 /**
  * An implementor determines if requests to quit this application should proceed or cancel.
  *
- * @see Application#setQuitHandler(QuitHandler)
- * @see Application#setQuitStrategy(QuitStrategy)
+ * @see java.awt.Desktop#setQuitHandler(java.awt.desktop.QuitHandler)
+ * @see java.awt.Desktop#setQuitStrategy(java.awt.desktop.QuitStrategy)
  *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
+ * @since 9
  */
 public interface QuitHandler {
     /**

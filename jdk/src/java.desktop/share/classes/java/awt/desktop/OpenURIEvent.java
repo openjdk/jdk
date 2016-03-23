@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,36 @@
  * questions.
  */
 
-package com.apple.eawt;
+package java.awt.desktop;
 
-import com.apple.eawt.AppEvent.AppHiddenEvent;
+import java.net.URI;
+
 
 /**
- * Implementors are notified when the app is hidden or shown by the user.
- * This notification is helpful for discontinuing a costly animation if it's not visible to the user.
+ * Event sent when the app is asked to open a {@code URI}.
  *
- * @see Application#addAppEventListener(AppEventListener)
+ * @see OpenURIHandler#openURI(AppEvent.OpenURIEvent)
  *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
+ * @since 9
  */
-public interface AppHiddenListener extends AppEventListener {
-    /**
-     * Called the app is hidden.
-     * @param e
-     */
-    public void appHidden(final AppHiddenEvent e);
+public final class OpenURIEvent extends AppEvent {
+    private static final long serialVersionUID = 221209100935933476L;
+    final URI uri;
 
     /**
-     * Called when the hidden app is shown again (but not necessarily brought to the foreground).
-     * @param e
+     * Constructs an {@code OpenURIEvent}
+     * @param uri {@code URI}
      */
-    public void appUnhidden(final AppHiddenEvent e);
+    public OpenURIEvent(final URI uri) {
+        this.uri = uri;
+    }
+
+    /**
+     * Get the {@code URI} the app was asked to open
+     * @return the {@code URI}
+     */
+    public URI getURI() {
+        return uri;
+    }
+
 }

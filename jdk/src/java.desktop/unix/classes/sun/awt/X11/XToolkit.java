@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package sun.awt.X11;
 
+import java.awt.peer.TaskbarPeer;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
@@ -2565,6 +2566,16 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     @Override
     public DesktopPeer createDesktopPeer(Desktop target){
         return new XDesktopPeer();
+    }
+
+    @Override
+    public boolean isTaskbarSupported(){
+        return XTaskbarPeer.isTaskbarSupported();
+    }
+
+    @Override
+    public TaskbarPeer createTaskbarPeer(Taskbar target){
+        return new XTaskbarPeer();
     }
 
     @Override

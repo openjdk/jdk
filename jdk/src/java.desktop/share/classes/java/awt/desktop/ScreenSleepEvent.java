@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package com.apple.eawt;
-
-import com.apple.eawt.event.FullScreenEvent;
+package java.awt.desktop;
 
 /**
- * Abstract adapter class for receiving fullscreen events. This class is provided
- * as a convenience for creating listeners.
+ * Event sent when the displays attached to the system enter and exit power save
+ * sleep.
  *
- * Subclasses registered with {@link FullScreenUtilities#addFullScreenListenerTo(javax.swing.RootPaneContainer, FullScreenListener)}
- * will receive all entering/entered/exiting/exited full screen events.
+ * @see ScreenSleepListener#screenAboutToSleep(AppEvent.ScreenSleepEvent)
+ * @see ScreenSleepListener#screenAwoke(AppEvent.ScreenSleepEvent)
  *
- * @see FullScreenUtilities
- *
- * @since Java for Mac OS X 10.7 Update 1
+ * @since 9
  */
-public abstract class FullScreenAdapter implements FullScreenListener {
-        public void windowEnteringFullScreen(final FullScreenEvent e) {}
-        public void windowEnteredFullScreen(final FullScreenEvent e) {}
-        public void windowExitingFullScreen(final FullScreenEvent e) {}
-        public void windowExitedFullScreen(final FullScreenEvent e) {}
+public final class ScreenSleepEvent extends AppEvent {
+
+    private static final long serialVersionUID = 7521606180376544150L;
+
+    /**
+     * Constructs a ScreenSleepEvent
+     */
+    public ScreenSleepEvent() {
+    }
 }

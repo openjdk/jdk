@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,29 @@
  * questions.
  */
 
-package com.apple.eawt;
+package com.apple.eawt.event;
 
-/**
- * Common interface for all event listener sub-types.
- * Implementors may implement multiple sub-types, but only need to call {@link Application#addAppEventListener(AppEventListener)} once to receive all notifications.
- *
- * @see AppReOpenedListener
- * @see AppForegroundListener
- * @see AppHiddenListener
- * @see ScreenSleepListener
- * @see SystemSleepListener
- * @see UserSessionListener
- *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
- */
-public interface AppEventListener { }
+import com.apple.eawt.Application;
+import java.awt.Window;
+import java.util.EventObject;
+
+@SuppressWarnings("serial") // JDK implementation class
+public class FullScreenEvent extends EventObject {
+
+        final Window window;
+
+        /**
+         * @param window window
+         */
+        public FullScreenEvent(final Window window) {
+            super(Application.getApplication());
+            this.window = window;
+        }
+
+        /**
+         * @return window transitioning between full screen states
+         */
+        public Window getWindow() {
+            return window;
+        }
+}

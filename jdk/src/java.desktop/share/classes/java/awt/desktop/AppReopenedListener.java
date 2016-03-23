@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,19 @@
  * questions.
  */
 
-package com.apple.eawt;
-
-import com.apple.eawt.AppEvent.SystemSleepEvent;
+package java.awt.desktop;
 
 /**
- * Implementors receive notification as the system is entering sleep, and after the system wakes.
+ * Implementors receive notification when the app has been asked to open again.
  *
- * This notification is useful for disconnecting from network services prior to sleep, or re-establishing a connection if the network configuration has changed during sleep.
+ * This notification is useful for showing a new document when your app has no open windows.
  *
- * @see Application#addAppEventListener(AppEventListener)
- *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
+ * @since 9
  */
-public interface SystemSleepListener extends AppEventListener {
+public interface AppReopenedListener extends SystemEventListener {
     /**
-     * Called when the system is about to sleep.
-     * Note: This message may not be delivered prior to the actual system sleep, and may be processed after the corresponding wake has occurred.
-     * @param e the system sleep event
+     * Called when the app has been reopened
+     * @param e the request to reopen the app
      */
-    public void systemAboutToSleep(final SystemSleepEvent e);
-
-    /**
-     * Called after the system has awoke from sleeping.
-     * @param e the system sleep event
-     */
-    public void systemAwoke(final SystemSleepEvent e);
+    public void appReopened(final AppReopenedEvent e);
 }

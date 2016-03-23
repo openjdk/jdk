@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,23 @@
  * questions.
  */
 
-package com.apple.eawt;
+package java.awt.desktop;
 
-import com.apple.eawt.AppEvent.PrintFilesEvent;
+import java.awt.Desktop;
+import java.util.EventObject;
 
 /**
- * An implementor can respond to requests to print documents that the app has been registered to handle.
+ * AppEvents are sent to listeners and handlers installed on the
+ * {@link java.awt.Desktop}.
  *
- * @see Application#setPrintFileHandler(PrintFilesHandler)
- *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
+ * @since 9
  */
-public interface PrintFilesHandler {
-    /**
-     * Called when the application is asked to print a list of files.
-     * @param e the request to print a list of files.
-     */
-    public void printFiles(final PrintFilesEvent e);
+public class AppEvent extends EventObject {
+
+    private static final long serialVersionUID = -5958503993556009432L;
+
+    AppEvent() {
+        super(Desktop.getDesktop());
+    }
+
 }

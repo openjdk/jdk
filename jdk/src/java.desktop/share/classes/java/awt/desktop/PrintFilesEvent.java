@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,28 @@
  * questions.
  */
 
-package com.apple.eawt;
 
-import com.apple.eawt.AppEvent.OpenURIEvent;
+package java.awt.desktop;
+
+import java.io.File;
+import java.util.List;
+
 
 /**
- * An implementor is notified when the application is asked to open a URI.
- * The application only sends {@link com.apple.eawt.EAWTEvent.OpenURIEvent}s when it has been launched as a bundled Mac application, and it's Info.plist claims URL schemes in it's {@code CFBundleURLTypes} entry.
- * See the <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">Info.plist Key Reference</a> for more information about adding a {@code CFBundleURLTypes} key to your app's Info.plist.
+ * Event sent when the app is asked to print a list of files.
  *
- * @see Application#setOpenURIHandler(OpenURIHandler)
- *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
+ * @see PrintFilesHandler#printFiles(AppEvent.PrintFilesEvent)
+ * @since 9
  */
-public interface OpenURIHandler {
+public final class PrintFilesEvent extends FilesEvent {
+    private static final long serialVersionUID = -5752560876153618618L;
+
     /**
-     * Called when the application is asked to open a URI
-     * @param e the request to open a URI
+     * Constructs a {@code PrintFilesEvent}
+     * @param files files
      */
-    public void openURI(final OpenURIEvent e);
+    public PrintFilesEvent(final List<File> files) {
+        super(files);
+    }
+
 }

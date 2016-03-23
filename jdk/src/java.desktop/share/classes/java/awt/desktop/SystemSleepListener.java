@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,33 @@
  * questions.
  */
 
-package com.apple.eawt;
-
-import com.apple.eawt.event.FullScreenEvent;
+package java.awt.desktop;
 
 /**
- * Abstract adapter class for receiving fullscreen events. This class is provided
- * as a convenience for creating listeners.
+ * Implementors receive notification as the system is entering sleep, and after
+ * the system wakes.
  *
- * Subclasses registered with {@link FullScreenUtilities#addFullScreenListenerTo(javax.swing.RootPaneContainer, FullScreenListener)}
- * will receive all entering/entered/exiting/exited full screen events.
+ * This notification is useful for disconnecting from network services prior to
+ * sleep, or re-establishing a connection if the network configuration has
+ * changed during sleep.
  *
- * @see FullScreenUtilities
- *
- * @since Java for Mac OS X 10.7 Update 1
+ * @since 9
  */
-public abstract class FullScreenAdapter implements FullScreenListener {
-        public void windowEnteringFullScreen(final FullScreenEvent e) {}
-        public void windowEnteredFullScreen(final FullScreenEvent e) {}
-        public void windowExitingFullScreen(final FullScreenEvent e) {}
-        public void windowExitedFullScreen(final FullScreenEvent e) {}
+public interface SystemSleepListener extends SystemEventListener {
+
+    /**
+     * Called when the system is about to sleep. Note: This message may not be
+     * delivered prior to the actual system sleep, and may be processed after
+     * the corresponding wake has occurred.
+     *
+     * @param e the system sleep event
+     */
+    public void systemAboutToSleep(final SystemSleepEvent e);
+
+    /**
+     * Called after the system has awoken from sleeping.
+     *
+     * @param e the system sleep event
+     */
+    public void systemAwoke(final SystemSleepEvent e);
 }

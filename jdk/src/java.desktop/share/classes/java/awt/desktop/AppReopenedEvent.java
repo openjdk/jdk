@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,23 @@
  * questions.
  */
 
-package com.apple.eawt;
+package java.awt.desktop;
 
-import com.apple.eawt.AppEvent.AppForegroundEvent;
 
 /**
- * Implementors are notified when the app becomes the foreground app and when it resigns being the foreground app.
- * This notification is useful for hiding and showing transient UI like palette windows which should be hidden when the app is in the background.
+ * Event sent when the application is asked to re-open itself.
  *
- * @see Application#addAppEventListener(AppEventListener)
+ * @see AppReopenedListener#appReopened(AppEvent.AppReopenedEvent)
  *
- * @since Java for Mac OS X 10.6 Update 3
- * @since Java for Mac OS X 10.5 Update 8
+ * @since 9
  */
-public interface AppForegroundListener extends AppEventListener {
-    /**
-     * Called when the app becomes the foreground app.
-     * @param e the app became foreground notification.
-     */
-    public void appRaisedToForeground(final AppForegroundEvent e);
+public final class AppReopenedEvent extends AppEvent {
+    private static final long serialVersionUID = 1503238361530407990L;
 
     /**
-     * Called when the app resigns to the background and another app becomes the foreground app.
-     * @param e the app resigned foreground notification.
+     * Constructs an {@code AppReopenedEvent}
      */
-    public void appMovedToBackground(final AppForegroundEvent e);
+    public AppReopenedEvent() {
+    }
+
 }
