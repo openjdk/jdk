@@ -91,3 +91,9 @@ tools/javap/output/RepeatingTypeAnnotations.java                                
 tools/sjavac/IncCompileFullyQualifiedRef.java                                   8152055    generic-all    Requires dependency code to deal with in-method dependencies.
 tools/sjavac/IncCompileWithChanges.java                                         8152055    generic-all    Requires dependency code to deal with in-method dependencies.
 
+###########################################################################
+#
+# jdeps 
+
+tools/jdeps/modules/GenModuleInfo.java                                          8152502    windows-all    fails to clean up files
+
