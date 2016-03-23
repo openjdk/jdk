@@ -557,12 +557,50 @@ Declares a structure type that can be used in other events.
     <value type="INTEGER" field="fullCount" label="Full Count"/>
   </event>
 
+  <event id="SafepointBegin" path="vm/runtime/safepoint/begin" label="Safepoint Begin"
+         description="Safepointing begin" has_thread="true">
+    <value type="INTEGER" field="safepointId" label="Safepoint ID" relation="SAFEPOINT_ID"/>
+    <value type="INTEGER" field="totalThreadCount" label="Total Threads" description="The total number of threads at the start of safe point"/>
+    <value type="INTEGER" field="jniCriticalThreadCount" label="JNI Critical Threads" description="The number of threads in JNI critical sections"/>
+  </event>
+
+  <event id="SafepointStateSync" path="vm/runtime/safepoint/statesync" label="Safepoint State Sync"
+         description="Synchronize run state of threads" has_thread="true">
+    <value type="INTEGER" field="safepointId" label="Safepoint ID" relation="SAFEPOINT_ID"/>
+    <value type="INTEGER" field="initialThreadCount" label="Initial Threads" description="The number of threads running at the beginning of state check"/>
+    <value type="INTEGER" field="runningThreadCount" label="Running Threads" description="The number of threads still running"/>
+    <value type="INTEGER" field="iterations" label="Iterations" description="Number of state check iterations"/>
+  </event>
+
+  <event id="SafepointWaitBlocked" path="vm/runtime/safepoint/waitblocked" label="Safepoint Wait Blocked"
+         description="Safepointing begin waiting on running threads to block" has_thread="true">
+    <value type="INTEGER" field="safepointId" label="Safepoint ID" relation="SAFEPOINT_ID"/>
+    <value type="INTEGER" field="runningThreadCount" label="Running Threads" description="The number running of threads wait for safe point"/>
+  </event>
+
+  <event id="SafepointCleanup" path="vm/runtime/safepoint/cleanup" label="Safepoint Cleanup"
+         description="Safepointing begin running cleanup tasks" has_thread="true">
+    <value type="INTEGER" field="safepointId" label="Safepoint ID" relation="SAFEPOINT_ID"/>
+  </event>
+
+  <event id="SafepointCleanupTask" path="vm/runtime/safepoint/cleanuptask" label="Safepoint Cleanup Task"
+         description="Safepointing begin running cleanup tasks" has_thread="true">
+    <value type="INTEGER" field="safepointId" label="Safepoint ID" relation="SAFEPOINT_ID"/>
+    <value type="UTF8" field="name" label="Task Name" description="The task name"/>
+  </event>
+
+  <event id="SafepointEnd" path="vm/runtime/safepoint/end" label="Safepoint End"
+         description="Safepointing end" has_thread="true">
+    <value type="INTEGER" field="safepointId" label="Safepoint ID" relation="SAFEPOINT_ID"/>
+  </event>
+
   <event id="ExecuteVMOperation" path="vm/runtime/execute_vm_operation" label="VM Operation"
       description="Execution of a VM Operation" has_thread="true">
     <value type="VMOPERATIONTYPE" field="operation" label="Operation" />
     <value type="BOOLEAN" field="safepoint" label="At Safepoint" description="If the operation occured at a safepoint."/>
     <value type="BOOLEAN" field="blocking" label="Caller Blocked" description="If the calling thread was blocked until the operation was complete."/>
     <value type="THREAD" field="caller" label="Caller" transition="FROM" description="Thread requesting operation. If non-blocking, will be set to 0 indicating thread is unknown."/>
+    <value type="INTEGER" field="safepointId" label="Safepoint ID" description="The safepoint (if any) under which this operation was completed." relation="SAFEPOINT_ID"/>
   </event>
 
   <!-- Allocation events -->

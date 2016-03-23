@@ -31,4 +31,5 @@
   <relation_decl id="COMP_ID" uri="vm/compiler/id"/>
   <relation_decl id="SWEEP_ID" uri="vm/code_sweeper/id"/>
   <relation_decl id="JAVA_MONITOR_ADDRESS" uri="java/monitor/address"/>
+  <relation_decl id="SAFEPOINT_ID" uri="vm/runtime/safepoint/id"/>
 </relation_decls>
