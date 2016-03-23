@@ -385,6 +385,7 @@
   template(fillInStackTrace_name,                     "fillInStackTrace")                         \
   template(getCause_name,                             "getCause")                                 \
   template(initCause_name,                            "initCause")                                \
+  template(depth_name,                                "depth")                                    \
   template(setProperty_name,                          "setProperty")                              \
   template(getProperty_name,                          "getProperty")                              \
   template(context_name,                              "context")                                  \

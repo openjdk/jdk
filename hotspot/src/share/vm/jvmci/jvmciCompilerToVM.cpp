@@ -48,6 +48,7 @@
 #include "gc/g1/heapRegion.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmStructs.hpp"

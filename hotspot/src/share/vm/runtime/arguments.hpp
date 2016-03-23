@@ -265,7 +265,12 @@ typedef struct {
   const char* alias_name;
   LogLevelType level;
   bool exactMatch;
-  LogTagType tag;
+  LogTagType tag0;
+  LogTagType tag1;
+  LogTagType tag2;
+  LogTagType tag3;
+  LogTagType tag4;
+  LogTagType tag5;
 } AliasedLoggingFlag;
 
 class Arguments : AllStatic {
@@ -502,6 +507,10 @@ class Arguments : AllStatic {
   // In this case the 'version' buffer is filled in with
   // the version number when the flag became obsolete.
   static bool is_obsolete_flag(const char* flag_name, JDK_Version* version);
+
+#ifndef PRODUCT
+  static const char* removed_develop_logging_flag_name(const char* name);
+#endif // PRODUCT
 
   // Returns 1 if the flag is deprecated (and not yet obsolete or expired).
   //     In this case the 'version' buffer is filled in with the version number when

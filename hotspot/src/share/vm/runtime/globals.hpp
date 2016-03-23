@@ -990,9 +990,6 @@ public:
   develop(bool, PrintVMMessages, true,                                      \
           "Print VM messages on console")                                   \
                                                                             \
-  diagnostic(bool, VerboseVerification, false,                              \
-          "Display detailed verification details")                          \
-                                                                            \
   notproduct(uintx, ErrorHandlerTest, 0,                                    \
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See test_error_handler() "    \
@@ -1051,9 +1048,6 @@ public:
           "When HeapDumpOnOutOfMemoryError is on, the path (filename or "   \
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
-                                                                            \
-  develop(size_t, HeapDumpSegmentSize, 1*G,                                 \
-          "Approximate segment size when generating a segmented heap dump") \
                                                                             \
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
@@ -1471,9 +1465,6 @@ public:
                                                                             \
   develop(bool, TraceCompiledIC, false,                                     \
           "Trace changes of compiled IC")                                   \
-                                                                            \
-  develop(bool, TraceClearedExceptions, false,                              \
-          "Print when an exception is forcibly cleared")                    \
                                                                             \
   /* gc */                                                                  \
                                                                             \
@@ -1904,7 +1895,8 @@ public:
                                                                             \
   product(uintx, CMSSamplingGrain, 16*K,                                    \
           "The minimum distance between eden samples for CMS (see above)")  \
-          range(1, max_uintx)                                               \
+          range(ObjectAlignmentInBytes, max_uintx)                          \
+          constraint(CMSSamplingGrainConstraintFunc,AfterMemoryInit)        \
                                                                             \
   product(bool, CMSScavengeBeforeRemark, false,                             \
           "Attempt scavenge before the CMS remark step")                    \
@@ -2067,9 +2059,6 @@ public:
   develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
           "Metadata allocation failure a lot interval")                     \
                                                                             \
-  develop(bool, TraceMetadataChunkAllocation, false,                        \
-          "Trace chunk metadata allocations")                               \
-                                                                            \
   notproduct(bool, ExecuteInternalVMTests, false,                           \
           "Enable execution of internal VM tests")                          \
                                                                             \
@@ -2223,10 +2212,10 @@ public:
           "Decay factor to TenuredGenerationSizeIncrement")                 \
           range(1, max_uintx)                                               \
                                                                             \
-  product(uintx, MaxGCPauseMillis, max_uintx,                               \
+  product(uintx, MaxGCPauseMillis, max_uintx - 1,                           \
           "Adaptive size policy maximum GC pause time goal in millisecond, "\
           "or (G1 Only) the maximum GC time per MMU time slice")            \
-          range(1, max_uintx)                                               \
+          range(1, max_uintx - 1)                                           \
           constraint(MaxGCPauseMillisConstraintFunc,AfterMemoryInit)        \
                                                                             \
   product(uintx, GCPauseIntervalMillis, 0,                                  \
@@ -2390,9 +2379,6 @@ public:
   product(bool, IgnoreEmptyClassPaths, false,                               \
           "Ignore empty path elements in -classpath")                       \
                                                                             \
-  product(bool, TraceClassLoadingPreorder, false,                           \
-          "Trace all classes loaded in order referenced (not loaded)")      \
-                                                                            \
   product_rw(bool, TraceLoaderConstraints, false,                           \
           "Trace loader constraints")                                       \
                                                                             \
@@ -2544,10 +2530,6 @@ public:
           "more than PrintSafepointSatisticsTimeout in millis")             \
   LP64_ONLY(range(-1, max_intx/MICROUNITS))                                 \
   NOT_LP64(range(-1, max_intx))                                             \
-                                                                            \
-  product(bool, TraceSafepointCleanupTime, false,                           \
-          "Print the break down of clean up tasks performed during "        \
-          "safepoint")                                                      \
                                                                             \
   product(bool, Inline, true,                                               \
           "Enable inlining")                                                \
@@ -2780,10 +2762,6 @@ public:
           "Produce histogram of IC misses")                                 \
                                                                             \
   /* interpreter */                                                         \
-  develop(bool, ClearInterpreterLocals, false,                              \
-          "Always clear local variables of interpreter activations upon "   \
-          "entry")                                                          \
-                                                                            \
   product_pd(bool, RewriteBytecodes,                                        \
           "Allow rewriting of bytecodes (bytecodes are not immutable)")     \
                                                                             \
@@ -3267,7 +3245,8 @@ public:
           range(0, max_uintx)                                               \
                                                                             \
   product_pd(size_t, MetaspaceSize,                                         \
-          "Initial size of Metaspaces (in bytes)")                          \
+          "Initial threshold (in bytes) at which a garbage collection "     \
+          "is done to reduce Metaspace usage")                              \
           constraint(MetaspaceSizeConstraintFunc,AfterErgo)                 \
                                                                             \
   product(size_t, MaxMetaspaceSize, max_uintx,                              \
@@ -3292,6 +3271,11 @@ public:
           " ParallelGC it applies to the whole heap.")                      \
           range(0, 100)                                                     \
           constraint(MaxHeapFreeRatioConstraintFunc,AfterErgo)              \
+                                                                            \
+  product(bool, ShrinkHeapInSteps, true,                                    \
+          "When disabled, informs the GC to shrink the java heap directly"  \
+          " to the target size at the next full GC rather than requiring"   \
+          " smaller steps during multiple full GCs.")                       \
                                                                             \
   product(intx, SoftRefLRUPolicyMSPerMB, 1000,                              \
           "Number of milliseconds per MB of free space in the heap")        \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorPolicy.hpp"
+#include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/commandLineFlagConstraintsGC.hpp"
@@ -448,6 +449,22 @@ Flag::Error CMSPrecleanNumeratorConstraintFunc(uintx value, bool verbose) {
   return Flag::SUCCESS;
 }
 
+Flag::Error CMSSamplingGrainConstraintFunc(uintx value, bool verbose) {
+#if INCLUDE_ALL_GCS
+  if (UseConcMarkSweepGC) {
+    size_t max_capacity = GenCollectedHeap::heap()->young_gen()->max_capacity();
+    if (value > max_uintx - max_capacity) {
+    CommandLineError::print(verbose,
+                            "CMSSamplingGrain (" UINTX_FORMAT ") must be "
+                            "less than or equal to ergonomic maximum (" SIZE_FORMAT ")\n",
+                            value, max_uintx - max_capacity);
+    return Flag::VIOLATES_CONSTRAINT;
+    }
+  }
+#endif
+  return Flag::SUCCESS;
+}
+
 Flag::Error CMSWorkQueueDrainThresholdConstraintFunc(uintx value, bool verbose) {
 #if INCLUDE_ALL_GCS
   if (UseConcMarkSweepGC) {
@@ -589,9 +606,15 @@ Flag::Error MinTLABSizeConstraintFunc(size_t value, bool verbose) {
                             "greater than or equal to reserved area in TLAB (" SIZE_FORMAT ")\n",
                             value, ThreadLocalAllocBuffer::alignment_reserve_in_bytes());
     return Flag::VIOLATES_CONSTRAINT;
-  } else {
-    return Flag::SUCCESS;
   }
+  if (value > (ThreadLocalAllocBuffer::max_size() * HeapWordSize)) {
+    CommandLineError::print(verbose,
+                            "MinTLABSize (" SIZE_FORMAT ") must be "
+                            "less than or equal to ergonomic TLAB maximum (" SIZE_FORMAT ")\n",
+                            value, ThreadLocalAllocBuffer::max_size() * HeapWordSize);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+  return Flag::SUCCESS;
 }
 
 Flag::Error TLABSizeConstraintFunc(size_t value, bool verbose) {
