@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,6 +503,44 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         TypeBoundKind kind = M.at(t.kind.pos).TypeBoundKind(t.kind.kind);
         JCTree inner = copy(t.inner, p);
         return M.at(t.pos).Wildcard(kind, inner);
+    }
+
+    @Override
+    public JCTree visitModule(ModuleTree node, P p) {
+        JCModuleDecl t = (JCModuleDecl) node;
+        JCExpression qualId = copy(t.qualId);
+        List<JCDirective> directives = copy(t.directives);
+        return M.at(t.pos).ModuleDef(qualId, directives);
+    }
+
+    @Override
+    public JCExports visitExports(ExportsTree node, P p) {
+        JCExports t = (JCExports) node;
+        JCExpression qualId = copy(t.qualid, p);
+        List<JCExpression> moduleNames = copy(t.moduleNames, p);
+        return M.at(t.pos).Exports(qualId, moduleNames);
+    }
+
+    @Override
+    public JCProvides visitProvides(ProvidesTree node, P p) {
+        JCProvides t = (JCProvides) node;
+        JCExpression serviceName = copy(t.serviceName, p);
+        JCExpression implName = copy(t.implName, p);
+        return M.at(t.pos).Provides(serviceName, implName);
+    }
+
+    @Override
+    public JCRequires visitRequires(RequiresTree node, P p) {
+        JCRequires t = (JCRequires) node;
+        JCExpression moduleName = copy(t.moduleName, p);
+        return M.at(t.pos).Requires(t.isPublic, moduleName);
+    }
+
+    @Override
+    public JCUses visitUses(UsesTree node, P p) {
+        JCUses t = (JCUses) node;
+        JCExpression serviceName = copy(t.qualid, p);
+        return M.at(t.pos).Uses(serviceName);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

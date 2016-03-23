@@ -61,6 +61,7 @@ import javax.lang.model.util.Elements;
 import javax.tools.FileObject;
 import jdk.jshell.MemoryFileManager.SourceMemoryJavaFileObject;
 import jdk.jshell.ClassTracker.ClassInfo;
+import jdk.Version;
 
 /**
  * The primary interface to the compiler API.  Parsing, analysis, and
@@ -73,6 +74,7 @@ class TaskFactory {
     private final MemoryFileManager fileManager;
     private final JShell state;
     private String classpath = System.getProperty("java.class.path");
+    private final static Version INITIAL_SUPPORTED_VER = Version.parse("9");
 
     TaskFactory(JShell state) {
         this.state = state;
@@ -80,7 +82,8 @@ class TaskFactory {
         if (compiler == null) {
             throw new UnsupportedOperationException("Compiler not available, must be run with full JDK 9.");
         }
-        if (!System.getProperty("java.specification.version").equals("9"))  {
+        Version current = Version.parse(System.getProperty("java.specification.version"));
+        if (INITIAL_SUPPORTED_VER.compareToIgnoreOpt(current) > 0)  {
             throw new UnsupportedOperationException("Wrong compiler, must be run with full JDK 9.");
         }
         this.fileManager = new MemoryFileManager(
@@ -246,7 +249,7 @@ class TaskFactory {
 
         AnalyzeTask(final Collection<Unit> units) {
             this(units.stream(), new UnitSourceHandler(),
-                    "-XDshouldStopPolicy=FLOW", "-Xlint:unchecked", "-proc:none");
+                    "-XDshouldStopPolicy=FLOW", "-Xlint:unchecked", "-XaddExports:jdk.jshell/jdk.internal.jshell.remote=ALL-UNNAMED", "-proc:none");
         }
 
         <T>AnalyzeTask(final Stream<T> stream, SourceHandler<T> sourceHandler,
@@ -288,7 +291,7 @@ class TaskFactory {
 
         CompileTask(Collection<Unit> units) {
             super(units.stream(), new UnitSourceHandler(),
-                    "-Xlint:unchecked", "-proc:none");
+                    "-Xlint:unchecked", "-XaddExports:jdk.jshell/jdk.internal.jshell.remote=ALL-UNNAMED", "-proc:none");
         }
 
         boolean compile() {

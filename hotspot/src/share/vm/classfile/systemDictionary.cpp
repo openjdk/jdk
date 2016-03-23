@@ -32,6 +32,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/loaderConstraints.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/placeholders.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/stringTable.hpp"
@@ -51,6 +52,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/methodHandles.hpp"
@@ -171,13 +173,13 @@ bool SystemDictionary::is_parallelDefine(Handle class_loader) {
 }
 
 /**
- * Returns true if the passed class loader is the extension class loader.
+ * Returns true if the passed class loader is the platform class loader.
  */
-bool SystemDictionary::is_ext_class_loader(Handle class_loader) {
+bool SystemDictionary::is_platform_class_loader(Handle class_loader) {
   if (class_loader.is_null()) {
     return false;
   }
-  return (class_loader->klass()->name() == vmSymbols::sun_misc_Launcher_ExtClassLoader());
+  return (class_loader->klass() == SystemDictionary::jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass());
 }
 
 // ----------------------------------------------------------------------------
@@ -430,12 +432,15 @@ void SystemDictionary::validate_protection_domain(instanceKlassHandle klass,
 
   // Now we have to call back to java to check if the initating class has access
   JavaValue result(T_VOID);
-  if (TraceProtectionDomainVerification) {
+  if (log_is_enabled(Debug, protectiondomain)) {
+    ResourceMark rm;
     // Print out trace information
-    tty->print_cr("Checking package access");
-    tty->print(" - class loader:      "); class_loader()->print_value_on(tty);      tty->cr();
-    tty->print(" - protection domain: "); protection_domain()->print_value_on(tty); tty->cr();
-    tty->print(" - loading:           "); klass()->print_value_on(tty);             tty->cr();
+    outputStream* log = LogHandle(protectiondomain)::debug_stream();
+    log->print_cr("Checking package access");
+    log->print("class loader: "); class_loader()->print_value_on(log);
+    log->print(" protection domain: "); protection_domain()->print_value_on(log);
+    log->print(" loading: "); klass()->print_value_on(log);
+    log->cr();
   }
 
   KlassHandle system_loader(THREAD, SystemDictionary::ClassLoader_klass());
@@ -448,13 +453,10 @@ void SystemDictionary::validate_protection_domain(instanceKlassHandle klass,
                          protection_domain,
                          THREAD);
 
-  if (TraceProtectionDomainVerification) {
-    if (HAS_PENDING_EXCEPTION) {
-      tty->print_cr(" -> DENIED !!!!!!!!!!!!!!!!!!!!!");
-    } else {
-     tty->print_cr(" -> granted");
-    }
-    tty->cr();
+  if (HAS_PENDING_EXCEPTION) {
+    log_debug(protectiondomain)("DENIED !!!!!!!!!!!!!!!!!!!!!");
+  } else {
+   log_debug(protectiondomain)("granted");
   }
 
   if (HAS_PENDING_EXCEPTION) return;
@@ -1144,6 +1146,7 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   const char* pkg = "java/";
   if (!HAS_PENDING_EXCEPTION &&
       !class_loader.is_null() &&
+      !SystemDictionary::is_platform_class_loader(class_loader) &&
       parsed_name != NULL &&
       !strncmp((const char*)parsed_name->bytes(), pkg, strlen(pkg))) {
     // It is illegal to define classes in the "java." package from
@@ -1236,11 +1239,86 @@ instanceKlassHandle SystemDictionary::load_shared_class(
   instanceKlassHandle ik (THREAD, find_shared_class(class_name));
   // Make sure we only return the boot class for the NULL classloader.
   if (ik.not_null() &&
-      SharedClassUtil::is_shared_boot_class(ik()) && class_loader.is_null()) {
+      ik->is_shared_boot_class() && class_loader.is_null()) {
     Handle protection_domain;
     return load_shared_class(ik, class_loader, protection_domain, THREAD);
   }
   return instanceKlassHandle();
+}
+
+// Check if a shared class can be loaded by the specific classloader:
+//
+// NULL classloader:
+//   - Module class from "modules" jimage. ModuleEntry must be defined in the classloader.
+//   - Class from -Xbootclasspath/a. The class has no defined PackageEntry, or must
+//     be defined in an unnamed module.
+bool SystemDictionary::is_shared_class_visible(Symbol* class_name,
+                                               instanceKlassHandle ik,
+                                               Handle class_loader, TRAPS) {
+  int path_index = ik->shared_classpath_index();
+  SharedClassPathEntry* ent =
+            (SharedClassPathEntry*)FileMapInfo::shared_classpath(path_index);
+  if (!Universe::is_module_initialized()) {
+    assert(ent->is_jrt(),
+           "Loading non-bootstrap classes before the module system is initialized");
+    assert(class_loader.is_null(), "sanity");
+    return true;
+  }
+  // Get the pkg_entry from the classloader
+  TempNewSymbol pkg_name = NULL;
+  PackageEntry* pkg_entry = NULL;
+  ModuleEntry* mod_entry = NULL;
+  int length = 0;
+  ClassLoaderData* loader_data = class_loader_data(class_loader);
+  const jbyte* pkg_string = InstanceKlass::package_from_name(class_name, length);
+  if (pkg_string != NULL) {
+    pkg_name = SymbolTable::new_symbol((const char*)pkg_string,
+                                       length, CHECK_(false));
+    if (loader_data != NULL) {
+      pkg_entry = loader_data->packages()->lookup_only(pkg_name);
+    }
+    if (pkg_entry != NULL) {
+      mod_entry = pkg_entry->module();
+    }
+  }
+
+  if (class_loader.is_null()) {
+    // The NULL classloader can load archived class originated from the
+    // "modules" jimage and the -Xbootclasspath/a. For class from the
+    // "modules" jimage, the PackageEntry/ModuleEntry must be defined
+    // by the NULL classloader.
+    if (mod_entry != NULL) {
+      // PackageEntry/ModuleEntry is found in the classloader. Check if the
+      // ModuleEntry's location agrees with the archived class' origination.
+      if (ent->is_jrt() && mod_entry->location()->starts_with("jrt:")) {
+        return true; // Module class from the "module" jimage
+      }
+    }
+
+    // If the archived class is not from the "module" jimage, the class can be
+    // loaded by the NULL classloader if
+    //
+    // 1. the class is from the unamed package
+    // 2. or, the class is not from a module defined in the NULL classloader
+    // 3. or, the class is from an unamed module
+    if (!ent->is_jrt() && ik->is_shared_boot_class()) {
+      // the class is from the -Xbootclasspath/a
+      if (pkg_string == NULL ||
+          pkg_entry == NULL ||
+          pkg_entry->in_unnamed_module()) {
+        assert(mod_entry == NULL ||
+               mod_entry == loader_data->modules()->unnamed_module(),
+               "the unnamed module is not defined in the classloader");
+        return true;
+      }
+    }
+    return false;
+  } else {
+    bool res = SystemDictionaryShared::is_shared_class_visible_for_classloader(
+              ik, class_loader, pkg_string, pkg_name,
+              pkg_entry, mod_entry, CHECK_(false));
+    return res;
+  }
 }
 
 instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
@@ -1249,6 +1327,12 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
   if (ik.not_null()) {
     instanceKlassHandle nh = instanceKlassHandle(); // null Handle
     Symbol* class_name = ik->name();
+
+    bool visible = is_shared_class_visible(
+                            class_name, ik, class_loader, CHECK_(nh));
+    if (!visible) {
+      return nh;
+    }
 
     // Found the class, now load the superclass and interfaces.  If they
     // are shared, add them to the main system dictionary and reset
@@ -1303,12 +1387,20 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
     }
 
     if (log_is_enabled(Info, classload)) {
-      ik()->print_loading_log(LogLevel::Info, loader_data, NULL);
+      ik()->print_loading_log(LogLevel::Info, loader_data, NULL, NULL);
     }
     // No 'else' here as logging levels are not mutually exclusive
 
     if (log_is_enabled(Debug, classload)) {
-      ik()->print_loading_log(LogLevel::Debug, loader_data, NULL);
+      ik()->print_loading_log(LogLevel::Debug, loader_data, NULL, NULL);
+    }
+
+    // For boot loader, ensure that GetSystemPackage knows that a class in this
+    // package was loaded.
+    if (class_loader.is_null()) {
+      int path_index = ik->shared_classpath_index();
+      ResourceMark rm;
+      ClassLoader::add_package(ik->name()->as_C_string(), path_index, THREAD);
     }
 
     if (DumpLoadedClassList != NULL && classlist_file->is_open()) {
@@ -1329,7 +1421,68 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
 
 instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Handle class_loader, TRAPS) {
   instanceKlassHandle nh = instanceKlassHandle(); // null Handle
+
   if (class_loader.is_null()) {
+    int length = 0;
+    PackageEntry* pkg_entry = NULL;
+    bool search_only_bootloader_append = false;
+    ClassLoaderData *loader_data = class_loader_data(class_loader);
+
+    // Find the package in the boot loader's package entry table.
+    const jbyte* pkg_string = InstanceKlass::package_from_name(class_name, length);
+    if (pkg_string != NULL) {
+      TempNewSymbol pkg_name = SymbolTable::new_symbol((const char*)pkg_string, length, CHECK_(nh));
+      pkg_entry = loader_data->packages()->lookup_only(pkg_name);
+    }
+
+    // Prior to attempting to load the class, enforce the boot loader's
+    // visibility boundaries.
+    if (!Universe::is_module_initialized()) {
+      // During bootstrapping, prior to module initialization, any
+      // class attempting to be loaded must be checked against the
+      // java.base packages in the boot loader's PackageEntryTable.
+      // No class outside of java.base is allowed to be loaded during
+      // this bootstrapping window.
+      if (!DumpSharedSpaces) {
+        if (pkg_entry == NULL || pkg_entry->in_unnamed_module()) {
+          // Class is either in the unnamed package or in
+          // a named package within the unnamed module.  Either
+          // case is outside of java.base, do not attempt to
+          // load the class post java.base definition.  If
+          // java.base has not been defined, let the class load
+          // and its package will be checked later by
+          // ModuleEntryTable::verify_javabase_packages.
+          if (ModuleEntryTable::javabase_defined()) {
+            return nh;
+          }
+        } else {
+          // Check that the class' package is defined within java.base.
+          ModuleEntry* mod_entry = pkg_entry->module();
+          Symbol* mod_entry_name = mod_entry->name();
+          if (mod_entry_name->fast_compare(vmSymbols::java_base()) != 0) {
+            return nh;
+          }
+        }
+      }
+    } else {
+      assert(!DumpSharedSpaces, "Archive dumped after module system initialization");
+      // After the module system has been initialized, check if the class'
+      // package is in a module defined to the boot loader.
+      if (pkg_string == NULL || pkg_entry == NULL || pkg_entry->in_unnamed_module()) {
+        // Class is either in the unnamed package, in a named package
+        // within a module not defined to the boot loader or in a
+        // a named package within the unnamed module.  In all cases,
+        // limit visibility to search for the class only in the boot
+        // loader's append path.
+        search_only_bootloader_append = true;
+      }
+    }
+
+    // Prior to bootstrapping's module initialization, never load a class outside
+    // of the boot loader's module path
+    assert(Universe::is_module_initialized() || DumpSharedSpaces ||
+           !search_only_bootloader_append,
+           "Attempt to load a class outside of boot loader's module path");
 
     // Search the shared system dictionary for classes preloaded into the
     // shared spaces.
@@ -1344,7 +1497,7 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
     if (k.is_null()) {
       // Use VM class loader
       PerfTraceTime vmtimer(ClassLoader::perf_sys_classload_time());
-      k = ClassLoader::load_class(class_name, CHECK_(nh));
+      k = ClassLoader::load_class(class_name, search_only_bootloader_append, CHECK_(nh));
     }
 
     // find_or_define_instance_class may return a different InstanceKlass
@@ -1669,7 +1822,7 @@ Klass* SystemDictionary::find_class(Symbol* class_name, ClassLoaderData* loader_
 }
 
 
-// Get the next class in the diictionary.
+// Get the next class in the dictionary.
 Klass* SystemDictionary::try_get_next_class() {
   return dictionary()->try_get_next_class();
 }
@@ -1940,6 +2093,11 @@ void SystemDictionary::initialize_wk_klasses_until(WKID limit_id, WKID &start_id
 
 void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   assert(WK_KLASS(Object_klass) == NULL, "preloaded classes should only be initialized once");
+
+  // Create the ModuleEntry for java.base.  This call needs to be done here,
+  // after vmSymbols::initialize() is called but before any classes are pre-loaded.
+  ClassLoader::create_javabase();
+
   // Preload commonly used klasses
   WKID scan = FIRST_WKID;
   // first do Object, then String, Class

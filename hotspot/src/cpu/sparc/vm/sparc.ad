@@ -948,27 +948,27 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, PhaseRegAlloc* ra, const MachNode* n, 
   }
 #endif
 
-  uint instr;
-  instr = (Assembler::ldst_op << 30)
-        | (dst_enc        << 25)
-        | (primary        << 19)
-        | (src1_enc       << 14);
+  uint instr = (Assembler::ldst_op << 30)
+             | (dst_enc        << 25)
+             | (primary        << 19)
+             | (src1_enc       << 14);
 
   uint index = src2_enc;
   int disp = disp32;
 
   if (src1_enc == R_SP_enc || src1_enc == R_FP_enc) {
     disp += STACK_BIAS;
-    // Quick fix for JDK-8029668: check that stack offset fits, bailout if not
+    // Check that stack offset fits, load into O7 if not
     if (!Assembler::is_simm13(disp)) {
-      ra->C->record_method_not_compilable("unable to handle large constant offsets");
-      return;
+      MacroAssembler _masm(&cbuf);
+      __ set(disp, O7);
+      if (index != R_G0_enc) {
+        __ add(O7, reg_to_register_object(index), O7);
+      }
+      index = R_O7_enc;
+      disp = 0;
     }
   }
-
-  // We should have a compiler bailout here rather than a guarantee.
-  // Better yet would be some mechanism to handle variable-size matches correctly.
-  guarantee(Assembler::is_simm13(disp), "Do not match large constant offsets" );
 
   if( disp == 0 ) {
     // use reg-reg form
@@ -983,7 +983,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, PhaseRegAlloc* ra, const MachNode* n, 
   cbuf.insts()->emit_int32(instr);
 
 #ifdef ASSERT
-  {
+  if (VerifyOops) {
     MacroAssembler _masm(&cbuf);
     if (is_verified_oop_base) {
       __ verify_oop(reg_to_register_object(src1_enc));
@@ -1342,7 +1342,7 @@ int MachEpilogNode::safepoint_offset() const {
 // Figure out which register class each belongs in: rc_int, rc_float, rc_stack
 enum RC { rc_bad, rc_int, rc_float, rc_stack };
 static enum RC rc_class( OptoReg::Name reg ) {
-  if( !OptoReg::is_valid(reg)  ) return rc_bad;
+  if (!OptoReg::is_valid(reg)) return rc_bad;
   if (OptoReg::is_stack(reg)) return rc_stack;
   VMReg r = OptoReg::as_VMReg(reg);
   if (r->is_Register()) return rc_int;
@@ -1350,66 +1350,79 @@ static enum RC rc_class( OptoReg::Name reg ) {
   return rc_float;
 }
 
-static int impl_helper(const MachNode* mach, CodeBuffer* cbuf, PhaseRegAlloc* ra, bool do_size, bool is_load, int offset, int reg, int opcode, const char *op_str, int size, outputStream* st ) {
+#ifndef PRODUCT
+ATTRIBUTE_PRINTF(2, 3)
+static void print_helper(outputStream* st, const char* format, ...) {
+  if (st->position() > 0) {
+    st->cr();
+    st->sp();
+  }
+  va_list ap;
+  va_start(ap, format);
+  st->vprint(format, ap);
+  va_end(ap);
+}
+#endif // !PRODUCT
+
+static void impl_helper(const MachNode* mach, CodeBuffer* cbuf, PhaseRegAlloc* ra, bool is_load, int offset, int reg, int opcode, const char *op_str, outputStream* st) {
   if (cbuf) {
     emit_form3_mem_reg(*cbuf, ra, mach, opcode, -1, R_SP_enc, offset, 0, Matcher::_regEncode[reg]);
   }
 #ifndef PRODUCT
-  else if (!do_size) {
-    if (size != 0) st->print("\n\t");
-    if (is_load) st->print("%s   [R_SP + #%d],R_%s\t! spill",op_str,offset,OptoReg::regname(reg));
-    else         st->print("%s   R_%s,[R_SP + #%d]\t! spill",op_str,OptoReg::regname(reg),offset);
+  else {
+    if (is_load) {
+      print_helper(st, "%s   [R_SP + #%d],R_%s\t! spill", op_str, offset, OptoReg::regname(reg));
+    } else {
+      print_helper(st, "%s   R_%s,[R_SP + #%d]\t! spill", op_str, OptoReg::regname(reg), offset);
+    }
   }
 #endif
-  return size+4;
 }
 
-static int impl_mov_helper( CodeBuffer *cbuf, bool do_size, int src, int dst, int op1, int op2, const char *op_str, int size, outputStream* st ) {
-  if( cbuf ) emit3( *cbuf, Assembler::arith_op, Matcher::_regEncode[dst], op1, 0, op2, Matcher::_regEncode[src] );
+static void impl_mov_helper(CodeBuffer *cbuf, int src, int dst, int op1, int op2, const char *op_str, outputStream* st) {
+  if (cbuf) {
+    emit3(*cbuf, Assembler::arith_op, Matcher::_regEncode[dst], op1, 0, op2, Matcher::_regEncode[src]);
+  }
 #ifndef PRODUCT
-  else if( !do_size ) {
-    if( size != 0 ) st->print("\n\t");
-    st->print("%s  R_%s,R_%s\t! spill",op_str,OptoReg::regname(src),OptoReg::regname(dst));
+  else {
+    print_helper(st, "%s  R_%s,R_%s\t! spill", op_str, OptoReg::regname(src), OptoReg::regname(dst));
   }
 #endif
-  return size+4;
 }
 
-uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
-                                        PhaseRegAlloc *ra_,
-                                        bool do_size,
-                                        outputStream* st ) const {
+static void mach_spill_copy_implementation_helper(const MachNode* mach,
+                                                  CodeBuffer *cbuf,
+                                                  PhaseRegAlloc *ra_,
+                                                  outputStream* st) {
   // Get registers to move
-  OptoReg::Name src_second = ra_->get_reg_second(in(1));
-  OptoReg::Name src_first = ra_->get_reg_first(in(1));
-  OptoReg::Name dst_second = ra_->get_reg_second(this );
-  OptoReg::Name dst_first = ra_->get_reg_first(this );
+  OptoReg::Name src_second = ra_->get_reg_second(mach->in(1));
+  OptoReg::Name src_first  = ra_->get_reg_first(mach->in(1));
+  OptoReg::Name dst_second = ra_->get_reg_second(mach);
+  OptoReg::Name dst_first  = ra_->get_reg_first(mach);
 
   enum RC src_second_rc = rc_class(src_second);
-  enum RC src_first_rc = rc_class(src_first);
+  enum RC src_first_rc  = rc_class(src_first);
   enum RC dst_second_rc = rc_class(dst_second);
-  enum RC dst_first_rc = rc_class(dst_first);
+  enum RC dst_first_rc  = rc_class(dst_first);
 
-  assert( OptoReg::is_valid(src_first) && OptoReg::is_valid(dst_first), "must move at least 1 register" );
+  assert(OptoReg::is_valid(src_first) && OptoReg::is_valid(dst_first), "must move at least 1 register");
 
-  // Generate spill code!
-  int size = 0;
-
-  if( src_first == dst_first && src_second == dst_second )
-    return size;            // Self copy, no move
+  if (src_first == dst_first && src_second == dst_second) {
+    return; // Self copy, no move
+  }
 
   // --------------------------------------
   // Check for mem-mem move.  Load into unused float registers and fall into
   // the float-store case.
-  if( src_first_rc == rc_stack && dst_first_rc == rc_stack ) {
+  if (src_first_rc == rc_stack && dst_first_rc == rc_stack) {
     int offset = ra_->reg2offset(src_first);
     // Further check for aligned-adjacent pair, so we can use a double load
-    if( (src_first&1)==0 && src_first+1 == src_second ) {
+    if ((src_first&1) == 0 && src_first+1 == src_second) {
       src_second    = OptoReg::Name(R_F31_num);
       src_second_rc = rc_float;
-      size = impl_helper(this,cbuf,ra_,do_size,true,offset,R_F30_num,Assembler::lddf_op3,"LDDF",size, st);
+      impl_helper(mach, cbuf, ra_, true, offset, R_F30_num, Assembler::lddf_op3, "LDDF", st);
     } else {
-      size = impl_helper(this,cbuf,ra_,do_size,true,offset,R_F30_num,Assembler::ldf_op3 ,"LDF ",size, st);
+      impl_helper(mach, cbuf, ra_, true, offset, R_F30_num, Assembler::ldf_op3, "LDF ", st);
     }
     src_first    = OptoReg::Name(R_F30_num);
     src_first_rc = rc_float;
@@ -1417,7 +1430,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
 
   if( src_second_rc == rc_stack && dst_second_rc == rc_stack ) {
     int offset = ra_->reg2offset(src_second);
-    size = impl_helper(this,cbuf,ra_,do_size,true,offset,R_F31_num,Assembler::ldf_op3,"LDF ",size, st);
+    impl_helper(mach, cbuf, ra_, true, offset, R_F31_num, Assembler::ldf_op3, "LDF ", st);
     src_second    = OptoReg::Name(R_F31_num);
     src_second_rc = rc_float;
   }
@@ -1427,36 +1440,38 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   if (src_first_rc == rc_float && dst_first_rc == rc_int && UseVIS < 3) {
     int offset = frame::register_save_words*wordSize;
     if (cbuf) {
-      emit3_simm13( *cbuf, Assembler::arith_op, R_SP_enc, Assembler::sub_op3, R_SP_enc, 16 );
-      impl_helper(this,cbuf,ra_,do_size,false,offset,src_first,Assembler::stf_op3 ,"STF ",size, st);
-      impl_helper(this,cbuf,ra_,do_size,true ,offset,dst_first,Assembler::lduw_op3,"LDUW",size, st);
-      emit3_simm13( *cbuf, Assembler::arith_op, R_SP_enc, Assembler::add_op3, R_SP_enc, 16 );
+      emit3_simm13(*cbuf, Assembler::arith_op, R_SP_enc, Assembler::sub_op3, R_SP_enc, 16);
+      impl_helper(mach, cbuf, ra_, false, offset, src_first,  Assembler::stf_op3, "STF ", st);
+      impl_helper(mach, cbuf, ra_,  true, offset, dst_first, Assembler::lduw_op3, "LDUW", st);
+      emit3_simm13(*cbuf, Assembler::arith_op, R_SP_enc, Assembler::add_op3, R_SP_enc, 16);
     }
 #ifndef PRODUCT
-    else if (!do_size) {
-      if (size != 0) st->print("\n\t");
-      st->print(  "SUB    R_SP,16,R_SP\n");
-      impl_helper(this,cbuf,ra_,do_size,false,offset,src_first,Assembler::stf_op3 ,"STF ",size, st);
-      impl_helper(this,cbuf,ra_,do_size,true ,offset,dst_first,Assembler::lduw_op3,"LDUW",size, st);
-      st->print("\tADD    R_SP,16,R_SP\n");
+    else {
+      print_helper(st, "SUB    R_SP,16,R_SP");
+      impl_helper(mach, cbuf, ra_, false, offset, src_first,  Assembler::stf_op3, "STF ", st);
+      impl_helper(mach, cbuf, ra_,  true, offset, dst_first, Assembler::lduw_op3, "LDUW", st);
+      print_helper(st, "ADD    R_SP,16,R_SP");
     }
 #endif
-    size += 16;
   }
 
   // Check for float->int copy on T4
   if (src_first_rc == rc_float && dst_first_rc == rc_int && UseVIS >= 3) {
     // Further check for aligned-adjacent pair, so we can use a double move
-    if ((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second)
-      return impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mdtox_opf,"MOVDTOX",size, st);
-    size  =  impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mstouw_opf,"MOVSTOUW",size, st);
+    if ((src_first & 1) == 0 && src_first + 1 == src_second && (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
+      impl_mov_helper(cbuf, src_first, dst_first, Assembler::mftoi_op3, Assembler::mdtox_opf, "MOVDTOX", st);
+      return;
+    }
+    impl_mov_helper(cbuf, src_first, dst_first, Assembler::mftoi_op3, Assembler::mstouw_opf, "MOVSTOUW", st);
   }
   // Check for int->float copy on T4
   if (src_first_rc == rc_int && dst_first_rc == rc_float && UseVIS >= 3) {
     // Further check for aligned-adjacent pair, so we can use a double move
-    if ((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second)
-      return impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mxtod_opf,"MOVXTOD",size, st);
-    size  =  impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::mftoi_op3,Assembler::mwtos_opf,"MOVWTOS",size, st);
+    if ((src_first & 1) == 0 && src_first + 1 == src_second && (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
+      impl_mov_helper(cbuf, src_first, dst_first, Assembler::mftoi_op3, Assembler::mxtod_opf, "MOVXTOD", st);
+      return;
+    }
+    impl_mov_helper(cbuf, src_first, dst_first, Assembler::mftoi_op3, Assembler::mwtos_opf, "MOVWTOS", st);
   }
 
   // --------------------------------------
@@ -1466,10 +1481,10 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   // there.  Misaligned sources only come from native-long-returns (handled
   // special below).
 #ifndef _LP64
-  if( src_first_rc == rc_int &&     // source is already big-endian
+  if (src_first_rc == rc_int &&     // source is already big-endian
       src_second_rc != rc_bad &&    // 64-bit move
-      ((dst_first&1)!=0 || dst_second != dst_first+1) ) { // misaligned dst
-    assert( (src_first&1)==0 && src_second == src_first+1, "source must be aligned" );
+      ((dst_first & 1) != 0 || dst_second != dst_first + 1)) { // misaligned dst
+    assert((src_first & 1) == 0 && src_second == src_first + 1, "source must be aligned");
     // Do the big-endian flop.
     OptoReg::Name tmp    = dst_first   ; dst_first    = dst_second   ; dst_second    = tmp   ;
     enum RC       tmp_rc = dst_first_rc; dst_first_rc = dst_second_rc; dst_second_rc = tmp_rc;
@@ -1478,30 +1493,28 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
 
   // --------------------------------------
   // Check for integer reg-reg copy
-  if( src_first_rc == rc_int && dst_first_rc == rc_int ) {
+  if (src_first_rc == rc_int && dst_first_rc == rc_int) {
 #ifndef _LP64
-    if( src_first == R_O0_num && src_second == R_O1_num ) {  // Check for the evil O0/O1 native long-return case
+    if (src_first == R_O0_num && src_second == R_O1_num) {  // Check for the evil O0/O1 native long-return case
       // Note: The _first and _second suffixes refer to the addresses of the the 2 halves of the 64-bit value
       //       as stored in memory.  On a big-endian machine like SPARC, this means that the _second
       //       operand contains the least significant word of the 64-bit value and vice versa.
       OptoReg::Name tmp = OptoReg::Name(R_O7_num);
-      assert( (dst_first&1)==0 && dst_second == dst_first+1, "return a native O0/O1 long to an aligned-adjacent 64-bit reg" );
+      assert((dst_first & 1) == 0 && dst_second == dst_first + 1, "return a native O0/O1 long to an aligned-adjacent 64-bit reg" );
       // Shift O0 left in-place, zero-extend O1, then OR them into the dst
-      if( cbuf ) {
-        emit3_simm13( *cbuf, Assembler::arith_op, Matcher::_regEncode[tmp], Assembler::sllx_op3, Matcher::_regEncode[src_first], 0x1020 );
-        emit3_simm13( *cbuf, Assembler::arith_op, Matcher::_regEncode[src_second], Assembler::srl_op3, Matcher::_regEncode[src_second], 0x0000 );
-        emit3       ( *cbuf, Assembler::arith_op, Matcher::_regEncode[dst_first], Assembler:: or_op3, Matcher::_regEncode[tmp], 0, Matcher::_regEncode[src_second] );
+      if ( cbuf ) {
+        emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[tmp], Assembler::sllx_op3, Matcher::_regEncode[src_first], 0x1020);
+        emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[src_second], Assembler::srl_op3, Matcher::_regEncode[src_second], 0x0000);
+        emit3       (*cbuf, Assembler::arith_op, Matcher::_regEncode[dst_first], Assembler:: or_op3, Matcher::_regEncode[tmp], 0, Matcher::_regEncode[src_second]);
 #ifndef PRODUCT
-      } else if( !do_size ) {
-        if( size != 0 ) st->print("\n\t");
-        st->print("SLLX   R_%s,32,R_%s\t! Move O0-first to O7-high\n\t", OptoReg::regname(src_first), OptoReg::regname(tmp));
-        st->print("SRL    R_%s, 0,R_%s\t! Zero-extend O1\n\t", OptoReg::regname(src_second), OptoReg::regname(src_second));
-        st->print("OR     R_%s,R_%s,R_%s\t! spill",OptoReg::regname(tmp), OptoReg::regname(src_second), OptoReg::regname(dst_first));
+      } else {
+        print_helper(st, "SLLX   R_%s,32,R_%s\t! Move O0-first to O7-high\n\t", OptoReg::regname(src_first), OptoReg::regname(tmp));
+        print_helper(st, "SRL    R_%s, 0,R_%s\t! Zero-extend O1\n\t", OptoReg::regname(src_second), OptoReg::regname(src_second));
+        print_helper(st, "OR     R_%s,R_%s,R_%s\t! spill",OptoReg::regname(tmp), OptoReg::regname(src_second), OptoReg::regname(dst_first));
 #endif
       }
-      return size+12;
-    }
-    else if( dst_first == R_I0_num && dst_second == R_I1_num ) {
+      return;
+    } else if (dst_first == R_I0_num && dst_second == R_I1_num) {
       // returning a long value in I0/I1
       // a SpillCopy must be able to target a return instruction's reg_class
       // Note: The _first and _second suffixes refer to the addresses of the the 2 halves of the 64-bit value
@@ -1511,27 +1524,25 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
 
       if (src_first == dst_first) {
         tdest = OptoReg::Name(R_O7_num);
-        size += 4;
       }
 
-      if( cbuf ) {
-        assert( (src_first&1) == 0 && (src_first+1) == src_second, "return value was in an aligned-adjacent 64-bit reg");
+      if (cbuf) {
+        assert((src_first & 1) == 0 && (src_first + 1) == src_second, "return value was in an aligned-adjacent 64-bit reg");
         // Shift value in upper 32-bits of src to lower 32-bits of I0; move lower 32-bits to I1
         // ShrL_reg_imm6
-        emit3_simm13( *cbuf, Assembler::arith_op, Matcher::_regEncode[tdest], Assembler::srlx_op3, Matcher::_regEncode[src_second], 32 | 0x1000 );
+        emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[tdest], Assembler::srlx_op3, Matcher::_regEncode[src_second], 32 | 0x1000);
         // ShrR_reg_imm6  src, 0, dst
-        emit3_simm13( *cbuf, Assembler::arith_op, Matcher::_regEncode[dst_second], Assembler::srl_op3, Matcher::_regEncode[src_first], 0x0000 );
+        emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[dst_second], Assembler::srl_op3, Matcher::_regEncode[src_first], 0x0000);
         if (tdest != dst_first) {
-          emit3     ( *cbuf, Assembler::arith_op, Matcher::_regEncode[dst_first], Assembler::or_op3, 0/*G0*/, 0/*op2*/, Matcher::_regEncode[tdest] );
+          emit3     (*cbuf, Assembler::arith_op, Matcher::_regEncode[dst_first], Assembler::or_op3, 0/*G0*/, 0/*op2*/, Matcher::_regEncode[tdest]);
         }
       }
 #ifndef PRODUCT
-      else if( !do_size ) {
-        if( size != 0 ) st->print("\n\t");  // %%%%% !!!!!
-        st->print("SRLX   R_%s,32,R_%s\t! Extract MSW\n\t",OptoReg::regname(src_second),OptoReg::regname(tdest));
-        st->print("SRL    R_%s, 0,R_%s\t! Extract LSW\n\t",OptoReg::regname(src_first),OptoReg::regname(dst_second));
+      else {
+        print_helper(st, "SRLX   R_%s,32,R_%s\t! Extract MSW\n\t",OptoReg::regname(src_second),OptoReg::regname(tdest));
+        print_helper(st, "SRL    R_%s, 0,R_%s\t! Extract LSW\n\t",OptoReg::regname(src_first),OptoReg::regname(dst_second));
         if (tdest != dst_first) {
-          st->print("MOV    R_%s,R_%s\t! spill\n\t", OptoReg::regname(tdest), OptoReg::regname(dst_first));
+          print_helper(st, "MOV    R_%s,R_%s\t! spill\n\t", OptoReg::regname(tdest), OptoReg::regname(dst_first));
         }
       }
 #endif // PRODUCT
@@ -1539,65 +1550,77 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
     }
 #endif // !_LP64
     // Else normal reg-reg copy
-    assert( src_second != dst_first, "smashed second before evacuating it" );
-    size = impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::or_op3,0,"MOV  ",size, st);
-    assert( (src_first&1) == 0 && (dst_first&1) == 0, "never move second-halves of int registers" );
+    assert(src_second != dst_first, "smashed second before evacuating it");
+    impl_mov_helper(cbuf, src_first, dst_first, Assembler::or_op3, 0, "MOV  ", st);
+    assert((src_first & 1) == 0 && (dst_first & 1) == 0, "never move second-halves of int registers");
     // This moves an aligned adjacent pair.
     // See if we are done.
-    if( src_first+1 == src_second && dst_first+1 == dst_second )
-      return size;
+    if (src_first + 1 == src_second && dst_first + 1 == dst_second) {
+      return;
+    }
   }
 
   // Check for integer store
-  if( src_first_rc == rc_int && dst_first_rc == rc_stack ) {
+  if (src_first_rc == rc_int && dst_first_rc == rc_stack) {
     int offset = ra_->reg2offset(dst_first);
     // Further check for aligned-adjacent pair, so we can use a double store
-    if( (src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second )
-      return impl_helper(this,cbuf,ra_,do_size,false,offset,src_first,Assembler::stx_op3,"STX ",size, st);
-    size  =  impl_helper(this,cbuf,ra_,do_size,false,offset,src_first,Assembler::stw_op3,"STW ",size, st);
+    if ((src_first & 1) == 0 && src_first + 1 == src_second && (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
+      impl_helper(mach, cbuf, ra_, false, offset, src_first, Assembler::stx_op3, "STX ", st);
+      return;
+    }
+    impl_helper(mach, cbuf, ra_, false, offset, src_first, Assembler::stw_op3, "STW ", st);
   }
 
   // Check for integer load
-  if( dst_first_rc == rc_int && src_first_rc == rc_stack ) {
+  if (dst_first_rc == rc_int && src_first_rc == rc_stack) {
     int offset = ra_->reg2offset(src_first);
     // Further check for aligned-adjacent pair, so we can use a double load
-    if( (src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second )
-      return impl_helper(this,cbuf,ra_,do_size,true,offset,dst_first,Assembler::ldx_op3 ,"LDX ",size, st);
-    size  =  impl_helper(this,cbuf,ra_,do_size,true,offset,dst_first,Assembler::lduw_op3,"LDUW",size, st);
+    if ((src_first & 1) == 0 && src_first + 1 == src_second && (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
+      impl_helper(mach, cbuf, ra_, true, offset, dst_first, Assembler::ldx_op3, "LDX ", st);
+      return;
+    }
+    impl_helper(mach, cbuf, ra_, true, offset, dst_first, Assembler::lduw_op3, "LDUW", st);
   }
 
   // Check for float reg-reg copy
-  if( src_first_rc == rc_float && dst_first_rc == rc_float ) {
+  if (src_first_rc == rc_float && dst_first_rc == rc_float) {
     // Further check for aligned-adjacent pair, so we can use a double move
-    if( (src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second )
-      return impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::fpop1_op3,Assembler::fmovd_opf,"FMOVD",size, st);
-    size  =  impl_mov_helper(cbuf,do_size,src_first,dst_first,Assembler::fpop1_op3,Assembler::fmovs_opf,"FMOVS",size, st);
+    if ((src_first & 1) == 0 && src_first + 1 == src_second && (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
+      impl_mov_helper(cbuf, src_first, dst_first, Assembler::fpop1_op3, Assembler::fmovd_opf, "FMOVD", st);
+      return;
+    }
+    impl_mov_helper(cbuf, src_first, dst_first, Assembler::fpop1_op3, Assembler::fmovs_opf, "FMOVS", st);
   }
 
   // Check for float store
-  if( src_first_rc == rc_float && dst_first_rc == rc_stack ) {
+  if (src_first_rc == rc_float && dst_first_rc == rc_stack) {
     int offset = ra_->reg2offset(dst_first);
     // Further check for aligned-adjacent pair, so we can use a double store
-    if( (src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second )
-      return impl_helper(this,cbuf,ra_,do_size,false,offset,src_first,Assembler::stdf_op3,"STDF",size, st);
-    size  =  impl_helper(this,cbuf,ra_,do_size,false,offset,src_first,Assembler::stf_op3 ,"STF ",size, st);
+    if ((src_first & 1) == 0 && src_first + 1 == src_second && (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
+      impl_helper(mach, cbuf, ra_, false, offset, src_first, Assembler::stdf_op3, "STDF", st);
+      return;
+    }
+    impl_helper(mach, cbuf, ra_, false, offset, src_first, Assembler::stf_op3, "STF ", st);
   }
 
   // Check for float load
-  if( dst_first_rc == rc_float && src_first_rc == rc_stack ) {
+  if (dst_first_rc == rc_float && src_first_rc == rc_stack) {
     int offset = ra_->reg2offset(src_first);
     // Further check for aligned-adjacent pair, so we can use a double load
-    if( (src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second )
-      return impl_helper(this,cbuf,ra_,do_size,true,offset,dst_first,Assembler::lddf_op3,"LDDF",size, st);
-    size  =  impl_helper(this,cbuf,ra_,do_size,true,offset,dst_first,Assembler::ldf_op3 ,"LDF ",size, st);
+    if ((src_first & 1) == 0 && src_first + 1 == src_second && (dst_first & 1) == 0 && dst_first + 1 == dst_second) {
+      impl_helper(mach, cbuf, ra_, true, offset, dst_first, Assembler::lddf_op3, "LDDF", st);
+      return;
+    }
+    impl_helper(mach, cbuf, ra_, true, offset, dst_first, Assembler::ldf_op3, "LDF ", st);
   }
 
   // --------------------------------------------------------------------
   // Check for hi bits still needing moving.  Only happens for misaligned
   // arguments to native calls.
-  if( src_second == dst_second )
-    return size;               // Self copy; no move
-  assert( src_second_rc != rc_bad && dst_second_rc != rc_bad, "src_second & dst_second cannot be Bad" );
+  if (src_second == dst_second) {
+    return; // Self copy; no move
+  }
+  assert(src_second_rc != rc_bad && dst_second_rc != rc_bad, "src_second & dst_second cannot be Bad");
 
 #ifndef _LP64
   // In the LP64 build, all registers can be moved as aligned/adjacent
@@ -1609,52 +1632,57 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
   // 32-bits of a 64-bit register, but are needed in low bits of another
   // register (else it's a hi-bits-to-hi-bits copy which should have
   // happened already as part of a 64-bit move)
-  if( src_second_rc == rc_int && dst_second_rc == rc_int ) {
-    assert( (src_second&1)==1, "its the evil O0/O1 native return case" );
-    assert( (dst_second&1)==0, "should have moved with 1 64-bit move" );
+  if (src_second_rc == rc_int && dst_second_rc == rc_int) {
+    assert((src_second & 1) == 1, "its the evil O0/O1 native return case");
+    assert((dst_second & 1) == 0, "should have moved with 1 64-bit move");
     // Shift src_second down to dst_second's low bits.
-    if( cbuf ) {
-      emit3_simm13( *cbuf, Assembler::arith_op, Matcher::_regEncode[dst_second], Assembler::srlx_op3, Matcher::_regEncode[src_second-1], 0x1020 );
+    if (cbuf) {
+      emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[dst_second], Assembler::srlx_op3, Matcher::_regEncode[src_second-1], 0x1020);
 #ifndef PRODUCT
-    } else if( !do_size ) {
-      if( size != 0 ) st->print("\n\t");
-      st->print("SRLX   R_%s,32,R_%s\t! spill: Move high bits down low",OptoReg::regname(src_second-1),OptoReg::regname(dst_second));
+    } else  {
+      print_helper(st, "SRLX   R_%s,32,R_%s\t! spill: Move high bits down low", OptoReg::regname(src_second - 1), OptoReg::regname(dst_second));
 #endif
     }
-    return size+4;
+    return;
   }
 
   // Check for high word integer store.  Must down-shift the hi bits
   // into a temp register, then fall into the case of storing int bits.
-  if( src_second_rc == rc_int && dst_second_rc == rc_stack && (src_second&1)==1 ) {
+  if (src_second_rc == rc_int && dst_second_rc == rc_stack && (src_second & 1) == 1) {
     // Shift src_second down to dst_second's low bits.
-    if( cbuf ) {
-      emit3_simm13( *cbuf, Assembler::arith_op, Matcher::_regEncode[R_O7_num], Assembler::srlx_op3, Matcher::_regEncode[src_second-1], 0x1020 );
+    if (cbuf) {
+      emit3_simm13(*cbuf, Assembler::arith_op, Matcher::_regEncode[R_O7_num], Assembler::srlx_op3, Matcher::_regEncode[src_second-1], 0x1020);
 #ifndef PRODUCT
-    } else if( !do_size ) {
-      if( size != 0 ) st->print("\n\t");
-      st->print("SRLX   R_%s,32,R_%s\t! spill: Move high bits down low",OptoReg::regname(src_second-1),OptoReg::regname(R_O7_num));
+    } else {
+      print_helper(st, "SRLX   R_%s,32,R_%s\t! spill: Move high bits down low", OptoReg::regname(src_second-1), OptoReg::regname(R_O7_num));
 #endif
     }
-    size+=4;
     src_second = OptoReg::Name(R_O7_num); // Not R_O7H_num!
   }
 
   // Check for high word integer load
-  if( dst_second_rc == rc_int && src_second_rc == rc_stack )
-    return impl_helper(this,cbuf,ra_,do_size,true ,ra_->reg2offset(src_second),dst_second,Assembler::lduw_op3,"LDUW",size, st);
+  if (dst_second_rc == rc_int && src_second_rc == rc_stack)
+    return impl_helper(this, cbuf, ra_, true, ra_->reg2offset(src_second), dst_second, Assembler::lduw_op3, "LDUW", size, st);
 
   // Check for high word integer store
-  if( src_second_rc == rc_int && dst_second_rc == rc_stack )
-    return impl_helper(this,cbuf,ra_,do_size,false,ra_->reg2offset(dst_second),src_second,Assembler::stw_op3 ,"STW ",size, st);
+  if (src_second_rc == rc_int && dst_second_rc == rc_stack)
+    return impl_helper(this, cbuf, ra_, false, ra_->reg2offset(dst_second), src_second, Assembler::stw_op3, "STW ", size, st);
 
   // Check for high word float store
-  if( src_second_rc == rc_float && dst_second_rc == rc_stack )
-    return impl_helper(this,cbuf,ra_,do_size,false,ra_->reg2offset(dst_second),src_second,Assembler::stf_op3 ,"STF ",size, st);
+  if (src_second_rc == rc_float && dst_second_rc == rc_stack)
+    return impl_helper(this, cbuf, ra_, false, ra_->reg2offset(dst_second), src_second, Assembler::stf_op3, "STF ", size, st);
 
 #endif // !_LP64
 
   Unimplemented();
+}
+
+uint MachSpillCopyNode::implementation(CodeBuffer *cbuf,
+                                       PhaseRegAlloc *ra_,
+                                       bool do_size,
+                                       outputStream* st) const {
+  assert(!do_size, "not supported");
+  mach_spill_copy_implementation_helper(this, cbuf, ra_, st);
   return 0;
 }
 
@@ -1669,19 +1697,19 @@ void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
-  return implementation( NULL, ra_, true, NULL );
+  return MachNode::size(ra_);
 }
 
 //=============================================================================
 #ifndef PRODUCT
-void MachNopNode::format( PhaseRegAlloc *, outputStream *st ) const {
+void MachNopNode::format(PhaseRegAlloc *, outputStream *st) const {
   st->print("NOP \t# %d bytes pad for loops and calls", 4 * _count);
 }
 #endif
 
-void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc * ) const {
+void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *) const {
   MacroAssembler _masm(&cbuf);
-  for(int i = 0; i < _count; i += 1) {
+  for (int i = 0; i < _count; i += 1) {
     __ nop();
   }
 }
@@ -5197,7 +5225,6 @@ instruct stkI_to_regF(regF dst, stackSlotI src) %{
   // No match rule to avoid chain rule match.
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
-  size(4);
   format %{ "LDF    $src,$dst\t! stkI to regF" %}
   opcode(Assembler::ldf_op3);
   ins_encode(simple_form3_mem_reg(src, dst));
@@ -5208,7 +5235,6 @@ instruct stkL_to_regD(regD dst, stackSlotL src) %{
   // No match rule to avoid chain rule match.
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
-  size(4);
   format %{ "LDDF   $src,$dst\t! stkL to regD" %}
   opcode(Assembler::lddf_op3);
   ins_encode(simple_form3_mem_reg(src, dst));
@@ -5219,7 +5245,6 @@ instruct regF_to_stkI(stackSlotI dst, regF src) %{
   // No match rule to avoid chain rule match.
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
-  size(4);
   format %{ "STF    $src,$dst\t! regF to stkI" %}
   opcode(Assembler::stf_op3);
   ins_encode(simple_form3_mem_reg(dst, src));
@@ -5230,7 +5255,6 @@ instruct regD_to_stkL(stackSlotL dst, regD src) %{
   // No match rule to avoid chain rule match.
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
-  size(4);
   format %{ "STDF   $src,$dst\t! regD to stkL" %}
   opcode(Assembler::stdf_op3);
   ins_encode(simple_form3_mem_reg(dst, src));
@@ -5240,7 +5264,6 @@ instruct regD_to_stkL(stackSlotL dst, regD src) %{
 instruct regI_to_stkLHi(stackSlotL dst, iRegI src) %{
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST*2);
-  size(8);
   format %{ "STW    $src,$dst.hi\t! long\n\t"
             "STW    R_G0,$dst.lo" %}
   opcode(Assembler::stw_op3);
@@ -5252,7 +5275,6 @@ instruct regL_to_stkD(stackSlotD dst, iRegL src) %{
   // No match rule to avoid chain rule match.
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
-  size(4);
   format %{ "STX    $src,$dst\t! regL to stkD" %}
   opcode(Assembler::stx_op3);
   ins_encode(simple_form3_mem_reg( dst, src ) );
@@ -5266,7 +5288,6 @@ instruct stkI_to_regI( iRegI dst, stackSlotI src ) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "LDUW   $src,$dst\t!stk" %}
   opcode(Assembler::lduw_op3);
   ins_encode(simple_form3_mem_reg( src, dst ) );
@@ -5278,7 +5299,6 @@ instruct regI_to_stkI( stackSlotI dst, iRegI src ) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STW    $src,$dst\t!stk" %}
   opcode(Assembler::stw_op3);
   ins_encode(simple_form3_mem_reg( dst, src ) );
@@ -5290,7 +5310,6 @@ instruct stkL_to_regL( iRegL dst, stackSlotL src ) %{
   match(Set dst src);
 
   ins_cost(MEMORY_REF_COST);
-  size(4);
   format %{ "LDX    $src,$dst\t! long" %}
   opcode(Assembler::ldx_op3);
   ins_encode(simple_form3_mem_reg( src, dst ) );
@@ -5302,7 +5321,6 @@ instruct regL_to_stkL(stackSlotL dst, iRegL src) %{
   match(Set dst src);
 
   ins_cost(MEMORY_REF_COST);
-  size(4);
   format %{ "STX    $src,$dst\t! long" %}
   opcode(Assembler::stx_op3);
   ins_encode(simple_form3_mem_reg( dst, src ) );
@@ -5314,7 +5332,6 @@ instruct regL_to_stkL(stackSlotL dst, iRegL src) %{
 instruct stkP_to_regP( iRegP dst, stackSlotP src ) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
-  size(4);
   format %{ "LDX    $src,$dst\t!ptr" %}
   opcode(Assembler::ldx_op3);
   ins_encode(simple_form3_mem_reg( src, dst ) );
@@ -5325,7 +5342,6 @@ instruct stkP_to_regP( iRegP dst, stackSlotP src ) %{
 instruct regP_to_stkP(stackSlotP dst, iRegP src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
-  size(4);
   format %{ "STX    $src,$dst\t!ptr" %}
   opcode(Assembler::stx_op3);
   ins_encode(simple_form3_mem_reg( dst, src ) );
@@ -5771,7 +5787,6 @@ instruct loadL_unaligned(iRegL dst, memory mem, o7RegI tmp) %{
   match(Set dst (LoadL_unaligned mem));
   effect(KILL tmp);
   ins_cost(MEMORY_REF_COST*2+DEFAULT_COST);
-  size(16);
   format %{ "LDUW   $mem+4,R_O7\t! misaligned long\n"
           "\tLDUW   $mem  ,$dst\n"
           "\tSLLX   #32, $dst, $dst\n"
@@ -5786,7 +5801,6 @@ instruct loadRange(iRegI dst, memory mem) %{
   match(Set dst (LoadRange mem));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "LDUW   $mem,$dst\t! range" %}
   opcode(Assembler::lduw_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
@@ -5797,7 +5811,6 @@ instruct loadRange(iRegI dst, memory mem) %{
 instruct loadI_freg(regF dst, memory mem) %{
   match(Set dst (LoadI mem));
   ins_cost(MEMORY_REF_COST);
-  size(4);
 
   format %{ "LDF    $mem,$dst\t! for fitos/fitod" %}
   opcode(Assembler::ldf_op3);
@@ -5876,7 +5889,6 @@ instruct loadD(regD dst, memory mem) %{
   match(Set dst (LoadD mem));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "LDDF   $mem,$dst" %}
   opcode(Assembler::lddf_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
@@ -5887,7 +5899,6 @@ instruct loadD(regD dst, memory mem) %{
 instruct loadD_unaligned(regD_low dst, memory mem ) %{
   match(Set dst (LoadD_unaligned mem));
   ins_cost(MEMORY_REF_COST*2+DEFAULT_COST);
-  size(8);
   format %{ "LDF    $mem  ,$dst.hi\t! misaligned double\n"
           "\tLDF    $mem+4,$dst.lo\t!" %}
   opcode(Assembler::ldf_op3);
@@ -5900,7 +5911,6 @@ instruct loadF(regF dst, memory mem) %{
   match(Set dst (LoadF mem));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "LDF    $mem,$dst" %}
   opcode(Assembler::ldf_op3);
   ins_encode(simple_form3_mem_reg( mem, dst ) );
@@ -6119,7 +6129,6 @@ instruct prefetchAlloc( memory mem ) %{
   predicate(AllocatePrefetchInstr == 0);
   match( PrefetchAllocation mem );
   ins_cost(MEMORY_REF_COST);
-  size(4);
 
   format %{ "PREFETCH $mem,2\t! Prefetch allocation" %}
   opcode(Assembler::prefetch_op3);
@@ -6175,7 +6184,6 @@ instruct storeB(memory mem, iRegI src) %{
   match(Set mem (StoreB mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STB    $src,$mem\t! byte" %}
   opcode(Assembler::stb_op3);
   ins_encode(simple_form3_mem_reg( mem, src ) );
@@ -6186,7 +6194,6 @@ instruct storeB0(memory mem, immI0 src) %{
   match(Set mem (StoreB mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STB    $src,$mem\t! byte" %}
   opcode(Assembler::stb_op3);
   ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
@@ -6197,7 +6204,6 @@ instruct storeCM0(memory mem, immI0 src) %{
   match(Set mem (StoreCM mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STB    $src,$mem\t! CMS card-mark byte 0" %}
   opcode(Assembler::stb_op3);
   ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
@@ -6209,7 +6215,6 @@ instruct storeC(memory mem, iRegI src) %{
   match(Set mem (StoreC mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STH    $src,$mem\t! short" %}
   opcode(Assembler::sth_op3);
   ins_encode(simple_form3_mem_reg( mem, src ) );
@@ -6220,7 +6225,6 @@ instruct storeC0(memory mem, immI0 src) %{
   match(Set mem (StoreC mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STH    $src,$mem\t! short" %}
   opcode(Assembler::sth_op3);
   ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
@@ -6232,7 +6236,6 @@ instruct storeI(memory mem, iRegI src) %{
   match(Set mem (StoreI mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STW    $src,$mem" %}
   opcode(Assembler::stw_op3);
   ins_encode(simple_form3_mem_reg( mem, src ) );
@@ -6243,7 +6246,6 @@ instruct storeI(memory mem, iRegI src) %{
 instruct storeL(memory mem, iRegL src) %{
   match(Set mem (StoreL mem src));
   ins_cost(MEMORY_REF_COST);
-  size(4);
   format %{ "STX    $src,$mem\t! long" %}
   opcode(Assembler::stx_op3);
   ins_encode(simple_form3_mem_reg( mem, src ) );
@@ -6254,7 +6256,6 @@ instruct storeI0(memory mem, immI0 src) %{
   match(Set mem (StoreI mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STW    $src,$mem" %}
   opcode(Assembler::stw_op3);
   ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
@@ -6265,7 +6266,6 @@ instruct storeL0(memory mem, immL0 src) %{
   match(Set mem (StoreL mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STX    $src,$mem" %}
   opcode(Assembler::stx_op3);
   ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
@@ -6277,7 +6277,6 @@ instruct storeI_Freg(memory mem, regF src) %{
   match(Set mem (StoreI mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STF    $src,$mem\t! after fstoi/fdtoi" %}
   opcode(Assembler::stf_op3);
   ins_encode(simple_form3_mem_reg( mem, src ) );
@@ -6288,7 +6287,6 @@ instruct storeI_Freg(memory mem, regF src) %{
 instruct storeP(memory dst, sp_ptr_RegP src) %{
   match(Set dst (StoreP dst src));
   ins_cost(MEMORY_REF_COST);
-  size(4);
 
 #ifndef _LP64
   format %{ "STW    $src,$dst\t! ptr" %}
@@ -6304,7 +6302,6 @@ instruct storeP(memory dst, sp_ptr_RegP src) %{
 instruct storeP0(memory dst, immP0 src) %{
   match(Set dst (StoreP dst src));
   ins_cost(MEMORY_REF_COST);
-  size(4);
 
 #ifndef _LP64
   format %{ "STW    $src,$dst\t! ptr" %}
@@ -6379,7 +6376,6 @@ instruct storeD( memory mem, regD src) %{
   match(Set mem (StoreD mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STDF   $src,$mem" %}
   opcode(Assembler::stdf_op3);
   ins_encode(simple_form3_mem_reg( mem, src ) );
@@ -6390,7 +6386,6 @@ instruct storeD0( memory mem, immD0 src) %{
   match(Set mem (StoreD mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STX    $src,$mem" %}
   opcode(Assembler::stx_op3);
   ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
@@ -6402,7 +6397,6 @@ instruct storeF( memory mem, regF src) %{
   match(Set mem (StoreF mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STF    $src,$mem" %}
   opcode(Assembler::stf_op3);
   ins_encode(simple_form3_mem_reg( mem, src ) );
@@ -6413,7 +6407,6 @@ instruct storeF0( memory mem, immF0 src) %{
   match(Set mem (StoreF mem src));
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STW    $src,$mem\t! storeF0" %}
   opcode(Assembler::stw_op3);
   ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
@@ -7068,7 +7061,6 @@ instruct loadPLocked(iRegP dst, memory mem) %{
   ins_cost(MEMORY_REF_COST);
 
 #ifndef _LP64
-  size(4);
   format %{ "LDUW   $mem,$dst\t! ptr" %}
   opcode(Assembler::lduw_op3, 0, REGP_OP);
 #else
@@ -8138,7 +8130,6 @@ instruct MoveF2I_stack_reg(iRegI dst, stackSlotF src) %{
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "LDUW   $src,$dst\t! MoveF2I" %}
   opcode(Assembler::lduw_op3);
   ins_encode(simple_form3_mem_reg( src, dst ) );
@@ -8150,7 +8141,6 @@ instruct MoveI2F_stack_reg(regF dst, stackSlotI src) %{
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "LDF    $src,$dst\t! MoveI2F" %}
   opcode(Assembler::ldf_op3);
   ins_encode(simple_form3_mem_reg(src, dst));
@@ -8162,7 +8152,6 @@ instruct MoveD2L_stack_reg(iRegL dst, stackSlotD src) %{
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "LDX    $src,$dst\t! MoveD2L" %}
   opcode(Assembler::ldx_op3);
   ins_encode(simple_form3_mem_reg( src, dst ) );
@@ -8174,7 +8163,6 @@ instruct MoveL2D_stack_reg(regD dst, stackSlotL src) %{
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "LDDF   $src,$dst\t! MoveL2D" %}
   opcode(Assembler::lddf_op3);
   ins_encode(simple_form3_mem_reg(src, dst));
@@ -8186,7 +8174,6 @@ instruct MoveF2I_reg_stack(stackSlotI dst, regF src) %{
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STF   $src,$dst\t! MoveF2I" %}
   opcode(Assembler::stf_op3);
   ins_encode(simple_form3_mem_reg(dst, src));
@@ -8198,7 +8185,6 @@ instruct MoveI2F_reg_stack(stackSlotF dst, iRegI src) %{
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STW    $src,$dst\t! MoveI2F" %}
   opcode(Assembler::stw_op3);
   ins_encode(simple_form3_mem_reg( dst, src ) );
@@ -8210,7 +8196,6 @@ instruct MoveD2L_reg_stack(stackSlotL dst, regD src) %{
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STDF   $src,$dst\t! MoveD2L" %}
   opcode(Assembler::stdf_op3);
   ins_encode(simple_form3_mem_reg(dst, src));
@@ -8222,7 +8207,6 @@ instruct MoveL2D_reg_stack(stackSlotD dst, iRegL src) %{
   effect(DEF dst, USE src);
   ins_cost(MEMORY_REF_COST);
 
-  size(4);
   format %{ "STX    $src,$dst\t! MoveL2D" %}
   opcode(Assembler::stx_op3);
   ins_encode(simple_form3_mem_reg( dst, src ) );
@@ -8427,7 +8411,6 @@ instruct convI2D_reg(regD_low dst, iRegI src) %{
 instruct convI2D_mem(regD_low dst, memory mem) %{
   match(Set dst (ConvI2D (LoadI mem)));
   ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  size(8);
   format %{ "LDF    $mem,$dst\n\t"
             "FITOD  $dst,$dst" %}
   opcode(Assembler::ldf_op3, Assembler::fitod_opf);
@@ -8468,7 +8451,6 @@ instruct convI2F_reg(regF dst, iRegI src) %{
 instruct convI2F_mem( regF dst, memory mem ) %{
   match(Set dst (ConvI2F (LoadI mem)));
   ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  size(8);
   format %{ "LDF    $mem,$dst\n\t"
             "FITOS  $dst,$dst" %}
   opcode(Assembler::ldf_op3, Assembler::fitos_opf);

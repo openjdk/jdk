@@ -24,30 +24,33 @@
 /*
  * @test
  * @bug 8072008
- * @library /testlibrary /test/lib
- * @compile InvokeTest.java NonInlinedReinvoker.java
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- *                              java.lang.invoke.InvokeTest
- *                              java.lang.invoke.InvokeTest$T
- *                              java.lang.invoke.InvokeTest$P1
- *                              java.lang.invoke.InvokeTest$P2
- *                              java.lang.invoke.InvokeTest$I
- *                              java.lang.invoke.NonInlinedReinvoker
- *                              jdk.test.lib.Asserts
- * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
- *                      java.lang.invoke.InvokeTest
+ * @library /testlibrary /test/lib / ../patches
+ * @modules java.base/jdk.internal.vm.annotation
+ * @build java.base/java.lang.invoke.MethodHandleHelper
+ * @build sun.hotspot.WhiteBox
+ * @build compiler.jsr292.NonInlinedCall.InvokeTest
+ * @run main/bootclasspath -XX:+IgnoreUnrecognizedVMOptions
+ *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                         -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
+ *                         compiler.jsr292.NonInlinedCall.InvokeTest
  */
-package java.lang.invoke;
+
+package compiler.jsr292.NonInlinedCall;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleHelper;
+import java.lang.invoke.MethodHandleHelper.NonInlinedReinvoker;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
+import jdk.internal.vm.annotation.DontInline;
 
 import sun.hotspot.WhiteBox;
-import jdk.internal.vm.annotation.DontInline;
+
 import static jdk.test.lib.Asserts.*;
 
 public class InvokeTest {
-    static MethodHandles.Lookup LOOKUP = MethodHandles.Lookup.IMPL_LOOKUP;
+    static MethodHandles.Lookup LOOKUP = MethodHandleHelper.IMPL_LOOKUP;
 
     static final MethodHandle virtualMH;  // invokevirtual   T.f1
     static final MethodHandle staticMH;   // invokestatic    T.f2
@@ -136,7 +139,7 @@ public class InvokeTest {
     @DontInline
     static void invokeBasic() {
         try {
-            Class<?> cls = (Class<?>)basicMH.invokeBasic();
+            Class<?> cls = (Class<?>)MethodHandleHelper.invokeBasicL(basicMH);
             assertEquals(cls, T.class);
         } catch (Throwable e) {
             throw new Error(e);
@@ -180,7 +183,10 @@ public class InvokeTest {
     static void testInterface() {
         System.out.println("linkToInterface");
 
-        // Monomorphic case (optimized virtual call)
+        // Monomorphic case (optimized virtual call), concrete target method
+        run(() -> linkToInterface(new P1(), P1.class));
+
+        // Monomorphic case (optimized virtual call), default target method
         run(() -> linkToInterface(new T(), I.class));
 
         // Megamorphic case (virtual call)

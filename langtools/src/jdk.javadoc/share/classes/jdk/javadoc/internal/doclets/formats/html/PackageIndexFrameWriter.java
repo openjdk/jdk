@@ -123,7 +123,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
             packageLinkContent = getHyperLink(DocPaths.PACKAGE_FRAME,
                     packageLabel, "", "packageFrame");
         } else {
-            packageLabel = getPackageLabel(pe.getQualifiedName().toString());
+            packageLabel = getPackageLabel(pe.getQualifiedName());
             packageLinkContent = getHyperLink(pathString(pe,
                      DocPaths.PACKAGE_FRAME), packageLabel, "",
                     "packageFrame");
@@ -162,6 +162,19 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     protected void addAllClassesLink(Content ul) {
         Content linkContent = getHyperLink(DocPaths.ALLCLASSES_FRAME,
                 allclassesLabel, "", "packageFrame");
+        Content li = HtmlTree.LI(linkContent);
+        ul.addContent(li);
+    }
+
+    /**
+     * Adds "All Modules" link for the top of the left-hand frame page to the
+     * documentation tree.
+     *
+     * @param ul the Content object to which the "All Modules" link should be added
+     */
+    protected void addAllModulesLink(Content ul) {
+        Content linkContent = getHyperLink(DocPaths.MODULE_OVERVIEW_FRAME,
+                allmodulesLabel, "", "packageListFrame");
         Content li = HtmlTree.LI(linkContent);
         ul.addContent(li);
     }

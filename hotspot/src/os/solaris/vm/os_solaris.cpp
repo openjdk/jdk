@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm_solaris.h"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "mutex_solaris.inline.hpp"
@@ -68,6 +69,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
 // put OS-includes here
@@ -736,6 +738,9 @@ extern "C" void* java_start(void* thread_addr) {
   osthr->set_lwp_id(_lwp_self());  // Store lwp in case we are bound
   thread->_schedctl = (void *) schedctl_init();
 
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ").",
+    os::current_thread_id());
+
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
     if (lgrp_id != -1) {
@@ -780,6 +785,8 @@ extern "C" void* java_start(void* thread_addr) {
   if (thread != VMThread::vm_thread() && VMThread::vm_thread() != NULL) {
     Atomic::dec(&os::Solaris::_os_thread_count);
   }
+
+  log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ").", os::current_thread_id());
 
   if (UseDetachedThreads) {
     thr_exit(NULL);
@@ -853,6 +860,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   os::Solaris::hotspot_sigmask(thread);
 
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ").",
+    os::current_thread_id());
+
   return true;
 }
 
@@ -879,6 +889,24 @@ bool os::create_main_thread(JavaThread* thread) {
   return true;
 }
 
+// Helper function to trace thread attributes, similar to os::Posix::describe_pthread_attr()
+static char* describe_thr_create_attributes(char* buf, size_t buflen,
+                                            size_t stacksize, long flags) {
+  stringStream ss(buf, buflen);
+  ss.print("stacksize: " SIZE_FORMAT "k, ", stacksize / 1024);
+  ss.print("flags: ");
+  #define PRINT_FLAG(f) if (flags & f) ss.print( #f " ");
+  #define ALL(X) \
+    X(THR_SUSPENDED) \
+    X(THR_DETACHED) \
+    X(THR_BOUND) \
+    X(THR_NEW_LWP) \
+    X(THR_DAEMON)
+  ALL(PRINT_FLAG)
+  #undef ALL
+  #undef PRINT_FLAG
+  return buf;
+}
 
 bool os::create_thread(Thread* thread, ThreadType thr_type,
                        size_t stack_size) {
@@ -974,10 +1002,17 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   osthread->set_thread_id(-1);
 
   status = thr_create(NULL, stack_size, java_start, thread, flags, &tid);
+
+  char buf[64];
+  if (status == 0) {
+    log_info(os, thread)("Thread started (tid: " UINTX_FORMAT ", attributes: %s). ",
+      (uintx) tid, describe_thr_create_attributes(buf, sizeof(buf), stack_size, flags));
+  } else {
+    log_warning(os, thread)("Failed to start thread - thr_create failed (%s) for attributes: %s.",
+      strerror(status), describe_thr_create_attributes(buf, sizeof(buf), stack_size, flags));
+  }
+
   if (status != 0) {
-    if (PrintMiscellaneous && (Verbose || WizardMode)) {
-      perror("os::create_thread");
-    }
     thread->set_osthread(NULL);
     // Need to clean up stuff we've allocated so far
     delete osthread;

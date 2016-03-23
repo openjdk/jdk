@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,39 +31,36 @@
 
 enum {
   CONTENT_TYPE_NONE             = 0,
-  CONTENT_TYPE_BYTES            = 1,
-  CONTENT_TYPE_EPOCHMILLIS      = 2,
-  CONTENT_TYPE_MILLIS           = 3,
-  CONTENT_TYPE_NANOS            = 4,
-  CONTENT_TYPE_TICKS            = 5,
-  CONTENT_TYPE_ADDRESS          = 6,
+  CONTENT_TYPE_CLASS            = 20,
+  CONTENT_TYPE_UTF8             = 21,
+  CONTENT_TYPE_THREAD           = 22,
+  CONTENT_TYPE_STACKTRACE       = 23,
+  CONTENT_TYPE_BYTES            = 24,
+  CONTENT_TYPE_EPOCHMILLIS      = 25,
+  CONTENT_TYPE_MILLIS           = 26,
+  CONTENT_TYPE_NANOS            = 27,
+  CONTENT_TYPE_TICKS            = 28,
+  CONTENT_TYPE_ADDRESS          = 29,
+  CONTENT_TYPE_PERCENTAGE       = 30,
 
-  CONTENT_TYPE_OSTHREAD,
-  CONTENT_TYPE_JAVALANGTHREAD,
-  CONTENT_TYPE_STACKTRACE,
-  CONTENT_TYPE_CLASS,
-  CONTENT_TYPE_PERCENTAGE,
-
-  JVM_CONTENT_TYPES_START       = 30,
-  JVM_CONTENT_TYPES_END         = 100
+  JVM_CONTENT_TYPES_START       = 33,
+  JVM_CONTENT_TYPES_END         = 255
 };
 
 enum ReservedEvent {
-  EVENT_PRODUCERS,
+  EVENT_METADATA,
   EVENT_CHECKPOINT,
   EVENT_BUFFERLOST,
 
-  NUM_RESERVED_EVENTS
+  NUM_RESERVED_EVENTS = JVM_CONTENT_TYPES_END
 };
 
 typedef enum ReservedEvent ReservedEvent;
 
-typedef u8 classid;
-typedef u8 stacktraceid;
-typedef u8 methodid;
-typedef u8 fieldid;
+typedef u8 traceid;
 
-class TraceUnicodeString;
+class ModuleEntry;
+class PackageEntry;
+class Symbol;
 
 #endif // SHARE_VM_TRACE_TRACEDATATYPES_HPP
-

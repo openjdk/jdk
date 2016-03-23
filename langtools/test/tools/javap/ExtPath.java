@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug     6428896
  * @summary javap cannot read multiple entries on the extension classpath
  * @author  Wei Tao
- * @modules jdk.jdeps
+ * @modules jdk.jdeps/com.sun.tools.javap
  * @run main/othervm ExtPath com.sun.crypto.provider.SunJCE
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -844,6 +844,32 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         R r = scan(node.getAnnotations(), p);
         r = scanAndReduce(node.getUnderlyingType(), p, r);
         return r;
+    }
+
+    public R visitModule(ModuleTree node, P p) {
+        R r = scan(node.getName(), p);
+        r = scanAndReduce(node.getDirectives(), p, r);
+        return r;
+    }
+
+    public R visitExports(ExportsTree node, P p) {
+        R r = scan(node.getExportName(), p);
+        r = scanAndReduce(node.getModuleNames(), p, r);
+        return r;
+    }
+
+    public R visitProvides(ProvidesTree node, P p) {
+        R r = scan(node.getServiceName(), p);
+        r = scanAndReduce(node.getImplementationName(), p, r);
+        return r;
+    }
+
+    public R visitRequires(RequiresTree node, P p) {
+        return scan(node.getModuleName(), p);
+    }
+
+    public R visitUses(UsesTree node, P p) {
+        return scan(node.getServiceName(), p);
     }
 
     /**

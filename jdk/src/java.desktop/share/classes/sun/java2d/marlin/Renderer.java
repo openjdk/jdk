@@ -148,8 +148,8 @@ final class Renderer implements PathConsumer2D, MarlinConst {
 //////////////////////////////////////////////////////////////////////////////
 //  EDGE LIST
 //////////////////////////////////////////////////////////////////////////////
-    private float edgeMinY = Float.POSITIVE_INFINITY;
-    private float edgeMaxY = Float.NEGATIVE_INFINITY;
+    private int edgeMinY = Integer.MAX_VALUE;
+    private int edgeMaxY = Integer.MIN_VALUE;
     private float edgeMinX = Float.POSITIVE_INFINITY;
     private float edgeMaxX = Float.NEGATIVE_INFINITY;
 
@@ -357,18 +357,21 @@ final class Renderer implements PathConsumer2D, MarlinConst {
             }
             return;
         }
-        // edge min/max X/Y are in subpixel space (inclusive)
-        if (y1 < edgeMinY) {
-            edgeMinY = y1;
+
+        // edge min/max X/Y are in subpixel space (inclusive) within bounds:
+        // note: Use integer crossings to ensure consistent range within
+        // edgeBuckets / edgeBucketCounts arrays in case of NaN values (int = 0)
+        if (firstCrossing < edgeMinY) {
+            edgeMinY = firstCrossing;
         }
-        if (y2 > edgeMaxY) {
-            edgeMaxY = y2;
+        if (lastCrossing > edgeMaxY) {
+            edgeMaxY = lastCrossing;
         }
 
         // Use double-precision for improved accuracy:
         final double x1d   = x1;
         final double y1d   = y1;
-        final double slope = (x2 - x1d) / (y2 - y1d);
+        final double slope = (x1d - x2) / (y1d - y2);
 
         if (slope >= 0.0) { // <==> x1 < x2
             if (x1 < edgeMinX) {
@@ -504,7 +507,7 @@ final class Renderer implements PathConsumer2D, MarlinConst {
     private float x0, y0;
 
     // Position of most recent 'moveTo' command
-    private float pix_sx0, pix_sy0;
+    private float sx0, sy0;
 
     // per-thread renderer context
     final RendererContext rdrCtx;
@@ -570,8 +573,8 @@ final class Renderer implements PathConsumer2D, MarlinConst {
             edgeBucketCounts = rdrCtx.getIntArray(edgeBucketsLength);
         }
 
-        edgeMinY = Float.POSITIVE_INFINITY;
-        edgeMaxY = Float.NEGATIVE_INFINITY;
+        edgeMinY = Integer.MAX_VALUE;
+        edgeMaxY = Integer.MIN_VALUE;
         edgeMinX = Float.POSITIVE_INFINITY;
         edgeMaxX = Float.NEGATIVE_INFINITY;
 
@@ -628,7 +631,7 @@ final class Renderer implements PathConsumer2D, MarlinConst {
             blkFlags = blkFlags_initial;
         }
 
-        if (edgeMinY != Float.POSITIVE_INFINITY) {
+        if (edgeMinY != Integer.MAX_VALUE) {
             // if context is maked as DIRTY:
             if (rdrCtx.dirty) {
                 // may happen if an exception if thrown in the pipeline processing:
@@ -688,16 +691,18 @@ final class Renderer implements PathConsumer2D, MarlinConst {
     @Override
     public void moveTo(float pix_x0, float pix_y0) {
         closePath();
-        this.pix_sx0 = pix_x0;
-        this.pix_sy0 = pix_y0;
-        this.y0 = tosubpixy(pix_y0);
-        this.x0 = tosubpixx(pix_x0);
+        final float sx = tosubpixx(pix_x0);
+        final float sy = tosubpixy(pix_y0);
+        this.sx0 = sx;
+        this.sy0 = sy;
+        this.x0 = sx;
+        this.y0 = sy;
     }
 
     @Override
     public void lineTo(float pix_x1, float pix_y1) {
-        float x1 = tosubpixx(pix_x1);
-        float y1 = tosubpixy(pix_y1);
+        final float x1 = tosubpixx(pix_x1);
+        final float y1 = tosubpixy(pix_y1);
         addLine(x0, y0, x1, y1);
         x0 = x1;
         y0 = y1;
@@ -729,8 +734,9 @@ final class Renderer implements PathConsumer2D, MarlinConst {
 
     @Override
     public void closePath() {
-        // lineTo expects its input in pixel coordinates.
-        lineTo(pix_sx0, pix_sy0);
+        addLine(x0, y0, sx0, sy0);
+        x0 = sx0;
+        y0 = sy0;
     }
 
     @Override
@@ -1396,7 +1402,7 @@ final class Renderer implements PathConsumer2D, MarlinConst {
         if (doMonitors) {
             RendererContext.stats.mon_rdr_endRendering.start();
         }
-        if (edgeMinY == Float.POSITIVE_INFINITY) {
+        if (edgeMinY == Integer.MAX_VALUE) {
             return false; // undefined edges bounds
         }
 
@@ -1407,11 +1413,10 @@ final class Renderer implements PathConsumer2D, MarlinConst {
         final int spminX = FloatMath.max(FloatMath.ceil_int(edgeMinX - 0.5f), boundsMinX);
         final int spmaxX = FloatMath.min(FloatMath.ceil_int(edgeMaxX - 0.5f), boundsMaxX - 1);
 
-        // y1 (and y2) are already biased by -0.5 in tosubpixy():
-        final int spminY = FloatMath.max(FloatMath.ceil_int(edgeMinY), _boundsMinY);
-        int maxY = FloatMath.ceil_int(edgeMaxY);
-
+        // edge Min/Max Y are already rounded to subpixels within bounds:
+        final int spminY = edgeMinY;
         final int spmaxY;
+        int maxY = edgeMaxY;
 
         if (maxY <= _boundsMaxY - 1) {
             spmaxY = maxY;

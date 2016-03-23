@@ -2609,9 +2609,7 @@ class StubGenerator: public StubCodeGenerator {
    *   R5_ARG3    - int   length (of buffer)
    *
    * scratch:
-   *   R6_ARG4    - crc table address
-   *   R7_ARG5    - tmp1
-   *   R8_ARG6    - tmp2
+   *   R2, R6-R12
    *
    * Ouput:
    *   R3_RET     - int   crc result
@@ -2623,22 +2621,25 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ function_entry();  // Remember stub start address (is rtn value).
 
     // arguments to kernel_crc32:
-    Register       crc     = R3_ARG1;  // Current checksum, preset by caller or result from previous call.
-    Register       data    = R4_ARG2;  // source byte array
-    Register       dataLen = R5_ARG3;  // #bytes to process
-    Register       table   = R6_ARG4;  // crc table address
+    const Register crc     = R3_ARG1;  // Current checksum, preset by caller or result from previous call.
+    const Register data    = R4_ARG2;  // source byte array
+    const Register dataLen = R5_ARG3;  // #bytes to process
+    const Register table   = R6_ARG4;  // crc table address
 
-    Register       t0      = R9;       // work reg for kernel* emitters
-    Register       t1      = R10;      // work reg for kernel* emitters
-    Register       t2      = R11;      // work reg for kernel* emitters
-    Register       t3      = R12;      // work reg for kernel* emitters
+    const Register t0      = R2;
+    const Register t1      = R7;
+    const Register t2      = R8;
+    const Register t3      = R9;
+    const Register tc0     = R10;
+    const Register tc1     = R11;
+    const Register tc2     = R12;
 
     BLOCK_COMMENT("Stub body {");
     assert_different_registers(crc, data, dataLen, table);
 
     StubRoutines::ppc64::generate_load_crc_table_addr(_masm, table);
 
-    __ kernel_crc32_1byte(crc, data, dataLen, table, t0, t1, t2, t3);
+    __ kernel_crc32_1word(crc, data, dataLen, table, t0, t1, t2, t3, tc0, tc1, tc2, table);
 
     BLOCK_COMMENT("return");
     __ mr_if_needed(R3_RET, crc);      // Updated crc is function result. No copying required (R3_ARG1 == R3_RET).

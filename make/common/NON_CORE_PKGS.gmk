@@ -98,8 +98,7 @@ SMARTCARDIO_PKGS = javax.smartcardio
 SCTPAPI_PKGS = com.sun.nio.sctp
 
 ifeq ($(PLATFORM), macosx)
-  APPLE_EXT_PKGS = com.apple.concurrent \
-      com.apple.eawt \
+  APPLE_EXT_PKGS = com.apple.eawt \
       com.apple.eawt.event \
       com.apple.eio
 endif

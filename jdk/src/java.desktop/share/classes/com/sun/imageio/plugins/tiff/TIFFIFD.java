@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ public class TIFFIFD extends TIFFDirectory {
     }
 
     /**
-     * Returns an <code>Iterator</code> over the TIFF fields. The
+     * Returns an {@code Iterator} over the TIFF fields. The
      * traversal is in the order of increasing tag number.
      */
     // Note: the sort is guaranteed for low fields by the use of an
@@ -164,7 +164,7 @@ public class TIFFIFD extends TIFFDirectory {
     }
 
     /**
-     * Read the value of a field. The <code>data</code> parameter should be
+     * Read the value of a field. The {@code data} parameter should be
      * an array of length 1 of Object.
      *
      * @param stream the input stream
@@ -762,8 +762,8 @@ public class TIFFIFD extends TIFFDirectory {
     }
 
     /**
-     * Returns a <code>TIFFIFD</code> wherein all fields from the
-     * <code>BaselineTIFFTagSet</code> are copied by value and all other
+     * Returns a {@code TIFFIFD} wherein all fields from the
+     * {@code BaselineTIFFTagSet} are copied by value and all other
      * fields copied by reference.
      */
     public TIFFIFD getShallowClone() {

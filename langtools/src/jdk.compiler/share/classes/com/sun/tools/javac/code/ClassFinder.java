@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.tools.javac.code;
 
 import java.io.IOException;
-import java.io.File;
+import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,15 +37,16 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.comp.Annotate;
-import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.file.JRTIndex;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.ClassReader;
@@ -119,6 +120,10 @@ public class ClassFinder {
      */
     final Name completionFailureName;
 
+    /** Module specified with -Xmodule:
+     */
+    final Name moduleOverride;
+
     /** Access to files
      */
     private final JavaFileManager fileManager;
@@ -179,7 +184,7 @@ public class ClassFinder {
         return instance;
     }
 
-    /** Construct a new class reader. */
+    /** Construct a new class finder. */
     protected ClassFinder(Context context) {
         context.put(classFinderKey, this);
         reader = ClassReader.instance(context);
@@ -205,6 +210,9 @@ public class ClassFinder {
             options.isSet("failcomplete")
             ? names.fromString(options.get("failcomplete"))
             : null;
+
+        moduleOverride = options.isSet(XMODULE) ? names.fromString(options.get(XMODULE))
+                                                : null;
 
         // Temporary, until more info is available from the module system.
         boolean useCtProps;
@@ -238,7 +246,7 @@ public class ClassFinder {
      * available from the module system.
      */
     long getSupplementaryFlags(ClassSymbol c) {
-        if (jrtIndex == null || !jrtIndex.isInJRT(c.classfile)) {
+        if (jrtIndex == null || !jrtIndex.isInJRT(c.classfile) || c.name == names.module_info) {
             return 0;
         }
 
@@ -319,7 +327,7 @@ public class ClassFinder {
             for (Name name : Convert.enclosingCandidates(Convert.shortName(c.name))) {
                 Symbol encl = owner.members().findFirst(name);
                 if (encl == null)
-                    encl = syms.classes.get(TypeSymbol.formFlatName(name, owner));
+                    encl = syms.getClass(c.packge().modle, TypeSymbol.formFlatName(name, owner));
                 if (encl != null)
                     encl.complete();
             }
@@ -329,7 +337,7 @@ public class ClassFinder {
     /** Fill in definition of class `c' from corresponding class or
      *  source file.
      */
-    private void fillIn(ClassSymbol c) {
+    void fillIn(ClassSymbol c) {
         if (completionFailureName == c.fullname) {
             throw new CompletionFailure(c, "user-selected completion failure by class name");
         }
@@ -398,14 +406,21 @@ public class ClassFinder {
     /** Load a toplevel class with given fully qualified name
      *  The class is entered into `classes' only if load was successful.
      */
-    public ClassSymbol loadClass(Name flatname) throws CompletionFailure {
-        boolean absent = syms.classes.get(flatname) == null;
-        ClassSymbol c = syms.enterClass(flatname);
+    public ClassSymbol loadClass(ModuleSymbol msym, Name flatname) throws CompletionFailure {
+        Assert.checkNonNull(msym);
+        Name packageName = Convert.packagePart(flatname);
+        PackageSymbol ps = syms.lookupPackage(msym, packageName);
+
+        Assert.checkNonNull(ps.modle, () -> "msym=" + msym + "; flatName=" + flatname);
+
+        boolean absent = syms.getClass(ps.modle, flatname) == null;
+        ClassSymbol c = syms.enterClass(ps.modle, flatname);
+
         if (c.members_field == null) {
             try {
                 c.complete();
             } catch (CompletionFailure ex) {
-                if (absent) syms.classes.remove(flatname);
+                if (absent) syms.removeClass(ps.modle, flatname);
                 throw ex;
             }
         }
@@ -439,7 +454,7 @@ public class ClassFinder {
             ? p.package_info
             : (ClassSymbol) p.members_field.findFirst(classname);
         if (c == null) {
-            c = syms.enterClass(classname, p);
+            c = syms.enterClass(p.modle, classname, p);
             if (c.classfile == null) // only update the file if's it's newly created
                 c.classfile = file;
             if (isPkgInfo) {
@@ -480,6 +495,7 @@ public class ClassFinder {
     /**
      * specifies types of files to be read when filling in a package symbol
      */
+    // Note: overridden by JavadocClassFinder
     protected EnumSet<JavaFileObject.Kind> getPackageFileKinds() {
         return EnumSet.of(JavaFileObject.Kind.CLASS, JavaFileObject.Kind.SOURCE);
     }
@@ -503,16 +519,83 @@ public class ClassFinder {
         if (p.members_field == null)
             p.members_field = WriteableScope.create(p);
 
-        preferCurrent = false;
-        if (userPathsFirst) {
+        ModuleSymbol msym = p.modle;
+
+        Assert.checkNonNull(msym, () -> p.toString());
+
+        msym.complete();
+
+        if (msym == syms.noModule) {
+            preferCurrent = false;
+            if (userPathsFirst) {
+                scanUserPaths(p);
+                preferCurrent = true;
+                scanPlatformPath(p);
+            } else {
+                scanPlatformPath(p);
+                scanUserPaths(p);
+            }
+        } else if (msym.classLocation == StandardLocation.CLASS_PATH) {
+            // assert p.modle.sourceLocation == StandardLocation.SOURCE_PATH);
             scanUserPaths(p);
-            preferCurrent = true;
-            scanPlatformPath(p);
         } else {
-            scanPlatformPath(p);
-            scanUserPaths(p);
+            scanModulePaths(p, msym);
         }
-        verbosePath = false;
+    }
+
+    // TODO: for now, this is a much simplified form of scanUserPaths
+    // and (deliberately) does not default sourcepath to classpath.
+    // But, we need to think about retaining existing behavior for
+    // -classpath and -sourcepath for single module mode.
+    // One plausible solution is to detect if the module's sourceLocation
+    // is the same as the module's classLocation.
+    private void scanModulePaths(PackageSymbol p, ModuleSymbol msym) throws IOException {
+        Set<JavaFileObject.Kind> kinds = getPackageFileKinds();
+
+        Set<JavaFileObject.Kind> classKinds = EnumSet.copyOf(kinds);
+        classKinds.remove(JavaFileObject.Kind.SOURCE);
+        boolean wantClassFiles = !classKinds.isEmpty();
+
+        Set<JavaFileObject.Kind> sourceKinds = EnumSet.copyOf(kinds);
+        sourceKinds.remove(JavaFileObject.Kind.CLASS);
+        boolean wantSourceFiles = !sourceKinds.isEmpty();
+
+        String packageName = p.fullname.toString();
+
+        if (msym.name == moduleOverride) {
+            if (wantClassFiles) {
+                fillIn(p, CLASS_PATH,
+                       fileManager.list(CLASS_PATH,
+                                        packageName,
+                                        classKinds,
+                                        false));
+            }
+            if (wantSourceFiles && fileManager.hasLocation(SOURCE_PATH)) {
+                fillIn(p, SOURCE_PATH,
+                        fileManager.list(SOURCE_PATH,
+                                        packageName,
+                                        sourceKinds,
+                                        false));
+            }
+        }
+
+        Location classLocn = msym.classLocation;
+        Location sourceLocn = msym.sourceLocation;
+
+        if (wantClassFiles && (classLocn != null)) {
+            fillIn(p, classLocn,
+                   fileManager.list(classLocn,
+                                    packageName,
+                                    classKinds,
+                                    false));
+        }
+        if (wantSourceFiles && (sourceLocn != null)) {
+            fillIn(p, sourceLocn,
+                   fileManager.list(sourceLocn,
+                                    packageName,
+                                    sourceKinds,
+                                    false));
+        }
     }
 
     /**
@@ -535,25 +618,25 @@ public class ClassFinder {
             if (fileManager instanceof StandardJavaFileManager) {
                 StandardJavaFileManager fm = (StandardJavaFileManager)fileManager;
                 if (haveSourcePath && wantSourceFiles) {
-                    List<File> path = List.nil();
-                    for (File file : fm.getLocation(SOURCE_PATH)) {
-                        path = path.prepend(file);
+                    List<Path> path = List.nil();
+                    for (Path sourcePath : fm.getLocationAsPaths(SOURCE_PATH)) {
+                        path = path.prepend(sourcePath);
                     }
                     log.printVerbose("sourcepath", path.reverse().toString());
                 } else if (wantSourceFiles) {
-                    List<File> path = List.nil();
-                    for (File file : fm.getLocation(CLASS_PATH)) {
-                        path = path.prepend(file);
+                    List<Path> path = List.nil();
+                    for (Path classPath : fm.getLocationAsPaths(CLASS_PATH)) {
+                        path = path.prepend(classPath);
                     }
                     log.printVerbose("sourcepath", path.reverse().toString());
                 }
                 if (wantClassFiles) {
-                    List<File> path = List.nil();
-                    for (File file : fm.getLocation(PLATFORM_CLASS_PATH)) {
-                        path = path.prepend(file);
+                    List<Path> path = List.nil();
+                    for (Path platformPath : fm.getLocationAsPaths(PLATFORM_CLASS_PATH)) {
+                        path = path.prepend(platformPath);
                     }
-                    for (File file : fm.getLocation(CLASS_PATH)) {
-                        path = path.prepend(file);
+                    for (Path classPath : fm.getLocationAsPaths(CLASS_PATH)) {
+                        path = path.prepend(classPath);
                     }
                     log.printVerbose("classpath",  path.reverse().toString());
                 }

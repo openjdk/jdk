@@ -208,9 +208,7 @@ void FileMapInfo::allocate_classpath_entry_table() {
         count ++;
         bytes += (int)entry_size;
         bytes += name_bytes;
-        if (TraceClassPaths) {
-          tty->print_cr("[Add main shared path (%s) %s]", (cpe->is_jar_file() ? "jar" : "dir"), name);
-        }
+        log_info(classpath)("add main shared path (%s) %s", (cpe->is_jar_file() ? "jar" : "dir"), name);
       } else {
         SharedClassPathEntry* ent = shared_classpath(cur_entry);
         if (cpe->is_jar_file()) {
@@ -228,12 +226,21 @@ void FileMapInfo::allocate_classpath_entry_table() {
           SharedClassUtil::update_shared_classpath(cpe, ent, st.st_mtime, st.st_size, THREAD);
         } else {
           struct stat st;
-          if ((os::stat(name, &st) == 0) && ((st.st_mode & S_IFDIR) == S_IFDIR)) {
-            if (!os::dir_is_empty(name)) {
-              ClassLoader::exit_with_path_failure("Cannot have non-empty directory in archived classpaths", name);
+          if (os::stat(name, &st) == 0) {
+            if (cpe->is_jrt()) {
+              // it's the "modules" jimage
+              ent->_timestamp = st.st_mtime;
+              ent->_filesize = st.st_size;
+            } else if ((st.st_mode & S_IFDIR) == S_IFDIR) {
+              if (!os::dir_is_empty(name)) {
+                ClassLoader::exit_with_path_failure(
+                  "Cannot have non-empty directory in archived classpaths", name);
+              }
+              ent->_filesize = -1;
             }
-            ent->_filesize = -1;
-          } else {
+          }
+          if (ent->_filesize == 0) {
+            // unknown
             ent->_filesize = -2;
           }
         }
@@ -275,9 +282,7 @@ bool FileMapInfo::validate_classpath_entry_table() {
     struct stat st;
     const char* name = ent->_name;
     bool ok = true;
-    if (TraceClassPaths) {
-      tty->print_cr("[Checking shared classpath entry: %s]", name);
-    }
+    log_info(classpath)("checking shared classpath entry: %s", name);
     if (os::stat(name, &st) != 0) {
       fail_continue("Required classpath entry does not exist: %s", name);
       ok = false;
@@ -286,7 +291,7 @@ bool FileMapInfo::validate_classpath_entry_table() {
         fail_continue("directory is not empty: %s", name);
         ok = false;
       }
-    } else if (ent->is_jar()) {
+    } else if (ent->is_jar_or_bootimage()) {
       if (ent->_timestamp != st.st_mtime ||
           ent->_filesize != st.st_size) {
         ok = false;
@@ -295,15 +300,13 @@ bool FileMapInfo::validate_classpath_entry_table() {
                         "Timestamp mismatch" :
                         "File size mismatch");
         } else {
-          fail_continue("A jar file is not the one used while building"
+          fail_continue("A jar/jimage file is not the one used while building"
                         " the shared archive file: %s", name);
         }
       }
     }
     if (ok) {
-      if (TraceClassPaths) {
-        tty->print_cr("[ok]");
-      }
+      log_info(classpath)("ok");
     } else if (!PrintSharedArchiveAndExit) {
       _validating_classpath_entry_table = false;
       return false;
@@ -877,6 +880,11 @@ bool FileMapInfo::FileMapHeader::validate() {
     return false;
   }
 
+  if (Arguments::patch_dirs() != NULL) {
+    FileMapInfo::fail_continue("The shared archive file cannot be used with -Xpatch.");
+    return false;
+  }
+
   if (_version != current_version()) {
     FileMapInfo::fail_continue("The shared archive file is the wrong version.");
     return false;
@@ -888,10 +896,8 @@ bool FileMapInfo::FileMapHeader::validate() {
   char header_version[JVM_IDENT_MAX];
   get_header_version(header_version);
   if (strncmp(_jvm_ident, header_version, JVM_IDENT_MAX-1) != 0) {
-    if (TraceClassPaths) {
-      tty->print_cr("Expected: %s", header_version);
-      tty->print_cr("Actual:   %s", _jvm_ident);
-    }
+    log_info(classpath)("expected: %s", header_version);
+    log_info(classpath)("actual:   %s", _jvm_ident);
     FileMapInfo::fail_continue("The shared archive file was created by a different"
                   " version or build of HotSpot");
     return false;
@@ -919,7 +925,7 @@ bool FileMapInfo::validate_header() {
   if (status) {
     if (!ClassLoader::check_shared_paths_misc_info(_paths_misc_info, _header->_paths_misc_info_size)) {
       if (!PrintSharedArchiveAndExit) {
-        fail_continue("shared class paths mismatch (hint: enable -XX:+TraceClassPaths to diagnose the failure)");
+        fail_continue("shared class paths mismatch (hint: enable -Xlog:classpath=info to diagnose the failure)");
         status = false;
       }
     }

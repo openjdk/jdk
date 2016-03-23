@@ -106,7 +106,7 @@ apt_help() {
     devkit)
       PKGHANDLER_COMMAND="sudo apt-get install build-essential" ;;
     openjdk)
-      PKGHANDLER_COMMAND="sudo apt-get install openjdk-7-jdk" ;;
+      PKGHANDLER_COMMAND="sudo apt-get install openjdk-8-jdk" ;;
     alsa)
       PKGHANDLER_COMMAND="sudo apt-get install libasound2-dev" ;;
     cups)
@@ -127,7 +127,7 @@ yum_help() {
     devkit)
       PKGHANDLER_COMMAND="sudo yum groupinstall \"Development Tools\"" ;;
     openjdk)
-      PKGHANDLER_COMMAND="sudo yum install java-1.7.0-openjdk" ;;
+      PKGHANDLER_COMMAND="sudo yum install java-1.8.0-openjdk-devel" ;;
     alsa)
       PKGHANDLER_COMMAND="sudo yum install alsa-lib-devel" ;;
     cups)

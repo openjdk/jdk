@@ -134,10 +134,10 @@ public:
   // is returned to the completed buffer set, and this call returns false.
   bool apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
                                          uint worker_i,
-                                         int stop_at,
+                                         size_t stop_at,
                                          bool during_pause);
 
-  BufferNode* get_completed_buffer(int stop_at);
+  BufferNode* get_completed_buffer(size_t stop_at);
 
   // Applies the current closure to all completed buffers,
   // non-consumptively.

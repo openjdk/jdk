@@ -74,7 +74,7 @@ void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, T
 void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset, TRAPS) {
   address pc = _instructions->start() + pc_offset;
   NativeInstruction* inst = nativeInstruction_at(pc);
-  if (inst->is_adr_aligned()) {
+  if (inst->is_adr_aligned() || inst->is_ldr_literal()) {
     address dest = _constants->start() + data_offset;
     _instructions->relocate(pc, section_word_Relocation::spec((address) dest, CodeBuffer::SECT_CONSTS));
     TRACE_jvmci_3("relocating at " PTR_FORMAT " (+%d) with destination at %d", p2i(pc), pc_offset, data_offset);

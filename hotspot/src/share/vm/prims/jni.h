@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -765,6 +765,17 @@ struct JNINativeInterface_ {
 
     jobjectRefType (JNICALL *GetObjectRefType)
         (JNIEnv* env, jobject obj);
+
+    /* Module Features */
+
+    jobject (JNICALL *GetModule)
+       (JNIEnv* env, jclass clazz);
+
+    void (JNICALL *AddModuleReads)
+       (JNIEnv* env, jobject m1, jobject m2);
+
+    jboolean (JNICALL *CanReadModule)
+       (JNIEnv* env, jobject m1, jobject m2);
 };
 
 /*
@@ -1857,6 +1868,20 @@ struct JNIEnv_ {
         return functions->GetObjectRefType(this, obj);
     }
 
+    /* Module Features */
+
+    jobject GetModule(jclass clazz) {
+        return functions->GetModule(this, clazz);
+    }
+
+    void AddModuleReads(jobject fromModule, jobject sourceModule) {
+        functions->AddModuleReads(this, fromModule, sourceModule);
+    }
+
+    jboolean CanReadModule(jobject askingModule, jobject sourceModule) {
+        return functions->CanReadModule(this, askingModule, sourceModule);
+    }
+
 #endif /* __cplusplus */
 };
 
@@ -1952,6 +1977,7 @@ JNI_OnUnload(JavaVM *vm, void *reserved);
 #define JNI_VERSION_1_4 0x00010004
 #define JNI_VERSION_1_6 0x00010006
 #define JNI_VERSION_1_8 0x00010008
+#define JNI_VERSION_9   0x00090000
 
 #ifdef __cplusplus
 } /* extern "C" */

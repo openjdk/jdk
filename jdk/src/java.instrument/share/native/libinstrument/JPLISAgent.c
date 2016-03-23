@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  */
 
 #include    <jni.h>
+#include    <jvm.h>
 #include    <jvmti.h>
 #include    <stdlib.h>
 #include    <string.h>
@@ -769,6 +770,36 @@ addRedefineClassesCapability(JPLISAgent * agent) {
     }
 }
 
+static jobject
+getModuleObject(JNIEnv *                jnienv,
+                jobject                 loaderObject,
+                const char*             cname) {
+    jboolean errorOutstanding = JNI_FALSE;
+    jobject moduleObject = NULL;
+    jstring package = NULL;
+
+    /* find last slash in the class name */
+    char* last_slash = (cname == NULL) ? NULL : strrchr(cname, '/');
+    int len = (last_slash == NULL) ? 0 : (int)(last_slash - cname);
+    char* pkg_name_buf = (char*)malloc(len + 1);
+
+    jplis_assert_msg(pkg_name_buf != NULL, "OOM error in native tmp buffer allocation");
+    if (last_slash != NULL) {
+        strncpy(pkg_name_buf, cname, len);
+    }
+    pkg_name_buf[len] = '\0';
+
+    package = (*jnienv)->NewStringUTF(jnienv, pkg_name_buf);
+    jplis_assert_msg(package != NULL, "OOM error in NewStringUTF");
+
+    moduleObject = JVM_GetModuleByPackageName(jnienv, loaderObject, package);
+
+    errorOutstanding = checkForAndClearThrowable(jnienv);
+    jplis_assert_msg(!errorOutstanding,
+                     "error in lookup of a module of the class being instrumented");
+    free((void*)pkg_name_buf);
+    return moduleObject;
+}
 
 /*
  *  Support for the JVMTI callbacks
@@ -810,7 +841,7 @@ transformClassFile(             JPLISAgent *            agent,
             classFileBufferObject = (*jnienv)->NewByteArray(jnienv,
                                                             class_data_len);
             errorOutstanding = checkForAndClearThrowable(jnienv);
-            jplis_assert_msg(!errorOutstanding, "can't create byte arrau");
+            jplis_assert_msg(!errorOutstanding, "can't create byte array");
         }
 
         if ( !errorOutstanding ) {
@@ -828,6 +859,14 @@ transformClassFile(             JPLISAgent *            agent,
         /*  now call the JPL agents to do the transforming */
         /*  potential future optimization: may want to skip this if there are none */
         if ( !errorOutstanding ) {
+            jobject moduleObject = NULL;
+
+            if (classBeingRedefined == NULL) {
+                moduleObject = getModuleObject(jnienv, loaderObject, name);
+            } else {
+                // Redefine or retransform, InstrumentationImpl.transform() will use
+                // classBeingRedefined.getModule() to get the module.
+            }
             jplis_assert(agent->mInstrumentationImpl != NULL);
             jplis_assert(agent->mTransform != NULL);
             transformedBufferObject = (*jnienv)->CallObjectMethod(
@@ -835,6 +874,7 @@ transformClassFile(             JPLISAgent *            agent,
                                                 agent->mInstrumentationImpl,
                                                 agent->mTransform,
                                                 loaderObject,
+                                                moduleObject,
                                                 classNameStringObject,
                                                 classBeingRedefined,
                                                 protectionDomain,

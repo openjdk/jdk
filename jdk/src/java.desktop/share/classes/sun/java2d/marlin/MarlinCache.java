@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -590,8 +590,8 @@ public final class MarlinCache implements MarlinConst {
             alphaRow[to + 1] = 0;
         }
         if (doChecks) {
-            IntArrayCache.check(blkFlags, 0, blkFlags.length, 0);
-            IntArrayCache.check(alphaRow, 0, alphaRow.length, 0);
+            IntArrayCache.check(blkFlags, blkW, blkE, 0);
+            IntArrayCache.check(alphaRow, from, px1 - bboxX0, 0);
         }
 
         if (doMonitors) {

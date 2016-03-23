@@ -31,14 +31,14 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.tools.*;
 import sun.jvm.hotspot.utilities.*;
+import jdk.internal.vm.agent.spi.ToolProvider;
 
 /**
   A command line tool to print class loader statistics.
 */
 
-public class ClassLoaderStats extends Tool {
+public class ClassLoaderStats extends Tool implements ToolProvider {
    boolean verbose = true;
 
    public ClassLoaderStats() {
@@ -47,6 +47,16 @@ public class ClassLoaderStats extends Tool {
 
    public ClassLoaderStats(JVMDebugger d) {
       super(d);
+   }
+
+   @Override
+   public String getName() {
+      return "classLoaderStats";
+   }
+
+   @Override
+   public void run(String... arguments) {
+      execute(arguments);
    }
 
    public static void main(String[] args) {

@@ -32,6 +32,7 @@ tier1 = \
     -java/util/WeakHashMap/GCDuringIteration.java \
     -java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
     -java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
+    -java/util/TimeZone/Bug6772689.java \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
@@ -42,6 +43,7 @@ tier2 = \
     java/util/WeakHashMap/GCDuringIteration.java \
     java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
     java/util/concurrent/forkjoin/FJExceptionTableLeak.java \
+    java/util/TimeZone/Bug6772689.java \
     :jdk_io \
     :jdk_nio \
     -sun/nio/cs/ISO8859x.java \
@@ -76,6 +78,7 @@ jdk_lang = \
     jdk/lambda \
     jdk/internal/misc \
     jdk/internal/ref \
+    jdk/modules \
     vm
 
 # All of the java.util package
@@ -239,7 +242,6 @@ jdk_launcher = \
 #
 core_tools = \
     tools \
-    jdk/internal/jimage \
     jdk/internal/jrtfs \
     sun/tools/java \
     sun/tools/jrunscript
@@ -492,7 +494,8 @@ needs_jdk = \
   sun/reflect/CallerSensitive/MissingCallerSensitive.java \
   sun/security/util/Resources/NewNamesFormat.java \
   vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java \
-  javax/xml/ws/clientjar/TestWsImport.java
+  javax/xml/ws/clientjar/TestWsImport.java \
+  javax/xml/bind/xjc/8145039/JaxbMarshallTest.java
 
 # JRE adds further tests to compact3
 #
@@ -522,7 +525,6 @@ needs_jre = \
   java/util/jar/Manifest/CreateManifest.java \
   java/util/logging/TestMainAppContext.java \
   java/util/logging/TestLoggingWithMainAppContext.java \
-  java/util/ResourceBundle/Control/Bug6530694.java \
   java/text/Bidi/BidiConformance.java \
   java/text/Bidi/BidiEmbeddingTest.java \
   java/text/Bidi/Bug7042148.java \

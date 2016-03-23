@@ -28,7 +28,7 @@
  *    characters correctly.  This test case needs to be run in en_US locale.
  * @author Naoto Sato
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @run main TestSupplementary
  */

@@ -111,32 +111,66 @@ ImageDecompressor* ImageDecompressor::get_decompressor(const char * decompressor
     return NULL;
 }
 
+// Sparc to read unaligned content
+// u8 l = (*(u8*) ptr);
+// If ptr is not aligned, sparc will fail.
+u8 ImageDecompressor::getU8(u1* ptr, Endian *endian) {
+    u8 ret;
+    if (endian->is_big_endian()) {
+        ret = (u8)ptr[0] << 56 | (u8)ptr[1] << 48 | (u8)ptr[2]<<40 | (u8)ptr[3]<<32 |
+                ptr[4]<<24 | ptr[5]<<16 | ptr[6]<<8 | ptr[7];
+    } else {
+        ret = ptr[0] | ptr[1]<<8 | ptr[2]<<16 | ptr[3]<<24 | (u8)ptr[4]<<32 |
+                (u8)ptr[5]<<40 | (u8)ptr[6]<<48 | (u8)ptr[7]<<56;
+    }
+    return ret;
+}
+
+u4 ImageDecompressor::getU4(u1* ptr, Endian *endian) {
+    u4 ret;
+    if (endian->is_big_endian()) {
+        ret = ptr[0] << 24 | ptr[1]<<16 | (ptr[2]<<8) | ptr[3];
+    } else {
+        ret = ptr[0] | ptr[1]<<8 | (ptr[2]<<16) | ptr[3]<<24;
+    }
+    return ret;
+}
+
 /*
  * Decompression entry point. Called from ImageFileReader::get_resource.
  */
 void ImageDecompressor::decompress_resource(u1* compressed, u1* uncompressed,
-                u4 uncompressed_size, const ImageStrings* strings) {
+                u8 uncompressed_size, const ImageStrings* strings, Endian *endian) {
     bool has_header = false;
     u1* decompressed_resource = compressed;
     u1* compressed_resource = compressed;
-
     // Resource could have been transformed by a stack of decompressors.
     // Iterate and decompress resources until there is no more header.
     do {
         ResourceHeader _header;
-        memcpy(&_header, compressed_resource, sizeof (ResourceHeader));
+        u1* compressed_resource_base = compressed_resource;
+        _header._magic = getU4(compressed_resource, endian);
+        compressed_resource += 4;
+        _header._size = getU8(compressed_resource, endian);
+        compressed_resource += 8;
+        _header._uncompressed_size = getU8(compressed_resource, endian);
+        compressed_resource += 8;
+        _header._decompressor_name_offset = getU4(compressed_resource, endian);
+        compressed_resource += 4;
+        _header._decompressor_config_offset = getU4(compressed_resource, endian);
+        compressed_resource += 4;
+        _header._is_terminal = *compressed_resource;
+        compressed_resource += 1;
         has_header = _header._magic == ResourceHeader::resource_header_magic;
         if (has_header) {
             // decompressed_resource array contains the result of decompression
-            decompressed_resource = new u1[_header._uncompressed_size];
+            decompressed_resource = new u1[(size_t) _header._uncompressed_size];
             // Retrieve the decompressor name
             const char* decompressor_name = strings->get(_header._decompressor_name_offset);
             assert(decompressor_name && "image decompressor not found");
             // Retrieve the decompressor instance
             ImageDecompressor* decompressor = get_decompressor(decompressor_name);
             assert(decompressor && "image decompressor not found");
-            u1* compressed_resource_base = compressed_resource;
-            compressed_resource += ResourceHeader::resource_header_length;
             // Ask the decompressor to decompress the compressed content
             decompressor->decompress_resource(compressed_resource, decompressed_resource,
                 &_header, strings);
@@ -146,8 +180,8 @@ void ImageDecompressor::decompress_resource(u1* compressed, u1* uncompressed,
             compressed_resource = decompressed_resource;
         }
     } while (has_header);
-    memcpy(uncompressed, decompressed_resource, uncompressed_size);
-    delete[] decompressed_resource;
+    memcpy(uncompressed, decompressed_resource, (size_t) uncompressed_size);
+    delete decompressed_resource;
 }
 
 // Zip decompressor
@@ -299,14 +333,14 @@ void SharedStringDecompressor::decompress_resource(u1* data,
             }
         }
     }
-    u4 remain = header->_size - (int)(data - data_base);
-    u4 computed = (u4)(uncompressed_resource - uncompressed_base) + remain;
+    u8 remain = header->_size - (int)(data - data_base);
+    u8 computed = (u8)(uncompressed_resource - uncompressed_base) + remain;
     if (header->_uncompressed_size != computed)
-        printf("Failure, expecting %d but getting %d\n", header->_uncompressed_size,
+        printf("Failure, expecting %llu but getting %llu\n", header->_uncompressed_size,
                 computed);
     assert(header->_uncompressed_size == computed &&
                 "Constant Pool reconstruction failed");
-    memcpy(uncompressed_resource, data, remain);
+    memcpy(uncompressed_resource, data, (size_t) remain);
 }
 
 /*

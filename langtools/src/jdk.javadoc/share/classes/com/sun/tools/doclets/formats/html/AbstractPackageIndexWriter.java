@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,15 +155,8 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
             htmlTree.addStyle(HtmlStyle.indexNav);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             addAllClassesLink(ul);
-            if (configuration.showProfiles) {
-                addAllProfilesLink(ul);
-            }
             htmlTree.addContent(ul);
             body.addContent(htmlTree);
-            if (configuration.showProfiles && configuration.profilePackages.size() > 0) {
-                Content profileSummary = configuration.getResource("doclet.Profiles");
-                addProfilesList(profileSummary, body);
-            }
             addPackagesList(packages, text, tableSummary, body);
         }
     }
@@ -200,22 +193,5 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * @param div the document tree to which the all classes link will be added
      */
     protected void addAllClassesLink(Content div) {
-    }
-
-    /**
-     * Do nothing. This will be overridden.
-     *
-     * @param div the document tree to which the all profiles link will be added
-     */
-    protected void addAllProfilesLink(Content div) {
-    }
-
-    /**
-     * Do nothing. This will be overridden.
-     *
-     * @param profileSummary the profile summary heading
-     * @param body the content tree to which the profiles list will be added
-     */
-    protected void addProfilesList(Content profileSummary, Content body) {
     }
 }

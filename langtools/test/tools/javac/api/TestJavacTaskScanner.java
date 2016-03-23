@@ -39,15 +39,18 @@ import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.parser.*;
 import com.sun.tools.javac.parser.Tokens.Token;
 import com.sun.tools.javac.util.*;
+
 import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.*;
@@ -70,7 +73,12 @@ public class TestJavacTaskScanner extends ToolTester {
         final Iterable<? extends JavaFileObject> compilationUnits =
             fm.getJavaFileObjects(new File[] {file});
         StandardJavaFileManager fm = getLocalFileManager(tool, null, null);
-        task = (JavacTaskImpl)tool.getTask(null, fm, null, null, null, compilationUnits);
+        java.util.List<String> options = Arrays.asList("-XaddExports:"
+                + "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED");
+        task = (JavacTaskImpl)tool.getTask(null, fm, null, options, null, compilationUnits);
         task.getContext().put(ScannerFactory.scannerFactoryKey,
                 new MyScanner.Factory(task.getContext(), this));
         elements = task.getElements();
@@ -79,7 +87,7 @@ public class TestJavacTaskScanner extends ToolTester {
 
     public void run() {
         Iterable<? extends TypeElement> toplevels;
-        toplevels = task.enter(task.parse());
+        toplevels = ElementFilter.typesIn(task.enter(task.parse()));
         for (TypeElement clazz : toplevels) {
             System.out.format("Testing %s:%n%n", clazz.getSimpleName());
             testParseType(clazz);

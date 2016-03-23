@@ -40,10 +40,9 @@
   <target name="compile" depends="prepare" description="Compiles the nasgen sources">
     <javac srcdir="${src.dir}"
            destdir="${build.classes.dir}"
-           classpath="${javac.classpath}"
            debug="${javac.debug}"
            includeantruntime="false" fork="true">
-      <compilerarg value="-J-Xbootclasspath/p:${javac.classpath}"/>
+      <compilerarg value="-XaddExports:${nasgen.module.imports}"/>
       <compilerarg value="-Xlint:unchecked"/>
       <compilerarg value="-Xlint:deprecation"/>
       <compilerarg value="-XDignore.symbol.file"/>

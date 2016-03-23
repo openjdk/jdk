@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import static org.testng.Assert.*;
 
 /**
  * @test
+ * @bug 8148748
  * @summary Spliterator last-binding and fail-fast tests
  * @run testng SpliteratorLateBindingFailFastTest
  */
@@ -120,8 +121,8 @@ public class SpliteratorLateBindingFailFastTest {
         }
 
         void addList(Function<Collection<T>, ? extends List<T>> l) {
-            // @@@ If collection is instance of List then add sub-list tests
             addCollection(l);
+            addCollection(l.andThen(list -> list.subList(0, list.size())));
         }
 
         void addMap(Function<Map<T, T>, ? extends Map<T, T>> mapConstructor) {

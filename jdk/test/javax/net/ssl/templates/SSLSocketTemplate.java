@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,26 +85,26 @@ public class SSLSocketTemplate {
      */
     void doServerSide() throws Exception {
         SSLServerSocketFactory sslssf =
-            (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+            (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
+        try (SSLServerSocket sslServerSocket =
+                (SSLServerSocket)sslssf.createServerSocket(serverPort)) {
 
-        serverPort = sslServerSocket.getLocalPort();
+            serverPort = sslServerSocket.getLocalPort();
 
-        /*
-         * Signal Client, we're ready for his connect.
-         */
-        serverReady = true;
+            /*
+             * Signal Client, we're ready for his connect.
+             */
+            serverReady = true;
 
-        SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-        InputStream sslIS = sslSocket.getInputStream();
-        OutputStream sslOS = sslSocket.getOutputStream();
+            try (SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept()) {
+                InputStream sslIS = sslSocket.getInputStream();
+                OutputStream sslOS = sslSocket.getOutputStream();
 
-        sslIS.read();
-        sslOS.write(85);
-        sslOS.flush();
-
-        sslSocket.close();
+                sslIS.read();
+                sslOS.write(85);
+                sslOS.flush();
+            }
+        }
     }
 
     /*
@@ -123,18 +123,17 @@ public class SSLSocketTemplate {
         }
 
         SSLSocketFactory sslsf =
-            (SSLSocketFactory) SSLSocketFactory.getDefault();
-        SSLSocket sslSocket = (SSLSocket)
-            sslsf.createSocket("localhost", serverPort);
+            (SSLSocketFactory)SSLSocketFactory.getDefault();
+        try (SSLSocket sslSocket =
+                (SSLSocket)sslsf.createSocket("localhost", serverPort)) {
 
-        InputStream sslIS = sslSocket.getInputStream();
-        OutputStream sslOS = sslSocket.getOutputStream();
+            InputStream sslIS = sslSocket.getInputStream();
+            OutputStream sslOS = sslSocket.getOutputStream();
 
-        sslOS.write(280);
-        sslOS.flush();
-        sslIS.read();
-
-        sslSocket.close();
+            sslOS.write(280);
+            sslOS.flush();
+            sslIS.read();
+        }
     }
 
     /*

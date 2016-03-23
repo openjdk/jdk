@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,13 @@
 
 package crules;
 
+import java.lang.reflect.Layer;
+import java.lang.reflect.Module;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
@@ -52,6 +55,11 @@ public class CodingRulesAnalyzerPlugin implements Plugin {
 
     @DefinedBy(Api.COMPILER_TREE)
     public void init(JavacTask task, String... args) {
+        addExports("jdk.compiler",
+                "com.sun.tools.javac.api",
+                "com.sun.tools.javac.code",
+                "com.sun.tools.javac.tree",
+                "com.sun.tools.javac.util");
         BasicJavacTask impl = (BasicJavacTask)task;
         Context context = impl.getContext();
         log = Log.instance(context);
@@ -61,6 +69,20 @@ public class CodingRulesAnalyzerPlugin implements Plugin {
                 new AssertCheckAnalyzer(task),
                 new DefinedByAnalyzer(task)
         ));
+    }
+
+    private void addExports(String moduleName, String... packageNames) {
+        for (String packageName : packageNames) {
+            try {
+                Layer layer = Layer.boot();
+                Optional<Module> m = layer.findModule(moduleName);
+                if (!m.isPresent())
+                    throw new Error("module not found: " + moduleName);
+                m.get().addExports(packageName, getClass().getModule());
+            } catch (Exception e) {
+                throw new Error("failed to add exports for " + moduleName + "/" + packageName);
+            }
+        }
     }
 
     public class PostAnalyzeTaskListener implements TaskListener {

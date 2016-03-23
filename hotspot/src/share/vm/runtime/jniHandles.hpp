@@ -138,6 +138,9 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   // Handle allocation
   jobject allocate_handle(oop obj);
 
+  // Release Handle
+  void release_handle(jobject);
+
   // Block allocation and block free list management
   static JNIHandleBlock* allocate_block(Thread* thread = NULL);
   static void release_block(JNIHandleBlock* block, Thread* thread = NULL);

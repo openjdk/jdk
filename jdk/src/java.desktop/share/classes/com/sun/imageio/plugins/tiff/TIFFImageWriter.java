@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,11 +221,11 @@ public class TIFFImageWriter extends ImageWriter {
      * relative to a given tile grid layout specified by its X offset
      * and tile width.
      *
-     * <p> If <code>tileWidth < 0</code>, the results of this method
-     * are undefined.  If <code>tileWidth == 0</code>, an
-     * <code>ArithmeticException</code> will be thrown.
+     * <p> If {@code tileWidth < 0}, the results of this method
+     * are undefined.  If {@code tileWidth == 0}, an
+     * {@code ArithmeticException} will be thrown.
      *
-     * @throws ArithmeticException  If <code>tileWidth == 0</code>.
+     * @throws ArithmeticException  If {@code tileWidth == 0}.
      */
     public static int XToTileX(int x, int tileGridXOffset, int tileWidth) {
         x -= tileGridXOffset;
@@ -240,11 +240,11 @@ public class TIFFImageWriter extends ImageWriter {
      * relative to a given tile grid layout specified by its Y offset
      * and tile height.
      *
-     * <p> If <code>tileHeight < 0</code>, the results of this method
-     * are undefined.  If <code>tileHeight == 0</code>, an
-     * <code>ArithmeticException</code> will be thrown.
+     * <p> If {@code tileHeight < 0}, the results of this method
+     * are undefined.  If {@code tileHeight == 0}, an
+     * {@code ArithmeticException} will be thrown.
      *
-     * @throws ArithmeticException  If <code>tileHeight == 0</code>.
+     * @throws ArithmeticException  If {@code tileHeight == 0}.
      */
     public static int YToTileY(int y, int tileGridYOffset, int tileHeight) {
         y -= tileGridYOffset;
@@ -424,17 +424,17 @@ public class TIFFImageWriter extends ImageWriter {
     }
 
     /**
-     * Converts a standard <code>javax_imageio_1.0</code> tree to a
-     * <code>TIFFImageMetadata</code> object.
+     * Converts a standard {@code javax_imageio_1.0} tree to a
+     * {@code TIFFImageMetadata} object.
      *
      * @param inData The metadata object.
-     * @return a <code>TIFFImageMetadata</code> or <code>null</code> if
-     * the standard tree derived from the input object is <code>null</code>.
-     * @throws IllegalArgumentException if <code>inData</code> is
-     * <code>null</code>.
-     * @throws IllegalArgumentException if <code>inData</code> does not support
+     * @return a {@code TIFFImageMetadata} or {@code null} if
+     * the standard tree derived from the input object is {@code null}.
+     * @throws IllegalArgumentException if {@code inData} is
+     * {@code null}.
+     * @throws IllegalArgumentException if {@code inData} does not support
      * the standard metadata format.
-     * @throws IIOInvalidTreeException if <code>inData</code> generates an
+     * @throws IIOInvalidTreeException if {@code inData} generates an
      * invalid standard metadata tree.
      */
     private TIFFImageMetadata convertStandardImageMetadata(IIOMetadata inData)
@@ -463,15 +463,15 @@ public class TIFFImageWriter extends ImageWriter {
 
     /**
      * Converts a native
-     * <code>javax_imageio_tiff_image_1.0</code> tree to a
-     * <code>TIFFImageMetadata</code> object.
+     * {@code javax_imageio_tiff_image_1.0} tree to a
+     * {@code TIFFImageMetadata} object.
      *
      * @param inData The metadata object.
-     * @return a <code>TIFFImageMetadata</code> or <code>null</code> if
-     * the native tree derived from the input object is <code>null</code>.
-     * @throws IllegalArgumentException if <code>inData</code> is
-     * <code>null</code> or does not support the native metadata format.
-     * @throws IIOInvalidTreeException if <code>inData</code> generates an
+     * @return a {@code TIFFImageMetadata} or {@code null} if
+     * the native tree derived from the input object is {@code null}.
+     * @throws IllegalArgumentException if {@code inData} is
+     * {@code null} or does not support the native metadata format.
+     * @throws IIOInvalidTreeException if {@code inData} generates an
      * invalid native metadata tree.
      */
     private TIFFImageMetadata convertNativeImageMetadata(IIOMetadata inData)
@@ -504,8 +504,8 @@ public class TIFFImageWriter extends ImageWriter {
      * as needed. The destination image dimensions are provided as parameters
      * because these might differ from those of the source due to subsampling.
      *
-     * @param cm The <code>ColorModel</code> of the image being written.
-     * @param sm The <code>SampleModel</code> of the image being written.
+     * @param cm The {@code ColorModel} of the image being written.
+     * @param sm The {@code SampleModel} of the image being written.
      * @param destWidth The width of the written image after subsampling.
      * @param destHeight The height of the written image after subsampling.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,8 @@ public:
 // PLAB book-keeping.
 class PLABStats : public CHeapObj<mtGC> {
  protected:
+  const char* _description;   // Identifying string.
+
   size_t _allocated;          // Total allocated
   size_t _wasted;             // of which wasted (internal fragmentation)
   size_t _undo_wasted;        // of which wasted on undo (is not used for calculation of PLAB size)
@@ -160,8 +162,12 @@ class PLABStats : public CHeapObj<mtGC> {
     _undo_wasted = 0;
     _unused      = 0;
   }
+
+  virtual void log_plab_allocation();
+  virtual void log_sizing(size_t calculated, size_t net_desired);
  public:
-  PLABStats(size_t desired_net_plab_sz_, unsigned wt) :
+  PLABStats(const char* description, size_t desired_net_plab_sz_, unsigned wt) :
+    _description(description),
     _allocated(0),
     _wasted(0),
     _undo_wasted(0),
@@ -171,6 +177,12 @@ class PLABStats : public CHeapObj<mtGC> {
   { }
 
   virtual ~PLABStats() { }
+
+  size_t allocated() const { return _allocated; }
+  size_t wasted() const { return _wasted; }
+  size_t unused() const { return _unused; }
+  size_t used() const { return allocated() - (wasted() + unused()); }
+  size_t undo_wasted() const { return _undo_wasted; }
 
   static const size_t min_size() {
     return PLAB::min_size();

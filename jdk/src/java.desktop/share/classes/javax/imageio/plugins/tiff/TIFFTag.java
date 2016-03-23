@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class TIFFTag {
      * The name assigned to a tag with an unknown tag number. Such
      * a tag may be created for example when reading an IFD and a
      * tag number is encountered which is not in any of the
-     * <code>TIFFTagSet</code>s known to the reader.
+     * {@code TIFFTagSet}s known to the reader.
      */
     public static final String UNKNOWN_TAG_NAME = "UnknownTag";
 
@@ -141,12 +141,12 @@ public class TIFFTag {
     private SortedMap<Integer,String> valueNames = null;
 
     /**
-     * Constructs a <code>TIFFTag</code> with a given name, tag number, set
+     * Constructs a {@code TIFFTag} with a given name, tag number, set
      * of legal data types, and value count. A negative value count signifies
      * that either an arbitrary number of values is legal or the required count
      * is determined by the values of other fields in the IFD. A non-negative
      * count specifies the number of values which an associated field must
-     * contain. The tag will have no associated <code>TIFFTagSet</code>.
+     * contain. The tag will have no associated {@code TIFFTagSet}.
      *
      * <p> If there are mnemonic names to be associated with the legal
      * data values for the tag, {@link #addValueName(int, String)
@@ -183,18 +183,18 @@ public class TIFFTag {
     }
 
     /**
-     * Constructs a <code>TIFFTag</code> with a given name, tag number and
-     * <code>TIFFTagSet</code> to which it refers. The legal data types are
+     * Constructs a {@code TIFFTag} with a given name, tag number and
+     * {@code TIFFTagSet} to which it refers. The legal data types are
      * set to include {@link #TIFF_LONG} and {@link #TIFF_IFD_POINTER} and the
-     * value count is unity. The <code>TIFFTagSet</code> will
-     * represent the set of <code>TIFFTag</code>s which appear in the IFD
-     * pointed to. A <code>TIFFTag</code> represents an IFD pointer if and
-     * only if <code>tagSet</code> is non-<code>null</code> or the data
-     * type <code>TIFF_IFD_POINTER</code> is legal.
+     * value count is unity. The {@code TIFFTagSet} will
+     * represent the set of {@code TIFFTag}s which appear in the IFD
+     * pointed to. A {@code TIFFTag} represents an IFD pointer if and
+     * only if {@code tagSet} is non-{@code null} or the data
+     * type {@code TIFF_IFD_POINTER} is legal.
      *
      * @param name the name of the tag.
      * @param number the number used to represent the tag.
-     * @param tagSet the <code>TIFFTagSet</code> to which this tag belongs.
+     * @param tagSet the {@code TIFFTagSet} to which this tag belongs.
      * @throws NullPointerException if name or tagSet is null.
      * @throws IllegalArgumentException if number is negative.
      *
@@ -210,9 +210,9 @@ public class TIFFTag {
     }
 
     /**
-     * Constructs  a  <code>TIFFTag</code>  with  a  given  name,  tag number,
+     * Constructs  a  {@code TIFFTag}  with  a  given  name,  tag number,
      * and set  of  legal  data  types.  The value count of the tag will be
-     * undefined and it will  have  no associated <code>TIFFTagSet</code>.
+     * undefined and it will  have  no associated {@code TIFFTagSet}.
      *
      * @param name the name of the tag.
      * @param number the number used to represent the tag.
@@ -236,9 +236,9 @@ public class TIFFTag {
      *
      * @return the number of bytes used to store the given data type.
      *
-     * @throws IllegalArgumentException if <code>datatype</code> is
-     * less than <code>MIN_DATATYPE</code> or greater than
-     * <code>MAX_DATATYPE</code>.
+     * @throws IllegalArgumentException if {@code datatype} is
+     * less than {@code MIN_DATATYPE} or greater than
+     * {@code MAX_DATATYPE}.
      */
     public static int getSizeOfType(int dataType) {
         if (dataType < MIN_DATATYPE ||dataType > MAX_DATATYPE) {
@@ -251,7 +251,7 @@ public class TIFFTag {
     /**
      * Returns the name of the tag, as it will appear in image metadata.
      *
-     * @return the tag name, as a <code>String</code>.
+     * @return the tag name, as a {@code String}.
      */
     public String getName() {
         return name;
@@ -260,7 +260,7 @@ public class TIFFTag {
     /**
      * Returns the integer used to represent the tag.
      *
-     * @return the tag number, as an <code>int</code>.
+     * @return the tag number, as an {@code int}.
      */
     public int getNumber() {
         return number;
@@ -276,7 +276,7 @@ public class TIFFTag {
      * (1 &lt;&lt; TIFFTag.TIFF_SHORT) | (1 &lt;&lt; TIFFTag.TIFF_LONG)
      * </pre>
      *
-     * @return an <code>int</code> containing a bitmask encoding the
+     * @return an {@code int} containing a bitmask encoding the
      * set of valid data types.
      */
     public int getDataTypes() {
@@ -285,11 +285,11 @@ public class TIFFTag {
 
     /**
      * Returns the value count of this tag. If this value is positive, it
-     * represents the required number of values for a <code>TIFFField</code>
+     * represents the required number of values for a {@code TIFFField}
      * which has this tag. If the value is negative, the count is undefined.
      * In the latter case the count may be derived, e.g., the number of values
-     * of the <code>BitsPerSample</code> field is <code>SamplesPerPixel</code>,
-     * or it may be variable as in the case of most <code>US-ASCII</code>
+     * of the {@code BitsPerSample} field is {@code SamplesPerPixel},
+     * or it may be variable as in the case of most {@code US-ASCII}
      * fields.
      *
      * @return the value count of this tag.
@@ -299,18 +299,18 @@ public class TIFFTag {
     }
 
     /**
-     * Returns <code>true</code> if the given data type
+     * Returns {@code true} if the given data type
      * may be used for the data associated with this tag.
      *
      * @param dataType the data type to be queried, one of
-     * <code>TIFF_BYTE</code>, <code>TIFF_SHORT</code>, etc.
+     * {@code TIFF_BYTE}, {@code TIFF_SHORT}, etc.
      *
-     * @return a <code>boolean</code> indicating whether the given
+     * @return a {@code boolean} indicating whether the given
      * data type may be used with this tag.
      *
-     * @throws IllegalArgumentException if <code>datatype</code> is
-     * less than <code>MIN_DATATYPE</code> or greater than
-     * <code>MAX_DATATYPE</code>.
+     * @throws IllegalArgumentException if {@code datatype} is
+     * less than {@code MIN_DATATYPE} or greater than
+     * {@code MAX_DATATYPE}.
      */
     public boolean isDataTypeOK(int dataType) {
         if (dataType < MIN_DATATYPE || dataType > MAX_DATATYPE) {
@@ -320,38 +320,38 @@ public class TIFFTag {
     }
 
     /**
-     * Returns the <code>TIFFTagSet</code> of which this tag is a part.
+     * Returns the {@code TIFFTagSet} of which this tag is a part.
      *
-     * @return the containing <code>TIFFTagSet</code>.
+     * @return the containing {@code TIFFTagSet}.
      */
     public TIFFTagSet getTagSet() {
         return tagSet;
     }
 
     /**
-     * Returns <code>true</code> if this tag is used to point to an IFD
-     * structure containing additional tags. A <code>TIFFTag</code> represents
-     * an IFD pointer if and only if its <code>TIFFTagSet</code> is
-     * non-<code>null</code> or the data type <code>TIFF_IFD_POINTER</code> is
+     * Returns {@code true} if this tag is used to point to an IFD
+     * structure containing additional tags. A {@code TIFFTag} represents
+     * an IFD pointer if and only if its {@code TIFFTagSet} is
+     * non-{@code null} or the data type {@code TIFF_IFD_POINTER} is
      * legal. This condition will be satisfied if and only if either
-     * <code>getTagSet()&nbsp;!=&nbsp;null</code> or
-     * <code>isDataTypeOK(TIFF_IFD_POINTER)&nbsp;==&nbsp;true</code>.
+     * {@code getTagSet()&nbsp;!=&nbsp;null} or
+     * {@code isDataTypeOK(TIFF_IFD_POINTER)&nbsp;==&nbsp;true}.
      *
      * <p>Many TIFF extensions use the IFD mechanism in order to limit the
      * number of new tags that may appear in the root IFD.</p>
      *
-     * @return <code>true</code> if this tag points to an IFD.
+     * @return {@code true} if this tag points to an IFD.
      */
     public boolean isIFDPointer() {
         return tagSet != null || isDataTypeOK(TIFF_IFD_POINTER);
     }
 
     /**
-     * Returns <code>true</code> if there are mnemonic names associated with
+     * Returns {@code true} if there are mnemonic names associated with
      * the set of legal values for the data associated with this tag.  Mnemonic
      * names apply only to tags which have integral data type.
      *
-     * @return <code>true</code> if mnemonic value names are available.
+     * @return {@code true} if mnemonic value names are available.
      */
     public boolean hasValueNames() {
         return valueNames != null;
@@ -373,14 +373,14 @@ public class TIFFTag {
 
     /**
      * Returns the mnemonic name associated with a particular value
-     * that this tag's data may take on, or <code>null</code> if
+     * that this tag's data may take on, or {@code null} if
      * no name is present.  Mnemonic names apply only to tags which have
      * integral data type.
      *
      * @param value the data value.
      *
      * @return the mnemonic name associated with the value, as a
-     * <code>String</code>.
+     * {@code String}.
      */
     public String getValueName(int value) {
         if (valueNames == null) {

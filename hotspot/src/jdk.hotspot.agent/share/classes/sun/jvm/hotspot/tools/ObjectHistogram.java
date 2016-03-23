@@ -27,11 +27,13 @@ package sun.jvm.hotspot.tools;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
+import jdk.internal.vm.agent.spi.ToolProvider;
+
 import java.io.PrintStream;
 
 /** A sample tool which uses the Serviceability Agent's APIs to obtain
     an object histogram from a remote or crashed VM. */
-public class ObjectHistogram extends Tool {
+public class ObjectHistogram extends Tool implements ToolProvider {
 
     public ObjectHistogram() {
        super();
@@ -39,6 +41,16 @@ public class ObjectHistogram extends Tool {
 
     public ObjectHistogram(JVMDebugger d) {
        super(d);
+    }
+
+    @Override
+    public String getName() {
+       return "objectHistogram";
+    }
+
+    @Override
+    public void run(String... arguments) {
+        execute(arguments);
     }
 
    public void run() {

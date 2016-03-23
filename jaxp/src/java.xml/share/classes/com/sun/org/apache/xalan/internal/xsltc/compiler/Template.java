@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,9 +16,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-/*
- * $Id: Template.java,v 1.2.4.1 2005/09/12 11:30:11 pvedula Exp $
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
@@ -63,7 +60,7 @@ public final class Template extends TopLevelElement {
 
     // The list of parameters in this template. This is only used
     // for simple named templates.
-    private Vector  _parameters = new Vector();
+    private Vector<Param> _parameters = new Vector<>();
 
     public boolean hasParams() {
         return _parameters.size() > 0;
@@ -85,7 +82,7 @@ public final class Template extends TopLevelElement {
         _parameters.addElement(param);
     }
 
-    public Vector getParameters() {
+    public Vector<Param> getParameters() {
         return _parameters;
     }
 

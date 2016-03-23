@@ -384,7 +384,7 @@ IRT_ENTRY(void, InterpreterRuntime::throw_ClassCastException(
 
   ResourceMark rm(thread);
   char* message = SharedRuntime::generate_class_cast_message(
-    thread, obj->klass()->external_name());
+    thread, obj->klass());
 
   if (ProfileTraps) {
     note_trap(thread, Deoptimization::Reason_class_check, CHECK);
@@ -762,14 +762,6 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
   ConstantPoolCacheEntry* cp_cache_entry = cache_entry(thread);
   if (cp_cache_entry->is_resolved(bytecode)) return;
 
-  if (bytecode == Bytecodes::_invokeinterface) {
-    if (log_develop_is_enabled(Trace, itables)) {
-      ResourceMark rm(thread);
-      log_develop_trace(itables)("Resolving: klass: %s to method: %s",
-                                 info.resolved_klass()->name()->as_C_string(),
-                                 info.resolved_method()->name()->as_C_string());
-    }
-  }
 #ifdef ASSERT
   if (bytecode == Bytecodes::_invokeinterface) {
     if (info.resolved_method()->method_holder() ==

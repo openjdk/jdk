@@ -24,25 +24,26 @@
 /*
  * @test TestCompilerDirectivesCompatibilityBase
  * @bug 8137167
- * @library /testlibrary /test/lib
+ * @library /testlibrary /test/lib /
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management
  * @build jdk.test.lib.*
- * @build jdk.test.lib.dcmd.*
- * @build sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestCompilerDirectivesCompatibilityBase
+ *        jdk.test.lib.dcmd.*
+ *        sun.hotspot.WhiteBox
+ *        compiler.testlibrary.CompilerUtils
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run testng/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestCompilerDirectivesCompatibilityBase
  * @summary Test compiler control compatibility with compile command
  */
 
+import compiler.testlibrary.CompilerUtils;
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
-
 import org.testng.annotations.Test;
 import org.testng.Assert;
-
 import sun.hotspot.WhiteBox;
 
 import java.io.BufferedReader;
@@ -64,32 +65,38 @@ public class TestCompilerDirectivesCompatibilityBase {
         method  = getMethod(TestCompilerDirectivesCompatibilityBase.class, "helper");
         nomatch = getMethod(TestCompilerDirectivesCompatibilityBase.class, "another");
 
-        testCompatibility(executor);
+        int[] levels = CompilerUtils.getAvailableCompilationLevels();
+        for (int complevel : levels) {
+            // Only test the major compilers, ignore profiling levels
+            if (complevel == CompilerWhiteBoxTest.COMP_LEVEL_SIMPLE || complevel == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION){
+                testCompatibility(executor, complevel);
+            }
+        }
     }
 
-    public void testCompatibility(CommandExecutor executor) throws Exception {
+    public void testCompatibility(CommandExecutor executor, int comp_level) throws Exception {
 
         // Call all validation twice to catch error when overwriting a directive
         // Flag is default off
         expect(!WB.getBooleanVMFlag("PrintAssembly"));
-        expect(!WB.shouldPrintAssembly(method));
-        expect(!WB.shouldPrintAssembly(nomatch));
-        expect(!WB.shouldPrintAssembly(method));
-        expect(!WB.shouldPrintAssembly(nomatch));
+        expect(!WB.shouldPrintAssembly(method, comp_level));
+        expect(!WB.shouldPrintAssembly(nomatch, comp_level));
+        expect(!WB.shouldPrintAssembly(method, comp_level));
+        expect(!WB.shouldPrintAssembly(nomatch, comp_level));
 
         // load directives that turn it on
         executor.execute("Compiler.directives_add " + control_on);
-        expect(WB.shouldPrintAssembly(method));
-        expect(!WB.shouldPrintAssembly(nomatch));
-        expect(WB.shouldPrintAssembly(method));
-        expect(!WB.shouldPrintAssembly(nomatch));
+        expect(WB.shouldPrintAssembly(method, comp_level));
+        expect(!WB.shouldPrintAssembly(nomatch, comp_level));
+        expect(WB.shouldPrintAssembly(method, comp_level));
+        expect(!WB.shouldPrintAssembly(nomatch, comp_level));
 
         // remove and see that it is true again
         executor.execute("Compiler.directives_remove");
-        expect(!WB.shouldPrintAssembly(method));
-        expect(!WB.shouldPrintAssembly(nomatch));
-        expect(!WB.shouldPrintAssembly(method));
-        expect(!WB.shouldPrintAssembly(nomatch));
+        expect(!WB.shouldPrintAssembly(method, comp_level));
+        expect(!WB.shouldPrintAssembly(nomatch, comp_level));
+        expect(!WB.shouldPrintAssembly(method, comp_level));
+        expect(!WB.shouldPrintAssembly(nomatch, comp_level));
     }
 
     public void expect(boolean test) throws Exception {

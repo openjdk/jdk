@@ -1525,7 +1525,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     public static class PackageType extends Type implements NoType {
 
-        PackageType(TypeSymbol tsym) {
+        PackageType(PackageSymbol tsym) {
             // Package types cannot be annotated
             super(tsym, TypeMetadata.EMPTY);
         }
@@ -1556,6 +1556,49 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
+        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
+            return v.visitNoType(this, p);
+        }
+    }
+
+    public static class ModuleType extends Type implements NoType {
+
+        ModuleType(ModuleSymbol tsym) {
+            // Module types cannot be annotated
+            super(tsym, TypeMetadata.EMPTY);
+        }
+
+        @Override
+        public ModuleType cloneWithMetadata(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to a module type");
+        }
+
+        @Override
+        public ModuleType annotatedType(List<Attribute.TypeCompound> annos) {
+            throw new AssertionError("Cannot annotate a module type");
+        }
+
+        @Override
+        public TypeTag getTag() {
+            return TypeTag.MODULE;
+        }
+
+        @Override
+        public <R,S> R accept(Type.Visitor<R,S> v, S s) {
+            return v.visitModuleType(this, s);
+        }
+
+        @Override
+        public String toString() {
+            return tsym.getQualifiedName().toString();
+        }
+
+        @Override
+        public TypeKind getKind() {
+            return TypeKind.MODULE;
+        }
+
+        @Override
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitNoType(this, p);
         }
@@ -2384,6 +2427,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         R visitArrayType(ArrayType t, S s);
         R visitMethodType(MethodType t, S s);
         R visitPackageType(PackageType t, S s);
+        R visitModuleType(ModuleType t, S s);
         R visitTypeVar(TypeVar t, S s);
         R visitCapturedType(CapturedType t, S s);
         R visitForAll(ForAll t, S s);

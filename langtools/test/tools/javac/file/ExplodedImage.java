@@ -53,21 +53,25 @@ import javax.tools.ToolProvider;
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.javap
  * @build ToolBox ExplodedImage
- * @run main ExplodedImage
+ * @run main/othervm ExplodedImage modules/* testDirectoryStreamClosed
+ * @run main/othervm ExplodedImage modules/* testCanCompileAgainstExplodedImage
  */
 
 public class ExplodedImage {
     public static void main(String... args) throws IOException {
-        new ExplodedImage().run();
+        new ExplodedImage().run(args);
     }
 
-    void run() throws IOException {
-        for (String moduleLocations : new String[] {"modules/*"}) {
-            System.setProperty("java.home", originalJavaHome);
-            testDirectoryStreamClosed(moduleLocations);
-            System.setProperty("java.home", originalJavaHome);
-            testCanCompileAgainstExplodedImage(moduleLocations);
+    void run(String... args) throws IOException {
+        switch (args[0]) {
+            case "testDirectoryStreamClosed":
+                testDirectoryStreamClosed(args[1]);
+                break;
+            case "testCanCompileAgainstExplodedImage":
+                testCanCompileAgainstExplodedImage(args[1]);
+                break;
         }
     }
 

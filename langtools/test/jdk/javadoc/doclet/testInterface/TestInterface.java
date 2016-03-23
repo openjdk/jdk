@@ -30,7 +30,7 @@
  *           implementing classes in the documentation for I.
  * @author   jamieh
  * @library  ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    JavadocTester
  * @run main TestInterface
  */

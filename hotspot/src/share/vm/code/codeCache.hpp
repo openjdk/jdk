@@ -72,7 +72,7 @@
 // Solaris and BSD.
 
 class OopClosure;
-class DepChange;
+class KlassDepChange;
 
 class CodeCache : AllStatic {
   friend class VMStructs;
@@ -223,7 +223,7 @@ class CodeCache : AllStatic {
 
   // Deoptimization
  private:
-  static int  mark_for_deoptimization(DepChange& changes);
+  static int  mark_for_deoptimization(KlassDepChange& changes);
 #ifdef HOTSWAP
   static int  mark_for_evol_deoptimization(instanceKlassHandle dependee);
 #endif // HOTSWAP
