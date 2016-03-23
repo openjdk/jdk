@@ -22,13 +22,15 @@
  */
 package gc.g1.plab.lib;
 
-import java.util.EnumMap;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * LogParser class parses VM output to get PLAB and ConsumptionStats values.
@@ -44,9 +46,6 @@ import java.util.regex.Pattern;
  */
 final public class LogParser {
 
-    // Name for GC ID field in report.
-    public final static String GC_ID = "gc_id";
-
     /**
      * Type of parsed log element.
      */
@@ -58,7 +57,7 @@ final public class LogParser {
     private final String log;
 
     // Contains Map of PLAB statistics for given log.
-    private final Map<Long, Map<ReportType, Map<String, Long>>> report;
+    private final PlabReport report;
 
     // GC ID
     private static final Pattern GC_ID_PATTERN = Pattern.compile("\\[gc,plab\\s*\\] GC\\((\\d+)\\)");
@@ -91,56 +90,107 @@ final public class LogParser {
      *
      * @return The log entries for the Survivor and Old stats.
      */
-    public Map<Long, Map<ReportType, Map<String, Long>>> getEntries() {
+    public PlabReport getEntries() {
         return report;
     }
 
-    private Map<Long, Map<ReportType, Map<String, Long>>> parseLines() throws NumberFormatException {
+    private PlabReport parseLines() throws NumberFormatException {
         Scanner lineScanner = new Scanner(log);
-        Map<Long, Map<ReportType, Map<String, Long>>> allocationStatistics = new HashMap<>();
+        PlabReport plabReport = new PlabReport();
         Optional<Long> gc_id;
         while (lineScanner.hasNextLine()) {
             String line = lineScanner.nextLine();
-            gc_id = getGcId(line);
+            gc_id = getGcId(line, GC_ID_PATTERN);
             if (gc_id.isPresent()) {
                 Matcher matcher = PAIRS_PATTERN.matcher(line);
                 if (matcher.find()) {
-                    Map<ReportType, Map<String, Long>> oneReportItem;
-                    ReportType reportType;
-
-                    if (!allocationStatistics.containsKey(gc_id.get())) {
-                        allocationStatistics.put(gc_id.get(), new EnumMap<>(ReportType.class));
+                    if (!plabReport.containsKey(gc_id.get())) {
+                        plabReport.put(gc_id.get(), new PlabGCStatistics());
                     }
+                    ReportType reportType = line.contains("Young") ? ReportType.SURVIVOR_STATS : ReportType.OLD_STATS;
 
-                    if (line.contains("Young")) {
-                        reportType = ReportType.SURVIVOR_STATS;
-                    } else {
-                        reportType = ReportType.OLD_STATS;
-                    }
-
-                    oneReportItem = allocationStatistics.get(gc_id.get());
-                    if (!oneReportItem.containsKey(reportType)) {
-                        oneReportItem.put(reportType, new HashMap<>());
+                    PlabGCStatistics gcStat = plabReport.get(gc_id.get());
+                    if (!gcStat.containsKey(reportType)) {
+                        gcStat.put(reportType, new PlabInfo());
                     }
 
                     // Extract all pairs from log.
-                    Map<String, Long> plabStats = oneReportItem.get(reportType);
+                    PlabInfo plabInfo = gcStat.get(reportType);
                     do {
                         String pair = matcher.group();
                         String[] nameValue = pair.replaceAll(": ", ":").split(":");
-                        plabStats.put(nameValue[0].trim(), Long.parseLong(nameValue[1]));
+                        plabInfo.put(nameValue[0].trim(), Long.parseLong(nameValue[1]));
                     } while (matcher.find());
                 }
             }
         }
-        return allocationStatistics;
+        return plabReport;
     }
 
-    private Optional<Long> getGcId(String line) {
-        Matcher number = GC_ID_PATTERN.matcher(line);
+    private static Optional<Long> getGcId(String line, Pattern pattern) {
+        Matcher number = pattern.matcher(line);
         if (number.find()) {
             return Optional.of(Long.parseLong(number.group(1)));
         }
         return Optional.empty();
+    }
+
+    /**
+     * Extracts GC ID from log.
+     *
+     * @param line - one line of log.
+     * @return GC ID
+     */
+    public static Long getGcIdFromLine(String line, Pattern pattern) {
+        Optional<Long> gcId = getGcId(line, pattern);
+        if (!gcId.isPresent()) {
+            System.out.println(line);
+            throw new RuntimeException("Cannot find GC ID in log.");
+        }
+        return gcId.get();
+    }
+
+    /**
+     * Returns Map<Long,PlabStatistics> which contains specified statistics for specified gc ids.
+     * @param specifiedGcId gc id to get
+     * @param type PLAB type
+     * @param fieldsName name of fields in PlabStatistics
+     * @return
+     **/
+    public Map<Long, PlabInfo> getSpecifiedStats(List<Long> specifiedGcId, LogParser.ReportType type, List<String> fieldsName) {
+        return getSpecifiedStats(specifiedGcId, type, fieldsName, true);
+    }
+
+    /**
+     * Returns PlabStatistics for specified GC ID.
+     * @param specifiedGcId
+     * @param type type of statistics
+     * @param fieldsName name of fields in PlabStatistics
+     * @return
+     **/
+    public PlabInfo getSpecifiedStats(long specifiedGcId, LogParser.ReportType type, List<String> fieldsName) {
+        return getSpecifiedStats(Arrays.asList(specifiedGcId), type, fieldsName, true).get(specifiedGcId);
+    }
+
+    /**
+     * Returns Map<Long,PlabStatistics> which contains specified statistics. Filters out specified gc ids.
+     * @param specifiedGcIdForExclude
+     * @param type
+     * @param fieldsName
+     * @return
+     **/
+    public Map<Long, PlabInfo> getExcludedSpecifiedStats(List<Long> specifiedGcIdForExclude, LogParser.ReportType type, List<String> fieldsName) {
+        return getSpecifiedStats(specifiedGcIdForExclude, type, fieldsName, false);
+    }
+
+    private Map<Long, PlabInfo> getSpecifiedStats(List<Long> gcIds, LogParser.ReportType type, List<String> fieldNames, boolean extractId) {
+        return new HashMap<>(
+                getEntries().entryStream()
+                .filter(gcLogItem -> extractId == gcIds.contains(gcLogItem.getKey()))
+                .collect(Collectors.toMap(gcLogItem -> gcLogItem.getKey(),
+                                gcLogItem -> gcLogItem.getValue().get(type).filter(fieldNames)
+                        )
+                )
+        );
     }
 }
