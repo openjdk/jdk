@@ -453,6 +453,10 @@ class Arguments : AllStatic {
   // the version number when the flag became obsolete.
   static bool is_obsolete_flag(const char* flag_name, JDK_Version* version);
 
+#ifndef PRODUCT
+  static const char* removed_develop_logging_flag_name(const char* name);
+#endif // PRODUCT
+
   // Returns 1 if the flag is deprecated (and not yet obsolete or expired).
   //     In this case the 'version' buffer is filled in with the version number when
   //     the flag became deprecated.
