@@ -32,27 +32,21 @@ import javax.swing.UIManager;
  * @bug 8137571
  * @summary Linux HiDPI Graphics support
  * @author Alexander Scherbatiy
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" | os.family == "mac")
  * @run main/othervm -Dsun.java2d.uiScale.enabled=false
  *                   -Dsun.java2d.uiScale=2
- *                    HiDPIPropertiesLinuxTest UISCALE_DISABLED
- *                    HiDPIPropertiesTest UISCALE_DISABLED
+ *                    HiDPIPropertiesUnixTest UISCALE_DISABLED
  * @run main/othervm -Dsun.java2d.uiScale.enabled=true
  *                   -Dsun.java2d.uiScale=3
- *                    HiDPIPropertiesLinuxTest UISCALE_3
+ *                    HiDPIPropertiesUnixTest UISCALE_3
  * @run main/othervm -Dsun.java2d.uiScale=4
- *                    HiDPIPropertiesLinuxTest UISCALE_4
+ *                    HiDPIPropertiesUnixTest UISCALE_4
  */
-public class HiDPIPropertiesLinuxTest {
+public class HiDPIPropertiesUnixTest {
 
     public static void main(String[] args) throws Exception {
 
-        try {
-            UIManager.setLookAndFeel(
-                    "com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
-        } catch (Exception e) {
-            return;
-        }
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
         String testCase = args[0];
         switch (testCase) {
