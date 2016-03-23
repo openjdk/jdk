@@ -27,5 +27,6 @@ include LauncherCommon.gmk
 
 $(eval $(call SetupBuildLauncher, jjs, \
     MAIN_CLASS := jdk.nashorn.tools.jjs.Main, \
+    JAVA_ARGS := -addmods ALL-SYSTEM, \
     CFLAGS := -DENABLE_ARG_FILES, \
 ))
