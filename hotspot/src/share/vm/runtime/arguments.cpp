@@ -417,15 +417,33 @@ static AliasedFlag const aliased_jvm_flags[] = {
 };
 
 static AliasedLoggingFlag const aliased_logging_flags[] = {
-  { "TraceClassLoading",         LogLevel::Info,  true,  LogTag::_classload },
-  { "TraceClassPaths",           LogLevel::Info,  true,  LogTag::_classpath },
-  { "TraceClassResolution",      LogLevel::Info,  true,  LogTag::_classresolve },
-  { "TraceClassUnloading",       LogLevel::Info,  true,  LogTag::_classunload },
-  { "TraceExceptions",           LogLevel::Info,  true,  LogTag::_exceptions },
-  { "TraceMonitorInflation",     LogLevel::Debug, true,  LogTag::_monitorinflation },
-  { "TraceBiasedLocking",        LogLevel::Info,  true,  LogTag::_biasedlocking },
-  { NULL,                        LogLevel::Off,   false, LogTag::__NO_TAG }
+  { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
+  { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(classload) },
+  { "TraceClassLoadingPreorder", LogLevel::Debug,  true,  LOG_TAGS(classload, preorder) },
+  { "TraceClassPaths",           LogLevel::Info,  true,  LOG_TAGS(classpath) },
+  { "TraceClassResolution",      LogLevel::Debug, true,  LOG_TAGS(classresolve) },
+  { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(classunload) },
+  { "TraceExceptions",           LogLevel::Info,  true,  LOG_TAGS(exceptions) },
+  { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
+  { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepointcleanup) },
+  { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
 };
+
+#ifndef PRODUCT
+// These options are removed in jdk9. Remove this code for jdk10.
+static AliasedFlag const removed_develop_logging_flags[] = {
+  { "TraceClassInitialization",   "-Xlog:classinit" },
+  { "TraceClassLoaderData",       "-Xlog:classloaderdata" },
+  { "TraceDefaultMethods",        "-Xlog:defaultmethods=debug" },
+  { "TraceItables",               "-Xlog:itables=debug" },
+  { "TraceSafepoint",             "-Xlog:safepoint=debug" },
+  { "TraceStartupTime",           "-Xlog:startuptime" },
+  { "TraceVMOperation",           "-Xlog:vmoperation=debug" },
+  { "PrintVtables",               "-Xlog:vtables=debug" },
+  { "VerboseVerification",        "-Xlog:verboseverification" },
+  { NULL, NULL }
+};
+#endif //PRODUCT
 
 // Return true if "v" is less than "other", where "other" may be "undefined".
 static bool version_less_than(JDK_Version v, JDK_Version other) {
@@ -477,6 +495,18 @@ int Arguments::is_deprecated_flag(const char *flag_name, JDK_Version* version) {
   }
   return 0;
 }
+
+#ifndef PRODUCT
+const char* Arguments::removed_develop_logging_flag_name(const char* name){
+  for (size_t i = 0; removed_develop_logging_flags[i].alias_name != NULL; i++) {
+    const AliasedFlag& flag = removed_develop_logging_flags[i];
+    if (strcmp(flag.alias_name, name) == 0) {
+      return flag.real_name;
+    }
+  }
+  return NULL;
+}
+#endif // PRODUCT
 
 const char* Arguments::real_flag_name(const char *flag_name) {
   for (size_t i = 0; aliased_jvm_flags[i].alias_name != NULL; i++) {
@@ -968,7 +998,7 @@ AliasedLoggingFlag Arguments::catch_logging_aliases(const char* name){
       return alf;
     }
   }
-  AliasedLoggingFlag a = {NULL, LogLevel::Off, false, LogTag::__NO_TAG};
+  AliasedLoggingFlag a = {NULL, LogLevel::Off, false, LOG_TAGS(_NO_TAG)};
   return a;
 }
 
@@ -981,12 +1011,11 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
   char dummy;
   const char* real_name;
   bool warn_if_deprecated = true;
-  AliasedLoggingFlag alf;
 
   if (sscanf(arg, "-%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
-    alf = catch_logging_aliases(name);
+    AliasedLoggingFlag alf = catch_logging_aliases(name);
     if (alf.alias_name != NULL){
-      LogConfiguration::configure_stdout(LogLevel::Off, alf.exactMatch, alf.tag, LogTag::__NO_TAG);
+      LogConfiguration::configure_stdout(LogLevel::Off, alf.exactMatch, alf.tag0, alf.tag1, alf.tag2, alf.tag3, alf.tag4, alf.tag5);
       return true;
     }
     real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
@@ -996,9 +1025,9 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
     return set_bool_flag(real_name, false, origin);
   }
   if (sscanf(arg, "+%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
-    alf = catch_logging_aliases(name);
+    AliasedLoggingFlag alf = catch_logging_aliases(name);
     if (alf.alias_name != NULL){
-      LogConfiguration::configure_stdout(alf.level, alf.exactMatch, alf.tag, LogTag::__NO_TAG);
+      LogConfiguration::configure_stdout(alf.level, alf.exactMatch, alf.tag0, alf.tag1, alf.tag2, alf.tag3, alf.tag4, alf.tag5);
       return true;
     }
     real_name = handle_aliases_and_deprecation(name, warn_if_deprecated);
@@ -1202,13 +1231,22 @@ bool Arguments::process_argument(const char* arg,
     char stripped_argname[BUFLEN+1];
     strncpy(stripped_argname, argname, arg_len);
     stripped_argname[arg_len] = '\0';  // strncpy may not null terminate.
-
     if (is_obsolete_flag(stripped_argname, &since)) {
       char version[256];
       since.to_string(version, sizeof(version));
       warning("Ignoring option %s; support was removed in %s", stripped_argname, version);
       return true;
     }
+#ifndef PRODUCT
+    else {
+      const char* replacement;
+      if ((replacement = removed_develop_logging_flag_name(stripped_argname)) != NULL){
+        jio_fprintf(defaultStream::error_stream(),
+                  "%s has been removed. Please use %s instead.\n", stripped_argname, replacement);
+        return false;
+      }
+    }
+#endif //PRODUCT
   }
 
   // For locked flags, report a custom error message if available.

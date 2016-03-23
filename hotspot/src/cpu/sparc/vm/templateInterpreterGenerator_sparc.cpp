@@ -1966,7 +1966,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 
   // Pass a 0 (not used in sparc) and the top of stack to the bytecode tracer
   __ mov( Otos_l2, G3_scratch );
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::trace_bytecode), G0, Otos_l1, G3_scratch);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::trace_bytecode), G0, Otos_l1, G3_scratch);
   __ mov(Lscratch, O7); // restore return address
   __ pop(state);
   __ retl();

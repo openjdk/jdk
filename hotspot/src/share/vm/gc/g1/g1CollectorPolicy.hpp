@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP
 #define SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP
 
-#include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1InCSetState.hpp"
@@ -41,8 +40,10 @@
 //   * when to collect.
 
 class HeapRegion;
+class G1CollectionSet;
 class CollectionSetChooser;
 class G1IHOPControl;
+class G1Analytics;
 class G1YoungGenSizer;
 
 class G1CollectorPolicy: public CollectorPolicy {
@@ -57,29 +58,13 @@ class G1CollectorPolicy: public CollectorPolicy {
   void report_ihop_statistics();
 
   G1Predictions _predictor;
-
-  double get_new_prediction(TruncatedSeq const* seq) const;
-  size_t get_new_size_prediction(TruncatedSeq const* seq) const;
-
+  G1Analytics* _analytics;
   G1MMUTracker* _mmu_tracker;
 
   void initialize_alignments();
   void initialize_flags();
 
-  CollectionSetChooser* _cset_chooser;
-
   double _full_collection_start_sec;
-
-  // These exclude marking times.
-  TruncatedSeq* _recent_gc_times_ms;
-
-  TruncatedSeq* _concurrent_mark_remark_times_ms;
-  TruncatedSeq* _concurrent_mark_cleanup_times_ms;
-
-  // Ratio check data for determining if heap growth is necessary.
-  uint _ratio_over_threshold_count;
-  double _ratio_over_threshold_sum;
-  uint _pauses_since_start;
 
   uint _young_list_target_length;
   uint _young_list_fixed_length;
@@ -90,58 +75,14 @@ class G1CollectorPolicy: public CollectorPolicy {
 
   SurvRateGroup* _short_lived_surv_rate_group;
   SurvRateGroup* _survivor_surv_rate_group;
-  // add here any more surv rate groups
-
-  double _gc_overhead_perc;
 
   double _reserve_factor;
   uint   _reserve_regions;
 
-  enum PredictionConstants {
-    TruncatedSeqLength = 10,
-    NumPrevPausesForHeuristics = 10,
-    // MinOverThresholdForGrowth must be less than NumPrevPausesForHeuristics,
-    // representing the minimum number of pause time ratios that exceed
-    // GCTimeRatio before a heap expansion will be triggered.
-    MinOverThresholdForGrowth = 4
-  };
-
-  TruncatedSeq* _alloc_rate_ms_seq;
-  double        _prev_collection_pause_end_ms;
-
-  TruncatedSeq* _rs_length_diff_seq;
-  TruncatedSeq* _cost_per_card_ms_seq;
-  TruncatedSeq* _cost_scan_hcc_seq;
-  TruncatedSeq* _young_cards_per_entry_ratio_seq;
-  TruncatedSeq* _mixed_cards_per_entry_ratio_seq;
-  TruncatedSeq* _cost_per_entry_ms_seq;
-  TruncatedSeq* _mixed_cost_per_entry_ms_seq;
-  TruncatedSeq* _cost_per_byte_ms_seq;
-  TruncatedSeq* _constant_other_time_ms_seq;
-  TruncatedSeq* _young_other_cost_per_region_ms_seq;
-  TruncatedSeq* _non_young_other_cost_per_region_ms_seq;
-
-  TruncatedSeq* _pending_cards_seq;
-  TruncatedSeq* _rs_lengths_seq;
-
-  TruncatedSeq* _cost_per_byte_ms_during_cm_seq;
-
   G1YoungGenSizer* _young_gen_sizer;
-
-  uint _eden_cset_region_length;
-  uint _survivor_cset_region_length;
-  uint _old_cset_region_length;
-
-  void init_cset_region_lengths(uint eden_cset_region_length,
-                                uint survivor_cset_region_length);
-
-  uint eden_cset_region_length() const     { return _eden_cset_region_length;     }
-  uint survivor_cset_region_length() const { return _survivor_cset_region_length; }
-  uint old_cset_region_length() const      { return _old_cset_region_length;      }
 
   uint _free_regions_at_end_of_collection;
 
-  size_t _recorded_rs_lengths;
   size_t _max_rs_lengths;
 
   size_t _rs_lengths_prediction;
@@ -149,10 +90,6 @@ class G1CollectorPolicy: public CollectorPolicy {
 #ifndef PRODUCT
   bool verify_young_ages(HeapRegion* head, SurvRateGroup *surv_rate_group);
 #endif // PRODUCT
-
-  void adjust_concurrent_refinement(double update_rs_time,
-                                    double update_rs_processed_buffers,
-                                    double goal_ms);
 
   double _pause_time_target_ms;
 
@@ -165,6 +102,7 @@ class G1CollectorPolicy: public CollectorPolicy {
   G1InitialMarkToMixedTimeTracker _initial_mark_to_mixed;
 public:
   const G1Predictions& predictor() const { return _predictor; }
+  const G1Analytics* analytics()   const { return const_cast<const G1Analytics*>(_analytics); }
 
   // Add the given number of bytes to the total number of allocated bytes in the old gen.
   void add_bytes_allocated_in_old_since_last_gc(size_t bytes) { _bytes_allocated_in_old_since_last_gc += bytes; }
@@ -191,50 +129,12 @@ public:
     _max_rs_lengths = rs_lengths;
   }
 
-  size_t predict_rs_length_diff() const;
-
-  double predict_alloc_rate_ms() const;
-
-  double predict_cost_per_card_ms() const;
-
-  double predict_scan_hcc_ms() const;
-
-  double predict_rs_update_time_ms(size_t pending_cards) const;
-
-  double predict_young_cards_per_entry_ratio() const;
-
-  double predict_mixed_cards_per_entry_ratio() const;
-
-  size_t predict_young_card_num(size_t rs_length) const;
-
-  size_t predict_non_young_card_num(size_t rs_length) const;
-
-  double predict_rs_scan_time_ms(size_t card_num) const;
-
-  double predict_mixed_rs_scan_time_ms(size_t card_num) const;
-
-  double predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const;
-
-  double predict_object_copy_time_ms(size_t bytes_to_copy) const;
-
-  double predict_constant_other_time_ms() const;
-
-  double predict_young_other_time_ms(size_t young_num) const;
-
-  double predict_non_young_other_time_ms(size_t non_young_num) const;
 
   double predict_base_elapsed_time_ms(size_t pending_cards) const;
   double predict_base_elapsed_time_ms(size_t pending_cards,
                                       size_t scanned_cards) const;
   size_t predict_bytes_to_copy(HeapRegion* hr) const;
   double predict_region_elapsed_time_ms(HeapRegion* hr, bool for_young_gc) const;
-
-  void set_recorded_rs_lengths(size_t rs_lengths);
-
-  uint cset_region_length() const       { return young_cset_region_length() +
-                                           old_cset_region_length(); }
-  uint young_cset_region_length() const { return eden_cset_region_length() +
-                                           survivor_cset_region_length(); }
 
   double predict_survivor_regions_evac_time() const;
 
@@ -261,10 +161,6 @@ public:
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
-  double predict_remark_time_ms() const;
-
-  double predict_cleanup_time_ms() const;
-
   // Returns an estimate of the survival rate of the region at yg-age
   // "yg_age".
   double predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const;
@@ -273,7 +169,23 @@ public:
 
   double accum_yg_surv_rate_pred(int age) const;
 
+  // When copying, we will likely need more bytes free than is live in the region.
+  // Add some safety margin to factor in the confidence of our guess, and the
+  // natural expected waste.
+  // (100.0 / G1ConfidencePercent) is a scale factor that expresses the uncertainty
+  // of the calculation: the lower the confidence, the more headroom.
+  // (100 + TargetPLABWastePct) represents the increase in expected bytes during
+  // copying due to anticipated waste in the PLABs.
+  double safety_factor() const {
+    return (100.0 / G1ConfidencePercent) * (100 + TargetPLABWastePct) / 100.0;
+  }
+
+  // Returns an estimate of the available bytes at end of collection, adjusted by
+  // the safety factor.
+  size_t available_bytes_estimate();
+
 protected:
+  G1CollectionSet* _collection_set;
   virtual double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
   virtual double other_time_ms(double pause_time_ms) const;
 
@@ -281,89 +193,16 @@ protected:
   double non_young_other_time_ms() const;
   double constant_other_time_ms(double pause_time_ms) const;
 
-  CollectionSetChooser* cset_chooser() const {
-    return _cset_chooser;
-  }
-
+  CollectionSetChooser* cset_chooser() const;
 private:
-  // Statistics kept per GC stoppage, pause or full.
-  TruncatedSeq* _recent_prev_end_times_for_all_gcs_sec;
-
-  // Add a new GC of the given duration and end time to the record.
-  void update_recent_gc_times(double end_time_sec, double elapsed_ms);
-
-  // The head of the list (via "next_in_collection_set()") representing the
-  // current collection set. Set from the incrementally built collection
-  // set at the start of the pause.
-  HeapRegion* _collection_set;
-
-  // The number of bytes in the collection set before the pause. Set from
-  // the incrementally built collection set at the start of an evacuation
-  // pause, and incremented in finalize_old_cset_part() when adding old regions
-  // (if any) to the collection set.
-  size_t _collection_set_bytes_used_before;
 
   // The number of bytes copied during the GC.
   size_t _bytes_copied_during_gc;
-
-  // The associated information that is maintained while the incremental
-  // collection set is being built with young regions. Used to populate
-  // the recorded info for the evacuation pause.
-
-  enum CSetBuildType {
-    Active,             // We are actively building the collection set
-    Inactive            // We are not actively building the collection set
-  };
-
-  CSetBuildType _inc_cset_build_state;
-
-  // The head of the incrementally built collection set.
-  HeapRegion* _inc_cset_head;
-
-  // The tail of the incrementally built collection set.
-  HeapRegion* _inc_cset_tail;
-
-  // The number of bytes in the incrementally built collection set.
-  // Used to set _collection_set_bytes_used_before at the start of
-  // an evacuation pause.
-  size_t _inc_cset_bytes_used_before;
-
-  // The RSet lengths recorded for regions in the CSet. It is updated
-  // by the thread that adds a new region to the CSet. We assume that
-  // only one thread can be allocating a new CSet region (currently,
-  // it does so after taking the Heap_lock) hence no need to
-  // synchronize updates to this field.
-  size_t _inc_cset_recorded_rs_lengths;
-
-  // A concurrent refinement thread periodically samples the young
-  // region RSets and needs to update _inc_cset_recorded_rs_lengths as
-  // the RSets grow. Instead of having to synchronize updates to that
-  // field we accumulate them in this field and add it to
-  // _inc_cset_recorded_rs_lengths_diffs at the start of a GC.
-  ssize_t _inc_cset_recorded_rs_lengths_diffs;
-
-  // The predicted elapsed time it will take to collect the regions in
-  // the CSet. This is updated by the thread that adds a new region to
-  // the CSet. See the comment for _inc_cset_recorded_rs_lengths about
-  // MT-safety assumptions.
-  double _inc_cset_predicted_elapsed_time_ms;
-
-  // See the comment for _inc_cset_recorded_rs_lengths_diffs.
-  double _inc_cset_predicted_elapsed_time_ms_diffs;
 
   // Stash a pointer to the g1 heap.
   G1CollectedHeap* _g1;
 
   G1GCPhaseTimes* _phase_times;
-
-  // The ratio of gc time to elapsed time, computed over recent pauses,
-  // and the ratio for just the last pause.
-  double _recent_avg_pause_time_ratio;
-  double _last_pause_time_ratio;
-
-  double recent_avg_pause_time_ratio() const {
-    return _recent_avg_pause_time_ratio;
-  }
 
   // This set of variables tracks the collector efficiency, in order to
   // determine whether we should initiate a new marking.
@@ -412,10 +251,6 @@ private:
   void update_rs_lengths_prediction();
   void update_rs_lengths_prediction(size_t prediction);
 
-  // Calculate and return chunk size (in number of regions) for parallel
-  // concurrent mark cleanup.
-  uint calculate_parallel_work_chunk_size(uint n_workers, uint n_regions) const;
-
   // Check whether a given young length (young_length) fits into the
   // given target pause time and whether the prediction for the amount
   // of objects to be copied for the given length will fit into the
@@ -423,6 +258,9 @@ private:
   // calculate_young_list_target_length().
   bool predict_will_fit(uint young_length, double base_time_ms,
                         uint base_free_regions, double target_pause_time_ms) const;
+
+public:
+  size_t pending_cards() const { return _pending_cards; }
 
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a mixed GC.
@@ -436,6 +274,7 @@ private:
   // as a percentage of the current heap capacity.
   double reclaimable_bytes_perc(size_t reclaimable_bytes) const;
 
+private:
   // Sets up marking if proper conditions are met.
   void maybe_start_marking();
 
@@ -520,83 +359,20 @@ public:
     return _bytes_copied_during_gc;
   }
 
-  size_t collection_set_bytes_used_before() const {
-    return _collection_set_bytes_used_before;
-  }
-
   // Determine whether there are candidate regions so that the
   // next GC should be mixed. The two action strings are used
   // in the ergo output when the method returns true or false.
   bool next_gc_should_be_mixed(const char* true_action_str,
                                const char* false_action_str) const;
 
-  // Choose a new collection set.  Marks the chosen regions as being
-  // "in_collection_set", and links them together.  The head and number of
-  // the collection set are available via access methods.
-  double finalize_young_cset_part(double target_pause_time_ms);
-  virtual void finalize_old_cset_part(double time_remaining_ms);
-
-  // The head of the list (via "next_in_collection_set()") representing the
-  // current collection set.
-  HeapRegion* collection_set() { return _collection_set; }
-
-  void clear_collection_set() { _collection_set = NULL; }
-
-  // Add old region "hr" to the CSet.
-  void add_old_region_to_cset(HeapRegion* hr);
-
-  // Incremental CSet Support
-
-  // The head of the incrementally built collection set.
-  HeapRegion* inc_cset_head() { return _inc_cset_head; }
-
-  // The tail of the incrementally built collection set.
-  HeapRegion* inc_set_tail() { return _inc_cset_tail; }
-
-  // Initialize incremental collection set info.
-  void start_incremental_cset_building();
-
-  // Perform any final calculations on the incremental CSet fields
-  // before we can use them.
-  void finalize_incremental_cset_building();
-
-  void clear_incremental_cset() {
-    _inc_cset_head = NULL;
-    _inc_cset_tail = NULL;
-  }
-
-  // Stop adding regions to the incremental collection set
-  void stop_incremental_cset_building() { _inc_cset_build_state = Inactive; }
-
-  // Add information about hr to the aggregated information for the
-  // incrementally built collection set.
-  void add_to_incremental_cset_info(HeapRegion* hr, size_t rs_length);
-
-  // Update information about hr in the aggregated information for
-  // the incrementally built collection set.
-  void update_incremental_cset_info(HeapRegion* hr, size_t new_rs_length);
-
+  virtual void finalize_collection_set(double target_pause_time_ms);
 private:
-  // Update the incremental cset information when adding a region
-  // (should not be called directly).
-  void add_region_to_incremental_cset_common(HeapRegion* hr);
-
   // Set the state to start a concurrent marking cycle and clear
   // _initiate_conc_mark_if_possible because it has now been
   // acted on.
   void initiate_conc_mark();
 
 public:
-  // Add hr to the LHS of the incremental collection set.
-  void add_region_to_incremental_cset_lhs(HeapRegion* hr);
-
-  // Add hr to the RHS of the incremental collection set.
-  void add_region_to_incremental_cset_rhs(HeapRegion* hr);
-
-#ifndef PRODUCT
-  void print_collection_set(HeapRegion* list_head, outputStream* st);
-#endif // !PRODUCT
-
   // This sets the initiate_conc_mark_if_possible() flag to start a
   // new cycle, as long as we are not already in one. It's best if it
   // is called during a safepoint when the test whether a cycle is in
@@ -611,13 +387,6 @@ public:
   // the initial-mark work and start a marking cycle.
   void decide_on_conc_mark_initiation();
 
-  // If an expansion would be appropriate, because recent GC overhead had
-  // exceeded the desired limit, return an amount to expand by.
-  virtual size_t expansion_amount();
-
-  // Clear ratio tracking data used by expansion_amount().
-  void clear_ratio_check_data();
-
   // Print stats on young survival ratio
   void print_yg_surv_rate_info() const;
 
@@ -627,7 +396,6 @@ public:
     } else {
       _short_lived_surv_rate_group->finished_recalculating_age_indexes();
     }
-    // do that for any other surv rate groups
   }
 
   size_t young_list_target_length() const { return _young_list_target_length; }
@@ -658,16 +426,6 @@ private:
   // The limit on the number of regions allocated for survivors.
   uint _max_survivor_regions;
 
-  // For reporting purposes.
-  // The value of _heap_bytes_before_gc is also used to calculate
-  // the cost of copying.
-
-  // The amount of survivor regions after a collection.
-  uint _recorded_survivor_regions;
-  // List of survivor regions.
-  HeapRegion* _recorded_survivor_head;
-  HeapRegion* _recorded_survivor_tail;
-
   AgeTable _survivors_age_table;
 
 public:
@@ -677,40 +435,12 @@ public:
     return _max_survivor_regions;
   }
 
-  static const uint REGIONS_UNLIMITED = (uint) -1;
-
-  uint max_regions(InCSetState dest) const {
-    switch (dest.value()) {
-      case InCSetState::Young:
-        return _max_survivor_regions;
-      case InCSetState::Old:
-        return REGIONS_UNLIMITED;
-      default:
-        assert(false, "Unknown dest state: " CSETSTATE_FORMAT, dest.value());
-        break;
-    }
-    // keep some compilers happy
-    return 0;
-  }
-
   void note_start_adding_survivor_regions() {
     _survivor_surv_rate_group->start_adding_regions();
   }
 
   void note_stop_adding_survivor_regions() {
     _survivor_surv_rate_group->stop_adding_regions();
-  }
-
-  void record_survivor_regions(uint regions,
-                               HeapRegion* head,
-                               HeapRegion* tail) {
-    _recorded_survivor_regions = regions;
-    _recorded_survivor_head    = head;
-    _recorded_survivor_tail    = tail;
-  }
-
-  uint recorded_survivor_regions() const {
-    return _recorded_survivor_regions;
   }
 
   void record_age_table(AgeTable* age_table) {

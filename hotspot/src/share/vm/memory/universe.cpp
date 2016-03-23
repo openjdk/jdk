@@ -64,11 +64,10 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/logTimer.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
-#include "runtime/timer.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/copy.hpp"
@@ -377,8 +376,7 @@ void Universe::genesis(TRAPS) {
     // We can allocate directly in the permanent generation, so we do.
     int size;
     if (UseConcMarkSweepGC) {
-      warning("Using +FullGCALot with concurrent mark sweep gc "
-              "will not force all objects to relocate");
+      log_warning(gc)("Using +FullGCALot with concurrent mark sweep gc will not force all objects to relocate");
       size = FullGCALotDummies;
     } else {
       size = FullGCALotDummies * 2;
@@ -629,7 +627,7 @@ jint universe_init() {
   guarantee(sizeof(oop) % sizeof(HeapWord) == 0,
             "oop size is not not a multiple of HeapWord size");
 
-  TraceStartupTime timer("Genesis");
+  TraceTime timer("Genesis", TRACETIME_LOG(Info, startuptime));
 
   JavaClasses::compute_hard_coded_offsets();
 
@@ -1098,19 +1096,19 @@ void Universe::print_heap_at_SIGBREAK() {
 
 void Universe::print_heap_before_gc() {
   LogHandle(gc, heap) log;
-  if (log.is_trace()) {
-    log.trace("Heap before GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
+  if (log.is_debug()) {
+    log.debug("Heap before GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
     ResourceMark rm;
-    heap()->print_on(log.trace_stream());
+    heap()->print_on(log.debug_stream());
   }
 }
 
 void Universe::print_heap_after_gc() {
   LogHandle(gc, heap) log;
-  if (log.is_trace()) {
-    log.trace("Heap after GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
+  if (log.is_debug()) {
+    log.debug("Heap after GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
     ResourceMark rm;
-    heap()->print_on(log.trace_stream());
+    heap()->print_on(log.debug_stream());
   }
 }
 

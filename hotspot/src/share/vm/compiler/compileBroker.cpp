@@ -32,6 +32,7 @@
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
+#include "gc/shared/referencePendingListLocker.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/methodData.hpp"
@@ -48,6 +49,7 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
+#include "runtime/timerTrace.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -900,7 +902,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
   // the pending list lock or a 3-way deadlock may occur
   // between the reference handler thread, a GC (instigated
   // by a compiler thread), and compiled method registration.
-  if (InstanceRefKlass::owns_pending_list_lock(JavaThread::current())) {
+  if (ReferencePendingListLocker::is_locked_by_self()) {
     return;
   }
 

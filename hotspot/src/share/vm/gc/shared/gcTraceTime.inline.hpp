@@ -33,7 +33,6 @@
 #include "memory/universe.hpp"
 #include "prims/jni_md.h"
 #include "utilities/ticks.hpp"
-#include "runtime/timer.hpp"
 
 #define LOG_STOP_TIME_FORMAT "(%.3fs, %.3fs) %.3fms"
 #define LOG_STOP_HEAP_FORMAT SIZE_FORMAT "M->" SIZE_FORMAT "M("  SIZE_FORMAT "M)"

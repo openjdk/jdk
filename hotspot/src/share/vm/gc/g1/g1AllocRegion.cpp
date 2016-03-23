@@ -26,6 +26,7 @@
 #include "gc/g1/g1AllocRegion.inline.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/orderAccess.inline.hpp"
 
 G1CollectedHeap* G1AllocRegion::_g1h = NULL;
@@ -194,44 +195,53 @@ HeapRegion* G1AllocRegion::release() {
   return (alloc_region == _dummy_region) ? NULL : alloc_region;
 }
 
-#if G1_ALLOC_REGION_TRACING
+#ifndef PRODUCT
 void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_word_size, size_t actual_word_size, HeapWord* result) {
   // All the calls to trace that set either just the size or the size
-  // and the result are considered part of level 2 tracing and are
-  // skipped during level 1 tracing.
-  if ((actual_word_size == 0 && result == NULL) || (G1_ALLOC_REGION_TRACING > 1)) {
-    const size_t buffer_length = 128;
-    char hr_buffer[buffer_length];
-    char rest_buffer[buffer_length];
+  // and the result are considered part of detailed tracing and are
+  // skipped during other tracing.
 
-    HeapRegion* alloc_region = _alloc_region;
-    if (alloc_region == NULL) {
-      jio_snprintf(hr_buffer, buffer_length, "NULL");
-    } else if (alloc_region == _dummy_region) {
-      jio_snprintf(hr_buffer, buffer_length, "DUMMY");
+  LogHandle(gc, alloc, region) log;
+
+  if (!log.is_debug()) {
+    return;
+  }
+
+  bool detailed_info = log.is_trace();
+
+  if ((actual_word_size == 0 && result == NULL) || detailed_info) {
+    ResourceMark rm;
+    outputStream* out;
+    if (detailed_info) {
+      out = log.trace_stream();
     } else {
-      jio_snprintf(hr_buffer, buffer_length,
-                   HR_FORMAT, HR_FORMAT_PARAMS(alloc_region));
+      out = log.debug_stream();
     }
 
-    if (G1_ALLOC_REGION_TRACING > 1) {
+    out->print("%s: %u ", _name, _count);
+
+    if (_alloc_region == NULL) {
+      out->print("NULL");
+    } else if (_alloc_region == _dummy_region) {
+      out->print("DUMMY");
+    } else {
+      out->print(HR_FORMAT, HR_FORMAT_PARAMS(_alloc_region));
+    }
+
+    out->print(" : %s", str);
+
+    if (detailed_info) {
       if (result != NULL) {
-        jio_snprintf(rest_buffer, buffer_length, "min " SIZE_FORMAT " desired " SIZE_FORMAT " actual " SIZE_FORMAT " " PTR_FORMAT,
-                     min_word_size, desired_word_size, actual_word_size, result);
+        out->print(" min " SIZE_FORMAT " desired " SIZE_FORMAT " actual " SIZE_FORMAT " " PTR_FORMAT,
+                     min_word_size, desired_word_size, actual_word_size, p2i(result));
       } else if (min_word_size != 0) {
-        jio_snprintf(rest_buffer, buffer_length, "min " SIZE_FORMAT " desired " SIZE_FORMAT, min_word_size, desired_word_size);
-      } else {
-        jio_snprintf(rest_buffer, buffer_length, "");
+        out->print(" min " SIZE_FORMAT " desired " SIZE_FORMAT, min_word_size, desired_word_size);
       }
-    } else {
-      jio_snprintf(rest_buffer, buffer_length, "");
     }
-
-    tty->print_cr("[%s] %u %s : %s %s",
-                  _name, _count, hr_buffer, str, rest_buffer);
+    out->cr();
   }
 }
-#endif // G1_ALLOC_REGION_TRACING
+#endif // PRODUCT
 
 G1AllocRegion::G1AllocRegion(const char* name,
                              bool bot_updates)
@@ -253,7 +263,7 @@ void MutatorAllocRegion::retire_region(HeapRegion* alloc_region,
 HeapRegion* G1GCAllocRegion::allocate_new_region(size_t word_size,
                                                  bool force) {
   assert(!force, "not supported for GC alloc regions");
-  return _g1h->new_gc_alloc_region(word_size, count(), _purpose);
+  return _g1h->new_gc_alloc_region(word_size, _purpose);
 }
 
 void G1GCAllocRegion::retire_region(HeapRegion* alloc_region,
