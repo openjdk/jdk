@@ -82,6 +82,7 @@ CORE_PKGS = \
     java.awt \
     java.awt.color \
     java.awt.datatransfer \
+    java.awt.desktop \
     java.awt.dnd \
     java.awt.event \
     java.awt.font \
