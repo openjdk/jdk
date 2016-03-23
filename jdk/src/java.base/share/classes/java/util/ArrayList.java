@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1281,8 +1281,74 @@ public class ArrayList<E> extends AbstractList<E>
 
         public Spliterator<E> spliterator() {
             checkForComodification();
-            return new ArrayListSpliterator<>(ArrayList.this, offset,
-                                              offset + this.size, this.modCount);
+
+            return new Spliterator<>() {
+                private int index = offset; // current index, modified on advance/split
+                private int fence = -1; // -1 until used; then one past last index
+                private int expectedModCount; // initialized when fence set
+
+                private int getFence() { // initialize fence to size on first use
+                    int hi; // (a specialized variant appears in method forEach)
+                    if ((hi = fence) < 0) {
+                        expectedModCount = modCount;
+                        hi = fence = offset + size;
+                    }
+                    return hi;
+                }
+
+                public ArrayListSpliterator<E> trySplit() {
+                    int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
+                    return (lo >= mid) ? null : // divide range in half unless too small
+                        new ArrayListSpliterator<>(ArrayList.this, lo, index = mid,
+                                                   expectedModCount);
+                }
+
+                public boolean tryAdvance(Consumer<? super E> action) {
+                    Objects.requireNonNull(action);
+                    int hi = getFence(), i = index;
+                    if (i < hi) {
+                        index = i + 1;
+                        @SuppressWarnings("unchecked") E e = (E)elementData[i];
+                        action.accept(e);
+                        if (ArrayList.this.modCount != expectedModCount)
+                            throw new ConcurrentModificationException();
+                        return true;
+                    }
+                    return false;
+                }
+
+                public void forEachRemaining(Consumer<? super E> action) {
+                    Objects.requireNonNull(action);
+                    int i, hi, mc; // hoist accesses and checks from loop
+                    ArrayList<E> lst = ArrayList.this;
+                    Object[] a;
+                    if ((a = lst.elementData) != null) {
+                        if ((hi = fence) < 0) {
+                            mc = modCount;
+                            hi = offset + size;
+                        }
+                        else
+                            mc = expectedModCount;
+                        if ((i = index) >= 0 && (index = hi) <= a.length) {
+                            for (; i < hi; ++i) {
+                                @SuppressWarnings("unchecked") E e = (E) a[i];
+                                action.accept(e);
+                            }
+                            if (lst.modCount == mc)
+                                return;
+                        }
+                    }
+                    throw new ConcurrentModificationException();
+                }
+
+                public long estimateSize() {
+                    return (long) (getFence() - index);
+                }
+
+                public int characteristics() {
+                    return Spliterator.ORDERED | Spliterator.SIZED | Spliterator.SUBSIZED;
+                }
+            };
         }
     }
 

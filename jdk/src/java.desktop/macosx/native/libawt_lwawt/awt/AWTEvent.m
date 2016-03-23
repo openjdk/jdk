@@ -134,7 +134,7 @@ const keyTable[] =
     {0x3D, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
     {0x3E, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
     {0x3F, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED}, // the 'fn' key on PowerBooks
-    {0x40, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
+    {0x40, NO,  KL_STANDARD, java_awt_event_KeyEvent_VK_F17},
     {0x41, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_DECIMAL},
     {0x42, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
     {0x43, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_MULTIPLY},
@@ -149,8 +149,8 @@ const keyTable[] =
     {0x4C, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_ENTER},
     {0x4D, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
     {0x4E, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_SUBTRACT},
-    {0x4F, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
-    {0x50, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
+    {0x4F, NO,  KL_STANDARD, java_awt_event_KeyEvent_VK_F18},
+    {0x50, NO,  KL_STANDARD, java_awt_event_KeyEvent_VK_F19},
     {0x51, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_EQUALS},
     {0x52, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_NUMPAD0},
     {0x53, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_NUMPAD1},
@@ -160,7 +160,7 @@ const keyTable[] =
     {0x57, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_NUMPAD5},
     {0x58, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_NUMPAD6},
     {0x59, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_NUMPAD7},
-    {0x5A, NO,  KL_UNKNOWN,  java_awt_event_KeyEvent_VK_UNDEFINED},
+    {0x5A, NO,  KL_STANDARD, java_awt_event_KeyEvent_VK_F20},
     {0x5B, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_NUMPAD8},
     {0x5C, YES, KL_NUMPAD,   java_awt_event_KeyEvent_VK_NUMPAD9},
     {0x5D, YES, KL_STANDARD, java_awt_event_KeyEvent_VK_BACK_SLASH}, // This is a combo yen/backslash on JIS keyboards.

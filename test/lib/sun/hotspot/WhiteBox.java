@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.security.BasicPermission;
 import java.util.Objects;
-import jdk.internal.HotSpotIntrinsicCandidate;
 
 import sun.hotspot.parser.DiagnosticCommand;
 
@@ -119,6 +118,28 @@ public class WhiteBox {
     return getConstantPool0(aClass);
   }
 
+  private native int getConstantPoolCacheIndexTag0();
+  public         int getConstantPoolCacheIndexTag() {
+    return getConstantPoolCacheIndexTag0();
+  }
+
+  private native int getConstantPoolCacheLength0(Class<?> aClass);
+  public         int getConstantPoolCacheLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getConstantPoolCacheLength0(aClass);
+  }
+
+  private native int remapInstructionOperandFromCPCache0(Class<?> aClass, int index);
+  public         int remapInstructionOperandFromCPCache(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return remapInstructionOperandFromCPCache0(aClass, index);
+  }
+
+  private native int encodeConstantPoolIndyIndex0(int index);
+  public         int encodeConstantPoolIndyIndex(int index) {
+    return encodeConstantPoolIndyIndex0(index);
+  }
+
   // JVMTI
   private native void addToBootstrapClassLoaderSearch0(String segment);
   public         void addToBootstrapClassLoaderSearch(String segment){
@@ -185,12 +206,10 @@ public class WhiteBox {
   // Compiler
   public native int     matchesMethod(Executable method, String pattern);
   public native int     matchesInline(Executable method, String pattern);
-  public native boolean shouldPrintAssembly(Executable method);
+  public native boolean shouldPrintAssembly(Executable method, int comp_level);
   public native int     deoptimizeFrames(boolean makeNotEntrant);
   public native void    deoptimizeAll();
 
-  @HotSpotIntrinsicCandidate
-  public        void    deoptimize() {}
   public        boolean isMethodCompiled(Executable method) {
     return isMethodCompiled(method, false /*not osr*/);
   }
@@ -400,6 +419,19 @@ public class WhiteBox {
                        .findAny()
                        .orElse(null);
   }
+
+  // Jigsaw
+  public native void DefineModule(Object module, String version, String location,
+                                  Object[] packages);
+  public native void AddModuleExports(Object from_module, String pkg, Object to_module);
+  public native void AddReadsModule(Object from_module, Object source_module);
+  public native boolean CanReadModule(Object asking_module, Object source_module);
+  public native boolean IsExportedToModule(Object from_module, String pkg, Object to_module);
+  public native void AddModulePackage(Object module, String pkg);
+  public native void AddModuleExportsToAllUnnamed(Object module, String pkg);
+  public native void AddModuleExportsToAll(Object module, String pkg);
+  public native Object GetModuleByPackageName(Object ldr, String pkg);
+
   public native int getOffsetForName0(String name);
   public int getOffsetForName(String name) throws Exception {
     int offset = getOffsetForName0(name);
@@ -430,7 +462,7 @@ public class WhiteBox {
   public native void assertMatchingSafepointCalls(boolean mutexSafepointValue, boolean attemptedNoSafepointValue);
 
   // Sharing
-  public native boolean isSharedClass(Class<?> c);
   public native boolean isShared(Object o);
+  public native boolean isSharedClass(Class<?> c);
   public native boolean areSharedStringsIgnored();
 }

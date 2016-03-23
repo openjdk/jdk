@@ -28,7 +28,9 @@
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -73,6 +75,7 @@
 #include "runtime/vm_operations.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
+#include "trace/traceMacros.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
@@ -88,7 +91,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #endif
 
-static jint CurrentVersion = JNI_VERSION_1_8;
+static jint CurrentVersion = JNI_VERSION_9;
 
 #ifdef _WIN32
 extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
@@ -3442,6 +3445,47 @@ JNI_LEAF(jint, jni_GetJavaVM(JNIEnv *env, JavaVM **vm))
   return JNI_OK;
 JNI_END
 
+
+JNI_ENTRY(jobject, jni_GetModule(JNIEnv* env, jclass clazz))
+  JNIWrapper("GetModule");
+  return Modules::get_module(clazz, THREAD);
+JNI_END
+
+
+JNI_ENTRY(void, jni_AddModuleReads(JNIEnv* env, jobject m1, jobject m2))
+  JNIWrapper("AddModuleReads");
+  if (m1 == NULL || m2 == NULL) {
+    THROW(vmSymbols::java_lang_NullPointerException());
+  }
+  JavaValue result(T_VOID);
+  Handle m1_h(THREAD, JNIHandles::resolve(m1));
+  if (!java_lang_reflect_Module::is_instance(m1_h())) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "Bad m1 object");
+  }
+  Handle m2_h(THREAD, JNIHandles::resolve(m2));
+  if (!java_lang_reflect_Module::is_instance(m2_h())) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "Bad m2 object");
+  }
+  JavaCalls::call_static(&result,
+                         KlassHandle(THREAD, SystemDictionary::module_Modules_klass()),
+                         vmSymbols::addReads_name(),
+                         vmSymbols::addReads_signature(),
+                         m1_h,
+                         m2_h,
+                         THREAD);
+JNI_END
+
+
+JNI_ENTRY(jboolean, jni_CanReadModule(JNIEnv* env, jobject m1, jobject m2))
+  JNIWrapper("CanReadModule");
+  if (m1 == NULL || m2 == NULL) {
+    THROW_(vmSymbols::java_lang_NullPointerException(), JNI_FALSE);
+  }
+  jboolean res = Modules::can_read_module(m1, m2, CHECK_false);
+  return res;
+JNI_END
+
+
 // Structure containing all jni functions
 struct JNINativeInterface_ jni_NativeInterface = {
     NULL,
@@ -3721,7 +3765,13 @@ struct JNINativeInterface_ jni_NativeInterface = {
 
     // New 1_6 features
 
-    jni_GetObjectRefType
+    jni_GetObjectRefType,
+
+    // Module features
+
+    jni_GetModule,
+    jni_AddModuleReads,
+    jni_CanReadModule
 };
 
 
@@ -3929,7 +3979,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
     EventThreadStart event;
     if (event.should_commit()) {
-      event.set_javalangthread(java_lang_Thread::thread_id(thread->threadObj()));
+      event.set_thread(THREAD_TRACE_ID(thread));
       event.commit();
     }
 
@@ -4149,7 +4199,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
 
   EventThreadStart event;
   if (event.should_commit()) {
-    event.set_javalangthread(java_lang_Thread::thread_id(thread->threadObj()));
+    event.set_thread(THREAD_TRACE_ID(thread));
     event.commit();
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,20 +72,19 @@ public interface PackageElement extends Element, QualifiedNameable {
     List<? extends Element> getEnclosedElements();
 
     /**
-     * Returns {@code true} is this is an unnamed package and {@code
+     * Returns {@code true} if this is an unnamed package and {@code
      * false} otherwise.
      *
-     * @return {@code true} is this is an unnamed package and {@code
+     * @return {@code true} if this is an unnamed package and {@code
      * false} otherwise
      * @jls 7.4.2 Unnamed Packages
      */
     boolean isUnnamed();
 
     /**
-     * Returns {@code null} since a package is not enclosed by another
-     * element.
+     * Returns the enclosing module.
      *
-     * @return {@code null}
+     * @return the enclosing module
      */
     @Override
     Element getEnclosingElement();

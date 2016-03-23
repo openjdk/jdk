@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6964914
  * @summary javadoc does not output number of warnings using user written doclet
- * @modules jdk.javadoc/com.sun.tools.doclets.standard
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
 
 import java.io.*;
@@ -48,7 +48,6 @@ public class Test {
         String[] args = {
             "-Xdoclint:none",
             "-source", "8",
-            "-bootclasspath", System.getProperty("sun.boot.class.path"),
             "-classpath", ".",
             "-package",
             new File(testSrc, path).getPath()

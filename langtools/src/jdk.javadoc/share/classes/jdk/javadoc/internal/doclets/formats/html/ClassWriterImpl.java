@@ -30,6 +30,7 @@ import java.util.*;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
@@ -194,13 +195,22 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         bodyTree.addContent(HtmlConstants.START_OF_CLASS_DATA);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
+        ModuleElement mdle = configuration.root.getElementUtils().getModuleOf(typeElement);
+        if (mdle != null && !mdle.isUnnamed()) {
+            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInClass, moduleLabel);
+            Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
+            moduleNameDiv.addContent(getSpace());
+            moduleNameDiv.addContent(getModuleLink(mdle,
+                    new StringContent(mdle.getQualifiedName().toString())));
+            div.addContent(moduleNameDiv);
+        }
         PackageElement pkg = utils.containingPackage(typeElement);
         if (!pkg.isUnnamed()) {
             Content classPackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInClass, packageLabel);
             Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classPackageLabel);
             pkgNameDiv.addContent(getSpace());
             Content pkgNameContent = getPackageLink(pkg,
-                    new StringContent(pkg.getQualifiedName().toString()));
+                    new StringContent(utils.getPackageName(pkg)));
             pkgNameDiv.addContent(pkgNameContent);
             div.addContent(pkgNameDiv);
         }
@@ -395,10 +405,10 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
                     new LinkInfoImpl(configuration, LinkInfoImpl.Kind.TREE,
                     typeElement));
             if (configuration.shouldExcludeQualifier(utils.containingPackage(typeElement).toString())) {
-                li.addContent(utils.asTypeElement(type).getSimpleName().toString());
+                li.addContent(utils.asTypeElement(type).getSimpleName());
                 li.addContent(typeParameters);
             } else {
-                li.addContent(utils.asTypeElement(type).getQualifiedName().toString());
+                li.addContent(utils.asTypeElement(type).getQualifiedName());
                 li.addContent(typeParameters);
             }
         } else {

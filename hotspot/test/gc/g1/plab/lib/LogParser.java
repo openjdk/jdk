@@ -35,14 +35,12 @@ import java.util.regex.Pattern;
  *
  * Typical GC log with PLAB statistics (options - -Xlog:gc=debug,gc+plab=debug) looks like:
  *
- * [2,244s][info   ][gc     ] GC(30) Concurrent Mark abort
- * [2,245s][debug  ][gc,plab] GC(33)  (allocated = 1 wasted = 0 unused = 0 used = 1 undo_waste = 0 region_end_waste = 0 regions filled = 0 direct_allocated = 0 failure_used = 0 failure_waste = 0)  (plab_sz = 0 desired_plab_sz = 258)
- * [2,245s][debug  ][gc,plab] GC(33)  (allocated = 1 wasted = 0 unused = 0 used = 1 undo_waste = 0 region_end_waste = 0 regions filled = 0 direct_allocated = 0 failure_used = 0 failure_waste = 0)  (plab_sz = 0 desired_plab_sz = 258)
- * [2,245s][info   ][gc     ] GC(33) Pause Young (G1 Evacuation Pause) 127M->127M(128M) (2,244s, 2,245s) 0,899ms
- * [2,246s][debug  ][gc,plab] GC(34)  (allocated = 1 wasted = 0 unused = 0 used = 1 undo_waste = 0 region_end_waste = 0 regions filled = 0 direct_allocated = 0 failure_used = 0 failure_waste = 0)  (plab_sz = 0 desired_plab_sz = 258)
- * [2,246s][debug  ][gc,plab] GC(34)  (allocated = 1 wasted = 0 unused = 0 used = 1 undo_waste = 0 region_end_waste = 0 regions filled = 0 direct_allocated = 0 failure_used = 0 failure_waste = 0)  (plab_sz = 0 desired_plab_sz = 258)
- * [2,246s][info   ][gc     ] GC(34) Pause Initial Mark (G1 Evacuation Pause) 127M->127M(128M) (2,245s, 2,246s) 0,907ms
-
+ * [0.330s][debug][gc,plab  ] GC(0) Young PLAB allocation: allocated: 1825632B, wasted: 29424B, unused: 2320B, used: 1793888B, undo waste: 0B,
+ * [0.330s][debug][gc,plab  ] GC(0) Young other allocation: region end waste: 0B, regions filled: 2, direct allocated: 271520B, failure used: 0B, failure wasted: 0B
+ * [0.330s][debug][gc,plab  ] GC(0) Young sizing: calculated: 358776B, actual: 358776B
+ * [0.330s][debug][gc,plab  ] GC(0) Old PLAB allocation: allocated: 427248B, wasted: 592B, unused: 368584B, used: 58072B, undo waste: 0B,
+ * [0.330s][debug][gc,plab  ] GC(0) Old other allocation: region end waste: 0B, regions filled: 1, direct allocated: 41704B, failure used: 0B, failure wasted: 0B
+ * [0.330s][debug][gc,plab  ] GC(0) Old sizing: calculated: 11608B, actual: 11608B
  */
 final public class LogParser {
 
@@ -53,7 +51,6 @@ final public class LogParser {
      * Type of parsed log element.
      */
     public static enum ReportType {
-
         SURVIVOR_STATS,
         OLD_STATS
     }
@@ -64,8 +61,8 @@ final public class LogParser {
 
     // GC ID
     private static final Pattern GC_ID_PATTERN = Pattern.compile("\\[gc,plab\\s*\\] GC\\((\\d+)\\)");
-    // Pattern for extraction pair <name>=<numeric value>
-    private static final Pattern PAIRS_PATTERN = Pattern.compile("\\w+\\s+=\\s+\\d+");
+    // Pattern for extraction pair <name>: <numeric value>
+    private static final Pattern PAIRS_PATTERN = Pattern.compile("\\w* \\w+:\\s+\\d+");
 
     /**
      * Construct LogParser Object
@@ -108,24 +105,29 @@ final public class LogParser {
                 if (matcher.find()) {
                     Map<ReportType,Map<String, Long>> oneReportItem;
                     ReportType reportType;
-                    // Second line in log is statistics for Old PLAB allocation
-                    if ( !allocationStatistics.containsKey(gc_id.get()) ) {
-                        oneReportItem = new EnumMap<>(ReportType.class);
+
+                    if (!allocationStatistics.containsKey(gc_id.get())) {
+                      allocationStatistics.put(gc_id.get(), new EnumMap<>(ReportType.class));
+                    }
+
+                    if ( line.contains("Young") ) {
                         reportType = ReportType.SURVIVOR_STATS;
-                        allocationStatistics.put(gc_id.get(), oneReportItem);
                     } else {
-                        oneReportItem = allocationStatistics.get(gc_id.get());
                         reportType = ReportType.OLD_STATS;
                     }
 
+                    oneReportItem = allocationStatistics.get(gc_id.get());
+                    if (!oneReportItem.containsKey(reportType)) {
+                      oneReportItem.put(reportType,new HashMap<String, Long>());
+                    }
+
                     // Extract all pairs from log.
-                    HashMap<String, Long> plabStats = new HashMap<>();
+                    Map<String, Long> plabStats = oneReportItem.get(reportType);
                     do {
                         String pair = matcher.group();
-                        String[] nameValue = pair.replaceAll(" ", "").split("=");
-                        plabStats.put(nameValue[0], Long.parseLong(nameValue[1]));
+                        String[] nameValue = pair.replaceAll(": ", ":").split(":");
+                        plabStats.put(nameValue[0].trim(), Long.parseLong(nameValue[1]));
                     } while (matcher.find());
-                    oneReportItem.put(reportType,plabStats);
                 }
             }
         }

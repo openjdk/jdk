@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ void VM_Version::initialize() {
 
   // If PowerArchitecturePPC64 hasn't been specified explicitly determine from features.
   if (FLAG_IS_DEFAULT(PowerArchitecturePPC64)) {
-    if (VM_Version::has_tcheck() && VM_Version::has_lqarx()) {
+    if (VM_Version::has_lqarx()) {
       FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 8);
     } else if (VM_Version::has_popcntw()) {
       FLAG_SET_ERGO(uintx, PowerArchitecturePPC64, 7);
@@ -68,8 +68,7 @@ void VM_Version::initialize() {
 
   bool PowerArchitecturePPC64_ok = false;
   switch (PowerArchitecturePPC64) {
-    case 8: if (!VM_Version::has_tcheck() ) break;
-            if (!VM_Version::has_lqarx()  ) break;
+    case 8: if (!VM_Version::has_lqarx()  ) break;
     case 7: if (!VM_Version::has_popcntw()) break;
     case 6: if (!VM_Version::has_cmpb()   ) break;
     case 5: if (!VM_Version::has_popcntb()) break;
@@ -80,7 +79,7 @@ void VM_Version::initialize() {
             UINTX_FORMAT " on this machine", PowerArchitecturePPC64);
 
   // Power 8: Configure Data Stream Control Register.
-  if (PowerArchitecturePPC64 >= 8) {
+  if (has_mfdscr()) {
     config_dscr();
   }
 
@@ -112,7 +111,7 @@ void VM_Version::initialize() {
   // Create and print feature-string.
   char buf[(num_features+1) * 16]; // Max 16 chars per feature.
   jio_snprintf(buf, sizeof(buf),
-               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s",
+               "ppc64%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_fsqrt()   ? " fsqrt"   : ""),
                (has_isel()    ? " isel"    : ""),
                (has_lxarxeh() ? " lxarxeh" : ""),
@@ -125,7 +124,8 @@ void VM_Version::initialize() {
                (has_lqarx()   ? " lqarx"   : ""),
                (has_vcipher() ? " vcipher" : ""),
                (has_vpmsumb() ? " vpmsumb" : ""),
-               (has_tcheck()  ? " tcheck"  : "")
+               (has_tcheck()  ? " tcheck"  : ""),
+               (has_mfdscr()  ? " mfdscr"  : "")
                // Make sure number of %s matches num_features!
               );
   _features_string = os::strdup(buf);
@@ -610,6 +610,7 @@ void VM_Version::determine_features() {
   a->vcipher(VR0, VR1, VR2);                   // code[10] -> vcipher
   a->vpmsumb(VR0, VR1, VR2);                   // code[11] -> vpmsumb
   a->tcheck(0);                                // code[12] -> tcheck
+  a->mfdscr(R0);                               // code[13] -> mfdscr
   a->blr();
 
   // Emit function to set one cache line to zero. Emit function descriptor and get pointer to it.
@@ -657,6 +658,7 @@ void VM_Version::determine_features() {
   if (code[feature_cntr++]) features |= vcipher_m;
   if (code[feature_cntr++]) features |= vpmsumb_m;
   if (code[feature_cntr++]) features |= tcheck_m;
+  if (code[feature_cntr++]) features |= mfdscr_m;
 
   // Print the detection code.
   if (PrintAssembly) {
@@ -670,8 +672,6 @@ void VM_Version::determine_features() {
 
 // Power 8: Configure Data Stream Control Register.
 void VM_Version::config_dscr() {
-  assert(has_tcheck(), "Only execute on Power 8 or later!");
-
   // 7 InstWords for each call (function descriptor + blr instruction).
   const int code_size = (2+2*7)*BytesPerInstWord;
 

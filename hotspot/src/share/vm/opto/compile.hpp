@@ -1250,7 +1250,7 @@ class Compile : public Phase {
   // Intrinsic setup.
   void           register_library_intrinsics();                            // initializer
   CallGenerator* make_vm_intrinsic(ciMethod* m, bool is_virtual);          // constructor
-  int            intrinsic_insertion_index(ciMethod* m, bool is_virtual);  // helper
+  int            intrinsic_insertion_index(ciMethod* m, bool is_virtual, bool& found);  // helper
   CallGenerator* find_intrinsic(ciMethod* m, bool is_virtual);             // query fn
   void           register_intrinsic(CallGenerator* cg);                    // update fn
 

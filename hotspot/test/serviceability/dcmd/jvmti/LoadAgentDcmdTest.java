@@ -22,6 +22,10 @@
  */
 import java.io.*;
 import java.nio.file.*;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import jdk.test.lib.*;
 import jdk.test.lib.dcmd.*;
 import org.testng.annotations.Test;
@@ -55,12 +59,7 @@ public class LoadAgentDcmdTest {
                       "'-Dtest.jdk=/path/to/jdk'.");
         }
 
-        Path libpath;
-        if (Platform.isWindows()) {
-            libpath = Paths.get(jdkPath, "bin", "instrument.dll");
-        } else {
-            libpath = Paths.get(jdkPath, "lib", Platform.getOsArch(), "libinstrument.so");
-        }
+        Path libpath = Paths.get(jdkPath, Platform.jdkLibPath(), Platform.sharedObjectName("instrument"));
 
         if (!libpath.toFile().exists()) {
             throw new FileNotFoundException(
@@ -70,31 +69,62 @@ public class LoadAgentDcmdTest {
         return libpath.toAbsolutePath().toString();
     }
 
+
+    public void createJarFileForAgent()
+      throws IOException {
+
+        final String jarName = "agent.jar";
+        final String agentClass = "SimpleJvmtiAgent";
+
+        Manifest manifest = new Manifest();
+
+        manifest.getMainAttributes().put(
+             Attributes.Name.MANIFEST_VERSION, "1.0");
+
+        manifest.getMainAttributes().put(
+             new Attributes.Name("Agent-Class"), agentClass);
+
+        JarOutputStream target = null;
+
+        try {
+            target = new
+              JarOutputStream(new FileOutputStream(jarName), manifest);
+            JarEntry entry = new JarEntry(agentClass + ".class");
+            target.putNextEntry(entry);
+            target.closeEntry();
+        } finally {
+            target.close();
+        }
+    }
+
     public void run(CommandExecutor executor)  {
         try{
-            PrintWriter pw = new PrintWriter("MANIFEST.MF");
-            pw.println("Agent-Class: SimpleJvmtiAgent");
-            pw.close();
 
-            ProcessBuilder pb = new ProcessBuilder();
-            pb.command(new String[] { JDKToolFinder.getJDKTool("jar"),
-                                      "cmf",
-                                      "MANIFEST.MF",
-                                      "agent.jar",
-                                      "SimpleJvmtiAgent.class"});
-            pb.start().waitFor();
+            createJarFileForAgent();
 
             String libpath = getLibInstrumentPath();
+            OutputAnalyzer output = null;
 
-            // Test 1: No argument
-            OutputAnalyzer output = executor.execute("JVMTI.agent_load " +
-                                                     libpath + " agent.jar");
-            output.stderrShouldBeEmpty();
-
-            // Test 2: With argument
+            // Test 1: Native agent, no arguments
             output = executor.execute("JVMTI.agent_load " +
-                                      libpath + " \"agent.jar=foo=bar\"");
+                                          libpath + " agent.jar");
             output.stderrShouldBeEmpty();
+
+            // Test 2: Native agent, with arguments
+            output = executor.execute("JVMTI.agent_load " +
+                                          libpath + " \"agent.jar=foo=bar\"");
+            output.stderrShouldBeEmpty();
+
+            // Test 3: Java agent, no arguments
+            output = executor.execute("JVMTI.agent_load " +
+                                          "agent.jar");
+            output.stderrShouldBeEmpty();
+
+            // Test 4: Java agent, with arguments
+            output = executor.execute("JVMTI.agent_load " +
+                                          "\"agent.jar=foo=bar\"");
+            output.stderrShouldBeEmpty();
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -121,7 +121,7 @@ protected:
   static bool is_T1_model(int features) { return is_T_family(features) && ((features & T1_model_m) != 0); }
 
   static int maximum_niagara1_processor_count() { return 32; }
-
+  static int parse_features(const char* implementation);
 public:
   // Initialization
   static void initialize();

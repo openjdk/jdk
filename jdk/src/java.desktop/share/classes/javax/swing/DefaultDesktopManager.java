@@ -191,12 +191,6 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
             JLayeredPane.putLayer(desktopIcon, layer);
         }
 
-        // If we are maximized we already have the normal bounds recorded
-        // don't try to re-record them, otherwise we incorrectly set the
-        // normal bounds to maximized state.
-        if (!f.isMaximum()) {
-            f.setNormalBounds(f.getBounds());
-        }
         if (findNext) {
             if (d.selectFrame(true) == null) {
                 // The icon is the last frame.

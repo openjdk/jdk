@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,15 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
+
 import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Descriptor;
@@ -53,16 +56,21 @@ import com.sun.tools.classfile.Descriptor.InvalidDescriptor;
 import com.sun.tools.classfile.Field;
 
 import static javax.tools.JavaFileObject.Kind.CLASS;
+
 import static com.sun.tools.classfile.AccessFlags.ACC_ENUM;
 import static com.sun.tools.classfile.AccessFlags.ACC_FINAL;
 import static com.sun.tools.classfile.AccessFlags.ACC_STATIC;
 
 public class DetectMutableStaticFields {
 
-    private static final String keyResource =
-            "com/sun/tools/javac/tree/JCTree.class";
+    private final String[] modules = {
+        "java.compiler",
+        "jdk.compiler",
+        "jdk.javadoc",
+        "jdk.jdeps"
+    };
 
-    private String[] packagesToSeekFor = new String[] {
+    private final String[] packagesToSeekFor = new String[] {
         "javax.tools",
         "javax.lang.model",
         "com.sun.javadoc",
@@ -73,61 +81,50 @@ public class DetectMutableStaticFields {
         "com.sun.tools.javadoc",
         "com.sun.tools.javah",
         "com.sun.tools.javap",
+        "jdk.javadoc"
     };
 
     private static final Map<String, List<String>> classFieldsToIgnoreMap = new HashMap<>();
-
-    static {
-        classFieldsToIgnoreMap.
-                put("javax/tools/ToolProvider",
-                    Arrays.asList("instance"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/javah/JavahTask",
-                    Arrays.asList("versionRB"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/classfile/Dependencies$DefaultFilter",
-                    Arrays.asList("instance"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/javap/JavapTask",
-                    Arrays.asList("versionRB"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/doclets/formats/html/HtmlDoclet",
-                    Arrays.asList("docletToStart"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/javac/util/JCDiagnostic",
-                    Arrays.asList("fragmentFormatter"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/javac/util/JavacMessages",
-                    Arrays.asList("defaultBundle", "defaultMessages"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/javac/file/ZipFileIndexCache",
-                    Arrays.asList("sharedInstance"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/javac/file/JRTIndex",
-                    Arrays.asList("sharedInstance"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/javac/main/JavaCompiler",
-                    Arrays.asList("versionRB"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/javac/code/Type",
-                    Arrays.asList("moreInfo"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/javac/util/SharedNameTable",
-                    Arrays.asList("freelist"));
-        classFieldsToIgnoreMap.
-                put("com/sun/tools/javac/util/Log",
-                    Arrays.asList("useRawMessages"));
+    private static void ignore(String className, String... fields) {
+        classFieldsToIgnoreMap.put(className, Arrays.asList(fields));
     }
 
-    private List<String> errors = new ArrayList<>();
+    static {
+        ignore("javax/tools/ToolProvider", "instance");
+        ignore("com/sun/tools/javah/JavahTask", "versionRB");
+        ignore("com/sun/tools/classfile/Dependencies$DefaultFilter", "instance");
+        ignore("com/sun/tools/javap/JavapTask", "versionRB");
+        ignore("com/sun/tools/doclets/formats/html/HtmlDoclet", "docletToStart");
+        ignore("com/sun/tools/javac/util/JCDiagnostic", "fragmentFormatter");
+        ignore("com/sun/tools/javac/util/JavacMessages", "defaultBundle", "defaultMessages");
+        ignore("com/sun/tools/javac/file/JRTIndex", "sharedInstance");
+        ignore("com/sun/tools/javac/main/JavaCompiler", "versionRB");
+        ignore("com/sun/tools/javac/code/Type", "moreInfo");
+        ignore("com/sun/tools/javac/util/SharedNameTable", "freelist");
+        ignore("com/sun/tools/javac/util/Log", "useRawMessages");
+
+        // The following static fields are used for caches of information obtained
+        // by reflective lookup, to avoid explicit references that are not available
+        // when running javac on JDK 8.
+        ignore("com/sun/tools/javac/util/ModuleHelper",
+                "addExportsMethod", "getModuleMethod", "getUnnamedModuleMethod");
+        ignore("com/sun/tools/javac/util/ModuleWrappers$ConfigurationHelper",
+                "resolveRequiresAndUsesMethod", "configurationClass");
+        ignore("com/sun/tools/javac/util/ModuleWrappers$LayerHelper",
+                "bootMethod", "defineModulesWithOneLoaderMethod", "configurationMethod", "layerClass");
+        ignore("com/sun/tools/javac/util/ModuleWrappers$ModuleFinderHelper",
+                "emptyMethod", "moduleFinderInterface", "ofMethod");
+
+
+    }
+
+    private final List<String> errors = new ArrayList<>();
 
     public static void main(String[] args) {
         try {
             new DetectMutableStaticFields().run();
         } catch (Exception ex) {
-            throw new AssertionError(
-                    "Exception during test execution with cause ",
-                    ex.getCause());
+            throw new AssertionError("Exception during test execution: " + ex, ex);
         }
     }
 
@@ -138,12 +135,12 @@ public class DetectMutableStaticFields {
             InvalidDescriptor,
             URISyntaxException {
 
-        URI resource = findResource(keyResource);
-        if (resource == null) {
-            throw new AssertionError("Resource " + keyResource +
-                "not found in the class path");
+        JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
+        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
+            for (String module: modules) {
+                analyzeModule(fm, module);
+            }
         }
-        analyzeResource(resource);
 
         if (errors.size() > 0) {
             for (String error: errors) {
@@ -152,19 +149,6 @@ public class DetectMutableStaticFields {
             throw new AssertionError("There are mutable fields, "
                 + "please check output");
         }
-    }
-
-    URI findResource(String className) throws URISyntaxException {
-        URI uri = getClass().getClassLoader().getResource(className).toURI();
-        if (uri.getScheme().equals("jar")) {
-            String ssp = uri.getRawSchemeSpecificPart();
-            int sep = ssp.lastIndexOf("!");
-            uri = new URI(ssp.substring(0, sep));
-        } else if (uri.getScheme().equals("file")) {
-            uri = new URI(uri.getPath().substring(0,
-                    uri.getPath().length() - keyResource.length()));
-        }
-        return uri;
     }
 
     boolean shouldAnalyzePackage(String packageName) {
@@ -176,25 +160,22 @@ public class DetectMutableStaticFields {
         return false;
     }
 
-    void analyzeResource(URI resource)
+    void analyzeModule(StandardJavaFileManager fm, String moduleName)
         throws
             IOException,
             ConstantPoolException,
             InvalidDescriptor {
-        JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
-        try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
-            JavaFileManager.Location location =
-                    StandardLocation.locationFor(resource.getPath());
-            fm.setLocation(location, com.sun.tools.javac.util.List.of(
-                    new File(resource.getPath())));
+        JavaFileManager.Location location =
+                fm.getModuleLocation(StandardLocation.SYSTEM_MODULES, moduleName);
+        if (location == null)
+            throw new AssertionError("can't find module " + moduleName);
 
-            for (JavaFileObject file : fm.list(location, "", EnumSet.of(CLASS), true)) {
-                String className = fm.inferBinaryName(location, file);
-                int index = className.lastIndexOf('.');
-                String pckName = index == -1 ? "" : className.substring(0, index);
-                if (shouldAnalyzePackage(pckName)) {
-                    analyzeClassFile(ClassFile.read(file.openInputStream()));
-                }
+        for (JavaFileObject file : fm.list(location, "", EnumSet.of(CLASS), true)) {
+            String className = fm.inferBinaryName(location, file);
+            int index = className.lastIndexOf('.');
+            String pckName = index == -1 ? "" : className.substring(0, index);
+            if (shouldAnalyzePackage(pckName)) {
+                analyzeClassFile(ClassFile.read(file.openInputStream()));
             }
         }
     }

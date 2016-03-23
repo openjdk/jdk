@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,10 @@
 package com.sun.tools.jdeps;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Build the profile information.
@@ -38,7 +41,12 @@ enum Profile {
                             "jdk.httpserver", "jdk.security.auth",
                             "jdk.naming.dns", "jdk.naming.rmi",
                             "jdk.management"),
-    FULL_JRE("Full JRE", 4, "java.se", "jdk.deploy.osx", "jdk.charsets",
+    // need a way to determine JRE modules
+    SE_JRE("Java SE JRE", 4, "java.se", "jdk.charsets",
+                            "jdk.crypto.ec", "jdk.crypto.pkcs11",
+                            "jdk.crypto.mscapi", "jdk.crypto.ucrypto", "jdk.jvmstat",
+                            "jdk.localedata", "jdk.scripting.nashorn", "jdk.zipfs"),
+    FULL_JRE("Full JRE", 5, "java.se.ee", "jdk.charsets",
                             "jdk.crypto.ec", "jdk.crypto.pkcs11",
                             "jdk.crypto.mscapi", "jdk.crypto.ucrypto", "jdk.jvmstat",
                             "jdk.localedata", "jdk.scripting.nashorn", "jdk.zipfs");
@@ -94,25 +102,27 @@ enum Profile {
     }
 
     private final static Set<Module> JDK = new HashSet<>();
-    static void initProfiles(List<Archive> modules) {
-        // add all modules into  JDK
-        modules.forEach(m -> JDK.add((Module)m));
-
+    static synchronized void init(Map<String, Module> installed) {
         for (Profile p : Profile.values()) {
             for (String mn : p.mnames) {
                 // this includes platform-dependent module that may not exist
-                Module m = PlatformClassPath.findModule(mn);
+                Module m = installed.get(mn);
                 if (m != null) {
-                    p.addModule(m);
+                    p.addModule(installed, m);
                 }
             }
         }
+
+        // JDK modules should include full JRE plus other jdk.* modules
+        // Just include all installed modules.  Assume jdeps is running
+        // in JDK image
+        JDK.addAll(installed.values());
     }
 
-    private void addModule(Module m) {
+    private void addModule(Map<String, Module> installed, Module m) {
         modules.add(m);
         for (String n : m.requires().keySet()) {
-            Module d = PlatformClassPath.findModule(n);
+            Module d = installed.get(n);
             if (d == null) {
                 throw new InternalError("module " + n + " required by " +
                         m.name() + " doesn't exist");
@@ -123,7 +133,6 @@ enum Profile {
     // for debugging
     public static void main(String[] args) throws IOException {
         // find platform modules
-        PlatformClassPath.getModules(null);
         if (Profile.getProfileCount() == 0) {
             System.err.println("No profile is present in this JDK");
         }

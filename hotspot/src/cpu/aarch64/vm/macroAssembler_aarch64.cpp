@@ -4481,224 +4481,125 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   BLOCK_COMMENT("} string_compare");
 }
 
+// Compare Strings or char/byte arrays.
 
-void MacroAssembler::string_equals(Register str1, Register str2,
-                                   Register cnt, Register result,
-                                   Register tmp1) {
-  Label SAME_CHARS, DONE, SHORT_LOOP, SHORT_STRING,
-    NEXT_WORD;
+// is_string is true iff this is a string comparison.
 
-  const Register tmp2 = rscratch1;
-  assert_different_registers(str1, str2, cnt, result, tmp1, tmp2, rscratch2);
+// For Strings we're passed the address of the first characters in a1
+// and a2 and the length in cnt1.
 
-  BLOCK_COMMENT("string_equals {");
+// For byte and char arrays we're passed the arrays themselves and we
+// have to extract length fields and do null checks here.
 
-  // Start by assuming that the strings are not equal.
-  mov(result, zr);
+// elem_size is the element size in bytes: either 1 or 2.
 
-  // A very short string
-  cmpw(cnt, 4);
-  br(Assembler::LT, SHORT_STRING);
+// There are two implementations.  For arrays >= 8 bytes, all
+// comparisons (including the final one, which may overlap) are
+// performed 8 bytes at a time.  For arrays < 8 bytes, we compare a
+// halfword, then a short, and then a byte.
 
-  // Check if the strings start at the same location.
-  cmp(str1, str2);
-  br(Assembler::EQ, SAME_CHARS);
+void MacroAssembler::arrays_equals(Register a1, Register a2,
+                                   Register result, Register cnt1,
+                                   int elem_size, bool is_string)
+{
+  Label SAME, DONE, SHORT, NEXT_WORD, ONE;
+  Register tmp1 = rscratch1;
+  Register tmp2 = rscratch2;
+  Register cnt2 = tmp2;  // cnt2 only used in array length compare
+  int elem_per_word = wordSize/elem_size;
+  int log_elem_size = exact_log2(elem_size);
+  int length_offset = arrayOopDesc::length_offset_in_bytes();
+  int base_offset
+    = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
 
-  // Compare longwords
-  {
-    subw(cnt, cnt, 4); // The last longword is a special case
+  assert(elem_size == 1 || elem_size == 2, "must be char or byte");
+  assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
 
-    // Move both string pointers to the last longword of their
-    // strings, negate the remaining count, and convert it to bytes.
-    lea(str1, Address(str1, cnt, Address::uxtw(1)));
-    lea(str2, Address(str2, cnt, Address::uxtw(1)));
-    sub(cnt, zr, cnt, LSL, 1);
+  BLOCK_COMMENT(is_string ? "string_equals {" : "array_equals {");
 
-    // Loop, loading longwords and comparing them into rscratch2.
-    bind(NEXT_WORD);
-    ldr(tmp1, Address(str1, cnt));
-    ldr(tmp2, Address(str2, cnt));
-    adds(cnt, cnt, wordSize);
-    eor(rscratch2, tmp1, tmp2);
-    cbnz(rscratch2, DONE);
-    br(Assembler::LT, NEXT_WORD);
+  mov(result, false);
 
-    // Last longword.  In the case where length == 4 we compare the
-    // same longword twice, but that's still faster than another
-    // conditional branch.
+  if (!is_string) {
+    // if (a==a2)
+    //     return true;
+    eor(rscratch1, a1, a2);
+    cbz(rscratch1, SAME);
+    // if (a==null || a2==null)
+    //     return false;
+    cbz(a1, DONE);
+    cbz(a2, DONE);
+    // if (a1.length != a2.length)
+    //      return false;
+    ldrw(cnt1, Address(a1, length_offset));
+    ldrw(cnt2, Address(a2, length_offset));
+    eorw(tmp1, cnt1, cnt2);
+    cbnzw(tmp1, DONE);
 
-    ldr(tmp1, Address(str1));
-    ldr(tmp2, Address(str2));
-    eor(rscratch2, tmp1, tmp2);
-    cbz(rscratch2, SAME_CHARS);
-    b(DONE);
+    lea(a1, Address(a1, base_offset));
+    lea(a2, Address(a2, base_offset));
   }
 
-  bind(SHORT_STRING);
-  // Is the length zero?
-  cbz(cnt, SAME_CHARS);
-
-  bind(SHORT_LOOP);
-  load_unsigned_short(tmp1, Address(post(str1, 2)));
-  load_unsigned_short(tmp2, Address(post(str2, 2)));
-  subw(tmp1, tmp1, tmp2);
+  // Check for short strings, i.e. smaller than wordSize.
+  subs(cnt1, cnt1, elem_per_word);
+  br(Assembler::LT, SHORT);
+  // Main 8 byte comparison loop.
+  bind(NEXT_WORD); {
+    ldr(tmp1, Address(post(a1, wordSize)));
+    ldr(tmp2, Address(post(a2, wordSize)));
+    subs(cnt1, cnt1, elem_per_word);
+    eor(tmp1, tmp1, tmp2);
+    cbnz(tmp1, DONE);
+  } br(GT, NEXT_WORD);
+  // Last longword.  In the case where length == 4 we compare the
+  // same longword twice, but that's still faster than another
+  // conditional branch.
+  // cnt1 could be 0, -1, -2, -3, -4 for chars; -4 only happens when
+  // length == 4.
+  if (log_elem_size > 0)
+    lsl(cnt1, cnt1, log_elem_size);
+  ldr(tmp1, Address(a1, cnt1));
+  ldr(tmp2, Address(a2, cnt1));
+  eor(tmp1, tmp1, tmp2);
   cbnz(tmp1, DONE);
-  sub(cnt, cnt, 1);
-  cbnz(cnt, SHORT_LOOP);
+  b(SAME);
 
-  // Strings are equal.
-  bind(SAME_CHARS);
+  bind(SHORT);
+  Label TAIL03, TAIL01;
+
+  tbz(cnt1, 2 - log_elem_size, TAIL03); // 0-7 bytes left.
+  {
+    ldrw(tmp1, Address(post(a1, 4)));
+    ldrw(tmp2, Address(post(a2, 4)));
+    eorw(tmp1, tmp1, tmp2);
+    cbnzw(tmp1, DONE);
+  }
+  bind(TAIL03);
+  tbz(cnt1, 1 - log_elem_size, TAIL01); // 0-3 bytes left.
+  {
+    ldrh(tmp1, Address(post(a1, 2)));
+    ldrh(tmp2, Address(post(a2, 2)));
+    eorw(tmp1, tmp1, tmp2);
+    cbnzw(tmp1, DONE);
+  }
+  bind(TAIL01);
+  if (elem_size == 1) { // Only needed when comparing byte arrays.
+    tbz(cnt1, 0, SAME); // 0-1 bytes left.
+    {
+      ldrb(tmp1, a1);
+      ldrb(tmp2, a2);
+      eorw(tmp1, tmp1, tmp2);
+      cbnzw(tmp1, DONE);
+    }
+  }
+  // Arrays are equal.
+  bind(SAME);
   mov(result, true);
 
-  // That's it
+  // That's it.
   bind(DONE);
-
-  BLOCK_COMMENT("} string_equals");
+  BLOCK_COMMENT(is_string ? "} string_equals" : "} array_equals");
 }
 
-
-void MacroAssembler::byte_arrays_equals(Register ary1, Register ary2,
-                                        Register result, Register tmp1)
-{
-  Register cnt1 = rscratch1;
-  Register cnt2 = rscratch2;
-  Register tmp2 = rscratch2;
-
-  Label SAME, DIFFER, NEXT, TAIL07, TAIL03, TAIL01;
-
-  int length_offset  = arrayOopDesc::length_offset_in_bytes();
-  int base_offset    = arrayOopDesc::base_offset_in_bytes(T_BYTE);
-
-  BLOCK_COMMENT("byte_arrays_equals  {");
-
-    // different until proven equal
-    mov(result, false);
-
-    // same array?
-    cmp(ary1, ary2);
-    br(Assembler::EQ, SAME);
-
-    // ne if either null
-    cbz(ary1, DIFFER);
-    cbz(ary2, DIFFER);
-
-    // lengths ne?
-    ldrw(cnt1, Address(ary1, length_offset));
-    ldrw(cnt2, Address(ary2, length_offset));
-    cmp(cnt1, cnt2);
-    br(Assembler::NE, DIFFER);
-
-    lea(ary1, Address(ary1, base_offset));
-    lea(ary2, Address(ary2, base_offset));
-
-    subs(cnt1, cnt1, 8);
-    br(LT, TAIL07);
-
-  BIND(NEXT);
-    ldr(tmp1, Address(post(ary1, 8)));
-    ldr(tmp2, Address(post(ary2, 8)));
-    subs(cnt1, cnt1, 8);
-    eor(tmp1, tmp1, tmp2);
-    cbnz(tmp1, DIFFER);
-    br(GE, NEXT);
-
-  BIND(TAIL07);  // 0-7 bytes left, cnt1 = #bytes left - 4
-    tst(cnt1, 0b100);
-    br(EQ, TAIL03);
-    ldrw(tmp1, Address(post(ary1, 4)));
-    ldrw(tmp2, Address(post(ary2, 4)));
-    cmp(tmp1, tmp2);
-    br(NE, DIFFER);
-
-  BIND(TAIL03);  // 0-3 bytes left, cnt1 = #bytes left - 4
-    tst(cnt1, 0b10);
-    br(EQ, TAIL01);
-    ldrh(tmp1, Address(post(ary1, 2)));
-    ldrh(tmp2, Address(post(ary2, 2)));
-    cmp(tmp1, tmp2);
-    br(NE, DIFFER);
-  BIND(TAIL01);  // 0-1 byte left
-    tst(cnt1, 0b01);
-    br(EQ, SAME);
-    ldrb(tmp1, ary1);
-    ldrb(tmp2, ary2);
-    cmp(tmp1, tmp2);
-    br(NE, DIFFER);
-
-  BIND(SAME);
-    mov(result, true);
-  BIND(DIFFER); // result already set
-
-  BLOCK_COMMENT("} byte_arrays_equals");
-}
-
-// Compare char[] arrays aligned to 4 bytes
-void MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
-                                        Register result, Register tmp1)
-{
-  Register cnt1 = rscratch1;
-  Register cnt2 = rscratch2;
-  Register tmp2 = rscratch2;
-
-  Label SAME, DIFFER, NEXT, TAIL03, TAIL01;
-
-  int length_offset  = arrayOopDesc::length_offset_in_bytes();
-  int base_offset    = arrayOopDesc::base_offset_in_bytes(T_CHAR);
-
-  BLOCK_COMMENT("char_arrays_equals  {");
-
-    // different until proven equal
-    mov(result, false);
-
-    // same array?
-    cmp(ary1, ary2);
-    br(Assembler::EQ, SAME);
-
-    // ne if either null
-    cbz(ary1, DIFFER);
-    cbz(ary2, DIFFER);
-
-    // lengths ne?
-    ldrw(cnt1, Address(ary1, length_offset));
-    ldrw(cnt2, Address(ary2, length_offset));
-    cmp(cnt1, cnt2);
-    br(Assembler::NE, DIFFER);
-
-    lea(ary1, Address(ary1, base_offset));
-    lea(ary2, Address(ary2, base_offset));
-
-    subs(cnt1, cnt1, 4);
-    br(LT, TAIL03);
-
-  BIND(NEXT);
-    ldr(tmp1, Address(post(ary1, 8)));
-    ldr(tmp2, Address(post(ary2, 8)));
-    subs(cnt1, cnt1, 4);
-    eor(tmp1, tmp1, tmp2);
-    cbnz(tmp1, DIFFER);
-    br(GE, NEXT);
-
-  BIND(TAIL03);  // 0-3 chars left, cnt1 = #chars left - 4
-    tst(cnt1, 0b10);
-    br(EQ, TAIL01);
-    ldrw(tmp1, Address(post(ary1, 4)));
-    ldrw(tmp2, Address(post(ary2, 4)));
-    cmp(tmp1, tmp2);
-    br(NE, DIFFER);
-  BIND(TAIL01);  // 0-1 chars left
-    tst(cnt1, 0b01);
-    br(EQ, SAME);
-    ldrh(tmp1, ary1);
-    ldrh(tmp2, ary2);
-    cmp(tmp1, tmp2);
-    br(NE, DIFFER);
-
-  BIND(SAME);
-    mov(result, true);
-  BIND(DIFFER); // result already set
-
-  BLOCK_COMMENT("} char_arrays_equals");
-}
 
 // encode char[] to byte[] in ISO_8859_1
 void MacroAssembler::encode_iso_array(Register src, Register dst,

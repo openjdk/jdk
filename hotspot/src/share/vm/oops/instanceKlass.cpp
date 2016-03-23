@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1879,7 +1879,7 @@ inline DependencyContext InstanceKlass::dependencies() {
   return dep_context;
 }
 
-int InstanceKlass::mark_dependent_nmethods(DepChange& changes) {
+int InstanceKlass::mark_dependent_nmethods(KlassDepChange& changes) {
   return dependencies().mark_dependent_nmethods(changes);
 }
 
@@ -1972,8 +1972,9 @@ static void restore_unshareable_in_class(Klass* k, TRAPS) {
 }
 
 void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
-  Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
   instanceKlassHandle ik(THREAD, this);
+  ik->set_package(loader_data, CHECK);
+  Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
 
   Array<Method*>* methods = ik->methods();
   int num_methods = methods->length();
@@ -2178,26 +2179,135 @@ const char* InstanceKlass::signature_name() const {
   return dest;
 }
 
-// different verisons of is_same_class_package
-bool InstanceKlass::is_same_class_package(const Klass* class2) const {
-  const Klass* const class1 = (const Klass* const)this;
-  oop classloader1 = InstanceKlass::cast(class1)->class_loader();
-  const Symbol* const classname1 = class1->name();
+const jbyte* InstanceKlass::package_from_name(const Symbol* name, int& length) {
+  ResourceMark rm;
+  length = 0;
+  if (name == NULL) {
+    return NULL;
+  } else {
+    const jbyte* base_name = name->base();
+    const jbyte* last_slash = UTF8::strrchr(base_name, name->utf8_length(), '/');
 
+    if (last_slash == NULL) {
+      // No package name
+      return NULL;
+    } else {
+      // Skip over '['s
+      if (*base_name == '[') {
+        do {
+          base_name++;
+        } while (*base_name == '[');
+        if (*base_name != 'L') {
+          // Fully qualified class names should not contain a 'L'.
+          // Set length to -1 to indicate that the package name
+          // could not be obtained due to an error condition.
+          // In this situtation, is_same_class_package returns false.
+          length = -1;
+          return NULL;
+        }
+      }
+
+      // Found the package name, look it up in the symbol table.
+      length = last_slash - base_name;
+      assert(length > 0, "Bad length for package name");
+      return base_name;
+    }
+  }
+}
+
+ModuleEntry* InstanceKlass::module() const {
+  if (!in_unnamed_package()) {
+    return _package_entry->module();
+  }
+  const Klass* host = host_klass();
+  if (host == NULL) {
+    return class_loader_data()->modules()->unnamed_module();
+  }
+  return host->class_loader_data()->modules()->unnamed_module();
+}
+
+void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
+  int length = 0;
+  const jbyte* base_name = package_from_name(name(), length);
+
+  if (base_name != NULL && loader_data != NULL) {
+    TempNewSymbol pkg_name = SymbolTable::new_symbol((const char*)base_name, length, CHECK);
+
+    // Find in class loader's package entry table.
+    _package_entry = loader_data->packages()->lookup_only(pkg_name);
+
+    // If the package name is not found in the loader's package
+    // entry table, it is an indication that the package has not
+    // been defined. Consider it defined within the unnamed module.
+    if (_package_entry == NULL) {
+      ResourceMark rm;
+
+      if (!ModuleEntryTable::javabase_defined()) {
+        // Before java.base is defined during bootstrapping, define all packages in
+        // the java.base module.  If a non-java.base package is erroneously placed
+        // in the java.base module it will be caught later when java.base
+        // is defined by ModuleEntryTable::verify_javabase_packages check.
+        assert(ModuleEntryTable::javabase_module() != NULL, "java.base module is NULL");
+        _package_entry = loader_data->packages()->lookup(pkg_name, ModuleEntryTable::javabase_module());
+      } else {
+        assert(loader_data->modules()->unnamed_module() != NULL, "unnamed module is NULL");
+        _package_entry = loader_data->packages()->lookup(pkg_name,
+                                                         loader_data->modules()->unnamed_module());
+      }
+
+      // A package should have been successfully created
+      assert(_package_entry != NULL, "Package entry for class %s not found, loader %s",
+             name()->as_C_string(), loader_data->loader_name());
+    }
+
+    if (log_is_enabled(Debug, modules)) {
+      ResourceMark rm;
+      ModuleEntry* m = _package_entry->module();
+      log_trace(modules)("Setting package: class: %s, package: %s, loader: %s, module: %s",
+                         external_name(),
+                         pkg_name->as_C_string(),
+                         loader_data->loader_name(),
+                         (m->is_named() ? m->name()->as_C_string() : UNNAMED_MODULE));
+    }
+  } else {
+    ResourceMark rm;
+    log_trace(modules)("Setting package: class: %s, package: unnamed, loader: %s, module: %s",
+                       external_name(),
+                       (loader_data != NULL) ? loader_data->loader_name() : "NULL",
+                       UNNAMED_MODULE);
+  }
+}
+
+
+// different versions of is_same_class_package
+
+bool InstanceKlass::is_same_class_package(const Klass* class2) const {
+  oop classloader1 = this->class_loader();
+  PackageEntry* classpkg1 = this->package();
   if (class2->is_objArray_klass()) {
     class2 = ObjArrayKlass::cast(class2)->bottom_klass();
   }
+
   oop classloader2;
+  PackageEntry* classpkg2;
   if (class2->is_instance_klass()) {
-    classloader2 = InstanceKlass::cast(class2)->class_loader();
+    classloader2 = class2->class_loader();
+    classpkg2 = InstanceKlass::cast(class2)->package();
   } else {
     assert(class2->is_typeArray_klass(), "should be type array");
     classloader2 = NULL;
+    classpkg2 = NULL;
   }
-  const Symbol* classname2 = class2->name();
 
-  return InstanceKlass::is_same_class_package(classloader1, classname1,
-                                              classloader2, classname2);
+  // Same package is determined by comparing class loader
+  // and package entries. Both must be the same. This rule
+  // applies even to classes that are defined in the unnamed
+  // package, they still must have the same class loader.
+  if ((classloader1 == classloader2) && (classpkg1 == classpkg2)) {
+    return true;
+  }
+
+  return false;
 }
 
 bool InstanceKlass::is_same_class_package(oop other_class_loader,
@@ -2225,43 +2335,24 @@ bool InstanceKlass::is_same_class_package(oop class_loader1, const Symbol* class
     // The Symbol*'s are in UTF8 encoding. Since we only need to check explicitly
     // for ASCII characters ('/', 'L', '['), we can keep them in UTF8 encoding.
     // Otherwise, we just compare jbyte values between the strings.
-    const jbyte *name1 = class_name1->base();
-    const jbyte *name2 = class_name2->base();
+    int length1 = 0;
+    int length2 = 0;
+    const jbyte *name1 = package_from_name(class_name1, length1);
+    const jbyte *name2 = package_from_name(class_name2, length2);
 
-    const jbyte *last_slash1 = UTF8::strrchr(name1, class_name1->utf8_length(), '/');
-    const jbyte *last_slash2 = UTF8::strrchr(name2, class_name2->utf8_length(), '/');
+    if ((length1 < 0) || (length2 < 0)) {
+      // error occurred parsing package name.
+      return false;
+    }
 
-    if ((last_slash1 == NULL) || (last_slash2 == NULL)) {
+    if ((name1 == NULL) || (name2 == NULL)) {
       // One of the two doesn't have a package.  Only return true
       // if the other one also doesn't have a package.
-      return last_slash1 == last_slash2;
-    } else {
-      // Skip over '['s
-      if (*name1 == '[') {
-        do {
-          name1++;
-        } while (*name1 == '[');
-        if (*name1 != 'L') {
-          // Something is terribly wrong.  Shouldn't be here.
-          return false;
-        }
-      }
-      if (*name2 == '[') {
-        do {
-          name2++;
-        } while (*name2 == '[');
-        if (*name2 != 'L') {
-          // Something is terribly wrong.  Shouldn't be here.
-          return false;
-        }
-      }
-
-      // Check that package part is identical
-      int length1 = last_slash1 - name1;
-      int length2 = last_slash2 - name2;
-
-      return UTF8::equal(name1, length1, name2, length2);
+      return name1 == name2;
     }
+
+    // Check that package part is identical
+    return UTF8::equal(name1, length1, name2, length2);
   }
 }
 
@@ -2300,7 +2391,7 @@ bool InstanceKlass::is_same_package_member_impl(const InstanceKlass* class1,
   if (!class2->is_instance_klass())  return false;
 
   // must be in same package before we try anything else
-  if (!class1->is_same_class_package(class2->class_loader(), class2->name()))
+  if (!class1->is_same_class_package(class2))
     return false;
 
   // As long as there is an outer1.getEnclosingClass,
@@ -2908,6 +2999,7 @@ const char* InstanceKlass::internal_name() const {
 
 void InstanceKlass::print_loading_log(LogLevel::type type,
                                       ClassLoaderData* loader_data,
+                                      const char* module_name,
                                       const ClassFileStream* cfs) const {
   ResourceMark rm;
   outputStream* log;
@@ -2928,7 +3020,11 @@ void InstanceKlass::print_loading_log(LogLevel::type type,
   // Source
   if (cfs != NULL) {
     if (cfs->source() != NULL) {
-      log->print(" source: %s", cfs->source());
+      if (module_name != NULL) {
+        log->print(" source: jrt:/%s", module_name);
+      } else {
+        log->print(" source: %s", cfs->source());
+      }
     } else if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
       Thread* THREAD = Thread::current();
       Klass* caller =

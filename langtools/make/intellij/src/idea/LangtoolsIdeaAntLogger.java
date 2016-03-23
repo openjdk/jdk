@@ -124,8 +124,8 @@ public final class LangtoolsIdeaAntLogger extends DefaultLogger {
      * This enum is used to represent the list of tasks we need to keep track of during logging.
      */
     enum Task {
-        /** javac task - invoked during compilation */
-        JAVAC("javac", MessageKind.JAVAC_ERROR, MessageKind.JAVAC_WARNING, MessageKind.JAVAC_NOTE,
+        /** exec task - invoked during compilation */
+        JAVAC("exec", MessageKind.JAVAC_ERROR, MessageKind.JAVAC_WARNING, MessageKind.JAVAC_NOTE,
                        MessageKind.JAVAC_NESTED_DIAG, MessageKind.JAVAC_CRASH),
         /** jtreg task - invoked during test execution */
         JTREG("jtreg", MessageKind.JTREG_TEST_PASSED, MessageKind.JTREG_TEST_FAILED, MessageKind.JTREG_TEST_ERROR, MessageKind.JTREG_TEST_REPORT),

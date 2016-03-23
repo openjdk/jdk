@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -359,7 +359,7 @@ void VMThread::evaluate_operation(VM_Operation* op) {
       // Only write caller thread information for non-concurrent vm operations.
       // For concurrent vm operations, the thread id is set to 0 indicating thread is unknown.
       // This is because the caller thread could have exited already.
-      event.set_caller(is_concurrent ? 0 : op->calling_thread()->osthread()->thread_id());
+      event.set_caller(is_concurrent ? 0 : THREAD_TRACE_ID(op->calling_thread()));
       event.commit();
     }
 

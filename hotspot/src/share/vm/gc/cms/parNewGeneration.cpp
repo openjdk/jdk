@@ -615,7 +615,7 @@ ParNewGeneration::ParNewGeneration(ReservedSpace rs, size_t initial_byte_size)
   : DefNewGeneration(rs, initial_byte_size, "PCopy"),
   _overflow_list(NULL),
   _is_alive_closure(this),
-  _plab_stats(YoungPLABSize, PLABWeight)
+  _plab_stats("Young", YoungPLABSize, PLABWeight)
 {
   NOT_PRODUCT(_overflow_counter = ParGCWorkQueueOverflowInterval;)
   NOT_PRODUCT(_num_par_pushes = 0;)
@@ -1008,9 +1008,7 @@ void ParNewGeneration::collect(bool   full,
   from()->set_concurrent_iteration_safe_limit(from()->top());
   to()->set_concurrent_iteration_safe_limit(to()->top());
 
-  if (ResizePLAB) {
-    plab_stats()->adjust_desired_plab_sz();
-  }
+  plab_stats()->adjust_desired_plab_sz();
 
   TASKQUEUE_STATS_ONLY(thread_state_set.print_termination_stats());
   TASKQUEUE_STATS_ONLY(thread_state_set.print_taskqueue_stats());

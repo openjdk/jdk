@@ -356,11 +356,10 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             Content overriddenTypeLink =
                     writer.getLink(new LinkInfoImpl(writer.configuration, context, overriddenType));
             Content codeOverridenTypeLink = HtmlTree.CODE(overriddenTypeLink);
-            String name = method.getSimpleName().toString();
             Content methlink = writer.getLink(
                     new LinkInfoImpl(writer.configuration, LinkInfoImpl.Kind.MEMBER,
                     holder)
-                    .where(writer.getName(writer.getAnchor(method))).label(name));
+                    .where(writer.getName(writer.getAnchor(method))).label(method.getSimpleName()));
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
             dd.addContent(writer.getSpace());
@@ -395,7 +394,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             dl.addContent(dt);
             Content methlink = writer.getDocLink(
                     LinkInfoImpl.Kind.MEMBER, implementedMeth,
-                    implementedMeth.getSimpleName().toString(), false);
+                    implementedMeth.getSimpleName(), false);
             Content codeMethLink = HtmlTree.CODE(methlink);
             Content dd = HtmlTree.DD(codeMethLink);
             dd.addContent(writer.getSpace());

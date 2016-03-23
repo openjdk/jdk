@@ -67,6 +67,11 @@ public class HtmlWriter {
     protected boolean memberDetailsListPrinted;
 
     /**
+     * Header for table displaying modules and description..
+     */
+    protected final List<String> moduleTableHeader;
+
+    /**
      * Header for tables displaying packages and description..
      */
     protected final List<String> packageTableHeader;
@@ -86,6 +91,8 @@ public class HtmlWriter {
     public final Content defaultPackageLabel;
 
     public final Content packageLabel;
+
+    public final Content moduleLabel;
 
     public final Content useLabel;
 
@@ -117,6 +124,8 @@ public class HtmlWriter {
 
     public final Content allpackagesLabel;
 
+    public final Content allmodulesLabel;
+
     public final Content indexLabel;
 
     public final Content helpLabel;
@@ -129,7 +138,13 @@ public class HtmlWriter {
 
     public final Content nextpackageLabel;
 
+    public final Content prevmoduleLabel;
+
+    public final Content nextmoduleLabel;
+
     public final Content packagesLabel;
+
+    public final Content modulesLabel;
 
     public final Content methodDetailsLabel;
 
@@ -171,6 +186,9 @@ public class HtmlWriter {
         writer = DocFile.createFileForOutput(configuration, path).openWriter();
         this.configuration = configuration;
         this.memberDetailsListPrinted = false;
+        moduleTableHeader = Arrays.asList(
+            configuration.getText("doclet.Module"),
+            configuration.getText("doclet.Description"));
         packageTableHeader = new ArrayList<>();
         packageTableHeader.add(configuration.getText("doclet.Package"));
         packageTableHeader.add(configuration.getText("doclet.Description"));
@@ -182,6 +200,7 @@ public class HtmlWriter {
         overviewLabel = getResource("doclet.Overview");
         defaultPackageLabel = new StringContent(DocletConstants.DEFAULT_PACKAGE_NAME);
         packageLabel = getResource("doclet.Package");
+        moduleLabel = getResource("doclet.Module");
         useLabel = getResource("doclet.navClassUse");
         prevLabel = getResource("doclet.Prev");
         nextLabel = getResource("doclet.Next");
@@ -197,13 +216,17 @@ public class HtmlWriter {
         deprecatedPhrase = getResource("doclet.Deprecated");
         allclassesLabel = getNonBreakResource("doclet.All_Classes");
         allpackagesLabel = getNonBreakResource("doclet.All_Packages");
+        allmodulesLabel = getNonBreakResource("doclet.All_Modules");
         indexLabel = getResource("doclet.Index");
         helpLabel = getResource("doclet.Help");
         seeLabel = getResource("doclet.See");
         descriptionLabel = getResource("doclet.Description");
         prevpackageLabel = getNonBreakResource("doclet.Prev_Package");
         nextpackageLabel = getNonBreakResource("doclet.Next_Package");
+        prevmoduleLabel = getNonBreakResource("doclet.Prev_Module");
+        nextmoduleLabel = getNonBreakResource("doclet.Next_Module");
         packagesLabel = getResource("doclet.Packages");
+        modulesLabel = getResource("doclet.Modules");
         methodDetailsLabel = getResource("doclet.Method_Detail");
         annotationTypeDetailsLabel = getResource("doclet.Annotation_Type_Member_Detail");
         fieldDetailsLabel = getResource("doclet.Field_Detail");
@@ -475,7 +498,7 @@ public class HtmlWriter {
         addStyles(HtmlStyle.rowColor, vars);
         addStyles(HtmlStyle.tableTab, vars);
         addStyles(HtmlStyle.activeTableTab, vars);
-        script.addContent(new RawHtml(vars.toString()));
+        script.addContent(new RawHtml(vars));
     }
 
     /**

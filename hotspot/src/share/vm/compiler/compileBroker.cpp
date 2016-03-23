@@ -469,7 +469,6 @@ CompileQueue* CompileBroker::compile_queue(int comp_level) {
 void CompileBroker::print_compile_queues(outputStream* st) {
   st->print_cr("Current compiles: ");
   MutexLocker locker(MethodCompileQueue_lock);
-  MutexLocker locker2(Threads_lock);
 
   char buf[2000];
   int buflen = sizeof(buf);
@@ -2152,18 +2151,33 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
 
     if (CITime) {
       int bytes_compiled = method->code_size() + task->num_inlined_bytecodes();
-      JVMCI_ONLY(CompilerStatistics* stats = compiler(task->comp_level())->stats();)
       if (is_osr) {
         _t_osr_compilation.add(time);
         _sum_osr_bytes_compiled += bytes_compiled;
-        JVMCI_ONLY(stats->_osr.update(time, bytes_compiled);)
       } else {
         _t_standard_compilation.add(time);
         _sum_standard_bytes_compiled += method->code_size() + task->num_inlined_bytecodes();
-        JVMCI_ONLY(stats->_standard.update(time, bytes_compiled);)
       }
-      JVMCI_ONLY(stats->_nmethods_size += code->total_size();)
-      JVMCI_ONLY(stats->_nmethods_code_size += code->insts_size();)
+
+#if INCLUDE_JVMCI
+      AbstractCompiler* comp = compiler(task->comp_level());
+      if (comp) {
+        CompilerStatistics* stats = comp->stats();
+        if (stats) {
+          if (is_osr) {
+            stats->_osr.update(time, bytes_compiled);
+          } else {
+            stats->_standard.update(time, bytes_compiled);
+          }
+          stats->_nmethods_size += code->total_size();
+          stats->_nmethods_code_size += code->insts_size();
+        } else { // if (!stats)
+          assert(false, "Compiler statistics object must exist");
+        }
+      } else { // if (!comp)
+        assert(false, "Compiler object must exist");
+      }
+#endif // INCLUDE_JVMCI
     }
 
     if (UsePerfData) {
@@ -2222,11 +2236,15 @@ const char* CompileBroker::compiler_name(int comp_level) {
 #if INCLUDE_JVMCI
 void CompileBroker::print_times(AbstractCompiler* comp) {
   CompilerStatistics* stats = comp->stats();
-  tty->print_cr("  %s {speed: %d bytes/s; standard: %6.3f s, %d bytes, %d methods; osr: %6.3f s, %d bytes, %d methods; nmethods_size: %d bytes; nmethods_code_size: %d bytes}",
+  if (stats) {
+    tty->print_cr("  %s {speed: %d bytes/s; standard: %6.3f s, %d bytes, %d methods; osr: %6.3f s, %d bytes, %d methods; nmethods_size: %d bytes; nmethods_code_size: %d bytes}",
                 comp->name(), stats->bytes_per_second(),
                 stats->_standard._time.seconds(), stats->_standard._bytes, stats->_standard._count,
                 stats->_osr._time.seconds(), stats->_osr._bytes, stats->_osr._count,
                 stats->_nmethods_size, stats->_nmethods_code_size);
+  } else { // if (!stats)
+    assert(false, "Compiler statistics object must exist");
+  }
   comp->print_timers();
 }
 #endif // INCLUDE_JVMCI
@@ -2260,17 +2278,21 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
       }
       CompilerStatistics* stats = comp->stats();
 
-      standard_compilation.add(stats->_standard._time);
-      osr_compilation.add(stats->_osr._time);
+      if (stats) {
+        standard_compilation.add(stats->_standard._time);
+        osr_compilation.add(stats->_osr._time);
 
-      standard_bytes_compiled += stats->_standard._bytes;
-      osr_bytes_compiled += stats->_osr._bytes;
+        standard_bytes_compiled += stats->_standard._bytes;
+        osr_bytes_compiled += stats->_osr._bytes;
 
-      standard_compile_count += stats->_standard._count;
-      osr_compile_count += stats->_osr._count;
+        standard_compile_count += stats->_standard._count;
+        osr_compile_count += stats->_osr._count;
 
-      nmethods_size += stats->_nmethods_size;
-      nmethods_code_size += stats->_nmethods_code_size;
+        nmethods_size += stats->_nmethods_size;
+        nmethods_code_size += stats->_nmethods_code_size;
+      } else { // if (!stats)
+        assert(false, "Compiler statistics object must exist");
+      }
 
       if (per_compiler) {
         print_times(comp);

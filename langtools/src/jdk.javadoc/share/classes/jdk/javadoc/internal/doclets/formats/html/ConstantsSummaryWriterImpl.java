@@ -140,7 +140,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
             packageNameContent.addContent(".*");
             link = getHyperLink(DocLink.fragment(parsedPackageName),
                     packageNameContent, "", "");
-            PackageElement abbrevPkg = utils.elementUtils.getPackageElement(parsedPackageName);
+            PackageElement abbrevPkg = configuration.workArounds.getAbbreviatedPackageElement(pkg);
             printedPackageHeaders.add(abbrevPkg);
         }
         contentListTree.addContent(HtmlTree.LI(link));
@@ -244,7 +244,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         PackageElement enclosingPackage  = utils.containingPackage(typeElement);
         if (!enclosingPackage.isUnnamed()) {
             Content cb = new ContentBuilder();
-            cb.addContent(enclosingPackage.getQualifiedName().toString());
+            cb.addContent(enclosingPackage.getQualifiedName());
             cb.addContent(".");
             cb.addContent(classlink);
             return getClassName(cb);
@@ -332,7 +332,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
      */
     private Content getNameColumn(VariableElement member) {
         Content nameContent = getDocLink(LinkInfoImpl.Kind.CONSTANT_SUMMARY,
-                member, member.getSimpleName().toString(), false);
+                member, member.getSimpleName(), false);
         Content code = HtmlTree.CODE(nameContent);
         return HtmlTree.TD(code);
     }

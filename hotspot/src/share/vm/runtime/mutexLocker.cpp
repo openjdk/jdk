@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 
 Mutex*   Patching_lock                = NULL;
 Monitor* SystemDictionary_lock        = NULL;
-Mutex*   PackageTable_lock            = NULL;
+Mutex*   Module_lock                  = NULL;
 Mutex*   CompiledIC_lock              = NULL;
 Mutex*   InlineCacheBuffer_lock       = NULL;
 Mutex*   VMStatistic_lock             = NULL;
@@ -50,7 +50,6 @@ Mutex*   JmethodIdCreation_lock       = NULL;
 Mutex*   JfieldIdCreation_lock        = NULL;
 Monitor* JNICritical_lock             = NULL;
 Mutex*   JvmtiThreadState_lock        = NULL;
-Monitor* JvmtiPendingEvent_lock       = NULL;
 Monitor* Heap_lock                    = NULL;
 Mutex*   ExpandHeap_lock              = NULL;
 Mutex*   AdapterHandlerLibrary_lock   = NULL;
@@ -73,8 +72,6 @@ Monitor* CGC_lock                     = NULL;
 Monitor* STS_lock                     = NULL;
 Monitor* SLT_lock                     = NULL;
 Monitor* FullGCCount_lock             = NULL;
-Monitor* CMark_lock                   = NULL;
-Mutex*   CMRegionStack_lock           = NULL;
 Mutex*   SATB_Q_FL_lock               = NULL;
 Monitor* SATB_Q_CBL_mon               = NULL;
 Mutex*   Shared_SATB_Q_lock           = NULL;
@@ -94,11 +91,8 @@ Mutex*   MultiArray_lock              = NULL;
 Monitor* Terminator_lock              = NULL;
 Monitor* BeforeExit_lock              = NULL;
 Monitor* Notify_lock                  = NULL;
-Monitor* Interrupt_lock               = NULL;
-Monitor* ProfileVM_lock               = NULL;
 Mutex*   ProfilePrint_lock            = NULL;
 Mutex*   ExceptionCache_lock          = NULL;
-Monitor* ObjAllocPost_lock            = NULL;
 Mutex*   OsrList_lock                 = NULL;
 
 #ifndef PRODUCT
@@ -184,8 +178,6 @@ void mutex_init() {
   }
   if (UseG1GC) {
 
-    def(CMark_lock                 , Monitor, nonleaf,     true,  Monitor::_safepoint_check_never);      // coordinate concurrent mark thread
-    def(CMRegionStack_lock         , Mutex,   leaf,        true,  Monitor::_safepoint_check_never);
     def(SATB_Q_FL_lock             , Mutex  , special,     true,  Monitor::_safepoint_check_never);
     def(SATB_Q_CBL_mon             , Monitor, nonleaf,     true,  Monitor::_safepoint_check_never);
     def(Shared_SATB_Q_lock         , Mutex,   nonleaf,     true,  Monitor::_safepoint_check_never);
@@ -206,17 +198,15 @@ void mutex_init() {
   def(ParGCRareEvent_lock          , Mutex  , leaf     ,   true,  Monitor::_safepoint_check_sometimes);
   def(DerivedPointerTableGC_lock   , Mutex,   leaf,        true,  Monitor::_safepoint_check_never);
   def(CodeCache_lock               , Mutex  , special,     true,  Monitor::_safepoint_check_never);
-  def(Interrupt_lock               , Monitor, special,     true,  Monitor::_safepoint_check_never);      // used for interrupt processing
   def(RawMonitor_lock              , Mutex,   special,     true,  Monitor::_safepoint_check_never);
   def(OopMapCacheAlloc_lock        , Mutex,   leaf,        true,  Monitor::_safepoint_check_always);     // used for oop_map_cache allocation.
 
   def(Patching_lock                , Mutex  , special,     true,  Monitor::_safepoint_check_never);      // used for safepointing and code patching.
-  def(ObjAllocPost_lock            , Monitor, special,     false, Monitor::_safepoint_check_never);
   def(Service_lock                 , Monitor, special,     true,  Monitor::_safepoint_check_never);      // used for service thread operations
   def(JmethodIdCreation_lock       , Mutex  , leaf,        true,  Monitor::_safepoint_check_always);     // used for creating jmethodIDs.
 
   def(SystemDictionary_lock        , Monitor, leaf,        true,  Monitor::_safepoint_check_always);     // lookups done by VM thread
-  def(PackageTable_lock            , Mutex  , leaf,        false, Monitor::_safepoint_check_always);
+  def(Module_lock                  , Mutex  , leaf+2,      true,  Monitor::_safepoint_check_always);
   def(InlineCacheBuffer_lock       , Mutex  , leaf,        true,  Monitor::_safepoint_check_always);
   def(VMStatistic_lock             , Mutex  , leaf,        false, Monitor::_safepoint_check_always);
   def(ExpandHeap_lock              , Mutex  , leaf,        true,  Monitor::_safepoint_check_always);     // Used during compilation by VM thread
@@ -267,7 +257,6 @@ void mutex_init() {
   def(MultiArray_lock              , Mutex  , nonleaf+2,   false, Monitor::_safepoint_check_always);     // locks SymbolTable_lock
 
   def(JvmtiThreadState_lock        , Mutex  , nonleaf+2,   false, Monitor::_safepoint_check_always);     // Used by JvmtiThreadState/JvmtiEventController
-  def(JvmtiPendingEvent_lock       , Monitor, nonleaf,     false, Monitor::_safepoint_check_never);      // Used by JvmtiCodeBlobEvents
   def(Management_lock              , Mutex  , nonleaf+2,   false, Monitor::_safepoint_check_always);     // used for JVM management
 
   def(Compile_lock                 , Mutex  , nonleaf+3,   true,  Monitor::_safepoint_check_sometimes);
@@ -277,7 +266,6 @@ void mutex_init() {
   def(MethodCompileQueue_lock      , Monitor, nonleaf+4,   true,  Monitor::_safepoint_check_always);
   def(Debug2_lock                  , Mutex  , nonleaf+4,   true,  Monitor::_safepoint_check_never);
   def(Debug3_lock                  , Mutex  , nonleaf+4,   true,  Monitor::_safepoint_check_never);
-  def(ProfileVM_lock               , Monitor, special,     false, Monitor::_safepoint_check_never);      // used for profiling of the VMThread
   def(CompileThread_lock           , Monitor, nonleaf+5,   false, Monitor::_safepoint_check_always);
   def(PeriodicTask_lock            , Monitor, nonleaf+5,   true,  Monitor::_safepoint_check_sometimes);
   if (WhiteBoxAPI) {

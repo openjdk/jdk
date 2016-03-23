@@ -31,7 +31,6 @@
 
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.ClientCodeWrapper.DiagnosticSourceUnwrapper;
-import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.util.JCDiagnostic;
 
 import java.io.File;

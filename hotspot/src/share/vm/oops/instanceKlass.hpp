@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,11 @@
 #ifndef SHARE_VM_OOPS_INSTANCEKLASS_HPP
 #define SHARE_VM_OOPS_INSTANCEKLASS_HPP
 
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/packageEntry.hpp"
 #include "gc/shared/specialized_oop_closures.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "logging/logLevel.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
@@ -56,7 +59,7 @@
 // forward declaration for class -- see below for definition
 class BreakpointInfo;
 class ClassFileParser;
-class DepChange;
+class KlassDepChange;
 class DependencyContext;
 class fieldDescriptor;
 class jniIdMapBase;
@@ -140,6 +143,8 @@ class InstanceKlass: public Klass {
  protected:
   // Annotations for this class
   Annotations*    _annotations;
+  // Package this class is defined in
+  PackageEntry*   _package_entry;
   // Array classes holding elements of this class.
   Klass*          _array_klasses;
   // Constant pool for this class.
@@ -199,16 +204,22 @@ class InstanceKlass: public Klass {
 
   // Start after _misc_kind field.
   enum {
-    _misc_rewritten                = 1 << 2, // methods rewritten.
-    _misc_has_nonstatic_fields     = 1 << 3, // for sizing with UseCompressedOops
-    _misc_should_verify_class      = 1 << 4, // allow caching of preverification
-    _misc_is_anonymous             = 1 << 5, // has embedded _host_klass field
-    _misc_is_contended             = 1 << 6, // marked with contended annotation
-    _misc_has_default_methods      = 1 << 7, // class/superclass/implemented interfaces has default methods
-    _misc_declares_default_methods = 1 << 8, // directly declares default methods (any access)
-    _misc_has_been_redefined       = 1 << 9, // class has been redefined
-    _misc_is_scratch_class         = 1 << 10 // class is the redefined scratch class
+    _misc_rewritten                = 1 << 2,  // methods rewritten.
+    _misc_has_nonstatic_fields     = 1 << 3,  // for sizing with UseCompressedOops
+    _misc_should_verify_class      = 1 << 4,  // allow caching of preverification
+    _misc_is_anonymous             = 1 << 5,  // has embedded _host_klass field
+    _misc_is_contended             = 1 << 6,  // marked with contended annotation
+    _misc_has_default_methods      = 1 << 7,  // class/superclass/implemented interfaces has default methods
+    _misc_declares_default_methods = 1 << 8,  // directly declares default methods (any access)
+    _misc_has_been_redefined       = 1 << 9,  // class has been redefined
+    _misc_is_scratch_class         = 1 << 10, // class is the redefined scratch class
+    _misc_is_shared_boot_class     = 1 << 11, // defining class loader is boot class loader
+    _misc_is_shared_platform_class = 1 << 12, // defining class loader is platform class loader
+    _misc_is_shared_app_class      = 1 << 13  // defining class loader is app class loader
   };
+  u2 loader_type_bits() {
+    return _misc_is_shared_boot_class|_misc_is_shared_platform_class|_misc_is_shared_app_class;
+  }
   u2              _misc_flags;
   u2              _minor_version;        // minor version number of class file
   u2              _major_version;        // major version number of class file
@@ -290,6 +301,39 @@ class InstanceKlass: public Klass {
   friend class SystemDictionary;
 
  public:
+  u2 loader_type() {
+    return _misc_flags & loader_type_bits();
+  }
+
+  bool is_shared_boot_class() const {
+    return (_misc_flags & _misc_is_shared_boot_class) != 0;
+  }
+  bool is_shared_platform_class() const {
+    return (_misc_flags & _misc_is_shared_platform_class) != 0;
+  }
+  bool is_shared_app_class() const {
+    return (_misc_flags & _misc_is_shared_app_class) != 0;
+  }
+
+  void set_class_loader_type(jshort loader_type) {
+    assert(( _misc_flags & loader_type_bits()) == 0,
+           "Should only be called once for each class.");
+    switch (loader_type) {
+    case ClassLoader::BOOT_LOADER:
+      _misc_flags |= _misc_is_shared_boot_class;
+       break;
+    case ClassLoader::PLATFORM_LOADER:
+      _misc_flags |= _misc_is_shared_platform_class;
+      break;
+    case ClassLoader::APP_LOADER:
+      _misc_flags |= _misc_is_shared_app_class;
+      break;
+    default:
+      ShouldNotReachHere();
+      break;
+    }
+  }
+
   bool has_nonstatic_fields() const        {
     return (_misc_flags & _misc_has_nonstatic_fields) != 0;
   }
@@ -395,6 +439,11 @@ class InstanceKlass: public Klass {
   bool is_override(const methodHandle& super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS);
 
   // package
+  PackageEntry* package() const     { return _package_entry; }
+  ModuleEntry* module() const;
+  bool in_unnamed_package() const   { return (_package_entry == NULL); }
+  void set_package(PackageEntry* p) { _package_entry = p; }
+  void set_package(ClassLoaderData* loader_data, TRAPS);
   bool is_same_class_package(const Klass* class2) const;
   bool is_same_class_package(oop classloader2, const Symbol* classname2) const;
   static bool is_same_class_package(oop class_loader1,
@@ -821,7 +870,7 @@ public:
 
   // maintenance of deoptimization dependencies
   inline DependencyContext dependencies();
-  int  mark_dependent_nmethods(DepChange& changes);
+  int  mark_dependent_nmethods(KlassDepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
   void remove_dependent_nmethod(nmethod* nm, bool delete_immediately);
 
@@ -839,7 +888,7 @@ public:
 
   // support for stub routines
   static ByteSize init_state_offset()  { return in_ByteSize(offset_of(InstanceKlass, _init_state)); }
-  TRACE_DEFINE_OFFSET;
+  TRACE_DEFINE_KLASS_TRACE_ID_OFFSET;
   static ByteSize init_thread_offset() { return in_ByteSize(offset_of(InstanceKlass, _init_thread)); }
 
   // subclass/subinterface checks
@@ -1030,6 +1079,7 @@ public:
 
   // Naming
   const char* signature_name() const;
+  static const jbyte* package_from_name(const Symbol* name, int& length);
 
   // GC specific object visitors
   //
@@ -1247,7 +1297,8 @@ public:
   void oop_verify_on(oop obj, outputStream* st);
 
   // Logging
-  void print_loading_log(LogLevel::type type, ClassLoaderData* loader_data, const ClassFileStream* cfs) const;
+  void print_loading_log(LogLevel::type type, ClassLoaderData* loader_data,
+                         const char* module_name, const ClassFileStream* cfs) const;
 };
 
 // for adding methods

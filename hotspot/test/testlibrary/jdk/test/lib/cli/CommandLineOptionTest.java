@@ -101,6 +101,7 @@ public abstract class CommandLineOptionTest {
                     throws Throwable {
         List<String> finalOptions = new ArrayList<>();
         if (addTestVMOptions) {
+            Collections.addAll(finalOptions, ProcessTools.getVmInputArgs());
             Collections.addAll(finalOptions, Utils.getTestJavaOpts());
         }
         Collections.addAll(finalOptions, options);

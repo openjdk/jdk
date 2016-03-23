@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
-extern Mutex*   PackageTable_lock;               // a lock on the class loader package table
+extern Mutex*   Module_lock;                     // a lock on module and package related data structures
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
 extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the InlineCacheBuffer
 extern Mutex*   VMStatistic_lock;                // a lock used to guard statistics count increment
@@ -43,7 +43,6 @@ extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI metho
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
 extern Monitor* JNICritical_lock;                // a lock used while entering and exiting JNI critical regions, allows GC to sometimes get in
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
-extern Monitor* JvmtiPendingEvent_lock;          // a lock on the JVMTI pending events list
 extern Monitor* Heap_lock;                       // a lock on the heap
 extern Mutex*   ExpandHeap_lock;                 // a lock on expanding the heap
 extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandlerLibrary
@@ -68,8 +67,6 @@ extern Monitor* CGC_lock;                        // used for coordination betwee
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.
 extern Monitor* SLT_lock;                        // used in CMS GC for acquiring PLL
 extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
-extern Monitor* CMark_lock;                      // used for concurrent mark thread coordination
-extern Mutex*   CMRegionStack_lock;              // used for protecting accesses to the CM region stack
 extern Mutex*   SATB_Q_FL_lock;                  // Protects SATB Q
                                                  // buffer free list.
 extern Monitor* SATB_Q_CBL_mon;                  // Protects SATB Q
@@ -98,8 +95,6 @@ extern Mutex*   MultiArray_lock;                 // a lock used to guard allocat
 extern Monitor* Terminator_lock;                 // a lock used to guard termination of the vm
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
 extern Monitor* Notify_lock;                     // a lock used to synchronize the start-up of the vm
-extern Monitor* Interrupt_lock;                  // a lock used for condition variable mediated interrupt processing
-extern Monitor* ProfileVM_lock;                  // a lock used for profiling the VMThread
 extern Mutex*   ProfilePrint_lock;               // a lock used to serialize the printing of profiles
 extern Mutex*   ExceptionCache_lock;             // a lock used to synchronize exception cache updates
 extern Mutex*   OsrList_lock;                    // a lock used to serialize access to OSR queues

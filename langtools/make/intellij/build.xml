@@ -15,8 +15,7 @@
             <java classname="org.apache.tools.ant.Main" fork="true" spawn="true">
                 <arg value="-f"/>
                 <arg value="@{antfile}"/>
-                <arg value="-Dboot.java.home=${boot.java.home}"/>
-                <arg value="-Dtarget.java.home=${target.java.home}"/>
+                <arg value="-Dlangtools.jdk.home=${langtools.jdk.home}"/>
                 <arg value="-Djtreg.home=${jtreg.home}"/>
                 <arg value="-Djtreg.tests=${jtreg.tests}"/>
                 <arg value="-Djtreg.jpda.jvmargs=${jtreg.jpda.jvmargs}"/>
@@ -28,18 +27,13 @@
         </sequential>
     </macrodef>
 
-    <target name="crules" depends="build-all-tools,-def-jtreg">
-        <jtreg-tool name="all" tests="tools/all/RunCodingRules.java"/>
-    </target>
-
     <target name="post-make" depends="clean, build-all-tools"/>
 
-    <target name="jtreg-debug" depends="build-all-tools,-def-jtreg">
+    <target name="jtreg-debug" depends="build-all-tools, -def-jtreg">
         <exec-target target="jtreg-debug-internal"/>
     </target>
 
     <target name="jtreg-debug-internal" depends="-def-jtreg">
-        <jtreg-tool name="all" tests="${jtreg.tests}" jpda.jvmargs="${jtreg.jpda.jvmargs}"/>
+        <jtreg-tool name="all" tests="${jtreg.tests}" options="-conc:1" jpda.jvmargs="${jtreg.jpda.jvmargs}"/>
     </target>
 </project>
-
