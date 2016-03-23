@@ -139,7 +139,11 @@ public class SjavacClient implements Sjavac {
                 String content = typeAndContent[1];
 
                 try {
-                    Log.log(Log.Level.valueOf(type), "[server] " + content);
+                    if (Log.isDebugging()) {
+                        // Distinguish server generated output if debugging.
+                        content = "[sjavac-server] " + content;
+                    }
+                    Log.log(Log.Level.valueOf(type), content);
                     continue;
                 } catch (IllegalArgumentException e) {
                     // Parsing of 'type' as log level failed.
