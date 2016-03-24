@@ -58,6 +58,9 @@ import java.util.Hashtable;
   * A state factory must implement the {@code StateFactory} interface.
   * In addition, the factory class must be public and must have a
   * public constructor that accepts no parameters.
+  * Note that in cases where the factory is in a named module then it must be
+  * in a package which is exported by that module to the {@code java.naming}
+  * module.
   *<p>
   * The {@code getStateToBind()} method of a state factory may
   * be invoked multiple times, possibly using different parameters.

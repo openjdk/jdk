@@ -42,6 +42,8 @@ import java.util.ResourceBundle;
  * ResourceBundleControlProvider} implementations are loaded using {@link
  * java.util.ServiceLoader} at the {@code ResourceBundle} class loading time.
  *
+ * <p>All {@code ResourceBundleControlProvider}s are ignored in named modules.
+ *
  * @author Masayoshi Okutsu
  * @since 1.8
  * @see ResourceBundle#getBundle(String, java.util.Locale, ClassLoader, ResourceBundle.Control)

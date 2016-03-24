@@ -664,7 +664,7 @@ JRT_ENTRY(void, Runtime1::throw_class_cast_exception(JavaThread* thread, oopDesc
   NOT_PRODUCT(_throw_class_cast_exception_count++;)
   ResourceMark rm(thread);
   char* message = SharedRuntime::generate_class_cast_message(
-    thread, object->klass()->external_name());
+    thread, object->klass());
   SharedRuntime::throw_and_post_jvmti_exception(
     thread, vmSymbols::java_lang_ClassCastException(), message);
 JRT_END

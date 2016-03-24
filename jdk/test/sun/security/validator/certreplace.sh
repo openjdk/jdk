@@ -25,6 +25,7 @@
 # @bug 6948803
 # @summary CertPath validation regression caused by SHA1 replacement root
 #  and MD2 disable feature
+# @modules java.base/sun.security.validator
 #
 
 if [ "${TESTSRC}" = "" ] ; then
@@ -82,5 +83,6 @@ $KT -delete -alias user
 
 # 5. Build and run test
 
-$JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . ${TESTSRC}${FS}CertReplace.java
-$JAVA ${TESTVMOPTS} CertReplace certreplace.jks certreplace.certs
+EXTRAOPTS="-XaddExports:java.base/sun.security.validator=ALL-UNNAMED"
+$JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} -d . ${TESTSRC}${FS}CertReplace.java
+$JAVA ${TESTVMOPTS} ${EXTRAOPTS} CertReplace certreplace.jks certreplace.certs

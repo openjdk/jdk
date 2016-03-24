@@ -168,3 +168,15 @@
                 JVM_TotalMemory;
                 JVM_UnloadLibrary;
                 JVM_Yield;
+
+                # Module related API's
+                JVM_AddModuleExports;
+                JVM_AddModuleExportsToAll;
+                JVM_AddModuleExportsToAllUnnamed;
+                JVM_AddModulePackage;
+                JVM_AddReadsModule;
+                JVM_CanReadModule;
+                JVM_DefineModule;
+                JVM_IsExportedToModule;
+                JVM_SetBootLoaderUnnamedModule;
+                JVM_GetModuleByPackageName;

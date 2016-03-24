@@ -51,7 +51,11 @@ public class T6412669 extends AbstractProcessor {
             fm.setLocation(StandardLocation.CLASS_PATH, Arrays.asList(testClasses));
             Iterable<? extends JavaFileObject> files =
                 fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrc, T6412669.class.getName()+".java")));
-            String[] opts = { "-proc:only", "-processor", T6412669.class.getName()};
+            String[] opts = {
+                "-proc:only",
+                "-processor", T6412669.class.getName(),
+                "-XaddExports:jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED"
+            };
             StringWriter sw = new StringWriter();
             JavacTask task = tool.getTask(sw, fm, null, Arrays.asList(opts), null, files);
             boolean ok = task.call();

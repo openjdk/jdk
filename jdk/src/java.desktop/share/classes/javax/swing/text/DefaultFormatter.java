@@ -31,7 +31,6 @@ import java.io.Serializable;
 import java.lang.reflect.*;
 import java.text.ParseException;
 import javax.swing.*;
-import javax.swing.text.*;
 
 /**
  * <code>DefaultFormatter</code> formats arbitrary objects. Formatting is done

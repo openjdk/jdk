@@ -78,7 +78,7 @@ public class TestResult extends TestBase {
         return checkEquals(actual, true, message);
     }
 
-    public boolean checkContains(Set<?> found, Set<?> expected, String message) {
+    public boolean checkContains(Collection<?> found, Collection<?> expected, String message) {
         Set<?> copy = new HashSet<>(expected);
         copy.removeAll(found);
         if (!found.containsAll(expected)) {
