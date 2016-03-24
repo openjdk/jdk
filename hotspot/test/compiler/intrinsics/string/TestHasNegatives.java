@@ -26,6 +26,7 @@
 /*
  * @test
  * @bug 8054307
+ * @ignore 8152636
  * @summary Validates StringCoding.hasNegatives intrinsic with a small range of tests.
  * @run main/bootclasspath java.lang.TestHasNegatives
  */
