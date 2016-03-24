@@ -530,7 +530,6 @@ const char* nmethod::compile_kind() const {
 void nmethod::init_defaults() {
   _state                      = in_use;
   _unloading_clock            = 0;
-  _marked_for_reclamation     = 0;
   _has_flushed_dependencies   = 0;
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
@@ -1564,8 +1563,6 @@ void nmethod::flush() {
   assert(!is_osr_method() || is_unloaded() || is_zombie(),
          "osr nmethod must be unloaded or zombie before flushing");
   assert(is_zombie() || is_osr_method(), "must be a zombie method");
-  assert(is_marked_for_reclamation() || is_osr_method(), "must be marked for reclamation");
-
   assert (!is_locked_by_vm(), "locked methods shouldn't be flushed");
   assert_locked_or_safepoint(CodeCache_lock);
 

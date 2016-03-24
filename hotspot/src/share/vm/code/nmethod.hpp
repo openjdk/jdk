@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,8 +187,6 @@ class nmethod : public CodeBlob {
 
   // protected by CodeCache_lock
   bool _has_flushed_dependencies;            // Used for maintenance of dependencies (CodeCache_lock)
-
-  bool _marked_for_reclamation;              // Used by NMethodSweeper (set only by sweeper)
 
   enum MarkForDeoptimizationStatus {
     not_marked,
@@ -502,9 +500,6 @@ class nmethod : public CodeBlob {
     assert(!has_flushed_dependencies(), "should only happen once");
     _has_flushed_dependencies = 1;
   }
-
-  bool  is_marked_for_reclamation() const         { return _marked_for_reclamation; }
-  void  mark_for_reclamation()                    { _marked_for_reclamation = 1; }
 
   bool  has_unsafe_access() const                 { return _has_unsafe_access; }
   void  set_has_unsafe_access(bool z)             { _has_unsafe_access = z; }
