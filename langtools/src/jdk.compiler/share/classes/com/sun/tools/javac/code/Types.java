@@ -1062,18 +1062,19 @@ public class Types {
     }
 
     /**
-    * A polymorphic signature method (JLS 15.12.3) is a method that
-    * (i) is declared in the java.lang.invoke.MethodHandle class, (ii) takes
-    * a single variable arity parameter (iii) whose declared type is Object[],
-    * (iv) has a return type of Object and (v) is native.
+     * A polymorphic signature method (JLS 15.12.3) is a method that
+     *   (i) is declared in the java.lang.invoke.MethodHandle/VarHandle classes;
+     *  (ii) takes a single variable arity parameter;
+     * (iii) whose declared type is Object[];
+     *  (iv) has any return type, Object signifying a polymorphic return type; and
+     *   (v) is native.
     */
    public boolean isSignaturePolymorphic(MethodSymbol msym) {
        List<Type> argtypes = msym.type.getParameterTypes();
        return (msym.flags_field & NATIVE) != 0 &&
-               msym.owner == syms.methodHandleType.tsym &&
+              (msym.owner == syms.methodHandleType.tsym || msym.owner == syms.varHandleType.tsym) &&
                argtypes.tail.tail == null &&
                argtypes.head.hasTag(TypeTag.ARRAY) &&
-               msym.type.getReturnType().tsym == syms.objectType.tsym &&
                ((ArrayType)argtypes.head).elemtype.tsym == syms.objectType.tsym;
    }
 
