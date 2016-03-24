@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,9 @@ class Heap$Type$Buffer$RW$
         super(cap, lim);
         this.isReadOnly = true;
 #end[rw]
+#if[byte]
+        this.address = arrayBaseOffset;
+#end[byte]
     }
 
     Heap$Type$Buffer$RW$($type$[] buf, int off, int len) { // package-private
@@ -87,6 +90,9 @@ class Heap$Type$Buffer$RW$
         super(buf, off, len);
         this.isReadOnly = true;
 #end[rw]
+#if[byte]
+        this.address = arrayBaseOffset;
+#end[byte]
     }
 
     protected Heap$Type$Buffer$RW$($type$[] buf,
@@ -103,6 +109,9 @@ class Heap$Type$Buffer$RW$
         super(buf, mark, pos, lim, cap, off);
         this.isReadOnly = true;
 #end[rw]
+#if[byte]
+        this.address = arrayBaseOffset + off;
+#end[byte]
     }
 
     public $Type$Buffer slice() {
@@ -113,6 +122,20 @@ class Heap$Type$Buffer$RW$
                                         this.remaining(),
                                         this.position() + offset);
     }
+
+#if[byte]
+    $Type$Buffer slice(int pos, int lim) {
+        assert (pos >= 0);
+        assert (pos <= lim);
+        int rem = lim - pos;
+        return new Heap$Type$Buffer$RW$(hb,
+                                        -1,
+                                        0,
+                                        rem,
+                                        rem,
+                                        pos + offset);
+    }
+#end[byte]
 
     public $Type$Buffer duplicate() {
         return new Heap$Type$Buffer$RW$(hb,
@@ -144,7 +167,7 @@ class Heap$Type$Buffer$RW$
 
 #if[byte]
     private long byteOffset(long i) {
-        return arrayBaseOffset + i + offset;
+        return address + i;
     }
 #end[byte]
 
