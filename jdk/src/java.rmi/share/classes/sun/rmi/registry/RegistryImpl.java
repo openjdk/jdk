@@ -25,10 +25,15 @@
 
 package sun.rmi.registry;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.io.File;
 import java.io.FilePermission;
 import java.io.IOException;
 import java.net.*;
@@ -333,6 +338,30 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     }
 
     /**
+     * Convert class path specification into an array of file URLs.
+     *
+     * The path of the file is converted to a URI then into URL
+     * form so that reserved characters can safely appear in the path.
+     */
+    private static URL[] pathToURLs(String path) {
+        List<URL> paths = new ArrayList<>();
+        for (String entry: path.split(File.pathSeparator)) {
+            Path p = Paths.get(entry);
+            try {
+                p = p.toRealPath();
+            } catch (IOException x) {
+                p = p.toAbsolutePath();
+            }
+            try {
+                paths.add(p.toUri().toURL());
+            } catch (MalformedURLException e) {
+                //ignore / skip entry
+            }
+        }
+        return paths.toArray(new URL[0]);
+    }
+
+    /**
      * Main program to start a registry. <br>
      * The port number can be specified on the command line.
      */
@@ -362,7 +391,7 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
             if (envcp == null) {
                 envcp = ".";            // preserve old default behavior
             }
-            URL[] urls = sun.misc.URLClassPath.pathToURLs(envcp);
+            URL[] urls = pathToURLs(envcp);
             ClassLoader cl = new URLClassLoader(urls);
 
             /*
