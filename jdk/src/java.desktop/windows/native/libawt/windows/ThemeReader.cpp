@@ -70,6 +70,11 @@ typedef struct _MARGINS
 #define TMT_TRANSPARENT 2201
 #endif // _UXTHEME_H_
 
+#if defined(_MSC_VER) && _MSC_VER >= 1800
+#  define ROUND_TO_INT(num)    ((int) round(num))
+#else
+#  define ROUND_TO_INT(num)    ((int) floor((num) + 0.5))
+#endif
 
 #define ALPHA_MASK 0xff000000
 #define RED_MASK 0xff0000
@@ -755,11 +760,11 @@ void rescale(SIZE *size) {
 
     if (dpiX !=0 && dpiX != 96) {
         float invScaleX = 96.0f / dpiX;
-        size->cx = (int)round(size->cx * invScaleX);
+        size->cx = ROUND_TO_INT(size->cx * invScaleX);
     }
     if (dpiY != 0 && dpiY != 96) {
         float invScaleY = 96.0f / dpiY;
-        size->cy = (int)round(size->cy * invScaleY);
+        size->cy = ROUND_TO_INT(size->cy * invScaleY);
     }
     ::ReleaseDC(hWnd, hDC);
 }
