@@ -162,9 +162,6 @@ javax/management/MBeanServer/OldMBeanServerTest.java            aix-all
 # 8042215
 javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java			generic-all
 
-# 8147985
-sun/management/jmxremote/bootstrap/JMXInterfaceBindingTest.java generic-all
-
 ############################################################################
 
 # jdk_net
