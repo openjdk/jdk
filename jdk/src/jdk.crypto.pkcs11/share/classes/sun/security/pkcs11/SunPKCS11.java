@@ -1439,10 +1439,17 @@ public final class SunPKCS11 extends AuthProvider {
                                    (defaultHandler,
                                    true,
                                    Thread.currentThread().getContextClassLoader());
+                        if (!javax.security.auth.callback.CallbackHandler.class.isAssignableFrom(c)) {
+                            // not the right subtype
+                            if (debug != null) {
+                                debug.println("default handler " + defaultHandler +
+                                              " is not a CallbackHandler");
+                            }
+                            return null;
+                        }
                         return (CallbackHandler)c.newInstance();
                     }
                 });
-
                 // save it
                 pHandler = myHandler;
                 return myHandler;

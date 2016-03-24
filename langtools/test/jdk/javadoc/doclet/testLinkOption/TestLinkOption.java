@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * right files, and URLs with and without trailing slash are accepted.
  * @author jamieh
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @run main TestLinkOption
  */
@@ -51,14 +51,21 @@ public class TestLinkOption extends JavadocTester {
     // method and not in independent @Test methods.
     @Test
     void test() {
+        String mylib = "mylib";
+        String[] javacArgs = {
+            "-d", mylib, testSrc + "/extra/StringBuilder.java"
+        };
+        com.sun.tools.javac.Main.compile(javacArgs);
+
         // Generate the documentation using -linkoffline and a URL as the first parameter.
         String out1 = "out1";
-        String url = "http://java.sun.com/j2se/1.4/docs/api/";
+        String url = "http://acme.com/jdk/";
         javadoc("-d", out1,
+                "-classpath", mylib,
                 "-sourcepath", testSrc,
-                "-linkoffline", url, testSrc,
+                "-linkoffline", url, testSrc + "/jdk",
                 "-package",
-                "pkg", "java.lang");
+                "pkg", "mylib.lang");
         checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
@@ -75,7 +82,7 @@ public class TestLinkOption extends JavadocTester {
 
         checkOutput("pkg/B.html", true,
                 "<div class=\"block\">A method with html tag the method "
-                + "<a href=\"http://java.sun.com/j2se/1.4/docs/api/java/lang/ClassLoader.html?is-external=true#getSystemClassLoader--\""
+                + "<a href=\"" + url + "java/lang/ClassLoader.html?is-external=true#getSystemClassLoader--\""
                 + " title=\"class or interface in java.lang\"><code><tt>getSystemClassLoader()</tt>"
                 + "</code></a> as the parent class loader.</div>",
                 "<div class=\"block\">is equivalent to invoking <code>"
@@ -96,7 +103,7 @@ public class TestLinkOption extends JavadocTester {
                 "URISyntaxException</a></dd>\n" +
                 "</dl>");
 
-        checkOutput("java/lang/StringBuilderChild.html", true,
+        checkOutput("mylib/lang/StringBuilderChild.html", true,
                 "<pre>public abstract class <span class=\"typeNameLabel\">StringBuilderChild</span>\n"
                 + "extends <a href=\"" + url + "java/lang/Object.html?is-external=true\" "
                 + "title=\"class or interface in java.lang\">Object</a></pre>"
@@ -123,7 +130,7 @@ public class TestLinkOption extends JavadocTester {
         String out4 = "out4";
         javadoc(createArguments(out4, out1, false)); // without trailing slash
         checkExit(Exit.OK);
-        // Note: the following test is very weak, and will fail if ever the test
+        // Note: the following test is very weak, and will fail if ever the text
         // of the message is changed. We should have a separate test to verify
         // this is the text that is given when there is a problem with a URL
         checkOutput(Output.OUT, false,

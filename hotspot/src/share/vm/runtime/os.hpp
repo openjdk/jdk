@@ -794,6 +794,8 @@ class os: AllStatic {
   // Amount beyond the callee frame size that we bang the stack.
   static int extra_bang_size_in_bytes();
 
+  static char** split_path(const char* path, int* n);
+
   // Extensions
 #include "runtime/os_ext.hpp"
 
@@ -1009,7 +1011,6 @@ class os: AllStatic {
                                 char fileSep,
                                 char pathSep);
   static bool set_boot_path(char fileSep, char pathSep);
-  static char** split_path(const char* path, int* n);
 
 };
 

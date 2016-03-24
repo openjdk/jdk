@@ -381,7 +381,7 @@ IRT_ENTRY(void, InterpreterRuntime::throw_ClassCastException(
 
   ResourceMark rm(thread);
   char* message = SharedRuntime::generate_class_cast_message(
-    thread, obj->klass()->external_name());
+    thread, obj->klass());
 
   if (ProfileTraps) {
     note_trap(thread, Deoptimization::Reason_class_check, CHECK);

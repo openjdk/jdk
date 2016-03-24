@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,20 @@
  * @run main/othervm/java.security.policy=security.policy/secure=java.lang.SecurityManager/timeout=240 StubClassesPermitted
  */
 
-import java.io.*;
-import java.rmi.*;
-import java.rmi.server.*;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.rmi.MarshalledObject;
+import java.rmi.RemoteException;
+import java.rmi.activation.Activatable;
+import java.rmi.activation.ActivationDesc;
+import java.rmi.activation.ActivationGroup;
+import java.rmi.activation.ActivationGroupDesc;
+import java.rmi.activation.ActivationGroupDesc.CommandEnvironment;
+import java.rmi.activation.ActivationGroupID;
+import java.rmi.activation.ActivationID;
+import java.rmi.activation.ActivationSystem;
 import java.rmi.registry.Registry;
-import java.rmi.activation.*;
-import java.security.CodeSource;
 import java.util.Properties;
-import java.util.StringTokenizer;
 
 /**
  * The RMI activation system needs to explicitly allow itself to
@@ -113,8 +119,13 @@ public class StubClassesPermitted
             // sun.rmi.server.Activation$ActivationMonitorImpl_Stub
             //
             System.err.println("Create activation group, in a new VM");
+            CommandEnvironment cmd = new ActivationGroupDesc.CommandEnvironment(null,
+                    new String[] { "-XaddExports:java.base/sun.security.provider=ALL-UNNAMED,"
+                            + "java.rmi/sun.rmi.registry=ALL-UNNAMED,java.rmi/sun.rmi.server=ALL-UNNAMED,"
+                            + "java.rmi/sun.rmi.transport=ALL-UNNAMED,java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED" });
+
             ActivationGroupDesc groupDesc =
-                new ActivationGroupDesc(p, null);
+                new ActivationGroupDesc(p, cmd);
             ActivationSystem system = ActivationGroup.getSystem();
             ActivationGroupID groupID = system.registerGroup(groupDesc);
 

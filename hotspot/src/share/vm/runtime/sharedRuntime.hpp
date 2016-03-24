@@ -290,22 +290,21 @@ class SharedRuntime: AllStatic {
   // Fill in the "X cannot be cast to a Y" message for ClassCastException
   //
   // @param thr the current thread
-  // @param name the name of the class of the object attempted to be cast
+  // @param caster_klass the class of the object we are casting
   // @return the dynamically allocated exception message (must be freed
   // by the caller using a resource mark)
   //
   // BCP must refer to the current 'checkcast' opcode for the frame
   // on top of the stack.
-  // The caller (or one of it's callers) must use a ResourceMark
+  // The caller (or one of its callers) must use a ResourceMark
   // in order to correctly free the result.
   //
-  static char* generate_class_cast_message(JavaThread* thr, const char* name);
+  static char* generate_class_cast_message(JavaThread* thr, Klass* caster_klass);
 
   // Fill in the "X cannot be cast to a Y" message for ClassCastException
   //
-  // @param name the name of the class of the object attempted to be cast
-  // @param klass the name of the target klass attempt
-  // @param gripe the specific kind of problem being reported
+  // @param caster_klass the class of the object we are casting
+  // @param target_klass the target klass attempt
   // @return the dynamically allocated exception message (must be freed
   // by the caller using a resource mark)
   //
@@ -314,8 +313,7 @@ class SharedRuntime: AllStatic {
   // The caller (or one of it's callers) must use a ResourceMark
   // in order to correctly free the result.
   //
-  static char* generate_class_cast_message(const char* name, const char* klass,
-                                           const char* gripe = " cannot be cast to ");
+  static char* generate_class_cast_message(Klass* caster_klass, Klass* target_klass);
 
   // Resolves a call site- may patch in the destination of the call into the
   // compiled code.

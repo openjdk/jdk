@@ -85,12 +85,11 @@ public class MessagerDiags extends AbstractProcessor {
         assert tool != null;
 
         DiagnosticCollector<JavaFileObject> dc = new DiagnosticCollector<>();
-        List<String> options = new LinkedList<>();
-        options.addAll(Arrays.asList("-bootclasspath",  bootPath,
-                        "-source", "1.8", "-classpath",
-                        System.getProperty("java.class.path")));
-        options.addAll(Arrays.asList("-processor",
-                       MessagerDiags.class.getName()));
+        List<String> options = Arrays.asList(
+                "-source", "1.8",
+                "-Xlint:-options",
+                "-classpath", System.getProperty("java.class.path"),
+                "-processor", MessagerDiags.class.getName());
         JavacTask ct = (JavacTask)tool.getTask(null, null, dc, options, null,
                         Arrays.asList(new MyFileObject("class " + CNAME + " {}")));
         ct.analyze();

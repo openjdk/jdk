@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.io.*;
 import java.util.*;
 
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
@@ -124,6 +125,15 @@ public class PackageWriterImpl extends HtmlDocletWriter
         }
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
+        ModuleElement mdle = configuration.root.getElementUtils().getModuleOf(packageElement);
+        if (mdle != null && !mdle.isUnnamed()) {
+            Content classModuleLabel = HtmlTree.SPAN(HtmlStyle.moduleLabelInClass, moduleLabel);
+            Content moduleNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classModuleLabel);
+            moduleNameDiv.addContent(getSpace());
+            moduleNameDiv.addContent(getModuleLink(mdle,
+                    new StringContent(mdle.getQualifiedName().toString())));
+            div.addContent(moduleNameDiv);
+        }
         Content annotationContent = new HtmlTree(HtmlTag.P);
         addAnnotationInfo(packageElement, annotationContent);
         div.addContent(annotationContent);

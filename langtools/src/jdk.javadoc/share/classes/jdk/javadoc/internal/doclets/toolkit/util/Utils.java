@@ -41,6 +41,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
@@ -60,6 +61,7 @@ import javax.lang.model.util.SimpleTypeVisitor9;
 import javax.lang.model.util.TypeKindVisitor9;
 import javax.lang.model.util.Types;
 import javax.tools.FileObject;
+import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
 import com.sun.source.doctree.DocCommentTree;
@@ -1539,6 +1541,45 @@ public class Utils {
         return secondaryCollator.compare(s1, s2);
     }
 
+    public void copyDocFiles(Configuration configuration, Location locn, DocPath dir) {
+        try {
+            boolean first = true;
+            for (DocFile f : DocFile.list(configuration, locn, dir)) {
+                if (!f.isDirectory()) {
+                    continue;
+                }
+                DocFile srcdir = f;
+                DocFile destdir = DocFile.createFileForOutput(configuration, dir);
+                if (srcdir.isSameFile(destdir)) {
+                    continue;
+                }
+
+                for (DocFile srcfile: srcdir.list()) {
+                    DocFile destfile = destdir.resolve(srcfile.getName());
+                    if (srcfile.isFile()) {
+                        if (destfile.exists() && !first) {
+                            configuration.message.warning("doclet.Copy_Overwrite_warning",
+                                    srcfile.getPath(), destdir.getPath());
+                        } else {
+                            configuration.message.notice(
+                                    "doclet.Copying_File_0_To_Dir_1",
+                                    srcfile.getPath(), destdir.getPath());
+                            destfile.copyFile(srcfile);
+                        }
+                    } else if (srcfile.isDirectory()) {
+                        if (configuration.copydocfilesubdirs
+                                && !configuration.shouldExcludeDocFileDir(srcfile.getName())) {
+                            copyDocFiles(configuration, locn, dir.resolve(srcfile.getName()));
+                        }
+                    }
+                }
+
+                first = false;
+            }
+        } catch (SecurityException | IOException exc) {
+            throw new com.sun.tools.doclets.internal.toolkit.util.DocletAbortException(exc);
+        }
+    }
 
     private static class DocCollator {
         private final Map<String, CollationKey> keys;
@@ -1564,6 +1605,18 @@ public class Utils {
         public int compare(String s1, String s2) {
             return getKey(s1).compareTo(getKey(s2));
         }
+    }
+
+    /**
+     * Comparator for ModuleElements, simply compares the fully qualified names
+     */
+    public Comparator<Element> makeModuleComparator() {
+        return new Utils.ElementComparator<Element>() {
+            @Override
+            public int compare(Element mod1, Element mod2) {
+                return compareFullyQualifiedNames(mod1, mod2);
+            }
+        };
     }
 
     /**
@@ -1942,6 +1995,11 @@ public class Utils {
          */
         private String getFullyQualifiedName(Element e) {
             return new SimpleElementVisitor9<String, Void>() {
+                @Override  @DefinedBy(Api.LANGUAGE_MODEL)
+                public String visitModule(ModuleElement e, Void p) {
+                    return e.getQualifiedName().toString();
+                }
+
                 @Override @DefinedBy(Api.LANGUAGE_MODEL)
                 public String visitPackage(PackageElement e, Void p) {
                     return e.getQualifiedName().toString();

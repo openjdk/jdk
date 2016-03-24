@@ -52,6 +52,8 @@ import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCPackageDecl;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Convert;
+import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 
 /**
@@ -151,7 +153,7 @@ public class DocEnv {
         finder = JavadocClassFinder.instance(context);
         enter = JavadocEnter.instance(context);
         names = Names.instance(context);
-        externalizableSym = syms.enterClass(names.fromString("java.io.Externalizable"));
+        externalizableSym = syms.enterClass(syms.java_base, names.fromString("java.io.Externalizable"));
         chk = Check.instance(context);
         types = Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
@@ -185,7 +187,9 @@ public class DocEnv {
      */
     public ClassDocImpl loadClass(String name) {
         try {
-            ClassSymbol c = finder.loadClass(names.fromString(name));
+            Name nameImpl = names.fromString(name);
+            ModuleSymbol mod = syms.inferModule(Convert.packagePart(nameImpl));
+            ClassSymbol c = finder.loadClass(mod != null ? mod : syms.errModule, nameImpl);
             return getClassDoc(c);
         } catch (CompletionFailure ex) {
             chk.completionError(null, ex);
@@ -201,7 +205,9 @@ public class DocEnv {
         //### to avoid a compiler bug.  Most likely
         //### instead a dummy created for error recovery.
         //### Should investigate this.
-        PackageSymbol p = syms.packages.get(names.fromString(name));
+        Name nameImpl = names.fromString(name);
+        ModuleSymbol mod = syms.inferModule(nameImpl);
+        PackageSymbol p = mod != null ? syms.getPackage(mod, nameImpl) : null;
         ClassSymbol c = getClassSymbol(name);
         if (p != null && c == null) {
             return getPackageDoc(p);
@@ -220,7 +226,9 @@ public class DocEnv {
             char[] nameChars = name.toCharArray();
             int idx = name.length();
             for (;;) {
-                ClassSymbol s = syms.classes.get(names.fromChars(nameChars, 0, nameLen));
+                Name nameImpl = names.fromChars(nameChars, 0, nameLen);
+                ModuleSymbol mod = syms.inferModule(Convert.packagePart(nameImpl));
+                ClassSymbol s = mod != null ? syms.getClass(mod, nameImpl) : null;
                 if (s != null)
                     return s; // found it!
                 idx = name.substring(0, idx).lastIndexOf('.');

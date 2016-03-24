@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,48 @@ public enum ToolOption {
         @Override
         public void process(Helper helper, String arg) {
             helper.setFileManagerOpt(Option.BOOTCLASSPATH, arg);
+        }
+    },
+
+    MODULESOURCEPATH("-modulesourcepath", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFileManagerOpt(Option.MODULESOURCEPATH, arg);
+        }
+    },
+
+    UPGRADEMODULEPATH("-upgrademodulepath", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFileManagerOpt(Option.UPGRADEMODULEPATH, arg);
+        }
+    },
+
+    SYSTEM("-system", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFileManagerOpt(Option.SYSTEM, arg);
+        }
+    },
+
+    MODULEPATH("-modulepath", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setFileManagerOpt(Option.MODULEPATH, arg);
+        }
+    },
+
+    ADDMODS("-addmods", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setCompilerOpt(opt, arg);
+        }
+    },
+
+    LIMITMODS("-limitmods", true) {
+        @Override
+        public void process(Helper helper, String arg) {
+            helper.setCompilerOpt(opt, arg);
         }
     },
 

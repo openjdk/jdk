@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.tools.doclets.formats.html;
 import java.util.*;
 
 import com.sun.javadoc.*;
-import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javadoc.RootDocImpl;
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
@@ -173,23 +172,13 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         bodyTree.addContent(HtmlConstants.START_OF_CLASS_DATA);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.header);
-        if (configuration.showProfiles) {
-            String sep = "";
-            int profile = configuration.profiles.getProfile(getTypeNameForProfile(classDoc));
-            if (profile > 0) {
-                Content profNameContent = new StringContent();
-                for (int i = profile; i < configuration.profiles.getProfileCount(); i++) {
-                    profNameContent.addContent(sep);
-                    profNameContent.addContent(Profile.lookup(i).name);
-                    sep = ", ";
-                }
-                Content profileNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, profNameContent);
-                div.addContent(profileNameDiv);
-            }
-        }
         if (pkgname.length() > 0) {
-            Content pkgNameContent = new StringContent(pkgname);
-            Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, pkgNameContent);
+            Content classPackageLabel = HtmlTree.SPAN(HtmlStyle.packageLabelInClass, packageLabel);
+            Content pkgNameDiv = HtmlTree.DIV(HtmlStyle.subTitle, classPackageLabel);
+            pkgNameDiv.addContent(getSpace());
+            Content pkgNameContent = getTargetPackageLink(classDoc.containingPackage(),
+                    "classFrame", new StringContent(pkgname));
+            pkgNameDiv.addContent(pkgNameContent);
             div.addContent(pkgNameDiv);
         }
         LinkInfoImpl linkInfo = new LinkInfoImpl(configuration,

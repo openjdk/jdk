@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -347,6 +348,50 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
+        public Location getModuleLocation(Location location, String moduleName) throws IOException {
+            try {
+                return clientJavaFileManager.getModuleLocation(location, moduleName);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public Location getModuleLocation(Location location, JavaFileObject fo, String pkgName) throws IOException {
+            try {
+                return clientJavaFileManager.getModuleLocation(location, fo, pkgName);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public String inferModuleName(Location location) throws IOException {
+            try {
+                return clientJavaFileManager.inferModuleName(location);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public Iterable<Set<Location>> listModuleLocations(Location location) throws IOException {
+            try {
+                return clientJavaFileManager.listModuleLocations(location);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
         public int isSupportedOption(String option) {
             try {
                 return clientJavaFileManager.isSupportedOption(option);
@@ -381,9 +426,31 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
+        public Iterable<? extends JavaFileObject> getJavaFileObjectsFromPaths(Iterable<? extends Path> paths) {
+            try {
+                return ((StandardJavaFileManager)clientJavaFileManager).getJavaFileObjectsFromPaths(paths);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
         public Iterable<? extends JavaFileObject> getJavaFileObjects(File... files) {
             try {
                 return ((StandardJavaFileManager)clientJavaFileManager).getJavaFileObjects(files);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public Iterable<? extends JavaFileObject> getJavaFileObjects(Path... paths) {
+            try {
+                return ((StandardJavaFileManager)clientJavaFileManager).getJavaFileObjects(paths);
             } catch (ClientCodeException e) {
                 throw e;
             } catch (RuntimeException | Error e) {
@@ -414,9 +481,20 @@ public class ClientCodeWrapper {
         }
 
         @Override @DefinedBy(Api.COMPILER)
-        public void setLocation(Location location, Iterable<? extends File> path) throws IOException {
+        public void setLocation(Location location, Iterable<? extends File> files) throws IOException {
             try {
-                ((StandardJavaFileManager)clientJavaFileManager).setLocation(location, path);
+                ((StandardJavaFileManager)clientJavaFileManager).setLocation(location, files);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public void setLocationFromPaths(Location location, Iterable<? extends Path> paths) throws IOException {
+            try {
+                ((StandardJavaFileManager)clientJavaFileManager).setLocationFromPaths(location, paths);
             } catch (ClientCodeException e) {
                 throw e;
             } catch (RuntimeException | Error e) {
@@ -428,6 +506,28 @@ public class ClientCodeWrapper {
         public Iterable<? extends File> getLocation(Location location) {
             try {
                 return ((StandardJavaFileManager)clientJavaFileManager).getLocation(location);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public Iterable<? extends Path> getLocationAsPaths(Location location) {
+            try {
+                return ((StandardJavaFileManager)clientJavaFileManager).getLocationAsPaths(location);
+            } catch (ClientCodeException e) {
+                throw e;
+            } catch (RuntimeException | Error e) {
+                throw new ClientCodeException(e);
+            }
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public Path asPath(FileObject file) {
+            try {
+                return ((StandardJavaFileManager)clientJavaFileManager).asPath(file);
             } catch (ClientCodeException e) {
                 throw e;
             } catch (RuntimeException | Error e) {

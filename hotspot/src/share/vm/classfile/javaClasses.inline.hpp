@@ -171,6 +171,10 @@ inline bool java_lang_invoke_DirectMethodHandle::is_instance(oop obj) {
 
 
 
+inline bool java_lang_reflect_Module::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
+}
+
 inline int Backtrace::merge_bci_and_version(int bci, int version) {
   // only store u2 for version, checking for overflow.
   if (version > USHRT_MAX || version < 0) version = USHRT_MAX;

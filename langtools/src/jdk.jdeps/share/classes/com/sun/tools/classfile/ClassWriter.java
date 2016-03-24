@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,7 +221,7 @@ public class ClassWriter {
             }
         }
 
-        private DataOutputStream d;
+        private final DataOutputStream d;
     }
 
     /**
@@ -234,73 +234,87 @@ public class ClassWriter {
             return info.accept(this, out);
         }
 
+        @Override
         public Integer visitClass(CONSTANT_Class_info info, ClassOutputStream out) {
             out.writeShort(info.name_index);
             return 1;
         }
 
+        @Override
         public Integer visitDouble(CONSTANT_Double_info info, ClassOutputStream out) {
             out.writeDouble(info.value);
             return 2;
         }
 
+        @Override
         public Integer visitFieldref(CONSTANT_Fieldref_info info, ClassOutputStream out) {
             writeRef(info, out);
             return 1;
         }
 
+        @Override
         public Integer visitFloat(CONSTANT_Float_info info, ClassOutputStream out) {
             out.writeFloat(info.value);
             return 1;
         }
 
+        @Override
         public Integer visitInteger(CONSTANT_Integer_info info, ClassOutputStream out) {
             out.writeInt(info.value);
             return 1;
         }
 
+        @Override
         public Integer visitInterfaceMethodref(CONSTANT_InterfaceMethodref_info info, ClassOutputStream out) {
             writeRef(info, out);
             return 1;
         }
 
+        @Override
         public Integer visitInvokeDynamic(CONSTANT_InvokeDynamic_info info, ClassOutputStream out) {
             out.writeShort(info.bootstrap_method_attr_index);
             out.writeShort(info.name_and_type_index);
             return 1;
         }
 
+        @Override
         public Integer visitLong(CONSTANT_Long_info info, ClassOutputStream out) {
             out.writeLong(info.value);
             return 2;
         }
 
+        @Override
         public Integer visitNameAndType(CONSTANT_NameAndType_info info, ClassOutputStream out) {
             out.writeShort(info.name_index);
             out.writeShort(info.type_index);
             return 1;
         }
 
+        @Override
         public Integer visitMethodHandle(CONSTANT_MethodHandle_info info, ClassOutputStream out) {
             out.writeByte(info.reference_kind.tag);
             out.writeShort(info.reference_index);
             return 1;
         }
 
+        @Override
         public Integer visitMethodType(CONSTANT_MethodType_info info, ClassOutputStream out) {
             out.writeShort(info.descriptor_index);
             return 1;
         }
 
+        @Override
         public Integer visitMethodref(CONSTANT_Methodref_info info, ClassOutputStream out) {
             return writeRef(info, out);
         }
 
+        @Override
         public Integer visitString(CONSTANT_String_info info, ClassOutputStream out) {
             out.writeShort(info.string_index);
             return 1;
         }
 
+        @Override
         public Integer visitUtf8(CONSTANT_Utf8_info info, ClassOutputStream out) {
             out.writeUTF(info.value);
             return 1;
@@ -336,16 +350,19 @@ public class ClassWriter {
         protected ClassOutputStream sharedOut = new ClassOutputStream();
         protected AnnotationWriter annotationWriter = new AnnotationWriter();
 
+        @Override
         public Void visitDefault(DefaultAttribute attr, ClassOutputStream out) {
             out.write(attr.info, 0, attr.info.length);
             return null;
         }
 
+        @Override
         public Void visitAnnotationDefault(AnnotationDefault_attribute attr, ClassOutputStream out) {
             annotationWriter.write(attr.default_value, out);
             return null;
         }
 
+        @Override
         public Void visitBootstrapMethods(BootstrapMethods_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.bootstrap_method_specifiers.length);
             for (BootstrapMethods_attribute.BootstrapMethodSpecifier bsm : attr.bootstrap_method_specifiers) {
@@ -359,6 +376,7 @@ public class ClassWriter {
             return null;
         }
 
+        @Override
         public Void visitCharacterRangeTable(CharacterRangeTable_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.character_range_table.length);
             for (CharacterRangeTable_attribute.Entry e: attr.character_range_table)
@@ -374,6 +392,7 @@ public class ClassWriter {
             out.writeShort(entry.flags);
         }
 
+        @Override
         public Void visitCode(Code_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.max_stack);
             out.writeShort(attr.max_locals);
@@ -393,26 +412,39 @@ public class ClassWriter {
             out.writeShort(exception_data.catch_type);
         }
 
+        @Override
         public Void visitCompilationID(CompilationID_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.compilationID_index);
             return null;
         }
 
+        @Override
+        public Void visitConcealedPackages(ConcealedPackages_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.packages_count);
+            for (int i: attr.packages_index)
+                out.writeShort(i);
+            return null;
+        }
+
+        @Override
         public Void visitConstantValue(ConstantValue_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.constantvalue_index);
             return null;
         }
 
+        @Override
         public Void visitDeprecated(Deprecated_attribute attr, ClassOutputStream out) {
             return null;
         }
 
+        @Override
         public Void visitEnclosingMethod(EnclosingMethod_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.class_index);
             out.writeShort(attr.method_index);
             return null;
         }
 
+        @Override
         public Void visitExceptions(Exceptions_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.exception_index_table.length);
             for (int i: attr.exception_index_table)
@@ -420,10 +452,22 @@ public class ClassWriter {
             return null;
         }
 
+        @Override
         public Void visitInnerClasses(InnerClasses_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.classes.length);
             for (InnerClasses_attribute.Info info: attr.classes)
                 writeInnerClassesInfo(info, out);
+            return null;
+        }
+
+        @Override
+        public Void visitHashes(Hashes_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.algorithm_index);
+            out.writeShort(attr.hashes_table.length);
+            for (Hashes_attribute.Entry e: attr.hashes_table) {
+                out.writeShort(e.requires_index);
+                out.writeShort(e.hash_index);
+            }
             return null;
         }
 
@@ -434,6 +478,7 @@ public class ClassWriter {
             writeAccessFlags(info.inner_class_access_flags, out);
         }
 
+        @Override
         public Void visitLineNumberTable(LineNumberTable_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.line_number_table.length);
             for (LineNumberTable_attribute.Entry e: attr.line_number_table)
@@ -446,6 +491,7 @@ public class ClassWriter {
             out.writeShort(entry.line_number);
         }
 
+        @Override
         public Void visitLocalVariableTable(LocalVariableTable_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.local_variable_table.length);
             for (LocalVariableTable_attribute.Entry e: attr.local_variable_table)
@@ -461,6 +507,7 @@ public class ClassWriter {
             out.writeShort(entry.index);
         }
 
+        @Override
         public Void visitLocalVariableTypeTable(LocalVariableTypeTable_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.local_variable_table.length);
             for (LocalVariableTypeTable_attribute.Entry e: attr.local_variable_table)
@@ -476,6 +523,7 @@ public class ClassWriter {
             out.writeShort(entry.index);
         }
 
+        @Override
         public Void visitMethodParameters(MethodParameters_attribute attr, ClassOutputStream out) {
             out.writeByte(attr.method_parameter_table.length);
             for (MethodParameters_attribute.Entry e : attr.method_parameter_table) {
@@ -485,26 +533,62 @@ public class ClassWriter {
             return null;
         }
 
+        @Override
+        public Void visitMainClass(MainClass_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.main_class_index);
+            return null;
+        }
+
+        @Override
+        public Void visitModule(Module_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.requires.length);
+            for (Module_attribute.RequiresEntry e: attr.requires) {
+                out.writeShort(e.requires_index);
+                out.writeShort(e.requires_flags);
+            }
+            out.writeShort(attr.exports.length);
+            for (Module_attribute.ExportsEntry e: attr.exports) {
+                out.writeShort(e.exports_index);
+                out.writeShort(e.exports_to_index.length);
+                for (int index: e.exports_to_index)
+                    out.writeShort(index);
+            }
+            out.writeShort(attr.uses_index.length);
+            for (int index: attr.uses_index)
+                out.writeShort(index);
+            out.writeShort(attr.provides.length);
+            for (Module_attribute.ProvidesEntry e: attr.provides) {
+                out.writeShort(e.provides_index);
+                out.writeShort(e.with_index);
+            }
+            return null;
+        }
+
+        @Override
         public Void visitRuntimeVisibleAnnotations(RuntimeVisibleAnnotations_attribute attr, ClassOutputStream out) {
             annotationWriter.write(attr.annotations, out);
             return null;
         }
 
+        @Override
         public Void visitRuntimeInvisibleAnnotations(RuntimeInvisibleAnnotations_attribute attr, ClassOutputStream out) {
             annotationWriter.write(attr.annotations, out);
             return null;
         }
 
+        @Override
         public Void visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute attr, ClassOutputStream out) {
             annotationWriter.write(attr.annotations, out);
             return null;
         }
 
+        @Override
         public Void visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute attr, ClassOutputStream out) {
             annotationWriter.write(attr.annotations, out);
             return null;
         }
 
+        @Override
         public Void visitRuntimeVisibleParameterAnnotations(RuntimeVisibleParameterAnnotations_attribute attr, ClassOutputStream out) {
             out.writeByte(attr.parameter_annotations.length);
             for (Annotation[] annos: attr.parameter_annotations)
@@ -512,6 +596,7 @@ public class ClassWriter {
             return null;
         }
 
+        @Override
         public Void visitRuntimeInvisibleParameterAnnotations(RuntimeInvisibleParameterAnnotations_attribute attr, ClassOutputStream out) {
             out.writeByte(attr.parameter_annotations.length);
             for (Annotation[] annos: attr.parameter_annotations)
@@ -519,26 +604,31 @@ public class ClassWriter {
             return null;
         }
 
+        @Override
         public Void visitSignature(Signature_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.signature_index);
             return null;
         }
 
+        @Override
         public Void visitSourceDebugExtension(SourceDebugExtension_attribute attr, ClassOutputStream out) {
             out.write(attr.debug_extension, 0, attr.debug_extension.length);
             return null;
         }
 
+        @Override
         public Void visitSourceFile(SourceFile_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.sourcefile_index);
             return null;
         }
 
+        @Override
         public Void visitSourceID(SourceID_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.sourceID_index);
             return null;
         }
 
+        @Override
         public Void visitStackMap(StackMap_attribute attr, ClassOutputStream out) {
             if (stackMapWriter == null)
                 stackMapWriter = new StackMapTableWriter();
@@ -549,6 +639,7 @@ public class ClassWriter {
             return null;
         }
 
+        @Override
         public Void visitStackMapTable(StackMapTable_attribute attr, ClassOutputStream out) {
             if (stackMapWriter == null)
                 stackMapWriter = new StackMapTableWriter();
@@ -559,12 +650,27 @@ public class ClassWriter {
             return null;
         }
 
+        @Override
         public Void visitSynthetic(Synthetic_attribute attr, ClassOutputStream out) {
+            return null;
+        }
+
+        @Override
+        public Void visitTargetPlatform(TargetPlatform_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.os_name_index);
+            out.writeShort(attr.os_arch_index);
+            out.writeShort(attr.os_version_index);
             return null;
         }
 
         protected void writeAccessFlags(AccessFlags flags, ClassOutputStream p) {
             sharedOut.writeShort(flags.flags);
+        }
+
+        @Override
+        public Void visitVersion(Version_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.version_index);
+            return null;
         }
 
         protected StackMapTableWriter stackMapWriter;
@@ -581,31 +687,37 @@ public class ClassWriter {
             frame.accept(this, out);
         }
 
+        @Override
         public Void visit_same_frame(same_frame frame, ClassOutputStream p) {
             return null;
         }
 
+        @Override
         public Void visit_same_locals_1_stack_item_frame(same_locals_1_stack_item_frame frame, ClassOutputStream out) {
             writeVerificationTypeInfo(frame.stack[0], out);
             return null;
         }
 
+        @Override
         public Void visit_same_locals_1_stack_item_frame_extended(same_locals_1_stack_item_frame_extended frame, ClassOutputStream out) {
             out.writeShort(frame.offset_delta);
             writeVerificationTypeInfo(frame.stack[0], out);
             return null;
         }
 
+        @Override
         public Void visit_chop_frame(chop_frame frame, ClassOutputStream out) {
             out.writeShort(frame.offset_delta);
             return null;
         }
 
+        @Override
         public Void visit_same_frame_extended(same_frame_extended frame, ClassOutputStream out) {
             out.writeShort(frame.offset_delta);
             return null;
         }
 
+        @Override
         public Void visit_append_frame(append_frame frame, ClassOutputStream out) {
             out.writeShort(frame.offset_delta);
             for (verification_type_info l: frame.locals)
@@ -613,6 +725,7 @@ public class ClassWriter {
             return null;
         }
 
+        @Override
         public Void visit_full_frame(full_frame frame, ClassOutputStream out) {
             out.writeShort(frame.offset_delta);
             out.writeShort(frame.locals.length);
@@ -692,27 +805,32 @@ public class ClassWriter {
             ev.accept(this, out);
         }
 
+        @Override
         public Void visitPrimitive(Primitive_element_value ev, ClassOutputStream out) {
             out.writeShort(ev.const_value_index);
             return null;
         }
 
+        @Override
         public Void visitEnum(Enum_element_value ev, ClassOutputStream out) {
             out.writeShort(ev.type_name_index);
             out.writeShort(ev.const_name_index);
             return null;
         }
 
+        @Override
         public Void visitClass(Class_element_value ev, ClassOutputStream out) {
             out.writeShort(ev.class_info_index);
             return null;
         }
 
+        @Override
         public Void visitAnnotation(Annotation_element_value ev, ClassOutputStream out) {
             write(ev.annotation_value, out);
             return null;
         }
 
+        @Override
         public Void visitArray(Array_element_value ev, ClassOutputStream out) {
             out.writeShort(ev.num_values);
             for (element_value v: ev.values)

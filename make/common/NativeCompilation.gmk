@@ -74,6 +74,7 @@ endef
 #   AS - Assembler
 #   MT - Windows MT tool
 #   RC - Windows RC tool
+#   OBJCOPY - The objcopy tool for debug symbol handling
 #   STRIP - The tool to use for stripping debug symbols
 #   SYSROOT_CFLAGS - Compiler flags for using the specific sysroot
 #   SYSROOT_LDFLAGS - Linker flags for using the specific sysroot
@@ -90,6 +91,7 @@ define DefineNativeToolchainBody
     $$(call SetIfEmpty, $1_AS, $$($$($1_EXTENDS)_AS))
     $$(call SetIfEmpty, $1_MT, $$($$($1_EXTENDS)_MT))
     $$(call SetIfEmpty, $1_RC, $$($$($1_EXTENDS)_RC))
+    $$(call SetIfEmpty, $1_OBJCOPY, $$($$($1_EXTENDS)_OBJCOPY))
     $$(call SetIfEmpty, $1_STRIP, $$($$($1_EXTENDS)_STRIP))
     $$(call SetIfEmpty, $1_SYSROOT_CFLAGS, $$($$($1_EXTENDS)_SYSROOT_CFLAGS))
     $$(call SetIfEmpty, $1_SYSROOT_LDFLAGS, $$($$($1_EXTENDS)_SYSROOT_LDFLAGS))
@@ -105,6 +107,7 @@ $(eval $(call DefineNativeToolchain, TOOLCHAIN_DEFAULT, \
     AS := $(AS), \
     MT := $(MT), \
     RC := $(RC), \
+    OBJCOPY := $(OBJCOPY), \
     STRIP := $(STRIP), \
     SYSROOT_CFLAGS := $(SYSROOT_CFLAGS), \
     SYSROOT_LDFLAGS := $(SYSROOT_LDFLAGS), \
@@ -118,13 +121,14 @@ $(eval $(call DefineNativeToolchain, TOOLCHAIN_LINK_CXX, \
 
 # Create a toolchain with the BUILD compiler, used for build tools that
 # are to be run during the build.
-# The BUILD_SYSROOT_*FLAGS variables are empty for now.
 $(eval $(call DefineNativeToolchain, TOOLCHAIN_BUILD, \
     CC := $(BUILD_CC), \
     CXX := $(BUILD_CXX), \
     LD := $(BUILD_LD), \
     AR := $(BUILD_AR), \
     AS := $(BUILD_AS), \
+    OBJCOPY := $(BUILD_OBJCOPY), \
+    STRIP := $(BUILD_STRIP), \
     SYSROOT_CFLAGS := $(BUILD_SYSROOT_CFLAGS), \
     SYSROOT_LDFLAGS := $(BUILD_SYSROOT_LDFLAGS), \
 ))
@@ -437,6 +441,7 @@ define SetupNativeCompilationBody
   $$(call SetIfEmpty, $1_AS, $$($$($1_TOOLCHAIN)_AS))
   $$(call SetIfEmpty, $1_MT, $$($$($1_TOOLCHAIN)_MT))
   $$(call SetIfEmpty, $1_RC, $$($$($1_TOOLCHAIN)_RC))
+  $$(call SetIfEmpty, $1_OBJCOPY, $$($$($1_TOOLCHAIN)_OBJCOPY))
   $$(call SetIfEmpty, $1_STRIP, $$($$($1_TOOLCHAIN)_STRIP))
   $$(call SetIfEmpty, $1_SYSROOT_CFLAGS, $$($$($1_TOOLCHAIN)_SYSROOT_CFLAGS))
   $$(call SetIfEmpty, $1_SYSROOT_LDFLAGS, $$($$($1_TOOLCHAIN)_SYSROOT_LDFLAGS))
@@ -720,9 +725,9 @@ define SetupNativeCompilationBody
           # Setup the command line creating debuginfo files, to be run after linking.
           # It cannot be run separately since it updates the original target file
           $1_CREATE_DEBUGINFO_CMDS := \
-              $(OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE) \
-              $(CD) $$($1_OUTPUT_DIR) && \
-                  $(OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
+            $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE) \
+            $(CD) $$($1_OUTPUT_DIR) && \
+                $$($1_OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
 
         else ifeq ($(OPENJDK_TARGET_OS), macosx)
           $1_DEBUGINFO_FILES := $$($1_OBJECT_DIR)/$$($1_BASENAME).dSYM

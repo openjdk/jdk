@@ -28,7 +28,7 @@
 #   @bug 6282388 8030640
 #   @summary Tests that AWT use correct toolkit to be wrapped into HeadlessToolkit
 #   @author artem.ananiev@sun.com: area=awt.headless
-#   @compile TestWrapped.java
+#   compile TestWrapped.java
 #   @run shell WrappedToolkitTest.sh
 
 # Beginning of subroutines:
@@ -105,22 +105,54 @@ if [ -z "${TESTJAVA}" ] ; then
 fi
 echo "JDK under test is: $TESTJAVA"
 
-#Deal with .class files:
-if [ -n "${STANDALONE}" ] ; then
-   # then compile all .java files (if there are any) into .class files
-   if [ -a *.java ]; then
-      ${TESTJAVA}/bin/javac$ ./*.java ;
-   fi
-   # else in harness so copy all the class files from where jtreg put them
-   # over to the scratch directory this test is running in. 
-   else cp ${TESTCLASSES}/*.class . ;
-fi
-
+##Deal with .class files:
+#if [ -n "${STANDALONE}" ] ; then
+#   # then compile all .java files (if there are any) into .class files
+#   if [ -a *.java ]; then
+#      ${TESTJAVA}/bin/javac$ ./*.java ;
+#   fi
+#   # else in harness so copy all the class files from where jtreg put them
+#   # over to the scratch directory this test is running in. 
+#   else cp ${TESTCLASSES}/*.class . ;
+#fi
+#
 #if in test harness, then copy the entire directory that the test is in over 
 # to the scratch directory.  This catches any support files needed by the test.
 if [ -z "${STANDALONE}" ] ; 
    then cp ${TESTSRC}/* . 
 fi
+case "$OS" in
+  Windows* | CYGWIN* )
+    ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} \
+                         -XaddExports:java.desktop/sun.awt=ALL-UNNAMED,java.desktop/sun.awt.windows=ALL-UNNAMED ${CP} \
+                         *.java
+    status=$?
+    if [ ! $status -eq "0" ]; then
+      fail "Compilation failed";
+    fi
+    ;;
+
+  SunOS | Linux )
+    ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} \
+                         -XaddExports:java.desktop/sun.awt=ALL-UNNAMED,java.desktop/sun.awt.X11=ALL-UNNAMED ${CP} \
+                         *.java
+    status=$?
+    if [ ! $status -eq "0" ]; then
+      fail "Compilation failed";
+    fi
+    ;;
+
+  Darwin)
+    ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} \
+                         -XaddExports:java.desktop/sun.awt=ALL-UNNAMED,java.desktop/sun.lwawt.macosx=ALL-UNNAMED ${CP} \
+                         *.java
+    status=$?
+    if [ ! $status -eq "0" ]; then
+      fail "Compilation failed";
+    fi
+    ;;
+
+esac
 
 #Just before executing anything, make sure it has executable permission!
 chmod 777 ./*
@@ -130,12 +162,14 @@ chmod 777 ./*
 case "$OS" in
   Windows* | CYGWIN* )
     ${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.awt.headless=true \
+                         -XaddExports:java.desktop/sun.awt=ALL-UNNAMED,java.desktop/sun.awt.windows=ALL-UNNAMED ${CP} \
                          TestWrapped sun.awt.windows.WToolkit
     status=$?
     if [ ! $status -eq "0" ]; then
       fail "Test FAILED: toolkit wrapped into HeadlessToolkit is not an instance of sun.awt.windows.WToolkit";
     fi
     ${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.awt.headless=true \
+                         -XaddExports:java.desktop/sun.awt=ALL-UNNAMED,java.desktop/sun.awt.windows=ALL-UNNAMED ${CP} \
                          -Dawt.toolkit=sun.awt.windows.WToolkit \
                          TestWrapped sun.awt.windows.WToolkit
     status=$?
@@ -146,6 +180,7 @@ case "$OS" in
 
   SunOS | Linux )
     ${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.awt.headless=true \
+                         -XaddExports:java.desktop/sun.awt=ALL-UNNAMED,java.desktop/sun.awt.X11=ALL-UNNAMED ${CP} \
                          -Dawt.toolkit=sun.awt.X11.XToolkit \
                          TestWrapped sun.awt.X11.XToolkit
     status=$?
@@ -153,6 +188,7 @@ case "$OS" in
       fail "Test FAILED: toolkit wrapped into HeadlessToolkit is not an instance of sun.awt.xawt.XToolkit";
     fi
     AWT_TOOLKIT=XToolkit ${TESTJAVA}/bin/java ${TESTVMOPTS} \
+                         -XaddExports:java.desktop/sun.awt=ALL-UNNAMED,java.desktop/sun.awt.X11=ALL-UNNAMED ${CP} \
                                               -Djava.awt.headless=true \
                                               TestWrapped sun.awt.X11.XToolkit
     status=$?
@@ -163,12 +199,14 @@ case "$OS" in
 
   Darwin)
     ${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.awt.headless=true \
+                         -XaddExports:java.desktop/sun.awt=ALL-UNNAMED,java.desktop/sun.lwawt.macosx=ALL-UNNAMED ${CP} \
                          TestWrapped sun.lwawt.macosx.LWCToolkit
     status=$?
     if [ ! $status -eq "0" ]; then
       fail "Test FAILED: toolkit wrapped into HeadlessToolkit is not an instance of sun.lwawt.macosx.LWCToolkit";
     fi
     ${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.awt.headless=true \
+                         -XaddExports:java.desktop/sun.awt=ALL-UNNAMED,java.desktop/sun.lwawt.macosx=ALL-UNNAMED ${CP} \
                          -Dawt.toolkit=sun.lwawt.macosx.LWCToolkit \
                          TestWrapped sun.lwawt.macosx.LWCToolkit
     status=$?

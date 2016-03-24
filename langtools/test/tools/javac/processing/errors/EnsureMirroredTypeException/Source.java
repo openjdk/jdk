@@ -6,7 +6,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor Processor
- * @compile/fail/ref=Source.out -XDrawDiagnostics -processor Processor Source.java
+ * @compile/fail/ref=Source.out -XDaccessInternalAPI -XDrawDiagnostics -processor Processor Source.java
  */
 
 @Processor.A(a=some.path.to.SomeUnknownClass$Inner.class)
