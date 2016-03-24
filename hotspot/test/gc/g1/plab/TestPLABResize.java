@@ -41,16 +41,15 @@
  */
 package gc.g1.plab;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.io.PrintStream;
 
 import gc.g1.plab.lib.LogParser;
 import gc.g1.plab.lib.PLABUtils;
 import gc.g1.plab.lib.AppPLABResize;
+import gc.g1.plab.lib.PlabReport;
 
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
@@ -73,6 +72,8 @@ public class TestPLABResize {
     private static final int ITERATIONS_SMALL = 3;
     private static final int ITERATIONS_MEDIUM = 5;
     private static final int ITERATIONS_HIGH = 8;
+
+    private static final String PLAB_SIZE_FIELD_NAME = "actual";
 
     private final static TestCase[] TEST_CASES = {
         new TestCase(WASTE_PCT_SMALL, OBJECT_SIZE_SMALL, GC_NUM_SMALL, ITERATIONS_MEDIUM),
@@ -109,16 +110,14 @@ public class TestPLABResize {
      */
     private static void checkResults(String output, TestCase testCase) {
         final LogParser log = new LogParser(output);
-        final Map<Long, Map<LogParser.ReportType, Map<String, Long>>> entries = log.getEntries();
+        final PlabReport report = log.getEntries();
 
-        final ArrayList<Long> plabSizes = entries.entrySet()
-                .stream()
-                .map(item -> {
-                    return item.getValue()
-                            .get(LogParser.ReportType.SURVIVOR_STATS)
-                            .get("actual");
-                })
-                .collect(Collectors.toCollection(ArrayList::new));
+        final List<Long> plabSizes = report.entryStream()
+                .map(item -> item.getValue()
+                        .get(LogParser.ReportType.SURVIVOR_STATS)
+                        .get(PLAB_SIZE_FIELD_NAME)
+                )
+                .collect(Collectors.toList());
 
         // Check that desired plab size was changed during iterations.
         // The test case does 3 rounds of allocations.  The second round of N allocations and GC's
