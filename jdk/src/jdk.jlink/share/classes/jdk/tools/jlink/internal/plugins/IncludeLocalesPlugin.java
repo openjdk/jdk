@@ -155,9 +155,13 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
 
     @Override
     public void configure(Map<String, String> config) {
-        priorityList = Arrays.stream(config.get(NAME).split(","))
-            .map(Locale.LanguageRange::new)
-            .collect(Collectors.toList());
+        try {
+            priorityList = Arrays.stream(config.get(NAME).split(","))
+                .map(Locale.LanguageRange::new)
+                .collect(Collectors.toList());
+        } catch (IllegalArgumentException iae) {
+            throw new PluginException(iae.getLocalizedMessage());
+        }
     }
 
     @Override
@@ -168,7 +172,7 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
         // jdk.localedata module validation
         Set<String> packages = module.getAllPackages();
         if (!packages.containsAll(LOCALEDATA_PACKAGES)) {
-            throw new PluginException("Missing locale data packages in jdk.localedata:\n\t" +
+            throw new PluginException(PluginsResourceBundle.getMessage(NAME + ".missingpackages") +
                 LOCALEDATA_PACKAGES.stream()
                     .filter(pn -> !packages.contains(pn))
                     .collect(Collectors.joining(",\n\t")));
@@ -185,6 +189,10 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
             .collect(Collectors.toList());
 
         filtered = filterLocales(available);
+
+        if (filtered.isEmpty()) {
+            throw new PluginException(PluginsResourceBundle.getMessage(NAME + ".nomatchinglocales"));
+        }
 
         try {
             String value = META_FILES + filtered.stream()
