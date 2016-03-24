@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,6 @@ public class EnsureNewOldDoclet {
     // make sure new doclet is invoked by default
     void run1() throws Exception {
         List<String> output = doTest(javadoc.getPath(),
-                "-J-Xbootclasspath:" + System.getProperty("sun.boot.class.path"),
                 "-classpath", ".", // insulates us from ambient classpath
                 "-Xdoclint:none",
                 "-package",
@@ -80,7 +79,6 @@ public class EnsureNewOldDoclet {
     void run2() throws Exception {
         List<String> output = doTest(javadoc.getPath(),
                 "-Xold",
-                "-J-Xbootclasspath:" + System.getProperty("sun.boot.class.path"),
                 "-classpath", ".", // insulates us from ambient classpath
                 "-Xdoclint:none",
                 "-package",

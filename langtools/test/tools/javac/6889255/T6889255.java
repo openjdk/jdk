@@ -379,7 +379,7 @@ public class T6889255 {
         String classname;
         while ((classname = work.poll()) != null) {
             System.err.println("Checking class " + classname);
-            ClassSymbol sym = syms.enterClass(names.table.fromString(classname));
+            ClassSymbol sym = syms.enterClass(syms.noModule, names.table.fromString(classname));
             sym.complete();
 
             if ((sym.flags() & Flags.INTERFACE) != 0 && !testInterfaces)

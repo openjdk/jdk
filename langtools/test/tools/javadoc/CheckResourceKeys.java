@@ -29,6 +29,8 @@
  */
 
 import java.io.*;
+import java.lang.reflect.Layer;
+import java.lang.reflect.Module;
 import java.util.*;
 import javax.tools.*;
 import com.sun.tools.classfile.*;
@@ -224,6 +226,7 @@ public class CheckResourceKeys {
      * Get the set of keys from the javadoc resource bundles.
      */
     Set<String> getResourceKeys() {
+        Module jdk_javadoc = Layer.boot().findModule("jdk.javadoc").get();
         String[] names = {
                 "com.sun.tools.doclets.formats.html.resources.standard",
                 "com.sun.tools.doclets.internal.toolkit.resources.doclets",
@@ -231,7 +234,7 @@ public class CheckResourceKeys {
         };
         Set<String> results = new TreeSet<String>();
         for (String name : names) {
-            ResourceBundle b = ResourceBundle.getBundle(name);
+            ResourceBundle b = ResourceBundle.getBundle(name, jdk_javadoc);
             results.addAll(b.keySet());
         }
         return results;

@@ -56,7 +56,8 @@ public class SolarisNumericUserPrincipal implements
           (new java.security.PrivilegedAction<java.util.ResourceBundle>() {
               public java.util.ResourceBundle run() {
                   return (java.util.ResourceBundle.getBundle
-                                ("sun.security.util.AuthResources"));
+                                ("sun.security.util.AuthResources",
+                                 sun.security.util.ResourcesMgr.class.getModule()));
               }
            });
 

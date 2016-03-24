@@ -54,13 +54,11 @@
  *   have been used to compress the resource.
  */
 struct ResourceHeader {
-    /* Length of header, needed to retrieve content offset */
-    static const u1 resource_header_length = 21;
     /* magic bytes that identifies a compressed resource header*/
     static const u4 resource_header_magic = 0xCAFEFAFA;
     u4 _magic; // Resource header
-    u4 _size;    // Resource size
-    u4 _uncompressed_size;  // Expected uncompressed size
+    u8 _size;    // Resource size
+    u8 _uncompressed_size;  // Expected uncompressed size
     u4 _decompressor_name_offset;    // Strings table decompressor offset
     u4 _decompressor_config_offset; // Strings table config offset
     u1 _is_terminal; // Last decompressor 1, otherwise 0.
@@ -101,6 +99,8 @@ private:
      */
     inline const char* get_name() const { return _name; }
 
+    static u8 getU8(u1* ptr, Endian *endian);
+    static u4 getU4(u1* ptr, Endian *endian);
 
 protected:
     ImageDecompressor(const char* name) : _name(name) {
@@ -113,7 +113,7 @@ public:
     static void image_decompressor_close();
     static ImageDecompressor* get_decompressor(const char * decompressor_name) ;
     static void decompress_resource(u1* compressed, u1* uncompressed,
-        u4 uncompressed_size, const ImageStrings* strings);
+        u8 uncompressed_size, const ImageStrings* strings, Endian* _endian);
 };
 
 /**

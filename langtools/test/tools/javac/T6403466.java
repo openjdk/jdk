@@ -57,10 +57,14 @@ public class T6403466 extends AbstractProcessor {
             Iterable<? extends JavaFileObject> files =
                 fm.getJavaFileObjectsFromFiles(Arrays.asList(new File(testSrcDir, self + ".java")));
 
-            Iterable<String> options = Arrays.asList("-processorpath", testClassDir,
-                                                     "-processor", self,
-                                                     "-s", ".",
-                                                     "-d", ".");
+            Iterable<String> options = Arrays.asList(
+                "-XaddExports:"
+                    + "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,"
+                    + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                "-processorpath", testClassDir,
+                "-processor", self,
+                "-s", ".",
+                "-d", ".");
             JavacTask task = tool.getTask(out, fm, null, options, null, files);
 
             VerifyingTaskListener vtl = new VerifyingTaskListener(new File(testSrcDir, self + ".out"));

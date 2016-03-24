@@ -33,8 +33,6 @@ import java.security.Principal;
 import java.security.cert.*;
 import javax.security.auth.x500.X500Principal;
 
-import sun.security.x509.*;
-
 public class EmptySubject {
 
     public static void main(String[] args) throws Exception {

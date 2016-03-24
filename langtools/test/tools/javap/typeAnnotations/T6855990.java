@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,14 @@
  * questions.
  */
 
-import java.io.*;
-
 /*
  * @test
  * @bug 6855990
  * @summary InstructionDetailWriter should support new 308 annotations attribute
- * @modules jdk.jdeps
+ * @modules jdk.jdeps/com.sun.tools.javap
  */
+
+import java.io.*;
 
 public class T6855990 {
     public static void main(String[] args) throws Exception {

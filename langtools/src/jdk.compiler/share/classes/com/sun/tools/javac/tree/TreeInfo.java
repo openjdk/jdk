@@ -42,6 +42,7 @@ import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.BLOCK;
 import static com.sun.tools.javac.tree.JCTree.Tag.SYNCHRONIZED;
+import javax.tools.JavaFileObject;
 
 /** Utility class containing inspector methods for trees.
  *
@@ -762,7 +763,12 @@ public class TreeInfo {
         node = skipParens(node);
         switch (node.getTag()) {
         case TOPLEVEL:
-            return ((JCCompilationUnit) node).packge;
+            JCCompilationUnit cut = (JCCompilationUnit) node;
+            if (isModuleInfo(cut) && cut.defs.nonEmpty() && cut.defs.head.hasTag(MODULEDEF))
+                return symbolFor(cut.defs.head);
+            return cut.packge;
+        case MODULEDEF:
+            return ((JCModuleDecl) node).sym;
         case PACKAGEDEF:
             return ((JCPackageDecl) node).packge;
         case CLASSDEF:
@@ -1143,5 +1149,22 @@ public class TreeInfo {
         TypeAnnotationFinder finder = new TypeAnnotationFinder();
         finder.scan(e);
         return finder.foundTypeAnno;
+    }
+
+    public static boolean isModuleInfo(JCCompilationUnit tree) {
+        return tree.sourcefile.isNameCompatible("module-info", JavaFileObject.Kind.SOURCE);
+    }
+
+    public static JCModuleDecl getModule(JCCompilationUnit t) {
+        if (t.defs.nonEmpty()) {
+            JCTree def = t.defs.head;
+            if (def.hasTag(MODULEDEF))
+                return (JCModuleDecl) def;
+        }
+        return null;
+    }
+
+    public static boolean isPackageInfo(JCCompilationUnit tree) {
+        return tree.sourcefile.isNameCompatible("package-info", JavaFileObject.Kind.SOURCE);
     }
 }

@@ -25,7 +25,6 @@
 
 package sun.misc;
 
-import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -56,7 +55,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.jar.JarEntry;
@@ -65,14 +63,10 @@ import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.util.zip.ZipFile;
 
-import jdk.internal.jimage.ImageLocation;
-import jdk.internal.jimage.ImageReader;
 import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
-
 import sun.net.util.URLUtil;
 import sun.net.www.ParseUtil;
-import sun.net.www.protocol.jrt.JavaRuntimeURLConnection;
 
 /**
  * This class is used to maintain a search path of URLs for loading classes
@@ -387,10 +381,6 @@ public class URLClassPath {
                             return new Loader(url);
                         }
                     } else {
-                        if (file != null && "file".equals(url.getProtocol())) {
-                            if (file.endsWith(".jimage"))
-                                return new JImageLoader(url);
-                        }
                         return new JarLoader(url, jarHandler, lmap);
                     }
                 }
@@ -446,13 +436,14 @@ public class URLClassPath {
      * Return null on security check failure.
      * Called by java.net.URLClassLoader.
      */
-    public URL checkURL(URL url) {
-        try {
-            check(url);
-        } catch (Exception e) {
-            return null;
+    public static URL checkURL(URL url) {
+        if (url != null) {
+            try {
+                check(url);
+            } catch (Exception e) {
+                return null;
+            }
         }
-
         return url;
     }
 
@@ -461,7 +452,7 @@ public class URLClassPath {
      * Throw exception on failure.
      * Called internally within this file.
      */
-    static void check(URL url) throws IOException {
+    public static void check(URL url) throws IOException {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             URLConnection urlConnection = url.openConnection();
@@ -1084,134 +1075,6 @@ public class URLClassPath {
                 return null;
             }
             return null;
-        }
-    }
-
-    /**
-     * A Loader of classes and resources from a jimage file located in the
-     * runtime image.
-     */
-    private static class JImageLoader
-        extends Loader implements JavaRuntimeURLConnection.ResourceFinder
-    {
-        private static final AtomicInteger NEXT_INDEX = new AtomicInteger();
-
-        private final ImageReader jimage;
-        private final int index;
-
-        JImageLoader(URL url) throws IOException {
-            super(url);
-
-            // get path to image file and check that it's in the runtime
-            String urlPath = url.getFile().replace('/', File.separatorChar);
-
-            File filePath = new File(ParseUtil.decode(urlPath));
-            File home = new File(JAVA_HOME).getCanonicalFile();
-            File parent = filePath.getParentFile();
-            while (parent != null) {
-                if (parent.equals(home))
-                    break;
-                parent = parent.getParentFile();
-            }
-            if (parent == null)
-                throw new IOException(filePath + " not in runtime image");
-
-            this.jimage = ImageReader.open(filePath.toString());
-            this.index = NEXT_INDEX.getAndIncrement();
-
-            // register with the jimage protocol handler
-            JavaRuntimeURLConnection.register(this);
-        }
-
-        /**
-         * Maps the given resource name to a module.
-         */
-        private String nameToModule(String name) {
-            int pos = name.lastIndexOf('/');
-            if (pos > 0) {
-                String pkg = name.substring(0, pos);
-                String module = jimage.getModule(pkg);
-                if (module != null)
-                    return module;
-            }
-            // cannot map to module
-            return "UNNAMED" + index;
-        }
-
-        /**
-         * Constructs a URL for the resource name.
-         */
-        private URL toURL(String name) {
-            String module = nameToModule(name);
-            String encodedName = ParseUtil.encodePath(name, false);
-            try {
-                return new URL("jrt:/" + module + "/" + encodedName);
-            } catch (MalformedURLException e) {
-                throw new InternalError(e);
-            }
-        }
-
-        @Override
-        URL findResource(String name, boolean check) {
-            ImageLocation location = jimage.findLocation(name);
-            if (location == null)
-                return null;
-            URL url = toURL(name);
-            if (check) {
-                try {
-                    URLClassPath.check(url);
-                } catch (IOException | SecurityException e) {
-                    return null;
-                }
-            }
-            return url;
-        }
-
-        @Override
-        Resource getResource(String name, boolean check) {
-            ImageLocation location = jimage.findLocation(name);
-            if (location == null)
-                return null;
-            URL url = toURL(name);
-            if (check) {
-                try {
-                    URLClassPath.check(url);
-                } catch (IOException | SecurityException e) {
-                    return null;
-                }
-            }
-            return new Resource() {
-                @Override
-                public String getName() { return name; }
-                @Override
-                public URL getURL() { return url; }
-                @Override
-                public URL getCodeSourceURL() {
-                    try {
-                        return new URL("jrt:/" + nameToModule(name));
-                    } catch (MalformedURLException e) {
-                        throw new InternalError(e);
-                    }
-                }
-                @Override
-                public InputStream getInputStream() throws IOException {
-                    byte[] resource = jimage.getResource(location);
-                    return new ByteArrayInputStream(resource);
-                }
-                public int getContentLength() {
-                    long size = location.getUncompressedSize();
-                    return (size > Integer.MAX_VALUE) ? -1 : (int)size;
-                }
-            };
-        }
-
-        @Override
-        public Resource find(String module, String name) throws IOException {
-            String m = nameToModule(name);
-            if (!m.equals(module))
-                return null;
-            // URLConnection will do the permission check
-            return getResource(name, false);
         }
     }
 }

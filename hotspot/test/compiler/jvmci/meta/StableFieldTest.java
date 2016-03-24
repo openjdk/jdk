@@ -26,6 +26,10 @@
  * @bug 8151664
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.vm.annotation
+ *          jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.meta
+ *          jdk.vm.ci/jdk.vm.ci.runtime
  * @compile StableFieldTest.java
  * @run main ClassFileInstaller compiler.jvmci.meta.StableFieldTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Xbootclasspath/a:. compiler.jvmci.meta.StableFieldTest

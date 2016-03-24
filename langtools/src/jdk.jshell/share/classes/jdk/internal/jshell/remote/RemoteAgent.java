@@ -113,6 +113,8 @@ class RemoteAgent {
                     }
                     Method doitMethod;
                     try {
+                        this.getClass().getModule().addReads(klass.getModule());
+                        this.getClass().getModule().addExports(RemoteResolutionException.class.getPackage().getName(), klass.getModule());
                         doitMethod = klass.getDeclaredMethod(DOIT_METHOD_NAME, new Class<?>[0]);
                         doitMethod.setAccessible(true);
                         Object res;
@@ -182,6 +184,7 @@ class RemoteAgent {
                         break;
                     }
                     try {
+                        this.getClass().getModule().addReads(klass.getModule());
                         Field var = klass.getDeclaredField(varname);
                         var.setAccessible(true);
                         Object res = var.get(null);

@@ -195,6 +195,9 @@ public class DocLint implements Plugin {
                 } else {
                     throw new BadArgs("dc.bad.value.for.option", arg, args[i]);
                 }
+            } else if ((arg.equals("-target") || arg.equals("-source")) && i + 1 < args.length) {
+                javacOpts.add(arg);
+                javacOpts.add(args[++i]);
             } else if (arg.equals(STATS)) {
                 env.messages.setStatsEnabled(true);
             } else if (arg.equals("-bootclasspath") && i + 1 < args.length) {

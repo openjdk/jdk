@@ -25,6 +25,9 @@
 
 package sun.management;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Predicate;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -49,10 +52,19 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
     public static StackTraceElement from(CompositeData cd) {
         validateCompositeData(cd);
 
-        return new StackTraceElement(getString(cd, CLASS_NAME),
-                                     getString(cd, METHOD_NAME),
-                                     getString(cd, FILE_NAME),
-                                     getInt(cd, LINE_NUMBER));
+        if (stackTraceElementV6CompositeType.equals(cd.getCompositeType())) {
+            return new StackTraceElement(getString(cd, CLASS_NAME),
+                                         getString(cd, METHOD_NAME),
+                                         getString(cd, FILE_NAME),
+                                         getInt(cd, LINE_NUMBER));
+        } else {
+            return new StackTraceElement(getString(cd, MODULE_NAME),
+                                         getString(cd, MODULE_VERSION),
+                                         getString(cd, CLASS_NAME),
+                                         getString(cd, METHOD_NAME),
+                                         getString(cd, FILE_NAME),
+                                         getInt(cd, LINE_NUMBER));
+        }
     }
 
     public static CompositeData toCompositeData(StackTraceElement ste) {
@@ -69,22 +81,13 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
             ste.getFileName(),
             ste.getLineNumber(),
             ste.isNativeMethod(),
+            ste.getModuleName(),
+            ste.getModuleVersion(),
         };
         try {
             return new CompositeDataSupport(stackTraceElementCompositeType,
                                             stackTraceElementItemNames,
                                             stackTraceElementItemValues);
-        } catch (OpenDataException e) {
-            // Should never reach here
-            throw new AssertionError(e);
-        }
-    }
-
-    private static final CompositeType stackTraceElementCompositeType;
-    static {
-        try {
-            stackTraceElementCompositeType = (CompositeType)
-                MappedMXBeanType.toOpenType(StackTraceElement.class);
         } catch (OpenDataException e) {
             // Should never reach here
             throw new AssertionError(e);
@@ -97,6 +100,8 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
     private static final String FILE_NAME       = "fileName";
     private static final String LINE_NUMBER     = "lineNumber";
     private static final String NATIVE_METHOD   = "nativeMethod";
+    private static final String MODULE_NAME     = "moduleName";
+    private static final String MODULE_VERSION  = "moduleVersion";
 
     private static final String[] stackTraceElementItemNames = {
         CLASS_NAME,
@@ -104,7 +109,31 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
         FILE_NAME,
         LINE_NUMBER,
         NATIVE_METHOD,
+        MODULE_NAME,
+        MODULE_VERSION,
     };
+
+    private static final String[] stackTraceElementV9ItemNames = {
+        MODULE_NAME,
+        MODULE_VERSION,
+    };
+
+    private static final CompositeType stackTraceElementCompositeType;
+    private static final CompositeType stackTraceElementV6CompositeType;
+    static {
+        try {
+            stackTraceElementCompositeType = (CompositeType)
+                MappedMXBeanType.toOpenType(StackTraceElement.class);
+            stackTraceElementV6CompositeType =
+                TypeVersionMapper.getInstance().getVersionedCompositeType(
+                    stackTraceElementCompositeType,
+                    TypeVersionMapper.V6
+                );
+        } catch (OpenDataException e) {
+            // Should never reach here
+            throw new AssertionError(e);
+        }
+    }
 
     /** Validate if the input CompositeData has the expected
      * CompositeType (i.e. contain all attributes with expected
@@ -115,10 +144,22 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
             throw new NullPointerException("Null CompositeData");
         }
 
-        if (!isTypeMatched(stackTraceElementCompositeType, cd.getCompositeType())) {
-            throw new IllegalArgumentException(
-                "Unexpected composite type for StackTraceElement");
+        CompositeType ct = cd.getCompositeType();
+        if (!isTypeMatched(stackTraceElementCompositeType, ct)) {
+            if (!isTypeMatched(stackTraceElementV6CompositeType, ct)) {
+                throw new IllegalArgumentException(
+                    "Unexpected composite type for StackTraceElement");
+            }
         }
+    }
+
+    static boolean isV6Attribute(String name) {
+        for(String attrName : stackTraceElementV9ItemNames) {
+            if (name.equals(attrName)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static final long serialVersionUID = -2704607706598396827L;

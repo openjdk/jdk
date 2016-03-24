@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,6 +480,46 @@ public interface TreeVisitor<R,P> {
      * @return a result value
      */
     R visitWildcard(WildcardTree node, P p);
+
+    /**
+     * Visits a ModuleTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitModule(ModuleTree node, P p);
+
+    /**
+     * Visits an ExportsTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitExports(ExportsTree node, P p);
+
+    /**
+     * Visits a ProvidesTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitProvides(ProvidesTree node, P p);
+
+    /**
+     * Visits a RequiresTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitRequires(RequiresTree node, P p);
+
+    /**
+     * Visits a UsesTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitUses(UsesTree node, P p);
 
     /**
      * Visits an unknown type of Tree node.

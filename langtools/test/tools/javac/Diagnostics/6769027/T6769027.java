@@ -33,6 +33,7 @@
 // use /othervm to avoid locale issues
 
 import java.net.URI;
+import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import javax.tools.*;
 import com.sun.tools.javac.util.*;
@@ -373,7 +374,7 @@ public class T6769027 {
         options.put("diagsIndentation", indentString);
         MyLog log = new MyLog(ctx);
         JavacMessages messages = JavacMessages.instance(ctx);
-        messages.add("tester");
+        messages.add(locale -> ResourceBundle.getBundle("tester", locale));
         JCDiagnostic.Factory diags = JCDiagnostic.Factory.instance(ctx);
         log.useSource(new MyFileObject("This is a source line"));
         JCDiagnostic d = diags.error(null, log.currentSource(),

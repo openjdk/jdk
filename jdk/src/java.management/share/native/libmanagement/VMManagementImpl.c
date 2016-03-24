@@ -80,9 +80,6 @@ Java_sun_management_VMManagementImpl_initOptionalSupportFields
     value = mos.isOtherThreadCpuTimeSupported;
     setStaticBooleanField(env, cls, "otherThreadCpuTimeSupport", value);
 
-    value = mos.isBootClassPathSupported;
-    setStaticBooleanField(env, cls, "bootClassPathSupport", value);
-
     if (jmm_version >= JMM_VERSION_1_1) {
         value = mos.isObjectMonitorUsageSupported;
         setStaticBooleanField(env, cls, "objectMonitorUsageSupport", value);

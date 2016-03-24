@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,14 +152,14 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
         if (seenCaptured.contains(t))
             return printAnnotations(t) +
                 localize(locale, "compiler.misc.type.captureof.1",
-                         capturedVarId(t, locale));
+                capturedVarId(t, locale));
         else {
             try {
                 seenCaptured = seenCaptured.prepend(t);
                 return printAnnotations(t) +
                     localize(locale, "compiler.misc.type.captureof",
-                             capturedVarId(t, locale),
-                             visit(t.wildcard, locale));
+                    capturedVarId(t, locale),
+                    visit(t.wildcard, locale));
             }
             finally {
                 seenCaptured = seenCaptured.tail;
@@ -271,6 +271,11 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     @Override
     public String visitTypeVar(TypeVar t, Locale locale) {
+        return visitType(t, locale);
+    }
+
+    @Override
+    public String visitModuleType(ModuleType t, Locale locale) {
         return visitType(t, locale);
     }
 
