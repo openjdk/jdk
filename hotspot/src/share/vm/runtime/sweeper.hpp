@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ class NMethodSweeper : public AllStatic {
   enum MethodStateChange {
     None,
     MadeZombie,
-    MarkedForReclamation,
     Flushed
   };
   static long      _traversals;                   // Stack scan count, also sweep ID.
@@ -76,7 +75,6 @@ class NMethodSweeper : public AllStatic {
   static volatile int _bytes_changed;             // Counts the total nmethod size if the nmethod changed from:
                                                   //   1) alive       -> not_entrant
                                                   //   2) not_entrant -> zombie
-                                                  //   3) zombie      -> marked_for_reclamation
   // Stat counters
   static long      _total_nof_methods_reclaimed;    // Accumulated nof methods flushed
   static long      _total_nof_c2_methods_reclaimed; // Accumulated nof C2-compiled methods flushed

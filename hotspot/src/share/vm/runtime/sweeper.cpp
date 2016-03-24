@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,6 @@ volatile bool NMethodSweeper::_force_sweep             = false;// Indicates if w
 volatile int  NMethodSweeper::_bytes_changed           = 0;    // Counts the total nmethod size if the nmethod changed from:
                                                                //   1) alive       -> not_entrant
                                                                //   2) not_entrant -> zombie
-                                                               //   3) zombie      -> marked_for_reclamation
 int    NMethodSweeper::_hotness_counter_reset_val       = 0;
 
 long   NMethodSweeper::_total_nof_methods_reclaimed     = 0;   // Accumulated nof methods flushed
@@ -397,7 +396,6 @@ void NMethodSweeper::sweep_code_cache() {
 
   int flushed_count                = 0;
   int zombified_count              = 0;
-  int marked_for_reclamation_count = 0;
   int flushed_c2_count     = 0;
 
   if (PrintMethodFlushing && Verbose) {
@@ -442,10 +440,6 @@ void NMethodSweeper::sweep_code_cache() {
               ++flushed_c2_count;
             }
             break;
-          case MarkedForReclamation:
-            state_after = "marked for reclamation";
-            ++marked_for_reclamation_count;
-            break;
           case MadeZombie:
             state_after = "made zombie";
             ++zombified_count;
@@ -486,7 +480,6 @@ void NMethodSweeper::sweep_code_cache() {
     event.set_sweepIndex(_traversals);
     event.set_sweptCount(swept_count);
     event.set_flushedCount(flushed_count);
-    event.set_markedCount(marked_for_reclamation_count);
     event.set_zombifiedCount(zombified_count);
     event.commit();
   }
@@ -601,23 +594,12 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_nmethod(nmethod* nm) {
   }
 
   if (nm->is_zombie()) {
-    // If it is the first time we see nmethod then we mark it. Otherwise,
-    // we reclaim it. When we have seen a zombie method twice, we know that
-    // there are no inline caches that refer to it.
-    if (nm->is_marked_for_reclamation()) {
-      assert(!nm->is_locked_by_vm(), "must not flush locked nmethods");
-      release_nmethod(nm);
-      assert(result == None, "sanity");
-      result = Flushed;
-    } else {
-      nm->mark_for_reclamation();
-      // Keep track of code cache state change
-      _bytes_changed += nm->total_size();
-      SWEEP(nm);
-      assert(result == None, "sanity");
-      result = MarkedForReclamation;
-      assert(nm->is_marked_for_reclamation(), "nmethod must be marked for reclamation");
-    }
+    // All inline caches that referred to this nmethod were cleaned in the
+    // previous sweeper cycle. Now flush the nmethod from the code cache.
+    assert(!nm->is_locked_by_vm(), "must not flush locked nmethods");
+    release_nmethod(nm);
+    assert(result == None, "sanity");
+    result = Flushed;
   } else if (nm->is_not_entrant()) {
     // If there are no current activations of this method on the
     // stack we can safely convert it to a zombie method
