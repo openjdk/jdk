@@ -90,10 +90,16 @@ void CallInfo::set_virtual(KlassHandle resolved_klass,
 void CallInfo::set_handle(const methodHandle& resolved_method,
                           Handle resolved_appendix,
                           Handle resolved_method_type, TRAPS) {
+  set_handle(SystemDictionary::MethodHandle_klass(), resolved_method, resolved_appendix, resolved_method_type, CHECK);
+}
+
+void CallInfo::set_handle(KlassHandle resolved_klass,
+                          const methodHandle& resolved_method,
+                          Handle resolved_appendix,
+                          Handle resolved_method_type, TRAPS) {
   if (resolved_method.is_null()) {
     THROW_MSG(vmSymbols::java_lang_InternalError(), "resolved method is null");
   }
-  KlassHandle resolved_klass = SystemDictionary::MethodHandle_klass();
   assert(resolved_method->intrinsic_id() == vmIntrinsics::_invokeBasic ||
          resolved_method->is_compiled_lambda_form(),
          "linkMethod must return one of these");
@@ -426,7 +432,8 @@ methodHandle LinkResolver::lookup_polymorphic_method(
                   vmIntrinsics::name_at(iid), klass->external_name(),
                   name->as_C_string(), full_signature->as_C_string());
   }
-  if (klass() == SystemDictionary::MethodHandle_klass() &&
+  if ((klass() == SystemDictionary::MethodHandle_klass() ||
+       klass() == SystemDictionary::VarHandle_klass()) &&
       iid != vmIntrinsics::_none) {
     if (MethodHandles::is_signature_polymorphic_intrinsic(iid)) {
       // Most of these do not need an up-call to Java to resolve, so can be done anywhere.
@@ -475,6 +482,7 @@ methodHandle LinkResolver::lookup_polymorphic_method(
       Handle appendix;
       Handle method_type;
       methodHandle result = SystemDictionary::find_method_handle_invoker(
+                                                            klass,
                                                             name,
                                                             full_signature,
                                                             link_info.current_klass(),
@@ -1554,13 +1562,15 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
                                        const LinkInfo& link_info,
                                        TRAPS) {
   // JSR 292:  this must be an implicitly generated method MethodHandle.invokeExact(*...) or similar
-  assert(link_info.resolved_klass()() == SystemDictionary::MethodHandle_klass(), "");
+  KlassHandle resolved_klass = link_info.resolved_klass();
+  assert(resolved_klass() == SystemDictionary::MethodHandle_klass() ||
+         resolved_klass() == SystemDictionary::VarHandle_klass(), "");
   assert(MethodHandles::is_signature_polymorphic_name(link_info.name()), "");
   Handle       resolved_appendix;
   Handle       resolved_method_type;
   methodHandle resolved_method = lookup_polymorphic_method(link_info,
                                        &resolved_appendix, &resolved_method_type, CHECK);
-  result.set_handle(resolved_method, resolved_appendix, resolved_method_type, CHECK);
+  result.set_handle(resolved_klass, resolved_method, resolved_appendix, resolved_method_type, CHECK);
 }
 
 static void wrap_invokedynamic_exception(TRAPS) {

@@ -279,6 +279,7 @@
   template(java_lang_invoke_MutableCallSite,          "java/lang/invoke/MutableCallSite")         \
   template(java_lang_invoke_VolatileCallSite,         "java/lang/invoke/VolatileCallSite")        \
   template(java_lang_invoke_MethodHandle,             "java/lang/invoke/MethodHandle")            \
+  template(java_lang_invoke_VarHandle,                "java/lang/invoke/VarHandle")               \
   template(java_lang_invoke_MethodType,               "java/lang/invoke/MethodType")              \
   template(java_lang_invoke_MethodType_signature,     "Ljava/lang/invoke/MethodType;")            \
   template(java_lang_invoke_MemberName_signature,     "Ljava/lang/invoke/MemberName;")            \
