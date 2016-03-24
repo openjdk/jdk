@@ -56,8 +56,6 @@ import java.util.jar.Manifest;
 
 import jdk.internal.module.ModulePatcher.PatchedModuleReader;
 import jdk.internal.misc.VM;
-import sun.misc.URLClassPath;
-import sun.misc.Resource;
 
 
 /**

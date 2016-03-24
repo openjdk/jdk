@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.loader;
 
 import java.io.Closeable;
 import java.io.File;
@@ -65,6 +65,8 @@ import java.util.zip.ZipFile;
 
 import jdk.internal.misc.JavaUtilZipFileAccess;
 import jdk.internal.misc.SharedSecrets;
+import sun.misc.InvalidJarIndexException;
+import sun.misc.JarIndex;
 import sun.net.util.URLUtil;
 import sun.net.www.ParseUtil;
 
