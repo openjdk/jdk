@@ -892,7 +892,7 @@ loop:
             block();
             break;
         case VAR:
-            variableStatement(type, true);
+            variableStatement(type);
             break;
         case SEMICOLON:
             emptyStatement();
@@ -946,11 +946,11 @@ loop:
                 if (singleStatement) {
                     throw error(AbstractParser.message("expected.stmt", type.getName() + " declaration"), token);
                 }
-                variableStatement(type, true);
+                variableStatement(type);
                 break;
             }
             if (env._const_as_var && type == CONST) {
-                variableStatement(TokenType.VAR, true);
+                variableStatement(TokenType.VAR);
                 break;
             }
 
@@ -1047,7 +1047,7 @@ loop:
         }
     }
 
-    /**
+    /*
      * VariableStatement :
      *      var VariableDeclarationList ;
      *
@@ -1066,8 +1066,8 @@ loop:
      * Parse a VAR statement.
      * @param isStatement True if a statement (not used in a FOR.)
      */
-    private List<VarNode> variableStatement(final TokenType varType, final boolean isStatement) {
-        return variableStatement(varType, isStatement, -1);
+    private List<VarNode> variableStatement(final TokenType varType) {
+        return variableStatement(varType, true, -1);
     }
 
     private List<VarNode> variableStatement(final TokenType varType, final boolean isStatement, final int sourceOrder) {
@@ -1215,6 +1215,7 @@ loop:
      *
      * Parse a FOR statement.
      */
+    @SuppressWarnings("fallthrough")
     private void forStatement() {
         final long forToken = token;
         final int forLine = line;
@@ -1235,6 +1236,7 @@ loop:
         JoinPredecessorExpression modify = null;
 
         int flags = 0;
+        boolean isForOf = false;
 
         try {
             // FOR tested in caller.
@@ -1292,8 +1294,17 @@ loop:
                 }
                 break;
 
+            case IDENT:
+                if (env._es6 && "of".equals(getValue())) {
+                    isForOf = true;
+                    // fall through
+                } else {
+                    expect(SEMICOLON); // fail with expected message
+                    break;
+                }
             case IN:
-                flags |= ForNode.IS_FOR_IN;
+
+                flags |= isForOf ? ForNode.IS_FOR_OF : ForNode.IS_FOR_IN;
                 test = new JoinPredecessorExpression();
                 if (vars != null) {
                     // for (var i in obj)
@@ -1301,32 +1312,31 @@ loop:
                         init = new IdentNode(vars.get(0).getName());
                     } else {
                         // for (var i, j in obj) is invalid
-                        throw error(AbstractParser.message("many.vars.in.for.in.loop"), vars.get(1).getToken());
+                        throw error(AbstractParser.message("many.vars.in.for.in.loop", isForOf ? "of" : "in"), vars.get(1).getToken());
                     }
-
                 } else {
                     // for (expr in obj)
-                    assert init != null : "for..in init expression can not be null here";
+                    assert init != null : "for..in/of init expression can not be null here";
 
                     // check if initial expression is a valid L-value
                     if (!(init instanceof AccessNode ||
                           init instanceof IndexNode ||
                           init instanceof IdentNode)) {
-                        throw error(AbstractParser.message("not.lvalue.for.in.loop"), init.getToken());
+                        throw error(AbstractParser.message("not.lvalue.for.in.loop", isForOf ? "of" : "in"), init.getToken());
                     }
 
                     if (init instanceof IdentNode) {
                         if (!checkIdentLValue((IdentNode)init)) {
-                            throw error(AbstractParser.message("not.lvalue.for.in.loop"), init.getToken());
+                            throw error(AbstractParser.message("not.lvalue.for.in.loop", isForOf ? "of" : "in"), init.getToken());
                         }
-                        verifyStrictIdent((IdentNode)init, "for-in iterator");
+                        verifyStrictIdent((IdentNode)init, isForOf ? "for-of iterator" : "for-in iterator");
                     }
                 }
 
                 next();
 
-                // Get the collection expression.
-                modify = joinPredecessorExpression();
+                // For-of only allows AssignmentExpression.
+                modify = isForOf ? new JoinPredecessorExpression(assignmentExpression(false)) : joinPredecessorExpression();
                 break;
 
             default:

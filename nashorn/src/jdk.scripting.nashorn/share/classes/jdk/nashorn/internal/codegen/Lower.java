@@ -254,12 +254,12 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         ForNode newForNode = forNode;
 
         final Expression test = forNode.getTest();
-        if (!forNode.isForIn() && isAlwaysTrue(test)) {
+        if (!forNode.isForInOrOf() && isAlwaysTrue(test)) {
             newForNode = forNode.setTest(lc, null);
         }
 
         newForNode = checkEscape(newForNode);
-        if(!es6 && newForNode.isForIn()) {
+        if(!es6 && newForNode.isForInOrOf()) {
             // Wrap it in a block so its internally created iterator is restricted in scope, unless we are running
             // in ES6 mode, in which case the parser already created a block to capture let/const declarations.
             addStatementEnclosedInBlock(newForNode);

@@ -1753,7 +1753,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
         enterStatement(forNode);
-        if (forNode.isForIn()) {
+        if (forNode.isForInOrOf()) {
             enterForIn(forNode);
         } else {
             final Expression init = forNode.getInit();
@@ -1768,7 +1768,15 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private void enterForIn(final ForNode forNode) {
         loadExpression(forNode.getModify(), TypeBounds.OBJECT);
-        method.invoke(forNode.isForEach() ? ScriptRuntime.TO_VALUE_ITERATOR : ScriptRuntime.TO_PROPERTY_ITERATOR);
+        if (forNode.isForEach()) {
+            method.invoke(ScriptRuntime.TO_VALUE_ITERATOR);
+        } else if (forNode.isForIn()) {
+            method.invoke(ScriptRuntime.TO_PROPERTY_ITERATOR);
+        } else if (forNode.isForOf()) {
+            method.invoke(ScriptRuntime.TO_ES6_ITERATOR);
+        } else {
+            throw new IllegalArgumentException("Unexpected for node");
+        }
         final Symbol iterSymbol = forNode.getIterator();
         final int iterSlot = iterSymbol.getSlot(Type.OBJECT);
         method.store(iterSymbol, ITERATOR_TYPE);
@@ -3318,7 +3326,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             if (needsScope && varNode.isLet()) {
                 method.loadCompilerConstant(SCOPE);
                 method.loadUndefined(Type.OBJECT);
-                final int flags = getScopeCallSiteFlags(identSymbol) | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
+                final int flags = getScopeCallSiteFlags(identSymbol) | CALLSITE_DECLARE;
                 assert isFastScope(identSymbol);
                 storeFastScopeVar(identSymbol, flags);
             }
