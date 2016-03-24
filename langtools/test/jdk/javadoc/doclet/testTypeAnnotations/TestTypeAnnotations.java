@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8005091 8009686 8025633 8026567 6469562
+ * @bug      8005091 8009686 8025633 8026567 6469562 8071982 8071984
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -355,5 +355,369 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/Generic2.html", true,
                 "<pre>void&nbsp;test2(<a href=\"../typeannos/RcvrA.html\" title=\""
                 + "annotation in typeannos\">@RcvrA</a>&nbsp;Generic2&lt;X&gt;&nbsp;this)</pre>");
+
+
+        // Test for repeated type annotations (RepeatedAnnotations.java).
+        checkOutput("typeannos/RepeatingAtClassLevel.html", true,
+                "<pre><a href=\"../typeannos/RepTypeA.html\" title=\"annotation in "
+                + "typeannos\">@RepTypeA</a> <a href=\"../typeannos/RepTypeA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeA</a>\n<a href="
+                + "\"../typeannos/RepTypeB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeB</a> <a href=\"../typeannos/RepTypeB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeB</a>\nclass <span class="
+                + "\"typeNameLabel\">RepeatingAtClassLevel</span>\nextends "
+                + "java.lang.Object</pre>");
+
+// @ignore 8146008
+//        checkOutput("typeannos/RepeatingAtClassLevel2.html", true,
+//                "<pre><a href=\"../typeannos/RepTypeUseA.html\" title=\"annotation "
+//                + "in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html"
+//                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a>\n<a href="
+//                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos"
+//                + "\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" "
+//                + "title=\"annotation in typeannos\">@RepTypeUseB</a>\nclass <span "
+//                + "class=\"typeNameLabel\">RepeatingAtClassLevel2</span>\nextends "
+//                + "java.lang.Object</pre>");
+//
+//        checkOutput("typeannos/RepeatingAtClassLevel2.html", true,
+//                "<pre><a href=\"../typeannos/RepAllContextsA.html\" title=\"annotation"
+//                + " in typeannos\">@RepAllContextsA</a> <a href=\"../typeannos/RepAllContextsA.html"
+//                + "\" title=\"annotation in typeannos\">@RepAllContextsA</a>\n<a href="
+//                + "\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos"
+//                + "\">@RepAllContextsB</a> <a href=\"../typeannos/RepAllContextsB.html"
+//                + "\" title=\"annotation in typeannos\">@RepAllContextsB</a>\n"
+//                + "class <span class=\"typeNameLabel\">RepeatingAtClassLevel3</span>\n"
+//                + "extends java.lang.Object</pre>");
+
+        checkOutput("typeannos/RepeatingOnConstructor.html", true,
+                "<pre><a href=\"../typeannos/RepConstructorA.html\" title=\"annotation "
+                + "in typeannos\">@RepConstructorA</a> <a href=\"../typeannos/RepConstructorA.html"
+                + "\" title=\"annotation in typeannos\">@RepConstructorA</a>\n<a href="
+                + "\"../typeannos/RepConstructorB.html\" title=\"annotation in typeannos"
+                + "\">@RepConstructorB</a> <a href=\"../typeannos/RepConstructorB.html"
+                + "\" title=\"annotation in typeannos\">@RepConstructorB</a>\n"
+                + "RepeatingOnConstructor()</pre>",
+
+                "<pre><a href=\"../typeannos/RepConstructorA.html\" title=\"annotation in typeannos"
+                + "\">@RepConstructorA</a> <a href=\"../typeannos/RepConstructorA.html"
+                + "\" title=\"annotation in typeannos\">@RepConstructorA</a>\n<a href="
+                + "\"../typeannos/RepConstructorB.html\" title=\"annotation in typeannos"
+                + "\">@RepConstructorB</a> <a href=\"../typeannos/RepConstructorB.html"
+                + "\" title=\"annotation in typeannos\">@RepConstructorB</a>\n"
+                + "RepeatingOnConstructor(int&nbsp;i,\n                       int&nbsp;j)</pre>",
+
+                "<pre><a href=\"../typeannos/RepAllContextsA.html\" title=\"annotation in typeannos"
+                + "\">@RepAllContextsA</a> <a href=\"../typeannos/RepAllContextsA.html"
+                + "\" title=\"annotation in typeannos\">@RepAllContextsA</a>\n"
+                + "<a href=\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos"
+                + "\">@RepAllContextsB</a> <a href=\"../typeannos/RepAllContextsB.html"
+                + "\" title=\"annotation in typeannos\">@RepAllContextsB</a>\n"
+                + "RepeatingOnConstructor(int&nbsp;i,\n                       int&nbsp;j,\n"
+                + "                       int&nbsp;k)</pre>",
+
+                "<pre>RepeatingOnConstructor(<a href=\"../typeannos/RepParameterA.html"
+                + "\" title=\"annotation in typeannos\">@RepParameterA</a> <a href="
+                + "\"../typeannos/RepParameterA.html\" title=\"annotation in typeannos"
+                + "\">@RepParameterA</a> <a href=\"../typeannos/RepParameterB.html"
+                + "\" title=\"annotation in typeannos\">@RepParameterB</a> "
+                + "<a href=\"../typeannos/RepParameterB.html\" title=\"annotation in typeannos"
+                + "\">@RepParameterB</a>\n                       java.lang.String&nbsp;parameter,\n"
+                + "                       <a href=\"../typeannos/RepParameterA.html\" "
+                + "title=\"annotation in typeannos\">@RepParameterA</a> <a href="
+                + "\"../typeannos/RepParameterA.html\" title=\"annotation in typeannos\">"
+                + "@RepParameterA</a> <a href=\"../typeannos/RepParameterB.html\" "
+                + "title=\"annotation in typeannos\">@RepParameterB</a> <a href="
+                + "\"../typeannos/RepParameterB.html\" title=\"annotation in typeannos\">"
+                + "@RepParameterB</a>\n                       java.lang.String "
+                + "<a href=\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">@RepTypeUseB</a> "
+                + "<a href=\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> ...&nbsp;vararg)</pre>"
+        );
+
+        checkOutput("typeannos/RepeatingOnConstructor.Inner.html", true,
+                "<code><span class=\"memberNameLink\"><a href=\"../typeannos/RepeatingOnConstructor.Inner.html"
+                + "#Inner-java.lang.String-java.lang.String...-\">Inner</a></span>"
+                + "(java.lang.String&nbsp;parameter,\n     java.lang.String <a href="
+                + "\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> <a href="
+                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> ...&nbsp;vararg)</code>",
+
+                "Inner(<a href=\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> <a href="
+                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a>&nbsp;RepeatingOnConstructor&nbsp;this,\n      <a href="
+                + "\"../typeannos/RepParameterA.html\" title=\"annotation in typeannos\">"
+                + "@RepParameterA</a> <a href=\"../typeannos/RepParameterA.html\" title="
+                + "\"annotation in typeannos\">@RepParameterA</a> <a href=\"../typeannos/RepParameterB.html"
+                + "\" title=\"annotation in typeannos\">@RepParameterB</a> <a href="
+                + "\"../typeannos/RepParameterB.html\" title=\"annotation in typeannos\">"
+                + "@RepParameterB</a>\n      java.lang.String&nbsp;parameter,\n"
+                + "      <a href=\"../typeannos/RepParameterA.html\" title=\"annotation in typeannos\">"
+                + "@RepParameterA</a> <a href=\"../typeannos/RepParameterA.html\" title="
+                + "\"annotation in typeannos\">@RepParameterA</a> <a href=\"../typeannos/RepParameterB.html"
+                + "\" title=\"annotation in typeannos\">@RepParameterB</a> <a href="
+                + "\"../typeannos/RepParameterB.html\" title=\"annotation in typeannos\">"
+                + "@RepParameterB</a>\n      java.lang.String <a href=\"../typeannos/RepTypeUseA.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> ...&nbsp;vararg)");
+
+        checkOutput("typeannos/RepeatingOnField.html", true,
+                "<code>(package private) java.lang.Integer</code></td>\n<td class=\"colLast\">"
+                + "<code><span class=\"memberNameLink\"><a href=\"../typeannos/RepeatingOnField.html#i1"
+                + "\">i1</a></span></code>",
+
+                "<code>(package private) <a href=\"../typeannos/RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href=\""
+                + "../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.Integer</code></td>\n"
+                + "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href="
+                + "\"../typeannos/RepeatingOnField.html#i2\">i2</a></span></code>",
+
+                "<code>(package private) <a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> java.lang.Integer</code>"
+                + "</td>\n<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"../typeannos/RepeatingOnField.html#i3\">i3</a></span></code>",
+
+                "<code>(package private) <a href=\"../typeannos/RepAllContextsA.html\" title=\""
+                + "annotation in typeannos\">@RepAllContextsA</a> <a href=\"../typeannos/RepAllContextsA.html"
+                + "\" title=\"annotation in typeannos\">@RepAllContextsA</a> <a href="
+                + "\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsB</a> <a href=\"../typeannos/RepAllContextsB.html\" title="
+                + "\"annotation in typeannos\">@RepAllContextsB</a> java.lang.Integer</code>"
+                + "</td>\n<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"../typeannos/RepeatingOnField.html#i4\">i4</a></span></code>",
+
+                "<code>(package private) java.lang.String <a href=\"../typeannos/RepTypeUseA.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> [] <a href="
+                + "\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> <a href="
+                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> []</code></td>\n<td class=\"colLast\"><code><span class="
+                + "\"memberNameLink\"><a href=\"../typeannos/RepeatingOnField.html#sa"
+                + "\">sa</a></span></code>",
+
+                "<pre><a href=\"../typeannos/RepFieldA.html\" title=\"annotation in typeannos\">"
+                + "@RepFieldA</a> <a href=\"../typeannos/RepFieldA.html\" title="
+                + "\"annotation in typeannos\">@RepFieldA</a>\n<a href=\"../typeannos/RepFieldB.html"
+                + "\" title=\"annotation in typeannos\">@RepFieldB</a> <a href="
+                + "\"../typeannos/RepFieldB.html\" title=\"annotation in typeannos\">"
+                + "@RepFieldB</a>\njava.lang.Integer i1</pre>",
+
+                "<pre><a href=\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos"
+                + "\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> "
+                + "<a href=\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> java.lang.Integer i2</pre>",
+
+                "<pre><a href=\"../typeannos/RepFieldA.html\" title=\"annotation in typeannos\">"
+                + "@RepFieldA</a> <a href=\"../typeannos/RepFieldA.html\" title="
+                + "\"annotation in typeannos\">@RepFieldA</a>\n<a href=\"../typeannos/RepFieldB.html"
+                + "\" title=\"annotation in typeannos\">@RepFieldB</a> <a href="
+                + "\"../typeannos/RepFieldB.html\" title=\"annotation in typeannos\">"
+                + "@RepFieldB</a>\n<a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> java.lang.Integer i3</pre>",
+
+                "<pre><a href=\"../typeannos/RepAllContextsA.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsA</a> <a href=\"../typeannos/RepAllContextsA.html"
+                + "\" title=\"annotation in typeannos\">@RepAllContextsA</a>\n<a href="
+                + "\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsB</a> <a href=\"../typeannos/RepAllContextsB.html"
+                + "\" title=\"annotation in typeannos\">@RepAllContextsB</a>\n"
+                + "<a href=\"../typeannos/RepAllContextsA.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsA</a> <a href=\"../typeannos/RepAllContextsA.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsA</a> <a href="
+                + "\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsB</a> <a href=\"../typeannos/RepAllContextsB.html"
+                + "\" title=\"annotation in typeannos\">@RepAllContextsB</a> java.lang.Integer i4</pre>",
+
+                "<pre>java.lang.String <a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> [] <a href="
+                + "\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a> <a href="
+                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> [] sa</pre>");
+
+        checkOutput("typeannos/RepeatingOnMethod.html", true,
+                "<code>(package private) java.lang.String</code></td>\n<td class="
+                + "\"colLast\"><code><span class=\"memberNameLink\"><a href="
+                + "\"../typeannos/RepeatingOnMethod.html#test1--\">test1</a></span>()</code>",
+
+                "<code>(package private) <a href=\"../typeannos/RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String</code>"
+                + "</td>\n<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"../typeannos/RepeatingOnMethod.html#test2--\">test2</a>"
+                + "</span>()</code>",
+
+                "<code>(package private) <a href=\"../typeannos/RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String</code>"
+                + "</td>\n<td class=\"colLast\"><code><span class=\"memberNameLink\">"
+                + "<a href=\"../typeannos/RepeatingOnMethod.html#test3--\">test3</a>"
+                + "</span>()</code>",
+
+                "<code>(package private) <a href=\"../typeannos/RepAllContextsA.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsA</a> <a href="
+                + "\"../typeannos/RepAllContextsA.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsA</a> <a href=\"../typeannos/RepAllContextsB.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsB</a> <a href="
+                + "\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsB</a> java.lang.String</code></td>\n<td class=\"colLast\">"
+                + "<code><span class=\"memberNameLink\"><a href=\"../typeannos/RepeatingOnMethod.html"
+                + "#test4--\">test4</a></span>()</code>",
+
+                "<code><span class=\"memberNameLink\"><a href=\"../typeannos/RepeatingOnMethod.html"
+                + "#test5-java.lang.String-java.lang.String...-\">test5</a></span>"
+                + "(java.lang.String&nbsp;parameter,\n     java.lang.String <a href="
+                + "\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> <a href="
+                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> ...&nbsp;vararg)</code>",
+
+                "<a href=\"../typeannos/RepMethodA.html\" title=\"annotation in typeannos\">"
+                + "@RepMethodA</a> <a href=\"../typeannos/RepMethodA.html\" title="
+                + "\"annotation in typeannos\">@RepMethodA</a>\n<a href=\"../typeannos/RepMethodB.html\""
+                + " title=\"annotation in typeannos\">@RepMethodB</a> <a href="
+                + "\"../typeannos/RepMethodB.html\" title=\"annotation in typeannos\">"
+                + "@RepMethodB</a>\njava.lang.String&nbsp;test1()",
+
+                "<a href=\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String&nbsp;test2()",
+
+                "<a href=\"../typeannos/RepMethodA.html\" title=\"annotation in typeannos\">"
+                + "@RepMethodA</a> <a href=\"../typeannos/RepMethodA.html\" title="
+                + "\"annotation in typeannos\">@RepMethodA</a>\n<a href=\"../typeannos/RepMethodB.html\" "
+                + "title=\"annotation in typeannos\">@RepMethodB</a> <a href="
+                + "\"../typeannos/RepMethodB.html\" title=\"annotation in typeannos\">"
+                + "@RepMethodB</a>\n<a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> java.lang.String&nbsp;test3()",
+
+                "<a href=\"../typeannos/RepAllContextsA.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsA</a> <a href=\"../typeannos/RepAllContextsA.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsA</a>\n<a href="
+                + "\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsB</a> <a href=\"../typeannos/RepAllContextsB.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsB</a>\n<a href="
+                + "\"../typeannos/RepAllContextsA.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsA</a> <a href=\"../typeannos/RepAllContextsA.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsA</a> <a href="
+                + "\"../typeannos/RepAllContextsB.html\" title=\"annotation in typeannos\">"
+                + "@RepAllContextsB</a> <a href=\"../typeannos/RepAllContextsB.html\" "
+                + "title=\"annotation in typeannos\">@RepAllContextsB</a> java.lang.String&nbsp;test4()",
+
+                "java.lang.String&nbsp;test5(<a href=\"../typeannos/RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a>&nbsp;RepeatingOnMethod&nbsp;"
+                + "this,\n                       <a href=\"../typeannos/RepParameterA.html\" "
+                + "title=\"annotation in typeannos\">@RepParameterA</a> <a href="
+                + "\"../typeannos/RepParameterA.html\" title=\"annotation in typeannos\">"
+                + "@RepParameterA</a> <a href=\"../typeannos/RepParameterB.html\" "
+                + "title=\"annotation in typeannos\">@RepParameterB</a> <a href="
+                + "\"../typeannos/RepParameterB.html\" title=\"annotation in typeannos\">"
+                + "@RepParameterB</a>\n                       java.lang.String&nbsp;parameter,\n"
+                + "                       <a href=\"../typeannos/RepParameterA.html\" title="
+                + "\"annotation in typeannos\">@RepParameterA</a> <a href=\"../typeannos/RepParameterA.html\""
+                + " title=\"annotation in typeannos\">@RepParameterA</a> <a href="
+                + "\"../typeannos/RepParameterB.html\" title=\"annotation in typeannos\">"
+                + "@RepParameterB</a> <a href=\"../typeannos/RepParameterB.html\" title="
+                + "\"annotation in typeannos\">@RepParameterB</a>\n                       "
+                + "java.lang.String <a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseB.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> ...&nbsp;vararg)");
+
+        checkOutput("typeannos/RepeatingOnTypeParametersBoundsTypeArgumentsOnMethod.html", true,
+                "<code>(package private) &lt;T&gt;&nbsp;java.lang.String</code></td>\n"
+                + "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href="
+                + "\"../typeannos/RepeatingOnTypeParametersBoundsTypeArgumentsOnMethod.html#"
+                + "genericMethod-T-\">genericMethod</a></span>(T&nbsp;t)</code>",
+
+                "<code>(package private) &lt;T&gt;&nbsp;java.lang.String</code></td>\n"
+                + "<td class=\"colLast\"><code><span class=\"memberNameLink\"><a href="
+                + "\"../typeannos/RepeatingOnTypeParametersBoundsTypeArgumentsOnMethod.html#"
+                + "genericMethod2-T-\">genericMethod2</a></span>(<a href=\"../typeannos/RepTypeUseA.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> T&nbsp;t)</code>",
+
+                "<code>(package private) java.lang.String</code></td>\n<td class=\"colLast\"><code>"
+                + "<span class=\"memberNameLink\"><a href=\"../typeannos/RepeatingOnTypeParametersBoundsTypeArgumentsOnMethod.html#"
+                + "test--\">test</a></span>()</code>",
+
+                "java.lang.String&nbsp;test(<a href=\"../typeannos/RepTypeUseA.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseA</a> <a href="
+                + "\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a>&nbsp;"
+                + "RepeatingOnTypeParametersBoundsTypeArgumentsOnMethod&lt;<a href="
+                + "\"../typeannos/RepTypeUseA.html\" title=\"annotation in typeannos\">"
+                + "@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseA.html\" title="
+                + "\"annotation in typeannos\">@RepTypeUseA</a> <a href=\"../typeannos/RepTypeUseB.html"
+                + "\" title=\"annotation in typeannos\">@RepTypeUseB</a> <a href=\"../typeannos/RepTypeUseB.html\" "
+                + "title=\"annotation in typeannos\">@RepTypeUseB</a> T&gt;&nbsp;this)");
+
+        checkOutput("typeannos/RepeatingOnVoidMethodDeclaration.html", true,
+                "<a href=\"../typeannos/RepMethodA.html\" title=\"annotation in typeannos\">"
+                + "@RepMethodA</a> <a href=\"../typeannos/RepMethodA.html\" title="
+                + "\"annotation in typeannos\">@RepMethodA</a>\n<a href=\"../typeannos/RepMethodB.html"
+                + "\" title=\"annotation in typeannos\">@RepMethodB</a> <a href="
+                + "\"../typeannos/RepMethodB.html\" title=\"annotation in typeannos\">"
+                + "@RepMethodB</a>\nvoid&nbsp;test()");
     }
 }

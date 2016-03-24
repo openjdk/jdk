@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * Cross link to inner class: {@link javax.swing.text.AbstractDocument.AttributeContext Link to AttributeContext innerclass} <br>
  * Cross link to class: {@link java.math.BigDecimal Link to external class BigDecimal}<br>
  * Cross link to member: {@link java.math.BigInteger#gcd(java.math.BigInteger) Link to external member gcd}<br>
+ * Cross link to package: {@link javax.tools.SimpleJavaFileObject#URI Link to external member URI}<br>
  */
 public class C {
 

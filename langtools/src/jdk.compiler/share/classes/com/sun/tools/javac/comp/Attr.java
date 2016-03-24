@@ -282,7 +282,9 @@ public class Attr extends JCTree.Visitor {
      *  @param env    The current environment.
      */
     void checkAssignable(DiagnosticPosition pos, VarSymbol v, JCTree base, Env<AttrContext> env) {
-        if ((v.flags() & FINAL) != 0 &&
+        if (v.name == names._this) {
+            log.error(pos, Errors.CantAssignValToThis);
+        } else if ((v.flags() & FINAL) != 0 &&
             ((v.flags() & HASINIT) != 0
              ||
              !((base == null ||
