@@ -27,7 +27,7 @@
  * @summary Tests ArrayType.toString with type annotations present
  * @modules jdk.compiler/com.sun.tools.javac.code
  * @build ArrayTypeToString
- * @compile/ref=ArrayTypeToString.out -XDrawDiagnostics -processor ArrayTypeToString -proc:only ArrayTypeToString.java
+ * @compile/ref=ArrayTypeToString.out -XDaccessInternalAPI -XDrawDiagnostics -processor ArrayTypeToString -proc:only ArrayTypeToString.java
  */
 
 import java.lang.annotation.ElementType;
@@ -56,7 +56,6 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 @SupportedAnnotationTypes("Foo")
 @SupportedSourceVersion(SourceVersion.RELEASE_9)
 public class ArrayTypeToString extends AbstractProcessor {
-
     @Foo(0) String @Foo(1)[] @Foo(2)[] @Foo(3)[] field;
 
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv) {

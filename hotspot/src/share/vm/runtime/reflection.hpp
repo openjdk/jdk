@@ -53,6 +53,14 @@ class Reflection: public AllStatic {
     MAX_DIM           = 255
   };
 
+  // Results returned by verify_class_access()
+  enum VerifyClassAccessResults {
+    ACCESS_OK = 0,
+    MODULE_NOT_READABLE = 1,
+    TYPE_NOT_EXPORTED = 2,
+    OTHER_PROBLEM = 3
+  };
+
   // Boxing. Returns boxed value of appropriate type. Throws IllegalArgumentException.
   static oop box(jvalue* v, BasicType type, TRAPS);
   // Unboxing. Returns type code and sets value.
@@ -73,9 +81,14 @@ class Reflection: public AllStatic {
   static arrayOop reflect_new_multi_array(oop element_mirror, typeArrayOop dimensions, TRAPS);
 
   // Verification
-  static bool     verify_class_access(const Klass* current_class,
-                                      const Klass* new_class,
-                                      bool classloader_only);
+  static VerifyClassAccessResults verify_class_access(const Klass* current_class,
+                                                      const Klass* new_class,
+                                                      bool classloader_only);
+  // Return an error message specific to the specified Klass*'s and result.
+  // This function must be called from within a block containing a ResourceMark.
+  static char*    verify_class_access_msg(const Klass* current_class,
+                                          const Klass* new_class,
+                                          const VerifyClassAccessResults result);
 
   static bool     verify_field_access(const Klass* current_class,
                                       const Klass* resolved_class,

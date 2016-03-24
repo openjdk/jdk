@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.text.BreakIterator;
 import java.text.spi.BreakIteratorProvider;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -155,9 +156,7 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
                                                   int type,
                                                   String dataName,
                                                   String dictionaryName) {
-        if (locale == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(locale);
 
         LocaleResources lr = LocaleProviderAdapter.forJRE().getLocaleResources(locale);
         String[] classNames = (String[]) lr.getBreakIteratorInfo("BreakIteratorClasses");
@@ -166,10 +165,12 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
         try {
             switch (classNames[type]) {
             case "RuleBasedBreakIterator":
-                return new RuleBasedBreakIterator(dataFile);
+                return new RuleBasedBreakIterator(
+                    lr.getBreakIteratorDataModule(), dataFile);
             case "DictionaryBasedBreakIterator":
                 String dictionaryFile = (String) lr.getBreakIteratorInfo(dictionaryName);
-                return new DictionaryBasedBreakIterator(dataFile, dictionaryFile);
+                return new DictionaryBasedBreakIterator(
+                    lr.getBreakIteratorDataModule(), dataFile, dictionaryFile);
             default:
                 throw new IllegalArgumentException("Invalid break iterator class \"" +
                                 classNames[type] + "\"");
@@ -187,5 +188,5 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
     @Override
     public boolean isSupportedLocale(Locale locale) {
         return LocaleProviderAdapter.forType(type).isSupportedProviderLocale(locale, langtags);
-}
+    }
 }

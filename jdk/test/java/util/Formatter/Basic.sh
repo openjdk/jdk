@@ -23,7 +23,8 @@
 
 #
 
-${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -cp ${TESTSRC} -d . \
+EXTRAOPTS="-XaddExports:java.base/jdk.internal.math=ALL-UNNAMED"
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} -cp ${TESTSRC} -d . \
     ${TESTSRC}/Basic.java
 
 expectPass() {
@@ -39,7 +40,7 @@ runTest() {
   echo "Testing:" ${1}
   TZ="${1}"; export TZ
   echo "  " $TZ
-  ${TESTJAVA}/bin/java ${TESTVMOPTS} Basic
+  ${TESTJAVA}/bin/java ${TESTVMOPTS} ${EXTRAOPTS} Basic
   expectPass $?
 }
 

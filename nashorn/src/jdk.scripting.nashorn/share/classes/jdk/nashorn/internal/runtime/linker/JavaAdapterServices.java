@@ -228,7 +228,7 @@ public final class JavaAdapterServices {
         });
 
         try {
-            return MethodHandles.lookup().findStatic(Class.forName(className, true, loader), "invoke",
+            return MethodHandles.publicLookup().findStatic(Class.forName(className, true, loader), "invoke",
                     MethodType.methodType(void.class, MethodHandle.class, Object.class));
         } catch(final ReflectiveOperationException e) {
             throw new AssertionError(e.getMessage(), e);

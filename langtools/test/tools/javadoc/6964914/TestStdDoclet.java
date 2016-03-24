@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class TestStdDoclet {
         String thisClassName = TestStdDoclet.class.getName();
         Process p = new ProcessBuilder()
             .command(javadoc.getPath(),
-                "-J-Xbootclasspath:" + System.getProperty("sun.boot.class.path"),
+                "-J-Xpatch:" + System.getProperty("jdk.launcher.patch.0", ""),
                 "-classpath", ".", // insulates us from ambient classpath
                 "-Xdoclint:none",
                 "-package",

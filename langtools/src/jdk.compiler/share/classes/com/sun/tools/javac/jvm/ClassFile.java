@@ -107,9 +107,8 @@ public class ClassFile {
         V49(49, 0),   // JDK 1.5: enum, generics, annotations
         V50(50, 0),   // JDK 1.6: stackmaps
         V51(51, 0),   // JDK 1.7
-        V52(52, 0);   // JDK 1.8: lambda, type annos, param names
-        // JDK9 still marked as V52 // V53(53, 0);   // JDK 1.9
-
+        V52(52, 0),   // JDK 1.8: lambda, type annos, param names
+        V53(52, 0);   // JDK 1.9: modules  **** FIXME TO 53 BEFORE RELEASE *****
         Version(int major, int minor) {
             this.major = major;
             this.minor = minor;

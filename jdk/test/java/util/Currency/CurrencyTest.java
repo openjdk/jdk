@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @bug 4290801 4692419 4693631 5101540 5104960 6296410 6336600 6371531
  *    6488442 7036905 8008577 8039317 8074350 8074351
  * @summary Basic tests for Currency class.
+ * @modules jdk.localedata
  */
 
 import java.io.ByteArrayInputStream;

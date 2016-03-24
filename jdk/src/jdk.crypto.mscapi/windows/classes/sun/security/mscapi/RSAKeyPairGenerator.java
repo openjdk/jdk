@@ -30,7 +30,6 @@ import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 
-import sun.security.jca.JCAUtil;
 import sun.security.rsa.RSAKeyFactory;
 
 /**

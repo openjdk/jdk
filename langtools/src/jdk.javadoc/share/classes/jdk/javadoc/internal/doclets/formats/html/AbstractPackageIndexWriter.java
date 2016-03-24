@@ -160,6 +160,9 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
             htmlTree.addStyle(HtmlStyle.indexNav);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             addAllClassesLink(ul);
+            if (configuration.showModules) {
+                addAllModulesLink(ul);
+            }
             htmlTree.addContent(ul);
             body.addContent(htmlTree);
             addPackagesList(packages, text, tableSummary, body);
@@ -198,5 +201,13 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
      * @param div the document tree to which the all classes link will be added
      */
     protected void addAllClassesLink(Content div) {
+    }
+
+    /**
+     * Do nothing. This will be overridden.
+     *
+     * @param div the document tree to which the all modules link will be added
+     */
+    protected void addAllModulesLink(Content div) {
     }
 }

@@ -26,11 +26,14 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library / /testlibrary /test/lib
- * @compile ../common/CompilerToVMHelper.java
- * @run main ClassFileInstaller
- *      jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run driver compiler.jvmci.compilerToVM.DebugOutputTest
+ * @library ../common/patches
+ * @modules jdk.vm.ci/jdk.vm.ci.hotspot
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @build compiler.jvmci.compilerToVM.DebugOutputTest
+ * @run main/othervm compiler.jvmci.compilerToVM.DebugOutputTest
  */
+
+ // as soon as CODETOOLS-7901589 fixed, '@run main/othervm' should be replaced w/ '@run driver'
 
 package compiler.jvmci.compilerToVM;
 
@@ -50,15 +53,13 @@ public class DebugOutputTest {
             System.out.println(testCase);
             OutputAnalyzer oa;
             try {
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                        /* use test options = */ true,
+                oa = ProcessTools.executeTestJvmAllArgs(
                         "-XX:+UnlockExperimentalVMOptions",
                         "-XX:+EnableJVMCI",
                         "-Xbootclasspath/a:.",
                         DebugOutputTest.Worker.class.getName(),
                         testCase.name());
-               oa = ProcessTools.executeProcess(pb);
-               } catch (Exception e) {
+               } catch (Throwable e) {
                 e.printStackTrace();
                 throw new Error("Problems running child process", e);
             }

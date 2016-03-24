@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import static java.io.ObjectStreamClass.processQueue;
@@ -212,20 +212,20 @@ public class ObjectInputStream
     /** marker for unshared objects in internal handle table */
     private static final Object unsharedMarker = new Object();
 
-    /** table mapping primitive type names to corresponding class objects */
-    private static final HashMap<String, Class<?>> primClasses
-        = new HashMap<>(8, 1.0F);
-    static {
-        primClasses.put("boolean", boolean.class);
-        primClasses.put("byte", byte.class);
-        primClasses.put("char", char.class);
-        primClasses.put("short", short.class);
-        primClasses.put("int", int.class);
-        primClasses.put("long", long.class);
-        primClasses.put("float", float.class);
-        primClasses.put("double", double.class);
-        primClasses.put("void", void.class);
-    }
+    /**
+     * immutable table mapping primitive type names to corresponding
+     * class objects
+     */
+    private static final Map<String, Class<?>> primClasses =
+        Map.of("boolean", boolean.class,
+               "byte", byte.class,
+               "char", char.class,
+               "short", short.class,
+               "int", int.class,
+               "long", long.class,
+               "float", float.class,
+               "double", double.class,
+               "void", void.class);
 
     private static class Caches {
         /** cache of subclass security audit results */
@@ -713,9 +713,11 @@ public class ObjectInputStream
             classObjs[i] = cl;
         }
         try {
-            return Proxy.getProxyClass(
+            @SuppressWarnings("deprecation")
+            Class<?> proxyClass = Proxy.getProxyClass(
                 hasNonPublicInterface ? nonPublicLoader : latestLoader,
                 classObjs);
+            return proxyClass;
         } catch (IllegalArgumentException e) {
             throw new ClassNotFoundException(null, e);
         }

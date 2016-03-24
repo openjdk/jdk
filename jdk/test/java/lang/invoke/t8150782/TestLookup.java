@@ -60,7 +60,9 @@ public class TestLookup {
     @Test
     public void testPublicInChangesClassLoader() {
         Lookup lookup = publicLookup();
-        assertNull(lookup.lookupClass().getClassLoader());
+        // Temporarily exclude until 8148697 is resolved, specifically:
+        // "publicLookup changed so that the lookup class is in an unnamed module"
+        //assertNull(lookup.lookupClass().getClassLoader());
         Lookup lookup2 = lookup.in(TestCls.class);
         assertNotNull(lookup2.lookupClass().getClassLoader());
     }

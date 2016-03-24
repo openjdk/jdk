@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,22 +31,10 @@ case `uname -s` in
       mydir=`cygpath -m $mydir`
       ;;
 esac
-mylib="$mydir/../lib"
+mylib="$mydir/../modules"
 
-# By default, put the jar file and its dependencies on the bootclasspath.
-# This is always required on a Mac, because the system langtools classes
-# are always on the main class path; in addition, it may be required on
-# standard versions of JDK (i.e. using rt.jar and tools.jar) because some
-# langtools interfaces are in rt.jar.
-# Assume that the jar file being invoked lists all the necessary langtools
-# jar files in its Class-Path manifest entry, so there is no need to search
-# dependent jar files for additional dependencies.
-
-if [ "$LANGTOOLS_USE_BOOTCLASSPATH" != "no" ]; then
-   cp=`echo "$mylib"/*.jar |
-       sed -e 's|\([a-z.]*\.jar\) *|\1#PS#|g'`
-   bcp=$cp
-fi
+# patch langtools modules
+bcp=-Xpatch:"$mylib"
 
 # tools currently assumes that assertions are enabled in the launcher
 ea=-ea:com.sun.tools...
@@ -71,4 +59,4 @@ done
 unset DUALCASE
 
 IFS=$nl
-"#TARGET_JAVA#" "${bcp:+-Xbootclasspath/p:"$bcp"}" ${ea} ${javaOpts} #PROGRAM# ${toolOpts}
+"#TARGET_JAVA#" $bcp ${ea} ${javaOpts} #PROGRAM# ${toolOpts}

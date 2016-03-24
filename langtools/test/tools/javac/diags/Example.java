@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,16 @@ class Example implements Comparable<Example> {
             opts.addAll(options);
 
         if (procFiles.size() > 0) {
-            List<String> pOpts = Arrays.asList("-d", classesDir.getPath());
+            List<String> pOpts = new ArrayList<>(Arrays.asList("-d", classesDir.getPath()));
+
+            // hack to automatically add exports; a better solution would be to grep the
+            // source for import statements or a magic comment
+            for (File pf: procFiles) {
+                if (pf.getName().equals("CreateBadClassFile.java")) {
+                    pOpts.add("-XaddExports:jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED");
+                }
+            }
+
             new Jsr199Compiler(verbose).run(null, null, false, pOpts, procFiles);
             opts.add("-classpath"); // avoid using -processorpath for now
             opts.add(classesDir.getPath());
@@ -331,7 +340,7 @@ class Example implements Comparable<Example> {
                 else if (first.equals("backdoor"))
                     return new BackdoorCompiler(verbose);
                 else if (first.equals("exec"))
-                    return new ExecCompiler(verbose);
+                    return new ExecCompiler(verbose, rest);
                 else
                     throw new IllegalArgumentException(first);
             }
@@ -515,8 +524,11 @@ class Example implements Comparable<Example> {
      * Run the test in a separate process.
      */
     static class ExecCompiler extends Compiler {
-        ExecCompiler(boolean verbose) {
+        List<String> vmOpts;
+
+        ExecCompiler(boolean verbose, String... args) {
             super(verbose);
+            vmOpts = Arrays.asList(args);
         }
 
         @Override
@@ -525,7 +537,7 @@ class Example implements Comparable<Example> {
                 throw new IllegalArgumentException();
 
             if (verbose)
-                System.err.println("run_exec: " + opts + " " + files);
+                System.err.println("run_exec: " + vmOpts + " " + opts + " " + files);
 
             List<String> args = new ArrayList<String>();
 
@@ -541,6 +553,7 @@ class Example implements Comparable<Example> {
                 args.add(toolsJar.getPath());
             }
 
+            args.addAll(vmOpts);
             addOpts(args, "test.vm.opts");
             addOpts(args, "test.java.opts");
             args.add(com.sun.tools.javac.Main.class.getName());

@@ -35,6 +35,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -351,6 +352,33 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         return getHyperLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY), label, "", target);
     }
 
+    /**
+     * Get Module Package link, with target frame.
+     *
+     * @param pkg the PackageElement
+     * @param target name of the target frame
+     * @param label tag for the link
+     * @param mdle the module being documented
+     * @return a content for the target module packages link
+     */
+    public Content getTargetModulePackageLink(PackageElement pkg, String target,
+            Content label, ModuleElement mdle) {
+        return getHyperLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
+                label, "", target);
+    }
+
+    /**
+     * Get Module link, with target frame.
+     *
+     * @param target name of the target frame
+     * @param label tag for the link
+     * @param mdle the module being documented
+     * @return a content for the target module link
+     */
+    public Content getTargetModuleLink(String target, Content label, ModuleElement mdle) {
+        return getHyperLink(pathToRoot.resolve(
+                DocPaths.moduleSummary(mdle)), label, "", target);
+    }
 
     public void addClassesSummary(SortedSet<TypeElement> classes, String label,
             String tableSummary, List<String> tableHeader, Content summaryContentTree) {
@@ -599,6 +627,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 fixedNavDiv.addContent(subDiv);
                 fixedNavDiv.addContent(HtmlConstants.END_OF_TOP_NAVBAR);
                 tree.addContent(fixedNavDiv);
+                HtmlTree paddingDiv = HtmlTree.DIV(HtmlStyle.navPadding, getSpace());
+                tree.addContent(paddingDiv);
             } else {
                 subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_BOTTOM));
                 tree.addContent(subDiv);
@@ -1079,6 +1109,18 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 return label;
             }
         }
+    }
+
+    /**
+     * Get Module link.
+     *
+     * @param mdle the module being documented
+     * @param label tag for the link
+     * @return a content for the module link
+     */
+    public Content getModuleLink(ModuleElement mdle, Content label) {
+        return getHyperLink(pathToRoot.resolve(
+                DocPaths.moduleSummary(mdle)), label, "", "");
     }
 
     public Content interfaceName(TypeElement typeElement, boolean qual) {

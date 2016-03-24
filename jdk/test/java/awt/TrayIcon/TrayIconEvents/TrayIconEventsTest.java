@@ -30,7 +30,9 @@ import java.awt.image.BufferedImage;
  * @test
  * @summary Check for MouseEvents with all mouse buttons
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
+ * @library /java/awt/patchlib
  * @library ../../../../lib/testlibrary ../
+ * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
  * @run main TrayIconEventsTest
  */

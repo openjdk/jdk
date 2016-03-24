@@ -28,28 +28,23 @@
  *  @modules jdk.compiler/com.sun.tools.javac.api
  *           jdk.compiler/com.sun.tools.javac.file
  *           jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.javap
  *  @build ToolBox
  *  @run main Test
  *  @summary Provide a simple light-weight "plug-in" mechanism for javac
  */
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+
 import javax.tools.JavaCompiler;
-import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
+
+import com.sun.source.util.JavacTask;
 
 public class Test {
     public static void main(String... args) throws Exception {

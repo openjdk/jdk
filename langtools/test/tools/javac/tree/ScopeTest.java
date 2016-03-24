@@ -87,7 +87,7 @@ public class ScopeTest {
                 return packageClause + SOURCE_CODE;
             }
             @Override public boolean isNameCompatible(String simpleName, Kind kind) {
-                return true;
+                return !"module-info".equals(simpleName);
             }
         };
         Iterable<? extends JavaFileObject> fos = Collections.singletonList(source);

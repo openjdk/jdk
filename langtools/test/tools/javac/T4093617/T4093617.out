@@ -1,2 +1,2 @@
-T4093617.java:12:16: compiler.err.no.superclass: java.lang.Object
+Object.java:9:16: compiler.err.no.superclass: java.lang.Object
 1 error
