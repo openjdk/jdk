@@ -37,6 +37,12 @@
 
 #include "math.h"
 
+#if defined(_MSC_VER) && _MSC_VER >= 1800
+#  define ROUND_TO_INT(num)    ((int) round(num))
+#else
+#  define ROUND_TO_INT(num)    ((int) floor((num) + 0.5))
+#endif
+
 // WDesktopProperties fields
 jfieldID AwtDesktopProperties::pDataID = 0;
 jmethodID AwtDesktopProperties::setBooleanPropertyID = 0;
@@ -92,7 +98,7 @@ void getInvScale(float &invScaleX, float &invScaleY) {
 }
 
 int rescale(int value, float invScale){
-    return invScale == 1.0f ? value : (int)round(value * invScale);
+    return invScale == 1.0f ? value : ROUND_TO_INT(value * invScale);
 }
 
 void AwtDesktopProperties::GetSystemProperties() {
