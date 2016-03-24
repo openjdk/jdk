@@ -25,14 +25,13 @@
 
 package sun.tools.jstack;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
-import java.io.IOException;
 import java.io.InputStream;
 
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.AttachNotSupportedException;
 import sun.tools.attach.HotSpotVirtualMachine;
+import jdk.internal.vm.agent.spi.ToolProvider;
+import jdk.internal.vm.agent.spi.ToolProviderFinder;
 
 /*
  * This class is the main class for the JStack utility. It parses its arguments
@@ -40,6 +39,8 @@ import sun.tools.attach.HotSpotVirtualMachine;
  * obtained the thread dump from a target process using the VM attach mechanism
  */
 public class JStack {
+    private static final String SA_JSTACK_TOOL_NAME = "jstack";
+
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             usage(1); // no arguments
@@ -117,11 +118,14 @@ public class JStack {
         }
     }
 
-
     // SA JStack tool
+    private static boolean isAgentToolPresent() {
+        return ToolProviderFinder.find(SA_JSTACK_TOOL_NAME) != null;
+    }
+
     private static void runJStackTool(boolean mixed, boolean locks, String args[]) throws Exception {
-        Class<?> cl = loadSAClass();
-        if (cl == null) {
+        ToolProvider tool = ToolProviderFinder.find(SA_JSTACK_TOOL_NAME);
+        if (tool == null) {
             usage(1);            // SA not available
         }
 
@@ -133,28 +137,9 @@ public class JStack {
             args = prepend("-l", args);
         }
 
-        Class<?>[] argTypes = { String[].class };
-        Method m = cl.getDeclaredMethod("main", argTypes);
-
-        Object[] invokeArgs = { args };
-        m.invoke(null, invokeArgs);
+        tool.run(args);
     }
 
-    // Returns sun.jvm.hotspot.tools.JStack if available, otherwise null.
-    private static Class<?> loadSAClass() {
-        //
-        // Attempt to load JStack class - we specify the system class
-        // loader so as to cater for development environments where
-        // this class is on the boot class path but sa-jdi.jar is on
-        // the system class path. Once the JDK is deployed then both
-        // tools.jar and sa-jdi.jar are on the system class path.
-        //
-        try {
-            return Class.forName("sun.jvm.hotspot.tools.JStack", true,
-                                 ClassLoader.getSystemClassLoader());
-        } catch (Exception x)  { }
-        return null;
-    }
 
     // Attach to pid and perform a thread dump
     private static void runThreadDump(String pid, String args[]) throws Exception {
@@ -168,8 +153,7 @@ public class JStack {
             } else {
                 x.printStackTrace();
             }
-            if ((x instanceof AttachNotSupportedException) &&
-                (loadSAClass() != null)) {
+            if ((x instanceof AttachNotSupportedException) && isAgentToolPresent()) {
                 System.err.println("The -F option can be used when the target " +
                     "process is not responding");
             }
@@ -208,7 +192,7 @@ public class JStack {
         System.err.println("    jstack [-l] <pid>");
         System.err.println("        (to connect to running process)");
 
-        if (loadSAClass() != null) {
+        if (isAgentToolPresent()) {
             System.err.println("    jstack -F [-m] [-l] <pid>");
             System.err.println("        (to connect to a hung process)");
             System.err.println("    jstack [-m] [-l] <executable> <core>");
@@ -220,7 +204,7 @@ public class JStack {
         System.err.println("");
         System.err.println("Options:");
 
-        if (loadSAClass() != null) {
+        if (isAgentToolPresent()) {
             System.err.println("    -F  to force a thread dump. Use when jstack <pid> does not respond" +
                 " (process is hung)");
             System.err.println("    -m  to print both java and native frames (mixed mode)");

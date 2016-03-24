@@ -28,6 +28,7 @@
  * @author  Wei Tao
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  * @build T
@@ -36,16 +37,22 @@
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.ClassFinder.BadClassFile;
+import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.main.JavaCompiler;
+import com.sun.tools.javac.util.List;
 import javax.tools.ToolProvider;
 
 public class T6435291 {
     public static void main(String... args) {
         javax.tools.JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         JavacTaskImpl task = (JavacTaskImpl)tool.getTask(null, null, null, null, null, null);
+        Symtab syms = Symtab.instance(task.getContext());
+        //initialize unnamed module:
+        Modules.instance(task.getContext()).enter(List.nil(), syms.errSymbol);
         JavaCompiler compiler = JavaCompiler.instance(task.getContext());
         try {
-            compiler.resolveIdent("T").complete();
+            compiler.resolveIdent(syms.unnamedModule, "T").complete();
         } catch (BadClassFile e) {
             System.err.println("Passed: expected completion failure " + e.getClass().getName());
             return;

@@ -92,10 +92,13 @@ case "$1" in
     ;;
 esac
 
+
+EXTRA_OPTS="-XaddExports:java.base/sun.util.locale.provider=ALL-UNNAMED,java.base/sun.util.resources=ALL-UNNAMED"
+
 # compile
 cp ${TESTSRC}${FS}ProviderTest.java .
 cp ${TESTSRC}${FS}$2.java .
-COMPILE="${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
+COMPILE="${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRA_OPTS} \
     -XDignore.symbol.file -d . -classpath ${CLASSPATHARG} $2.java"
 echo ${COMPILE}
 ${COMPILE}
@@ -120,7 +123,7 @@ then
 fi
 
 # run
-RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${SECURITYOPTS} -classpath ${CLASSPATHARG} -Djava.locale.providers=JRE,SPI $2 "
+RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${EXTRA_OPTS} ${SECURITYOPTS} -classpath ${CLASSPATHARG} -Djava.locale.providers=JRE,SPI $2 "
 
 echo ${RUNCMD}
 ${RUNCMD}

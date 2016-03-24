@@ -1,4 +1,0 @@
-WarnMethod.java:15:45: compiler.warn.sun.proprietary: sun.security.x509.OIDMap
-- compiler.err.warnings.and.werror
-1 error
-1 warning

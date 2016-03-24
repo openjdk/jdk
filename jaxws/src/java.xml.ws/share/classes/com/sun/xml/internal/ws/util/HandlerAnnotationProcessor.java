@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,28 +197,62 @@ public class HandlerAnnotationProcessor {
         return null;
     }
 
-   static InputStream getFileAsStream(Class clazz, HandlerChain chain) {
-        URL url = clazz.getResource(chain.file());
-        if (url == null) {
-            url = Thread.currentThread().getContextClassLoader().
-                getResource(chain.file());
-        }
-        if (url == null) {
-            String tmp = clazz.getPackage().getName();
-            tmp = tmp.replace('.', '/');
-            tmp += "/" + chain.file();
-            url =
-                Thread.currentThread().getContextClassLoader().getResource(tmp);
-        }
+    static InputStream getFileAsStream(Class clazz, HandlerChain chain) {
+        Package pkg = clazz.getPackage();
+        String filename = chain.file();
+        String fullpath = addPackagePath(filename, pkg);
+        InputStream is;
+
+        is = moduleResource(clazz, filename);
+        if (is != null) return is;
+
+        is = moduleResource(clazz, fullpath);
+        if (is != null) return is;
+
+        URL url = cpResource(clazz, filename);
+        if (url == null) url = cpResource(clazz, fullpath);
+
         if (url == null) {
             throw new UtilException("util.failed.to.find.handlerchain.file",
-                clazz.getName(), chain.file());
+                    clazz.getName(), filename);
         }
         try {
             return url.openStream();
         } catch (IOException e) {
             throw new UtilException("util.failed.to.parse.handlerchain.file",
-                clazz.getName(), chain.file());
+                    clazz.getName(), filename);
         }
+    }
+
+    private static URL cpResource(Class clazz, String name) {
+        URL url = clazz.getResource(name);
+        if (url == null) {
+            ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+            url = tccl.getResource(name);
+        }
+        return url;
+    }
+
+    private static InputStream moduleResource(Class resolvingClass, String name) {
+        java.lang.reflect.Module module = resolvingClass.getModule();
+        if (module != null) {
+            try {
+                InputStream stream = module.getResourceAsStream(name);
+                if (stream != null) {
+                    return stream;
+                }
+            } catch(IOException e) {
+                throw new UtilException("util.failed.to.find.handlerchain.file",
+                        resolvingClass.getName(), name);
+            }
+        }
+        return null;
+    }
+
+    private static String addPackagePath(String file, Package pkg) {
+        String tmp = pkg.getName();
+        tmp = tmp.replace('.', '/');
+        tmp += "/" + file;
+        return tmp;
     }
 }

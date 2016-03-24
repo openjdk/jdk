@@ -27,7 +27,7 @@
  * @summary A simple test to ensure class-use files are correct.
  * @author jamieh
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @run main TestUseOption
  */

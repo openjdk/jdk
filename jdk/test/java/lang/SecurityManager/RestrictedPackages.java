@@ -77,6 +77,7 @@ final class RestrictedPackages {
         "jdk.internal.",
         "jdk.nashorn.internal.",
         "jdk.nashorn.tools.",
+        "jdk.rmi.rmic.",
         "jdk.tools.jimage.",
         "com.sun.activation.registries.",
         "com.sun.java.accessibility.util.internal."

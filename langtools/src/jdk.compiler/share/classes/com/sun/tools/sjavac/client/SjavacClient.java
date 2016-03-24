@@ -172,7 +172,7 @@ public class SjavacClient implements Sjavac {
         makeSureServerIsRunning(portFile);
         int attempt = 0;
         while (true) {
-            Log.info("Trying to connect. Attempt " + (++attempt) + " of " + MAX_CONNECT_ATTEMPTS);
+            Log.debug("Trying to connect. Attempt " + (++attempt) + " of " + MAX_CONNECT_ATTEMPTS);
             try {
                 return makeConnectionAttempt();
             } catch (IOException ex) {
@@ -191,7 +191,7 @@ public class SjavacClient implements Sjavac {
         InetAddress localhost = InetAddress.getByName(null);
         InetSocketAddress address = new InetSocketAddress(localhost, portFile.getPort());
         socket.connect(address, CONNECTION_TIMEOUT);
-        Log.info("Connected");
+        Log.debug("Connected");
         return socket;
     }
 
@@ -238,7 +238,7 @@ public class SjavacClient implements Sjavac {
               + ",keepalive="+ keepalive);
 
         Process serverProcess;
-        Log.info("Starting server. Command: " + String.join(" ", cmd));
+        Log.debug("Starting server. Command: " + String.join(" ", cmd));
         try {
             // If the cmd for some reason can't be executed (file is not found,
             // or is not executable for instance) this will throw an

@@ -31,16 +31,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import jdk.internal.org.objectweb.asm.Type;
-import jdk.nashorn.internal.objects.annotations.Constructor;
-import jdk.nashorn.internal.objects.annotations.Function;
-import jdk.nashorn.internal.objects.annotations.Getter;
-import jdk.nashorn.internal.objects.annotations.Property;
-import jdk.nashorn.internal.objects.annotations.ScriptClass;
-import jdk.nashorn.internal.objects.annotations.Setter;
-import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
-import jdk.nashorn.internal.objects.annotations.SpecializedFunction.LinkLogic;
-import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.tools.nasgen.MemberInfo.Kind;
+
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJ_ANNO_PKG;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.RUNTIME_PKG;
 
 /**
  * All annotation information from a class that is annotated with
@@ -48,16 +42,20 @@ import jdk.nashorn.internal.tools.nasgen.MemberInfo.Kind;
  *
  */
 public final class ScriptClassInfo {
+    private static String getTypeDescriptor(String pkg, String name) {
+        return "L" + pkg + name + ";";
+    }
+
     // descriptors for various annotations
-    static final String SCRIPT_CLASS_ANNO_DESC  = Type.getDescriptor(ScriptClass.class);
-    static final String CONSTRUCTOR_ANNO_DESC   = Type.getDescriptor(Constructor.class);
-    static final String FUNCTION_ANNO_DESC      = Type.getDescriptor(Function.class);
-    static final String GETTER_ANNO_DESC        = Type.getDescriptor(Getter.class);
-    static final String SETTER_ANNO_DESC        = Type.getDescriptor(Setter.class);
-    static final String PROPERTY_ANNO_DESC      = Type.getDescriptor(Property.class);
-    static final String WHERE_ENUM_DESC         = Type.getDescriptor(Where.class);
-    static final String LINK_LOGIC_DESC         = Type.getDescriptor(LinkLogic.class);
-    static final String SPECIALIZED_FUNCTION    = Type.getDescriptor(SpecializedFunction.class);
+    static final String SCRIPT_CLASS_ANNO_DESC  = getTypeDescriptor(OBJ_ANNO_PKG, "ScriptClass");
+    static final String CONSTRUCTOR_ANNO_DESC   = getTypeDescriptor(OBJ_ANNO_PKG, "Constructor");
+    static final String FUNCTION_ANNO_DESC      = getTypeDescriptor(OBJ_ANNO_PKG, "Function");
+    static final String GETTER_ANNO_DESC        = getTypeDescriptor(OBJ_ANNO_PKG, "Getter");
+    static final String SETTER_ANNO_DESC        = getTypeDescriptor(OBJ_ANNO_PKG, "Setter");
+    static final String PROPERTY_ANNO_DESC      = getTypeDescriptor(OBJ_ANNO_PKG, "Property");
+    static final String WHERE_ENUM_DESC         = getTypeDescriptor(OBJ_ANNO_PKG, "Where");
+    static final String LINK_LOGIC_DESC         = getTypeDescriptor(OBJ_ANNO_PKG, "SpecializedFunction$LinkLogic");
+    static final String SPECIALIZED_FUNCTION    = getTypeDescriptor(OBJ_ANNO_PKG, "SpecializedFunction");
 
     static final Map<String, Kind> annotations = new HashMap<>();
 
@@ -276,6 +274,7 @@ public final class ScriptClassInfo {
             try {
                 memInfo.verify();
             } catch (final Exception e) {
+                e.printStackTrace();
                 error(e.getMessage());
             }
         }

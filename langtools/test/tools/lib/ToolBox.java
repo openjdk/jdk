@@ -560,13 +560,17 @@ public class ToolBox {
         }
 
         /**
-         * Returns the content of a named stream as a list of lines.
-         * @param outputKind the kind of the selected stream
-         * @return the content that was written to that stream when the tool
+         * Returns the content of named streams as a list of lines.
+         * @param outputKinds the kinds of the selected streams
+         * @return the content that was written to the given streams when the tool
          *  was executed.
          */
-        public List<String> getOutputLines(OutputKind outputKind) {
-            return Arrays.asList(outputMap.get(outputKind).split(lineSeparator));
+        public List<String> getOutputLines(OutputKind... outputKinds) {
+            List<String> result = new ArrayList<>();
+            for (OutputKind outputKind : outputKinds) {
+                result.addAll(Arrays.asList(outputMap.get(outputKind).split(lineSeparator)));
+            }
+            return result;
         }
 
         /**
@@ -1690,9 +1694,9 @@ public class ToolBox {
         private final Pattern jrtEntry = Pattern.compile("/modules/([^/]+)/(.*)");
 
         /*
-         * A file: URL is of the form  file:/path/to/modules/<module>/<package>/<file>
+         * A file: URL is of the form  file:/path/to/{modules,patches}/<module>/<package>/<file>
          */
-        private final Pattern fileEntry = Pattern.compile(".*/modules/([^/]+)/(.*)");
+        private final Pattern fileEntry = Pattern.compile(".*/(?:modules|patches)/([^/]+)/(.*)");
 
         private String guessPath(FileObject fo) {
             URI u = fo.toUri();
@@ -1965,6 +1969,8 @@ public class ToolBox {
             return source;
         }
 
+        private static Pattern modulePattern =
+                Pattern.compile("module\\s+((?:\\w+\\.)*)");
         private static Pattern packagePattern =
                 Pattern.compile("package\\s+(((?:\\w+\\.)*)(?:\\w+))");
         private static Pattern classPattern =
@@ -1978,7 +1984,11 @@ public class ToolBox {
         static String getJavaFileNameFromSource(String source) {
             String packageName = null;
 
-            Matcher matcher = packagePattern.matcher(source);
+            Matcher matcher = modulePattern.matcher(source);
+            if (matcher.find())
+                return "module-info.java";
+
+            matcher = packagePattern.matcher(source);
             if (matcher.find())
                 packageName = matcher.group(1).replace(".", "/");
 
@@ -1986,6 +1996,8 @@ public class ToolBox {
             if (matcher.find()) {
                 String className = matcher.group(1) + ".java";
                 return (packageName == null) ? className : packageName + "/" + className;
+            } else if (packageName != null) {
+                return packageName + "/package-info.java";
             } else {
                 throw new Error("Could not extract the java class " +
                         "name from the provided source");

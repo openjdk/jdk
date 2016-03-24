@@ -76,6 +76,7 @@ jdk_lang = \
     jdk/lambda \
     jdk/internal/misc \
     jdk/internal/ref \
+    jdk/modules \
     vm
 
 # All of the java.util package
@@ -239,7 +240,6 @@ jdk_launcher = \
 #
 core_tools = \
     tools \
-    jdk/internal/jimage \
     jdk/internal/jrtfs \
     sun/tools/java \
     sun/tools/jrunscript
@@ -522,7 +522,6 @@ needs_jre = \
   java/util/jar/Manifest/CreateManifest.java \
   java/util/logging/TestMainAppContext.java \
   java/util/logging/TestLoggingWithMainAppContext.java \
-  java/util/ResourceBundle/Control/Bug6530694.java \
   java/text/Bidi/BidiConformance.java \
   java/text/Bidi/BidiEmbeddingTest.java \
   java/text/Bidi/Bug7042148.java \

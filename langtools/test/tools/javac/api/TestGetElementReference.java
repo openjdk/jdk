@@ -36,7 +36,9 @@ import com.sun.source.util.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.lang.model.element.Element;
@@ -50,10 +52,21 @@ import javax.tools.ToolProvider;
 public class TestGetElementReference {
 
     public static void main(String... args) throws IOException {
-        File source = new File(System.getProperty("test.src", "."), "TestGetElementReferenceData.java").getAbsoluteFile();
+        analyze("TestGetElementReferenceData.java");
+        analyze("mod/module-info.java", "mod/api/pkg/Api.java");
+    }
+
+    private static void analyze(String... fileNames) throws IOException {
         try (StandardJavaFileManager fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null)) {
+            List<JavaFileObject> files = new ArrayList<>();
+            for (String fileName : fileNames) {
+                File source = new File(System.getProperty("test.src", "."), fileName.replace('/', File.separatorChar)).getAbsoluteFile();
+                for (JavaFileObject f : fm.getJavaFileObjects(source)) {
+                    files.add(f);
+                }
+            }
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
-            JavacTask ct = (JavacTask) ToolProvider.getSystemJavaCompiler().getTask(null, null, diagnostics, Arrays.asList("-Xjcov"), null, fm.getJavaFileObjects(source));
+            JavacTask ct = (JavacTask) ToolProvider.getSystemJavaCompiler().getTask(null, null, diagnostics, Arrays.asList("-Xjcov"), null, files);
             Trees trees = Trees.instance(ct);
             CompilationUnitTree cut = ct.parse().iterator().next();
 
@@ -70,12 +83,16 @@ public class TestGetElementReference {
 
             while (m.find()) {
                 TreePath tp = pathFor(trees, cut, m.start() - 1);
-                Element found = trees.getElement(tp);
                 String expected = m.group(1);
+                if (expected.startsWith("getParentPath:")) {
+                    tp = tp.getParentPath();
+                    expected = expected.substring("getParentPath:".length());
+                }
+                Element found = trees.getElement(tp);
                 String actual = found != null ? found.getKind() + ":" + symbolToString(found) : "<null>";
 
                 if (!expected.equals(actual)) {
-                    throw new IllegalStateException("expected=" + expected + "; actual=" + actual);
+                    throw new IllegalStateException("expected=" + expected + "; actual=" + actual + "; tree: " + tp.getLeaf());
                 }
             }
         }

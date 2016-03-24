@@ -125,6 +125,7 @@ public class TreeMaker implements JCTree.Factory {
             Assert.check(node instanceof JCClassDecl
                 || node instanceof JCPackageDecl
                 || node instanceof JCImport
+                || node instanceof JCModuleDecl
                 || node instanceof JCSkip
                 || node instanceof JCErroneous
                 || (node instanceof JCExpressionStatement
@@ -534,6 +535,41 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCModifiers Modifiers(long flags) {
         return Modifiers(flags, List.<JCAnnotation>nil());
+    }
+
+    @Override
+    public JCModuleDecl ModuleDef(JCExpression qualid, List<JCDirective> directives) {
+        JCModuleDecl tree = new JCModuleDecl(qualid, directives);
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override
+    public JCExports Exports(JCExpression qualId, List<JCExpression> moduleNames) {
+        JCExports tree = new JCExports(qualId, moduleNames);
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override
+    public JCProvides Provides(JCExpression serviceName, JCExpression implName) {
+        JCProvides tree = new JCProvides(serviceName, implName);
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override
+    public JCRequires Requires(boolean isPublic, JCExpression qualId) {
+        JCRequires tree = new JCRequires(isPublic, qualId);
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override
+    public JCUses Uses(JCExpression qualId) {
+        JCUses tree = new JCUses(qualId);
+        tree.pos = pos;
+        return tree;
     }
 
     public JCAnnotatedType AnnotatedType(List<JCAnnotation> annotations, JCExpression underlyingType) {

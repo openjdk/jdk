@@ -33,7 +33,7 @@
  * Make sure see tags work in serialized form.
  * @author jamieh
  * @library ../lib/
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @build TestSerializedForm
  * @run main TestSerializedForm

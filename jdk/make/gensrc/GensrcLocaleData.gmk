@@ -143,19 +143,6 @@ $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonBaseLo
 GENSRC_BASELOCALEDATA := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/BaseLocaleDataMetaInfo.java
 GENSRC_LOCALEDATA := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonBaseLocaleDataMetaInfo.java
 
-################################################################################
-
-GENSRC_CRBC_DST := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/util/CoreResourceBundleControl.java
-GENSRC_CRBC_CMD := $(JDK_TOPDIR)/make/scripts/localelist.sh
-
-JRE_NONEXIST_LOCALES := en en_US de_DE es_ES fr_FR it_IT ja_JP ko_KR sv_SE zh
-
-$(GENSRC_CRBC_DST): $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/CoreResourceBundleControl-XLocales.java.template \
-    $(GENSRC_CRBC_CMD)
-	$(MKDIR) -p $(@D)
-	NAWK="$(NAWK)" SED="$(SED)" $(SH) $(GENSRC_CRBC_CMD) "$(JRE_NONEXIST_LOCALES)" $< $@
-
-GENSRC_BASELOCALEDATA += $(GENSRC_CRBC_DST)
 GENSRC_JAVA_BASE += $(GENSRC_BASELOCALEDATA)
 GENSRC_JDK_LOCALEDATA += $(GENSRC_LOCALEDATA)
 

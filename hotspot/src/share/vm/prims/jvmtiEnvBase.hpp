@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   };
 
   static jvmtiPhase  get_phase()                    { return _phase; }
+  static jvmtiPhase  get_phase(jvmtiEnv* env)       { return ((JvmtiEnvBase*)JvmtiEnv_from_jvmti_env(env))->phase(); }
   static void  set_phase(jvmtiPhase phase)          { _phase = phase; }
   static bool is_vm_live()                          { return _phase == JVMTI_PHASE_LIVE; }
 
@@ -140,6 +141,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
 
  public:
 
+  jvmtiPhase  phase();
   bool is_valid();
 
   bool use_version_1_0_semantics();  // agent asked for version 1.0
@@ -159,6 +161,10 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   jvmtiCapabilities *get_capabilities()             { return &_current_capabilities; }
 
   jvmtiCapabilities *get_prohibited_capabilities()  { return &_prohibited_capabilities; }
+
+  bool early_vmstart_env() {
+    return get_capabilities()->can_generate_early_vmstart != 0;
+  }
 
   static char** get_all_native_method_prefixes(int* count_ptr);
 
@@ -687,6 +693,23 @@ class JvmtiMonitorClosure: public MonitorClosure {
   }
   void do_monitor(ObjectMonitor* mon);
   jvmtiError error() { return _error;}
+};
+
+
+// Jvmti module closure to collect all modules loaded to the system.
+class JvmtiModuleClosure : public StackObj {
+private:
+  static GrowableArray<jobject> *_tbl; // Protected with Module_lock
+
+  static void do_module(ModuleEntry* entry) {
+    assert_locked_or_safepoint(Module_lock);
+    jobject module = entry->module();
+    guarantee(module != NULL, "module object is NULL");
+    _tbl->push(module);
+  }
+
+public:
+  jvmtiError get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobject** modules_ptr);
 };
 
 #endif // SHARE_VM_PRIMS_JVMTIENVBASE_HPP

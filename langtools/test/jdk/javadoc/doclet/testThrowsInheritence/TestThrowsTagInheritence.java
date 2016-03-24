@@ -29,7 +29,7 @@
  * the case where the name of one exception is not fully qualified.
  * @author jamieh
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @run main TestThrowsTagInheritence
  */

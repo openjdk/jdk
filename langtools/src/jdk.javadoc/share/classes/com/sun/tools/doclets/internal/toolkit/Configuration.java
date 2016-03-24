@@ -31,14 +31,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.tools.JavaFileManager;
+import javax.tools.JavaFileManager.Location;
 
 import com.sun.javadoc.*;
-import com.sun.tools.javac.sym.Profiles;
-import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.doclets.internal.toolkit.builders.BuilderFactory;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
-import com.sun.tools.doclets.internal.toolkit.util.VisibleMemberMap.GetterSetter;
 import com.sun.tools.javac.util.StringUtils;
 
 /**
@@ -212,16 +210,6 @@ public abstract class Configuration {
      * used.Default is don't show version information.
      */
     public boolean showversion = false;
-    /**
-     * Argument for command line option "-Xprofilespath".
-     */
-    public String profilespath = "";
-
-    /**
-     * Generate profiles documentation if profilespath is set and valid profiles
-     * are present.
-     */
-    public boolean showProfiles = false;
 
     /**
      * Don't generate deprecated API information at all, if -nodeprecated
@@ -283,28 +271,13 @@ public abstract class Configuration {
     public abstract MessageRetriever getDocletSpecificMsg();
 
     /**
-     * A profiles object used to access profiles across various pages.
-     */
-    public Profiles profiles;
-
-    /**
-     * A map of the profiles to packages.
-     */
-    public Map<String, List<PackageDoc>> profilePackages;
-
-    /**
      * A sorted set of packages specified on the command-line merged with a
      * collection of packages that contain the classes specified on the
      * command-line.
      */
     public SortedSet<PackageDoc> packages;
 
-    // The following three fields provide caches for use by all instances of VisibleMemberMap.
-    public final Map<ClassDoc, ProgramElementDoc[]> propertiesCache = new HashMap<>();
-    public final Map<ProgramElementDoc, ProgramElementDoc> classPropertiesMap = new HashMap<>();
-    public final Map<ProgramElementDoc, GetterSetter> getterSetterMap = new HashMap<>();
-
-    public DocFileFactory docFileFactory;
+    public boolean exportInternalAPI;
 
     /**
      * Constructor. Constructs the message retriever with resource file.
@@ -360,6 +333,7 @@ public abstract class Configuration {
             case "-quiet":
             case "-xnodate":
             case "-version":
+            case "-xdaccessinternalapi":
                 return 1;
             case "-d":
             case "-docencoding":
@@ -373,7 +347,6 @@ public abstract class Configuration {
             case "-tag":
             case "-taglet":
             case "-tagletpath":
-            case "-xprofilespath":
                 return 2;
             case "-group":
             case "-linkoffline":
@@ -391,54 +364,6 @@ public abstract class Configuration {
      */
     public abstract boolean validOptions(String options[][],
         DocErrorReporter reporter);
-
-    private void initProfiles() throws IOException {
-        if (profilespath.isEmpty())
-            return;
-
-        profiles = Profiles.read(new File(profilespath));
-
-        // Group the packages to be documented by the lowest profile (if any)
-        // in which each appears
-        Map<Profile, List<PackageDoc>> interimResults = new EnumMap<>(Profile.class);
-        for (Profile p: Profile.values())
-            interimResults.put(p, new ArrayList<PackageDoc>());
-
-        for (PackageDoc pkg: packages) {
-            if (nodeprecated && utils.isDeprecated(pkg)) {
-                continue;
-            }
-            // the getProfile method takes a type name, not a package name,
-            // but isn't particularly fussy about the simple name -- so just use *
-            int i = profiles.getProfile(pkg.name().replace(".", "/") + "/*");
-            Profile p = Profile.lookup(i);
-            if (p != null) {
-                List<PackageDoc> pkgs = interimResults.get(p);
-                pkgs.add(pkg);
-            }
-        }
-
-        // Build the profilePackages structure used by the doclet
-        profilePackages = new HashMap<>();
-        List<PackageDoc> prev = Collections.<PackageDoc>emptyList();
-        int size;
-        for (Map.Entry<Profile,List<PackageDoc>> e: interimResults.entrySet()) {
-            Profile p = e.getKey();
-            List<PackageDoc> pkgs =  e.getValue();
-            pkgs.addAll(prev); // each profile contains all lower profiles
-            Collections.sort(pkgs);
-            size = pkgs.size();
-            // For a profile, if there are no packages to be documented, do not add
-            // it to profilePackages map.
-            if (size > 0)
-                profilePackages.put(p.name, pkgs);
-            prev = pkgs;
-        }
-
-        // Generate profiles documentation if any profile contains any
-        // of the packages to be documented.
-        showProfiles = !prev.isEmpty();
-    }
 
     private void initPackages() {
         packages = new TreeSet<>(Arrays.asList(root.specifiedPackages()));
@@ -512,8 +437,6 @@ public abstract class Configuration {
                 customTagStrs.add(os);
             } else if (opt.equals("-tagletpath")) {
                 tagletpath = os[1];
-            }  else if (opt.equals("-xprofilespath")) {
-                profilespath = os[1];
             } else if (opt.equals("-keywords")) {
                 keywords = true;
             } else if (opt.equals("-serialwarn")) {
@@ -527,6 +450,8 @@ public abstract class Configuration {
                 String url = os[1];
                 String pkglisturl = os[2];
                 extern.link(url, pkglisturl, root, true);
+            } else if (opt.equals("-xdaccessinternalapi")) {
+                exportInternalAPI = true;
             }
         }
         if (docencoding == null) {
@@ -545,11 +470,6 @@ public abstract class Configuration {
     public void setOptions() throws Fault {
         initPackages();
         setOptions(root.options());
-        try {
-            initProfiles();
-        } catch (Exception e) {
-            throw new DocletAbortException(e);
-        }
         setSpecificDocletOptions(root.options());
     }
 
@@ -578,9 +498,9 @@ public abstract class Configuration {
      * either -tag or -taglet arguments.
      */
     private void initTagletManager(Set<String[]> customTagStrs) {
-        tagletManager = tagletManager == null ?
-            new TagletManager(nosince, showversion, showauthor, javafx, message) :
-            tagletManager;
+        tagletManager = (tagletManager == null)
+                ? new TagletManager(nosince, showversion, showauthor, javafx, exportInternalAPI, message)
+                : tagletManager;
         for (String[] args : customTagStrs) {
             if (args[0].equals("-taglet")) {
                 tagletManager.addCustomTag(args[1], getFileManager(), tagletpath);
@@ -716,17 +636,6 @@ public abstract class Configuration {
             }
         }
         return true;
-    }
-
-    /**
-     * Check the validity of the given profile. Return false if there are no
-     * valid packages to be documented for the profile.
-     *
-     * @param profileName the profile that needs to be validated.
-     * @return true if the profile has valid packages to be documented.
-     */
-    public boolean shouldDocumentProfile(String profileName) {
-        return profilePackages.containsKey(profileName);
     }
 
     /**
@@ -977,4 +886,6 @@ public abstract class Configuration {
     }
 
     public abstract boolean showMessage(SourcePosition pos, String key);
+
+    public abstract Location getLocationForPackage(PackageDoc pd);
 }

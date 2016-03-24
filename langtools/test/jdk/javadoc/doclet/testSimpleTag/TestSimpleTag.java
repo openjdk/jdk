@@ -30,7 +30,7 @@
  * considered a separator when parsing the simple tag argument.
  * @author jamieh
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @run main TestSimpleTag
  */

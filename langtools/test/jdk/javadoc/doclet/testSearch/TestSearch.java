@@ -27,7 +27,7 @@
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @run main TestSearch
  */

@@ -28,7 +28,7 @@
  *           to be printed. Test for the group defined using patterns.
  * @author   jamieh
  * @library  ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    JavadocTester
  * @run main TestGroupOption
  */

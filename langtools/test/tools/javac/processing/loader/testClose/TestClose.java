@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,6 @@ import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.ClientCodeWrapper.Trusted;
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.processing.JavacProcessingEnvironment;
-import com.sun.tools.javac.util.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -133,7 +131,12 @@ public class TestClose implements TaskListener {
                 List<? extends JavaFileObject> files = Arrays.asList(
                         new MemFile("AnnoProc.java", annoProc),
                         new MemFile("Callback.java", callback));
-                JavacTask task = tool.getTask(null, fm, null, null, null, files);
+                List<String> options = Arrays.asList(
+                        "-XaddExports:"
+                        + "jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED,"
+                        + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+                        "-XDaccessInternalAPI");
+                JavacTask task = tool.getTask(null, fm, null, options, null, files);
                 check(task.call());
             }
 
@@ -151,7 +154,7 @@ public class TestClose implements TaskListener {
                             Arrays.asList(extraClasses, testClasses));
                     List<? extends JavaFileObject> files = Arrays.asList(
                             new MemFile("my://dummy", "class Dummy { }"));
-                    List<String> options = Arrays.asList("-processor", "AnnoProc");
+                    List<String> options = Arrays.asList("-XDaccessInternalAPI", "-processor", "AnnoProc");
                     JavacTask task = tool.getTask(null, fm, null, options, null, files);
                     task.setTaskListener(this);
                     check(task.call());
@@ -189,6 +192,7 @@ public class TestClose implements TaskListener {
     }
 
     public static void add(ProcessingEnvironment env, Runnable r) {
+        // ensure this class in this class loader can access javac internals
         try {
             JavacTask task = JavacTask.instance(env);
             TaskListener l = ((BasicJavacTask) task).getTaskListeners().iterator().next();

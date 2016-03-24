@@ -543,11 +543,14 @@ var spill = {
 
 var AccessorProperty = Java.type("jdk.nashorn.internal.runtime.AccessorProperty");
 var SpillProperty    = Java.type("jdk.nashorn.internal.runtime.SpillProperty");
+var PropertyMap = Java.type("jdk.nashorn.internal.runtime.PropertyMap");
+var findPropertyMethod = PropertyMap.class.getMethod("findProperty", java.lang.Object.class);
 
 Assert.assertTrue(Object.keys(fields).length === 3);
-Assert.assertTrue(Debug.map(fields).findProperty("p0").getClass() === AccessorProperty.class);
-Assert.assertTrue(Debug.map(fields).findProperty("p2").getClass() === AccessorProperty.class);
+Assert.assertTrue(findPropertyMethod.invoke(Debug.map(fields), "p0").getClass() === AccessorProperty.class);
+Assert.assertTrue(findPropertyMethod.invoke(Debug.map(fields), "p2").getClass() === AccessorProperty.class);
 
 Assert.assertTrue(Object.keys(spill).length === 500);
-Assert.assertTrue(Debug.map(spill).findProperty("p0").getClass() === SpillProperty.class);
-Assert.assertTrue(Debug.map(spill).findProperty("p499").getClass() === SpillProperty.class);
+
+Assert.assertTrue(findPropertyMethod.invoke(Debug.map(spill), "p0").getClass() === SpillProperty.class);
+Assert.assertTrue(findPropertyMethod.invoke(Debug.map(spill), "p499").getClass() === SpillProperty.class);

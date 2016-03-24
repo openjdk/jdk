@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.tree
  * @build JavacTestingAbstractProcessor ModelChecker
- * @compile -processor ModelChecker Model01.java
+ * @compile -XDaccessInternalAPI -processor ModelChecker Model01.java
  */
 
 import javax.lang.model.element.ElementKind;
