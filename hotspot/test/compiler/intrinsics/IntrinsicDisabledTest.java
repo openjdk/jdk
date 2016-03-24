@@ -33,8 +33,8 @@
  *                   -XX:+WhiteBoxAPI
  *                   -XX:DisableIntrinsic=_putCharVolatile,_putInt
  *                   -XX:DisableIntrinsic=_putIntVolatile
- *                   -XX:CompileCommand=option,sun.misc.Unsafe::putChar,ccstrlist,DisableIntrinsic,_getCharVolatile,_getInt
- *                   -XX:CompileCommand=option,sun.misc.Unsafe::putCharVolatile,ccstrlist,DisableIntrinsic,_getIntVolatile
+ *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putChar,ccstrlist,DisableIntrinsic,_getCharVolatile,_getInt
+ *                   -XX:CompileCommand=option,jdk.internal.misc.Unsafe::putCharVolatile,ccstrlist,DisableIntrinsic,_getIntVolatile
  *                   IntrinsicDisabledTest
  */
 
@@ -60,7 +60,7 @@ public class IntrinsicDisabledTest {
         return Boolean.valueOf(Objects.toString(wb.getVMFlag("TieredCompilation")));
     }
 
-    /* This test uses several methods from sun.misc.Unsafe. The method
+    /* This test uses several methods from jdk.internal.misc.Unsafe. The method
      * getMethod() returns a different Executable for each different
      * combination of its input parameters. There are eight possible
      * combinations, getMethod can return an Executable representing
@@ -74,7 +74,7 @@ public class IntrinsicDisabledTest {
         String methodTypeName = isChar ? "Char" : "Int";
 
         try {
-            Class aClass = Class.forName("sun.misc.Unsafe");
+            Class aClass = Class.forName("jdk.internal.misc.Unsafe");
             if (isPut) {
                 aMethod = aClass.getDeclaredMethod("put" + methodTypeName + (isVolatile ? "Volatile" : ""),
                                                    Object.class,

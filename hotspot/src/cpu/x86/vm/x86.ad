@@ -3179,13 +3179,13 @@ instruct Repl32B(vecY dst, rRegI src) %{
             "punpcklbw $dst,$dst\n\t"
             "pshuflw $dst,$dst,0x00\n\t"
             "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate32B" %}
+            "vinserti128_high $dst,$dst\t! replicate32B" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ punpcklbw($dst$$XMMRegister, $dst$$XMMRegister);
     __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3196,12 +3196,12 @@ instruct Repl32B_mem(vecY dst, memory mem) %{
   format %{ "punpcklbw $dst,$mem\n\t"
             "pshuflw $dst,$dst,0x00\n\t"
             "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate32B" %}
+            "vinserti128_high $dst,$dst\t! replicate32B" %}
   ins_encode %{
     __ punpcklbw($dst$$XMMRegister, $mem$$Address);
     __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3223,11 +3223,11 @@ instruct Repl32B_imm(vecY dst, immI con) %{
   match(Set dst (ReplicateB con));
   format %{ "movq    $dst,[$constantaddress]\n\t"
             "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! lreplicate32B($con)" %}
+            "vinserti128_high $dst,$dst\t! lreplicate32B($con)" %}
   ins_encode %{
     __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 1)));
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3298,12 +3298,12 @@ instruct Repl16S(vecY dst, rRegI src) %{
   format %{ "movd    $dst,$src\n\t"
             "pshuflw $dst,$dst,0x00\n\t"
             "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate16S" %}
+            "vinserti128_high $dst,$dst\t! replicate16S" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ pshuflw($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3313,11 +3313,11 @@ instruct Repl16S_mem(vecY dst, memory mem) %{
   match(Set dst (ReplicateS (LoadS mem)));
   format %{ "pshuflw $dst,$mem,0x00\n\t"
             "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate16S" %}
+            "vinserti128_high $dst,$dst\t! replicate16S" %}
   ins_encode %{
     __ pshuflw($dst$$XMMRegister, $mem$$Address, 0x00);
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3327,11 +3327,11 @@ instruct Repl16S_imm(vecY dst, immI con) %{
   match(Set dst (ReplicateS con));
   format %{ "movq    $dst,[$constantaddress]\n\t"
             "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate16S($con)" %}
+            "vinserti128_high $dst,$dst\t! replicate16S($con)" %}
   ins_encode %{
     __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 2)));
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3363,11 +3363,11 @@ instruct Repl8I(vecY dst, rRegI src) %{
   match(Set dst (ReplicateI src));
   format %{ "movd    $dst,$src\n\t"
             "pshufd  $dst,$dst,0x00\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate8I" %}
+            "vinserti128_high $dst,$dst\t! replicate8I" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ pshufd($dst$$XMMRegister, $dst$$XMMRegister, 0x00);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3376,10 +3376,10 @@ instruct Repl8I_mem(vecY dst, memory mem) %{
   predicate(n->as_Vector()->length() == 8 && !VM_Version::supports_avx512vl());
   match(Set dst (ReplicateI (LoadI mem)));
   format %{ "pshufd  $dst,$mem,0x00\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate8I" %}
+            "vinserti128_high $dst,$dst\t! replicate8I" %}
   ins_encode %{
     __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3401,11 +3401,11 @@ instruct Repl8I_imm(vecY dst, immI con) %{
   match(Set dst (ReplicateI con));
   format %{ "movq    $dst,[$constantaddress]\t! replicate8I($con)\n\t"
             "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst" %}
+            "vinserti128_high $dst,$dst" %}
   ins_encode %{
     __ movq($dst$$XMMRegister, $constantaddress(replicate8_imm($con$$constant, 4)));
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3430,11 +3430,11 @@ instruct Repl4L(vecY dst, rRegL src) %{
   match(Set dst (ReplicateL src));
   format %{ "movdq   $dst,$src\n\t"
             "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
+            "vinserti128_high $dst,$dst\t! replicate4L" %}
   ins_encode %{
     __ movdq($dst$$XMMRegister, $src$$Register);
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3447,13 +3447,13 @@ instruct Repl4L(vecY dst, eRegL src, regD tmp) %{
             "movdl   $tmp,$src.hi\n\t"
             "punpckldq $dst,$tmp\n\t"
             "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
+            "vinserti128_high $dst,$dst\t! replicate4L" %}
   ins_encode %{
     __ movdl($dst$$XMMRegister, $src$$Register);
     __ movdl($tmp$$XMMRegister, HIGH_FROM_LOW($src$$Register));
     __ punpckldq($dst$$XMMRegister, $tmp$$XMMRegister);
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3464,11 +3464,11 @@ instruct Repl4L_imm(vecY dst, immL con) %{
   match(Set dst (ReplicateL con));
   format %{ "movq    $dst,[$constantaddress]\n\t"
             "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate4L($con)" %}
+            "vinserti128_high $dst,$dst\t! replicate4L($con)" %}
   ins_encode %{
     __ movq($dst$$XMMRegister, $constantaddress($con));
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3478,11 +3478,11 @@ instruct Repl4L_mem(vecY dst, memory mem) %{
   match(Set dst (ReplicateL (LoadL mem)));
   format %{ "movq    $dst,$mem\n\t"
             "punpcklqdq $dst,$dst\n\t"
-            "vinserti128h $dst,$dst,$dst\t! replicate4L" %}
+            "vinserti128_high $dst,$dst\t! replicate4L" %}
   ins_encode %{
     __ movq($dst$$XMMRegister, $mem$$Address);
     __ punpcklqdq($dst$$XMMRegister, $dst$$XMMRegister);
-    __ vinserti128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinserti128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3511,10 +3511,10 @@ instruct Repl8F(vecY dst, regF src) %{
   predicate(n->as_Vector()->length() == 8 && !VM_Version::supports_avx512vl());
   match(Set dst (ReplicateF src));
   format %{ "pshufd  $dst,$src,0x00\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate8F" %}
+            "vinsertf128_high $dst,$dst\t! replicate8F" %}
   ins_encode %{
     __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x00);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3523,10 +3523,10 @@ instruct Repl8F_mem(vecY dst, memory mem) %{
   predicate(n->as_Vector()->length() == 8 && !VM_Version::supports_avx512vl());
   match(Set dst (ReplicateF (LoadF mem)));
   format %{ "pshufd  $dst,$mem,0x00\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate8F" %}
+            "vinsertf128_high $dst,$dst\t! replicate8F" %}
   ins_encode %{
     __ pshufd($dst$$XMMRegister, $mem$$Address, 0x00);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3576,10 +3576,10 @@ instruct Repl4D(vecY dst, regD src) %{
   predicate(n->as_Vector()->length() == 4 && !VM_Version::supports_avx512vl());
   match(Set dst (ReplicateD src));
   format %{ "pshufd  $dst,$src,0x44\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate4D" %}
+            "vinsertf128_high $dst,$dst\t! replicate4D" %}
   ins_encode %{
     __ pshufd($dst$$XMMRegister, $src$$XMMRegister, 0x44);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -3588,10 +3588,10 @@ instruct Repl4D_mem(vecY dst, memory mem) %{
   predicate(n->as_Vector()->length() == 4 && !VM_Version::supports_avx512vl());
   match(Set dst (ReplicateD (LoadD mem)));
   format %{ "pshufd  $dst,$mem,0x44\n\t"
-            "vinsertf128h $dst,$dst,$dst\t! replicate4D" %}
+            "vinsertf128_high $dst,$dst\t! replicate4D" %}
   ins_encode %{
     __ pshufd($dst$$XMMRegister, $mem$$Address, 0x44);
-    __ vinsertf128h($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister);
+    __ vinsertf128_high($dst$$XMMRegister, $dst$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4791,7 +4791,7 @@ instruct rvadd8I_reduction_reg(rRegI dst, rRegI src1, vecY src2, regF tmp, regF 
   effect(TEMP tmp, TEMP tmp2);
   format %{ "vphaddd  $tmp,$src2,$src2\n\t"
             "vphaddd  $tmp,$tmp,$tmp2\n\t"
-            "vextracti128  $tmp2,$tmp\n\t"
+            "vextracti128_high  $tmp2,$tmp\n\t"
             "vpaddd   $tmp,$tmp,$tmp2\n\t"
             "movd     $tmp2,$src1\n\t"
             "vpaddd   $tmp2,$tmp2,$tmp\n\t"
@@ -4800,7 +4800,7 @@ instruct rvadd8I_reduction_reg(rRegI dst, rRegI src1, vecY src2, regF tmp, regF 
     int vector_len = 1;
     __ vphaddd($tmp$$XMMRegister, $src2$$XMMRegister, $src2$$XMMRegister, vector_len);
     __ vphaddd($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, vector_len);
-    __ vextracti128h($tmp2$$XMMRegister, $tmp$$XMMRegister);
+    __ vextracti128_high($tmp2$$XMMRegister, $tmp$$XMMRegister);
     __ vpaddd($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, 0);
     __ movdl($tmp2$$XMMRegister, $src1$$Register);
     __ vpaddd($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister, 0);
@@ -4813,7 +4813,7 @@ instruct rvadd8I_reduction_reg_evex(rRegI dst, rRegI src1, vecY src2, regF tmp, 
   predicate(UseAVX > 2);
   match(Set dst (AddReductionVI src1 src2));
   effect(TEMP tmp, TEMP tmp2);
-  format %{ "vextracti128  $tmp,$src2\n\t"
+  format %{ "vextracti128_high  $tmp,$src2\n\t"
             "vpaddd  $tmp,$tmp,$src2\n\t"
             "pshufd  $tmp2,$tmp,0xE\n\t"
             "vpaddd  $tmp,$tmp,$tmp2\n\t"
@@ -4824,7 +4824,7 @@ instruct rvadd8I_reduction_reg_evex(rRegI dst, rRegI src1, vecY src2, regF tmp, 
             "movd    $dst,$tmp2\t! add reduction8I" %}
   ins_encode %{
     int vector_len = 0;
-    __ vextracti128h($tmp$$XMMRegister, $src2$$XMMRegister);
+    __ vextracti128_high($tmp$$XMMRegister, $src2$$XMMRegister);
     __ vpaddd($tmp$$XMMRegister, $tmp$$XMMRegister, $src2$$XMMRegister, vector_len);
     __ pshufd($tmp2$$XMMRegister, $tmp$$XMMRegister, 0xE);
     __ vpaddd($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, vector_len);
@@ -4841,9 +4841,9 @@ instruct rvadd16I_reduction_reg_evex(rRegI dst, rRegI src1, vecZ src2, regF tmp,
   predicate(UseAVX > 2);
   match(Set dst (AddReductionVI src1 src2));
   effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
-  format %{ "vextracti64x4  $tmp3,$src2,0x1\n\t"
+  format %{ "vextracti64x4_high  $tmp3,$src2\n\t"
             "vpaddd  $tmp3,$tmp3,$src2\n\t"
-            "vextracti128   $tmp,$tmp3\n\t"
+            "vextracti128_high  $tmp,$tmp3\n\t"
             "vpaddd  $tmp,$tmp,$tmp3\n\t"
             "pshufd  $tmp2,$tmp,0xE\n\t"
             "vpaddd  $tmp,$tmp,$tmp2\n\t"
@@ -4853,9 +4853,9 @@ instruct rvadd16I_reduction_reg_evex(rRegI dst, rRegI src1, vecZ src2, regF tmp,
             "vpaddd  $tmp2,$tmp,$tmp2\n\t"
             "movd    $dst,$tmp2\t! mul reduction16I" %}
   ins_encode %{
-    __ vextracti64x4h($tmp3$$XMMRegister, $src2$$XMMRegister, 1);
+    __ vextracti64x4_high($tmp3$$XMMRegister, $src2$$XMMRegister);
     __ vpaddd($tmp3$$XMMRegister, $tmp3$$XMMRegister, $src2$$XMMRegister, 1);
-    __ vextracti128h($tmp$$XMMRegister, $tmp3$$XMMRegister);
+    __ vextracti128_high($tmp$$XMMRegister, $tmp3$$XMMRegister);
     __ vpaddd($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp3$$XMMRegister, 0);
     __ pshufd($tmp2$$XMMRegister, $tmp$$XMMRegister, 0xE);
     __ vpaddd($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, 0);
@@ -4892,7 +4892,7 @@ instruct rvadd4L_reduction_reg(rRegL dst, rRegL src1, vecY src2, regF tmp, regF 
   predicate(UseAVX > 2);
   match(Set dst (AddReductionVL src1 src2));
   effect(TEMP tmp, TEMP tmp2);
-  format %{ "vextracti128  $tmp,$src2\n\t"
+  format %{ "vextracti128_high  $tmp,$src2\n\t"
             "vpaddq  $tmp2,$tmp,$src2\n\t"
             "pshufd  $tmp,$tmp2,0xE\n\t"
             "vpaddq  $tmp2,$tmp2,$tmp\n\t"
@@ -4900,7 +4900,7 @@ instruct rvadd4L_reduction_reg(rRegL dst, rRegL src1, vecY src2, regF tmp, regF 
             "vpaddq  $tmp2,$tmp2,$tmp\n\t"
             "movdq   $dst,$tmp2\t! add reduction4L" %}
   ins_encode %{
-    __ vextracti128h($tmp$$XMMRegister, $src2$$XMMRegister);
+    __ vextracti128_high($tmp$$XMMRegister, $src2$$XMMRegister);
     __ vpaddq($tmp2$$XMMRegister, $tmp$$XMMRegister, $src2$$XMMRegister, 0);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vpaddq($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister, 0);
@@ -4915,9 +4915,9 @@ instruct rvadd8L_reduction_reg(rRegL dst, rRegL src1, vecZ src2, regF tmp, regF 
   predicate(UseAVX > 2);
   match(Set dst (AddReductionVL src1 src2));
   effect(TEMP tmp, TEMP tmp2);
-  format %{ "vextracti64x4  $tmp2,$src2,0x1\n\t"
+  format %{ "vextracti64x4_high  $tmp2,$src2\n\t"
             "vpaddq  $tmp2,$tmp2,$src2\n\t"
-            "vextracti128   $tmp,$tmp2\n\t"
+            "vextracti128_high  $tmp,$tmp2\n\t"
             "vpaddq  $tmp2,$tmp2,$tmp\n\t"
             "pshufd  $tmp,$tmp2,0xE\n\t"
             "vpaddq  $tmp2,$tmp2,$tmp\n\t"
@@ -4925,9 +4925,9 @@ instruct rvadd8L_reduction_reg(rRegL dst, rRegL src1, vecZ src2, regF tmp, regF 
             "vpaddq  $tmp2,$tmp2,$tmp\n\t"
             "movdq   $dst,$tmp2\t! add reduction8L" %}
   ins_encode %{
-    __ vextracti64x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 1);
+    __ vextracti64x4_high($tmp2$$XMMRegister, $src2$$XMMRegister);
     __ vpaddq($tmp2$$XMMRegister, $tmp2$$XMMRegister, $src2$$XMMRegister, 1);
-    __ vextracti128h($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ vextracti128_high($tmp$$XMMRegister, $tmp2$$XMMRegister);
     __ vpaddq($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister, 0);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vpaddq($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister, 0);
@@ -5026,7 +5026,7 @@ instruct radd8F_reduction_reg(regF dst, vecY src2, regF tmp, regF tmp2) %{
             "vaddss  $dst,$dst,$tmp\n\t"
             "pshufd  $tmp,$src2,0x03\n\t"
             "vaddss  $dst,$dst,$tmp\n\t"
-            "vextractf128  $tmp2,$src2\n\t"
+            "vextractf128_high  $tmp2,$src2\n\t"
             "vaddss  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0x01\n\t"
             "vaddss  $dst,$dst,$tmp\n\t"
@@ -5042,7 +5042,7 @@ instruct radd8F_reduction_reg(regF dst, vecY src2, regF tmp, regF tmp2) %{
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x03);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf128h($tmp2$$XMMRegister, $src2$$XMMRegister);
+    __ vextractf128_high($tmp2$$XMMRegister, $src2$$XMMRegister);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x01);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
@@ -5065,7 +5065,7 @@ instruct radd16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
             "vaddss  $dst,$dst,$tmp\n\t"
             "pshufd  $tmp,$src2,0x03\n\t"
             "vaddss  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x1\n\t"
+            "vextractf32x4  $tmp2,$src2,0x1\n\t"
             "vaddss  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0x01\n\t"
             "vaddss  $dst,$dst,$tmp\n\t"
@@ -5073,7 +5073,7 @@ instruct radd16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
             "vaddss  $dst,$dst,$tmp\n\t"
             "pshufd  $tmp,$tmp2,0x03\n\t"
             "vaddss  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x2\n\t"
+            "vextractf32x4  $tmp2,$src2,0x2\n\t"
             "vaddss  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0x01\n\t"
             "vaddss  $dst,$dst,$tmp\n\t"
@@ -5081,7 +5081,7 @@ instruct radd16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
             "vaddss  $dst,$dst,$tmp\n\t"
             "pshufd  $tmp,$tmp2,0x03\n\t"
             "vaddss  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x3\n\t"
+            "vextractf32x4  $tmp2,$src2,0x3\n\t"
             "vaddss  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0x01\n\t"
             "vaddss  $dst,$dst,$tmp\n\t"
@@ -5097,7 +5097,7 @@ instruct radd16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x03);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x01);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
@@ -5105,7 +5105,7 @@ instruct radd16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x03);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x2);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x2);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x01);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
@@ -5113,7 +5113,7 @@ instruct radd16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x03);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x3);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x3);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x01);
     __ vaddss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
@@ -5162,7 +5162,7 @@ instruct rvadd4D_reduction_reg(regD dst, vecY src2, regD tmp, regD tmp2) %{
   format %{ "vaddsd  $dst,$dst,$src2\n\t"
             "pshufd  $tmp,$src2,0xE\n\t"
             "vaddsd  $dst,$dst,$tmp\n\t"
-            "vextractf32x4h  $tmp2,$src2, 0x1\n\t"
+            "vextractf32x4  $tmp2,$src2,0x1\n\t"
             "vaddsd  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0xE\n\t"
             "vaddsd  $dst,$dst,$tmp\t! add reduction4D" %}
@@ -5170,7 +5170,7 @@ instruct rvadd4D_reduction_reg(regD dst, vecY src2, regD tmp, regD tmp2) %{
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $src2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0xE);
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
@@ -5185,15 +5185,15 @@ instruct rvadd8D_reduction_reg(regD dst, vecZ src2, regD tmp, regD tmp2) %{
   format %{ "vaddsd  $dst,$dst,$src2\n\t"
             "pshufd  $tmp,$src2,0xE\n\t"
             "vaddsd  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x1\n\t"
+            "vextractf32x4  $tmp2,$src2,0x1\n\t"
             "vaddsd  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0xE\n\t"
             "vaddsd  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x2\n\t"
+            "vextractf32x4  $tmp2,$src2,0x2\n\t"
             "vaddsd  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0xE\n\t"
             "vaddsd  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x3\n\t"
+            "vextractf32x4  $tmp2,$src2,0x3\n\t"
             "vaddsd  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0xE\n\t"
             "vaddsd  $dst,$dst,$tmp\t! add reduction8D" %}
@@ -5201,15 +5201,15 @@ instruct rvadd8D_reduction_reg(regD dst, vecZ src2, regD tmp, regD tmp2) %{
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $src2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0xE);
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x2);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x2);
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x3);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x3);
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vaddsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
@@ -5307,7 +5307,7 @@ instruct rvmul8I_reduction_reg(rRegI dst, rRegI src1, vecY src2, regF tmp, regF 
   predicate(UseAVX > 0);
   match(Set dst (MulReductionVI src1 src2));
   effect(TEMP tmp, TEMP tmp2);
-  format %{ "vextracti128  $tmp,$src2\n\t"
+  format %{ "vextracti128_high  $tmp,$src2\n\t"
             "vpmulld  $tmp,$tmp,$src2\n\t"
             "pshufd   $tmp2,$tmp,0xE\n\t"
             "vpmulld  $tmp,$tmp,$tmp2\n\t"
@@ -5318,7 +5318,7 @@ instruct rvmul8I_reduction_reg(rRegI dst, rRegI src1, vecY src2, regF tmp, regF 
             "movd     $dst,$tmp2\t! mul reduction8I" %}
   ins_encode %{
     int vector_len = 0;
-    __ vextracti128h($tmp$$XMMRegister, $src2$$XMMRegister);
+    __ vextracti128_high($tmp$$XMMRegister, $src2$$XMMRegister);
     __ vpmulld($tmp$$XMMRegister, $tmp$$XMMRegister, $src2$$XMMRegister, vector_len);
     __ pshufd($tmp2$$XMMRegister, $tmp$$XMMRegister, 0xE);
     __ vpmulld($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, vector_len);
@@ -5335,9 +5335,9 @@ instruct rvmul16I_reduction_reg(rRegI dst, rRegI src1, vecZ src2, regF tmp, regF
   predicate(UseAVX > 2);
   match(Set dst (MulReductionVI src1 src2));
   effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
-  format %{ "vextracti64x4  $tmp3,$src2,0x1\n\t"
+  format %{ "vextracti64x4_high  $tmp3,$src2\n\t"
             "vpmulld  $tmp3,$tmp3,$src2\n\t"
-            "vextracti128   $tmp,$tmp3\n\t"
+            "vextracti128_high  $tmp,$tmp3\n\t"
             "vpmulld  $tmp,$tmp,$src2\n\t"
             "pshufd   $tmp2,$tmp,0xE\n\t"
             "vpmulld  $tmp,$tmp,$tmp2\n\t"
@@ -5347,9 +5347,9 @@ instruct rvmul16I_reduction_reg(rRegI dst, rRegI src1, vecZ src2, regF tmp, regF
             "vpmulld  $tmp2,$tmp,$tmp2\n\t"
             "movd     $dst,$tmp2\t! mul reduction16I" %}
   ins_encode %{
-    __ vextracti64x4h($tmp3$$XMMRegister, $src2$$XMMRegister, 1);
+    __ vextracti64x4_high($tmp3$$XMMRegister, $src2$$XMMRegister);
     __ vpmulld($tmp3$$XMMRegister, $tmp3$$XMMRegister, $src2$$XMMRegister, 1);
-    __ vextracti128h($tmp$$XMMRegister, $tmp3$$XMMRegister);
+    __ vextracti128_high($tmp$$XMMRegister, $tmp3$$XMMRegister);
     __ vpmulld($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp3$$XMMRegister, 0);
     __ pshufd($tmp2$$XMMRegister, $tmp$$XMMRegister, 0xE);
     __ vpmulld($tmp$$XMMRegister, $tmp$$XMMRegister, $tmp2$$XMMRegister, 0);
@@ -5386,7 +5386,7 @@ instruct rvmul4L_reduction_reg(rRegL dst, rRegL src1, vecY src2, regF tmp, regF 
   predicate(UseAVX > 2 && VM_Version::supports_avx512dq());
   match(Set dst (MulReductionVL src1 src2));
   effect(TEMP tmp, TEMP tmp2);
-  format %{ "vextracti128  $tmp,$src2\n\t"
+  format %{ "vextracti128_high  $tmp,$src2\n\t"
             "vpmullq  $tmp2,$tmp,$src2\n\t"
             "pshufd   $tmp,$tmp2,0xE\n\t"
             "vpmullq  $tmp2,$tmp2,$tmp\n\t"
@@ -5394,7 +5394,7 @@ instruct rvmul4L_reduction_reg(rRegL dst, rRegL src1, vecY src2, regF tmp, regF 
             "vpmullq  $tmp2,$tmp2,$tmp\n\t"
             "movdq    $dst,$tmp2\t! mul reduction4L" %}
   ins_encode %{
-    __ vextracti128h($tmp$$XMMRegister, $src2$$XMMRegister);
+    __ vextracti128_high($tmp$$XMMRegister, $src2$$XMMRegister);
     __ vpmullq($tmp2$$XMMRegister, $tmp$$XMMRegister, $src2$$XMMRegister, 0);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vpmullq($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister, 0);
@@ -5409,9 +5409,9 @@ instruct rvmul8L_reduction_reg(rRegL dst, rRegL src1, vecZ src2, regF tmp, regF 
   predicate(UseAVX > 2 && VM_Version::supports_avx512dq());
   match(Set dst (MulReductionVL src1 src2));
   effect(TEMP tmp, TEMP tmp2);
-  format %{ "vextracti64x4  $tmp2,$src2,0x1\n\t"
+  format %{ "vextracti64x4_high  $tmp2,$src2\n\t"
             "vpmullq  $tmp2,$tmp2,$src2\n\t"
-            "vextracti128   $tmp,$tmp2\n\t"
+            "vextracti128_high  $tmp,$tmp2\n\t"
             "vpmullq  $tmp2,$tmp2,$tmp\n\t"
             "pshufd   $tmp,$tmp2,0xE\n\t"
             "vpmullq  $tmp2,$tmp2,$tmp\n\t"
@@ -5419,9 +5419,9 @@ instruct rvmul8L_reduction_reg(rRegL dst, rRegL src1, vecZ src2, regF tmp, regF 
             "vpmullq  $tmp2,$tmp2,$tmp\n\t"
             "movdq    $dst,$tmp2\t! mul reduction8L" %}
   ins_encode %{
-    __ vextracti64x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 1);
+    __ vextracti64x4_high($tmp2$$XMMRegister, $src2$$XMMRegister);
     __ vpmullq($tmp2$$XMMRegister, $tmp2$$XMMRegister, $src2$$XMMRegister, 1);
-    __ vextracti128h($tmp$$XMMRegister, $tmp2$$XMMRegister);
+    __ vextracti128_high($tmp$$XMMRegister, $tmp2$$XMMRegister);
     __ vpmullq($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister, 0);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vpmullq($tmp2$$XMMRegister, $tmp2$$XMMRegister, $tmp$$XMMRegister, 0);
@@ -5520,7 +5520,7 @@ instruct rvmul8F_reduction_reg(regF dst, vecY src2, regF tmp, regF tmp2) %{
             "vmulss  $dst,$dst,$tmp\n\t"
             "pshufd  $tmp,$src2,0x03\n\t"
             "vmulss  $dst,$dst,$tmp\n\t"
-            "vextractf128  $tmp2,$src2\n\t"
+            "vextractf128_high  $tmp2,$src2\n\t"
             "vmulss  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0x01\n\t"
             "vmulss  $dst,$dst,$tmp\n\t"
@@ -5536,7 +5536,7 @@ instruct rvmul8F_reduction_reg(regF dst, vecY src2, regF tmp, regF tmp2) %{
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x03);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf128h($tmp2$$XMMRegister, $src2$$XMMRegister);
+    __ vextractf128_high($tmp2$$XMMRegister, $src2$$XMMRegister);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x01);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
@@ -5559,7 +5559,7 @@ instruct rvmul16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
             "vmulss  $dst,$dst,$tmp\n\t"
             "pshufd  $tmp,$src2,0x03\n\t"
             "vmulss  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x1\n\t"
+            "vextractf32x4  $tmp2,$src2,0x1\n\t"
             "vmulss  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0x01\n\t"
             "vmulss  $dst,$dst,$tmp\n\t"
@@ -5567,7 +5567,7 @@ instruct rvmul16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
             "vmulss  $dst,$dst,$tmp\n\t"
             "pshufd  $tmp,$tmp2,0x03\n\t"
             "vmulss  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x2\n\t"
+            "vextractf32x4  $tmp2,$src2,0x2\n\t"
             "vmulss  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0x01\n\t"
             "vmulss  $dst,$dst,$tmp\n\t"
@@ -5575,7 +5575,7 @@ instruct rvmul16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
             "vmulss  $dst,$dst,$tmp\n\t"
             "pshufd  $tmp,$tmp2,0x03\n\t"
             "vmulss  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x3\n\t"
+            "vextractf32x4  $tmp2,$src2,0x3\n\t"
             "vmulss  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0x01\n\t"
             "vmulss  $dst,$dst,$tmp\n\t"
@@ -5591,7 +5591,7 @@ instruct rvmul16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0x03);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x01);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
@@ -5599,7 +5599,7 @@ instruct rvmul16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x03);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x2);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x2);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x01);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
@@ -5607,7 +5607,7 @@ instruct rvmul16F_reduction_reg(regF dst, vecZ src2, regF tmp, regF tmp2) %{
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x03);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x3);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x3);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0x01);
     __ vmulss($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
@@ -5656,7 +5656,7 @@ instruct rvmul4D_reduction_reg(regD dst, vecY src2, regD tmp, regD tmp2) %{
   format %{ "vmulsd  $dst,$dst,$src2\n\t"
             "pshufd  $tmp,$src2,0xE\n\t"
             "vmulsd  $dst,$dst,$tmp\n\t"
-            "vextractf128  $tmp2,$src2\n\t"
+            "vextractf128_high  $tmp2,$src2\n\t"
             "vmulsd  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0xE\n\t"
             "vmulsd  $dst,$dst,$tmp\t! mul reduction4D" %}
@@ -5664,7 +5664,7 @@ instruct rvmul4D_reduction_reg(regD dst, vecY src2, regD tmp, regD tmp2) %{
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $src2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0xE);
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf128h($tmp2$$XMMRegister, $src2$$XMMRegister);
+    __ vextractf128_high($tmp2$$XMMRegister, $src2$$XMMRegister);
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
@@ -5679,15 +5679,15 @@ instruct rvmul8D_reduction_reg(regD dst, vecZ src2, regD tmp, regD tmp2) %{
   format %{ "vmulsd  $dst,$dst,$src2\n\t"
             "pshufd  $tmp,$src2,0xE\n\t"
             "vmulsd  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x1\n\t"
+            "vextractf32x4  $tmp2,$src2,0x1\n\t"
             "vmulsd  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$src2,0xE\n\t"
             "vmulsd  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x2\n\t"
+            "vextractf32x4  $tmp2,$src2,0x2\n\t"
             "vmulsd  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0xE\n\t"
             "vmulsd  $dst,$dst,$tmp\n\t"
-            "vextractf32x4  $tmp2,$src2, 0x3\n\t"
+            "vextractf32x4  $tmp2,$src2,0x3\n\t"
             "vmulsd  $dst,$dst,$tmp2\n\t"
             "pshufd  $tmp,$tmp2,0xE\n\t"
             "vmulsd  $dst,$dst,$tmp\t! mul reduction8D" %}
@@ -5695,15 +5695,15 @@ instruct rvmul8D_reduction_reg(regD dst, vecZ src2, regD tmp, regD tmp2) %{
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $src2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $src2$$XMMRegister, 0xE);
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x1);
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x2);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x2);
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
-    __ vextractf32x4h($tmp2$$XMMRegister, $src2$$XMMRegister, 0x3);
+    __ vextractf32x4($tmp2$$XMMRegister, $src2$$XMMRegister, 0x3);
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp2$$XMMRegister);
     __ pshufd($tmp$$XMMRegister, $tmp2$$XMMRegister, 0xE);
     __ vmulsd($dst$$XMMRegister, $dst$$XMMRegister, $tmp$$XMMRegister);
