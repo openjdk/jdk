@@ -1810,6 +1810,11 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
         LazyValue menuArrowIcon = t -> WindowsIconFactory.getMenuArrowIcon();
 
+        Color highlight = (Color) Toolkit.getDefaultToolkit().
+                getDesktopProperty("win.3d.highlightColor");
+
+        Color shadow = (Color) Toolkit.getDefaultToolkit().
+                getDesktopProperty("win.3d.shadowColor");
 
         Object[] lazyDefaults = {
             "Button.border", buttonBorder,
@@ -1838,8 +1843,12 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "TextArea.margin", textFieldMargin,
             "TextField.border", textFieldBorder,
             "TextField.margin", textFieldMargin,
-            "TitledBorder.border",
-                        new XPBorderValue(Part.BP_GROUPBOX, etchedBorder),
+            "TitledBorder.border", new UIDefaults.LazyValue() {
+                public Object createValue(UIDefaults table) {
+                    return new BorderUIResource.
+                            EtchedBorderUIResource(highlight, shadow);
+                }
+            },
             "ToggleButton.border", radioButtonBorder,
             "ToolBar.border", toolBarBorder,
             "ToolTip.border", toolTipBorder,
