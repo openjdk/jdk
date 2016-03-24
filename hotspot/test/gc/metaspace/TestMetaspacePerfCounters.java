@@ -84,6 +84,9 @@ public class TestMetaspacePerfCounters {
     }
 
     private static void checkUsedIncreasesWhenLoadingClass(String ns) throws Exception {
+        // Need to ensure that used is up to date and that all unreachable
+        // classes are unloaded before doing this check.
+        System.gc();
         long before = getUsed(ns);
         fooClass = compileAndLoad("Foo", "public class Foo { }");
         System.gc();
