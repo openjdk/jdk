@@ -205,6 +205,9 @@ public class InsnList {
     /**
      * Returns an iterator over the instructions in this list.
      *
+     * @param index
+     *            index of instruction for the iterator to start at
+     *
      * @return an iterator over the instructions in this list.
      */
     @SuppressWarnings("unchecked")

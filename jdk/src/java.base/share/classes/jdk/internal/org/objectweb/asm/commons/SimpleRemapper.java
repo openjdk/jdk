@@ -86,6 +86,12 @@ public class SimpleRemapper extends Remapper {
     }
 
     @Override
+    public String mapInvokeDynamicMethodName(String name, String desc) {
+        String s = map('.' + name + desc);
+        return s == null ? name : s;
+    }
+
+    @Override
     public String mapFieldName(String owner, String name, String desc) {
         String s = map(owner + '.' + name);
         return s == null ? name : s;
