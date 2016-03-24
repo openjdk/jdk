@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,7 +385,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
     __ movdl(xmm0, rcx);
     __ pshufd(xmm0, xmm0, 0x00);
-    __ vinsertf128h(xmm0, xmm0, xmm0);
+    __ vinsertf128_high(xmm0, xmm0);
     __ vmovdqu(xmm7, xmm0);
 #ifdef _LP64
     __ vmovdqu(xmm8, xmm0);
@@ -577,7 +577,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -608,7 +608,8 @@ void VM_Version::get_processor_features() {
                (supports_bmi1() ? ", bmi1" : ""),
                (supports_bmi2() ? ", bmi2" : ""),
                (supports_adx() ? ", adx" : ""),
-               (supports_evex() ? ", evex" : ""));
+               (supports_evex() ? ", evex" : ""),
+               (supports_sha() ? ", sha" : ""));
   _features_string = os::strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what
@@ -730,17 +731,29 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
-  if (UseSHA) {
+  if (supports_sha()) {
+    if (FLAG_IS_DEFAULT(UseSHA)) {
+      UseSHA = true;
+    }
+  } else if (UseSHA) {
     warning("SHA instructions are not available on this CPU");
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (UseSHA1Intrinsics) {
+  if (UseSHA) {
+    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
+    }
+  } else if (UseSHA1Intrinsics) {
     warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-  if (UseSHA256Intrinsics) {
+  if (UseSHA) {
+    if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
+    }
+  } else if (UseSHA256Intrinsics) {
     warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
   }
@@ -748,6 +761,10 @@ void VM_Version::get_processor_features() {
   if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+  }
+
+  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
+    FLAG_SET_DEFAULT(UseSHA, false);
   }
 
   if (UseAdler32Intrinsics) {

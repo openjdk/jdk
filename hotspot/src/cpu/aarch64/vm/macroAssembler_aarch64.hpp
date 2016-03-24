@@ -971,21 +971,10 @@ public:
   }
 
   // A generic CAS; success or failure is in the EQ flag.
-  template <typename T1, typename T2>
   void cmpxchg(Register addr, Register expected, Register new_val,
-               T1 load_insn,
-               void (MacroAssembler::*cmp_insn)(Register, Register),
-               T2 store_insn,
-               Register tmp = rscratch1) {
-    Label retry_load, done;
-    bind(retry_load);
-    (this->*load_insn)(tmp, addr);
-    (this->*cmp_insn)(tmp, expected);
-    br(Assembler::NE, done);
-    (this->*store_insn)(tmp, new_val, addr);
-    cbnzw(tmp, retry_load);
-    bind(done);
-  }
+               enum operand_size size,
+               bool acquire, bool release,
+               Register tmp = rscratch1);
 
   // Calls
 

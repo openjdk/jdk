@@ -61,6 +61,10 @@
 #define HWCAP_CRC32 (1<<7)
 #endif
 
+#ifndef HWCAP_ATOMICS
+#define HWCAP_ATOMICS (1<<8)
+#endif
+
 int VM_Version::_cpu;
 int VM_Version::_model;
 int VM_Version::_model2;
@@ -172,6 +176,7 @@ void VM_Version::get_processor_features() {
   if (auxv & HWCAP_AES)   strcat(buf, ", aes");
   if (auxv & HWCAP_SHA1)  strcat(buf, ", sha1");
   if (auxv & HWCAP_SHA2)  strcat(buf, ", sha256");
+  if (auxv & HWCAP_ATOMICS) strcat(buf, ", lse");
 
   _features_string = os::strdup(buf);
 
@@ -189,6 +194,15 @@ void VM_Version::get_processor_features() {
   if (UseVectorizedMismatchIntrinsic) {
     warning("UseVectorizedMismatchIntrinsic specified, but not available on this CPU.");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
+  if (auxv & HWCAP_ATOMICS) {
+    if (FLAG_IS_DEFAULT(UseLSE))
+      FLAG_SET_DEFAULT(UseLSE, true);
+  } else {
+    if (UseLSE) {
+      warning("UseLSE specified, but not supported on this CPU");
+    }
   }
 
   if (auxv & HWCAP_AES) {
