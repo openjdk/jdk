@@ -401,36 +401,6 @@ public class URLClassPath {
         }
     }
 
-    /**
-     * Convert class path specification into an array of file URLs.
-     *
-     * The path of the file is encoded before conversion into URL
-     * form so that reserved characters can safely appear in the path.
-     */
-    public static URL[] pathToURLs(String path) {
-        StringTokenizer st = new StringTokenizer(path, File.pathSeparator);
-        URL[] urls = new URL[st.countTokens()];
-        int count = 0;
-        while (st.hasMoreTokens()) {
-            File f = new File(st.nextToken());
-            try {
-                f = new File(f.getCanonicalPath());
-            } catch (IOException x) {
-                // use the non-canonicalized filename
-            }
-            try {
-                urls[count++] = ParseUtil.fileToEncodedURL(f);
-            } catch (IOException x) { }
-        }
-
-        if (urls.length != count) {
-            URL[] tmp = new URL[count];
-            System.arraycopy(urls, 0, tmp, 0, count);
-            urls = tmp;
-        }
-        return urls;
-    }
-
     /*
      * Check whether the resource URL should be returned.
      * Return null on security check failure.
