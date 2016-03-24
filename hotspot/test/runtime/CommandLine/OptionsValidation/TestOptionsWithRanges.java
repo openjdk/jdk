@@ -27,8 +27,9 @@
  * @library /testlibrary /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/sun.misc
  *          java.management
- *          jdk.attach
- *          jdk.management/sun.tools.attach
+ *          jdk.attach/sun.tools.attach
+ *          jdk.jvmstat/sun.jvmstat.monitor
+ * @build jdk.test.lib.* TestOptionsWithRanges
  * @run main/othervm/timeout=900 TestOptionsWithRanges
  */
 

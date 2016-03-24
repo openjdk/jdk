@@ -41,7 +41,12 @@ BUILD_TOOLS_JDK := $(call SetupJavaCompilationCompileTarget, \
 TOOL_ADDJSUM = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.addjsum.AddJsum
 
+ifeq ($(BOOT_JDK_MODULAR), true)
+  COMPILEFONTCONFIG_ADD_EXPORTS := -XaddExports:java.desktop/sun.awt=ALL-UNNAMED
+endif
+
 TOOL_COMPILEFONTCONFIG = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    $(COMPILEFONTCONFIG_ADD_EXPORTS) \
     build.tools.compilefontconfig.CompileFontConfig
 
 TOOL_COMPILEPROPERTIES = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
@@ -106,12 +111,18 @@ TOOL_OSX_TOBIN = $(JAVA_SMALL) -Djava.awt.headless=true -cp $(BUILDTOOLS_OUTPUTD
 TOOL_CLDRCONVERTER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.cldrconverter.CLDRConverter
 
-TOOL_GENMODULESXML = $(JAVA_SMALL) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
-    -cp $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes $(JDK_OUTPUTDIR)) \
+TOOL_GENMODULESXML = $(JAVA_SMALL) $(INTERIM_LANGTOOLS_BOOTCLASSPATH) \
+    -cp $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes) \
     build.tools.module.GenJdepsModulesXml
 
-TOOL_IMAGEBUILDER = $(JAVA_SMALL) -Xbootclasspath/p:$(BUILDTOOLS_OUTPUTDIR)/interim_jimage_classes \
-    -cp $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes $(JDK_OUTPUTDIR)) \
-    build.tools.module.ImageBuilder
+TOOL_GENMODULEINFOSOURCE = $(JAVA_SMALL) $(INTERIM_LANGTOOLS_BOOTCLASSPATH) \
+    -cp $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes) \
+    build.tools.module.GenModuleInfoSource
+
+TOOL_GENCLASSLOADERMAP = $(JAVA_SMALL) $(INTERIM_LANGTOOLS_BOOTCLASSPATH) \
+    -cp $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes) \
+    build.tools.module.GenModuleLoaderMap
+
+##########################################################################################
 
 endif # _TOOLS_GMK

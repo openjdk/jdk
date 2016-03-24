@@ -335,6 +335,7 @@ JRT_ENTRY(void, Runtime1::new_instance(JavaThread* thread, Klass* klass))
   NOT_PRODUCT(_new_instance_slowcase_cnt++;)
 
   assert(klass->is_klass(), "not a class");
+  Handle holder(THREAD, klass->klass_holder()); // keep the klass alive
   instanceKlassHandle h(thread, klass);
   h->check_valid_for_instantiation(true, CHECK);
   // make sure klass is initialized
@@ -370,6 +371,7 @@ JRT_ENTRY(void, Runtime1::new_object_array(JavaThread* thread, Klass* array_klas
   //       anymore after new_objArray() and no GC can happen before.
   //       (This may have to change if this code changes!)
   assert(array_klass->is_klass(), "not a class");
+  Handle holder(THREAD, array_klass->klass_holder()); // keep the klass alive
   Klass* elem_klass = ObjArrayKlass::cast(array_klass)->element_klass();
   objArrayOop obj = oopFactory::new_objArray(elem_klass, length, CHECK);
   thread->set_vm_result(obj);
@@ -386,6 +388,7 @@ JRT_ENTRY(void, Runtime1::new_multi_array(JavaThread* thread, Klass* klass, int 
 
   assert(klass->is_klass(), "not a class");
   assert(rank >= 1, "rank must be nonzero");
+  Handle holder(THREAD, klass->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(klass)->multi_allocate(rank, dims, CHECK);
   thread->set_vm_result(obj);
 JRT_END
@@ -661,7 +664,7 @@ JRT_ENTRY(void, Runtime1::throw_class_cast_exception(JavaThread* thread, oopDesc
   NOT_PRODUCT(_throw_class_cast_exception_count++;)
   ResourceMark rm(thread);
   char* message = SharedRuntime::generate_class_cast_message(
-    thread, object->klass()->external_name());
+    thread, object->klass());
   SharedRuntime::throw_and_post_jvmti_exception(
     thread, vmSymbols::java_lang_ClassCastException(), message);
 JRT_END

@@ -134,6 +134,7 @@ BASIC_SETUP_DEFAULT_MAKE_TARGET
 
 # We need build & target for this.
 JDKOPT_SETUP_JDK_OPTIONS
+JDKOPT_SETUP_JLINK_OPTIONS
 HOTSPOT_SETUP_HOTSPOT_OPTIONS
 JDKVER_SETUP_JDK_VERSION_NUMBERS
 
@@ -144,6 +145,7 @@ JDKVER_SETUP_JDK_VERSION_NUMBERS
 ###############################################################################
 
 BOOTJDK_SETUP_BOOT_JDK
+BOOTJDK_SETUP_BUILD_JDK
 
 ###############################################################################
 #
@@ -154,6 +156,8 @@ BOOTJDK_SETUP_BOOT_JDK
 SRCDIRS_SETUP_TOPDIRS
 SRCDIRS_SETUP_ALTERNATIVE_TOPDIRS
 SRCDIRS_SETUP_OUTPUT_DIRS
+
+SRCDIRS_SETUP_IMPORT_MODULES
 
 ###############################################################################
 #

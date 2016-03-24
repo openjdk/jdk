@@ -27,6 +27,7 @@
  * @summary Basher for star-import scopes
  * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.file
+ *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  */
 
@@ -199,7 +200,7 @@ public class StarImportTest {
             Name name = names.fromString("c" + (++nextClassSerial));
             int count = rgen.nextInt(MAX_SETUP_CLASS_COUNT);
             log("setup: creating class " + name + " with " + count + " entries");
-            ClassSymbol c = createClass(name, symtab.unnamedPackage);
+            ClassSymbol c = createClass(name, symtab.unnamedModule.unnamedPackage);
 //            log("setup: created " + c);
             for (int i = 0; i < count; i++) {
                 ClassSymbol ic = createClass(names.fromString("Entry" + i), c);
@@ -290,7 +291,7 @@ public class StarImportTest {
         ClassSymbol createClass(Name name, Symbol owner) {
             ClassSymbol sym = new ClassSymbol(0, name, owner);
             sym.members_field = WriteableScope.create(sym);
-            if (owner != symtab.unnamedPackage)
+            if (owner != symtab.unnamedModule.unnamedPackage)
                 owner.members().enter(sym);
             return sym;
         }

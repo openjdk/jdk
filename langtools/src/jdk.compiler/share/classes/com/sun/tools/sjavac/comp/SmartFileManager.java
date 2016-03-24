@@ -28,6 +28,8 @@ package com.sun.tools.sjavac.comp;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -131,7 +133,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
             return file;
         }
 
-        if (visibleSources.contains(file.toUri())) {
+        if (visibleSources.contains(file.toUri()) || isModuleInfo(file)) {
             return file;
         }
         return null;
@@ -166,10 +168,19 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
             return file;
         }
 
-        if (visibleSources.contains(file.toUri())) {
+        if (visibleSources.contains(file.toUri()) || isModuleInfo(file)) {
             return file;
         }
         return null;
+    }
+
+    private boolean isModuleInfo(FileObject fo) {
+        if (fo instanceof JavaFileObject) {
+            JavaFileObject jfo = (JavaFileObject) fo;
+            return jfo.isNameCompatible("module-info", Kind.SOURCE)
+                || jfo.isNameCompatible("module-info", Kind.CLASS);
+        }
+        return false;
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -190,6 +201,11 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         }
         addArtifact(packageName, file.toUri());
         return file;
+    }
+
+    @Override
+    public Location getModuleLocation(Location location, JavaFileObject fo, String pkgName) throws IOException {
+        return super.getModuleLocation(location, locUnwrap(fo), pkgName);
     }
 
     private static String packageNameFromFileName(String fn) {

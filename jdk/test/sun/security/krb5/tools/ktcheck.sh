@@ -24,6 +24,9 @@
 # @test
 # @bug 6950546
 # @summary "ktab -d name etype" to "ktab -d name [-e etype] [kvno | all | old]"
+# @modules java.security.jgss/sun.security.krb5.internal.ktab
+#          java.security.jgss/sun.security.krb5
+# @compile KtabCheck.java
 # @run shell ktcheck.sh
 #
 
@@ -54,11 +57,12 @@ esac
 KEYTAB=ktab.tmp
 
 rm $KEYTAB
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}KtabCheck.java
 
 EXTRA_OPTIONS="-Djava.security.krb5.conf=${TESTSRC}${FS}onlythree.conf"
 KTAB="${TESTJAVA}${FS}bin${FS}ktab -J${EXTRA_OPTIONS} -k $KEYTAB -f"
-CHECK="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${EXTRA_OPTIONS} KtabCheck $KEYTAB"
+CHECK="${TESTJAVA}${FS}bin${FS}java -cp ${TESTCLASSES} ${TESTVMOPTS} ${EXTRA_OPTIONS} \
+        -XaddExports:java.security.jgss/sun.security.krb5.internal.ktab=ALL-UNNAMED,java.security.jgss/sun.security.krb5=ALL-UNNAMED \
+        KtabCheck $KEYTAB"
 
 echo ${EXTRA_OPTIONS}
 

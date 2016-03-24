@@ -1,28 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
- DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-
- This code is free software; you can redistribute it and/or modify it
- under the terms of the GNU General Public License version 2 only, as
- published by the Free Software Foundation.  Oracle designates this
- particular file as subject to the "Classpath" exception as provided
- by Oracle in the LICENSE file that accompanied this code.
-
- This code is distributed in the hope that it will be useful, but WITHOUT
- ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- version 2 for more details (a copy is included in the LICENSE file that
- accompanied this code).
-
- You should have received a copy of the GNU General Public License version
- 2 along with this work; if not, write to the Free Software Foundation,
- Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-
- Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- or visit www.oracle.com if you need additional information or have any
- questions.
--->
+  ~ Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+  ~ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  ~
+  ~ This code is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU General Public License version 2 only, as
+  ~ published by the Free Software Foundation.  Oracle designates this
+  ~ particular file as subject to the "Classpath" exception as provided
+  ~ by Oracle in the LICENSE file that accompanied this code.
+  ~
+  ~ This code is distributed in the hope that it will be useful, but WITHOUT
+  ~ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  ~ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+  ~ version 2 for more details (a copy is included in the LICENSE file that
+  ~ accompanied this code).
+  ~
+  ~ You should have received a copy of the GNU General Public License version
+  ~ 2 along with this work; if not, write to the Free Software Foundation,
+  ~ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+  ~
+  ~ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+  ~ or visit www.oracle.com if you need additional information or have any
+  ~ questions.
+  -->
 
 <!--
  This is a convenience build file supporting development in the langtools
@@ -33,33 +33,23 @@
  External dependencies are specified via properties. These can be given
  on the command line, or by providing a local build.properties file.
  (They can also be edited into make/build.properties, although that is not
- recommended.)  At a minimum, boot.java.home must be set to the installed
+ recommended.)  At a minimum, langtools.jdk.home must be set to the installed
  location of the version of JDK used to build this repository. Additional
  properties may be required, depending on the targets that are built.
- For example, to run any of the jtreg tests you must set jtreg.home,
- to run findbugs on the code you must set findbugs.home, and so on.
+ For example, to run any of the jtreg tests you must set jtreg.home.
 
- The main build happens in two phases:
- - First, javac is built using ${boot.java.home}. (This implies a constraint
-   on the source code that they can be compiled with the previous version of JDK.
- - Second, all required classes are compiled with the latest javac, created
-   in the previous step.
- The build generally builds one module at time.
+ The output of the build is as follows:
 
- For more details on the stub generator, see
-    http://blogs.sun.com/jjg/entry/building_javac_for_jdk7
-
- Internal details ...
-
- Bootstrap classes are built into the build/bootstrap/<module-name>/classes directory.
- Final classes are built into the build/<module-name>/classes directory.
- Final runnable javac is in dist/bin and dist/lib. Bootstrap javac (if requested by
- using the build-bootstrap-javac target) is built into dist/bootstrap.
+ build
+   |-bin (scripts to invoke various tools, javac, javah etc.)
+   |-genrsc (generated sources - i.e. properties)
+   |-modules (compiled classes in a modular layout)
+   |-jtreg (test work/results)
+   |-toolclasses (tools used for building - like the property compiler)
 
  This file is organized into sections as follows:
  - global property definitions
- - primary top level targets (cleaning, building, testing, producing javac)
- - secondary top level targets (code analysis, diagnostics, extra documentation, etc.)
+ - primary top level targets (cleaning, building)
  - utility definitions
  -->
 
@@ -80,25 +70,19 @@
     <property file="${user.home}/.openjdk/build.properties"/>
 
     <!-- Convenient shorthands for standard locations within the workspace. -->
-    <property name="build.dir" location="build"/>
-    <property name="build.crules.dir" location="${build.dir}/crules"/>
-    <property name="build.jtreg.dir" location="${build.dir}/jtreg"/>
-    <property name="build.toolclasses.dir" location="${build.dir}/toolclasses"/>
-    <property name="build.javadoc.dir" location="${build.dir}/javadoc"/>
-    <property name="dist.dir" location="dist"/>
-    <property name="dist.bin.dir" location="${dist.dir}/bin"/>
-    <property name="dist.lib.dir" location="${dist.dir}/lib"/>
-    <property name="dist.findbugs.dir" location="${dist.dir}/findbugs"/>
-    <property name="dist.checkstyle.dir" location="${dist.dir}/checkstyle"/>
+    <property name="src.dir" location="src"/>
+    <property name="test.dir" location="test"/>
     <property name="make.dir" location="make"/>
     <property name="make.conf.dir" location="${make.dir}/conf"/>
     <property name="make.tools.dir" location="${make.dir}/tools"/>
-    <property name="test.dir" location="test"/>
+    <property name="build.dir" location="build"/>
+    <property name="build.modules" location="${build.dir}/modules"/>
+    <property name="build.gensrc" location="${build.dir}/gensrc"/>
+    <property name="build.tools" location="${build.dir}/toolclasses"/>
+    <property name="build.bin" location="${build.dir}/bin"/>
+    <property name="build.jtreg" location="${build.dir}/jtreg"/>
+    <property name="build.prevsrc" location="${build.dir}/prevsrc"/>
 
-    <property name="boot.build.dir" location="${build.dir}/bootstrap"/>
-    <property name="boot.dist.dir" location="${dist.dir}/bootstrap"/>
-    <property name="boot.dist.bin.dir" location="${boot.dist.dir}/bin"/>
-    <property name="boot.dist.lib.dir" location="${boot.dist.dir}/lib"/>
 
     <!-- java.marker is set to a marker file to check for within a Java install dir.
          The best file to check for across Solaris/Linux/Windows/MacOS is one of the
@@ -113,786 +97,28 @@
     <!-- Standard property values, if not overriden by earlier settings. -->
     <property file="${make.dir}/build.properties"/>
 
-    <!-- launcher.java is used in the launcher scripts provided to run
-        the tools' jar files.  If it has not already been set, then
-        default it to use ${target.java.home}, if available, otherwise
-        quietly default to simply use "java". -->
-    <condition property="launcher.java"
-        value="${target.java.home}/bin/java" else="java">
-        <isset property="target.java.home"/>
+    <condition property="langtools.jdk.home" value="${jdk.home}">
+        <isset property="jdk.home" />
     </condition>
 
-    <!-- setup basic properties holding paths to all sources, generated source and class directories
-         (both boot and non-boot) -->
-    <pathconvert property="langtools.sources">
-        <path>
-            <pathelement path="${langtools.modules}" />
-        </path>
-        <map from="${basedir}/" to="${basedir}/src/" />
-        <mapper type="glob" from="*" to="*/share/classes"/>
-    </pathconvert>
-    <pathconvert property="langtools.gensrc">
-        <path>
-            <pathelement path="${langtools.modules}" />
-        </path>
-        <map from="${basedir}/" to="${build.dir}/" />
-        <mapper type="glob" from="*" to="*/gensrc"/>
-    </pathconvert>
-    <pathconvert property="langtools.boot.classes">
-        <path>
-            <pathelement path="${langtools.modules}" />
-        </path>
-        <map from="${basedir}/" to="${boot.build.dir}/" />
-        <mapper type="glob" from="*" to="*/classes"/>
-    </pathconvert>
-    <pathconvert property="langtools.classes">
-        <path>
-            <pathelement path="${langtools.modules}" />
-        </path>
-        <map from="${basedir}/" to="${build.dir}/" />
-        <mapper type="glob" from="*" to="*/classes"/>
-    </pathconvert>
+    <!-- launcher.java is used in the launcher scripts provided to run
+        the tools' jar files.  If it has not already been set, then
+        default it to use ${langtools.jdk.home}, if available, otherwise
+        quietly default to simply use "java". -->
+    <condition property="launcher.java"
+        value="${langtools.jdk.home}/bin/java" else="java">
+        <isset property="langtools.jdk.home"/>
+    </condition>
 
     <!--
-        **** Primary targets
+        **** Check targets
     -->
-
-    <target name="clean" description="Delete all generated files">
-        <delete dir="${build.dir}"/>
-        <delete dir="${dist.dir}"/>
-    </target>
-
-    <target name="build" depends="build-all-tools">
-    </target>
-
-    <target name="build-all-tools" depends="build-all-classes,-def-build-all-module-jars,-def-build-tool">
-        <build-all-module-jars />
-        <build-tool name="javac"/>
-        <build-tool name="javadoc"/>
-        <build-tool name="javap"/>
-        <build-tool name="javah"/>
-        <build-tool name="sjavac"/>
-        <build-tool name="jshell"/>
-    </target>
-
-    <target name="build-all-classes" depends="-def-build-all-module-classes,build-bootstrap-javac-classes">
-        <build-all-module-classes />
-    </target>
-
-    <target name="jtreg" depends="build-all-tools,-def-jtreg">
-        <jtreg-tool name="all" tests="${jtreg.tests}"/>
-    </target>
-
-    <target name="javadoc" depends="build-all-classes,-def-javadoc-tool">
-        <javadoc-tool options="${javadoc.jls.option}"/>
-    </target>
-
-    <target name="build-bootstrap-javac-classes" depends="-check-boot.java.home,-def-build-all-module-classes">
-        <build-all-module-classes compilation.kind="boot." />
-    </target>
-
-    <!--
-        **** Extra targets
-    -->
-
-    <target name="build-bootstrap-javac" depends="build-bootstrap-javac-classes,-def-build-all-module-jars,-def-build-tool">
-        <build-all-module-jars compilation.kind="boot." />
-        <build-tool name="javac" compilation.kind="boot." />
-    </target>
-
-    <target name="jtreg-bootstrap-javac" depends="build-bootstrap-javac,-def-jtreg">
-        <jtreg-tool name="bootstrap-javac"
-                    tests="${boot.javac.tests}"
-                    langtools.classes="${langtools.boot.classes}"/>
-    </target>
-
-    <target name="checkstyle" depends="-def-checkstyle"
-        description="Generates reports for code convention violations.">
-        <mkdir dir="${dist.checkstyle.dir}"/>
-        <checkstyle config="${make.conf.dir}/checkstyle-langtools.xml"
-              failureProperty="checkstyle.failure"
-              failOnViolation="false">
-            <formatter type="xml" tofile="${dist.checkstyle.dir}/checkstyle_report.xml"/>
-            <fileset dir="src" includes="**/*.java, **/*.properties"/>
-        </checkstyle>
-        <!-- transform the output to a simple html -->
-        <xslt  in="${dist.checkstyle.dir}/checkstyle_report.xml"
-               out="${dist.checkstyle.dir}/checkstyle_report.html"
-               style="${checkstyle.home}/contrib/checkstyle-simple.xsl"/>
-        <!-- transform the output to a very simple emacs friendly text file -->
-        <xslt  in="${dist.checkstyle.dir}/checkstyle_report.xml"
-               out="${dist.checkstyle.dir}/checkstyle_report.tmp"
-               style="${make.conf.dir}/checkstyle-emacs.xsl"/>
-        <!-- beautify remove extra lines -->
-        <move file="${dist.checkstyle.dir}/checkstyle_report.tmp"
-             toFile="${dist.checkstyle.dir}/checkstyle_report.emacs.txt">
-            <filterchain>
-                <ignoreblank/>
-                <replaceregex byline="true" pattern="^File:" replace="${line.separator}File:"/>
-            </filterchain>
-        </move>
-    </target>
-    <!-- target can be invoked from an ide, the output of which can be used
-         to access and fix the errors directly.
-     -->
-    <target name="checkstyle-ide" depends="checkstyle">
-        <concat>
-            <fileset file="${dist.checkstyle.dir}/checkstyle_report.emacs.txt"/>
-        </concat>
-    </target>
-
-    <target name="findbugs" depends="-def-findbugs,build-all-tools">
-        <property name="findbugs.reportLevel" value="medium"/>
-        <mkdir dir="${dist.findbugs.dir}"/>
-        <findbugs
-            home="${findbugs.home}"
-            projectName="JDK langtools ${full.version}"
-            output="xml"
-            outputFile="${dist.findbugs.dir}/findbugs.xml"
-            reportLevel="${findbugs.reportLevel}"
-            failOnError="false"
-            errorProperty="findbugs.all.errors"
-            warningsProperty="findbugs.all.warnings"
-            jvm="${target.java.home}/bin/java"
-            jvmargs="-Xmx512M">
-            <class location="${build.dir}/java.compiler/classes"/>
-            <class location="${build.dir}/jdk.compiler/classes"/>
-            <class location="${build.dir}/jdk.javadoc/classes"/>
-            <class location="${build.dir}/jdk.jdeps/classes"/>
-            <sourcePath>
-                <pathelement path="${langtools.sources}"/>
-            </sourcePath>
-        </findbugs>
-        <exec executable="sh">
-            <arg value="${findbugs.home}/bin/convertXmlToText"/>
-            <arg value="-longBugCodes"/>
-            <arg value="-html:${findbugs.home}/src/xsl/fancy.xsl"/>
-            <arg value="${dist.findbugs.dir}/findbugs.xml"/>
-            <redirector output="${dist.findbugs.dir}/findbugs.html"/>
-        </exec>
-    </target>
-
-    <target name="diags-examples" depends="build-all-tools">
-        <!-- can override the following on the command line if desired. -->
-        <property name="diags.examples.out" location="${build.dir}/diag-examples/diags-examples.html"/>
-        <mkdir dir="${build.dir}/diag-examples/classes"/>
-        <javac fork="true"
-            executable="${dist.bin.dir}/javac"
-            srcdir="test/tools/javac/diags"
-            destdir="${build.dir}/diag-examples/classes"
-            includes="ArgTypeCompilerFactory.java,Example.java,FileManager.java,HTMLWriter.java,RunExamples.java,DocCommentProcessor.java"
-            sourcepath=""
-            classpath="${langtools.classes}"
-            includeAntRuntime="no"
-            debug="${javac.debug}"
-            debuglevel="${javac.debuglevel}">
-            <compilerarg line="${javac.lint.opts}"/>
-        </javac>
-        <java fork="true"
-            jvm="${target.java.home}/bin/java"
-            dir="test/tools/javac/diags"
-            classpath="${build.dir}/diag-examples/classes;${langtools.classes}"
-            classname="RunExamples">
-            <jvmarg value="-Dtest.classes=${build.dir}/diag-examples/classes"/>
-            <arg value="-examples"/>
-            <arg value="examples"/>
-            <arg value="-o"/>
-            <arg file="${diags.examples.out}"/>
-            <arg value="-showFiles"/>
-            <arg value="-title"/>
-            <arg value="Examples of javac diagnostics"/>
-        </java>
-    </target>
-
-    <target name="doclint-api" depends="build-all-classes">
-        <delete dir="${build.dir}/doclint/classes"/>
-        <mkdir dir="${build.dir}/doclint/classes"/>
-        <javac fork="true"
-               executable="${boot.java.home}/bin/javac"
-               destdir="${build.dir}/doclint/classes"
-               includes="javax/lang/model/** com/sun/javadoc/** com/sun/source/**"
-               excludes=""
-               sourcepath=""
-               classpath="${langtools.classes}"
-               includeAntRuntime="no"
-               source="${javac.source}"
-               target="${javac.target}"
-               debug="${javac.debug}"
-               debuglevel="${javac.debuglevel}">
-            <compilerarg value="-implicit:none"/>
-            <compilerarg value="-Xprefer:source"/>
-            <compilerarg value="-J-Xbootclasspath/p:${build.bootstrap.dir}/classes"/>
-            <compilerarg line="${javac.extra.opts}"/>
-            <compilerarg line="-Xdoclint:all/protected,-missing"/>
-            <src>
-                <pathelement path="${langtools.sources}"/>
-                <pathelement path="${langtools.gensrc}"/>
-            </src>
-        </javac>
-    </target>
-
-    <!-- Generate API docs for "important" test classes that are used by
-         multiple tests.
-    -->
-    <target name="test-framework-docs" depends="build-all-classes">
-        <javadoc executable="${target.java.home}/bin/javadoc"
-                destdir="${build.dir}/testframeworkdocs">
-            <!-- disable doclint for now; it might be good to enable -Xdoclint:missing -->
-            <arg value="-Xdoclint:none"/>
-            <!-- source files to be documented -->
-            <sourcefiles>
-                <fileset dir="${test.dir}">
-                    <include name="**/ToolBox.java"/>
-                    <include name="**/*Tester.java"/>
-                    <include name="**/*TestBase.java"/>
-                    <include name="**/*Testing*.java"/>
-                </fileset>
-            </sourcefiles>
-            <!-- source path used for documentation -->
-            <sourcepath>
-                <pathelement path="${test.dir}/lib"/>
-                <pathelement path="${test.dir}/lib/combo"/>
-                <pathelement path="${test.dir}/tools/javac/lib"/>
-                <pathelement path="${test.dir}/tools/javac/classfiles/attributes/LocalVariableTable"/>
-            </sourcepath>
-            <!-- exclude the following "packages" found by <javadoc>
-                on the sourcepath -->
-            <excludepackage name="combo.tools.javac.combo"/>
-            <excludepackage name="tools.javac.combo"/>
-            <!-- library classes used for documentation -->
-            <classpath>
-                <pathelement path="${jtreg.home}/lib/testng.jar"/>
-            </classpath>
-            <!-- platform classes used for documentation -->
-            <bootclasspath>
-                <pathelement path="${langtools.classes}"/>
-                <pathelement path="${target.java.home}/jre/lib/rt.jar"/>
-            </bootclasspath>
-        </javadoc>
-    </target>
-
-    <target name="sanity"
-        description="display settings of configuration values">
-        <echo level="info">ant.home = ${ant.home}</echo>
-        <echo level="info">boot.java.home = ${boot.java.home}</echo>
-        <echo level="info">target.java.home = ${target.java.home}</echo>
-        <echo level="info">jtreg.home = ${jtreg.home}</echo>
-        <echo level="info">findbugs.home = ${findbugs.home}</echo>
-        <echo level="info">checkstyle.home = ${checkstyle.home}</echo>
-    </target>
-
-    <target name="diagnostics">
-        <diagnostics/>
-    </target>
-
-    <target name="jtreg-crules" depends="build-all-classes,-def-jtreg">
-        <mkdir dir="${build.crules.dir}/classes"/>
-        <javac fork="true"
-               source="${boot.javac.source}"
-               target="${boot.javac.target}"
-               executable="${boot.java.home}/bin/javac"
-               srcdir="${make.tools.dir}"
-               includes="crules/*"
-               destdir="${build.crules.dir}/classes"
-               includeantruntime="false">
-            <compilerarg value="-Xbootclasspath/p:${langtools.classes}"/>
-            <compilerarg line="${javac.lint.opts}"/>
-        </javac>
-        <copy todir="${build.crules.dir}/classes" includeemptydirs="false">
-            <fileset dir="${make.tools.dir}">
-                <include name="**/*.properties"/>
-            </fileset>
-        </copy>
-        <echo file="${build.crules.dir}/classes/META-INF/services/com.sun.source.util.Plugin">crules.CodingRulesAnalyzerPlugin</echo>
-        <jtreg-tool name="crules"
-                    tests="${crules.tests}"
-                    extra.jvmargs="-Xbootclasspath/a:${build.crules.dir}/classes" />
-    </target>
-
-    <!--
-    **** IDE support
-    -->
-
-    <target name="idea">
-        <mkdir dir=".idea"/>
-        <copy todir=".idea" >
-            <fileset dir="make/intellij" excludes="**/src/**"/>
-        </copy>
-        <condition property="idea.jtreg.home" value="${jtreg.home}" else = "[jtreg.home]">
-            <isset property="jtreg.home"/>
-        </condition>
-        <condition property="idea.target.jdk" value="${target.java.home}" else = "$JDKPath$">
-            <isset property="target.java.home"/>
-        </condition>
-        <replace file=".idea/ant.xml" token="@IDEA_JTREG_HOME@" value="${idea.jtreg.home}"/>
-        <replace file=".idea/ant.xml" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
-        <replace file=".idea/workspace.xml" token="@FILE_SEP@" value="${file.separator}"/>
-        <replace file=".idea/workspace.xml" token="@PATH_SEP@" value="${path.separator}"/>
-        <mkdir dir=".idea/classes"/>
-        <javac srcdir="make/intellij/src"
-               destdir=".idea/classes"/>
-    </target>
-
-    <!--
-    **** Check targets.
-    **** "-check-*" targets check that a required property is set, and set to a reasonable value.
-    **** A user friendly message is generated if not, and the build exits.
-    -->
-
-    <target name="-check-boot.java.home" depends="-def-check">
-        <check name="bootstrap java" property="boot.java.home" marker="${java.marker}"/>
-    </target>
-
-    <target name="-check-target.java.home" depends="-def-check">
-        <check name="target java" property="target.java.home" marker="${java.marker}"/>
-    </target>
-
-    <target name="-check-jtreg.home" depends="-def-check">
-        <check name="jtreg" property="jtreg.home" marker="lib/jtreg.jar"/>
-    </target>
-
-    <target name="-check-findbugs.home" depends="-def-check">
-        <check name="findbugs" property="findbugs.home" marker="lib/findbugs.jar"/>
-    </target>
-
-    <target name="-check-checkstyle.home" depends="-def-check">
-        <check name="checkstyle" property="checkstyle.home" marker=""/> <!--TODO: better checkstyle verification-->
-    </target>
-
-    <!-- Definitions -->
-
-    <target name="-def-build-all-module-jars" depends="-def-build-module-jar">
-        <macrodef name="build-all-module-jars">
-            <attribute name="compilation.kind" default=""/>
-            <sequential>
-                <build-module-jar module.name="java.compiler" compilation.kind="@{compilation.kind}" />
-                <build-module-jar module.name="jdk.compiler" compilation.kind="@{compilation.kind}" />
-                <build-module-jar module.name="jdk.javadoc" compilation.kind="@{compilation.kind}" />
-                <build-module-jar module.name="jdk.jdeps" compilation.kind="@{compilation.kind}" />
-                <build-module-jar module.name="jdk.internal.le" compilation.kind="@{compilation.kind}" />
-                <build-module-jar module.name="jdk.jdi" compilation.kind="@{compilation.kind}" />
-                <build-module-jar module.name="jdk.jshell" compilation.kind="@{compilation.kind}" />
-            </sequential>
-        </macrodef>
-    </target>
-
-    <target name="-def-build-module-jar">
-        <macrodef name="build-module-jar">
-            <attribute name="module.name"/>
-            <attribute name="compilation.kind"/>
-            <attribute name="dependencies" default="${@{compilation.kind}@{module.name}.dependencies}"/>
-            <attribute name="build.dir" default="${@{compilation.kind}build.dir}"/>
-            <attribute name="lib.dir" default="${@{compilation.kind}dist.lib.dir}"/>
-            <attribute name="classes.dir" default="@{build.dir}/@{module.name}/classes"/>
-            <sequential>
-                <mkdir dir="@{lib.dir}"/>
-                <local name="jarclasspath" />
-                <pathconvert property="jarclasspath">
-                    <path>
-                        <pathelement path="@{dependencies}" />
-                    </path>
-                    <map from="${basedir}/" to="" />
-                    <mapper type="glob" from="*" to="*.jar"/>
-                </pathconvert>
-                <jar destfile="@{lib.dir}/@{module.name}.jar"
-                     basedir="@{classes.dir}">
-                    <manifest>
-                        <attribute name="Class-Path" value="@{jarclasspath}"/>
-                    </manifest>
-                </jar>
-            </sequential>
-        </macrodef>
-    </target>
-
-    <target name="-def-build-tool">
-        <macrodef name="build-tool">
-            <attribute name="name"/>
-            <attribute name="compilation.kind" default=""/>
-            <attribute name="bin.dir" default="${@{compilation.kind}dist.bin.dir}"/>
-            <attribute name="java" default="${launcher.java}"/>
-            <attribute name="main.class" default="${tool.@{name}.main.class}"/>
-            <sequential>
-                <mkdir dir="@{bin.dir}"/>
-                <copy file="${make.dir}/launcher.sh-template" tofile="@{bin.dir}/@{name}">
-                    <filterset begintoken="#" endtoken="#">
-                        <filter token="PROGRAM" value="@{main.class}"/>
-                        <filter token="TARGET_JAVA" value="@{java}"/>
-                        <filter token="PS" value="${path.separator}"/>
-                    </filterset>
-                </copy>
-                <chmod file="@{bin.dir}/@{name}" perm="ugo+rx"/>
-            </sequential>
-        </macrodef>
-    </target>
-
-    <target name="-def-build-all-module-classes" depends="-def-build-module-classes">
-        <macrodef name="build-all-module-classes">
-            <attribute name="compilation.kind" default=""/>
-            <sequential>
-                <build-module-classes module.name="java.compiler"
-                                      compilation.kind="@{compilation.kind}" />
-                <build-module-classes module.name="jdk.compiler"
-                                      compilation.kind="@{compilation.kind}"
-                                      resource.includes="${javac.resource.includes}" />
-                <build-module-classes module.name="jdk.javadoc"
-                                      compilation.kind="@{compilation.kind}" />
-                <build-module-classes module.name="jdk.jdeps"
-                                      compilation.kind="@{compilation.kind}" />
-                <copy-module-classes  module.name="jdk.internal.le"
-                                      compilation.kind="@{compilation.kind}" />
-                <copy-module-classes  module.name="jdk.jdi"
-                                      compilation.kind="@{compilation.kind}" />
-                <build-module-classes module.name="jdk.jshell"
-                                      compilation.kind="@{compilation.kind}" />
-            </sequential>
-        </macrodef>
-    </target>
-
-    <target name="-def-build-module-classes" depends="-def-pcompile,-def-pparse,-def-cdumper">
-        <macrodef name="build-module-classes">
-            <attribute name="module.name"/>
-            <attribute name="compilation.kind" default=""/>
-            <attribute name="resource.includes" default="nonExistent" />
-            <attribute name="dependencies" default="${@{module.name}.dependencies}"/>
-            <attribute name="includes" default="${@{compilation.kind}javac.includes}"/>
-            <attribute name="javac.lint.opts" default="${@{compilation.kind}javac.lint.opts}"/>
-            <attribute name="javac.extra.opts" default="${@{compilation.kind}javac.extra.opts}"/>
-            <attribute name="build.dir" default="${@{compilation.kind}build.dir}"/>
-            <attribute name="excludes" default="${exclude.files} **/package-info.java"/>
-            <attribute name="classes.dir" default="@{build.dir}/@{module.name}/classes"/>
-            <attribute name="gensrc.dir" default="@{build.dir}/@{module.name}/gensrc"/>
-            <attribute name="depcache.dir" default="@{build.dir}/@{module.name}/depcache"/>
-            <attribute name="java.home" default="${boot.java.home}"/>
-            <attribute name="source" default="${@{compilation.kind}javac.source}"/>
-            <attribute name="target" default="${@{compilation.kind}javac.target}"/>
-            <attribute name="release" default="${release}"/>
-            <attribute name="full.version" default="${full.version}"/>
-            <attribute name="plugin.options" default=""/>
-            <sequential>
-                <echo level="verbose" message="build-classes: excludes=@{excludes}"/>
-                <echo level="verbose" message="build-classes: classpath=@{classpath}"/>
-                <echo level="verbose" message="build-classes: sourcepath=@{sourcepath}"/>
-                <echo level="verbose" message="build-classes: dependencies=@{dependencies}"/>
-                <local name="src.dir" />
-                <property name="src.dir" location="${basedir}/src/@{module.name}/share/classes"/>
-                <local name="classpath" />
-                <pathconvert property="classpath">
-                    <path>
-                        <pathelement path="@{dependencies}" />
-                    </path>
-                    <map from="${basedir}/" to="@{build.dir}/" />
-                    <mapper type="glob" from="*" to="*/classes"/>
-                </pathconvert>
-                <local name="bootclasspath.prepend"/>
-                <condition property="bootclasspath.prepend" value="" else="${langtools.boot.classes}">
-                    <equals arg1="@{compilation.kind}" arg2="boot."/>
-                </condition>
-                <mkdir dir="@{classes.dir}"/>
-                <mkdir dir="@{gensrc.dir}"/>
-                <mkdir dir="@{depcache.dir}"/>
-                <pcompile destdir="@{gensrc.dir}"
-                          includes="@{includes}">
-                    <src>
-                        <path location="${src.dir}"/>
-                    </src>
-                </pcompile>
-                <pparse destdir="@{gensrc.dir}"
-                        includes="@{resource.includes}">
-                    <src>
-                        <path location="${src.dir}"/>
-                    </src>
-                </pparse>
-                <copy todir="@{gensrc.dir}">
-                    <fileset dir="${src.dir}" includes="@{includes}" />
-                    <globmapper from="*.properties-template" to="*.properties"/>
-                    <filterset begintoken="$(" endtoken=")">
-                        <filter token="JDK_VERSION" value="${jdk.version}"/>
-                        <filter token="RELEASE" value="@{release}"/>
-                        <filter token="FULL_VERSION" value="@{full.version}"/>
-                    </filterset>
-                </copy>
-                <pcompile destdir="@{gensrc.dir}"
-                          includes="**/*.properties">
-                    <src>
-                        <pathelement location="@{gensrc.dir}"/>
-                    </src>
-                </pcompile>
-                <antcall target="-do-depend">
-                    <param name="src.dir" value="${src.dir}" />
-                    <param name="classes.dir" value="@{classes.dir}" />
-                    <param name="gensrc.dir" value="@{gensrc.dir}" />
-                    <param name="depcache.dir" value="@{depcache.dir}" />
-                    <param name="classpath" value="${classpath}" />
-                </antcall>
-                <javac fork="true"
-                       executable="@{java.home}/bin/javac"
-                       destdir="@{classes.dir}"
-                       includes="@{includes}"
-                       excludes="@{excludes}"
-                       sourcepath="${src.dir}:@{gensrc.dir}"
-                       classpath="${classpath}"
-                       includeAntRuntime="no"
-                       source="@{source}"
-                       target="@{target}"
-                       debug="${javac.debug}"
-                       debuglevel="${javac.debuglevel}">
-                    <compilerarg value="-implicit:none"/>
-                    <compilerarg value="-Xprefer:source"/>
-                    <compilerarg value="-J-Xbootclasspath/p:${bootclasspath.prepend}"/>
-                    <compilerarg value="-Xbootclasspath/p:${classpath}"/>
-                    <compilerarg line="@{javac.extra.opts}"/>
-                    <compilerarg line="@{javac.lint.opts}"/>
-                    <compilerarg line="@{plugin.options}"/>
-                    <src>
-                        <path location="${src.dir}"/>
-                        <path location="@{gensrc.dir}"/>
-                    </src>
-                </javac>
-                <copy todir="@{classes.dir}" includeemptydirs="false">
-                    <fileset dir="${src.dir}" includes="@{includes}" excludes="@{excludes}">
-                        <exclude name="**/*.java"/>
-                        <exclude name="**/*.properties"/>
-                        <exclude name="**/*-template"/>
-                        <exclude name="**/*.rej"/>
-                        <exclude name="**/*.orig"/>
-                        <exclude name="**/overview.html"/>
-                        <exclude name="**/package.html"/>
-                    </fileset>
-                </copy>
-            </sequential>
-        </macrodef>
-        <macrodef name="copy-module-classes">
-            <attribute name="module.name"/>
-            <attribute name="compilation.kind" default=""/>
-            <attribute name="build.dir" default="${@{compilation.kind}build.dir}"/>
-            <attribute name="classes.dir" default="@{build.dir}/@{module.name}/classes"/>
-            <attribute name="java.home" default="${boot.java.home}"/>
-            <sequential>
-                <property name="classes.origin.dir" location="${target.java.home}/../../jdk/modules/@{module.name}"/>
-                <mkdir dir="@{classes.dir}"/>
-                <dumpclasses moduleName="@{module.name}" destDir="@{classes.dir}" />
-            </sequential>
-        </macrodef>
-    </target>
-
-    <target name="-def-pparse">
-        <mkdir dir="${build.toolclasses.dir}"/>
-        <copy todir="${build.toolclasses.dir}/propertiesparser" >
-            <fileset dir="make/tools/propertiesparser" includes="**/resources/**"/>
-        </copy>
-        <javac fork="true"
-               source="${boot.javac.source}"
-               target="${boot.javac.target}"
-               executable="${boot.java.home}/bin/javac"
-               srcdir="${make.tools.dir}"
-               includes="propertiesparser/* anttasks/PropertiesParser* anttasks/PathFileSet*"
-               destdir="${build.toolclasses.dir}/"
-               classpath="${ant.core.lib}"
-               bootclasspath="${boot.java.home}/jre/lib/rt.jar"
-               includeantruntime="false">
-            <compilerarg line="${javac.lint.opts}"/>
-        </javac>
-        <taskdef name="pparse"
-                 classname="anttasks.PropertiesParserTask"
-                 classpath="${build.toolclasses.dir}/"/>
-    </target>
-
-    <target name="-def-cdumper">
-        <mkdir dir="${build.toolclasses.dir}"/>
-        <javac fork="true"
-               source="${boot.javac.source}"
-               target="${boot.javac.target}"
-               executable="${boot.java.home}/bin/javac"
-               srcdir="${make.tools.dir}"
-               includes="anttasks/DumpClass*"
-               destdir="${build.toolclasses.dir}/"
-               classpath="${ant.core.lib}"
-               bootclasspath="${boot.java.home}/jre/lib/rt.jar"
-               includeantruntime="false">
-            <compilerarg line="${javac.lint.opts}"/>
-        </javac>
-        <taskdef name="dumpclasses"
-                 classname="anttasks.DumpClassesTask"
-                 classpath="${build.toolclasses.dir}/:${target.java.home}/jrt-fs.jar"/>
-    </target>
-
-    <target name="-do-depend" if="do.depend">
-        <depend srcdir="${src.dir}:${gensrc.dir}" destdir="${classes.dir}" classpath="${classpath}"
-                cache="${depcache.dir}"/>
-    </target>
-
-    <target name="-def-pcompile">
-        <mkdir dir="${build.toolclasses.dir}"/>
-        <javac fork="true"
-               source="${boot.javac.source}"
-               target="${boot.javac.target}"
-               executable="${boot.java.home}/bin/javac"
-               srcdir="${make.tools.dir}"
-               includes="compileproperties/* anttasks/CompileProperties* anttasks/PathFileSet*"
-               destdir="${build.toolclasses.dir}/"
-               classpath="${ant.core.lib}"
-               bootclasspath="${boot.java.home}/jre/lib/rt.jar"
-               includeantruntime="false">
-            <compilerarg line="${javac.lint.opts}"/>
-        </javac>
-        <taskdef name="pcompile"
-                 classname="anttasks.CompilePropertiesTask"
-                 classpath="${build.toolclasses.dir}/"/>
-    </target>
-
-    <target name="-def-javadoc-tool" depends="-check-target.java.home">
-        <macrodef name="javadoc-tool">
-            <attribute name="includes" default="${javac.includes}"/>
-            <attribute name="options" default=""/>
-            <attribute name="source" default="${javac.source}"/>
-            <sequential>
-                <property name="javadoc.options" value=""/> <!-- default, can be overridden per user or per project -->
-                <!-- Note: even with this default value, includes
-                from source directories get javadoc'd; see packageset below -->
-                <property name="javadoc.packagenames" value="none"/> <!-- default, can be overridden per user or per project -->
-                <javadoc
-                    executable="${target.java.home}/bin/javadoc"
-                    destdir="${build.javadoc.dir}"
-                    source="@{source}"
-                    windowtitle="UNOFFICIAL"
-                    failonerror="true"
-                    use="true"
-                    author="false"
-                    version="false"
-                    packagenames="${javadoc.packagenames}" >
-                    <header><![CDATA[<strong>Unofficial Javadoc</strong> generated from developer sources for preview purposes only]]></header>
-                    <arg line="@{options}"/>
-                    <bootclasspath>
-                        <pathelement path="${langtools.classes}"/>
-                        <path location="${target.java.home}/jre/lib/rt.jar"/>
-                    </bootclasspath>
-                    <sourcepath>
-                        <pathelement path="${langtools.sources}"/>
-                    </sourcepath>
-                    <!-- XXX just <fileset> (restricted further to **/*.java) and no <packageset> -->
-                    <!-- means that {@link some.package} will not work, which is no good. -->
-                    <!-- (It correctly skips excluded single classes, but not if packageset is also included, -->
-                    <!-- which also causes duplicates in the class index for included files.) -->
-                    <packageset dir="${basedir}/src/java.compiler/share/classes" includes="@{includes}">
-                        <or>
-                            <filename name="javax/"/>
-                        </or>
-                    </packageset>
-                    <packageset dir="${basedir}/src/jdk.compiler/share/classes" includes="@{includes}">
-                        <or>
-                            <filename name="com/sun/source/"/>
-                        </or>
-                    </packageset>
-                    <packageset dir="${basedir}/src/jdk.javadoc/share/classes" includes="@{includes}">
-                        <or>
-                            <filename name="com/sun/javadoc/"/>
-                        </or>
-                    </packageset>
-                </javadoc>
-            </sequential>
-        </macrodef>
-    </target>
-
-    <target name="-def-jtreg" unless="jtreg.defined" depends="-check-jtreg.home,-check-target.java.home">
-        <taskdef name="jtreg" classname="com.sun.javatest.regtest.Main$$Ant">
-            <classpath>
-                <pathelement location="${jtreg.home}/lib/jtreg.jar"/>
-                <pathelement location="${jtreg.home}/lib/javatest.jar"/>
-            </classpath>
-        </taskdef>
-        <macrodef name="jtreg-tool">
-            <attribute name="name"/>
-            <attribute name="tests"/>
-            <attribute name="langtools.classes" default="${langtools.classes}"/>
-            <attribute name="jdk" default="${target.java.home}"/>
-            <attribute name="samevm" default="true"/>
-            <attribute name="verbose" default="${default.jtreg.verbose}"/>
-            <attribute name="options" default="${other.jtreg.options}"/>
-            <attribute name="keywords" default="-keywords:!ignore"/>
-            <attribute name="jpda.jvmargs" default=""/>
-            <attribute name="extra.jvmargs" default=""/>
-            <attribute name="build.dir" default="${build.dir}"/>
-            <sequential>
-                <property name="coverage.options" value=""/>              <!-- default -->
-                <property name="coverage.classpath" value=""/>            <!-- default -->
-                <property name="default.jtreg.verbose" value="summary"/>  <!-- default -->
-                <property name="other.jtreg.options" value=""/>           <!-- default -->
-                <jtreg
-                    dir="${test.dir}"
-                    workDir="${build.jtreg.dir}/@{name}/work"
-                    reportDir="${build.jtreg.dir}/@{name}/report"
-                    jdk="@{jdk}"
-                    samevm="@{samevm}" verbose="@{verbose}"
-                    failonerror="false" resultproperty="jtreg.@{name}.result"
-                    javacoptions="-g"
-                    vmoptions="${coverage.options} -Xbootclasspath/p:${coverage.classpath}${path.separator}@{langtools.classes} @{jpda.jvmargs} @{extra.jvmargs}">
-                    <arg line="@{keywords}"/>
-                    <arg line="@{options}"/>
-                    <arg line="@{tests}"/>
-                </jtreg>
-                <!-- the next two properties are for convenience, when only
-                     a single instance of jtreg will be invoked. -->
-                <condition property="jtreg.passed">
-                    <equals arg1="${jtreg.@{name}.result}" arg2="0"/>
-                </condition>
-                <property name="jtreg.report" value="${build.jtreg.dir}/@{name}/report"/>
-            </sequential>
-        </macrodef>
-        <property name="jtreg.defined" value="true"/>
-    </target>
-
-    <target name="-def-checkstyle" unless="checkstyle.defined" depends="-check-checkstyle.home">
-        <taskdef resource="checkstyletask.properties">
-            <classpath>
-              <fileset dir="${checkstyle.home}">
-                <include name="checkstyle-*-all.jar"/>
-              </fileset>
-            </classpath>
-        </taskdef>
-        <property name="checkstyle.defined" value="true"/>
-    </target>
-
-    <target name="-def-findbugs" unless="findbugs.defined"
-        depends="-check-findbugs.home,-check-target.java.home">
-        <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask">
-            <classpath>
-                <pathelement location="${findbugs.home}/lib/findbugs.jar"/>
-            </classpath>
-        </taskdef>
-        <macrodef name="findbugs-tool">
-            <attribute name="name"/>
-            <attribute name="output" default="emacs"/>
-            <attribute name="outputFile" default=""/>
-            <attribute name="reportLevel" default="high"/>
-            <sequential>
-                <findbugs
-                    home="${findbugs.home}"
-                    output="@{output}"
-                    outputFile="@{outputFile}"
-                    reportLevel="@{reportLevel}"
-                    failOnError="false"
-                    errorProperty="findbugs.@{name}.errors"
-                    warningsProperty="findbugs.@{name}.warnings"
-                    jvm="${target.java.home}/bin/java"
-                    jvmargs="-Xmx512M" >
-                    <class location="${dist.dir}/lib/@{name}.jar"/>
-                    <auxClasspath>
-                        <pathelement location="${langtools.classes}"/>
-                    </auxClasspath>
-                    <sourcePath>
-                        <path refid="src.dirs"/>
-                    </sourcePath>
-                </findbugs>
-            </sequential>
-        </macrodef>
-        <property name="findbugs.defined" value="true"/>
-    </target>
 
     <target name="-def-check">
-        <macrodef name="check">
-            <attribute name="name"/>
-            <attribute name="property"/>
-            <attribute name="marker" default=""/>
+      <macrodef name="check">
+          <attribute name="name"/>
+          <attribute name="property"/>
+          <attribute name="marker" default=""/>
             <sequential>
                 <fail message="Cannot locate @{name}: please set @{property} to its location">
                     <condition>
@@ -917,5 +143,207 @@
         </macrodef>
     </target>
 
-</project>
+    <target name="-check-langtools.jdk.home" depends="-def-check">
+        <check name="target java" property="langtools.jdk.home" marker="${java.marker}"/>
+    </target>
 
+    <target name="-check-jtreg.home" depends="-def-check">
+        <check name="jtreg" property="jtreg.home" marker="lib/jtreg.jar"/>
+    </target>
+
+    <!--
+        **** Primary targets
+    -->
+
+    <target name="clean" description="Delete all generated files">
+        <delete dir="${build.dir}"/>
+    </target>
+
+    <target name="build" depends="build-all-tools"/>
+
+    <target name="-prepare-build" depends="-check-langtools.jdk.home">
+        <mkdir dir="${build.modules}"/>
+        <mkdir dir="${build.tools}"/>
+        <mkdir dir="${build.gensrc}"/>
+        <mkdir dir="${build.bin}"/>
+        <mkdir dir="${build.prevsrc}"/>
+    </target>
+
+    <target name="generate-sources-internal">
+        <basename property="module.name" file="${basedir}"/>
+        <pparse destdir="${build.gensrc}/${module.name}" includes="${langtools.resource.includes}">
+            <src path="./share/classes"/>
+        </pparse>
+        <pcompile destdir="${build.gensrc}/${module.name}" includes="**/*.properties">
+            <src path="./share/classes"/>
+        </pcompile>
+    </target>
+
+    <target name="generate-sources"  depends="-prepare-build,-def-pparse,-def-pcompile">
+        <subant inheritall="true" target="generate-sources-internal" genericantfile="${make.dir}/build.xml">
+              <dirset dir="${src.dir}" includes="*.*"/>
+        </subant>
+    </target>
+
+    <target name="build-all-classes" depends="generate-sources">
+        <exec executable="${langtools.jdk.home}/bin/javac" failonerror="true">
+            <arg line="-source ${javac.source} -target ${javac.target}" />
+            <arg value="-d" />
+            <arg value="${build.modules}" />
+            <arg line="${javac.opts} -modulesourcepath ${src.dir}${file.separator}*${file.separator}share${file.separator}classes:${build.gensrc} -m java.compiler,jdk.compiler,jdk.javadoc,jdk.jdeps,jdk.jshell" />
+        </exec>
+        <delete>
+            <fileset dir="${build.modules}" includes="**/module-info.class"/>
+        </delete>
+    </target>
+
+    <target name="build-all-tools" depends="build-all-classes, -def-build-tool">
+        <build-tool name="javac"/>
+        <build-tool name="javadoc"/>
+        <build-tool name="javap"/>
+        <build-tool name="javah"/>
+        <build-tool name="jdeps"/>
+        <build-tool name="sjavac"/>
+        <build-tool name="jshell"/>
+    </target>
+
+    <target name="jtreg" depends="build-all-tools,-def-jtreg">
+        <jtreg-tool name="all" tests="${jtreg.tests}"/>
+    </target>
+
+    <!--
+    **** IDE support
+    -->
+
+    <target name="idea" depends="-check-langtools.jdk.home">
+        <mkdir dir=".idea"/>
+        <copy todir=".idea" >
+            <fileset dir="make/intellij" excludes="**/src/**"/>
+        </copy>
+        <condition property="idea.jtreg.home" value="${jtreg.home}" else = "[jtreg.home]">
+            <isset property="jtreg.home"/>
+        </condition>
+        <condition property="idea.target.jdk" value="${langtools.jdk.home}" else = "$JDKPath$">
+            <isset property="langtools.jdk.home"/>
+        </condition>
+        <replace file=".idea/ant.xml" token="@IDEA_JTREG_HOME@" value="${idea.jtreg.home}"/>
+        <replace file=".idea/ant.xml" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
+        <replace file=".idea/workspace.xml" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
+        <replace file=".idea/workspace.xml" token="@FILE_SEP@" value="${file.separator}"/>
+        <replace file=".idea/workspace.xml" token="@PATH_SEP@" value="${path.separator}"/>
+        <mkdir dir=".idea/classes"/>
+        <javac srcdir="make/intellij/src"
+               destdir=".idea/classes"/>
+    </target>
+
+    <!--
+        **** Utility definitions
+    -->
+
+    <target name="-def-pparse">
+        <copy todir="${build.tools}/propertiesparser" >
+            <fileset dir="${make.tools.dir}/propertiesparser" includes="**/resources/**"/>
+        </copy>
+        <javac fork="true"
+               source="${javac.source}"
+               target="${javac.target}"
+               executable="${langtools.jdk.home}/bin/javac"
+               srcdir="${make.tools.dir}"
+               includes="propertiesparser/* anttasks/PropertiesParser* anttasks/PathFileSet*"
+               destdir="${build.tools}"
+               classpath="${ant.core.lib}"
+               bootclasspath="${langtools.jdk.home}/jre/lib/rt.jar"
+               includeantruntime="false">
+            <compilerarg line="${javac.opts} -XDstringConcat=inline"/>
+        </javac>
+        <taskdef name="pparse"
+                 classname="anttasks.PropertiesParserTask"
+                 classpath="${build.tools}"/>
+    </target>
+
+     <target name="-def-pcompile">
+        <javac fork="true"
+               source="${javac.source}"
+               target="${javac.target}"
+               executable="${langtools.jdk.home}/bin/javac"
+               srcdir="${make.tools.dir}"
+               includes="compileproperties/* anttasks/CompileProperties* anttasks/PathFileSet*"
+               destdir="${build.dir}/toolclasses/"
+               classpath="${ant.core.lib}"
+               includeantruntime="false">
+            <compilerarg line="${javac.opts} -XDstringConcat=inline"/>
+        </javac>
+        <taskdef name="pcompile"
+                 classname="anttasks.CompilePropertiesTask"
+                 classpath="${build.tools}"/>
+    </target>
+
+    <target name="-def-build-tool">
+        <macrodef name="build-tool">
+            <attribute name="name"/>
+            <attribute name="compilation.kind" default=""/>
+            <attribute name="bin.dir" default="${build.bin}"/>
+            <attribute name="java" default="${launcher.java}"/>
+            <attribute name="main.class" default="${tool.@{name}.main.class}"/>
+            <sequential>
+                <mkdir dir="@{bin.dir}"/>
+                <copy file="${make.dir}/launcher.sh-template" tofile="@{bin.dir}/@{name}">
+                    <filterset begintoken="#" endtoken="#">
+                        <filter token="PROGRAM" value="@{main.class}"/>
+                        <filter token="TARGET_JAVA" value="@{java}"/>
+                        <filter token="PS" value="${path.separator}"/>
+                    </filterset>
+                </copy>
+                <chmod file="@{bin.dir}/@{name}" perm="ugo+rx"/>
+            </sequential>
+        </macrodef>
+    </target>
+
+    <target name="-def-jtreg" unless="jtreg.defined" depends="-check-jtreg.home,-check-langtools.jdk.home">
+        <taskdef name="jtreg" classname="com.sun.javatest.regtest.Main$$Ant">
+            <classpath>
+                <pathelement location="${jtreg.home}/lib/jtreg.jar"/>
+                <pathelement location="${jtreg.home}/lib/javatest.jar"/>
+            </classpath>
+        </taskdef>
+        <macrodef name="jtreg-tool">
+            <attribute name="name"/>
+            <attribute name="tests"/>
+            <attribute name="jdk" default="${langtools.jdk.home}"/>
+            <attribute name="agentvm" default="true"/>
+            <attribute name="verbose" default="${default.jtreg.verbose}"/>
+            <attribute name="options" default="${other.jtreg.options}"/>
+            <attribute name="keywords" default="-keywords:!ignore"/>
+            <attribute name="jpda.jvmargs" default=""/>
+            <attribute name="extra.jvmargs" default=""/>
+            <attribute name="build.modules" default="${build.modules}"/>
+            <sequential>
+                <property name="coverage.options" value=""/>              <!-- default -->
+                <property name="coverage.classpath" value=""/>            <!-- default -->
+                <property name="default.jtreg.verbose" value="summary"/>  <!-- default -->
+                <property name="other.jtreg.options" value=""/>           <!-- default -->
+                <property name="jtreg.classfiles.to.modules" value="@{agentvm}"/>
+                <jtreg
+                    dir="${test.dir}"
+                    workDir="${build.jtreg}/@{name}/work"
+                    reportDir="${build.jtreg}/@{name}/report"
+                    jdk="@{jdk}"
+                    agentvm="@{agentvm}" verbose="@{verbose}"
+                    failonerror="false" resultproperty="jtreg.@{name}.result"
+                    vmoptions="${coverage.options} @{extra.jvmargs} -Xpatch:@{build.modules}">
+                    <arg value="-debug:@{jpda.jvmargs}"/>
+                    <arg line="@{keywords}"/>
+                    <arg line="@{options}"/>
+                    <arg line="@{tests}"/>
+                </jtreg>
+                <!-- the next two properties are for convenience, when only
+                     a single instance of jtreg will be invoked. -->
+                <condition property="jtreg.passed">
+                    <equals arg1="${jtreg.@{name}.result}" arg2="0"/>
+                </condition>
+                <property name="jtreg.report" value="${build.jtreg}/@{name}/report"/>
+            </sequential>
+        </macrodef>
+        <property name="jtreg.defined" value="true"/>
+    </target>
+</project>

@@ -603,14 +603,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   SystemDictionary::reverse();
   SystemDictionary::copy_buckets(&md_top, md_end);
 
-  ClassLoader::verify();
-  ClassLoader::copy_package_info_buckets(&md_top, md_end);
-  ClassLoader::verify();
-
   SystemDictionary::copy_table(&md_top, md_end);
-  ClassLoader::verify();
-  ClassLoader::copy_package_info_table(&md_top, md_end);
-  ClassLoader::verify();
 
   // Write the other data to the output array.
   WriteClosure wc(md_top, md_end);
@@ -716,8 +709,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 }
 
 
-void MetaspaceShared::link_one_shared_class(Klass* obj, TRAPS) {
-  Klass* k = obj;
+void MetaspaceShared::link_one_shared_class(Klass* k, TRAPS) {
   if (k->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(k);
     // Link the class to cause the bytecodes to be rewritten and the
@@ -731,6 +723,16 @@ void MetaspaceShared::link_one_shared_class(Klass* obj, TRAPS) {
 void MetaspaceShared::check_one_shared_class(Klass* k) {
   if (k->is_instance_klass() && InstanceKlass::cast(k)->check_sharing_error_state()) {
     _check_classes_made_progress = true;
+  }
+}
+
+void MetaspaceShared::check_shared_class_loader_type(Klass* k) {
+  if (k->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    u2 loader_type = ik->loader_type();
+    ResourceMark rm;
+    guarantee(loader_type != 0,
+              "Class loader type is not set for this class %s", ik->name()->as_C_string());
   }
 }
 
@@ -765,6 +767,7 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
 }
 
 void MetaspaceShared::prepare_for_dumping() {
+  Arguments::check_unsupported_dumping_properties();
   ClassLoader::initialize_shared_path();
   FileMapInfo::allocate_classpath_entry_table();
 }
@@ -901,7 +904,7 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
   assert(DumpSharedSpaces, "should only be called during dumping");
   if (ik->init_state() < InstanceKlass::linked) {
     bool saved = BytecodeVerificationLocal;
-    if (!SharedClassUtil::is_shared_boot_class(ik)) {
+    if (!(ik->is_shared_boot_class())) {
       // The verification decision is based on BytecodeVerificationRemote
       // for non-system classes. Since we are using the NULL classloader
       // to load non-system classes during dumping, we need to temporarily
@@ -1089,33 +1092,11 @@ void MetaspaceShared::initialize_shared_spaces() {
                                           number_of_entries);
   buffer += sharedDictionaryLen;
 
-  // Create the package info table using the bucket array at this spot in
-  // the misc data space.  Since the package info table is never
-  // modified, this region (of mapped pages) will be (effectively, if
-  // not explicitly) read-only.
-
-  int pkgInfoLen = *(intptr_t*)buffer;
-  buffer += sizeof(intptr_t);
-  number_of_entries = *(intptr_t*)buffer;
-  buffer += sizeof(intptr_t);
-  ClassLoader::create_package_info_table((HashtableBucket<mtClass>*)buffer, pkgInfoLen,
-                                         number_of_entries);
-  buffer += pkgInfoLen;
-  ClassLoader::verify();
-
   // The following data in the shared misc data region are the linked
   // list elements (HashtableEntry objects) for the shared dictionary
-  // and package info table.
+  // table.
 
   int len = *(intptr_t*)buffer;     // skip over shared dictionary entries
-  buffer += sizeof(intptr_t);
-  buffer += len;
-
-  len = *(intptr_t*)buffer;     // skip over package info table entries
-  buffer += sizeof(intptr_t);
-  buffer += len;
-
-  len = *(intptr_t*)buffer;     // skip over package info table char[] arrays.
   buffer += sizeof(intptr_t);
   buffer += len;
 

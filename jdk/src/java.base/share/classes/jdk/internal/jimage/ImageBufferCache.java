@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,13 @@ package jdk.internal.jimage;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+/**
+ * @implNote This class needs to maintain JDK 8 source compatibility.
+ *
+ * It is used internally in the JDK to implement jimage/jrtfs access,
+ * but also compiled and delivered as part of the jrtfs.jar to support access
+ * to the jimage file provided by the shipped JDK by tools running on JDK 8.
+ */
 class ImageBufferCache {
     private static final int MAX_FREE_BUFFERS = 3;
     private static final int LARGE_BUFFER = 0x10000;
@@ -37,7 +44,10 @@ class ImageBufferCache {
     private boolean isUsed;
 
     static ByteBuffer getBuffer(long size) {
-        assert size < Integer.MAX_VALUE;
+        if (size < 0 || Integer.MAX_VALUE < size) {
+            throw new IndexOutOfBoundsException("size");
+        }
+
         ByteBuffer buffer = null;
 
         if (size > LARGE_BUFFER) {
@@ -84,7 +94,7 @@ class ImageBufferCache {
     static void releaseBuffer(ByteBuffer buffer) {
         ArrayList<ImageBufferCache> buffers = threadLocal.get();
 
-        if (buffers == null ) {
+        if (buffers == null) {
             return;
         }
 

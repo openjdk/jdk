@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,20 @@
  * @bug     6551367
  * @summary javadoc throws ClassCastException when an link tag tries to reference constructor.
  * @author  A. Sundararajan
- * @modules jdk.javadoc/com.sun.tools.doclets.standard
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @run main T6551367 T6551367.java
  */
 
+/*
+ * ***NOTE: This is not a tool test!, should be moved to doclets.***
+ */
 import java.io.File;
 
 import jdk.javadoc.doclet.DocletEnvironment;
 
 import static jdk.javadoc.internal.tool.Main.execute;
 
-public class T6551367 extends jdk.javadoc.internal.doclets.standard.Standard {
+public class T6551367 {
     public T6551367() {}
     public boolean run(DocletEnvironment root) {
         return true;
@@ -50,8 +53,6 @@ public class T6551367 extends jdk.javadoc.internal.doclets.standard.Standard {
         for (String file : args) {
             File source = new File(testSrc, file);
             String[] array = {
-                "-docletpath", System.getProperty("test.classes", "."),
-                "-doclet", "T6551367",
                 "-Xdoclint:none",
                 source.getPath(),
                 "-d",

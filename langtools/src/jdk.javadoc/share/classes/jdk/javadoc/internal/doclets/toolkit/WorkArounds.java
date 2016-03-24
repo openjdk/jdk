@@ -38,6 +38,7 @@ import java.util.TreeSet;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -59,6 +60,7 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.util.Names;
 
@@ -68,6 +70,7 @@ import jdk.javadoc.internal.tool.RootDocImpl;
 
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
+
 import static javax.lang.model.element.ElementKind.*;
 
 /**
@@ -531,5 +534,22 @@ public class WorkArounds {
     // a package.html file, however we need to eliminate this.
     public JavaFileObject getJavaFileObject(PackageElement pe) {
         return env.pkgToJavaFOMap.get(pe);
+    }
+
+    // TODO: we need to eliminate this, as it is hacky.
+    /**
+     * Returns a representation of the package truncated to two levels.
+     * For instance if the given package represents foo.bar.baz will return
+     * a representation of foo.bar
+     * @param pkg the PackageElement
+     * @return an abbreviated PackageElement
+     */
+    public PackageElement getAbbreviatedPackageElement(PackageElement pkg) {
+        String parsedPackageName = utils.parsePackageName(pkg);
+        ModuleElement encl = (ModuleElement) pkg.getEnclosingElement();
+        PackageElement abbrevPkg = encl == null
+                ? utils.elementUtils.getPackageElement(parsedPackageName)
+                : ((JavacElements) utils.elementUtils).getPackageElement(encl, parsedPackageName);
+        return abbrevPkg;
     }
 }

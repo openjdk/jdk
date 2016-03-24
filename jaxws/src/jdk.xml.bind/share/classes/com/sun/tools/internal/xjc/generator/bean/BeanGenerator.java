@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package com.sun.tools.internal.xjc.generator.bean;
 import static com.sun.tools.internal.xjc.outline.Aspect.EXPOSED;
 
 import java.io.Serializable;
-import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -809,26 +808,14 @@ public final class BeanGenerator implements Outline {
     }
 
     public JClass generateStaticClass(Class src, JPackage out) {
-        String shortName = getShortName(src.getName());
-
-        // some people didn't like our jars to contain files with .java extension,
-        // so when we build jars, we'' use ".java_". But when we run from the workspace,
-        // we want the original source code to be used, so we check both here.
-        // see bug 6211503.
-        URL res = src.getResource(shortName + ".java");
-        if (res == null) {
-            res = src.getResource(shortName + ".java_");
-        }
-        if (res == null) {
-            throw new InternalError("Unable to load source code of " + src.getName() + " as a resource");
-        }
-
-        JStaticJavaFile sjf = new JStaticJavaFile(out, shortName, res, null);
+        JStaticJavaFile sjf = new JStaticJavaFile(out, getShortName(src), src, null);
         out.addResourceFile(sjf);
         return sjf.getJClass();
     }
 
-    private String getShortName(String name) {
+    private String getShortName(Class src) {
+        String name = src.getName();
         return name.substring(name.lastIndexOf('.') + 1);
     }
+
 }

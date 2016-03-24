@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8032814
  * @summary LineNumberTable/LocalVariableTable tables duplication for the
  *          "-v -l" combination of options
- * @modules jdk.jdeps
+ * @modules jdk.jdeps/com.sun.tools.javap
  * @compile -g T8032814.java
  * @run main T8032814
  */

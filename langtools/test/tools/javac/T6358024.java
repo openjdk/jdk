@@ -38,9 +38,7 @@ import javax.lang.model.element.*;
 import javax.tools.*;
 import com.sun.source.util.*;
 import com.sun.tools.javac.api.*;
-import com.sun.tools.javac.file.*;
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.main.*;
 import com.sun.tools.javac.util.*;
 
 
@@ -71,6 +69,10 @@ public class T6358024 extends AbstractProcessor {
 
         JavacTool tool = JavacTool.create();
         List<String> flags = new ArrayList<String>();
+        flags.add("-XaddExports:"
+                + "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED,"
+                + "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED");
         for (Option opt: opts) {
             flags.add(opt.name);
             for (Object arg : opt.args)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public class T6418694 extends ToolTester {
             case SOURCE_PATH:
             case CLASS_OUTPUT:
             case PLATFORM_CLASS_PATH:
+            case SYSTEM_MODULES:
                 if (!fm.hasLocation(loc))
                     throw new AssertionError("Missing location " + loc);
                 break;

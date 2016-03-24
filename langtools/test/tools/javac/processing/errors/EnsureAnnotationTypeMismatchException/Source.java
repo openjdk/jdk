@@ -6,7 +6,7 @@
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor Processor
- * @compile/fail/ref=Source.out -XDrawDiagnostics -processor Processor Source.java
+ * @compile/fail/ref=Source.out -XDaccessInternalAPI -XDrawDiagnostics -processor Processor Source.java
  */
 
 @Gen(fileName="Generated",

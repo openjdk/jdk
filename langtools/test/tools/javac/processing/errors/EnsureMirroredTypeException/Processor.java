@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,8 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeKind;
-import javax.tools.*;
 
 import com.sun.tools.javac.util.Assert;
-import com.sun.tools.javac.code.Symbol;
 import static com.sun.tools.javac.code.Symbol.TypeSymbol;
 
 public class Processor extends JavacTestingAbstractProcessor {

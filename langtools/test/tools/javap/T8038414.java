@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8038414
+ * @summary Constant pool's strings are not escaped properly
+ * @modules jdk.jdeps/com.sun.tools.javap
+ */
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -28,12 +35,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/*
- * @test
- * @bug 8038414
- * @summary Constant pool's strings are not escaped properly
- * @modules jdk.jdeps
- */
 public class T8038414 {
     private static final String NEW_LINE = System.getProperty("line.separator");
     private static final String TEST_CLASSES = System.getProperty("test.classes", ".");

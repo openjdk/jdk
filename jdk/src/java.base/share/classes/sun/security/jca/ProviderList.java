@@ -36,8 +36,10 @@ import java.security.Security;
 /**
  * List of Providers. Used to represent the provider preferences.
  *
- * The system starts out with a ProviderList that only has the classNames
- * of the Providers. Providers are loaded on demand only when needed.
+ * The system starts out with a ProviderList that only has the names
+ * of the Providers.
+ * When using ServiceLoader to load the providers, Providers are created
+ * semi-eagerly as we iterate through them looking for a match.
  *
  * For compatibility reasons, Providers that could not be loaded are ignored
  * and internally presented as the instance EMPTY_PROVIDER. However, those

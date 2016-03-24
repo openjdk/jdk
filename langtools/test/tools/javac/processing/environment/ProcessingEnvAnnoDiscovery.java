@@ -29,7 +29,7 @@
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor ProcessingEnvAnnoDiscovery
- * @compile/process -processor ProcessingEnvAnnoDiscovery ProcessingEnvAnnoDiscovery.java
+ * @compile/process -XDaccessInternalAPI -processor ProcessingEnvAnnoDiscovery ProcessingEnvAnnoDiscovery.java
  */
 
 import java.lang.annotation.*;

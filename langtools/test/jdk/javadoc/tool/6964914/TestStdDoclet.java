@@ -56,7 +56,7 @@ public class TestStdDoclet {
         String thisClassName = TestStdDoclet.class.getName();
         Process p = new ProcessBuilder()
             .command(javadoc.getPath(),
-                "-J-Xbootclasspath:" + System.getProperty("sun.boot.class.path"),
+                "-J-Xpatch:" + System.getProperty("jdk.launcher.patch.0", ""),
                 "-classpath", ".", // insulates us from ambient classpath
                 "-Xdoclint:none",
                 "-package",

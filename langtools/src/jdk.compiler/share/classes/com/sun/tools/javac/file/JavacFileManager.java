@@ -47,12 +47,14 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -70,6 +72,10 @@ import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.ModuleWrappers.Configuration;
+import com.sun.tools.javac.util.ModuleWrappers.Layer;
+import com.sun.tools.javac.util.ModuleWrappers.ModuleFinder;
+import com.sun.tools.javac.util.ModuleWrappers.ServiceLoaderHelper;
 
 import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
 
@@ -421,16 +427,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                                boolean recurse,
                                ListBuffer<JavaFileObject> resultList)
             throws IOException {
-        // Very temporary and obnoxious interim hack
-        if (container.endsWith("bootmodules.jimage")) {
-            System.err.println("Warning: reference to bootmodules.jimage replaced by jrt:");
-            container = Locations.JRT_MARKER_FILE;
-        } else if (container.getNameCount() > 0 && container.getFileName().toString().endsWith(".jimage")) {
-            System.err.println("Warning: reference to " + container + " ignored");
-            return;
-        }
-
-        if (container == Locations.JRT_MARKER_FILE) {
+        if (Files.isRegularFile(container) && container.equals(Locations.thisSystemModules)) {
             try {
                 listJRTImage(subdirectory,
                         fileKinds,
@@ -443,7 +440,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             return;
         }
 
-        if  (fsInfo.isDirectory(container)) {
+        if  (Files.isDirectory(container)) {
             listDirectory(container, null,
                           subdirectory,
                           fileKinds,
@@ -452,7 +449,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             return;
         }
 
-        if (Files.exists(container)) {
+        if (Files.isRegularFile(container)) {
             listArchive(container,
                     subdirectory,
                     fileKinds,
@@ -530,6 +527,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             return;
         }
 
+        locations.close();
         for (FileSystem fs: fileSystems.values()) {
             fs.close();
         }
@@ -604,7 +602,8 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     @Override @DefinedBy(Api.COMPILER)
     public boolean hasLocation(Location location) {
-        return getLocation(location) != null;
+        nullCheck(location);
+        return locations.hasLocation(location);
     }
 
     @Override @DefinedBy(Api.COMPILER)
@@ -645,14 +644,14 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             return null;
 
         for (Path file: path) {
-            if (file == Locations.JRT_MARKER_FILE) {
+            if (file.equals(Locations.thisSystemModules)) {
                 JRTIndex.Entry e = getJRTIndex().getEntry(name.dirname());
                 if (symbolFileEnabled && e.ctSym.hidden)
                     continue;
                 Path p = e.files.get(name.basename());
                 if (p != null)
                     return PathFileObject.forJRTPath(this, p);
-            } else if (fsInfo.isDirectory(file)) {
+            } else if (Files.isDirectory(file)) {
                 try {
                     Path f = name.resolveAgainst(file);
                     if (Files.exists(f))
@@ -660,7 +659,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
                                 fsInfo.getCanonicalFile(f), f);
                 } catch (InvalidPathException ignore) {
                 }
-            } else if (Files.exists(file)) {
+            } else if (Files.isRegularFile(file)) {
                 FileSystem fs = getFileSystem(file);
                 if (fs != null) {
                     Path fsRoot = fs.getRootDirectories().iterator().next();
@@ -827,6 +826,69 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     private Path getSourceOutDir() {
         return locations.getOutputLocation(SOURCE_OUTPUT);
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public Location getModuleLocation(Location location, String moduleName) throws IOException {
+        nullCheck(location);
+        nullCheck(moduleName);
+        return locations.getModuleLocation(location, moduleName);
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public <S> ServiceLoader<S> getServiceLoader(Location location, Class<S> service) throws IOException {
+        nullCheck(location);
+        nullCheck(service);
+        if (location.isModuleLocation()) {
+            Collection<Path> paths = locations.getLocation(location);
+            ModuleFinder finder = ModuleFinder.of(paths.toArray(new Path[paths.size()]));
+            Layer bootLayer = Layer.boot();
+            Configuration cf = bootLayer.configuration().resolveRequiresAndUses(ModuleFinder.empty(), finder, Collections.emptySet());
+            Layer layer = bootLayer.defineModulesWithOneLoader(cf, ClassLoader.getSystemClassLoader());
+            return ServiceLoaderHelper.load(layer, service);
+        } else {
+            return ServiceLoader.load(service, getClassLoader(location));
+        }
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public Location getModuleLocation(Location location, JavaFileObject fo, String pkgName) throws IOException {
+        nullCheck(location);
+        if (!(fo instanceof PathFileObject))
+            throw new IllegalArgumentException(fo.getName());
+        int depth = 1; // allow 1 for filename
+        if (pkgName != null && !pkgName.isEmpty()) {
+            depth += 1;
+            for (int i = 0; i < pkgName.length(); i++) {
+                switch (pkgName.charAt(i)) {
+                    case '/': case '.':
+                        depth++;
+                }
+            }
+        }
+        Path p = Locations.normalize(((PathFileObject) fo).path);
+        int fc = p.getNameCount();
+        if (depth < fc) {
+            Path root = p.getRoot();
+            Path subpath = p.subpath(0, fc - depth);
+            Path dir = (root == null) ? subpath : root.resolve(subpath);
+            // need to find dir in location
+            return locations.getModuleLocation(location, dir);
+        } else {
+            return null;
+        }
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public String inferModuleName(Location location) {
+        nullCheck(location);
+        return locations.inferModuleName(location);
+    }
+
+    @Override @DefinedBy(Api.COMPILER)
+    public Iterable<Set<Location>> listModuleLocations(Location location) throws IOException {
+        nullCheck(location);
+        return locations.listModuleLocations(location);
     }
 
     @Override @DefinedBy(Api.COMPILER)

@@ -33,10 +33,14 @@ typedef u8 traceid;
 #define TRACE_KLASS_DEFINITION(k, t)
 
 #define TRACE_INIT_KLASS_ID(k)
+#define TRACE_INIT_MODULE_ID(m)
+#define TRACE_INIT_PACKAGE_ID(p)
 #define TRACE_INIT_THREAD_ID(td)
 #define TRACE_DATA TraceThreadData
 
 #define THREAD_TRACE_ID(thread) ((traceid)thread->osthread()->thread_id())
+extern "C" void JNICALL trace_register_natives(JNIEnv*, jclass);
+#define TRACE_REGISTER_NATIVES ((void*)((address_word)(&trace_register_natives)))
 #define TRACE_START() JNI_OK
 #define TRACE_INITIALIZE() JNI_OK
 

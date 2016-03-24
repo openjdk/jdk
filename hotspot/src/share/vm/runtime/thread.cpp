@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -118,6 +119,9 @@
 #if INCLUDE_RTM_OPT
 #include "runtime/rtmLocking.hpp"
 #endif
+
+// Initialization after module runtime initialization
+void universe_post_module_init();  // must happen after call_initPhase2
 
 #ifdef DTRACE_ENABLED
 
@@ -996,15 +1000,6 @@ static oop create_initial_thread(Handle thread_group, JavaThread* thread,
                           string,
                           CHECK_NULL);
   return thread_oop();
-}
-
-static void call_initializeSystemClass(TRAPS) {
-  Klass* k =  SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
-  instanceKlassHandle klass (THREAD, k);
-
-  JavaValue result(T_VOID);
-  JavaCalls::call_static(&result, klass, vmSymbols::initializeSystemClass_name(),
-                         vmSymbols::void_method_signature(), CHECK);
 }
 
 char java_runtime_name[128] = "";
@@ -3365,6 +3360,62 @@ void Threads::threads_do(ThreadClosure* tc) {
   // If CompilerThreads ever become non-JavaThreads, add them here
 }
 
+// The system initialization in the library has three phases.
+//
+// Phase 1: java.lang.System class initialization
+//     java.lang.System is a primordial class loaded and initialized
+//     by the VM early during startup.  java.lang.System.<clinit>
+//     only does registerNatives and keeps the rest of the class
+//     initialization work later until thread initialization completes.
+//
+//     System.initPhase1 initializes the system properties, the static
+//     fields in, out, and err. Set up java signal handlers, OS-specific
+//     system settings, and thread group of the main thread.
+static void call_initPhase1(TRAPS) {
+  Klass* k =  SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
+  instanceKlassHandle klass (THREAD, k);
+
+  JavaValue result(T_VOID);
+  JavaCalls::call_static(&result, klass, vmSymbols::initPhase1_name(),
+                                         vmSymbols::void_method_signature(), CHECK);
+}
+
+// Phase 2. Module system initialization
+//     This will initialize the module system.  Only java.base classes
+//     can be loaded until phase 2 completes.
+//
+//     Call System.initPhase2 after the compiler initialization and jsr292
+//     classes get initialized because module initialization runs a lot of java
+//     code, that for performance reasons, should be compiled.  Also, this will
+//     enable the startup code to use lambda and other language features in this
+//     phase and onward.
+//
+//     After phase 2, The VM will begin search classes from -Xbootclasspath/a.
+static void call_initPhase2(TRAPS) {
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
+  instanceKlassHandle klass (THREAD, k);
+
+  JavaValue result(T_VOID);
+  JavaCalls::call_static(&result, klass, vmSymbols::initPhase2_name(),
+                                         vmSymbols::void_method_signature(), CHECK);
+  universe_post_module_init();
+}
+
+// Phase 3. final setup - set security manager, system class loader and TCCL
+//
+//     This will instantiate and set the security manager, set the system class
+//     loader as well as the thread context class loader.  The security manager
+//     and system class loader may be a custom class loaded from -Xbootclasspath/a,
+//     other modules or the application's classpath.
+static void call_initPhase3(TRAPS) {
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_System(), true, CHECK);
+  instanceKlassHandle klass (THREAD, k);
+
+  JavaValue result(T_VOID);
+  JavaCalls::call_static(&result, klass, vmSymbols::initPhase3_name(),
+                                         vmSymbols::void_method_signature(), CHECK);
+}
+
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   TraceTime timer("Initialize java.lang classes", TRACETIME_LOG(Info, startuptime));
 
@@ -3392,10 +3443,15 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   java_lang_Thread::set_thread_status(thread_object,
                                       java_lang_Thread::RUNNABLE);
 
+  // The VM creates objects of this class.
+  initialize_class(vmSymbols::java_lang_reflect_Module(), CHECK);
+
   // The VM preresolves methods to these classes. Make sure that they get initialized
   initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK);
   initialize_class(vmSymbols::java_lang_ref_Finalizer(), CHECK);
-  call_initializeSystemClass(CHECK);
+
+  // Phase 1 of the system initialization in the library, java.lang.System class initialization
+  call_initPhase1(CHECK);
 
   // get the Java runtime name after java.lang.System is initialized
   JDK_Version::set_runtime_name(get_java_runtime_name(THREAD));
@@ -3613,10 +3669,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
-  JvmtiExport::enter_start_phase();
+  JvmtiExport::enter_early_start_phase();
 
   // Notify JVMTI agents that VM has started (JNI is up) - nop if no agents.
-  JvmtiExport::post_vm_start();
+  JvmtiExport::post_early_vm_start();
 
   initialize_java_lang_classes(main_thread, CHECK_JNI_ERR);
 
@@ -3644,20 +3700,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   Management::record_vm_init_completed();
 #endif // INCLUDE_MANAGEMENT
 
-  // Compute system loader. Note that this has to occur after set_init_completed, since
-  // valid exceptions may be thrown in the process.
   // Note that we do not use CHECK_0 here since we are inside an EXCEPTION_MARK and
   // set_init_completed has just been called, causing exceptions not to be shortcut
   // anymore. We call vm_exit_during_initialization directly instead.
-  SystemDictionary::compute_java_system_loader(CHECK_(JNI_ERR));
 
   // Initialize reference pending list locker
   bool needs_locker_thread = Universe::heap()->needs_reference_pending_list_locker_thread();
   ReferencePendingListLocker::initialize(needs_locker_thread, CHECK_JNI_ERR);
-
-  // Always call even when there are not JVMTI environments yet, since environments
-  // may be attached late and JVMTI must track phases of VM execution
-  JvmtiExport::enter_live_phase();
 
   // Signal Dispatcher needs to be started before VMInit event is posted
   os::signal_init();
@@ -3677,25 +3726,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     create_vm_init_libraries();
   }
 
-  // Notify JVMTI agents that VM initialization is complete - nop if no agents.
-  JvmtiExport::post_vm_initialized();
-
-  if (TRACE_START() != JNI_OK) {
-    vm_exit_during_initialization("Failed to start tracing backend.");
-  }
-
   if (CleanChunkPoolAsync) {
     Chunk::start_chunk_pool_cleaner_task();
   }
-
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    const char* jvmciCompiler = Arguments::PropertyList_get_value(Arguments::system_properties(), "jvmci.compiler");
-    if (jvmciCompiler != NULL) {
-      JVMCIRuntime::save_compiler(jvmciCompiler);
-    }
-  }
-#endif // INCLUDE_JVMCI
 
   // initialize compiler(s)
 #if defined(COMPILER1) || defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
@@ -3707,6 +3740,34 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // signature polymorphic MH intrinsics can be missed
   // (see SystemDictionary::find_method_handle_intrinsic).
   initialize_jsr292_core_classes(CHECK_JNI_ERR);
+
+  // This will initialize the module system.  Only java.base classes can be
+  // loaded until phase 2 completes
+  call_initPhase2(CHECK_JNI_ERR);
+
+  // Always call even when there are not JVMTI environments yet, since environments
+  // may be attached late and JVMTI must track phases of VM execution
+  JvmtiExport::enter_start_phase();
+
+  // Notify JVMTI agents that VM has started (JNI is up) - nop if no agents.
+  JvmtiExport::post_vm_start();
+
+  // Final system initialization including security manager and system class loader
+  call_initPhase3(CHECK_JNI_ERR);
+
+  // cache the system class loader
+  SystemDictionary::compute_java_system_loader(CHECK_(JNI_ERR));
+
+  // Always call even when there are not JVMTI environments yet, since environments
+  // may be attached late and JVMTI must track phases of VM execution
+  JvmtiExport::enter_live_phase();
+
+  // Notify JVMTI agents that VM initialization is complete - nop if no agents.
+  JvmtiExport::post_vm_initialized();
+
+  if (TRACE_START() != JNI_OK) {
+    vm_exit_during_initialization("Failed to start tracing backend.");
+  }
 
 #if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);

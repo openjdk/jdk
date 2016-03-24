@@ -88,7 +88,7 @@ public class SALauncher {
     }
 
     private static boolean jsnapHelp() {
-        System.out.println(" <no option>\tdump performance counters");
+        System.out.println("    --all\tto print all performance counters");
         return commonHelp();
     }
 
@@ -331,7 +331,7 @@ public class SALauncher {
 
     private static void runJSNAP(String[] oldArgs) {
         SAGetopt sg = new SAGetopt(oldArgs);
-        String[] longOpts = {"exe=", "core=", "pid="};
+        String[] longOpts = {"exe=", "core=", "pid=", "all"};
 
         ArrayList<String> newArgs = new ArrayList();
         String exe = null;
@@ -350,6 +350,10 @@ public class SALauncher {
             }
             if (s.equals("pid")) {
                 pid = sg.getOptarg();
+                continue;
+            }
+            if (s.equals("all")) {
+                newArgs.add("-a");
                 continue;
             }
         }

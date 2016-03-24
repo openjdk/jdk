@@ -29,7 +29,7 @@
  * @build LockCompilationTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::* LockCompilationTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI LockCompilationTest
  * @summary testing of WB::lock/unlockCompilation()
  */
 
@@ -37,12 +37,15 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+
 import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Asserts;
 
 public class LockCompilationTest extends CompilerWhiteBoxTest {
     public static void main(String[] args) throws Exception {
-        CompilerWhiteBoxTest.main(LockCompilationTest::new, args);
+        // This case waits for 10 seconds and verifies that the method hasn't been
+        // compiled during that time. Only do that for one of the test cases.
+        CompilerWhiteBoxTest.main(LockCompilationTest::new, new String[] {"METHOD_TEST"});
     }
 
     private LockCompilationTest(TestCase testCase) {
