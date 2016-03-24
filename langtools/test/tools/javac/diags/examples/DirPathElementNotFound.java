@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,8 @@
  */
 
 // key: compiler.warn.dir.path.element.not.found
-// options: -Xlint:path -extdirs DoesNotExist
+// key: compiler.warn.source.no.bootclasspath
+// options: -Xlint:path -source 8 -target 8 -extdirs DoesNotExist
 // run: simple
 
 class DirPathElementNotFound { }

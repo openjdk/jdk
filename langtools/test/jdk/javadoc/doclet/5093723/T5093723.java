@@ -26,7 +26,7 @@
  * @bug      5093723
  * @summary  REGRESSION: ClassCastException in SingleIndexWriter
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    JavadocTester
  * @run main T5093723
  */

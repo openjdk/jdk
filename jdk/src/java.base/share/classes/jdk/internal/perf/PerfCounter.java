@@ -67,11 +67,11 @@ public class PerfCounter {
         this.lb = bb.asLongBuffer();
     }
 
-    static PerfCounter newPerfCounter(String name) {
+    public static PerfCounter newPerfCounter(String name) {
         return new PerfCounter(name, V_Variable);
     }
 
-    static PerfCounter newConstantPerfCounter(String name) {
+    public static PerfCounter newConstantPerfCounter(String name) {
         PerfCounter c = new PerfCounter(name, V_Constant);
         return c;
     }

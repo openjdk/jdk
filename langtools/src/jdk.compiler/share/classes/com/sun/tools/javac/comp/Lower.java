@@ -652,7 +652,7 @@ public class Lower extends TreeTranslator {
 
         // Enter class symbol in owner scope and compiled table.
         enterSynthetic(odef.pos(), c, owner.members());
-        chk.compiled.put(c.flatname, c);
+        chk.putCompiled(c);
 
         // Create class definition tree.
         JCClassDecl cdef = make.ClassDef(
@@ -1286,10 +1286,11 @@ public class Lower extends TreeTranslator {
      */
     ClassSymbol accessConstructorTag() {
         ClassSymbol topClass = currentClass.outermostClass();
+        ModuleSymbol topModle = topClass.packge().modle;
         Name flatname = names.fromString("" + topClass.getQualifiedName() +
                                          target.syntheticNameChar() +
                                          "1");
-        ClassSymbol ctag = chk.compiled.get(flatname);
+        ClassSymbol ctag = chk.getCompiled(topModle, flatname);
         if (ctag == null)
             ctag = makeEmptyClass(STATIC | SYNTHETIC, topClass).sym;
         // keep a record of all tags, to verify that all are generated as required
@@ -2342,25 +2343,18 @@ public class Lower extends TreeTranslator {
 
     public void visitPackageDef(JCPackageDecl tree) {
         if (!needPackageInfoClass(tree))
-            return;
+                        return;
 
-        Name name = names.package_info;
         long flags = Flags.ABSTRACT | Flags.INTERFACE;
         // package-info is marked SYNTHETIC in JDK 1.6 and later releases
         flags = flags | Flags.SYNTHETIC;
-        JCClassDecl packageAnnotationsClass
-            = make.ClassDef(make.Modifiers(flags, tree.getAnnotations()),
-                            name, List.<JCTypeParameter>nil(),
-                            null, List.<JCExpression>nil(), List.<JCTree>nil());
         ClassSymbol c = tree.packge.package_info;
-        c.flags_field |= flags;
         c.setAttributes(tree.packge);
+        c.flags_field |= flags;
         ClassType ctype = (ClassType) c.type;
         ctype.supertype_field = syms.objectType;
         ctype.interfaces_field = List.nil();
-        packageAnnotationsClass.sym = c;
-
-        translated.append(packageAnnotationsClass);
+        createInfoClass(tree.annotations, c);
     }
     // where
     private boolean needPackageInfoClass(JCPackageDecl pd) {
@@ -2379,6 +2373,23 @@ public class Lower extends TreeTranslator {
                 return false;
         }
         throw new AssertionError();
+    }
+
+    public void visitModuleDef(JCModuleDecl tree) {
+        ModuleSymbol msym = tree.sym;
+        ClassSymbol c = msym.module_info;
+        c.flags_field |= Flags.MODULE;
+        createInfoClass(List.<JCAnnotation>nil(), tree.sym.module_info);
+    }
+
+    private void createInfoClass(List<JCAnnotation> annots, ClassSymbol c) {
+        long flags = Flags.ABSTRACT | Flags.INTERFACE;
+        JCClassDecl infoClass =
+                make.ClassDef(make.Modifiers(flags, annots),
+                    c.name, List.<JCTypeParameter>nil(),
+                    null, List.<JCExpression>nil(), List.<JCTree>nil());
+        infoClass.sym = c;
+        translated.append(infoClass);
     }
 
     public void visitClassDef(JCClassDecl tree) {

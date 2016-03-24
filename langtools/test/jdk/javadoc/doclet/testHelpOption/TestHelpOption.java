@@ -27,7 +27,7 @@
  * @summary  Make sure that -help, -helpfile and -nohelp options work correctly.
  * @author   jamieh
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    JavadocTester TestHelpOption
  * @run main TestHelpOption
  */

@@ -135,8 +135,18 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
   // GC walks these as strong roots.
   loader_data->add_class(oak);
 
+  // The array is defined in the module of its bottom class
+  Klass* bottom_klass = oak->bottom_klass();
+  ModuleEntry* module;
+  if (bottom_klass->is_instance_klass()) {
+    module = InstanceKlass::cast(bottom_klass)->module();
+  } else {
+    module = ModuleEntryTable::javabase_module();
+  }
+  assert(module != NULL, "No module entry for array");
+
   // Call complete_create_array_klass after all instance variables has been initialized.
-  ArrayKlass::complete_create_array_klass(oak, super_klass, CHECK_0);
+  ArrayKlass::complete_create_array_klass(oak, super_klass, module, CHECK_0);
 
   return oak;
 }

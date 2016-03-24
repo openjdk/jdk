@@ -26,7 +26,7 @@
  * @bug 8071982
  * @summary Test for package-frame.html.
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @run main TestClassDocCatalog
  */

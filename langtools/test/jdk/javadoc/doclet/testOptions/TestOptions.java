@@ -27,7 +27,7 @@
  * @summary  Test the output for -header, -footer, -nooverview, -nodeprecatedlist, -nonavbar, -notree, -stylesheetfile options.
  * @author   Bhavesh Patel
  * @library  ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    JavadocTester
  * @run main TestOptions
  */

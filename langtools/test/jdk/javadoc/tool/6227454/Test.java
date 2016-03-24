@@ -25,7 +25,7 @@
  * @test
  * @bug 6227454
  * @summary package.html and overview.html may not be read fully
- * @modules jdk.javadoc
+ *  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
 
 import java.io.*;
@@ -81,18 +81,12 @@ public class Test implements Doclet {
         System.err.println("test " + testNum);
         File file = writeFile("overview" + testNum + ".html", text);
         String thisClassName = Test.class.getName();
+        File testSrc = new File(System.getProperty("test.src"));
         String[] args = {
-            "-bootclasspath",
-                System.getProperty("java.class.path")
-                + File.pathSeparator
-                + System.getProperty("sun.boot.class.path"),
             "-classpath", ".",
-            "-docletpath", System.getProperty("test.classes"),
-            "-doclet", thisClassName,
             "-package",
             "-overview", file.getPath(),
-            "-sourcepath", ".",
-            referenceFile.getPath()
+            new File(testSrc, thisClassName + ".java").getPath()
         };
 
         StringWriter sw = new StringWriter();

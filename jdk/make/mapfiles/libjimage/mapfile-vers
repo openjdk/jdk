@@ -27,23 +27,7 @@
 
 SUNWprivate_1.1 {
     global:
-        JNI_OnLoad;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_openImage;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_closeImage;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_getIndexAddress;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_getDataAddress;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_read;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_readCompressed;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_getStringBytes;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_getAttributes;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_findAttributes;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_attributeOffsets;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_JIMAGE_1Open;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_JIMAGE_1Close;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_JIMAGE_1FindResource;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_JIMAGE_1GetResource;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_JIMAGE_1PackageToModule;
-        Java_jdk_internal_jimage_ImageNativeSubstrate_JIMAGE_1Resources;
+        Java_jdk_internal_jimage_NativeImageBuffer_getNativeMap;
         JIMAGE_Open;
         JIMAGE_Close;
         JIMAGE_PackageToModule;

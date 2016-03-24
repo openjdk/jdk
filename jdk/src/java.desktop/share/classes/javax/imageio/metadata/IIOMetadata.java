@@ -26,7 +26,11 @@
 package javax.imageio.metadata;
 
 import org.w3c.dom.Node;
+
 import java.lang.reflect.Method;
+import java.lang.reflect.Module;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * An abstract class to be extended by objects that represent metadata
@@ -395,45 +399,11 @@ public abstract class IIOMetadata {
             throw new IllegalArgumentException("Unsupported format name");
         }
         try {
-            Class<?> cls = null;
-            final Object o = this;
-
-            // firstly we try to use classloader used for loading
-            // the IIOMetadata implemantation for this plugin.
-            ClassLoader loader =
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<ClassLoader>() {
-                            public ClassLoader run() {
-                                return o.getClass().getClassLoader();
-                            }
-                        });
-
-            try {
-                cls = Class.forName(formatClassName, true,
-                                    loader);
-            } catch (ClassNotFoundException e) {
-                // we failed to load IIOMetadataFormat class by
-                // using IIOMetadata classloader.Next try is to
-                // use thread context classloader.
-                loader =
-                    java.security.AccessController.doPrivileged(
-                        new java.security.PrivilegedAction<ClassLoader>() {
-                                public ClassLoader run() {
-                                    return Thread.currentThread().getContextClassLoader();
-                                }
-                        });
-                try {
-                    cls = Class.forName(formatClassName, true,
-                                        loader);
-                } catch (ClassNotFoundException e1) {
-                    // finally we try to use system classloader in case
-                    // if we failed to load IIOMetadataFormat implementation
-                    // class above.
-                    cls = Class.forName(formatClassName, true,
-                                        ClassLoader.getSystemClassLoader());
-                }
-            }
-
+            final String className = formatClassName;
+            // Try to load from the module of the IIOMetadata implementation
+            // for this plugin since the IIOMetadataImpl is part of the plugin
+            PrivilegedAction<Class<?>> pa = () -> { return getMetadataFormatClass(className); };
+            Class<?> cls = AccessController.doPrivileged(pa);
             Method meth = cls.getMethod("getInstance");
             return (IIOMetadataFormat) meth.invoke(null);
         } catch (Exception e) {
@@ -442,7 +412,24 @@ public abstract class IIOMetadata {
             ex.initCause(e);
             throw ex;
         }
+    }
 
+    private Class<?> getMetadataFormatClass(String formatClassName) {
+        Module thisModule = IIOMetadata.class.getModule();
+        Module targetModule = this.getClass().getModule();
+        Class<?> c = Class.forName(targetModule, formatClassName);
+        if (thisModule.equals(targetModule) || c == null) {
+            return c;
+        }
+        if (thisModule.isNamed()) {
+            int i = formatClassName.lastIndexOf(".");
+            String pn = i > 0 ? formatClassName.substring(0, i) : "";
+            if (!targetModule.isExported(pn, thisModule)) {
+                throw new IllegalStateException("Class " + formatClassName +
+                   " in named module must be exported to java.desktop module.");
+            }
+        }
+        return c;
     }
 
     /**

@@ -167,6 +167,19 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     }
 
     /**
+     * Adds "All Modules" link for the top of the left-hand frame page to the
+     * documentation tree.
+     *
+     * @param ul the Content object to which the "All Modules" link should be added
+     */
+    protected void addAllModulesLink(Content ul) {
+        Content linkContent = getHyperLink(DocPaths.MODULE_OVERVIEW_FRAME,
+                allmodulesLabel, "", "packageListFrame");
+        Content li = HtmlTree.LI(linkContent);
+        ul.addContent(li);
+    }
+
+    /**
      * {@inheritDoc}
      */
     protected void addNavigationBarFooter(Content body) {

@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.processing
  *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor TestMissingElement
- * @compile/fail/ref=TestMissingElement.ref -proc:only -XprintRounds -XDrawDiagnostics -processor TestMissingElement InvalidSource.java
+ * @compile/fail/ref=TestMissingElement.ref -XDaccessInternalAPI -proc:only -XprintRounds -XDrawDiagnostics -processor TestMissingElement InvalidSource.java
  */
 
 import java.io.PrintWriter;

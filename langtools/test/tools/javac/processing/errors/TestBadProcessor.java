@@ -74,7 +74,7 @@ public class TestBadProcessor {
         String expect = "error: Bad service configuration file, " +
                 "or exception thrown while constructing Processor object: " +
                 "javax.annotation.processing.Processor: " +
-                "Provider AnnoProc could not be instantiated: java.lang.Error\n" +
+                "Provider AnnoProc could not be instantiated\n" +
                 "1 error";
         String lineSeparator = System.getProperty("line.separator");
         if (!out.trim().replace(lineSeparator, "\n").equals(expect)) {

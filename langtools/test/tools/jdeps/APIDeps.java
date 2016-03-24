@@ -29,7 +29,6 @@
  *          java.management
  *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jdeps/com.sun.tools.jdeps
- * @build m.Bar m.Foo m.Gee b.B c.C c.I d.D e.E f.F g.G
  * @run main APIDeps
  */
 
@@ -37,10 +36,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
 import java.util.regex.*;
+import java.util.stream.Collectors;
 
 public class APIDeps {
     public static void main(String... args) throws Exception {
@@ -50,8 +49,42 @@ public class APIDeps {
             throw new Exception(errors + " errors found");
     }
 
+    private static final Path dest = Paths.get(System.getProperty("test.classes", "."), "tmp");
+    private static final String[] srcDirs = new String[] {
+            "m", "b", "c", "d", "e", "f", "g"
+    };
+    void setup(Path dest) throws IOException {
+        CompilerUtils.cleanDir(dest);
+        Files.createDirectories(dest);
+        Path testsrc = Paths.get(System.getProperty("test.src"));
+        List<String> options = new ArrayList<>();
+
+        // add -XaddExports
+        String testModules = System.getProperty("test.modules", "");
+        List<String> addExports = new ArrayList<>();
+        for (String s : testModules.split("\\s+")) {
+            if (s.isEmpty()) continue;
+            if (s.indexOf('/') != -1)
+                addExports.add(s.trim() + "=ALL-UNNAMED");
+        }
+        if (addExports.size() > 0) {
+            options.add(addExports.stream().collect(Collectors.joining(",", "-XaddExports:", "")));
+        }
+
+        for (String dir : srcDirs) {
+            Path source = testsrc.resolve(dir);
+            boolean ok = CompilerUtils.compile(source, dest, options.toArray(new String[0]));
+            if (!ok) {
+                throw new RuntimeException("compilation fails");
+            }
+        }
+    }
+
     int run() throws IOException {
-        File testDir = new File(System.getProperty("test.classes", "."));
+        // compile classes in a separate directory for analysis
+        setup(dest);
+
+        File testDir = dest.toFile();
         String testDirBasename = testDir.toPath().getFileName().toString();
         File mDir = new File(testDir, "m");
         // all dependencies
@@ -81,13 +114,14 @@ public class APIDeps {
         test(new File(mDir, "Gee.class"),
              new String[] {"sun.security.x509.X509CertInfo", "com.sun.tools.classfile.ClassFile"},
              new String[] {"JDK internal API"},
-             new String[] {"-jdkinternals"});
+             new String[] {"-jdkinternals", "-quiet"});
         // -jdkinternals parses all classes on -classpath and the input arguments
         test(new File(mDir, "Gee.class"),
-             new String[] {"com.sun.tools.jdeps.Main", "com.sun.tools.classfile.ClassFile",
-                           "sun.security.x509.X509CertInfo", "sun.misc.Unsafe"},
+             new String[] {"com.sun.tools.classfile.ClassFile",
+                           "sun.security.x509.X509CertInfo"},
              new String[] {"JDK internal API"},
-             new String[] {"-classpath", testDir.getPath(), "-jdkinternals"});
+             // use -classpath tmp/a with no use of JDK internal API
+             new String[] {"-classpath", dest.resolve("a").toString(), "-jdkinternals", "-quiet"});
 
         // parse only APIs
         test(mDir,
@@ -196,4 +230,5 @@ public class APIDeps {
     }
 
     int errors;
+
 }

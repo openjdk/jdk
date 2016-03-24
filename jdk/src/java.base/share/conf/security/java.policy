@@ -1,37 +1,10 @@
 // permissions required by each component
+
+grant codeBase "jrt:/java.activation" {
+        permission java.security.AllPermission;
+};
+
 grant codeBase "jrt:/java.corba" {
-        permission java.security.AllPermission;
-};
-
-grant codeBase "jrt:/jdk.zipfs" {
-        permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete";
-        permission java.lang.RuntimePermission "fileSystemProvider";
-        permission java.util.PropertyPermission "*", "read";
-};
-
-grant codeBase "jrt:/jdk.localedata" {
-        permission java.lang.RuntimePermission "accessClassInPackage.sun.text.*";
-        permission java.lang.RuntimePermission "accessClassInPackage.sun.util.*";
-        permission java.util.PropertyPermission "*", "read";
-};
-
-grant codeBase "jrt:/jdk.naming.dns" {
-        permission java.security.AllPermission;
-};
-
-grant codeBase "jrt:/jdk.dynalink" {
-        permission java.security.AllPermission;
-};
-
-grant codeBase "jrt:/jdk.scripting.nashorn" {
-        permission java.security.AllPermission;
-};
-
-grant codeBase "jrt:/jdk.scripting.nashorn.shell" {
-        permission java.security.AllPermission;
-};
-
-grant codeBase "jrt:/jdk.internal.le" {
         permission java.security.AllPermission;
 };
 
@@ -72,14 +45,34 @@ grant codeBase "jrt:/jdk.crypto.pkcs11" {
         permission java.io.FilePermission "<<ALL FILES>>", "read";
 };
 
-grant codeBase "jrt:/java.xml.ws" {
-        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.xml.internal.*";
-        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.istack.internal";
-        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.istack.internal.*";
-        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.org.apache.xerces.internal.*";
-        permission java.lang.RuntimePermission "accessDeclaredMembers";
-        permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+grant codeBase "jrt:/jdk.dynalink" {
+        permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.internal.le" {
+        permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.jsobject" {
+        permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.localedata" {
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.text.*";
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.util.*";
         permission java.util.PropertyPermission "*", "read";
+};
+
+grant codeBase "jrt:/jdk.naming.dns" {
+        permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.scripting.nashorn" {
+        permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.scripting.nashorn.shell" {
+        permission java.security.AllPermission;
 };
 
 grant codeBase "jrt:/java.xml.bind" {
@@ -91,8 +84,20 @@ grant codeBase "jrt:/java.xml.bind" {
         permission java.util.PropertyPermission "*", "read";
 };
 
-grant codeBase "jrt:/java.activation" {
-        permission java.security.AllPermission;
+grant codeBase "jrt:/java.xml.ws" {
+        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.xml.internal.*";
+        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.istack.internal";
+        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.istack.internal.*";
+        permission java.lang.RuntimePermission "accessClassInPackage.com.sun.org.apache.xerces.internal.*";
+        permission java.lang.RuntimePermission "accessDeclaredMembers";
+        permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+        permission java.util.PropertyPermission "*", "read";
+};
+
+grant codeBase "jrt:/jdk.zipfs" {
+        permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete";
+        permission java.lang.RuntimePermission "fileSystemProvider";
+        permission java.util.PropertyPermission "*", "read";
 };
 
 // default permissions granted to all domains

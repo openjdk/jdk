@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.util.*;
  * @test
  * @bug 4501661
  * @summary disallow mixing -public, -private, and -protected
- * @modules jdk.jdeps
+ * @modules jdk.jdeps/com.sun.tools.javap
  */
 public class T4501661 {
     public static void main(String... args) throws Exception {
