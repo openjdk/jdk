@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,8 @@
  * certain types in this package have special relations to dynamic
  * language support in the virtual machine:
  * <ul>
- * <li>The class {@link java.lang.invoke.MethodHandle MethodHandle} contains
+ * <li>The classes {@link java.lang.invoke.MethodHandle MethodHandle}
+ * {@link java.lang.invoke.VarHandle VarHandle} contain
  * <a href="MethodHandle.html#sigpoly">signature polymorphic methods</a>
  * which can be linked regardless of their type descriptor.
  * Normally, method linkage requires exact matching of type descriptors.
