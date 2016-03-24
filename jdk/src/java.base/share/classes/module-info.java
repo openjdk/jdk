@@ -274,7 +274,6 @@ module java.base {
         jdk.localedata;
     exports sun.util.logging to
         java.desktop,
-        java.httpclient,
         java.logging,
         java.prefs;
 
