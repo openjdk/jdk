@@ -28,6 +28,7 @@
  * @author  Wei Tao
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  * @clean T1 T2
@@ -39,9 +40,13 @@
 import java.nio.*;
 import java.io.*;
 import java.nio.channels.*;
+
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.ClassFinder.BadClassFile;
+import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.main.JavaCompiler;
+import com.sun.tools.javac.util.List;
 import javax.tools.ToolProvider;
 
 public class T6330997 {
@@ -51,14 +56,17 @@ public class T6330997 {
         javax.tools.JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         JavacTaskImpl task = (JavacTaskImpl)tool.getTask(null, null, null, null, null, null);
         JavaCompiler compiler = JavaCompiler.instance(task.getContext());
+        Symtab syms = Symtab.instance(task.getContext());
+        Modules modules = Modules.instance(task.getContext());
+        modules.enter(List.nil(), null);
         try {
-            compiler.resolveIdent("T1").complete();
+            compiler.resolveIdent(syms.unnamedModule, "T1").complete();
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Failed: unexpected exception while reading class T1");
         }
         try {
-            compiler.resolveIdent("T2").complete();
+            compiler.resolveIdent(syms.unnamedModule, "T2").complete();
         } catch (BadClassFile e) {
             System.err.println("Passed: expected completion failure " + e.getClass().getName());
             return;

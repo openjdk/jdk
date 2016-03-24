@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import java.lang.reflect.Module;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -34,12 +35,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 import jdk.dynalink.beans.StaticClass;
 import jdk.nashorn.internal.codegen.DumpBytecode;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.internal.module.Modules;
 
 /**
  * This class encapsulates the bytecode of the adapter class and can be used to load it into the JVM as an actual Class.
@@ -49,6 +52,12 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * class are normally created by {@code JavaAdapterBytecodeGenerator}.
  */
 final class JavaAdapterClassLoader {
+    private static final Module nashornModule = JavaAdapterClassLoader.class.getModule();
+    private static final Set<String> adapterPkgs = new HashSet<>();
+    static {
+        adapterPkgs.add(JavaAdapterBytecodeGenerator.ADAPTER_PACKAGE);
+    }
+
     private static final AccessControlContext CREATE_LOADER_ACC_CTXT = ClassAndLoader.createPermAccCtxt("createClassLoader");
     private static final AccessControlContext GET_CONTEXT_ACC_CTXT = ClassAndLoader.createPermAccCtxt(Context.NASHORN_GET_CONTEXT);
     private static final Collection<String> VISIBLE_INTERNAL_CLASS_NAMES = Collections.unmodifiableCollection(new HashSet<>(
@@ -56,10 +65,12 @@ final class JavaAdapterClassLoader {
 
     private final String className;
     private final byte[] classBytes;
+    private final Set<Module> accessedModules;
 
-    JavaAdapterClassLoader(final String className, final byte[] classBytes) {
+    JavaAdapterClassLoader(final String className, final byte[] classBytes, final Set<Module> accessedModules) {
         this.className = className.replace('/', '.');
         this.classBytes = classBytes;
+        this.accessedModules = accessedModules;
     }
 
     /**
@@ -82,6 +93,14 @@ final class JavaAdapterClassLoader {
         }, CREATE_LOADER_ACC_CTXT);
     }
 
+    private static void addExports(final Module from, final String pkg, final Module to) {
+        if (to == null) {
+            Modules.addExportsToAll(from, pkg);
+        } else {
+            Modules.addExports(from, pkg, to);
+        }
+    }
+
     // Note that the adapter class is created in the protection domain of the class/interface being
     // extended/implemented, and only the privileged global setter action class is generated in the protection domain
     // of Nashorn itself. Also note that the creation and loading of the global setter is deferred until it is
@@ -92,6 +111,26 @@ final class JavaAdapterClassLoader {
     private ClassLoader createClassLoader(final ClassLoader parentLoader, final ProtectionDomain protectionDomain) {
         return new SecureClassLoader(parentLoader) {
             private final ClassLoader myLoader = getClass().getClassLoader();
+
+            // new adapter module
+            private final Module adapterModule = Modules.defineModule(this, "jdk.scripting.nashorn.javaadapters", adapterPkgs);
+
+            {
+                // new adapter module exports and read-edges
+                addExports(adapterModule, JavaAdapterBytecodeGenerator.ADAPTER_PACKAGE, null);
+                Modules.addReads(adapterModule, nashornModule);
+                Modules.addReads(adapterModule, Object.class.getModule());
+                for (Module mod : accessedModules) {
+                    Modules.addReads(adapterModule, mod);
+                }
+
+                // specific exports from nashorn to the new adapter module
+                nashornModule.addExports("jdk.nashorn.internal.runtime", adapterModule);
+                nashornModule.addExports("jdk.nashorn.internal.runtime.linker", adapterModule);
+
+                // nashorn should be be able to read methods of classes loaded in adapter module
+                nashornModule.addReads(adapterModule);
+            }
 
             @Override
             public Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {

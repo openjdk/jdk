@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,9 +227,7 @@ public class EarlyReturnNegativeTest extends TestScaffold {
         String methodName = origMethodName.substring(2);
         ThreadReference tr = event.thread();
 
-        if (vmm.majorInterfaceVersion() >= 1 &&
-            vmm.minorInterfaceVersion() >= 6 &&
-            vm().canForceEarlyReturn()) {
+        if (vm().canForceEarlyReturn()) {
 
             /* There are some incompatible classes of values.  In the following,
              * we test each combination.

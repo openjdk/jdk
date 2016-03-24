@@ -24,7 +24,11 @@
 /**
  * @test
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
- * @compile TestResolvedJavaType.java TypeUniverse.java TestMetaAccessProvider.java NameAndSignature.java
+ * @library ../../../../../
+ * @modules jdk.vm.ci/jdk.vm.ci.meta
+ *          jdk.vm.ci/jdk.vm.ci.runtime
+ *          jdk.vm.ci/jdk.vm.ci.common
+ * @build jdk.vm.ci.runtime.test.TestResolvedJavaType
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.runtime.test.TestResolvedJavaType
  */
 

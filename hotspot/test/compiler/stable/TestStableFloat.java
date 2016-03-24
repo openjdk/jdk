@@ -26,64 +26,37 @@
 /*
  * @test TestStableFloat
  * @summary tests on stable fields and arrays
- * @library /testlibrary /test/lib
- * @build TestStableFloat StableConfiguration sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main ClassFileInstaller
- *           java/lang/invoke/StableConfiguration
- *           java/lang/invoke/TestStableFloat
- *           java/lang/invoke/TestStableFloat$FloatStable
- *           java/lang/invoke/TestStableFloat$StaticFloatStable
- *           java/lang/invoke/TestStableFloat$VolatileFloatStable
- *           java/lang/invoke/TestStableFloat$FloatArrayDim1
- *           java/lang/invoke/TestStableFloat$FloatArrayDim2
- *           java/lang/invoke/TestStableFloat$FloatArrayDim3
- *           java/lang/invoke/TestStableFloat$FloatArrayDim4
- *           java/lang/invoke/TestStableFloat$ObjectArrayLowerDim0
- *           java/lang/invoke/TestStableFloat$ObjectArrayLowerDim1
- *           java/lang/invoke/TestStableFloat$NestedStableField
- *           java/lang/invoke/TestStableFloat$NestedStableField$A
- *           java/lang/invoke/TestStableFloat$NestedStableField1
- *           java/lang/invoke/TestStableFloat$NestedStableField1$A
- *           java/lang/invoke/TestStableFloat$NestedStableField2
- *           java/lang/invoke/TestStableFloat$NestedStableField2$A
- *           java/lang/invoke/TestStableFloat$NestedStableField3
- *           java/lang/invoke/TestStableFloat$NestedStableField3$A
- *           java/lang/invoke/TestStableFloat$DefaultValue
- *           java/lang/invoke/TestStableFloat$DefaultStaticValue
- *           java/lang/invoke/TestStableFloat$ObjectArrayLowerDim2
+ * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.vm.annotation
+ * @build sun.hotspot.WhiteBox
+ * @build compiler.stable.TestStableFloat
  *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:-TieredCompilation
- *                   -XX:+FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableFloat
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:-TieredCompilation
- *                   -XX:-FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableFloat
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         compiler.stable.TestStableFloat
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         compiler.stable.TestStableFloat
  *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:+FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableFloat
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:-FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableFloat
- *
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         compiler.stable.TestStableFloat
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         compiler.stable.TestStableFloat
  */
-package java.lang.invoke;
+
+package compiler.stable;
 
 import jdk.internal.vm.annotation.Stable;
-
 import java.lang.reflect.InvocationTargetException;
 
 public class TestStableFloat {
@@ -126,7 +99,7 @@ public class TestStableFloat {
         public static final DefaultValue c = new DefaultValue();
         public static float get() { return c.v; }
         public static void test() throws Exception {
-                        float val1 = get();
+            float val1 = get();
             c.v = 1.0F; float val2 = get();
             assertEquals(val1, 0F);
             assertEquals(val2, 1.0F);
@@ -156,7 +129,7 @@ public class TestStableFloat {
         public static final DefaultStaticValue c = new DefaultStaticValue();
         public static float get() { return c.v; }
         public static void test() throws Exception {
-                        float val1 = get();
+            float val1 = get();
             c.v = 1.0F; float val2 = get();
             assertEquals(val1, 0F);
             assertEquals(val2, 1.0F);
@@ -206,24 +179,24 @@ public class TestStableFloat {
         public static void test() throws Exception {
             {
                 c.v = new float[1]; c.v[0] = 1.0F; float val1 = get();
-                                    c.v[0] = 2.0F; float val2 = get();
+                c.v[0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
                 assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
 
                 c.v = new float[1]; c.v[0] = 3.0F; float val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
-                                                    : 3.0F));
+                        : 3.0F));
             }
 
             {
                 c.v = new float[20]; c.v[10] = 1.0F; float val1 = get1();
-                                     c.v[10] = 2.0F; float val2 = get1();
+                c.v[10] = 2.0F; float val2 = get1();
                 assertEquals(val1, 1.0F);
                 assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
 
                 c.v = new float[20]; c.v[10] = 3.0F; float val3 = get1();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
-                                                    : 3.0F));
+                        : 3.0F));
             }
 
             {
@@ -246,17 +219,17 @@ public class TestStableFloat {
         public static void test() throws Exception {
             {
                 c.v = new float[1][1]; c.v[0][0] = 1.0F; float val1 = get();
-                                       c.v[0][0] = 2.0F; float val2 = get();
+                c.v[0][0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
                 assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
 
                 c.v = new float[1][1]; c.v[0][0] = 3.0F; float val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
-                                                    : 3.0F));
+                        : 3.0F));
 
                 c.v[0] = new float[1]; c.v[0][0] = 4.0F; float val4 = get();
                 assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
-                                                    : 4.0F));
+                        : 4.0F));
             }
 
             {
@@ -286,21 +259,21 @@ public class TestStableFloat {
         public static void test() throws Exception {
             {
                 c.v = new float[1][1][1]; c.v[0][0][0] = 1.0F; float val1 = get();
-                                          c.v[0][0][0] = 2.0F; float val2 = get();
+                c.v[0][0][0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
                 assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
 
                 c.v = new float[1][1][1]; c.v[0][0][0] = 3.0F; float val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
-                                                    : 3.0F));
+                        : 3.0F));
 
                 c.v[0] = new float[1][1]; c.v[0][0][0] = 4.0F; float val4 = get();
                 assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
-                                                    : 4.0F));
+                        : 4.0F));
 
                 c.v[0][0] = new float[1]; c.v[0][0][0] = 5.0F; float val5 = get();
                 assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
-                                                    : 5.0F));
+                        : 5.0F));
             }
 
             {
@@ -337,25 +310,25 @@ public class TestStableFloat {
         public static void test() throws Exception {
             {
                 c.v = new float[1][1][1][1]; c.v[0][0][0][0] = 1.0F; float val1 = get();
-                                             c.v[0][0][0][0] = 2.0F; float val2 = get();
+                c.v[0][0][0][0] = 2.0F; float val2 = get();
                 assertEquals(val1, 1.0F);
                 assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
 
                 c.v = new float[1][1][1][1]; c.v[0][0][0][0] = 3.0F; float val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
-                                                    : 3.0F));
+                        : 3.0F));
 
                 c.v[0] = new float[1][1][1]; c.v[0][0][0][0] = 4.0F; float val4 = get();
                 assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
-                                                    : 4.0F));
+                        : 4.0F));
 
                 c.v[0][0] = new float[1][1]; c.v[0][0][0][0] = 5.0F; float val5 = get();
                 assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
-                                                    : 5.0F));
+                        : 5.0F));
 
                 c.v[0][0][0] = new float[1]; c.v[0][0][0][0] = 6.0F; float val6 = get();
                 assertEquals(val6, (isStableEnabled ? (isStableEnabled ? 1.0F : 2.0F)
-                                                    : 6.0F));
+                        : 6.0F));
             }
 
             {
@@ -396,7 +369,7 @@ public class TestStableFloat {
         public static void test() throws Exception {
             {
                 c.v = new float[1]; ((float[])c.v)[0] = 1.0F; float val1 = get();
-                                    ((float[])c.v)[0] = 2.0F; float val2 = get();
+                ((float[])c.v)[0] = 2.0F; float val2 = get();
 
                 assertEquals(val1, 1.0F);
                 assertEquals(val2, 2.0F);
@@ -423,7 +396,7 @@ public class TestStableFloat {
         public static void test() throws Exception {
             {
                 c.v = new float[1][1]; ((float[][])c.v)[0][0] = 1.0F; float val1 = get();
-                                       ((float[][])c.v)[0][0] = 2.0F; float val2 = get();
+                ((float[][])c.v)[0][0] = 2.0F; float val2 = get();
 
                 assertEquals(val1, 1.0F);
                 assertEquals(val2, 2.0F);
@@ -431,7 +404,7 @@ public class TestStableFloat {
 
             {
                 c.v = new float[1][1]; c.v[0] = new float[0]; float[] val1 = get1();
-                                       c.v[0] = new float[0]; float[] val2 = get1();
+                c.v[0] = new float[0]; float[] val2 = get1();
 
                 assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
@@ -459,7 +432,7 @@ public class TestStableFloat {
         public static void test() throws Exception {
             {
                 c.v = new float[1][1][1]; ((float[][][])c.v)[0][0][0] = 1.0F; float val1 = get();
-                                          ((float[][][])c.v)[0][0][0] = 2.0F; float val2 = get();
+                ((float[][][])c.v)[0][0][0] = 2.0F; float val2 = get();
 
                 assertEquals(val1, 1.0F);
                 assertEquals(val2, 2.0F);
@@ -467,14 +440,14 @@ public class TestStableFloat {
 
             {
                 c.v = new float[1][1][1]; c.v[0][0] = new float[0]; float[] val1 = get1();
-                                          c.v[0][0] = new float[0]; float[] val2 = get1();
+                c.v[0][0] = new float[0]; float[] val2 = get1();
 
                 assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new float[1][1][1]; c.v[0] = new float[0][0]; float[][] val1 = get2();
-                                          c.v[0] = new float[0][0]; float[][] val2 = get2();
+                c.v[0] = new float[0][0]; float[][] val2 = get2();
 
                 assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
@@ -504,7 +477,7 @@ public class TestStableFloat {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.a = 1.0F; A val1 = get();
-                               c.v.a = 2.0F; A val2 = get();
+                c.v.a = 2.0F; A val2 = get();
 
                 assertEquals(val1.a, 2.0F);
                 assertEquals(val2.a, 2.0F);
@@ -512,7 +485,7 @@ public class TestStableFloat {
 
             {
                 c.v = new A(); c.v.a = 1.0F; float val1 = get1();
-                               c.v.a = 2.0F; float val2 = get1();
+                c.v.a = 2.0F; float val2 = get1();
                 c.v = new A(); c.v.a = 3.0F; float val3 = get1();
 
                 assertEquals(val1, 1.0F);
@@ -538,8 +511,8 @@ public class TestStableFloat {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.next = new A();   c.v.next.next  = c.v;
-                               c.v.a = 1.0F; c.v.next.a = 1.0F; A val1 = get();
-                               c.v.a = 2.0F; c.v.next.a = 2.0F; A val2 = get();
+                c.v.a = 1.0F; c.v.next.a = 1.0F; A val1 = get();
+                c.v.a = 2.0F; c.v.next.a = 2.0F; A val2 = get();
 
                 assertEquals(val1.a, 2.0F);
                 assertEquals(val2.a, 2.0F);
@@ -547,10 +520,10 @@ public class TestStableFloat {
 
             {
                 c.v = new A(); c.v.next = c.v;
-                               c.v.a = 1.0F; float val1 = get1();
-                               c.v.a = 2.0F; float val2 = get1();
+                c.v.a = 1.0F; float val1 = get1();
+                c.v.a = 2.0F; float val2 = get1();
                 c.v = new A(); c.v.next = c.v;
-                               c.v.a = 3.0F; float val3 = get1();
+                c.v.a = 3.0F; float val3 = get1();
 
                 assertEquals(val1, 1.0F);
                 assertEquals(val2, (isStableEnabled ? 1.0F : 2.0F));
@@ -576,8 +549,8 @@ public class TestStableFloat {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.left = c.v.right = c.v;
-                               c.v.a = 1.0F; float val1 = get(); float val2 = get1();
-                               c.v.a = 2.0F; float val3 = get(); float val4 = get1();
+                c.v.a = 1.0F; float val1 = get(); float val2 = get1();
+                c.v.a = 2.0F; float val3 = get(); float val4 = get1();
 
                 assertEquals(val1, 1.0F);
                 assertEquals(val3, (isStableEnabled ? 1.0F : 2.0F));
@@ -607,8 +580,8 @@ public class TestStableFloat {
             {
                 A elem = new A();
                 c.v = new A[] { elem, elem }; c.v[0].left = c.v[0].right = c.v;
-                               elem.a = 1.0F; float val1 = get(); float val2 = get1();
-                               elem.a = 2.0F; float val3 = get(); float val4 = get1();
+                elem.a = 1.0F; float val1 = get(); float val2 = get1();
+                elem.a = 2.0F; float val3 = get(); float val4 = get1();
 
                 assertEquals(val1, 1.0F);
                 assertEquals(val3, (isStableEnabled ? 1.0F : 2.0F));

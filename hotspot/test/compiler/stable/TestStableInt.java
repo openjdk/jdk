@@ -26,64 +26,37 @@
 /*
  * @test TestStableInt
  * @summary tests on stable fields and arrays
- * @library /testlibrary /test/lib
- * @build TestStableInt StableConfiguration sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main ClassFileInstaller
- *           java/lang/invoke/StableConfiguration
- *           java/lang/invoke/TestStableInt
- *           java/lang/invoke/TestStableInt$IntStable
- *           java/lang/invoke/TestStableInt$StaticIntStable
- *           java/lang/invoke/TestStableInt$VolatileIntStable
- *           java/lang/invoke/TestStableInt$IntArrayDim1
- *           java/lang/invoke/TestStableInt$IntArrayDim2
- *           java/lang/invoke/TestStableInt$IntArrayDim3
- *           java/lang/invoke/TestStableInt$IntArrayDim4
- *           java/lang/invoke/TestStableInt$ObjectArrayLowerDim0
- *           java/lang/invoke/TestStableInt$ObjectArrayLowerDim1
- *           java/lang/invoke/TestStableInt$NestedStableField
- *           java/lang/invoke/TestStableInt$NestedStableField$A
- *           java/lang/invoke/TestStableInt$NestedStableField1
- *           java/lang/invoke/TestStableInt$NestedStableField1$A
- *           java/lang/invoke/TestStableInt$NestedStableField2
- *           java/lang/invoke/TestStableInt$NestedStableField2$A
- *           java/lang/invoke/TestStableInt$NestedStableField3
- *           java/lang/invoke/TestStableInt$NestedStableField3$A
- *           java/lang/invoke/TestStableInt$DefaultValue
- *           java/lang/invoke/TestStableInt$DefaultStaticValue
- *           java/lang/invoke/TestStableInt$ObjectArrayLowerDim2
+ * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.vm.annotation
+ * @build sun.hotspot.WhiteBox
+ * @build compiler.stable.TestStableInt
  *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:-TieredCompilation
- *                   -XX:+FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableInt
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:-TieredCompilation
- *                   -XX:-FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableInt
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         compiler.stable.TestStableInt
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         compiler.stable.TestStableInt
  *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:+FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableInt
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:-FoldStableValues
- *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
- *                   java.lang.invoke.TestStableInt
- *
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         compiler.stable.TestStableInt
+ * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                         -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         compiler.stable.TestStableInt
  */
-package java.lang.invoke;
+
+package compiler.stable;
 
 import jdk.internal.vm.annotation.Stable;
-
 import java.lang.reflect.InvocationTargetException;
 
 public class TestStableInt {
@@ -126,7 +99,7 @@ public class TestStableInt {
         public static final DefaultValue c = new DefaultValue();
         public static int get() { return c.v; }
         public static void test() throws Exception {
-                        int val1 = get();
+            int val1 = get();
             c.v = 1; int val2 = get();
             assertEquals(val1, 0);
             assertEquals(val2, 1);
@@ -156,7 +129,7 @@ public class TestStableInt {
         public static final DefaultStaticValue c = new DefaultStaticValue();
         public static int get() { return c.v; }
         public static void test() throws Exception {
-                        int val1 = get();
+            int val1 = get();
             c.v = 1; int val2 = get();
             assertEquals(val1, 0);
             assertEquals(val2, 1);
@@ -206,24 +179,24 @@ public class TestStableInt {
         public static void test() throws Exception {
             {
                 c.v = new int[1]; c.v[0] = 1; int val1 = get();
-                                  c.v[0] = 2; int val2 = get();
+                c.v[0] = 2; int val2 = get();
                 assertEquals(val1, 1);
                 assertEquals(val2, (isStableEnabled ? 1 : 2));
 
                 c.v = new int[1]; c.v[0] = 3; int val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1 : 2)
-                                                    : 3));
+                        : 3));
             }
 
             {
                 c.v = new int[20]; c.v[10] = 1; int val1 = get1();
-                                   c.v[10] = 2; int val2 = get1();
+                c.v[10] = 2; int val2 = get1();
                 assertEquals(val1, 1);
                 assertEquals(val2, (isStableEnabled ? 1 : 2));
 
                 c.v = new int[20]; c.v[10] = 3; int val3 = get1();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1 : 2)
-                                                    : 3));
+                        : 3));
             }
 
             {
@@ -246,17 +219,17 @@ public class TestStableInt {
         public static void test() throws Exception {
             {
                 c.v = new int[1][1]; c.v[0][0] = 1; int val1 = get();
-                                     c.v[0][0] = 2; int val2 = get();
+                c.v[0][0] = 2; int val2 = get();
                 assertEquals(val1, 1);
                 assertEquals(val2, (isStableEnabled ? 1 : 2));
 
                 c.v = new int[1][1]; c.v[0][0] = 3; int val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1 : 2)
-                                                    : 3));
+                        : 3));
 
                 c.v[0] = new int[1]; c.v[0][0] = 4; int val4 = get();
                 assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1 : 2)
-                                                    : 4));
+                        : 4));
             }
 
             {
@@ -286,21 +259,21 @@ public class TestStableInt {
         public static void test() throws Exception {
             {
                 c.v = new int[1][1][1]; c.v[0][0][0] = 1; int val1 = get();
-                                        c.v[0][0][0] = 2; int val2 = get();
+                c.v[0][0][0] = 2; int val2 = get();
                 assertEquals(val1, 1);
                 assertEquals(val2, (isStableEnabled ? 1 : 2));
 
                 c.v = new int[1][1][1]; c.v[0][0][0] = 3; int val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1 : 2)
-                                                    : 3));
+                        : 3));
 
                 c.v[0] = new int[1][1]; c.v[0][0][0] = 4; int val4 = get();
                 assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1 : 2)
-                                                    : 4));
+                        : 4));
 
                 c.v[0][0] = new int[1]; c.v[0][0][0] = 5; int val5 = get();
                 assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 1 : 2)
-                                                    : 5));
+                        : 5));
             }
 
             {
@@ -337,25 +310,25 @@ public class TestStableInt {
         public static void test() throws Exception {
             {
                 c.v = new int[1][1][1][1]; c.v[0][0][0][0] = 1; int val1 = get();
-                                           c.v[0][0][0][0] = 2; int val2 = get();
+                c.v[0][0][0][0] = 2; int val2 = get();
                 assertEquals(val1, 1);
                 assertEquals(val2, (isStableEnabled ? 1 : 2));
 
                 c.v = new int[1][1][1][1]; c.v[0][0][0][0] = 3; int val3 = get();
                 assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 1 : 2)
-                                                    : 3));
+                        : 3));
 
                 c.v[0] = new int[1][1][1]; c.v[0][0][0][0] = 4; int val4 = get();
                 assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 1 : 2)
-                                                    : 4));
+                        : 4));
 
                 c.v[0][0] = new int[1][1]; c.v[0][0][0][0] = 5; int val5 = get();
                 assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 1 : 2)
-                                                    : 5));
+                        : 5));
 
                 c.v[0][0][0] = new int[1]; c.v[0][0][0][0] = 6; int val6 = get();
                 assertEquals(val6, (isStableEnabled ? (isStableEnabled ? 1 : 2)
-                                                    : 6));
+                        : 6));
             }
 
             {
@@ -396,7 +369,7 @@ public class TestStableInt {
         public static void test() throws Exception {
             {
                 c.v = new int[1]; ((int[])c.v)[0] = 1; int val1 = get();
-                                  ((int[])c.v)[0] = 2; int val2 = get();
+                ((int[])c.v)[0] = 2; int val2 = get();
 
                 assertEquals(val1, 1);
                 assertEquals(val2, 2);
@@ -423,7 +396,7 @@ public class TestStableInt {
         public static void test() throws Exception {
             {
                 c.v = new int[1][1]; ((int[][])c.v)[0][0] = 1; int val1 = get();
-                                     ((int[][])c.v)[0][0] = 2; int val2 = get();
+                ((int[][])c.v)[0][0] = 2; int val2 = get();
 
                 assertEquals(val1, 1);
                 assertEquals(val2, 2);
@@ -431,7 +404,7 @@ public class TestStableInt {
 
             {
                 c.v = new int[1][1]; c.v[0] = new int[0]; int[] val1 = get1();
-                                     c.v[0] = new int[0]; int[] val2 = get1();
+                c.v[0] = new int[0]; int[] val2 = get1();
 
                 assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
@@ -459,7 +432,7 @@ public class TestStableInt {
         public static void test() throws Exception {
             {
                 c.v = new int[1][1][1]; ((int[][][])c.v)[0][0][0] = 1; int val1 = get();
-                                        ((int[][][])c.v)[0][0][0] = 2; int val2 = get();
+                ((int[][][])c.v)[0][0][0] = 2; int val2 = get();
 
                 assertEquals(val1, 1);
                 assertEquals(val2, 2);
@@ -467,14 +440,14 @@ public class TestStableInt {
 
             {
                 c.v = new int[1][1][1]; c.v[0][0] = new int[0]; int[] val1 = get1();
-                                        c.v[0][0] = new int[0]; int[] val2 = get1();
+                c.v[0][0] = new int[0]; int[] val2 = get1();
 
                 assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new int[1][1][1]; c.v[0] = new int[0][0]; int[][] val1 = get2();
-                                        c.v[0] = new int[0][0]; int[][] val2 = get2();
+                c.v[0] = new int[0][0]; int[][] val2 = get2();
 
                 assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
@@ -504,7 +477,7 @@ public class TestStableInt {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.a = 1; A val1 = get();
-                               c.v.a = 2; A val2 = get();
+                c.v.a = 2; A val2 = get();
 
                 assertEquals(val1.a, 2);
                 assertEquals(val2.a, 2);
@@ -512,7 +485,7 @@ public class TestStableInt {
 
             {
                 c.v = new A(); c.v.a = 1; int val1 = get1();
-                               c.v.a = 2; int val2 = get1();
+                c.v.a = 2; int val2 = get1();
                 c.v = new A(); c.v.a = 3; int val3 = get1();
 
                 assertEquals(val1, 1);
@@ -538,8 +511,8 @@ public class TestStableInt {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.next = new A();   c.v.next.next  = c.v;
-                               c.v.a = 1; c.v.next.a = 1; A val1 = get();
-                               c.v.a = 2; c.v.next.a = 2; A val2 = get();
+                c.v.a = 1; c.v.next.a = 1; A val1 = get();
+                c.v.a = 2; c.v.next.a = 2; A val2 = get();
 
                 assertEquals(val1.a, 2);
                 assertEquals(val2.a, 2);
@@ -547,10 +520,10 @@ public class TestStableInt {
 
             {
                 c.v = new A(); c.v.next = c.v;
-                               c.v.a = 1; int val1 = get1();
-                               c.v.a = 2; int val2 = get1();
+                c.v.a = 1; int val1 = get1();
+                c.v.a = 2; int val2 = get1();
                 c.v = new A(); c.v.next = c.v;
-                               c.v.a = 3; int val3 = get1();
+                c.v.a = 3; int val3 = get1();
 
                 assertEquals(val1, 1);
                 assertEquals(val2, (isStableEnabled ? 1 : 2));
@@ -576,8 +549,8 @@ public class TestStableInt {
         public static void test() throws Exception {
             {
                 c.v = new A(); c.v.left = c.v.right = c.v;
-                               c.v.a = 1; int val1 = get(); int val2 = get1();
-                               c.v.a = 2; int val3 = get(); int val4 = get1();
+                c.v.a = 1; int val1 = get(); int val2 = get1();
+                c.v.a = 2; int val3 = get(); int val4 = get1();
 
                 assertEquals(val1, 1);
                 assertEquals(val3, (isStableEnabled ? 1 : 2));
@@ -607,8 +580,8 @@ public class TestStableInt {
             {
                 A elem = new A();
                 c.v = new A[] { elem, elem }; c.v[0].left = c.v[0].right = c.v;
-                               elem.a = 1; int val1 = get(); int val2 = get1();
-                               elem.a = 2; int val3 = get(); int val4 = get1();
+                elem.a = 1; int val1 = get(); int val2 = get1();
+                elem.a = 2; int val3 = get(); int val4 = get1();
 
                 assertEquals(val1, 1);
                 assertEquals(val3, (isStableEnabled ? 1 : 2));

@@ -28,17 +28,18 @@
  * @author  Peter von der Ah\u00e9
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  * @run main TestResolveIdent
  */
 
 import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.main.JavaCompiler;
-import java.io.File;
+import com.sun.tools.javac.util.List;
 import java.io.IOException;
-import javax.lang.model.element.TypeElement;
 import javax.tools.ToolProvider;
 
 public class TestResolveIdent {
@@ -52,7 +53,10 @@ public class TestResolveIdent {
         javax.tools.JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         JavacTaskImpl task = (JavacTaskImpl)tool.getTask(null, null, null, null, null, null);
         JavaCompiler compiler = JavaCompiler.instance(task.getContext());
-        System.out.println(compiler.resolveIdent(getDeprecatedClass().getCanonicalName()));
+        Symtab syms = Symtab.instance(task.getContext());
+        Modules modules = Modules.instance(task.getContext());
+        modules.enter(List.nil(), null);
+        System.out.println(compiler.resolveIdent(syms.unnamedModule, getDeprecatedClass().getCanonicalName()));
     }
 
 }

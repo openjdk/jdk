@@ -29,6 +29,8 @@
  *          jdk.compiler/com.sun.tools.javac.util
  */
 
+import java.lang.reflect.Layer;
+import java.lang.reflect.Module;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -39,8 +41,11 @@ import com.sun.tools.javac.util.Log.PrefixKind;
 
 public class VerifyLintDescriptions {
     public static void main(String... args) {
+        Layer boot = Layer.boot();
+        Module jdk_compiler = boot.findModule("jdk.compiler").get();
         ResourceBundle b = ResourceBundle.getBundle("com.sun.tools.javac.resources.javac",
-                                                    Locale.US);
+                                                    Locale.US,
+                                                    jdk_compiler);
 
         List<String> missing = new ArrayList<>();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,12 @@ public enum StandardLocation implements Location {
     ANNOTATION_PROCESSOR_PATH,
 
     /**
+     * Location to search for modules containing annotation processors.
+     * @since 9
+     */
+    ANNOTATION_PROCESSOR_MODULE_PATH,
+
+    /**
      * Location to search for platform classes.  Sometimes called
      * the boot class path.
      */
@@ -72,7 +78,31 @@ public enum StandardLocation implements Location {
      * Location of new native header files.
      * @since 1.8
      */
-    NATIVE_HEADER_OUTPUT;
+    NATIVE_HEADER_OUTPUT,
+
+    /**
+     * Location to search for the source code of modules.
+     * @since 9
+     */
+    MODULE_SOURCE_PATH,
+
+    /**
+     * Location to search for upgradeable system modules.
+     * @since 9
+     */
+    UPGRADE_MODULE_PATH,
+
+    /**
+     * Location to search for system modules.
+     * @since 9
+     */
+    SYSTEM_MODULES,
+
+    /**
+     * Location to search for precompiled user modules.
+     * @since 9
+     */
+    MODULE_PATH;
 
     /**
      * Returns a location object with the given name.  The following
@@ -90,8 +120,11 @@ public enum StandardLocation implements Location {
             for (Location location : values())
                 locations.putIfAbsent(location.getName(), location);
         }
-        locations.putIfAbsent(name.toString(/* null-check */), new Location() {
+        name.getClass(); /* null-check */
+        locations.putIfAbsent(name, new Location() {
+                @Override
                 public String getName() { return name; }
+                @Override
                 public boolean isOutputLocation() { return name.endsWith("_OUTPUT"); }
             });
         return locations.get(name);
@@ -100,13 +133,29 @@ public enum StandardLocation implements Location {
         private static final ConcurrentMap<String,Location> locations
             = new ConcurrentHashMap<>();
 
+    @Override
     public String getName() { return name(); }
 
+    @Override
     public boolean isOutputLocation() {
         switch (this) {
             case CLASS_OUTPUT:
             case SOURCE_OUTPUT:
             case NATIVE_HEADER_OUTPUT:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    @Override
+    public boolean isModuleLocation() {
+        switch (this) {
+            case MODULE_SOURCE_PATH:
+            case ANNOTATION_PROCESSOR_MODULE_PATH:
+            case UPGRADE_MODULE_PATH:
+            case SYSTEM_MODULES:
+            case MODULE_PATH:
                 return true;
             default:
                 return false;

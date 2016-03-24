@@ -26,9 +26,8 @@
  * @summary Test writeable VM Options with ranges.
  * @library /testlibrary /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/sun.misc
+ *          jdk.attach/sun.tools.attach
  *          java.management
- *          jdk.attach
- *          jdk.management/sun.tools.attach
  * @run main/othervm -XX:MinHeapFreeRatio=0 -XX:MaxHeapFreeRatio=100 TestOptionsWithRangesDynamic
  */
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 
- Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -44,20 +44,20 @@
   </xsl:template>
 
   <xsl:template name="copyrightComment">
-    <xsl:text>/* </xsl:text>
+    <xsl:text>/*</xsl:text>
     <!-- Copy the Copyright comment from jvmti.xml -->
     <xsl:value-of select="/comment()[position()=1]"/>
-    <xsl:text> */ &#xA;&#xA;</xsl:text>
+    <xsl:text> */&#xA;&#xA;</xsl:text>
   </xsl:template>
 
   <xsl:template name="includeHeader">
     <xsl:call-template name="copyrightComment"/>
-    <xsl:text> /* AUTOMATICALLY GENERATED FILE - DO NOT EDIT */ &#xA;</xsl:text>    
+    <xsl:text> /* AUTOMATICALLY GENERATED FILE - DO NOT EDIT */&#xA;</xsl:text>    
   </xsl:template>
 
   <xsl:template name="sourceHeader">
     <xsl:call-template name="copyrightComment"/>
-    <xsl:text> // AUTOMATICALLY GENERATED FILE - DO NOT EDIT &#xA;</xsl:text>    
+    <xsl:text> // AUTOMATICALLY GENERATED FILE - DO NOT EDIT&#xA;</xsl:text>    
   </xsl:template>
 
 

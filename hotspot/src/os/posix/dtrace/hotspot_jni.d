@@ -300,6 +300,8 @@ provider hotspot_jni {
   probe GetLongField__return(uintptr_t);
   probe GetMethodID__entry(void*, void*, const char*, const char*);
   probe GetMethodID__return(uintptr_t);
+  probe GetModule__entry(void*, void*);
+  probe GetModule__return(void*);
   probe GetObjectArrayElement__entry(void*, void*, uintptr_t);
   probe GetObjectArrayElement__return(void*);
   probe GetObjectClass__entry(void*, void*);

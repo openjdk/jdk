@@ -25,6 +25,9 @@
 
 package com.sun.tools.doclets.internal.toolkit.util;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardJavaFileManager;
@@ -42,13 +45,15 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  *
  * @since 1.8
  */
-public abstract class DocFileFactory {
+abstract class DocFileFactory {
+    private static final Map<Configuration, DocFileFactory> factories = new WeakHashMap<>();
+
     /**
      * Get the appropriate factory, based on the file manager given in the
      * configuration.
      */
     static synchronized DocFileFactory getFactory(Configuration configuration) {
-        DocFileFactory f = configuration.docFileFactory;
+        DocFileFactory f = factories.get(configuration);
         if (f == null) {
             JavaFileManager fm = configuration.getFileManager();
             if (fm instanceof StandardJavaFileManager) {
@@ -56,7 +61,7 @@ public abstract class DocFileFactory {
             } else {
                 throw new IllegalStateException();
             }
-            configuration.docFileFactory = f;
+            factories.put(configuration, f);
         }
         return f;
     }

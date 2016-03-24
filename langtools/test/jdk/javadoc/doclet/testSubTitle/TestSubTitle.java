@@ -27,7 +27,7 @@
  * @summary Test for correct sub title generation.
  * @author Bhavesh Patel
  * @library ../lib
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build JavadocTester
  * @run main TestSubTitle
  */

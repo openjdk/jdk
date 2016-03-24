@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,30 @@
  * @bug     6374357 6308351 6707027
  * @summary PackageElement.getEnclosedElements() throws ClassReader$BadClassFileException
  * @author  Peter von der Ah\u00e9
- * @modules jdk.compiler
+ * @modules jdk.compiler/com.sun.tools.javac.model
  * @run main/othervm -Xmx256m Main
  */
 
 import java.io.File;
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.StreamSupport;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.tools.*;
+import javax.tools.JavaFileManager.Location;
+
 import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.model.JavacElements;
 
 import static javax.tools.StandardLocation.CLASS_PATH;
 import static javax.tools.StandardLocation.PLATFORM_CLASS_PATH;
+import static javax.tools.StandardLocation.SYSTEM_MODULES;
 import static javax.tools.JavaFileObject.Kind.CLASS;
 
 
@@ -66,7 +74,7 @@ public class Main {
             JavacTask javac = (JavacTask)tool.getTask(null, fm, null, null, null, null);
             Elements elements = javac.getElements();
 
-            final Set<String> packages = new LinkedHashSet<String>();
+            final Map<String, Set<String>> packages = new LinkedHashMap<>();
 
             int nestedClasses = 0;
             int classes = 0;
@@ -75,16 +83,23 @@ public class Main {
                 String type = fm.inferBinaryName(PLATFORM_CLASS_PATH, file);
                 if (type.endsWith("package-info"))
                     continue;
+                if (type.endsWith("module-info"))
+                    continue;
+                String moduleName = fm.asPath(file).getName(1).toString();
                 try {
-                    TypeElement elem = elements.getTypeElement(type);
+                    ModuleElement me = elements.getModuleElement(moduleName);
+                    me.getClass();
+                    TypeElement elem = ((JavacElements) elements).getTypeElement(me, type);
                     if (elem == null && type.indexOf('$') > 0) {
                         nestedClasses++;
                         type = null;
                         continue;
                     }
                     classes++;
-                    packages.add(getPackage(elem).getQualifiedName().toString());
-                    elements.getTypeElement(type).getKind(); // force completion
+                    String pack = getPackage(elem).getQualifiedName().toString();
+                    packages.computeIfAbsent(me.getQualifiedName().toString(),
+                                             m -> new LinkedHashSet<>()).add(pack);
+                    elem.getKind(); // force completion
                     type = null;
                 } finally {
                     if (type != null)
@@ -97,10 +112,13 @@ public class Main {
             javac = (JavacTask)tool.getTask(null, fm, null, null, null, null);
             elements = javac.getElements();
 
-            for (String name : packages) {
-                PackageElement pe = elements.getPackageElement(name);
-                for (Element e : pe.getEnclosedElements()) {
-                    e.getSimpleName().getClass();
+            for (Entry<String, Set<String>> module2Packages : packages.entrySet()) {
+                ModuleElement me = elements.getModuleElement(module2Packages.getKey());
+                for (String name : module2Packages.getValue()) {
+                    PackageElement pe = ((JavacElements) elements).getPackageElement(me, name);
+                    for (Element e : pe.getEnclosedElements()) {
+                        e.getSimpleName().getClass();
+                    }
                 }
             }
             /*
@@ -117,7 +135,7 @@ public class Main {
                               packages.size(), classes, nestedClasses);
             if (classes < 9000)
                 throw new AssertionError("Too few classes in PLATFORM_CLASS_PATH ;-)");
-            if (packages.size() < 530)
+            if (packages.values().stream().flatMap(packs -> packs.stream()).count() < 530)
                 throw new AssertionError("Too few packages in PLATFORM_CLASS_PATH ;-)");
             if (nestedClasses < 3000)
                 throw new AssertionError("Too few nested classes in PLATFORM_CLASS_PATH ;-)");

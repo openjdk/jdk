@@ -25,24 +25,21 @@
 package sun.jvm.hotspot.tools;
 
 import sun.jvm.hotspot.debugger.JVMDebugger;
-import sun.jvm.hotspot.tools.*;
 
 import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.utilities.SystemDictionaryHelper;
-import sun.jvm.hotspot.utilities.ObjectReader;
-import sun.jvm.hotspot.utilities.MarkBits;
+import jdk.internal.vm.agent.spi.ToolProvider;
 
-import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 
 /*
  * Iterates over the queue of object pending finalization and prints a
  * summary of these objects in the form of a histogram.
  */
-public class FinalizerInfo extends Tool {
+public class FinalizerInfo extends Tool implements ToolProvider {
 
     public FinalizerInfo() {
         super();
@@ -50,6 +47,16 @@ public class FinalizerInfo extends Tool {
 
     public FinalizerInfo(JVMDebugger d) {
         super(d);
+    }
+
+    @Override
+    public String getName() {
+        return "finalizerInfo";
+    }
+
+    @Override
+    public void run(String... arguments) {
+        execute(arguments);
     }
 
     public static void main(String[] args) {

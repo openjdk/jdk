@@ -172,6 +172,11 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   POLICY_SRC_LIST += $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/conf/security/java.policy
 endif
 
+# Allow imported modules to modify the java.policy
+ifneq ($(IMPORT_MODULES_CONF), )
+  POLICY_SRC_LIST += $(wildcard $(IMPORT_MODULES_CONF)/java.base/security/java.policy.extra)
+endif
+
 POLICY_SRC_LIST += $(POLICY_SRC)
 
 $(POLICY_DST): $(POLICY_SRC_LIST)

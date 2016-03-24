@@ -32,7 +32,7 @@
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor DPrinter BasicAnnoTests
- * @compile/process -processor BasicAnnoTests -proc:only BasicAnnoTests.java
+ * @compile/process -XDaccessInternalAPI -processor BasicAnnoTests -proc:only BasicAnnoTests.java
  */
 
 import java.io.PrintWriter;

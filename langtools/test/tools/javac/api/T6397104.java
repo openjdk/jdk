@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,15 +61,22 @@ public class T6397104 {
         if (!fileObjectFile.equals(expectedFile))
             throw new AssertionError("Expected " + expectedFile +
                                      ", got " + fileObjectFile);
-        System.out.format("OK: (%s, %s) => %s%n", siblingFile, relName, fileObjectFile);
+        System.err.format("OK: (%s, %s) => %s%n", siblingFile, relName, fileObjectFile);
     }
 
     void test(boolean hasLocation, File siblingFile, String relName, String expectedPath)
         throws Exception
     {
+        System.err.format("test: hasLocation:%s, siblingFile:%s, relName:%s, expectedPath:%s%n",
+                hasLocation, siblingFile, relName, expectedPath);
         try (StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null)) {
             if (hasLocation) {
                 for (Location location : StandardLocation.values()) {
+                    System.err.format("  location:%s, moduleLocn:%b%n",
+                        location, location.isModuleLocation());
+                    if (location.isModuleLocation()) {
+                        continue;
+                    }
                     fm.setLocation(location, Arrays.asList(new File(".")));
                     test(fm, location, siblingFile, relName, expectedPath);
                 }
