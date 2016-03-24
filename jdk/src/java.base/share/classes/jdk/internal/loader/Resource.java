@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.loader;
 
 import java.io.EOFException;
 import java.net.URL;
