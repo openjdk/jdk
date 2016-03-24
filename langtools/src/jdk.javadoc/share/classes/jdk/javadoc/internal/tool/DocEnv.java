@@ -50,6 +50,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
@@ -65,8 +66,10 @@ import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCPackageDecl;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
@@ -164,7 +167,7 @@ public class DocEnv {
         finder = JavadocClassFinder.instance(context);
         enter = JavadocEnter.instance(context);
         names = Names.instance(context);
-        externalizableSym = syms.enterClass(names.fromString("java.io.Externalizable"));
+        externalizableSym = syms.enterClass(syms.java_base, names.fromString("java.io.Externalizable"));
         chk = Check.instance(context);
         types = com.sun.tools.javac.code.Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
@@ -199,7 +202,9 @@ public class DocEnv {
      */
     public TypeElement loadClass(String name) {
         try {
-            ClassSymbol c = finder.loadClass(names.fromString(name));
+            Name nameImpl = names.fromString(name);
+            ModuleSymbol mod = syms.inferModule(Convert.packagePart(nameImpl));
+            ClassSymbol c = finder.loadClass(mod != null ? mod : syms.errModule, nameImpl);
             return c;
         } catch (CompletionFailure ex) {
             chk.completionError(null, ex);

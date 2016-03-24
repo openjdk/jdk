@@ -29,6 +29,8 @@
  */
 
 import java.io.InputStream;
+import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,8 +38,8 @@ import java.nio.file.Paths;
 public class WithSecurityManager {
     public static void main(String[] args) throws Exception {
         String home = System.getProperty("java.home");
-        Path bootmodules = Paths.get(home, "lib", "modules", "bootmodules.jimage");
-        if (Files.notExists(bootmodules)) {
+        Path modules = Paths.get(home, "lib", "modules");
+        if (!Files.isRegularFile(modules)) {
             System.out.println("This runtime is not jimage, test skipped");
             return;
         }
@@ -55,7 +57,13 @@ public class WithSecurityManager {
 
         System.setSecurityManager(new SecurityManager());
 
-        InputStream in = ClassLoader.getSystemResourceAsStream("java/lang/Object.class");
+        InputStream in = null;
+        URL url = new URL("jrt:/java.base/java/lang/Object.class");
+        if (url != null) {
+            try {
+                in = url.openStream();
+            } catch (IOException ignore) { }
+        }
         if (in == null && allow)
             throw new RuntimeException("access expected");
         if (in != null && !allow)

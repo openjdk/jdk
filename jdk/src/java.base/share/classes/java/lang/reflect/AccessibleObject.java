@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package java.lang.reflect;
 
 import java.security.AccessController;
+
+import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.reflect.ReflectionFactory;
 import java.lang.annotation.Annotation;
@@ -34,11 +36,14 @@ import java.lang.annotation.Annotation;
  * The AccessibleObject class is the base class for Field, Method and
  * Constructor objects.  It provides the ability to flag a reflected
  * object as suppressing default Java language access control checks
- * when it is used.  The access checks--for public, default (package)
- * access, protected, and private members--are performed when Fields,
- * Methods or Constructors are used to set or get fields, to invoke
- * methods, or to create and initialize new instances of classes,
- * respectively.
+ * when it is used. The access checks -- <em>module boundaries</em>,
+ * public, default (package) access, protected, and private members --
+ * are performed when Fields, Methods or Constructors are used to set
+ * or get fields, to invoke methods or to create and initialize new
+ * instances of classes, respectively. Unlike access control specified
+ * in the <cite>The Java&trade; Language Specification</cite> and
+ * <cite>The Java Virtual Machine Specification</cite>, access checks
+ * with reflected objects assume {@link Module#canRead readability}.
  *
  * <p>Setting the {@code accessible} flag in a reflected object
  * permits sophisticated applications with sufficient privilege, such
@@ -64,37 +69,49 @@ public class AccessibleObject implements AnnotatedElement {
     private static final java.security.Permission ACCESS_PERMISSION =
         new ReflectPermission("suppressAccessChecks");
 
+    static void checkPermission() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
+    }
+
     /**
      * Convenience method to set the {@code accessible} flag for an
      * array of objects with a single security check (for efficiency).
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkPermission} method is called with a
+     * <p>This method cannot be used to enable access to an object that is a
+     * {@link Member member} of a class in a different module to the caller and
+     * where the class is in a package that is not exported to the caller's
+     * module. Additionally, this method cannot be used to enable access to
+     * non-public members of {@code AccessibleObject} or {@link Module}.
+     *
+     * <p>If there is a security manager, its
+     * {@code checkPermission} method is first called with a
      * {@code ReflectPermission("suppressAccessChecks")} permission.
      *
-     * <p>A {@code SecurityException} is raised if {@code flag} is
-     * {@code true} but accessibility of any of the elements of the input
-     * {@code array} may not be changed (for example, if the element
-     * object is a {@link Constructor} object for the class {@link
-     * java.lang.Class}).  In the event of such a SecurityException, the
-     * accessibility of objects is set to {@code flag} for array elements
-     * up to (and excluding) the element for which the exception occurred; the
-     * accessibility of elements beyond (and including) the element for which
-     * the exception occurred is unchanged.
+     * <p>A {@code SecurityException} is also thrown if any of the elements of
+     * the input {@code array} is a {@link java.lang.reflect.Constructor}
+     * object for the class {@code java.lang.Class} and {@code flag} is true.
      *
      * @param array the array of AccessibleObjects
      * @param flag  the new value for the {@code accessible} flag
      *              in each object
+     * @throws InaccessibleObjectException if access cannot be enabled
      * @throws SecurityException if the request is denied.
      * @see SecurityManager#checkPermission
-     * @see java.lang.RuntimePermission
+     * @see ReflectPermission
      */
-    public static void setAccessible(AccessibleObject[] array, boolean flag)
-        throws SecurityException {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
+    @CallerSensitive
+    public static void setAccessible(AccessibleObject[] array, boolean flag) {
+        checkPermission();
+        if (flag) {
+            Class<?> caller = Reflection.getCallerClass();
+            array = array.clone();
+            for (AccessibleObject ao : array) {
+                ao.checkCanSetAccessible(caller);
+            }
+        }
         for (AccessibleObject ao : array) {
-            setAccessible0(ao, flag);
+            ao.setAccessible0(flag);
         }
     }
 
@@ -103,45 +120,87 @@ public class AccessibleObject implements AnnotatedElement {
      * the indicated boolean value.  A value of {@code true} indicates that
      * the reflected object should suppress Java language access
      * checking when it is used.  A value of {@code false} indicates
-     * that the reflected object should enforce Java language access checks.
+     * that the reflected object should enforce Java language access checks
+     * while assuming readability (as noted in the class description).
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkPermission} method is called with a
+     * <p>This method cannot be used to enable access to an object that is a
+     * {@link Member member} of a class in a different module to the caller and
+     * where the class is in a package that is not exported to the caller's
+     * module. Additionally, this method cannot be used to enable access to
+     * non-public members of {@code AccessibleObject} or {@link Module}.
+     *
+     * <p>If there is a security manager, its
+     * {@code checkPermission} method is first called with a
      * {@code ReflectPermission("suppressAccessChecks")} permission.
      *
-     * <p>A {@code SecurityException} is raised if {@code flag} is
-     * {@code true} but accessibility of this object may not be changed
-     * (for example, if this element object is a {@link Constructor} object for
-     * the class {@link java.lang.Class}).
-     *
-     * <p>A {@code SecurityException} is raised if this object is a {@link
-     * java.lang.reflect.Constructor} object for the class
-     * {@code java.lang.Class}, and {@code flag} is true.
-     *
      * @param flag the new value for the {@code accessible} flag
-     * @throws SecurityException if the request is denied.
+     * @throws InaccessibleObjectException if access cannot be enabled
+     * @throws SecurityException if the request is denied
      * @see SecurityManager#checkPermission
-     * @see java.lang.RuntimePermission
+     * @see ReflectPermission
      */
-    public void setAccessible(boolean flag) throws SecurityException {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) sm.checkPermission(ACCESS_PERMISSION);
-        setAccessible0(this, flag);
+    public void setAccessible(boolean flag) {
+        AccessibleObject.checkPermission();
+        setAccessible0(flag);
     }
 
-    /* Check that you aren't exposing java.lang.Class.<init> or sensitive
-       fields in java.lang.Class. */
-    private static void setAccessible0(AccessibleObject obj, boolean flag)
-        throws SecurityException
-    {
-        if (obj instanceof Constructor && flag == true) {
-            Constructor<?> c = (Constructor<?>)obj;
-            if (c.getDeclaringClass() == Class.class) {
-                throw new SecurityException("Cannot make a java.lang.Class" +
-                                            " constructor accessible");
+    void setAccessible0(boolean flag) {
+        this.override = flag;
+    }
+
+   /**
+    * If the given AccessibleObject is a {@code Constructor}, {@code Method}
+    * or {@code Field} then checks that its declaring class is in a package
+    * that can be accessed by the given caller of setAccessible.
+    */
+    void checkCanSetAccessible(Class<?> caller) {
+        // do nothing, needs to be overridden by Constructor, Method, Field
+    }
+
+    void checkCanSetAccessible(Class<?> caller, Class<?> declaringClass) {
+        Module callerModule = caller.getModule();
+        Module declaringModule = declaringClass.getModule();
+
+        if (callerModule != declaringModule
+                && callerModule != Object.class.getModule()) {
+
+            // check exports to target module
+            String pn = packageName(declaringClass);
+            if (!declaringModule.isExported(pn, callerModule)) {
+                String msg = "Unable to make member of "
+                        + declaringClass + " accessible:  "
+                        + declaringModule + " does not export "
+                        + pn + " to " + callerModule;
+                Reflection.throwInaccessibleObjectException(msg);
+            }
+
+        }
+
+        if (declaringClass == Module.class
+                || declaringClass == AccessibleObject.class) {
+            int modifiers;
+            if (this instanceof Executable) {
+                modifiers = ((Executable) this).getModifiers();
+            } else {
+                modifiers = ((Field) this).getModifiers();
+            }
+            if (!Modifier.isPublic(modifiers)) {
+                String msg = "Cannot make a non-public member of "
+                        + declaringClass + " accessible";
+                Reflection.throwInaccessibleObjectException(msg);
             }
         }
-        obj.override = flag;
+    }
+
+    /**
+     * Returns the package name of the given class.
+     */
+    private static String packageName(Class<?> c) {
+        while (c.isArray()) {
+            c = c.getComponentType();
+        }
+        String pn = c.getPackageName();
+        return (pn != null) ? pn : "";
     }
 
     /**

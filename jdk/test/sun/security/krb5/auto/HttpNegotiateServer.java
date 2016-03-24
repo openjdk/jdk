@@ -24,6 +24,14 @@
 /*
  * @test
  * @bug 6578647 6829283
+ * @modules java.base/sun.net.spi.nameservice
+ *          java.base/sun.security.util
+ *          java.security.jgss/sun.security.jgss
+ *          java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal
+ *          java.security.jgss/sun.security.krb5.internal.ccache
+ *          java.security.jgss/sun.security.krb5.internal.crypto
+ *          java.security.jgss/sun.security.krb5.internal.ktab
  * @run main/othervm HttpNegotiateServer
  * @summary Undefined requesting URL in java.net.Authenticator.getPasswordAuthentication()
  * @summary HTTP/Negotiate: Authenticator triggered again when user cancels the first one

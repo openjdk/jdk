@@ -42,8 +42,8 @@ public class NullClassLoader {
             "\nTest creating proxy class with the null class loader.\n");
 
         try {
-            Class p = Proxy.getProxyClass(null,
-                new Class[] { Runnable.class, Observer.class });
+            ClassLoader ld = null;
+            Class p = Proxy.getProxyClass(ld, new Class[] { Runnable.class, Observer.class });
             System.err.println("proxy class: " + p);
 
             ClassLoader loader = p.getClassLoader();

@@ -743,6 +743,10 @@ public class Flow {
             }
         }
 
+        public void visitModuleDef(JCModuleDecl tree) {
+            // Do nothing for modules
+        }
+
     /**************************************************************************
      * main method
      *************************************************************************/
@@ -1303,6 +1307,10 @@ public class Flow {
                 caught = prevCaught;
                 thrown = prevThrown;
             }
+        }
+
+        public void visitModuleDef(JCModuleDecl tree) {
+            // Do nothing for modules
         }
 
     /**************************************************************************
@@ -2416,6 +2424,10 @@ public class Flow {
             tree.underlyingType.accept(this);
         }
 
+        public void visitModuleDef(JCModuleDecl tree) {
+            // Do nothing for modules
+        }
+
     /**************************************************************************
      * main method
      *************************************************************************/
@@ -2603,6 +2615,10 @@ public class Flow {
                 }
             }
             super.visitTry(tree);
+        }
+
+        public void visitModuleDef(JCModuleDecl tree) {
+            // Do nothing for modules
         }
 
     /**************************************************************************

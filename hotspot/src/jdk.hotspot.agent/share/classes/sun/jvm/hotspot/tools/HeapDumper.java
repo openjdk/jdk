@@ -26,6 +26,8 @@ package sun.jvm.hotspot.tools;
 
 import sun.jvm.hotspot.utilities.HeapHprofBinWriter;
 import sun.jvm.hotspot.debugger.JVMDebugger;
+import jdk.internal.vm.agent.spi.ToolProvider;
+
 import java.io.IOException;
 
 /*
@@ -33,11 +35,15 @@ import java.io.IOException;
  * process/core as a HPROF binary file. It can also be used as a standalone
  * tool if required.
  */
-public class HeapDumper extends Tool {
+public class HeapDumper extends Tool implements ToolProvider {
 
     private static String DEFAULT_DUMP_FILE = "heap.bin";
 
     private String dumpFile;
+
+    public HeapDumper() {
+        this.dumpFile = DEFAULT_DUMP_FILE;
+    }
 
     public HeapDumper(String dumpFile) {
         this.dumpFile = dumpFile;
@@ -46,6 +52,11 @@ public class HeapDumper extends Tool {
     public HeapDumper(String dumpFile, JVMDebugger d) {
         super(d);
         this.dumpFile = dumpFile;
+    }
+
+    @Override
+    public String getName() {
+        return "heapDumper";
     }
 
     protected void printFlagsUsage() {
@@ -69,18 +80,22 @@ public class HeapDumper extends Tool {
     // JDK jmap utility will always invoke this tool as:
     //   HeapDumper -f <file> <args...>
     public static void main(String args[]) {
-        String file = DEFAULT_DUMP_FILE;
+        HeapDumper dumper = new HeapDumper();
+        dumper.run(args);
+    }
+
+    @Override
+    public void run(String... args) {
         if (args.length > 2) {
             if (args[0].equals("-f")) {
-                file = args[1];
+                this.dumpFile = args[1];
                 String[] newargs = new String[args.length-2];
                 System.arraycopy(args, 2, newargs, 0, args.length-2);
                 args = newargs;
             }
         }
 
-        HeapDumper dumper = new HeapDumper(file);
-        dumper.execute(args);
+        execute(args);
     }
 
 }

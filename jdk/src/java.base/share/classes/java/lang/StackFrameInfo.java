@@ -29,6 +29,7 @@ import jdk.internal.misc.SharedSecrets;
 
 import static java.lang.StackWalker.Option.*;
 import java.lang.StackWalker.StackFrame;
+import java.lang.reflect.Module;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -133,4 +134,21 @@ class StackFrameInfo implements StackFrame {
     static native void fillInStackFrames(int startIndex,
                                          Object[] stackframes,
                                          int fromIndex, int toIndex);
+
+    @Override
+    public StackTraceElement toStackTraceElement() {
+        ensureMethodInfoInitialized();
+
+        Module module = declaringClass.getModule();
+        String moduleName = module.isNamed() ? module.getName() : null;
+        String moduleVersion = null;
+        if (module.isNamed() && module.getDescriptor().version().isPresent()) {
+            moduleVersion = module.getDescriptor().version().get().toString();
+        }
+        return new StackTraceElement(moduleName, moduleVersion,
+                                     getClassName(), getMethodName(),
+                                     fileName,
+                                     lineNumber);
+    }
+
 }

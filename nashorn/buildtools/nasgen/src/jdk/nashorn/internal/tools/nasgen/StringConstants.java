@@ -31,25 +31,23 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import jdk.internal.org.objectweb.asm.Type;
-import jdk.nashorn.internal.objects.NativeSymbol;
-import jdk.nashorn.internal.runtime.AccessorProperty;
-import jdk.nashorn.internal.runtime.PropertyMap;
-import jdk.nashorn.internal.runtime.PrototypeObject;
-import jdk.nashorn.internal.runtime.ScriptFunction;
-import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.runtime.Specialization;
-import jdk.nashorn.internal.runtime.Symbol;
 
 /**
  * String constants used for code generation/instrumentation.
  */
 @SuppressWarnings("javadoc")
 public interface StringConstants {
+    static final String NASHORN_INTERNAL = "jdk/nashorn/internal/";
+    static final String OBJ_PKG = NASHORN_INTERNAL + "objects/";
+    static final String OBJ_ANNO_PKG = OBJ_PKG + "annotations/";
+    static final String RUNTIME_PKG = NASHORN_INTERNAL + "runtime/";
+    static final String SCRIPTS_PKG = NASHORN_INTERNAL + "scripts/";
+
     // standard jdk types, methods
     static final Type TYPE_METHODHANDLE         = Type.getType(MethodHandle.class);
     static final Type TYPE_METHODHANDLE_ARRAY   = Type.getType(MethodHandle[].class);
-    static final Type TYPE_SPECIALIZATION       = Type.getType(Specialization.class);
-    static final Type TYPE_SPECIALIZATION_ARRAY = Type.getType(Specialization[].class);
+    static final Type TYPE_SPECIALIZATION       = Type.getType("L" + RUNTIME_PKG + "Specialization;");
+    static final Type TYPE_SPECIALIZATION_ARRAY = Type.getType("[L" + RUNTIME_PKG + "Specialization;");
     static final Type TYPE_OBJECT               = Type.getType(Object.class);
     static final Type TYPE_STRING               = Type.getType(String.class);
     static final Type TYPE_CLASS                = Type.getType(Class.class);
@@ -85,13 +83,13 @@ public interface StringConstants {
     static final String LIST_DESC = TYPE_LIST.getDescriptor();
 
     // Nashorn types, methods
-    static final Type TYPE_ACCESSORPROPERTY   = Type.getType(AccessorProperty.class);
-    static final Type TYPE_PROPERTYMAP        = Type.getType(PropertyMap.class);
-    static final Type TYPE_PROTOTYPEOBJECT    = Type.getType(PrototypeObject.class);
-    static final Type TYPE_SCRIPTFUNCTION     = Type.getType(ScriptFunction.class);
-    static final Type TYPE_SCRIPTOBJECT       = Type.getType(ScriptObject.class);
-    static final Type TYPE_NATIVESYMBOL       = Type.getType(NativeSymbol.class);
-    static final Type TYPE_SYMBOL             = Type.getType(Symbol.class);
+    static final Type TYPE_ACCESSORPROPERTY   = Type.getType("L" + RUNTIME_PKG + "AccessorProperty;");
+    static final Type TYPE_PROPERTYMAP        = Type.getType("L" + RUNTIME_PKG + "PropertyMap;");
+    static final Type TYPE_PROTOTYPEOBJECT    = Type.getType("L" + RUNTIME_PKG + "PrototypeObject;");
+    static final Type TYPE_SCRIPTFUNCTION     = Type.getType("L" + RUNTIME_PKG + "ScriptFunction;");
+    static final Type TYPE_SCRIPTOBJECT       = Type.getType("L" + RUNTIME_PKG + "ScriptObject;");
+    static final Type TYPE_NATIVESYMBOL       = Type.getType("L" + OBJ_PKG + "NativeSymbol;");
+    static final Type TYPE_SYMBOL             = Type.getType("L" + RUNTIME_PKG + "Symbol;");
 
     static final String PROTOTYPE_SUFFIX = "$Prototype";
     static final String CONSTRUCTOR_SUFFIX = "$Constructor";

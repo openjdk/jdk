@@ -47,6 +47,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Objects;
 import java.util.Vector;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -115,7 +116,7 @@ public final class XSLTC {
     private boolean _debug = false;      // -x
     private String  _jarFileName = null; // -j <jar-file-name>
     private String  _className = null;   // -o <class-name>
-    private String  _packageName = null; // -p <package-name>
+    private String  _packageName = "die.verwandlung"; // override with -p <package-name>
     private File    _destDir = null;     // -d <directory-name>
     private int     _outputType = FILE_OUTPUT; // by default
 
@@ -724,7 +725,7 @@ public final class XSLTC {
      * Set an optional package name for the translet and auxiliary classes
      */
     public void setPackageName(String packageName) {
-        _packageName = packageName;
+        _packageName = Objects.requireNonNull(packageName);
         if (_className != null) setClassName(_className);
     }
 

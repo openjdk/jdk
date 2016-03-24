@@ -34,6 +34,7 @@
  */
 
 import java.lang.instrument.*;
+import java.lang.reflect.Module;
 import java.security.ProtectionDomain;
 import java.io.*;
 import asmlib.*;
@@ -67,12 +68,13 @@ class RetransformAgent {
             this.nname = nname;
         }
 
-        public byte[] transform(ClassLoader loader,
+        public byte[] transform(Module module,
                                 String className,
                                 Class<?> classBeingRedefined,
                                 ProtectionDomain    protectionDomain,
                                 byte[] classfileBuffer) {
             boolean redef = classBeingRedefined != null;
+
             // System.err.println("hook " + trname + ": " + className +
             //                    (redef? " REDEF" : " LOAD"));
             if ((redef? onRedef : onLoad) && className != null && className.equals(cname)) {

@@ -42,7 +42,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/macros.hpp"
-
+#if INCLUDE_TRACE
+#include "trace/traceMacros.hpp"
+#endif
 
 static void mangle_name_on(outputStream* st, Symbol* name, int begin, int end) {
   char* bytes = (char*)name->bytes() + begin;
@@ -128,6 +130,9 @@ static JNINativeMethod lookup_special_native_methods[] = {
 #if INCLUDE_JVMCI
   { CC"Java_jdk_vm_ci_runtime_JVMCI_initializeRuntime",            NULL, FN_PTR(JVM_GetJVMCIRuntime)             },
   { CC"Java_jdk_vm_ci_hotspot_CompilerToVM_registerNatives",       NULL, FN_PTR(JVM_RegisterJVMCINatives)        },
+#endif
+#if INCLUDE_TRACE
+  { CC"Java_jdk_jfr_internal_JVM_registerNatives",                 NULL, TRACE_REGISTER_NATIVES                  },
 #endif
 };
 

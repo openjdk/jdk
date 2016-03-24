@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -138,9 +139,10 @@ public class Tester {
         } finally {
             try {
                 ((JavacFileManager) context.get(JavaFileManager.class)).close();
-                tr.setLogs(sw.toString(), sysOut.close(), sysErr.close());
             } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
+            tr.setLogs(sw.toString(), sysOut.close(), sysErr.close());
         }
         tr.setContext(context);
         tr.show();

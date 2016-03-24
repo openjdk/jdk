@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,9 +129,17 @@ public final class JavacTool implements JavaCompiler {
             }
 
             if (classes != null) {
-                for (String cls : classes)
-                    if (!SourceVersion.isName(cls)) // implicit null check
+                for (String cls : classes) {
+                    int sep = cls.indexOf('/'); // implicit null check
+                    if (sep > 0) {
+                        String mod = cls.substring(0, sep);
+                        if (!SourceVersion.isName(mod))
+                            throw new IllegalArgumentException("Not a valid module name: " + mod);
+                        cls = cls.substring(sep + 1);
+                    }
+                    if (!SourceVersion.isName(cls))
                         throw new IllegalArgumentException("Not a valid class name: " + cls);
+                }
             }
 
             if (compilationUnits != null) {

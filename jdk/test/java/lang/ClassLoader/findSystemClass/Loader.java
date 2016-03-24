@@ -44,7 +44,6 @@
  *      - Loadee.java            (source for a class that refers to Loader)
  *      - Loadee.classfile       (to test findSystemClass)
  *      - Loadee.resource        (to test getSystemResource)
- *      - java/lang/Object.class (to test getSystemResources)
  *
  * The extension ".classfile" is so the class file is not seen by any loader
  * other than Loader.  If you need to make any changes you will have to
@@ -126,25 +125,6 @@ public class Loader extends ClassLoader {
             if (u == null)
                 throw new Exception
                     ("java.lang.ClassLoader.getSystemResource() test failed!");
-        }
-
-        if ((tests & RESOURCES) == RESOURCES) {
-            report("getSystemResources()");
-            java.util.Enumeration e =
-                getSystemResources("java/lang/Object.class");
-            HashSet hs = new HashSet();
-            while (e.hasMoreElements()) {
-                URL u = (URL)e.nextElement();
-                if (u == null)
-                    break;
-                System.out.println("url: " + u);
-                hs.add(u);
-            }
-            if (hs.size() != 2) {
-                throw
-                    new Exception("java.lang.ClassLoader.getSystemResources()"+
-                                  " did not find all resources");
-            }
         }
     }
 
