@@ -2405,7 +2405,8 @@ static methodHandle unpack_method_and_appendix(Handle mname,
   return empty;
 }
 
-methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
+methodHandle SystemDictionary::find_method_handle_invoker(KlassHandle klass,
+                                                          Symbol* name,
                                                           Symbol* signature,
                                                           KlassHandle accessing_klass,
                                                           Handle *appendix_result,
@@ -2416,7 +2417,6 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
   Handle method_type =
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_(empty));
 
-  KlassHandle  mh_klass = SystemDictionary::MethodHandle_klass();
   int ref_kind = JVM_REF_invokeVirtual;
   Handle name_str = StringTable::intern(name, CHECK_(empty));
   objArrayHandle appendix_box = oopFactory::new_objArray(SystemDictionary::Object_klass(), 1, CHECK_(empty));
@@ -2431,7 +2431,7 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
   JavaCallArguments args;
   args.push_oop(accessing_klass()->java_mirror());
   args.push_int(ref_kind);
-  args.push_oop(mh_klass()->java_mirror());
+  args.push_oop(klass()->java_mirror());
   args.push_oop(name_str());
   args.push_oop(method_type());
   args.push_oop(appendix_box());
