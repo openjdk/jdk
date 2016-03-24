@@ -878,6 +878,57 @@ Universe::NARROW_OOP_MODE Universe::narrow_oop_mode() {
   return UnscaledNarrowOop;
 }
 
+void initialize_known_method(LatestMethodCache* method_cache,
+                             InstanceKlass* ik,
+                             const char* method,
+                             Symbol* signature,
+                             bool is_static, TRAPS)
+{
+  TempNewSymbol name = SymbolTable::new_symbol(method, CHECK);
+  Method* m = NULL;
+  // The klass must be linked before looking up the method.
+  if (!ik->link_class_or_fail(THREAD) ||
+      ((m = ik->find_method(name, signature)) == NULL) ||
+      is_static != m->is_static()) {
+    ResourceMark rm(THREAD);
+    // NoSuchMethodException doesn't actually work because it tries to run the
+    // <init> function before java_lang_Class is linked. Print error and exit.
+    vm_exit_during_initialization(err_msg("Unable to link/verify %s.%s method",
+                                 ik->name()->as_C_string(), method));
+  }
+  method_cache->init(ik, m);
+}
+
+void Universe::initialize_known_methods(TRAPS) {
+  // Set up static method for registering finalizers
+  initialize_known_method(_finalizer_register_cache,
+                          SystemDictionary::Finalizer_klass(),
+                          "register",
+                          vmSymbols::object_void_signature(), true, CHECK);
+
+  initialize_known_method(_throw_illegal_access_error_cache,
+                          SystemDictionary::internal_Unsafe_klass(),
+                          "throwIllegalAccessError",
+                          vmSymbols::void_method_signature(), true, CHECK);
+
+  // Set up method for registering loaded classes in class loader vector
+  initialize_known_method(_loader_addClass_cache,
+                          SystemDictionary::ClassLoader_klass(),
+                          "addClass",
+                          vmSymbols::class_void_signature(), false, CHECK);
+
+  // Set up method for checking protection domain
+  initialize_known_method(_pd_implies_cache,
+                          SystemDictionary::ProtectionDomain_klass(),
+                          "impliesCreateAccessControlContext",
+                          vmSymbols::void_boolean_signature(), false, CHECK);
+
+  // Set up method for stack walking
+  initialize_known_method(_do_stack_walk_cache,
+                          SystemDictionary::AbstractStackWalker_klass(),
+                          "doStackWalk",
+                          vmSymbols::doStackWalk_signature(), false, CHECK);
+}
 
 void universe2_init() {
   EXCEPTION_MARK;
@@ -906,46 +957,46 @@ bool universe_post_init() {
   HandleMark hm(THREAD);
   Klass* k;
   instanceKlassHandle k_h;
-    // Setup preallocated empty java.lang.Class array
-    Universe::_the_empty_class_klass_array = oopFactory::new_objArray(SystemDictionary::Class_klass(), 0, CHECK_false);
+  // Setup preallocated empty java.lang.Class array
+  Universe::_the_empty_class_klass_array = oopFactory::new_objArray(SystemDictionary::Class_klass(), 0, CHECK_false);
 
-    // Setup preallocated OutOfMemoryError errors
-    k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_OutOfMemoryError(), true, CHECK_false);
-    k_h = instanceKlassHandle(THREAD, k);
-    Universe::_out_of_memory_error_java_heap = k_h->allocate_instance(CHECK_false);
-    Universe::_out_of_memory_error_metaspace = k_h->allocate_instance(CHECK_false);
-    Universe::_out_of_memory_error_class_metaspace = k_h->allocate_instance(CHECK_false);
-    Universe::_out_of_memory_error_array_size = k_h->allocate_instance(CHECK_false);
-    Universe::_out_of_memory_error_gc_overhead_limit =
-      k_h->allocate_instance(CHECK_false);
-    Universe::_out_of_memory_error_realloc_objects = k_h->allocate_instance(CHECK_false);
+  // Setup preallocated OutOfMemoryError errors
+  k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_OutOfMemoryError(), true, CHECK_false);
+  k_h = instanceKlassHandle(THREAD, k);
+  Universe::_out_of_memory_error_java_heap = k_h->allocate_instance(CHECK_false);
+  Universe::_out_of_memory_error_metaspace = k_h->allocate_instance(CHECK_false);
+  Universe::_out_of_memory_error_class_metaspace = k_h->allocate_instance(CHECK_false);
+  Universe::_out_of_memory_error_array_size = k_h->allocate_instance(CHECK_false);
+  Universe::_out_of_memory_error_gc_overhead_limit =
+    k_h->allocate_instance(CHECK_false);
+  Universe::_out_of_memory_error_realloc_objects = k_h->allocate_instance(CHECK_false);
 
-    // Setup preallocated cause message for delayed StackOverflowError
-    if (StackReservedPages > 0) {
-      Universe::_delayed_stack_overflow_error_message =
-        java_lang_String::create_oop_from_str("Delayed StackOverflowError due to ReservedStackAccess annotated method", CHECK_false);
-    }
+  // Setup preallocated cause message for delayed StackOverflowError
+  if (StackReservedPages > 0) {
+    Universe::_delayed_stack_overflow_error_message =
+      java_lang_String::create_oop_from_str("Delayed StackOverflowError due to ReservedStackAccess annotated method", CHECK_false);
+  }
 
-    // Setup preallocated NullPointerException
-    // (this is currently used for a cheap & dirty solution in compiler exception handling)
-    k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_NullPointerException(), true, CHECK_false);
-    Universe::_null_ptr_exception_instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
-    // Setup preallocated ArithmeticException
-    // (this is currently used for a cheap & dirty solution in compiler exception handling)
-    k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_ArithmeticException(), true, CHECK_false);
-    Universe::_arithmetic_exception_instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
-    // Virtual Machine Error for when we get into a situation we can't resolve
-    k = SystemDictionary::resolve_or_fail(
-      vmSymbols::java_lang_VirtualMachineError(), true, CHECK_false);
-    bool linked = InstanceKlass::cast(k)->link_class_or_fail(CHECK_false);
-    if (!linked) {
-      tty->print_cr("Unable to link/verify VirtualMachineError class");
-      return false; // initialization failed
-    }
-    Universe::_virtual_machine_error_instance =
-      InstanceKlass::cast(k)->allocate_instance(CHECK_false);
+  // Setup preallocated NullPointerException
+  // (this is currently used for a cheap & dirty solution in compiler exception handling)
+  k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_NullPointerException(), true, CHECK_false);
+  Universe::_null_ptr_exception_instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
+  // Setup preallocated ArithmeticException
+  // (this is currently used for a cheap & dirty solution in compiler exception handling)
+  k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_ArithmeticException(), true, CHECK_false);
+  Universe::_arithmetic_exception_instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
+  // Virtual Machine Error for when we get into a situation we can't resolve
+  k = SystemDictionary::resolve_or_fail(
+    vmSymbols::java_lang_VirtualMachineError(), true, CHECK_false);
+  bool linked = InstanceKlass::cast(k)->link_class_or_fail(CHECK_false);
+  if (!linked) {
+    tty->print_cr("Unable to link/verify VirtualMachineError class");
+    return false; // initialization failed
+  }
+  Universe::_virtual_machine_error_instance =
+    InstanceKlass::cast(k)->allocate_instance(CHECK_false);
 
-    Universe::_vm_exception = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
+  Universe::_vm_exception = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
 
   if (!DumpSharedSpaces) {
     // These are the only Java fields that are currently set during shared space dumping.
@@ -986,71 +1037,7 @@ bool universe_post_init() {
     Universe::_preallocated_out_of_memory_error_avail_count = (jint)len;
   }
 
-
-  // Setup static method for registering finalizers
-  // The finalizer klass must be linked before looking up the method, in
-  // case it needs to get rewritten.
-  SystemDictionary::Finalizer_klass()->link_class(CHECK_false);
-  Method* m = SystemDictionary::Finalizer_klass()->find_method(
-                                  vmSymbols::register_method_name(),
-                                  vmSymbols::register_method_signature());
-  if (m == NULL || !m->is_static()) {
-    tty->print_cr("Unable to link/verify Finalizer.register method");
-    return false; // initialization failed (cannot throw exception yet)
-  }
-  Universe::_finalizer_register_cache->init(
-    SystemDictionary::Finalizer_klass(), m);
-
-  SystemDictionary::internal_Unsafe_klass()->link_class(CHECK_false);
-  m = SystemDictionary::internal_Unsafe_klass()->find_method(
-                                  vmSymbols::throwIllegalAccessError_name(),
-                                  vmSymbols::void_method_signature());
-  if (m != NULL && !m->is_static()) {
-    // Note null is okay; this method is used in itables, and if it is null,
-    // then AbstractMethodError is thrown instead.
-    tty->print_cr("Unable to link/verify Unsafe.throwIllegalAccessError method");
-    return false; // initialization failed (cannot throw exception yet)
-  }
-  Universe::_throw_illegal_access_error_cache->init(
-    SystemDictionary::internal_Unsafe_klass(), m);
-
-  // Setup method for registering loaded classes in class loader vector
-  SystemDictionary::ClassLoader_klass()->link_class(CHECK_false);
-  m = SystemDictionary::ClassLoader_klass()->find_method(vmSymbols::addClass_name(), vmSymbols::class_void_signature());
-  if (m == NULL || m->is_static()) {
-    tty->print_cr("Unable to link/verify ClassLoader.addClass method");
-    return false; // initialization failed (cannot throw exception yet)
-  }
-  Universe::_loader_addClass_cache->init(
-    SystemDictionary::ClassLoader_klass(), m);
-
-  // Setup method for checking protection domain
-  SystemDictionary::ProtectionDomain_klass()->link_class(CHECK_false);
-  m = SystemDictionary::ProtectionDomain_klass()->
-            find_method(vmSymbols::impliesCreateAccessControlContext_name(),
-                        vmSymbols::void_boolean_signature());
-  // Allow NULL which should only happen with bootstrapping.
-  if (m != NULL) {
-    if (m->is_static()) {
-      // NoSuchMethodException doesn't actually work because it tries to run the
-      // <init> function before java_lang_Class is linked. Print error and exit.
-      tty->print_cr("ProtectionDomain.impliesCreateAccessControlContext() has the wrong linkage");
-      return false; // initialization failed
-    }
-    Universe::_pd_implies_cache->init(
-      SystemDictionary::ProtectionDomain_klass(), m);
-  }
-
-  // Setup method for stack walking
-  InstanceKlass::cast(SystemDictionary::AbstractStackWalker_klass())->link_class(CHECK_false);
-  m = InstanceKlass::cast(SystemDictionary::AbstractStackWalker_klass())->
-            find_method(vmSymbols::doStackWalk_name(),
-                        vmSymbols::doStackWalk_signature());
-  // Allow NULL which should only happen with bootstrapping.
-  if (m != NULL) {
-    Universe::_do_stack_walk_cache->init(
-      SystemDictionary::AbstractStackWalker_klass(), m);
-  }
+  Universe::initialize_known_methods(CHECK_false);
 
   // This needs to be done before the first scavenge/gc, since
   // it's an input to soft ref clearing policy.

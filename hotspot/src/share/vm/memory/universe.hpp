@@ -323,6 +323,9 @@ class Universe: AllStatic {
 
   static Method*      do_stack_walk_method()          { return _do_stack_walk_cache->get_method(); }
 
+  // Function to initialize these
+  static void initialize_known_methods(TRAPS);
+
   static oop          null_ptr_exception_instance()   { return _null_ptr_exception_instance;   }
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
   static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
