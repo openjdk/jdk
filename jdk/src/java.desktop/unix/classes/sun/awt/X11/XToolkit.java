@@ -770,22 +770,35 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 GraphicsEnvironment.getLocalGraphicsEnvironment();
             if (!x11ge.runningXinerama())
             {
-                Rectangle workArea = XToolkit.getWorkArea(root, scale);
-                if (workArea != null)
-                {
-                    return new Insets(workArea.y,
-                                      workArea.x,
-                                      rootBounds.height - workArea.height - workArea.y,
-                                      rootBounds.width - workArea.width - workArea.x);
-                }
+                Insets screenInsets = getInsets(root, rootBounds, scale);
+                if (screenInsets != null) return screenInsets;
             }
 
-            return getScreenInsetsManually(root, rootBounds, gc.getBounds(), scale);
+            Insets insets = getScreenInsetsManually(root, rootBounds,
+                    gc.getBounds(), scale);
+            if ((insets.left | insets.top | insets.bottom | insets.right) == 0
+                    && rootBounds != null ) {
+                root = XlibWrapper.RootWindow(XToolkit.getDisplay(),
+                        x11gd.getScreen());
+                Insets screenInsets = getInsets(root, rootBounds, scale);
+                if (screenInsets != null) return screenInsets;
+            }
+            return insets;
         }
         finally
         {
             XToolkit.awtUnlock();
         }
+    }
+
+    private Insets getInsets(long root, Rectangle rootBounds, int scale) {
+        Rectangle workArea = XToolkit.getWorkArea(root, scale);
+        if (workArea == null) {
+            return null;
+        }
+        return new Insets(workArea.y, workArea.x,
+                rootBounds.height - workArea.height - workArea.y,
+                rootBounds.width - workArea.width - workArea.x);
     }
 
     /*
