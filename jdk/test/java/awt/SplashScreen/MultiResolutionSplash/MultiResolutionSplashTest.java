@@ -26,6 +26,7 @@ import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.Panel;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -38,12 +39,11 @@ import java.io.File;
 import javax.imageio.ImageIO;
 import sun.java2d.SunGraphics2D;
 
+
 /**
  * @test
- * @bug 8043869 8075244 8078082
- * @author Alexander Scherbatiy
- * @summary [macosx] java -splash does not honor 2x hi dpi notation for retina
- * support
+ * @bug 8043869 8075244 8078082 8145173
+ * @summary Tests the HiDPI splash screen support for windows and MAC
  * @modules java.desktop/sun.java2d
  * @run main MultiResolutionSplashTest GENERATE_IMAGES
  * @run main/othervm -splash:splash1.png MultiResolutionSplashTest TEST_SPLASH 0
@@ -56,16 +56,26 @@ public class MultiResolutionSplashTest {
     private static final int IMAGE_WIDTH = 300;
     private static final int IMAGE_HEIGHT = 200;
 
-    private static final ImageInfo[] tests = {
+    private static final ImageInfo[] macTests = {
         new ImageInfo("splash1.png", "splash1@2x.png", Color.BLUE, Color.GREEN),
         new ImageInfo("splash2", "splash2@2x", Color.WHITE, Color.BLACK),
         new ImageInfo("splash3.", "splash3@2x.", Color.YELLOW, Color.RED)
     };
+    private static final ImageInfo[] windowsTests = {
+        new ImageInfo("splash1.png", "splash1.scale-120.png", Color.BLUE, Color.GREEN),
+        new ImageInfo("splash2", "splash2.scale-120", Color.WHITE, Color.BLACK),
+        new ImageInfo("splash3.", "splash3.scale-120.", Color.YELLOW, Color.RED)
+    };
+    private static ImageInfo[] tests;
 
     public static void main(String[] args) throws Exception {
 
         String test = args[0];
-
+        tests = windowsTests;
+        String osName = System.getProperty("os.name");
+        if (osName.contains("OS X")) {
+            tests = macTests;
+        }
         switch (test) {
             case "GENERATE_IMAGES":
                 generateImages();
@@ -156,7 +166,10 @@ public class MultiResolutionSplashTest {
             public void paint(Graphics g) {
                 float scaleFactor = 1;
                 if (g instanceof SunGraphics2D) {
-                    scaleFactor = ((SunGraphics2D) g).surfaceData.getDefaultScale();
+                    scaleFactor = (float)GraphicsEnvironment.
+                            getLocalGraphicsEnvironment().
+                            getDefaultScreenDevice().getDefaultConfiguration().
+                            getDefaultTransform().getScaleX();
                 }
                 scaleFactors[0] = scaleFactor;
                 dialog.setVisible(false);

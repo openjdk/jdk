@@ -133,16 +133,16 @@ BOOL isSWTRunning() {
     return getenv(envVar) != NULL;
 }
 
-char* SplashGetScaledImageName(const char* jar, const char* file,
-                               float *scaleFactor) {
+jboolean SplashGetScaledImageName(const char* jar, const char* file,
+                                    float *scaleFactor, char *scaledFile,
+                                    const size_t scaledImageLength) {
     *scaleFactor = 1;
 
     if(isSWTRunning()){
-        return nil;
+        return JNI_FALSE;
     }
 
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
-    char* scaledFile = nil;
     __block float screenScaleFactor = 1;
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
@@ -170,12 +170,18 @@ char* SplashGetScaledImageName(const char* jar, const char* file,
         
         if ((fileName2x != nil) && (jar || [[NSFileManager defaultManager]
                     fileExistsAtPath: fileName2x])){
+            if (strlen([fileName2x UTF8String]) > scaledImageLength) {
+                [pool drain];
+                return JNI_FALSE;
+            }
             *scaleFactor = 2;
-            scaledFile = strdup([fileName2x UTF8String]);
+            strcpy(scaledFile, [fileName2x UTF8String]);
+            [pool drain];
+            return JNI_TRUE;
         }
     }
     [pool drain];
-    return scaledFile;
+    return JNI_FALSE;
 }
 
 void

@@ -389,3 +389,8 @@ int SplashStreamInitMemory(SplashStream * pStream, void* pData, int size) {
     pStream->close = closeMem;
     return 1;
 }
+
+SPLASHEXPORT int
+SplashGetScaledImgNameMaxPstfixLen(const char *fileName){
+    return strlen(fileName) + strlen(".java-scale-200") + 1;
+}

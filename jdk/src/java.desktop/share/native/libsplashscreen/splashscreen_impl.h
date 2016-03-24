@@ -28,6 +28,7 @@
 
 #include "splashscreen_config.h"
 #include "splashscreen_gfx.h"
+#include "jni.h"
 
 SPLASHEXPORT int SplashLoadMemory(void *pdata, int size); /* requires preloading the file */
 SPLASHEXPORT int SplashLoadFile(const char *filename);  // FIXME: range checking for SplashLoadMemory
@@ -36,11 +37,14 @@ SPLASHEXPORT void SplashInit(void);
 SPLASHEXPORT void SplashClose(void);
 
 SPLASHEXPORT void SplashSetScaleFactor(float);
-SPLASHEXPORT char* SplashGetScaledImageName(const char*, const char*, float*);
+SPLASHEXPORT jboolean SplashGetScaledImageName(const char*, const char*,
+                              float*, char*, const size_t scaledImageNameLength);
 
 SPLASHEXPORT void
 SplashSetFileJarName(const char* fileName, const char* jarName);
 
+SPLASHEXPORT int
+SplashGetScaledImgNameMaxPstfixLen(const char*);
 typedef struct SplashImage
 {
     rgbquad_t *bitmapBits;
@@ -119,9 +123,9 @@ void SplashDonePlatform(Splash * splash);
 
 unsigned SplashTime();
 char* SplashConvertStringAlloc(const char* in, int *size);
-char* SplashGetScaledImageName(const char* jarName,
-                               const char* fileName, float *scaleFactor);
-
+jboolean SplashGetScaledImageName(const char* jarName,
+                 const char* fileName, float *scaleFactor,
+                 char *scaleImageName, const size_t scaledImageNameLength);
 void SplashLock(Splash * splash);
 void SplashUnlock(Splash * splash);
 
@@ -145,7 +149,7 @@ void SplashUpdateScreenData(Splash * splash);
 
 void SplashCleanup(Splash * splash);
 void SplashSetScaleFactor(float scaleFactor);
-
+int  SplashGetScaledImgNameMaxPstfixLen(const char *fileName);
 
 typedef struct SplashStream {
     int (*read)(void* pStream, void* pData, int nBytes);
