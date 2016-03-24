@@ -21,26 +21,18 @@
  * questions.
  */
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.Layer;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.internal.PluginRepository;
+import jdk.tools.jlink.internal.TaskHelper;
+import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageValidator;
+import tests.Result;
 
 /*
  * @test
@@ -50,6 +42,7 @@ import tests.JImageValidator;
  * @modules java.base/jdk.internal.jimage
  *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.internal.plugins
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
@@ -65,6 +58,7 @@ public class IncludeLocalesPluginTest {
     private final static int EXPECTED_LOCATIONS     = 1;
     private final static int UNEXPECTED_PATHS       = 2;
     private final static int AVAILABLE_LOCALES      = 3;
+    private final static int ERROR_MESSAGE          = 4;
 
     private final static Object[][] testData = {
         // without --include-locales option: should include all locales
@@ -144,6 +138,7 @@ public class IncludeLocalesPluginTest {
             "yav_CM yo yo_BJ yo_NG zgh zgh_MA zh zh_CN zh_CN_#Hans zh_HK " +
             "zh_HK_#Hans zh_HK_#Hant zh_MO_#Hans zh_MO_#Hant zh_SG zh_SG_#Hans " +
             "zh_TW zh_TW_#Hant zh__#Hans zh__#Hant zu zu_ZA",
+            "",
         },
 
         // All English/Japanese locales
@@ -173,6 +168,7 @@ public class IncludeLocalesPluginTest {
             "en_PW en_RW en_SB en_SC en_SD en_SG en_SH en_SL en_SS en_SX en_SZ " +
             "en_TC en_TK en_TO en_TT en_TV en_TZ en_UG en_UM en_US en_US_POSIX " +
             "en_VC en_VG en_VI en_VU en_WS en_ZA en_ZM en_ZW ja ja_JP ja_JP_JP_#u-ca-japanese",
+            "",
         },
 
         // All locales in India
@@ -201,6 +197,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_zh.class"),
             " as_IN bn_IN bo_IN brx_IN en en_IN en_US en_US_POSIX gu_IN hi_IN kn_IN " +
             "kok_IN ks_IN_#Arab ml_IN mr_IN ne_IN or_IN pa_IN_#Guru ta_IN te_IN ur_IN",
+            "",
         },
 
         // Thai
@@ -220,6 +217,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_zh.class"),
             " en en_US en_US_POSIX th th_TH th_TH_TH_#u-nu-thai",
+            "",
         },
 
         // Hong Kong
@@ -242,6 +240,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             " en en_US en_US_POSIX zh_HK zh_HK_#Hans zh_HK_#Hant",
+            "",
         },
 
         // Norwegian
@@ -265,6 +264,7 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             " en en_US en_US_POSIX nb nb_NO nb_SJ nn nn_NO no no_NO no_NO_NY",
+            "",
         },
 
         // Hebrew/Indonesian/Yiddish
@@ -290,6 +290,25 @@ public class IncludeLocalesPluginTest {
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_ja.class",
                 "/jdk.localedata/sun/text/resources/cldr/ext/FormatData_th.class"),
             " en en_US en_US_POSIX in in_ID iw iw_IL ji ji_001",
+            "",
+        },
+
+        // Error case: No matching locales
+        {"--include-locales=xyz",
+            null,
+            null,
+            null,
+            new PluginException(
+                PluginsResourceBundle.getMessage("include-locales.nomatchinglocales"))
+                .toString(),
+        },
+
+        // Error case: Invalid argument
+        {"--include-locales=zh_HK",
+            null,
+            null,
+            null,
+            "range=zh_hk",
         },
     };
 
@@ -304,20 +323,28 @@ public class IncludeLocalesPluginTest {
 
         for (Object[] data : testData) {
             // create image for each test data
-            Path image = JImageGenerator.getJLinkTask()
+            Result result = JImageGenerator.getJLinkTask()
                     .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods("jdk.localedata")
                     .option((String)data[INCLUDE_LOCALES_OPTION])
-                    .call().assertSuccess();
+                    .call();
 
-            // test locale data entries
-            testLocaleDataEntries(image,
-                (List<String>)data[EXPECTED_LOCATIONS],
-                (List<String>)data[UNEXPECTED_PATHS]);
+            String errorMsg = (String)data[ERROR_MESSAGE];
+            if (errorMsg.isEmpty()) {
+                Path image = result.assertSuccess();
 
-            // test available locales
-            testAvailableLocales(image, (String)data[AVAILABLE_LOCALES]);
+                // test locale data entries
+                testLocaleDataEntries(image,
+                    (List<String>)data[EXPECTED_LOCATIONS],
+                    (List<String>)data[UNEXPECTED_PATHS]);
+
+                // test available locales
+                testAvailableLocales(image, (String)data[AVAILABLE_LOCALES]);
+            } else {
+                result.assertFailure(new TaskHelper(TaskHelper.JLINK_BUNDLE)
+                    .getMessage("error.prefix") + " " +errorMsg);
+            }
         }
     }
 
