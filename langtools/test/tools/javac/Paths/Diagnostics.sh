@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,10 @@ Warning() {
     HorizontalRule
     echo "$@"
     output=`"$@" 2>&1`; rc="$?"
-    test -n "$output" && echo "$output"
+    output2=`echo "$output" | grep -v "bootstrap class path not set in conjunction with -source"`
+    test -n "$output2" && echo "$output"
     test $rc -eq 0 || Fail "Command \"$*\" failed with exitValue $rc";
-    case "$output" in *warning:*) gotwarning="yes";; *) gotwarning="no";; esac
+    case "$output2" in *warning:*) gotwarning="yes";; *) gotwarning="no";; esac
 
     if test "$gotwarning" = "yes" -a "$NO" = "no"; then
         Fail "Command \"$*\" printed an unexpected warning"
@@ -87,6 +88,13 @@ Cleanup() {
 Cleanup
 echo "public class Main{public static void main(String[]a){}}" > Main.java
 
+# We need to set -source 8 -target 8 for those cases where the option is
+# not legal in 9 and later. However, that triggers an additional warning
+# about not setting bootclasspath, which is filtered out in Warning.
+# The alternative would be to extract a minimal rt.jar from JDK and
+# specify that with -bootclasspath.
+SRCTRG8="-source 8 -target 8"
+
 #----------------------------------------------------------------
 # No warnings unless -Xlint:path is used
 #----------------------------------------------------------------
@@ -96,33 +104,33 @@ No Warning "$javac" ${TESTTOOLVMOPTS} -cp ".${PS}classes" Main.java
 #----------------------------------------------------------------
 # Warn for missing elts in user-specified paths
 #----------------------------------------------------------------
-Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path -cp ".${PS}classes"         Main.java
-Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-Xbootclasspath/p:classes" Main.java
-Warning "$javac" ${TESTTOOLVMOPTS} -Xlint      "-Xbootclasspath/a:classes" Main.java
+Warning "$javac" ${TESTTOOLVMOPTS}           -Xlint:path -cp ".${PS}classes"         Main.java
+Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint:path "-Xbootclasspath/p:classes" Main.java
+Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint      "-Xbootclasspath/a:classes" Main.java
 
-Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-endorseddirs" "classes"   Main.java
-Warning "$javac" ${TESTTOOLVMOPTS} -Xlint      "-extdirs"      "classes"   Main.java
-# Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-Xbootclasspath:classes${PS}${BCP}" Main.java
+Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint:path "-endorseddirs" "classes"   Main.java
+Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint      "-extdirs"      "classes"   Main.java
+#Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint:path "-Xbootclasspath:classes${PS}${BCP}" Main.java
 
 #----------------------------------------------------------------
 # No warning for missing elts in "system" paths
 #----------------------------------------------------------------
 # No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Djava.endorsed.dirs=classes" Main.java
 # No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Djava.ext.dirs=classes"      Main.java
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Xbootclasspath/p:classes"    Main.java
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Xbootclasspath/a:classes"    Main.java
+# No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Xbootclasspath/p:classes"    Main.java
+# No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Xbootclasspath/a:classes"    Main.java
 # No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-J-Xbootclasspath:classes${PS}${BCP}" Main.java
 
 #----------------------------------------------------------------
 # No warning if class path element exists
 #----------------------------------------------------------------
 Sys mkdir classes
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path -cp ".${PS}classes"         Main.java
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-endorseddirs"   "classes" Main.java
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-extdirs"        "classes" Main.java
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-Xbootclasspath/p:classes" Main.java
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-Xbootclasspath/a:classes" Main.java
-# No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint:path "-Xbootclasspath:classes${PS}${BCP}" Main.java
+No Warning "$javac" ${TESTTOOLVMOPTS}           -Xlint:path -cp ".${PS}classes"         Main.java
+No Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint:path "-endorseddirs"   "classes" Main.java
+No Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint:path "-extdirs"        "classes" Main.java
+No Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint:path "-Xbootclasspath/p:classes" Main.java
+No Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint:path "-Xbootclasspath/a:classes" Main.java
+#No Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint:path "-Xbootclasspath:classes${PS}${BCP}" Main.java
 
 Sys "$jar" cf classes.jar Main.class
 Sys cp classes.jar classes.war
@@ -161,17 +169,17 @@ Sys "$jar" cmf MANIFEST.MF classesRefRef.jar Main.class
 #----------------------------------------------------------------
 # Non-existent recursive Class-Path reference gives warning
 #----------------------------------------------------------------
-No Warning "$javac" ${TESTTOOLVMOPTS}             -classpath   classesRefRef.jar Main.java
-   Warning "$javac" ${TESTTOOLVMOPTS} -Xlint      -classpath   classesRefRef.jar Main.java
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint -Xbootclasspath/p:classesRefRef.jar Main.java
+No Warning "$javac" ${TESTTOOLVMOPTS}                        -classpath   classesRefRef.jar Main.java
+   Warning "$javac" ${TESTTOOLVMOPTS}            -Xlint      -classpath   classesRefRef.jar Main.java
+No Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint -Xbootclasspath/p:classesRefRef.jar Main.java
 
 BadJarFile classesRef.jar
 
 #----------------------------------------------------------------
 # Non-jar file recursive Class-Path reference gives error
 #----------------------------------------------------------------
-   Error "$javac" ${TESTTOOLVMOPTS}      -classpath   classesRefRef.jar Main.java
-No Error "$javac" ${TESTTOOLVMOPTS} -Xbootclasspath/a:classesRefRef.jar Main.java
+   Error "$javac" ${TESTTOOLVMOPTS}            -classpath        classesRefRef.jar Main.java
+No Error "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xbootclasspath/a:classesRefRef.jar Main.java
 
 MkManifestWithClassPath classes
 Sys "$jar" cmf MANIFEST.MF classesRef.jar Main.class
@@ -179,23 +187,23 @@ Sys "$jar" cmf MANIFEST.MF classesRef.jar Main.class
 #----------------------------------------------------------------
 # Jar file recursive Class-Path reference is OK
 #----------------------------------------------------------------
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint      -classpath   classesRefRef.jar Main.java
-No Warning "$javac" ${TESTTOOLVMOPTS} -Xlint -Xbootclasspath/p:classesRefRef.jar Main.java
+No Warning "$javac" ${TESTTOOLVMOPTS}            -Xlint      -classpath   classesRefRef.jar Main.java
+No Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint -Xbootclasspath/p:classesRefRef.jar Main.java
 
 #----------------------------------------------------------------
 # Class-Path attribute followed in extdirs or endorseddirs
 #----------------------------------------------------------------
 Sys mkdir jars
 Sys cp classesRefRef.jar jars/.
-   Warning "$javac" ${TESTTOOLVMOPTS} -Xlint -extdirs      jars Main.java
-   Warning "$javac" ${TESTTOOLVMOPTS} -Xlint -endorseddirs jars Main.java
+   Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint -extdirs      jars Main.java
+   Warning "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint -endorseddirs jars Main.java
 
 #----------------------------------------------------------------
 # Bad Jar file in extdirs and endorseddirs should not be ignored
 #----------------------------------------------------------------
 BadJarFile jars/classesRef.jar
-  Error "$javac" ${TESTTOOLVMOPTS} -Xlint -extdirs      jars Main.java
-  Error "$javac" ${TESTTOOLVMOPTS} -Xlint -endorseddirs jars Main.java
+   Error "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint -extdirs      jars Main.java
+   Error "$javac" ${TESTTOOLVMOPTS} ${SRCTRG8} -Xlint -endorseddirs jars Main.java
 
 Cleanup
 

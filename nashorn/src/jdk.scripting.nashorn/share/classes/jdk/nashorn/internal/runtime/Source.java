@@ -922,7 +922,7 @@ public final class Source implements Loggable {
         return (cs != null) ? new String(readBytes(is), cs).toCharArray() : readFully(is);
     }
 
-    private static char[] readFully(final InputStream is) throws IOException {
+    public static char[] readFully(final InputStream is) throws IOException {
         return byteToCharArray(readBytes(is));
     }
 

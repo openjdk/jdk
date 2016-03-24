@@ -55,14 +55,16 @@ BCP=${TESTCLASSES}/bcp
 rm -rf ${BCP}
 mkdir ${BCP}
 
+EXTRAOPTS="-XaddExports:java.base/sun.reflect=ALL-UNNAMED"
+
 # Compile GetCallerClass in bootclasspath
-${COMPILEJAVA}/bin/javac ${TESTTOOLVMOPTS} \
+${COMPILEJAVA}/bin/javac ${TESTTOOLVMOPTS} ${EXTRAOPTS} \
      -XDignore.symbol.file \
      -d ${BCP} ${TESTSRC}/GetCallerClass.java  || exit 1
 
-${COMPILEJAVA}/bin/javac ${TESTTOOLVMOPTS} \
-     -XDignore.symbol.file -Xbootclasspath/a:${BCP} \
+${COMPILEJAVA}/bin/javac ${TESTTOOLVMOPTS} ${EXTRAOPTS} \
+     -XDignore.symbol.file -cp ${BCP} \
      -d ${TESTCLASSES} ${TESTSRC}/GetCallerClassTest.java  || exit 2
 
-${TESTJAVA}/bin/java ${TESTVMOPTS} -Xbootclasspath/a:${BCP} \
+${TESTJAVA}/bin/java ${TESTVMOPTS} ${EXTRAOPTS} -Xbootclasspath/a:${BCP} \
      -cp ${TESTCLASSES} GetCallerClassTest || exit 3

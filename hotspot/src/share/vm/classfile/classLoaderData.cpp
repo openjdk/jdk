@@ -31,7 +31,7 @@
 //
 // Class loaders that implement a deterministic name resolution strategy
 // (including with respect to their delegation behavior), such as the boot, the
-// extension, and the system loaders of the JDK's built-in class loader
+// platform, and the system loaders of the JDK's built-in class loader
 // hierarchy, always produce the same linkset for a given configuration.
 //
 // ClassLoaderData carries information related to a linkset (e.g.,
@@ -51,6 +51,8 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/metadataOnStackMark.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -83,6 +85,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous, Depen
   // The null-class-loader should always be kept alive.
   _keep_alive(is_anonymous || h_class_loader.is_null()),
   _metaspace(NULL), _unloading(false), _klasses(NULL),
+  _modules(NULL), _packages(NULL),
   _claimed(0), _jmethod_ids(NULL), _handles(NULL), _deallocate_list(NULL),
   _next(NULL), _dependencies(dependencies), _shared_class_loader_id(-1),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
@@ -165,6 +168,30 @@ void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
       f(InstanceKlass::cast(k));
     }
     assert(k != k->next_link(), "no loops!");
+  }
+}
+
+void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
+  if (_modules != NULL) {
+    for (int i = 0; i < _modules->table_size(); i++) {
+      for (ModuleEntry* entry = _modules->bucket(i);
+                              entry != NULL;
+                              entry = entry->next()) {
+        f(entry);
+      }
+    }
+  }
+}
+
+void ClassLoaderData::packages_do(void f(PackageEntry*)) {
+  if (_packages != NULL) {
+    for (int i = 0; i < _packages->table_size(); i++) {
+      for (PackageEntry* entry = _packages->bucket(i);
+                              entry != NULL;
+                              entry = entry->next()) {
+        f(entry);
+      }
+    }
   }
 }
 
@@ -341,6 +368,46 @@ void ClassLoaderData::unload() {
   }
 }
 
+PackageEntryTable* ClassLoaderData::packages() {
+  // Lazily create the package entry table at first request.
+  if (_packages == NULL) {
+    MutexLockerEx m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
+    // Check again if _packages has been allocated while we were getting this lock.
+    if (_packages != NULL) {
+      return _packages;
+    }
+    // Ensure _packages is stable, since it is examined without a lock
+    OrderAccess::storestore();
+    _packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
+  }
+  return _packages;
+}
+
+ModuleEntryTable* ClassLoaderData::modules() {
+  // Lazily create the module entry table at first request.
+  if (_modules == NULL) {
+    MutexLocker m1(Module_lock);
+    // Check again if _modules has been allocated while we were getting this lock.
+    if (_modules != NULL) {
+      return _modules;
+    }
+
+    ModuleEntryTable* temp_table = new ModuleEntryTable(ModuleEntryTable::_moduletable_entry_size);
+    // Each loader has one unnamed module entry. Create it before
+    // any classes, loaded by this loader, are defined in case
+    // they end up being defined in loader's unnamed module.
+    temp_table->create_unnamed_module(this);
+
+    {
+      MutexLockerEx m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
+      // Ensure _modules is stable, since it is examined without a lock
+      OrderAccess::storestore();
+      _modules = temp_table;
+    }
+  }
+  return _modules;
+}
+
 oop ClassLoaderData::keep_alive_object() const {
   assert(!keep_alive(), "Don't use with CLDs that are artificially kept alive");
   return is_anonymous() ? _klasses->java_mirror() : class_loader();
@@ -358,16 +425,30 @@ ClassLoaderData::~ClassLoaderData() {
   // Release C heap structures for all the classes.
   classes_do(InstanceKlass::release_C_heap_structures);
 
+  // Release C heap allocated hashtable for all the packages.
+  if (_packages != NULL) {
+    // Destroy the table itself
+    delete _packages;
+    _packages = NULL;
+  }
+
+  // Release C heap allocated hashtable for all the modules.
+  if (_modules != NULL) {
+    // Destroy the table itself
+    delete _modules;
+    _modules = NULL;
+  }
+
+  // release the metaspace
   Metaspace *m = _metaspace;
   if (m != NULL) {
     _metaspace = NULL;
-    // release the metaspace
     delete m;
-    // release the handles
-    if (_handles != NULL) {
-      JNIHandleBlock::release_block(_handles);
-      _handles = NULL;
-    }
+  }
+  // release the handles
+  if (_handles != NULL) {
+    JNIHandleBlock::release_block(_handles);
+    _handles = NULL;
   }
 
   // Clear all the JNI handles for methods
@@ -389,10 +470,10 @@ ClassLoaderData::~ClassLoaderData() {
 }
 
 /**
- * Returns true if this class loader data is for the extension class loader.
+ * Returns true if this class loader data is for the platform class loader.
  */
-bool ClassLoaderData::is_ext_class_loader_data() const {
-  return SystemDictionary::is_ext_class_loader(class_loader());
+bool ClassLoaderData::is_platform_class_loader_data() const {
+  return SystemDictionary::is_platform_class_loader(class_loader());
 }
 
 Metaspace* ClassLoaderData::metaspace_non_null() {
@@ -436,6 +517,10 @@ jobject ClassLoaderData::add_handle(Handle h) {
     set_handles(JNIHandleBlock::allocate_block());
   }
   return handles()->allocate_handle(h());
+}
+
+void ClassLoaderData::remove_handle(jobject h) {
+  _handles->release_handle(h);
 }
 
 // Add this metadata pointer to be freed when it's safe.  This is only during
@@ -712,6 +797,40 @@ void ClassLoaderDataGraph::methods_do(void f(Method*)) {
   }
 }
 
+void ClassLoaderDataGraph::modules_do(void f(ModuleEntry*)) {
+  assert_locked_or_safepoint(Module_lock);
+  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    cld->modules_do(f);
+  }
+}
+
+void ClassLoaderDataGraph::modules_unloading_do(void f(ModuleEntry*)) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  // Only walk the head until any clds not purged from prior unloading
+  // (CMS doesn't purge right away).
+  for (ClassLoaderData* cld = _unloading; cld != _saved_unloading; cld = cld->next()) {
+    assert(cld->is_unloading(), "invariant");
+    cld->modules_do(f);
+  }
+}
+
+void ClassLoaderDataGraph::packages_do(void f(PackageEntry*)) {
+  assert_locked_or_safepoint(Module_lock);
+  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    cld->packages_do(f);
+  }
+}
+
+void ClassLoaderDataGraph::packages_unloading_do(void f(PackageEntry*)) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  // Only walk the head until any clds not purged from prior unloading
+  // (CMS doesn't purge right away).
+  for (ClassLoaderData* cld = _unloading; cld != _saved_unloading; cld = cld->next()) {
+    assert(cld->is_unloading(), "invariant");
+    cld->packages_do(f);
+  }
+}
+
 void ClassLoaderDataGraph::loaded_classes_do(KlassClosure* klass_closure) {
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
     cld->loaded_classes_do(klass_closure);
@@ -723,6 +842,7 @@ void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
   // Only walk the head until any clds not purged from prior unloading
   // (CMS doesn't purge right away).
   for (ClassLoaderData* cld = _unloading; cld != _saved_unloading; cld = cld->next()) {
+    assert(cld->is_unloading(), "invariant");
     cld->classes_do(f);
   }
 }
@@ -800,6 +920,12 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure,
   data = _head;
   while (data != NULL) {
     if (data->is_alive(is_alive_closure)) {
+      if (data->packages_defined()) {
+        data->packages()->purge_all_package_exports();
+      }
+      if (data->modules_defined()) {
+        data->modules()->purge_all_module_reads();
+      }
       // clean metaspace
       if (walk_all_metadata) {
         data->classes_do(InstanceKlass::purge_previous_versions);
@@ -992,6 +1118,7 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
 Ticks ClassLoaderDataGraph::_class_unload_time;
 
 void ClassLoaderDataGraph::class_unload_event(Klass* const k) {
+  assert(k != NULL, "invariant");
 
   // post class unload event
   EventClassUnload event(UNTIMED);

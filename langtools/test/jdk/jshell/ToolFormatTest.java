@@ -26,6 +26,10 @@
  * @bug 8148316 8148317
  * @summary Tests for output customization
  * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.javap
+ *          jdk.jshell/jdk.internal.jshell.tool
  * @build KullaTesting TestingInputStream ToolBox Compiler
  * @run testng ToolFormatTest
  */

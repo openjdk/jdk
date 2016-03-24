@@ -353,6 +353,8 @@ public final class OptimisticTypesPersistence {
         }
     }
 
+    private static final String ANCHOR_PROPS = "anchor.properties";
+
     /**
      * In order to ensure that changes in Nashorn code don't cause corruption in the data, we'll create a
      * per-code-version directory. Normally, this will create the SHA-1 digest of the nashorn.jar. In case the classpath
@@ -368,7 +370,7 @@ public final class OptimisticTypesPersistence {
         // getResource("OptimisticTypesPersistence.class") but behavior of getResource with regard to its willingness
         // to hand out URLs to .class files is also unspecified. Therefore, the most robust way to obtain an URL to our
         // package is to have a small non-class anchor file and start out from its URL.
-        final URL url = OptimisticTypesPersistence.class.getResource("anchor.properties");
+        final URL url = OptimisticTypesPersistence.class.getResource(ANCHOR_PROPS);
         final String protocol = url.getProtocol();
         if (protocol.equals("jar")) {
             // Normal deployment: nashorn.jar
@@ -391,7 +393,7 @@ public final class OptimisticTypesPersistence {
             final String fileStr = url.getFile();
             final String className = OptimisticTypesPersistence.class.getName();
             final int packageNameLen = className.lastIndexOf('.');
-            final String dirStr = fileStr.substring(0, fileStr.length() - packageNameLen - 1);
+            final String dirStr = fileStr.substring(0, fileStr.length() - packageNameLen - 1 - ANCHOR_PROPS.length());
             final File dir = new File(dirStr);
             return "dev-" + new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date(getLastModifiedClassFile(
                     dir, 0L)));

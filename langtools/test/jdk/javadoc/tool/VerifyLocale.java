@@ -25,7 +25,7 @@
  * @test
  * @bug 8035473
  * @summary Verify that init method works correctly.
- * @modules jdk.javadoc
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
 
 import java.util.Collections;

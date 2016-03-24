@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.ByteBuffer;
@@ -42,6 +43,7 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -58,6 +60,8 @@ import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -192,12 +196,34 @@ public abstract class BaseFileManager implements JavaFileManager {
                         Class.forName(classLoaderClass).asSubclass(ClassLoader.class);
                 Class<?>[] constrArgTypes = { URL[].class, ClassLoader.class };
                 Constructor<? extends ClassLoader> constr = loader.getConstructor(constrArgTypes);
-                return constr.newInstance(urls, thisClassLoader);
+                return ensureReadable(constr.newInstance(urls, thisClassLoader));
             } catch (ReflectiveOperationException t) {
                 // ignore errors loading user-provided class loader, fall through
             }
         }
-        return new URLClassLoader(urls, thisClassLoader);
+        return ensureReadable(new URLClassLoader(urls, thisClassLoader));
+    }
+
+    /**
+     * Ensures that the unnamed module of the given classloader is readable to this
+     * module.
+     */
+    private ClassLoader ensureReadable(ClassLoader targetLoader) {
+        try {
+            Method getModuleMethod = Class.class.getMethod("getModule");
+            Object thisModule = getModuleMethod.invoke(this.getClass());
+            Method getUnnamedModuleMethod = ClassLoader.class.getMethod("getUnnamedModule");
+            Object targetModule = getUnnamedModuleMethod.invoke(targetLoader);
+
+            Class<?> moduleClass = getModuleMethod.getReturnType();
+            Method addReadsMethod = moduleClass.getMethod("addReads", moduleClass);
+            addReadsMethod.invoke(thisModule, targetModule);
+        } catch (NoSuchMethodException e) {
+            // ignore
+        } catch (Exception e) {
+            throw new Abort(e);
+        }
+        return targetLoader;
     }
 
     public boolean isDefaultBootClassPath() {
@@ -284,8 +310,14 @@ public abstract class BaseFileManager implements JavaFileManager {
      */
     public boolean handleOptions(Map<Option, String> map) {
         boolean ok = true;
-        for (Map.Entry<Option, String> e: map.entrySet())
-            ok = ok & handleOption(e.getKey(), e.getValue());
+        for (Map.Entry<Option, String> e: map.entrySet()) {
+            try {
+                ok = ok & handleOption(e.getKey(), e.getValue());
+            } catch (IllegalArgumentException ex) {
+                log.error(Errors.IllegalArgumentForOption(e.getKey().getText(), ex.getMessage()));
+                ok = false;
+            }
+        }
         return ok;
     }
 

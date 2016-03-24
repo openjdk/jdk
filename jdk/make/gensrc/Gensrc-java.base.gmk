@@ -34,6 +34,7 @@ include GensrcCharsetCoder.gmk
 include GensrcBuffer.gmk
 include GensrcExceptions.gmk
 include GensrcVarHandles.gmk
+include GensrcModuleLoaderMap.gmk
 
 ################################################################################
 

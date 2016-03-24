@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ implements ReferenceType {
     private boolean isClassLoaderCached = false;
     private ClassLoaderReference classLoader = null;
     private ClassObjectReference classObject = null;
+    private ModuleReference module = null;
 
     private int status = 0;
     private boolean isPrepared = false;
@@ -219,6 +220,22 @@ implements ReferenceType {
         return classLoader;
     }
 
+    public ModuleReference module() {
+        if (module != null) {
+            return module;
+        }
+        // Does not need synchronization, since worst-case
+        // static info is fetched twice
+        try {
+            ModuleReferenceImpl m = JDWP.ReferenceType.Module.
+                process(vm, this).module;
+            module = vm.getModule(m.ref());
+        } catch (JDWPException exc) {
+            throw exc.toJDIException();
+        }
+        return module;
+    }
+
     public boolean isPublic() {
         if (modifiers == -1)
             getModifiers();
@@ -308,7 +325,8 @@ implements ReferenceType {
             if (vm.canGet1_5LanguageFeatures()) {
                 JDWP.ReferenceType.FieldsWithGeneric.FieldInfo[] jdwpFields;
                 try {
-                    jdwpFields = JDWP.ReferenceType.FieldsWithGeneric.process(vm, this).declared;
+                    jdwpFields = JDWP.ReferenceType.FieldsWithGeneric.
+                        process(vm, this).declared;
                 } catch (JDWPException exc) {
                     throw exc.toJDIException();
                 }

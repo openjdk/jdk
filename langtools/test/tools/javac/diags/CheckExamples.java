@@ -38,6 +38,8 @@
  */
 
 import java.io.*;
+import java.lang.reflect.Layer;
+import java.lang.reflect.Module;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
@@ -108,8 +110,9 @@ public class CheckExamples {
             }
         }
 
+        Module jdk_compiler = Layer.boot().findModule("jdk.compiler").get();
         ResourceBundle b =
-            ResourceBundle.getBundle("com.sun.tools.javac.resources.compiler");
+            ResourceBundle.getBundle("com.sun.tools.javac.resources.compiler", jdk_compiler);
         Set<String> resourceKeys = new TreeSet<String>(b.keySet());
 
         for (String dk: declaredKeys) {

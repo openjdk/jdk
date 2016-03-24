@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
 public class PackageDocImpl extends DocImpl implements PackageDoc {
 
-    protected PackageSymbol sym;
+    public final PackageSymbol sym;
     private JCCompilationUnit tree = null;    // for source position
 
     public FileObject docPath = null;

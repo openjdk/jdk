@@ -68,7 +68,7 @@ public class CompileEvent {
         //when starting compiler using Main.compile
         out = new StringWriter();
         int mainResult = Main.compile(new String[] {
-            "-Xplugin:compile-event", "-processorpath", testClasses, test.getAbsolutePath()
+            "-XDaccessInternalAPI", "-Xplugin:compile-event", "-processorpath", testClasses, test.getAbsolutePath()
         }, new PrintWriter(out, true));
         if (mainResult != 0)
             throw new AssertionError("Compilation failed unexpectedly, exit code: " + mainResult);
@@ -81,7 +81,7 @@ public class CompileEvent {
             //test events fired to listeners registered from plugins
             //when starting compiler using JavaCompiler.getTask(...).call
             List<String> options =
-                    Arrays.asList("-Xplugin:compile-event", "-processorpath", testClasses);
+                    Arrays.asList("-XDaccessInternalAPI", "-Xplugin:compile-event", "-processorpath", testClasses);
             out = new StringWriter();
             boolean compResult = comp.getTask(out, null, null, options, null, testFileObjects).call();
             if (!compResult)

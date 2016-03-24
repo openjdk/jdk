@@ -173,10 +173,10 @@ public class Check {
      */
     char syntheticNameChar;
 
-    /** A table mapping flat names of all compiled classes in this run to their
-     *  symbols; maintained from outside.
+    /** A table mapping flat names of all compiled classes for each module in this run
+     *  to their symbols; maintained from outside.
      */
-    public Map<Name,ClassSymbol> compiled = new HashMap<>();
+    private Map<Pair<ModuleSymbol, Name>,ClassSymbol> compiled = new HashMap<>();
 
     /** A handler for messages about deprecated usage.
      */
@@ -404,7 +404,7 @@ public class Check {
         for (int i = (index == null) ? 1 : index; ; i++) {
             Name flatname = names.fromString(enclFlatnameStr
                     + syntheticNameChar + i + c.name);
-            if (compiled.get(flatname) == null) {
+            if (getCompiled(c.packge().modle, flatname) == null) {
                 localClassNameIndexes.put(key, i + 1);
                 return flatname;
             }
@@ -419,6 +419,22 @@ public class Check {
     public void newRound() {
         compiled.clear();
         localClassNameIndexes.clear();
+    }
+
+    public void putCompiled(ClassSymbol csym) {
+        compiled.put(Pair.of(csym.packge().modle, csym.flatname), csym);
+    }
+
+    public ClassSymbol getCompiled(ClassSymbol csym) {
+        return compiled.get(Pair.of(csym.packge().modle, csym.flatname));
+    }
+
+    public ClassSymbol getCompiled(ModuleSymbol msym, Name flatname) {
+        return compiled.get(Pair.of(msym, flatname));
+    }
+
+    public void removeCompiled(ClassSymbol csym) {
+        compiled.remove(Pair.of(csym.packge().modle, csym.flatname));
     }
 
 /* *************************************************************************
@@ -3473,7 +3489,7 @@ public class Check {
         private boolean isCanonical(JCTree tree) {
             while (tree.hasTag(SELECT)) {
                 JCFieldAccess s = (JCFieldAccess) tree;
-                if (s.sym.owner != TreeInfo.symbol(s.selected))
+                if (s.sym.owner.name != TreeInfo.symbol(s.selected).name)
                     return false;
                 tree = s.selected;
             }
@@ -3576,9 +3592,19 @@ public class Check {
 
     // Check that packages imported are in scope (JLS 7.4.3, 6.3, 6.5.3.1, 6.5.3.2)
     public void checkImportedPackagesObservable(final JCCompilationUnit toplevel) {
-        for (JCImport imp : toplevel.getImports()) {
+        OUTER: for (JCImport imp : toplevel.getImports()) {
             if (!imp.staticImport && TreeInfo.name(imp.qualid) == names.asterisk) {
                 TypeSymbol tsym = ((JCFieldAccess)imp.qualid).selected.type.tsym;
+                if (toplevel.modle.visiblePackages != null) {
+                    //TODO - unclear: selects like javax.* will get resolved from the current module
+                    //(as javax is not an exported package from any module). And as javax in the current
+                    //module typically does not contain any classes or subpackages, we need to go through
+                    //the visible packages to find a sub-package:
+                    for (PackageSymbol known : toplevel.modle.visiblePackages.values()) {
+                        if (Convert.packagePart(known.fullname) == tsym.flatName())
+                            continue OUTER;
+                    }
+                }
                 if (tsym.kind == PCK && tsym.members().isEmpty() && !tsym.exists()) {
                     log.error(DiagnosticFlag.RESOLVE_ERROR, imp.pos, "doesnt.exist", tsym);
                 }

@@ -29,6 +29,7 @@
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.classfile
+ *          jdk.jdeps/com.sun.tools.javap
  * @library /tools/lib /tools/javac/lib ../lib
  * @build TestBase TestResult InMemoryFileManager ToolBox
  * @build BridgeMethodForGenericMethodTest SyntheticTestDriver ExpectedClass ExpectedClasses

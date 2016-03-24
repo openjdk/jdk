@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
+ *          jdk.jartool/sun.tools.jar
  * @build SharedStringsWb SharedStrings BasicJarBuilder sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main SharedStrings
@@ -40,7 +41,7 @@ import jdk.test.lib.*;
 
 public class SharedStrings {
     public static void main(String[] args) throws Exception {
-        BasicJarBuilder.build("whitebox", "sun/hotspot/WhiteBox");
+        BasicJarBuilder.build(true, "whitebox", "sun/hotspot/WhiteBox");
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",

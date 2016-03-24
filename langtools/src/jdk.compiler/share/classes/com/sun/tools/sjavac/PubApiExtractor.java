@@ -35,8 +35,10 @@ import javax.tools.JavaFileManager;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.sjavac.comp.PubapiVisitor;
@@ -77,10 +79,11 @@ public class PubApiExtractor {
     }
 
     public PubApi getPubApi(String fullyQualifiedClassName) {
+        Symtab syms = Symtab.instance(context);
         ClassFinder cr = ClassFinder.instance(context);
         Names ns = Names.instance(context);
         Name n = ns.fromString(fullyQualifiedClassName);
-        ClassSymbol cs = cr.loadClass(n);
+        ClassSymbol cs = cr.loadClass(syms.inferModule(Convert.packagePart(n)), n);
         PubapiVisitor v = new PubapiVisitor();
         v.visit(cs);
         return v.getCollectedPubApi();

@@ -140,7 +140,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
             packageNameContent.addContent(".*");
             link = getHyperLink(DocLink.fragment(parsedPackageName),
                     packageNameContent, "", "");
-            PackageElement abbrevPkg = utils.elementUtils.getPackageElement(parsedPackageName);
+            PackageElement abbrevPkg = configuration.workArounds.getAbbreviatedPackageElement(pkg);
             printedPackageHeaders.add(abbrevPkg);
         }
         contentListTree.addContent(HtmlTree.LI(link));

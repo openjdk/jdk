@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,26 +146,6 @@ public class DocPaths {
 
     /** The name of the file for the overview frame. */
     public static final DocPath PROFILE_OVERVIEW_FRAME = DocPath.create("profile-overview-frame.html");
-
-    /** The name of the file for the profile frame. */
-     public static DocPath profileFrame(String profileName) {
-        return DocPath.create(profileName + "-frame.html");
-    }
-
-    /** The name of the file for the profile package frame. */
-     public static DocPath profilePackageFrame(String profileName) {
-        return DocPath.create(profileName + "-package-frame.html");
-    }
-
-    /** The name of the file for the profile package summary. */
-     public static DocPath profilePackageSummary(String profileName) {
-        return DocPath.create(profileName + "-package-summary.html");
-    }
-
-    /** The name of the file for the profile summary. */
-     public static DocPath profileSummary(String profileName) {
-        return DocPath.create(profileName + "-summary.html");
-    }
 
     /** The name of the sub-package from which resources are read. */
     public static final DocPath RESOURCES = DocPath.create("resources");

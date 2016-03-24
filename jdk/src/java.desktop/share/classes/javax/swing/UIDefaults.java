@@ -30,13 +30,15 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.border.*;
 import javax.swing.event.SwingPropertyChangeSupport;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.reflect.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.MissingResourceException;
@@ -52,7 +54,6 @@ import java.security.PrivilegedAction;
 import sun.reflect.misc.MethodUtil;
 import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingUtilities2;
-import sun.util.CoreResourceBundleControl;
 
 /**
  * A table of defaults for Swing components.  Applications can set/get
@@ -302,12 +303,12 @@ public class UIDefaults extends Hashtable<Object,Object>
             for (int i=resourceBundles.size()-1; i >= 0; i--) {
                 String bundleName = resourceBundles.get(i);
                 try {
-                    Control c = CoreResourceBundleControl.getRBControlInstance(bundleName);
                     ResourceBundle b;
-                    if (c != null) {
-                        b = ResourceBundle.getBundle(bundleName, l, c);
+                    if (isDesktopResourceBundle(bundleName)) {
+                        // load resource bundle from java.desktop module
+                        b = ResourceBundle.getBundle(bundleName, l, UIDefaults.class.getModule());
                     } else {
-                        b = ResourceBundle.getBundle(bundleName, l);
+                        b = ResourceBundle.getBundle(bundleName, l, ClassLoader.getSystemClassLoader());
                     }
                     Enumeration<String> keys = b.getKeys();
 
@@ -327,6 +328,30 @@ public class UIDefaults extends Hashtable<Object,Object>
             resourceCache.put(l, values);
         }
         return values;
+    }
+
+    /*
+     * Test if the specified baseName of the ROOT locale is in java.desktop module.
+     * JDK always defines the resource bundle of the ROOT locale.
+     */
+    private static boolean isDesktopResourceBundle(String baseName) {
+        Module thisModule = UIDefaults.class.getModule();
+        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            @Override
+            public Boolean run() {
+                Class<?> c = Class.forName(thisModule, baseName);
+                if (c != null) {
+                    return true;
+                } else {
+                    String resourceName = baseName.replace('.', '/') + ".properties";
+                    try (InputStream in = thisModule.getResourceAsStream(resourceName)) {
+                        return in != null;
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            }
+        });
     }
 
     /**
@@ -767,7 +792,13 @@ public class UIDefaults extends Hashtable<Object,Object>
                     m = uiClass.getMethod("createUI", new Class<?>[]{JComponent.class});
                     put(uiClass, m);
                 }
-                uiObject = MethodUtil.invoke(m, null, new Object[]{target});
+
+                if (uiClass.getModule() == ComponentUI.class.getModule()) {
+                    // uiClass is a system LAF if it's in java.desktop module
+                    uiObject = m.invoke(null, new Object[]{target});
+                } else {
+                    uiObject = MethodUtil.invoke(m, null, new Object[]{target});
+                }
             }
             catch (NoSuchMethodException e) {
                 getUIError("static createUI() method not found in " + uiClass);
