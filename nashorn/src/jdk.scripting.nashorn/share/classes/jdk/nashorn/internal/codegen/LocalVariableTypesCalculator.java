@@ -595,7 +595,7 @@ final class LocalVariableTypesCalculator extends SimpleNodeVisitor {
         }
 
         final Expression init = forNode.getInit();
-        if(forNode.isForIn()) {
+        if(forNode.isForInOrOf()) {
             final JoinPredecessorExpression iterable = forNode.getModify();
             visitExpression(iterable);
             enterTestFirstLoop(forNode, null, init,

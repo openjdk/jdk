@@ -130,7 +130,7 @@ final class OptimisticTypesCalculator extends SimpleNodeVisitor {
 
     @Override
     public boolean enterForNode(final ForNode forNode) {
-        if(forNode.isForIn()) {
+        if(forNode.isForInOrOf()) {
             // for..in has the iterable in its "modify"
             tagNeverOptimistic(forNode.getModify());
         } else {
