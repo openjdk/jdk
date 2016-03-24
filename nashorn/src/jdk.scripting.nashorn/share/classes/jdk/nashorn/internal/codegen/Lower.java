@@ -97,6 +97,7 @@ import jdk.nashorn.internal.runtime.logging.Logger;
 final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Loggable {
 
     private final DebugLogger log;
+    private final boolean es6;
 
     // Conservative pattern to test if element names consist of characters valid for identifiers.
     // This matches any non-zero length alphanumeric string including _ and $ and not starting with a digit.
@@ -144,6 +145,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         });
 
         this.log = initLogger(compiler.getContext());
+        this.es6 = compiler.getScriptEnvironment()._es6;
     }
 
     @Override
@@ -257,8 +259,9 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         }
 
         newForNode = checkEscape(newForNode);
-        if(newForNode.isForIn()) {
-            // Wrap it in a block so its internally created iterator is restricted in scope
+        if(!es6 && newForNode.isForIn()) {
+            // Wrap it in a block so its internally created iterator is restricted in scope, unless we are running
+            // in ES6 mode, in which case the parser already created a block to capture let/const declarations.
             addStatementEnclosedInBlock(newForNode);
         } else {
             addStatement(newForNode);

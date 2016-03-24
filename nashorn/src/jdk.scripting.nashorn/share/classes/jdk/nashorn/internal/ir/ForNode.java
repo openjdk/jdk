@@ -274,4 +274,15 @@ public final class ForNode extends LoopNode {
     public boolean hasPerIterationScope() {
         return (flags & PER_ITERATION_SCOPE) != 0;
     }
+
+    /**
+     * Returns true if this for-node needs the scope creator of its containing block to create
+     * per-iteration scope. This is only true for for-in loops with lexical declarations.
+     *
+     * @see Block#providesScopeCreator()
+     * @return true if the containing block's scope object creator is required in codegen
+     */
+    public boolean needsScopeCreator() {
+        return isForIn() && hasPerIterationScope();
+    }
 }
