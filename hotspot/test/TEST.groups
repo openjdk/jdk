@@ -334,6 +334,15 @@ hotspot_runtime = \
  -runtime/memory/ReserveMemory.java \
  -runtime/memory/RunUnitTestsConcurrently.java \
  -runtime/Unsafe/RangeCheck.java \
+ -runtime/SelectionResolution/AbstractMethodErrorTest.java \
+ -runtime/SelectionResolution/IllegalAccessErrorTest.java \
+ -runtime/SelectionResolution/InvokeInterfaceICCE.java \
+ -runtime/SelectionResolution/InvokeInterfaceSuccessTest.java \
+ -runtime/SelectionResolution/InvokeSpecialICCE.java \
+ -runtime/SelectionResolution/InvokeSpecialSuccessTest.java \
+ -runtime/SelectionResolution/InvokeStaticICCE.java \
+ -runtime/SelectionResolution/InvokeVirtualICCE.java \
+ -runtime/SelectionResolution/InvokeVirtualSuccessTest.java \
  -runtime/SharedArchiveFile/CdsSameObjectAlignment.java \
  -runtime/SharedArchiveFile/DefaultUseWithClient.java \
  -runtime/Thread/CancellableThreadTest.java \
