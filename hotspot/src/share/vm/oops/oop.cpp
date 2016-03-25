@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,8 @@ void oopDesc::print_on(outputStream* st) const {
 }
 
 void oopDesc::print_address_on(outputStream* st) const {
-  if (PrintOopAddress) {
-    st->print("{" INTPTR_FORMAT "}", p2i(this));
-  }
+  st->print("{" INTPTR_FORMAT "}", p2i(this));
+
 }
 
 void oopDesc::print()         { print_on(tty);         }
@@ -76,7 +75,7 @@ void oopDesc::print_value_on(outputStream* st) const {
     st->print("NULL");
   } else if (java_lang_String::is_instance(obj)) {
     java_lang_String::print(obj, st);
-    if (PrintOopAddress) print_address_on(st);
+    print_address_on(st);
   } else {
     klass()->oop_print_value_on(obj, st);
   }
