@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -904,7 +904,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
                                 ? LoggingBackend.JUL_WITH_CONFIG
                                 : LoggingBackend.JUL_DEFAULT;
                         } else {
-                            // SimpleLogger is used
+                            // SimpleConsoleLogger is used
                             return LoggingBackend.NONE;
                         }
                     }
@@ -913,10 +913,10 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         }
     }
 
-    // We will use temporary SimpleConsoleLoggers if
+    // We will use a temporary SurrogateLogger if
     // the logging backend is JUL, there is no custom config,
     // and the LogManager has not been initialized yet.
-    private static  boolean useTemporaryLoggers() {
+    private static  boolean useSurrogateLoggers() {
         // being paranoid: this should already have been checked
         if (!isBooted()) return true;
         return DetectBackend.detectedBackend == LoggingBackend.JUL_DEFAULT
@@ -931,25 +931,24 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
     public static synchronized boolean useLazyLoggers() {
         return !BootstrapLogger.isBooted()
                 || DetectBackend.detectedBackend == LoggingBackend.CUSTOM
-                || useTemporaryLoggers();
+                || useSurrogateLoggers();
     }
 
     // Called by LazyLoggerAccessor. This method will determine whether
     // to create a BootstrapLogger (if the VM is not yet booted),
-    // a SimpleConsoleLogger (if JUL is the default backend and there
+    // a SurrogateLogger (if JUL is the default backend and there
     // is no custom JUL configuration and LogManager is not yet initialized),
     // or a logger returned by the loaded LoggerFinder (all other cases).
     static Logger getLogger(LazyLoggerAccessor accessor) {
         if (!BootstrapLogger.isBooted()) {
             return new BootstrapLogger(accessor);
         } else {
-            boolean temporary = useTemporaryLoggers();
-            if (temporary) {
+            if (useSurrogateLoggers()) {
                 // JUL is the default backend, there is no custom configuration,
                 // LogManager has not been used.
                 synchronized(BootstrapLogger.class) {
-                    if (useTemporaryLoggers()) {
-                        return makeTemporaryLogger(accessor);
+                    if (useSurrogateLoggers()) {
+                        return createSurrogateLogger(accessor);
                     }
                 }
             }
@@ -961,46 +960,46 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
 
     // If the backend is JUL, and there is no custom configuration, and
     // nobody has attempted to call LogManager.getLogManager() yet, then
-    // we can temporarily substitute JUL Logger with SimpleConsoleLoggers,
+    // we can temporarily substitute JUL Logger with SurrogateLoggers,
     // which avoids the cost of actually loading up the LogManager...
-    // The TemporaryLoggers class has the logic to create such temporary
+    // The RedirectedLoggers class has the logic to create such surrogate
     // loggers, and to possibly replace them with real JUL loggers if
     // someone calls LogManager.getLogManager().
-    static final class TemporaryLoggers implements
-            Function<LazyLoggerAccessor, SimpleConsoleLogger> {
+    static final class RedirectedLoggers implements
+            Function<LazyLoggerAccessor, SurrogateLogger> {
 
         // all accesses must be synchronized on the outer BootstrapLogger.class
-        final Map<LazyLoggerAccessor, SimpleConsoleLogger> temporaryLoggers =
+        final Map<LazyLoggerAccessor, SurrogateLogger> redirectedLoggers =
                 new HashMap<>();
 
         // all accesses must be synchronized on the outer BootstrapLogger.class
-        // The temporaryLoggers map will be cleared when LogManager is initialized.
+        // The redirectLoggers map will be cleared when LogManager is initialized.
         boolean cleared;
 
         @Override
         // all accesses must be synchronized on the outer BootstrapLogger.class
-        public SimpleConsoleLogger apply(LazyLoggerAccessor t) {
+        public SurrogateLogger apply(LazyLoggerAccessor t) {
             if (cleared) throw new IllegalStateException("LoggerFinder already initialized");
-            return SimpleConsoleLogger.makeSimpleLogger(t.getLoggerName(), true);
+            return SurrogateLogger.makeSurrogateLogger(t.getLoggerName());
         }
 
         // all accesses must be synchronized on the outer BootstrapLogger.class
-        SimpleConsoleLogger get(LazyLoggerAccessor a) {
+        SurrogateLogger get(LazyLoggerAccessor a) {
             if (cleared) throw new IllegalStateException("LoggerFinder already initialized");
-            return temporaryLoggers.computeIfAbsent(a, this);
+            return redirectedLoggers.computeIfAbsent(a, this);
         }
 
         // all accesses must be synchronized on the outer BootstrapLogger.class
-        Map<LazyLoggerAccessor, SimpleConsoleLogger> drainTemporaryLoggers() {
-            if (temporaryLoggers.isEmpty()) return null;
+        Map<LazyLoggerAccessor, SurrogateLogger> drainLoggersMap() {
+            if (redirectedLoggers.isEmpty()) return null;
             if (cleared) throw new IllegalStateException("LoggerFinder already initialized");
-            final Map<LazyLoggerAccessor, SimpleConsoleLogger> accessors = new HashMap<>(temporaryLoggers);
-            temporaryLoggers.clear();
+            final Map<LazyLoggerAccessor, SurrogateLogger> accessors = new HashMap<>(redirectedLoggers);
+            redirectedLoggers.clear();
             cleared = true;
             return accessors;
         }
 
-        static void resetTemporaryLoggers(Map<LazyLoggerAccessor, SimpleConsoleLogger> accessors) {
+        static void replaceSurrogateLoggers(Map<LazyLoggerAccessor, SurrogateLogger> accessors) {
             // When the backend is JUL we want to force the creation of
             // JUL loggers here: some tests are expecting that the
             // PlatformLogger will create JUL loggers as soon as the
@@ -1012,36 +1011,38 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
             final LoggingBackend detectedBackend = DetectBackend.detectedBackend;
             final boolean lazy = detectedBackend != LoggingBackend.JUL_DEFAULT
                     && detectedBackend != LoggingBackend.JUL_WITH_CONFIG;
-            for (Map.Entry<LazyLoggerAccessor, SimpleConsoleLogger> a : accessors.entrySet()) {
+            for (Map.Entry<LazyLoggerAccessor, SurrogateLogger> a : accessors.entrySet()) {
                 a.getKey().release(a.getValue(), !lazy);
             }
         }
 
         // all accesses must be synchronized on the outer BootstrapLogger.class
-        static final TemporaryLoggers INSTANCE = new TemporaryLoggers();
+        static final RedirectedLoggers INSTANCE = new RedirectedLoggers();
     }
 
-    static synchronized Logger makeTemporaryLogger(LazyLoggerAccessor a) {
-        // accesses to TemporaryLoggers is synchronized on BootstrapLogger.class
-        return TemporaryLoggers.INSTANCE.get(a);
+    static synchronized Logger createSurrogateLogger(LazyLoggerAccessor a) {
+        // accesses to RedirectedLoggers is synchronized on BootstrapLogger.class
+        return RedirectedLoggers.INSTANCE.get(a);
     }
 
     private static volatile boolean logManagerConfigured;
 
-    private static synchronized Map<LazyLoggerAccessor, SimpleConsoleLogger>
-         releaseTemporaryLoggers() {
+    private static synchronized Map<LazyLoggerAccessor, SurrogateLogger>
+         releaseSurrogateLoggers() {
         // first check whether there's a chance that we have used
-        // temporary loggers; Will be false if logManagerConfigured is already
+        // surrogate loggers; Will be false if logManagerConfigured is already
         // true.
-        final boolean clearTemporaryLoggers = useTemporaryLoggers();
+        final boolean releaseSurrogateLoggers = useSurrogateLoggers();
 
         // then sets the flag that tells that the log manager is configured
         logManagerConfigured = true;
 
-        // finally replace all temporary loggers by real JUL loggers
-        if (clearTemporaryLoggers) {
-            // accesses to TemporaryLoggers is synchronized on BootstrapLogger.class
-            return TemporaryLoggers.INSTANCE.drainTemporaryLoggers();
+        // finally retrieves all surrogate loggers that should be replaced
+        // by real JUL loggers, and return them in the form of a redirected
+        // loggers map.
+        if (releaseSurrogateLoggers) {
+            // accesses to RedirectedLoggers is synchronized on BootstrapLogger.class
+            return RedirectedLoggers.INSTANCE.drainLoggersMap();
         } else {
             return null;
         }
@@ -1049,14 +1050,14 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
 
     public static void redirectTemporaryLoggers() {
         // This call is synchronized on BootstrapLogger.class.
-        final Map<LazyLoggerAccessor, SimpleConsoleLogger> accessors =
-                releaseTemporaryLoggers();
+        final Map<LazyLoggerAccessor, SurrogateLogger> accessors =
+                releaseSurrogateLoggers();
 
         // We will now reset the logger accessors, triggering the
-        // (possibly lazy) replacement of any temporary logger by the
+        // (possibly lazy) replacement of any temporary surrogate logger by the
         // real logger returned from the loaded LoggerFinder.
         if (accessors != null) {
-            TemporaryLoggers.resetTemporaryLoggers(accessors);
+            RedirectedLoggers.replaceSurrogateLoggers(accessors);
         }
 
         BootstrapExecutors.flush();
