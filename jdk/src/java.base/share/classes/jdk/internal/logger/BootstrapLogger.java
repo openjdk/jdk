@@ -135,7 +135,7 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
             Thread thread = AccessController.doPrivileged(new PrivilegedAction<Thread>() {
                 @Override
                 public Thread run() {
-                    Thread t = new InnocuousThread(new BootstrapMessageLoggerTask(owner, r));
+                    Thread t = InnocuousThread.newThread(new BootstrapMessageLoggerTask(owner, r));
                     t.setName("BootstrapMessageLoggerTask-"+t.getName());
                     return t;
                 }
