@@ -82,7 +82,8 @@ class DirtyCardQueueSet: public PtrQueueSet {
   // returns true.  Stops processing after the first closure
   // application that returns false, and returns false from this
   // function.  If "consume" is true, the node's index is updated to
-  // follow the last processed element.
+  // exclude the processed elements, e.g. up to the element for which
+  // the closure returned false.
   bool apply_closure_to_buffer(CardTableEntryClosure* cl,
                                BufferNode* node,
                                bool consume,
@@ -121,14 +122,18 @@ public:
 
   static void handle_zero_index_for_thread(JavaThread* t);
 
-  // If there exists some completed buffer, pop it, then apply the
-  // specified closure to its active elements.  If all active elements
-  // are processed, returns "true".  If no completed buffers exist,
-  // returns false.  If a completed buffer exists, but is only
-  // partially completed before a "yield" happens, the partially
-  // completed buffer (with its index updated to exclude the processed
-  // elements) is returned to the completed buffer set, and this call
-  // returns false.
+  // If there are more than stop_at completed buffers, pop one, apply
+  // the specified closure to its active elements, and return true.
+  // Otherwise return false.
+  //
+  // A completely processed buffer is freed.  However, if a closure
+  // invocation returns false, processing is stopped and the partially
+  // processed buffer (with its index updated to exclude the processed
+  // elements, e.g. up to the element for which the closure returned
+  // false) is returned to the completed buffer set.
+  //
+  // If during_pause is true, stop_at must be zero, and the closure
+  // must never return false.
   bool apply_closure_to_completed_buffer(CardTableEntryClosure* cl,
                                          uint worker_i,
                                          size_t stop_at,

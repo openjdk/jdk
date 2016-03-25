@@ -155,42 +155,52 @@ bool DirtyCardQueueSet::apply_closure_to_buffer(CardTableEntryClosure* cl,
                                                 bool consume,
                                                 uint worker_i) {
   if (cl == NULL) return true;
+  bool result = true;
   void** buf = BufferNode::make_buffer_from_node(node);
   size_t limit = DirtyCardQueue::byte_index_to_index(buffer_size());
-  size_t start = DirtyCardQueue::byte_index_to_index(node->index());
-  for (size_t i = start; i < limit; ++i) {
+  size_t i = DirtyCardQueue::byte_index_to_index(node->index());
+  for ( ; i < limit; ++i) {
     jbyte* card_ptr = static_cast<jbyte*>(buf[i]);
     assert(card_ptr != NULL, "invariant");
     if (!cl->do_card_ptr(card_ptr, worker_i)) {
-      if (consume) {
-        size_t new_index = DirtyCardQueue::index_to_byte_index(i + 1);
-        assert(new_index <= buffer_size(), "invariant");
-        node->set_index(new_index);
-      }
-      return false;
+      result = false;           // Incomplete processing.
+      break;
     }
   }
   if (consume) {
-    node->set_index(buffer_size());
+    size_t new_index = DirtyCardQueue::index_to_byte_index(i);
+    assert(new_index <= buffer_size(), "invariant");
+    node->set_index(new_index);
   }
-  return true;
+  return result;
 }
+
+#ifndef ASSERT
+#define assert_fully_consumed(node, buffer_size)
+#else
+#define assert_fully_consumed(node, buffer_size)                \
+  do {                                                          \
+    size_t _afc_index = (node)->index();                        \
+    size_t _afc_size = (buffer_size);                           \
+    assert(_afc_index == _afc_size,                             \
+           "Buffer was not fully consumed as claimed: index: "  \
+           SIZE_FORMAT ", size: " SIZE_FORMAT,                  \
+            _afc_index, _afc_size);                             \
+  } while (0)
+#endif // ASSERT
 
 bool DirtyCardQueueSet::mut_process_buffer(BufferNode* node) {
   guarantee(_free_ids != NULL, "must be");
 
-  // claim a par id
-  uint worker_i = _free_ids->claim_par_id();
+  uint worker_i = _free_ids->claim_par_id(); // temporarily claim an id
+  bool result = apply_closure_to_buffer(_mut_process_closure, node, true, worker_i);
+  _free_ids->release_par_id(worker_i); // release the id
 
-  bool b = apply_closure_to_buffer(_mut_process_closure, node, true, worker_i);
-  if (b) {
+  if (result) {
+    assert_fully_consumed(node, buffer_size());
     Atomic::inc(&_processed_buffers_mut);
   }
-
-  // release the id
-  _free_ids->release_par_id(worker_i);
-
-  return b;
+  return result;
 }
 
 
@@ -227,15 +237,16 @@ bool DirtyCardQueueSet::apply_closure_to_completed_buffer(CardTableEntryClosure*
     return false;
   } else {
     if (apply_closure_to_buffer(cl, nd, true, worker_i)) {
+      assert_fully_consumed(nd, buffer_size());
       // Done with fully processed buffer.
       deallocate_buffer(nd);
       Atomic::inc(&_processed_buffers_rs_thread);
-      return true;
     } else {
       // Return partially processed buffer to the queue.
+      guarantee(!during_pause, "Should never stop early");
       enqueue_complete_buffer(nd);
-      return false;
     }
+    return true;
   }
 }
 
