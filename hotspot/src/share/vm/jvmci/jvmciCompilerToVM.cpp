@@ -1051,6 +1051,11 @@ C2V_VMENTRY(jobject, getSymbol, (JNIEnv*, jobject, jlong symbol))
   return JNIHandles::make_local(THREAD, sym());
 C2V_END
 
+C2V_VMENTRY(jlong, lookupSymbol, (JNIEnv*, jobject, jobject string))
+  Symbol* symbol = java_lang_String::as_symbol_or_null(JNIHandles::resolve(string));
+  return (jlong) symbol;
+C2V_END
+
 bool matches(jobjectArray methods, Method* method) {
   objArrayOop methods_oop = (objArrayOop) JNIHandles::resolve(methods);
 
@@ -1478,6 +1483,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC"isMature",                                     CC"("METASPACE_METHOD_DATA")Z",                                                   FN_PTR(isMature)},
   {CC"hasCompiledCodeForOSR",                        CC"("HS_RESOLVED_METHOD"II)Z",                                                    FN_PTR(hasCompiledCodeForOSR)},
   {CC"getSymbol",                                    CC"(J)"STRING,                                                                    FN_PTR(getSymbol)},
+  {CC"lookupSymbol",                                 CC"("STRING")J",                                                                  FN_PTR(lookupSymbol)},
   {CC"getNextStackFrame",                            CC"("HS_STACK_FRAME_REF "["RESOLVED_METHOD"I)"HS_STACK_FRAME_REF,                 FN_PTR(getNextStackFrame)},
   {CC"materializeVirtualObjects",                    CC"("HS_STACK_FRAME_REF"Z)V",                                                     FN_PTR(materializeVirtualObjects)},
   {CC"shouldDebugNonSafepoints",                     CC"()Z",                                                                          FN_PTR(shouldDebugNonSafepoints)},

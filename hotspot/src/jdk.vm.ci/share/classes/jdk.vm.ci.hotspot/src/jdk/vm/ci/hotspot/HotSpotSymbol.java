@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,36 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.hotspot.HotSpotVMConfig.CompressEncoding;
 import jdk.vm.ci.meta.Constant;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.MemoryAccessProvider;
 
 /**
- * HotSpot specific extension of {@link MemoryAccessProvider}.
+ * Class to access the C++ {@code vmSymbols} table.
  */
-public interface HotSpotMemoryAccessProvider extends MemoryAccessProvider {
+public final class HotSpotSymbol implements MetaspaceWrapperObject {
 
-    JavaConstant readNarrowOopConstant(Constant base, long displacement, CompressEncoding encoding);
+    private final String symbol;
+    private final long pointer;
 
-    Constant readKlassPointerConstant(Constant base, long displacement);
+    HotSpotSymbol(String symbol, long pointer) {
+        this.symbol = symbol;
+        this.pointer = pointer;
+    }
 
-    Constant readNarrowKlassPointerConstant(Constant base, long displacement, CompressEncoding encoding);
+    public String getSymbol() {
+        return symbol;
+    }
 
-    Constant readMethodPointerConstant(Constant base, long displacement);
+    public Constant asConstant() {
+        return HotSpotMetaspaceConstantImpl.forMetaspaceObject(this, false);
+    }
 
-    Constant readSymbolConstant(Constant base, long displacement);
+    @Override
+    public long getMetaspacePointer() {
+        return pointer;
+    }
+
+    @Override
+    public String toString() {
+        return "Symbol<" + symbol + ">";
+    }
 }
