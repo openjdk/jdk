@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import javax.swing.SortOrder;
 
 /**
  * An implementation of <code>RowSorter</code> that provides sorting and
@@ -495,7 +494,7 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
      */
     public int convertRowIndexToView(int index) {
         if (modelToView == null) {
-            if (index < 0 || index >= getModelWrapper().getRowCount()) {
+            if (index < 0 || index >= modelRowCount) {
                 throw new IndexOutOfBoundsException("Invalid index");
             }
             return index;
@@ -510,7 +509,7 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
      */
     public int convertRowIndexToModel(int index) {
         if (viewToModel == null) {
-            if (index < 0 || index >= getModelWrapper().getRowCount()) {
+            if (index < 0 || index >= modelRowCount) {
                 throw new IndexOutOfBoundsException("Invalid index");
             }
             return index;
@@ -814,7 +813,7 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
             // When filtering this may differ from getModelWrapper().getRowCount()
             return viewToModel.length;
         }
-        return getModelWrapper().getRowCount();
+        return Math.max(getModelWrapper().getRowCount(), modelRowCount);
     }
 
     /**
