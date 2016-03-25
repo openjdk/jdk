@@ -198,6 +198,7 @@ java/nio/channels/Selector/OutOfBand.java                       macosx-all
 
 # 7158947, Solaris 11
 java/nio/file/WatchService/Basic.java				solaris-all
+java/nio/file/WatchService/MayFlies.java			solaris-all
 java/nio/file/WatchService/LotsOfEvents.java			solaris-all
 
 # 8149712
