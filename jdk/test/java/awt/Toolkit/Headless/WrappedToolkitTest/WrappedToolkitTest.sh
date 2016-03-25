@@ -105,17 +105,6 @@ if [ -z "${TESTJAVA}" ] ; then
 fi
 echo "JDK under test is: $TESTJAVA"
 
-##Deal with .class files:
-#if [ -n "${STANDALONE}" ] ; then
-#   # then compile all .java files (if there are any) into .class files
-#   if [ -a *.java ]; then
-#      ${TESTJAVA}/bin/javac$ ./*.java ;
-#   fi
-#   # else in harness so copy all the class files from where jtreg put them
-#   # over to the scratch directory this test is running in. 
-#   else cp ${TESTCLASSES}/*.class . ;
-#fi
-#
 #if in test harness, then copy the entire directory that the test is in over 
 # to the scratch directory.  This catches any support files needed by the test.
 if [ -z "${STANDALONE}" ] ; 

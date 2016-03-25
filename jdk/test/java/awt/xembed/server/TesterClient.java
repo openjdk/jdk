@@ -32,7 +32,6 @@ public class TesterClient {
     public static void main(String[] args) throws Throwable {
         // First parameter is the name of the test, second is the window, the rest are rectangles
         Class cl = Class.forName("sun.awt.X11.XEmbedServerTester");
-        cl.getModule().addExports("sun.awt.X11",TesterClient.class.getModule());
 
         test = cl.getMethod(args[0], new Class[0]);
         long window = Long.parseLong(args[1]);
