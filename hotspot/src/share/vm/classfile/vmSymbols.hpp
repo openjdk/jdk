@@ -1330,16 +1330,6 @@
   do_intrinsic(_weakCompareAndSwapIntAcquire,     jdk_internal_misc_Unsafe,  weakCompareAndSwapIntAcquire_name,     compareAndSwapInt_signature,        F_R) \
   do_intrinsic(_weakCompareAndSwapIntRelease,     jdk_internal_misc_Unsafe,  weakCompareAndSwapIntRelease_name,     compareAndSwapInt_signature,        F_R) \
                                                                                                                         \
-  do_intrinsic(_putOrderedObject,         jdk_internal_misc_Unsafe,        putOrderedObject_name, putOrderedObject_signature, F_RN) \
-   do_name(     putOrderedObject_name,                           "putOrderedObject")                                    \
-   do_alias(    putOrderedObject_signature,                     /*(LObject;JLObject;)V*/ putObject_signature)           \
-  do_intrinsic(_putOrderedLong,           jdk_internal_misc_Unsafe,        putOrderedLong_name, putOrderedLong_signature, F_RN)  \
-   do_name(     putOrderedLong_name,                             "putOrderedLong")                                      \
-   do_alias(    putOrderedLong_signature,                       /*(Ljava/lang/Object;JJ)V*/ putLong_signature)          \
-  do_intrinsic(_putOrderedInt,            jdk_internal_misc_Unsafe,        putOrderedInt_name, putOrderedInt_signature,   F_RN)  \
-   do_name(     putOrderedInt_name,                              "putOrderedInt")                                       \
-   do_alias(    putOrderedInt_signature,                        /*(Ljava/lang/Object;JI)V*/ putInt_signature)           \
-                                                                                                                        \
   do_intrinsic(_getAndAddInt,             jdk_internal_misc_Unsafe,     getAndAddInt_name, getAndAddInt_signature, F_R)       \
    do_name(     getAndAddInt_name,                                      "getAndAddInt")                                       \
    do_signature(getAndAddInt_signature,                                 "(Ljava/lang/Object;JI)I" )                           \

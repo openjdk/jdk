@@ -209,9 +209,6 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_putLong_raw:
   case vmIntrinsics::_putFloat_raw:
   case vmIntrinsics::_putDouble_raw:
-  case vmIntrinsics::_putOrderedObject:
-  case vmIntrinsics::_putOrderedInt:
-  case vmIntrinsics::_putOrderedLong:
   case vmIntrinsics::_getShortUnaligned:
   case vmIntrinsics::_getCharUnaligned:
   case vmIntrinsics::_getIntUnaligned:
