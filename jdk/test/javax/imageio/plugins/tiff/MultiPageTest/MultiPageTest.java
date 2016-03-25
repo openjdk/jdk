@@ -97,7 +97,7 @@ public class MultiPageTest {
     }
 
 
-    private ImageWriter getTIFFWriter() throws Exception {
+    private ImageWriter getTIFFWriter() {
 
         Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("TIFF");
         if (!writers.hasNext()) {
@@ -106,7 +106,7 @@ public class MultiPageTest {
         return writers.next();
     }
 
-    private ImageReader getTIFFReader() throws Exception {
+    private ImageReader getTIFFReader() {
 
         Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("TIFF");
         if (!readers.hasNext()) {
