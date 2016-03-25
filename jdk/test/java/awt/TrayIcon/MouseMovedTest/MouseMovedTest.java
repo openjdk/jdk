@@ -30,7 +30,7 @@ import java.awt.image.BufferedImage;
  * @bug 7153700
  * @summary Check for mouseMoved event for java.awt.TrayIcon
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
- * @library ../../../../lib/testlibrary
+ * @library ../../../../lib/testlibrary ../
  * @build ExtendedRobot SystemTrayIconHelper
  * @run main MouseMovedTest
  */

@@ -32,7 +32,7 @@ import sun.awt.ComponentFactory;
  * @test
  * @bug 8143316
  * @modules java.desktop/java.awt.peer
- *          java.desktop/sun.awt.peer
+ *          java.desktop/sun.awt
  * @summary Crash Trend in 1.9.0-ea-b93 (sun.awt.DefaultMouseInfoPeer.fillPointWithCoords)
  */
 public class PointerInfoCrashTest {
