@@ -75,7 +75,6 @@ import jdk.jshell.MethodSnippet;
 import jdk.jshell.PersistentSnippet;
 import jdk.jshell.Snippet;
 import jdk.jshell.Snippet.Status;
-import jdk.jshell.Snippet.SubKind;
 import jdk.jshell.SnippetEvent;
 import jdk.jshell.SourceCodeAnalysis;
 import jdk.jshell.SourceCodeAnalysis.CompletionInfo;
@@ -95,10 +94,11 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import jdk.internal.jshell.tool.Feedback.FormatAction;
 import jdk.internal.jshell.tool.Feedback.FormatCase;
+import jdk.internal.jshell.tool.Feedback.FormatErrors;
 import jdk.internal.jshell.tool.Feedback.FormatResolve;
+import jdk.internal.jshell.tool.Feedback.FormatUnresolved;
 import jdk.internal.jshell.tool.Feedback.FormatWhen;
 import static java.util.stream.Collectors.toList;
-import static jdk.jshell.Snippet.Kind.METHOD;
 import static java.util.stream.Collectors.toMap;
 import static jdk.jshell.Snippet.SubKind.VAR_VALUE_SUBKIND;
 
@@ -113,6 +113,12 @@ public class JShellTool {
     private static final Pattern HISTORY_ALL_START_FILENAME = Pattern.compile(
             "((?<cmd>(all|history|start))(\\z|\\p{javaWhitespace}+))?(?<filename>.*)");
     private static final String RECORD_SEPARATOR = "\u241E";
+    private static final String RB_NAME_PREFIX  = "jdk.internal.jshell.tool.resources";
+    private static final String VERSION_RB_NAME = RB_NAME_PREFIX + ".version";
+    private static final String L10N_RB_NAME    = RB_NAME_PREFIX + ".l10n";
+    private static ResourceBundle versionRB = null;
+    private static ResourceBundle outputRB  = null;
+
 
     final InputStream cmdin;
     final PrintStream cmdout;
@@ -148,82 +154,18 @@ public class JShellTool {
         this.userout = userout;
         this.usererr = usererr;
         this.prefs = prefs;
-        initializeFeedbackModes();
-    }
-
-    /**
-     * Create the default set of feedback modes
-     */
-    final void initializeFeedbackModes() {
-        // Initialize normal feedback mode
-        cmdSet("newmode normal command");
-        cmdSet("prompt normal '\n-> ' '>> '");
-        cmdSet("field normal pre '|  '");
-        cmdSet("field normal post '%n'");
-        cmdSet("field normal errorpre '|  '");
-        cmdSet("field normal errorpost '%n'");
-        cmdSet("field normal action 'Added' added-primary");
-        cmdSet("field normal action 'Modified' modified-primary");
-        cmdSet("field normal action 'Replaced' replaced-primary");
-        cmdSet("field normal action 'Overwrote' overwrote-primary");
-        cmdSet("field normal action 'Dropped' dropped-primary");
-        cmdSet("field normal action 'Rejected' rejected-primary");
-        cmdSet("field normal action '  Update added' added-update");
-        cmdSet("field normal action '  Update modified' modified-update");
-        cmdSet("field normal action '  Update replaced' replaced-update");
-        cmdSet("field normal action '  Update overwrote' overwrote-update");
-        cmdSet("field normal action '  Update dropped' dropped-update");
-        cmdSet("field normal action '  Update rejected' rejected-update");
-        cmdSet("field normal resolve '' ok-*");
-        cmdSet("field normal resolve ', however, it cannot be invoked until%s is declared' defined-primary");
-        cmdSet("field normal resolve ', however, it cannot be referenced until%s is declared' notdefined-primary");
-        cmdSet("field normal resolve ' which cannot be invoked until%s is declared' defined-update");
-        cmdSet("field normal resolve ' which cannot be referenced until%s is declared' notdefined-update");
-        cmdSet("field normal name '%s'");
-        cmdSet("field normal type '%s'");
-        cmdSet("field normal result '%s'");
-
-        cmdSet("format normal '' *-*-*");
-
-        cmdSet("format normal '{pre}{action} class {name}{resolve}{post}' class");
-        cmdSet("format normal '{pre}{action} interface {name}{resolve}{post}' interface");
-        cmdSet("format normal '{pre}{action} enum {name}{resolve}{post}' enum");
-        cmdSet("format normal '{pre}{action} annotation interface {name}{resolve}{post}' annotation");
-
-        cmdSet("format normal '{pre}{action} method {name}({type}){resolve}{post}' method");
-
-        cmdSet("format normal '{pre}{action} variable {name} of type {type}{resolve}{post}' vardecl");
-        cmdSet("format normal '{pre}{action} variable {name} of type {type} with initial value {result}{resolve}{post}' varinit");
-        cmdSet("format normal '{pre}{action} variable {name}{resolve}{post}' vardeclrecoverable");
-        cmdSet("format normal '{pre}{action} variable {name}, reset to null{post}' varreset-*-update");
-
-        cmdSet("format normal '{pre}Expression value is: {result}{post}" +
-                "{pre}  assigned to temporary variable {name} of type {type}{post}' expression");
-        cmdSet("format normal '{pre}Variable {name} of type {type} has value {result}{post}' varvalue");
-        cmdSet("format normal '{pre}Variable {name} has been assigned the value {result}{post}' assignment");
-
-        cmdSet("feedback normal");
-
-        // Initialize off feedback mode
-        cmdSet("newmode off quiet");
-        cmdSet("prompt off '-> ' '>> '");
-        cmdSet("field off pre '|  '");
-        cmdSet("field off post '%n'");
-        cmdSet("field off errorpre '|  '");
-        cmdSet("field off errorpost '%n'");
-        cmdSet("format off '' *-*-*");
     }
 
     private IOContext input = null;
     private boolean regenerateOnDeath = true;
     private boolean live = false;
+    private boolean feedbackInitialized = false;
 
     SourceCodeAnalysis analysis;
     JShell state = null;
     Subscription shutdownSubscription = null;
 
     private boolean debug = false;
-    private boolean displayPrompt = true;
     public boolean testPrompt = false;
     private String cmdlineClasspath = null;
     private String cmdlineStartup = null;
@@ -326,6 +268,43 @@ public class JShellTool {
         }
     }
 
+    /**
+     * Print using resource bundle look-up and adding prefix and postfix
+     *
+     * @param key the resource key
+     */
+    String getResourceString(String key) {
+        if (outputRB == null) {
+            try {
+                outputRB = ResourceBundle.getBundle(L10N_RB_NAME);
+            } catch (MissingResourceException mre) {
+                error("Cannot find ResourceBundle: %s", L10N_RB_NAME);
+                return "";
+            }
+        }
+        String s;
+        try {
+            s = outputRB.getString(key);
+        } catch (MissingResourceException mre) {
+            error("Missing resource: %s in %s", key, L10N_RB_NAME);
+            return "";
+        }
+        return s;
+    }
+
+    /**
+     * Print using resource bundle look-up and adding prefix and postfix
+     *
+     * @param key the resource key
+     */
+    void hardrb(String key) {
+        String s = getResourceString(key);
+        String out = feedback.getPre()
+                + s.substring(0, s.length() - 1).replaceAll("\\R", "\n" + feedback.getPre())
+                + s.substring(s.length() - 1, s.length());
+        cmdout.print(out);
+    }
+
     <T> void hardPairs(Stream<T> stream, Function<T, String> a, Function<T, String> b) {
         Map<String, String> a2b = stream.collect(toMap(a, b,
                 (m1, m2) -> m1,
@@ -340,26 +319,6 @@ public class JShellTool {
         for (Entry<String, String> e : a2b.entrySet()) {
             hard(format, e.getKey(), e.getValue().replaceAll("\n", indentedNewLine));
         }
-    }
-
-    /**
-     * User custom feedback mode only
-     *
-     * @param fcase Event to report
-     * @param update Is this an update (rather than primary)
-     * @param fa Action
-     * @param fr Resolution status
-     * @param name Name string
-     * @param type Type string or null
-     * @param result Result value or null
-     * @param unresolved The unresolved symbols
-     */
-    void custom(FormatCase fcase, boolean update, FormatAction fa, FormatResolve fr,
-            String name, String type, String unresolved, String result) {
-        String format = feedback.getFormat(fcase,
-                (update ? FormatWhen.UPDATE : FormatWhen.PRIMARY), fa, fr,
-                name != null, type != null, result != null);
-        fluffRaw(format, unresolved, name, type, result);
     }
 
     /**
@@ -544,7 +503,6 @@ public class JShellTool {
                         ? currentNameSpace.tid(sn)
                         : errorNamespace.tid(sn))
                 .build();
-        analysis = state.sourceCodeAnalysis();
         shutdownSubscription = state.onShutdown((JShell deadState) -> {
             if (deadState == state) {
                 hard("State engine terminated.");
@@ -552,7 +510,12 @@ public class JShellTool {
                 live = false;
             }
         });
+        analysis = state.sourceCodeAnalysis();
         live = true;
+        if (!feedbackInitialized) {
+            startUpRun(getResourceString("startup.feedback"));
+            feedbackInitialized = true;
+        }
 
         if (cmdlineClasspath != null) {
             state.addToClasspath(cmdlineClasspath);
@@ -568,12 +531,16 @@ public class JShellTool {
         } else {
             start = cmdlineStartup;
         }
+        startUpRun(start);
+        currentNameSpace = mainNamespace;
+    }
+    //where
+    private void startUpRun(String start) {
         try (IOContext suin = new FileScannerIOContext(new StringReader(start))) {
             run(suin);
         } catch (Exception ex) {
             hard("Unexpected exception reading start-up: %s\n", ex);
         }
-        currentNameSpace = mainNamespace;
     }
 
     private void closeState() {
@@ -596,7 +563,7 @@ public class JShellTool {
             String incomplete = "";
             while (live) {
                 String prompt;
-                if (displayPrompt) {
+                if (currentNameSpace == mainNamespace) {
                     prompt = testPrompt
                                     ? incomplete.isEmpty()
                                             ? "\u0005" //ENQ
@@ -679,21 +646,22 @@ public class JShellTool {
             cmd = cmd.substring(0, idx);
         }
         Command[] candidates = findCommand(cmd, c -> c.kind.isRealCommand);
-        if (candidates.length == 0) {
-            if (!rerunHistoryEntryById(cmd.substring(1))) {
-                error("No such command or snippet id: %s", cmd);
+        switch (candidates.length) {
+            case 0:
+                if (!rerunHistoryEntryById(cmd.substring(1))) {
+                    error("No such command or snippet id: %s", cmd);
+                    fluff("Type /help for help.");
+                }   break;
+            case 1:
+                Command command = candidates[0];
+                // If comand was successful and is of a replayable kind, add it the replayable history
+                if (command.run.apply(arg) && command.kind == CommandKind.REPLAY) {
+                    addToReplayHistory((command.command + " " + arg).trim());
+                }   break;
+            default:
+                error("Command: %s is ambiguous: %s", cmd, Arrays.stream(candidates).map(c -> c.command).collect(Collectors.joining(", ")));
                 fluff("Type /help for help.");
-            }
-        } else if (candidates.length == 1) {
-            Command command = candidates[0];
-
-            // If comand was successful and is of a replayable kind, add it the replayable history
-            if (command.run.apply(arg) && command.kind == CommandKind.REPLAY) {
-                addToReplayHistory((command.command + " " + arg).trim());
-            }
-        } else {
-            error("Command: %s is ambiguous: %s", cmd, Arrays.stream(candidates).map(c -> c.command).collect(Collectors.joining(", ")));
-            fluff("Type /help for help.");
+                break;
         }
     }
 
@@ -1022,7 +990,7 @@ public class JShellTool {
                 "  -- Display information about the specified help subject. Example: /help intro\n",
                 arg -> cmdHelp(arg),
                 EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/set", "editor|start|feedback|newmode|prompt|format|field ...", "set jshell configuration information",
+        registerCommand(new Command("/set", "editor|start|feedback|newmode|prompt|format ...", "set jshell configuration information",
                 "Set jshell configuration information, including:\n" +
                 "the external editor to use, the start-up definitions to use, a new feedback mode,\n" +
                 "the command prompt, the feedback mode to use, or the format of output.\n" +
@@ -1043,16 +1011,13 @@ public class JShellTool {
                 "/set prompt <mode> \"<prompt>\" \"<continuation-prompt>\"\n" +
                 "  -- Set the displayed prompts for a given feedback mode.\n" +
                 "\n" +
-                "/set format <mode> \"<format>\" <selector>...\n" +
-                "  -- Configure a feedback mode by setting the format to use in a specified set of cases.\n" +
-                "\n" +
-                "/set field name|type|result|when|action|resolve|pre|post|errorpre|errorpost \"<format>\"  <format-case>...\n" +
-                "  -- Set the format of a field within the <format-string> of a \"/set format\" command\n" +
+                "/set format <mode> <field> \"<format>\" <selector>...\n" +
+                "  -- Configure a feedback mode by setting the format of a field when the selector matchs.\n" +
                 "\n" +
                 "To get more information about one of these forms, use /help with the form specified.\n" +
                 "For example:   /help /set format\n",
                 arg -> cmdSet(arg),
-                new FixedCompletionProvider("format", "field", "feedback", "prompt", "newmode", "start", "editor")));
+                new FixedCompletionProvider("format", "feedback", "prompt", "newmode", "start", "editor")));
         registerCommand(new Command("/?", "", "get information about jshell",
                 "Display information about jshell (abbreviation for /help).\n" +
                 "/?\n" +
@@ -1153,11 +1118,9 @@ public class JShellTool {
 
     // --- Command implementations ---
 
-    private static final String[] setSub = new String[]{
-        "format", "field", "feedback", "newmode", "prompt", "editor", "start"};
+    private static final String[] SET_SUBCOMMANDS = new String[]{
+        "format", "feedback", "newmode", "prompt", "editor", "start"};
 
-    // The /set command.  Currently /set format, /set field and /set feedback.
-    // Other commands will fold here, see: 8148317
     final boolean cmdSet(String arg) {
         ArgTokenizer at = new ArgTokenizer(arg.trim());
         String which = setSubCommand(at);
@@ -1167,8 +1130,6 @@ public class JShellTool {
         switch (which) {
             case "format":
                 return feedback.setFormat(this, at);
-            case "field":
-                return feedback.setField(this, at);
             case "feedback":
                 return feedback.setFeedback(this, at);
             case "newmode":
@@ -1229,9 +1190,6 @@ public class JShellTool {
             case "format":
                 feedback.printFormatHelp(this);
                 return true;
-            case "field":
-                feedback.printFieldHelp(this);
-                return true;
             case "feedback":
                 feedback.printFeedbackHelp(this);
                 return true;
@@ -1265,13 +1223,13 @@ public class JShellTool {
     }
 
     String setSubCommand(ArgTokenizer at) {
-        String[] matches = at.next(setSub);
+        String[] matches = at.next(SET_SUBCOMMANDS);
         if (matches == null) {
             error("The /set command requires arguments. See: /help /set");
             return null;
         } else if (matches.length == 0) {
             error("Not a valid argument to /set: %s", at.val());
-            fluff("/set is followed by one of: %s", Arrays.stream(setSub)
+            fluff("/set is followed by one of: %s", Arrays.stream(SET_SUBCOMMANDS)
                     .collect(Collectors.joining(", "))
             );
             return null;
@@ -1349,8 +1307,20 @@ public class JShellTool {
         regenerateOnDeath = false;
         live = false;
         if (!replayableHistory.isEmpty()) {
-            prefs.put(REPLAY_RESTORE_KEY, replayableHistory.stream().reduce(
-                    (a, b) -> a + RECORD_SEPARATOR + b).get());
+            // Prevent history overflow by calculating what will fit, starting
+            // with must recent
+            int sepLen = RECORD_SEPARATOR.length();
+            int length = 0;
+            int first = replayableHistory.size();
+            while(length < Preferences.MAX_VALUE_LENGTH && --first >= 0) {
+                length += replayableHistory.get(first).length() + sepLen;
+            }
+            String hist = replayableHistory
+                    .subList(first + 1, replayableHistory.size())
+                    .stream()
+                    .reduce( (a, b) -> a + RECORD_SEPARATOR + b)
+                    .get();
+            prefs.put(REPLAY_RESTORE_KEY, hist);
         }
         fluff("Goodbye\n");
         return true;
@@ -1841,68 +1811,55 @@ public class JShellTool {
                 .collect(toList());
     }
 
-    void printDiagnostics(String source, List<Diag> diagnostics, boolean embed) {
-        String padding = embed? "    " : "";
-        for (Diag diag : diagnostics) {
-            //assert diag.getSource().equals(source);
-
-            if (!embed) {
-                if (diag.isError()) {
-                    hard("Error:");
-                } else {
-                    hard("Warning:");
-                }
+    void displayDiagnostics(String source, Diag diag, List<String> toDisplay) {
+        for (String line : diag.getMessage(null).split("\\r?\\n")) { // TODO: Internationalize
+            if (!line.trim().startsWith("location:")) {
+                toDisplay.add(line);
             }
-
-            for (String line : diag.getMessage(null).split("\\r?\\n")) { // TODO: Internationalize
-                if (!line.trim().startsWith("location:")) {
-                    hard("%s%s", padding, line);
-                }
-            }
-
-            int pstart = (int) diag.getStartPosition();
-            int pend = (int) diag.getEndPosition();
-            Matcher m = LINEBREAK.matcher(source);
-            int pstartl = 0;
-            int pendl = -2;
-            while (m.find(pstartl)) {
-                pendl = m.start();
-                if (pendl >= pstart) {
-                    break;
-                } else {
-                    pstartl = m.end();
-                }
-            }
-            if (pendl < pstart) {
-                pendl = source.length();
-            }
-            fluff("%s%s", padding, source.substring(pstartl, pendl));
-
-            StringBuilder sb = new StringBuilder();
-            int start = pstart - pstartl;
-            for (int i = 0; i < start; ++i) {
-                sb.append(' ');
-            }
-            sb.append('^');
-            boolean multiline = pend > pendl;
-            int end = (multiline ? pendl : pend) - pstartl - 1;
-            if (end > start) {
-                for (int i = start + 1; i < end; ++i) {
-                    sb.append('-');
-                }
-                if (multiline) {
-                    sb.append("-...");
-                } else {
-                    sb.append('^');
-                }
-            }
-            fluff("%s%s", padding, sb.toString());
-
-            debug("printDiagnostics start-pos = %d ==> %d -- wrap = %s", diag.getStartPosition(), start, this);
-            debug("Code: %s", diag.getCode());
-            debug("Pos: %d (%d - %d)", diag.getPosition(),
-                    diag.getStartPosition(), diag.getEndPosition());
         }
+
+        int pstart = (int) diag.getStartPosition();
+        int pend = (int) diag.getEndPosition();
+        Matcher m = LINEBREAK.matcher(source);
+        int pstartl = 0;
+        int pendl = -2;
+        while (m.find(pstartl)) {
+            pendl = m.start();
+            if (pendl >= pstart) {
+                break;
+            } else {
+                pstartl = m.end();
+            }
+        }
+        if (pendl < pstart) {
+            pendl = source.length();
+        }
+        toDisplay.add(source.substring(pstartl, pendl));
+
+        StringBuilder sb = new StringBuilder();
+        int start = pstart - pstartl;
+        for (int i = 0; i < start; ++i) {
+            sb.append(' ');
+        }
+        sb.append('^');
+        boolean multiline = pend > pendl;
+        int end = (multiline ? pendl : pend) - pstartl - 1;
+        if (end > start) {
+            for (int i = start + 1; i < end; ++i) {
+                sb.append('-');
+            }
+            if (multiline) {
+                sb.append("-...");
+            } else {
+                sb.append('^');
+            }
+        }
+        toDisplay.add(sb.toString());
+
+        debug("printDiagnostics start-pos = %d ==> %d -- wrap = %s", diag.getStartPosition(), start, this);
+        debug("Code: %s", diag.getCode());
+        debug("Pos: %d (%d - %d)", diag.getPosition(),
+                diag.getStartPosition(), diag.getEndPosition());
     }
 
     private String processSource(String srcInput) throws IllegalStateException {
@@ -1943,6 +1900,7 @@ public class JShellTool {
         return failed;
     }
 
+    // Handle incoming snippet events -- return true on failure
     private boolean handleEvent(SnippetEvent ste) {
         Snippet sn = ste.snippet();
         if (sn == null) {
@@ -1953,161 +1911,48 @@ public class JShellTool {
         String source = sn.source();
         if (ste.causeSnippet() == null) {
             // main event
-            printDiagnostics(source, diagnostics, false);
-            if (ste.status().isActive) {
+            for (Diag d : diagnostics) {
+                if (d.isError()) {
+                    hard("Error:");
+                } else {
+                    hard("Warning:");
+                }
+                List<String> disp = new ArrayList<>();
+                displayDiagnostics(source, d, disp);
+                disp.stream()
+                        .forEach(l -> hard(l));
+            }
+
+            if (ste.status() != Status.REJECTED) {
                 if (ste.exception() != null) {
                     if (ste.exception() instanceof EvalException) {
                         printEvalException((EvalException) ste.exception());
                         return true;
                     } else if (ste.exception() instanceof UnresolvedReferenceException) {
-                        printUnresolved((UnresolvedReferenceException) ste.exception());
+                        printUnresolvedException((UnresolvedReferenceException) ste.exception());
                     } else {
                         hard("Unexpected execution exception: %s", ste.exception());
                         return true;
                     }
                 } else {
-                    displayDeclarationAndValue(ste, false, ste.value());
+                    new DisplayEvent(ste, false, ste.value(), diagnostics).displayDeclarationAndValue();
                 }
-            } else if (ste.status() == Status.REJECTED) {
+            } else {
                 if (diagnostics.isEmpty()) {
                     hard("Failed.");
                 }
                 return true;
             }
-        } else if (ste.status() == Status.REJECTED) {
-            //TODO -- I don't believe updates can cause failures any more
-            hard("Caused failure of dependent %s --", ((DeclarationSnippet) sn).name());
-            printDiagnostics(source, diagnostics, true);
         } else {
             // Update
             if (sn instanceof DeclarationSnippet) {
-                // display update information
-                displayDeclarationAndValue(ste, true, ste.value());
-
                 List<Diag> other = errorsOnly(diagnostics);
-                if (other.size() > 0) {
-                    printDiagnostics(source, other, true);
-                }
+
+                // display update information
+                new DisplayEvent(ste, true, ste.value(), other).displayDeclarationAndValue();
             }
         }
         return false;
-    }
-
-    @SuppressWarnings("fallthrough")
-    private void displayDeclarationAndValue(SnippetEvent ste, boolean update, String value) {
-        Snippet key = ste.snippet();
-        FormatAction action;
-        Status status = ste.status();
-        switch (status) {
-            case VALID:
-            case RECOVERABLE_DEFINED:
-            case RECOVERABLE_NOT_DEFINED:
-                if (ste.previousStatus().isActive) {
-                    action = ste.isSignatureChange()
-                        ? FormatAction.REPLACED
-                        : FormatAction.MODIFIED;
-                } else {
-                    action = FormatAction.ADDED;
-                }
-                break;
-            case OVERWRITTEN:
-                action = FormatAction.OVERWROTE;
-                break;
-            case DROPPED:
-                action = FormatAction.DROPPED;
-                break;
-            case REJECTED:
-                action = FormatAction.REJECTED;
-                break;
-            case NONEXISTENT:
-            default:
-                // Should not occur
-                error("Unexpected status: " + ste.previousStatus().toString() + "=>" + status.toString());
-                return;
-        }
-        FormatResolve resolution;
-        String unresolved;
-        if (key instanceof DeclarationSnippet && (status == Status.RECOVERABLE_DEFINED || status == Status.RECOVERABLE_NOT_DEFINED)) {
-            resolution = (status == Status.RECOVERABLE_NOT_DEFINED)
-                    ? FormatResolve.NOTDEFINED
-                    : FormatResolve.DEFINED;
-            unresolved = unresolved((DeclarationSnippet) key);
-        } else {
-            resolution = FormatResolve.OK;
-            unresolved = "";
-        }
-        switch (key.subKind()) {
-            case CLASS_SUBKIND:
-                custom(FormatCase.CLASS, update, action, resolution,
-                        ((TypeDeclSnippet) key).name(), null, unresolved, null);
-                break;
-            case INTERFACE_SUBKIND:
-                custom(FormatCase.INTERFACE, update, action, resolution,
-                        ((TypeDeclSnippet) key).name(), null, unresolved, null);
-                break;
-            case ENUM_SUBKIND:
-                custom(FormatCase.ENUM, update, action, resolution,
-                        ((TypeDeclSnippet) key).name(), null, unresolved, null);
-                break;
-            case ANNOTATION_TYPE_SUBKIND:
-                custom(FormatCase.ANNOTATION, update, action, resolution,
-                        ((TypeDeclSnippet) key).name(), null, unresolved, null);
-                break;
-            case METHOD_SUBKIND:
-                custom(FormatCase.METHOD, update, action, resolution,
-                        ((MethodSnippet) key).name(), ((MethodSnippet) key).parameterTypes(), unresolved, null);
-                break;
-            case VAR_DECLARATION_SUBKIND:
-            case VAR_DECLARATION_WITH_INITIALIZER_SUBKIND: {
-                VarSnippet vk = (VarSnippet) key;
-                if (status == Status.RECOVERABLE_NOT_DEFINED) {
-                    custom(FormatCase.VARDECLRECOVERABLE, update, action, resolution,
-                            vk.name(), null, unresolved, null);
-                } else if (update && ste.isSignatureChange()) {
-                    custom(FormatCase.VARRESET, update, action, resolution,
-                            vk.name(), null, unresolved, value);
-                } else if (key.subKind() == SubKind.VAR_DECLARATION_WITH_INITIALIZER_SUBKIND) {
-                    custom(FormatCase.VARINIT, update, action, resolution,
-                            vk.name(), vk.typeName(), unresolved, value);
-                } else {
-                    custom(FormatCase.VARDECL, update, action, resolution,
-                            vk.name(), vk.typeName(), unresolved, value);
-                }
-                break;
-            }
-            case TEMP_VAR_EXPRESSION_SUBKIND: {
-                VarSnippet vk = (VarSnippet) key;
-                custom(FormatCase.EXPRESSION, update, action, resolution,
-                        vk.name(), vk.typeName(), null, value);
-                break;
-            }
-            case OTHER_EXPRESSION_SUBKIND:
-                error("Unexpected expression form -- value is: %s", (value));
-                break;
-            case VAR_VALUE_SUBKIND: {
-                ExpressionSnippet ek = (ExpressionSnippet) key;
-                custom(FormatCase.VARVALUE, update, action, resolution,
-                        ek.name(), ek.typeName(), null, value);
-                break;
-            }
-            case ASSIGNMENT_SUBKIND: {
-                ExpressionSnippet ek = (ExpressionSnippet) key;
-                custom(FormatCase.ASSIGNMENT, update, action, resolution,
-                        ek.name(), ek.typeName(), null, value);
-                break;
-            }
-            case SINGLE_TYPE_IMPORT_SUBKIND:
-            case TYPE_IMPORT_ON_DEMAND_SUBKIND:
-            case SINGLE_STATIC_IMPORT_SUBKIND:
-            case STATIC_IMPORT_ON_DEMAND_SUBKIND:
-                custom(FormatCase.IMPORT, update, action, resolution,
-                        ((ImportSnippet) key).name(), null, null, null);
-                break;
-            case STATEMENT_SUBKIND:
-                custom(FormatCase.STATEMENT, update, action, resolution,
-                        null, null, null, null);
-                break;
-        }
     }
     //where
     void printStackTrace(StackTraceElement[] stes) {
@@ -2141,31 +1986,11 @@ public class JShellTool {
         }
     }
     //where
-    void printUnresolved(UnresolvedReferenceException ex) {
+    void printUnresolvedException(UnresolvedReferenceException ex) {
         DeclarationSnippet corralled =  ex.getSnippet();
         List<Diag> otherErrors = errorsOnly(state.diagnostics(corralled));
-        StringBuilder sb = new StringBuilder();
-        if (otherErrors.size() > 0) {
-            if (state.unresolvedDependencies(corralled).size() > 0) {
-                sb.append(" and");
-            }
-            if (otherErrors.size() == 1) {
-                sb.append(" this error is addressed --");
-            } else {
-                sb.append(" these errors are addressed --");
-            }
-        } else {
-            sb.append(".");
-        }
-
-        String format = corralled.kind() == METHOD
-                ? "Attempted to call %s which cannot be invoked until%s"
-                : "Attempted to use %s which cannot be accessed until%s";
-        hard(format, corralled.name(),
-                unresolved(corralled), sb.toString());
-        if (otherErrors.size() > 0) {
-            printDiagnostics(corralled.source(), otherErrors, true);
-        }
+        new DisplayEvent(corralled, state.status(corralled), FormatAction.USED, true, null, otherErrors)
+                .displayDeclarationAndValue();
     }
     //where
     void printEvalException(EvalException ex) {
@@ -2176,26 +2001,180 @@ public class JShellTool {
         }
         printStackTrace(ex.getStackTrace());
     }
-    //where
-    String unresolved(DeclarationSnippet key) {
-        List<String> unr = state.unresolvedDependencies(key);
-        StringBuilder sb = new StringBuilder();
-        int fromLast = unr.size();
-        if (fromLast > 0) {
-            sb.append(" ");
+
+    private FormatAction toAction(Status status, Status previousStatus, boolean isSignatureChange) {
+        FormatAction act;
+        switch (status) {
+            case VALID:
+            case RECOVERABLE_DEFINED:
+            case RECOVERABLE_NOT_DEFINED:
+                if (previousStatus.isActive) {
+                    act = isSignatureChange
+                            ? FormatAction.REPLACED
+                            : FormatAction.MODIFIED;
+                } else {
+                    act = FormatAction.ADDED;
+                }
+                break;
+            case OVERWRITTEN:
+                act = FormatAction.OVERWROTE;
+                break;
+            case DROPPED:
+                act = FormatAction.DROPPED;
+                break;
+            case REJECTED:
+            case NONEXISTENT:
+            default:
+                // Should not occur
+                error("Unexpected status: " + previousStatus.toString() + "=>" + status.toString());
+                act = FormatAction.DROPPED;
         }
-        for (String u : unr) {
-            --fromLast;
-            sb.append(u);
-            if (fromLast == 0) {
-                // No suffix
-            } else if (fromLast == 1) {
-                sb.append(", and ");
+        return act;
+    }
+
+    class DisplayEvent {
+        private final Snippet sn;
+        private final FormatAction action;
+        private final boolean update;
+        private final String value;
+        private final List<String> errorLines;
+        private final FormatResolve resolution;
+        private final String unresolved;
+        private final FormatUnresolved unrcnt;
+        private final FormatErrors errcnt;
+
+        DisplayEvent(SnippetEvent ste, boolean update, String value, List<Diag> errors) {
+            this(ste.snippet(), ste.status(), toAction(ste.status(), ste.previousStatus(), ste.isSignatureChange()), update, value, errors);
+        }
+
+        DisplayEvent(Snippet sn, Status status, FormatAction action, boolean update, String value, List<Diag> errors) {
+            this.sn = sn;
+            this.action = action;
+            this.update = update;
+            this.value = value;
+            this.errorLines = new ArrayList<>();
+            for (Diag d : errors) {
+                displayDiagnostics(sn.source(), d, errorLines);
+            }
+            int unresolvedCount;
+            if (sn instanceof DeclarationSnippet && (status == Status.RECOVERABLE_DEFINED || status == Status.RECOVERABLE_NOT_DEFINED)) {
+                resolution = (status == Status.RECOVERABLE_NOT_DEFINED)
+                        ? FormatResolve.NOTDEFINED
+                        : FormatResolve.DEFINED;
+                unresolved = unresolved((DeclarationSnippet) sn);
+                unresolvedCount = state.unresolvedDependencies((DeclarationSnippet) sn).size();
             } else {
-                sb.append(", ");
+                resolution = FormatResolve.OK;
+                unresolved = "";
+                unresolvedCount = 0;
+            }
+            unrcnt = unresolvedCount == 0
+                    ? FormatUnresolved.UNRESOLVED0
+                    : unresolvedCount == 1
+                        ? FormatUnresolved.UNRESOLVED1
+                        : FormatUnresolved.UNRESOLVED2;
+            errcnt = errors.isEmpty()
+                    ? FormatErrors.ERROR0
+                    : errors.size() == 1
+                        ? FormatErrors.ERROR1
+                        : FormatErrors.ERROR2;
+        }
+
+        private String unresolved(DeclarationSnippet key) {
+            List<String> unr = state.unresolvedDependencies(key);
+            StringBuilder sb = new StringBuilder();
+            int fromLast = unr.size();
+            if (fromLast > 0) {
+                sb.append(" ");
+            }
+            for (String u : unr) {
+                --fromLast;
+                sb.append(u);
+                switch (fromLast) {
+                    // No suffix
+                    case 0:
+                        break;
+                    case 1:
+                        sb.append(", and ");
+                        break;
+                    default:
+                        sb.append(", ");
+                        break;
+                }
+            }
+            return sb.toString();
+        }
+
+        private void custom(FormatCase fcase, String name) {
+            custom(fcase, name, null);
+        }
+
+        private void custom(FormatCase fcase, String name, String type) {
+            String display = feedback.format(fcase, action, (update ? FormatWhen.UPDATE : FormatWhen.PRIMARY),
+                    resolution, unrcnt, errcnt,
+                    name, type, value, unresolved, errorLines);
+            if (interactive()) {
+                cmdout.print(display);
             }
         }
-        return sb.toString();
+
+        @SuppressWarnings("fallthrough")
+        private void displayDeclarationAndValue() {
+            switch (sn.subKind()) {
+                case CLASS_SUBKIND:
+                    custom(FormatCase.CLASS, ((TypeDeclSnippet) sn).name());
+                    break;
+                case INTERFACE_SUBKIND:
+                    custom(FormatCase.INTERFACE, ((TypeDeclSnippet) sn).name());
+                    break;
+                case ENUM_SUBKIND:
+                    custom(FormatCase.ENUM, ((TypeDeclSnippet) sn).name());
+                    break;
+                case ANNOTATION_TYPE_SUBKIND:
+                    custom(FormatCase.ANNOTATION, ((TypeDeclSnippet) sn).name());
+                    break;
+                case METHOD_SUBKIND:
+                    custom(FormatCase.METHOD, ((MethodSnippet) sn).name(), ((MethodSnippet) sn).parameterTypes());
+                    break;
+                case VAR_DECLARATION_SUBKIND: {
+                    VarSnippet vk = (VarSnippet) sn;
+                    custom(FormatCase.VARDECL, vk.name(), vk.typeName());
+                    break;
+                }
+                case VAR_DECLARATION_WITH_INITIALIZER_SUBKIND: {
+                    VarSnippet vk = (VarSnippet) sn;
+                    custom(FormatCase.VARINIT, vk.name(), vk.typeName());
+                    break;
+                }
+                case TEMP_VAR_EXPRESSION_SUBKIND: {
+                    VarSnippet vk = (VarSnippet) sn;
+                    custom(FormatCase.EXPRESSION, vk.name(), vk.typeName());
+                    break;
+                }
+                case OTHER_EXPRESSION_SUBKIND:
+                    error("Unexpected expression form -- value is: %s", (value));
+                    break;
+                case VAR_VALUE_SUBKIND: {
+                    ExpressionSnippet ek = (ExpressionSnippet) sn;
+                    custom(FormatCase.VARVALUE, ek.name(), ek.typeName());
+                    break;
+                }
+                case ASSIGNMENT_SUBKIND: {
+                    ExpressionSnippet ek = (ExpressionSnippet) sn;
+                    custom(FormatCase.ASSIGNMENT, ek.name(), ek.typeName());
+                    break;
+                }
+                case SINGLE_TYPE_IMPORT_SUBKIND:
+                case TYPE_IMPORT_ON_DEMAND_SUBKIND:
+                case SINGLE_STATIC_IMPORT_SUBKIND:
+                case STATIC_IMPORT_ON_DEMAND_SUBKIND:
+                    custom(FormatCase.IMPORT, ((ImportSnippet) sn).name());
+                    break;
+                case STATEMENT_SUBKIND:
+                    custom(FormatCase.STATEMENT, null);
+                    break;
+            }
+        }
     }
 
     /** The current version number as a string.
@@ -2210,13 +2189,10 @@ public class JShellTool {
         return version("full"); // mm.mm.oo[-milestone]-build
     }
 
-    private static final String versionRBName = "jdk.internal.jshell.tool.resources.version";
-    private static ResourceBundle versionRB;
-
     private static String version(String key) {
         if (versionRB == null) {
             try {
-                versionRB = ResourceBundle.getBundle(versionRBName);
+                versionRB = ResourceBundle.getBundle(VERSION_RB_NAME);
             } catch (MissingResourceException e) {
                 return "(version info not available)";
             }

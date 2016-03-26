@@ -374,8 +374,8 @@ public class ReplToolTesting {
         }
     }
 
-    private void dropKey(boolean after, String cmd, String name, Map<String, ? extends MemberInfo> map) {
-        assertCommand(after, cmd, "");
+    private void dropKey(boolean after, String cmd, String name, Map<String, ? extends MemberInfo> map, String output) {
+        assertCommand(after, cmd, output);
         if (after) {
             map.remove(name);
             for (int i = 0; i < keys.size(); ++i) {
@@ -389,20 +389,20 @@ public class ReplToolTesting {
         }
     }
 
-    public void dropVariable(boolean after, String cmd, String name) {
-        dropKey(after, cmd, name, variables);
+    public void dropVariable(boolean after, String cmd, String name, String output) {
+        dropKey(after, cmd, name, variables, output);
     }
 
-    public void dropMethod(boolean after, String cmd, String name) {
-        dropKey(after, cmd, name, methods);
+    public void dropMethod(boolean after, String cmd, String name, String output) {
+        dropKey(after, cmd, name, methods, output);
     }
 
-    public void dropClass(boolean after, String cmd, String name) {
-        dropKey(after, cmd, name, classes);
+    public void dropClass(boolean after, String cmd, String name, String output) {
+        dropKey(after, cmd, name, classes, output);
     }
 
-    public void dropImport(boolean after, String cmd, String name) {
-        dropKey(after, cmd, name, imports);
+    public void dropImport(boolean after, String cmd, String name, String output) {
+        dropKey(after, cmd, name, imports, output);
     }
 
     public void assertCommand(boolean after, String cmd, String out) {
@@ -436,10 +436,10 @@ public class ReplToolTesting {
             }
             setCommandInput(cmd + "\n");
         } else {
-            assertOutput(getCommandOutput(), out, "command");
-            assertOutput(getCommandErrorOutput(), err, "command error");
-            assertOutput(getUserOutput(), print, "user");
-            assertOutput(getUserErrorOutput(), usererr, "user error");
+            assertOutput(getCommandOutput(), out, "command output: " + cmd);
+            assertOutput(getCommandErrorOutput(), err, "command error: " + cmd);
+            assertOutput(getUserOutput(), print, "user output: " + cmd);
+            assertOutput(getUserErrorOutput(), usererr, "user error: " + cmd);
         }
     }
 
@@ -476,9 +476,9 @@ public class ReplToolTesting {
         return (output) -> assertTrue(output.startsWith(prefix), "Output: \'" + output + "' does not start with: " + prefix);
     }
 
-    public void assertOutput(String got, String expected, String kind) {
+    public void assertOutput(String got, String expected, String display) {
         if (expected != null) {
-            assertEquals(got, expected, "Kind: " + kind + ".\n");
+            assertEquals(got, expected, display + ".\n");
         }
     }
 
