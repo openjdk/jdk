@@ -31,6 +31,7 @@
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/methodMatcher.hpp"
+#include "compiler/directivesParser.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -637,6 +638,10 @@ WB_ENTRY(jboolean, WB_TestSetForceInlineMethod(JNIEnv* env, jobject o, jobject m
 WB_END
 
 WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobject method, jint comp_level, jint bci))
+  // Screen for unavailable/bad comp level
+  if (CompileBroker::compiler(comp_level) == NULL) {
+    return false;
+  }
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
@@ -1539,6 +1544,27 @@ void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread,
   }
 }
 
+WB_ENTRY(jint, WB_AddCompilerDirective(JNIEnv* env, jobject o, jstring compDirect))
+  // can't be in VM when we call JNI
+  ThreadToNativeFromVM ttnfv(thread);
+  const char* dir = env->GetStringUTFChars(compDirect, NULL);
+  int ret;
+  {
+    ThreadInVMfromNative ttvfn(thread); // back to VM
+    ret = DirectivesParser::parse_string(dir, tty);
+  }
+  env->ReleaseStringUTFChars(compDirect, dir);
+  // -1 for error parsing directive. Return 0 as number of directives added.
+  if (ret == -1) {
+    ret = 0;
+  }
+  return (jint) ret;
+WB_END
+
+WB_ENTRY(void, WB_RemoveCompilerDirective(JNIEnv* env, jobject o, jint count))
+  DirectivesStack::pop(count);
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -1732,6 +1758,9 @@ static JNINativeMethod methods[] = {
   {CC"isSharedClass",      CC"(Ljava/lang/Class;)Z",  (void*)&WB_IsSharedClass },
   {CC"areSharedStringsIgnored",           CC"()Z",    (void*)&WB_AreSharedStringsIgnored },
   {CC"clearInlineCaches",  CC"()V",                   (void*)&WB_ClearInlineCaches },
+  {CC"addCompilerDirective",    CC"(Ljava/lang/String;)I",
+                                                      (void*)&WB_AddCompilerDirective },
+  {CC"removeCompilerDirective", CC"(I)V",             (void*)&WB_RemoveCompilerDirective },
 };
 
 #undef CC

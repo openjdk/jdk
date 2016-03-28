@@ -98,6 +98,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import jdk.dynalink.CallSiteDescriptor;
+import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.beans.ApplicableOverloadedMethods.ApplicabilityTest;
 import jdk.dynalink.internal.AccessControlContextFactory;
 import jdk.dynalink.internal.InternalTypeUtilities;
@@ -148,7 +149,7 @@ class OverloadedDynamicMethod extends DynamicMethod {
     }
 
     @Override
-    public MethodHandle getInvocation(final CallSiteDescriptor callSiteDescriptor, final LinkerServices linkerServices) {
+    MethodHandle getInvocation(final CallSiteDescriptor callSiteDescriptor, final LinkerServices linkerServices) {
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
         // First, find all methods applicable to the call site by subtyping (JLS 15.12.2.2)
         final ApplicableOverloadedMethods subtypingApplicables = getApplicables(callSiteType,
@@ -218,14 +219,14 @@ class OverloadedDynamicMethod extends DynamicMethod {
                 for(final SingleDynamicMethod method: invokables) {
                     methodHandles.add(method.getTarget(callSiteDescriptor));
                 }
-                return new OverloadedMethod(methodHandles, this, getCallSiteClassLoader(callSiteDescriptor), callSiteType, linkerServices).getInvoker();
+                return new OverloadedMethod(methodHandles, this, getCallSiteClassLoader(callSiteDescriptor), callSiteType, linkerServices, callSiteDescriptor).getInvoker();
             }
         }
     }
 
     private static final AccessControlContext GET_CALL_SITE_CLASS_LOADER_CONTEXT =
             AccessControlContextFactory.createAccessControlContext(
-                    "getClassLoader", CallSiteDescriptor.GET_LOOKUP_PERMISSION_NAME);
+                    "getClassLoader", SecureLookupSupplier.GET_LOOKUP_PERMISSION_NAME);
 
     private static ClassLoader getCallSiteClassLoader(final CallSiteDescriptor callSiteDescriptor) {
         return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {

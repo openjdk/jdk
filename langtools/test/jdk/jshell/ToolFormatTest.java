@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8148316 8148317
+ * @bug 8148316 8148317 8151755 8152246
  * @summary Tests for output customization
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -33,6 +33,8 @@
  * @build KullaTesting TestingInputStream ToolBox Compiler
  * @run testng ToolFormatTest
  */
+import java.util.ArrayList;
+import java.util.List;
 import org.testng.annotations.Test;
 
 @Test
@@ -42,28 +44,34 @@ public class ToolFormatTest extends ReplToolTesting {
         try {
             test(
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode test command", "|  Created new feedback mode: test"),
-                    (a) -> assertCommand(a, "/set field test pre '$ '", ""),
-                    (a) -> assertCommand(a, "/set field test post ''", ""),
-                    (a) -> assertCommand(a, "/set field test action 'ADD ' added-primary", ""),
-                    (a) -> assertCommand(a, "/set field test action 'MOD ' modified-primary", ""),
-                    (a) -> assertCommand(a, "/set field test action 'REP ' replaced-primary", ""),
-                    (a) -> assertCommand(a, "/set field test action 'UP-ADD ' added-update", ""),
-                    (a) -> assertCommand(a, "/set field test action 'UP-MOD ' modified-update", ""),
-                    (a) -> assertCommand(a, "/set field test action 'UP-REP ' replaced-update", ""),
-                    (a) -> assertCommand(a, "/set field test resolve 'OK' ok-*", ""),
-                    (a) -> assertCommand(a, "/set field test resolve 'DEF' defined-*", ""),
-                    (a) -> assertCommand(a, "/set field test resolve 'NODEF' notdefined-*", ""),
-                    (a) -> assertCommand(a, "/set field test name ':%s ' ", ""),
-                    (a) -> assertCommand(a, "/set field test type '[%s]' ", ""),
-                    (a) -> assertCommand(a, "/set field test result '=%s ' ", ""),
-                    (a) -> assertCommand(a, "/set format test '{pre}{action}{type}{name}{result}{resolve}' *-*-*", ""),
-                    (a) -> assertCommand(a, "/set format test '{pre}HI this is enum' enum", ""),
+                    (a) -> assertCommand(a, "/set format test pre '$ '", ""),
+                    (a) -> assertCommand(a, "/set format test post ''", ""),
+                    (a) -> assertCommand(a, "/set format test act 'ADD' added", ""),
+                    (a) -> assertCommand(a, "/set format test act 'MOD' modified", ""),
+                    (a) -> assertCommand(a, "/set format test act 'REP' replaced", ""),
+                    (a) -> assertCommand(a, "/set format test act 'OVR' overwrote", ""),
+                    (a) -> assertCommand(a, "/set format test act 'USE' used", ""),
+                    (a) -> assertCommand(a, "/set format test act 'DRP' dropped", ""),
+                    (a) -> assertCommand(a, "/set format test up 'UP-' update", ""),
+                    (a) -> assertCommand(a, "/set format test action '{up}{act} '", ""),
+                    (a) -> assertCommand(a, "/set format test resolve 'OK' ok", ""),
+                    (a) -> assertCommand(a, "/set format test resolve 'DEF' defined", ""),
+                    (a) -> assertCommand(a, "/set format test resolve 'NODEF' notdefined", ""),
+                    (a) -> assertCommand(a, "/set format test fname ':{name} ' ", ""),
+                    (a) -> assertCommand(a, "/set format test ftype '[{type}]' method,expression", ""),
+                    (a) -> assertCommand(a, "/set format test result '={value} ' expression", ""),
+                    (a) -> assertCommand(a, "/set format test display '{pre}{action}{ftype}{fname}{result}{resolve}'", ""),
+                    (a) -> assertCommand(a, "/set format test display '{pre}HI this is enum' enum", ""),
                     (a) -> assertCommand(a, "/set feedback test", "$ Feedback mode: test"),
                     (a) -> assertCommand(a, "class D {}", "$ ADD :D OK"),
                     (a) -> assertCommand(a, "void m() {}", "$ ADD []:m OK"),
                     (a) -> assertCommand(a, "interface EX extends EEX {}", "$ ADD :EX NODEF"),
                     (a) -> assertCommand(a, "56", "$ ADD [int]:$4 =56 OK"),
-                    (a) -> assertCommand(a, "class D { int hh; }", "$ REP :D OK$ OVERWROTE-UPDATE:D OK"),
+                    (a) -> assertCommand(a, "class D { int hh; }", "$ REP :D OK$ UP-OVR :D OK"),
+                    (a) -> assertCommand(a, "enum E {A,B}", "$ HI this is enum"),
+                    (a) -> assertCommand(a, "int z() { return f(); }", "$ ADD []:z DEF"),
+                    (a) -> assertCommand(a, "z()", "$ UP-USE []:z DEF"),
+                    (a) -> assertCommand(a, "/drop z", "$ DRP []:z OK"),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback normal", "|  Feedback mode: normal")
             );
         } finally {
@@ -72,7 +80,82 @@ public class ToolFormatTest extends ReplToolTesting {
         }
     }
 
-    public void testNewModeQuiet() {
+    public void testSetFormatSelector() {
+        List<ReplTest> tests = new ArrayList<>();
+        tests.add((a) -> assertCommandOutputStartsWith(a, "/set newmode ate quiet",
+                            "|  Created new feedback mode: ate"));
+        tests.add((a) -> assertCommand(a, "/set feedback ate", ""));
+        StringBuilder sb = new StringBuilder();
+        class KindList {
+            final String[] values;
+            final int matchIndex;
+            int current;
+            boolean match;
+            KindList(String[] values, int matchIndex) {
+                this.values = values;
+                this.matchIndex = matchIndex;
+                this.current = 1 << values.length;
+            }
+            boolean next() {
+                if (current <= 0) {
+                    return false;
+                }
+                --current;
+                return true;
+            }
+            boolean append(boolean ahead) {
+                boolean any = false;
+                match = false;
+                for (int i = values.length - 1; i >= 0 ; --i) {
+                    if ((current & (1 << i)) != 0) {
+                        match |= i == matchIndex;
+                        if (any) {
+                            sb.append(",");
+                        } else {
+                            if (ahead) {
+                                sb.append("-");
+                            }
+                        }
+                        sb.append(values[i]);
+                        any = true;
+                    }
+                }
+                match |= !any;
+                return ahead || any;
+            }
+        }
+        KindList klcase = new KindList(new String[] {"class", "method", "expression", "vardecl"}, 2);
+        while (klcase.next()) {
+            KindList klact  = new KindList(new String[] {"added", "modified", "replaced"}, 0);
+            while (klact.next()) {
+                KindList klwhen = new KindList(new String[] {"update", "primary"}, 1);
+                while (klwhen.next()) {
+                    sb.setLength(0);
+                    klwhen.append(
+                        klact.append(
+                            klcase.append(false)));
+                    boolean match = klcase.match && klact.match && klwhen.match;
+                    String select = sb.toString();
+                    String yes = "+++" + select + "+++";
+                    String no  = "---" + select + "---";
+                    String expect = match? yes : no;
+                    tests.add((a) -> assertCommand(a, "/set format ate display '" + no  + "'", ""));
+                    tests.add((a) -> assertCommand(a, "/set format ate display '" + yes + "' " + select, ""));
+                    tests.add((a) -> assertCommand(a, "\"" + select + "\"", expect));
+                }
+            }
+        }
+        tests.add((a) -> assertCommandOutputStartsWith(a, "/set feedback normal", "|  Feedback mode: normal"));
+
+        try {
+            test(tests.toArray(new ReplTest[tests.size()]));
+        } finally {
+            assertCommandCheckOutput(false, "/set feedback normal", s -> {
+            });
+        }
+    }
+
+    public void testSetNewModeQuiet() {
         try {
             test(
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode nmq quiet normal", "|  Created new feedback mode: nmq"),
@@ -82,7 +165,8 @@ public class ToolFormatTest extends ReplToolTesting {
                     (a) -> assertCommand(a, "/set newmode nmc command normal", ""),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback nmc", "|  Feedback mode: nmc"),
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode nm", "|  Created new feedback mode: nm"),
-                    (a) -> assertCommandOutputStartsWith(a, "/set feedback nm", "|  Feedback mode: nm")
+                    (a) -> assertCommandOutputStartsWith(a, "/set feedback nm", "|  Feedback mode: nm"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set feedback normal", "|  Feedback mode: normal")
             );
         } finally {
             assertCommandCheckOutput(false, "/set feedback normal", s -> {
@@ -93,38 +177,75 @@ public class ToolFormatTest extends ReplToolTesting {
     public void testSetError() {
         try {
             test(
-                    (a) -> assertCommandOutputStartsWith(a, "/set newmode te command normal", "|  Created new feedback mode: te"),
-                    (a) -> assertCommand(a, "/set field te errorpre 'ERROR: '", ""),
-                    (a) -> assertCommandOutputStartsWith(a, "/set feedback te", ""),
-                    (a) -> assertCommandCheckOutput(a, "/set ", assertStartsWith("ERROR: The /set command requires arguments")),
-                    (a) -> assertCommandCheckOutput(a, "/set xyz", assertStartsWith("ERROR: Not a valid argument to /set")),
-                    (a) -> assertCommandCheckOutput(a, "/set f", assertStartsWith("ERROR: Ambiguous argument to /set")),
-                    (a) -> assertCommandCheckOutput(a, "/set feedback", assertStartsWith("ERROR: Expected a feedback mode")),
-                    (a) -> assertCommandCheckOutput(a, "/set feedback xyz", assertStartsWith("ERROR: Does not match any current feedback mode")),
-                    (a) -> assertCommandCheckOutput(a, "/set format", assertStartsWith("ERROR: Expected a feedback mode")),
-                    (a) -> assertCommandCheckOutput(a, "/set format xyz", assertStartsWith("ERROR: Does not match any current feedback mode")),
-                    (a) -> assertCommandCheckOutput(a, "/set format te", assertStartsWith("ERROR: Expected format missing")),
-                    (a) -> assertCommandCheckOutput(a, "/set format te aaa", assertStartsWith("ERROR: Format 'aaa' must be quoted")),
-                    (a) -> assertCommandCheckOutput(a, "/set format te 'aaa'", assertStartsWith("ERROR: At least one selector required")),
-                    (a) -> assertCommandCheckOutput(a, "/set format te 'aaa' frog", assertStartsWith("ERROR: Not a valid case")),
-                    (a) -> assertCommandCheckOutput(a, "/set format te 'aaa' import-frog", assertStartsWith("ERROR: Not a valid action")),
-                    (a) -> assertCommandCheckOutput(a, "/set newmode", assertStartsWith("ERROR: Expected new feedback mode")),
-                    (a) -> assertCommandCheckOutput(a, "/set newmode te", assertStartsWith("ERROR: Expected a new feedback mode name")),
-                    (a) -> assertCommandCheckOutput(a, "/set newmode x xyz", assertStartsWith("ERROR: Specify either 'command' or 'quiet'")),
-                    (a) -> assertCommandCheckOutput(a, "/set newmode x quiet y", assertStartsWith("ERROR: Does not match any current feedback mode")),
-                    (a) -> assertCommandCheckOutput(a, "/set prompt", assertStartsWith("ERROR: Expected a feedback mode")),
-                    (a) -> assertCommandCheckOutput(a, "/set prompt te", assertStartsWith("ERROR: Expected format missing")),
-                    (a) -> assertCommandCheckOutput(a, "/set prompt te aaa xyz", assertStartsWith("ERROR: Format 'aaa' must be quoted")),
-                    (a) -> assertCommandCheckOutput(a, "/set prompt te 'aaa' xyz", assertStartsWith("ERROR: Format 'xyz' must be quoted")),
-                    (a) -> assertCommandCheckOutput(a, "/set prompt", assertStartsWith("ERROR: Expected a feedback mode")),
-                    (a) -> assertCommandCheckOutput(a, "/set prompt te", assertStartsWith("ERROR: Expected format missing")),
-                    (a) -> assertCommandCheckOutput(a, "/set prompt te aaa", assertStartsWith("ERROR: Format 'aaa' must be quoted")),
-                    (a) -> assertCommandCheckOutput(a, "/set prompt te 'aaa'", assertStartsWith("ERROR: Expected format missing")),
-                    (a) -> assertCommandCheckOutput(a, "/set field", assertStartsWith("ERROR: Expected a feedback mode")),
-                    (a) -> assertCommandCheckOutput(a, "/set field xyz", assertStartsWith("ERROR: Does not match any current feedback mode: xyz")),
-                    (a) -> assertCommandCheckOutput(a, "/set field te xyz", assertStartsWith("ERROR: Not a valid field: xyz, must be one of: when")),
-                    (a) -> assertCommandCheckOutput(a, "/set field te action", assertStartsWith("ERROR: Expected format missing")),
-                    (a) -> assertCommandCheckOutput(a, "/set field te action 'act'", assertStartsWith("ERROR: At least one selector required"))
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode tee command foo",
+                            "|  Does not match any current feedback mode: foo"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode tee flurb",
+                            "|  Specify either 'command' or 'quiet'"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode te2",
+                            "|  Created new feedback mode: te2"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode te2 command",
+                            "|  Expected a new feedback mode name. te2 is a known feedback mode"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode te command normal",
+                            "|  Created new feedback mode: te"),
+                    (a) -> assertCommand(a, "/set format te errorpre 'ERROR: '", ""),
+                    (a) -> assertCommandOutputStartsWith(a, "/set feedback te",
+                            ""),
+                    (a) -> assertCommandOutputStartsWith(a, "/set ",
+                            "ERROR: The /set command requires arguments"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set xyz",
+                            "ERROR: Not a valid argument to /set"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set f",
+                            "ERROR: Ambiguous argument to /set"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set feedback",
+                            "ERROR: Expected a feedback mode"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set feedback xyz",
+                            "ERROR: Does not match any current feedback mode"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set format",
+                            "ERROR: Expected a feedback mode"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set format xyz",
+                            "ERROR: Does not match any current feedback mode"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set format t",
+                            "ERROR: Matches more then one current feedback mode: t"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set format te",
+                            "ERROR: Expected field name missing"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set format te fld",
+                            "ERROR: Expected format missing"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set format te fld aaa",
+                            "ERROR: Format 'aaa' must be quoted"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set format te fld 'aaa' frog",
+                            "ERROR: Not a valid selector"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set format te fld 'aaa' import-frog",
+                            "ERROR: Not a valid selector"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set format te fld 'aaa' import-import",
+                            "ERROR: Selector kind in multiple sections of"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set format te fld 'aaa' import,added",
+                            "ERROR: Different selector kinds in same sections of"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode",
+                            "ERROR: Expected new feedback mode"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode te",
+                            "ERROR: Expected a new feedback mode name"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode x xyz",
+                            "ERROR: Specify either 'command' or 'quiet'"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set newmode x quiet y",
+                            "ERROR: Does not match any current feedback mode"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set prompt",
+                            "ERROR: Expected a feedback mode"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set prompt te",
+                            "ERROR: Expected format missing"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set prompt te aaa xyz",
+                            "ERROR: Format 'aaa' must be quoted"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set prompt te 'aaa' xyz",
+                            "ERROR: Format 'xyz' must be quoted"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set prompt",
+                            "ERROR: Expected a feedback mode"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set prompt te",
+                            "ERROR: Expected format missing"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set prompt te aaa",
+                            "ERROR: Format 'aaa' must be quoted"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set prompt te 'aaa'",
+                            "ERROR: Expected format missing"),
+                    (a) -> assertCommandOutputStartsWith(a, "/set feedback normal",
+                            "|  Feedback mode: normal")
             );
         } finally {
             assertCommandCheckOutput(false, "/set feedback normal", s -> {
@@ -136,7 +257,7 @@ public class ToolFormatTest extends ReplToolTesting {
         try {
             test(
                     (a) -> assertCommandOutputContains(a, "/help /set", "command to launch"),
-                    (a) -> assertCommandOutputContains(a, "/help /set format", "vardecl"),
+                    (a) -> assertCommandOutputContains(a, "/help /set format", "display"),
                     (a) -> assertCommandOutputContains(a, "/hel /se for", "vardecl"),
                     (a) -> assertCommandOutputContains(a, "/help /set editor", "temporary file")
             );
@@ -150,7 +271,7 @@ public class ToolFormatTest extends ReplToolTesting {
         try {
             test(
                     (a) -> assertCommandOutputStartsWith(a, "/set newmode te command normal", "|  Created new feedback mode: te"),
-                    (a) -> assertCommand(a, "/set field te errorpre 'ERROR: '", ""),
+                    (a) -> assertCommand(a, "/set format te errorpre 'ERROR: '", ""),
                     (a) -> assertCommandOutputStartsWith(a, "/set feedback te", "|  Feedback mode: te"),
                     (a) -> assertCommandOutputContains(a, "/help /set xyz", "ERROR: Not a valid argument to /set: xyz"),
                     (a) -> assertCommandOutputContains(a, "/help /set f", "ERROR: Ambiguous argument to /set: f")

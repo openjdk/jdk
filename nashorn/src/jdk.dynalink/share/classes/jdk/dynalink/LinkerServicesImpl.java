@@ -85,7 +85,10 @@ package jdk.dynalink;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.util.Objects;
+import java.util.function.Supplier;
 import jdk.dynalink.linker.ConversionComparator.Comparison;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
@@ -97,7 +100,7 @@ import jdk.dynalink.linker.MethodHandleTransformer;
  * Default implementation of the {@link LinkerServices} interface.
  */
 final class LinkerServicesImpl implements LinkerServices {
-    private static final ThreadLocal<LinkRequest> threadLinkRequest = new ThreadLocal<>();
+    private static final ThreadLocal<SecureLookupSupplier> threadLookupSupplier = new ThreadLocal<>();
 
     private final TypeConverterFactory typeConverterFactory;
     private final GuardingDynamicLinker topLevelLinker;
@@ -138,14 +141,31 @@ final class LinkerServicesImpl implements LinkerServices {
         return typeConverterFactory.compareConversion(sourceType, targetType1, targetType2);
     }
 
+    /**
+     * Used to marshal a checked exception out of Supplier.get() in getGuardedInvocation.
+     */
+    private static class LinkerException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        public LinkerException(final Exception cause) {
+            super(null, cause, true, false);
+        }
+    }
+
     @Override
     public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest) throws Exception {
-        final LinkRequest prevLinkRequest = threadLinkRequest.get();
-        threadLinkRequest.set(linkRequest);
         try {
-            return topLevelLinker.getGuardedInvocation(linkRequest, this);
-        } finally {
-            threadLinkRequest.set(prevLinkRequest);
+            return getWithLookupInternal(() -> {
+                try {
+                    return topLevelLinker.getGuardedInvocation(linkRequest, this);
+                } catch (final RuntimeException e) {
+                    throw e;
+                } catch (final Exception e) {
+                    throw new LinkerException(e);
+                }
+            }, linkRequest.getCallSiteDescriptor());
+        } catch (final LinkerException e) {
+            throw (Exception)e.getCause();
         }
     }
 
@@ -154,10 +174,32 @@ final class LinkerServicesImpl implements LinkerServices {
         return internalObjectsFilter != null ? internalObjectsFilter.transform(target) : target;
     }
 
-    static MethodHandles.Lookup getCurrentLookup() {
-        final LinkRequest currentRequest = threadLinkRequest.get();
-        if (currentRequest != null) {
-            return currentRequest.getCallSiteDescriptor().getLookup();
+    @Override
+    public <T> T getWithLookup(final Supplier<T> operation, final SecureLookupSupplier lookupSupplier) {
+        return getWithLookupInternal(
+                Objects.requireNonNull(operation, "action"),
+                Objects.requireNonNull(lookupSupplier, "lookupSupplier"));
+    }
+
+    private static <T> T getWithLookupInternal(final Supplier<T> operation, final SecureLookupSupplier lookupSupplier) {
+        final SecureLookupSupplier prevLookupSupplier = threadLookupSupplier.get();
+        final boolean differ = prevLookupSupplier != lookupSupplier;
+        if (differ) {
+            threadLookupSupplier.set(lookupSupplier);
+        }
+        try {
+            return operation.get();
+        } finally {
+            if (differ) {
+                threadLookupSupplier.set(prevLookupSupplier);
+            }
+        }
+    }
+
+    static Lookup getCurrentLookup() {
+        final SecureLookupSupplier lookupSupplier = threadLookupSupplier.get();
+        if (lookupSupplier != null) {
+            return lookupSupplier.getLookup();
         }
         return MethodHandles.publicLookup();
     }

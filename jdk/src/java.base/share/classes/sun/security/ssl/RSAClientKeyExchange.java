@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,10 +115,31 @@ final class RSAClientKeyExchange extends HandshakeMessage {
 
         byte[] encoded = null;
         try {
+            boolean needFailover = false;
             Cipher cipher = JsseJce.getCipher(JsseJce.CIPHER_RSA_PKCS1);
-            boolean needFailover = !KeyUtil.isOracleJCEProvider(
-                    cipher.getProvider().getName());
+            try {
+                // Try UNWRAP_MODE mode firstly.
+                cipher.init(Cipher.UNWRAP_MODE, privateKey,
+                        new TlsRsaPremasterSecretParameterSpec(
+                                maxVersion.v, currentVersion.v),
+                        generator);
+
+                // The provider selection can be delayed, please don't call
+                // any Cipher method before the call to Cipher.init().
+                needFailover = !KeyUtil.isOracleJCEProvider(
+                        cipher.getProvider().getName());
+            } catch (InvalidKeyException | UnsupportedOperationException iue) {
+                if (debug != null && Debug.isOn("handshake")) {
+                    System.out.println("The Cipher provider " +
+                        cipher.getProvider().getName() +
+                        " caused exception: " + iue.getMessage());
+                }
+
+                needFailover = true;
+            }
+
             if (needFailover) {
+                // Use DECRYPT_MODE and dispose the previous initialization.
                 cipher.init(Cipher.DECRYPT_MODE, privateKey);
                 boolean failed = false;
                 try {
@@ -134,10 +155,7 @@ final class RSAClientKeyExchange extends HandshakeMessage {
                                 maxVersion.v, currentVersion.v,
                                 encoded, generator);
             } else {
-                cipher.init(Cipher.UNWRAP_MODE, privateKey,
-                        new TlsRsaPremasterSecretParameterSpec(
-                                maxVersion.v, currentVersion.v),
-                        generator);
+                // the cipher should have been initialized
                 preMaster = (SecretKey)cipher.unwrap(encrypted,
                         "TlsRsaPremasterSecret", Cipher.SECRET_KEY);
             }

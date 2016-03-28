@@ -369,7 +369,6 @@ void DebugInformationRecorder::describe_scope(int         pc_offset,
   assert(method == NULL ||
          (method->is_native() && bci == 0) ||
          (!method->is_native() && 0 <= bci && bci < method->code_size()) ||
-         (method->is_compiled_lambda_form() && bci == -99) ||  // this might happen in C1
          bci == -1, "illegal bci");
 
   // serialize the locals/expressions/monitors

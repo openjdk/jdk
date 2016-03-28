@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1266,9 +1266,11 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     public static final BigInteger ONE = valueOf(1);
 
     /**
-     * The BigInteger constant two.  (Not exported.)
+     * The BigInteger constant two.
+     *
+     * @since   9
      */
-    private static final BigInteger TWO = valueOf(2);
+    public static final BigInteger TWO = valueOf(2);
 
     /**
      * The BigInteger constant -1.  (Not exported.)

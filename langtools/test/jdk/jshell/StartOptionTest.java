@@ -54,7 +54,8 @@ public class StartOptionTest {
     private ByteArrayOutputStream err;
 
     private JShellTool getShellTool() {
-        return new JShellTool(null, new PrintStream(out), new PrintStream(err), null, null, null, null);
+        return new JShellTool(null, new PrintStream(out), new PrintStream(err), null, null, null,
+                              null, new ReplToolTesting.MemoryPreferences());
     }
 
     private String getOutput() {

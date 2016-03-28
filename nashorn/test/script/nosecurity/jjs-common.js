@@ -26,15 +26,29 @@
  * @subtest
  * @summary test used by all other jjs-option* test cases
  */
-var javaHome = $ENV.JAVA_HOME,
-    homeJjs = "${javaHome}/bin/jjs",
-    altJjs = $EXEC('which jjs').trim(),
-    homejavac = "${javaHome}/bin/javac",
-    altjavac = $EXEC('which javac').trim()
 
-var Files = Java.type('java.nio.file.Files'),
-    Paths = Java.type('java.nio.file.Paths'),
-    System = Java.type('java.lang.System')
+load(__DIR__ + "JDK-util.js")
+
+var javaHome = System.getenv("JAVA_HOME"),
+    homeJjs = "${javaHome}" + "/bin/jjs",
+    altJjs = which('jjs'),
+    homejavac = "${javaHome}" + "/bin/javac",
+    altjavac = which('javac')
+
+if (windows) {
+    if (winCyg) {
+        //Files.exists() expects proper extension as it talks to windows filesystem even on cygwin
+        //make paths work on on underlying shells cygwin/cmd/linux.
+        homeJjs = toShellPath("${javaHome}" + "/bin/jjs.exe")
+        homejavac = toShellPath("${javaHome}" + "/bin/javac.exe")
+    }
+    else {
+        homeJjs = toShellPath("${javaHome}" + "\\bin\\jjs.exe")
+        homejavac = toShellPath("${javaHome}" + "\\bin\\javac.exe")
+    }
+    altJjs = which('jjs.exe')
+    altjavac = which('javac.exe')
+}
 
 // Initialize default values for variables used in different functions
 var func_cond_p = <<EOD
@@ -62,12 +76,11 @@ var args_n = "-scripting"
 
 // create file to check -flag passing
 var path_f = Paths.get("temp-flag.js")
-var testflag_file = path_f.toAbsolutePath()
+var testflag_file = toShellPath(path_f.toAbsolutePath().toString())
 
 // create file to check -flag functionality
 var path_func = Paths.get("temp-func.js")
-var testfunc_file = path_func.toAbsolutePath()
-
+var testfunc_file = toShellPath(path_func.toAbsolutePath().toString())
 
 function exists(f) {
     return Files.exists(Paths.get(f))
@@ -82,12 +95,12 @@ if (!exists(jjs)) {
 
 // write code to testflag_file
 function write_testflag_file() {
-    Files.write(testflag_file, msg_flag.getBytes())
+    Files.write(Paths.get(testflag_file), msg_flag.getBytes())
 }
 
 // write code to testfunc_file
 function write_testfunc_file() {
-    Files.write(testfunc_file, msg_func.getBytes())
+    Files.write(Paths.get(testfunc_file), msg_func.getBytes())
 }
 
 function flag_test_pass() {
@@ -106,7 +119,7 @@ function testjjs_opt_func(args, positive) {
     if (positive) {
         if (eval(func_cond_p))
             print("functionality test PASSED")
-        else
+        else 
             print("functionality test FAILED. stdout: ${out} -- stderr: ${err}")
     }
     else {
@@ -156,8 +169,8 @@ function testjjs_flag_and_func(flag, param) {
         print("${flag} flag negative test:")
         testjjs_opt("${args_n} ${testflag_file}", false, true)        // negative test
     } finally {
-        $EXEC("rm ${testflag_file}")
-        $EXEC("rm ${testfunc_file}")
+        rm("${testflag_file}")
+        rm("${testfunc_file}")
     }
 }
 
@@ -171,7 +184,7 @@ function testjjs_functionality(flag, param) {
         print("${flag} flag negative test:")
         testjjs_opt_func("${args_n} ${testfunc_file}", false)        // negative test
     } finally {
-        $EXEC("rm ${testfunc_file}")
+        rm("${testfunc_file}")
     }
 }
 
@@ -185,6 +198,6 @@ function testjjs_flag(flag, param) {
         print("${flag} flag negative test:")
         testjjs_opt("${args_n} ${testflag_file}", false, false)        // negative test
     } finally {
-        $EXEC("rm ${testflag_file}")
+        rm("${testflag_file}")
     }
 }

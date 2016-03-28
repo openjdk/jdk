@@ -27,6 +27,8 @@ package jdk.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.util.function.Supplier;
+import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.linker.ConversionComparator.Comparison;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
@@ -76,5 +78,10 @@ final class LinkerServicesWithMissingMemberHandlerFactory implements LinkerServi
     @Override
     public MethodHandle filterInternalObjects(final MethodHandle target) {
         return linkerServices.filterInternalObjects(target);
+    }
+
+    @Override
+    public <T> T getWithLookup(final Supplier<T> operation, final SecureLookupSupplier lookupSupplier) {
+        return linkerServices.getWithLookup(operation, lookupSupplier);
     }
 }

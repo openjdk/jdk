@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ void DirectivesParser::clean_tmp() {
   assert(_tmp_depth == 0, "Consistency");
 }
 
-bool DirectivesParser::parse_string(const char* text, outputStream* st) {
+int DirectivesParser::parse_string(const char* text, outputStream* st) {
   DirectivesParser cd(text, st);
   if (cd.valid()) {
     return cd.install_directives();
@@ -63,7 +63,7 @@ bool DirectivesParser::parse_string(const char* text, outputStream* st) {
     cd.clean_tmp();
     st->flush();
     st->print_cr("Parsing of compiler directives failed");
-    return false;
+    return -1;
   }
 }
 
@@ -97,17 +97,17 @@ bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream*
       buffer[num_read] = '\0';
       // close file
       os::close(file_handle);
-      return parse_string(buffer, stream);
+      return parse_string(buffer, stream) > 0;
     }
   }
   return false;
 }
 
-bool DirectivesParser::install_directives() {
+int DirectivesParser::install_directives() {
   // Check limit
   if (!DirectivesStack::check_capacity(_tmp_depth, _st)) {
     clean_tmp();
-    return false;
+    return 0;
   }
 
   // Pop from internal temporary stack and push to compileBroker.
@@ -120,14 +120,14 @@ bool DirectivesParser::install_directives() {
   }
   if (i == 0) {
     _st->print_cr("No directives in file");
-    return false;
+    return 0;
   } else {
     _st->print_cr("%i compiler directives added", i);
     if (CompilerDirectivesPrint) {
       // Print entire directives stack after new has been pushed.
       DirectivesStack::print(_st);
     }
-    return true;
+    return i;
   }
 }
 

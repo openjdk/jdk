@@ -1,0 +1,156 @@
+/*
+ * Copyright (c) 2016 SAP SE. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 8150646
+ * @summary Add support for blocking compiles through whitebox API
+ * @library /testlibrary /test/lib /
+ * @build sun.hotspot.WhiteBox
+ *        compiler.testlibrary.CompilerUtils
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *
+ * @run main/othervm/timeout=60
+ *        -Xbootclasspath/a:.
+ *        -Xmixed
+ *        -XX:+UnlockDiagnosticVMOptions
+ *        -XX:+WhiteBoxAPI
+ *        -XX:+PrintCompilation
+ *        BlockingCompilation
+ */
+
+import java.lang.reflect.Method;
+import java.util.Random;
+
+import sun.hotspot.WhiteBox;
+import compiler.testlibrary.CompilerUtils;
+
+public class BlockingCompilation {
+    private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private static final Random RANDOM = new Random();
+
+    public static int foo() {
+        return RANDOM.nextInt();
+    }
+
+    public static void main(String[] args) throws Exception {
+        Method m = BlockingCompilation.class.getMethod("foo");
+        int[] levels = CompilerUtils.getAvailableCompilationLevels();
+        int highest_level = levels[levels.length-1];
+
+        // If there are no compilers available these tests don't make any sense.
+        if (levels.length == 0) return;
+
+        // Make sure no compilations can progress, blocking compiles will hang
+        WB.lockCompilation();
+
+        // Verify method state before test
+        if (WB.isMethodCompiled(m)) {
+            throw new Exception("Should not be compiled after deoptimization");
+        }
+        if (WB.isMethodQueuedForCompilation(m)) {
+            throw new Exception("Should not be enqueued on any level");
+        }
+
+        // Try compiling on highest available comp level.
+        // If the compiles are blocking, this call will block until the test time out,
+        // Progress == success
+        // (Don't run with -Xcomp since that can cause long timeouts due to many compiles)
+        WB.enqueueMethodForCompilation(m, highest_level);
+
+        // restore state
+        WB.unlockCompilation();
+        while (!WB.isMethodCompiled(m)) {
+          Thread.sleep(100);
+        }
+        WB.deoptimizeMethod(m);
+        WB.clearMethodState(m);
+
+        // Blocking compilations on all levels, using the default versions of
+        // WB.enqueueMethodForCompilation() and manually setting compiler directives.
+        String directive = "[{ match: \"BlockingCompilation.foo\", BackgroundCompilation: false }]";
+        if (WB.addCompilerDirective(directive) != 1) {
+            throw new Exception("Failed to add compiler directive");
+        }
+
+        try {
+            for (int l : levels) {
+                // Make uncompiled
+                WB.deoptimizeMethod(m);
+
+                // Verify that it's not compiled
+                if (WB.isMethodCompiled(m)) {
+                    throw new Exception("Should not be compiled after deoptimization");
+                }
+                if (WB.isMethodQueuedForCompilation(m)) {
+                    throw new Exception("Should not be enqueued on any level");
+                }
+
+                // Add to queue and verify that it went well
+                if (!WB.enqueueMethodForCompilation(m, l)) {
+                    throw new Exception("Could not be enqueued for compilation");
+                }
+
+                // Verify that it is compiled
+                if (!WB.isMethodCompiled(m)) {
+                    throw new Exception("Must be compiled here");
+                }
+                // And verify the level
+                if (WB.getMethodCompilationLevel(m) != l) {
+                    String msg = m + " should be compiled at level " + l +
+                                 "(but is actually compiled at level " +
+                                 WB.getMethodCompilationLevel(m) + ")";
+                    System.out.println("==> " + msg);
+                    throw new Exception(msg);
+                }
+            }
+        } finally {
+            WB.removeCompilerDirective(1);
+        }
+
+        // Clean up
+        WB.deoptimizeMethod(m);
+        WB.clearMethodState(m);
+
+        // Make sure no compilations can progress, blocking compiles will hang
+        WB.lockCompilation();
+
+        // Verify method state before test
+        if (WB.isMethodCompiled(m)) {
+            throw new Exception("Should not be compiled after deoptimization");
+        }
+        if (WB.isMethodQueuedForCompilation(m)) {
+            throw new Exception("Should not be enqueued on any level");
+        }
+
+        // Try compiling on highest available comp level.
+        // If the compiles are blocking, this call will block until the test time out,
+        // Progress == success
+        // (Don't run with -Xcomp since that can cause long timeouts due to many compiles)
+        WB.enqueueMethodForCompilation(m, highest_level);
+
+        // restore state
+        WB.unlockCompilation();
+    }
+}
