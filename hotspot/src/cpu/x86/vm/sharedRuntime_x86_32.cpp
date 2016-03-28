@@ -208,13 +208,13 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     __ subptr(rsp, ymm_bytes);
     // Save upper half of YMM registers
     for (int n = 0; n < num_xmm_regs; n++) {
-      __ vextractf128h(Address(rsp, n*16), as_XMMRegister(n));
+      __ vextractf128_high(Address(rsp, n*16), as_XMMRegister(n));
     }
     if (UseAVX > 2) {
       __ subptr(rsp, zmm_bytes);
       // Save upper half of ZMM registers
       for (int n = 0; n < num_xmm_regs; n++) {
-        __ vextractf64x4h(Address(rsp, n*32), as_XMMRegister(n), 1);
+        __ vextractf64x4_high(Address(rsp, n*32), as_XMMRegister(n));
       }
     }
   }
@@ -304,13 +304,13 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     if (UseAVX > 2) {
       // Restore upper half of ZMM registers.
       for (int n = 0; n < num_xmm_regs; n++) {
-        __ vinsertf64x4h(as_XMMRegister(n), Address(rsp, n*32), 1);
+        __ vinsertf64x4_high(as_XMMRegister(n), Address(rsp, n*32));
       }
       __ addptr(rsp, zmm_bytes);
     }
     // Restore upper half of YMM registers.
     for (int n = 0; n < num_xmm_regs; n++) {
-      __ vinsertf128h(as_XMMRegister(n), Address(rsp, n*16));
+      __ vinsertf128_high(as_XMMRegister(n), Address(rsp, n*16));
     }
     __ addptr(rsp, ymm_bytes);
   }

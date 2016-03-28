@@ -235,8 +235,6 @@ void Arguments::init_system_properties() {
 
   // Set OS specific system properties values
   os::init_system_properties_values();
-
-  JVMCI_ONLY(JVMCIRuntime::init_system_properties(&_system_properties);)
 }
 
 // Update/Initialize System properties after JDK version number is known
@@ -2540,9 +2538,11 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
+#ifdef _LP64
   if (!FLAG_IS_DEFAULT(CICompilerCount) && !FLAG_IS_DEFAULT(CICompilerCountPerCPU) && CICompilerCountPerCPU) {
     warning("The VM option CICompilerCountPerCPU overrides CICompilerCount.");
   }
+#endif
 
 #ifndef SUPPORT_RESERVED_STACK_AREA
   if (StackReservedPages != 0) {
