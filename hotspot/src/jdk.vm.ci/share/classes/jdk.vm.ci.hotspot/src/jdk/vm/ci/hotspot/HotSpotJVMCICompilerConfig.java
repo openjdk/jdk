@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package jdk.vm.ci.hotspot;
 import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompilationRequestResult;
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.runtime.JVMCICompiler;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
@@ -47,29 +48,33 @@ final class HotSpotJVMCICompilerConfig {
         }
     }
 
+    /**
+     * Factory of the selected system compiler.
+     */
     private static JVMCICompilerFactory compilerFactory;
 
     /**
-     * Selects the system compiler.
+     * Gets the selected system compiler factory.
      *
-     * Called from VM. This method has an object return type to allow it to be called with a VM
-     * utility function used to call other static initialization methods.
+     * @return the selected system compiler factory
      */
-    static Boolean selectCompiler(String compilerName) {
-        assert compilerFactory == null;
-        for (JVMCICompilerFactory factory : Services.load(JVMCICompilerFactory.class)) {
-            if (factory.getCompilerName().equals(compilerName)) {
-                compilerFactory = factory;
-                return Boolean.TRUE;
-            }
-        }
-
-        throw new JVMCIError("JVMCI compiler '%s' not found", compilerName);
-    }
-
     static JVMCICompilerFactory getCompilerFactory() {
         if (compilerFactory == null) {
-            compilerFactory = new DummyCompilerFactory();
+            JVMCICompilerFactory factory = null;
+            String compilerName = Option.Compiler.getString();
+            if (compilerName != null) {
+                for (JVMCICompilerFactory f : Services.load(JVMCICompilerFactory.class)) {
+                    if (f.getCompilerName().equals(compilerName)) {
+                        factory = f;
+                    }
+                }
+                if (factory == null) {
+                    throw new JVMCIError("JVMCI compiler '%s' not found", compilerName);
+                }
+            } else {
+                factory = new DummyCompilerFactory();
+            }
+            compilerFactory = factory;
         }
         return compilerFactory;
     }

@@ -110,6 +110,41 @@ public abstract class AbstractIterator extends ScriptObject {
         return new IteratorResult(value, done, global);
     }
 
+    static MethodHandle getIteratorInvoker(final Global global) {
+        return global.getDynamicInvoker(ITERATOR_INVOKER_KEY,
+                () -> Bootstrap.createDynamicCallInvoker(Object.class, Object.class, Object.class));
+    }
+
+    /**
+     * Get the invoker for the ES6 iterator {@code next} method.
+     * @param global the global object
+     * @return the next invoker
+     */
+    public static InvokeByName getNextInvoker(final Global global) {
+        return global.getInvokeByName(AbstractIterator.NEXT_INVOKER_KEY,
+                () -> new InvokeByName("next", Object.class, Object.class, Object.class));
+    }
+
+    /**
+     * Get the invoker for the ES6 iterator result {@code done} property.
+     * @param global the global object
+     * @return the done invoker
+     */
+    public static MethodHandle getDoneInvoker(final Global global) {
+        return global.getDynamicInvoker(AbstractIterator.DONE_INVOKER_KEY,
+                () -> Bootstrap.createDynamicInvoker("done", NashornCallSiteDescriptor.GET_PROPERTY, Object.class, Object.class));
+    }
+
+    /**
+     * Get the invoker for the ES6 iterator result {@code value} property.
+     * @param global the global object
+     * @return the value invoker
+     */
+    public static MethodHandle getValueInvoker(final Global global) {
+        return global.getDynamicInvoker(AbstractIterator.VALUE_INVOKER_KEY,
+                () -> Bootstrap.createDynamicInvoker("value", NashornCallSiteDescriptor.GET_PROPERTY, Object.class, Object.class));
+    }
+
     /**
      * ES6 7.4.1 GetIterator abstract operation
      *
@@ -126,8 +161,7 @@ public abstract class AbstractIterator extends ScriptObject {
 
             if (Bootstrap.isCallable(getter)) {
                 try {
-                    final MethodHandle invoker = global.getDynamicInvoker(ITERATOR_INVOKER_KEY,
-                            () -> Bootstrap.createDynamicCallInvoker(Object.class, Object.class, Object.class));
+                    final MethodHandle invoker = getIteratorInvoker(global);
 
                     final Object value = invoker.invokeExact(getter, iterable);
                     if (JSType.isPrimitive(value)) {
@@ -156,12 +190,9 @@ public abstract class AbstractIterator extends ScriptObject {
 
         final Object iterator = AbstractIterator.getIterator(Global.toObject(iterable), global);
 
-        final InvokeByName nextInvoker = global.getInvokeByName(AbstractIterator.NEXT_INVOKER_KEY,
-                () -> new InvokeByName("next", Object.class, Object.class, Object.class));
-        final MethodHandle doneInvoker = global.getDynamicInvoker(AbstractIterator.DONE_INVOKER_KEY,
-                () -> Bootstrap.createDynamicInvoker("done", NashornCallSiteDescriptor.GET_PROPERTY, Object.class, Object.class));
-        final MethodHandle valueInvoker = global.getDynamicInvoker(AbstractIterator.VALUE_INVOKER_KEY,
-                () -> Bootstrap.createDynamicInvoker("value", NashornCallSiteDescriptor.GET_PROPERTY, Object.class, Object.class));
+        final InvokeByName nextInvoker = getNextInvoker(global);
+        final MethodHandle doneInvoker = getDoneInvoker(global);
+        final MethodHandle valueInvoker = getValueInvoker(global);
 
         try {
             do {

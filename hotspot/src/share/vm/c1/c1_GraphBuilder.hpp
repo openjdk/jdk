@@ -276,6 +276,7 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   void iterate_all_blocks(bool start_in_current_block_for_inlining = false);
   Dependencies* dependency_recorder() const; // = compilation()->dependencies()
   bool direct_compare(ciKlass* k);
+  Value make_constant(ciConstant value, ciField* field);
 
   void kill_all();
 

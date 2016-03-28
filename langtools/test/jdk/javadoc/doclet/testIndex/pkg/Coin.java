@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,13 @@
 package pkg;
 
 /**
- * This is a sample Enum.
- *
+ * This is a sample {@index Enum} Enum.
  * @author Jamie Ho
  */
 public enum Coin {
 
-  Penny, Nickel, Dime;
+  Penny(1), Nickel(2), Dime(3);
 
-public Coin(int i) {}
+Coin(int i) {}
 
 }

@@ -82,7 +82,7 @@ public class ThreadPool {
         } else {
             return (Runnable r) -> {
                 PrivilegedAction<Thread> action = () -> {
-                    Thread t = new InnocuousThread(r);
+                    Thread t = InnocuousThread.newThread(r);
                     t.setDaemon(true);
                     return t;
                };

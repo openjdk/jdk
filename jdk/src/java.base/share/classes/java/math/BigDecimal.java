@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,7 +286,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private static final BigDecimal ZERO_THROUGH_TEN[] = {
         new BigDecimal(BigInteger.ZERO,       0,  0, 1),
         new BigDecimal(BigInteger.ONE,        1,  0, 1),
-        new BigDecimal(BigInteger.valueOf(2), 2,  0, 1),
+        new BigDecimal(BigInteger.TWO,        2,  0, 1),
         new BigDecimal(BigInteger.valueOf(3), 3,  0, 1),
         new BigDecimal(BigInteger.valueOf(4), 4,  0, 1),
         new BigDecimal(BigInteger.valueOf(5), 5,  0, 1),
@@ -936,7 +936,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 rb = BigInteger.valueOf(5).pow(-exponent).multiply(compactVal);
                 scl = -exponent;
             } else { //  (exponent > 0)
-                rb = BigInteger.valueOf(2).pow(exponent).multiply(compactVal);
+                rb = BigInteger.TWO.pow(exponent).multiply(compactVal);
             }
             compactVal = compactValFor(rb);
         }

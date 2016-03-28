@@ -61,7 +61,6 @@ import jdk.internal.vm.annotation.Stable;
 
 public class TestStableChar {
     static final boolean isStableEnabled    = StableConfiguration.isStableEnabled;
-    static final boolean isServerWithStable = StableConfiguration.isServerWithStable;
 
     public static void main(String[] args) throws Exception {
         run(DefaultValue.class);
@@ -182,10 +181,10 @@ public class TestStableChar {
                 c.v = new char[1]; c.v[0] = 'a'; char val1 = get();
                 c.v[0] = 'b'; char val2 = get();
                 assertEquals(val1, 'a');
-                assertEquals(val2, (isServerWithStable ? 'a' : 'b'));
+                assertEquals(val2, (isStableEnabled ? 'a' : 'b'));
 
                 c.v = new char[1]; c.v[0] = 'c'; char val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 'a' : 'b')
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
                         : 'c'));
             }
 
@@ -193,10 +192,10 @@ public class TestStableChar {
                 c.v = new char[20]; c.v[10] = 'a'; char val1 = get1();
                 c.v[10] = 'b'; char val2 = get1();
                 assertEquals(val1, 'a');
-                assertEquals(val2, (isServerWithStable ? 'a' : 'b'));
+                assertEquals(val2, (isStableEnabled ? 'a' : 'b'));
 
                 c.v = new char[20]; c.v[10] = 'c'; char val3 = get1();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 'a' : 'b')
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
                         : 'c'));
             }
 
@@ -222,21 +221,21 @@ public class TestStableChar {
                 c.v = new char[1][1]; c.v[0][0] = 'a'; char val1 = get();
                 c.v[0][0] = 'b'; char val2 = get();
                 assertEquals(val1, 'a');
-                assertEquals(val2, (isServerWithStable ? 'a' : 'b'));
+                assertEquals(val2, (isStableEnabled ? 'a' : 'b'));
 
                 c.v = new char[1][1]; c.v[0][0] = 'c'; char val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 'a' : 'b')
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
                         : 'c'));
 
                 c.v[0] = new char[1]; c.v[0][0] = 'd'; char val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 'a' : 'b')
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
                         : 'd'));
             }
 
             {
                 c.v = new char[1][1]; char[] val1 = get1();
                 c.v[0] = new char[1]; char[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -262,31 +261,31 @@ public class TestStableChar {
                 c.v = new char[1][1][1]; c.v[0][0][0] = 'a'; char val1 = get();
                 c.v[0][0][0] = 'b'; char val2 = get();
                 assertEquals(val1, 'a');
-                assertEquals(val2, (isServerWithStable ? 'a' : 'b'));
+                assertEquals(val2, (isStableEnabled ? 'a' : 'b'));
 
                 c.v = new char[1][1][1]; c.v[0][0][0] = 'c'; char val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 'a' : 'b')
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
                         : 'c'));
 
                 c.v[0] = new char[1][1]; c.v[0][0][0] = 'd'; char val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 'a' : 'b')
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
                         : 'd'));
 
                 c.v[0][0] = new char[1]; c.v[0][0][0] = 'e'; char val5 = get();
-                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 'a' : 'b')
+                assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
                         : 'e'));
             }
 
             {
                 c.v = new char[1][1][1]; char[] val1 = get1();
                 c.v[0][0] = new char[1]; char[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new char[1][1][1]; char[][] val1 = get2();
                 c.v[0] = new char[1][1]; char[][] val2 = get2();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -313,41 +312,41 @@ public class TestStableChar {
                 c.v = new char[1][1][1][1]; c.v[0][0][0][0] = 'a'; char val1 = get();
                 c.v[0][0][0][0] = 'b'; char val2 = get();
                 assertEquals(val1, 'a');
-                assertEquals(val2, (isServerWithStable ? 'a' : 'b'));
+                assertEquals(val2, (isStableEnabled ? 'a' : 'b'));
 
                 c.v = new char[1][1][1][1]; c.v[0][0][0][0] = 'c'; char val3 = get();
-                assertEquals(val3, (isStableEnabled ? (isServerWithStable ? 'a' : 'b')
+                assertEquals(val3, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
                         : 'c'));
 
                 c.v[0] = new char[1][1][1]; c.v[0][0][0][0] = 'd'; char val4 = get();
-                assertEquals(val4, (isStableEnabled ? (isServerWithStable ? 'a' : 'b')
+                assertEquals(val4, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
                         : 'd'));
 
                 c.v[0][0] = new char[1][1]; c.v[0][0][0][0] = 'e'; char val5 = get();
-                assertEquals(val5, (isStableEnabled ? (isServerWithStable ? 'a' : 'b')
+                assertEquals(val5, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
                         : 'e'));
 
                 c.v[0][0][0] = new char[1]; c.v[0][0][0][0] = 'f'; char val6 = get();
-                assertEquals(val6, (isStableEnabled ? (isServerWithStable ? 'a' : 'b')
+                assertEquals(val6, (isStableEnabled ? (isStableEnabled ? 'a' : 'b')
                         : 'f'));
             }
 
             {
                 c.v = new char[1][1][1][1]; char[] val1 = get1();
                 c.v[0][0][0] = new char[1]; char[] val2 = get1();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new char[1][1][1][1]; char[][] val1 = get2();
                 c.v[0][0] = new char[1][1]; char[][] val2 = get2();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new char[1][1][1][1]; char[][][] val1 = get3();
                 c.v[0] = new char[1][1][1]; char[][][] val2 = get3();
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -407,7 +406,7 @@ public class TestStableChar {
                 c.v = new char[1][1]; c.v[0] = new char[0]; char[] val1 = get1();
                 c.v[0] = new char[0]; char[] val2 = get1();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -443,14 +442,14 @@ public class TestStableChar {
                 c.v = new char[1][1][1]; c.v[0][0] = new char[0]; char[] val1 = get1();
                 c.v[0][0] = new char[0]; char[] val2 = get1();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new char[1][1][1]; c.v[0] = new char[0][0]; char[][] val1 = get2();
                 c.v[0] = new char[0][0]; char[][] val2 = get2();
 
-                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -585,7 +584,7 @@ public class TestStableChar {
                 elem.a = 'b'; char val3 = get(); char val4 = get1();
 
                 assertEquals(val1, 'a');
-                assertEquals(val3, (isServerWithStable ? 'a' : 'b'));
+                assertEquals(val3, (isStableEnabled ? 'a' : 'b'));
 
                 assertEquals(val2, 'a');
                 assertEquals(val4, 'b');

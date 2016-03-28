@@ -92,11 +92,11 @@ public class ToolReloadTest extends ReplToolTesting {
     public void testReloadDrop() {
         test(false, new String[]{"-nostartup"},
                 a -> assertVariable(a, "int", "a"),
-                a -> dropVariable(a, "/dr 1", "int a = 0"),
+                a -> dropVariable(a, "/dr 1", "int a = 0", "|  Dropped variable a\n"),
                 a -> assertMethod(a, "int b() { return 0; }", "()I", "b"),
-                a -> dropMethod(a, "/drop b", "b ()I"),
+                a -> dropMethod(a, "/drop b", "b ()I", "|  Dropped method b()\n"),
                 a -> assertClass(a, "class A {}", "class", "A"),
-                a -> dropClass(a, "/dr A", "class A"),
+                a -> dropClass(a, "/dr A", "class A", "|  Dropped class A\n"),
                 a -> assertCommand(a, "/reload",
                         "|  Restarting and restoring state.\n" +
                         "-: int a;\n" +
@@ -115,11 +115,11 @@ public class ToolReloadTest extends ReplToolTesting {
     public void testReloadQuiet() {
         test(false, new String[]{"-nostartup"},
                 a -> assertVariable(a, "int", "a"),
-                a -> dropVariable(a, "/dr 1", "int a = 0"),
+                a -> dropVariable(a, "/dr 1", "int a = 0", "|  Dropped variable a\n"),
                 a -> assertMethod(a, "int b() { return 0; }", "()I", "b"),
-                a -> dropMethod(a, "/drop b", "b ()I"),
+                a -> dropMethod(a, "/drop b", "b ()I", "|  Dropped method b()\n"),
                 a -> assertClass(a, "class A {}", "class", "A"),
-                a -> dropClass(a, "/dr A", "class A"),
+                a -> dropClass(a, "/dr A", "class A", "|  Dropped class A\n"),
                 a -> assertCommand(a, "/reload quiet",
                         "|  Restarting and restoring state.\n"),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),

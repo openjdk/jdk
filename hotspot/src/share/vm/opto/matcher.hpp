@@ -399,10 +399,6 @@ public:
   // Optional scaling for the parameter to the ClearArray/CopyArray node.
   static const bool init_array_count_is_in_bytes;
 
-  // Threshold small size (in bytes) for a ClearArray/CopyArray node.
-  // Anything this size or smaller may get converted to discrete scalar stores.
-  static const int init_array_short_size;
-
   // Some hardware needs 2 CMOV's for longs.
   static const int long_cmove_cost();
 

@@ -38,7 +38,6 @@ import java.util.jar.Manifest;
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.VM;
-import sun.misc.URLClassPath;
 
 
 /**

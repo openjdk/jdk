@@ -2741,6 +2741,9 @@ Node* ClearArrayNode::Identity(PhaseGVN* phase) {
 //------------------------------Idealize---------------------------------------
 // Clearing a short array is faster with stores
 Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape){
+  // Already know this is a large node, do not try to ideal it
+  if (_is_large) return NULL;
+
   const int unit = BytesPerLong;
   const TypeX* t = phase->type(in(2))->isa_intptr_t();
   if (!t)  return NULL;
@@ -2753,8 +2756,11 @@ Node *ClearArrayNode::Ideal(PhaseGVN *phase, bool can_reshape){
   // (see jck test stmt114.stmt11402.val).
   if (size <= 0 || size % unit != 0)  return NULL;
   intptr_t count = size / unit;
-  // Length too long; use fast hardware clear
-  if (size > Matcher::init_array_short_size)  return NULL;
+  // Length too long; communicate this to matchers and assemblers.
+  // Assemblers are responsible to produce fast hardware clears for it.
+  if (size > InitArrayShortSize) {
+    return new ClearArrayNode(in(0), in(1), in(2), in(3), true);
+  }
   Node *mem = in(1);
   if( phase->type(mem)==Type::TOP ) return NULL;
   Node *adr = in(3);
@@ -2852,7 +2858,7 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
   // Bulk clear double-words
   Node* zsize = phase->transform(new SubXNode(zend, zbase) );
   Node* adr = phase->transform(new AddPNode(dest, dest, start_offset) );
-  mem = new ClearArrayNode(ctl, mem, zsize, adr);
+  mem = new ClearArrayNode(ctl, mem, zsize, adr, false);
   return phase->transform(mem);
 }
 
@@ -3901,7 +3907,7 @@ Node* InitializeNode::complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
                                               zeroes_done, zeroes_needed,
                                               phase);
         zeroes_done = zeroes_needed;
-        if (zsize > Matcher::init_array_short_size && ++big_init_gaps > 2)
+        if (zsize > InitArrayShortSize && ++big_init_gaps > 2)
           do_zeroing = false;   // leave the hole, next time
       }
     }
