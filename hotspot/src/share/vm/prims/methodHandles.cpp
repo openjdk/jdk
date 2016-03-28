@@ -1228,10 +1228,10 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
       THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "obsolete MemberName format");
     }
     if ((flags & ALL_KINDS) == IS_FIELD) {
-      THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), "field resolution failed");
+      THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), "field resolution failed");
     } else if ((flags & ALL_KINDS) == IS_METHOD ||
                (flags & ALL_KINDS) == IS_CONSTRUCTOR) {
-      THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), "method resolution failed");
+      THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), "method resolution failed");
     } else {
       THROW_MSG_NULL(vmSymbols::java_lang_LinkageError(), "resolution failed");
     }
