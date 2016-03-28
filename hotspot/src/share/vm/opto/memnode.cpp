@@ -1620,7 +1620,7 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
   return NULL;
 }
 
-static bool is_mismatched_access(ciConstant con, BasicType loadbt) {
+static ciConstant check_mismatched_access(ciConstant con, BasicType loadbt, bool is_unsigned) {
   BasicType conbt = con.basic_type();
   switch (conbt) {
     case T_BOOLEAN: conbt = T_BYTE;   break;
@@ -1632,23 +1632,40 @@ static bool is_mismatched_access(ciConstant con, BasicType loadbt) {
     case T_ARRAY:     loadbt = T_OBJECT; break;
     case T_ADDRESS:   loadbt = T_OBJECT; break;
   }
-  return (conbt != loadbt);
+  if (conbt == loadbt) {
+    if (is_unsigned && conbt == T_BYTE) {
+      // LoadB (T_BYTE) with a small mask (<=8-bit) is converted to LoadUB (T_BYTE).
+      return ciConstant(T_INT, con.as_int() & 0xFF);
+    } else {
+      return con;
+    }
+  }
+  if (conbt == T_SHORT && loadbt == T_CHAR) {
+    // LoadS (T_SHORT) with a small mask (<=16-bit) is converted to LoadUS (T_CHAR).
+    return ciConstant(T_INT, con.as_int() & 0xFFFF);
+  }
+  return ciConstant(); // T_ILLEGAL
 }
 
 // Try to constant-fold a stable array element.
-static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, BasicType loadbt) {
+static const Type* fold_stable_ary_elem(const TypeAryPtr* ary, int off, bool is_unsigned_load, BasicType loadbt) {
   assert(ary->const_oop(), "array should be constant");
   assert(ary->is_stable(), "array should be stable");
 
   // Decode the results of GraphKit::array_element_address.
   ciArray* aobj = ary->const_oop()->as_array();
-  ciConstant con = aobj->element_value_by_offset(off);
-  if (con.basic_type() != T_ILLEGAL && !con.is_null_or_zero()) {
-    bool is_mismatched = is_mismatched_access(con, loadbt);
-    assert(!is_mismatched, "conbt=%s; loadbt=%s", type2name(con.basic_type()), type2name(loadbt));
+  ciConstant element_value = aobj->element_value_by_offset(off);
+  if (element_value.basic_type() == T_ILLEGAL) {
+    return NULL; // wrong offset
+  }
+  ciConstant con = check_mismatched_access(element_value, loadbt, is_unsigned_load);
+  assert(con.basic_type() != T_ILLEGAL, "elembt=%s; loadbt=%s; unsigned=%d",
+         type2name(element_value.basic_type()), type2name(loadbt), is_unsigned_load);
+
+  if (con.basic_type() != T_ILLEGAL && // not a mismatched access
+      !con.is_null_or_zero()) {        // not a default value
     const Type* con_type = Type::make_from_constant(con);
-    // Guard against erroneous constant folding.
-    if (!is_mismatched && con_type != NULL) {
+    if (con_type != NULL) {
       if (con_type->isa_aryptr()) {
         // Join with the array element type, in case it is also stable.
         int dim = ary->stable_dimension();
@@ -1700,7 +1717,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     if (FoldStableValues && !is_mismatched_access() && ary->is_stable() && ary->const_oop() != NULL) {
       // Make sure the reference is not into the header and the offset is constant
       if (off_beyond_header && adr->is_AddP() && off != Type::OffsetBot) {
-        const Type* con_type = fold_stable_ary_elem(ary, off, memory_type());
+        const Type* con_type = fold_stable_ary_elem(ary, off, is_unsigned(), memory_type());
         if (con_type != NULL) {
           return con_type;
         }

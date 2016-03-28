@@ -197,6 +197,10 @@ public:
     assert(_mo == unordered || _mo == acquire, "unexpected");
     return _mo == acquire;
   }
+  inline bool is_unsigned() const {
+    int lop = Opcode();
+    return (lop == Op_LoadUB) || (lop == Op_LoadUS);
+  }
 
   // Polymorphic factory method:
   static Node* make(PhaseGVN& gvn, Node *c, Node *mem, Node *adr,
