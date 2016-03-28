@@ -742,7 +742,7 @@ void LoadNode::dump_spec(outputStream *st) const {
     // standard dump does this in Verbose and WizardMode
     st->print(" #"); _type->dump_on(st);
   }
-  if (!_depends_only_on_test) {
+  if (!depends_only_on_test()) {
     st->print(" (does not depend only on test)");
   }
 }
@@ -914,7 +914,7 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseTransform* phase) const {
       }
     }
     // load depends on the tests that validate the arraycopy
-    ld->as_Load()->_depends_only_on_test = Pinned;
+    ld->as_Load()->_control_dependency = Pinned;
     return ld;
   }
   return NULL;
@@ -1116,6 +1116,44 @@ Node* LoadNode::Identity(PhaseGVN* phase) {
   }
 
   return this;
+}
+
+// Construct an equivalent unsigned load.
+Node* LoadNode::convert_to_unsigned_load(PhaseGVN& gvn) {
+  BasicType bt = T_ILLEGAL;
+  const Type* rt = NULL;
+  switch (Opcode()) {
+    case Op_LoadUB: return this;
+    case Op_LoadUS: return this;
+    case Op_LoadB: bt = T_BOOLEAN; rt = TypeInt::UBYTE; break;
+    case Op_LoadS: bt = T_CHAR;    rt = TypeInt::CHAR;  break;
+    default:
+      assert(false, "no unsigned variant: %s", Name());
+      return NULL;
+  }
+  return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
+                        adr_type(), rt, bt, _mo, _control_dependency,
+                        is_unaligned_access(), is_mismatched_access());
+}
+
+// Construct an equivalent signed load.
+Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
+  BasicType bt = T_ILLEGAL;
+  const Type* rt = NULL;
+  switch (Opcode()) {
+    case Op_LoadUB: bt = T_BYTE;  rt = TypeInt::BYTE;  break;
+    case Op_LoadUS: bt = T_SHORT; rt = TypeInt::SHORT; break;
+    case Op_LoadB: // fall through
+    case Op_LoadS: // fall through
+    case Op_LoadI: // fall through
+    case Op_LoadL: return this;
+    default:
+      assert(false, "no signed variant: %s", Name());
+      return NULL;
+  }
+  return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
+                        adr_type(), rt, bt, _mo, _control_dependency,
+                        is_unaligned_access(), is_mismatched_access());
 }
 
 // We're loading from an object which has autobox behaviour.
