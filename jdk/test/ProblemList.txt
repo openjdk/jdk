@@ -198,6 +198,7 @@ java/nio/channels/Selector/OutOfBand.java                       macosx-all
 
 # 7158947, Solaris 11
 java/nio/file/WatchService/Basic.java				solaris-all
+java/nio/file/WatchService/MayFlies.java			solaris-all
 java/nio/file/WatchService/LotsOfEvents.java			solaris-all
 
 # 8149712
@@ -353,6 +354,9 @@ tools/pack200/CommandLineTests.java                             generic-all
 
 # 8059906 fails on solaris and macosx, 8151901 
 tools/pack200/Pack200Test.java                                  generic-all
+
+# 8152622
+tools/pack200/Pack200Props.java                                 macosx-all
 
 # 8068049 
 tools/launcher/FXLauncherTest.java                              linux-all,macosx-all

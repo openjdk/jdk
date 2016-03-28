@@ -1665,7 +1665,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   bool uncasted = false;
   Node* uin = unique_input(phase, false);
-  if (uin == NULL) {
+  if (uin == NULL && can_reshape) {
     uncasted = true;
     uin = unique_input(phase, true);
   }
@@ -1702,6 +1702,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
 
     if (uncasted) {
+      // Wait until after parsing for the type information to propagate from the casts
+      assert(can_reshape, "Invalid during parsing");
       const Type* phi_type = bottom_type();
       assert(phi_type->isa_int() || phi_type->isa_ptr(), "bad phi type");
       int opcode;
@@ -1720,8 +1722,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node* cast = ConstraintCastNode::make_cast(opcode, r, uin, phi_type, true);
       cast = phase->transform(cast);
       // set all inputs to the new cast so the Phi is removed by Identity
+      PhaseIterGVN* igvn = phase->is_IterGVN();
       for (uint i = 1; i < req(); i++) {
-        set_req(i, cast);
+        set_req_X(i, cast, igvn);
       }
       uin = cast;
     }

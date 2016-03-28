@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -656,8 +656,9 @@ public final class Collectors {
          */
         return new CollectorImpl<>(
                 () -> new double[3],
-                (a, t) -> { sumWithCompensation(a, mapper.applyAsDouble(t));
-                            a[2] += mapper.applyAsDouble(t);},
+                (a, t) -> { double val = mapper.applyAsDouble(t);
+                            sumWithCompensation(a, val);
+                            a[2] += val;},
                 (a, b) -> { sumWithCompensation(a, b[0]);
                             a[2] += b[2];
                             return sumWithCompensation(a, b[1]); },
@@ -768,7 +769,7 @@ public final class Collectors {
          */
         return new CollectorImpl<>(
                 () -> new double[4],
-                (a, t) -> { sumWithCompensation(a, mapper.applyAsDouble(t)); a[2]++; a[3]+= mapper.applyAsDouble(t);},
+                (a, t) -> { double val = mapper.applyAsDouble(t); sumWithCompensation(a, val); a[2]++; a[3]+= val;},
                 (a, b) -> { sumWithCompensation(a, b[0]); sumWithCompensation(a, b[1]); a[2] += b[2]; a[3] += b[3]; return a; },
                 a -> (a[2] == 0) ? 0.0d : (computeFinalSum(a) / a[2]),
                 CH_NOID);

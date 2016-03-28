@@ -4950,7 +4950,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1458558778
+DATE_WHEN_GENERATED=1458755892
 
 ###############################################################################
 #
@@ -61707,10 +61707,10 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which zlib to use" >&5
 $as_echo_n "checking for which zlib to use... " >&6; }
 
-  DEFAULT_ZLIB=bundled
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    # On macosx default is system...on others default is bundled
-    DEFAULT_ZLIB=system
+  DEFAULT_ZLIB=system
+  if test "x$OPENJDK_TARGET_OS" = xwindows; then
+    # On windows default is bundled...on others default is system
+    DEFAULT_ZLIB=bundled
   fi
 
   if test "x${ZLIB_FOUND}" != "xyes"; then

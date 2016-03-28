@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.function.Function;
 import java.lang.System.Logger;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
 import sun.util.logging.PlatformLogger.ConfigurableBridge.LoggerConfiguration;
 
@@ -49,7 +50,19 @@ import sun.util.logging.PlatformLogger.ConfigurableBridge.LoggerConfiguration;
 public class SimpleConsoleLogger extends LoggerConfiguration
     implements Logger, PlatformLogger.Bridge, PlatformLogger.ConfigurableBridge {
 
-    static final PlatformLogger.Level DEFAULT_LEVEL = PlatformLogger.Level.INFO;
+    static final Level DEFAULT_LEVEL = getDefaultLevel();
+    static final PlatformLogger.Level DEFAULT_PLATFORM_LEVEL =
+            PlatformLogger.toPlatformLevel(DEFAULT_LEVEL);
+
+    static Level getDefaultLevel() {
+        String levelName = AccessController.doPrivileged(
+                new GetPropertyAction("jdk.system.logger.level", "INFO"));
+        try {
+            return Level.valueOf(levelName);
+        } catch (IllegalArgumentException iae) {
+            return Level.INFO;
+        }
+    }
 
     final String name;
     volatile PlatformLogger.Level  level;
@@ -59,8 +72,16 @@ public class SimpleConsoleLogger extends LoggerConfiguration
         this.usePlatformLevel = usePlatformLevel;
     }
 
+    String getSimpleFormatString() {
+        return Formatting.SIMPLE_CONSOLE_LOGGER_FORMAT;
+    }
+
+    PlatformLogger.Level defaultPlatformLevel() {
+        return DEFAULT_PLATFORM_LEVEL;
+    }
+
     @Override
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
@@ -77,12 +98,12 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     // ---------------------------------------------------
 
     @Override
-    public boolean isLoggable(Level level) {
+    public final boolean isLoggable(Level level) {
         return isLoggable(PlatformLogger.toPlatformLevel(level));
     }
 
     @Override
-    public void log(Level level, ResourceBundle bundle, String key, Throwable thrown) {
+    public final void log(Level level, ResourceBundle bundle, String key, Throwable thrown) {
         if (isLoggable(level)) {
             if (bundle != null) {
                 key = bundle.getString(key);
@@ -92,7 +113,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     }
 
     @Override
-    public void log(Level level, ResourceBundle bundle, String format, Object... params) {
+    public final void log(Level level, ResourceBundle bundle, String format, Object... params) {
         if (isLoggable(level)) {
             if (bundle != null) {
                 format = bundle.getString(format);
@@ -106,55 +127,55 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     // ---------------------------------------------------
 
     @Override
-    public boolean isLoggable(PlatformLogger.Level level) {
+    public final boolean isLoggable(PlatformLogger.Level level) {
         final PlatformLogger.Level effectiveLevel =  effectiveLevel();
         return level != PlatformLogger.Level.OFF
                 && level.ordinal() >= effectiveLevel.ordinal();
     }
 
     @Override
-    public boolean isEnabled() {
+    public final boolean isEnabled() {
         return level != PlatformLogger.Level.OFF;
     }
 
     @Override
-    public void log(PlatformLogger.Level level, String msg) {
+    public final void log(PlatformLogger.Level level, String msg) {
         if (isLoggable(level)) {
             publish(getCallerInfo(), logLevel(level), msg);
         }
     }
 
     @Override
-    public void log(PlatformLogger.Level level, String msg, Throwable thrown) {
+    public final void log(PlatformLogger.Level level, String msg, Throwable thrown) {
         if (isLoggable(level)) {
             publish(getCallerInfo(), logLevel(level), msg, thrown);
         }
     }
 
     @Override
-    public void log(PlatformLogger.Level level, String msg, Object... params) {
+    public final void log(PlatformLogger.Level level, String msg, Object... params) {
         if (isLoggable(level)) {
             publish(getCallerInfo(), logLevel(level), msg, params);
         }
     }
 
     private PlatformLogger.Level effectiveLevel() {
-        if (level == null) return DEFAULT_LEVEL;
+        if (level == null) return defaultPlatformLevel();
         return level;
     }
 
     @Override
-    public PlatformLogger.Level getPlatformLevel() {
+    public final PlatformLogger.Level getPlatformLevel() {
         return level;
     }
 
     @Override
-    public void setPlatformLevel(PlatformLogger.Level newLevel) {
+    public final void setPlatformLevel(PlatformLogger.Level newLevel) {
         level = newLevel;
     }
 
     @Override
-    public LoggerConfiguration getLoggerConfiguration() {
+    public final LoggerConfiguration getLoggerConfiguration() {
         return this;
     }
 
@@ -222,7 +243,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
             }
             // Continue walking until we've found the relevant calling frame.
             // Skips logging/logger infrastructure.
-            return !isFilteredFrame(t);
+            return !Formatting.isFilteredFrame(t);
         }
 
         private boolean isLoggerImplFrame(String cname) {
@@ -256,7 +277,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
         ZonedDateTime zdt = ZonedDateTime.now();
         String throwable = toString(thrown);
 
-        return String.format(Formatting.formatString,
+        return String.format(getSimpleFormatString(),
                          zdt,
                          callerInfo,
                          name,
@@ -280,31 +301,19 @@ public class SimpleConsoleLogger extends LoggerConfiguration
         outputStream().print(format(level, msg, null, callerInfo));
     }
 
-    public static SimpleConsoleLogger makeSimpleLogger(String name, boolean usePlatformLevel) {
-        return new SimpleConsoleLogger(name, usePlatformLevel);
-    }
-
     public static SimpleConsoleLogger makeSimpleLogger(String name) {
         return new SimpleConsoleLogger(name, false);
     }
 
-    public static String getSimpleFormat(Function<String, String> defaultPropertyGetter) {
-        return Formatting.getSimpleFormat(defaultPropertyGetter);
-    }
-
-    public static boolean isFilteredFrame(StackFrame st) {
-        return Formatting.isFilteredFrame(st);
-    }
-
     @Override
-    public void log(PlatformLogger.Level level, Supplier<String> msgSupplier) {
+    public final void log(PlatformLogger.Level level, Supplier<String> msgSupplier) {
         if (isLoggable(level)) {
             publish(getCallerInfo(), logLevel(level), msgSupplier.get());
         }
     }
 
     @Override
-    public void log(PlatformLogger.Level level, Throwable thrown,
+    public final void log(PlatformLogger.Level level, Throwable thrown,
             Supplier<String> msgSupplier) {
         if (isLoggable(level)) {
             publish(getCallerInfo(), logLevel(level), msgSupplier.get(), thrown);
@@ -312,7 +321,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     }
 
     @Override
-    public void logp(PlatformLogger.Level level, String sourceClass,
+    public final void logp(PlatformLogger.Level level, String sourceClass,
             String sourceMethod, String msg) {
         if (isLoggable(level)) {
             publish(getCallerInfo(sourceClass, sourceMethod), logLevel(level), msg);
@@ -320,7 +329,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     }
 
     @Override
-    public void logp(PlatformLogger.Level level, String sourceClass,
+    public final void logp(PlatformLogger.Level level, String sourceClass,
             String sourceMethod, Supplier<String> msgSupplier) {
         if (isLoggable(level)) {
             publish(getCallerInfo(sourceClass, sourceMethod), logLevel(level), msgSupplier.get());
@@ -328,7 +337,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     }
 
     @Override
-    public void logp(PlatformLogger.Level level, String sourceClass, String sourceMethod,
+    public final void logp(PlatformLogger.Level level, String sourceClass, String sourceMethod,
             String msg, Object... params) {
         if (isLoggable(level)) {
             publish(getCallerInfo(sourceClass, sourceMethod), logLevel(level), msg, params);
@@ -336,7 +345,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     }
 
     @Override
-    public void logp(PlatformLogger.Level level, String sourceClass,
+    public final void logp(PlatformLogger.Level level, String sourceClass,
             String sourceMethod, String msg, Throwable thrown) {
         if (isLoggable(level)) {
             publish(getCallerInfo(sourceClass, sourceMethod), logLevel(level), msg, thrown);
@@ -344,7 +353,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     }
 
     @Override
-    public void logp(PlatformLogger.Level level, String sourceClass,
+    public final void logp(PlatformLogger.Level level, String sourceClass,
             String sourceMethod, Throwable thrown, Supplier<String> msgSupplier) {
         if (isLoggable(level)) {
             publish(getCallerInfo(sourceClass, sourceMethod), logLevel(level), msgSupplier.get(), thrown);
@@ -352,7 +361,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     }
 
     @Override
-    public void logrb(PlatformLogger.Level level, String sourceClass,
+    public final void logrb(PlatformLogger.Level level, String sourceClass,
             String sourceMethod, ResourceBundle bundle, String key, Object... params) {
         if (isLoggable(level)) {
             String msg = bundle == null ? key : bundle.getString(key);
@@ -361,7 +370,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     }
 
     @Override
-    public void logrb(PlatformLogger.Level level, String sourceClass,
+    public final void logrb(PlatformLogger.Level level, String sourceClass,
             String sourceMethod, ResourceBundle bundle, String key, Throwable thrown) {
         if (isLoggable(level)) {
             String msg = bundle == null ? key : bundle.getString(key);
@@ -370,7 +379,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     }
 
     @Override
-    public void logrb(PlatformLogger.Level level, ResourceBundle bundle,
+    public final void logrb(PlatformLogger.Level level, ResourceBundle bundle,
             String key, Object... params) {
         if (isLoggable(level)) {
             String msg = bundle == null ? key : bundle.getString(key);
@@ -379,7 +388,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
     }
 
     @Override
-    public void logrb(PlatformLogger.Level level, ResourceBundle bundle,
+    public final void logrb(PlatformLogger.Level level, ResourceBundle bundle,
             String key, Throwable thrown) {
         if (isLoggable(level)) {
             String msg = bundle == null ? key : bundle.getString(key);
@@ -387,21 +396,38 @@ public class SimpleConsoleLogger extends LoggerConfiguration
         }
     }
 
-    private static final class Formatting {
+    static final class Formatting {
+        // The default simple log format string.
+        // Used both by SimpleConsoleLogger when java.logging is not present,
+        // and by SurrogateLogger and java.util.logging.SimpleFormatter when
+        // java.logging is present.
         static final String DEFAULT_FORMAT =
             "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %2$s%n%4$s: %5$s%6$s%n";
-        static final String FORMAT_PROP_KEY =
+
+        // The system property key that allows to change the default log format
+        // when java.logging is not present. This is used to control the formatting
+        // of the SimpleConsoleLogger.
+        static final String DEFAULT_FORMAT_PROP_KEY =
+            "jdk.system.logger.format";
+
+        // The system property key that allows to change the default log format
+        // when java.logging is present. This is used to control the formatting
+        // of the SurrogateLogger (used before java.util.logging.LogManager is
+        // initialized) and the java.util.logging.SimpleFormatter (used after
+        // java.util.logging.LogManager is  initialized).
+        static final String JUL_FORMAT_PROP_KEY =
             "java.util.logging.SimpleFormatter.format";
-        static final String formatString = getSimpleFormat(null);
+
+        // The simple console logger format string
+        static final String SIMPLE_CONSOLE_LOGGER_FORMAT =
+                getSimpleFormat(DEFAULT_FORMAT_PROP_KEY, null);
 
         // Make it easier to wrap Logger...
         static private final String[] skips;
         static {
             String additionalPkgs = AccessController.doPrivileged(
-                (PrivilegedAction<String>)
-                () -> System.getProperty("jdk.logger.packages"));
+                new GetPropertyAction("jdk.logger.packages"));
             skips = additionalPkgs == null ? new String[0] : additionalPkgs.split(",");
-
         }
 
         static boolean isFilteredFrame(StackFrame st) {
@@ -440,21 +466,29 @@ public class SimpleConsoleLogger extends LoggerConfiguration
             return false;
         }
 
-        static String getSimpleFormat(Function<String, String> defaultPropertyGetter) {
-            // Using a lambda here causes
+        static String getSimpleFormat(String key, Function<String, String> defaultPropertyGetter) {
+            // Double check that 'key' is one of the expected property names:
+            // - DEFAULT_FORMAT_PROP_KEY is used to control the
+            //   SimpleConsoleLogger format when java.logging is
+            //   not present.
+            // - JUL_FORMAT_PROP_KEY is used when this method is called
+            //   from the SurrogateLogger subclass. It is used to control the
+            //   SurrogateLogger format and java.util.logging.SimpleFormatter
+            //   format when java.logging is present.
+            // This method should not be called with any other key.
+            if (!DEFAULT_FORMAT_PROP_KEY.equals(key)
+                    && !JUL_FORMAT_PROP_KEY.equals(key)) {
+                throw new IllegalArgumentException("Invalid property name: " + key);
+            }
+
+            // Do not use any lambda in this method. Using a lambda here causes
             //    jdk/test/java/lang/invoke/lambda/LogGeneratedClassesTest.java
             // to fail - because that test has a testcase which somehow references
-            // PlatformLogger and counts the number of generated lambda classes
-            // So we explicitely use new PrivilegedAction<String> here.
-            String format =
-                AccessController.doPrivileged(new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    return System.getProperty(FORMAT_PROP_KEY);
-                }
-            });
+            // PlatformLogger and counts the number of generated lambda classes.
+            String format = AccessController.doPrivileged(new GetPropertyAction(key));
+
             if (format == null && defaultPropertyGetter != null) {
-                format = defaultPropertyGetter.apply(FORMAT_PROP_KEY);
+                format = defaultPropertyGetter.apply(key);
             }
             if (format != null) {
                 try {

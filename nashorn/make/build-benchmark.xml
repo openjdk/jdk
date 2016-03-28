@@ -278,8 +278,14 @@
   -->
   <target name="octane-nashorn" depends="jar">
     <property name="runtime" value="nashorn"/>
-    <antcall target="octane-process-separate"/>
-    <antcall target="octane-process-single"/>
+    <!--
+       Temporarily disabled because ant script tag is broken with
+       jdk9. See also: JDK-8152533.
+
+       <antcall target="octane-process-separate"/>
+       <antcall target="octane-process-single"/>
+    -->
+    <echo message="octane target temporarily disabled"/>
   </target>
 
   <!-- alias for 'octane' -->

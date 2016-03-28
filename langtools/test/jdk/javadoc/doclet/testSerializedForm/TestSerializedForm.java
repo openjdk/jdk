@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4341304 4485668 4966728 8032066
+ * @bug 4341304 4485668 4966728 8032066 8071982
  * @summary Test that methods readResolve and writeReplace show
  * up in serialized-form.html the same way that readObject and writeObject do.
  * If the doclet includes readResolve and writeReplace in the serialized-form
@@ -41,7 +41,7 @@
 
 import java.io.*;
 
-public class TestSerializedForm extends JavadocTester implements Serializable {
+public class TestSerializedForm extends JavadocTester {
     public static void main(String... args) throws Exception {
         TestSerializedForm tester = new TestSerializedForm();
         tester.runTests();
@@ -50,18 +50,23 @@ public class TestSerializedForm extends JavadocTester implements Serializable {
 //        tester.printSummary();
     }
 
-    @Test
+    // @ignore 8146022
+    // @Test
     void testDefault() {
-        javadoc("-d", "out-default",
+        javadoc("-d", "out-default", "-serialwarn", "-Xdoclint:none",
                 "-sourcepath", testSrc,
-                testSrc("TestSerializedForm.java"), "pkg1");
+                testSrc("SerializedForm.java"), testSrc("ExternalizedForm.java"), "pkg1");
         checkExit(Exit.OK);
 
         checkOutput("serialized-form.html", true,
                 "protected&nbsp;java.lang.Object&nbsp;readResolve()",
                 "protected&nbsp;java.lang.Object&nbsp;writeReplace()",
                 "protected&nbsp;java.lang.Object&nbsp;readObjectNoData()",
-                "See Also",
+                "<h3>Serialization Overview</h3>\n<ul class=\"blockList\">\n"
+                + "<li class=\"blockListLast\">\n<div class=\"block\">"
+                + "<span class=\"deprecatedLabel\">Deprecated.</span>&nbsp;</div>\n"
+                + "<dl>\n<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
+                + "<dd><code>TestSerializedForm</code></dd>\n</dl>",
                 "<h3>Class pkg1.NestedInnerClass.InnerClass.ProNestedInnerClass "
                 + "extends java.lang.Object implements Serializable</h3>",
                 "<h3>Class pkg1.PrivateIncludeInnerClass.PriInnerClass extends "
@@ -86,7 +91,7 @@ public class TestSerializedForm extends JavadocTester implements Serializable {
         javadoc("-private",
                 "-d", "out-private",
                 "-sourcepath", testSrc,
-                testSrc("TestSerializedForm.java"), "pkg1");
+                testSrc("SerializedForm.java"), testSrc("ExternalizedForm.java"), "pkg1");
         checkExit(Exit.OK);
 
         checkOutput("serialized-form.html", true,
@@ -109,53 +114,4 @@ public class TestSerializedForm extends JavadocTester implements Serializable {
                 + "title=\"class in pkg1\">pkg1.PublicExcludeInnerClass.PubInnerClass</a> "
                 + "extends java.lang.Object implements Serializable</h3>");
     }
-
-    /**
-     * @serial
-     * @see TestSerializedForm
-     */
-    public final int SERIALIZABLE_CONSTANT = 1;
-
-    /**
-     * The entry point of the test.
-     * @param args the array of command line arguments.
-     */
-
-    /**
-     * @param s ObjectInputStream.
-     * @throws IOException when there is an I/O error.
-     * @serial
-     */
-    private void readObject(ObjectInputStream s) throws IOException {}
-
-    /**
-     * @param s ObjectOutputStream.
-     * @throws IOException when there is an I/O error.
-     * @serial
-     */
-    private void writeObject(ObjectOutputStream s) throws IOException {}
-
-    /**
-     * @throws IOException when there is an I/O error.
-     * @serialData This is a serial data comment.
-     * @return an object.
-     */
-    protected Object readResolve() throws IOException {return null;}
-
-    /**
-     * @throws IOException when there is an I/O error.
-     * @serialData This is a serial data comment.
-     * @return an object.
-     */
-    protected Object writeReplace() throws IOException {return null;}
-
-    /**
-     * @throws IOException when there is an I/O error.
-     * @serialData This is a serial data comment.
-     * @return an object.
-     */
-    protected Object readObjectNoData() throws IOException {
-        return null;
-    }
-
 }

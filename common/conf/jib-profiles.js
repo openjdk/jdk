@@ -242,6 +242,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit"),
             configure_args: common.configure_args,
+	    configure_args: concat(common.configure_args, "--with-zlib=system"),
             make_args: common.make_args
         },
 
@@ -251,6 +252,7 @@ var getJibProfilesProfiles = function (input, common) {
             build_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit"),
             configure_args: concat(common.configure_args, common.configure_args_32bit),
+	    configure_args: concat(common.configure_args, "--with-zlib=system"),
             make_args: common.make_args
         },
 
@@ -259,6 +261,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit"),
             configure_args: common.configure_args,
+	    configure_args: concat(common.configure_args, "--with-zlib=system"),
             make_args: common.make_args
         },
 
@@ -267,6 +270,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit", "cups"),
             configure_args: common.configure_args,
+	    configure_args: concat(common.configure_args, "--with-zlib=system"),
             make_args: common.make_args
         },
 
@@ -275,6 +279,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_cpu: "sparcv9",
             dependencies: concat(common.dependencies, "devkit", "cups"),
             configure_args: common.configure_args,
+	    configure_args: concat(common.configure_args, "--with-zlib=system"),
             make_args: common.make_args
         },
 
