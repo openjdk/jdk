@@ -1132,7 +1132,7 @@ Node* LoadNode::convert_to_unsigned_load(PhaseGVN& gvn) {
       return NULL;
   }
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
-                        adr_type(), rt, bt, _mo, _control_dependency,
+                        raw_adr_type(), rt, bt, _mo, _control_dependency,
                         is_unaligned_access(), is_mismatched_access());
 }
 
@@ -1152,7 +1152,7 @@ Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
       return NULL;
   }
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
-                        adr_type(), rt, bt, _mo, _control_dependency,
+                        raw_adr_type(), rt, bt, _mo, _control_dependency,
                         is_unaligned_access(), is_mismatched_access());
 }
 
