@@ -41,8 +41,8 @@ import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReaderFactory;
 
-import sun.misc.URLClassPath;
-import sun.misc.Resource;
+import jdk.internal.loader.URLClassPath;
+import jdk.internal.loader.Resource;
 import sun.net.www.ParseUtil;
 import sun.net.www.URLConnection;
 
