@@ -420,11 +420,12 @@ static AliasedFlag const aliased_jvm_flags[] = {
 static AliasedLoggingFlag const aliased_logging_flags[] = {
   { "TraceBiasedLocking",        LogLevel::Info,  true,  LOG_TAGS(biasedlocking) },
   { "TraceClassLoading",         LogLevel::Info,  true,  LOG_TAGS(classload) },
-  { "TraceClassLoadingPreorder", LogLevel::Debug,  true,  LOG_TAGS(classload, preorder) },
+  { "TraceClassLoadingPreorder", LogLevel::Debug, true,  LOG_TAGS(classload, preorder) },
   { "TraceClassPaths",           LogLevel::Info,  true,  LOG_TAGS(classpath) },
   { "TraceClassResolution",      LogLevel::Debug, true,  LOG_TAGS(classresolve) },
   { "TraceClassUnloading",       LogLevel::Info,  true,  LOG_TAGS(classunload) },
   { "TraceExceptions",           LogLevel::Info,  true,  LOG_TAGS(exceptions) },
+  { "TraceLoaderConstraints",    LogLevel::Info,  true,  LOG_TAGS(classload, constraints) },
   { "TraceMonitorInflation",     LogLevel::Debug, true,  LOG_TAGS(monitorinflation) },
   { "TraceSafepointCleanupTime", LogLevel::Info,  true,  LOG_TAGS(safepointcleanup) },
   { NULL,                        LogLevel::Off,   false, LOG_TAGS(_NO_TAG) }
