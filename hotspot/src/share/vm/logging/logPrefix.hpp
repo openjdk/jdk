@@ -38,6 +38,10 @@
 // List of prefixes for specific tags and/or tagsets.
 // Syntax: LOG_PREFIX(<name of prefixer function>, LOG_TAGS(<chosen log tags>))
 // Where the prefixer function matches the following signature: size_t (*)(char*, size_t)
+
+// Prefix function for internal vm test
+DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
+
 #define LOG_PREFIX_LIST \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, age)) \
@@ -72,6 +76,7 @@
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, task, start)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, task, stats)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, task, time)) \
+  DEBUG_ONLY(LOG_PREFIX(Test_log_prefix_prefixer, LOG_TAGS(logging, test))) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, tlab))
 
 

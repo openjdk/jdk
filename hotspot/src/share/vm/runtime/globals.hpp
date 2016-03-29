@@ -951,9 +951,6 @@ public:
   notproduct(bool, PrintMallocFree, false,                                  \
           "Trace calls to C heap malloc/free allocation")                   \
                                                                             \
-  product(bool, PrintOopAddress, false,                                     \
-          "Always print the location of the oop")                           \
-                                                                            \
   notproduct(bool, VerifyCodeCache, false,                                  \
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \

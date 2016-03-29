@@ -508,12 +508,13 @@ void Exceptions::log_exception(Handle exception, stringStream tempst) {
   ResourceMark rm;
   Symbol* message = java_lang_Throwable::detail_message(exception());
   if (message != NULL) {
-    log_info(exceptions)("Exception <%s: %s> (" INTPTR_FORMAT ")\n thrown in %s",
+    log_info(exceptions)("Exception <%s: %s>\n thrown in %s",
                          exception->print_value_string(),
-                         message->as_C_string(), p2i(exception()), tempst.as_string());
+                         message->as_C_string(),
+                         tempst.as_string());
   } else {
-    log_info(exceptions)("Exception <%s> (" INTPTR_FORMAT ")\n thrown in %s",
+    log_info(exceptions)("Exception <%s>\n thrown in %s",
                          exception->print_value_string(),
-                         p2i(exception()), tempst.as_string());
+                         tempst.as_string());
   }
 }

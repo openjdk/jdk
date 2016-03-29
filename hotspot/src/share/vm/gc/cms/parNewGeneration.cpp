@@ -233,11 +233,15 @@ HeapWord* ParScanThreadState::alloc_in_to_space_slow(size_t word_sz) {
     if (word_sz * 100 < ParallelGCBufferWastePct * plab->word_sz()) {
       // Is small enough; abandon this buffer and start a new one.
       plab->retire();
-      size_t buf_size = plab->word_sz();
+      // The minimum size has to be twice SurvivorAlignmentInBytes to
+      // allow for padding used in the alignment of 1 word.  A padding
+      // of 1 is too small for a filler word so the padding size will
+      // be increased by SurvivorAlignmentInBytes.
+      size_t min_usable_size = 2 * static_cast<size_t>(SurvivorAlignmentInBytes >> LogHeapWordSize);
+      size_t buf_size = MAX2(plab->word_sz(), min_usable_size);
       HeapWord* buf_space = sp->par_allocate(buf_size);
       if (buf_space == NULL) {
-        const size_t min_bytes =
-          PLAB::min_size() << LogHeapWordSize;
+        const size_t min_bytes = MAX2(PLAB::min_size(), min_usable_size) << LogHeapWordSize;
         size_t free_bytes = sp->free();
         while(buf_space == NULL && free_bytes >= min_bytes) {
           buf_size = free_bytes >> LogHeapWordSize;
@@ -253,7 +257,10 @@ HeapWord* ParScanThreadState::alloc_in_to_space_slow(size_t word_sz) {
         // Note that we cannot compare buf_size < word_sz below
         // because of AlignmentReserve (see PLAB::allocate()).
         assert(obj != NULL || plab->words_remaining() < word_sz,
-               "Else should have been able to allocate");
+               "Else should have been able to allocate requested object size "
+               SIZE_FORMAT ", PLAB size " SIZE_FORMAT ", SurvivorAlignmentInBytes "
+               SIZE_FORMAT ", words_remaining " SIZE_FORMAT,
+               word_sz, buf_size, SurvivorAlignmentInBytes, plab->words_remaining());
         // It's conceivable that we may be able to use the
         // buffer we just grabbed for subsequent small requests
         // even if not for this one.
