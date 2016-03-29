@@ -26,18 +26,19 @@
 /*
  * @test
  * @bug 8054307
- * @ignore 8152636
  * @summary Validates StringCoding.hasNegatives intrinsic with a small range of tests.
- * @run main/bootclasspath java.lang.TestHasNegatives
+ * @library /compiler/patches
+ * @build java.base/java.lang.Helper
+ * @build compiler.intrinsics.string.TestHasNegatives
+ * @run main compiler.intrinsics.string.TestHasNegatives
  */
-package java.lang;
+package compiler.intrinsics.string;
 
-import java.lang.StringCoding;
+import java.lang.Helper;
 
 /*
  * @summary Validates StringCoding.hasNegatives intrinsic with a small
- *          range of tests.  Must be run with modified bootclasspath
- *          to allow existence in java.lang package.
+ *          range of tests.
  */
 public class TestHasNegatives {
 
@@ -95,7 +96,7 @@ public class TestHasNegatives {
                     if (len + off > tBa.length)
                         continue;
                     initialize(off, len, ng);
-                    r = StringCoding.hasNegatives(tBa, off, len);
+                    r = Helper.StringCodingHasNegatives(tBa, off, len);
                     if (r ^ ((ng == 0) ? false : true)) {
                         throw new Exception("Failed test hasNegatives " + "offset: " + off + " "
                                 + "length: " + len + " " + "return: " + r + " " + "negatives: "
