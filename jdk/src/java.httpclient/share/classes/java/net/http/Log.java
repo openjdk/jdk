@@ -24,7 +24,6 @@
 package java.net.http;
 
 import java.util.Locale;
-import sun.util.logging.PlatformLogger;
 
 /**
  * -Djava.net.HttpClient.log=errors,requests,headers,frames[:type:type2:..],content
@@ -35,9 +34,11 @@ import sun.util.logging.PlatformLogger;
  *
  * Logger name is "java.net.http.HttpClient"
  */
-class Log {
+// implements System.Logger in order to be skipped when printing the caller's
+// information
+abstract class Log implements System.Logger {
 
-    final static String logProp = "java.net.http.HttpClient.log";
+    static final String logProp = "java.net.http.HttpClient.log";
 
     public static final int OFF = 0;
     public static final int ERRORS = 0x1;
@@ -55,7 +56,7 @@ class Log {
     public static final int ALL = CONTROL| DATA | WINDOW_UPDATES;
     static int frametypes;
 
-    static sun.util.logging.PlatformLogger logger;
+    static final System.Logger logger;
 
     static {
         String s = Utils.getNetProperty(logProp);
@@ -111,7 +112,9 @@ class Log {
             }
         }
         if (logging != OFF) {
-            logger = PlatformLogger.getLogger("java.net.http.HttpClient");
+            logger = System.getLogger("java.net.http.HttpClient");
+        } else {
+            logger = null;
         }
     }
 
@@ -137,34 +140,38 @@ class Log {
 
     static void logError(String s) {
         if (errors())
-            logger.info("ERROR: " + s);
+            logger.log(Level.INFO, "ERROR: " + s);
     }
 
     static void logError(Throwable t) {
         if (errors()) {
             String s = Utils.stackTrace(t);
-            logger.info("ERROR: " + s);
+            logger.log(Level.INFO, "ERROR: " + s);
         }
     }
 
     static void logSSL(String s) {
         if (ssl())
-            logger.info("SSL: " + s);
+            logger.log(Level.INFO, "SSL: " + s);
     }
 
     static void logRequest(String s) {
         if (requests())
-            logger.info("REQUEST: " + s);
+            logger.log(Level.INFO, "REQUEST: " + s);
     }
 
     static void logResponse(String s) {
         if (requests())
-            logger.info("RESPONSE: " + s);
+            logger.log(Level.INFO, "RESPONSE: " + s);
     }
 
     static void logHeaders(String s) {
         if (headers())
-            logger.info("HEADERS: " + s);
+            logger.log(Level.INFO, "HEADERS: " + s);
     }
+
+    // not instantiable
+    private Log() {}
+
 // END HTTP2
 }

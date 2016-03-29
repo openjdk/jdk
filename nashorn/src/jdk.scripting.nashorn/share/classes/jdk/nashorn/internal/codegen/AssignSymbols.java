@@ -803,7 +803,7 @@ final class AssignSymbols extends SimpleNodeVisitor implements Loggable {
 
     @Override
     public Node leaveForNode(final ForNode forNode) {
-        if (forNode.isForIn()) {
+        if (forNode.isForInOrOf()) {
             return forNode.setIterator(lc, newObjectInternal(ITERATOR_PREFIX)); //NASHORN-73
         }
 

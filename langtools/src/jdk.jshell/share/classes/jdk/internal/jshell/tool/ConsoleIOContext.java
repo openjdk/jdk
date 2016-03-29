@@ -48,7 +48,7 @@ import java.util.function.Supplier;
 import jdk.internal.jline.NoInterruptUnixTerminal;
 import jdk.internal.jline.Terminal;
 import jdk.internal.jline.TerminalFactory;
-import jdk.internal.jline.UnsupportedTerminal;
+import jdk.internal.jline.TerminalSupport;
 import jdk.internal.jline.WindowsTerminal;
 import jdk.internal.jline.console.ConsoleReader;
 import jdk.internal.jline.console.KeyMap;
@@ -70,7 +70,7 @@ class ConsoleIOContext extends IOContext {
         this.input = new StopDetectingInputStream(() -> repl.state.stop(), ex -> repl.hard("Error on input: %s", ex));
         Terminal term;
         if (System.getProperty("test.jdk") != null) {
-            term = new UnsupportedTerminal();
+            term = new TestTerminal(input);
         } else if (System.getProperty("os.name").toLowerCase(Locale.US).contains(TerminalFactory.WINDOWS)) {
             term = new JShellWindowsTerminal(input);
         } else {
@@ -80,7 +80,7 @@ class ConsoleIOContext extends IOContext {
         in = new ConsoleReader(cmdin, cmdout, term);
         in.setExpandEvents(false);
         in.setHandleUserInterrupt(true);
-        in.setHistory(history = new EditingHistory(JShellTool.PREFS) {
+        in.setHistory(history = new EditingHistory(repl.prefs) {
             @Override protected CompletionInfo analyzeCompletion(String input) {
                 return repl.analysis.analyzeCompletion(input);
             }
@@ -530,6 +530,24 @@ class ConsoleIOContext extends IOContext {
         public void init() throws Exception {
             super.init();
             setAnsiSupported(false);
+        }
+
+        @Override
+        public InputStream wrapInIfNeeded(InputStream in) throws IOException {
+            return input.setInputStream(super.wrapInIfNeeded(in));
+        }
+
+    }
+
+    private static final class TestTerminal extends TerminalSupport {
+
+        private final StopDetectingInputStream input;
+
+        public TestTerminal(StopDetectingInputStream input) throws Exception {
+            super(true);
+            setAnsiSupported(false);
+            setEchoEnabled(true);
+            this.input = input;
         }
 
         @Override

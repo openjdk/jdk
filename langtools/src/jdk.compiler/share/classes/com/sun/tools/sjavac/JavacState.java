@@ -361,22 +361,22 @@ public class JavacState {
             // Silently create a new javac_state file.
             noFileFound = true;
         } catch (IOException e) {
-            Log.info("Dropping old javac_state because of errors when reading it.");
+            Log.warn("Dropping old javac_state because of errors when reading it.");
             db = new JavacState(options, true);
             foundCorrectVerNr = true;
             newCommandLine = false;
             syntaxError = false;
     }
         if (foundCorrectVerNr == false && !noFileFound) {
-            Log.info("Dropping old javac_state since it is of an old version.");
+            Log.debug("Dropping old javac_state since it is of an old version.");
             db = new JavacState(options, true);
         } else
         if (newCommandLine == true && !noFileFound) {
-            Log.info("Dropping old javac_state since a new command line is used!");
+            Log.debug("Dropping old javac_state since a new command line is used!");
             db = new JavacState(options, true);
         } else
         if (syntaxError == true) {
-            Log.info("Dropping old javac_state since it contains syntax errors.");
+            Log.warn("Dropping old javac_state since it contains syntax errors.");
             db = new JavacState(options, true);
         }
         db.prev.calculateDependents();
@@ -868,7 +868,7 @@ public class JavacState {
                         // This is an incremental compile! The pubapi
                         // did change. Trigger recompilation of dependents.
                         packagesWithChangedPublicApis.add(pkg);
-                        Log.info("The API of " + Util.justPackageName(pkg) + " has changed!");
+                        Log.debug("The API of " + Util.justPackageName(pkg) + " has changed!");
                     }
                 }
             }

@@ -25,7 +25,6 @@
  * JDK-8144113: Nashorn: enable jjs testing. 
  * @test
  * @option -scripting
- * @runif os.not.windows
  * @run
  * @summary Test -scripting flag and its basic functionality
  */
@@ -40,7 +39,7 @@ var msg_func = <<'EOD'
 var x = "Nashorn"
 var hello = "Hello ${x}"
 if (hello != "Hello Nashorn") {
-    throw new Error("string interploation not working");
+    throw new Error("string interploation not working")
 }
 EOD
 

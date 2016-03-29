@@ -165,7 +165,7 @@ public class SjavacServer implements Terminable {
             portFile.lock();
             portFile.getValues();
             if (portFile.containsPortInfo()) {
-                Log.info("Javac server not started because portfile exists!");
+                Log.debug("Javac server not started because portfile exists!");
                 portFile.unlock();
                 return -1;
             }
@@ -192,10 +192,10 @@ public class SjavacServer implements Terminable {
         portFileMonitor = new PortFileMonitor(portFile, this);
         portFileMonitor.start();
 
-        Log.info("Sjavac server started. Accepting connections...");
-        Log.info("    port: " + getPort());
-        Log.info("    time: " + new java.util.Date());
-        Log.info("    poolsize: " + poolsize);
+        Log.debug("Sjavac server started. Accepting connections...");
+        Log.debug("    port: " + getPort());
+        Log.debug("    time: " + new java.util.Date());
+        Log.debug("    poolsize: " + poolsize);
 
 
         keepAcceptingRequests.set(true);
@@ -208,7 +208,7 @@ public class SjavacServer implements Terminable {
             }
         } while (keepAcceptingRequests.get());
 
-        Log.info("Shutting down.");
+        Log.debug("Shutting down.");
 
         // No more connections accepted. If any client managed to connect after
         // the accept() was interrupted but before the server socket is closed
@@ -216,7 +216,7 @@ public class SjavacServer implements Terminable {
         // IOException on the client side.
 
         long realTime = System.currentTimeMillis() - serverStart;
-        Log.info("Total wall clock time " + realTime + "ms build time " + totalBuildTime + "ms");
+        Log.debug("Total wall clock time " + realTime + "ms build time " + totalBuildTime + "ms");
 
         // Shut down
         sjavac.shutdown();
@@ -231,7 +231,7 @@ public class SjavacServer implements Terminable {
             return;
         }
 
-        Log.info("Quitting: " + quitMsg);
+        Log.debug("Quitting: " + quitMsg);
 
         portFileMonitor.shutdown(); // No longer any need to monitor port file
 

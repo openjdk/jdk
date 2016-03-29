@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4732864 6280605 7064544 8014636 8016328 8025633
+ * @bug      4732864 6280605 7064544 8014636 8016328 8025633 8071982
  * @summary  Make sure that you can link from one member to another using
  *           non-qualified name, furthermore, ensure the right one is linked.
  * @author   jamieh
@@ -54,7 +54,8 @@ public class TestLinkTaglet extends JavadocTester {
                 + " Unqualified Link2: <a href=\"../pkg/C.InnerC.html\" title=\"class in pkg\"><code>C.InnerC</code></a>.<br/>\n"
                 + " Qualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(pkg.C.InnerC, pkg.C.InnerC2)</code></a>.<br/>\n"
                 + " Unqualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>\n"
-                + " Unqualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(InnerC, InnerC2)</code></a>.<br/>");
+                + " Unqualified Link: <a href=\"../pkg/C.html#method-pkg.C.InnerC-pkg.C.InnerC2-\"><code>method(InnerC, InnerC2)</code></a>.<br/>\n"
+                + " Package Link: <a href=\"../pkg/package-summary.html\"><code>pkg</code></a>.<br/>");
 
         checkOutput("pkg/C.InnerC.html", true,
                 "Link to member in outer class: <a href=\"../pkg/C.html#MEMBER\"><code>C.MEMBER</code></a> <br/>\n"
