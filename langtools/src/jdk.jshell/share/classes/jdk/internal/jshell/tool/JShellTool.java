@@ -121,6 +121,7 @@ public class JShellTool {
     final InputStream userin;
     final PrintStream userout;
     final PrintStream usererr;
+    final Preferences prefs;
 
     final Feedback feedback = new Feedback();
 
@@ -137,7 +138,8 @@ public class JShellTool {
      */
     public JShellTool(InputStream cmdin, PrintStream cmdout, PrintStream cmderr,
             PrintStream console,
-            InputStream userin, PrintStream userout, PrintStream usererr) {
+            InputStream userin, PrintStream userout, PrintStream usererr,
+            Preferences prefs) {
         this.cmdin = cmdin;
         this.cmdout = cmdout;
         this.cmderr = cmderr;
@@ -145,6 +147,7 @@ public class JShellTool {
         this.userin = userin;
         this.userout = userout;
         this.usererr = usererr;
+        this.prefs = prefs;
         initializeFeedbackModes();
     }
 
@@ -229,8 +232,6 @@ public class JShellTool {
     // Commands and snippets which should be replayed
     private List<String> replayableHistory;
     private List<String> replayableHistoryPrevious;
-
-    static final Preferences PREFS = Preferences.userRoot().node("tool/JShell");
 
     static final String STARTUP_KEY = "STARTUP";
     static final String REPLAY_RESTORE_KEY = "REPLAY_RESTORE";
@@ -387,7 +388,8 @@ public class JShellTool {
      */
     public static void main(String[] args) throws Exception {
         new JShellTool(System.in, System.out, System.err, System.out,
-                 new ByteArrayInputStream(new byte[0]), System.out, System.err)
+                 new ByteArrayInputStream(new byte[0]), System.out, System.err,
+                 Preferences.userRoot().node("tool/JShell"))
                 .start(args);
     }
 
@@ -406,7 +408,7 @@ public class JShellTool {
         resetState(); // Initialize
 
         // Read replay history from last jshell session into previous history
-        String prevReplay = PREFS.get(REPLAY_RESTORE_KEY, null);
+        String prevReplay = prefs.get(REPLAY_RESTORE_KEY, null);
         if (prevReplay != null) {
             replayableHistoryPrevious = Arrays.asList(prevReplay.split(RECORD_SEPARATOR));
         }
@@ -558,10 +560,10 @@ public class JShellTool {
 
         String start;
         if (cmdlineStartup == null) {
-            start = PREFS.get(STARTUP_KEY, "<nada>");
+            start = prefs.get(STARTUP_KEY, "<nada>");
             if (start.equals("<nada>")) {
                 start = DEFAULT_STARTUP;
-                PREFS.put(STARTUP_KEY, DEFAULT_STARTUP);
+                prefs.put(STARTUP_KEY, DEFAULT_STARTUP);
             }
         } else {
             start = cmdlineStartup;
@@ -1198,7 +1200,7 @@ public class JShellTool {
                     try {
                         byte[] encoded = Files.readAllBytes(toPathResolvingUserHome(filename));
                         String init = new String(encoded);
-                        PREFS.put(STARTUP_KEY, init);
+                        prefs.put(STARTUP_KEY, init);
                     } catch (AccessDeniedException e) {
                         hard("File '%s' for /set start is not accessible.", filename);
                         return false;
@@ -1347,7 +1349,7 @@ public class JShellTool {
         regenerateOnDeath = false;
         live = false;
         if (!replayableHistory.isEmpty()) {
-            PREFS.put(REPLAY_RESTORE_KEY, replayableHistory.stream().reduce(
+            prefs.put(REPLAY_RESTORE_KEY, replayableHistory.stream().reduce(
                     (a, b) -> a + RECORD_SEPARATOR + b).get());
         }
         fluff("Goodbye\n");
