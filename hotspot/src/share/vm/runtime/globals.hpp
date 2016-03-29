@@ -1454,9 +1454,6 @@ public:
   develop(bool, TimeOopMap2, false,                                         \
           "Time calls to GenerateOopMap::compute_map() individually")       \
                                                                             \
-  develop(bool, TraceMonitorMismatch, false,                                \
-          "Trace monitor matching failures during OopMapGeneration")        \
-                                                                            \
   develop(bool, TraceOopMapRewrites, false,                                 \
           "Trace rewriting of method oops during oop map generation")       \
                                                                             \
