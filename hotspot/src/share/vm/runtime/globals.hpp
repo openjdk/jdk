@@ -2376,9 +2376,6 @@ public:
   product(bool, IgnoreEmptyClassPaths, false,                               \
           "Ignore empty path elements in -classpath")                       \
                                                                             \
-  product_rw(bool, TraceLoaderConstraints, false,                           \
-          "Trace loader constraints")                                       \
-                                                                            \
   product(size_t, InitialBootClassLoaderMetaspaceSize,                      \
           NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
           "Initial size of the boot class loader data metaspace")           \
