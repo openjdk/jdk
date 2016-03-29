@@ -605,6 +605,7 @@ private:
   bool _legacy_mode_dq;
   bool _legacy_mode_vl;
   bool _legacy_mode_vlbw;
+  bool _is_managed;
 
   class InstructionAttr *_attributes;
 
@@ -811,11 +812,16 @@ private:
     _legacy_mode_dq = (VM_Version::supports_avx512dq() == false);
     _legacy_mode_vl = (VM_Version::supports_avx512vl() == false);
     _legacy_mode_vlbw = (VM_Version::supports_avx512vlbw() == false);
+    _is_managed = false;
     _attributes = NULL;
   }
 
   void set_attributes(InstructionAttr *attributes) { _attributes = attributes; }
   void clear_attributes(void) { _attributes = NULL; }
+
+  void set_managed(void) { _is_managed = true; }
+  void clear_managed(void) { _is_managed = false; }
+  bool is_managed(void) { return _is_managed; }
 
   void lea(Register dst, Address src);
 

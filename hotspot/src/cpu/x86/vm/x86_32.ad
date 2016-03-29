@@ -795,6 +795,9 @@ static int impl_x_helper( CodeBuffer *cbuf, bool do_size, bool is_load,
   }
   if (cbuf) {
     MacroAssembler _masm(cbuf);
+    // EVEX spills remain EVEX: Compressed displacemement is better than AVX on spill mem operations, 
+    //                          it maps more cases to single byte displacement
+    _masm.set_managed();
     if (reg_lo+1 == reg_hi) { // double move?
       if (is_load) {
         __ movdbl(as_XMMRegister(Matcher::_regEncode[reg_lo]), Address(rsp, offset));
@@ -845,6 +848,8 @@ static int impl_movx_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int dst
                             int src_hi, int dst_hi, int size, outputStream* st ) {
   if (cbuf) {
     MacroAssembler _masm(cbuf);
+    // EVEX spills remain EVEX: logic complex between full EVEX, partial and AVX, manage EVEX spill code one way.
+    _masm.set_managed();
     if (src_lo+1 == src_hi && dst_lo+1 == dst_hi) { // double move?
       __ movdbl(as_XMMRegister(Matcher::_regEncode[dst_lo]),
                 as_XMMRegister(Matcher::_regEncode[src_lo]));
@@ -883,6 +888,8 @@ static int impl_movgpr2x_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int
   // 32-bit
   if (cbuf) {
     MacroAssembler _masm(cbuf);
+    // EVEX spills remain EVEX: logic complex between full EVEX, partial and AVX, manage EVEX spill code one way.
+    _masm.set_managed();
     __ movdl(as_XMMRegister(Matcher::_regEncode[dst_lo]),
              as_Register(Matcher::_regEncode[src_lo]));
 #ifndef PRODUCT
@@ -899,6 +906,8 @@ static int impl_movx2gpr_helper( CodeBuffer *cbuf, bool do_size, int src_lo, int
   // 32-bit
   if (cbuf) {
     MacroAssembler _masm(cbuf);
+    // EVEX spills remain EVEX: logic complex between full EVEX, partial and AVX, manage EVEX spill code one way.
+    _masm.set_managed();
     __ movdl(as_Register(Matcher::_regEncode[dst_lo]),
              as_XMMRegister(Matcher::_regEncode[src_lo]));
 #ifndef PRODUCT
