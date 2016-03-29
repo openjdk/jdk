@@ -29,7 +29,6 @@
 #include "logging/logTagSet.hpp"
 #include "logging/logTag.hpp"
 #include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
@@ -87,6 +86,26 @@
 //
 #define LogHandle(...)  Log<LOG_TAGS(__VA_ARGS__)>
 
+template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+class Log;
+
+// Non-template helper class for implementing write-slowpath in cpp
+class LogWriteHelper : AllStatic {
+ private:
+
+  template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+  friend class Log;
+
+  ATTRIBUTE_PRINTF(6, 0)
+  static void write_large(LogTagSet& lts,
+                          LogLevelType level,
+                          const char* prefix,
+                          size_t prefix_len,
+                          size_t msg_len,
+                          const char* fmt,
+                          va_list args);
+};
+
 template <LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG, LogTagType T3 = LogTag::__NO_TAG,
           LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
 class Log VALUE_OBJ_CLASS_SPEC {
@@ -133,21 +152,14 @@ class Log VALUE_OBJ_CLASS_SPEC {
     // Check that string fits in buffer; resize buffer if necessary
     int ret = os::log_vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
     assert(ret >= 0, "Log message buffer issue");
-    if ((size_t)ret >= sizeof(buf)) {
-      size_t newbuf_len = prefix_len + ret + 1;
-      char* newbuf = NEW_C_HEAP_ARRAY(char, newbuf_len, mtLogging);
-      prefix_len = LogPrefix<T0, T1, T2, T3, T4>::prefix(newbuf, newbuf_len);
-      ret = os::log_vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
-      assert(ret >= 0, "Log message buffer issue");
-      puts(level, newbuf);
-      FREE_C_HEAP_ARRAY(char, newbuf);
+    size_t msg_len = ret;
+    LogTagSet& lts = LogTagSetMapping<T0, T1, T2, T3, T4>::tagset();
+    if (msg_len >= sizeof(buf)) {
+      LogWriteHelper::write_large(lts, level, buf, prefix_len, msg_len, fmt, saved_args);
     } else {
-      puts(level, buf);
+      lts.log(level, buf);
     }
-  }
-
-  static void puts(LogLevelType level, const char* string) {
-    LogTagSetMapping<T0, T1, T2, T3, T4>::tagset().log(level, string);
+    va_end(saved_args);
   }
 
 #define LOG_LEVEL(level, name) ATTRIBUTE_PRINTF(2, 0) \

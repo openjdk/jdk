@@ -89,6 +89,7 @@
   LOG_TAG(survivor) \
   LOG_TAG(sweep) \
   LOG_TAG(task) \
+  DEBUG_ONLY(LOG_TAG(test)) \
   LOG_TAG(thread) \
   LOG_TAG(tlab) \
   LOG_TAG(time) \
