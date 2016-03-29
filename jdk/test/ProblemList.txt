@@ -443,7 +443,7 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java			linux-i586,macosx-all
 # core_tools
 
 # 8150975
-# tools/jimage/JImageTest.java                                    linux-i586,windows-i586
+tools/jimage/JImageTest.java                                    linux-i586,windows-i586
 
 ############################################################################
 
