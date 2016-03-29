@@ -24,8 +24,6 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
-#include "gc/shared/gcId.hpp"
-#include "gc/shared/gcId.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
