@@ -26,47 +26,39 @@
 /*
  * @test TestStableUShort
  * @summary tests on stable fields and arrays
- * @library /testlibrary /test/lib
- * @build TestStableUShort StableConfiguration sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main ClassFileInstaller
- *           java/lang/invoke/StableConfiguration
- *           java/lang/invoke/TestStableUShort
- *           java/lang/invoke/TestStableUShort$UShortStable
- *           java/lang/invoke/TestStableUShort$UShortArrayDim1
+ * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.vm.annotation
+ * @build sun.hotspot.WhiteBox
+ * @build compiler.stable.TestStableUShort
  *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:-TieredCompilation
- *                   -XX:+FoldStableValues
- *                   -XX:CompileOnly=::get,::get1
- *                   java.lang.invoke.TestStableUShort
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:-TieredCompilation
- *                   -XX:-FoldStableValues
- *                   -XX:CompileOnly=::get,::get1
- *                   java.lang.invoke.TestStableUShort
+ * @run main/bootclasspath -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         -XX:CompileOnly=::get,::get1
+ *                         compiler.stable.TestStableUShort
+ * @run main/bootclasspath -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:-TieredCompilation
+ *                         -XX:-FoldStableValues
+ *                         -XX:CompileOnly=::get,::get1
+ *                         compiler.stable.TestStableUShort
  *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:+FoldStableValues
- *                   -XX:CompileOnly=::get,::get1
- *                   java.lang.invoke.TestStableUShort
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
- *                   -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:-FoldStableValues
- *                   -XX:CompileOnly=::get,::get1
- *                   java.lang.invoke.TestStableUShort
+ * @run main/bootclasspath -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                         -XX:+FoldStableValues
+ *                         -XX:CompileOnly=::get,::get1
+ *                         compiler.stable.TestStableUShort
+ * @run main/bootclasspath -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
+ *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                         -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                         -XX:-FoldStableValues
+ *                         -XX:CompileOnly=::get,::get1
+ *                         compiler.stable.TestStableUShort
  *
  */
-package java.lang.invoke;
+package compiler.stable;
 
 import jdk.internal.vm.annotation.Stable;
 
