@@ -66,6 +66,7 @@
   LOG_TAG(metaspace) \
   LOG_TAG(modules) \
   LOG_TAG(monitorinflation) \
+  LOG_TAG(monitormismatch) \
   LOG_TAG(os) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
