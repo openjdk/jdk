@@ -363,20 +363,6 @@ address JVMCIRuntime::exception_handler_for_pc(JavaThread* thread) {
   return continuation;
 }
 
-JRT_ENTRY(void, JVMCIRuntime::create_null_exception(JavaThread* thread))
-  SharedRuntime::throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_NullPointerException());
-  thread->set_vm_result(PENDING_EXCEPTION);
-  CLEAR_PENDING_EXCEPTION;
-JRT_END
-
-JRT_ENTRY(void, JVMCIRuntime::create_out_of_bounds_exception(JavaThread* thread, jint index))
-  char message[jintAsStringSize];
-  sprintf(message, "%d", index);
-  SharedRuntime::throw_and_post_jvmti_exception(thread, vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), message);
-  thread->set_vm_result(PENDING_EXCEPTION);
-  CLEAR_PENDING_EXCEPTION;
-JRT_END
-
 JRT_ENTRY_NO_ASYNC(void, JVMCIRuntime::monitorenter(JavaThread* thread, oopDesc* obj, BasicLock* lock))
   IF_TRACE_jvmci_3 {
     char type[O_BUFLEN];
@@ -436,6 +422,21 @@ JRT_LEAF(void, JVMCIRuntime::monitorexit(JavaThread* thread, oopDesc* obj, Basic
     TRACE_jvmci_3("%s: exited locking slow case with obj=" INTPTR_FORMAT ", type=%s, mark=" INTPTR_FORMAT ", lock=" INTPTR_FORMAT, thread->name(), p2i(obj), type, p2i(obj->mark()), p2i(lock));
     tty->flush();
   }
+JRT_END
+
+JRT_ENTRY(void, JVMCIRuntime::throw_and_post_jvmti_exception(JavaThread* thread, Symbol* name, const char* message))
+  SharedRuntime::throw_and_post_jvmti_exception(thread, name, message);
+JRT_END
+
+JRT_ENTRY(void, JVMCIRuntime::throw_klass_external_name_exception(JavaThread* thread, Symbol* exception, Klass* klass))
+  ResourceMark rm(thread);
+  SharedRuntime::throw_and_post_jvmti_exception(thread, exception, klass->external_name());
+JRT_END
+
+JRT_ENTRY(void, JVMCIRuntime::throw_class_cast_exception(JavaThread* thread, Symbol* exception, Klass* caster_klass, Klass* target_klass))
+  ResourceMark rm(thread);
+  const char* message = SharedRuntime::generate_class_cast_message(caster_klass, target_klass);
+  SharedRuntime::throw_and_post_jvmti_exception(thread, exception, message);
 JRT_END
 
 JRT_LEAF(void, JVMCIRuntime::log_object(JavaThread* thread, oopDesc* obj, bool as_string, bool newline))
