@@ -39,24 +39,27 @@
 
 template <LogLevelType Level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag >
 void GCTraceTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::log_start(jlong start_counter) {
-  if (Log<PREFIX_LOG_TAG(start), T0, T1, T2, T3>::is_level(Level)) {
+  STATIC_ASSERT(T0 != LogTag::__NO_TAG); // Need some tag to log on.
+  STATIC_ASSERT(T4 == LogTag::__NO_TAG); // Need to leave at least the last tag for the "start" tag in log_start()
+
+  // Get log with start tag appended (replace first occurrence of NO_TAG)
+  const LogTagType start_tag = PREFIX_LOG_TAG(start);
+  const LogTagType no_tag = PREFIX_LOG_TAG(_NO_TAG);
+  Log<T0,
+      T1 == no_tag ? start_tag : T1,
+      T1 != no_tag && T2 == no_tag ? start_tag : T2,
+      T2 != no_tag && T3 == no_tag ? start_tag : T3,
+      T3 != no_tag && T4 == no_tag ? start_tag : T4
+    > log;
+
+  if (log.is_level(Level)) {
     FormatBuffer<> start_msg("%s", _title);
     if (_gc_cause != GCCause::_no_gc) {
       start_msg.append(" (%s)", GCCause::to_string(_gc_cause));
     }
     start_msg.append(" (%.3fs)", TimeHelper::counter_to_seconds(start_counter));
     // Make sure to put the "start" tag last in the tag set
-    STATIC_ASSERT(T0 != LogTag::__NO_TAG); // Need some tag to log on.
-    STATIC_ASSERT(T4 == LogTag::__NO_TAG); // Need to leave at least the last tag for the "start" tag in log_start()
-    if (T1 == LogTag::__NO_TAG) {
-      Log<T0, PREFIX_LOG_TAG(start)>::template write<Level>("%s", start_msg.buffer());
-    } else if (T2 == LogTag::__NO_TAG) {
-      Log<T0, T1, PREFIX_LOG_TAG(start)>::template write<Level>("%s", start_msg.buffer());
-    } else if (T3 == LogTag::__NO_TAG) {
-      Log<T0, T1, T2, PREFIX_LOG_TAG(start)>::template write<Level>("%s", start_msg.buffer());
-    } else {
-      Log<T0, T1, T2, T3, PREFIX_LOG_TAG(start)>::template write<Level>("%s", start_msg.buffer());
-    }
+    log.template write<Level>("%s", start_msg.buffer());
   }
 }
 
