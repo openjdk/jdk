@@ -102,7 +102,6 @@
   template(java_security_SecureClassLoader,           "java/security/SecureClassLoader")          \
   template(java_net_URL,                              "java/net/URL")                             \
   template(java_util_jar_Manifest,                    "java/util/jar/Manifest")                   \
-  template(impliesCreateAccessControlContext_name,    "impliesCreateAccessControlContext")        \
   template(java_io_OutputStream,                      "java/io/OutputStream")                     \
   template(java_io_Reader,                            "java/io/Reader")                           \
   template(java_io_BufferedReader,                    "java/io/BufferedReader")                   \
@@ -326,7 +325,6 @@
   template(java_lang_StackFrameInfo,                  "java/lang/StackFrameInfo")                 \
   template(java_lang_LiveStackFrameInfo,              "java/lang/LiveStackFrameInfo")             \
   template(java_lang_StackStreamFactory_AbstractStackWalker, "java/lang/StackStreamFactory$AbstractStackWalker") \
-  template(doStackWalk_name,                          "doStackWalk")                              \
   template(doStackWalk_signature,                     "(JIIII)Ljava/lang/Object;")                \
   template(asPrimitive_name,                          "asPrimitive")                              \
   template(asPrimitive_int_signature,                 "(I)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
@@ -377,8 +375,6 @@
   template(type_name,                                 "type")                                     \
   template(findNative_name,                           "findNative")                               \
   template(deadChild_name,                            "deadChild")                                \
-  template(addClass_name,                             "addClass")                                 \
-  template(throwIllegalAccessError_name,              "throwIllegalAccessError")                  \
   template(getFromClass_name,                         "getFromClass")                             \
   template(dispatch_name,                             "dispatch")                                 \
   template(getSystemClassLoader_name,                 "getSystemClassLoader")                     \
@@ -472,10 +468,6 @@
   template(getProtectionDomain_signature,             "(Ljava/security/CodeSource;)Ljava/security/ProtectionDomain;") \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
   template(module_entry_name,                         "module_entry")                             \
-                                                                                                  \
-  /* non-intrinsic name/signature pairs: */                                                       \
-  template(register_method_name,                      "register")                                 \
-  do_alias(register_method_signature,         object_void_signature)                              \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \

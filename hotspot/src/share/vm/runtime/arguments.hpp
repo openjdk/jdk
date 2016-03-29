@@ -567,7 +567,7 @@ class Arguments : AllStatic {
   static jint adjust_after_os();
 
   static void set_gc_specific_flags();
-  static inline bool gc_selected(); // whether a gc has been selected
+  static bool gc_selected(); // whether a gc has been selected
   static void select_gc_ergonomically();
 #if INCLUDE_JVMCI
   // Check consistency of jvmci vm argument settings.
@@ -731,10 +731,6 @@ class Arguments : AllStatic {
 
   static void check_unsupported_dumping_properties() NOT_CDS_RETURN;
 };
-
-bool Arguments::gc_selected() {
-  return UseConcMarkSweepGC || UseG1GC || UseParallelGC || UseParallelOldGC || UseSerialGC;
-}
 
 // Disable options not supported in this release, with a warning if they
 // were explicitly requested on the command-line
