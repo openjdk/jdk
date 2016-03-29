@@ -25,7 +25,6 @@
  * JDK-8144113: Nashorn: enable jjs testing. 
  * @test
  * @option -scripting
- * @runif os.not.windows
  * @run
  * @summary Test -ot flag
  */
@@ -33,7 +32,7 @@
 load(__DIR__ + "jjs-common.js")
 
 var args_n = "-scripting -ot=false"
-var msg_flag = "print($OPTIONS._optimistic_types);";
+var msg_flag = "print($OPTIONS._optimistic_types)"
 
 // flag test expected output variables
 var e_outp = "true"

@@ -25,7 +25,7 @@
 
 package sun.misc;
 
-import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.misc.VM;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
@@ -39,21 +39,29 @@ import java.security.ProtectionDomain;
  * Although the class and all methods are public, use of this class is
  * limited because only trusted code can obtain instances of it.
  *
+ * <em>Note:</em> It is the resposibility of the caller to make sure
+ * arguments are checked before methods of this class are
+ * called. While some rudimentary checks are performed on the input,
+ * the checks are best effort and when performance is an overriding
+ * priority, as when methods of this class are optimized by the
+ * runtime compiler, some or all checks (if any) may be elided. Hence,
+ * the caller must not rely on the checks and corresponding
+ * exceptions!
+ *
  * @author John R. Rose
  * @see #getUnsafe
  */
 
 public final class Unsafe {
 
-    private static native void registerNatives();
     static {
-        registerNatives();
         sun.reflect.Reflection.registerMethodsToFilter(Unsafe.class, "getUnsafe");
     }
 
     private Unsafe() {}
 
     private static final Unsafe theUnsafe = new Unsafe();
+    private static final jdk.internal.misc.Unsafe theInternalUnsafe = jdk.internal.misc.Unsafe.getUnsafe();
 
     /**
      * Provides the caller with the capability of performing unsafe
@@ -150,8 +158,10 @@ public final class Unsafe {
      * @throws RuntimeException No defined exceptions are thrown, not even
      *         {@link NullPointerException}
      */
-    @HotSpotIntrinsicCandidate
-    public native int getInt(Object o, long offset);
+    @ForceInline
+    public int getInt(Object o, long offset) {
+        return theInternalUnsafe.getInt(o, offset);
+    }
 
     /**
      * Stores a value into a given Java variable.
@@ -173,15 +183,19 @@ public final class Unsafe {
      * @throws RuntimeException No defined exceptions are thrown, not even
      *         {@link NullPointerException}
      */
-    @HotSpotIntrinsicCandidate
-    public native void putInt(Object o, long offset, int x);
+    @ForceInline
+    public void putInt(Object o, long offset, int x) {
+        theInternalUnsafe.putInt(o, offset, x);
+    }
 
     /**
      * Fetches a reference value from a given Java variable.
      * @see #getInt(Object, long)
      */
-    @HotSpotIntrinsicCandidate
-    public native Object getObject(Object o, long offset);
+    @ForceInline
+    public Object getObject(Object o, long offset) {
+        return theInternalUnsafe.getObject(o, offset);
+    }
 
     /**
      * Stores a reference value into a given Java variable.
@@ -193,51 +207,95 @@ public final class Unsafe {
      * are updated.
      * @see #putInt(Object, long, int)
      */
-    @HotSpotIntrinsicCandidate
-    public native void putObject(Object o, long offset, Object x);
+    @ForceInline
+    public void putObject(Object o, long offset, Object x) {
+        theInternalUnsafe.putObject(o, offset, x);
+    }
 
     /** @see #getInt(Object, long) */
-    @HotSpotIntrinsicCandidate
-    public native boolean getBoolean(Object o, long offset);
+    @ForceInline
+    public boolean getBoolean(Object o, long offset) {
+        return theInternalUnsafe.getBoolean(o, offset);
+    }
+
     /** @see #putInt(Object, long, int) */
-    @HotSpotIntrinsicCandidate
-    public native void    putBoolean(Object o, long offset, boolean x);
+    @ForceInline
+    public void putBoolean(Object o, long offset, boolean x) {
+        theInternalUnsafe.putBoolean(o, offset, x);
+    }
+
     /** @see #getInt(Object, long) */
-    @HotSpotIntrinsicCandidate
-    public native byte    getByte(Object o, long offset);
+    @ForceInline
+    public byte getByte(Object o, long offset) {
+        return theInternalUnsafe.getByte(o, offset);
+    }
+
     /** @see #putInt(Object, long, int) */
-    @HotSpotIntrinsicCandidate
-    public native void    putByte(Object o, long offset, byte x);
+    @ForceInline
+    public void putByte(Object o, long offset, byte x) {
+        theInternalUnsafe.putByte(o, offset, x);
+    }
+
     /** @see #getInt(Object, long) */
-    @HotSpotIntrinsicCandidate
-    public native short   getShort(Object o, long offset);
+    @ForceInline
+    public short getShort(Object o, long offset) {
+        return theInternalUnsafe.getShort(o, offset);
+    }
+
     /** @see #putInt(Object, long, int) */
-    @HotSpotIntrinsicCandidate
-    public native void    putShort(Object o, long offset, short x);
+    @ForceInline
+    public void putShort(Object o, long offset, short x) {
+        theInternalUnsafe.putShort(o, offset, x);
+    }
+
     /** @see #getInt(Object, long) */
-    @HotSpotIntrinsicCandidate
-    public native char    getChar(Object o, long offset);
+    @ForceInline
+    public char getChar(Object o, long offset) {
+        return theInternalUnsafe.getChar(o, offset);
+    }
+
     /** @see #putInt(Object, long, int) */
-    @HotSpotIntrinsicCandidate
-    public native void    putChar(Object o, long offset, char x);
+    @ForceInline
+    public void putChar(Object o, long offset, char x) {
+        theInternalUnsafe.putChar(o, offset, x);
+    }
+
     /** @see #getInt(Object, long) */
-    @HotSpotIntrinsicCandidate
-    public native long    getLong(Object o, long offset);
+    @ForceInline
+    public long getLong(Object o, long offset) {
+        return theInternalUnsafe.getLong(o, offset);
+    }
+
     /** @see #putInt(Object, long, int) */
-    @HotSpotIntrinsicCandidate
-    public native void    putLong(Object o, long offset, long x);
+    @ForceInline
+    public void putLong(Object o, long offset, long x) {
+        theInternalUnsafe.putLong(o, offset, x);
+    }
+
     /** @see #getInt(Object, long) */
-    @HotSpotIntrinsicCandidate
-    public native float   getFloat(Object o, long offset);
+    @ForceInline
+    public float getFloat(Object o, long offset) {
+        return theInternalUnsafe.getFloat(o, offset);
+    }
+
     /** @see #putInt(Object, long, int) */
-    @HotSpotIntrinsicCandidate
-    public native void    putFloat(Object o, long offset, float x);
+    @ForceInline
+    public void putFloat(Object o, long offset, float x) {
+        theInternalUnsafe.putFloat(o, offset, x);
+    }
+
     /** @see #getInt(Object, long) */
-    @HotSpotIntrinsicCandidate
-    public native double  getDouble(Object o, long offset);
+    @ForceInline
+    public double getDouble(Object o, long offset) {
+        return theInternalUnsafe.getDouble(o, offset);
+    }
+
     /** @see #putInt(Object, long, int) */
-    @HotSpotIntrinsicCandidate
-    public native void    putDouble(Object o, long offset, double x);
+    @ForceInline
+    public void putDouble(Object o, long offset, double x) {
+        theInternalUnsafe.putDouble(o, offset, x);
+    }
+
 
     // These read VM internal data.
 
@@ -248,7 +306,10 @@ public final class Unsafe {
      * @param address a memory address locating the variable
      * @return the value fetched from the indicated native variable
      */
-    public native Object getUncompressedObject(long address);
+    @ForceInline
+    public Object getUncompressedObject(long address) {
+        return theInternalUnsafe.getUncompressedObject(address);
+    }
 
     /**
      * Fetches the {@link java.lang.Class} Java mirror for the given native
@@ -257,7 +318,10 @@ public final class Unsafe {
      * @param metaspaceKlass a native metaspace {@code Klass} pointer
      * @return the {@link java.lang.Class} Java mirror
      */
-    public native Class<?> getJavaMirror(long metaspaceKlass);
+    @ForceInline
+    public Class<?> getJavaMirror(long metaspaceKlass) {
+        return theInternalUnsafe.getJavaMirror(metaspaceKlass);
+    }
 
     /**
      * Fetches a native metaspace {@code Klass} pointer for the given Java
@@ -266,7 +330,10 @@ public final class Unsafe {
      * @param o Java heap object for which to fetch the class pointer
      * @return a native metaspace {@code Klass} pointer
      */
-    public native long getKlassPointer(Object o);
+    @ForceInline
+    public long getKlassPointer(Object o) {
+        return theInternalUnsafe.getKlassPointer(o);
+    }
 
     // These work on values in the C heap.
 
@@ -277,8 +344,10 @@ public final class Unsafe {
      *
      * @see #allocateMemory
      */
-    @HotSpotIntrinsicCandidate
-    public native byte    getByte(long address);
+    @ForceInline
+    public byte getByte(long address) {
+        return theInternalUnsafe.getByte(address);
+    }
 
     /**
      * Stores a value into a given memory address.  If the address is zero, or
@@ -287,45 +356,83 @@ public final class Unsafe {
      *
      * @see #getByte(long)
      */
-    @HotSpotIntrinsicCandidate
-    public native void    putByte(long address, byte x);
+    @ForceInline
+    public void putByte(long address, byte x) {
+        theInternalUnsafe.putByte(address, x);
+    }
 
     /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native short   getShort(long address);
+    @ForceInline
+    public short getShort(long address) {
+        return theInternalUnsafe.getShort(address);
+    }
+
     /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putShort(long address, short x);
+    @ForceInline
+    public void putShort(long address, short x) {
+        theInternalUnsafe.putShort(address, x);
+    }
+
     /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native char    getChar(long address);
+    @ForceInline
+    public char getChar(long address) {
+        return theInternalUnsafe.getChar(address);
+    }
+
     /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putChar(long address, char x);
+    @ForceInline
+    public void putChar(long address, char x) {
+        theInternalUnsafe.putChar(address, x);
+    }
+
     /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native int     getInt(long address);
+    @ForceInline
+    public int getInt(long address) {
+        return theInternalUnsafe.getInt(address);
+    }
+
     /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putInt(long address, int x);
+    @ForceInline
+    public void putInt(long address, int x) {
+        theInternalUnsafe.putInt(address, x);
+    }
+
     /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native long    getLong(long address);
+    @ForceInline
+    public long getLong(long address) {
+        return theInternalUnsafe.getLong(address);
+    }
+
     /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putLong(long address, long x);
+    @ForceInline
+    public void putLong(long address, long x) {
+        theInternalUnsafe.putLong(address, x);
+    }
+
     /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native float   getFloat(long address);
+    @ForceInline
+    public float getFloat(long address) {
+        return theInternalUnsafe.getFloat(address);
+    }
+
     /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putFloat(long address, float x);
+    @ForceInline
+    public void putFloat(long address, float x) {
+        theInternalUnsafe.putFloat(address, x);
+    }
+
     /** @see #getByte(long) */
-    @HotSpotIntrinsicCandidate
-    public native double  getDouble(long address);
+    @ForceInline
+    public double getDouble(long address) {
+        return theInternalUnsafe.getDouble(address);
+    }
+
     /** @see #putByte(long, byte) */
-    @HotSpotIntrinsicCandidate
-    public native void    putDouble(long address, double x);
+    @ForceInline
+    public void putDouble(long address, double x) {
+        theInternalUnsafe.putDouble(address, x);
+    }
+
 
     /**
      * Fetches a native pointer from a given memory address.  If the address is
@@ -341,8 +448,10 @@ public final class Unsafe {
      *
      * @see #allocateMemory
      */
-    @HotSpotIntrinsicCandidate
-    public native long getAddress(long address);
+    @ForceInline
+    public long getAddress(long address) {
+        return theInternalUnsafe.getAddress(address);
+    }
 
     /**
      * Stores a native pointer into a given memory address.  If the address is
@@ -354,8 +463,11 @@ public final class Unsafe {
      *
      * @see #getAddress(long)
      */
-    @HotSpotIntrinsicCandidate
-    public native void putAddress(long address, long x);
+    @ForceInline
+    public void putAddress(long address, long x) {
+        theInternalUnsafe.putAddress(address, x);
+    }
+
 
     /// wrappers for malloc, realloc, free:
 
@@ -366,7 +478,16 @@ public final class Unsafe {
      * aligned for all value types.  Dispose of this memory by calling {@link
      * #freeMemory}, or resize it with {@link #reallocateMemory}.
      *
-     * @throws IllegalArgumentException if the size is negative or too large
+     * <em>Note:</em> It is the resposibility of the caller to make
+     * sure arguments are checked before the methods are called. While
+     * some rudimentary checks are performed on the input, the checks
+     * are best effort and when performance is an overriding priority,
+     * as when methods of this class are optimized by the runtime
+     * compiler, some or all checks (if any) may be elided. Hence, the
+     * caller must not rely on the checks and corresponding
+     * exceptions!
+     *
+     * @throws RuntimeException if the size is negative or too large
      *         for the native size_t type
      *
      * @throws OutOfMemoryError if the allocation is refused by the system
@@ -374,7 +495,10 @@ public final class Unsafe {
      * @see #getByte(long)
      * @see #putByte(long, byte)
      */
-    public native long allocateMemory(long bytes);
+    @ForceInline
+    public long allocateMemory(long bytes) {
+        return theInternalUnsafe.allocateMemory(bytes);
+    }
 
     /**
      * Resizes a new block of native memory, to the given size in bytes.  The
@@ -386,14 +510,26 @@ public final class Unsafe {
      * #reallocateMemory}.  The address passed to this method may be null, in
      * which case an allocation will be performed.
      *
-     * @throws IllegalArgumentException if the size is negative or too large
+     * <em>Note:</em> It is the resposibility of the caller to make
+     * sure arguments are checked before the methods are called. While
+     * some rudimentary checks are performed on the input, the checks
+     * are best effort and when performance is an overriding priority,
+     * as when methods of this class are optimized by the runtime
+     * compiler, some or all checks (if any) may be elided. Hence, the
+     * caller must not rely on the checks and corresponding
+     * exceptions!
+     *
+     * @throws RuntimeException if the size is negative or too large
      *         for the native size_t type
      *
      * @throws OutOfMemoryError if the allocation is refused by the system
      *
      * @see #allocateMemory
      */
-    public native long reallocateMemory(long address, long bytes);
+    @ForceInline
+    public long reallocateMemory(long address, long bytes) {
+        return theInternalUnsafe.reallocateMemory(address, bytes);
+    }
 
     /**
      * Sets all bytes in a given block of memory to a fixed value
@@ -410,9 +546,23 @@ public final class Unsafe {
      * If the effective address and length are (resp.) even modulo 4 or 2,
      * the stores take place in units of 'int' or 'short'.
      *
+     * <em>Note:</em> It is the resposibility of the caller to make
+     * sure arguments are checked before the methods are called. While
+     * some rudimentary checks are performed on the input, the checks
+     * are best effort and when performance is an overriding priority,
+     * as when methods of this class are optimized by the runtime
+     * compiler, some or all checks (if any) may be elided. Hence, the
+     * caller must not rely on the checks and corresponding
+     * exceptions!
+     *
+     * @throws RuntimeException if any of the arguments is invalid
+     *
      * @since 1.7
      */
-    public native void setMemory(Object o, long offset, long bytes, byte value);
+    @ForceInline
+    public void setMemory(Object o, long offset, long bytes, byte value) {
+        theInternalUnsafe.setMemory(o, offset, bytes, value);
+    }
 
     /**
      * Sets all bytes in a given block of memory to a fixed value
@@ -421,8 +571,9 @@ public final class Unsafe {
      *
      * <p>Equivalent to {@code setMemory(null, address, bytes, value)}.
      */
+    @ForceInline
     public void setMemory(long address, long bytes, byte value) {
-        setMemory(null, address, bytes, value);
+        theInternalUnsafe.setMemory(address, bytes, value);
     }
 
     /**
@@ -440,12 +591,26 @@ public final class Unsafe {
      * If the effective addresses and length are (resp.) even modulo 4 or 2,
      * the transfer takes place in units of 'int' or 'short'.
      *
+     * <em>Note:</em> It is the resposibility of the caller to make
+     * sure arguments are checked before the methods are called. While
+     * some rudimentary checks are performed on the input, the checks
+     * are best effort and when performance is an overriding priority,
+     * as when methods of this class are optimized by the runtime
+     * compiler, some or all checks (if any) may be elided. Hence, the
+     * caller must not rely on the checks and corresponding
+     * exceptions!
+     *
+     * @throws RuntimeException if any of the arguments is invalid
+     *
      * @since 1.7
      */
-    @HotSpotIntrinsicCandidate
-    public native void copyMemory(Object srcBase, long srcOffset,
-                                  Object destBase, long destOffset,
-                                  long bytes);
+    @ForceInline
+    public void copyMemory(Object srcBase, long srcOffset,
+                           Object destBase, long destOffset,
+                           long bytes) {
+        theInternalUnsafe.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
+    }
+
     /**
      * Sets all bytes in a given block of memory to a copy of another
      * block.  This provides a <em>single-register</em> addressing mode,
@@ -453,8 +618,9 @@ public final class Unsafe {
      *
      * Equivalent to {@code copyMemory(null, srcAddress, null, destAddress, bytes)}.
      */
+    @ForceInline
     public void copyMemory(long srcAddress, long destAddress, long bytes) {
-        copyMemory(null, srcAddress, null, destAddress, bytes);
+        theInternalUnsafe.copyMemory(srcAddress, destAddress, bytes);
     }
 
     /**
@@ -462,9 +628,23 @@ public final class Unsafe {
      * #allocateMemory} or {@link #reallocateMemory}.  The address passed to
      * this method may be null, in which case no action is taken.
      *
+     * <em>Note:</em> It is the resposibility of the caller to make
+     * sure arguments are checked before the methods are called. While
+     * some rudimentary checks are performed on the input, the checks
+     * are best effort and when performance is an overriding priority,
+     * as when methods of this class are optimized by the runtime
+     * compiler, some or all checks (if any) may be elided. Hence, the
+     * caller must not rely on the checks and corresponding
+     * exceptions!
+     *
+     * @throws RuntimeException if any of the arguments is invalid
+     *
      * @see #allocateMemory
      */
-    public native void freeMemory(long address);
+    @ForceInline
+    public void freeMemory(long address) {
+        theInternalUnsafe.freeMemory(address);
+    }
 
     /// random queries
 
@@ -473,7 +653,7 @@ public final class Unsafe {
      * {@link #staticFieldOffset}, {@link #objectFieldOffset},
      * or {@link #arrayBaseOffset}.
      */
-    public static final int INVALID_FIELD_OFFSET   = -1;
+    public static final int INVALID_FIELD_OFFSET = jdk.internal.misc.Unsafe.INVALID_FIELD_OFFSET;
 
     /**
      * Reports the location of a given field in the storage allocation of its
@@ -493,7 +673,10 @@ public final class Unsafe {
      * must preserve all bits of static field offsets.
      * @see #getInt(Object, long)
      */
-    public native long objectFieldOffset(Field f);
+    @ForceInline
+    public long objectFieldOffset(Field f) {
+        return theInternalUnsafe.objectFieldOffset(f);
+    }
 
     /**
      * Reports the location of a given static field, in conjunction with {@link
@@ -512,7 +695,10 @@ public final class Unsafe {
      * this method reports its result as a long value.
      * @see #getInt(Object, long)
      */
-    public native long staticFieldOffset(Field f);
+    @ForceInline
+    public long staticFieldOffset(Field f) {
+        return theInternalUnsafe.staticFieldOffset(f);
+    }
 
     /**
      * Reports the location of a given static field, in conjunction with {@link
@@ -524,7 +710,10 @@ public final class Unsafe {
      * not be used in any way except as argument to the get and put routines in
      * this class.
      */
-    public native Object staticFieldBase(Field f);
+    @ForceInline
+    public Object staticFieldBase(Field f) {
+        return theInternalUnsafe.staticFieldBase(f);
+    }
 
     /**
      * Detects if the given class may need to be initialized. This is often
@@ -532,14 +721,20 @@ public final class Unsafe {
      * class.
      * @return false only if a call to {@code ensureClassInitialized} would have no effect
      */
-    public native boolean shouldBeInitialized(Class<?> c);
+    @ForceInline
+    public boolean shouldBeInitialized(Class<?> c) {
+        return theInternalUnsafe.shouldBeInitialized(c);
+    }
 
     /**
      * Ensures the given class has been initialized. This is often
      * needed in conjunction with obtaining the static field base of a
      * class.
      */
-    public native void ensureClassInitialized(Class<?> c);
+    @ForceInline
+    public void ensureClassInitialized(Class<?> c) {
+        theInternalUnsafe.ensureClassInitialized(c);
+    }
 
     /**
      * Reports the offset of the first element in the storage allocation of a
@@ -551,43 +746,37 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
-    public native int arrayBaseOffset(Class<?> arrayClass);
+    @ForceInline
+    public int arrayBaseOffset(Class<?> arrayClass) {
+        return theInternalUnsafe.arrayBaseOffset(arrayClass);
+    }
 
     /** The value of {@code arrayBaseOffset(boolean[].class)} */
-    public static final int ARRAY_BOOLEAN_BASE_OFFSET
-            = theUnsafe.arrayBaseOffset(boolean[].class);
+    public static final int ARRAY_BOOLEAN_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_BOOLEAN_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(byte[].class)} */
-    public static final int ARRAY_BYTE_BASE_OFFSET
-            = theUnsafe.arrayBaseOffset(byte[].class);
+    public static final int ARRAY_BYTE_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(short[].class)} */
-    public static final int ARRAY_SHORT_BASE_OFFSET
-            = theUnsafe.arrayBaseOffset(short[].class);
+    public static final int ARRAY_SHORT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_SHORT_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(char[].class)} */
-    public static final int ARRAY_CHAR_BASE_OFFSET
-            = theUnsafe.arrayBaseOffset(char[].class);
+    public static final int ARRAY_CHAR_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_CHAR_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(int[].class)} */
-    public static final int ARRAY_INT_BASE_OFFSET
-            = theUnsafe.arrayBaseOffset(int[].class);
+    public static final int ARRAY_INT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_INT_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(long[].class)} */
-    public static final int ARRAY_LONG_BASE_OFFSET
-            = theUnsafe.arrayBaseOffset(long[].class);
+    public static final int ARRAY_LONG_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_LONG_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(float[].class)} */
-    public static final int ARRAY_FLOAT_BASE_OFFSET
-            = theUnsafe.arrayBaseOffset(float[].class);
+    public static final int ARRAY_FLOAT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_FLOAT_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(double[].class)} */
-    public static final int ARRAY_DOUBLE_BASE_OFFSET
-            = theUnsafe.arrayBaseOffset(double[].class);
+    public static final int ARRAY_DOUBLE_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
 
     /** The value of {@code arrayBaseOffset(Object[].class)} */
-    public static final int ARRAY_OBJECT_BASE_OFFSET
-            = theUnsafe.arrayBaseOffset(Object[].class);
+    public static final int ARRAY_OBJECT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_OBJECT_BASE_OFFSET;
 
     /**
      * Reports the scale factor for addressing elements in the storage
@@ -600,43 +789,37 @@ public final class Unsafe {
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
-    public native int arrayIndexScale(Class<?> arrayClass);
+    @ForceInline
+    public int arrayIndexScale(Class<?> arrayClass) {
+        return theInternalUnsafe.arrayIndexScale(arrayClass);
+    }
 
     /** The value of {@code arrayIndexScale(boolean[].class)} */
-    public static final int ARRAY_BOOLEAN_INDEX_SCALE
-            = theUnsafe.arrayIndexScale(boolean[].class);
+    public static final int ARRAY_BOOLEAN_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_BOOLEAN_INDEX_SCALE;
 
     /** The value of {@code arrayIndexScale(byte[].class)} */
-    public static final int ARRAY_BYTE_INDEX_SCALE
-            = theUnsafe.arrayIndexScale(byte[].class);
+    public static final int ARRAY_BYTE_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_BYTE_INDEX_SCALE;
 
     /** The value of {@code arrayIndexScale(short[].class)} */
-    public static final int ARRAY_SHORT_INDEX_SCALE
-            = theUnsafe.arrayIndexScale(short[].class);
+    public static final int ARRAY_SHORT_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_SHORT_INDEX_SCALE;
 
     /** The value of {@code arrayIndexScale(char[].class)} */
-    public static final int ARRAY_CHAR_INDEX_SCALE
-            = theUnsafe.arrayIndexScale(char[].class);
+    public static final int ARRAY_CHAR_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_CHAR_INDEX_SCALE;
 
     /** The value of {@code arrayIndexScale(int[].class)} */
-    public static final int ARRAY_INT_INDEX_SCALE
-            = theUnsafe.arrayIndexScale(int[].class);
+    public static final int ARRAY_INT_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_INT_INDEX_SCALE;
 
     /** The value of {@code arrayIndexScale(long[].class)} */
-    public static final int ARRAY_LONG_INDEX_SCALE
-            = theUnsafe.arrayIndexScale(long[].class);
+    public static final int ARRAY_LONG_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_LONG_INDEX_SCALE;
 
     /** The value of {@code arrayIndexScale(float[].class)} */
-    public static final int ARRAY_FLOAT_INDEX_SCALE
-            = theUnsafe.arrayIndexScale(float[].class);
+    public static final int ARRAY_FLOAT_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_FLOAT_INDEX_SCALE;
 
     /** The value of {@code arrayIndexScale(double[].class)} */
-    public static final int ARRAY_DOUBLE_INDEX_SCALE
-            = theUnsafe.arrayIndexScale(double[].class);
+    public static final int ARRAY_DOUBLE_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_DOUBLE_INDEX_SCALE;
 
     /** The value of {@code arrayIndexScale(Object[].class)} */
-    public static final int ARRAY_OBJECT_INDEX_SCALE
-            = theUnsafe.arrayIndexScale(Object[].class);
+    public static final int ARRAY_OBJECT_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_OBJECT_INDEX_SCALE;
 
     /**
      * Reports the size in bytes of a native pointer, as stored via {@link
@@ -644,16 +827,22 @@ public final class Unsafe {
      * other primitive types (as stored in native memory blocks) is determined
      * fully by their information content.
      */
-    public native int addressSize();
+    @ForceInline
+    public int addressSize() {
+        return theInternalUnsafe.addressSize();
+    }
 
     /** The value of {@code addressSize()} */
-    public static final int ADDRESS_SIZE = theUnsafe.addressSize();
+    public static final int ADDRESS_SIZE = theInternalUnsafe.addressSize();
 
     /**
      * Reports the size in bytes of a native memory page (whatever that is).
      * This value will always be a power of two.
      */
-    public native int pageSize();
+    @ForceInline
+    public int pageSize() {
+        return theInternalUnsafe.pageSize();
+    }
 
 
     /// random trusted operations from JNI:
@@ -662,9 +851,12 @@ public final class Unsafe {
      * Tells the VM to define a class, without security checks.  By default, the
      * class loader and protection domain come from the caller's class.
      */
-    public native Class<?> defineClass(String name, byte[] b, int off, int len,
-                                       ClassLoader loader,
-                                       ProtectionDomain protectionDomain);
+    @ForceInline
+    public Class<?> defineClass(String name, byte[] b, int off, int len,
+                                ClassLoader loader,
+                                ProtectionDomain protectionDomain) {
+        return theInternalUnsafe.defineClass(name, b, off, len, loader, protectionDomain);
+    }
 
     /**
      * Defines a class but does not make it known to the class loader or system dictionary.
@@ -682,18 +874,26 @@ public final class Unsafe {
      * @param data      bytes of a class file
      * @param cpPatches where non-null entries exist, they replace corresponding CP entries in data
      */
-    public native Class<?> defineAnonymousClass(Class<?> hostClass, byte[] data, Object[] cpPatches);
+    @ForceInline
+    public Class<?> defineAnonymousClass(Class<?> hostClass, byte[] data, Object[] cpPatches) {
+        return theInternalUnsafe.defineAnonymousClass(hostClass, data, cpPatches);
+    }
 
     /**
      * Allocates an instance but does not run any constructor.
      * Initializes the class if it has not yet been.
      */
-    @HotSpotIntrinsicCandidate
-    public native Object allocateInstance(Class<?> cls)
-        throws InstantiationException;
+    @ForceInline
+    public Object allocateInstance(Class<?> cls)
+        throws InstantiationException {
+        return theInternalUnsafe.allocateInstance(cls);
+    }
 
     /** Throws the exception without telling the verifier. */
-    public native void throwException(Throwable ee);
+    @ForceInline
+    public void throwException(Throwable ee) {
+        theInternalUnsafe.throwException(ee);
+    }
 
     /**
      * Atomically updates Java variable to {@code x} if it is currently
@@ -704,10 +904,12 @@ public final class Unsafe {
      *
      * @return {@code true} if successful
      */
-    @HotSpotIntrinsicCandidate
-    public final native boolean compareAndSwapObject(Object o, long offset,
-                                                     Object expected,
-                                                     Object x);
+    @ForceInline
+    public final boolean compareAndSwapObject(Object o, long offset,
+                                              Object expected,
+                                              Object x) {
+        return theInternalUnsafe.compareAndSwapObject(o, offset, expected, x);
+    }
 
     /**
      * Atomically updates Java variable to {@code x} if it is currently
@@ -718,10 +920,12 @@ public final class Unsafe {
      *
      * @return {@code true} if successful
      */
-    @HotSpotIntrinsicCandidate
-    public final native boolean compareAndSwapInt(Object o, long offset,
-                                                  int expected,
-                                                  int x);
+    @ForceInline
+    public final boolean compareAndSwapInt(Object o, long offset,
+                                           int expected,
+                                           int x) {
+        return theInternalUnsafe.compareAndSwapInt(o, offset, expected, x);
+    }
 
     /**
      * Atomically updates Java variable to {@code x} if it is currently
@@ -732,88 +936,126 @@ public final class Unsafe {
      *
      * @return {@code true} if successful
      */
-    @HotSpotIntrinsicCandidate
-    public final native boolean compareAndSwapLong(Object o, long offset,
-                                                   long expected,
-                                                   long x);
+    @ForceInline
+    public final boolean compareAndSwapLong(Object o, long offset,
+                                            long expected,
+                                            long x) {
+        return theInternalUnsafe.compareAndSwapLong(o, offset, expected, x);
+    }
 
     /**
      * Fetches a reference value from a given Java variable, with volatile
      * load semantics. Otherwise identical to {@link #getObject(Object, long)}
      */
-    @HotSpotIntrinsicCandidate
-    public native Object getObjectVolatile(Object o, long offset);
+    @ForceInline
+    public Object getObjectVolatile(Object o, long offset) {
+        return theInternalUnsafe.getObjectVolatile(o, offset);
+    }
 
     /**
      * Stores a reference value into a given Java variable, with
      * volatile store semantics. Otherwise identical to {@link #putObject(Object, long, Object)}
      */
-    @HotSpotIntrinsicCandidate
-    public native void    putObjectVolatile(Object o, long offset, Object x);
+    @ForceInline
+    public void putObjectVolatile(Object o, long offset, Object x) {
+        theInternalUnsafe.putObjectVolatile(o, offset, x);
+    }
 
     /** Volatile version of {@link #getInt(Object, long)}  */
-    @HotSpotIntrinsicCandidate
-    public native int     getIntVolatile(Object o, long offset);
+    @ForceInline
+    public int getIntVolatile(Object o, long offset) {
+        return theInternalUnsafe.getIntVolatile(o, offset);
+    }
 
     /** Volatile version of {@link #putInt(Object, long, int)}  */
-    @HotSpotIntrinsicCandidate
-    public native void    putIntVolatile(Object o, long offset, int x);
+    @ForceInline
+    public void putIntVolatile(Object o, long offset, int x) {
+        theInternalUnsafe.putIntVolatile(o, offset, x);
+    }
 
     /** Volatile version of {@link #getBoolean(Object, long)}  */
-    @HotSpotIntrinsicCandidate
-    public native boolean getBooleanVolatile(Object o, long offset);
+    @ForceInline
+    public boolean getBooleanVolatile(Object o, long offset) {
+        return theInternalUnsafe.getBooleanVolatile(o, offset);
+    }
 
     /** Volatile version of {@link #putBoolean(Object, long, boolean)}  */
-    @HotSpotIntrinsicCandidate
-    public native void    putBooleanVolatile(Object o, long offset, boolean x);
+    @ForceInline
+    public void putBooleanVolatile(Object o, long offset, boolean x) {
+        theInternalUnsafe.putBooleanVolatile(o, offset, x);
+    }
 
     /** Volatile version of {@link #getByte(Object, long)}  */
-    @HotSpotIntrinsicCandidate
-    public native byte    getByteVolatile(Object o, long offset);
+    @ForceInline
+    public byte getByteVolatile(Object o, long offset) {
+        return theInternalUnsafe.getByteVolatile(o, offset);
+    }
 
     /** Volatile version of {@link #putByte(Object, long, byte)}  */
-    @HotSpotIntrinsicCandidate
-    public native void    putByteVolatile(Object o, long offset, byte x);
+    @ForceInline
+    public void putByteVolatile(Object o, long offset, byte x) {
+        theInternalUnsafe.putByteVolatile(o, offset, x);
+    }
 
     /** Volatile version of {@link #getShort(Object, long)}  */
-    @HotSpotIntrinsicCandidate
-    public native short   getShortVolatile(Object o, long offset);
+    @ForceInline
+    public short getShortVolatile(Object o, long offset) {
+        return theInternalUnsafe.getShortVolatile(o, offset);
+    }
 
     /** Volatile version of {@link #putShort(Object, long, short)}  */
-    @HotSpotIntrinsicCandidate
-    public native void    putShortVolatile(Object o, long offset, short x);
+    @ForceInline
+    public void putShortVolatile(Object o, long offset, short x) {
+        theInternalUnsafe.putShortVolatile(o, offset, x);
+    }
 
     /** Volatile version of {@link #getChar(Object, long)}  */
-    @HotSpotIntrinsicCandidate
-    public native char    getCharVolatile(Object o, long offset);
+    @ForceInline
+    public char getCharVolatile(Object o, long offset) {
+        return theInternalUnsafe.getCharVolatile(o, offset);
+    }
 
     /** Volatile version of {@link #putChar(Object, long, char)}  */
-    @HotSpotIntrinsicCandidate
-    public native void    putCharVolatile(Object o, long offset, char x);
+    @ForceInline
+    public void putCharVolatile(Object o, long offset, char x) {
+        theInternalUnsafe.putCharVolatile(o, offset, x);
+    }
 
     /** Volatile version of {@link #getLong(Object, long)}  */
-    @HotSpotIntrinsicCandidate
-    public native long    getLongVolatile(Object o, long offset);
+    @ForceInline
+    public long getLongVolatile(Object o, long offset) {
+        return theInternalUnsafe.getLongVolatile(o, offset);
+    }
 
     /** Volatile version of {@link #putLong(Object, long, long)}  */
-    @HotSpotIntrinsicCandidate
-    public native void    putLongVolatile(Object o, long offset, long x);
+    @ForceInline
+    public void putLongVolatile(Object o, long offset, long x) {
+        theInternalUnsafe.putLongVolatile(o, offset, x);
+    }
 
     /** Volatile version of {@link #getFloat(Object, long)}  */
-    @HotSpotIntrinsicCandidate
-    public native float   getFloatVolatile(Object o, long offset);
+    @ForceInline
+    public float getFloatVolatile(Object o, long offset) {
+        return theInternalUnsafe.getFloatVolatile(o, offset);
+    }
 
     /** Volatile version of {@link #putFloat(Object, long, float)}  */
-    @HotSpotIntrinsicCandidate
-    public native void    putFloatVolatile(Object o, long offset, float x);
+    @ForceInline
+    public void putFloatVolatile(Object o, long offset, float x) {
+        theInternalUnsafe.putFloatVolatile(o, offset, x);
+    }
 
     /** Volatile version of {@link #getDouble(Object, long)}  */
-    @HotSpotIntrinsicCandidate
-    public native double  getDoubleVolatile(Object o, long offset);
+    @ForceInline
+    public double getDoubleVolatile(Object o, long offset) {
+        return theInternalUnsafe.getDoubleVolatile(o, offset);
+    }
 
     /** Volatile version of {@link #putDouble(Object, long, double)}  */
-    @HotSpotIntrinsicCandidate
-    public native void    putDoubleVolatile(Object o, long offset, double x);
+    @ForceInline
+    public void putDoubleVolatile(Object o, long offset, double x) {
+        theInternalUnsafe.putDoubleVolatile(o, offset, x);
+    }
 
     /**
      * Version of {@link #putObjectVolatile(Object, long, Object)}
@@ -824,16 +1066,22 @@ public final class Unsafe {
      *
      * Corresponds to C11 atomic_store_explicit(..., memory_order_release).
      */
-    @HotSpotIntrinsicCandidate
-    public native void    putOrderedObject(Object o, long offset, Object x);
+    @ForceInline
+    public void putOrderedObject(Object o, long offset, Object x) {
+        theInternalUnsafe.putOrderedObject(o, offset, x);
+    }
 
     /** Ordered/Lazy version of {@link #putIntVolatile(Object, long, int)}  */
-    @HotSpotIntrinsicCandidate
-    public native void    putOrderedInt(Object o, long offset, int x);
+    @ForceInline
+    public void putOrderedInt(Object o, long offset, int x) {
+        theInternalUnsafe.putOrderedInt(o, offset, x);
+    }
 
     /** Ordered/Lazy version of {@link #putLongVolatile(Object, long, long)} */
-    @HotSpotIntrinsicCandidate
-    public native void    putOrderedLong(Object o, long offset, long x);
+    @ForceInline
+    public void putOrderedLong(Object o, long offset, long x) {
+        theInternalUnsafe.putOrderedLong(o, offset, x);
+    }
 
     /**
      * Unblocks the given thread blocked on {@code park}, or, if it is
@@ -847,8 +1095,10 @@ public final class Unsafe {
      *
      * @param thread the thread to unpark.
      */
-    @HotSpotIntrinsicCandidate
-    public native void unpark(Object thread);
+    @ForceInline
+    public void unpark(Object thread) {
+        theInternalUnsafe.unpark(thread);
+    }
 
     /**
      * Blocks current thread, returning when a balancing
@@ -861,8 +1111,10 @@ public final class Unsafe {
      * because {@code unpark} is, so it would be strange to place it
      * elsewhere.
      */
-    @HotSpotIntrinsicCandidate
-    public native void park(boolean isAbsolute, long time);
+    @ForceInline
+    public void park(boolean isAbsolute, long time) {
+        theInternalUnsafe.park(isAbsolute, time);
+    }
 
     /**
      * Gets the load average in the system run queue assigned
@@ -879,7 +1131,10 @@ public final class Unsafe {
      * @return the number of samples actually retrieved; or -1
      *         if the load average is unobtainable.
      */
-    public native int getLoadAverage(double[] loadavg, int nelems);
+    @ForceInline
+    public int getLoadAverage(double[] loadavg, int nelems) {
+        return theInternalUnsafe.getLoadAverage(loadavg, nelems);
+    }
 
     // The following contain CAS-based Java implementations used on
     // platforms not supporting native instructions
@@ -895,13 +1150,9 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @ForceInline
     public final int getAndAddInt(Object o, long offset, int delta) {
-        int v;
-        do {
-            v = getIntVolatile(o, offset);
-        } while (!compareAndSwapInt(o, offset, v, v + delta));
-        return v;
+        return theInternalUnsafe.getAndAddInt(o, offset, delta);
     }
 
     /**
@@ -915,13 +1166,9 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @ForceInline
     public final long getAndAddLong(Object o, long offset, long delta) {
-        long v;
-        do {
-            v = getLongVolatile(o, offset);
-        } while (!compareAndSwapLong(o, offset, v, v + delta));
-        return v;
+        return theInternalUnsafe.getAndAddLong(o, offset, delta);
     }
 
     /**
@@ -935,13 +1182,9 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @ForceInline
     public final int getAndSetInt(Object o, long offset, int newValue) {
-        int v;
-        do {
-            v = getIntVolatile(o, offset);
-        } while (!compareAndSwapInt(o, offset, v, newValue));
-        return v;
+        return theInternalUnsafe.getAndSetInt(o, offset, newValue);
     }
 
     /**
@@ -955,13 +1198,9 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @ForceInline
     public final long getAndSetLong(Object o, long offset, long newValue) {
-        long v;
-        do {
-            v = getLongVolatile(o, offset);
-        } while (!compareAndSwapLong(o, offset, v, newValue));
-        return v;
+        return theInternalUnsafe.getAndSetLong(o, offset, newValue);
     }
 
     /**
@@ -975,13 +1214,9 @@ public final class Unsafe {
      * @return the previous value
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
+    @ForceInline
     public final Object getAndSetObject(Object o, long offset, Object newValue) {
-        Object v;
-        do {
-            v = getObjectVolatile(o, offset);
-        } while (!compareAndSwapObject(o, offset, v, newValue));
-        return v;
+        return theInternalUnsafe.getAndSetObject(o, offset, newValue);
     }
 
 
@@ -997,8 +1232,10 @@ public final class Unsafe {
      * provide a LoadLoad barrier also provide a LoadStore barrier for free.
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
-    public native void loadFence();
+    @ForceInline
+    public void loadFence() {
+        theInternalUnsafe.loadFence();
+    }
 
     /**
      * Ensures that loads and stores before the fence will not be reordered with
@@ -1012,8 +1249,10 @@ public final class Unsafe {
      * provide a StoreStore barrier also provide a LoadStore barrier for free.
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
-    public native void storeFence();
+    @ForceInline
+    public void storeFence() {
+        theInternalUnsafe.storeFence();
+    }
 
     /**
      * Ensures that loads and stores before the fence will not be reordered
@@ -1024,15 +1263,8 @@ public final class Unsafe {
      * Corresponds to C11 atomic_thread_fence(memory_order_seq_cst).
      * @since 1.8
      */
-    @HotSpotIntrinsicCandidate
-    public native void fullFence();
-
-    /**
-     * Throws IllegalAccessError; for use by the VM for access control
-     * error support.
-     * @since 1.8
-     */
-    private static void throwIllegalAccessError() {
-        throw new IllegalAccessError();
+    @ForceInline
+    public void fullFence() {
+        theInternalUnsafe.fullFence();
     }
 }

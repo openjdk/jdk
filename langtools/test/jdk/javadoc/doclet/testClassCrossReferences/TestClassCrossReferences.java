@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4652655 4857717 8025633 8026567
+ * @bug 4652655 4857717 8025633 8026567 8071982
  * @summary This test verifies that class cross references work properly.
  * @author jamieh
  * @library ../lib
@@ -42,9 +42,10 @@ public class TestClassCrossReferences extends JavadocTester {
 
     @Test
     void test() {
-        final String uri = "http://java.sun.com/j2se/1.4/docs/api/";
+        final String uri = "http://docs.oracle.com/javase/8/docs/api/";
 
         javadoc("-d", "out",
+                "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-linkoffline", uri, testSrc,
                 testSrc("C.java"));
@@ -59,6 +60,8 @@ public class TestClassCrossReferences extends JavadocTester {
                 + "title=\"class or interface in java.math\"><code>Link to external class BigDecimal</code></a>",
                 "<a href=\"" + uri + "java/math/BigInteger.html?is-external=true#gcd-java.math.BigInteger-\" "
                 + "title=\"class or interface in java.math\"><code>Link to external member gcd</code></a>",
+                "<a href=\"" + uri + "javax/tools/SimpleJavaFileObject.html?is-external=true#URI\" "
+                + "title=\"class or interface in javax.tools\"><code>Link to external member URI</code></a>",
                 "<dl>\n"
                 + "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
                 + "<dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>\n"
