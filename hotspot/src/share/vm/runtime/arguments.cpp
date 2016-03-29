@@ -438,6 +438,7 @@ static AliasedFlag const removed_develop_logging_flags[] = {
   { "TraceClassLoaderData",       "-Xlog:classloaderdata" },
   { "TraceDefaultMethods",        "-Xlog:defaultmethods=debug" },
   { "TraceItables",               "-Xlog:itables=debug" },
+  { "TraceMonitorMismatch",       "-Xlog:monitormismatch=info" },
   { "TraceSafepoint",             "-Xlog:safepoint=debug" },
   { "TraceStartupTime",           "-Xlog:startuptime" },
   { "TraceVMOperation",           "-Xlog:vmoperation=debug" },
