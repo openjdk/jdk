@@ -1106,7 +1106,7 @@ public final class Instant
      * complete units between the two instants.
      * The {@code Temporal} passed to this method is converted to a
      * {@code Instant} using {@link #from(TemporalAccessor)}.
-     * For example, the amount in days between two dates can be calculated
+     * For example, the amount in seconds between two dates can be calculated
      * using {@code startInstant.until(endInstant, SECONDS)}.
      * <p>
      * There are two equivalent ways of using this method.
