@@ -615,6 +615,10 @@ public class TreeInfo {
                 if (that.packge == sym) result = that;
                 else super.visitTopLevel(that);
             }
+            public void visitModuleDef(JCModuleDecl that) {
+                if (that.sym == sym) result = that;
+                // no need to scan within module declaration
+            }
             public void visitPackageDef(JCPackageDecl that) {
                 if (that.packge == sym) result = that;
                 else super.visitPackageDef(that);
