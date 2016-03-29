@@ -66,15 +66,15 @@
 #define DEFAULT_VENDOR_URL_BUG "http://bugreport.java.com/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
 
-#define UNSUPPORTED_GC_OPTION(gc)                                     \
-do {                                                                  \
-  if (gc) {                                                           \
-    if (FLAG_IS_CMDLINE(gc)) {                                        \
-      warning(#gc " is not supported in this VM.  Using Serial GC."); \
-    }                                                                 \
-    FLAG_SET_DEFAULT(gc, false);                                      \
-  }                                                                   \
-} while(0)
+#define UNSUPPORTED_GC_OPTION(gc)                         \
+  do {                                                    \
+    if (gc) {                                             \
+      if (FLAG_IS_CMDLINE(gc)) {                          \
+        warning("-XX:+" #gc " not supported in this VM"); \
+      }                                                   \
+      FLAG_SET_DEFAULT(gc, false);                        \
+    }                                                     \
+  } while(0)
 
 char*  Arguments::_jvm_flags_file               = NULL;
 char** Arguments::_jvm_flags_array              = NULL;
@@ -1936,26 +1936,45 @@ void Arguments::set_conservative_max_heap_alignment() {
                                           CollectorPolicy::compute_heap_alignment());
 }
 
+bool Arguments::gc_selected() {
+#if INCLUDE_ALL_GCS
+  return UseSerialGC || UseParallelGC || UseParallelOldGC || UseConcMarkSweepGC || UseG1GC;
+#else
+  return UseSerialGC;
+#endif // INCLUDE_ALL_GCS
+}
+
 void Arguments::select_gc_ergonomically() {
+#if INCLUDE_ALL_GCS
   if (os::is_server_class_machine()) {
     if (should_auto_select_low_pause_collector()) {
-      FLAG_SET_ERGO(bool, UseConcMarkSweepGC, true);
+      FLAG_SET_ERGO_IF_DEFAULT(bool, UseConcMarkSweepGC, true);
     } else {
 #if defined(JAVASE_EMBEDDED)
-      FLAG_SET_ERGO(bool, UseParallelGC, true);
+      FLAG_SET_ERGO_IF_DEFAULT(bool, UseParallelGC, true);
 #else
-      FLAG_SET_ERGO(bool, UseG1GC, true);
+      FLAG_SET_ERGO_IF_DEFAULT(bool, UseG1GC, true);
 #endif
     }
   } else {
-    FLAG_SET_ERGO(bool, UseSerialGC, true);
+    FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
   }
+#else
+  UNSUPPORTED_GC_OPTION(UseG1GC);
+  UNSUPPORTED_GC_OPTION(UseParallelGC);
+  UNSUPPORTED_GC_OPTION(UseParallelOldGC);
+  UNSUPPORTED_GC_OPTION(UseConcMarkSweepGC);
+  UNSUPPORTED_GC_OPTION(UseParNewGC);
+  FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
+#endif // INCLUDE_ALL_GCS
 }
 
 void Arguments::select_gc() {
   if (!gc_selected()) {
     select_gc_ergonomically();
-    guarantee(gc_selected(), "No GC selected");
+    if (!gc_selected()) {
+      vm_exit_during_initialization("Garbage collector not selected (default collector explicitly disabled)", NULL);
+    }
   }
 }
 
@@ -2080,16 +2099,6 @@ void Arguments::set_g1_gc_flags() {
   log_trace(gc)("ConcGCThreads: %u", ConcGCThreads);
 }
 
-#if !INCLUDE_ALL_GCS
-#ifdef ASSERT
-static bool verify_serial_gc_flags() {
-  return (UseSerialGC &&
-        !(UseParNewGC || (UseConcMarkSweepGC) || UseG1GC ||
-          UseParallelGC || UseParallelOldGC));
-}
-#endif // ASSERT
-#endif // INCLUDE_ALL_GCS
-
 void Arguments::set_gc_specific_flags() {
 #if INCLUDE_ALL_GCS
   // Set per-collector flags
@@ -2111,8 +2120,6 @@ void Arguments::set_gc_specific_flags() {
     // Keeping the heap 100% free is hard ;-) so limit it to 99%.
     FLAG_SET_ERGO(uintx, MinHeapFreeRatio, 99);
   }
-#else // INCLUDE_ALL_GCS
-  assert(verify_serial_gc_flags(), "SerialGC unset");
 #endif // INCLUDE_ALL_GCS
 }
 
@@ -3955,17 +3962,6 @@ void Arguments::set_shared_spaces_flags() {
   }
 }
 
-#if !INCLUDE_ALL_GCS
-static void force_serial_gc() {
-  FLAG_SET_DEFAULT(UseSerialGC, true);
-  UNSUPPORTED_GC_OPTION(UseG1GC);
-  UNSUPPORTED_GC_OPTION(UseParallelGC);
-  UNSUPPORTED_GC_OPTION(UseParallelOldGC);
-  UNSUPPORTED_GC_OPTION(UseConcMarkSweepGC);
-  UNSUPPORTED_GC_OPTION(UseParNewGC);
-}
-#endif // INCLUDE_ALL_GCS
-
 // Sharing support
 // Construct the path to the archive
 static char* get_shared_archive_path() {
@@ -4360,9 +4356,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   // Set object alignment values.
   set_object_alignment();
 
-#if !INCLUDE_ALL_GCS
-  force_serial_gc();
-#endif // INCLUDE_ALL_GCS
 #if !INCLUDE_CDS
   if (DumpSharedSpaces || RequireSharedSpaces) {
     jio_fprintf(defaultStream::error_stream(),
