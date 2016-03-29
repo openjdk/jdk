@@ -67,9 +67,10 @@ void InternalVMTests::run() {
   run_unit_test(Test_linked_list);
   run_unit_test(TestChunkedList_test);
   run_unit_test(JSON_test);
-  run_unit_test(Test_log_length);
   run_unit_test(Test_configure_stdout);
   run_unit_test(Test_logconfiguration_subscribe);
+  run_unit_test(Test_log_prefix);
+  run_unit_test(Test_log_big);
   run_unit_test(Test_logtagset_duplicates);
   run_unit_test(DirectivesParser_test);
   run_unit_test(Test_TempNewSymbol);

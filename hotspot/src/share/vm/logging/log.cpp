@@ -23,6 +23,24 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/log.hpp"
+#include "memory/allocation.inline.hpp"
+
+void LogWriteHelper::write_large(LogTagSet& lts,
+                                 LogLevelType level,
+                                 const char* prefix,
+                                 size_t prefix_len,
+                                 size_t msg_len,
+                                 const char* fmt,
+                                 va_list args) {
+  size_t newbuf_len = prefix_len + msg_len + 1;
+  char* newbuf = NEW_C_HEAP_ARRAY(char, newbuf_len, mtLogging);
+  memcpy(newbuf, prefix, prefix_len);
+  int ret = os::log_vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, args);
+  assert(ret >= 0, "Log message buffer issue");
+  lts.log(level, newbuf);
+  FREE_C_HEAP_ARRAY(char, newbuf);
+}
 
 /////////////// Unit tests ///////////////
 
@@ -33,66 +51,6 @@
 #include "logging/logOutput.hpp"
 #include "memory/resourceArea.hpp"
 
-void Test_log_length() {
-  remove("loglengthoutput.txt");
-
-  // Write long message to output file
-  ResourceMark rm;
-  LogHandle(logging) log;
-  bool success = LogConfiguration::parse_log_arguments("loglengthoutput.txt", "logging=trace",
-    NULL, NULL, log.error_stream());
-  assert(success, "test unable to configure logging");
-  log.trace("01:1234567890-"
-            "02:1234567890-"
-            "03:1234567890-"
-            "04:1234567890-"
-            "05:1234567890-"
-            "06:1234567890-"
-            "07:1234567890-"
-            "08:1234567890-"
-            "09:1234567890-"
-            "10:1234567890-"
-            "11:1234567890-"
-            "12:1234567890-"
-            "13:1234567890-"
-            "14:1234567890-"
-            "15:1234567890-"
-            "16:1234567890-"
-            "17:1234567890-"
-            "18:1234567890-"
-            "19:1234567890-"
-            "20:1234567890-"
-            "21:1234567890-"
-            "22:1234567890-"
-            "23:1234567890-"
-            "24:1234567890-"
-            "25:1234567890-"
-            "26:1234567890-"
-            "27:1234567890-"
-            "28:1234567890-"
-            "29:1234567890-"
-            "30:1234567890-"
-            "31:1234567890-"
-            "32:1234567890-"
-            "33:1234567890-"
-            "34:1234567890-"
-            "35:1234567890-"
-            "36:1234567890-"
-            "37:1234567890-");
-  LogConfiguration::parse_log_arguments("loglengthoutput.txt", "all=off",
-    NULL, NULL, log.error_stream());
-
-  // Look for end of message in output file
-  FILE* fp = fopen("loglengthoutput.txt", "r");
-  assert(fp, "File read error");
-  char output[600];
-  if (fgets(output, 600, fp) != NULL) {
-    assert(strstr(output, "37:1234567890-"), "logging print size error");
-  }
-  fclose(fp);
-  remove("loglengthoutput.txt");
-}
-
 #define assert_str_eq(s1, s2) \
   assert(strcmp(s1, s2) == 0, "Expected '%s' to equal '%s'", s1, s2)
 
@@ -102,14 +60,67 @@ void Test_log_length() {
 #define assert_char_not_in(c, s) \
   assert(strchr(s, c) == NULL, "Expected '%s' to *not* contain character '%c'", s, c)
 
+class TestLogFile {
+ private:
+  char file_name[256];
+
+  void set_name(const char* test_name) {
+    const char* tmpdir = os::get_temp_directory();
+    int pos = jio_snprintf(file_name, sizeof(file_name), "%s%svmtest.%s.%d.log", tmpdir, os::file_separator(), test_name, os::current_process_id());
+    assert(pos > 0, "too small log file name buffer");
+    assert((size_t)pos < sizeof(file_name), "too small log file name buffer");
+  }
+
+ public:
+  TestLogFile(const char* test_name) {
+    set_name(test_name);
+    remove(name());
+  }
+
+  ~TestLogFile() {
+    remove(name());
+  }
+
+  const char* name() {
+    return file_name;
+  }
+};
+
+class TestLogSavedConfig {
+ private:
+  char* _saved_config;
+  char* _new_output;
+  LogHandle(logging) _log;
+ public:
+  TestLogSavedConfig(const char* apply_output = NULL, const char* apply_setting = NULL) : _new_output(0) {
+    _saved_config = os::strdup_check_oom(LogOutput::Stdout->config_string());
+    bool success = LogConfiguration::parse_log_arguments("stdout", "all=off", NULL, NULL, _log.error_stream());
+    assert(success, "test unable to turn all off");
+
+    if (apply_output) {
+      _new_output = os::strdup_check_oom(apply_output);
+      bool success = LogConfiguration::parse_log_arguments(_new_output, apply_setting,  NULL, NULL, _log.error_stream());
+      assert(success, "test unable to apply test log configuration");
+    }
+  }
+
+  ~TestLogSavedConfig() {
+    if (_new_output) {
+      bool success = LogConfiguration::parse_log_arguments(_new_output, "all=off", NULL, NULL, _log.error_stream());
+      assert(success, "test unable to turn all off");
+      os::free(_new_output);
+    }
+
+    bool success = LogConfiguration::parse_log_arguments("stdout", _saved_config, NULL, NULL, _log.error_stream());
+    assert(success, "test unable to restore log configuration");
+    os::free(_saved_config);
+  }
+};
+
 void Test_configure_stdout() {
   ResourceMark rm;
-  LogHandle(logging) log;
   LogOutput* stdoutput = LogOutput::Stdout;
-
-  // Save current stdout config and clear it
-  char* saved_config = os::strdup_check_oom(stdoutput->config_string());
-  LogConfiguration::parse_log_arguments("stdout", "all=off", NULL, NULL, log.error_stream());
+  TestLogSavedConfig tlsc;
 
   // Enable 'logging=info', verifying it has been set
   LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(logging));
@@ -131,10 +142,6 @@ void Test_configure_stdout() {
   LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(gc));
   LogConfiguration::configure_stdout(LogLevel::Off, true, LOG_TAGS(logging));
   assert_str_eq("all=off", stdoutput->config_string());
-
-  // Restore saved configuration
-  LogConfiguration::parse_log_arguments("stdout", saved_config, NULL, NULL, log.error_stream());
-  os::free(saved_config);
 }
 
 static int Test_logconfiguration_subscribe_triggered = 0;
@@ -147,6 +154,8 @@ void Test_logconfiguration_subscribe() {
   ResourceMark rm;
   LogHandle(logging) log;
 
+  TestLogSavedConfig log_cfg("stdout", "logging+test=trace");
+
   LogConfiguration::register_update_listener(&Test_logconfiguration_subscribe_helper);
 
   LogConfiguration::parse_log_arguments("stdout", "logging=trace", NULL, NULL, log.error_stream());
@@ -157,6 +166,60 @@ void Test_logconfiguration_subscribe() {
 
   LogConfiguration::disable_logging();
   assert(Test_logconfiguration_subscribe_triggered == 3, "subscription not triggered (3)");
+
+  // We need to renable stderr error logging since "disable_logging" disable it all.
+  // TestLogSavedConfig log_cfg will only renable stdout for us.
+  LogConfiguration::parse_log_arguments("stderr", "all=warning", NULL, NULL, log.error_stream());
+  assert(Test_logconfiguration_subscribe_triggered == 4, "subscription not triggered (3)");
+}
+
+#define LOG_PREFIX_STR "THE_PREFIX "
+#define LOG_LINE_STR "a log line"
+
+size_t Test_log_prefix_prefixer(char* buf, size_t len) {
+  int ret = jio_snprintf(buf, len, LOG_PREFIX_STR);
+  assert(ret > 0, "Failed to print prefix. Log buffer too small?");
+  return (size_t) ret;
+}
+
+void Test_log_prefix() {
+  ResourceMark rm;
+  TestLogFile log_file("log_prefix");
+  TestLogSavedConfig log_cfg(log_file.name(), "logging+test=trace");
+
+  log_trace(logging, test)(LOG_LINE_STR);
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp, "File read error");
+  char output[1024];
+  if (fgets(output, 1024, fp) != NULL) {
+    assert(strstr(output, LOG_PREFIX_STR LOG_LINE_STR), "logging prefix error");
+  }
+  fclose(fp);
+}
+
+void Test_log_big() {
+  char big_msg[4096] = {0};
+  char Xchar = '~';
+
+  ResourceMark rm;
+  TestLogFile log_file("log_big");
+  TestLogSavedConfig log_cfg(log_file.name(), "logging+test=trace");
+
+  memset(big_msg, Xchar, sizeof(big_msg) - 1);
+
+  log_trace(logging, test)("%s", big_msg);
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp, "File read error");
+  char output[sizeof(big_msg)+128 /*decorators*/ ];
+  if (fgets(output, sizeof(output), fp) != NULL) {
+    assert(strstr(output, LOG_PREFIX_STR), "logging prefix error");
+    size_t count = 0;
+    for (size_t ps = 0 ; output[ps + count] != '\0'; output[ps + count] == Xchar ? count++ : ps++);
+    assert(count == (sizeof(big_msg) - 1) , "logging msg error");
+  }
+  fclose(fp);
 }
 
 void Test_logtagset_duplicates() {
