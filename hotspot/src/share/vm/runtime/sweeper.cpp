@@ -613,7 +613,10 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_nmethod(nmethod* nm) {
       // Code cache state change is tracked in make_zombie()
       nm->make_zombie();
       SWEEP(nm);
-      if (nm->is_osr_method()) {
+      // The nmethod may have been locked by JVMTI after being made zombie (see
+      // JvmtiDeferredEvent::compiled_method_unload_event()). If so, we cannot
+      // flush the osr nmethod directly but have to wait for a later sweeper cycle.
+      if (nm->is_osr_method() && !nm->is_locked_by_vm()) {
         // No inline caches will ever point to osr methods, so we can just remove it.
         // Make sure that we unregistered the nmethod with the heap and flushed all
         // dependencies before removing the nmethod (done in make_zombie()).

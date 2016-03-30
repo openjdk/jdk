@@ -1331,8 +1331,19 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   }
   // Unlink the osr method, so we do not look this up again
   if (is_osr_method()) {
-    invalidate_osr_method();
+    // Invalidate the osr nmethod only once
+    if (is_in_use()) {
+      invalidate_osr_method();
+    }
+#ifdef ASSERT
+    if (method() != NULL) {
+      // Make sure osr nmethod is invalidated, i.e. not on the list
+      bool found = method()->method_holder()->remove_osr_nmethod(this);
+      assert(!found, "osr nmethod should have been invalidated");
+    }
+#endif
   }
+
   // If _method is already NULL the Method* is about to be unloaded,
   // so we don't have to break the cycle. Note that it is possible to
   // have the Method* live here, in case we unload the nmethod because
@@ -1385,16 +1396,9 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
 
 void nmethod::invalidate_osr_method() {
   assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod");
-#ifndef ASSERT
-  // Make sure osr nmethod is invalidated only once
-  if (!is_in_use()) {
-    return;
-  }
-#endif
   // Remove from list of active nmethods
   if (method() != NULL) {
-    bool removed = method()->method_holder()->remove_osr_nmethod(this);
-    assert(!removed || is_in_use(), "unused osr nmethod should be invalidated");
+    method()->method_holder()->remove_osr_nmethod(this);
   }
 }
 
@@ -1443,8 +1447,9 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     // invalidate osr nmethod before acquiring the patching lock since
     // they both acquire leaf locks and we don't want a deadlock.
     // This logic is equivalent to the logic below for patching the
-    // verified entry point of regular methods.
-    if (is_osr_method()) {
+    // verified entry point of regular methods. We check that the
+    // nmethod is in use to ensure that it is invalidated only once.
+    if (is_osr_method() && is_in_use()) {
       // this effectively makes the osr nmethod not entrant
       invalidate_osr_method();
     }
@@ -1509,6 +1514,14 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       method()->clear_code();
     }
   } // leave critical region under Patching_lock
+
+#ifdef ASSERT
+  if (is_osr_method() && method() != NULL) {
+    // Make sure osr nmethod is invalidated, i.e. not on the list
+    bool found = method()->method_holder()->remove_osr_nmethod(this);
+    assert(!found, "osr nmethod should have been invalidated");
+  }
+#endif
 
   // When the nmethod becomes zombie it is no longer alive so the
   // dependencies must be flushed.  nmethods in the not_entrant
