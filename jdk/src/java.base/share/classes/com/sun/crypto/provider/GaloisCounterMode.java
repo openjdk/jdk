@@ -49,6 +49,16 @@ final class GaloisCounterMode extends FeedbackCipher {
     static int DEFAULT_TAG_LEN = AES_BLOCK_SIZE;
     static int DEFAULT_IV_LEN = 12; // in bytes
 
+    // In NIST SP 800-38D, GCM input size is limited to be no longer
+    // than (2^36 - 32) bytes. Otherwise, the counter will wrap
+    // around and lead to a leak of plaintext.
+    // However, given the current GCM spec requirement that recovered
+    // text can only be returned after successful tag verification,
+    // we are bound by limiting the data size to the size limit of
+    // java byte array, e.g. Integer.MAX_VALUE, since all data
+    // can only be returned by the doFinal(...) call.
+    private static final int MAX_BUF_SIZE = Integer.MAX_VALUE;
+
     // buffer for AAD data; if null, meaning update has been called
     private ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
     private int sizeOfAAD = 0;
@@ -89,9 +99,13 @@ final class GaloisCounterMode extends FeedbackCipher {
         }
     }
 
-    // ivLen in bits
-    private static byte[] getLengthBlock(int ivLen) {
+    private static byte[] getLengthBlock(int ivLenInBytes) {
+        long ivLen = ((long)ivLenInBytes) << 3;
         byte[] out = new byte[AES_BLOCK_SIZE];
+        out[8] = (byte)(ivLen >>> 56);
+        out[9] = (byte)(ivLen >>> 48);
+        out[10] = (byte)(ivLen >>> 40);
+        out[11] = (byte)(ivLen >>> 32);
         out[12] = (byte)(ivLen >>> 24);
         out[13] = (byte)(ivLen >>> 16);
         out[14] = (byte)(ivLen >>> 8);
@@ -99,13 +113,22 @@ final class GaloisCounterMode extends FeedbackCipher {
         return out;
     }
 
-    // aLen and cLen both in bits
-    private static byte[] getLengthBlock(int aLen, int cLen) {
+    private static byte[] getLengthBlock(int aLenInBytes, int cLenInBytes) {
+        long aLen = ((long)aLenInBytes) << 3;
+        long cLen = ((long)cLenInBytes) << 3;
         byte[] out = new byte[AES_BLOCK_SIZE];
+        out[0] = (byte)(aLen >>> 56);
+        out[1] = (byte)(aLen >>> 48);
+        out[2] = (byte)(aLen >>> 40);
+        out[3] = (byte)(aLen >>> 32);
         out[4] = (byte)(aLen >>> 24);
         out[5] = (byte)(aLen >>> 16);
         out[6] = (byte)(aLen >>> 8);
         out[7] = (byte)aLen;
+        out[8] = (byte)(cLen >>> 56);
+        out[9] = (byte)(cLen >>> 48);
+        out[10] = (byte)(cLen >>> 40);
+        out[11] = (byte)(cLen >>> 32);
         out[12] = (byte)(cLen >>> 24);
         out[13] = (byte)(cLen >>> 16);
         out[14] = (byte)(cLen >>> 8);
@@ -142,11 +165,18 @@ final class GaloisCounterMode extends FeedbackCipher {
             } else {
                 g.update(iv);
             }
-            byte[] lengthBlock = getLengthBlock(iv.length*8);
+            byte[] lengthBlock = getLengthBlock(iv.length);
             g.update(lengthBlock);
             j0 = g.digest();
         }
         return j0;
+    }
+
+    private static void checkDataLength(int processed, int len) {
+        if (processed > MAX_BUF_SIZE - len) {
+            throw new ProviderException("SunJCE provider only supports " +
+                "input size up to " + MAX_BUF_SIZE + " bytes");
+        }
     }
 
     GaloisCounterMode(SymmetricCipher embeddedCipher) {
@@ -386,6 +416,9 @@ final class GaloisCounterMode extends FeedbackCipher {
         if ((len % blockSize) != 0) {
              throw new ProviderException("Internal error in input buffering");
         }
+
+        checkDataLength(processed, len);
+
         processAAD();
         if (len > 0) {
             gctrPAndC.update(in, inOfs, len, out, outOfs);
@@ -407,9 +440,15 @@ final class GaloisCounterMode extends FeedbackCipher {
      */
     int encryptFinal(byte[] in, int inOfs, int len, byte[] out, int outOfs)
         throws IllegalBlockSizeException, ShortBufferException {
+        if (len > MAX_BUF_SIZE - tagLenBytes) {
+            throw new ShortBufferException
+                ("Can't fit both data and tag into one buffer");
+        }
         if (out.length - outOfs < (len + tagLenBytes)) {
             throw new ShortBufferException("Output buffer too small");
         }
+
+        checkDataLength(processed, len);
 
         processAAD();
         if (len > 0) {
@@ -417,7 +456,7 @@ final class GaloisCounterMode extends FeedbackCipher {
         }
 
         byte[] lengthBlock =
-            getLengthBlock(sizeOfAAD*8, processed*8);
+            getLengthBlock(sizeOfAAD, processed);
         ghashAllToS.update(lengthBlock);
         byte[] s = ghashAllToS.digest();
         byte[] sOut = new byte[s.length];
@@ -449,6 +488,9 @@ final class GaloisCounterMode extends FeedbackCipher {
         if ((len % blockSize) != 0) {
              throw new ProviderException("Internal error in input buffering");
         }
+
+        checkDataLength(ibuffer.size(), len);
+
         processAAD();
 
         if (len > 0) {
@@ -483,10 +525,21 @@ final class GaloisCounterMode extends FeedbackCipher {
         if (len < tagLenBytes) {
             throw new AEADBadTagException("Input too short - need tag");
         }
+        // do this check here can also catch the potential integer overflow
+        // scenario for the subsequent output buffer capacity check.
+        checkDataLength(ibuffer.size(), (len - tagLenBytes));
+
         if (out.length - outOfs < ((ibuffer.size() + len) - tagLenBytes)) {
             throw new ShortBufferException("Output buffer too small");
         }
+
         processAAD();
+
+        // get the trailing tag bytes from 'in'
+        byte[] tag = new byte[tagLenBytes];
+        System.arraycopy(in, inOfs + len - tagLenBytes, tag, 0, tagLenBytes);
+        len -= tagLenBytes;
+
         if (len != 0) {
             ibuffer.write(in, inOfs, len);
         }
@@ -497,17 +550,12 @@ final class GaloisCounterMode extends FeedbackCipher {
         len = in.length;
         ibuffer.reset();
 
-        byte[] tag = new byte[tagLenBytes];
-        // get the trailing tag bytes from 'in'
-        System.arraycopy(in, len - tagLenBytes, tag, 0, tagLenBytes);
-        len -= tagLenBytes;
-
         if (len > 0) {
             doLastBlock(in, inOfs, len, out, outOfs, false);
         }
 
         byte[] lengthBlock =
-            getLengthBlock(sizeOfAAD*8, processed*8);
+            getLengthBlock(sizeOfAAD, processed);
         ghashAllToS.update(lengthBlock);
 
         byte[] s = ghashAllToS.digest();
