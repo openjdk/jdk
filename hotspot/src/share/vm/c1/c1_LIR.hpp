@@ -920,6 +920,7 @@ enum LIR_Code {
       , lir_membar_loadstore
       , lir_membar_storeload
       , lir_get_thread
+      , lir_on_spin_wait
   , end_op0
   , begin_op1
       , lir_fxch
@@ -2100,6 +2101,8 @@ class LIR_List: public CompilationResourceObj {
 
   void std_entry(LIR_Opr receiver)               { append(new LIR_Op0(lir_std_entry, receiver)); }
   void osr_entry(LIR_Opr osrPointer)             { append(new LIR_Op0(lir_osr_entry, osrPointer)); }
+
+  void on_spin_wait()                            { append(new LIR_Op0(lir_on_spin_wait)); }
 
   void branch_destination(Label* lbl)            { append(new LIR_OpLabel(lbl)); }
 

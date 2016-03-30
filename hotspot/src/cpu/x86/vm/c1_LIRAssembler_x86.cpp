@@ -3886,6 +3886,10 @@ void LIR_Assembler::membar_storeload() {
   __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
 }
 
+void LIR_Assembler::on_spin_wait() {
+  __ pause ();
+}
+
 void LIR_Assembler::get_thread(LIR_Opr result_reg) {
   assert(result_reg->is_register(), "check");
 #ifdef _LP64

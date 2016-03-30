@@ -483,6 +483,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_membar_storestore:        // result and info always invalid
     case lir_membar_loadstore:         // result and info always invalid
     case lir_membar_storeload:         // result and info always invalid
+    case lir_on_spin_wait:
     {
       assert(op->as_Op0() != NULL, "must be");
       assert(op->_info == NULL, "info not used by this instruction");
@@ -1691,6 +1692,7 @@ const char * LIR_Op::name() const {
      case lir_word_align:            s = "word_align";    break;
      case lir_label:                 s = "label";         break;
      case lir_nop:                   s = "nop";           break;
+     case lir_on_spin_wait:          s = "on_spin_wait";  break;
      case lir_backwardbranch_target: s = "backbranch";    break;
      case lir_std_entry:             s = "std_entry";     break;
      case lir_osr_entry:             s = "osr_entry";     break;

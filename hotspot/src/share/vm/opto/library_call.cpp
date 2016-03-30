@@ -280,6 +280,7 @@ class LibraryCallKit : public GraphKit {
   MemNode::MemOrd access_kind_to_memord(AccessKind access_kind);
   bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind, AccessKind access_kind);
   bool inline_unsafe_fence(vmIntrinsics::ID id);
+  bool inline_onspinwait();
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
@@ -694,6 +695,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_fullFence:                return inline_unsafe_fence(intrinsic_id());
+
+  case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
 
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
   case vmIntrinsics::_isInterrupted:            return inline_native_isInterrupted();
@@ -3124,6 +3127,11 @@ bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
       fatal_unexpected_iid(id);
       return false;
   }
+}
+
+bool LibraryCallKit::inline_onspinwait() {
+  insert_mem_bar(Op_OnSpinWait);
+  return true;
 }
 
 bool LibraryCallKit::klass_needs_init_guard(Node* kls) {
