@@ -3595,6 +3595,11 @@ jint Arguments::finalize_vm_init_args(ArgumentBootClassPath* bcp_p, bool bcp_ass
   }
 #endif
 
+#if !defined(COMPILER2) && !INCLUDE_JVMCI
+  UNSUPPORTED_OPTION(ProfileInterpreter, "ProfileInterpreter");
+  NOT_PRODUCT(UNSUPPORTED_OPTION(TraceProfileInterpreter, "TraceProfileInterpreter"));
+#endif
+
 #ifndef TIERED
   // Tiered compilation is undefined.
   UNSUPPORTED_OPTION(TieredCompilation, "TieredCompilation");

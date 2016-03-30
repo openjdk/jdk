@@ -632,9 +632,11 @@ BytecodeInterpreter::run(interpreterState istate) {
       if (_compiling) {
         MethodCounters* mcs;
         GET_METHOD_COUNTERS(mcs);
+#if COMPILER2_OR_JVMCI
         if (ProfileInterpreter) {
           METHOD->increment_interpreter_invocation_count(THREAD);
         }
+#endif
         mcs->invocation_counter()->increment();
         if (mcs->invocation_counter()->reached_InvocationLimit(mcs->backedge_counter())) {
           CALL_VM((void)InterpreterRuntime::frequency_counter_overflow(THREAD, NULL), handle_exception);
