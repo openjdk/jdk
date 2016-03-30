@@ -235,7 +235,7 @@ class SvcGCMarker : public StackObj {
  private:
   JvmtiGCMarker _jgcm;
  public:
-  typedef enum { MINOR, FULL, OTHER } reason_type;
+  typedef enum { MINOR, FULL, CONCURRENT, OTHER } reason_type;
 
   SvcGCMarker(reason_type reason ) {
     VM_GC_Operation::notify_gc_begin(reason == FULL);
