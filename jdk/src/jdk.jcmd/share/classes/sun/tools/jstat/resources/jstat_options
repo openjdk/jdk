@@ -255,8 +255,24 @@ option gc {
     format "0.000"
   }
   column {
+    header "^CGC^"	/* Concurrent Collections (STW phase) */
+    data sun.gc.collector.2.invocations
+    align center
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^CGCT^"	/* Concurrent Garbage Collection Time (STW phase) */
+    data sun.gc.collector.2.time/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+  column {
     header "^GCT^"	/* Total Garbage Collection Time */
-    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time + sun.gc.collector.2.time)/sun.os.hrt.frequency
     align right
     width 8
     scale sec
@@ -408,6 +424,14 @@ option gccapacity {
     scale raw
     format "0"
   }
+  column {
+    header "^CGC^"	/* Concurrent Collections (STW phase) */
+    data sun.gc.collector.2.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
 }
 
 option gccause {
@@ -491,8 +515,24 @@ option gccause {
     format "0.000"
   }
   column {
+    header "^CGC^"	/* Concurrent Collections (STW phase) */
+    data sun.gc.collector.2.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^CGCT^"	/* Concurrent Garbage Collection Time (STW phase) */
+    data sun.gc.collector.2.time/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+  column {
     header "^GCT^"	/* Total Garbage Collection Time */
-    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time + sun.gc.collector.2.time)/sun.os.hrt.frequency
     align right
     width 8
     scale sec
@@ -690,6 +730,14 @@ option gcnewcapacity {
     scale raw
     format "0"
   }
+  column {
+    header "^CGC^"	/* Concurrent Collections (STW phase) */
+    data sun.gc.collector.2.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
 }
 
 option gcold {
@@ -765,8 +813,24 @@ option gcold {
     format "0.000"
   }
   column {
+    header "^CGC^"	/* Concurrent Collections (STW phase) */
+    data sun.gc.collector.2.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^CGCT^"	/* Concurrent Garbage Collection Time (STW phase) */
+    data sun.gc.collector.2.time/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+  column {
     header "^GCT^"	/* Total Garbage Collection Time */
-    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time + sun.gc.collector.2.time)/sun.os.hrt.frequency
     align right
     width 8
     scale sec
@@ -831,8 +895,24 @@ option gcoldcapacity {
     format "0.000"
   }
   column {
+    header "^CGC^"	/* Concurrent Collections (STW phase) */
+    data sun.gc.collector.2.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^CGCT^"	/* Concurrent Garbage Collection Time (STW phase) */
+    data sun.gc.collector.2.time/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+  column {
     header "^GCT^"	/* Total Garbage Collection Time */
-    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time + sun.gc.collector.2.time)/sun.os.hrt.frequency
     align right
     width 8
     scale sec
@@ -913,8 +993,24 @@ option gcmetacapacity {
     format "0.000"
   }
   column {
+    header "^CGC^"	/* Concurrent Collections (STW phase) */
+    data sun.gc.collector.2.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^CGCT^"	/* Concurrent Garbage Collection Time (STW phase) */
+    data sun.gc.collector.2.time/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+  column {
     header "^GCT^"	/* Total Garbage Collection Time */
-    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time + sun.gc.collector.2.time)/sun.os.hrt.frequency
     align right
     width 8
     scale sec
@@ -1003,8 +1099,24 @@ option gcutil {
     format "0.000"
   }
   column {
+    header "^CGC^"	/* Concurrent Collections (STW phase) */
+    data sun.gc.collector.2.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^CGCT^"	/* Concurrent Garbage Collection Time (STW phase) */
+    data sun.gc.collector.2.time/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+  column {
     header "^GCT^"	/* Total Garbage Collection Time */
-    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time + sun.gc.collector.2.time)/sun.os.hrt.frequency
     align right
     width 8
     scale sec

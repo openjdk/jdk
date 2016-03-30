@@ -3,18 +3,18 @@
 # that the numerical values conform to a specific pattern, rather than
 # specific values.
 #
-#   OGCMN       OGCMX        OGC         OC       YGC   FGC    FGCT     GCT   
-#     6016.0     58304.0      6016.0      6016.0     1     0    0.000    0.030
+#   OGCMN       OGCMX        OGC         OC       YGC   FGC    FGCT    CGC    CGCT     GCT   
+#     6016.0     58304.0      6016.0      6016.0     1     0    0.000    0   0.000    0.030
 
 BEGIN	{
 	    headerlines=0; datalines=0; totallines=0
 	}
 
-/^   OGCMN       OGCMX        OGC         OC       YGC   FGC    FGCT     GCT   $/	{
+/^   OGCMN       OGCMX        OGC         OC       YGC   FGC    FGCT    CGC    CGCT     GCT   $/	{
 	    headerlines++;
 	}
 
-/^[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+$/	{
+/^[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+$/	{
 	    datalines++;
 	}
 
