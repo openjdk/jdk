@@ -224,6 +224,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 typedef const char* ccstr;
 typedef const char* ccstrlist;   // represents string arguments which accumulate
 
+// function type that will construct default range string
+typedef const char* (*RangeStrFunc)(void);
+
 struct Flag {
   enum Flags {
     // value origin
@@ -304,6 +307,14 @@ struct Flag {
   static Flag* find_flag(const char* name) { return find_flag(name, strlen(name), true, true); };
   static Flag* find_flag(const char* name, size_t length, bool allow_locked = false, bool return_flag = false);
   static Flag* fuzzy_match(const char* name, size_t length, bool allow_locked = false);
+
+  static const char* get_int_default_range_str();
+  static const char* get_uint_default_range_str();
+  static const char* get_intx_default_range_str();
+  static const char* get_uintx_default_range_str();
+  static const char* get_uint64_t_default_range_str();
+  static const char* get_size_t_default_range_str();
+  static const char* get_double_default_range_str();
 
   void check_writable();
 
