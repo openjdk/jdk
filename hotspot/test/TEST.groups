@@ -310,10 +310,15 @@ hotspot_compiler_3 = \
 hotspot_compiler_closed = \
   sanity/ExecuteInternalVMTests.java
 
-hotspot_gc = \
+hotspot_gc_1 = \
+  gc/g1/
+
+hotspot_gc_2 = \
   sanity/ExecuteInternalVMTests.java \
   gc/ \
-  -gc/g1/TestGreyReclaimedHumongousObjects.java \
+  -gc/g1/ \
+  -gc/survivorAlignment/TestPromotionFromSurvivorToTenuredAfterMinorGC.java \
+  -gc/cms/TestMBeanCMS.java \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java
 
 hotspot_gc_closed = \
@@ -361,7 +366,8 @@ hotspot_jprt = \
   :hotspot_compiler_2 \
   :hotspot_compiler_3 \
   :hotspot_compiler_closed \
-  :hotspot_gc \
+  :hotspot_gc_1 \
+  :hotspot_gc_2 \
   :hotspot_gc_closed \
   :hotspot_gc_gcold \
   :hotspot_runtime \
