@@ -312,9 +312,9 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
 static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject dstPrinterJob, jobject dstPageable)
 {
     static JNF_MEMBER_CACHE(jm_setService, sjc_CPrinterJob, "setPrinterServiceFromNative", "(Ljava/lang/String;)V");
-    static JNF_MEMBER_CACHE(jm_setCopies, sjc_CPrinterJob, "setCopies", "(I)V");
+    static JNF_MEMBER_CACHE(jm_setCopiesAttribute, sjc_CPrinterJob, "setCopiesAttribute", "(I)V");
     static JNF_MEMBER_CACHE(jm_setCollated, sjc_CPrinterJob, "setCollated", "(Z)V");
-    static JNF_MEMBER_CACHE(jm_setPageRange, sjc_CPrinterJob, "setPageRange", "(II)V");
+    static JNF_MEMBER_CACHE(jm_setPageRangeAttribute, sjc_CPrinterJob, "setPageRangeAttribute", "(IIZ)V");
 
     // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSString *name = [[src printer] name];
@@ -327,7 +327,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     NSNumber* nsCopies = [printingDictionary objectForKey:NSPrintCopies];
     if ([nsCopies respondsToSelector:@selector(integerValue)])
     {
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setCopies, [nsCopies integerValue]); // AWT_THREADING Safe (known object)
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setCopiesAttribute, [nsCopies integerValue]); // AWT_THREADING Safe (known object)
     }
 
     NSNumber* nsCollated = [printingDictionary objectForKey:NSPrintMustCollate];
@@ -340,6 +340,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     if ([nsPrintAllPages respondsToSelector:@selector(boolValue)])
     {
         jint jFirstPage = 0, jLastPage = java_awt_print_Pageable_UNKNOWN_NUMBER_OF_PAGES;
+        jboolean isRangeSet = false;
         if (![nsPrintAllPages boolValue])
         {
             NSNumber* nsFirstPage = [printingDictionary objectForKey:NSPrintFirstPage];
@@ -353,9 +354,12 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
             {
                 jLastPage = [nsLastPage integerValue] - 1;
             }
-        }
+            isRangeSet = true;
+        } 
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setPageRangeAttribute, 
+                          jFirstPage, jLastPage, isRangeSet); 
+            // AWT_THREADING Safe (known object)
 
-        JNFCallVoidMethod(env, dstPrinterJob, jm_setPageRange, jFirstPage, jLastPage); // AWT_THREADING Safe (known object)
     }
 }
 
