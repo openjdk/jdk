@@ -57,12 +57,18 @@ class NativeGCMCipher extends NativeCipher {
 
     private static final int DEFAULT_TAG_LEN = 128; // same as SunJCE provider
 
+    // same as SunJCE provider, see GaloisCounterMode.java for details
+    private static final int MAX_BUF_SIZE = Integer.MAX_VALUE;
+
     // buffer for storing AAD data; if null, meaning buffer content has been
     // supplied to native context
     private ByteArrayOutputStream aadBuffer;
 
     // buffer for storing input in decryption, not used for encryption
     private ByteArrayOutputStream ibuffer;
+
+    // needed for checking against MAX_BUF_SIZE
+    private int processed;
 
     private int tagLen = DEFAULT_TAG_LEN;
 
@@ -78,6 +84,18 @@ class NativeGCMCipher extends NativeCipher {
     private boolean requireReinit;
     private byte[] lastEncKey = null;
     private byte[] lastEncIv = null;
+
+    private void checkAndUpdateProcessed(int len) {
+        // Currently, cipher text and tag are packed in one byte array, so
+        // the impl-specific limit for input data size is (MAX_BUF_SIZE - tagLen)
+        int inputDataLimit = MAX_BUF_SIZE - tagLen;
+
+        if (processed > inputDataLimit - len) {
+            throw new ProviderException("OracleUcrypto provider only supports " +
+                "input size up to " + inputDataLimit + " bytes");
+        }
+        processed += len;
+    }
 
     NativeGCMCipher(int fixedKeySize) throws NoSuchAlgorithmException {
         super(UcryptoMech.CRYPTO_AES_GCM, fixedKeySize);
@@ -138,6 +156,7 @@ class NativeGCMCipher extends NativeCipher {
             ibuffer.reset();
         }
         if (!encrypt) requireReinit = false;
+        processed = 0;
     }
 
     // actual init() implementation - caller should clone key and iv if needed
@@ -261,6 +280,7 @@ class NativeGCMCipher extends NativeCipher {
             throw new IllegalStateException
                 ("Must use either different key or iv for GCM encryption");
         }
+        checkAndUpdateProcessed(inLen);
         if (inLen > 0) {
             if (!encrypt) {
                 ibuffer.write(in, inOfs, inLen);
@@ -291,6 +311,7 @@ class NativeGCMCipher extends NativeCipher {
             throw new IllegalStateException
                 ("Must use either different key or iv for GCM encryption");
         }
+        checkAndUpdateProcessed(inLen);
         if (inLen > 0) {
             if (!encrypt) {
                 ibuffer.write(in, inOfs, inLen);
@@ -393,6 +414,8 @@ class NativeGCMCipher extends NativeCipher {
             throw new IllegalStateException
                 ("Must use either different key or iv for GCM encryption");
         }
+
+        checkAndUpdateProcessed(inLen);
         if (!encrypt) {
             if (inLen > 0) {
                 ibuffer.write(in, inOfs, inLen);
