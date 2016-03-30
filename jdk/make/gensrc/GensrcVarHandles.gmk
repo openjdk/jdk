@@ -50,9 +50,9 @@ define GenerateVarHandle
         ifeq ($$($1_Type), Object)
 	  $$(eval $1_type := $$($1_Type))
         else
-	  $$(eval $1_type := $$(shell $(TR) '[:upper:]' '[:lower:]' <<< $$($1_Type)))
+	  $$(eval $1_type := $$$$(shell $(TR) '[:upper:]' '[:lower:]' <<< $$$$($1_Type)))
         endif
-	$(MKDIR) -p $$(@D)
+	$$(call MakeDir, $$(@D))
 	$(TOOL_SPP) -nel -K$$($1_type) -Dtype=$$($1_type) -DType=$$($1_Type) \
 	    $$($1_ARGS) < $$< > $$@
 
@@ -138,7 +138,7 @@ define GenerateVarHandleByteArray
   endif
 
   $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandleByteArrayView.java.template $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $$(@D)
+	$$(call MakeDir, $$(@D))
 	$(TOOL_SPP) -nel -K$$($1_type) \
 	    -Dtype=$$($1_type) -DType=$$($1_Type) -DBoxType=$$($1_BoxType) \
 	    -DrawType=$$($1_rawType) -DRawType=$$($1_RawType) -DRawBoxType=$$($1_RawBoxType) \
@@ -151,10 +151,12 @@ endef
 
 # List the types to generate source for, with capitalized first letter
 VARHANDLES_TYPES := Boolean Byte Short Char Int Long Float Double Object
-$(foreach t, $(VARHANDLES_TYPES), $(eval $(call GenerateVarHandle,VAR_HANDLE_$t,$t)))
+$(foreach t, $(VARHANDLES_TYPES), \
+  $(eval $(call GenerateVarHandle,VAR_HANDLE_$t,$t)))
 
 # List the types to generate source for, with capitalized first letter
 VARHANDLES_BYTE_ARRAY_TYPES := Short Char Int Long Float Double
-$(foreach t, $(VARHANDLES_BYTE_ARRAY_TYPES), $(eval $(call GenerateVarHandleByteArray,VAR_HANDLE_BYTE_ARRAY_$t,$t)))
+$(foreach t, $(VARHANDLES_BYTE_ARRAY_TYPES), \
+  $(eval $(call GenerateVarHandleByteArray,VAR_HANDLE_BYTE_ARRAY_$t,$t)))
 
 GENSRC_JAVA_BASE += $(GENSRC_VARHANDLES)
