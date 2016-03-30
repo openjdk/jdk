@@ -3161,7 +3161,9 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_fullFence :
     if (os::is_MP()) __ membar();
     break;
-
+  case vmIntrinsics::_onSpinWait:
+    __ on_spin_wait();
+    break;
   case vmIntrinsics::_Reference_get:
     do_Reference_get(x);
     break;

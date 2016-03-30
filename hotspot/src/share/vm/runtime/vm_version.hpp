@@ -162,6 +162,9 @@ class Abstract_VM_Version: AllStatic {
   // Calculates and returns the number of parallel threads.  May
   // be VM version specific.
   static unsigned int calc_parallel_worker_threads();
+
+  // Does this CPU support spin wait instruction?
+  static bool supports_on_spin_wait() { return false; }
 };
 
 #ifdef TARGET_ARCH_x86
