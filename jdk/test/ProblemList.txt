@@ -116,221 +116,184 @@
 
 # jdk_beans
 
-# 8060027
-java/beans/XMLEncoder/Test4903007.java                        generic-all
-java/beans/XMLEncoder/java_awt_GridBagLayout.java             generic-all
-java/beans/XMLDecoder/8028054/TestConstructorFinder.java      generic-all
-java/beans/XMLDecoder/8028054/TestMethodFinder.java           generic-all
+java/beans/XMLEncoder/Test4903007.java                          8060027 generic-all
+java/beans/XMLEncoder/java_awt_GridBagLayout.java               8060027 generic-all
+java/beans/XMLDecoder/8028054/TestConstructorFinder.java        8060027 generic-all
+java/beans/XMLDecoder/8028054/TestMethodFinder.java             8060027 generic-all
 
-# 8132565
-java/beans/Introspector/8132566/OverridePropertyInfoTest.java generic-all
-java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java generic-all
+java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-all
+java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
 
 ############################################################################
 
 # jdk_lang
 
-# 8029891
-java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
+java/lang/ClassLoader/deadlock/GetResource.java                 8029891 generic-all
 
-# 7008363
-java/lang/StringCoding/CheckEncodings.sh                        generic-all
+java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
 
 ############################################################################
 
 # jdk_instrument
 
-# 8061177
-java/lang/instrument/RedefineBigClass.sh                        generic-all
-java/lang/instrument/RetransformBigClass.sh                     generic-all
+java/lang/instrument/RedefineBigClass.sh                        8061177 generic-all
+java/lang/instrument/RetransformBigClass.sh                     8061177 generic-all
 
-# 8072130
-java/lang/instrument/BootClassPath/BootClassPathTest.sh         macosx-all
+java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-all
 
-# 8130339
-java/lang/management/MemoryMXBean/LowMemoryTest.java		generic-all
+java/lang/management/MemoryMXBean/LowMemoryTest.java            8130339 generic-all
 
 ############################################################################
 
 # jdk_jmx
 
-# 8030957
-com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java aix-all
-com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  aix-all
-javax/management/MBeanServer/OldMBeanServerTest.java            aix-all
+com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
+com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
+javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
-# 8042215
-javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java			generic-all
+javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 generic-all
 
-# 8147985
-sun/management/jmxremote/bootstrap/JMXInterfaceBindingTest.java generic-all
+sun/management/jmxremote/bootstrap/JMXInterfaceBindingTest.java 8147985 generic-all
 
 ############################################################################
 
 # jdk_net
 
-# 7148829
-sun/net/InetAddress/nameservice/simple/CacheTest.java		generic-all
-sun/net/InetAddress/nameservice/simple/DefaultCaching.java	generic-all
+sun/net/InetAddress/nameservice/simple/CacheTest.java           7148829 generic-all
+sun/net/InetAddress/nameservice/simple/DefaultCaching.java      7148829 generic-all
 
-# 7122846
-java/net/MulticastSocket/NoLoopbackPackets.java                  macosx-all
-java/net/MulticastSocket/SetLoopbackMode.java                    macosx-all
+java/net/MulticastSocket/NoLoopbackPackets.java                 7122846 macosx-all
+java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-all
 
-# 7145658
-java/net/MulticastSocket/Test.java                               macosx-all
+java/net/MulticastSocket/Test.java                              7145658 macosx-all
 
-# 7143960
-java/net/DatagramSocket/SendDatagramToBadAddress.java            macosx-all
+java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
 ############################################################################
 
 # jdk_nio
 
-# 6963118
-java/nio/channels/Selector/Wakeup.java                          windows-all
+java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
 
-# 7141822
-java/nio/channels/DatagramChannel/ChangingAddress.java          macosx-all
+java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
 
-# 7132677
-java/nio/channels/Selector/OutOfBand.java                       macosx-all
+java/nio/channels/Selector/OutOfBand.java                       7132677 macosx-all
 
-# 7158947, Solaris 11
-java/nio/file/WatchService/Basic.java				solaris-all
-java/nio/file/WatchService/MayFlies.java			solaris-all
-java/nio/file/WatchService/LotsOfEvents.java			solaris-all
+java/nio/file/WatchService/Basic.java                           7158947 solaris-all Solaris 11
+java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
+java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-all Solaris 11
 
-# 8149712
-java/nio/charset/coders/BashStreams.java                        generic-all
+java/nio/charset/coders/BashStreams.java                        8149712 generic-all
 
 ############################################################################
 
 # jdk_rmi
 
-# 7140992
-java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java  generic-all
+java/rmi/server/Unreferenced/finiteGCLatency/FiniteGCLatency.java 7140992 generic-all
 
-# 7146541
-java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java	linux-all
+java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java 7146541 linux-all
 
-# 7191877
-java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       generic-all
+java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       7191877 generic-all
 
-# 7195095
-sun/rmi/transport/proxy/EagerHttpFallback.java                  generic-all
+sun/rmi/transport/proxy/EagerHttpFallback.java                  7195095 generic-all
 
-# 8062724
-java/rmi/activation/Activatable/extLoadedImpl/ext.sh            generic-all
+java/rmi/activation/Activatable/extLoadedImpl/ext.sh            8062724 generic-all
 
-# 8145980
-sun/rmi/rmic/newrmic/equivalence/run.sh                         generic-all
+sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-all
 
 ############################################################################
 
 # jdk_security
 
-# 7157786
-sun/security/pkcs11/ec/TestKeyFactory.java                      generic-all
+sun/security/pkcs11/ec/TestKeyFactory.java                      7157786 generic-all
 
-# 7164518: no PortUnreachableException on Mac
-sun/security/krb5/auto/Unreachable.java                         macosx-all
+sun/security/krb5/auto/Unreachable.java                         7164518 macosx-all no PortUnreachableException on Mac
 
-# 7041639: Solaris DSA keypair generation bug
-java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
-sun/security/tools/keytool/standard.sh                          solaris-all
+java/security/KeyPairGenerator/SolarisShortDSA.java             7041639 solaris-all
+sun/security/tools/keytool/standard.sh                          7041639 solaris-all
 
-# 8062758
-java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         generic-all
+java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         8062758 generic-all
 
-# 8026393
-sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      generic-all
+sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
 
-# 8077138: Some PKCS11 tests fail because NSS library is not initialized
-# 8023434: NSS initialization failed
-sun/security/pkcs11/Cipher/ReinitCipher.java                    windows-all
-sun/security/pkcs11/Cipher/TestPKCS5PaddingError.java           windows-all
-sun/security/pkcs11/Cipher/TestRSACipher.java                   windows-all
-sun/security/pkcs11/Cipher/TestRSACipherWrap.java               windows-all
-sun/security/pkcs11/Cipher/TestRawRSACipher.java                windows-all
-sun/security/pkcs11/Cipher/TestSymmCiphers.java                 windows-all
-sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java            windows-all
-sun/security/pkcs11/KeyAgreement/TestDH.java                    windows-all
-sun/security/pkcs11/KeyAgreement/TestInterop.java               windows-all
-sun/security/pkcs11/KeyAgreement/TestShort.java                 windows-all
-sun/security/pkcs11/KeyGenerator/DESParity.java                 windows-all
-sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java          windows-all
-sun/security/pkcs11/KeyPairGenerator/TestDH2048.java            windows-all
-sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 windows-all
-sun/security/pkcs11/Mac/MacKAT.java                             windows-all
-sun/security/pkcs11/Mac/MacSameTest.java                        windows-all
-sun/security/pkcs11/Mac/ReinitMac.java                          windows-all
-sun/security/pkcs11/MessageDigest/ByteBuffers.java              windows-all
-sun/security/pkcs11/MessageDigest/DigestKAT.java                windows-all
-sun/security/pkcs11/MessageDigest/ReinitDigest.java             windows-all
-sun/security/pkcs11/MessageDigest/TestCloning.java              windows-all
-sun/security/pkcs11/Provider/ConfigQuotedString.sh              windows-all
-sun/security/pkcs11/Provider/Login.sh                           windows-all
-sun/security/pkcs11/SampleTest.java                             windows-all
-sun/security/pkcs11/Secmod/AddPrivateKey.java                   windows-all
-sun/security/pkcs11/Secmod/AddTrustedCert.java                  windows-all
-sun/security/pkcs11/Secmod/Crypto.java                          windows-all
-sun/security/pkcs11/Secmod/GetPrivateKey.java                   windows-all
-sun/security/pkcs11/Secmod/JksSetPrivateKey.java                windows-all
-sun/security/pkcs11/Secmod/LoadKeystore.java                    windows-all
-sun/security/pkcs11/SecureRandom/Basic.java                     windows-all
-sun/security/pkcs11/SecureRandom/TestDeserialization.java       windows-all
-sun/security/pkcs11/Serialize/SerializeProvider.java            windows-all
-sun/security/pkcs11/Signature/ByteBuffers.java                  windows-all
-sun/security/pkcs11/Signature/ReinitSignature.java              windows-all
-sun/security/pkcs11/Signature/TestDSA.java                      windows-all
-sun/security/pkcs11/Signature/TestDSAKeyLength.java             windows-all
-sun/security/pkcs11/Signature/TestRSAKeyLength.java             windows-all
-sun/security/pkcs11/ec/ReadCertificates.java                    windows-all
-sun/security/pkcs11/ec/ReadPKCS12.java                          windows-all
-sun/security/pkcs11/ec/TestCurves.java                          windows-all
-sun/security/pkcs11/ec/TestECDH.java                            windows-all
-sun/security/pkcs11/ec/TestECDH2.java                           windows-all
-sun/security/pkcs11/ec/TestECDSA.java                           windows-all
-sun/security/pkcs11/ec/TestECDSA2.java                          windows-all
-sun/security/pkcs11/ec/TestECGenSpec.java                       windows-all
-sun/security/pkcs11/rsa/KeyWrap.java                            windows-all
-sun/security/pkcs11/rsa/TestCACerts.java                        windows-all
-sun/security/pkcs11/rsa/TestKeyFactory.java                     windows-all
-sun/security/pkcs11/rsa/TestKeyPairGenerator.java               windows-all
-sun/security/pkcs11/rsa/TestSignatures.java                     windows-all
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            windows-all
-sun/security/pkcs11/tls/TestKeyMaterial.java                    windows-all
-sun/security/pkcs11/tls/TestLeadingZeroesP11.java               windows-all
-sun/security/pkcs11/tls/TestMasterSecret.java                   windows-all
-sun/security/pkcs11/tls/TestPRF.java                            windows-all
-sun/security/pkcs11/tls/TestPremaster.java                      windows-all
+sun/security/pkcs11/Cipher/ReinitCipher.java                    8077138,8023434 windows-all
+sun/security/pkcs11/Cipher/TestPKCS5PaddingError.java           8077138,8023434 windows-all
+sun/security/pkcs11/Cipher/TestRSACipher.java                   8077138,8023434 windows-all
+sun/security/pkcs11/Cipher/TestRSACipherWrap.java               8077138,8023434 windows-all
+sun/security/pkcs11/Cipher/TestRawRSACipher.java                8077138,8023434 windows-all
+sun/security/pkcs11/Cipher/TestSymmCiphers.java                 8077138,8023434 windows-all
+sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java            8077138,8023434 windows-all
+sun/security/pkcs11/KeyAgreement/TestDH.java                    8077138,8023434 windows-all
+sun/security/pkcs11/KeyAgreement/TestInterop.java               8077138,8023434 windows-all
+sun/security/pkcs11/KeyAgreement/TestShort.java                 8077138,8023434 windows-all
+sun/security/pkcs11/KeyGenerator/DESParity.java                 8077138,8023434 windows-all
+sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java          8077138,8023434 windows-all
+sun/security/pkcs11/KeyPairGenerator/TestDH2048.java            8077138,8023434 windows-all
+sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8077138,8023434 windows-all
+sun/security/pkcs11/Mac/MacKAT.java                             8077138,8023434 windows-all
+sun/security/pkcs11/Mac/MacSameTest.java                        8077138,8023434 windows-all
+sun/security/pkcs11/Mac/ReinitMac.java                          8077138,8023434 windows-all
+sun/security/pkcs11/MessageDigest/ByteBuffers.java              8077138,8023434 windows-all
+sun/security/pkcs11/MessageDigest/DigestKAT.java                8077138,8023434 windows-all
+sun/security/pkcs11/MessageDigest/ReinitDigest.java             8077138,8023434 windows-all
+sun/security/pkcs11/MessageDigest/TestCloning.java              8077138,8023434 windows-all
+sun/security/pkcs11/Provider/ConfigQuotedString.sh              8077138,8023434 windows-all
+sun/security/pkcs11/Provider/Login.sh                           8077138,8023434 windows-all
+sun/security/pkcs11/SampleTest.java                             8077138,8023434 windows-all
+sun/security/pkcs11/Secmod/AddPrivateKey.java                   8077138,8023434 windows-all
+sun/security/pkcs11/Secmod/AddTrustedCert.java                  8077138,8023434 windows-all
+sun/security/pkcs11/Secmod/Crypto.java                          8077138,8023434 windows-all
+sun/security/pkcs11/Secmod/GetPrivateKey.java                   8077138,8023434 windows-all
+sun/security/pkcs11/Secmod/JksSetPrivateKey.java                8077138,8023434 windows-all
+sun/security/pkcs11/Secmod/LoadKeystore.java                    8077138,8023434 windows-all
+sun/security/pkcs11/SecureRandom/Basic.java                     8077138,8023434 windows-all
+sun/security/pkcs11/SecureRandom/TestDeserialization.java       8077138,8023434 windows-all
+sun/security/pkcs11/Serialize/SerializeProvider.java            8077138,8023434 windows-all
+sun/security/pkcs11/Signature/ByteBuffers.java                  8077138,8023434 windows-all
+sun/security/pkcs11/Signature/ReinitSignature.java              8077138,8023434 windows-all
+sun/security/pkcs11/Signature/TestDSA.java                      8077138,8023434 windows-all
+sun/security/pkcs11/Signature/TestDSAKeyLength.java             8077138,8023434 windows-all
+sun/security/pkcs11/Signature/TestRSAKeyLength.java             8077138,8023434 windows-all
+sun/security/pkcs11/ec/ReadCertificates.java                    8077138,8023434 windows-all
+sun/security/pkcs11/ec/ReadPKCS12.java                          8077138,8023434 windows-all
+sun/security/pkcs11/ec/TestCurves.java                          8077138,8023434 windows-all
+sun/security/pkcs11/ec/TestECDH.java                            8077138,8023434 windows-all
+sun/security/pkcs11/ec/TestECDH2.java                           8077138,8023434 windows-all
+sun/security/pkcs11/ec/TestECDSA.java                           8077138,8023434 windows-all
+sun/security/pkcs11/ec/TestECDSA2.java                          8077138,8023434 windows-all
+sun/security/pkcs11/ec/TestECGenSpec.java                       8077138,8023434 windows-all
+sun/security/pkcs11/rsa/KeyWrap.java                            8077138,8023434 windows-all
+sun/security/pkcs11/rsa/TestCACerts.java                        8077138,8023434 windows-all
+sun/security/pkcs11/rsa/TestKeyFactory.java                     8077138,8023434 windows-all
+sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8077138,8023434 windows-all
+sun/security/pkcs11/rsa/TestSignatures.java                     8077138,8023434 windows-all
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8077138,8023434 windows-all
+sun/security/pkcs11/tls/TestKeyMaterial.java                    8077138,8023434 windows-all
+sun/security/pkcs11/tls/TestLeadingZeroesP11.java               8077138,8023434 windows-all
+sun/security/pkcs11/tls/TestMasterSecret.java                   8077138,8023434 windows-all
+sun/security/pkcs11/tls/TestPRF.java                            8077138,8023434 windows-all
+sun/security/pkcs11/tls/TestPremaster.java                      8077138,8023434 windows-all
 
-# 8051770
-sun/security/provider/SecureRandom/StrongSecureRandom.java      macosx-10.10
+sun/security/provider/SecureRandom/StrongSecureRandom.java      8051770 macosx-10.10
 
-# 8074580
-sun/security/pkcs11/rsa/TestKeyPairGenerator.java               generic-all
+sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8074580 generic-all
 
-# 8038079
-sun/security/krb5/auto/HttpNegotiateServer.java                 generic-all
+sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-all
 
-# 8130302
-sun/security/tools/keytool/autotest.sh                          generic-all
+sun/security/tools/keytool/autotest.sh                          8130302 generic-all
 
 ############################################################################
 
 # jdk_sound
 
-# 8059743
-javax/sound/midi/Gervill/SoftProvider/GetDevice.java            generic-all
+javax/sound/midi/Gervill/SoftProvider/GetDevice.java            8059743 generic-all
 
 ############################################################################
 
 # jdk_imageio
-javax/imageio/plugins/shared/CanWriteSequence.java              generic-all
-javax/imageio/plugins/tiff/MultiPageTest/MultiPageTest.java     generic-all
-javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       generic-all
+javax/imageio/plugins/shared/CanWriteSequence.java              8148454 generic-all
+javax/imageio/plugins/tiff/MultiPageTest/MultiPageTest.java     8148454 generic-all
+javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       8148454 generic-all
 
 ############################################################################
 
@@ -348,56 +311,41 @@ javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       generic-all
 
 # jdk_tools
 
-# Tests take too long, on sparcs see 7143279
-# also see 8059906
-tools/pack200/CommandLineTests.java                             generic-all
+tools/pack200/CommandLineTests.java                             7143279,8059906 generic-all
 
-# 8059906 fails on solaris and macosx, 8151901 
-tools/pack200/Pack200Test.java                                  generic-all
+tools/pack200/Pack200Test.java                                  8059906,8151901 generic-all
 
-# 8152622
-tools/pack200/Pack200Props.java                                 macosx-all
+tools/pack200/Pack200Props.java                                 8152622 macosx-all
 
-# 8068049 
-tools/launcher/FXLauncherTest.java                              linux-all,macosx-all
+tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
 ############################################################################
 
 # jdk_jdi
 
-# 8004127
-com/sun/jdi/RedefineImplementor.sh                              generic-all
+com/sun/jdi/RedefineImplementor.sh                              8004127 generic-all
 
-# 8031555
-com/sun/jdi/JdbMethodExitTest.sh                                generic-all
+com/sun/jdi/JdbMethodExitTest.sh                                8031555 generic-all
 
-# 8043571
-com/sun/jdi/RepStep.java                                        generic-all
+com/sun/jdi/RepStep.java                                        8043571 generic-all
 
-# 8058616
-com/sun/jdi/RedefinePop.sh                                      generic-all
+com/sun/jdi/RedefinePop.sh                                      8058616 generic-all
 
-# 8068645
-com/sun/jdi/CatchPatternTest.sh                                 generic-all
+com/sun/jdi/CatchPatternTest.sh                                 8068645 generic-all
 
-# 8067354
-com/sun/jdi/GetLocalVariables4Test.sh				windows-all
+com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-all
 
 ############################################################################
 
 # jdk_util
 
-# 8062512
-java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java generic-all
+java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java 8062512 generic-all
 
-# 8130337
-java/util/stream/test/org/openjdk/tests/java/util/stream/IntPrimitiveOpsTests.java generic-all
+java/util/stream/test/org/openjdk/tests/java/util/stream/IntPrimitiveOpsTests.java 8130337 generic-all
 
-# 8080165, 8085982
-java/util/Arrays/ParallelPrefix.java generic-all
+java/util/Arrays/ParallelPrefix.java                            8080165,8085982 generic-all
 
-# 8079538
-java/util/BitSet/BitSetStreamTest.java generic-all
+java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
 
 ############################################################################
 
@@ -407,43 +355,33 @@ java/util/BitSet/BitSetStreamTest.java generic-all
 
 # svc_tools
 
-# 8031482
-sun/tools/jcmd/TestJcmdSanity.java				windows-all
+sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
 
-# 8072131, 8132452
-sun/tools/jmap/heapconfig/JMapHeapConfigTest.java generic-all
+sun/tools/jmap/heapconfig/JMapHeapConfigTest.java               8072131,8132452 generic-all
 
-# 8046285
-sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
+sun/tools/jstatd/TestJstatdExternalRegistry.java                8046285 generic-all
 
-# 6456333
-sun/tools/jps/TestJpsJarRelative.java				generic-all
+sun/tools/jps/TestJpsJarRelative.java                           6456333 generic-all
 
-# 6734748
-sun/tools/jinfo/JInfoRunningProcessFlagTest.java		generic-all
+sun/tools/jinfo/JInfoRunningProcessFlagTest.java                6734748 generic-all
 
-# 8057732
-sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    generic-all
+sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
-# 8059035
-sun/tools/jinfo/JInfoSanityTest.java                           generic-all
+sun/tools/jinfo/JInfoSanityTest.java                            8059035 generic-all
 
-# 8151899
-demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       generic-all
+demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       8151899 generic-all
 
 ############################################################################
 
 # jdk_other
 
-# 8141370
-com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java			linux-i586,macosx-all
+com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8141370 linux-i586,macosx-all
 
 ############################################################################
 
 # core_tools
 
-# 8150975
-tools/jimage/JImageTest.java                                    linux-i586,windows-i586
+tools/jimage/JImageTest.java                                    8150975 linux-i586,windows-i586
 
 ############################################################################
 
