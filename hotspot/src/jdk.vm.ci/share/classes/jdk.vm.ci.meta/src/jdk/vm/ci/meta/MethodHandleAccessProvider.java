@@ -60,11 +60,15 @@ public interface MethodHandleAccessProvider {
      * Resolves the invocation target for an invocation of {@link IntrinsicMethod#INVOKE_BASIC
      * MethodHandle.invokeBasic} with the given constant receiver {@link MethodHandle}. Returns
      * {@code null} if the invocation target is not available at this time.
-     * <p>
+     *
      * The first invocations of a method handle can use an interpreter to lookup the actual invoked
      * method; frequently executed method handles can use Java bytecode generation to avoid the
      * interpreter overhead. If the parameter forceBytecodeGeneration is set to true, the VM should
      * try to generate bytecodes before this method returns.
+     *
+     * @returns {@code null} if {@code methodHandle} is not a {@link MethodHandle} or the invocation
+     *          target is not available at this time
+     * @throws NullPointerException if {@code methodHandle} is null
      */
     ResolvedJavaMethod resolveInvokeBasicTarget(JavaConstant methodHandle, boolean forceBytecodeGeneration);
 
