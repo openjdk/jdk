@@ -3228,7 +3228,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
                                                                   Threads::number_of_non_daemon_threads());
     workers()->set_active_workers(active_workers);
 
-    g1_policy()->note_gc_start(active_workers);
+    g1_policy()->note_gc_start();
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
     TraceMemoryManagerStats tms(false /* fullGC */, gc_cause());
