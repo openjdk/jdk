@@ -476,7 +476,7 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     // terminating the VM so we check one more time.
 
     // create the zip entry
-    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment);
+    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment, true);
     if (zip_entry == NULL) {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
@@ -520,7 +520,7 @@ JvmtiEnv::AddToSystemClassLoaderSearch(const char* segment) {
 
     // create the zip entry (which will open the zip file and hence
     // check that the segment is indeed a zip file).
-    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment);
+    ClassPathZipEntry* zip_entry = ClassLoader::create_class_path_zip_entry(segment, false);
     if (zip_entry == NULL) {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
