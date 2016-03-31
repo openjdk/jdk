@@ -1068,19 +1068,19 @@ public final class Unsafe {
      */
     @ForceInline
     public void putOrderedObject(Object o, long offset, Object x) {
-        theInternalUnsafe.putOrderedObject(o, offset, x);
+        theInternalUnsafe.putObjectRelease(o, offset, x);
     }
 
     /** Ordered/Lazy version of {@link #putIntVolatile(Object, long, int)}  */
     @ForceInline
     public void putOrderedInt(Object o, long offset, int x) {
-        theInternalUnsafe.putOrderedInt(o, offset, x);
+        theInternalUnsafe.putIntRelease(o, offset, x);
     }
 
     /** Ordered/Lazy version of {@link #putLongVolatile(Object, long, long)} */
     @ForceInline
     public void putOrderedLong(Object o, long offset, long x) {
-        theInternalUnsafe.putOrderedLong(o, offset, x);
+        theInternalUnsafe.putLongRelease(o, offset, x);
     }
 
     /**
