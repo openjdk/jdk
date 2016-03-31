@@ -75,8 +75,12 @@ public interface MethodHandleAccessProvider {
     /**
      * Resolves the invocation target for an invocation of a {@code MethodHandle.linkTo*} method
      * with the given constant member name. The member name is the last parameter of the
-     * {@code linkTo*} method. Returns {@code null} if the invocation target is not available at
-     * this time.
+     * {@code linkTo*} method.
+     *
+     * @returns {@code null} if the invocation target is not available at this time
+     * @throws NullPointerException if {@code memberName} is null
+     * @throws IllegalArgumentException if {@code memberName} is not a
+     *             {@code java.lang.invoke.MemberName}
      */
     ResolvedJavaMethod resolveLinkToTarget(JavaConstant memberName);
 }
