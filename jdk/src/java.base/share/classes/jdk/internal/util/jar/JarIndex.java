@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.util.jar;
 
 import java.io.*;
 import java.util.*;

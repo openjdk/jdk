@@ -23,38 +23,32 @@
  * questions.
  */
 
-package sun.misc;
-
-import java.lang.LinkageError;
+package jdk.internal.util.jar;
 
 /**
  * Thrown if the URLClassLoader finds the INDEX.LIST file of
  * a jar file contains incorrect information.
  *
- * @author   Zhenghua Li
- * @since   1.3
+ * @since 9
  */
 
-public
-class InvalidJarIndexException extends RuntimeException {
+public class InvalidJarIndexError extends Error {
 
-    static final long serialVersionUID = -6159797516569680148L;
+    static final long serialVersionUID = 0L;
 
     /**
-     * Constructs an <code>InvalidJarIndexException</code> with no
-     * detail message.
+     * Constructs an {@code InvalidJarIndexError} with no detail message.
      */
-    public InvalidJarIndexException() {
+    public InvalidJarIndexError() {
         super();
     }
 
     /**
-     * Constructs an <code>InvalidJarIndexException</code> with the
-     * specified detail message.
+     * Constructs an {@code InvalidJarIndexError} with the specified detail message.
      *
      * @param   s   the detail message.
      */
-    public InvalidJarIndexException(String s) {
+    public InvalidJarIndexError(String s) {
         super(s);
     }
 }
