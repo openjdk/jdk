@@ -29,14 +29,15 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main NPECompilingModuleInfoTest
  */
 
 import java.nio.file.Path;
 
-import com.sun.source.util.JavacTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class NPECompilingModuleInfoTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -53,11 +54,11 @@ public class NPECompilingModuleInfoTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(classes)
                 .files(findJavaFiles(mod))
                 .run()
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
     }
 }

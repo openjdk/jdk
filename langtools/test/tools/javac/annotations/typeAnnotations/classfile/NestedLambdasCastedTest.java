@@ -27,10 +27,9 @@
  * @summary No type annotations generated for nested lambdas
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavapTask
  * @run compile -g NestedLambdasCastedTest.java
  * @run main NestedLambdasCastedTest
  */
@@ -40,20 +39,24 @@ import java.nio.file.Paths;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
+import toolbox.JavapTask;
+import toolbox.Task;
+import toolbox.ToolBox;
+
 public class NestedLambdasCastedTest {
 
     // Expected output can't be directly encoded into NestedLambdasCastedTest !!!
     static class ExpectedOutputHolder {
-        public String [] outputs = {
+        public String[] outputs = {
                       "public static strictfp void main(java.lang.String[])",
                       "private static strictfp void lambda$main$3();",
                       "private static strictfp void lambda$main$2();",
                       "private static strictfp void lambda$main$1();",
                       "private static strictfp void lambda$main$0();",
-                      "0: #63(#64=s#65): CAST, offset=5, type_index=0",
-                      "0: #63(#64=s#70): CAST, offset=5, type_index=0",
-                      "0: #63(#64=s#73): CAST, offset=5, type_index=0",
-                      "0: #63(#64=s#76): CAST, offset=5, type_index=0"
+                      "0: #62(#63=s#64): CAST, offset=5, type_index=0",
+                      "0: #62(#63=s#69): CAST, offset=5, type_index=0",
+                      "0: #62(#63=s#72): CAST, offset=5, type_index=0",
+                      "0: #62(#63=s#75): CAST, offset=5, type_index=0"
         };
     }
 
@@ -73,11 +76,11 @@ public class NestedLambdasCastedTest {
         };
         ToolBox tb = new ToolBox();
         Path classPath = Paths.get(ToolBox.testClasses, "NestedLambdasCastedTest.class");
-        String javapOut = tb.new JavapTask()
+        String javapOut = new JavapTask(tb)
                 .options("-v", "-p")
                 .classes(classPath.toString())
                 .run()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
         ExpectedOutputHolder holder = new ExpectedOutputHolder();
         for (String s : holder.outputs) {
             if (!javapOut.contains(s))

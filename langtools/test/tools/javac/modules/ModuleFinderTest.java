@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,17 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask ModuleTestBase
  * @run main ModuleFinderTest
  */
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ModuleFinderTest extends ModuleTestBase {
 
@@ -53,18 +57,18 @@ public class ModuleFinderTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll();
 
-        tb.new JarTask(modules.resolve("m1-1.jar"))
+        new JarTask(tb, modules.resolve("m1-1.jar"))
                 .baseDir(classes)
                 .files(".")
                 .run();
 
-        tb.new JarTask(modules.resolve("m1-2.jar"))
+        new JarTask(tb, modules.resolve("m1-2.jar"))
                 .baseDir(classes)
                 .files(".")
                 .run();
@@ -73,13 +77,13 @@ public class ModuleFinderTest extends ModuleTestBase {
         tb.writeJavaFiles(src2, "module m2 { requires m1; }");
 
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics", "-modulepath", modules.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src2))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.err.duplicate.module.on.path: (compiler.misc.locn.module_path), m1"))
             throw new Exception("expected output not found");

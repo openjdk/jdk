@@ -28,13 +28,17 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask ModuleTestBase
  * @run main HelloWorldTest
  */
 
 import java.nio.file.*;
 import javax.tools.*;
+
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class HelloWorldTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -63,13 +67,13 @@ public class HelloWorldTest extends ModuleTestBase {
 
         Path smallRtJar = base.resolve("small-rt.jar");
         try (JavaFileManager fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null)) {
-            tb.new JarTask(smallRtJar)
+            new JarTask(tb, smallRtJar)
                 .files(fm, StandardLocation.PLATFORM_CLASS_PATH,
                     "java.lang.**", "java.io.*", "java.util.*")
                 .run();
         }
 
-        tb.new JavacTask()
+        new JavacTask(tb)
             .options("-source", "8",
                 "-target", "8",
                 "-bootclasspath", smallRtJar.toString())
@@ -88,7 +92,7 @@ public class HelloWorldTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
             .outdir(classes)
             .files(src.resolve("HelloWorld.java"))
             .run();
@@ -105,7 +109,7 @@ public class HelloWorldTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
             .outdir(classes)
             .files(src.resolve("module-info.java"), src.resolve("p/HelloWorld.java"))
             .run()
@@ -126,7 +130,7 @@ public class HelloWorldTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
             .options("-modulesourcepath", src.toString())
             .outdir(classes)
             .files(src_m1.resolve("p/HelloWorld.java"))

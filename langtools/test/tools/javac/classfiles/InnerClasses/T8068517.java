@@ -26,11 +26,10 @@
  * @summary Verify that nested enums have correct abstract flag in the InnerClasses attribute.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox T8068517
+ * @build toolbox.ToolBox toolbox.JavacTask
+ * @build T8068517
  * @run main T8068517
  */
 
@@ -39,6 +38,9 @@ import java.util.Arrays;
 import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class T8068517 {
 
@@ -106,11 +108,11 @@ public class T8068517 {
         try (JavaFileManager fm = ToolProvider.getSystemJavaCompiler().getStandardFileManager(null, null, null)) {
             ToolBox tb = new ToolBox();
             ToolBox.MemoryFileManager memoryFM1 = new ToolBox.MemoryFileManager(fm);
-            tb.new JavacTask().fileManager(memoryFM1)
+            new JavacTask(tb).fileManager(memoryFM1)
                               .sources(aJava, bJava)
                               .run();
             ToolBox.MemoryFileManager memoryFM2 = new ToolBox.MemoryFileManager(fm);
-            tb.new JavacTask().fileManager(memoryFM2)
+            new JavacTask(tb).fileManager(memoryFM2)
                               .sources(bJava, aJava)
                               .run();
 

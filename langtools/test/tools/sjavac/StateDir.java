@@ -29,11 +29,10 @@
  * @author sogoel (rewrite)
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
  *          jdk.jdeps/com.sun.tools.javap
- * @build Wrapper ToolBox
+ * @build Wrapper toolbox.ToolBox
  * @run main Wrapper StateDir
  */
 
