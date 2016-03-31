@@ -40,7 +40,10 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
 ))
 
 ifeq ($(BOOT_JDK_MODULAR), true)
-  COMPILECREATESYMBOLS_ADD_EXPORTS := -XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED,jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED,jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED
+  COMPILECREATESYMBOLS_ADD_EXPORTS := \
+      -XaddExports:jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
+      -XaddExports:jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
+      -XaddExports:jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED
 endif
 
 $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols: \
