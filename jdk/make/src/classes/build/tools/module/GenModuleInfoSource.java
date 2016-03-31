@@ -25,25 +25,27 @@
 package build.tools.module;
 
 import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * A build tool to extend the module-info.java in the source tree
- * for platform-specific exports, uses, and provides and write
- * to the specified output file.
+ * A build tool to extend the module-info.java in the source tree for
+ * platform-specific exports, uses, and provides and write to the specified
+ * output file. Injecting platform-specific requires is not supported.
  *
- * GenModulesList build tool currently generates the modules.list from
- * the module-info.java from the source tree that will be used for
- * the make target and dependences.
- *
- * The build currently invokes gensrc-$MODULE.gmk after modules.list
- * is generated.  Hence, platform-specific requires is not supported.
+ * The extra exports, uses, provides can be specified in module-info.java.extra
+ * files and GenModuleInfoSource will be invoked for each module that has
+ * module-info.java.extra in the source directory.
  */
 public class GenModuleInfoSource {
     private final static String USAGE =
@@ -57,17 +59,32 @@ public class GenModuleInfoSource {
     public static void main(String... args) throws Exception {
         Path outfile = null;
         Path moduleInfoJava = null;
-        Map<String, Set<String>> options = new HashMap<>();
+        GenModuleInfoSource genModuleInfo = new GenModuleInfoSource();
 
         // validate input arguments
         for (int i = 0; i < args.length; i++){
             String option = args[i];
             if (option.startsWith("-")) {
                 String arg = args[++i];
-                if (option.equals("-exports") ||
-                        option.equals("-uses") ||
-                        option.equals("-provides")) {
-                    options.computeIfAbsent(option, _k -> new HashSet<>()).add(arg);
+                if (option.equals("-exports")) {
+                    int index = arg.indexOf('/');
+                        if (index > 0) {
+                            String pn = arg.substring(0, index);
+                            String mn = arg.substring(index + 1, arg.length());
+                            genModuleInfo.exportTo(pn, mn);
+                        } else {
+                            genModuleInfo.export(arg);
+                        }
+                } else if (option.equals("-uses")) {
+                    genModuleInfo.use(arg);
+                } else if (option.equals("-provides")) {
+                        int index = arg.indexOf('/');
+                        if (index <= 0) {
+                            throw new IllegalArgumentException("invalid -provide argument: " + arg);
+                        }
+                        String service = arg.substring(0, index);
+                        String impl = arg.substring(index + 1, arg.length());
+                        genModuleInfo.provide(service, impl);
                 } else if (option.equals("-o")) {
                     outfile = Paths.get(arg);
                 } else {
@@ -87,48 +104,145 @@ public class GenModuleInfoSource {
             System.err.println(USAGE);
             System.exit(-1);
         }
-        // read module-info.java
-        Module.Builder builder = ModuleInfoReader.builder(moduleInfoJava);
-        augment(builder, options);
 
         // generate new module-info.java
-        Module module = builder.build();
+        genModuleInfo.generate(moduleInfoJava, outfile);
+    }
+
+    private final Set<String> exports = new HashSet<>();
+    private final Map<String, Set<String>> exportsTo = new HashMap<>();
+    private final Set<String> uses = new HashSet<>();
+    private final Map<String, Set<String>> provides = new HashMap<>();
+    GenModuleInfoSource() {
+    }
+
+    private void export(String p) {
+        Objects.requireNonNull(p);
+        if (exports.contains(p) || exportsTo.containsKey(p)) {
+            throw new RuntimeException("duplicated exports: " + p);
+        }
+        exports.add(p);
+    }
+    private void exportTo(String p, String mn) {
+        Objects.requireNonNull(p);
+        Objects.requireNonNull(mn);
+        if (exports.contains(p)) {
+            throw new RuntimeException("unqualified exports already exists: " + p);
+        }
+        exportsTo.computeIfAbsent(p, _k -> new HashSet<>()).add(mn);
+    }
+
+    private void use(String service) {
+        uses.add(service);
+    }
+
+    private void provide(String s, String impl) {
+        provides.computeIfAbsent(s, _k -> new HashSet<>()).add(impl);
+    }
+
+    private void generate(Path sourcefile, Path outfile) throws IOException {
         Path parent = outfile.getParent();
         if (parent != null)
             Files.createDirectories(parent);
 
-        try (BufferedWriter writer = Files.newBufferedWriter(outfile)) {
-            writer.write(module.toString());
-        }
-    }
+        List<String> lines = Files.readAllLines(sourcefile);
+        try (BufferedWriter bw = Files.newBufferedWriter(outfile);
+             PrintWriter writer = new PrintWriter(bw)) {
+            int lineNumber = 0;
+            for (String l : lines) {
+                lineNumber++;
+                String[] s = l.trim().split("\\s+");
+                String keyword = s[0].trim();
+                int nextIndex = keyword.length();
+                String exp = null;
+                int n = l.length();
+                switch (keyword) {
+                    case "exports":
+                        boolean inExportsTo = false;
+                        // assume package name immediately after exports
+                        exp = s[1].trim();
+                        if (s.length >= 3) {
+                            nextIndex = l.indexOf(exp, nextIndex) + exp.length();
+                            if (s[2].trim().equals("to")) {
+                                inExportsTo = true;
+                                n = l.indexOf("to", nextIndex) + "to".length();
+                            } else {
+                                throw new RuntimeException(sourcefile + ", line " +
+                                    lineNumber + ", is malformed: " + s[2]);
+                            }
+                        }
 
-    private static void augment(Module.Builder builder, Map<String, Set<String>> options) {
-        for (String opt : options.keySet()) {
-            if (opt.equals("-exports")) {
-                for (String arg : options.get(opt)) {
-                    int index = arg.indexOf('/');
-                    if (index > 0) {
-                        String pn = arg.substring(0, index);
-                        String mn = arg.substring(index + 1, arg.length());
-                        builder.exportTo(pn, mn);
-                    } else {
-                        builder.export(arg);
-                    }
-                }
-            } else if (opt.equals("-uses")) {
-                options.get(opt).stream()
-                        .forEach(builder::use);
-            } else if (opt.equals("-provides")) {
-                for (String arg : options.get(opt)) {
-                    int index = arg.indexOf('/');
-                    if (index <= 0) {
-                        throw new IllegalArgumentException("invalid -provide argument: " + arg);
-                    }
-                    String service = arg.substring(0, index);
-                    String impl = arg.substring(index + 1, arg.length());
-                    builder.provide(service, impl);
+                        // inject the extra targets after "to"
+                        if (inExportsTo) {
+                            writer.println(injectExportTargets(exp, l, n));
+                        } else {
+                            writer.println(l);
+                        }
+                        break;
+                    case "to":
+                        if (exp == null) {
+                            throw new RuntimeException(sourcefile + ", line " +
+                                lineNumber + ", is malformed");
+                        }
+                        n = l.indexOf("to", nextIndex) + "to".length();
+                        writer.println(injectExportTargets(exp, l, n));
+                        break;
+                    case "}":
+                        doAugments(writer);
+                        // fall through
+                    default:
+                        writer.println(l);
+                        // reset exports
+                        exp = null;
                 }
             }
         }
+    }
+
+    private String injectExportTargets(String pn, String exp, int pos) {
+        Set<String> targets = exportsTo.remove(pn);
+        if (targets != null) {
+            StringBuilder sb = new StringBuilder();
+            // inject the extra targets after the given pos
+            sb.append(exp.substring(0, pos))
+              .append("\n\t")
+              .append(targets.stream()
+                             .collect(Collectors.joining(",", "", ",")))
+              .append(" /* injected */");
+            if (pos < exp.length()) {
+                // print the remaining statement followed "to"
+                sb.append("\n\t")
+                  .append(exp.substring(pos+1, exp.length()));
+            }
+            return sb.toString();
+        } else {
+            return exp;
+        }
+    }
+
+    private void doAugments(PrintWriter writer) {
+        if ((exports.size() + exportsTo.size() + uses.size() + provides.size()) == 0)
+            return;
+
+        writer.println("    // augmented from module-info.java.extra");
+        exports.stream()
+            .sorted()
+            .forEach(e -> writer.format("    exports %s;%n", e));
+        // remaining injected qualified exports
+        exportsTo.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .map(e -> String.format("    exports %s to%n%s;", e.getKey(),
+                                    e.getValue().stream().sorted()
+                                        .map(mn -> String.format("        %s", mn))
+                                        .collect(Collectors.joining(",\n"))))
+            .forEach(writer::println);
+        uses.stream().sorted()
+            .forEach(s -> writer.format("    uses %s;%n", s));
+        provides.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .flatMap(e -> e.getValue().stream().sorted()
+                           .map(impl -> String.format("    provides %s with %s;",
+                                                      e.getKey(), impl)))
+            .forEach(writer::println);
     }
 }
