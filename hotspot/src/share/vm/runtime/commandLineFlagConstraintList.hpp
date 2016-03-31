@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,7 @@ public:
   static void init();
   static int length() { return (_constraints != NULL) ? _constraints->length() : 0; }
   static CommandLineFlagConstraint* at(int i) { return (_constraints != NULL) ? _constraints->at(i) : NULL; }
+  static CommandLineFlagConstraint* find(const char* name);
   static CommandLineFlagConstraint* find_if_needs_check(const char* name);
   static void add(CommandLineFlagConstraint* constraint) { _constraints->append(constraint); }
   // True if 'AfterErgo' or later constraint functions are validated.

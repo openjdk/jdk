@@ -27,6 +27,7 @@
 #include "classfile/symbolTable.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/commandLineFlagConstraintList.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
@@ -378,12 +379,18 @@ CommandLineFlagRange* CommandLineFlagRangeList::find(const char* name) {
   return found;
 }
 
-void CommandLineFlagRangeList::print(const char* name, outputStream* st, bool unspecified) {
+void CommandLineFlagRangeList::print(outputStream* st, const char* name, RangeStrFunc default_range_str_func) {
   CommandLineFlagRange* range = CommandLineFlagRangeList::find(name);
   if (range != NULL) {
     range->print(st);
-  } else if (unspecified == true) {
-    st->print("[                           ...                           ]");
+  } else {
+    CommandLineFlagConstraint* constraint = CommandLineFlagConstraintList::find(name);
+    if (constraint != NULL) {
+      assert(default_range_str_func!=NULL, "default_range_str_func must be provided");
+      st->print("%s", default_range_str_func());
+    } else {
+      st->print("[                           ...                           ]");
+    }
   }
 }
 
