@@ -90,7 +90,7 @@ public class ForceNMethodSweepTest extends CompilerWhiteBoxTest {
         return usage;
     }
     private void guaranteedSweep() {
-        // not entrant -> ++stack_traversal_mark -> zombie -> reclamation -> flushed
+        // not entrant -> ++stack_traversal_mark -> zombie -> flushed
         for (int i = 0; i < 5; ++i) {
             WHITE_BOX.fullGC();
             WHITE_BOX.forceNMethodSweep();

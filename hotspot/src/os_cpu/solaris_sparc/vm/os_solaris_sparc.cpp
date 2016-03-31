@@ -277,7 +277,7 @@ bool os::Solaris::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_
       return false;
     } else {
       *fr = os::fetch_frame_from_ucontext(thread, uc);
-      *fr = frame(fr->sender_sp(), frame::unpatchable, fr->sender_pc());
+      *fr = frame(fr->sender_sp(), fr->sp());
       if (!fr->is_java_frame()) {
         assert(fr->safe_for_sender(thread), "Safety check");
         *fr = fr->java_sender();

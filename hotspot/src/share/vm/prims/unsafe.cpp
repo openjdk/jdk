@@ -378,44 +378,6 @@ DEFINE_GETSETOOP_VOLATILE(jlong, Long);
 
 #undef DEFINE_GETSETOOP_VOLATILE
 
-// The non-intrinsified versions of setOrdered just use setVolatile
-
-UNSAFE_ENTRY(void, Unsafe_SetOrderedInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint x)) {
-  SET_FIELD_VOLATILE(obj, offset, jint, x);
-} UNSAFE_END
-
-UNSAFE_ENTRY(void, Unsafe_SetOrderedObject(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject x_h)) {
-  oop x = JNIHandles::resolve(x_h);
-  oop p = JNIHandles::resolve(obj);
-  void* addr = index_oop_from_field_offset_long(p, offset);
-  OrderAccess::release();
-
-  if (UseCompressedOops) {
-    oop_store((narrowOop*)addr, x);
-  } else {
-    oop_store((oop*)addr, x);
-  }
-
-  OrderAccess::fence();
-} UNSAFE_END
-
-UNSAFE_ENTRY(void, Unsafe_SetOrderedLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong x)) {
-#ifdef SUPPORTS_NATIVE_CX8
-  SET_FIELD_VOLATILE(obj, offset, jlong, x);
-#else
-
-  // Keep old code for platforms which may not have atomic long (8 bytes) instructions
-  if (VM_Version::supports_cx8()) {
-    SET_FIELD_VOLATILE(obj, offset, jlong, x);
-  } else {
-    Handle p(THREAD, JNIHandles::resolve(obj));
-    jlong* addr = (jlong*)(index_oop_from_field_offset_long(p(), offset));
-    MutexLockerEx mu(UnsafeJlong_lock, Mutex::_no_safepoint_check_flag);
-    Atomic::store(x, addr);
-  }
-#endif
-} UNSAFE_END
-
 UNSAFE_LEAF(void, Unsafe_LoadFence(JNIEnv *env, jobject unsafe)) {
   OrderAccess::acquire();
 } UNSAFE_END
@@ -1230,9 +1192,6 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
     {CC "compareAndExchangeIntVolatile",  CC "(" OBJ "J""I""I"")I", FN_PTR(Unsafe_CompareAndExchangeInt)},
     {CC "compareAndExchangeLongVolatile", CC "(" OBJ "J""J""J"")J", FN_PTR(Unsafe_CompareAndExchangeLong)},
 
-    {CC "putOrderedObject",   CC "(" OBJ "J" OBJ ")V",   FN_PTR(Unsafe_SetOrderedObject)},
-    {CC "putOrderedInt",      CC "(" OBJ "JI)V",         FN_PTR(Unsafe_SetOrderedInt)},
-    {CC "putOrderedLong",     CC "(" OBJ "JJ)V",         FN_PTR(Unsafe_SetOrderedLong)},
     {CC "park",               CC "(ZJ)V",                FN_PTR(Unsafe_Park)},
     {CC "unpark",             CC "(" OBJ ")V",           FN_PTR(Unsafe_Unpark)},
 
