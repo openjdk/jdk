@@ -60,7 +60,8 @@ tier3 = \
     :jdk_rmi \
     :jdk_beans \
     :jdk_imageio \
-    :jdk_sound
+    :jdk_sound \
+    :jdk_client_sanity
 
 ###############################################################################
 #
@@ -351,6 +352,10 @@ jdk_desktop = \
     :jdk_sound \
     :jdk_imageio
 
+# SwingSet3 tests.
+jdk_client_sanity = \
+    sanity/client/SwingSet
+    
 ###############################################################################
 #
 # Serviceability sanity groups
