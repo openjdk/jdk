@@ -103,7 +103,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(V newValue) {
-        U.putOrderedObject(this, VALUE, newValue);
+        U.putObjectRelease(this, VALUE, newValue);
     }
 
     /**

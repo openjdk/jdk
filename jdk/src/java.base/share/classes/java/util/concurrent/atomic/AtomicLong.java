@@ -124,7 +124,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(long newValue) {
-        U.putOrderedLong(this, VALUE, newValue);
+        U.putLongRelease(this, VALUE, newValue);
     }
 
     /**
