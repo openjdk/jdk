@@ -253,7 +253,7 @@ endef
 # * JRE_TOOL_MODULES
 define ReadImportMetaData
     IMPORTED_MODULES := $(call FindImportedModules)
-    $(foreach m, $(IMPORTED_MODULES), $(eval $(call ReadImportMetaData, $m)))
+    $(foreach m, $(IMPORTED_MODULES), $(eval $(call ReadSingleImportMetaData, $m)))
 endef
 
 ################################################################################
