@@ -526,7 +526,7 @@ class Arguments : AllStatic {
   // Return NULL if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
   static bool lookup_logging_aliases(const char* arg, char* buffer);
-  static AliasedLoggingFlag catch_logging_aliases(const char* name);
+  static AliasedLoggingFlag catch_logging_aliases(const char* name, bool on);
   static short  CompileOnlyClassesNum;
   static short  CompileOnlyClassesMax;
   static char** CompileOnlyClasses;
