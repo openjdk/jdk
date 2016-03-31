@@ -52,6 +52,25 @@
 
 hotspot_all = \
   /
+  
+hotspot_compiler = \
+  compiler
+  
+hotspot_gc = \
+  gc
+
+hotspot_runtime = \
+  runtime
+  
+hotspot_serviceability = \
+  serviceability
+  
+hotspot_misc = \
+  / \
+ -:hotspot_compiler \
+ -:hotspot_gc \
+ -:hotspot_runtime \
+ -:hotspot_serviceability
 
 # Full JDK can run all tests
 #
@@ -253,7 +272,7 @@ needs_g1gc = \
 hotspot_native_sanity = \
   native_sanity
 
-hotspot_compiler_1 = \
+hotspot_fast_compiler_1 = \
   compiler/arraycopy/ \
   compiler/c1/ \
   compiler/c2/ \
@@ -268,7 +287,7 @@ hotspot_compiler_1 = \
   -compiler/c2/7070134 \
   -compiler/c2/8004867
   
-hotspot_compiler_2 = \
+hotspot_fast_compiler_2 = \
   compiler/classUnloading/ \
   compiler/codecache/ \
   compiler/codegen/ \
@@ -286,7 +305,7 @@ hotspot_compiler_2 = \
   -compiler/codegen/7184394 \
   -compiler/codecache/stress
   
-hotspot_compiler_3 = \
+hotspot_fast_compiler_3 = \
   compiler/intrinsics/ \
   compiler/jsr292/ \
   compiler/loopopts/ \
@@ -307,13 +326,13 @@ hotspot_compiler_3 = \
   -compiler/loopopts/7052494 \
   -compiler/runtime/6826736
 
-hotspot_compiler_closed = \
+hotspot_fast_compiler_closed = \
   sanity/ExecuteInternalVMTests.java
 
-hotspot_gc_1 = \
+hotspot_fast_gc_1 = \
   gc/g1/
 
-hotspot_gc_2 = \
+hotspot_fast_gc_2 = \
   sanity/ExecuteInternalVMTests.java \
   gc/ \
   -gc/g1/ \
@@ -321,13 +340,13 @@ hotspot_gc_2 = \
   -gc/cms/TestMBeanCMS.java \
   -gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java
 
-hotspot_gc_closed = \
+hotspot_fast_gc_closed = \
   sanity/ExecuteInternalVMTests.java
 
-hotspot_gc_gcold = \
+hotspot_fast_gc_gcold = \
   stress/gc/TestGCOld.java
 
-hotspot_runtime = \
+hotspot_fast_runtime = \
   runtime/ \
  -runtime/ErrorHandling/ErrorHandler.java \
  -runtime/RedefineObject/TestRedefineObject.java \
@@ -356,22 +375,21 @@ hotspot_runtime = \
   sanity/ \
   testlibrary_tests/TestMutuallyExclusivePlatformPredicates.java
 
-hotspot_serviceability = \
+hotspot_fast_serviceability = \
   sanity/ExecuteInternalVMTests.java \
   serviceability/dcmd/compiler \
   serviceability/logging
 
 hotspot_jprt = \
-  :hotspot_compiler_1 \
-  :hotspot_compiler_2 \
-  :hotspot_compiler_3 \
-  :hotspot_compiler_closed \
-  :hotspot_gc_1 \
-  :hotspot_gc_2 \
-  :hotspot_gc_closed \
-  :hotspot_gc_gcold \
-  :hotspot_runtime \
-  :hotspot_serviceability
+  :hotspot_fast_compiler_1 \
+  :hotspot_fast_compiler_2 \
+  :hotspot_fast_compiler_3 \
+  :hotspot_fast_compiler_closed \
+  :hotspot_fast_gc \
+  :hotspot_fast_gc_closed \
+  :hotspot_fast_gc_gcold \
+  :hotspot_fast_runtime \
+  :hotspot_fast_serviceability
 
 #All tests that depends on nashorn extension.
 #
