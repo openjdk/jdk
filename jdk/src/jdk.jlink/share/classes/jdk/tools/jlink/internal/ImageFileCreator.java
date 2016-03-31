@@ -46,6 +46,7 @@ import jdk.tools.jlink.internal.Archive.Entry;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.PoolImpl.CompressedModuleData;
 import jdk.tools.jlink.plugin.ExecutableImage;
+import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.Pool;
 import jdk.tools.jlink.plugin.Pool.ModuleData;
 import jdk.tools.jlink.plugin.Pool.ModuleDataType;
@@ -183,6 +184,8 @@ public final class ImageFileCreator {
         PoolImpl resultResources;
         try {
             resultResources = pluginSupport.visitResources(allContent);
+        } catch (PluginException pe) {
+            throw pe;
         } catch (Exception ex) {
             throw new IOException(ex);
         }
