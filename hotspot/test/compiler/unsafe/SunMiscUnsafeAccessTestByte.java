@@ -159,6 +159,7 @@ public class SunMiscUnsafeAccessTestByte {
 
 
 
+
     }
 
     static void testAccess(long address) {
@@ -170,3 +171,4 @@ public class SunMiscUnsafeAccessTestByte {
         }
     }
 }
+

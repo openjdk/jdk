@@ -30,9 +30,9 @@
  * @build compiler.compilercontrol.commandfile.PrintTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm compiler.compilercontrol.commandfile.PrintTest
+ * @run driver compiler.compilercontrol.commandfile.PrintTest
  */
 
 package compiler.compilercontrol.commandfile;

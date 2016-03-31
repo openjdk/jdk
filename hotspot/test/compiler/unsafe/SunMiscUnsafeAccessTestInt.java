@@ -164,6 +164,7 @@ public class SunMiscUnsafeAccessTestInt {
         }
 
 
+
         UNSAFE.putInt(base, offset, 1);
 
         // Compare
@@ -180,6 +181,7 @@ public class SunMiscUnsafeAccessTestInt {
             int x = UNSAFE.getInt(base, offset);
             assertEquals(x, 2, "failing compareAndSwap int value");
         }
+
 
         // Compare set and get
         {
@@ -209,3 +211,4 @@ public class SunMiscUnsafeAccessTestInt {
         }
     }
 }
+

@@ -46,6 +46,7 @@
  *                         -XX:+FoldStableValues
  *                         -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
  *                         -XX:CompileCommand=dontinline,*.test*
+ *                         -XX:CompileCommand=inline,*Unsafe.get*
  *                         -XX:-UseUnalignedAccesses
  *                         compiler.unsafe.UnsafeGetConstantField
  */

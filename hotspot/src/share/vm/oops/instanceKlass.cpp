@@ -2614,8 +2614,8 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
   }
 }
 
-
-void InstanceKlass::remove_osr_nmethod(nmethod* n) {
+// Remove osr nmethod from the list. Return true if found and removed.
+bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
   MutexLockerEx ml(OsrList_lock, Mutex::_no_safepoint_check_flag);
   assert(n->is_osr_method(), "wrong kind of nmethod");
@@ -2624,6 +2624,7 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
   int max_level = CompLevel_none;  // Find the max comp level excluding n
   Method* m = n->method();
   // Search for match
+  bool found = false;
   while(cur != NULL && cur != n) {
     if (TieredCompilation && m == cur->method()) {
       // Find max level before n
@@ -2634,6 +2635,7 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
   }
   nmethod* next = NULL;
   if (cur == n) {
+    found = true;
     next = cur->osr_link();
     if (last == NULL) {
       // Remove first element
@@ -2654,6 +2656,7 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
     }
     m->set_highest_osr_comp_level(max_level);
   }
+  return found;
 }
 
 int InstanceKlass::mark_osr_nmethods(const Method* m) {
