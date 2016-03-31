@@ -317,7 +317,7 @@ public:
 
   void init();
 
-  virtual void note_gc_start(uint num_active_workers);
+  virtual void note_gc_start();
 
   // Create jstat counters for the policy.
   virtual void initialize_gc_policy_counters();

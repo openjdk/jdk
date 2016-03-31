@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
     _active_workers = MAX2(1U, _active_workers);
     assert(UseDynamicNumberOfGCThreads || _active_workers == _total_workers,
            "Unless dynamic should use total workers");
-    log_info(gc, task)("GC Workers: %d", _active_workers);
+    log_info(gc, task)("GC Workers: using %d out of %d", _active_workers, _total_workers);
   }
 
   // Return the Ith worker.
