@@ -28,7 +28,8 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  * @library /tools/lib
- * @build KullaTesting TestingInputStream ToolBox Compiler
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
+ * @build KullaTesting TestingInputStream Compiler
  * @run testng ClassPathTest
  */
 

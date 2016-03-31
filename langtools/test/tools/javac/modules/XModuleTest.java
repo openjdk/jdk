@@ -28,14 +28,17 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main XModuleTest
  */
 
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class XModuleTest extends ModuleTestBase {
 
@@ -51,13 +54,13 @@ public class XModuleTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-Xmodule:java.compiler")
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty())
             throw new Exception("expected output not found: " + log);
@@ -71,13 +74,13 @@ public class XModuleTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-Xmodule:java.compiler", "-sourcepath", src.toString())
                 .outdir(classes)
                 .files(src.resolve("javax/lang/model/element/Extra.java"))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty())
             throw new Exception("expected output not found: " + log);
@@ -90,12 +93,12 @@ public class XModuleTest extends ModuleTestBase {
         Path cpClasses = base.resolve("cpClasses");
         tb.createDirectories(cpClasses);
 
-        String cpLog = tb.new JavacTask()
+        String cpLog = new JavacTask(tb)
                 .outdir(cpClasses)
                 .files(findJavaFiles(cpSrc))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!cpLog.isEmpty())
             throw new Exception("expected output not found: " + cpLog);
@@ -106,13 +109,13 @@ public class XModuleTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-Xmodule:java.compiler", "-classpath", cpClasses.toString())
                 .outdir(classes)
                 .files(src.resolve("javax/lang/model/element/Extra.java"))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty())
             throw new Exception("expected output not found: " + log);
@@ -128,13 +131,13 @@ public class XModuleTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-Xmodule:java.compiler")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("Extra.java:1:1: compiler.err.module-info.with.xmodule.sourcepath",
                                               "1 error");
@@ -152,13 +155,13 @@ public class XModuleTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        String logMod = tb.new JavacTask()
+        String logMod = new JavacTask(tb)
                 .options()
                 .outdir(classes)
                 .files(findJavaFiles(srcMod))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!logMod.isEmpty())
             throw new Exception("unexpected output found: " + logMod);
@@ -168,13 +171,13 @@ public class XModuleTest extends ModuleTestBase {
                           "package javax.lang.model.element; public interface Extra { }");
         tb.createDirectories(classes);
 
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-Xmodule:java.compiler")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("Extra.java:1:1: compiler.err.module-info.with.xmodule.classpath",
                                               "1 error");
@@ -191,13 +194,13 @@ public class XModuleTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-Xmodule:java.compiler", "-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("- compiler.err.xmodule.no.module.sourcepath",
                                               "1 error");
@@ -214,13 +217,13 @@ public class XModuleTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        List<String> log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics", "-Xmodule:java.compiler", "-Xmodule:java.compiler")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("javac: option -Xmodule: can only be specified once",
                                               "Usage: javac <options> <source files>",
@@ -240,7 +243,7 @@ public class XModuleTest extends ModuleTestBase {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "package p; interface A extends pkg1.E { }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-modulepath", module.toString(),
                         "-Xmodule:m1")
                 .files(findJavaFiles(src))
@@ -255,14 +258,14 @@ public class XModuleTest extends ModuleTestBase {
         Path src2 = base.resolve("src2");
         tb.writeJavaFiles(src2, "package p; interface A extends pkg2.D { }");
 
-        List<String> log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", module.toString(),
                         "-Xmodule:m1")
                 .files(findJavaFiles(src2))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("A.java:1:36: compiler.err.doesnt.exist: pkg2",
                 "1 error");
@@ -286,7 +289,7 @@ public class XModuleTest extends ModuleTestBase {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "package p; interface A extends pkg1.D { }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-modulepath", module.toString(),
                         "-upgrademodulepath", upgrade.toString(),
                         "-Xmodule:m1")

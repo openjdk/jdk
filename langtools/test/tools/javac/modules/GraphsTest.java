@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask ModuleTestBase
  * @run main GraphsTest
  */
 
@@ -39,6 +38,11 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class GraphsTest extends ModuleTestBase {
 
@@ -77,7 +81,7 @@ public class GraphsTest extends ModuleTestBase {
 
         Path jarModules = Files.createDirectories(base.resolve("jarModules"));
         Path jar = jarModules.resolve("J.jar");
-        tb.new JarTask(jar)
+        new JarTask(tb, jar)
                 .baseDir(base.resolve("jar/J"))
                 .files(".")
                 .run()
@@ -109,7 +113,7 @@ public class GraphsTest extends ModuleTestBase {
                 .classes("package p; public class Positive { openO.O o; openN.N n; openL.L l; }")
                 .write(base.resolve("positiveSrc"));
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-mp", modules + File.pathSeparator + jarModules)
                 .outdir(Files.createDirectories(base.resolve("positive")))
                 .files(findJavaFiles(positiveSrc))
@@ -118,13 +122,13 @@ public class GraphsTest extends ModuleTestBase {
         //negative case
         Path negativeSrc = m.classes("package p; public class Negative { closedO.O o; closedN.N n; closedL.L l; }")
                 .write(base.resolve("negativeSrc"));
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-mp", modules + File.pathSeparator + jarModules)
                 .outdir(Files.createDirectories(base.resolve("negative")))
                 .files(findJavaFiles(negativeSrc))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
                 "Negative.java:1:43: compiler.err.doesnt.exist: closedO",
@@ -135,16 +139,16 @@ public class GraphsTest extends ModuleTestBase {
         }
         //multi module mode
         m.write(modules);
-        List<String> out = tb.new JavacTask()
+        List<String> out = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", modules + "/*/src",
                         "-mp", jarModules.toString()
                 )
                 .outdir(Files.createDirectories(base.resolve("negative")))
                 .files(findJavaFiles(modules))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
         expected = Arrays.asList(
                 "Negative.java:1:43: compiler.err.not.def.access.package.cant.access: closedO.O, closedO",
                 "Negative.java:1:56: compiler.err.not.def.access.package.cant.access: closedN.N, closedN",
@@ -185,14 +189,14 @@ public class GraphsTest extends ModuleTestBase {
                 .requires("M")
                 .classes("package p; public class A { A(pack.Clazz cl){} } ")
                 .write(modules);
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", modules + "/*/src")
                 .outdir(Files.createDirectories(base.resolve("negative")))
                 .files(findJavaFiles(modules))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         String expected = "A.java:1:35: compiler.err.not.def.access.package.cant.access: pack.Clazz, pack";
         if (!log.contains(expected)) {

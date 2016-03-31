@@ -29,7 +29,7 @@
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
- * @build Compiler ToolBox
+ * @build Compiler toolbox.ToolBox
  * @run testng StartOptionTest
  */
 

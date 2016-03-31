@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,16 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main NPEEmptyFileTest
  */
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class NPEEmptyFileTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -47,7 +50,7 @@ public class NPEEmptyFileTest extends ModuleTestBase {
         Files.createDirectories(modules);
         Path emptyJavaFile = base.resolve("Test.java");
         tb.writeFile(emptyJavaFile, "");
-        tb.new JavacTask(ToolBox.Mode.EXEC)
+        new JavacTask(tb, Task.Mode.EXEC)
                 .options("-modulesourcepath", modules.toString(),
                         "-d", modules.toString(), emptyJavaFile.toString())
                 .run()
