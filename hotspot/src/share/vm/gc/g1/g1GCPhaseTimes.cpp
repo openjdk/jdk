@@ -277,11 +277,11 @@ void G1GCPhaseTimes::print() {
   }
   debug_line("Choose CSet", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
   debug_line("Preserve CM Refs", _recorded_preserve_cm_referents_time_ms);
+  trace_phase(_gc_par_phases[PreserveCMReferents]);
   debug_line("Reference Processing", _cur_ref_proc_time_ms);
   debug_line("Reference Enqueuing", _cur_ref_enq_time_ms);
   debug_line("Redirty Cards", _recorded_redirty_logged_cards_time_ms);
   trace_phase(_gc_par_phases[RedirtyCards]);
-  trace_phase(_gc_par_phases[PreserveCMReferents]);
   if (G1EagerReclaimHumongousObjects) {
     debug_line("Humongous Register", _cur_fast_reclaim_humongous_register_time_ms);
     trace_line_sz("Humongous Total", _cur_fast_reclaim_humongous_total);
