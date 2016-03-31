@@ -51,6 +51,8 @@ public interface MethodHandleAccessProvider {
     /**
      * Returns the method handle method intrinsic identifier for the provided method, or
      * {@code null} if the method is not an intrinsic processed by this interface.
+     *
+     * @throws NullPointerException if {@code method} is null
      */
     IntrinsicMethod lookupMethodHandleIntrinsic(ResolvedJavaMethod method);
 
