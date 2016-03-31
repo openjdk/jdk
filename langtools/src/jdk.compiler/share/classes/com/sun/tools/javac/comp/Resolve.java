@@ -2492,13 +2492,19 @@ public class Resolve {
         Type mtype = infer.instantiatePolymorphicSignatureInstance(env,
                 (MethodSymbol)spMethod, currentResolutionContext, argtypes);
         for (Symbol sym : polymorphicSignatureScope.getSymbolsByName(spMethod.name)) {
-            if (types.isSameType(mtype, sym.type)) {
-               return sym;
+            // Check that there is already a method symbol for the method
+            // type and owner
+            if (types.isSameType(mtype, sym.type) &&
+                spMethod.owner == sym.owner) {
+                return sym;
             }
         }
 
-        // create the desired method
-        long flags = ABSTRACT | HYPOTHETICAL | spMethod.flags() & Flags.AccessFlags;
+        // Create the desired method
+        // Retain static modifier is to support invocations to
+        // MethodHandle.linkTo* methods
+        long flags = ABSTRACT | HYPOTHETICAL |
+                     spMethod.flags() & (Flags.AccessFlags | Flags.STATIC);
         Symbol msym = new MethodSymbol(flags, spMethod.name, mtype, spMethod.owner) {
             @Override
             public Symbol baseSymbol() {
