@@ -158,7 +158,9 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
                 out.add(data);
                 speciesTypes.forEach(types -> generateConcreteClass(types, data, out));
             } else {
-                out.add(data);
+                if (!out.contains(data)) {
+                    out.add(data);
+                }
             }
         }
     }
@@ -177,7 +179,9 @@ public final class GenerateJLIClassesPlugin implements TransformerPlugin {
                     "/java.base/" + className + ".class",
                     Pool.ModuleDataType.CLASS_OR_RESOURCE,
                     new ByteArrayInputStream(bytes), bytes.length);
-            out.add(ndata);
+            if (!out.contains(ndata)) {
+                out.add(ndata);
+            }
         } catch (Exception ex) {
             throw new PluginException(ex);
         }
