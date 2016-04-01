@@ -234,9 +234,6 @@ private:
   void run_task(WorkData work);
   void signal_task_done();
 
-  void print_task_started(WorkData data);
-  void print_task_done(WorkData data);
-
   WorkGang* gang() const { return (WorkGang*)_gang; }
 };
 
