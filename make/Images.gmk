@@ -41,8 +41,7 @@ $(eval $(call IncludeCustomExtension, , Images-pre.gmk))
 # All modules for the current target platform.
 ALL_MODULES := $(call FindAllModules)
 
-IMPORTED_MODULES := $(call FindImportedModules)
-$(foreach m, $(IMPORTED_MODULES), $(eval $(call ReadSingleImportMetaData, $m)))
+$(eval $(call ReadImportMetaData))
 
 JRE_MODULES += $(filter-out $(MODULES_FILTER), $(BOOT_MODULES) $(PLATFORM_MODULES) $(JRE_TOOL_MODULES))
 JDK_MODULES += $(filter-out $(MODULES_FILTER), $(ALL_MODULES))
