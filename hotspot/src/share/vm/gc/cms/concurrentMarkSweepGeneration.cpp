@@ -626,6 +626,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
 
   NOT_PRODUCT(_overflow_counter = CMSMarkStackOverflowInterval;)
   _gc_counters = new CollectorCounters("CMS", 1);
+  _cgc_counters = new CollectorCounters("CMS stop-the-world phases", 2);
   _completed_initialization = true;
   _inter_sweep_timer.start();  // start of time
 }
@@ -5546,18 +5547,18 @@ void CMSCollector::reset_stw() {
 
 void CMSCollector::do_CMS_operation(CMS_op_type op, GCCause::Cause gc_cause) {
   GCTraceCPUTime tcpu;
-  TraceCollectorStats tcs(counters());
+  TraceCollectorStats tcs(cgc_counters());
 
   switch (op) {
     case CMS_op_checkpointRootsInitial: {
       GCTraceTime(Info, gc) t("Pause Initial Mark", NULL, GCCause::_no_gc, true);
-      SvcGCMarker sgcm(SvcGCMarker::OTHER);
+      SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
       checkpointRootsInitial();
       break;
     }
     case CMS_op_checkpointRootsFinal: {
       GCTraceTime(Info, gc) t("Pause Remark", NULL, GCCause::_no_gc, true);
-      SvcGCMarker sgcm(SvcGCMarker::OTHER);
+      SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
       checkpointRootsFinal();
       break;
     }

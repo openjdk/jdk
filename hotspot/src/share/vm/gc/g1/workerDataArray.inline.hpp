@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ void WorkerDataArray<T>::set(uint worker_i, T value) {
 template <typename T>
 T WorkerDataArray<T>::get(uint worker_i) const {
   assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
-  assert(_data[worker_i] != uninitialized(), "No data added for worker %d", worker_i);
   return _data[worker_i];
 }
 
@@ -78,22 +77,28 @@ void WorkerDataArray<T>::add(uint worker_i, T value) {
 }
 
 template <typename T>
-double WorkerDataArray<T>::average(uint active_threads) const {
-  return sum(active_threads) / (double) active_threads;
+double WorkerDataArray<T>::average() const {
+  uint contributing_threads = 0;
+  for (uint i = 0; i < _length; ++i) {
+    if (get(i) != uninitialized()) {
+      contributing_threads++;
+    }
+  }
+  if (contributing_threads == 0) {
+    return 0.0;
+  }
+  return sum() / (double) contributing_threads;
 }
 
 template <typename T>
-T WorkerDataArray<T>::sum(uint active_threads) const {
-  T s = get(0);
-  for (uint i = 1; i < active_threads; ++i) {
-    s += get(i);
+T WorkerDataArray<T>::sum() const {
+  T s = 0;
+  for (uint i = 0; i < _length; ++i) {
+    if (get(i) != uninitialized()) {
+      s += get(i);
+    }
   }
   return s;
-}
-
-template <typename T>
-void WorkerDataArray<T>::clear() {
-  set_all(0);
 }
 
 template <typename T>
@@ -104,27 +109,42 @@ void WorkerDataArray<T>::set_all(T value) {
 }
 
 template <class T>
-void WorkerDataArray<T>::print_summary_on(outputStream* out, uint active_threads, bool print_sum) const {
-  T max = get(0);
-  T min = max;
-  T sum = 0;
-  for (uint i = 1; i < active_threads; ++i) {
-    T value = get(i);
-    max = MAX2(max, value);
-    min = MIN2(min, value);
-    sum += value;
+void WorkerDataArray<T>::print_summary_on(outputStream* out, bool print_sum) const {
+  out->print("%-25s", title());
+  uint start = 0;
+  while (start < _length && get(start) == uninitialized()) {
+    start++;
   }
-  T diff = max - min;
-  double avg = sum / (double) active_threads;
-  WDAPrinter::summary(out, title(), min, avg, max, diff, sum, print_sum);
+  if (start < _length) {
+    T min = get(start);
+    T max = min;
+    T sum = 0;
+    uint contributing_threads = 0;
+    for (uint i = start; i < _length; ++i) {
+      T value = get(i);
+      if (value != uninitialized()) {
+        max = MAX2(max, value);
+        min = MIN2(min, value);
+        sum += value;
+        contributing_threads++;
+      }
+    }
+    T diff = max - min;
+    assert(contributing_threads != 0, "Must be since we found a used value for the start index");
+    double avg = sum / (double) contributing_threads;
+    WDAPrinter::summary(out, min, avg, max, diff, sum, print_sum);
+    out->print_cr(", Workers: %d", contributing_threads);
+  } else {
+    // No data for this phase.
+    out->print_cr(" skipped");
+  }
 }
 
 template <class T>
-void WorkerDataArray<T>::print_details_on(outputStream* out, uint active_threads) const {
-  WDAPrinter::details(this, out, active_threads);
+void WorkerDataArray<T>::print_details_on(outputStream* out) const {
+  WDAPrinter::details(this, out);
 }
 
-#ifndef PRODUCT
 template <typename T>
 void WorkerDataArray<T>::reset() {
   set_all(uninitialized());
@@ -132,28 +152,5 @@ void WorkerDataArray<T>::reset() {
     _thread_work_items->reset();
   }
 }
-
-template <typename T>
-void WorkerDataArray<T>::verify(uint active_threads) const {
-  assert(active_threads <= _length, "Wrong number of active threads");
-  for (uint i = 0; i < active_threads; i++) {
-    assert(_data[i] != uninitialized(),
-           "Invalid data for worker %u in '%s'", i, _title);
-  }
-  if (_thread_work_items != NULL) {
-    _thread_work_items->verify(active_threads);
-  }
-}
-
-template <>
-inline size_t WorkerDataArray<size_t>::uninitialized() const {
-  return (size_t)-1;
-}
-
-template <>
-inline double WorkerDataArray<double>::uninitialized() const {
-  return -1.0;
-}
-#endif
 
 #endif // SHARE_VM_GC_G1_WORKERDATAARRAY_INLINE_HPP

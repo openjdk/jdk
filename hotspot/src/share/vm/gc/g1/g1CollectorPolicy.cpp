@@ -186,8 +186,8 @@ void G1CollectorPolicy::init() {
   _collection_set->start_incremental_building();
 }
 
-void G1CollectorPolicy::note_gc_start(uint num_active_workers) {
-  phase_times()->note_gc_start(num_active_workers);
+void G1CollectorPolicy::note_gc_start() {
+  phase_times()->note_gc_start();
 }
 
 // Create the jstat counters for the policy.
