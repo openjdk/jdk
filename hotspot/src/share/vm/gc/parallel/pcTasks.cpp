@@ -232,35 +232,15 @@ void StealRegionCompactionTask::do_it(GCTaskManager* manager, uint which) {
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
 
-
-  // If not all threads are active, get a draining stack
-  // from the list.  Else, just use this threads draining stack.
-  uint which_stack_index;
-  bool use_all_workers = manager->all_workers_active();
-  if (use_all_workers) {
-    which_stack_index = which;
-    assert(manager->active_workers() == ParallelGCThreads,
-           "all_workers_active has been incorrectly set: "
-           " active %d  ParallelGCThreads %u", manager->active_workers(),
-           ParallelGCThreads);
-  } else {
-    which_stack_index = ParCompactionManager::pop_recycled_stack_index();
-  }
-
-  cm->set_region_stack_index(which_stack_index);
-  cm->set_region_stack(ParCompactionManager::region_list(which_stack_index));
-
-  // Has to drain stacks first because there may be regions on
-  // preloaded onto the stack and this thread may never have
-  // done a draining task.  Are the draining tasks needed?
+  // Drain the stacks that have been preloaded with regions
+  // that are ready to fill.
 
   cm->drain_region_stacks();
 
+  guarantee(cm->region_stack()->is_empty(), "Not empty");
+
   size_t region_index = 0;
   int random_seed = 17;
-
-  // If we're the termination task, try 10 rounds of stealing before
-  // setting the termination flag
 
   while(true) {
     if (ParCompactionManager::steal(which, &random_seed, region_index)) {
@@ -292,43 +272,4 @@ void UpdateDensePrefixTask::do_it(GCTaskManager* manager, uint which) {
                                                          _space_id,
                                                          _region_index_start,
                                                          _region_index_end);
-}
-
-void DrainStacksCompactionTask::do_it(GCTaskManager* manager, uint which) {
-  assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
-
-  ParCompactionManager* cm =
-    ParCompactionManager::gc_thread_compaction_manager(which);
-
-  uint which_stack_index;
-  bool use_all_workers = manager->all_workers_active();
-  if (use_all_workers) {
-    which_stack_index = which;
-    assert(manager->active_workers() == ParallelGCThreads,
-           "all_workers_active has been incorrectly set: "
-           " active %d  ParallelGCThreads %u", manager->active_workers(),
-           ParallelGCThreads);
-  } else {
-    which_stack_index = stack_index();
-  }
-
-  cm->set_region_stack(ParCompactionManager::region_list(which_stack_index));
-
-  cm->set_region_stack_index(which_stack_index);
-
-  // Process any regions already in the compaction managers stacks.
-  cm->drain_region_stacks();
-
-  assert(cm->region_stack()->is_empty(), "Not empty");
-
-  if (!use_all_workers) {
-    // Always give up the region stack.
-    assert(cm->region_stack() ==
-           ParCompactionManager::region_list(cm->region_stack_index()),
-           "region_stack and region_stack_index are inconsistent");
-    ParCompactionManager::push_recycled_stack_index(cm->region_stack_index());
-
-    cm->set_region_stack(NULL);
-    cm->set_region_stack_index((uint)max_uintx);
-  }
 }
