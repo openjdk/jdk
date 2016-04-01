@@ -2402,9 +2402,6 @@ public:
   manageable(bool, PrintClassHistogram, false,                              \
           "Print a histogram of class instances")                           \
                                                                             \
-  develop(bool, TraceWorkGang, false,                                       \
-          "Trace activities of work gangs")                                 \
-                                                                            \
   develop(bool, TraceGCTaskManager, false,                                  \
           "Trace actions of the GC task manager")                           \
                                                                             \
