@@ -34,6 +34,7 @@
 #define LOG_TAG_LIST \
   LOG_TAG(alloc) \
   LOG_TAG(age) \
+  LOG_TAG(arguments) \
   LOG_TAG(barrier) \
   LOG_TAG(biasedlocking) \
   LOG_TAG(bot) \
