@@ -153,7 +153,6 @@ void universe_post_module_init();  // must happen after call_initPhase2
 // Current thread is maintained as a thread-local variable
 THREAD_LOCAL_DECL Thread* Thread::_thr_current = NULL;
 #endif
-
 // Class hierarchy
 // - Thread
 //   - VMThread
@@ -2888,7 +2887,9 @@ void JavaThread::print_thread_state() const {
 
 // Called by Threads::print() for VM_PrintThreads operation
 void JavaThread::print_on(outputStream *st) const {
-  st->print("\"%s\" ", get_thread_name());
+  st->print_raw("\"");
+  st->print_raw(get_thread_name());
+  st->print_raw("\" ");
   oop thread_oop = threadObj();
   if (thread_oop != NULL) {
     st->print("#" INT64_FORMAT " ", java_lang_Thread::thread_id(thread_oop));
