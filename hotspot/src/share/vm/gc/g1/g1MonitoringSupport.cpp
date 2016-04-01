@@ -76,7 +76,6 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   _g1h(g1h),
   _incremental_collection_counters(NULL),
   _full_collection_counters(NULL),
-  _conc_collection_counters(NULL),
   _old_collection_counters(NULL),
   _old_space_counters(NULL),
   _young_collection_counters(NULL),
@@ -105,9 +104,6 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   // old generation collection.
   _full_collection_counters =
     new CollectorCounters("G1 stop-the-world full collections", 1);
-  // name "collector.2". STW phases as part of a concurrent collection.
-  _conc_collection_counters =
-    new CollectorCounters("G1 stop-the-world phases", 2);
 
   // timer sampling for all counters supporting sampling only update the
   // used value.  See the take_sample() method.  G1 requires both used and
