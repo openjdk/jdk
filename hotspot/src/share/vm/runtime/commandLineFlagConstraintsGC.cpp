@@ -382,6 +382,39 @@ Flag::Error ParGCStridesPerThreadConstraintFunc(uintx value, bool verbose) {
   return Flag::SUCCESS;
 }
 
+Flag::Error ParGCCardsPerStrideChunkConstraintFunc(intx value, bool verbose) {
+#if INCLUDE_ALL_GCS
+  if (UseConcMarkSweepGC) {
+    // ParGCCardsPerStrideChunk should be compared with card table size.
+    size_t heap_size = Universe::heap()->reserved_region().word_size();
+    CardTableModRefBS* bs = (CardTableModRefBS*)GenCollectedHeap::heap()->rem_set()->bs();
+    size_t card_table_size = bs->cards_required(heap_size) - 1; // Valid card table size
+
+    if ((size_t)value > card_table_size) {
+      CommandLineError::print(verbose,
+                              "ParGCCardsPerStrideChunk (" INTX_FORMAT ") is too large for the heap size and "
+                              "must be less than or equal to card table size (" SIZE_FORMAT ")\n",
+                              value, card_table_size);
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+
+    // ParGCCardsPerStrideChunk is used with n_strides(ParallelGCThreads*ParGCStridesPerThread)
+    // from CardTableModRefBSForCTRS::process_stride(). Note that ParGCStridesPerThread is already checked
+    // not to make an overflow with ParallelGCThreads from its constraint function.
+    uintx n_strides = ParallelGCThreads * ParGCStridesPerThread;
+    uintx ergo_max = max_uintx / n_strides;
+    if ((uintx)value > ergo_max) {
+      CommandLineError::print(verbose,
+                              "ParGCCardsPerStrideChunk (" INTX_FORMAT ") must be "
+                              "less than or equal to ergonomic maximum (" UINTX_FORMAT ")\n",
+                              value, ergo_max);
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+  }
+#endif
+  return Flag::SUCCESS;
+}
+
 Flag::Error CMSOldPLABMinConstraintFunc(size_t value, bool verbose) {
   Flag::Error status = Flag::SUCCESS;
 
