@@ -241,7 +241,7 @@ class SystemDictionary : AllStatic {
 
     Opt,                        // preload tried; NULL if not present
 #if INCLUDE_JVMCI
-    Jvmci,                      // preload tried; error if not present, use only with JVMCI
+    Jvmci,                      // preload tried; error if not present if JVMCI enabled
 #endif
     OPTION_LIMIT,
     CEIL_LG_OPTION_LIMIT = 2    // OPTION_LIMIT <= (1<<CEIL_LG_OPTION_LIMIT)

@@ -1686,6 +1686,9 @@ Node* GraphKit::load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAr
   const Type* elemtype = arytype->elem();
   BasicType elembt = elemtype->array_element_basic_type();
   Node* adr = array_element_address(ary, idx, elembt, arytype->size());
+  if (elembt == T_NARROWOOP) {
+    elembt = T_OBJECT; // To satisfy switch in LoadNode::make()
+  }
   Node* ld = make_load(ctl, adr, elemtype, elembt, arytype, MemNode::unordered);
   return ld;
 }
