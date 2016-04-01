@@ -1629,6 +1629,7 @@ public:
           "The number of cards in each chunk of the parallel chunks used "  \
           "during card table scanning")                                     \
           range(1, max_intx)                                                \
+          constraint(ParGCCardsPerStrideChunkConstraintFunc,AfterMemoryInit)\
                                                                             \
   product(uintx, OldPLABWeight, 50,                                         \
           "Percentage (0-100) used to weight the current sample when "      \

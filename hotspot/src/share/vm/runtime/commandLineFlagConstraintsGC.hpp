@@ -56,6 +56,7 @@ Flag::Error G1MaxNewSizePercentConstraintFunc(uintx value, bool verbose);
 #endif // INCLUDE_ALL_GCS
 
 Flag::Error ParGCStridesPerThreadConstraintFunc(uintx value, bool verbose);
+Flag::Error ParGCCardsPerStrideChunkConstraintFunc(intx value, bool verbose);
 Flag::Error CMSOldPLABMinConstraintFunc(size_t value, bool verbose);
 Flag::Error CMSOldPLABMaxConstraintFunc(size_t value, bool verbose);
 Flag::Error MarkStackSizeConstraintFunc(size_t value, bool verbose);
