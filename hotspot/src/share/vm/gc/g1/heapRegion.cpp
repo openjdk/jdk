@@ -34,7 +34,6 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
-#include "gc/shared/liveRange.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
