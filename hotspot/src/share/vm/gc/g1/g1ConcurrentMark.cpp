@@ -1072,8 +1072,6 @@ void G1ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     return;
   }
 
-  SvcGCMarker sgcm(SvcGCMarker::OTHER);
-
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
     g1h->prepare_for_verify();

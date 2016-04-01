@@ -994,10 +994,35 @@ const char* Arguments::handle_aliases_and_deprecation(const char* arg, bool warn
   return NULL;
 }
 
-AliasedLoggingFlag Arguments::catch_logging_aliases(const char* name){
+void log_deprecated_flag(const char* name, bool on, AliasedLoggingFlag alf) {
+  LogTagType tagSet[] = {alf.tag0, alf.tag1, alf.tag2, alf.tag3, alf.tag4, alf.tag5};
+  // Set tagset string buffer at max size of 256, large enough for any alias tagset
+  const int max_tagset_size = 256;
+  int max_tagset_len = max_tagset_size - 1;
+  char tagset_buffer[max_tagset_size];
+  tagset_buffer[0] = '\0';
+
+  // Write tag-set for aliased logging option, in string list form
+  int max_tags = sizeof(tagSet)/sizeof(tagSet[0]);
+  for (int i = 0; i < max_tags && tagSet[i] != LogTag::__NO_TAG; i++) {
+    if (i > 0) {
+      strncat(tagset_buffer, ",", max_tagset_len - strlen(tagset_buffer));
+    }
+    strncat(tagset_buffer, LogTag::name(tagSet[i]), max_tagset_len - strlen(tagset_buffer));
+  }
+
+  log_warning(arguments)("-XX:%s%s is deprecated. Will use -Xlog:%s=%s instead.",
+                         (on) ? "+" : "-",
+                         name,
+                         tagset_buffer,
+                         (on) ? LogLevel::name(alf.level) : "off");
+}
+
+AliasedLoggingFlag Arguments::catch_logging_aliases(const char* name, bool on){
   for (size_t i = 0; aliased_logging_flags[i].alias_name != NULL; i++) {
     const AliasedLoggingFlag& alf = aliased_logging_flags[i];
     if (strcmp(alf.alias_name, name) == 0) {
+      log_deprecated_flag(name, on, alf);
       return alf;
     }
   }
@@ -1016,7 +1041,7 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
   bool warn_if_deprecated = true;
 
   if (sscanf(arg, "-%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
-    AliasedLoggingFlag alf = catch_logging_aliases(name);
+    AliasedLoggingFlag alf = catch_logging_aliases(name, false);
     if (alf.alias_name != NULL){
       LogConfiguration::configure_stdout(LogLevel::Off, alf.exactMatch, alf.tag0, alf.tag1, alf.tag2, alf.tag3, alf.tag4, alf.tag5);
       return true;
@@ -1028,7 +1053,7 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
     return set_bool_flag(real_name, false, origin);
   }
   if (sscanf(arg, "+%" XSTR(BUFLEN) NAME_RANGE "%c", name, &dummy) == 1) {
-    AliasedLoggingFlag alf = catch_logging_aliases(name);
+    AliasedLoggingFlag alf = catch_logging_aliases(name, true);
     if (alf.alias_name != NULL){
       LogConfiguration::configure_stdout(alf.level, alf.exactMatch, alf.tag0, alf.tag1, alf.tag2, alf.tag3, alf.tag4, alf.tag5);
       return true;
@@ -1244,8 +1269,9 @@ bool Arguments::process_argument(const char* arg,
     else {
       const char* replacement;
       if ((replacement = removed_develop_logging_flag_name(stripped_argname)) != NULL){
-        jio_fprintf(defaultStream::error_stream(),
-                  "%s has been removed. Please use %s instead.\n", stripped_argname, replacement);
+        log_warning(arguments)("%s has been removed. Please use %s instead.",
+                               stripped_argname,
+                               replacement);
         return false;
       }
     }
