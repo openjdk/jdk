@@ -2063,7 +2063,18 @@ bool SystemDictionary::initialize_wk_klass(WKID id, int init_opt, TRAPS) {
   int  sid  = (info >> CEIL_LG_OPTION_LIMIT);
   Symbol* symbol = vmSymbols::symbol_at((vmSymbols::SID)sid);
   InstanceKlass** klassp = &_well_known_klasses[id];
-  bool must_load = (init_opt < SystemDictionary::Opt);
+
+  bool must_load;
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    // If JVMCI is enabled we require its classes to be found.
+    must_load = (init_opt < SystemDictionary::Opt) || (init_opt == SystemDictionary::Jvmci);
+  } else
+#endif
+  {
+    must_load = (init_opt < SystemDictionary::Opt);
+  }
+
   if ((*klassp) == NULL) {
     Klass* k;
     if (must_load) {
