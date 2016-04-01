@@ -114,7 +114,7 @@ Flag::Error ConcGCThreadsConstraintFunc(uint value, bool verbose) {
 
 static Flag::Error MinPLABSizeBounds(const char* name, size_t value, bool verbose) {
 #if INCLUDE_ALL_GCS
-  if ((UseConcMarkSweepGC || UseG1GC) && (value < PLAB::min_size())) {
+  if ((UseConcMarkSweepGC || UseG1GC || UseParallelGC) && (value < PLAB::min_size())) {
     CommandLineError::print(verbose,
                             "%s (" SIZE_FORMAT ") must be "
                             "greater than or equal to ergonomic PLAB minimum size (" SIZE_FORMAT ")\n",
@@ -127,7 +127,7 @@ static Flag::Error MinPLABSizeBounds(const char* name, size_t value, bool verbos
 
 static Flag::Error MaxPLABSizeBounds(const char* name, size_t value, bool verbose) {
 #if INCLUDE_ALL_GCS
-  if ((UseConcMarkSweepGC || UseG1GC) && (value > PLAB::max_size())) {
+  if ((UseConcMarkSweepGC || UseG1GC || UseParallelGC) && (value > PLAB::max_size())) {
     CommandLineError::print(verbose,
                             "%s (" SIZE_FORMAT ") must be "
                             "less than or equal to ergonomic PLAB maximum size (" SIZE_FORMAT ")\n",
