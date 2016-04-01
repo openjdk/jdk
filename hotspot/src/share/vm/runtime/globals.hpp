@@ -2411,9 +2411,6 @@ public:
   develop(bool, TraceGCTaskQueue, false,                                    \
           "Trace actions of the GC task queues")                            \
                                                                             \
-  diagnostic(bool, TraceGCTaskThread, false,                                \
-          "Trace actions of the GC task threads")                           \
-                                                                            \
   develop(bool, TraceParallelOldGCMarkingPhase, false,                      \
           "Trace marking phase in ParallelOldGC")                           \
                                                                             \

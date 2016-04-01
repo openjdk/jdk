@@ -107,10 +107,7 @@ void GCTaskThread::run() {
   this->initialize_named_thread();
   // Bind yourself to your processor.
   if (processor_id() != GCTaskManager::sentinel_worker()) {
-    if (TraceGCTaskThread) {
-      tty->print_cr("GCTaskThread::run: "
-                    "  binding to processor %u", processor_id());
-    }
+    log_trace(gc, task, thread)("GCTaskThread::run: binding to processor %u", processor_id());
     if (!os::bind_to_processor(processor_id())) {
       DEBUG_ONLY(
         log_warning(gc)("Couldn't bind GCTaskThread %u to processor %u",
