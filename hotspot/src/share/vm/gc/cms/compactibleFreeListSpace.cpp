@@ -30,7 +30,6 @@
 #include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/liveRange.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "memory/allocation.inline.hpp"
