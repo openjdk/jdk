@@ -33,7 +33,7 @@
 #include "runtime/timer.hpp"
 #include "runtime/os.hpp"
 
-static const char* Indents[5] = {"", "  ", "    ", "     ", "       "};
+static const char* Indents[5] = {"", "  ", "    ", "      ", "        "};
 
 G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _max_gc_threads(max_gc_threads)
@@ -94,11 +94,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[PreserveCMReferents] = new WorkerDataArray<double>(max_gc_threads, "Parallel Preserve CM Refs (ms):");
 }
 
-void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
-  assert(active_gc_threads > 0, "The number of threads must be > 0");
-  assert(active_gc_threads <= _max_gc_threads, "The number of active threads must be <= the max number of threads");
+void G1GCPhaseTimes::note_gc_start() {
   _gc_start_counter = os::elapsed_counter();
-  _active_gc_threads = active_gc_threads;
   _cur_expand_heap_time_ms = 0.0;
   _external_accounted_time_ms = 0.0;
 
@@ -109,30 +106,54 @@ void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
   }
 }
 
+#define ASSERT_PHASE_UNINITIALIZED(phase) \
+    assert(_gc_par_phases[phase]->get(i) == uninitialized, "Phase " #phase " reported for thread that was not started");
+
+double G1GCPhaseTimes::worker_time(GCParPhases phase, uint worker) {
+  double value = _gc_par_phases[phase]->get(worker);
+  if (value != WorkerDataArray<double>::uninitialized()) {
+    return value;
+  }
+  return 0.0;
+}
+
 void G1GCPhaseTimes::note_gc_end() {
   _gc_pause_time_ms = TimeHelper::counter_to_millis(os::elapsed_counter() - _gc_start_counter);
-  for (uint i = 0; i < _active_gc_threads; i++) {
-    double worker_time = _gc_par_phases[GCWorkerEnd]->get(i) - _gc_par_phases[GCWorkerStart]->get(i);
-    record_time_secs(GCWorkerTotal, i , worker_time);
 
-    double worker_known_time =
-        _gc_par_phases[ExtRootScan]->get(i) +
-        _gc_par_phases[SATBFiltering]->get(i) +
-        _gc_par_phases[UpdateRS]->get(i) +
-        _gc_par_phases[ScanRS]->get(i) +
-        _gc_par_phases[CodeRoots]->get(i) +
-        _gc_par_phases[ObjCopy]->get(i) +
-        _gc_par_phases[Termination]->get(i);
+  double uninitialized = WorkerDataArray<double>::uninitialized();
 
-    record_time_secs(Other, i, worker_time - worker_known_time);
-  }
+  for (uint i = 0; i < _max_gc_threads; i++) {
+    double worker_start = _gc_par_phases[GCWorkerStart]->get(i);
+    if (worker_start != uninitialized) {
+      assert(_gc_par_phases[GCWorkerEnd]->get(i) != uninitialized, "Worker started but not ended.");
+      double total_worker_time = _gc_par_phases[GCWorkerEnd]->get(i) - _gc_par_phases[GCWorkerStart]->get(i);
+      record_time_secs(GCWorkerTotal, i , total_worker_time);
 
-  for (int i = 0; i < GCParPhasesSentinel; i++) {
-    if (_gc_par_phases[i] != NULL) {
-      _gc_par_phases[i]->verify(_active_gc_threads);
+      double worker_known_time =
+          worker_time(ExtRootScan, i)
+          + worker_time(SATBFiltering, i)
+          + worker_time(UpdateRS, i)
+          + worker_time(ScanRS, i)
+          + worker_time(CodeRoots, i)
+          + worker_time(ObjCopy, i)
+          + worker_time(Termination, i);
+
+      record_time_secs(Other, i, total_worker_time - worker_known_time);
+    } else {
+      // Make sure all slots are uninitialized since this thread did not seem to have been started
+      ASSERT_PHASE_UNINITIALIZED(GCWorkerEnd);
+      ASSERT_PHASE_UNINITIALIZED(ExtRootScan);
+      ASSERT_PHASE_UNINITIALIZED(SATBFiltering);
+      ASSERT_PHASE_UNINITIALIZED(UpdateRS);
+      ASSERT_PHASE_UNINITIALIZED(ScanRS);
+      ASSERT_PHASE_UNINITIALIZED(CodeRoots);
+      ASSERT_PHASE_UNINITIALIZED(ObjCopy);
+      ASSERT_PHASE_UNINITIALIZED(Termination);
     }
   }
 }
+
+#undef ASSERT_PHASE_UNINITIALIZED
 
 // record the time a phase took in seconds
 void G1GCPhaseTimes::record_time_secs(GCParPhases phase, uint worker_i, double secs) {
@@ -150,12 +171,12 @@ void G1GCPhaseTimes::record_thread_work_item(GCParPhases phase, uint worker_i, s
 
 // return the average time for a phase in milliseconds
 double G1GCPhaseTimes::average_time_ms(GCParPhases phase) {
-  return _gc_par_phases[phase]->average(_active_gc_threads) * 1000.0;
+  return _gc_par_phases[phase]->average() * 1000.0;
 }
 
 size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase) {
   assert(_gc_par_phases[phase]->thread_work_items() != NULL, "No sub count");
-  return _gc_par_phases[phase]->thread_work_items()->sum(_active_gc_threads);
+  return _gc_par_phases[phase]->thread_work_items()->sum();
 }
 
 template <class T>
@@ -164,19 +185,19 @@ void G1GCPhaseTimes::details(T* phase, const char* indent) {
   if (log.is_level(LogLevel::Trace)) {
     outputStream* trace_out = log.trace_stream();
     trace_out->print("%s", indent);
-    phase->print_details_on(trace_out, _active_gc_threads);
+    phase->print_details_on(trace_out);
   }
 }
 
 void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent, outputStream* out, bool print_sum) {
   out->print("%s", Indents[indent]);
-  phase->print_summary_on(out, _active_gc_threads, print_sum);
+  phase->print_summary_on(out, print_sum);
   details(phase, Indents[indent]);
 
   WorkerDataArray<size_t>* work_items = phase->thread_work_items();
   if (work_items != NULL) {
     out->print("%s", Indents[indent + 1]);
-    work_items->print_summary_on(out, _active_gc_threads, true);
+    work_items->print_summary_on(out, true);
     details(work_items, Indents[indent + 1]);
   }
 }

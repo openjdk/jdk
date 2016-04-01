@@ -3972,18 +3972,22 @@ public:
   product(size_t, SharedReadWriteSize, DEFAULT_SHARED_READ_WRITE_SIZE,      \
           "Size of read-write space for metadata (in bytes)")               \
           range(MIN_SHARED_READ_WRITE_SIZE, MAX_SHARED_READ_WRITE_SIZE)     \
+          constraint(SharedReadWriteSizeConstraintFunc,AfterErgo)           \
                                                                             \
   product(size_t, SharedReadOnlySize, DEFAULT_SHARED_READ_ONLY_SIZE,        \
           "Size of read-only space for metadata (in bytes)")                \
           range(MIN_SHARED_READ_ONLY_SIZE, MAX_SHARED_READ_ONLY_SIZE)       \
+          constraint(SharedReadOnlySizeConstraintFunc,AfterErgo)            \
                                                                             \
   product(size_t, SharedMiscDataSize, DEFAULT_SHARED_MISC_DATA_SIZE,        \
           "Size of the shared miscellaneous data area (in bytes)")          \
           range(MIN_SHARED_MISC_DATA_SIZE, MAX_SHARED_MISC_DATA_SIZE)       \
+          constraint(SharedMiscDataSizeConstraintFunc,AfterErgo)            \
                                                                             \
   product(size_t, SharedMiscCodeSize, DEFAULT_SHARED_MISC_CODE_SIZE,        \
           "Size of the shared miscellaneous code area (in bytes)")          \
           range(MIN_SHARED_MISC_CODE_SIZE, MAX_SHARED_MISC_CODE_SIZE)       \
+          constraint(SharedMiscCodeSizeConstraintFunc,AfterErgo)            \
                                                                             \
   product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \

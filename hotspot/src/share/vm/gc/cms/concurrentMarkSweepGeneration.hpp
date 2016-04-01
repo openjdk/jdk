@@ -555,6 +555,7 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // Performance Counters
   CollectorCounters* _gc_counters;
+  CollectorCounters* _cgc_counters;
 
   // Initialization Errors
   bool _completed_initialization;
@@ -929,7 +930,8 @@ class CMSCollector: public CHeapObj<mtGC> {
   NOT_PRODUCT(bool is_cms_reachable(HeapWord* addr);)
 
   // Performance Counter Support
-  CollectorCounters* counters()    { return _gc_counters; }
+  CollectorCounters* counters()     { return _gc_counters; }
+  CollectorCounters* cgc_counters() { return _cgc_counters; }
 
   // Timer stuff
   void    startTimer() { assert(!_timer.is_active(), "Error"); _timer.start();   }
