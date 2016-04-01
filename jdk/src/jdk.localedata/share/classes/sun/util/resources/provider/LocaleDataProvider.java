@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,33 @@
 
 package sun.util.resources.provider;
 
-import java.lang.reflect.Module;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import sun.util.locale.provider.ResourceBundleProviderSupport;
 import sun.util.resources.LocaleData;
 
 /**
- * {@code LocaleDataProvider} in module jdk.localedata implements
- * {@code LocaleDataBundleProvider} in module java.base. This class works as a
- * service agent between {@code ResourceBundle.getBundle} callers in java.base
- * and resource bundles in jdk.localedata.
+ * Service Provider for loading locale data resource bundles in jdk.localedata
+ * except for JavaTimeSupplementary resource bundles.
  */
 public class LocaleDataProvider extends LocaleData.CommonResourceBundleProvider {
     @Override
-    protected boolean isSupportedInModule(String baseName, Locale locale) {
-        // The assumption here is that there are two modules containing
-        // resource bundles for locale support. If resource bundles are split
-        // into more modules, this method will need to be changed to determine
-        // what locales are exactly supported.
-        return !super.isSupportedInModule(baseName, locale);
+    public ResourceBundle getBundle(String baseName, Locale locale) {
+        return loadResourceBundle(toBundleName(baseName, locale));
     }
 
-    @Override
-    public ResourceBundle getBundle(String baseName, Locale locale) {
-        if (isSupportedInModule(baseName, locale)) {
-            Module module = LocaleDataProvider.class.getModule();
-            String bundleName = toBundleName(baseName, locale);
-            return ResourceBundleProviderSupport.loadResourceBundle(module, bundleName);
+    /**
+     * Utility method for loading a resource bundle in jdk.localedata.
+     */
+    static ResourceBundle loadResourceBundle(String bundleName) {
+        Class<?> c = Class.forName(LocaleDataProvider.class.getModule(), bundleName);
+        if (c != null && ResourceBundle.class.isAssignableFrom(c)) {
+            try {
+                @SuppressWarnings("unchecked")
+                ResourceBundle rb = ((Class<ResourceBundle>) c).newInstance();
+                return rb;
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new InternalError(e);
+            }
         }
         return null;
     }

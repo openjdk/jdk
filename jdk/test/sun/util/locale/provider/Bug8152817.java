@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,33 @@
  * questions.
  */
 
-package sun.util.resources.provider;
-
-import java.util.Locale;
-import java.util.ResourceBundle;
-import sun.util.resources.LocaleData;
-
-/**
- * Service Provider for loading JavaTimeSupplementary resource bundles in jdk.localedata.
+/*
+ * @test
+ * @bug 8152817
+ * @summary Make sure that resource bundles in the jdk.localedata module are
+ *          loaded under a security manager.
+ * @run main/othervm -Djava.locale.providers=COMPAT
+ *      -Djava.security.debug=access,failure,codebase=jrt:/jdk.localedata Bug8152817
  */
-public class SupplementaryLocaleDataProvider extends LocaleData.SupplementaryResourceBundleProvider {
-    @Override
-    public ResourceBundle getBundle(String baseName, Locale locale) {
-        return LocaleDataProvider.loadResourceBundle(toBundleName(baseName, locale));
+
+import java.text.DateFormatSymbols;
+import java.time.chrono.HijrahChronology;
+import java.time.format.TextStyle;
+import java.util.Calendar;
+import java.util.Locale;
+
+public class Bug8152817 {
+    public static void main(String[] args) throws Exception {
+        System.setSecurityManager(new SecurityManager());
+
+        DateFormatSymbols syms = DateFormatSymbols.getInstance(Locale.GERMAN);
+        if (!"Oktober".equals(syms.getMonths()[Calendar.OCTOBER])) {
+            throw new RuntimeException("Test failed (FormatData)");
+        }
+
+        String s = HijrahChronology.INSTANCE.getDisplayName(TextStyle.FULL, Locale.GERMAN);
+        if (!s.contains("Islamischer Kalender")) {
+            throw new RuntimeException("Test failed (JavaTimeSupplementary)");
+        }
     }
 }
