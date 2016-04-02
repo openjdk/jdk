@@ -52,11 +52,11 @@ void ThreadShadow::set_pending_exception(oop exception, const char* file, int li
 }
 
 void ThreadShadow::clear_pending_exception() {
-  if (TraceClearedExceptions) {
-    if (_pending_exception != NULL) {
-      tty->print_cr("Thread::clear_pending_exception: cleared exception:");
-      _pending_exception->print();
-    }
+  if (_pending_exception != NULL && log_is_enabled(Debug, exceptions)) {
+    ResourceMark rm;
+    outputStream* logst = LogHandle(exceptions)::debug_stream();
+    logst->print("Thread::clear_pending_exception: cleared exception:");
+    _pending_exception->print_on(logst);
   }
   _pending_exception = NULL;
   _exception_file    = NULL;
@@ -508,12 +508,13 @@ void Exceptions::log_exception(Handle exception, stringStream tempst) {
   ResourceMark rm;
   Symbol* message = java_lang_Throwable::detail_message(exception());
   if (message != NULL) {
-    log_info(exceptions)("Exception <%s: %s> (" INTPTR_FORMAT ")\n thrown in %s",
+    log_info(exceptions)("Exception <%s: %s>\n thrown in %s",
                          exception->print_value_string(),
-                         message->as_C_string(), p2i(exception()), tempst.as_string());
+                         message->as_C_string(),
+                         tempst.as_string());
   } else {
-    log_info(exceptions)("Exception <%s> (" INTPTR_FORMAT ")\n thrown in %s",
+    log_info(exceptions)("Exception <%s>\n thrown in %s",
                          exception->print_value_string(),
-                         p2i(exception()), tempst.as_string());
+                         tempst.as_string());
   }
 }

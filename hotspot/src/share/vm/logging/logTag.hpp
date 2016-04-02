@@ -24,6 +24,7 @@
 #ifndef SHARE_VM_LOGGING_LOGTAG_HPP
 #define SHARE_VM_LOGGING_LOGTAG_HPP
 
+#include "logging/logTag_ext.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -33,6 +34,7 @@
 #define LOG_TAG_LIST \
   LOG_TAG(alloc) \
   LOG_TAG(age) \
+  LOG_TAG(arguments) \
   LOG_TAG(barrier) \
   LOG_TAG(biasedlocking) \
   LOG_TAG(bot) \
@@ -45,6 +47,7 @@
   LOG_TAG(classunload) /* Trace unloading of classes */ \
   LOG_TAG(classpath) \
   LOG_TAG(compaction) \
+  LOG_TAG(constraints) \
   LOG_TAG(cpu) \
   LOG_TAG(cset) \
   LOG_TAG(defaultmethods) \
@@ -64,32 +67,41 @@
   LOG_TAG(metaspace) \
   LOG_TAG(modules) \
   LOG_TAG(monitorinflation) \
+  LOG_TAG(monitormismatch) \
   LOG_TAG(os) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(promotion) \
+  LOG_TAG(preorder) /* Trace all classes loaded in order referenced (not loaded) */ \
   LOG_TAG(protectiondomain) /* "Trace protection domain verification" */ \
   LOG_TAG(ref) \
   LOG_TAG(refine) \
   LOG_TAG(region) \
   LOG_TAG(remset) \
   LOG_TAG(safepoint) \
+  LOG_TAG(safepointcleanup) \
   LOG_TAG(scavenge) \
   LOG_TAG(scrub) \
+  LOG_TAG(stacktrace) \
   LOG_TAG(start) \
   LOG_TAG(startuptime) \
   LOG_TAG(state) \
   LOG_TAG(stats) \
   LOG_TAG(stringdedup) \
+  LOG_TAG(stringtable) \
   LOG_TAG(survivor) \
   LOG_TAG(sweep) \
   LOG_TAG(task) \
+  DEBUG_ONLY(LOG_TAG(test)) \
   LOG_TAG(thread) \
   LOG_TAG(tlab) \
   LOG_TAG(time) \
+  LOG_TAG(verboseverification) \
   LOG_TAG(verify) \
   LOG_TAG(vmoperation) \
-  LOG_TAG(vtables)
+  LOG_TAG(vtables) \
+  LOG_TAG(workgang) \
+  LOG_TAG_LIST_EXT
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)
 

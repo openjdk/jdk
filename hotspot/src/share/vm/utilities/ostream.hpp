@@ -29,7 +29,6 @@
 #include "runtime/timer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class GCId;
 DEBUG_ONLY(class ResourceMark;)
 
 // Output streams for printing

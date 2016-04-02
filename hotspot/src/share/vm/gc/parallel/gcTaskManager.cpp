@@ -30,6 +30,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"
@@ -404,12 +405,15 @@ void GCTaskManager::initialize() {
     for (uint t = 0; t < workers(); t += 1) {
       set_thread(t, GCTaskThread::create(this, t, processor_assignment[t]));
     }
-    if (TraceGCTaskThread) {
-      tty->print("GCTaskManager::initialize: distribution:");
+    LogHandle(gc, task, thread) log;
+    if (log.is_trace()) {
+      ResourceMark rm;
+      outputStream* out = log.trace_stream();
+      out->print("GCTaskManager::initialize: distribution:");
       for (uint t = 0; t < workers(); t += 1) {
-        tty->print("  %u", processor_assignment[t]);
+        out->print("  %u", processor_assignment[t]);
       }
-      tty->cr();
+      out->cr();
     }
     FREE_C_HEAP_ARRAY(uint, processor_assignment);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ void G1MonitoringSupport::recalculate_sizes() {
   // of a GC).
 
   uint young_list_length = g1->young_list()->length();
-  uint survivor_list_length = g1->g1_policy()->recorded_survivor_regions();
+  uint survivor_list_length = g1->young_list()->survivor_length();
   assert(young_list_length >= survivor_list_length, "invariant");
   uint eden_list_length = young_list_length - survivor_list_length;
   // Max length includes any potential extensions to the young gen

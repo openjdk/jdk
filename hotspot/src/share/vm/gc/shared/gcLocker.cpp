@@ -51,10 +51,10 @@ void GCLocker::verify_critical_count() {
       }
     }
     if (_jni_lock_count != count) {
-      tty->print_cr("critical counts don't match: %d != %d", _jni_lock_count, count);
+      log_error(gc, verify)("critical counts don't match: %d != %d", _jni_lock_count, count);
       for (JavaThread* thr = Threads::first(); thr; thr = thr->next()) {
         if (thr->in_critical()) {
-          tty->print_cr(INTPTR_FORMAT " in_critical %d", p2i(thr), thr->in_critical());
+          log_error(gc, verify)(INTPTR_FORMAT " in_critical %d", p2i(thr), thr->in_critical());
         }
       }
     }

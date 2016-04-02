@@ -97,15 +97,6 @@ public class TestOptionsWithRanges {
         excludeTestRange("ThreadStackSize");
 
         /*
-         * JDK-8143958
-         * Temporarily exclude testing of max range for Shared* flags
-         */
-        excludeTestMaxRange("SharedReadWriteSize");
-        excludeTestMaxRange("SharedReadOnlySize");
-        excludeTestMaxRange("SharedMiscDataSize");
-        excludeTestMaxRange("SharedMiscCodeSize");
-
-        /*
          * Remove the flag controlling the size of the stack because the
          * flag has direct influence on the physical memory usage of
          * the VM.

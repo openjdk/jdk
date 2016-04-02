@@ -1931,11 +1931,6 @@ CompactibleFreeListSpace::refillLinearAllocBlockIfNeeded(LinearAllocBlock* blk) 
   if (blk->_ptr == NULL) {
     refillLinearAllocBlock(blk);
   }
-  if (PrintMiscellaneous && Verbose) {
-    if (blk->_word_size == 0) {
-      warning("CompactibleFreeListSpace(prologue):: Linear allocation failure");
-    }
-  }
 }
 
 void
@@ -2541,7 +2536,7 @@ void CompactibleFreeListSpaceLAB::compute_desired_plab_size() {
         _blocks_to_claim[i].sample(
           MAX2(CMSOldPLABMin,
           MIN2(CMSOldPLABMax,
-               _global_num_blocks[i]/(_global_num_workers[i]*CMSOldPLABNumRefills))));
+               _global_num_blocks[i]/_global_num_workers[i]/CMSOldPLABNumRefills)));
       }
       // Reset counters for next round
       _global_num_workers[i] = 0;
