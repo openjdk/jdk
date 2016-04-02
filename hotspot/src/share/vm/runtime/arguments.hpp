@@ -265,7 +265,12 @@ typedef struct {
   const char* alias_name;
   LogLevelType level;
   bool exactMatch;
-  LogTagType tag;
+  LogTagType tag0;
+  LogTagType tag1;
+  LogTagType tag2;
+  LogTagType tag3;
+  LogTagType tag4;
+  LogTagType tag5;
 } AliasedLoggingFlag;
 
 class Arguments : AllStatic {
@@ -503,6 +508,10 @@ class Arguments : AllStatic {
   // the version number when the flag became obsolete.
   static bool is_obsolete_flag(const char* flag_name, JDK_Version* version);
 
+#ifndef PRODUCT
+  static const char* removed_develop_logging_flag_name(const char* name);
+#endif // PRODUCT
+
   // Returns 1 if the flag is deprecated (and not yet obsolete or expired).
   //     In this case the 'version' buffer is filled in with the version number when
   //     the flag became deprecated.
@@ -517,7 +526,7 @@ class Arguments : AllStatic {
   // Return NULL if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg, bool warn);
   static bool lookup_logging_aliases(const char* arg, char* buffer);
-  static AliasedLoggingFlag catch_logging_aliases(const char* name);
+  static AliasedLoggingFlag catch_logging_aliases(const char* name, bool on);
   static short  CompileOnlyClassesNum;
   static short  CompileOnlyClassesMax;
   static char** CompileOnlyClasses;
@@ -558,7 +567,7 @@ class Arguments : AllStatic {
   static jint adjust_after_os();
 
   static void set_gc_specific_flags();
-  static inline bool gc_selected(); // whether a gc has been selected
+  static bool gc_selected(); // whether a gc has been selected
   static void select_gc_ergonomically();
 #if INCLUDE_JVMCI
   // Check consistency of jvmci vm argument settings.
@@ -722,10 +731,6 @@ class Arguments : AllStatic {
 
   static void check_unsupported_dumping_properties() NOT_CDS_RETURN;
 };
-
-bool Arguments::gc_selected() {
-  return UseConcMarkSweepGC || UseG1GC || UseParallelGC || UseParallelOldGC || UseSerialGC;
-}
 
 // Disable options not supported in this release, with a warning if they
 // were explicitly requested on the command-line

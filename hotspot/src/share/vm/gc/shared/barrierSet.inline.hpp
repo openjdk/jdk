@@ -78,10 +78,6 @@ void BarrierSet::write_ref_array(HeapWord* start, size_t count) {
   // If compressed oops were not being used, these should already be aligned
   assert(UseCompressedOops || (aligned_start == start && aligned_end == end),
          "Expected heap word alignment of start and end");
-#if 0
-  warning("Post:\t" INTPTR_FORMAT "[" SIZE_FORMAT "] : [" INTPTR_FORMAT "," INTPTR_FORMAT ")\t",
-                   start,            count,              aligned_start,   aligned_end);
-#endif
   write_ref_array_work(MemRegion(aligned_start, aligned_end));
 }
 

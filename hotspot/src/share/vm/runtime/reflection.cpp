@@ -76,9 +76,9 @@ static void trace_class_resolution(const Klass* to_class) {
     const char * to = to_class->external_name();
     // print in a single call to reduce interleaving between threads
     if (source_file != NULL) {
-      log_info(classresolve)("%s %s %s:%d (reflection)", from, to, source_file, line_number);
+      log_debug(classresolve)("%s %s %s:%d (reflection)", from, to, source_file, line_number);
     } else {
-      log_info(classresolve)("%s %s (reflection)", from, to);
+      log_debug(classresolve)("%s %s (reflection)", from, to);
     }
   }
 }
@@ -769,7 +769,7 @@ static oop get_mirror_from_signature(methodHandle method,
                                                        Handle(THREAD, protection_domain),
                                                        true,
                                                        CHECK_NULL);
-    if (log_is_enabled(Info, classresolve)) {
+    if (log_is_enabled(Debug, classresolve)) {
       trace_class_resolution(k);
     }
     return k->java_mirror();
@@ -824,7 +824,7 @@ static Handle new_type(Symbol* signature, KlassHandle k, TRAPS) {
                                       Handle(THREAD, k->protection_domain()),
                                       true, CHECK_(Handle()));
 
-  if (log_is_enabled(Info, classresolve)) {
+  if (log_is_enabled(Debug, classresolve)) {
     trace_class_resolution(result);
   }
 

@@ -295,7 +295,8 @@ HeapWord* GenCollectedHeap::mem_allocate(size_t size,
 }
 
 bool GenCollectedHeap::must_clear_all_soft_refs() {
-  return _gc_cause == GCCause::_last_ditch_collection;
+  return _gc_cause == GCCause::_metadata_GC_clear_soft_refs ||
+         _gc_cause == GCCause::_wb_full_gc;
 }
 
 bool GenCollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
@@ -315,7 +316,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
                                           bool is_tlab, bool run_verification, bool clear_soft_refs,
                                           bool restore_marks_for_biased_locking) {
   FormatBuffer<> title("Collect gen: %s", gen->short_name());
-  GCTraceTime(Debug, gc) t1(title);
+  GCTraceTime(Trace, gc, phases) t1(title);
   TraceCollectorStats tcs(gen->counters());
   TraceMemoryManagerStats tmms(gen->kind(),gc_cause());
 
@@ -684,15 +685,8 @@ void GenCollectedHeap::gen_process_roots(StrongRootsScope* scope,
   _process_strong_tasks->all_tasks_completed(scope->n_threads());
 }
 
-
-class AlwaysTrueClosure: public BoolObjectClosure {
-public:
-  bool do_object_b(oop p) { return true; }
-};
-static AlwaysTrueClosure always_true;
-
 void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
-  JNIHandles::weak_oops_do(&always_true, root_closure);
+  JNIHandles::weak_oops_do(root_closure);
   _young_gen->ref_processor()->weak_oops_do(root_closure);
   _old_gen->ref_processor()->weak_oops_do(root_closure);
 }
@@ -1272,7 +1266,7 @@ jlong GenCollectedHeap::millis_since_last_gc() {
   // back a time later than 'now'.
   jlong retVal = now - tolgc_cl.time();
   if (retVal < 0) {
-    NOT_PRODUCT(warning("time warp: " JLONG_FORMAT, retVal);)
+    NOT_PRODUCT(log_warning(gc)("time warp: " JLONG_FORMAT, retVal);)
     return 0;
   }
   return retVal;
@@ -1281,7 +1275,7 @@ jlong GenCollectedHeap::millis_since_last_gc() {
 void GenCollectedHeap::stop() {
 #if INCLUDE_ALL_GCS
   if (UseConcMarkSweepGC) {
-    ConcurrentMarkSweepThread::stop();
+    ConcurrentMarkSweepThread::cmst()->stop();
   }
 #endif
 }

@@ -39,7 +39,7 @@ public class TestStringSymbolTableStats {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                               "-XX:+UnlockExperimentalVMOptions",
-                                                              "-Xlog:gc+stringdedup=trace",
+                                                              "-Xlog:gc+stringtable=trace",
                                                               SystemGCTest.class.getName());
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

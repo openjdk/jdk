@@ -82,18 +82,19 @@ inline void ParScanClosure::do_oop_work(T* p,
     if ((HeapWord*)obj < _boundary) {
 #ifndef PRODUCT
       if (_g->to()->is_in_reserved(obj)) {
-        tty->print_cr("Scanning field (" PTR_FORMAT ") twice?", p2i(p));
+        LogHandle(gc) log;
+        log.error("Scanning field (" PTR_FORMAT ") twice?", p2i(p));
         GenCollectedHeap* gch = GenCollectedHeap::heap();
         Space* sp = gch->space_containing(p);
         oop obj = oop(sp->block_start(p));
         assert((HeapWord*)obj < (HeapWord*)p, "Error");
-        tty->print_cr("Object: " PTR_FORMAT, p2i((void *)obj));
-        tty->print_cr("-------");
-        obj->print();
-        tty->print_cr("-----");
-        tty->print_cr("Heap:");
-        tty->print_cr("-----");
-        gch->print();
+        log.error("Object: " PTR_FORMAT, p2i((void *)obj));
+        log.error("-------");
+        obj->print_on(log.error_stream());
+        log.error("-----");
+        log.error("Heap:");
+        log.error("-----");
+        gch->print_on(log.error_stream());
         ShouldNotReachHere();
       }
 #endif

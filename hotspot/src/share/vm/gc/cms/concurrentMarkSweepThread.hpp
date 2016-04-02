@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,17 +37,10 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   friend class VMStructs;
   friend class ConcurrentMarkSweepGeneration;   // XXX should remove friendship
   friend class CMSCollector;
- public:
-  virtual void run();
 
  private:
-  static ConcurrentMarkSweepThread*     _cmst;
-  static CMSCollector*                  _collector;
-  static SurrogateLockerThread*         _slt;
-  static SurrogateLockerThread::SLT_msg_type _sltBuffer;
-  static Monitor*                       _sltMonitor;
-
-  static bool _should_terminate;
+  static ConcurrentMarkSweepThread* _cmst;
+  static CMSCollector*              _collector;
 
   enum CMS_flag_type {
     CMS_nil             = NoBits,
@@ -72,12 +65,12 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   // debugging
   void verify_ok_to_terminate() const PRODUCT_RETURN;
 
+  void run_service();
+  void stop_service();
+
  public:
   // Constructor
   ConcurrentMarkSweepThread(CMSCollector* collector);
-
-  static void makeSurrogateLockerThread(TRAPS);
-  static SurrogateLockerThread* slt() { return _slt; }
 
   static void threads_do(ThreadClosure* tc);
 
@@ -91,8 +84,6 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
 
   // Create and start the CMS Thread, or stop it on shutdown
   static ConcurrentMarkSweepThread* start(CMSCollector* collector);
-  static void stop();
-  static bool should_terminate() { return _should_terminate; }
 
   // Synchronization using CMS token
   static void synchronize(bool is_cms_thread);
@@ -170,7 +161,7 @@ class CMSLoopCountWarn: public StackObj {
   inline void tick() {
     _ticks++;
     if (CMSLoopWarn && _ticks % _threshold == 0) {
-      warning("%s has looped " INTX_FORMAT " times %s", _src, _ticks, _msg);
+      log_warning(gc)("%s has looped " INTX_FORMAT " times %s", _src, _ticks, _msg);
     }
   }
 };

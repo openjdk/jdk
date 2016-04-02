@@ -24,8 +24,6 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
-#include "gc/shared/gcId.hpp"
-#include "gc/shared/gcId.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
@@ -504,7 +502,7 @@ fileStream::fileStream(const char* file_name) {
   if (_file != NULL) {
     _need_close = true;
   } else {
-    warning("Cannot open file %s due to %s\n", file_name, strerror(errno));
+    warning("Cannot open file %s due to %s\n", file_name, os::strerror(errno));
     _need_close = false;
   }
 }
@@ -514,7 +512,7 @@ fileStream::fileStream(const char* file_name, const char* opentype) {
   if (_file != NULL) {
     _need_close = true;
   } else {
-    warning("Cannot open file %s due to %s\n", file_name, strerror(errno));
+    warning("Cannot open file %s due to %s\n", file_name, os::strerror(errno));
     _need_close = false;
   }
 }

@@ -32,7 +32,6 @@ class LineBuffer;
 template <class T> class WorkerDataArray;
 
 class G1GCPhaseTimes : public CHeapObj<mtGC> {
-  uint _active_gc_threads;
   uint _max_gc_threads;
   jlong _gc_start_counter;
   double _gc_pause_time_ms;
@@ -123,6 +122,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_verify_before_time_ms;
   double _cur_verify_after_time_ms;
 
+  double worker_time(GCParPhases phase, uint worker);
   void note_gc_end();
 
   template <class T>
@@ -133,7 +133,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
  public:
   G1GCPhaseTimes(uint max_gc_threads);
-  void note_gc_start(uint active_gc_threads);
+  void note_gc_start();
   void print();
 
   // record the time a phase took in seconds

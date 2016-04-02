@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/preserveException.hpp"
-
-#if defined(__GNUC__) && !defined(PPC64)
-// Need to inhibit inlining for older versions of GCC to avoid build-time failures
-  #define NOINLINE __attribute__((noinline))
-#else
-  #define NOINLINE
-#endif
 
 // The "core" versions of monitor enter and exit reside in this file.
 // The interpreter and compilers contain specialized transliterated
@@ -1038,7 +1031,7 @@ void ObjectSynchronizer::verifyInUse(Thread *Self) {
   assert(free_tally == Self->omFreeCount, "free count off");
 }
 
-ObjectMonitor * NOINLINE ObjectSynchronizer::omAlloc(Thread * Self) {
+ObjectMonitor* ObjectSynchronizer::omAlloc(Thread * Self) {
   // A large MAXPRIVATE value reduces both list lock contention
   // and list coherency traffic, but also tends to increase the
   // number of objectMonitors in circulation as well as the STW
@@ -1313,7 +1306,7 @@ ObjectMonitor* ObjectSynchronizer::inflate_helper(oop obj) {
                                      inflate_cause_vm_internal);
 }
 
-ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
+ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
                                                      oop object,
                                                      const InflateCause cause) {
 
