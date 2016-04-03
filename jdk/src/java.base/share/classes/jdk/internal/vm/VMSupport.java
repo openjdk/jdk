@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.misc;
+package jdk.internal.vm;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
