@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,8 +188,10 @@ abstract class KeyStore extends KeyStoreSpi {
 
     /*
      * The keystore entries.
+     * Keys in the map are unique aliases (thus can differ from
+     * KeyEntry.getAlias())
      */
-    private Collection<KeyEntry> entries = new ArrayList<KeyEntry>();
+    private Map<String,KeyEntry> entries = new HashMap<>();
 
     /*
      * The keystore name.
@@ -248,13 +250,10 @@ abstract class KeyStore extends KeyStoreSpi {
         if (engineIsKeyEntry(alias) == false)
             return null;
 
-        for (KeyEntry entry : entries) {
-            if (alias.equals(entry.getAlias())) {
-                return entry.getPrivateKey();
-            }
-        }
-
-        return null;
+        KeyEntry entry = entries.get(alias);
+        return (entry == null)
+                ? null
+                : entry.getPrivateKey();
     }
 
     /**
@@ -274,15 +273,13 @@ abstract class KeyStore extends KeyStoreSpi {
             return null;
         }
 
-        for (KeyEntry entry : entries) {
-            if (alias.equals(entry.getAlias())) {
-                X509Certificate[] certChain = entry.getCertificateChain();
-
-                return certChain.clone();
-            }
-        }
-
-        return null;
+        KeyEntry entry = entries.get(alias);
+        X509Certificate[] certChain = (entry == null)
+                ? null
+                : entry.getCertificateChain();
+        return (certChain == null)
+                ? null
+                : certChain.clone();
     }
 
     /**
@@ -306,15 +303,13 @@ abstract class KeyStore extends KeyStoreSpi {
             return null;
         }
 
-        for (KeyEntry entry : entries) {
-            if (alias.equals(entry.getAlias()))
-            {
-                X509Certificate[] certChain = entry.getCertificateChain();
-                return certChain.length == 0 ? null : certChain[0];
-            }
-        }
-
-        return null;
+        KeyEntry entry = entries.get(alias);
+        X509Certificate[] certChain = (entry == null)
+                ? null
+                : entry.getCertificateChain();
+        return (certChain == null || certChain.length == 0)
+                ? null
+                : certChain[0];
     }
 
     /**
@@ -378,16 +373,7 @@ abstract class KeyStore extends KeyStoreSpi {
 
         if (key instanceof RSAPrivateCrtKey) {
 
-            KeyEntry entry = null;
-            boolean found = false;
-
-            for (KeyEntry e : entries) {
-                if (alias.equals(e.getAlias())) {
-                    found = true;
-                    entry = e;
-                    break;
-                }
-            }
+            KeyEntry entry = entries.get(alias);
 
             X509Certificate[] xchain;
             if (chain != null) {
@@ -401,11 +387,11 @@ abstract class KeyStore extends KeyStoreSpi {
                 xchain = null;
             }
 
-            if (! found) {
+            if (entry == null) {
                 entry =
                     //TODO new KeyEntry(alias, key, (X509Certificate[]) chain);
                     new KeyEntry(alias, null, xchain);
-                entries.add(entry);
+                storeWithUniqueAlias(alias, entry);
             }
 
             entry.setAlias(alias);
@@ -484,23 +470,14 @@ abstract class KeyStore extends KeyStoreSpi {
             // TODO - build CryptoAPI chain?
             X509Certificate[] chain =
                 new X509Certificate[]{ (X509Certificate) cert };
-            KeyEntry entry = null;
-            boolean found = false;
+            KeyEntry entry = entries.get(alias);
 
-            for (KeyEntry e : entries) {
-                if (alias.equals(e.getAlias())) {
-                    found = true;
-                    entry = e;
-                    break;
-                }
-            }
-
-            if (! found) {
+            if (entry == null) {
                 entry =
                     new KeyEntry(alias, null, chain);
-                entries.add(entry);
-
+                storeWithUniqueAlias(alias, entry);
             }
+
             if (entry.getPrivateKey() == null) { // trusted-cert entry
                 entry.setAlias(alias);
 
@@ -532,32 +509,26 @@ abstract class KeyStore extends KeyStoreSpi {
             throw new KeyStoreException("alias must not be null");
         }
 
-        for (KeyEntry entry : entries) {
-            if (alias.equals(entry.getAlias())) {
+        KeyEntry entry = entries.remove(alias);
+        if (entry != null) {
+            // Get end-entity certificate and remove from system cert store
+            X509Certificate[] certChain = entry.getCertificateChain();
+            if (certChain != null) {
 
-                // Get end-entity certificate and remove from system cert store
-                X509Certificate[] certChain = entry.getCertificateChain();
-                if (certChain != null) {
+                try {
 
-                    try {
-
-                        byte[] encoding = certChain[0].getEncoded();
-                        removeCertificate(getName(), alias, encoding,
+                    byte[] encoding = certChain[0].getEncoded();
+                    removeCertificate(getName(), entry.getAlias(), encoding,
                             encoding.length);
 
-                    } catch (CertificateException e) {
-                        throw new KeyStoreException("Cannot remove entry: " +
-                            e);
-                    }
+                } catch (CertificateException e) {
+                    throw new KeyStoreException("Cannot remove entry: ", e);
                 }
-                Key privateKey = entry.getPrivateKey();
-                if (privateKey != null) {
-                    destroyKeyContainer(
-                        Key.getContainerName(privateKey.getHCryptProvider()));
-                }
-
-                entries.remove(entry);
-                break;
+            }
+            Key privateKey = entry.getPrivateKey();
+            if (privateKey != null) {
+                destroyKeyContainer(
+                    Key.getContainerName(privateKey.getHCryptProvider()));
             }
         }
     }
@@ -568,8 +539,7 @@ abstract class KeyStore extends KeyStoreSpi {
      * @return enumeration of the alias names
      */
     public Enumeration<String> engineAliases() {
-
-        final Iterator<KeyEntry> iter = entries.iterator();
+        final Iterator<String> iter = entries.keySet().iterator();
 
         return new Enumeration<String>()
         {
@@ -580,8 +550,7 @@ abstract class KeyStore extends KeyStoreSpi {
 
             public String nextElement()
             {
-                KeyEntry entry = iter.next();
-                return entry.getAlias();
+                return iter.next();
             }
         };
     }
@@ -594,15 +563,7 @@ abstract class KeyStore extends KeyStoreSpi {
      * @return true if the alias exists, false otherwise
      */
     public boolean engineContainsAlias(String alias) {
-        for (Enumeration<String> enumerator = engineAliases();
-            enumerator.hasMoreElements();)
-        {
-            String a = enumerator.nextElement();
-
-            if (a.equals(alias))
-                return true;
-        }
-        return false;
+        return entries.containsKey(alias);
     }
 
     /**
@@ -627,13 +588,8 @@ abstract class KeyStore extends KeyStoreSpi {
             return false;
         }
 
-        for (KeyEntry entry : entries) {
-            if (alias.equals(entry.getAlias())) {
-                return entry.getPrivateKey() != null;
-            }
-        }
-
-        return false;
+        KeyEntry entry = entries.get(alias);
+        return entry != null && entry.getPrivateKey() != null;
     }
 
     /**
@@ -643,15 +599,14 @@ abstract class KeyStore extends KeyStoreSpi {
      * @return true if the entry identified by the given alias is a
      * <i>trusted certificate entry</i>, false otherwise.
      */
-    public boolean engineIsCertificateEntry(String alias)
-    {
-        for (KeyEntry entry : entries) {
-            if (alias.equals(entry.getAlias())) {
-                return entry.getPrivateKey() == null;
-            }
+    public boolean engineIsCertificateEntry(String alias) {
+
+        if (alias == null) {
+            return false;
         }
 
-        return false;
+        KeyEntry entry = entries.get(alias);
+        return entry != null && entry.getPrivateKey() == null;
     }
 
     /**
@@ -670,9 +625,10 @@ abstract class KeyStore extends KeyStoreSpi {
      * @return the (alias) name of the first entry with matching certificate,
      * or null if no such entry exists in this keystore.
      */
-    public String engineGetCertificateAlias(Certificate cert)
-    {
-        for (KeyEntry entry : entries) {
+    public String engineGetCertificateAlias(Certificate cert) {
+
+        for (Map.Entry<String,KeyEntry> mapEntry : entries.entrySet()) {
+            KeyEntry entry = mapEntry.getValue();
             if (entry.certChain != null && entry.certChain[0].equals(cert)) {
                 return entry.getAlias();
             }
@@ -765,7 +721,7 @@ abstract class KeyStore extends KeyStoreSpi {
         try {
 
             // Load keys and/or certificate chains
-            loadKeysOrCertificateChains(getName(), entries);
+            loadKeysOrCertificateChains(getName());
 
         } catch (KeyStoreException e) {
             throw new IOException(e);
@@ -773,12 +729,31 @@ abstract class KeyStore extends KeyStoreSpi {
     }
 
     /**
+     * Stores the given entry into the map, making sure
+     * the alias, used as the key is unique.
+     * If the same alias already exists, it tries to append
+     * a suffix  (1), (2), etc to it until it finds a unique
+     * value.
+     */
+    private void storeWithUniqueAlias(String alias, KeyEntry entry) {
+        String uniqAlias = alias;
+        int uniqNum = 1;
+
+        while (true) {
+            if (entries.putIfAbsent(uniqAlias, entry) == null) {
+                break;
+            }
+            uniqAlias = alias + " (" + (uniqNum++) + ")";
+        }
+    }
+
+
+    /**
      * Generates a certificate chain from the collection of
      * certificates and stores the result into a key entry.
      */
     private void generateCertificateChain(String alias,
-        Collection<? extends Certificate> certCollection,
-        Collection<KeyEntry> entries)
+        Collection<? extends Certificate> certCollection)
     {
         try
         {
@@ -792,10 +767,8 @@ abstract class KeyStore extends KeyStoreSpi {
                 certChain[i] = (X509Certificate) iter.next();
             }
 
-            KeyEntry entry = new KeyEntry(alias, null, certChain);
-
-            // Add cert chain
-            entries.add(entry);
+            storeWithUniqueAlias(alias,
+                    new KeyEntry(alias, null, certChain));
         }
         catch (Throwable e)
         {
@@ -810,8 +783,7 @@ abstract class KeyStore extends KeyStoreSpi {
      */
     private void generateRSAKeyAndCertificateChain(String alias,
         long hCryptProv, long hCryptKey, int keyLength,
-        Collection<? extends Certificate> certCollection,
-        Collection<KeyEntry> entries)
+        Collection<? extends Certificate> certCollection)
     {
         try
         {
@@ -825,11 +797,9 @@ abstract class KeyStore extends KeyStoreSpi {
                 certChain[i] = (X509Certificate) iter.next();
             }
 
-            KeyEntry entry = new KeyEntry(alias, new RSAPrivateKey(hCryptProv,
-                hCryptKey, keyLength), certChain);
-
-            // Add cert chain
-            entries.add(entry);
+            storeWithUniqueAlias(alias, new KeyEntry(alias,
+                    new RSAPrivateKey(hCryptProv, hCryptKey, keyLength),
+                    certChain));
         }
         catch (Throwable e)
         {
@@ -886,8 +856,8 @@ abstract class KeyStore extends KeyStoreSpi {
      * @param name Name of keystore.
      * @param entries Collection of key/certificate.
      */
-    private native void loadKeysOrCertificateChains(String name,
-        Collection<KeyEntry> entries) throws KeyStoreException;
+    private native void loadKeysOrCertificateChains(String name)
+            throws KeyStoreException;
 
     /**
      * Stores a DER-encoded certificate into the certificate store
