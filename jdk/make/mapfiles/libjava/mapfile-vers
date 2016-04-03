@@ -283,8 +283,8 @@ SUNWprivate_1.1 {
 		Java_jdk_internal_loader_BootLoader_getSystemPackageNames;
                 Java_jdk_internal_loader_BootLoader_setBootLoaderUnnamedModule0;
 
-		Java_sun_misc_VMSupport_initAgentProperties;
-		Java_sun_misc_VMSupport_getVMTemporaryDirectory;
+		Java_jdk_internal_vm_VMSupport_initAgentProperties;
+		Java_jdk_internal_vm_VMSupport_getVMTemporaryDirectory;
 
                 # ZipFile.c needs this one
 		throwFileNotFoundException;
