@@ -151,7 +151,7 @@ PSPromotionManager::print_taskqueue_stats() {
   if (!log_develop_is_enabled(Trace, gc, task, stats)) {
     return;
   }
-  LogHandle(gc, task, stats) log;
+  Log(gc, task, stats) log;
   ResourceMark rm;
   outputStream* out = log.trace_stream();
   out->print_cr("== GC Tasks Stats, GC %3d",

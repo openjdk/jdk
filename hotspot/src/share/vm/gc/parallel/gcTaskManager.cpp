@@ -405,7 +405,7 @@ void GCTaskManager::initialize() {
     for (uint t = 0; t < workers(); t += 1) {
       set_thread(t, GCTaskThread::create(this, t, processor_assignment[t]));
     }
-    LogHandle(gc, task, thread) log;
+    Log(gc, task, thread) log;
     if (log.is_trace()) {
       ResourceMark rm;
       outputStream* out = log.trace_stream();

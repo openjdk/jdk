@@ -436,7 +436,7 @@ void SystemDictionary::validate_protection_domain(instanceKlassHandle klass,
   if (log_is_enabled(Debug, protectiondomain)) {
     ResourceMark rm;
     // Print out trace information
-    outputStream* log = LogHandle(protectiondomain)::debug_stream();
+    outputStream* log = Log(protectiondomain)::debug_stream();
     log->print_cr("Checking package access");
     log->print("class loader: "); class_loader()->print_value_on(log);
     log->print(" protection domain: "); protection_domain()->print_value_on(log);

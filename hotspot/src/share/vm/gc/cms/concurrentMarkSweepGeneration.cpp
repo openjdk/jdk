@@ -693,7 +693,7 @@ bool ConcurrentMarkSweepGeneration::promotion_attempt_is_safe(size_t max_promoti
 // At a promotion failure dump information on block layout in heap
 // (cms old generation).
 void ConcurrentMarkSweepGeneration::promotion_failure_occurred() {
-  LogHandle(gc, promotion) log;
+  Log(gc, promotion) log;
   if (log.is_trace()) {
     ResourceMark rm;
     cmsSpace()->dump_at_safepoint_with_locks(collector(), log.trace_stream());
@@ -752,7 +752,7 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
     size_t desired_capacity = (size_t)(used() / ((double) 1 - desired_free_percentage));
     assert(desired_capacity >= capacity(), "invalid expansion size");
     size_t expand_bytes = MAX2(desired_capacity - capacity(), MinHeapDeltaBytes);
-    LogHandle(gc) log;
+    Log(gc) log;
     if (log.is_trace()) {
       size_t desired_capacity = (size_t)(used() / ((double) 1 - desired_free_percentage));
       log.trace("From compute_new_size: ");
@@ -1117,7 +1117,7 @@ bool CMSCollector::shouldConcurrentCollect() {
   // ------------------------------------------------------------------
   // Print out lots of information which affects the initiation of
   // a collection.
-  LogHandle(gc) log;
+  Log(gc) log;
   if (log.is_trace() && stats().valid()) {
     log.trace("CMSCollector shouldConcurrentCollect: ");
     ResourceMark rm;
@@ -1605,7 +1605,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
 }
 
 void CMSCollector::print_eden_and_survivor_chunk_arrays() {
-  LogHandle(gc, heap) log;
+  Log(gc, heap) log;
   if (!log.is_trace()) {
     return;
   }
@@ -2221,7 +2221,7 @@ class VerifyMarkedClosure: public BitMapClosure {
   bool do_bit(size_t offset) {
     HeapWord* addr = _marks->offsetToHeapWord(offset);
     if (!_marks->isMarked(addr)) {
-      LogHandle(gc, verify) log;
+      Log(gc, verify) log;
       ResourceMark rm;
       oop(addr)->print_on(log.error_stream());
       log.error(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
@@ -2347,7 +2347,7 @@ void CMSCollector::verify_after_remark_work_1() {
   VerifyMarkedClosure vcl(markBitMap());
   verification_mark_bm()->iterate(&vcl);
   if (vcl.failed()) {
-    LogHandle(gc, verify) log;
+    Log(gc, verify) log;
     log.error("Failed marking verification after remark");
     ResourceMark rm;
     gch->print_on(log.error_stream());
@@ -5874,7 +5874,7 @@ void MarkRefsIntoVerifyClosure::do_oop(oop obj) {
   if (_span.contains(addr)) {
     _verification_bm->mark(addr);
     if (!_cms_bm->isMarked(addr)) {
-      LogHandle(gc, verify) log;
+      Log(gc, verify) log;
       ResourceMark rm;
       oop(addr)->print_on(log.error_stream());
       log.error(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
@@ -6655,7 +6655,7 @@ void PushAndMarkVerifyClosure::do_oop(oop obj) {
     // Oop lies in _span and isn't yet grey or black
     _verification_bm->mark(addr);            // now grey
     if (!_cms_bm->isMarked(addr)) {
-      LogHandle(gc, verify) log;
+      Log(gc, verify) log;
       ResourceMark rm;
       oop(addr)->print_on(log.error_stream());
       log.error(" (" INTPTR_FORMAT " should have been marked)", p2i(addr));
@@ -7062,7 +7062,7 @@ SweepClosure::~SweepClosure() {
   assert(_limit >= _sp->bottom() && _limit <= _sp->end(),
          "sweep _limit out of bounds");
   if (inFreeRange()) {
-    LogHandle(gc, sweep) log;
+    Log(gc, sweep) log;
     log.error("inFreeRange() should have been reset; dumping state of SweepClosure");
     ResourceMark rm;
     print_on(log.error_stream());

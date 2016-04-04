@@ -82,7 +82,7 @@ inline void ParScanClosure::do_oop_work(T* p,
     if ((HeapWord*)obj < _boundary) {
 #ifndef PRODUCT
       if (_g->to()->is_in_reserved(obj)) {
-        LogHandle(gc) log;
+        Log(gc) log;
         log.error("Scanning field (" PTR_FORMAT ") twice?", p2i(p));
         GenCollectedHeap* gch = GenCollectedHeap::heap();
         Space* sp = gch->space_containing(p);

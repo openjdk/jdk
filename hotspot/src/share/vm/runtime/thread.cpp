@@ -2093,7 +2093,7 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
 
       if (log_is_enabled(Info, exceptions)) {
         ResourceMark rm;
-        outputStream* logstream = LogHandle(exceptions)::info_stream();
+        outputStream* logstream = Log(exceptions)::info_stream();
         logstream->print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
           if (has_last_Java_frame()) {
             frame f = last_frame();

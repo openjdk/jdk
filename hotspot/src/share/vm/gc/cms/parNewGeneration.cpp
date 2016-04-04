@@ -398,7 +398,7 @@ void ParScanThreadStateSet::print_termination_stats_hdr(outputStream* const st) 
 }
 
 void ParScanThreadStateSet::print_termination_stats() {
-  LogHandle(gc, task, stats) log;
+  Log(gc, task, stats) log;
   if (!log.is_debug()) {
     return;
   }
@@ -430,7 +430,7 @@ void ParScanThreadStateSet::print_taskqueue_stats() {
   if (!log_develop_is_enabled(Trace, gc, task, stats)) {
     return;
   }
-  LogHandle(gc, task, stats) log;
+  Log(gc, task, stats) log;
   ResourceMark rm;
   outputStream* st = log.trace_stream();
   print_taskqueue_stats_hdr(st);

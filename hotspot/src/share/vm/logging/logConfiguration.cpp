@@ -74,7 +74,7 @@ bool ConfigurationLock::current_thread_has_lock() {
 
 void LogConfiguration::post_initialize() {
   LogDiagnosticCommand::registerCommand();
-  LogHandle(logging) log;
+  Log(logging) log;
   log.info("Log configuration fully initialized.");
   log_develop_info(logging)("Develop logging is available.");
   if (log.is_trace()) {

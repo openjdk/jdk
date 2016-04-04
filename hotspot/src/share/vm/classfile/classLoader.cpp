@@ -535,7 +535,7 @@ void ClassLoader::exit_with_path_failure(const char* error, const char* message)
 void ClassLoader::trace_class_path(const char* msg, const char* name) {
   if (log_is_enabled(Info, classpath)) {
     ResourceMark rm;
-    outputStream* out = LogHandle(classpath)::info_stream();
+    outputStream* out = Log(classpath)::info_stream();
     if (msg) {
       out->print("%s", msg);
     }

@@ -2620,7 +2620,7 @@ static void print_ms_time_info(const char* prefix, const char* name,
 }
 
 void G1ConcurrentMark::print_summary_info() {
-  LogHandle(gc, marking) log;
+  Log(gc, marking) log;
   if (!log.is_trace()) {
     return;
   }

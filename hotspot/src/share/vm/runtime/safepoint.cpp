@@ -228,7 +228,7 @@ void SafepointSynchronize::begin() {
           }
           if (log_is_enabled(Trace, safepoint)) {
             ResourceMark rm;
-            cur_state->print_on(LogHandle(safepoint)::trace_stream());
+            cur_state->print_on(Log(safepoint)::trace_stream());
           }
         }
       }

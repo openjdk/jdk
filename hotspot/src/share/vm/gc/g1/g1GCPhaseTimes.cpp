@@ -181,7 +181,7 @@ size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase) {
 
 template <class T>
 void G1GCPhaseTimes::details(T* phase, const char* indent) {
-  LogHandle(gc, phases, task) log;
+  Log(gc, phases, task) log;
   if (log.is_level(LogLevel::Trace)) {
     outputStream* trace_out = log.trace_stream();
     trace_out->print("%s", indent);
@@ -203,7 +203,7 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent, outp
 }
 
 void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase) {
-  LogHandle(gc, phases) log;
+  Log(gc, phases) log;
   if (log.is_level(LogLevel::Debug)) {
     ResourceMark rm;
     log_phase(phase, 2, log.debug_stream(), true);
@@ -211,7 +211,7 @@ void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase) {
 }
 
 void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum) {
-  LogHandle(gc, phases) log;
+  Log(gc, phases) log;
   if (log.is_level(LogLevel::Trace)) {
     ResourceMark rm;
     log_phase(phase, 3, log.trace_stream(), print_sum);

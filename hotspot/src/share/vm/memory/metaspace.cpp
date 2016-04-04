@@ -810,7 +810,7 @@ void VirtualSpaceNode::verify_container_count() {
 BlockFreelist::BlockFreelist() : _dictionary(new BlockTreeDictionary()) {}
 
 BlockFreelist::~BlockFreelist() {
-  LogHandle(gc, metaspace, freelist) log;
+  Log(gc, metaspace, freelist) log;
   if (log.is_trace()) {
     ResourceMark rm;
     dictionary()->print_free_lists(log.trace_stream());
@@ -893,7 +893,7 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
       "The committed memory doesn't match the expanded memory.");
 
   if (!is_available(chunk_word_size)) {
-    LogHandle(gc, metaspace, freelist) log;
+    Log(gc, metaspace, freelist) log;
     log.debug("VirtualSpaceNode::take_from_committed() not available " SIZE_FORMAT " words ", chunk_word_size);
     // Dump some information about the virtual space that is nearly full
     ResourceMark rm;
@@ -1234,7 +1234,7 @@ void VirtualSpaceList::link_vs(VirtualSpaceNode* new_entry) {
   new_entry->mangle();
 #endif
   if (log_is_enabled(Trace, gc, metaspace)) {
-    LogHandle(gc, metaspace) log;
+    Log(gc, metaspace) log;
     VirtualSpaceNode* vsl = current_virtual_space();
     ResourceMark rm;
     vsl->print_on(log.trace_stream());
@@ -1796,7 +1796,7 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
   assert((word_size <= chunk->word_size()) ||
          list_index(chunk->word_size() == HumongousIndex),
          "Non-humongous variable sized chunk");
-  LogHandle(gc, metaspace, freelist) log;
+  Log(gc, metaspace, freelist) log;
   if (log.is_debug()) {
     size_t list_count;
     if (list_index(word_size) < HumongousIndex) {
@@ -1995,7 +1995,7 @@ size_t SpaceManager::calc_chunk_size(size_t word_size) {
          "Size calculation is wrong, word_size " SIZE_FORMAT
          " chunk_word_size " SIZE_FORMAT,
          word_size, chunk_word_size);
-  LogHandle(gc, metaspace, alloc) log;
+  Log(gc, metaspace, alloc) log;
   if (log.is_debug() && SpaceManager::is_humongous(word_size)) {
     log.debug("Metadata humongous allocation:");
     log.debug("  word_size " PTR_FORMAT, word_size);
@@ -2163,7 +2163,7 @@ SpaceManager::~SpaceManager() {
 
   dec_total_from_size_metrics();
 
-  LogHandle(gc, metaspace, freelist) log;
+  Log(gc, metaspace, freelist) log;
   if (log.is_trace()) {
     log.trace("~SpaceManager(): " PTR_FORMAT, p2i(this));
     ResourceMark rm;
@@ -2306,7 +2306,7 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
   inc_size_metrics(new_chunk->word_size());
 
   assert(new_chunk->is_empty(), "Not ready for reuse");
-  LogHandle(gc, metaspace, freelist) log;
+  Log(gc, metaspace, freelist) log;
   if (log.is_trace()) {
     log.trace("SpaceManager::add_chunk: " SIZE_FORMAT ") ", sum_count_in_chunks_in_use());
     ResourceMark rm;
@@ -2337,7 +2337,7 @@ Metachunk* SpaceManager::get_new_chunk(size_t word_size,
                                     medium_chunk_bunch());
   }
 
-  LogHandle(gc, metaspace, alloc) log;
+  Log(gc, metaspace, alloc) log;
   if (log.is_debug() && next != NULL &&
       SpaceManager::is_humongous(next->word_size())) {
     log.debug("  new humongous chunk word size " PTR_FORMAT, next->word_size());
@@ -3037,7 +3037,7 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
   initialize_class_space(metaspace_rs);
 
   if (log_is_enabled(Trace, gc, metaspace)) {
-    LogHandle(gc, metaspace) log;
+    Log(gc, metaspace) log;
     ResourceMark rm;
     print_compressed_class_space(log.trace_stream(), requested_addr);
   }
@@ -3512,7 +3512,7 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
   tracer()->report_metadata_oom(loader_data, word_size, type, mdtype);
 
   // If result is still null, we are out of memory.
-  LogHandle(gc, metaspace, freelist) log;
+  Log(gc, metaspace, freelist) log;
   if (log.is_trace()) {
     log.trace("Metaspace allocation failed for size " SIZE_FORMAT, word_size);
     ResourceMark rm;
