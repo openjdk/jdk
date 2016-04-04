@@ -37,6 +37,7 @@
 #ifdef ASSERT
 #include "memory/guardedMemory.hpp"
 #endif
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"

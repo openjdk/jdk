@@ -44,6 +44,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/constantPool.hpp"

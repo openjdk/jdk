@@ -35,6 +35,7 @@
 #include "gc/shared/referencePendingListLocker.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"

@@ -44,6 +44,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"

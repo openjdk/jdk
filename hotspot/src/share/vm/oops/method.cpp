@@ -39,6 +39,7 @@
 #include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"

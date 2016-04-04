@@ -27,6 +27,7 @@
 #include "interpreter/cppInterpreterGenerator.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/timerTrace.hpp"
 
 #ifdef CC_INTERP

@@ -29,6 +29,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/ostream.hpp"
 

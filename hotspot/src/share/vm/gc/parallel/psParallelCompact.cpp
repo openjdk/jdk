@@ -51,6 +51,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/methodData.hpp"

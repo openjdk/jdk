@@ -27,6 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"

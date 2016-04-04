@@ -36,6 +36,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"

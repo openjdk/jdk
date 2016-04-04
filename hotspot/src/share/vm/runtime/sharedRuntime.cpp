@@ -38,6 +38,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/objArrayKlass.hpp"

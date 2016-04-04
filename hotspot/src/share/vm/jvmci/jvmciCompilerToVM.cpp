@@ -27,6 +27,7 @@
 #include "code/scopeDesc.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/oop.inline.hpp"
