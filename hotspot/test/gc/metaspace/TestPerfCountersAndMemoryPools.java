@@ -36,6 +36,7 @@ import static jdk.test.lib.Asserts.*;
  * @modules java.base/sun.misc
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
+ * @ignore 8151460
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops -XX:-UseCompressedKlassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint TestPerfCountersAndMemoryPools
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCompressedOops -XX:+UseCompressedKlassPointers -XX:+UseSerialGC -XX:+UsePerfData -Xint TestPerfCountersAndMemoryPools
  */

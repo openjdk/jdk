@@ -164,6 +164,7 @@ public class SunMiscUnsafeAccessTestLong {
         }
 
 
+
         UNSAFE.putLong(base, offset, 1L);
 
         // Compare
@@ -180,6 +181,7 @@ public class SunMiscUnsafeAccessTestLong {
             long x = UNSAFE.getLong(base, offset);
             assertEquals(x, 2L, "failing compareAndSwap long value");
         }
+
 
         // Compare set and get
         {
@@ -209,3 +211,4 @@ public class SunMiscUnsafeAccessTestLong {
         }
     }
 }
+

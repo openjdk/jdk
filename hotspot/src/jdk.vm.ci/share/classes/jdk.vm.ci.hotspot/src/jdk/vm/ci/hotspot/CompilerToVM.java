@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,6 +478,11 @@ final class CompilerToVM {
      * Gets the value of {@code metaspaceSymbol} as a String.
      */
     native String getSymbol(long metaspaceSymbol);
+
+    /**
+     * Lookup a VMSymbol from a String.
+     */
+    native long lookupSymbol(String symbol);
 
     /**
      * Looks for the next Java stack frame matching an entry in {@code methods}.
