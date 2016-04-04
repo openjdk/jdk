@@ -71,7 +71,7 @@ public class ToolReloadTest extends ReplToolTesting {
         Path classpath = compiler.getPath(outDir);
         test(
                 (a) -> assertCommand(a, "/classpath " + classpath,
-                        String.format("|  Path %s added to classpath\n", classpath)),
+                        String.format("|  Path '%s' added to classpath\n", classpath)),
                 (a) -> assertMethod(a, "String foo() { return (new pkg.A()).toString(); }",
                         "()String", "foo"),
                 (a) -> assertVariable(a, "String", "v", "foo()", "\"A\""),

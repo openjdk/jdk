@@ -42,6 +42,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -49,6 +50,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
@@ -128,6 +130,7 @@ public class JShellTool {
     final PrintStream userout;
     final PrintStream usererr;
     final Preferences prefs;
+    final Locale locale;
 
     final Feedback feedback = new Feedback();
 
@@ -141,11 +144,13 @@ public class JShellTool {
      * @param userin code execution input (not yet functional)
      * @param userout code execution output  -- System.out.printf("hi")
      * @param usererr code execution error stream  -- System.err.printf("Oops")
+     * @param prefs preferences to use
+     * @param locale locale to use
      */
     public JShellTool(InputStream cmdin, PrintStream cmdout, PrintStream cmderr,
             PrintStream console,
             InputStream userin, PrintStream userout, PrintStream usererr,
-            Preferences prefs) {
+            Preferences prefs, Locale locale) {
         this.cmdin = cmdin;
         this.cmdout = cmdout;
         this.cmderr = cmderr;
@@ -154,6 +159,7 @@ public class JShellTool {
         this.userout = userout;
         this.usererr = usererr;
         this.prefs = prefs;
+        this.locale = locale;
     }
 
     private IOContext input = null;
@@ -293,16 +299,94 @@ public class JShellTool {
     }
 
     /**
+     * Add prefixing to embedded newlines in a string, leading with the normal
+     * prefix
+     *
+     * @param s the string to prefix
+     */
+    String prefix(String s) {
+        return prefix(s, feedback.getPre());
+    }
+
+    /**
+     * Add prefixing to embedded newlines in a string
+     *
+     * @param s the string to prefix
+     * @param leading the string to prepend
+     */
+    String prefix(String s, String leading) {
+        if (s == null || s.isEmpty()) {
+            return "";
+        }
+        return leading
+                + s.substring(0, s.length() - 1).replaceAll("\\R", System.getProperty("line.separator") + feedback.getPre())
+                + s.substring(s.length() - 1, s.length());
+    }
+
+    /**
      * Print using resource bundle look-up and adding prefix and postfix
      *
      * @param key the resource key
      */
     void hardrb(String key) {
-        String s = getResourceString(key);
-        String out = feedback.getPre()
-                + s.substring(0, s.length() - 1).replaceAll("\\R", "\n" + feedback.getPre())
-                + s.substring(s.length() - 1, s.length());
-        cmdout.print(out);
+        String s = prefix(getResourceString(key));
+        cmdout.println(s);
+    }
+
+    /**
+     * Format using resource bundle look-up using MessageFormat
+     *
+     * @param key the resource key
+     * @param args
+     */
+    String messageFormat(String key, Object... args) {
+        String rs = getResourceString(key);
+        return MessageFormat.format(rs, args);
+    }
+
+    /**
+     * Print using resource bundle look-up, MessageFormat, and add prefix and
+     * postfix
+     *
+     * @param key the resource key
+     * @param args
+     */
+    void hardmsg(String key, Object... args) {
+        cmdout.println(prefix(messageFormat(key, args)));
+    }
+
+    /**
+     * Print error using resource bundle look-up, MessageFormat, and add prefix
+     * and postfix
+     *
+     * @param key the resource key
+     * @param args
+     */
+    void errormsg(String key, Object... args) {
+        cmdout.println(prefix(messageFormat(key, args), feedback.getErrorPre()));
+    }
+
+    /**
+     * Print command-line error using resource bundle look-up, MessageFormat
+     *
+     * @param key the resource key
+     * @param args
+     */
+    void startmsg(String key, Object... args) {
+        cmderr.println(prefix(messageFormat(key, args), ""));
+    }
+
+    /**
+     * Print (fluff) using resource bundle look-up, MessageFormat, and add
+     * prefix and postfix
+     *
+     * @param key the resource key
+     * @param args
+     */
+    void fluffmsg(String key, Object... args) {
+        if (feedback.shouldDisplayCommandFluff() && interactive()) {
+            hardmsg(key, args);
+        }
     }
 
     <T> void hardPairs(Stream<T> stream, Function<T, String> a, Function<T, String> b) {
@@ -348,7 +432,8 @@ public class JShellTool {
     public static void main(String[] args) throws Exception {
         new JShellTool(System.in, System.out, System.err, System.out,
                  new ByteArrayInputStream(new byte[0]), System.out, System.err,
-                 Preferences.userRoot().node("tool/JShell"))
+                 Preferences.userRoot().node("tool/JShell"),
+                 Locale.getDefault())
                 .start(args);
     }
 
@@ -373,12 +458,11 @@ public class JShellTool {
         }
 
         for (String loadFile : loadList) {
-            cmdOpen(loadFile);
+            runFile(loadFile, "jshell");
         }
 
         if (regenerateOnDeath) {
-            hard("Welcome to JShell -- Version %s", version());
-            hard("Type /help for help");
+            hardmsg("jshell.msg.welcome", version());
         }
 
         try {
@@ -409,13 +493,13 @@ public class JShellTool {
                     case "-classpath":
                     case "-cp":
                         if (cmdlineClasspath != null) {
-                            cmderr.printf("Conflicting -classpath option.\n");
+                            startmsg("jshell.err.opt.classpath.conflict");
                             return null;
                         }
                         if (ai.hasNext()) {
                             cmdlineClasspath = ai.next();
                         } else {
-                            cmderr.printf("Argument to -classpath missing.\n");
+                            startmsg("jshell.err.opt.classpath.arg");
                             return null;
                         }
                         break;
@@ -430,35 +514,23 @@ public class JShellTool {
                         return null;
                     case "-startup":
                         if (cmdlineStartup != null) {
-                            cmderr.printf("Conflicting -startup or -nostartup option.\n");
+                            startmsg("jshell.err.opt.startup.conflict");
                             return null;
                         }
-                        if (ai.hasNext()) {
-                            String filename = ai.next();
-                            try {
-                                byte[] encoded = Files.readAllBytes(Paths.get(filename));
-                                cmdlineStartup = new String(encoded);
-                            } catch (AccessDeniedException e) {
-                                hard("File '%s' for start-up is not accessible.", filename);
-                            } catch (NoSuchFileException e) {
-                                hard("File '%s' for start-up is not found.", filename);
-                            } catch (Exception e) {
-                                hard("Exception while reading start-up file: %s", e);
-                            }
-                        } else {
-                            cmderr.printf("Argument to -startup missing.\n");
+                        cmdlineStartup = readFile(ai.hasNext()? ai.next() : null, "'-startup'");
+                        if (cmdlineStartup == null) {
                             return null;
                         }
                         break;
                     case "-nostartup":
                         if (cmdlineStartup != null && !cmdlineStartup.isEmpty()) {
-                            cmderr.printf("Conflicting -startup option.\n");
+                            startmsg("jshell.err.opt.startup.conflict");
                             return null;
                         }
                         cmdlineStartup = "";
                         break;
                     default:
-                        cmderr.printf("Unknown option: %s\n", arg);
+                        startmsg("jshell.err.opt.unknown", arg);
                         printUsage();
                         return null;
                 }
@@ -470,14 +542,7 @@ public class JShellTool {
     }
 
     private void printUsage() {
-        rawout("Usage:   jshell <options> <load files>\n");
-        rawout("where possible options include:\n");
-        rawout("  -classpath <path>          Specify where to find user class files\n");
-        rawout("  -cp <path>                 Specify where to find user class files\n");
-        rawout("  -startup <file>            One run replacement for the start-up definitions\n");
-        rawout("  -nostartup                 Do not run the start-up definitions\n");
-        rawout("  -help                      Print a synopsis of standard options\n");
-        rawout("  -version                   Version information\n");
+        cmdout.print(getResourceString("help.usage"));
     }
 
     private void resetState() {
@@ -505,8 +570,7 @@ public class JShellTool {
                 .build();
         shutdownSubscription = state.onShutdown((JShell deadState) -> {
             if (deadState == state) {
-                hard("State engine terminated.");
-                hard("Restore definitions with: /reload restore");
+                hardmsg("jshell.msg.terminated");
                 live = false;
             }
         });
@@ -539,7 +603,7 @@ public class JShellTool {
         try (IOContext suin = new FileScannerIOContext(new StringReader(start))) {
             run(suin);
         } catch (Exception ex) {
-            hard("Unexpected exception reading start-up: %s\n", ex);
+            hardmsg("jshell.err.startup.unexpected.exception", ex);
         }
     }
 
@@ -604,7 +668,7 @@ public class JShellTool {
                 }
             }
         } catch (IOException ex) {
-            hard("Unexpected exception: %s\n", ex);
+            errormsg("jshell.err.unexpected.exception", ex);
         } finally {
             input = oldInput;
         }
@@ -649,8 +713,8 @@ public class JShellTool {
         switch (candidates.length) {
             case 0:
                 if (!rerunHistoryEntryById(cmd.substring(1))) {
-                    error("No such command or snippet id: %s", cmd);
-                    fluff("Type /help for help.");
+                    errormsg("jshell.err.no.such.command.or.snippet.id", cmd);
+                    fluffmsg("jshell.msg.help.for.help");
                 }   break;
             case 1:
                 Command command = candidates[0];
@@ -659,8 +723,9 @@ public class JShellTool {
                     addToReplayHistory((command.command + " " + arg).trim());
                 }   break;
             default:
-                error("Command: %s is ambiguous: %s", cmd, Arrays.stream(candidates).map(c -> c.command).collect(Collectors.joining(", ")));
-                fluff("Type /help for help.");
+                errormsg("jshell.err.command.ambiguous", cmd,
+                        Arrays.stream(candidates).map(c -> c.command).collect(Collectors.joining(", ")));
+                fluffmsg("jshell.msg.help.for.help");
                 break;
         }
     }
@@ -686,35 +751,33 @@ public class JShellTool {
 
     static final class Command {
         public final String command;
-        public final String params;
-        public final String description;
-        public final String help;
+        public final String helpKey;
         public final Function<String,Boolean> run;
         public final CompletionProvider completions;
         public final CommandKind kind;
 
         // NORMAL Commands
-        public Command(String command, String params, String description, String help,
-                Function<String,Boolean> run, CompletionProvider completions) {
-            this(command, params, description, help,
-                    run, completions, CommandKind.NORMAL);
+        public Command(String command, Function<String,Boolean> run, CompletionProvider completions) {
+            this(command, run, completions, CommandKind.NORMAL);
+        }
+
+        // Special kinds of Commands
+        public Command(String command, Function<String,Boolean> run, CompletionProvider completions, CommandKind kind) {
+            this(command, "help." + command.substring(1),
+                    run, completions, kind);
         }
 
         // Documentation pseudo-commands
-        public Command(String command, String description, String help,
-                CommandKind kind) {
-            this(command, null, description, help,
+        public Command(String command, String helpKey, CommandKind kind) {
+            this(command, helpKey,
                     arg -> { throw new IllegalStateException(); },
                     EMPTY_COMPLETION_PROVIDER,
                     kind);
         }
 
-        public Command(String command, String params, String description, String help,
-                Function<String,Boolean> run, CompletionProvider completions, CommandKind kind) {
+        public Command(String command, String helpKey, Function<String,Boolean> run, CompletionProvider completions, CommandKind kind) {
             this.command = command;
-            this.params = params;
-            this.description = description;
-            this.help = help;
+            this.helpKey = helpKey;
             this.run = run;
             this.completions = completions;
             this.kind = kind;
@@ -853,221 +916,86 @@ public class JShellTool {
         };
     }
 
-    // Table of commands -- with command forms, argument kinds, help message, implementation, ...
+    // Table of commands -- with command forms, argument kinds, helpKey message, implementation, ...
 
     {
-        registerCommand(new Command("/list", "[all|start|<name or id>]", "list the source you have typed",
-                "Show the source of snippets, prefaced with the snippet id.\n\n" +
-                "/list\n" +
-                "  -- List the currently active snippets of code that you typed or read with /open\n" +
-                "/list start\n" +
-                "  -- List the automatically evaluated start-up snippets\n" +
-                "/list all\n" +
-                "  -- List all snippets including failed, overwritten, dropped, and start-up\n" +
-                "/list <name>\n" +
-                "  -- List snippets with the specified name (preference for active snippets)\n" +
-                "/list <id>\n" +
-                "  -- List the snippet with the specified snippet id\n",
+        registerCommand(new Command("/list",
                 arg -> cmdList(arg),
                 editKeywordCompletion()));
-        registerCommand(new Command("/edit", "<name or id>", "edit a source entry referenced by name or id",
-                "Edit a snippet or snippets of source in an external editor.\n" +
-                "The editor to use is set with /set editor.\n" +
-                "If no editor has been set, a simple editor will be launched.\n\n" +
-                "/edit <name>\n" +
-                "  -- Edit the snippet or snippets with the specified name (preference for active snippets)\n" +
-                "/edit <id>\n" +
-                "  -- Edit the snippet with the specified snippet id\n" +
-                "/edit\n" +
-                "  -- Edit the currently active snippets of code that you typed or read with /open\n",
+        registerCommand(new Command("/edit",
                 arg -> cmdEdit(arg),
                 editCompletion()));
-        registerCommand(new Command("/drop", "<name or id>", "delete a source entry referenced by name or id",
-                "Drop a snippet -- making it inactive.\n\n" +
-                "/drop <name>\n" +
-                "  -- Drop the snippet with the specified name\n" +
-                "/drop <id>\n" +
-                "  -- Drop the snippet with the specified snippet id\n",
+        registerCommand(new Command("/drop",
                 arg -> cmdDrop(arg),
                 editCompletion(),
                 CommandKind.REPLAY));
-        registerCommand(new Command("/save", "[all|history|start] <file>", "Save snippet source to a file.",
-                "Save the specified snippets and/or commands to the specified file.\n\n" +
-                "/save <file>\n" +
-                "  -- Save the source of current active snippets to the file\n" +
-                "/save all <file>\n" +
-                "  -- Save the source of all snippets to the file\n" +
-                "     Includes source including overwritten, failed, and start-up code\n" +
-                "/save history <file>\n" +
-                "  -- Save the sequential history of all commands and snippets entered since jshell was launched\n" +
-                "/save start <file>\n" +
-                "  -- Save the default start-up definitions to the file\n",
+        registerCommand(new Command("/save",
                 arg -> cmdSave(arg),
                 saveCompletion()));
-        registerCommand(new Command("/open", "<file>", "open a file as source input",
-                "Open a file and read its contents as snippets and commands.\n\n" +
-                "/open <file>\n" +
-                "  -- Read the specified file as jshell input.\n",
+        registerCommand(new Command("/open",
                 arg -> cmdOpen(arg),
                 FILE_COMPLETION_PROVIDER));
-        registerCommand(new Command("/vars", null, "list the declared variables and their values",
-                "List the type, name, and value of the current active jshell variables.\n",
+        registerCommand(new Command("/vars",
                 arg -> cmdVars(),
                 EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/methods", null, "list the declared methods and their signatures",
-                "List the name, parameter types, and return type of the current active jshell methods.\n",
+        registerCommand(new Command("/methods",
                 arg -> cmdMethods(),
                 EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/classes", null, "list the declared classes",
-                "List the current active jshell classes, interfaces, and enums.\n",
+        registerCommand(new Command("/classes",
                 arg -> cmdClasses(),
                 EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/imports", null, "list the imported items",
-                "List the current active jshell imports.\n",
+        registerCommand(new Command("/imports",
                 arg -> cmdImports(),
                 EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/exit", null, "exit jshell",
-                "Leave the jshell tool.  No work is saved.\n" +
-                "Save any work before using this command\n",
+        registerCommand(new Command("/exit",
                 arg -> cmdExit(),
                 EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/reset", null, "reset jshell",
-                "Reset the jshell tool code and execution state:\n" +
-                "   * All entered code is lost.\n" +
-                "   * Start-up code is re-executed.\n" +
-                "   * The execution state is restarted.\n" +
-                "   * The classpath is cleared.\n" +
-                "Tool settings are maintained, as set with: /set ...\n" +
-                "Save any work before using this command\n",
+        registerCommand(new Command("/reset",
                 arg -> cmdReset(),
                 EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/reload", "[restore] [quiet]", "reset and replay relevant history -- current or previous (restore)",
-                "Reset the jshell tool code and execution state then replay each\n" +
-                "jshell valid command and valid snippet in the order they were entered.\n\n" +
-                "/reload\n" +
-                "  -- Reset and replay the valid history since jshell was entered, or\n" +
-                "     a /reset, or /reload command was executed -- whichever is most\n" +
-                "     recent.\n" +
-                "/reload restore\n" +
-                "  -- Reset and replay the valid history between the previous and most\n" +
-                "     recent time that jshell was entered, or a /reset, or /reload\n" +
-                "     command was executed. This can thus be used to restore a previous\n" +
-                "     jshell tool sesson.\n" +
-                "/reload [restore] quiet\n" +
-                "  -- With the 'quiet' argument the replay is not shown.  Errors will display.\n",
+        registerCommand(new Command("/reload",
                 arg -> cmdReload(arg),
                 reloadCompletion()));
-        registerCommand(new Command("/classpath", "<path>", "add a path to the classpath",
-                "Append a additional path to the classpath.\n",
+        registerCommand(new Command("/classpath",
                 arg -> cmdClasspath(arg),
                 classPathCompletion(),
                 CommandKind.REPLAY));
-        registerCommand(new Command("/history", null, "history of what you have typed",
-                "Display the history of snippet and command input since this jshell was launched.\n",
+        registerCommand(new Command("/history",
                 arg -> cmdHistory(),
                 EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/debug", null, "toggle debugging of the jshell",
-                "Display debugging information for the jshelll implementation.\n" +
-                "0: Debugging off\n" +
-                "r: Debugging on\n" +
-                "g: General debugging on\n" +
-                "f: File manager debugging on\n" +
-                "c': Completion analysis debugging on\n" +
-                "d': Dependency debugging on\n" +
-                "e': Event debugging on\n",
+        registerCommand(new Command("/debug",
                 arg -> cmdDebug(arg),
                 EMPTY_COMPLETION_PROVIDER,
                 CommandKind.HIDDEN));
-        registerCommand(new Command("/help", "[<command>|<subject>]", "get information about jshell",
-                "Display information about jshell.\n" +
-                "/help\n" +
-                "  -- List the jshell commands and help subjects.\n" +
-                "/help <command>\n" +
-                "  -- Display information about the specified comand. The slash must be included.\n" +
-                "     Only the first few letters of the command are needed -- if more than one\n" +
-                "     each will be displayed.  Example:  /help /li\n" +
-                "/help <subject>\n" +
-                "  -- Display information about the specified help subject. Example: /help intro\n",
+        registerCommand(new Command("/help",
                 arg -> cmdHelp(arg),
                 EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/set", "editor|start|feedback|newmode|prompt|format ...", "set jshell configuration information",
-                "Set jshell configuration information, including:\n" +
-                "the external editor to use, the start-up definitions to use, a new feedback mode,\n" +
-                "the command prompt, the feedback mode to use, or the format of output.\n" +
-                "\n" +
-                "/set editor <command> <optional-arg>...\n" +
-                "  -- Specify the command to launch for the /edit command.\n" +
-                "     The <command> is an operating system dependent string.\n" +
-                "\n" +
-                "/set start <file>\n" +
-                "  -- The contents of the specified <file> become the default start-up snippets and commands.\n" +
-                "\n" +
-                "/set feedback <mode>\n" +
-                "  -- Set the feedback mode describing displayed feedback for entered snippets and commands.\n" +
-                "\n" +
-                "/set newmode <new-mode> [command|quiet [<old-mode>]]\n" +
-                "  -- Create a user-defined feedback mode, optionally copying from an existing mode.\n" +
-                "\n" +
-                "/set prompt <mode> \"<prompt>\" \"<continuation-prompt>\"\n" +
-                "  -- Set the displayed prompts for a given feedback mode.\n" +
-                "\n" +
-                "/set format <mode> <field> \"<format>\" <selector>...\n" +
-                "  -- Configure a feedback mode by setting the format of a field when the selector matchs.\n" +
-                "\n" +
-                "To get more information about one of these forms, use /help with the form specified.\n" +
-                "For example:   /help /set format\n",
+        registerCommand(new Command("/set",
                 arg -> cmdSet(arg),
                 new FixedCompletionProvider("format", "feedback", "prompt", "newmode", "start", "editor")));
-        registerCommand(new Command("/?", "", "get information about jshell",
-                "Display information about jshell (abbreviation for /help).\n" +
-                "/?\n" +
-                "  -- Display list of commands and help subjects.\n" +
-                "/? <command>\n" +
-                "  -- Display information about the specified comand. The slash must be included.\n" +
-                "     Only the first few letters of the command are needed -- if more than one\n" +
-                "     match, each will be displayed.  Example:  /? /li\n" +
-                "/? <subject>\n" +
-                "  -- Display information about the specified help subject. Example: /? intro\n",
+        registerCommand(new Command("/?",
+                "help.quest",
                 arg -> cmdHelp(arg),
-                EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/!", "", "re-run last snippet",
-                "Reevaluate the most recently entered snippet.\n",
+                EMPTY_COMPLETION_PROVIDER,
+                CommandKind.NORMAL));
+        registerCommand(new Command("/!",
+                "help.bang",
                 arg -> cmdUseHistoryEntry(-1),
-                EMPTY_COMPLETION_PROVIDER));
+                EMPTY_COMPLETION_PROVIDER,
+                CommandKind.NORMAL));
 
         // Documentation pseudo-commands
-
-        registerCommand(new Command("/<id>", "re-run snippet by id",
-                "",
+        registerCommand(new Command("/<id>",
+                "help.id",
                 CommandKind.HELP_ONLY));
-        registerCommand(new Command("/-<n>", "re-run n-th previous snippet",
-                "",
+        registerCommand(new Command("/-<n>",
+                "help.previous",
                 CommandKind.HELP_ONLY));
-        registerCommand(new Command("intro", "An introduction to the jshell tool",
-                "The jshell tool allows you to execute Java code, getting immediate results.\n" +
-                "You can enter a Java definition (variable, method, class, etc), like:  int x = 8\n" +
-                "or a Java expression, like:  x + x\n" +
-                "or a Java statement or import.\n" +
-                "These little chunks of Java code are called 'snippets'.\n\n" +
-                "There are also jshell commands that allow you to understand and\n" +
-                "control what you are doing, like:  /list\n\n" +
-                "For a list of commands: /help",
+        registerCommand(new Command("intro",
+                "help.intro",
                 CommandKind.HELP_SUBJECT));
-        registerCommand(new Command("shortcuts", "Describe shortcuts",
-                "Supported shortcuts include:\n\n" +
-                "<tab>            -- After entering the first few letters of a Java identifier,\n" +
-                "                    a jshell command, or, in some cases, a jshell command argument,\n" +
-                "                    press the <tab> key to complete the input.\n" +
-                "                    If there is more than one completion, show possible completions.\n" +
-                "Shift-<tab>      -- After the name and open parenthesis of a method or constructor invocation,\n" +
-                "                    hold the <shift> key and press the <tab> to see a synopsis of all\n" +
-                "                    matching methods/constructors.\n" +
-                "<fix-shortcut> v -- After a complete expression, press \"<fix-shortcut> v\" to introduce a new variable\n" +
-                "                    whose type is based on the type of the expression.\n" +
-                "                    The \"<fix-shortcut>\" is either Alt-F1 or Alt-Enter, depending on the platform.\n" +
-                "<fix-shortcut> i -- After an unresolvable identifier, press \"<fix-shortcut> i\" and jshell will propose\n" +
-                "                    possible fully qualified names based on the content of the specified classpath.\n" +
-                "                    The \"<fix-shortcut>\" is either Alt-F1 or Alt-Enter, depending on the platform.\n",
+        registerCommand(new Command("shortcuts",
+                "help.shortcuts",
                 CommandKind.HELP_SUBJECT));
     }
 
@@ -1109,7 +1037,7 @@ public class JShellTool {
             String cmd = code.substring(0, space);
             Command command = commands.get(cmd);
             if (command != null) {
-                return command.description;
+                return getResourceString(command.helpKey + ".summary");
             }
         }
 
@@ -1139,7 +1067,7 @@ public class JShellTool {
             case "editor": {
                 String prog = at.next();
                 if (prog == null) {
-                    hard("The '/set editor' command requires a path argument");
+                    errormsg("jshell.err.set.editor.arg");
                     return false;
                 } else {
                     List<String> ed = new ArrayList<>();
@@ -1149,34 +1077,21 @@ public class JShellTool {
                         ed.add(n);
                     }
                     editor = ed.toArray(new String[ed.size()]);
-                    fluff("Editor set to: %s", arg);
+                    fluffmsg("jshell.msg.set.editor.set", arg);
                     return true;
                 }
             }
             case "start": {
-                String filename = at.next();
-                if (filename == null) {
-                    hard("The '/set start' command requires a filename argument.");
+                String init = readFile(at.next(), "'/set start'");
+                if (init == null) {
+                    return false;
                 } else {
-                    try {
-                        byte[] encoded = Files.readAllBytes(toPathResolvingUserHome(filename));
-                        String init = new String(encoded);
-                        prefs.put(STARTUP_KEY, init);
-                    } catch (AccessDeniedException e) {
-                        hard("File '%s' for /set start is not accessible.", filename);
-                        return false;
-                    } catch (NoSuchFileException e) {
-                        hard("File '%s' for /set start is not found.", filename);
-                        return false;
-                    } catch (Exception e) {
-                        hard("Exception while reading start set file: %s", e);
-                        return false;
-                    }
+                    prefs.put(STARTUP_KEY, init);
+                    return true;
                 }
-                return true;
             }
             default:
-                hard("Error: Invalid /set argument: %s", which);
+                errormsg("jshell.err.arg", "/set", at.val());
                 return false;
         }
     }
@@ -1186,56 +1101,26 @@ public class JShellTool {
         if (which == null) {
             return false;
         }
-        switch (which) {
-            case "format":
-                feedback.printFormatHelp(this);
-                return true;
-            case "feedback":
-                feedback.printFeedbackHelp(this);
-                return true;
-            case "newmode":
-                feedback.printNewModeHelp(this);
-                return true;
-            case "prompt":
-                feedback.printPromptHelp(this);
-                return true;
-            case "editor":
-                hard("Specify the command to launch for the /edit command.");
-                hard("");
-                hard("/set editor <command> <optional-arg>...");
-                hard("");
-                hard("The <command> is an operating system dependent string.");
-                hard("The <command> may include space-separated arguments (such as flags) -- <optional-arg>....");
-                hard("When /edit is used, the temporary file to edit will be appended as the last argument.");
-                return true;
-            case "start":
-                hard("Set the start-up configuration -- a sequence of snippets and commands read at start-up.");
-                hard("");
-                hard("/set start <file>");
-                hard("");
-                hard("The contents of the specified <file> become the default start-up snippets and commands --");
-                hard("which are run when the jshell tool is started or reset.");
-                return true;
-            default:
-                hard("Error: Invalid /set argument: %s", which);
-                return false;
-        }
+        hardrb("help.set." + which);
+        return true;
     }
 
     String setSubCommand(ArgTokenizer at) {
         String[] matches = at.next(SET_SUBCOMMANDS);
         if (matches == null) {
-            error("The /set command requires arguments. See: /help /set");
+            errormsg("jshell.err.set.arg");
             return null;
-        } else if (matches.length == 0) {
-            error("Not a valid argument to /set: %s", at.val());
-            fluff("/set is followed by one of: %s", Arrays.stream(SET_SUBCOMMANDS)
+        }
+        if (matches.length == 0) {
+            errormsg("jshell.err.arg", "/set", at.val());
+            fluffmsg("jshell.msg.use.one.of", Arrays.stream(SET_SUBCOMMANDS)
                     .collect(Collectors.joining(", "))
             );
             return null;
-        } else if (matches.length > 1) {
-            error("Ambiguous argument to /set: %s", at.val());
-            fluff("Use one of: %s", Arrays.stream(matches)
+        }
+        if (matches.length > 1) {
+            errormsg("jshell.err.set.ambiguous", at.val());
+            fluffmsg("jshell.msg.use.one.of", Arrays.stream(matches)
                     .collect(Collectors.joining(", "))
             );
             return null;
@@ -1245,11 +1130,11 @@ public class JShellTool {
 
     boolean cmdClasspath(String arg) {
         if (arg.isEmpty()) {
-            hard("/classpath requires a path argument");
+            errormsg("jshell.err.classpath.arg");
             return false;
         } else {
             state.addToClasspath(toPathResolvingUserHome(arg).toString());
-            fluff("Path %s added to classpath", arg);
+            fluffmsg("jshell.msg.classpath", arg);
             return true;
         }
     }
@@ -1322,7 +1207,7 @@ public class JShellTool {
                     .get();
             prefs.put(REPLAY_RESTORE_KEY, hist);
         }
-        fluff("Goodbye\n");
+        fluffmsg("jshell.msg.goodbye");
         return true;
     }
 
@@ -1344,31 +1229,24 @@ public class JShellTool {
                     hard("");
                     hard("%s", c.command);
                     hard("");
-                    hard("%s", c.help.replaceAll("\n", LINE_SEP + feedback.getPre()));
+                    hardrb(c.helpKey);
                 }
                 return true;
             } else {
-                error("No commands or subjects start with the provided argument: %s\n\n", arg);
+                errormsg("jshell.err.help.arg", arg);
             }
         }
-        hard("Type a Java language expression, statement, or declaration.");
-        hard("Or type one of the following commands:");
-        hard("");
+        hardmsg("jshell.msg.help.begin");
         hardPairs(commands.values().stream()
                 .filter(cmd -> cmd.kind.showInHelp),
-                cmd -> (cmd.params != null)
-                            ? cmd.command + " " + cmd.params
-                            : cmd.command,
-                cmd -> cmd.description
+                cmd -> cmd.command + " " + getResourceString(cmd.helpKey + ".args"),
+                cmd -> getResourceString(cmd.helpKey + ".summary")
         );
-        hard("");
-        hard("For more information type '/help' followed by the name of command or a subject.");
-        hard("For example '/help /list' or '/help intro'.  Subjects:");
-        hard("");
+        hardmsg("jshell.msg.help.subject");
         hardPairs(commands.values().stream()
                 .filter(cmd -> cmd.kind == CommandKind.HELP_SUBJECT),
                 cmd -> cmd.command,
-                cmd -> cmd.description
+                cmd -> getResourceString(cmd.helpKey + ".summary")
         );
         return true;
     }
@@ -1460,28 +1338,28 @@ public class JShellTool {
 
     private boolean cmdDrop(String arg) {
         if (arg.isEmpty()) {
-            hard("In the /drop argument, please specify an import, variable, method, or class to drop.");
-            hard("Specify by id or name. Use /list to see ids. Use /reset to reset all state.");
+            errormsg("jshell.err.drop.arg");
             return false;
         }
         Stream<Snippet> stream = argToSnippets(arg, false);
         if (stream == null) {
-            hard("No definition or id named %s found.  See /classes, /methods, /vars, or /list", arg);
+            errormsg("jshell.err.def.or.id.not.found", arg);
+            fluffmsg("jshell.msg.see.classes.etc");
             return false;
         }
         List<Snippet> snippets = stream
                 .filter(sn -> state.status(sn).isActive && sn instanceof PersistentSnippet)
                 .collect(toList());
         if (snippets.isEmpty()) {
-            hard("The argument did not specify an active import, variable, method, or class to drop.");
+            errormsg("jshell.err.drop.active");
             return false;
         }
         if (snippets.size() > 1) {
-            hard("The argument references more than one import, variable, method, or class.");
-            hard("Try again with one of the ids below:");
-            for (Snippet sn : snippets) {
-                cmdout.printf("%4s : %s\n", sn.id(), sn.source().replace("\n", "\n       "));
-            }
+            errormsg("jshell.err.drop.ambiguous");
+            fluffmsg("jshell.msg.use.one.of", snippets.stream()
+                    .map(sn -> String.format("\n%4s : %s", sn.id(), sn.source().replace("\n", "\n       ")))
+                    .collect(Collectors.joining(", "))
+            );
             return false;
         }
         PersistentSnippet psn = (PersistentSnippet) snippets.get(0);
@@ -1492,7 +1370,8 @@ public class JShellTool {
     private boolean cmdEdit(String arg) {
         Stream<Snippet> stream = argToSnippets(arg, true);
         if (stream == null) {
-            hard("No definition or id named %s found.  See /classes, /methods, /vars, or /list", arg);
+            errormsg("jshell.err.def.or.id.not.found", arg);
+            fluffmsg("jshell.msg.see.classes.etc");
             return false;
         }
         Set<String> srcSet = new LinkedHashSet<>();
@@ -1565,7 +1444,7 @@ public class JShellTool {
                     }
                     currSrcs = nextSrcs;
                 } catch (IllegalStateException ex) {
-                    hard("Resetting...");
+                    hardmsg("jshell.msg.resetting");
                     resetState();
                     currSrcs = new LinkedHashSet<>(); // re-process everything
                 }
@@ -1591,11 +1470,12 @@ public class JShellTool {
         }
         Stream<Snippet> stream = argToSnippets(arg, true);
         if (stream == null) {
+            errormsg("jshell.err.def.or.id.not.found", arg);
             // Check if there are any definitions at all
             if (argToSnippets("", false).iterator().hasNext()) {
-                hard("No definition or id named %s found.  Try /list without arguments.", arg);
+                fluffmsg("jshell.msg.try.list.without.args");
             } else {
-                hard("No definition or id named %s found.  There are no active definitions.", arg);
+                hardmsg("jshell.msg.no.active");
             }
             return false;
         }
@@ -1613,26 +1493,54 @@ public class JShellTool {
     }
 
     private boolean cmdOpen(String filename) {
-        if (filename.isEmpty()) {
-            hard("The /open command requires a filename argument.");
-            return false;
-        } else {
+        return runFile(filename, "'/open'");
+    }
+
+    private boolean runFile(String filename, String context) {
+        if (!filename.isEmpty()) {
             try {
                 run(new FileScannerIOContext(toPathResolvingUserHome(filename).toString()));
+                return true;
             } catch (FileNotFoundException e) {
-                hard("File '%s' is not found: %s", filename, e.getMessage());
-                return false;
+                errormsg("jshell.err.file.not.found", context, filename, e.getMessage());
             } catch (Exception e) {
-                hard("Exception while reading file: %s", e);
-                return false;
+                errormsg("jshell.err.file.exception", context, filename, e);
             }
+        } else {
+            errormsg("jshell.err.file.filename", context);
         }
-        return true;
+        return false;
+    }
+
+    /**
+     * Read an external file. Error messages accessed via keyPrefix
+     *
+     * @param filename file to access or null
+     * @param context printable non-natural language context for errors
+     * @return contents of file as string
+     */
+    String readFile(String filename, String context) {
+        if (filename != null) {
+            try {
+                byte[] encoded = Files.readAllBytes(Paths.get(filename));
+                return new String(encoded);
+            } catch (AccessDeniedException e) {
+                errormsg("jshell.err.file.not.accessible", context, filename, e.getMessage());
+            } catch (NoSuchFileException e) {
+                errormsg("jshell.err.file.not.found", context, filename, e.getMessage());
+            } catch (Exception e) {
+                errormsg("jshell.err.file.exception", context, filename, e);
+            }
+        } else {
+            errormsg("jshell.err.file.filename", context);
+        }
+        return null;
+
     }
 
     private boolean cmdReset() {
         live = false;
-        fluff("Resetting state.");
+        fluffmsg("jshell.msg.resetting.state");
         return true;
     }
 
@@ -1642,21 +1550,20 @@ public class JShellTool {
         if (arg.length() > 0) {
             if ("restore".startsWith(arg)) {
                 if (replayableHistoryPrevious == null) {
-                    hard("No previous history to restore\n", arg);
+                    errormsg("jshell.err.reload.no.previous");
                     return false;
                 }
                 history = replayableHistoryPrevious;
             } else if ("quiet".startsWith(arg)) {
                 echo = false;
             } else {
-                hard("Invalid argument to reload command: %s\nUse 'restore', 'quiet', or no argument\n", arg);
+                errormsg("jshell.err.arg", "/reload", arg);
                 return false;
             }
         }
-        fluff("Restarting and restoring %s.",
-                history == replayableHistoryPrevious
-                        ? "from previous state"
-                        : "state");
+        fluffmsg(history == replayableHistoryPrevious
+                        ? "jshell.err.reload.restarting.previous.state"
+                        : "jshell.err.reload.restarting.state");
         resetState();
         run(new ReloadIOContext(history,
                 echo? cmdout : null));
@@ -1666,7 +1573,7 @@ public class JShellTool {
     private boolean cmdSave(String arg_filename) {
         Matcher mat = HISTORY_ALL_START_FILENAME.matcher(arg_filename);
         if (!mat.find()) {
-            hard("Malformed argument to the /save command: %s", arg_filename);
+            errormsg("jshell.err.arg", arg_filename);
             return false;
         }
         boolean useHistory = false;
@@ -1686,7 +1593,7 @@ public class JShellTool {
         }
         String filename = mat.group("filename");
         if (filename == null ||filename.isEmpty()) {
-            hard("The /save command requires a filename argument.");
+            errormsg("jshell.err.file.filename", "/save");
             return false;
         }
         try (BufferedWriter writer = Files.newBufferedWriter(toPathResolvingUserHome(filename),
@@ -1709,10 +1616,10 @@ public class JShellTool {
                 }
             }
         } catch (FileNotFoundException e) {
-            hard("File '%s' for save is not accessible: %s", filename, e.getMessage());
+            errormsg("jshell.err.file.not.found", "/save", filename, e.getMessage());
             return false;
         } catch (Exception e) {
-            hard("Exception while saving: %s", e);
+            errormsg("jshell.err.file.exception", "/save", filename, e);
             return false;
         }
         return true;
@@ -1722,7 +1629,7 @@ public class JShellTool {
         for (VarSnippet vk : state.variables()) {
             String val = state.status(vk) == Status.VALID
                     ? state.varValue(vk)
-                    : "(not-active)";
+                    : "jshell.msg.vars.not.active";
             hard("  %s %s = %s", vk.typeName(), vk.name(), val);
         }
         return true;
@@ -1777,7 +1684,7 @@ public class JShellTool {
         if (index >= 0 && index < keys.size()) {
             rerunSnippet(keys.get(index));
         } else {
-            hard("Cannot find snippet %d", index + 1);
+            errormsg("jshell.err.out.of.range");
             return false;
         }
         return true;
@@ -1912,11 +1819,7 @@ public class JShellTool {
         if (ste.causeSnippet() == null) {
             // main event
             for (Diag d : diagnostics) {
-                if (d.isError()) {
-                    hard("Error:");
-                } else {
-                    hard("Warning:");
-                }
+                hardmsg(d.isError()? "jshell.msg.error" : "jshell.msg.warning");
                 List<String> disp = new ArrayList<>();
                 displayDiagnostics(source, d, disp);
                 disp.stream()
@@ -1939,7 +1842,7 @@ public class JShellTool {
                 }
             } else {
                 if (diagnostics.isEmpty()) {
-                    hard("Failed.");
+                    errormsg("jshell.err.failed");
                 }
                 return true;
             }
@@ -1975,9 +1878,9 @@ public class JShellTool {
             String fileName = ste.getFileName();
             int lineNumber = ste.getLineNumber();
             String loc = ste.isNativeMethod()
-                    ? "Native Method"
+                    ? getResourceString("jshell.msg.native.method")
                     : fileName == null
-                            ? "Unknown Source"
+                            ? getResourceString("jshell.msg.unknown.source")
                             : lineNumber >= 0
                                     ? fileName + ":" + lineNumber
                                     : fileName;

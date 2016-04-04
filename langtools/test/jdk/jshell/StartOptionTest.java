@@ -37,6 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.function.Consumer;
 
 import jdk.internal.jshell.tool.JShellTool;
@@ -55,7 +56,8 @@ public class StartOptionTest {
 
     private JShellTool getShellTool() {
         return new JShellTool(null, new PrintStream(out), new PrintStream(err), null, null, null,
-                              null, new ReplToolTesting.MemoryPreferences());
+                              null, new ReplToolTesting.MemoryPreferences(),
+                              Locale.ROOT);
     }
 
     private String getOutput() {
@@ -116,10 +118,10 @@ public class StartOptionTest {
         Compiler compiler = new Compiler();
         Path p = compiler.getPath("file.txt");
         compiler.writeToFile(p);
-        start("", "Argument to -startup missing.\n", "-startup");
+        start("", "'-startup' requires a filename argument.\n", "-startup");
         start("", "Conflicting -startup or -nostartup option.\n", "-startup", p.toString(), "-startup", p.toString());
         start("", "Conflicting -startup or -nostartup option.\n", "-nostartup", "-startup", p.toString());
-        start("", "Conflicting -startup option.\n", "-startup", p.toString(), "-nostartup");
+        start("", "Conflicting -startup or -nostartup option.\n", "-startup", p.toString(), "-nostartup");
     }
 
     @Test
