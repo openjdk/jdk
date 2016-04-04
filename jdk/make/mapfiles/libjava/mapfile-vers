@@ -259,7 +259,6 @@ SUNWprivate_1.1 {
 		Java_java_io_Console_istty;
 		Java_java_io_Console_encoding;
                 Java_java_io_Console_echo;
-		Java_sun_misc_GC_maxObjectInspectionAge;
 		Java_sun_reflect_NativeConstructorAccessorImpl_newInstance0;
 		Java_sun_reflect_NativeMethodAccessorImpl_invoke0;
 		Java_sun_reflect_Reflection_getCallerClass__;

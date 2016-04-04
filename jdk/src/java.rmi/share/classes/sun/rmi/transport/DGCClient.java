@@ -41,7 +41,6 @@ import java.rmi.dgc.DGC;
 import java.rmi.dgc.Lease;
 import java.rmi.dgc.VMID;
 import java.rmi.server.ObjID;
-import sun.misc.GC;
 import sun.rmi.runtime.NewThreadAction;
 import sun.rmi.server.UnicastRef;
 import sun.rmi.server.Util;

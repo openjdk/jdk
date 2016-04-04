@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package sun.rmi.transport;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -38,7 +38,7 @@ import java.util.TreeSet;
  * @since    1.2
  */
 
-public class GC {
+class GC {
 
     private GC() { }            /* To prevent instantiation */
 
@@ -81,6 +81,14 @@ public class GC {
      * before it can be reclaimed.
      */
     public static native long maxObjectInspectionAge();
+
+    static {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                System.loadLibrary("rmi");
+                return null;
+            }});
+    }
 
     private static class Daemon extends Thread {
 
