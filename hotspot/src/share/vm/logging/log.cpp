@@ -90,7 +90,7 @@ class TestLogSavedConfig {
  private:
   char* _saved_config;
   char* _new_output;
-  LogHandle(logging) _log;
+  Log(logging) _log;
  public:
   TestLogSavedConfig(const char* apply_output = NULL, const char* apply_setting = NULL) : _new_output(0) {
     _saved_config = os::strdup_check_oom(LogOutput::Stdout->config_string());
@@ -152,7 +152,7 @@ static void Test_logconfiguration_subscribe_helper() {
 
 void Test_logconfiguration_subscribe() {
   ResourceMark rm;
-  LogHandle(logging) log;
+  Log(logging) log;
 
   TestLogSavedConfig log_cfg("stdout", "logging+test=trace");
 

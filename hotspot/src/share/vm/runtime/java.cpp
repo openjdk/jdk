@@ -465,7 +465,7 @@ void before_exit(JavaThread* thread) {
   Universe::heap()->stop();
 
   // Print GC/heap related information.
-  LogHandle(gc, heap, exit) log;
+  Log(gc, heap, exit) log;
   if (log.is_info()) {
     ResourceMark rm;
     Universe::print_on(log.info_stream());

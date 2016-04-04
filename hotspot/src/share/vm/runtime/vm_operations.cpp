@@ -59,7 +59,7 @@ void VM_Operation::evaluate() {
   outputStream* debugstream;
   bool enabled = log_is_enabled(Debug, vmoperation);
   if (enabled) {
-    debugstream = LogHandle(vmoperation)::debug_stream();
+    debugstream = Log(vmoperation)::debug_stream();
     debugstream->print("begin ");
     print_on_error(debugstream);
     debugstream->cr();

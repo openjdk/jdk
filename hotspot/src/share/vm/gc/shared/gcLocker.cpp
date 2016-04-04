@@ -75,7 +75,7 @@ void GCLocker::decrement_debug_jni_lock_count() {
 #endif
 
 void GCLocker::log_debug_jni(const char* msg) {
-  LogHandle(gc, jni) log;
+  Log(gc, jni) log;
   if (log.is_debug()) {
     ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
     log.debug("%s Thread \"%s\" %d locked.", msg, Thread::current()->name(), _jni_lock_count);

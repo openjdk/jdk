@@ -45,11 +45,11 @@ void GCTraceTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::log_start(jlong start
   // Get log with start tag appended (replace first occurrence of NO_TAG)
   const LogTagType start_tag = PREFIX_LOG_TAG(start);
   const LogTagType no_tag = PREFIX_LOG_TAG(_NO_TAG);
-  Log<T0,
-      T1 == no_tag ? start_tag : T1,
-      T1 != no_tag && T2 == no_tag ? start_tag : T2,
-      T2 != no_tag && T3 == no_tag ? start_tag : T3,
-      T3 != no_tag && T4 == no_tag ? start_tag : T4
+  LogImpl<T0,
+          T1 == no_tag ? start_tag : T1,
+          T1 != no_tag && T2 == no_tag ? start_tag : T2,
+          T2 != no_tag && T3 == no_tag ? start_tag : T3,
+          T3 != no_tag && T4 == no_tag ? start_tag : T4
     > log;
 
   if (log.is_level(Level)) {
@@ -73,14 +73,14 @@ void GCTraceTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::log_stop(jlong start_
     stop_msg.append(" (%s)", GCCause::to_string(_gc_cause));
   }
   if (_heap_usage_before == SIZE_MAX) {
-    Log<T0, T1, T2, T3, T4>::template write<Level>("%s " LOG_STOP_TIME_FORMAT,
+    LogImpl<T0, T1, T2, T3, T4>::template write<Level>("%s " LOG_STOP_TIME_FORMAT,
         stop_msg.buffer(), start_time_in_secs, stop_time_in_secs, duration_in_ms);
   } else {
     CollectedHeap* heap = Universe::heap();
     size_t used_before_m = _heap_usage_before / M;
     size_t used_m = heap->used() / M;
     size_t capacity_m = heap->capacity() / M;
-    Log<T0, T1, T2, T3, T4>::template write<Level>("%s " LOG_STOP_HEAP_FORMAT " " LOG_STOP_TIME_FORMAT,
+    LogImpl<T0, T1, T2, T3, T4>::template write<Level>("%s " LOG_STOP_HEAP_FORMAT " " LOG_STOP_TIME_FORMAT,
         stop_msg.buffer(), used_before_m, used_m, capacity_m, start_time_in_secs, stop_time_in_secs, duration_in_ms);
   }
 }
@@ -94,7 +94,7 @@ void GCTraceTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::time_stamp(Ticks& tic
 
 template <LogLevelType Level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag >
 GCTraceTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::GCTraceTimeImpl(const char* title, GCTimer* timer, GCCause::Cause gc_cause, bool log_heap_usage) :
-  _enabled(Log<T0, T1, T2, T3, T4, GuardTag>::is_level(Level)),
+  _enabled(LogImpl<T0, T1, T2, T3, T4, GuardTag>::is_level(Level)),
   _start_ticks(),
   _heap_usage_before(SIZE_MAX),
   _title(title),
@@ -127,9 +127,9 @@ GCTraceTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::~GCTraceTimeImpl() {
 
 template <LogLevelType Level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag >
 GCTraceConcTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::GCTraceConcTimeImpl(const char* title) :
-  _enabled(Log<T0, T1, T2, T3, T4, GuardTag>::is_level(Level)), _start_time(os::elapsed_counter()), _title(title) {
+  _enabled(LogImpl<T0, T1, T2, T3, T4, GuardTag>::is_level(Level)), _start_time(os::elapsed_counter()), _title(title) {
   if (_enabled) {
-    Log<T0, T1, T2, T3, T4>::template write<Level>("%s (%.3fs)", _title, TimeHelper::counter_to_seconds(_start_time));
+    LogImpl<T0, T1, T2, T3, T4>::template write<Level>("%s (%.3fs)", _title, TimeHelper::counter_to_seconds(_start_time));
   }
 }
 
@@ -137,7 +137,7 @@ template <LogLevelType Level, LogTagType T0, LogTagType T1, LogTagType T2, LogTa
 GCTraceConcTimeImpl<Level, T0, T1, T2, T3, T4, GuardTag>::~GCTraceConcTimeImpl() {
   if (_enabled) {
     jlong stop_time = os::elapsed_counter();
-    Log<T0, T1, T2, T3, T4>::template write<Level>("%s " LOG_STOP_TIME_FORMAT,
+    LogImpl<T0, T1, T2, T3, T4>::template write<Level>("%s " LOG_STOP_TIME_FORMAT,
                                                    _title,
                                                    TimeHelper::counter_to_seconds(_start_time),
                                                    TimeHelper::counter_to_seconds(stop_time),

@@ -536,7 +536,7 @@ void G1RemSet::print_periodic_summary_info(const char* header, uint period_count
     current.initialize(this);
     _prev_period_summary.subtract_from(&current);
 
-    LogHandle(gc, remset) log;
+    Log(gc, remset) log;
     log.trace("%s", header);
     ResourceMark rm;
     _prev_period_summary.print_on(log.trace_stream());
@@ -546,7 +546,7 @@ void G1RemSet::print_periodic_summary_info(const char* header, uint period_count
 }
 
 void G1RemSet::print_summary_info() {
-  LogHandle(gc, remset, exit) log;
+  Log(gc, remset, exit) log;
   if (log.is_trace()) {
     log.trace(" Cumulative RS summary");
     G1RemSetSummary current;

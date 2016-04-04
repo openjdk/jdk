@@ -500,7 +500,7 @@ void CompactibleFreeListSpace::dump_at_safepoint_with_locks(CMSCollector* c, out
 
 void CompactibleFreeListSpace::reportFreeListStatistics(const char* title) const {
   assert_lock_strong(&_freelistLock);
-  LogHandle(gc, freelist, stats) log;
+  Log(gc, freelist, stats) log;
   if (!log.is_debug()) {
     return;
   }
@@ -2199,7 +2199,7 @@ class VerifyAllBlksClosure: public BlkClosure {
       }
     }
     if (res == 0) {
-      LogHandle(gc, verify) log;
+      Log(gc, verify) log;
       log.error("Livelock: no rank reduction!");
       log.error(" Current:  addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n"
                 " Previous: addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n",
@@ -2373,7 +2373,7 @@ void CompactibleFreeListSpace::check_free_list_consistency() const {
 
 void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
   assert_lock_strong(&_freelistLock);
-  LogHandle(gc, freelist, census) log;
+  Log(gc, freelist, census) log;
   if (!log.is_debug()) {
     return;
   }

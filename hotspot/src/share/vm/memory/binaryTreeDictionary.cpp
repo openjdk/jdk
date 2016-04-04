@@ -1190,7 +1190,7 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::end_sweep_dict_census(double spl
   // Does walking the tree 3 times hurt?
   set_tree_surplus(splitSurplusPercent);
   set_tree_hints();
-  LogHandle(gc, freelist, stats) log;
+  Log(gc, freelist, stats) log;
   if (log.is_trace()) {
     ResourceMark rm;
     report_statistics(log.trace_stream());
@@ -1232,7 +1232,7 @@ class PrintTreeCensusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_
   FreeList_t* total() { return &_total; }
   size_t total_free() { return _total_free; }
   void do_list(FreeList<Chunk_t>* fl) {
-    LogHandle(gc, freelist, census) log;
+    Log(gc, freelist, census) log;
     outputStream* out = log.debug_stream();
     if (++_print_line >= 40) {
       ResourceMark rm;
@@ -1246,7 +1246,7 @@ class PrintTreeCensusClosure : public AscendTreeCensusClosure<Chunk_t, FreeList_
 
 #if INCLUDE_ALL_GCS
   void do_list(AdaptiveFreeList<Chunk_t>* fl) {
-    LogHandle(gc, freelist, census) log;
+    Log(gc, freelist, census) log;
     outputStream* out = log.debug_stream();
     if (++_print_line >= 40) {
       FreeList_t::print_labels_on(out, "size");

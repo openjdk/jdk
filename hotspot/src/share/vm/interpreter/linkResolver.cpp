@@ -749,9 +749,9 @@ static void trace_method_resolution(const char* prefix,
   ResourceMark rm;
   outputStream* st;
   if (logitables) {
-    st = LogHandle(itables)::trace_stream();
+    st = Log(itables)::trace_stream();
   } else {
-    st = LogHandle(vtables)::trace_stream();
+    st = Log(vtables)::trace_stream();
   }
   st->print("%s%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
             prefix,
