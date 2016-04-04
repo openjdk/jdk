@@ -2954,7 +2954,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
   Method* moop = fr.interpreter_frame_method();
   int max_locals = moop->max_locals();
   // Allocate temp buffer, 1 word per local & 2 per active monitor
-  int buf_size_words = max_locals + active_monitor_count*2;
+  int buf_size_words = max_locals + active_monitor_count * BasicObjectLock::size();
   intptr_t *buf = NEW_C_HEAP_ARRAY(intptr_t,buf_size_words, mtCode);
 
   // Copy the locals.  Order is preserved so that loading of longs works.
