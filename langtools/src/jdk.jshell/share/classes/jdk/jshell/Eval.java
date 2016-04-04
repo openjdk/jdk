@@ -651,17 +651,19 @@ class Eval {
             ModifierDiagnostic(List<Modifier> list, boolean fatal) {
                 this.fatal = fatal;
                 StringBuilder sb = new StringBuilder();
-                sb.append((list.size() > 1) ? "Modifiers " : "Modifier ");
                 for (Modifier mod : list) {
                     sb.append("'");
                     sb.append(mod.toString());
                     sb.append("' ");
                 }
-                sb.append("not permitted in top-level declarations");
-                if (!fatal) {
-                    sb.append(", ignored");
-                }
-                this.message = sb.toString();
+                String key = (list.size() > 1)
+                        ? fatal
+                            ? "jshell.diag.modifier.plural.fatal"
+                            : "jshell.diag.modifier.plural.ignore"
+                        : fatal
+                            ? "jshell.diag.modifier.single.fatal"
+                            : "jshell.diag.modifier.single.ignore";
+                this.message = state.messageFormat(key, sb.toString());
             }
 
             @Override

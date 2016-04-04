@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -194,10 +195,10 @@ public class ReplToolTesting {
     }
 
     public void test(boolean isDefaultStartUp, String[] args, ReplTest... tests) {
-        test(isDefaultStartUp, args, DEFAULT_STARTUP_MESSAGE, tests);
+        test(Locale.ROOT, isDefaultStartUp, args, DEFAULT_STARTUP_MESSAGE, tests);
     }
 
-    public void test(boolean isDefaultStartUp, String[] args, String startUpMessage, ReplTest... tests) {
+    public void test(Locale locale, boolean isDefaultStartUp, String[] args, String startUpMessage, ReplTest... tests) {
         this.isDefaultStartUp = isDefaultStartUp;
         initSnippets();
         ReplTest[] wtests = new ReplTest[tests.length + 3];
@@ -206,7 +207,7 @@ public class ReplToolTesting {
         wtests[1] = a -> assertCommand(a, "/debug 0", null);
         System.arraycopy(tests, 0, wtests, 2, tests.length);
         wtests[tests.length + 2] = a -> assertCommand(a, "/exit", null);
-        testRaw(args, wtests);
+        testRaw(locale, args, wtests);
     }
 
     private void initSnippets() {
@@ -230,7 +231,7 @@ public class ReplToolTesting {
         prefs = new MemoryPreferences();
     }
 
-    public void testRaw(String[] args, ReplTest... tests) {
+    public void testRaw(Locale locale, String[] args, ReplTest... tests) {
         cmdin = new WaitingTestingInputStream();
         cmdout = new ByteArrayOutputStream();
         cmderr = new ByteArrayOutputStream();
@@ -246,7 +247,8 @@ public class ReplToolTesting {
                 userin,
                 new PrintStream(userout),
                 new PrintStream(usererr),
-                prefs);
+                prefs,
+                locale);
         repl.testPrompt = true;
         try {
             repl.start(args);
@@ -258,7 +260,7 @@ public class ReplToolTesting {
         String ceos = getCommandErrorOutput();
         String uos = getUserOutput();
         String ueos = getUserErrorOutput();
-        assertTrue((cos.isEmpty() || cos.startsWith("|  Goodbye")),
+        assertTrue((cos.isEmpty() || cos.startsWith("|  Goodbye") || !locale.equals(Locale.ROOT)),
                 "Expected a goodbye, but got: " + cos);
         assertTrue(ceos.isEmpty(), "Expected empty error output, got: " + ceos);
         assertTrue(uos.isEmpty(), "Expected empty output, got: " + uos);
@@ -459,7 +461,7 @@ public class ReplToolTesting {
 
     private List<String> computeCompletions(String code, boolean isSmart) {
         JShellTool js = this.repl != null ? this.repl
-                                      : new JShellTool(null, null, null, null, null, null, null, prefs);
+                                      : new JShellTool(null, null, null, null, null, null, null, prefs, Locale.ROOT);
         int cursor =  code.indexOf('|');
         code = code.replace("|", "");
         assertTrue(cursor > -1, "'|' not found: " + code);
