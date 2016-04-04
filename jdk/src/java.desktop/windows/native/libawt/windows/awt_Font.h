@@ -230,11 +230,14 @@ public:
     INLINE static jobjectArray GetComponentFonts(JNIEnv *env,
                                                      jobject font) {
       jobject platformFont = env->CallObjectMethod(font, AwtFont::peerMID);
-      jobjectArray result =
-          (jobjectArray)(env->GetObjectField(platformFont,
-                                             AwtFont::componentFontsID));
-      env->DeleteLocalRef(platformFont);
-      return result;
+      if (platformFont != NULL) {
+          jobjectArray result =
+              (jobjectArray)(env->GetObjectField(platformFont,
+                                                 AwtFont::componentFontsID));
+          env->DeleteLocalRef(platformFont);
+          return result;
+      }
+      return NULL;
     }
 
    /*
