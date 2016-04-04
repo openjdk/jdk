@@ -2373,14 +2373,14 @@ void CompactibleFreeListSpace::check_free_list_consistency() const {
 
 void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
   assert_lock_strong(&_freelistLock);
-  Log(gc, freelist, census) log;
-  if (!log.is_debug()) {
+  LogTarget(Debug, gc, freelist, census) log;
+  if (!log.is_enabled()) {
     return;
   }
   AdaptiveFreeList<FreeChunk> total;
-  log.debug("end sweep# " SIZE_FORMAT, sweep_count);
+  log.print("end sweep# " SIZE_FORMAT, sweep_count);
   ResourceMark rm;
-  outputStream* out = log.debug_stream();
+  outputStream* out = log.stream();
   AdaptiveFreeList<FreeChunk>::print_labels_on(out, "size");
   size_t total_free = 0;
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
@@ -2402,8 +2402,8 @@ void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
     total.set_split_deaths(total.split_deaths() + fl->split_deaths());
   }
   total.print_on(out, "TOTAL");
-  log.debug("Total free in indexed lists " SIZE_FORMAT " words", total_free);
-  log.debug("growth: %8.5f  deficit: %8.5f",
+  log.print("Total free in indexed lists " SIZE_FORMAT " words", total_free);
+  log.print("growth: %8.5f  deficit: %8.5f",
             (double)(total.split_births()+total.coal_births()-total.split_deaths()-total.coal_deaths())/
                     (total.prev_sweep() != 0 ? (double)total.prev_sweep() : 1.0),
             (double)(total.desired() - total.count())/(total.desired() != 0 ? (double)total.desired() : 1.0));
