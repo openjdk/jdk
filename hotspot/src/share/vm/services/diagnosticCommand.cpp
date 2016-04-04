@@ -28,6 +28,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/vmGCOperations.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaCalls.hpp"

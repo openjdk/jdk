@@ -35,6 +35,7 @@
 #include "gc/shared/vmGCOperations.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/init.hpp"

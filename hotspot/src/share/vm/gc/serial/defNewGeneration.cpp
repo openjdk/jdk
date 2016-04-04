@@ -43,6 +43,7 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"

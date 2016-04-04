@@ -45,6 +45,7 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/filemap.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/klass.inline.hpp"

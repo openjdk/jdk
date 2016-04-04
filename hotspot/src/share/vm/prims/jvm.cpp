@@ -38,6 +38,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/bytecode.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/instanceKlass.hpp"

@@ -35,6 +35,7 @@
 #include "code/debugInfoRec.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/timerTrace.hpp"
 

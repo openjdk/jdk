@@ -33,6 +33,7 @@
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/jniHandles.hpp"

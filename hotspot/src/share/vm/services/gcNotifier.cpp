@@ -37,6 +37,7 @@
 #include "services/memoryService.hpp"
 #include "memoryManager.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 
 GCNotificationRequest *GCNotifier::first_request = NULL;
 GCNotificationRequest *GCNotifier::last_request = NULL;

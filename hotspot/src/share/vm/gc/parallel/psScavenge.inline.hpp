@@ -31,6 +31,7 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/resourceArea.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 inline void PSScavenge::save_to_space_top_before_gc() {

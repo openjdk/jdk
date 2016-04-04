@@ -38,6 +38,7 @@
 #include "memory/filemap.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceShared.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/timerTrace.hpp"

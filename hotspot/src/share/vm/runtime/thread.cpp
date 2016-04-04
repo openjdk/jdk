@@ -45,6 +45,7 @@
 #include "logging/logConfiguration.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.hpp"
