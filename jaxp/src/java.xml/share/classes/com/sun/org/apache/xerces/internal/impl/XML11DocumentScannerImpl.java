@@ -1,62 +1,21 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * The Apache Software License, Version 1.1
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Copyright (c) 1999-2004 The Apache Software Foundation.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * 3. The end-user documentation included with the redistribution,
- *    if any, must include the following acknowledgment:
- *       "This product includes software developed by the
- *        Apache Software Foundation (http://www.apache.org/)."
- *    Alternately, this acknowledgment may appear in the software itself,
- *    if and wherever such third-party acknowledgments normally appear.
- *
- * 4. The names "Xerces" and "Apache Software Foundation" must
- *    not be used to endorse or promote products derived from this
- *    software without prior written permission. For written
- *    permission, please contact apache@apache.org.
- *
- * 5. Products derived from this software may not be called "Apache",
- *    nor may "Apache" appear in their name, without prior written
- *    permission of the Apache Software Foundation.
- *
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.  IN NO EVENT SHALL THE APACHE SOFTWARE FOUNDATION OR
- * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
- * USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
- * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- * ====================================================================
- *
- * This software consists of voluntary contributions made by many
- * individuals on behalf of the Apache Software Foundation and was
- * originally based on software copyright (c) 1999, International
- * Business Machines, Inc., http://www.apache.org.  For more
- * information on the Apache Software Foundation, please see
- * <http://www.apache.org/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.sun.org.apache.xerces.internal.impl;
@@ -134,7 +93,7 @@ public class XML11DocumentScannerImpl
             // happens when there is the character reference &#13;
             // but scanContent doesn't do entity expansions...
             // is this *really* necessary???  - NG
-            fEntityScanner.scanChar();
+            fEntityScanner.scanChar(null);
             content.append((char)c);
             c = -1;
         }
@@ -143,7 +102,7 @@ public class XML11DocumentScannerImpl
         } */
 
         if (c == ']') {
-            content.append((char)fEntityScanner.scanChar());
+            content.append((char)fEntityScanner.scanChar(null));
             // remember where we are in case we get an endEntity before we
             // could flush the buffer out - this happens when we're parsing an
             // entity which ends with a ]
@@ -152,12 +111,12 @@ public class XML11DocumentScannerImpl
             // We work on a single character basis to handle cases such as:
             // ']]]>' which we might otherwise miss.
             //
-            if (fEntityScanner.skipChar(']')) {
+            if (fEntityScanner.skipChar(']', null)) {
                 content.append(']');
-                while (fEntityScanner.skipChar(']')) {
+                while (fEntityScanner.skipChar(']', null)) {
                     content.append(']');
                 }
-                if (fEntityScanner.skipChar('>')) {
+                if (fEntityScanner.skipChar('>', null)) {
                     reportFatalError("CDEndInContent", null);
                 }
             }
@@ -203,7 +162,7 @@ public class XML11DocumentScannerImpl
             reportFatalError("OpenQuoteExpected", new Object[]{eleName,atName});
         }
 
-        fEntityScanner.scanChar();
+        fEntityScanner.scanChar(NameType.ATTRIBUTE);
         int entityDepth = fEntityDepth;
 
         int c = fEntityScanner.scanLiteral(quote, value, isNSURI);
@@ -216,7 +175,7 @@ public class XML11DocumentScannerImpl
         if (c == quote && (fromIndex = isUnchangedByNormalization(value)) == -1) {
             /** Both the non-normalized and normalized attribute values are equal. **/
             nonNormalizedValue.setValues(value);
-            int cquote = fEntityScanner.scanChar();
+            int cquote = fEntityScanner.scanChar(NameType.ATTRIBUTE);
             if (cquote != quote) {
                 reportFatalError("CloseQuoteExpected", new Object[]{eleName,atName});
             }
@@ -239,11 +198,11 @@ public class XML11DocumentScannerImpl
                                        + fStringBuffer.toString() + "\"");
                 }
                 if (c == '&') {
-                    fEntityScanner.skipChar('&');
+                    fEntityScanner.skipChar('&', NameType.REFERENCE);
                     if (entityDepth == fEntityDepth) {
                         fStringBuffer2.append('&');
                     }
-                    if (fEntityScanner.skipChar('#')) {
+                    if (fEntityScanner.skipChar('#', NameType.REFERENCE)) {
                         if (entityDepth == fEntityDepth) {
                             fStringBuffer2.append('#');
                         }
@@ -257,59 +216,22 @@ public class XML11DocumentScannerImpl
                         }
                     }
                     else {
-                        String entityName = fEntityScanner.scanName();
+                        String entityName = fEntityScanner.scanName(NameType.REFERENCE);
                         if (entityName == null) {
                             reportFatalError("NameRequiredInReference", null);
                         }
                         else if (entityDepth == fEntityDepth) {
                             fStringBuffer2.append(entityName);
                         }
-                        if (!fEntityScanner.skipChar(';')) {
+                        if (!fEntityScanner.skipChar(';', NameType.REFERENCE)) {
                             reportFatalError("SemicolonRequiredInReference",
                                              new Object []{entityName});
                         }
                         else if (entityDepth == fEntityDepth) {
                             fStringBuffer2.append(';');
                         }
-                        if (entityName == fAmpSymbol) {
-                            fStringBuffer.append('&');
-                            if (DEBUG_ATTR_NORMALIZATION) {
-                                System.out.println("** value5: \""
-                                                   + fStringBuffer.toString()
-                                                   + "\"");
-                            }
-                        }
-                        else if (entityName == fAposSymbol) {
-                            fStringBuffer.append('\'');
-                            if (DEBUG_ATTR_NORMALIZATION) {
-                                System.out.println("** value7: \""
-                                                   + fStringBuffer.toString()
-                                                   + "\"");
-                            }
-                        }
-                        else if (entityName == fLtSymbol) {
-                            fStringBuffer.append('<');
-                            if (DEBUG_ATTR_NORMALIZATION) {
-                                System.out.println("** value9: \""
-                                                   + fStringBuffer.toString()
-                                                   + "\"");
-                            }
-                        }
-                        else if (entityName == fGtSymbol) {
-                            fStringBuffer.append('>');
-                            if (DEBUG_ATTR_NORMALIZATION) {
-                                System.out.println("** valueB: \""
-                                                   + fStringBuffer.toString()
-                                                   + "\"");
-                            }
-                        }
-                        else if (entityName == fQuotSymbol) {
-                            fStringBuffer.append('"');
-                            if (DEBUG_ATTR_NORMALIZATION) {
-                                System.out.println("** valueD: \""
-                                                   + fStringBuffer.toString()
-                                                   + "\"");
-                            }
+                        if (resolveCharacter(entityName, fStringBuffer)) {
+                            checkEntityLimit(false, fEntityScanner.fCurrentEntity.name, 1);
                         }
                         else {
                             if (fEntityManager.isExternalEntity(entityName)) {
@@ -340,13 +262,13 @@ public class XML11DocumentScannerImpl
                 else if (c == '<') {
                     reportFatalError("LessthanInAttValue",
                                      new Object[] { eleName, atName });
-                    fEntityScanner.scanChar();
+                    fEntityScanner.scanChar(null);
                     if (entityDepth == fEntityDepth) {
                         fStringBuffer2.append((char)c);
                     }
                 }
                 else if (c == '%' || c == ']') {
-                    fEntityScanner.scanChar();
+                    fEntityScanner.scanChar(null);
                     fStringBuffer.append((char)c);
                     if (entityDepth == fEntityDepth) {
                         fStringBuffer2.append((char)c);
@@ -360,7 +282,7 @@ public class XML11DocumentScannerImpl
                 // XML11EntityScanner.  Not sure why
                 // this check was originally necessary.  - NG
                 else if (c == '\n' || c == '\r' || c == 0x85 || c == 0x2028) {
-                    fEntityScanner.scanChar();
+                    fEntityScanner.scanChar(null);
                     fStringBuffer.append(' ');
                     if (entityDepth == fEntityDepth) {
                         fStringBuffer2.append('\n');
@@ -383,7 +305,7 @@ public class XML11DocumentScannerImpl
                 else if (c != -1 && isInvalidLiteral(c)) {
                     reportFatalError("InvalidCharInAttValue",
                                      new Object[] {eleName, atName, Integer.toString(c, 16)});
-                    fEntityScanner.scanChar();
+                    fEntityScanner.scanChar(null);
                     if (entityDepth == fEntityDepth) {
                         fStringBuffer2.append((char)c);
                     }
@@ -405,7 +327,7 @@ public class XML11DocumentScannerImpl
         nonNormalizedValue.setValues(fStringBuffer2);
 
         // quote
-        int cquote = fEntityScanner.scanChar();
+        int cquote = fEntityScanner.scanChar(null);
         if (cquote != quote) {
             reportFatalError("CloseQuoteExpected", new Object[]{eleName,atName});
         }
@@ -440,7 +362,7 @@ public class XML11DocumentScannerImpl
     protected boolean scanPubidLiteral(XMLString literal)
         throws IOException, XNIException
     {
-        int quote = fEntityScanner.scanChar();
+        int quote = fEntityScanner.scanChar(null);
         if (quote != '\'' && quote != '"') {
             reportFatalError("QuoteRequiredInPublicID", null);
             return false;
@@ -451,7 +373,7 @@ public class XML11DocumentScannerImpl
         boolean skipSpace = true;
         boolean dataok = true;
         while (true) {
-            int c = fEntityScanner.scanChar();
+            int c = fEntityScanner.scanChar(null);
             // REVISIT:  none of these except \n and 0x20 should make it past the entity scanner
             if (c == ' ' || c == '\n' || c == '\r' || c == 0x85 || c == 0x2028) {
                 if (!skipSpace) {

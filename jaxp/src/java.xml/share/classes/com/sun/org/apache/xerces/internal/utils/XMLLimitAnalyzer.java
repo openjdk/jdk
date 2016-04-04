@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -129,13 +129,15 @@ public final class XMLLimitAnalyzer {
         if (index == Limit.ENTITY_EXPANSION_LIMIT.ordinal() ||
                 index == Limit.MAX_OCCUR_NODE_LIMIT.ordinal() ||
                 index == Limit.ELEMENT_ATTRIBUTE_LIMIT.ordinal() ||
-                index == Limit.TOTAL_ENTITY_SIZE_LIMIT.ordinal()
+                index == Limit.TOTAL_ENTITY_SIZE_LIMIT.ordinal() ||
+                index == Limit.ENTITY_REPLACEMENT_LIMIT.ordinal()
                 ) {
             totalValue[index] += value;
             return;
         }
         if (index == Limit.MAX_ELEMENT_DEPTH_LIMIT.ordinal() ||
                 index == Limit.MAX_NAME_LIMIT.ordinal()) {
+            values[index] = value;
             totalValue[index] = value;
             return;
         }
@@ -175,10 +177,13 @@ public final class XMLLimitAnalyzer {
      * @return the value of the property
      */
     public int getValue(Limit limit) {
-        return values[limit.ordinal()];
+        return getValue(limit.ordinal());
     }
 
     public int getValue(int index) {
+        if (index == Limit.ENTITY_REPLACEMENT_LIMIT.ordinal()) {
+            return totalValue[index];
+        }
         return values[index];
     }
     /**
@@ -232,6 +237,11 @@ public final class XMLLimitAnalyzer {
      */
     public void reset(Limit limit) {
         if (limit.ordinal() == Limit.TOTAL_ENTITY_SIZE_LIMIT.ordinal()) {
+            totalValue[limit.ordinal()] = 0;
+        } else if (limit.ordinal() == Limit.GENERAL_ENTITY_SIZE_LIMIT.ordinal()) {
+            names[limit.ordinal()] = null;
+            values[limit.ordinal()] = 0;
+            caches[limit.ordinal()] = null;
             totalValue[limit.ordinal()] = 0;
         }
     }
