@@ -204,7 +204,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc * obj, Thread * self, bool all) {
 // quick_enter() as our thread state remains _in_Java.
 
 bool ObjectSynchronizer::quick_enter(oop obj, Thread * Self,
-                                     BasicLock * Lock) {
+                                     BasicLock * lock) {
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(Self->is_Java_thread(), "invariant");
   assert(((JavaThread *) Self)->thread_state() == _thread_in_Java, "invariant");
@@ -226,6 +226,18 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread * Self,
       m->_recursions++;
       return true;
     }
+
+    // This Java Monitor is inflated so obj's header will never be
+    // displaced to this thread's BasicLock. Make the displaced header
+    // non-NULL so this BasicLock is not seen as recursive nor as
+    // being locked. We do this unconditionally so that this thread's
+    // BasicLock cannot be mis-interpreted by any stack walkers. For
+    // performance reasons, stack walkers generally first check for
+    // Biased Locking in the object's header, the second check is for
+    // stack-locking in the object's header, the third check is for
+    // recursive stack-locking in the displaced header in the BasicLock,
+    // and last are the inflated Java Monitor (ObjectMonitor) checks.
+    lock->set_displaced_header(markOopDesc::unused_mark());
 
     if (owner == NULL &&
         Atomic::cmpxchg_ptr(Self, &(m->_owner), NULL) == NULL) {
@@ -271,38 +283,52 @@ void ObjectSynchronizer::fast_enter(Handle obj, BasicLock* lock,
 }
 
 void ObjectSynchronizer::fast_exit(oop object, BasicLock* lock, TRAPS) {
-  assert(!object->mark()->has_bias_pattern(), "should not see bias pattern here");
-  // if displaced header is null, the previous enter is recursive enter, no-op
+  markOop mark = object->mark();
+  // We cannot check for Biased Locking if we are racing an inflation.
+  assert(mark == markOopDesc::INFLATING() ||
+         !mark->has_bias_pattern(), "should not see bias pattern here");
+
   markOop dhw = lock->displaced_header();
-  markOop mark;
   if (dhw == NULL) {
-    // Recursive stack-lock.
-    // Diagnostics -- Could be: stack-locked, inflating, inflated.
-    mark = object->mark();
-    assert(!mark->is_neutral(), "invariant");
-    if (mark->has_locker() && mark != markOopDesc::INFLATING()) {
-      assert(THREAD->is_lock_owned((address)mark->locker()), "invariant");
+    // If the displaced header is NULL, then this exit matches up with
+    // a recursive enter. No real work to do here except for diagnostics.
+#ifndef PRODUCT
+    if (mark != markOopDesc::INFLATING()) {
+      // Only do diagnostics if we are not racing an inflation. Simply
+      // exiting a recursive enter of a Java Monitor that is being
+      // inflated is safe; see the has_monitor() comment below.
+      assert(!mark->is_neutral(), "invariant");
+      assert(!mark->has_locker() ||
+             THREAD->is_lock_owned((address)mark->locker()), "invariant");
+      if (mark->has_monitor()) {
+        // The BasicLock's displaced_header is marked as a recursive
+        // enter and we have an inflated Java Monitor (ObjectMonitor).
+        // This is a special case where the Java Monitor was inflated
+        // after this thread entered the stack-lock recursively. When a
+        // Java Monitor is inflated, we cannot safely walk the Java
+        // Monitor owner's stack and update the BasicLocks because a
+        // Java Monitor can be asynchronously inflated by a thread that
+        // does not own the Java Monitor.
+        ObjectMonitor * m = mark->monitor();
+        assert(((oop)(m->object()))->mark() == mark, "invariant");
+        assert(m->is_entered(THREAD), "invariant");
+      }
     }
-    if (mark->has_monitor()) {
-      ObjectMonitor * m = mark->monitor();
-      assert(((oop)(m->object()))->mark() == mark, "invariant");
-      assert(m->is_entered(THREAD), "invariant");
-    }
+#endif
     return;
   }
 
-  mark = object->mark();
-
-  // If the object is stack-locked by the current thread, try to
-  // swing the displaced header from the box back to the mark.
   if (mark == (markOop) lock) {
+    // If the object is stack-locked by the current thread, try to
+    // swing the displaced header from the BasicLock back to the mark.
     assert(dhw->is_neutral(), "invariant");
-    if ((markOop) Atomic::cmpxchg_ptr (dhw, object->mark_addr(), mark) == mark) {
-      TEVENT(fast_exit: release stacklock);
+    if ((markOop) Atomic::cmpxchg_ptr(dhw, object->mark_addr(), mark) == mark) {
+      TEVENT(fast_exit: release stack-lock);
       return;
     }
   }
 
+  // We have to take the slow-path of possible inflation and then exit.
   ObjectSynchronizer::inflate(THREAD,
                               object,
                               inflate_cause_vm_internal)->exit(true, THREAD);
@@ -1735,6 +1761,7 @@ class ReleaseJavaMonitorsClosure: public MonitorClosure {
   void do_monitor(ObjectMonitor* mid) {
     if (mid->owner() == THREAD) {
       if (ObjectMonitor::Knob_VerifyMatch != 0) {
+        ResourceMark rm;
         Handle obj((oop) mid->object());
         tty->print("INFO: unexpected locked object:");
         javaVFrame::print_locked_object_class_name(tty, obj, "locked");
