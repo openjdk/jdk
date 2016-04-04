@@ -44,7 +44,6 @@ import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.PageRanges;
 
 import sun.java2d.*;
-import sun.misc.ManagedLocalsThread;
 import sun.print.*;
 
 public final class CPrinterJob extends RasterPrinterJob {
@@ -775,7 +774,8 @@ public final class CPrinterJob extends RasterPrinterJob {
 
     // upcall from native
     private static void detachPrintLoop(final long target, final long arg) {
-        new ManagedLocalsThread(() -> _safePrintLoop(target, arg)).start();
+        new Thread(null, () -> _safePrintLoop(target, arg),
+                   "PrintLoop", 0, false).start();
     }
     private static native void _safePrintLoop(long target, long arg);
 
