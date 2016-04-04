@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "logging/logDecorators.hpp"
 #include "logging/logLevel.hpp"
 #include "logging/logOutputList.hpp"
+#include "logging/logPrefix.hpp"
 #include "logging/logTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -45,14 +46,17 @@ class LogTagSet VALUE_OBJ_CLASS_SPEC {
   LogOutputList     _output_list;
   LogDecorators     _decorators;
 
+  typedef size_t (*PrefixWriter)(char* buf, size_t size);
+  PrefixWriter      _write_prefix;
+
   // Keep constructor private to prevent incorrect instantiations of this class.
   // Only LogTagSetMappings can create/contain instances of this class.
   // The constructor links all tagsets together in a global list of tagsets.
   // This list is used during configuration to be able to update all tagsets
   // and their configurations to reflect the new global log configuration.
-  LogTagSet(LogTagType t0, LogTagType t1, LogTagType t2, LogTagType t3, LogTagType t4);
+  LogTagSet(PrefixWriter prefix_writer, LogTagType t0, LogTagType t1, LogTagType t2, LogTagType t3, LogTagType t4);
 
-  template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4>
+  template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
   friend class LogTagSetMapping;
 
  public:
@@ -102,12 +106,30 @@ class LogTagSet VALUE_OBJ_CLASS_SPEC {
     return _output_list.is_level(level);
   }
   void log(LogLevelType level, const char* msg);
+
+  ATTRIBUTE_PRINTF(3, 4)
+  void write(LogLevelType level, const char* fmt, ...);
+
+  template <LogLevelType Level>
+  ATTRIBUTE_PRINTF(2, 3)
+  void write(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vwrite(Level, fmt, args);
+    va_end(args);
+  }
+
+  ATTRIBUTE_PRINTF(3, 0)
+  void vwrite(LogLevelType level, const char* fmt, va_list args);
 };
 
 template <LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG,
-          LogTagType T3 = LogTag::__NO_TAG, LogTagType T4 = LogTag::__NO_TAG>
+          LogTagType T3 = LogTag::__NO_TAG, LogTagType T4 = LogTag::__NO_TAG,
+          LogTagType GuardTag = LogTag::__NO_TAG>
 class LogTagSetMapping : public AllStatic {
 private:
+  // Verify number of logging tags does not exceed maximum supported.
+  STATIC_ASSERT(GuardTag == LogTag::__NO_TAG);
   static LogTagSet _tagset;
 
 public:
@@ -121,7 +143,7 @@ public:
 // Each combination of tags used as template arguments to the Log class somewhere (via macro or not)
 // will instantiate the LogTagSetMapping template, which in turn creates the static field for that
 // tagset. This _tagset contains the configuration for those tags.
-template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4>
-LogTagSet LogTagSetMapping<T0, T1, T2, T3, T4>::_tagset(T0, T1, T2, T3, T4);
+template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+LogTagSet LogTagSetMapping<T0, T1, T2, T3, T4, GuardTag>::_tagset(&LogPrefix<T0, T1, T2, T3, T4>::prefix, T0, T1, T2, T3, T4);
 
 #endif // SHARE_VM_LOGGING_LOGTAGSET_HPP

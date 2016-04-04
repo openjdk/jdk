@@ -27,14 +27,15 @@
 #include "logging/logOutput.hpp"
 #include "logging/logTag.hpp"
 #include "logging/logTagSet.hpp"
+#include "memory/allocation.inline.hpp"
 
 LogTagSet*  LogTagSet::_list      = NULL;
 size_t      LogTagSet::_ntagsets  = 0;
 
 // This constructor is called only during static initialization.
 // See the declaration in logTagSet.hpp for more information.
-LogTagSet::LogTagSet(LogTagType t0, LogTagType t1, LogTagType t2, LogTagType t3, LogTagType t4)
-    : _next(_list) {
+LogTagSet::LogTagSet(PrefixWriter prefix_writer, LogTagType t0, LogTagType t1, LogTagType t2, LogTagType t3, LogTagType t4)
+    : _next(_list), _write_prefix(prefix_writer) {
   _tag[0] = t0;
   _tag[1] = t1;
   _tag[2] = t2;
@@ -85,4 +86,35 @@ int LogTagSet::label(char* buf, size_t len, const char* separator) const {
     tot_written += written;
   }
   return tot_written;
+}
+
+void LogTagSet::write(LogLevelType level, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vwrite(level, fmt, args);
+  va_end(args);
+}
+
+const size_t vwrite_buffer_size = 512;
+
+void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
+  char buf[vwrite_buffer_size];
+  va_list saved_args;           // For re-format on buf overflow.
+  va_copy(saved_args, args);
+  size_t prefix_len = _write_prefix(buf, sizeof(buf));
+  // Check that string fits in buffer; resize buffer if necessary
+  int ret = os::log_vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
+  assert(ret >= 0, "Log message buffer issue");
+  if ((size_t)ret >= sizeof(buf)) {
+    size_t newbuf_len = prefix_len + ret + 1;
+    char* newbuf = NEW_C_HEAP_ARRAY(char, newbuf_len, mtLogging);
+    memcpy(newbuf, buf, prefix_len);
+    ret = os::log_vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
+    assert(ret >= 0, "Log message buffer issue");
+    log(level, newbuf);
+    FREE_C_HEAP_ARRAY(char, newbuf);
+  } else {
+    log(level, buf);
+  }
+  va_end(saved_args);
 }

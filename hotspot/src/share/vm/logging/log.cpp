@@ -23,24 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "logging/log.hpp"
-#include "memory/allocation.inline.hpp"
-
-void LogWriteHelper::write_large(LogTagSet& lts,
-                                 LogLevelType level,
-                                 const char* prefix,
-                                 size_t prefix_len,
-                                 size_t msg_len,
-                                 const char* fmt,
-                                 va_list args) {
-  size_t newbuf_len = prefix_len + msg_len + 1;
-  char* newbuf = NEW_C_HEAP_ARRAY(char, newbuf_len, mtLogging);
-  memcpy(newbuf, prefix, prefix_len);
-  int ret = os::log_vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, args);
-  assert(ret >= 0, "Log message buffer issue");
-  lts.log(level, newbuf);
-  FREE_C_HEAP_ARRAY(char, newbuf);
-}
 
 /////////////// Unit tests ///////////////
 

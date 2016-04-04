@@ -86,26 +86,6 @@
 //
 #define Log(...)  LogImpl<LOG_TAGS(__VA_ARGS__)>
 
-template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-class LogImpl;
-
-// Non-template helper class for implementing write-slowpath in cpp
-class LogWriteHelper : AllStatic {
- private:
-
-  template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
-  friend class LogImpl;
-
-  ATTRIBUTE_PRINTF(6, 0)
-  static void write_large(LogTagSet& lts,
-                          LogLevelType level,
-                          const char* prefix,
-                          size_t prefix_len,
-                          size_t msg_len,
-                          const char* fmt,
-                          va_list args);
-};
-
 //
 // Log class that embeds both log tags and a log level.
 //
@@ -150,7 +130,7 @@ class LogImpl VALUE_OBJ_CLASS_SPEC {
     va_start(args, fmt);
     vwrite(level, fmt, args);
     va_end(args);
-  };
+  }
 
   template <LogLevelType Level>
   ATTRIBUTE_PRINTF(1, 2)
@@ -159,25 +139,11 @@ class LogImpl VALUE_OBJ_CLASS_SPEC {
     va_start(args, fmt);
     vwrite(Level, fmt, args);
     va_end(args);
-  };
+  }
 
   ATTRIBUTE_PRINTF(2, 0)
   static void vwrite(LogLevelType level, const char* fmt, va_list args) {
-    char buf[LogBufferSize];
-    va_list saved_args;         // For re-format on buf overflow.
-    va_copy(saved_args, args);
-    size_t prefix_len = LogPrefix<T0, T1, T2, T3, T4>::prefix(buf, sizeof(buf));
-    // Check that string fits in buffer; resize buffer if necessary
-    int ret = os::log_vsnprintf(buf + prefix_len, sizeof(buf) - prefix_len, fmt, args);
-    assert(ret >= 0, "Log message buffer issue");
-    size_t msg_len = ret;
-    LogTagSet& lts = LogTagSetMapping<T0, T1, T2, T3, T4>::tagset();
-    if (msg_len >= sizeof(buf)) {
-      LogWriteHelper::write_large(lts, level, buf, prefix_len, msg_len, fmt, saved_args);
-    } else {
-      lts.log(level, buf);
-    }
-    va_end(saved_args);
+    LogTagSetMapping<T0, T1, T2, T3, T4>::tagset().vwrite(level, fmt, args);
   }
 
 #define LOG_LEVEL(level, name) ATTRIBUTE_PRINTF(2, 0) \
