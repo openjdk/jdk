@@ -483,8 +483,30 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
                 pageFormat.setOrientation(PageFormat.LANDSCAPE);
             } else {
                 pageFormat.setOrientation(PageFormat.PORTRAIT);
-                }
+            }
 
+            PageRanges pageRangesAttr
+                    = (PageRanges) attributes.get(PageRanges.class);
+            if (pageRangesAttr != null) {
+                // Get the PageRanges from print dialog.
+                int[][] range = pageRangesAttr.getMembers();
+
+                int prevFromPage = this.jobAttributes.getFromPage();
+                int prevToPage = this.jobAttributes.getToPage();
+
+                int currFromPage = range[0][0];
+                int currToPage = range[range.length - 1][1];
+
+                // if from < to update fromPage first followed by toPage
+                // else update toPage first followed by fromPage
+                if (currFromPage < prevToPage) {
+                    this.jobAttributes.setFromPage(currFromPage);
+                    this.jobAttributes.setToPage(currToPage);
+                } else {
+                    this.jobAttributes.setToPage(currToPage);
+                    this.jobAttributes.setFromPage(currFromPage);
+                }
+            }
             printerJob.setPrintable(this, pageFormat);
 
         }
