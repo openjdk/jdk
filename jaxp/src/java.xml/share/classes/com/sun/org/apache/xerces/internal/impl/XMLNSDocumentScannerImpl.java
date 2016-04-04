@@ -189,9 +189,9 @@ public class XMLNSDocumentScannerImpl
             // There are two variables,fNamespaces and fBindNamespaces
             //StAX uses XMLNSDocumentScannerImpl so this distinction needs to be maintained
             if (fNamespaces) {
-                fEntityScanner.scanQName(fElementQName);
+                fEntityScanner.scanQName(fElementQName, NameType.ELEMENTSTART);
             } else {
-                String name = fEntityScanner.scanName();
+                String name = fEntityScanner.scanName(NameType.ELEMENTSTART);
                 fElementQName.setValues(null, name, name, null);
             }
 
@@ -404,11 +404,11 @@ public class XMLNSDocumentScannerImpl
         if (DEBUG_START_END_ELEMENT) System.out.println(this.getClass().toString() +">>> scanAttribute()");
 
         // name
-        fEntityScanner.scanQName(fAttributeQName);
+        fEntityScanner.scanQName(fAttributeQName, NameType.ATTRIBUTE);
 
         // equals
         fEntityScanner.skipSpaces();
-        if (!fEntityScanner.skipChar('=')) {
+        if (!fEntityScanner.skipChar('=', NameType.ATTRIBUTE)) {
             reportFatalError("EqRequiredInAttribute",
                     new Object[]{fCurrentElement.rawname,fAttributeQName.rawname});
         }

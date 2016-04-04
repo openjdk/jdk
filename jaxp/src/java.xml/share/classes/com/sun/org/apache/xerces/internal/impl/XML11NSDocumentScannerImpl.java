@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -135,7 +135,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
         if (DEBUG_START_END_ELEMENT)
             System.out.println(">>> scanStartElementNS()");
                 // Note: namespace processing is on by default
-        fEntityScanner.scanQName(fElementQName);
+        fEntityScanner.scanQName(fElementQName, NameType.ATTRIBUTE);
         // REVISIT - [Q] Why do we need this local variable? -- mrglavas
         String rawname = fElementQName.rawname;
         if (fBindNamespaces) {
@@ -173,11 +173,11 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
             // end tag?
             int c = fEntityScanner.peekChar();
             if (c == '>') {
-                fEntityScanner.scanChar();
+                fEntityScanner.scanChar(null);
                 break;
             } else if (c == '/') {
-                fEntityScanner.scanChar();
-                if (!fEntityScanner.skipChar('>')) {
+                fEntityScanner.scanChar(null);
+                if (!fEntityScanner.skipChar('>', null)) {
                     reportFatalError(
                         "ElementUnterminated",
                         new Object[] { rawname });
@@ -345,7 +345,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
     protected void scanStartElementName ()
         throws IOException, XNIException {
         // Note: namespace processing is on by default
-        fEntityScanner.scanQName(fElementQName);
+        fEntityScanner.scanQName(fElementQName, NameType.ATTRIBUTE);
         // Must skip spaces here because the DTD scanner
         // would consume them at the end of the external subset.
         fSawSpace = fEntityScanner.skipSpaces();
@@ -395,11 +395,11 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
             // end tag?
             int c = fEntityScanner.peekChar();
             if (c == '>') {
-                fEntityScanner.scanChar();
+                fEntityScanner.scanChar(null);
                 break;
             } else if (c == '/') {
-                fEntityScanner.scanChar();
-                if (!fEntityScanner.skipChar('>')) {
+                fEntityScanner.scanChar(null);
+                if (!fEntityScanner.skipChar('>', null)) {
                     reportFatalError(
                         "ElementUnterminated",
                         new Object[] { rawname });
@@ -571,11 +571,11 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
             System.out.println(">>> scanAttribute()");
 
         // name
-        fEntityScanner.scanQName(fAttributeQName);
+        fEntityScanner.scanQName(fAttributeQName, NameType.ATTRIBUTE);
 
         // equals
         fEntityScanner.skipSpaces();
-        if (!fEntityScanner.skipChar('=')) {
+        if (!fEntityScanner.skipChar('=', NameType.ATTRIBUTE)) {
             reportFatalError(
                 "EqRequiredInAttribute",
                 new Object[] {
@@ -755,7 +755,7 @@ public class XML11NSDocumentScannerImpl extends XML11DocumentScannerImpl {
 
         // end
         fEntityScanner.skipSpaces();
-        if (!fEntityScanner.skipChar('>')) {
+        if (!fEntityScanner.skipChar('>', NameType.ELEMENTEND)) {
             reportFatalError(
                 "ETagUnterminated",
                 new Object[] { endElementName.rawname });
