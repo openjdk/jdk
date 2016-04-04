@@ -56,6 +56,11 @@ void LogOutput::add_to_config_string(const LogTagSet* ts, LogLevelType level) {
   }
 
   size_t offset = strlen(_config_string);
+  if (offset > 0) {
+    // Add commas in-between tag and level combinations in the config string
+    _config_string[offset++] = ',';
+  }
+
   for (;;) {
     int ret = ts->label(_config_string + offset, _config_string_buffer_size - offset, "+");
     if (ret == -1) {
@@ -69,7 +74,7 @@ void LogOutput::add_to_config_string(const LogTagSet* ts, LogLevelType level) {
 
   offset = strlen(_config_string);
   for (;;) {
-    int ret = jio_snprintf(_config_string + offset, _config_string_buffer_size - offset, "=%s,", LogLevel::name(level));
+    int ret = jio_snprintf(_config_string + offset, _config_string_buffer_size - offset, "=%s", LogLevel::name(level));
     if (ret == -1) {
       _config_string_buffer_size *= 2;
       _config_string = REALLOC_C_HEAP_ARRAY(char, _config_string, _config_string_buffer_size, mtLogging);
