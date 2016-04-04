@@ -167,6 +167,7 @@ public class Symtab {
     public final Type cloneableType;
     public final Type serializableType;
     public final Type serializedLambdaType;
+    public final Type varHandleType;
     public final Type methodHandleType;
     public final Type methodHandleLookupType;
     public final Type methodTypeType;
@@ -468,6 +469,7 @@ public class Symtab {
         throwableType = enterClass("java.lang.Throwable");
         serializableType = enterClass("java.io.Serializable");
         serializedLambdaType = enterClass("java.lang.invoke.SerializedLambda");
+        varHandleType = enterClass("java.lang.invoke.VarHandle");
         methodHandleType = enterClass("java.lang.invoke.MethodHandle");
         methodHandleLookupType = enterClass("java.lang.invoke.MethodHandles$Lookup");
         methodTypeType = enterClass("java.lang.invoke.MethodType");
