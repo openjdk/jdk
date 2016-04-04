@@ -191,10 +191,10 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
   }
 
   if (log_is_enabled(Info, classinit)){
-    log_end_verification(LogHandle(classinit)::info_stream(), klassName, exception_name, THREAD);
+    log_end_verification(Log(classinit)::info_stream(), klassName, exception_name, THREAD);
   }
   if (log_is_enabled(Info, verboseverification)){
-    log_end_verification(LogHandle(verboseverification)::info_stream(), klassName, exception_name, THREAD);
+    log_end_verification(Log(verboseverification)::info_stream(), klassName, exception_name, THREAD);
   }
 
   if (HAS_PENDING_EXCEPTION) {
@@ -658,7 +658,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
   if (log_is_enabled(Info, verboseverification)) {
     ResourceMark rm(THREAD);
-    stackmap_table.print_on(LogHandle(verboseverification)::info_stream());
+    stackmap_table.print_on(Log(verboseverification)::info_stream());
   }
 
   RawBytecodeStream bcs(m);
@@ -700,7 +700,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
       if (log_is_enabled(Info, verboseverification)) {
         ResourceMark rm(THREAD);
-        current_frame.print_on(LogHandle(verboseverification)::info_stream());
+        current_frame.print_on(Log(verboseverification)::info_stream());
         log_info(verboseverification)("offset = %d,  opcode = %s", bci, Bytecodes::name(opcode));
       }
 

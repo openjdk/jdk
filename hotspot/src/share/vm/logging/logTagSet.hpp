@@ -95,7 +95,12 @@ class LogTagSet VALUE_OBJ_CLASS_SPEC {
 
   int label(char *buf, size_t len, const char* separator = ",") const;
   bool has_output(const LogOutput* output);
-  bool is_level(LogLevelType level) const;
+
+  // The implementation of this function is put here to ensure
+  // that it is inline:able by the log_is_enabled(level, ...) macro.
+  bool is_level(LogLevelType level) const {
+    return _output_list.is_level(level);
+  }
   void log(LogLevelType level, const char* msg);
 };
 

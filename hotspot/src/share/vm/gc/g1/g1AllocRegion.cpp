@@ -201,7 +201,7 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
   // and the result are considered part of detailed tracing and are
   // skipped during other tracing.
 
-  LogHandle(gc, alloc, region) log;
+  Log(gc, alloc, region) log;
 
   if (!log.is_debug()) {
     return;

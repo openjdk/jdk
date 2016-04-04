@@ -198,7 +198,7 @@ void PSParallelCompact::print_region_ranges() {
   if (!log_develop_is_enabled(Trace, gc, compaction)) {
     return;
   }
-  LogHandle(gc, compaction) log;
+  Log(gc, compaction) log;
   ResourceMark rm;
   Universe::print_on(log.trace_stream());
   log.trace("space  bottom     top        end        new_top");
@@ -2175,7 +2175,7 @@ void PSParallelCompact::adjust_roots(ParCompactionManager* cm) {
 // Helper class to print 8 region numbers per line and then print the total at the end.
 class FillableRegionLogger : public StackObj {
 private:
-  LogHandle(gc, compaction) log;
+  Log(gc, compaction) log;
   static const int LineLength = 8;
   size_t _regions[LineLength];
   int _next_index;
@@ -2377,7 +2377,7 @@ void PSParallelCompact::write_block_fill_histogram()
     return;
   }
 
-  LogHandle(gc, compaction) log;
+  Log(gc, compaction) log;
   ResourceMark rm;
   outputStream* out = log.trace_stream();
 
