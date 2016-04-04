@@ -93,6 +93,7 @@ class TestLogSavedConfig {
   Log(logging) _log;
  public:
   TestLogSavedConfig(const char* apply_output = NULL, const char* apply_setting = NULL) : _new_output(0) {
+    ResourceMark rm;
     _saved_config = os::strdup_check_oom(LogOutput::Stdout->config_string());
     bool success = LogConfiguration::parse_log_arguments("stdout", "all=off", NULL, NULL, _log.error_stream());
     assert(success, "test unable to turn all off");
@@ -105,6 +106,7 @@ class TestLogSavedConfig {
   }
 
   ~TestLogSavedConfig() {
+    ResourceMark rm;
     if (_new_output) {
       bool success = LogConfiguration::parse_log_arguments(_new_output, "all=off", NULL, NULL, _log.error_stream());
       assert(success, "test unable to turn all off");
@@ -154,7 +156,7 @@ void Test_logconfiguration_subscribe() {
   ResourceMark rm;
   Log(logging) log;
 
-  TestLogSavedConfig log_cfg("stdout", "logging+test=trace");
+  TestLogSavedConfig log_cfg("stdout", "logging*=trace");
 
   LogConfiguration::register_update_listener(&Test_logconfiguration_subscribe_helper);
 
@@ -265,6 +267,70 @@ void Test_logtagset_duplicates() {
       }
     }
   }
+}
+
+#define Test_logtarget_string_literal "First line"
+
+
+static void Test_logtarget_on() {
+  TestLogFile log_file("log_target");
+  TestLogSavedConfig tlsc(log_file.name(), "gc=debug");
+
+  LogTarget(Debug, gc) log;
+
+  assert(log.is_enabled(), "assert");
+
+  // Log the line and expect it to be available in the output file.
+  log.print(Test_logtarget_string_literal);
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp != NULL, "File read error");
+
+  char output[256 /* Large enough buffer */];
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  assert(strstr(output, Test_logtarget_string_literal) != NULL, "log line missing");
+
+  fclose(fp);
+}
+
+static void Test_logtarget_off() {
+  TestLogFile log_file("log_target");
+  TestLogSavedConfig tlsc(log_file.name(), "gc=info");
+
+  LogTarget(Debug, gc) log;
+
+  if (log.is_enabled()) {
+    // The log config could have been redirected gc=debug to a file. If gc=debug
+    // is enabled, we can only test that the LogTarget returns the same value
+    // as the log_is_enabled function. The rest of the test will be ignored.
+    assert(log.is_enabled() == log_is_enabled(Debug, gc), "assert");
+    log_warning(logging)("This test doesn't support runs with -Xlog");
+    return;
+  }
+
+  // Try to log, but expect this to be filtered out.
+  log.print(Test_logtarget_string_literal);
+
+  // Log a dummy line so that fgets doesn't return NULL because the file is empty.
+  log_info(gc)("Dummy line");
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp != NULL, "File read error");
+
+  char output[256 /* Large enough buffer */];
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  assert(strstr(output, Test_logtarget_string_literal) == NULL, "log line not missing");
+
+  fclose(fp);
+}
+
+void Test_logtarget() {
+  Test_logtarget_on();
+  Test_logtarget_off();
 }
 
 #endif // PRODUCT

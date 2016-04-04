@@ -106,6 +106,24 @@ class LogWriteHelper : AllStatic {
                           va_list args);
 };
 
+//
+// Log class that embeds both log tags and a log level.
+//
+// The class provides a way to write the tags and log level once,
+// so that redundant specification of tags or levels can be avoided.
+//
+// Example usage:
+//   LogTarget(Debug, gc) out;
+//   if (out.is_enabled()) {
+//     ...
+//     out.print("Worker: %u", i);
+//     out.print(" data: %d", x);
+//     ...
+//     print_stats(out.stream());
+//   }
+//
+#define LogTarget(level, ...) LogTargetImpl<LogLevel::level, LOG_TAGS(__VA_ARGS__)>
+
 template <LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG, LogTagType T3 = LogTag::__NO_TAG,
           LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
 class LogImpl VALUE_OBJ_CLASS_SPEC {
@@ -182,6 +200,32 @@ class LogImpl VALUE_OBJ_CLASS_SPEC {
   }
   LOG_LEVEL_LIST
 #undef LOG_LEVEL
+};
+
+// Combines logging tags and a logging level.
+template <LogLevelType level, LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG,
+          LogTagType T3 = LogTag::__NO_TAG, LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
+class LogTargetImpl {
+public:
+  // Empty constructor to avoid warnings on MSVC about unused variables
+  // when the log instance is only used for static functions.
+  LogTargetImpl() {
+  }
+
+  static bool is_enabled() {
+    return LogImpl<T0, T1, T2, T3, T4, GuardTag>::is_level(level);
+  }
+
+  static void print(const char* fmt, ...) ATTRIBUTE_PRINTF(1, 2) {
+    va_list args;
+    va_start(args, fmt);
+    LogImpl<T0, T1, T2, T3, T4, GuardTag>::vwrite(level, fmt, args);
+    va_end(args);
+  }
+
+  static outputStream* stream() {
+    return new logStream(&LogImpl<T0, T1, T2, T3, T4, GuardTag>::template write<level>);
+  }
 };
 
 #endif // SHARE_VM_LOGGING_LOG_HPP
