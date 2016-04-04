@@ -1969,8 +1969,8 @@ JRT_END
 // Handles the uncommon case in locking, i.e., contention or an inflated lock.
 JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, BasicLock* lock, JavaThread* thread))
   // Disable ObjectSynchronizer::quick_enter() in default config
-  // until JDK-8077392 is resolved.
-  if ((SyncFlags & 256) != 0 && !SafepointSynchronize::is_synchronizing()) {
+  // on AARCH64 until JDK-8153107 is resolved.
+  if (AARCH64_ONLY((SyncFlags & 256) != 0 &&) !SafepointSynchronize::is_synchronizing()) {
     // Only try quick_enter() if we're not trying to reach a safepoint
     // so that the calling thread reaches the safepoint more quickly.
     if (ObjectSynchronizer::quick_enter(_obj, thread, lock)) return;
@@ -2954,7 +2954,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
   Method* moop = fr.interpreter_frame_method();
   int max_locals = moop->max_locals();
   // Allocate temp buffer, 1 word per local & 2 per active monitor
-  int buf_size_words = max_locals + active_monitor_count*2;
+  int buf_size_words = max_locals + active_monitor_count * BasicObjectLock::size();
   intptr_t *buf = NEW_C_HEAP_ARRAY(intptr_t,buf_size_words, mtCode);
 
   // Copy the locals.  Order is preserved so that loading of longs works.

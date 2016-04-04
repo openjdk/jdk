@@ -850,7 +850,7 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
 // ~~~~~~~~
 // ::exit() uses a canonical 1-1 idiom with a MEMBAR although some of
 // the fast-path operators have been optimized so the common ::exit()
-// operation is 1-0.  See i486.ad fast_unlock(), for instance.
+// operation is 1-0, e.g., see macroAssembler_x86.cpp: fast_unlock().
 // The code emitted by fast_unlock() elides the usual MEMBAR.  This
 // greatly improves latency -- MEMBAR and CAS having considerable local
 // latency on modern processors -- but at the cost of "stranding".  Absent the
@@ -863,7 +863,7 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
 //
 // The CAS() in enter provides for safety and exclusion, while the CAS or
 // MEMBAR in exit provides for progress and avoids stranding.  1-0 locking
-// eliminates the CAS/MEMBAR from the exist path, but it admits stranding.
+// eliminates the CAS/MEMBAR from the exit path, but it admits stranding.
 // We detect and recover from stranding with timers.
 //
 // If a thread transiently strands it'll park until (a) another
@@ -935,7 +935,6 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
 
   for (;;) {
     assert(THREAD == _owner, "invariant");
-
 
     if (Knob_ExitPolicy == 0) {
       // release semantics: prior loads and stores from within the critical section
