@@ -1,0 +1,1026 @@
+/*
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @run testng/othervm -Diters=10    -Xint                   VarHandleTestAccess$Type$
+ * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccess$Type$
+ * @run testng/othervm -Diters=20000                         VarHandleTestAccess$Type$
+ * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccess$Type$
+ */
+
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.testng.Assert.*;
+
+public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
+    static final $type$ static_final_v = $value1$;
+
+    static $type$ static_v;
+
+    final $type$ final_v = $value1$;
+
+    $type$ v;
+
+    VarHandle vhFinalField;
+
+    VarHandle vhField;
+
+    VarHandle vhStaticField;
+
+    VarHandle vhStaticFinalField;
+
+    VarHandle vhArray;
+
+    @BeforeClass
+    public void setup() throws Exception {
+        vhFinalField = MethodHandles.lookup().findVarHandle(
+                VarHandleTestAccess$Type$.class, "final_v", $type$.class);
+
+        vhField = MethodHandles.lookup().findVarHandle(
+                VarHandleTestAccess$Type$.class, "v", $type$.class);
+
+        vhStaticFinalField = MethodHandles.lookup().findStaticVarHandle(
+            VarHandleTestAccess$Type$.class, "static_final_v", $type$.class);
+
+        vhStaticField = MethodHandles.lookup().findStaticVarHandle(
+            VarHandleTestAccess$Type$.class, "static_v", $type$.class);
+
+        vhArray = MethodHandles.arrayElementVarHandle($type$[].class);
+    }
+
+
+    @DataProvider
+    public Object[][] varHandlesProvider() throws Exception {
+        List<VarHandle> vhs = new ArrayList<>();
+        vhs.add(vhField);
+        vhs.add(vhStaticField);
+        vhs.add(vhArray);
+
+        return vhs.stream().map(tc -> new Object[]{tc}).toArray(Object[][]::new);
+    }
+
+    @Test(dataProvider = "varHandlesProvider")
+    public void testIsAccessModeSupported(VarHandle vh) {
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.get));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.set));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getVolatile));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setVolatile));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAcquire));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setRelease));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getOpaque));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.setOpaque));
+
+#if[CAS]
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndSet));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeVolatile));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeAcquire));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeRelease));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSet));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetAcquire));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAndSet));
+#else[CAS]
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndSet));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeVolatile));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeAcquire));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.compareAndExchangeRelease));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSet));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetAcquire));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.weakCompareAndSetRelease));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.getAndSet));
+#end[CAS]
+
+#if[AtomicAdd]
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.getAndAdd));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.addAndGet));
+#else[AtomicAdd]
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.getAndAdd));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.addAndGet));
+#end[AtomicAdd]
+    }
+
+
+    @DataProvider
+    public Object[][] typesProvider() throws Exception {
+        List<Object[]> types = new ArrayList<>();
+        types.add(new Object[] {vhField, Arrays.asList(VarHandleTestAccess$Type$.class)});
+        types.add(new Object[] {vhStaticField, Arrays.asList()});
+        types.add(new Object[] {vhArray, Arrays.asList($type$[].class, int.class)});
+
+        return types.stream().toArray(Object[][]::new);
+    }
+
+    @Test(dataProvider = "typesProvider")
+    public void testTypes(VarHandle vh, List<Class<?>> pts) {
+        assertEquals(vh.varType(), $type$.class);
+
+        assertEquals(vh.coordinateTypes(), pts);
+
+        testTypes(vh);
+    }
+
+
+    @Test
+    public void testLookupInstanceToStatic() {
+        checkIAE("Lookup of static final field to instance final field", () -> {
+            MethodHandles.lookup().findStaticVarHandle(
+                    VarHandleTestAccess$Type$.class, "final_v", $type$.class);
+        });
+
+        checkIAE("Lookup of static field to instance field", () -> {
+            MethodHandles.lookup().findStaticVarHandle(
+                    VarHandleTestAccess$Type$.class, "v", $type$.class);
+        });
+    }
+
+    @Test
+    public void testLookupStaticToInstance() {
+        checkIAE("Lookup of instance final field to static final field", () -> {
+            MethodHandles.lookup().findVarHandle(
+                VarHandleTestAccess$Type$.class, "static_final_v", $type$.class);
+        });
+
+        checkIAE("Lookup of instance field to static field", () -> {
+            vhStaticField = MethodHandles.lookup().findVarHandle(
+                VarHandleTestAccess$Type$.class, "static_v", $type$.class);
+        });
+    }
+
+
+    @DataProvider
+    public Object[][] accessTestCaseProvider() throws Exception {
+        List<AccessTestCase<?>> cases = new ArrayList<>();
+
+        cases.add(new VarHandleAccessTestCase("Instance final field",
+                                              vhFinalField, vh -> testInstanceFinalField(this, vh)));
+        cases.add(new VarHandleAccessTestCase("Instance final field unsupported",
+                                              vhFinalField, vh -> testInstanceFinalFieldUnsupported(this, vh),
+                                              false));
+
+        cases.add(new VarHandleAccessTestCase("Static final field",
+                                              vhStaticFinalField, VarHandleTestAccess$Type$::testStaticFinalField));
+        cases.add(new VarHandleAccessTestCase("Static final field unsupported",
+                                              vhStaticFinalField, VarHandleTestAccess$Type$::testStaticFinalFieldUnsupported,
+                                              false));
+
+        cases.add(new VarHandleAccessTestCase("Instance field",
+                                              vhField, vh -> testInstanceField(this, vh)));
+        cases.add(new VarHandleAccessTestCase("Instance field unsupported",
+                                              vhField, vh -> testInstanceFieldUnsupported(this, vh),
+                                              false));
+
+        cases.add(new VarHandleAccessTestCase("Static field",
+                                              vhStaticField, VarHandleTestAccess$Type$::testStaticField));
+        cases.add(new VarHandleAccessTestCase("Static field unsupported",
+                                              vhStaticField, VarHandleTestAccess$Type$::testStaticFieldUnsupported,
+                                              false));
+
+        cases.add(new VarHandleAccessTestCase("Array",
+                                              vhArray, VarHandleTestAccess$Type$::testArray));
+        cases.add(new VarHandleAccessTestCase("Array unsupported",
+                                              vhArray, VarHandleTestAccess$Type$::testArrayUnsupported,
+                                              false));
+        cases.add(new VarHandleAccessTestCase("Array index out of bounds",
+                                              vhArray, VarHandleTestAccess$Type$::testArrayIndexOutOfBounds,
+                                              false));
+
+        // Work around issue with jtreg summary reporting which truncates
+        // the String result of Object.toString to 30 characters, hence
+        // the first dummy argument
+        return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
+    }
+
+    @Test(dataProvider = "accessTestCaseProvider")
+    public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
+        T t = atc.get();
+        int iters = atc.requiresLoop() ? ITERS : 1;
+        for (int c = 0; c < iters; c++) {
+            atc.testAccess(t);
+        }
+    }
+
+
+
+
+    static void testInstanceFinalField(VarHandleTestAccess$Type$ recv, VarHandle vh) {
+        // Plain
+        {
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value1$, "get $type$ value");
+        }
+
+
+        // Volatile
+        {
+            $type$ x = ($type$) vh.getVolatile(recv);
+            assertEquals(x, $value1$, "getVolatile $type$ value");
+        }
+
+        // Lazy
+        {
+            $type$ x = ($type$) vh.getAcquire(recv);
+            assertEquals(x, $value1$, "getRelease $type$ value");
+        }
+
+        // Opaque
+        {
+            $type$ x = ($type$) vh.getOpaque(recv);
+            assertEquals(x, $value1$, "getOpaque $type$ value");
+        }
+    }
+
+    static void testInstanceFinalFieldUnsupported(VarHandleTestAccess$Type$ recv, VarHandle vh) {
+        checkUOE(() -> {
+            vh.set(recv, $value2$);
+        });
+
+        checkUOE(() -> {
+            vh.setVolatile(recv, $value2$);
+        });
+
+        checkUOE(() -> {
+            vh.setRelease(recv, $value2$);
+        });
+
+        checkUOE(() -> {
+            vh.setOpaque(recv, $value2$);
+        });
+
+#if[!CAS]
+        checkUOE(() -> {
+            boolean r = vh.compareAndSet(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeVolatile(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeAcquire(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeRelease(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSet(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetAcquire(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetRelease(recv, $value1$, $value2$);
+        });
+#end[CAS]
+
+#if[!AtomicAdd]
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndAdd(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.addAndGet(recv, $value1$);
+        });
+#end[AtomicAdd]
+    }
+
+
+    static void testStaticFinalField(VarHandle vh) {
+        // Plain
+        {
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value1$, "get $type$ value");
+        }
+
+
+        // Volatile
+        {
+            $type$ x = ($type$) vh.getVolatile();
+            assertEquals(x, $value1$, "getVolatile $type$ value");
+        }
+
+        // Lazy
+        {
+            $type$ x = ($type$) vh.getAcquire();
+            assertEquals(x, $value1$, "getRelease $type$ value");
+        }
+
+        // Opaque
+        {
+            $type$ x = ($type$) vh.getOpaque();
+            assertEquals(x, $value1$, "getOpaque $type$ value");
+        }
+    }
+
+    static void testStaticFinalFieldUnsupported(VarHandle vh) {
+        checkUOE(() -> {
+            vh.set($value2$);
+        });
+
+        checkUOE(() -> {
+            vh.setVolatile($value2$);
+        });
+
+        checkUOE(() -> {
+            vh.setRelease($value2$);
+        });
+
+        checkUOE(() -> {
+            vh.setOpaque($value2$);
+        });
+
+#if[!CAS]
+        checkUOE(() -> {
+            boolean r = vh.compareAndSet($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeVolatile($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeAcquire($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeRelease($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSet($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetAcquire($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetRelease($value1$, $value2$);
+        });
+#end[CAS]
+
+#if[!AtomicAdd]
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndAdd($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.addAndGet($value1$);
+        });
+#end[AtomicAdd]
+    }
+
+
+    static void testInstanceField(VarHandleTestAccess$Type$ recv, VarHandle vh) {
+        // Plain
+        {
+            vh.set(recv, $value1$);
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value1$, "set $type$ value");
+        }
+
+
+        // Volatile
+        {
+            vh.setVolatile(recv, $value2$);
+            $type$ x = ($type$) vh.getVolatile(recv);
+            assertEquals(x, $value2$, "setVolatile $type$ value");
+        }
+
+        // Lazy
+        {
+            vh.setRelease(recv, $value1$);
+            $type$ x = ($type$) vh.getAcquire(recv);
+            assertEquals(x, $value1$, "setRelease $type$ value");
+        }
+
+        // Opaque
+        {
+            vh.setOpaque(recv, $value2$);
+            $type$ x = ($type$) vh.getOpaque(recv);
+            assertEquals(x, $value2$, "setOpaque $type$ value");
+        }
+
+#if[CAS]
+        vh.set(recv, $value1$);
+
+        // Compare
+        {
+            boolean r = vh.compareAndSet(recv, $value1$, $value2$);
+            assertEquals(r, true, "success compareAndSet $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value2$, "success compareAndSet $type$ value");
+        }
+
+        {
+            boolean r = vh.compareAndSet(recv, $value1$, $value3$);
+            assertEquals(r, false, "failing compareAndSet $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value2$, "failing compareAndSet $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeVolatile(recv, $value2$, $value1$);
+            assertEquals(r, $value2$, "success compareAndExchangeVolatile $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value1$, "success compareAndExchangeVolatile $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeVolatile(recv, $value2$, $value3$);
+            assertEquals(r, $value1$, "failing compareAndExchangeVolatile $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value1$, "failing compareAndExchangeVolatile $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeAcquire(recv, $value1$, $value2$);
+            assertEquals(r, $value1$, "success compareAndExchangeAcquire $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value2$, "success compareAndExchangeAcquire $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeAcquire(recv, $value1$, $value3$);
+            assertEquals(r, $value2$, "failing compareAndExchangeAcquire $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value2$, "failing compareAndExchangeAcquire $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeRelease(recv, $value2$, $value1$);
+            assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value1$, "success compareAndExchangeRelease $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeRelease(recv, $value2$, $value3$);
+            assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value1$, "failing compareAndExchangeRelease $type$ value");
+        }
+
+        {
+            boolean r = vh.weakCompareAndSet(recv, $value1$, $value2$);
+            assertEquals(r, true, "weakCompareAndSet $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value2$, "weakCompareAndSet $type$ value");
+        }
+
+        {
+            boolean r = vh.weakCompareAndSetAcquire(recv, $value2$, $value1$);
+            assertEquals(r, true, "weakCompareAndSetAcquire $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
+        }
+
+        {
+            boolean r = vh.weakCompareAndSetRelease(recv, $value1$, $value2$);
+            assertEquals(r, true, "weakCompareAndSetRelease $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
+        }
+
+        // Compare set and get
+        {
+            $type$ o = ($type$) vh.getAndSet(recv, $value1$);
+            assertEquals(o, $value2$, "getAndSet $type$");
+            $type$ x = ($type$) vh.get(recv);
+            assertEquals(x, $value1$, "getAndSet $type$ value");
+        }
+#end[CAS]
+
+#if[AtomicAdd]
+        vh.set(recv, $value1$);
+
+        // get and add, add and get
+        {
+            $type$ o = ($type$) vh.getAndAdd(recv, $value3$);
+            assertEquals(o, $value1$, "getAndAdd $type$");
+            $type$ c = ($type$) vh.addAndGet(recv, $value3$);
+            assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+        }
+#end[AtomicAdd]
+    }
+
+    static void testInstanceFieldUnsupported(VarHandleTestAccess$Type$ recv, VarHandle vh) {
+#if[!CAS]
+        checkUOE(() -> {
+            boolean r = vh.compareAndSet(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeVolatile(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeAcquire(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeRelease(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSet(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetAcquire(recv, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetRelease(recv, $value1$, $value2$);
+        });
+#end[CAS]
+
+#if[!AtomicAdd]
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndAdd(recv, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.addAndGet(recv, $value1$);
+        });
+#end[AtomicAdd]
+    }
+
+
+    static void testStaticField(VarHandle vh) {
+        // Plain
+        {
+            vh.set($value1$);
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value1$, "set $type$ value");
+        }
+
+
+        // Volatile
+        {
+            vh.setVolatile($value2$);
+            $type$ x = ($type$) vh.getVolatile();
+            assertEquals(x, $value2$, "setVolatile $type$ value");
+        }
+
+        // Lazy
+        {
+            vh.setRelease($value1$);
+            $type$ x = ($type$) vh.getAcquire();
+            assertEquals(x, $value1$, "setRelease $type$ value");
+        }
+
+        // Opaque
+        {
+            vh.setOpaque($value2$);
+            $type$ x = ($type$) vh.getOpaque();
+            assertEquals(x, $value2$, "setOpaque $type$ value");
+        }
+
+#if[CAS]
+        vh.set($value1$);
+
+        // Compare
+        {
+            boolean r = vh.compareAndSet($value1$, $value2$);
+            assertEquals(r, true, "success compareAndSet $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value2$, "success compareAndSet $type$ value");
+        }
+
+        {
+            boolean r = vh.compareAndSet($value1$, $value3$);
+            assertEquals(r, false, "failing compareAndSet $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value2$, "failing compareAndSet $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeVolatile($value2$, $value1$);
+            assertEquals(r, $value2$, "success compareAndExchangeVolatile $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value1$, "success compareAndExchangeVolatile $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeVolatile($value2$, $value3$);
+            assertEquals(r, $value1$, "failing compareAndExchangeVolatile $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value1$, "failing compareAndExchangeVolatile $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeAcquire($value1$, $value2$);
+            assertEquals(r, $value1$, "success compareAndExchangeAcquire $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value2$, "success compareAndExchangeAcquire $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeAcquire($value1$, $value3$);
+            assertEquals(r, $value2$, "failing compareAndExchangeAcquire $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value2$, "failing compareAndExchangeAcquire $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeRelease($value2$, $value1$);
+            assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value1$, "success compareAndExchangeRelease $type$ value");
+        }
+
+        {
+            $type$ r = ($type$) vh.compareAndExchangeRelease($value2$, $value3$);
+            assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value1$, "failing compareAndExchangeRelease $type$ value");
+        }
+
+        {
+            boolean r = (boolean) vh.weakCompareAndSet($value1$, $value2$);
+            assertEquals(r, true, "weakCompareAndSet $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value2$, "weakCompareAndSet $type$ value");
+        }
+
+        {
+            boolean r = (boolean) vh.weakCompareAndSetAcquire($value2$, $value1$);
+            assertEquals(r, true, "weakCompareAndSetAcquire $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
+        }
+
+        {
+            boolean r = (boolean) vh.weakCompareAndSetRelease( $value1$, $value2$);
+            assertEquals(r, true, "weakCompareAndSetRelease $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
+        }
+
+        // Compare set and get
+        {
+            $type$ o = ($type$) vh.getAndSet( $value1$);
+            assertEquals(o, $value2$, "getAndSet $type$");
+            $type$ x = ($type$) vh.get();
+            assertEquals(x, $value1$, "getAndSet $type$ value");
+        }
+#end[CAS]
+
+#if[AtomicAdd]
+        vh.set($value1$);
+
+        // get and add, add and get
+        {
+            $type$ o = ($type$) vh.getAndAdd( $value3$);
+            assertEquals(o, $value1$, "getAndAdd $type$");
+            $type$ c = ($type$) vh.addAndGet($value3$);
+            assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+        }
+#end[AtomicAdd]
+    }
+
+    static void testStaticFieldUnsupported(VarHandle vh) {
+#if[!CAS]
+        checkUOE(() -> {
+            boolean r = vh.compareAndSet($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeVolatile($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeAcquire($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeRelease($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSet($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetAcquire($value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetRelease($value1$, $value2$);
+        });
+#end[CAS]
+
+#if[!AtomicAdd]
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndAdd($value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.addAndGet($value1$);
+        });
+#end[AtomicAdd]
+    }
+
+
+    static void testArray(VarHandle vh) {
+        $type$[] array = new $type$[10];
+
+        for (int i = 0; i < array.length; i++) {
+            // Plain
+            {
+                vh.set(array, i, $value1$);
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value1$, "get $type$ value");
+            }
+
+
+            // Volatile
+            {
+                vh.setVolatile(array, i, $value2$);
+                $type$ x = ($type$) vh.getVolatile(array, i);
+                assertEquals(x, $value2$, "setVolatile $type$ value");
+            }
+
+            // Lazy
+            {
+                vh.setRelease(array, i, $value1$);
+                $type$ x = ($type$) vh.getAcquire(array, i);
+                assertEquals(x, $value1$, "setRelease $type$ value");
+            }
+
+            // Opaque
+            {
+                vh.setOpaque(array, i, $value2$);
+                $type$ x = ($type$) vh.getOpaque(array, i);
+                assertEquals(x, $value2$, "setOpaque $type$ value");
+            }
+
+#if[CAS]
+            vh.set(array, i, $value1$);
+
+            // Compare
+            {
+                boolean r = vh.compareAndSet(array, i, $value1$, $value2$);
+                assertEquals(r, true, "success compareAndSet $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value2$, "success compareAndSet $type$ value");
+            }
+
+            {
+                boolean r = vh.compareAndSet(array, i, $value1$, $value3$);
+                assertEquals(r, false, "failing compareAndSet $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value2$, "failing compareAndSet $type$ value");
+            }
+
+            {
+                $type$ r = ($type$) vh.compareAndExchangeVolatile(array, i, $value2$, $value1$);
+                assertEquals(r, $value2$, "success compareAndExchangeVolatile $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value1$, "success compareAndExchangeVolatile $type$ value");
+            }
+
+            {
+                $type$ r = ($type$) vh.compareAndExchangeVolatile(array, i, $value2$, $value3$);
+                assertEquals(r, $value1$, "failing compareAndExchangeVolatile $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value1$, "failing compareAndExchangeVolatile $type$ value");
+            }
+
+            {
+                $type$ r = ($type$) vh.compareAndExchangeAcquire(array, i, $value1$, $value2$);
+                assertEquals(r, $value1$, "success compareAndExchangeAcquire $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value2$, "success compareAndExchangeAcquire $type$ value");
+            }
+
+            {
+                $type$ r = ($type$) vh.compareAndExchangeAcquire(array, i, $value1$, $value3$);
+                assertEquals(r, $value2$, "failing compareAndExchangeAcquire $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value2$, "failing compareAndExchangeAcquire $type$ value");
+            }
+
+            {
+                $type$ r = ($type$) vh.compareAndExchangeRelease(array, i, $value2$, $value1$);
+                assertEquals(r, $value2$, "success compareAndExchangeRelease $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value1$, "success compareAndExchangeRelease $type$ value");
+            }
+
+            {
+                $type$ r = ($type$) vh.compareAndExchangeRelease(array, i, $value2$, $value3$);
+                assertEquals(r, $value1$, "failing compareAndExchangeRelease $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value1$, "failing compareAndExchangeRelease $type$ value");
+            }
+
+            {
+                boolean r = vh.weakCompareAndSet(array, i, $value1$, $value2$);
+                assertEquals(r, true, "weakCompareAndSet $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value2$, "weakCompareAndSet $type$ value");
+            }
+
+            {
+                boolean r = vh.weakCompareAndSetAcquire(array, i, $value2$, $value1$);
+                assertEquals(r, true, "weakCompareAndSetAcquire $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
+            }
+
+            {
+                boolean r = vh.weakCompareAndSetRelease(array, i, $value1$, $value2$);
+                assertEquals(r, true, "weakCompareAndSetRelease $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
+            }
+
+            // Compare set and get
+            {
+                $type$ o = ($type$) vh.getAndSet(array, i, $value1$);
+                assertEquals(o, $value2$, "getAndSet $type$");
+                $type$ x = ($type$) vh.get(array, i);
+                assertEquals(x, $value1$, "getAndSet $type$ value");
+            }
+#end[CAS]
+
+#if[AtomicAdd]
+            vh.set(array, i, $value1$);
+
+            // get and add, add and get
+            {
+                $type$ o = ($type$) vh.getAndAdd(array, i, $value3$);
+                assertEquals(o, $value1$, "getAndAdd $type$");
+                $type$ c = ($type$) vh.addAndGet(array, i, $value3$);
+                assertEquals(c, $value1$ + $value3$ + $value3$, "getAndAdd $type$ value");
+            }
+#end[AtomicAdd]
+        }
+    }
+
+    static void testArrayUnsupported(VarHandle vh) {
+        $type$[] array = new $type$[10];
+
+        int i = 0;
+#if[!CAS]
+        checkUOE(() -> {
+            boolean r = vh.compareAndSet(array, i, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeVolatile(array, i, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeAcquire(array, i, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            $type$ r = ($type$) vh.compareAndExchangeRelease(array, i, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSet(array, i, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetAcquire(array, i, $value1$, $value2$);
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetRelease(array, i, $value1$, $value2$);
+        });
+#end[CAS]
+
+#if[!AtomicAdd]
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.getAndAdd(array, i, $value1$);
+        });
+
+        checkUOE(() -> {
+            $type$ o = ($type$) vh.addAndGet(array, i, $value1$);
+        });
+#end[AtomicAdd]
+    }
+
+    static void testArrayIndexOutOfBounds(VarHandle vh) throws Throwable {
+        $type$[] array = new $type$[10];
+
+        for (int i : new int[]{-1, Integer.MIN_VALUE, 10, 11, Integer.MAX_VALUE}) {
+            final int ci = i;
+
+            checkIOOBE(() -> {
+                $type$ x = ($type$) vh.get(array, ci);
+            });
+
+            checkIOOBE(() -> {
+                vh.set(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ x = ($type$) vh.getVolatile(array, ci);
+            });
+
+            checkIOOBE(() -> {
+                vh.setVolatile(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ x = ($type$) vh.getAcquire(array, ci);
+            });
+
+            checkIOOBE(() -> {
+                vh.setRelease(array, ci, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ x = ($type$) vh.getOpaque(array, ci);
+            });
+
+            checkIOOBE(() -> {
+                vh.setOpaque(array, ci, $value1$);
+            });
+
+#if[CAS]
+            checkIOOBE(() -> {
+                boolean r = vh.compareAndSet(array, ci, $value1$, $value2$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ r = ($type$) vh.compareAndExchangeVolatile(array, ci, $value2$, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ r = ($type$) vh.compareAndExchangeAcquire(array, ci, $value2$, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ r = ($type$) vh.compareAndExchangeRelease(array, ci, $value2$, $value1$);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSet(array, ci, $value1$, $value2$);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetAcquire(array, ci, $value1$, $value2$);
+            });
+
+            checkIOOBE(() -> {
+                boolean r = vh.weakCompareAndSetRelease(array, ci, $value1$, $value2$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndSet(array, ci, $value1$);
+            });
+#end[CAS]
+
+#if[AtomicAdd]
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.getAndAdd(array, ci, $value3$);
+            });
+
+            checkIOOBE(() -> {
+                $type$ o = ($type$) vh.addAndGet(array, ci, $value3$);
+            });
+#end[AtomicAdd]
+        }
+    }
+}
+

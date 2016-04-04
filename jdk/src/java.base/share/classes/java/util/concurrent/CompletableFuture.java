@@ -480,7 +480,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     static void lazySetNext(Completion c, Completion next) {
-        U.putOrderedObject(c, NEXT, next);
+        U.putObjectRelease(c, NEXT, next);
     }
 
     /**
