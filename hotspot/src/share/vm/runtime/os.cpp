@@ -1284,8 +1284,8 @@ void os::set_memory_serialize_page(address page) {
   _mem_serialize_page = (volatile int32_t *)page;
   // We initialize the serialization page shift count here
   // We assume a cache line size of 64 bytes
-  assert(SerializePageShiftCount == count,
-         "thread size changed, fix SerializePageShiftCount constant");
+  assert(SerializePageShiftCount == count, "JavaThread size changed; "
+         "SerializePageShiftCount constant should be %d", count);
   set_serialize_page_mask((uintptr_t)(vm_page_size() - sizeof(int32_t)));
 }
 

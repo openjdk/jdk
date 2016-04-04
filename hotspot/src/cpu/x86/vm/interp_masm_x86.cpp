@@ -1099,7 +1099,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     movptr(Address(lock_reg, mark_offset), swap_reg);
 
     assert(lock_offset == 0,
-           "displached header must be first word in BasicObjectLock");
+           "displaced header must be first word in BasicObjectLock");
 
     if (os::is_MP()) lock();
     cmpxchgptr(lock_reg, Address(obj_reg, 0));
@@ -1154,7 +1154,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 // Kills:
 //      rax
 //      c_rarg0, c_rarg1, c_rarg2, c_rarg3, ... (param regs)
-//      rscratch1, rscratch2 (scratch regs)
+//      rscratch1 (scratch reg)
 // rax, rbx, rcx, rdx
 void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
   assert(lock_reg == LP64_ONLY(c_rarg1) NOT_LP64(rdx),
@@ -1201,7 +1201,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     if (os::is_MP()) lock();
     cmpxchgptr(header_reg, Address(obj_reg, 0));
 
-    // zero for recursive case
+    // zero for simple unlock of a stack-lock case
     jcc(Assembler::zero, done);
 
     // Call the runtime routine for slow case.
