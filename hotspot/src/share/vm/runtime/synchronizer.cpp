@@ -204,7 +204,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc * obj, Thread * self, bool all) {
 // quick_enter() as our thread state remains _in_Java.
 
 bool ObjectSynchronizer::quick_enter(oop obj, Thread * Self,
-                                     BasicLock * Lock) {
+                                     BasicLock * lock) {
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(Self->is_Java_thread(), "invariant");
   assert(((JavaThread *) Self)->thread_state() == _thread_in_Java, "invariant");
@@ -226,6 +226,18 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread * Self,
       m->_recursions++;
       return true;
     }
+
+    // This Java Monitor is inflated so obj's header will never be
+    // displaced to this thread's BasicLock. Make the displaced header
+    // non-NULL so this BasicLock is not seen as recursive nor as
+    // being locked. We do this unconditionally so that this thread's
+    // BasicLock cannot be mis-interpreted by any stack walkers. For
+    // performance reasons, stack walkers generally first check for
+    // Biased Locking in the object's header, the second check is for
+    // stack-locking in the object's header, the third check is for
+    // recursive stack-locking in the displaced header in the BasicLock,
+    // and last are the inflated Java Monitor (ObjectMonitor) checks.
+    lock->set_displaced_header(markOopDesc::unused_mark());
 
     if (owner == NULL &&
         Atomic::cmpxchg_ptr(Self, &(m->_owner), NULL) == NULL) {
