@@ -25,11 +25,11 @@
 
 #include <jni.h>
 #include <jvm.h>
-#include "sun_misc_GC.h"
+#include "sun_rmi_transport_GC.h"
 
 
 JNIEXPORT jlong JNICALL
-Java_sun_misc_GC_maxObjectInspectionAge(JNIEnv *env, jclass cls)
+Java_sun_rmi_transport_GC_maxObjectInspectionAge(JNIEnv *env, jclass cls)
 {
     return JVM_MaxObjectInspectionAge();
 }
