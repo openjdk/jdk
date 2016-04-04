@@ -49,10 +49,6 @@ LogTagSet::LogTagSet(LogTagType t0, LogTagType t1, LogTagType t2, LogTagType t3,
   _output_list.set_output_level(LogOutput::Stderr, LogLevel::Default);
 }
 
-bool LogTagSet::is_level(LogLevelType level) const {
-  return _output_list.is_level(level);
-}
-
 void LogTagSet::update_decorators(const LogDecorators& decorator) {
   LogDecorators new_decorators = decorator;
   for (LogOutputList::Iterator it = _output_list.iterator(); it != _output_list.end(); it++) {
