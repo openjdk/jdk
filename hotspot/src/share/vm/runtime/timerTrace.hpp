@@ -38,10 +38,10 @@
 
 typedef void (*TraceTimerLogPrintFunc)(const char*, ...);
 
-// We need to explicit take address of Log<>write<> and static cast
+// We need to explicit take address of LogImpl<>write<> and static cast
 // due to MSVC is not compliant with templates two-phase lookup
 #define TRACETIME_LOG(TT_LEVEL, ...) \
-    log_is_enabled(TT_LEVEL, __VA_ARGS__) ? static_cast<TraceTimerLogPrintFunc>(&Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::TT_LEVEL>) : (TraceTimerLogPrintFunc)NULL
+    log_is_enabled(TT_LEVEL, __VA_ARGS__) ? static_cast<TraceTimerLogPrintFunc>(&LogImpl<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::TT_LEVEL>) : (TraceTimerLogPrintFunc)NULL
 
 class TraceTime: public StackObj {
  private:

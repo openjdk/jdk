@@ -1288,7 +1288,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
 
   if (log_is_enabled(Info, exceptions)) {
     ResourceMark rm;
-    trace_exception(LogHandle(exceptions)::info_stream(), exception(), pc, "");
+    trace_exception(Log(exceptions)::info_stream(), exception(), pc, "");
   }
 
   // for AbortVMOnException flag

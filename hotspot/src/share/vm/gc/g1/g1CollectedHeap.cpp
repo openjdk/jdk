@@ -2676,7 +2676,7 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
 }
 
 void G1CollectedHeap::print_heap_regions() const {
-  LogHandle(gc, heap, region) log;
+  Log(gc, heap, region) log;
   if (log.is_trace()) {
     ResourceMark rm;
     print_regions_on(log.trace_stream());
@@ -3112,7 +3112,7 @@ void G1CollectedHeap::print_taskqueue_stats() const {
   if (!log_is_enabled(Trace, gc, task, stats)) {
     return;
   }
-  LogHandle(gc, task, stats) log;
+  Log(gc, task, stats) log;
   ResourceMark rm;
   outputStream* st = log.trace_stream();
 

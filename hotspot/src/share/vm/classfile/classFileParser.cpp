@@ -5700,7 +5700,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   if (!is_internal()) {
     if (log_is_enabled(Debug, classload, preorder)){
       ResourceMark rm(THREAD);
-      outputStream* log = LogHandle(classload, preorder)::debug_stream();
+      outputStream* log = Log(classload, preorder)::debug_stream();
       log->print("%s", _class_name->as_klass_external_name());
       if (stream->source() != NULL) {
         log->print(" source: %s", stream->source());

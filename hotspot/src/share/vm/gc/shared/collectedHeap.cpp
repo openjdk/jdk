@@ -580,7 +580,7 @@ void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
     HeapDumper::dump_heap();
   }
 
-  LogHandle(gc, classhisto) log;
+  Log(gc, classhisto) log;
   if (log.is_trace()) {
     GCTraceTime(Trace, gc, classhisto) tm(before ? "Class Histogram (before full gc)" : "Class Histogram (after full gc)", timer);
     ResourceMark rm;

@@ -480,7 +480,7 @@ void Modules::define_module(jobject module, jstring version,
   }
 
   if (log_is_enabled(Debug, modules)) {
-    outputStream* logst = LogHandle(modules)::debug_stream();
+    outputStream* logst = Log(modules)::debug_stream();
     logst->print("define_module(): creation of module: %s, version: %s, location: %s, ",
                  module_name, module_version != NULL ? module_version : "NULL",
                  module_location != NULL ? module_location : "NULL");
@@ -789,7 +789,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
 
   if (log_is_enabled(Debug, modules)) {
     ResourceMark rm(THREAD);
-    outputStream* logst = LogHandle(modules)::debug_stream();
+    outputStream* logst = Log(modules)::debug_stream();
     Klass* klass = java_lang_Class::as_Klass(mirror);
     oop module_name = java_lang_reflect_Module::name(module);
     if (module_name != NULL) {

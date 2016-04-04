@@ -695,7 +695,7 @@ public:
   template <class T>
   void verify_liveness(T* p) {
     T heap_oop = oopDesc::load_heap_oop(p);
-    LogHandle(gc, verify) log;
+    Log(gc, verify) log;
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       bool failed = false;
@@ -749,7 +749,7 @@ public:
   template <class T>
   void verify_remembered_set(T* p) {
     T heap_oop = oopDesc::load_heap_oop(p);
-    LogHandle(gc, verify) log;
+    Log(gc, verify) log;
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       bool failed = false;
