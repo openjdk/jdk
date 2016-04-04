@@ -483,11 +483,7 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (can_reshape &&
       load->outcnt() == 1 && load->unique_out() == this) {
     if (lop == Op_LoadS && (mask & 0xFFFF0000) == 0 ) {
-      Node *ldus = new LoadUSNode(load->in(MemNode::Control),
-                                  load->in(MemNode::Memory),
-                                  load->in(MemNode::Address),
-                                  load->adr_type(),
-                                  TypeInt::CHAR, MemNode::unordered);
+      Node* ldus = load->as_Load()->convert_to_unsigned_load(*phase);
       ldus = phase->transform(ldus);
       return new AndINode(ldus, phase->intcon(mask & 0xFFFF));
     }
@@ -495,11 +491,7 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Masking sign bits off of a Byte?  Do an unsigned byte load plus
     // an and.
     if (lop == Op_LoadB && (mask & 0xFFFFFF00) == 0) {
-      Node* ldub = new LoadUBNode(load->in(MemNode::Control),
-                                  load->in(MemNode::Memory),
-                                  load->in(MemNode::Address),
-                                  load->adr_type(),
-                                  TypeInt::UBYTE, MemNode::unordered);
+      Node* ldub = load->as_Load()->convert_to_unsigned_load(*phase);
       ldub = phase->transform(ldub);
       return new AndINode(ldub, phase->intcon(mask));
     }
@@ -934,11 +926,7 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
              ld->Opcode() == Op_LoadUS &&
              ld->outcnt() == 1 && ld->unique_out() == shl)
       // Replace zero-extension-load with sign-extension-load
-      return new LoadSNode( ld->in(MemNode::Control),
-                            ld->in(MemNode::Memory),
-                            ld->in(MemNode::Address),
-                            ld->adr_type(), TypeInt::SHORT,
-                            MemNode::unordered);
+      return ld->as_Load()->convert_to_signed_load(*phase);
   }
 
   // Check for "(byte[i] <<24)>>24" which simply sign-extends

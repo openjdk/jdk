@@ -999,8 +999,16 @@ void LIRGenerator::move_to_phi(PhiResolver* resolver, Value cur_val, Value sux_v
   Phi* phi = sux_val->as_Phi();
   // cur_val can be null without phi being null in conjunction with inlining
   if (phi != NULL && cur_val != NULL && cur_val != phi && !phi->is_illegal()) {
+    Phi* cur_phi = cur_val->as_Phi();
+    if (cur_phi != NULL && cur_phi->is_illegal()) {
+      // Phi and local would need to get invalidated
+      // (which is unexpected for Linear Scan).
+      // But this case is very rare so we simply bail out.
+      bailout("propagation of illegal phi");
+      return;
+    }
     LIR_Opr operand = cur_val->operand();
-    if (cur_val->operand()->is_illegal()) {
+    if (operand->is_illegal()) {
       assert(cur_val->as_Constant() != NULL || cur_val->as_Local() != NULL,
              "these can be produced lazily");
       operand = operand_for_instruction(cur_val);

@@ -211,10 +211,6 @@ static int reg2offset_out(VMReg r) {
   return (r->reg2stack() + SharedRuntime::out_preserve_stack_slots()) * VMRegImpl::stack_slot_size;
 }
 
-template <class T> static const T& min (const T& a, const T& b) {
-  return (a > b) ? b : a;
-}
-
 // ---------------------------------------------------------------------------
 // Read the array of BasicTypes from a signature, and compute where the
 // arguments should go.  Values in the VMRegPair regs array refer to 4-byte

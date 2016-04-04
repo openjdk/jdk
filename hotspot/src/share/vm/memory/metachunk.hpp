@@ -145,7 +145,9 @@ class Metachunk : public Metabase<Metachunk> {
 
   bool contains(const void* ptr) { return bottom() <= ptr && ptr < _top; }
 
-  NOT_PRODUCT(void mangle();)
+#ifndef PRODUCT
+  void mangle(juint word_value);
+#endif
 
   void print_on(outputStream* st) const;
   void verify();
