@@ -124,7 +124,7 @@ void Test_configure_stdout() {
 
   // Enable 'logging=info', verifying it has been set
   LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(logging));
-  assert_str_eq("logging=info,", stdoutput->config_string());
+  assert_str_eq("logging=info", stdoutput->config_string());
   assert(log_is_enabled(Info, logging), "logging was not properly enabled");
 
   // Enable 'gc=debug' (no wildcard), verifying no other tags are enabled
