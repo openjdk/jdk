@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4927552 8026567
+ * @bug      4927552 8026567 8071982
  * @summary  <DESC>
  * @author   jamieh
  * @library  ../lib
@@ -50,6 +50,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 "annotation_test1 passes",
                 "annotation_test2 passes",
                 "annotation_test3 passes",
+                "annotation_test4 passes.",
                 "class_test1 passes",
                 "class_test2 passes",
                 "class_test3 passes",

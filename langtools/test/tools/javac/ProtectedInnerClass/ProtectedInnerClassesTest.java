@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,15 @@
  * @summary Verify allowed access to protected class from another package
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavaTask toolbox.JavacTask
  * @run main ProtectedInnerClassesTest
  */
+
+import toolbox.JavaTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 // Original tests: test/tools/javac/ProtectedInnerClass/ProtectedInnerClass.sh
 // and test/tools/javac/ProtectedInnerClass/ProtectedInnerClass_2.java
@@ -86,12 +89,12 @@ public class ProtectedInnerClassesTest {
     }
 
     void compileAndExecute() throws Exception {
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(".")
                 .sources(protectedInnerClass1Src, protectedInnerClass2Src)
                 .run();
 
-        tb.new JavaTask()
+        new JavaTask(tb)
                 .classpath(System.getProperty("user.dir"))
                 .className("p2.ProtectedInnerClass2")
                 .run();
@@ -99,15 +102,15 @@ public class ProtectedInnerClassesTest {
 
 //from test/tools/javac/ProtectedInnerClass/ProtectedInnerClass_2.java
     void compileOnly() throws Exception {
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(".")
                 .sources(protectedInnerClass1Src)
                 .run();
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(".")
                 .sources(protectedInnerClass3Src)
-                .run(ToolBox.Expect.FAIL);
+                .run(Task.Expect.FAIL);
     }
 
 }

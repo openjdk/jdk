@@ -99,7 +99,6 @@ import jdk.dynalink.linker.support.Lookup;
  * arity).
  */
 abstract class SingleDynamicMethod extends DynamicMethod {
-
     private static final MethodHandle CAN_CONVERT_TO = Lookup.findOwnStatic(MethodHandles.lookup(), "canConvertTo", boolean.class, LinkerServices.class, Class.class, Object.class);
 
     SingleDynamicMethod(final String name) {
@@ -129,8 +128,8 @@ abstract class SingleDynamicMethod extends DynamicMethod {
 
     @Override
     MethodHandle getInvocation(final CallSiteDescriptor callSiteDescriptor, final LinkerServices linkerServices) {
-        return getInvocation(getTarget(callSiteDescriptor), callSiteDescriptor.getMethodType(),
-                linkerServices);
+        return linkerServices.getWithLookup(()->getInvocation(getTarget(callSiteDescriptor),
+                callSiteDescriptor.getMethodType(), linkerServices), callSiteDescriptor);
     }
 
     @Override

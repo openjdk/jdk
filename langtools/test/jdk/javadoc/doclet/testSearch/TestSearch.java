@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8141492
+ * @bug 8141492 8071982
  * @summary Test the search feature of javadoc.
  * @author bpatel
  * @library ../lib
@@ -234,6 +234,12 @@ public class TestSearch extends JavadocTester {
         checkOutput("index-all.html", expectedOutput,
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg/package-summary.html#phrasewithspaces\">"
                         + "phrase with spaces</a></span> - Search tag in pkg</dt>",
+                "<dt><span class=\"searchTagLink\"><a href=\"pkg/package-summary.html#pkg\">"
+                        + "pkg</a></span> - Search tag in pkg</dt>",
+                "<dt><span class=\"searchTagLink\"><a href=\"pkg/package-summary.html#pkg2.5\">"
+                        + "pkg2.5</a></span> - Search tag in pkg</dt>",
+                "<dt><span class=\"searchTagLink\"><a href=\"pkg/package-summary.html#r\">"
+                        + "r</a></span> - Search tag in pkg</dt>",
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg1/RegClass.html#searchphrase\">"
                         + "search phrase</a></span> - Search tag in pkg1.RegClass</dt>",
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg1/RegClass.html#SearchWordWithDescription\">"
@@ -290,7 +296,14 @@ public class TestSearch extends JavadocTester {
                         + "SingleWord</a></span> - Search tag in pkg</dt>");
         checkOutput("index-files/index-9.html", true,
                 "<dt><span class=\"searchTagLink\"><a href=\"../pkg/package-summary.html#phrasewithspaces\">"
-                        + "phrase with spaces</a></span> - Search tag in pkg</dt>");
+                        + "phrase with spaces</a></span> - Search tag in pkg</dt>",
+                "<dt><span class=\"searchTagLink\"><a href=\"../pkg/package-summary.html#pkg\">"
+                        + "pkg</a></span> - Search tag in pkg</dt>",
+                "<dt><span class=\"searchTagLink\"><a href=\"../pkg/package-summary.html#pkg2.5\">"
+                        + "pkg2.5</a></span> - Search tag in pkg</dt>");
+        checkOutput("index-files/index-11.html", true,
+                "<dt><span class=\"searchTagLink\"><a href=\"../pkg/package-summary.html#r\">"
+                        + "r</a></span> - Search tag in pkg</dt>");
         checkOutput("index-files/index-8.html", true,
                 "<dt><span class=\"searchTagLink\"><a href=\"../pkg/AnotherClass.ModalExclusionType.html"
                         + "#nested%7B@indexnested_tag_test%7D\">nested {@index nested_tag_test}</a></span> - "
@@ -309,6 +322,12 @@ public class TestSearch extends JavadocTester {
         checkOutput("index-all.html", false,
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg/package-summary.html#phrasewithspaces\">"
                         + "phrase with spaces</a></span> - Search tag in pkg</dt>",
+                "<dt><span class=\"searchTagLink\"><a href=\"pkg/package-summary.html#pkg\">"
+                        + "pkg</a></span> - Search tag in pkg</dt>",
+                "<dt><span class=\"searchTagLink\"><a href=\"pkg/package-summary.html#pkg2.5\">"
+                        + "pkg2.5</a></span> - Search tag in pkg</dt>",
+                "<dt><span class=\"searchTagLink\"><a href=\"pkg/package-summary.html#r\">"
+                        + "r</a></span> - Search tag in pkg</dt>",
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg1/RegClass.html#searchphrase\">"
                         + "search phrase</a></span> - Search tag in pkg1.RegClass</dt>",
                 "<dt><span class=\"searchTagLink\"><a href=\"pkg1/RegClass.html#SearchWordWithDescription\">"

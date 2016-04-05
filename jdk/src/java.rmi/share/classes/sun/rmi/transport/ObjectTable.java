@@ -34,7 +34,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
-import sun.misc.GC;
 import sun.rmi.runtime.Log;
 import sun.rmi.runtime.NewThreadAction;
 

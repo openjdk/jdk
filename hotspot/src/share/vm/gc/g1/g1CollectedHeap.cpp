@@ -2329,9 +2329,13 @@ void G1CollectedHeap::register_concurrent_cycle_end() {
     GCIdMarkAndRestore conc_gc_id_mark(_cmThread->gc_id());
     if (_cm->has_aborted()) {
       _gc_tracer_cm->report_concurrent_mode_failure();
+
+      // ConcurrentGCTimer will be ended as well.
+      _cm->register_concurrent_gc_end_and_stop_timer();
+    } else {
+      _gc_timer_cm->register_gc_end();
     }
 
-    _gc_timer_cm->register_gc_end();
     _gc_tracer_cm->report_gc_end(_gc_timer_cm->gc_end(), _gc_timer_cm->time_partitions());
 
     // Clear state variables to prepare for the next concurrent cycle.

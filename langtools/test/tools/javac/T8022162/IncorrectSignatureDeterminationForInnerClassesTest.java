@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@
  * @summary Incorrect signature determination for certain inner class generics
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main IncorrectSignatureDeterminationForInnerClassesTest
  */
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class IncorrectSignatureDeterminationForInnerClassesTest {
 
@@ -73,13 +75,13 @@ public class IncorrectSignatureDeterminationForInnerClassesTest {
         ToolBox tb = new ToolBox();
         tb.createDirectories("classes");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir("classes")
                 .sources(DSrc)
                 .run();
 
         // compile class H against the class files for classes D and Q
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir("classes")
                 .classpath("classes")
                 .sources(HSrc)

@@ -33,6 +33,9 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.prefs.AbstractPreferences;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -40,6 +43,8 @@ import java.util.stream.Stream;
 
 import jdk.internal.jshell.tool.JShellTool;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
+
+import org.testng.annotations.BeforeMethod;
 
 import static java.util.stream.Collectors.toList;
 import static org.testng.Assert.assertEquals;
@@ -83,6 +88,7 @@ public class ReplToolTesting {
     private Map<String, ClassInfo> classes;
     private Map<String, ImportInfo> imports;
     private boolean isDefaultStartUp = true;
+    private Preferences prefs;
 
     public JShellTool repl = null;
 
@@ -219,6 +225,11 @@ public class ReplToolTesting {
         }
     }
 
+    @BeforeMethod
+    public void setUp() {
+        prefs = new MemoryPreferences();
+    }
+
     public void testRaw(String[] args, ReplTest... tests) {
         cmdin = new WaitingTestingInputStream();
         cmdout = new ByteArrayOutputStream();
@@ -234,7 +245,8 @@ public class ReplToolTesting {
                 new PrintStream(console),
                 userin,
                 new PrintStream(userout),
-                new PrintStream(usererr));
+                new PrintStream(usererr),
+                prefs);
         repl.testPrompt = true;
         try {
             repl.start(args);
@@ -362,8 +374,8 @@ public class ReplToolTesting {
         }
     }
 
-    private void dropKey(boolean after, String cmd, String name, Map<String, ? extends MemberInfo> map) {
-        assertCommand(after, cmd, "");
+    private void dropKey(boolean after, String cmd, String name, Map<String, ? extends MemberInfo> map, String output) {
+        assertCommand(after, cmd, output);
         if (after) {
             map.remove(name);
             for (int i = 0; i < keys.size(); ++i) {
@@ -377,20 +389,20 @@ public class ReplToolTesting {
         }
     }
 
-    public void dropVariable(boolean after, String cmd, String name) {
-        dropKey(after, cmd, name, variables);
+    public void dropVariable(boolean after, String cmd, String name, String output) {
+        dropKey(after, cmd, name, variables, output);
     }
 
-    public void dropMethod(boolean after, String cmd, String name) {
-        dropKey(after, cmd, name, methods);
+    public void dropMethod(boolean after, String cmd, String name, String output) {
+        dropKey(after, cmd, name, methods, output);
     }
 
-    public void dropClass(boolean after, String cmd, String name) {
-        dropKey(after, cmd, name, classes);
+    public void dropClass(boolean after, String cmd, String name, String output) {
+        dropKey(after, cmd, name, classes, output);
     }
 
-    public void dropImport(boolean after, String cmd, String name) {
-        dropKey(after, cmd, name, imports);
+    public void dropImport(boolean after, String cmd, String name, String output) {
+        dropKey(after, cmd, name, imports, output);
     }
 
     public void assertCommand(boolean after, String cmd, String out) {
@@ -424,10 +436,10 @@ public class ReplToolTesting {
             }
             setCommandInput(cmd + "\n");
         } else {
-            assertOutput(getCommandOutput(), out, "command");
-            assertOutput(getCommandErrorOutput(), err, "command error");
-            assertOutput(getUserOutput(), print, "user");
-            assertOutput(getUserErrorOutput(), usererr, "user error");
+            assertOutput(getCommandOutput(), out, "command output: " + cmd);
+            assertOutput(getCommandErrorOutput(), err, "command error: " + cmd);
+            assertOutput(getUserOutput(), print, "user output: " + cmd);
+            assertOutput(getUserErrorOutput(), usererr, "user error: " + cmd);
         }
     }
 
@@ -447,7 +459,7 @@ public class ReplToolTesting {
 
     private List<String> computeCompletions(String code, boolean isSmart) {
         JShellTool js = this.repl != null ? this.repl
-                                      : new JShellTool(null, null, null, null, null, null, null);
+                                      : new JShellTool(null, null, null, null, null, null, null, prefs);
         int cursor =  code.indexOf('|');
         code = code.replace("|", "");
         assertTrue(cursor > -1, "'|' not found: " + code);
@@ -464,9 +476,9 @@ public class ReplToolTesting {
         return (output) -> assertTrue(output.startsWith(prefix), "Output: \'" + output + "' does not start with: " + prefix);
     }
 
-    public void assertOutput(String got, String expected, String kind) {
+    public void assertOutput(String got, String expected, String display) {
         if (expected != null) {
-            assertEquals(got, expected, "Kind: " + kind + ".\n");
+            assertEquals(got, expected, display + ".\n");
         }
     }
 
@@ -761,5 +773,63 @@ public class ReplToolTesting {
                 write(b[off + i]);
             }
         }
+    }
+
+    public static final class MemoryPreferences extends AbstractPreferences {
+
+        private final Map<String, String> values = new HashMap<>();
+        private final Map<String, MemoryPreferences> nodes = new HashMap<>();
+
+        public MemoryPreferences() {
+            this(null, "");
+        }
+
+        public MemoryPreferences(MemoryPreferences parent, String name) {
+            super(parent, name);
+        }
+
+        @Override
+        protected void putSpi(String key, String value) {
+            values.put(key, value);
+        }
+
+        @Override
+        protected String getSpi(String key) {
+            return values.get(key);
+        }
+
+        @Override
+        protected void removeSpi(String key) {
+            values.remove(key);
+        }
+
+        @Override
+        protected void removeNodeSpi() throws BackingStoreException {
+            ((MemoryPreferences) parent()).nodes.remove(name());
+        }
+
+        @Override
+        protected String[] keysSpi() throws BackingStoreException {
+            return values.keySet().toArray(new String[0]);
+        }
+
+        @Override
+        protected String[] childrenNamesSpi() throws BackingStoreException {
+            return nodes.keySet().toArray(new String[0]);
+        }
+
+        @Override
+        protected AbstractPreferences childSpi(String name) {
+            return nodes.computeIfAbsent(name, n -> new MemoryPreferences(this, name));
+        }
+
+        @Override
+        protected void syncSpi() throws BackingStoreException {
+        }
+
+        @Override
+        protected void flushSpi() throws BackingStoreException {
+        }
+
     }
 }

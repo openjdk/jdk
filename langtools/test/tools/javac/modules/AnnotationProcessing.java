@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main AnnotationProcessing
  */
 
@@ -58,6 +57,10 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.ElementScanner9;
 
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
+
 public class AnnotationProcessing extends ModuleTestBase {
 
     public static void main(String... args) throws Exception {
@@ -77,7 +80,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                           "module m1 { }",
                           "package impl; public class Impl { }");
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-modulesourcepath", moduleSrc.toString(),
                          "-processor", AP.class.getName(),
                          "-AexpectedEnclosedElements=m1=>impl")
@@ -85,7 +88,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                 .files(findJavaFiles(moduleSrc))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty())
             throw new AssertionError("Unexpected output: " + log);
@@ -109,7 +112,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                           "module m2 { }",
                           "package impl2; public class Impl2 { }");
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-modulesourcepath", moduleSrc.toString(),
                          "-processor", AP.class.getName(),
                          "-AexpectedEnclosedElements=m1=>impl1,m2=>impl2")
@@ -117,7 +120,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                 .files(findJavaFiles(moduleSrc))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty())
             throw new AssertionError("Unexpected output: " + log);
@@ -206,13 +209,13 @@ public class AnnotationProcessing extends ModuleTestBase {
                           "package api; public class Api { }",
                           "package impl; public class Impl extends api.Api { }");
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-doe", "-processor", VerifyUsesProvidesAP.class.getName())
                 .outdir(classes)
                 .files(findJavaFiles(moduleSrc))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty())
             throw new AssertionError("Unexpected output: " + log);
@@ -260,7 +263,7 @@ public class AnnotationProcessing extends ModuleTestBase {
         tb.writeJavaFiles(src,
                           "package api; public class Api { }");
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-processor", VerifyPackageNoModule.class.getName(),
                          "-source", "8",
                          "-Xlint:-options")
@@ -268,7 +271,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty())
             throw new AssertionError("Unexpected output: " + log);

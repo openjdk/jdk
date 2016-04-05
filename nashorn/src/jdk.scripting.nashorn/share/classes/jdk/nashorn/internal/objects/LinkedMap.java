@@ -62,7 +62,7 @@ public class LinkedMap {
      */
     static class Node {
         private final Object key;
-        private final Object value;
+        private volatile Object value;
 
         private volatile boolean alive = true;
         private volatile Node prev;
@@ -102,6 +102,14 @@ public class LinkedMap {
          */
         public Object getValue() {
             return value;
+        }
+
+        /**
+         * Set the node's value
+         * @param value the new value
+         */
+        void setValue(final Object value) {
+            this.value = value;
         }
     }
 
@@ -150,12 +158,14 @@ public class LinkedMap {
      * @param value the value
      */
     public void set(final Object key, final Object value) {
-        final Node newNode = new Node(key, value);
-        final Node oldNode = data.put(key, newNode);
-        if (oldNode != null) {
-            unlink(oldNode);
+        Node node = data.get(key);
+        if (node != null) {
+            node.setValue(value);
+        } else {
+            node = new Node(key, value);
+            data.put(key, node);
+            link(node);
         }
-        link(newNode);
     }
 
     /**

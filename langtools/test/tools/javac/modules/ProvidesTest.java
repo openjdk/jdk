@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main ProvidesTest
  */
 
@@ -37,6 +36,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ProvidesTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -54,10 +57,10 @@ public class ProvidesTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
@@ -73,11 +76,11 @@ public class ProvidesTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
 
     }
@@ -91,13 +94,13 @@ public class ProvidesTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:24: compiler.err.expected: 'with'"))
             throw new Exception("expected output not found");
@@ -114,11 +117,11 @@ public class ProvidesTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-XDrawDiagnostic")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll();
     }
 
@@ -129,13 +132,13 @@ public class ProvidesTest extends ModuleTestBase {
                 "module m { provides p.Missing with p.C; }",
                 "package p; public class C extends p.Missing { }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
                 "C.java:1:36: compiler.err.cant.resolve.location: kindname.class, Missing, , , (compiler.misc.location: kindname.package, p, null)",
@@ -156,14 +159,14 @@ public class ProvidesTest extends ModuleTestBase {
         tb.writeJavaFiles(modules.resolve("L"),
                 "module L { requires M; provides p.Service with p.Service; }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", modules.toString())
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(modules))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
         List<String> expected = Arrays.asList(
                 "module-info.java:1:24: compiler.err.service.implementation.not.in.right.module: M",
                 "1 error");
@@ -181,13 +184,13 @@ public class ProvidesTest extends ModuleTestBase {
                 "package p; public class A { }",
                 "package p; public class B { }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("module-info.java:1:31: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: p.B, p.A)",
                 "1 error");
@@ -203,13 +206,13 @@ public class ProvidesTest extends ModuleTestBase {
                 "module m { provides p.C with p.Impl; }",
                 "package p; public class C { }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("module-info.java:1:31: compiler.err.cant.resolve.location: kindname.class, Impl, , , (compiler.misc.location: kindname.package, p, null)",
                 "1 error");
@@ -227,10 +230,10 @@ public class ProvidesTest extends ModuleTestBase {
                 "package p; public class Impl1 extends p.C { }",
                 "package p; public class Impl2 extends p.C { }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
@@ -243,10 +246,10 @@ public class ProvidesTest extends ModuleTestBase {
                 "package p; public abstract class Service2 { }",
                 "package p; public class Impl extends p.Service2 implements p.Service1 { }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
@@ -258,13 +261,13 @@ public class ProvidesTest extends ModuleTestBase {
                 "package p1; public class C1 { }",
                 "package p2; public abstract class C2 extends p1.C1 { }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
                 "module-info.java:1:34: compiler.err.service.implementation.is.abstract: p2.C2");
@@ -281,13 +284,13 @@ public class ProvidesTest extends ModuleTestBase {
                 "package p1; public interface Service { }",
                 "package p2; public interface Impl extends p1.Service { }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
                 "module-info.java:1:39: compiler.err.service.implementation.is.abstract: p2.Impl");
@@ -304,13 +307,13 @@ public class ProvidesTest extends ModuleTestBase {
                 "package p1; public class C1 { }",
                 "package p2; class C2 extends p1.C1 { }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("module-info.java:1:34: compiler.err.not.def.public.cant.access: p2.C2, p2",
                 "1 error");
@@ -327,13 +330,13 @@ public class ProvidesTest extends ModuleTestBase {
                 "package p1; public class C1 { }",
                 "package p2; public class C2 extends p1.C1 { public C2(String str) { } }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
                 "module-info.java:1:46: compiler.err.service.implementation.doesnt.have.a.no.args.constructor: p2.C2");
@@ -350,13 +353,13 @@ public class ProvidesTest extends ModuleTestBase {
                 "package p1; public class C1 { }",
                 "package p2; public class C2 extends p1.C1 { private C2() { } }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
                 "module-info.java:1:46: compiler.err.service.implementation.no.args.constructor.not.public: p2.C2");
@@ -374,10 +377,10 @@ public class ProvidesTest extends ModuleTestBase {
                 "package p2; public class C2 extends p1.C1 {  }",
                 "package p2; public class C3 extends p2.C2 {  }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
@@ -389,13 +392,13 @@ public class ProvidesTest extends ModuleTestBase {
                 "package p1; public class C1 { }",
                 "package p2; public class C2  { public class Inner extends p1.C1 { } }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
                 "module-info.java:1:37: compiler.err.service.implementation.is.inner: p2.C2.Inner");
@@ -412,13 +415,13 @@ public class ProvidesTest extends ModuleTestBase {
                 "package p1; public class C1 { public class InnerDefinition { } }",
                 "package p2; public class C2 extends p1.C1.InnerDefinition { }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
                 "module-info.java:1:26: compiler.err.service.definition.is.inner: p1.C1.InnerDefinition",

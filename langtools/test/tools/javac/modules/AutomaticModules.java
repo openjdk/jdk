@@ -28,13 +28,17 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask toolbox.JarTask ModuleTestBase
  * @run main AutomaticModules
  */
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class AutomaticModules extends ModuleTestBase {
 
@@ -51,13 +55,13 @@ public class AutomaticModules extends ModuleTestBase {
         Path legacyClasses = base.resolve("legacy-classes");
         Files.createDirectories(legacyClasses);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options()
                 .outdir(legacyClasses)
                 .files(findJavaFiles(legacySrc))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty()) {
             throw new Exception("unexpected output: " + log);
@@ -69,7 +73,7 @@ public class AutomaticModules extends ModuleTestBase {
 
         Path jar = modulePath.resolve("test-api-1.0.jar");
 
-        tb.new JarTask(jar)
+        new JarTask(tb, jar)
           .baseDir(legacyClasses)
           .files("api/Api.class")
           .run();
@@ -85,7 +89,7 @@ public class AutomaticModules extends ModuleTestBase {
                           "module m1 { requires test.api; }",
                           "package impl; public class Impl { public void e(api.Api api) { api.actionPerformed(null); } }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", moduleSrc.toString(), "-modulepath", modulePath.toString(), "-addmods", "java.desktop")
                 .outdir(classes)
                 .files(findJavaFiles(moduleSrc))
@@ -102,13 +106,13 @@ public class AutomaticModules extends ModuleTestBase {
         Path legacyClasses = base.resolve("legacy-classes");
         Files.createDirectories(legacyClasses);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options()
                 .outdir(legacyClasses)
                 .files(findJavaFiles(legacySrc))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty()) {
             throw new Exception("unexpected output: " + log);
@@ -120,14 +124,14 @@ public class AutomaticModules extends ModuleTestBase {
 
         Path apiJar = modulePath.resolve("test-api-1.0.jar");
 
-        tb.new JarTask(apiJar)
+        new JarTask(tb, apiJar)
           .baseDir(legacyClasses)
           .files("api/Api.class")
           .run();
 
         Path baseJar = base.resolve("base.jar");
 
-        tb.new JarTask(baseJar)
+        new JarTask(tb, baseJar)
           .baseDir(legacyClasses)
           .files("base/Base.class")
           .run();
@@ -143,7 +147,7 @@ public class AutomaticModules extends ModuleTestBase {
                           "module m1 { requires test.api; }",
                           "package impl; public class Impl { public void e(api.Api api) { api.run(\"\"); } }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", moduleSrc.toString(), "-modulepath", modulePath.toString(), "-classpath", baseJar.toString())
                 .outdir(classes)
                 .files(findJavaFiles(moduleSrc))
@@ -158,12 +162,12 @@ public class AutomaticModules extends ModuleTestBase {
         Path automaticClasses = base.resolve("automaticClasses");
         tb.createDirectories(automaticClasses);
 
-        String automaticLog = tb.new JavacTask()
+        String automaticLog = new JavacTask(tb)
                                 .outdir(automaticClasses)
                                 .files(findJavaFiles(automaticSrc))
                                 .run()
                                 .writeAll()
-                                .getOutput(ToolBox.OutputKind.DIRECT);
+                                .getOutput(Task.OutputKind.DIRECT);
 
         if (!automaticLog.isEmpty())
             throw new Exception("expected output not found: " + automaticLog);
@@ -174,7 +178,7 @@ public class AutomaticModules extends ModuleTestBase {
 
         Path automaticJar = modulePath.resolve("automatic-1.0.jar");
 
-        tb.new JarTask(automaticJar)
+        new JarTask(tb, automaticJar)
           .baseDir(automaticClasses)
           .files("api/Api.class")
           .run();
@@ -189,7 +193,7 @@ public class AutomaticModules extends ModuleTestBase {
                           "module m1 { requires public automatic; }",
                           "package dep; public class Dep { api.Api api; }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulepath", modulePath.toString())
                 .outdir(depClasses)
                 .files(findJavaFiles(depSrc))
@@ -198,7 +202,7 @@ public class AutomaticModules extends ModuleTestBase {
 
         Path moduleJar = modulePath.resolve("m1.jar");
 
-        tb.new JarTask(moduleJar)
+        new JarTask(tb, moduleJar)
           .baseDir(depClasses)
           .files("module-info.class", "dep/Dep.class")
           .run();
@@ -213,7 +217,7 @@ public class AutomaticModules extends ModuleTestBase {
                           "module m2 { requires automatic; }",
                           "package test; public class Test { }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulepath", modulePath.toString())
                 .outdir(testClasses)
                 .files(findJavaFiles(testSrc))

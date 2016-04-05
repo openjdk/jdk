@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ public:
   static bool has_file();
   static bool parse_from_flag();
   static bool parse_from_file(const char* filename, outputStream* st);
-  static bool parse_string(const char* string, outputStream* st);
-  bool install_directives();
+  static int  parse_string(const char* string, outputStream* st);
+  int install_directives();
 
 private:
   DirectivesParser(const char* text, outputStream* st);

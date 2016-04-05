@@ -1420,9 +1420,6 @@ const bool Matcher::isSimpleConstant64(jlong value) {
 // The ecx parameter to rep stos for the ClearArray node is in dwords.
 const bool Matcher::init_array_count_is_in_bytes = false;
 
-// Threshold size for cleararray.
-const int Matcher::init_array_short_size = 8 * BytesPerLong;
-
 // Needs 2 CMOV's for longs.
 const int Matcher::long_cmove_cost() { return 1; }
 
@@ -11369,27 +11366,54 @@ instruct MoveL2D_reg_reg_sse(regD dst, eRegL src, regD tmp) %{
 // =======================================================================
 // fast clearing of an array
 instruct rep_stos(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(!UseFastStosb);
+  predicate(!((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
-  format %{ "XOR    EAX,EAX\t# ClearArray:\n\t"
-            "SHL    ECX,1\t# Convert doublewords to words\n\t"
-            "REP STOS\t# store EAX into [EDI++] while ECX--" %}
+
+  format %{ $$template
+    $$emit$$"XOR    EAX,EAX\t# ClearArray:\n\t"
+    $$emit$$"CMP    InitArrayShortSize,rcx\n\t"
+    $$emit$$"JG     LARGE\n\t"
+    $$emit$$"SHL    ECX, 1\n\t"
+    $$emit$$"DEC    ECX\n\t"
+    $$emit$$"JS     DONE\t# Zero length\n\t"
+    $$emit$$"MOV    EAX,(EDI,ECX,4)\t# LOOP\n\t"
+    $$emit$$"DEC    ECX\n\t"
+    $$emit$$"JGE    LOOP\n\t"
+    $$emit$$"JMP    DONE\n\t"
+    $$emit$$"# LARGE:\n\t"
+    if (UseFastStosb) {
+       $$emit$$"SHL    ECX,3\t# Convert doublewords to bytes\n\t"
+       $$emit$$"REP STOSB\t# store EAX into [EDI++] while ECX--\n\t"
+    } else {
+       $$emit$$"SHL    ECX,1\t# Convert doublewords to words\n\t"
+       $$emit$$"REP STOS\t# store EAX into [EDI++] while ECX--\n\t"
+    }
+    $$emit$$"# DONE"
+  %}
   ins_encode %{
-    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register, false);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct rep_fast_stosb(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
-  predicate(UseFastStosb);
+instruct rep_stos_large(eCXRegI cnt, eDIRegP base, eAXRegI zero, Universe dummy, eFlagsReg cr) %{
+  predicate(((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
-  format %{ "XOR    EAX,EAX\t# ClearArray:\n\t"
-            "SHL    ECX,3\t# Convert doublewords to bytes\n\t"
-            "REP STOSB\t# store EAX into [EDI++] while ECX--" %}
+  format %{ $$template
+    $$emit$$"XOR    EAX,EAX\t# ClearArray:\n\t"
+    if (UseFastStosb) {
+       $$emit$$"SHL    ECX,3\t# Convert doublewords to bytes\n\t"
+       $$emit$$"REP STOSB\t# store EAX into [EDI++] while ECX--\n\t"
+    } else {
+       $$emit$$"SHL    ECX,1\t# Convert doublewords to words\n\t"
+       $$emit$$"REP STOS\t# store EAX into [EDI++] while ECX--\n\t"
+    }
+    $$emit$$"# DONE"
+  %}
   ins_encode %{
-    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register, true);
   %}
   ins_pipe( pipe_slow );
 %}

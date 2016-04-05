@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,11 @@
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.doclint
  *          jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JarTask
  * @run main PathsTest
  */
 
-import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.doclint.DocLint;
-import com.sun.tools.doclint.DocLint.BadArgs;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -48,6 +41,13 @@ import java.io.StringWriter;
 import java.util.regex.Pattern;
 import javax.tools.StandardLocation;
 import javax.tools.JavaFileManager;
+import javax.tools.ToolProvider;
+
+import com.sun.tools.doclint.DocLint;
+import com.sun.tools.doclint.DocLint.BadArgs;
+
+import toolbox.JarTask;
+import toolbox.ToolBox;
 
 public class PathsTest {
     public static void main(String... args) throws Exception {
@@ -117,9 +117,10 @@ public class PathsTest {
 
     File createJar() throws IOException {
         File f = new File("test.jar");
-        try (JavaFileManager fm = new JavacFileManager(new Context(), false, null)) {
+        try (JavaFileManager fm = ToolProvider.getSystemJavaCompiler()
+                .getStandardFileManager(null, null, null)) {
             ToolBox tb = new ToolBox();
-            tb.new JarTask(f.getPath())
+            new JarTask(tb, f.getPath())
                 .files(fm, StandardLocation.PLATFORM_CLASS_PATH, "java.lang.*")
                 .run();
         }

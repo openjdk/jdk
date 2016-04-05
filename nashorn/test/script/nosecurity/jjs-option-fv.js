@@ -25,7 +25,6 @@
  * JDK-8144113: Nashorn: enable jjs testing. 
  * @test
  * @option -scripting
- * @runif os.not.windows
  * @run
  * @summary Test if -fv flag its basic funnctionality
  */

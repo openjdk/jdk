@@ -26,7 +26,7 @@
  *
  * @test
  * @option -scripting
- * @run
+ * @runif os.not.windows.cmd
  */
 
 // The test generates three different JavaScript source files. The first two

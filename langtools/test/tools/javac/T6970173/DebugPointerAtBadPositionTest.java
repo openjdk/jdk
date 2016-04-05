@@ -28,11 +28,10 @@
  * @library /tools/lib
  * @modules jdk.jdeps/com.sun.tools.classfile
  *          jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main DebugPointerAtBadPositionTest
  */
 
@@ -44,6 +43,9 @@ import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.LineNumberTable_attribute;
 import com.sun.tools.classfile.Method;
 import com.sun.tools.javac.util.Assert;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class DebugPointerAtBadPositionTest {
 
@@ -82,7 +84,7 @@ public class DebugPointerAtBadPositionTest {
 
     void compileTestClass() throws Exception {
         ToolBox tb = new ToolBox();
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .sources(testSource)
                 .run();
     }

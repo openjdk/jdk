@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,13 @@
  *          during previous compilations, and that the Symbols are updated appropriatelly.
  * @library /tools/lib /tools/javac/lib/
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.processing
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.javap
  * @clean *
- * @build OverwriteBetweenCompilations ToolBox JavacTestingAbstractProcessor
+ * @build toolbox.ToolBox toolbox.JavacTask
+ * @build OverwriteBetweenCompilations JavacTestingAbstractProcessor
  * @compile/ref=OverwriteBetweenCompilations_1.out -XDaccessInternalAPI -processor OverwriteBetweenCompilations -Apass=1 -parameters -XDrawDiagnostics OverwriteBetweenCompilationsSource.java
  * @compile/ref=OverwriteBetweenCompilations_2.out -XDaccessInternalAPI -processor OverwriteBetweenCompilations -Apass=2 -parameters -XDrawDiagnostics OverwriteBetweenCompilationsSource.java
  * @compile/ref=OverwriteBetweenCompilations_3.out -XDaccessInternalAPI -processor OverwriteBetweenCompilations -Apass=3 -parameters -XDrawDiagnostics OverwriteBetweenCompilationsSource.java
@@ -51,6 +51,9 @@ import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.processing.PrintingProcessor.PrintingElementVisitor;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Log.WriterKind;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 @SupportedOptions("pass")
 public class OverwriteBetweenCompilations extends JavacTestingAbstractProcessor {
@@ -95,7 +98,7 @@ public class OverwriteBetweenCompilations extends JavacTestingAbstractProcessor 
 
                 ToolBox tb = new ToolBox();
                 ToolBox.MemoryFileManager mfm = new ToolBox.MemoryFileManager();
-                tb.new JavacTask()
+                new JavacTask(tb)
                         .fileManager(mfm)
                         .options("-parameters")
                         .sources(code)

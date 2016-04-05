@@ -179,13 +179,13 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     // Save upper half of YMM registers(0..15)
     int base_addr = XSAVE_AREA_YMM_BEGIN;
     for (int n = 0; n < 16; n++) {
-      __ vextractf128h(Address(rsp, base_addr+n*16), as_XMMRegister(n));
+      __ vextractf128_high(Address(rsp, base_addr+n*16), as_XMMRegister(n));
     }
     if (VM_Version::supports_evex()) {
       // Save upper half of ZMM registers(0..15)
       base_addr = XSAVE_AREA_ZMM_BEGIN;
       for (int n = 0; n < 16; n++) {
-        __ vextractf64x4h(Address(rsp, base_addr+n*32), as_XMMRegister(n), 1);
+        __ vextractf64x4_high(Address(rsp, base_addr+n*32), as_XMMRegister(n));
       }
       // Save full ZMM registers(16..num_xmm_regs)
       base_addr = XSAVE_AREA_UPPERBANK;
@@ -333,13 +333,13 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     // Restore upper half of YMM registers (0..15)
     int base_addr = XSAVE_AREA_YMM_BEGIN;
     for (int n = 0; n < 16; n++) {
-      __ vinsertf128h(as_XMMRegister(n), Address(rsp,  base_addr+n*16));
+      __ vinsertf128_high(as_XMMRegister(n), Address(rsp, base_addr+n*16));
     }
     if (VM_Version::supports_evex()) {
       // Restore upper half of ZMM registers (0..15)
       base_addr = XSAVE_AREA_ZMM_BEGIN;
       for (int n = 0; n < 16; n++) {
-        __ vinsertf64x4h(as_XMMRegister(n), Address(rsp, base_addr+n*32), 1);
+        __ vinsertf64x4_high(as_XMMRegister(n), Address(rsp, base_addr+n*32));
       }
       // Restore full ZMM registers(16..num_xmm_regs)
       base_addr = XSAVE_AREA_UPPERBANK;

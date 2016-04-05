@@ -298,17 +298,19 @@ public class IncludeLocalesPluginTest {
             null,
             null,
             null,
-            new PluginException(
-                PluginsResourceBundle.getMessage("include-locales.nomatchinglocales"))
-                .toString(),
+            new PluginException(String.format(
+                PluginsResourceBundle.getMessage("include-locales.nomatchinglocales"), "xyz"))
+                .getMessage(),
         },
 
         // Error case: Invalid argument
-        {"--include-locales=zh_HK",
+        {"--include-locales=en,zh_HK",
             null,
             null,
             null,
-            "range=zh_hk",
+            new PluginException(String.format(
+                PluginsResourceBundle.getMessage("include-locales.invalidtag"), "zh_HK"))
+                .getMessage(),
         },
     };
 

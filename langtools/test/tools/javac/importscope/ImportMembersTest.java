@@ -27,10 +27,9 @@
  * @summary The test checks possibility of class members to be imported.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ImportMembersTest
+ * @build toolbox.ToolBox ImportMembersTest
  * @run main ImportMembersTest
  */
 
@@ -40,6 +39,8 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import toolbox.ToolBox;
 
 /**
  * The test checks that members of a class, an enum, an interface or annotation

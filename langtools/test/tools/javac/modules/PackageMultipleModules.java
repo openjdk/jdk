@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main PackageMultipleModules
  */
 
@@ -37,6 +36,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class PackageMultipleModules extends ModuleTestBase {
 
@@ -60,13 +63,13 @@ public class PackageMultipleModules extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", base.toString())
                 .outdir(classes)
                 .files(findJavaFiles(base))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("A.java:1:26: compiler.err.not.def.access.package.cant.access: test.B, test",
                                               "B.java:1:26: compiler.err.not.def.access.package.cant.access: test.A, test",

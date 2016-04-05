@@ -26,11 +26,109 @@
 ifndef _MODULES_GMK
 _MODULES_GMK := 1
 
+################################################################################
+#
+# BOOT_MODULES are modules defined by the boot loader
+# PLATFORM_MODULES are modules defined by the platform loader
+# JRE_TOOL_MODULES are tools included in JRE and defined by the application loader
+#
+# All other modules not declared below are defined by the application loader
+# and are not included in JRE.
+
+BOOT_MODULES :=
+PLATFORM_MODULES :=
+JRE_TOOL_MODULES :=
+
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , common/Modules.gmk))
 
+UPGRADEABLE_MDOULES :=
+AGGREGATOR_MDOULES :=
+
+BOOT_MODULES += \
+    java.base \
+    java.datatransfer \
+    java.desktop \
+    java.httpclient \
+    java.instrument \
+    java.logging \
+    java.management \
+    java.naming \
+    java.prefs \
+    java.rmi \
+    java.security.jgss \
+    java.security.sasl \
+    java.sql \
+    java.xml \
+    java.xml.crypto \
+    jdk.httpserver \
+    jdk.management \
+    jdk.sctp \
+    jdk.security.auth \
+    jdk.security.jgss \
+    jdk.vm.ci \
+    #
+
+# to be deprivileged
+BOOT_MODULES += \
+    java.compiler \
+    java.scripting \
+    java.sql.rowset \
+    java.smartcardio \
+    jdk.charsets \
+    jdk.naming.rmi \
+    #
+
+UPGRADEABLE_MODULES += \
+    java.activation \
+    java.annotations.common \
+    java.corba \
+    java.transaction \
+    java.xml.bind \
+    java.xml.ws \
+    #
+
+AGGREGATOR_MODULES += \
+    java.compact1 \
+    java.compact2 \
+    java.compact3 \
+    java.se \
+    java.se.ee \
+    #
+
+PLATFORM_MODULES += \
+    $(UPGRADEABLE_MODULES) \
+    $(AGGREGATOR_MODULES)
+    #
+
+PLATFORM_MODULES += \
+    jdk.accessibility \
+    jdk.crypto.ec \
+    jdk.crypto.pkcs11 \
+    jdk.dynalink \
+    jdk.jsobject \
+    jdk.xml.dom \
+    jdk.localedata \
+    jdk.naming.dns \
+    jdk.scripting.nashorn \
+    jdk.zipfs \
+    #
+
+JRE_TOOL_MODULES += \
+    jdk.pack200 \
+    jdk.scripting.nashorn.shell \
+    #
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  PLATFORM_MODULES += jdk.crypto.mscapi
+endif
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  PLATFORM_MODULES += jdk.crypto.ucrypto
+endif
+
 ################################################################################
 # Some platforms don't have the serviceability agent
+
 ifeq ($(INCLUDE_SA), false)
   MODULES_FILTER += jdk.hotspot.agent
 endif
@@ -117,6 +215,47 @@ FindTransitiveDepsForModule = \
             $(call FindDepsForModule, $m) \
             $(foreach n, $(call FindDepsForModule, $m), \
                  $(call FindDepsForModule, $n))))
+
+################################################################################
+
+# Param 1 - Name of module
+define ReadSingleImportMetaData
+    ifneq ($$(wildcard $(IMPORT_MODULES_MAKE)/$$(strip $1)/build.properties), )
+      classloader :=
+      include_in_jre :=
+      include_in_jdk :=
+      include $(IMPORT_MODULES_MAKE)/$$(strip $1)/build.properties
+      ifeq ($$(include_in_jre), true)
+        JRE_MODULES += $1
+      endif
+      ifeq ($$(include_in_jdk), true)
+        JDK_MODULES += $1
+      endif
+      ifeq ($$(classloader), boot)
+        BOOT_MODULES += $1
+      else ifeq ($$(classloader), ext)
+        PLATFORM_MODULES += $1
+      endif
+    else
+      # Default to include in all
+      JRE_MODULES += $1
+      JDK_MODULES += $1
+    endif
+endef
+
+# Reading the imported modules metadata has a cost, so to make it available,
+# a makefile needs to eval-call this macro first. After calling this, the
+# following variables are populated with data from the imported modules:
+# * JRE_MODULES
+# * JDK_MODULES
+# * BOOT_MODULES
+# * PLATFORM_MODULES
+# * JRE_TOOL_MODULES
+define ReadImportMetaData
+    IMPORTED_MODULES := $$(call FindImportedModules)
+    $$(foreach m, $$(IMPORTED_MODULES), \
+      $$(eval $$(call ReadSingleImportMetaData, $$m)))
+endef
 
 ################################################################################
 

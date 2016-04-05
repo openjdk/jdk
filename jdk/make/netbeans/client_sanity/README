@@ -1,0 +1,15 @@
+This NetBeans project corresponds to client sanity test suite in jdk/test/sanity/client.
+
+It simplifies working on the suite in NetBeans.
+
+It also includes the following custom tasks:
+
+prepare-bundle      creates dist/sanity.zip containing standalone bundle of the suite
+
+run-jemmy-browser   runs Jemmy browser for the ButtonDemo (hardcoded in build.xml file)
+                    The tool allows to explore the UI hierarchy.
+                    
+There is no task to run tests using JTReg. Please refer to corresponding README file 
+in the client sanity test suite folder on how to run the tests.
+
+Contact alexander.kouznetsov@oracle.com in case of issues.

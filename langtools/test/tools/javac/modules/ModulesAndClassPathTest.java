@@ -25,11 +25,9 @@
  * @test
  * @summary Ensure named modules cannot refer to classpath types.
  * @library /tools/lib
- * @modules
- *      jdk.compiler/com.sun.tools.javac.api
- *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask ModuleTestBase
  * @run main ModulesAndClassPathTest
  */
 
@@ -44,6 +42,11 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.TypeElement;
+
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ModulesAndClassPathTest extends ModuleTestBase {
 
@@ -66,14 +69,14 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
                           "module m1 { }",
                           "package impl; public class Impl { api.Api api; }");
 
-        List<String> modLog = tb.new JavacTask()
+        List<String> modLog = new JavacTask(tb)
                                 .options("-classpath", jar.toString(),
                                          "-XDrawDiagnostics")
                                 .outdir(classes)
                                 .files(findJavaFiles(moduleSrc))
-                                .run(ToolBox.Expect.FAIL)
+                                .run(Task.Expect.FAIL)
                                 .writeAll()
-                                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("Impl.java:1:38: compiler.err.doesnt.exist: api",
                                               "1 error");
@@ -82,16 +85,16 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
             throw new Exception("unexpected output: " + modLog);
         }
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .options("-classpath", jar.toString(),
                    "-XaddReads:m1=ALL-UNNAMED")
           .outdir(classes)
           .files(findJavaFiles(moduleSrc))
           .run()
           .writeAll()
-          .getOutputLines(ToolBox.OutputKind.DIRECT);
+          .getOutputLines(Task.OutputKind.DIRECT);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .options("-classpath", jar.toString() + File.pathSeparator + System.getProperty("test.classes"),
                    "-XaddReads:m1=ALL-UNNAMED",
                    "-processor", ProcessorImpl.class.getName())
@@ -99,7 +102,7 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
           .files(findJavaFiles(moduleSrc))
           .run()
           .writeAll()
-          .getOutputLines(ToolBox.OutputKind.DIRECT);
+          .getOutputLines(Task.OutputKind.DIRECT);
     }
 
     @Test
@@ -117,15 +120,15 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
                           "module m1 { }",
                           "package impl; public class Impl { api.Api api; }");
 
-        List<String> modLog = tb.new JavacTask()
+        List<String> modLog = new JavacTask(tb)
                                 .options("-classpath", jar.toString(),
                                          "-sourcepath", m1.toString(),
                                          "-XDrawDiagnostics")
                                 .outdir(classes)
                                 .files(m1.resolve("impl").resolve("Impl.java"))
-                                .run(ToolBox.Expect.FAIL)
+                                .run(Task.Expect.FAIL)
                                 .writeAll()
-                                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("Impl.java:1:38: compiler.err.doesnt.exist: api",
                                               "1 error");
@@ -150,23 +153,23 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
                           "module m1 { }",
                           "package impl; public class Impl { api.Api api; }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .options("-classpath", jar.toString(),
                    "-XDrawDiagnostics")
           .outdir(classes)
           .files(m1.resolve("module-info.java"))
           .run()
           .writeAll()
-          .getOutputLines(ToolBox.OutputKind.DIRECT);
+          .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> modLog = tb.new JavacTask()
+        List<String> modLog = new JavacTask(tb)
                                 .options("-classpath", jar.toString(),
                                          "-XDrawDiagnostics")
                                 .outdir(classes)
                                 .files(m1.resolve("impl").resolve("Impl.java"))
-                                .run(ToolBox.Expect.FAIL)
+                                .run(Task.Expect.FAIL)
                                 .writeAll()
-                                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("Impl.java:1:38: compiler.err.doesnt.exist: api",
                                               "1 error");
@@ -183,13 +186,13 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
         Path legacyClasses = base.resolve("legacy-classes");
         Files.createDirectories(legacyClasses);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options()
                 .outdir(legacyClasses)
                 .files(findJavaFiles(legacySrc))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty()) {
             throw new Exception("unexpected output: " + log);
@@ -201,7 +204,7 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
 
         Path jar = lib.resolve("test-api-1.0.jar");
 
-        tb.new JarTask(jar)
+        new JarTask(tb, jar)
           .baseDir(legacyClasses)
           .files("api/Api.class")
           .run();
@@ -233,33 +236,33 @@ public class ModulesAndClassPathTest extends ModuleTestBase {
                           "package test; public class TestCP extends impl.Impl { }",
                           "package test; public class TestSP extends src.Src { }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .outdir(classes)
           .files(m1.resolve("impl").resolve("Impl.java"))
           .run()
           .writeAll()
-          .getOutputLines(ToolBox.OutputKind.DIRECT);
+          .getOutputLines(Task.OutputKind.DIRECT);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .outdir(classes)
           .files(m1.resolve("module-info.java"))
           .run()
           .writeAll()
-          .getOutputLines(ToolBox.OutputKind.DIRECT);
+          .getOutputLines(Task.OutputKind.DIRECT);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .outdir(classes)
           .files(m1.resolve("test").resolve("TestCP.java"))
           .run()
           .writeAll()
-          .getOutputLines(ToolBox.OutputKind.DIRECT);
+          .getOutputLines(Task.OutputKind.DIRECT);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .options("-sourcepath", m1.toString())
           .outdir(classes)
           .files(m1.resolve("test").resolve("TestSP.java"))
           .run()
           .writeAll()
-          .getOutputLines(ToolBox.OutputKind.DIRECT);
+          .getOutputLines(Task.OutputKind.DIRECT);
     }
 }

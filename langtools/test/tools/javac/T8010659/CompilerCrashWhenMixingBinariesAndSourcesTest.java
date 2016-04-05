@@ -27,12 +27,13 @@
  * @summary Javac Crashes while building OpenJFX
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main CompilerCrashWhenMixingBinariesAndSourcesTest
  */
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class CompilerCrashWhenMixingBinariesAndSourcesTest {
     private static final String ASource =
@@ -53,13 +54,13 @@ public class CompilerCrashWhenMixingBinariesAndSourcesTest {
     public static void main(String[] args) throws Exception {
         ToolBox tb = new ToolBox();
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .sources(ASource, BSource, CSource, DSource)
                 .run();
 
         tb.deleteFiles("A.class", "A$1.class", "C.class", "D.class");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .classpath(".")
                 .sources(ASource, CSource, DSource)
                 .run();

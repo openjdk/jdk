@@ -45,20 +45,49 @@ public final class InnocuousThread extends Thread {
     private static final long CONTEXTCLASSLOADER;
 
     private static final AtomicInteger threadNumber = new AtomicInteger(1);
-
-    public InnocuousThread(Runnable target) {
-        this(INNOCUOUSTHREADGROUP, target,
-             "InnocuousThread-" + threadNumber.getAndIncrement());
+    private static String newName() {
+        return "InnocuousThread-" + threadNumber.getAndIncrement();
     }
 
-    public InnocuousThread(Runnable target, String name) {
-        this(INNOCUOUSTHREADGROUP, target, name);
+    /**
+     * Returns a new InnocuousThread with an auto-generated thread name
+     * and its context class loader is set to the system class loader.
+     */
+    public static Thread newThread(Runnable target) {
+        return newThread(newName(), target);
     }
 
-    public InnocuousThread(ThreadGroup group, Runnable target, String name) {
+    /**
+     * Returns a new InnocuousThread with its context class loader
+     * set to the system class loader.
+     */
+    public static Thread newThread(String name, Runnable target) {
+        return new InnocuousThread(INNOCUOUSTHREADGROUP,
+                                   target,
+                                   name,
+                                   ClassLoader.getSystemClassLoader());
+    }
+
+    /**
+     * Returns a new InnocuousThread with an auto-generated thread name.
+     * Its context class loader is set to null.
+     */
+    public static Thread newSystemThread(Runnable target) {
+        return newSystemThread(newName(), target);
+    }
+
+    /**
+     * Returns a new InnocuousThread with null context class loader.
+     */
+    public static Thread newSystemThread(String name, Runnable target) {
+        return new InnocuousThread(INNOCUOUSTHREADGROUP,
+                                   target, name, null);
+    }
+
+    private InnocuousThread(ThreadGroup group, Runnable target, String name, ClassLoader tccl) {
         super(group, target, name, 0L, false);
         UNSAFE.putObjectRelease(this, INHERITEDACCESSCONTROLCONTEXT, ACC);
-        UNSAFE.putObjectRelease(this, CONTEXTCLASSLOADER, ClassLoader.getSystemClassLoader());
+        UNSAFE.putObjectRelease(this, CONTEXTCLASSLOADER, tccl);
     }
 
     @Override

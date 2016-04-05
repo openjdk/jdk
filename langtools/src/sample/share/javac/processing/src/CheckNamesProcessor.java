@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -75,9 +75,6 @@ import static javax.tools.Diagnostic.Kind.*;
  *
  * </ol>
  *
- * For some notes on how to run an annotation processor inside
- * NetBeans, see http://wiki.java.net/bin/view/Netbeans/FaqApt.
- *
  * <h3>Possible Enhancements</h3>
  * <ul>
  *
@@ -138,9 +135,8 @@ public class CheckNamesProcessor extends AbstractProcessor {
     public SourceVersion getSupportedSourceVersion() {
         /*
          * Return latest source version instead of a fixed version
-         * like RELEASE_9.  To return a fixed version, this class
-         * could be annotated with a SupportedSourceVersion
-         * annotation.
+         * like RELEASE_9. To return a fixed version, this class could
+         * be annotated with a SupportedSourceVersion annotation.
          *
          * Warnings will be issued if any unknown language constructs
          * are encountered.
@@ -311,10 +307,30 @@ public class CheckNamesProcessor extends AbstractProcessor {
                 return null;
             }
 
+            /**
+             * Check the name of a module.
+             */
+            @Override
+            public Void visitModule(ModuleElement e, Void p) {
+                /*
+                 * Implementing the checks of package names is left as
+                 * an exercise for the reader.
+                 */
+
+                // Similar to the options of how visiting a package
+                // could be handled, whether or not this method should
+                // call super and scan, etc. is a design choice on
+                // whether it is desired for a ModuleElement to
+                // represent a module-info file or for the
+                // ModuleElement to represent the entire contents of a
+                // module, including its packages.
+                return null;
+            }
+
             @Override
             public Void visitUnknown(Element e, Void p) {
                 // This method will be called if a kind of element
-                // added after JDK 7 is visited.  Since as of this
+                // added after JDK 9 is visited.  Since as of this
                 // writing the conventions for such constructs aren't
                 // known, issue a warning.
                 messager.printMessage(WARNING,
@@ -403,13 +419,13 @@ public class CheckNamesProcessor extends AbstractProcessor {
                     previousUpper = true;
                     if (!initialCaps) {
                         messager.printMessage(WARNING,
-                                              "Name, ``" + name + "'', should start in lowercase.", e);
+                                              "Name ``" + name + "'' should start in lowercase.", e);
                         return;
                     }
                 } else if (Character.isLowerCase(firstCodePoint)) {
                     if (initialCaps) {
                         messager.printMessage(WARNING,
-                                              "Name, ``" + name + "'', should start in uppercase.", e);
+                                              "Name ``" + name + "'' should start in uppercase.", e);
                         return;
                     }
                 } else // underscore, etc.
@@ -434,7 +450,7 @@ public class CheckNamesProcessor extends AbstractProcessor {
 
                 if (!conventional)
                     messager.printMessage(WARNING,
-                                          "Name, ``" + name + "'', should be in camel case.", e);
+                                          "Name ``" + name + "'', should be in camel case.", e);
             }
 
             /**
@@ -445,7 +461,12 @@ public class CheckNamesProcessor extends AbstractProcessor {
              */
             private void checkAllCaps(Element e) {
                 String name = e.getSimpleName().toString();
-                if (e.getKind() == TYPE_PARAMETER) { // Should be one character
+                /*
+                 * Traditionally type variables are recommended to
+                 * have one-character names. As an exercise for the
+                 * reader, a more nuanced policy can be implemented.
+                 */
+                if (e.getKind() == TYPE_PARAMETER) {
                     if (name.codePointCount(0, name.length()) > 1 ||
                         // Assume names are non-empty
                         !Character.isUpperCase(name.codePointAt(0)))
@@ -497,6 +518,8 @@ public class CheckNamesProcessor extends AbstractProcessor {
 
 /**
  * Lots of bad names.  Don't write code like this!
+ *
+ * The unmodified name checks will print 11 warnings for this class.
  */
 class BADLY_NAMED_CODE {
     enum colors {

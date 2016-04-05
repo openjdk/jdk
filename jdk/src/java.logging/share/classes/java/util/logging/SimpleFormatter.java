@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package java.util.logging;
 import java.io.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import jdk.internal.logger.SimpleConsoleLogger;
+import jdk.internal.logger.SurrogateLogger;
 
 /**
  * Print a brief summary of the {@code LogRecord} in a human readable
@@ -64,7 +64,7 @@ public class SimpleFormatter extends Formatter {
     }
 
     private final String format =
-        SimpleConsoleLogger.getSimpleFormat(SimpleFormatter::getLoggingProperty);
+        SurrogateLogger.getSimpleFormat(SimpleFormatter::getLoggingProperty);
 
     /**
      * Format the given LogRecord.
