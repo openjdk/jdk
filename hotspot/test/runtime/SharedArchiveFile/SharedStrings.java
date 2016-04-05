@@ -32,23 +32,20 @@
  * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
- *          jdk.jartool/sun.tools.jar
- * @build SharedStringsWb SharedStrings BasicJarBuilder sun.hotspot.WhiteBox
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @build SharedStringsWb SharedStrings ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
  * @run main SharedStrings
  */
 import jdk.test.lib.*;
 
 public class SharedStrings {
     public static void main(String[] args) throws Exception {
-        BasicJarBuilder.build(true, "whitebox", "sun/hotspot/WhiteBox");
-
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./SharedStrings.jsa",
             "-XX:+PrintSharedSpaces",
             // Needed for bootclasspath match, for CDS to work with WhiteBox API
-            "-Xbootclasspath/a:" + BasicJarBuilder.getTestJar("whitebox.jar"),
+            "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
             "-Xshare:dump");
 
         new OutputAnalyzer(pb.start())
@@ -62,7 +59,7 @@ public class SharedStrings {
             // these are required modes for shared strings
             "-XX:+UseCompressedOops", "-XX:+UseG1GC",
             // needed for access to white box test API
-            "-Xbootclasspath/a:" + BasicJarBuilder.getTestJar("whitebox.jar"),
+            "-Xbootclasspath/a:" + ClassFileInstaller.getJarPath("whitebox.jar"),
             "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
             "-Xshare:on", "-showversion", "SharedStringsWb");
 
