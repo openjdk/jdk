@@ -66,16 +66,6 @@
 #define DEFAULT_VENDOR_URL_BUG "http://bugreport.java.com/bugreport/crash.jsp"
 #define DEFAULT_JAVA_LAUNCHER  "generic"
 
-#define UNSUPPORTED_GC_OPTION(gc)                         \
-  do {                                                    \
-    if (gc) {                                             \
-      if (FLAG_IS_CMDLINE(gc)) {                          \
-        warning("-XX:+" #gc " not supported in this VM"); \
-      }                                                   \
-      FLAG_SET_DEFAULT(gc, false);                        \
-    }                                                     \
-  } while(0)
-
 char*  Arguments::_jvm_flags_file               = NULL;
 char** Arguments::_jvm_flags_array              = NULL;
 int    Arguments::_num_jvm_flags                = 0;
@@ -1988,11 +1978,11 @@ void Arguments::select_gc_ergonomically() {
     FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
   }
 #else
-  UNSUPPORTED_GC_OPTION(UseG1GC);
-  UNSUPPORTED_GC_OPTION(UseParallelGC);
-  UNSUPPORTED_GC_OPTION(UseParallelOldGC);
-  UNSUPPORTED_GC_OPTION(UseConcMarkSweepGC);
-  UNSUPPORTED_GC_OPTION(UseParNewGC);
+  UNSUPPORTED_OPTION(UseG1GC);
+  UNSUPPORTED_OPTION(UseParallelGC);
+  UNSUPPORTED_OPTION(UseParallelOldGC);
+  UNSUPPORTED_OPTION(UseConcMarkSweepGC);
+  UNSUPPORTED_OPTION(UseParNewGC);
   FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
 #endif // INCLUDE_ALL_GCS
 }
@@ -3671,7 +3661,7 @@ jint Arguments::finalize_vm_init_args(ArgumentBootClassPath* bcp_p, bool bcp_ass
 
 #ifndef TIERED
   // Tiered compilation is undefined.
-  UNSUPPORTED_OPTION(TieredCompilation, "TieredCompilation");
+  UNSUPPORTED_OPTION(TieredCompilation);
 #endif
 
   // If we are running in a headless jre, force java.awt.headless property
@@ -4360,7 +4350,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
 
 #if defined(_ALLBSD_SOURCE) || defined(AIX)  // UseLargePages is not yet supported on BSD and AIX.
-  UNSUPPORTED_OPTION(UseLargePages, "-XX:+UseLargePages");
+  UNSUPPORTED_OPTION(UseLargePages);
 #endif
 
   ArgumentsExt::report_unsupported_options();
