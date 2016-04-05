@@ -36,6 +36,7 @@
 #include "utilities/defaultStream.hpp"
 
 #if INCLUDE_ALL_GCS
+#include "gc/cms/concurrentMarkSweepGeneration.inline.hpp"
 #include "gc/g1/g1_globals.hpp"
 #include "gc/g1/heapRegionBounds.inline.hpp"
 #include "gc/shared/plab.hpp"
@@ -502,6 +503,27 @@ Flag::Error CMSWorkQueueDrainThresholdConstraintFunc(uintx value, bool verbose) 
 #if INCLUDE_ALL_GCS
   if (UseConcMarkSweepGC) {
     return ParallelGCThreadsAndCMSWorkQueueDrainThreshold(ParallelGCThreads, value, verbose);
+  }
+#endif
+  return Flag::SUCCESS;
+}
+
+Flag::Error CMSBitMapYieldQuantumConstraintFunc(size_t value, bool verbose) {
+#if INCLUDE_ALL_GCS
+  // Skip for current default value.
+  if (UseConcMarkSweepGC && FLAG_IS_CMDLINE(CMSBitMapYieldQuantum)) {
+    // CMSBitMapYieldQuantum should be compared with mark bitmap size.
+    ConcurrentMarkSweepGeneration* cms = (ConcurrentMarkSweepGeneration*)GenCollectedHeap::heap()->old_gen();
+    size_t bitmap_size = cms->collector()->markBitMap()->sizeInWords();
+
+    if (value > bitmap_size) {
+      CommandLineError::print(verbose,
+                              "CMSBitMapYieldQuantum (" SIZE_FORMAT ") must "
+                              "be less than or equal to bitmap size (" SIZE_FORMAT ") "
+                              "whose size corresponds to the size of old generation of the Java heap\n",
+                              value, bitmap_size);
+      return Flag::VIOLATES_CONSTRAINT;
+    }
   }
 #endif
   return Flag::SUCCESS;

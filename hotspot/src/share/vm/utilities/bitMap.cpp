@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,8 +163,10 @@ void BitMap::clear_large_range(idx_t beg, idx_t end) {
   idx_t beg_full_word = word_index_round_up(beg);
   idx_t end_full_word = word_index(end);
 
-  assert(end_full_word - beg_full_word >= 32,
-         "the range must include at least 32 bytes");
+  if (end_full_word - beg_full_word < 32) {
+    clear_range(beg, end);
+    return;
+  }
 
   // The range includes at least one full word.
   clear_range_within_word(beg, bit_index(beg_full_word));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ inline void BitMap::set_range(idx_t beg, idx_t end, RangeSizeHint hint) {
 }
 
 inline void BitMap::clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
-  if (hint == small_range && end - beg == 1) {
+  if (end - beg == 1) {
     clear_bit(beg);
   } else {
     if (hint == large_range) {
