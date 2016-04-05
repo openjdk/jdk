@@ -84,7 +84,6 @@
 package jdk.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.dynalink.beans.GuardedInvocationComponent.ValidationType;
 import jdk.dynalink.linker.support.Lookup;

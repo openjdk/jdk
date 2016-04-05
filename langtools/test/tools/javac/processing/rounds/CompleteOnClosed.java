@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,9 @@
  *          the compiler.
  * @library /tools/lib /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox JavacTestingAbstractProcessor
+ * @build toolbox.ToolBox JavacTestingAbstractProcessor
  * @run main CompleteOnClosed
  */
 
@@ -44,6 +43,8 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
+
+import toolbox.ToolBox;
 
 public class CompleteOnClosed extends JavacTestingAbstractProcessor {
     public static void main(String... args) {

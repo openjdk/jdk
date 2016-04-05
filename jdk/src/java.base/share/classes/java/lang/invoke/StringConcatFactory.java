@@ -255,7 +255,6 @@ public final class StringConcatFactory {
      */
     private static final class Recipe {
         private final List<RecipeElement> elements;
-        private final List<RecipeElement> elementsRev;
 
         public Recipe(String src, Object[] constants) {
             List<RecipeElement> el = new ArrayList<>();
@@ -294,17 +293,11 @@ public final class StringConcatFactory {
                 el.add(new RecipeElement(acc.toString()));
             }
 
-            elements = new ArrayList<>(el);
-            Collections.reverse(el);
-            elementsRev = el;
+            elements = el;
         }
 
-        public Collection<RecipeElement> getElements() {
+        public List<RecipeElement> getElements() {
             return elements;
-        }
-
-        public Collection<RecipeElement> getElementsReversed() {
-            return elementsRev;
         }
 
         @Override
@@ -1310,7 +1303,9 @@ public final class StringConcatFactory {
 
             // Compose append calls. This is done in reverse because the application order is
             // reverse as well.
-            for (RecipeElement el : recipe.getElementsReversed()) {
+            List<RecipeElement> elements = recipe.getElements();
+            for (int i = elements.size() - 1; i >= 0; i--) {
+                RecipeElement el = elements.get(i);
                 MethodHandle appender;
                 switch (el.getTag()) {
                     case CONST: {
@@ -1478,6 +1473,7 @@ public final class StringConcatFactory {
      * that requires porting if there are private JDK changes occur.
      */
     private static final class MethodHandleInlineCopyStrategy {
+        static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
         private MethodHandleInlineCopyStrategy() {
             // no instantiation
@@ -1512,10 +1508,9 @@ public final class StringConcatFactory {
             mh = MethodHandles.dropArguments(NEW_STRING, 2, ptypes);
             mh = MethodHandles.dropArguments(mh, 0, int.class);
 
-            // In debug mode, check that remaining index is zero.
-            if (DEBUG) {
-                mh = MethodHandles.filterArgument(mh, 0, CHECK_INDEX);
-            }
+            // Safety: check that remaining index is zero -- that would mean the storage is completely
+            // overwritten, and no leakage of uninitialized data occurred.
+            mh = MethodHandles.filterArgument(mh, 0, CHECK_INDEX);
 
             // Mix in prependers. This happens when (int, byte[], byte) = (index, storage, coder) is already
             // known from the combinators below. We are assembling the string backwards, so "index" is the
@@ -1650,13 +1645,13 @@ public final class StringConcatFactory {
 
         @ForceInline
         private static byte[] newArray(int length, byte coder) {
-            return new byte[length << coder];
+            return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, length << coder);
         }
 
         @ForceInline
         private static int checkIndex(int index) {
             if (index != 0) {
-                throw new AssertionError("Exactness check failed: " + index + " characters left in the buffer.");
+                throw new IllegalStateException("Storage is not completely initialized, " + index + " bytes left");
             }
             return index;
         }
@@ -1721,12 +1716,7 @@ public final class StringConcatFactory {
 
             NEW_STRING = lookupStatic(Lookup.IMPL_LOOKUP, STRING_HELPER, "newString", String.class, byte[].class, byte.class);
             NEW_ARRAY  = lookupStatic(Lookup.IMPL_LOOKUP, MethodHandleInlineCopyStrategy.class, "newArray", byte[].class, int.class, byte.class);
-
-            if (DEBUG) {
-                CHECK_INDEX = lookupStatic(Lookup.IMPL_LOOKUP, MethodHandleInlineCopyStrategy.class, "checkIndex", int.class, int.class);
-            } else {
-                CHECK_INDEX = null;
-            }
+            CHECK_INDEX = lookupStatic(Lookup.IMPL_LOOKUP, MethodHandleInlineCopyStrategy.class, "checkIndex", int.class, int.class);
         }
     }
 

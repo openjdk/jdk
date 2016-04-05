@@ -27,12 +27,13 @@
  * @summary compile of iterator use fails with error "defined in an inaccessible class or interface"
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main CompileErrorWithIteratorTest
  */
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class CompileErrorWithIteratorTest {
 
@@ -80,7 +81,7 @@ public class CompileErrorWithIteratorTest {
     }
 
     void compile() throws Exception {
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .sources(TestCollectionSrc, TestSrc)
                 .run();
     }

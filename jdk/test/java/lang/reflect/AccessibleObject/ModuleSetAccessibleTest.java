@@ -24,7 +24,7 @@
 /**
  * @test
  * @build ModuleSetAccessibleTest
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @run testng ModuleSetAccessibleTest
  * @summary Test java.lang.reflect.AccessibleObject with modules
  */
@@ -38,7 +38,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Module;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;

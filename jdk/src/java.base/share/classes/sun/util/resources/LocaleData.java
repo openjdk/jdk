@@ -197,8 +197,6 @@ public class LocaleData {
 
     private static abstract class LocaleDataResourceBundleProvider
                                             implements ResourceBundleProvider {
-        abstract protected boolean isSupportedInModule(String baseName, Locale locale);
-
         /**
          * Changes baseName to its module dependent package name and
          * calls the super class implementation. For example,
@@ -217,10 +215,6 @@ public class LocaleData {
      * resource bundles except for the java.time supplementary data.
      */
     public static abstract class CommonResourceBundleProvider extends LocaleDataResourceBundleProvider {
-        @Override
-        protected boolean isSupportedInModule(String baseName, Locale locale) {
-            return LocaleDataStrategy.INSTANCE.inJavaBaseModule(baseName, locale);
-        }
     }
 
     /**
@@ -228,10 +222,6 @@ public class LocaleData {
      * resource bundles for java.time.
      */
     public static abstract class SupplementaryResourceBundleProvider extends LocaleDataResourceBundleProvider {
-        @Override
-        protected boolean isSupportedInModule(String baseName, Locale locale) {
-            return SupplementaryStrategy.INSTANCE.inJavaBaseModule(baseName, locale);
-        }
     }
 
     // Bundles.Strategy implementations

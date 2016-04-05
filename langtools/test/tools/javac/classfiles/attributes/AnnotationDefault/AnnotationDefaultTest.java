@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,12 @@
  * @summary Checking AnnotationDefault attribute.
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.classfile
- *          jdk.jdeps/com.sun.tools.javap
- * @build AnnotationDefaultTest TestBase TestResult InMemoryFileManager ToolBox AnnotationDefaultVerifier
+ * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
+ * @build AnnotationDefaultTest AnnotationDefaultVerifier
  * @run main AnnotationDefaultTest
  */
-
-import com.sun.tools.classfile.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +44,8 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.sun.tools.classfile.*;
 
 public class AnnotationDefaultTest extends TestResult {
 

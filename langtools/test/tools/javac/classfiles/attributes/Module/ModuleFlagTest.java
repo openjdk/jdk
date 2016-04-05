@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.classfile
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask toolbox.ToolBox
  * @run main ModuleFlagTest
  */
 
@@ -43,13 +42,16 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import toolbox.JavacTask;
+import toolbox.ToolBox;
+
 public class ModuleFlagTest {
     public static void main(String[] args) throws IOException, ConstantPoolException {
         Path outdir = Paths.get(".");
         ToolBox tb = new ToolBox();
         final Path moduleInfo = Paths.get("module-info.java");
         tb.writeFile(moduleInfo, "module test_module{}");
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(outdir)
                 .files(moduleInfo)
                 .run();

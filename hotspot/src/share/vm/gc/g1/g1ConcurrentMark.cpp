@@ -441,7 +441,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* 
   _has_aborted(false),
   _restart_for_overflow(false),
   _concurrent_marking_in_progress(false),
-  _concurrent_phase_started(false),
+  _concurrent_phase_status(ConcPhaseNotStarted),
 
   // _verbose_level set below
 
@@ -1008,16 +1008,43 @@ void G1ConcurrentMark::scanRootRegions() {
 }
 
 void G1ConcurrentMark::register_concurrent_phase_start(const char* title) {
-  assert(!_concurrent_phase_started, "Sanity");
-  _concurrent_phase_started = true;
+  uint old_val = 0;
+  do {
+    old_val = Atomic::cmpxchg(ConcPhaseStarted, &_concurrent_phase_status, ConcPhaseNotStarted);
+  } while (old_val != ConcPhaseNotStarted);
   _g1h->gc_timer_cm()->register_gc_concurrent_start(title);
 }
 
-void G1ConcurrentMark::register_concurrent_phase_end() {
-  if (_concurrent_phase_started) {
-    _concurrent_phase_started = false;
-    _g1h->gc_timer_cm()->register_gc_concurrent_end();
+void G1ConcurrentMark::register_concurrent_phase_end_common(bool end_timer) {
+  if (_concurrent_phase_status == ConcPhaseNotStarted) {
+    return;
   }
+
+  uint old_val = Atomic::cmpxchg(ConcPhaseStopping, &_concurrent_phase_status, ConcPhaseStarted);
+  if (old_val == ConcPhaseStarted) {
+    _g1h->gc_timer_cm()->register_gc_concurrent_end();
+    // If 'end_timer' is true, we came here to end timer which needs concurrent phase ended.
+    // We need to end it before changing the status to 'ConcPhaseNotStarted' to prevent
+    // starting a new concurrent phase by 'ConcurrentMarkThread'.
+    if (end_timer) {
+      _g1h->gc_timer_cm()->register_gc_end();
+    }
+    old_val = Atomic::cmpxchg(ConcPhaseNotStarted, &_concurrent_phase_status, ConcPhaseStopping);
+    assert(old_val == ConcPhaseStopping, "Should not have changed since we entered this scope.");
+  } else {
+    do {
+      // Let other thread finish changing '_concurrent_phase_status' to 'ConcPhaseNotStarted'.
+      os::naked_short_sleep(1);
+    } while (_concurrent_phase_status != ConcPhaseNotStarted);
+  }
+}
+
+void G1ConcurrentMark::register_concurrent_phase_end() {
+  register_concurrent_phase_end_common(false);
+}
+
+void G1ConcurrentMark::register_concurrent_gc_end_and_stop_timer() {
+  register_concurrent_phase_end_common(true);
 }
 
 void G1ConcurrentMark::markFromRoots() {
@@ -2604,9 +2631,6 @@ void G1ConcurrentMark::abort() {
                                  satb_mq_set.is_active() /* expected_active */);
 
   _g1h->trace_heap_after_concurrent_cycle();
-
-  // Close any open concurrent phase timing
-  register_concurrent_phase_end();
 
   _g1h->register_concurrent_cycle_end();
 }

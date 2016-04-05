@@ -32,7 +32,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.zip.ZipEntry;
 
-import sun.misc.JarIndex;
+import jdk.internal.util.jar.JarIndex;
 import sun.security.util.ManifestDigester;
 import sun.security.util.ManifestEntryVerifier;
 import sun.security.util.SignatureFileVerifier;

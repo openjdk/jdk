@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package javax.xml.catalog;
 
 import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -141,6 +140,12 @@ class CatalogImpl extends GroupEntry implements Catalog {
                 start++;
                 if (verifyCatalogFile(uri)) {
                     systemId = uri.toASCIIString();
+                    try {
+                        baseURI = new URL(systemId);
+                    } catch (MalformedURLException e) {
+                        CatalogMessages.reportRunTimeError(CatalogMessages.ERR_INVALID_PATH,
+                                new Object[]{temp}, e);
+                    }
                     break;
                 }
             }
@@ -291,59 +296,15 @@ class CatalogImpl extends GroupEntry implements Catalog {
      * to a system id
      */
     private URI getSystemId(String file) {
-        URL filepath;
-        if (file != null && file.length() > 0) {
-            try {
-                File f = new File(file);
-                if (baseURI != null && !f.isAbsolute()) {
-                    filepath = new URL(baseURI, fixSlashes(file));
-                    return filepath.toURI();
-                } else {
-                    return resolveURI(file);
-                }
-            } catch (MalformedURLException | URISyntaxException e) {
-                CatalogMessages.reportRunTimeError(CatalogMessages.ERR_INVALID_PATH,
-                        new Object[]{file}, e);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Resolves the specified uri. If the uri is relative, makes it absolute by
-     * the user.dir directory.
-     *
-     * @param uri The specified URI.
-     * @return The resolved URI
-     */
-    private URI resolveURI(String uri) throws MalformedURLException {
-        if (uri == null) {
-            uri = "";
-        }
-
-        URI temp = toURI(uri);
-        String str = temp.toASCIIString();
-        String base = str.substring(0, str.lastIndexOf('/') + 1);
-        baseURI = new URL(str);
-
-        return temp;
-    }
-
-    /**
-     * Converts an URI string or file path to URI.
-     *
-     * @param uri an URI string or file path
-     * @return an URI
-     */
-    private URI toURI(String uri) {
         URI temp = null;
+
         try {
-            URL url = new URL(uri);
-            temp = url.toURI();
-        } catch (MalformedURLException | URISyntaxException mue) {
-            File file = new File(uri);
-            temp = file.toURI();
+            temp = Util.verifyAndGetURI(file, baseURI);
+        } catch (MalformedURLException | URISyntaxException | IllegalArgumentException e) {
+            CatalogMessages.reportRunTimeError(CatalogMessages.ERR_INVALID_PATH,
+                    new Object[]{file}, e);
         }
+
         return temp;
     }
 

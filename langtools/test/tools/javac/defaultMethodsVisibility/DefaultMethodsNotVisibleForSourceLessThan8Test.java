@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,17 @@
  * Default methods should be visible under source previous to 8
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main DefaultMethodsNotVisibleForSourceLessThan8Test
  */
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class DefaultMethodsNotVisibleForSourceLessThan8Test {
     // common definitions
@@ -132,19 +134,19 @@ public class DefaultMethodsNotVisibleForSourceLessThan8Test {
         /* as an extra check let's make sure that interface 'I' can't be compiled
          * with source < 8
          */
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(outDir)
                 .options("-source", source)
                 .sources(ISrc)
-                .run(ToolBox.Expect.FAIL);
+                .run(Task.Expect.FAIL);
 
         //but it should compile with source >= 8
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(outDir)
                 .sources(ISrc)
                 .run();
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(outDir)
                 .classpath(outDir)
                 .options("-source", source)
@@ -154,7 +156,7 @@ public class DefaultMethodsNotVisibleForSourceLessThan8Test {
 
     void testLegacyImplementations() throws Exception {
         //compile C1-4
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(outDir)
                 .classpath(outDir)
                 .options("-source", source)
@@ -164,7 +166,7 @@ public class DefaultMethodsNotVisibleForSourceLessThan8Test {
 
     void testLegacyInvocations() throws Exception {
         //compile LegacyInvocation
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(outDir)
                 .classpath(outDir)
                 .options("-source", source)
@@ -174,7 +176,7 @@ public class DefaultMethodsNotVisibleForSourceLessThan8Test {
 
     void testSuperInvocations() throws Exception {
         //compile SubA, SubB
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(outDir)
                 .classpath(outDir)
                 .options("-source", source)

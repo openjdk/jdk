@@ -92,6 +92,7 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
         "*sun/text/resources/cldr/ext/[^\\/]+_%%.class," +
         "*sun/util/resources/cldr/ext/[^\\/]+_%%.class,";
     private Predicate<String> predicate;
+    private String userParam;
     private List<Locale.LanguageRange> priorityList;
     private List<Locale> available;
     private List<String> filtered;
@@ -155,8 +156,16 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
 
     @Override
     public void configure(Map<String, String> config) {
-        priorityList = Arrays.stream(config.get(NAME).split(","))
-            .map(Locale.LanguageRange::new)
+        userParam = config.get(NAME);
+        priorityList = Arrays.stream(userParam.split(","))
+            .map(s -> {
+                try {
+                    return new Locale.LanguageRange(s);
+                } catch (IllegalArgumentException iae) {
+                    throw new PluginException(String.format(
+                        PluginsResourceBundle.getMessage(NAME + ".invalidtag"), s));
+                }
+            })
             .collect(Collectors.toList());
     }
 
@@ -168,7 +177,7 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
         // jdk.localedata module validation
         Set<String> packages = module.getAllPackages();
         if (!packages.containsAll(LOCALEDATA_PACKAGES)) {
-            throw new PluginException("Missing locale data packages in jdk.localedata:\n\t" +
+            throw new PluginException(PluginsResourceBundle.getMessage(NAME + ".missingpackages") +
                 LOCALEDATA_PACKAGES.stream()
                     .filter(pn -> !packages.contains(pn))
                     .collect(Collectors.joining(",\n\t")));
@@ -185,6 +194,11 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
             .collect(Collectors.toList());
 
         filtered = filterLocales(available);
+
+        if (filtered.isEmpty()) {
+            throw new PluginException(
+                String.format(PluginsResourceBundle.getMessage(NAME + ".nomatchinglocales"), userParam));
+        }
 
         try {
             String value = META_FILES + filtered.stream()
