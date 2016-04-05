@@ -105,6 +105,14 @@ void VM_ThreadStop::doit() {
   }
 }
 
+void VM_ClearICs::doit() {
+  if (_preserve_static_stubs) {
+    CodeCache::cleanup_inline_caches();
+  } else {
+    CodeCache::clear_inline_caches();
+  }
+}
+
 void VM_Deoptimize::doit() {
   // We do not want any GCs to happen while we are in the middle of this VM operation
   ResourceMark rm;
