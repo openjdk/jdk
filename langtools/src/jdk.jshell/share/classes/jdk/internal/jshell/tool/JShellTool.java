@@ -118,9 +118,6 @@ public class JShellTool {
     private static final String RB_NAME_PREFIX  = "jdk.internal.jshell.tool.resources";
     private static final String VERSION_RB_NAME = RB_NAME_PREFIX + ".version";
     private static final String L10N_RB_NAME    = RB_NAME_PREFIX + ".l10n";
-    private static ResourceBundle versionRB = null;
-    private static ResourceBundle outputRB  = null;
-
 
     final InputStream cmdin;
     final PrintStream cmdout;
@@ -161,6 +158,9 @@ public class JShellTool {
         this.prefs = prefs;
         this.locale = locale;
     }
+
+    private ResourceBundle versionRB = null;
+    private ResourceBundle outputRB  = null;
 
     private IOContext input = null;
     private boolean regenerateOnDeath = true;
@@ -282,9 +282,9 @@ public class JShellTool {
     String getResourceString(String key) {
         if (outputRB == null) {
             try {
-                outputRB = ResourceBundle.getBundle(L10N_RB_NAME);
+                outputRB = ResourceBundle.getBundle(L10N_RB_NAME, locale);
             } catch (MissingResourceException mre) {
-                error("Cannot find ResourceBundle: %s", L10N_RB_NAME);
+                error("Cannot find ResourceBundle: %s for locale: %s", L10N_RB_NAME, locale);
                 return "";
             }
         }
@@ -2082,20 +2082,20 @@ public class JShellTool {
 
     /** The current version number as a string.
      */
-    static String version() {
+    String version() {
         return version("release");  // mm.nn.oo[-milestone]
     }
 
     /** The current full version number as a string.
      */
-    static String fullVersion() {
+    String fullVersion() {
         return version("full"); // mm.mm.oo[-milestone]-build
     }
 
-    private static String version(String key) {
+    private String version(String key) {
         if (versionRB == null) {
             try {
-                versionRB = ResourceBundle.getBundle(VERSION_RB_NAME);
+                versionRB = ResourceBundle.getBundle(VERSION_RB_NAME, locale);
             } catch (MissingResourceException e) {
                 return "(version info not available)";
             }
