@@ -64,6 +64,7 @@ Flag::Error CMSPrecleanDenominatorConstraintFunc(uintx value, bool verbose);
 Flag::Error CMSPrecleanNumeratorConstraintFunc(uintx value, bool verbose);
 Flag::Error CMSSamplingGrainConstraintFunc(uintx value, bool verbose);
 Flag::Error CMSWorkQueueDrainThresholdConstraintFunc(uintx value, bool verbose);
+Flag::Error CMSBitMapYieldQuantumConstraintFunc(size_t value, bool verbose);
 Flag::Error MaxGCPauseMillisConstraintFunc(uintx value, bool verbose);
 Flag::Error GCPauseIntervalMillisConstraintFunc(uintx value, bool verbose);
 Flag::Error InitialBootClassLoaderMetaspaceSizeConstraintFunc(size_t value, bool verbose);

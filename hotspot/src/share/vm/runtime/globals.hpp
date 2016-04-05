@@ -1927,6 +1927,7 @@ public:
           "Bitmap operations should process at most this many bits "        \
           "between yields")                                                 \
           range(1, max_uintx)                                               \
+          constraint(CMSBitMapYieldQuantumConstraintFunc,AfterMemoryInit)   \
                                                                             \
   product(bool, CMSPrintChunksInDump, false,                                \
           "If logging for the \"gc\" and \"promotion\" tags is enabled on"  \
