@@ -104,7 +104,6 @@ class TestLogSavedConfig {
 };
 
 void Test_configure_stdout() {
-  ResourceMark rm;
   LogOutput* stdoutput = LogOutput::Stdout;
   TestLogSavedConfig tlsc;
 
@@ -169,7 +168,6 @@ size_t Test_log_prefix_prefixer(char* buf, size_t len) {
 }
 
 void Test_log_prefix() {
-  ResourceMark rm;
   TestLogFile log_file("log_prefix");
   TestLogSavedConfig log_cfg(log_file.name(), "logging+test=trace");
 
@@ -188,7 +186,6 @@ void Test_log_big() {
   char big_msg[4096] = {0};
   char Xchar = '~';
 
-  ResourceMark rm;
   TestLogFile log_file("log_big");
   TestLogSavedConfig log_cfg(log_file.name(), "logging+test=trace");
 
