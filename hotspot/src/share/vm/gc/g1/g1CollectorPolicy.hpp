@@ -169,21 +169,6 @@ public:
 
   double accum_yg_surv_rate_pred(int age) const;
 
-  // When copying, we will likely need more bytes free than is live in the region.
-  // Add some safety margin to factor in the confidence of our guess, and the
-  // natural expected waste.
-  // (100.0 / G1ConfidencePercent) is a scale factor that expresses the uncertainty
-  // of the calculation: the lower the confidence, the more headroom.
-  // (100 + TargetPLABWastePct) represents the increase in expected bytes during
-  // copying due to anticipated waste in the PLABs.
-  double safety_factor() const {
-    return (100.0 / G1ConfidencePercent) * (100 + TargetPLABWastePct) / 100.0;
-  }
-
-  // Returns an estimate of the available bytes at end of collection, adjusted by
-  // the safety factor.
-  size_t available_bytes_estimate();
-
 protected:
   G1CollectionSet* _collection_set;
   virtual double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;

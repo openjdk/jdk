@@ -59,14 +59,12 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h) :
 
   _head(NULL),
   _bytes_used_before(0),
-  _bytes_live_before(0),
   _recorded_rs_lengths(0),
   // Incremental CSet attributes
   _inc_build_state(Inactive),
   _inc_head(NULL),
   _inc_tail(NULL),
   _inc_bytes_used_before(0),
-  _inc_bytes_live_before(0),
   _inc_recorded_rs_lengths(0),
   _inc_recorded_rs_lengths_diffs(0),
   _inc_predicted_elapsed_time_ms(0.0),
@@ -97,7 +95,6 @@ void G1CollectionSet::add_old_region(HeapRegion* hr) {
   hr->set_next_in_collection_set(_head);
   _head = hr;
   _bytes_used_before += hr->used();
-  _bytes_live_before += hr->live_bytes();
   size_t rs_length = hr->rem_set()->occupied();
   _recorded_rs_lengths += rs_length;
   _old_region_length += 1;
@@ -110,7 +107,6 @@ void G1CollectionSet::start_incremental_building() {
   _inc_head = NULL;
   _inc_tail = NULL;
   _inc_bytes_used_before = 0;
-  _inc_bytes_live_before = 0;
 
   _inc_recorded_rs_lengths = 0;
   _inc_recorded_rs_lengths_diffs = 0;
@@ -213,7 +209,6 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   _inc_recorded_rs_lengths += rs_length;
   _inc_predicted_elapsed_time_ms += region_elapsed_time_ms;
   _inc_bytes_used_before += used_bytes;
-  _inc_bytes_live_before += hr->live_bytes();
 
   assert(!hr->in_collection_set(), "invariant");
   _g1->register_young_region_with_cset(hr);
@@ -316,7 +311,6 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms) {
 
   _head = _inc_head;
   _bytes_used_before = _inc_bytes_used_before;
-  _bytes_live_before = _inc_bytes_live_before;
   time_remaining_ms = MAX2(time_remaining_ms - _inc_predicted_elapsed_time_ms, 0.0);
 
   log_trace(gc, ergo, cset)("Add young regions to CSet. eden: %u regions, survivors: %u regions, predicted young region time: %1.2fms, target pause time: %1.2fms",
@@ -340,7 +334,6 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
     cset_chooser()->verify();
     const uint min_old_cset_length = _policy->calc_min_old_cset_length();
     const uint max_old_cset_length = _policy->calc_max_old_cset_length();
-    const size_t estimated_available_bytes = _policy->available_bytes_estimate();
 
     uint expensive_region_num = 0;
     bool check_time_remaining = _policy->adaptive_young_list_length();
@@ -366,13 +359,6 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
         log_debug(gc, ergo, cset)("Finish adding old regions to CSet (reclaimable percentage not over threshold). "
                                   "old %u regions, max %u regions, reclaimable: " SIZE_FORMAT "B (%1.2f%%) threshold: " UINTX_FORMAT "%%",
                                   old_region_length(), max_old_cset_length, reclaimable_bytes, reclaimable_perc, G1HeapWastePercent);
-        break;
-      }
-
-      // Stop adding regions if the live bytes (according to the last marking)
-      // added so far would exceed the estimated free bytes.
-      if ((_bytes_live_before + hr->live_bytes()) > estimated_available_bytes) {
-        log_debug(gc, ergo, cset)("Finish adding old regions to CSet (reached estimated free space limit)");
         break;
       }
 
