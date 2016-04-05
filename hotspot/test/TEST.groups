@@ -249,6 +249,7 @@ compact1_minimal = \
 #
 needs_g1gc = \
   compiler/regalloc/C1ObjectSpillInLogicOp.java \
+  gc/TestHumongousReferenceObject.java \
   gc/TestSmallHeap.java \
   gc/TestSystemGC.java \
   gc/arguments/TestAlignmentToUseLargePages.java \
