@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 8072480
  * @summary Check the platform classpath contains the correct elements.
  * @library /tools/lib
- * @build ToolBox ElementStructureTest
  * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -34,6 +33,7 @@
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jdeps/com.sun.tools.javap
+ * @build toolbox.ToolBox ElementStructureTest
  * @run main ElementStructureTest
  */
 
@@ -98,6 +98,9 @@ import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.platform.PlatformProvider;
+
+import toolbox.ToolBox;
+
 
 /**To generate the hash values for version N, invoke this class like:
  *

@@ -31,8 +31,7 @@
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JarTask
  * @run main T6725036
  */
 
@@ -48,6 +47,9 @@ import javax.tools.*;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.util.Context;
+
+import toolbox.JarTask;
+import toolbox.ToolBox;
 
 public class T6725036 {
     public static void main(String... args) throws Exception {
@@ -82,7 +84,7 @@ public class T6725036 {
         try (JavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
             File f = new File(name);
             ToolBox tb = new ToolBox();
-            tb.new JarTask(name)
+            new JarTask(tb, name)
                 .files(fm, StandardLocation.PLATFORM_CLASS_PATH, paths)
                 .run();
             return f;
