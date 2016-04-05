@@ -183,6 +183,25 @@ public final class FontUtilities {
     }
 
     /**
+     * Return true if there any characters which would trigger layout.
+     * This method considers supplementary characters to be simple,
+     * since we do not presently invoke layout on any code points in
+     * outside the BMP.
+     */
+    public static boolean isComplexScript(char [] chs, int start, int limit) {
+
+        for (int i = start; i < limit; i++) {
+            if (chs[i] < MIN_LAYOUT_CHARCODE) {
+                continue;
+            }
+            else if (isComplexCharCode(chs[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * If there is anything in the text which triggers a case
      * where char->glyph does not map 1:1 in straightforward
      * left->right ordering, then this method returns true.
