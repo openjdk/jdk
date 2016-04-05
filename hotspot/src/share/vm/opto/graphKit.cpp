@@ -1190,11 +1190,6 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
                                   bool speculative) {
   assert(!assert_null || null_control == NULL, "not both at once");
   if (stopped())  return top();
-  if (!GenerateCompilerNullChecks && !assert_null && null_control == NULL) {
-    // For some performance testing, we may wish to suppress null checking.
-    value = cast_not_null(value);   // Make it appear to be non-null (4962416).
-    return value;
-  }
   NOT_PRODUCT(explicit_null_checks_inserted++);
 
   // Construct NULL check

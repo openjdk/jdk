@@ -2516,9 +2516,6 @@ public:
           "generate locking/unlocking code for synchronized methods and "   \
           "monitors")                                                       \
                                                                             \
-  develop(bool, GenerateCompilerNullChecks, true,                           \
-          "Generate explicit null checks for loads/stores/calls")           \
-                                                                            \
   develop(bool, GenerateRangeChecks, true,                                  \
           "Generate range checks for array accesses")                       \
                                                                             \
