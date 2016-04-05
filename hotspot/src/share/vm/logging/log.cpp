@@ -28,9 +28,11 @@
 
 #ifndef PRODUCT
 
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logOutput.hpp"
+#include "logging/logStream.inline.hpp"
 #include "memory/resourceArea.hpp"
 
 #define assert_str_eq(s1, s2) \
@@ -102,7 +104,6 @@ class TestLogSavedConfig {
 };
 
 void Test_configure_stdout() {
-  ResourceMark rm;
   LogOutput* stdoutput = LogOutput::Stdout;
   TestLogSavedConfig tlsc;
 
@@ -167,7 +168,6 @@ size_t Test_log_prefix_prefixer(char* buf, size_t len) {
 }
 
 void Test_log_prefix() {
-  ResourceMark rm;
   TestLogFile log_file("log_prefix");
   TestLogSavedConfig log_cfg(log_file.name(), "logging+test=trace");
 
@@ -186,7 +186,6 @@ void Test_log_big() {
   char big_msg[4096] = {0};
   char Xchar = '~';
 
-  ResourceMark rm;
   TestLogFile log_file("log_big");
   TestLogSavedConfig log_cfg(log_file.name(), "logging+test=trace");
 
@@ -313,6 +312,403 @@ static void Test_logtarget_off() {
 void Test_logtarget() {
   Test_logtarget_on();
   Test_logtarget_off();
+}
+
+
+static void Test_logstream_helper(outputStream* stream) {
+  TestLogFile log_file("log_stream");
+  TestLogSavedConfig tlsc(log_file.name(), "gc=debug");
+
+  // Try to log, but expect this to be filtered out.
+  stream->print("%d ", 3); stream->print("workers"); stream->cr();
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp != NULL, "File read error");
+
+  char output[256 /* Large enough buffer */];
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  assert(strstr(output, "3 workers") != NULL, "log line missing");
+
+  fclose(fp);
+}
+
+static void Test_logstream_log() {
+  Log(gc) log;
+  LogStream stream(log.debug());
+
+  Test_logstream_helper(&stream);
+}
+
+static void Test_logstream_logtarget() {
+  LogTarget(Debug, gc) log;
+  LogStream stream(log);
+
+  Test_logstream_helper(&stream);
+}
+
+static void Test_logstream_logstreamhandle() {
+  LogStreamHandle(Debug, gc) stream;
+
+  Test_logstream_helper(&stream);
+}
+
+static void Test_logstream_no_rm() {
+  ResourceMark rm;
+  outputStream* stream = LogTarget(Debug, gc)::stream();
+
+  Test_logstream_helper(stream);
+}
+
+void Test_logstream() {
+  Test_logstream_log();
+  Test_logstream_logtarget();
+  Test_logstream_logstreamhandle();
+  Test_logstream_no_rm();
+}
+
+void Test_loghandle_on() {
+  TestLogFile log_file("log_handle");
+  TestLogSavedConfig tlsc(log_file.name(), "gc=debug");
+
+  Log(gc) log;
+  LogHandle log_handle(log);
+
+  assert(log_handle.is_debug(), "assert");
+
+  // Try to log trough a LogHandle.
+  log_handle.debug("%d workers", 3);
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp, "File read error");
+
+  char output[256 /* Large enough buffer */];
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  assert(strstr(output, "3 workers") != NULL, "log line missing");
+
+  fclose(fp);
+}
+
+void Test_loghandle_off() {
+  TestLogFile log_file("log_handle");
+  TestLogSavedConfig tlsc(log_file.name(), "gc=info");
+
+  Log(gc) log;
+  LogHandle log_handle(log);
+
+  if (log_handle.is_debug()) {
+    // The log config could have been redirected gc=debug to a file. If gc=debug
+    // is enabled, we can only test that the LogTarget returns the same value
+    // as the log_is_enabled function. The rest of the test will be ignored.
+    assert(log_handle.is_debug() == log_is_enabled(Debug, gc), "assert");
+    log_warning(logging)("This test doesn't support runs with -Xlog");
+    return;
+  }
+
+  // Try to log trough a LogHandle. Should fail, since only info is turned on.
+  log_handle.debug("%d workers", 3);
+
+  // Log a dummy line so that fgets doesn't return NULL because the file is empty.
+  log_info(gc)("Dummy line");
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp, "File read error");
+
+  char output[256 /* Large enough buffer */];
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  assert(strstr(output, "3 workers") == NULL, "log line missing");
+
+  fclose(fp);
+}
+
+void Test_loghandle() {
+  Test_loghandle_on();
+  Test_loghandle_off();
+}
+
+static void Test_logtargethandle_on() {
+  TestLogFile log_file("log_handle");
+  TestLogSavedConfig tlsc(log_file.name(), "gc=debug");
+
+  LogTarget(Debug, gc) log;
+  LogTargetHandle log_handle(log);
+
+  assert(log_handle.is_enabled(), "assert");
+
+  // Try to log trough a LogHandle.
+  log_handle.print("%d workers", 3);
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp, "File read error");
+
+  char output[256 /* Large enough buffer */];
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  assert(strstr(output, "3 workers") != NULL, "log line missing");
+
+  fclose(fp);
+}
+
+static void Test_logtargethandle_off() {
+  TestLogFile log_file("log_handle");
+  TestLogSavedConfig tlsc(log_file.name(), "gc=info");
+
+  LogTarget(Debug, gc) log;
+  LogTargetHandle log_handle(log);
+
+  if (log_handle.is_enabled()) {
+    // The log config could have been redirected gc=debug to a file. If gc=debug
+    // is enabled, we can only test that the LogTarget returns the same value
+    // as the log_is_enabled function. The rest of the test will be ignored.
+    assert(log_handle.is_enabled() == log_is_enabled(Debug, gc), "assert");
+    log_warning(logging)("This test doesn't support runs with -Xlog");
+    return;
+  }
+
+  // Try to log trough a LogHandle. Should fail, since only info is turned on.
+  log_handle.print("%d workers", 3);
+
+  // Log a dummy line so that fgets doesn't return NULL because the file is empty.
+  log_info(gc)("Dummy line");
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp, "File read error");
+
+  char output[256 /* Large enough buffer */];
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  assert(strstr(output, "3 workers") == NULL, "log line missing");
+
+  fclose(fp);
+}
+
+void Test_logtargethandle() {
+  Test_logtargethandle_on();
+  Test_logtargethandle_off();
+}
+
+static void Test_log_gctracetime_full() {
+  TestLogFile log_file("log_gctracetime");
+  TestLogSavedConfig tlsc(log_file.name(), "gc=debug,gc+start=debug");
+
+  LogTarget(Debug, gc) gc_debug;
+  LogTarget(Debug, gc, start) gc_start_debug;
+
+  assert(gc_debug.is_enabled(), "assert");
+  assert(gc_start_debug.is_enabled(), "assert");
+
+  {
+    MutexLocker lock(Heap_lock); // Needed to read heap usage
+    GCTraceTime(Debug, gc) timer("Test GC", NULL, GCCause::_allocation_failure, true);
+  }
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp, "File read error");
+
+  char output[256 /* Large enough buffer */];
+
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  // [2.975s][debug][gc,start] Test GC (Allocation Failure) (2.975s)
+  assert(strstr(output, "[gc,start") != NULL, "Incorrect tag set");
+  assert(strstr(output, "] Test GC (Allocation Failure) (") != NULL, "Incorrect log line");
+  assert(strstr(output, "s)") != NULL, "Incorrect log line");
+
+  res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  // [2.975s][debug][gc      ] Test GC (Allocation Failure) 59M->59M(502M) (2.975s, 2.975s) 0.026ms
+  assert(strstr(output, "[gc ") != NULL, "Incorrect tag set");
+  assert(strstr(output, "] Test GC (Allocation Failure) ") != NULL, "Incorrect log line");
+  assert(strstr(output, "M) (") != NULL, "Incorrect log line");
+  assert(strstr(output, "s, ") != NULL, "Incorrect log line");
+  assert(strstr(output, "s) ") != NULL, "Incorrect log line");
+  assert(strstr(output, "ms") != NULL, "Incorrect log line");
+
+  fclose(fp);
+}
+
+static void Test_log_gctracetime_full_multitag() {
+  TestLogFile log_file("log_gctracetime");
+  TestLogSavedConfig tlsc(log_file.name(), "gc+ref=debug,gc+ref+start=debug");
+
+  LogTarget(Debug, gc, ref) gc_debug;
+  LogTarget(Debug, gc, ref, start) gc_start_debug;
+
+  assert(gc_debug.is_enabled(), "assert");
+  assert(gc_start_debug.is_enabled(), "assert");
+
+  {
+    MutexLocker lock(Heap_lock); // Needed to read heap usage
+    GCTraceTime(Debug, gc, ref) timer("Test GC", NULL, GCCause::_allocation_failure, true);
+  }
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp, "File read error");
+
+  char output[256 /* Large enough buffer */];
+
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  // [2.975s][debug][gc,start] Test GC (Allocation Failure) (2.975s)
+  assert(strstr(output, "[gc,ref,start") != NULL, "Incorrect tag set");
+  assert(strstr(output, "] Test GC (Allocation Failure) (") != NULL, "Incorrect log line");
+  assert(strstr(output, "s)") != NULL, "Incorrect log line");
+
+  res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  // [2.975s][debug][gc      ] Test GC (Allocation Failure) 59M->59M(502M) (2.975s, 2.975s) 0.026ms
+  assert(strstr(output, "[gc,ref ") != NULL, "Incorrect tag set");
+  assert(strstr(output, "] Test GC (Allocation Failure) ") != NULL, "Incorrect log line");
+  assert(strstr(output, "M) (") != NULL, "Incorrect log line");
+  assert(strstr(output, "s, ") != NULL, "Incorrect log line");
+  assert(strstr(output, "s) ") != NULL, "Incorrect log line");
+  assert(strstr(output, "ms") != NULL, "Incorrect log line");
+
+  fclose(fp);
+}
+
+static void Test_log_gctracetime_no_heap() {
+  TestLogFile log_file("log_gctracetime");
+  TestLogSavedConfig tlsc(log_file.name(), "gc=debug,gc+start=debug");
+
+  LogTarget(Debug, gc) gc_debug;
+  LogTarget(Debug, gc, start) gc_start_debug;
+
+  assert(gc_debug.is_enabled(), "assert");
+  assert(gc_start_debug.is_enabled(), "assert");
+
+  {
+    GCTraceTime(Debug, gc) timer("Test GC", NULL, GCCause::_allocation_failure, false);
+  }
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp, "File read error");
+
+  char output[256 /* Large enough buffer */];
+
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  // [2.975s][debug][gc,start] Test GC (Allocation Failure) (2.975s)
+  assert(strstr(output, "[gc,start") != NULL, "Incorrect tag set");
+  assert(strstr(output, "] Test GC (Allocation Failure) (") != NULL, "Incorrect log line");
+  assert(strstr(output, "s)") != NULL, "Incorrect log line");
+
+  res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  // [2.975s][debug][gc      ] Test GC (Allocation Failure) (2.975s, 2.975s) 0.026ms
+  assert(strstr(output, "[gc ") != NULL, "Incorrect tag set");
+  assert(strstr(output, "] Test GC (Allocation Failure) (") != NULL, "Incorrect log line");
+  assert(strstr(output, "M) (") == NULL, "Incorrect log line");
+  assert(strstr(output, "s, ") != NULL, "Incorrect log line");
+  assert(strstr(output, "s) ") != NULL, "Incorrect log line");
+  assert(strstr(output, "ms") != NULL, "Incorrect log line");
+
+  fclose(fp);
+}
+
+static void Test_log_gctracetime_no_cause() {
+  TestLogFile log_file("log_gctracetime");
+  TestLogSavedConfig tlsc(log_file.name(), "gc=debug,gc+start=debug");
+
+  LogTarget(Debug, gc) gc_debug;
+  LogTarget(Debug, gc, start) gc_start_debug;
+
+  assert(gc_debug.is_enabled(), "assert");
+  assert(gc_start_debug.is_enabled(), "assert");
+
+  {
+    MutexLocker lock(Heap_lock); // Needed to read heap usage
+    GCTraceTime(Debug, gc) timer("Test GC", NULL, GCCause::_no_gc, true);
+  }
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp, "File read error");
+
+  char output[256 /* Large enough buffer */];
+
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  // [2.975s][debug][gc,start] Test GC (2.975s)
+  assert(strstr(output, "[gc,start") != NULL, "Incorrect tag set");
+  assert(strstr(output, "] Test GC (") != NULL, "Incorrect log line");
+  assert(strstr(output, "s)") != NULL, "Incorrect log line");
+
+  res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  // [2.975s][debug][gc      ] Test GC 59M->59M(502M) (2.975s, 2.975s) 0.026ms
+  assert(strstr(output, "[gc ") != NULL, "Incorrect tag set");
+  assert(strstr(output, "] Test GC ") != NULL, "Incorrect log line");
+  assert(strstr(output, "M) (") != NULL, "Incorrect log line");
+  assert(strstr(output, "s, ") != NULL, "Incorrect log line");
+  assert(strstr(output, "s) ") != NULL, "Incorrect log line");
+  assert(strstr(output, "ms") != NULL, "Incorrect log line");
+
+  fclose(fp);
+}
+
+static void Test_log_gctracetime_no_heap_no_cause() {
+  TestLogFile log_file("log_gctracetime");
+  TestLogSavedConfig tlsc(log_file.name(), "gc=debug,gc+start=debug");
+
+  LogTarget(Debug, gc) gc_debug;
+  LogTarget(Debug, gc, start) gc_start_debug;
+
+  assert(gc_debug.is_enabled(), "assert");
+  assert(gc_start_debug.is_enabled(), "assert");
+
+  {
+    MutexLocker lock(Heap_lock); // Needed to read heap usage
+    GCTraceTime(Debug, gc) timer("Test GC", NULL, GCCause::_no_gc, false);
+  }
+
+  FILE* fp = fopen(log_file.name(), "r");
+  assert(fp, "File read error");
+
+  char output[256 /* Large enough buffer */];
+
+  char* res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  // [2.975s][debug][gc,start] Test GC (2.975s)
+  assert(strstr(output, "[gc,start") != NULL, "Incorrect tag set");
+  assert(strstr(output, "] Test GC (") != NULL, "Incorrect log line");
+  assert(strstr(output, "s)") != NULL, "Incorrect log line");
+
+  res = fgets(output, sizeof(output), fp);
+  assert(res != NULL, "assert");
+
+  // [2.975s][debug][gc      ] Test GC (2.975s, 2.975s) 0.026ms
+  assert(strstr(output, "[gc ") != NULL, "Incorrect tag set");
+  assert(strstr(output, "] Test GC (") != NULL, "Incorrect log line");
+  assert(strstr(output, "M) (") == NULL, "Incorrect log line");
+  assert(strstr(output, "s, ") != NULL, "Incorrect log line");
+  assert(strstr(output, "s) ") != NULL, "Incorrect log line");
+  assert(strstr(output, "ms") != NULL, "Incorrect log line");
+
+  fclose(fp);
+}
+
+void Test_log_gctracetime() {
+  Test_log_gctracetime_full();
+  Test_log_gctracetime_full_multitag();
+  Test_log_gctracetime_no_heap();
+  Test_log_gctracetime_no_cause();
+  Test_log_gctracetime_no_heap_no_cause();
 }
 
 #endif // PRODUCT

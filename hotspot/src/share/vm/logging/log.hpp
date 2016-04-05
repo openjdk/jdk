@@ -31,7 +31,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/ostream.hpp"
 
 //
 // Logging macros
@@ -104,6 +103,13 @@
 //
 #define LogTarget(level, ...) LogTargetImpl<LogLevel::level, LOG_TAGS(__VA_ARGS__)>
 
+// Forward declaration to decouple this file from the outputStream API.
+class outputStream;
+outputStream* create_log_stream(LogLevelType level, LogTagSet* tagset);
+
+template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+class LogTargetImpl;
+
 template <LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG, LogTagType T3 = LogTag::__NO_TAG,
           LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
 class LogImpl VALUE_OBJ_CLASS_SPEC {
@@ -162,7 +168,10 @@ class LogImpl VALUE_OBJ_CLASS_SPEC {
     return is_level(LogLevel::level); \
   } \
   static outputStream* name##_stream() { \
-    return new logStream(write<LogLevel::level>); \
+    return create_log_stream(LogLevel::level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()); \
+  } \
+  static LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>* name() { \
+    return (LogTargetImpl<LogLevel::level, T0, T1, T2, T3, T4, GuardTag>*)NULL; \
   }
   LOG_LEVEL_LIST
 #undef LOG_LEVEL
@@ -190,7 +199,7 @@ public:
   }
 
   static outputStream* stream() {
-    return new logStream(&LogImpl<T0, T1, T2, T3, T4, GuardTag>::template write<level>);
+    return create_log_stream(level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset());
   }
 };
 
