@@ -167,7 +167,7 @@ void RefProcTaskExecutor::execute(ProcessTask& task)
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
   uint active_gc_threads = heap->gc_task_manager()->active_workers();
-  RegionTaskQueueSet* qset = ParCompactionManager::region_array();
+  OopTaskQueueSet* qset = ParCompactionManager::stack_array();
   ParallelTaskTerminator terminator(active_gc_threads, qset);
   GCTaskQueue* q = GCTaskQueue::create();
   for(uint i=0; i<parallel_gc_threads; i++) {

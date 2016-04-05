@@ -2048,7 +2048,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   uint parallel_gc_threads = heap->gc_task_manager()->workers();
   uint active_gc_threads = heap->gc_task_manager()->active_workers();
-  TaskQueueSetSuper* qset = ParCompactionManager::region_array();
+  TaskQueueSetSuper* qset = ParCompactionManager::stack_array();
   ParallelTaskTerminator terminator(active_gc_threads, qset);
 
   ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
