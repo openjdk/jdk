@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 /**
  * Base class for module tests.
@@ -175,7 +178,7 @@ public class ModuleTestBase {
 
         public void build(Path where) throws IOException {
             Path moduleSrc = write(where);
-            tb.new JavacTask()
+            new JavacTask(tb)
                     .outdir(where.resolve(name))
                     .options("-mp", modulePath)
                     .files(findJavaFiles(moduleSrc))

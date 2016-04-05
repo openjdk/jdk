@@ -27,16 +27,19 @@
  * @summary The "method0" StackMap attribute should have two entries instead of three
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavapTask
  * @run compile StackMapTest.java
  * @run main StackMapTest
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import toolbox.JavapTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 // Original test: test/tools/javac/stackmap/T4955930.sh
 public class StackMapTest {
@@ -54,11 +57,11 @@ public class StackMapTest {
     public static void main(String args[]) throws Exception {
         ToolBox tb = new ToolBox();
         Path pathToClass = Paths.get(ToolBox.testClasses, "StackMapTest$Test.class");
-        String javapOut = tb.new JavapTask()
+        String javapOut = new JavapTask(tb)
                 .options("-v")
                 .classes(pathToClass.toString())
                 .run()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!javapOut.contains("StackMapTable: number_of_entries = 2"))
             throw new AssertionError("The number of entries of the stack map "

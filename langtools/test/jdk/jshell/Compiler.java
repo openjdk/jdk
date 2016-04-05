@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,10 @@ import java.nio.file.Paths;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.ToolBox;
+
 public class Compiler {
 
     private final ToolBox tb = new ToolBox();
@@ -57,7 +61,7 @@ public class Compiler {
 
     public void compile(Path directory, String...sources) {
         Path classDir = getClassDir();
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-d", classDir.resolve(directory).toString())
                 .sources(sources)
                 .run();
@@ -73,7 +77,7 @@ public class Compiler {
         Path classDirPath = getClassDir();
         Path baseDir = classDirPath.resolve(directory);
         Path jarPath = baseDir.resolve(jarName);
-        tb.new JarTask(jarPath.toString())
+        new JarTask(tb, jarPath.toString())
                 .manifest(manifest)
                 .baseDir(baseDir.toString())
                 .files(files).run();

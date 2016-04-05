@@ -31,7 +31,7 @@
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
- * @build KullaTesting TestingInputStream ToolBox Compiler
+ * @build KullaTesting TestingInputStream toolbox.ToolBox Compiler
  * @run testng ToolReloadTest
  */
 

@@ -257,9 +257,9 @@ util_initialize(JNIEnv *env)
         gdata->property_user_dir
                         = getPropertyUTF8(env, "user.dir");
 
-        /* Get agent properties: invoke sun.misc.VMSupport.getAgentProperties */
+        /* Get agent properties: invoke VMSupport.getAgentProperties */
         localVMSupportClass = JNI_FUNC_PTR(env,FindClass)
-                                          (env, "sun/misc/VMSupport");
+                                          (env, "jdk/internal/vm/VMSupport");
         if (localVMSupportClass == NULL) {
             gdata->agent_properties = NULL;
             if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
@@ -276,7 +276,7 @@ util_initialize(JNIEnv *env)
             if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
                 JNI_FUNC_PTR(env,ExceptionClear)(env);
                 EXIT_ERROR(AGENT_ERROR_INTERNAL,
-                    "Exception occurred calling sun.misc.VMSupport.getAgentProperties");
+                    "Exception occurred calling VMSupport.getAgentProperties");
             }
         }
 

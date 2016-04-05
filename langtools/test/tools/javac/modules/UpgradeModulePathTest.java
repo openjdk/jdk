@@ -28,13 +28,16 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main UpgradeModulePathTest
  */
 
 import java.io.File;
 import java.nio.file.Path;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class UpgradeModulePathTest extends ModuleTestBase {
 
@@ -61,7 +64,7 @@ public class UpgradeModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "module m2 { requires m1; }",
                 "package p; class A { void main() { pkg2.E.class.getName(); } }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-modulepath", module.toString(),
                         "-upgrademodulepath", upgradeModule.toString())
                 .files(findJavaFiles(src))
@@ -87,7 +90,7 @@ public class UpgradeModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "module m2 { requires m1; }",
                 "package p; class A { void main() { pkg2.E.class.getName(); } }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-upgrademodulepath", upgradeModule + File.pathSeparator + module)
                 .files(findJavaFiles(src))
                 .run()
@@ -121,7 +124,7 @@ public class UpgradeModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src.resolve("m2"), "module m2 { requires m1; requires m3; }",
                 "package p; class A { void main() { pkg2.E.class.getName(); } }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-modulepath", module.toString(),
                         "-modulesourcepath", src + File.pathSeparator + s,
                         "-upgrademodulepath", upgradeModule + File.pathSeparator + upgradeModule3)
@@ -149,7 +152,7 @@ public class UpgradeModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "module m2 { requires m1; }",
                 "package p; class A { void main() { pkg2.E.class.getName(); } }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-modulepath", upgradeModule + File.pathSeparator + module,
                         "-upgrademodulepath", upgradeModule.toString())
                 .files(findJavaFiles(src))
@@ -172,14 +175,14 @@ public class UpgradeModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "module m2 { requires m1; }",
                 "package p; class A { void main() { pkg2.E.class.getName(); } }");
 
-        String output = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String output = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", module.toString(),
                         "-upgrademodulepath", dummy.toString())
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
         if (!output.contains("compiler.err.illegal.argument.for.option: -upgrademodulepath, " + dummy)) {
             throw new Exception("Expected output was not found");
         }
@@ -212,7 +215,7 @@ public class UpgradeModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "module m4 { requires m1; requires m2; requires m3; }",
                 "package p; class A { void main() { pkg1.A.class.getName(); pkg2.BC.class.getName(); pkg3.DC.class.getName(); } }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-modulepath", module.toString(),
                         "-upgrademodulepath", upgradeModule.toString())
                 .files(findJavaFiles(src))
@@ -223,14 +226,14 @@ public class UpgradeModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src2, "module m4 { requires m1; }",
                 "package p; class A { void main() { pkg2.B.class.getName(); } }");
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", module.toString(),
                         "-upgrademodulepath", upgradeModule.toString())
                 .files(findJavaFiles(src2))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
         if (!log.contains("compiler.err.doesnt.exist: pkg2")) {
             throw new Exception("Expected output was not found");
         }
@@ -260,7 +263,7 @@ public class UpgradeModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "module m2 { requires m1; }",
                 "package p; class A { void main() { pkg2.EC2.class.getName(); } }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-modulepath", module.toString(),
                         "-upgrademodulepath", upgradeModule1.toString(),
                         "-upgrademodulepath", upgradeModule2.toString())
@@ -272,15 +275,15 @@ public class UpgradeModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src2, "module m2 { requires m1; }",
                 "package p; class A { void main() { pkg2.EC1.class.getName(); } }");
 
-        final String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        final String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", module.toString(),
                         "-upgrademodulepath", upgradeModule1.toString(),
                         "-upgrademodulepath", upgradeModule2.toString())
                 .files(findJavaFiles(src2))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("compiler.err.cant.resolve.location: kindname.class, EC1, , , (compiler.misc.location: kindname.package, pkg2, null)")) {
             throw new Exception("Expected output was not found");

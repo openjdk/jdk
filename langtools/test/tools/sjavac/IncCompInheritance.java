@@ -27,10 +27,9 @@
  * @summary Analysis of public API does not take super classes into account
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build Wrapper ToolBox
+ * @build Wrapper toolbox.ToolBox
  * @run main Wrapper IncCompInheritance
  */
 
