@@ -1468,209 +1468,156 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
   C->set_major_progress();
 
   Node* new_limit = NULL;
-  if (UnrollLimitCheck) {
-    int stride_con = stride->get_int();
-    int stride_p = (stride_con > 0) ? stride_con : -stride_con;
-    uint old_trip_count = loop_head->trip_count();
-    // Verify that unroll policy result is still valid.
-    assert(old_trip_count > 1 &&
-           (!adjust_min_trip || stride_p <= (1<<3)*loop_head->unrolled_count()), "sanity");
+  int stride_con = stride->get_int();
+  int stride_p = (stride_con > 0) ? stride_con : -stride_con;
+  uint old_trip_count = loop_head->trip_count();
+  // Verify that unroll policy result is still valid.
+  assert(old_trip_count > 1 &&
+      (!adjust_min_trip || stride_p <= (1<<3)*loop_head->unrolled_count()), "sanity");
 
-    // Adjust loop limit to keep valid iterations number after unroll.
-    // Use (limit - stride) instead of (((limit - init)/stride) & (-2))*stride
-    // which may overflow.
-    if (!adjust_min_trip) {
-      assert(old_trip_count > 1 && (old_trip_count & 1) == 0,
-             "odd trip count for maximally unroll");
-      // Don't need to adjust limit for maximally unroll since trip count is even.
-    } else if (loop_head->has_exact_trip_count() && init->is_Con()) {
-      // Loop's limit is constant. Loop's init could be constant when pre-loop
-      // become peeled iteration.
-      jlong init_con = init->get_int();
-      // We can keep old loop limit if iterations count stays the same:
-      //   old_trip_count == new_trip_count * 2
-      // Note: since old_trip_count >= 2 then new_trip_count >= 1
-      // so we also don't need to adjust zero trip test.
-      jlong limit_con  = limit->get_int();
-      // (stride_con*2) not overflow since stride_con <= 8.
-      int new_stride_con = stride_con * 2;
-      int stride_m    = new_stride_con - (stride_con > 0 ? 1 : -1);
-      jlong trip_count = (limit_con - init_con + stride_m)/new_stride_con;
-      // New trip count should satisfy next conditions.
-      assert(trip_count > 0 && (julong)trip_count < (julong)max_juint/2, "sanity");
-      uint new_trip_count = (uint)trip_count;
-      adjust_min_trip = (old_trip_count != new_trip_count*2);
-    }
+  // Adjust loop limit to keep valid iterations number after unroll.
+  // Use (limit - stride) instead of (((limit - init)/stride) & (-2))*stride
+  // which may overflow.
+  if (!adjust_min_trip) {
+    assert(old_trip_count > 1 && (old_trip_count & 1) == 0,
+        "odd trip count for maximally unroll");
+    // Don't need to adjust limit for maximally unroll since trip count is even.
+  } else if (loop_head->has_exact_trip_count() && init->is_Con()) {
+    // Loop's limit is constant. Loop's init could be constant when pre-loop
+    // become peeled iteration.
+    jlong init_con = init->get_int();
+    // We can keep old loop limit if iterations count stays the same:
+    //   old_trip_count == new_trip_count * 2
+    // Note: since old_trip_count >= 2 then new_trip_count >= 1
+    // so we also don't need to adjust zero trip test.
+    jlong limit_con  = limit->get_int();
+    // (stride_con*2) not overflow since stride_con <= 8.
+    int new_stride_con = stride_con * 2;
+    int stride_m    = new_stride_con - (stride_con > 0 ? 1 : -1);
+    jlong trip_count = (limit_con - init_con + stride_m)/new_stride_con;
+    // New trip count should satisfy next conditions.
+    assert(trip_count > 0 && (julong)trip_count < (julong)max_juint/2, "sanity");
+    uint new_trip_count = (uint)trip_count;
+    adjust_min_trip = (old_trip_count != new_trip_count*2);
+  }
 
-    if (adjust_min_trip) {
-      // Step 2: Adjust the trip limit if it is called for.
-      // The adjustment amount is -stride. Need to make sure if the
-      // adjustment underflows or overflows, then the main loop is skipped.
-      Node* cmp = loop_end->cmp_node();
-      assert(cmp->in(2) == limit, "sanity");
-      assert(opaq != NULL && opaq->in(1) == limit, "sanity");
+  if (adjust_min_trip) {
+    // Step 2: Adjust the trip limit if it is called for.
+    // The adjustment amount is -stride. Need to make sure if the
+    // adjustment underflows or overflows, then the main loop is skipped.
+    Node* cmp = loop_end->cmp_node();
+    assert(cmp->in(2) == limit, "sanity");
+    assert(opaq != NULL && opaq->in(1) == limit, "sanity");
 
-      // Verify that policy_unroll result is still valid.
-      const TypeInt* limit_type = _igvn.type(limit)->is_int();
-      assert(stride_con > 0 && ((limit_type->_hi - stride_con) < limit_type->_hi) ||
-             stride_con < 0 && ((limit_type->_lo - stride_con) > limit_type->_lo), "sanity");
+    // Verify that policy_unroll result is still valid.
+    const TypeInt* limit_type = _igvn.type(limit)->is_int();
+    assert(stride_con > 0 && ((limit_type->_hi - stride_con) < limit_type->_hi) ||
+        stride_con < 0 && ((limit_type->_lo - stride_con) > limit_type->_lo), "sanity");
 
-      if (limit->is_Con()) {
-        // The check in policy_unroll and the assert above guarantee
-        // no underflow if limit is constant.
-        new_limit = _igvn.intcon(limit->get_int() - stride_con);
-        set_ctrl(new_limit, C->root());
+    if (limit->is_Con()) {
+      // The check in policy_unroll and the assert above guarantee
+      // no underflow if limit is constant.
+      new_limit = _igvn.intcon(limit->get_int() - stride_con);
+      set_ctrl(new_limit, C->root());
+    } else {
+      // Limit is not constant.
+      if (loop_head->unrolled_count() == 1) { // only for first unroll
+        // Separate limit by Opaque node in case it is an incremented
+        // variable from previous loop to avoid using pre-incremented
+        // value which could increase register pressure.
+        // Otherwise reorg_offsets() optimization will create a separate
+        // Opaque node for each use of trip-counter and as result
+        // zero trip guard limit will be different from loop limit.
+        assert(has_ctrl(opaq), "should have it");
+        Node* opaq_ctrl = get_ctrl(opaq);
+        limit = new Opaque2Node( C, limit );
+        register_new_node( limit, opaq_ctrl );
+      }
+      if (stride_con > 0 && (java_subtract(limit_type->_lo, stride_con) < limit_type->_lo) ||
+          stride_con < 0 && (java_subtract(limit_type->_hi, stride_con) > limit_type->_hi)) {
+        // No underflow.
+        new_limit = new SubINode(limit, stride);
       } else {
-        // Limit is not constant.
-        if (loop_head->unrolled_count() == 1) { // only for first unroll
-          // Separate limit by Opaque node in case it is an incremented
-          // variable from previous loop to avoid using pre-incremented
-          // value which could increase register pressure.
-          // Otherwise reorg_offsets() optimization will create a separate
-          // Opaque node for each use of trip-counter and as result
-          // zero trip guard limit will be different from loop limit.
-          assert(has_ctrl(opaq), "should have it");
-          Node* opaq_ctrl = get_ctrl(opaq);
-          limit = new Opaque2Node( C, limit );
-          register_new_node( limit, opaq_ctrl );
-        }
-        if (stride_con > 0 && (java_subtract(limit_type->_lo, stride_con) < limit_type->_lo) ||
-            stride_con < 0 && (java_subtract(limit_type->_hi, stride_con) > limit_type->_hi)) {
-          // No underflow.
-          new_limit = new SubINode(limit, stride);
+        // (limit - stride) may underflow.
+        // Clamp the adjustment value with MININT or MAXINT:
+        //
+        //   new_limit = limit-stride
+        //   if (stride > 0)
+        //     new_limit = (limit < new_limit) ? MININT : new_limit;
+        //   else
+        //     new_limit = (limit > new_limit) ? MAXINT : new_limit;
+        //
+        BoolTest::mask bt = loop_end->test_trip();
+        assert(bt == BoolTest::lt || bt == BoolTest::gt, "canonical test is expected");
+        Node* adj_max = _igvn.intcon((stride_con > 0) ? min_jint : max_jint);
+        set_ctrl(adj_max, C->root());
+        Node* old_limit = NULL;
+        Node* adj_limit = NULL;
+        Node* bol = limit->is_CMove() ? limit->in(CMoveNode::Condition) : NULL;
+        if (loop_head->unrolled_count() > 1 &&
+            limit->is_CMove() && limit->Opcode() == Op_CMoveI &&
+            limit->in(CMoveNode::IfTrue) == adj_max &&
+            bol->as_Bool()->_test._test == bt &&
+            bol->in(1)->Opcode() == Op_CmpI &&
+            bol->in(1)->in(2) == limit->in(CMoveNode::IfFalse)) {
+          // Loop was unrolled before.
+          // Optimize the limit to avoid nested CMove:
+          // use original limit as old limit.
+          old_limit = bol->in(1)->in(1);
+          // Adjust previous adjusted limit.
+          adj_limit = limit->in(CMoveNode::IfFalse);
+          adj_limit = new SubINode(adj_limit, stride);
         } else {
-          // (limit - stride) may underflow.
-          // Clamp the adjustment value with MININT or MAXINT:
-          //
-          //   new_limit = limit-stride
-          //   if (stride > 0)
-          //     new_limit = (limit < new_limit) ? MININT : new_limit;
-          //   else
-          //     new_limit = (limit > new_limit) ? MAXINT : new_limit;
-          //
-          BoolTest::mask bt = loop_end->test_trip();
-          assert(bt == BoolTest::lt || bt == BoolTest::gt, "canonical test is expected");
-          Node* adj_max = _igvn.intcon((stride_con > 0) ? min_jint : max_jint);
-          set_ctrl(adj_max, C->root());
-          Node* old_limit = NULL;
-          Node* adj_limit = NULL;
-          Node* bol = limit->is_CMove() ? limit->in(CMoveNode::Condition) : NULL;
-          if (loop_head->unrolled_count() > 1 &&
-              limit->is_CMove() && limit->Opcode() == Op_CMoveI &&
-              limit->in(CMoveNode::IfTrue) == adj_max &&
-              bol->as_Bool()->_test._test == bt &&
-              bol->in(1)->Opcode() == Op_CmpI &&
-              bol->in(1)->in(2) == limit->in(CMoveNode::IfFalse)) {
-            // Loop was unrolled before.
-            // Optimize the limit to avoid nested CMove:
-            // use original limit as old limit.
-            old_limit = bol->in(1)->in(1);
-            // Adjust previous adjusted limit.
-            adj_limit = limit->in(CMoveNode::IfFalse);
-            adj_limit = new SubINode(adj_limit, stride);
-          } else {
-            old_limit = limit;
-            adj_limit = new SubINode(limit, stride);
-          }
-          assert(old_limit != NULL && adj_limit != NULL, "");
-          register_new_node( adj_limit, ctrl ); // adjust amount
-          Node* adj_cmp = new CmpINode(old_limit, adj_limit);
-          register_new_node( adj_cmp, ctrl );
-          Node* adj_bool = new BoolNode(adj_cmp, bt);
-          register_new_node( adj_bool, ctrl );
-          new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
+          old_limit = limit;
+          adj_limit = new SubINode(limit, stride);
         }
-        register_new_node(new_limit, ctrl);
+        assert(old_limit != NULL && adj_limit != NULL, "");
+        register_new_node( adj_limit, ctrl ); // adjust amount
+        Node* adj_cmp = new CmpINode(old_limit, adj_limit);
+        register_new_node( adj_cmp, ctrl );
+        Node* adj_bool = new BoolNode(adj_cmp, bt);
+        register_new_node( adj_bool, ctrl );
+        new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
       }
-      assert(new_limit != NULL, "");
-      // Replace in loop test.
-      assert(loop_end->in(1)->in(1) == cmp, "sanity");
-      if (cmp->outcnt() == 1 && loop_end->in(1)->outcnt() == 1) {
-        // Don't need to create new test since only one user.
-        _igvn.hash_delete(cmp);
-        cmp->set_req(2, new_limit);
-      } else {
-        // Create new test since it is shared.
-        Node* ctrl2 = loop_end->in(0);
-        Node* cmp2  = cmp->clone();
-        cmp2->set_req(2, new_limit);
-        register_new_node(cmp2, ctrl2);
-        Node* bol2 = loop_end->in(1)->clone();
-        bol2->set_req(1, cmp2);
-        register_new_node(bol2, ctrl2);
-        _igvn.replace_input_of(loop_end, 1, bol2);
-      }
-      // Step 3: Find the min-trip test guaranteed before a 'main' loop.
-      // Make it a 1-trip test (means at least 2 trips).
-
-      // Guard test uses an 'opaque' node which is not shared.  Hence I
-      // can edit it's inputs directly.  Hammer in the new limit for the
-      // minimum-trip guard.
-      assert(opaq->outcnt() == 1, "");
-      _igvn.replace_input_of(opaq, 1, new_limit);
+      register_new_node(new_limit, ctrl);
     }
-
-    // Adjust max trip count. The trip count is intentionally rounded
-    // down here (e.g. 15-> 7-> 3-> 1) because if we unwittingly over-unroll,
-    // the main, unrolled, part of the loop will never execute as it is protected
-    // by the min-trip test.  See bug 4834191 for a case where we over-unrolled
-    // and later determined that part of the unrolled loop was dead.
-    loop_head->set_trip_count(old_trip_count / 2);
-
-    // Double the count of original iterations in the unrolled loop body.
-    loop_head->double_unrolled_count();
-
-  } else { // LoopLimitCheck
-
-    // Adjust max trip count. The trip count is intentionally rounded
-    // down here (e.g. 15-> 7-> 3-> 1) because if we unwittingly over-unroll,
-    // the main, unrolled, part of the loop will never execute as it is protected
-    // by the min-trip test.  See bug 4834191 for a case where we over-unrolled
-    // and later determined that part of the unrolled loop was dead.
-    loop_head->set_trip_count(loop_head->trip_count() / 2);
-
-    // Double the count of original iterations in the unrolled loop body.
-    loop_head->double_unrolled_count();
-
-    // -----------
-    // Step 2: Cut back the trip counter for an unroll amount of 2.
-    // Loop will normally trip (limit - init)/stride_con.  Since it's a
-    // CountedLoop this is exact (stride divides limit-init exactly).
-    // We are going to double the loop body, so we want to knock off any
-    // odd iteration: (trip_cnt & ~1).  Then back compute a new limit.
-    Node *span = new SubINode( limit, init );
-    register_new_node( span, ctrl );
-    Node *trip = new DivINode( 0, span, stride );
-    register_new_node( trip, ctrl );
-    Node *mtwo = _igvn.intcon(-2);
-    set_ctrl(mtwo, C->root());
-    Node *rond = new AndINode( trip, mtwo );
-    register_new_node( rond, ctrl );
-    Node *spn2 = new MulINode( rond, stride );
-    register_new_node( spn2, ctrl );
-    new_limit = new AddINode( spn2, init );
-    register_new_node( new_limit, ctrl );
-
-    // Hammer in the new limit
-    Node *ctrl2 = loop_end->in(0);
-    Node *cmp2 = new CmpINode( loop_head->incr(), new_limit );
-    register_new_node( cmp2, ctrl2 );
-    Node *bol2 = new BoolNode( cmp2, loop_end->test_trip() );
-    register_new_node( bol2, ctrl2 );
-    _igvn.replace_input_of(loop_end, CountedLoopEndNode::TestValue, bol2);
-
+    assert(new_limit != NULL, "");
+    // Replace in loop test.
+    assert(loop_end->in(1)->in(1) == cmp, "sanity");
+    if (cmp->outcnt() == 1 && loop_end->in(1)->outcnt() == 1) {
+      // Don't need to create new test since only one user.
+      _igvn.hash_delete(cmp);
+      cmp->set_req(2, new_limit);
+    } else {
+      // Create new test since it is shared.
+      Node* ctrl2 = loop_end->in(0);
+      Node* cmp2  = cmp->clone();
+      cmp2->set_req(2, new_limit);
+      register_new_node(cmp2, ctrl2);
+      Node* bol2 = loop_end->in(1)->clone();
+      bol2->set_req(1, cmp2);
+      register_new_node(bol2, ctrl2);
+      _igvn.replace_input_of(loop_end, 1, bol2);
+    }
     // Step 3: Find the min-trip test guaranteed before a 'main' loop.
     // Make it a 1-trip test (means at least 2 trips).
-    if( adjust_min_trip ) {
-      assert( new_limit != NULL, "" );
-      // Guard test uses an 'opaque' node which is not shared.  Hence I
-      // can edit it's inputs directly.  Hammer in the new limit for the
-      // minimum-trip guard.
-      assert( opaq->outcnt() == 1, "" );
-      _igvn.hash_delete(opaq);
-      opaq->set_req(1, new_limit);
-    }
-  } // LoopLimitCheck
+
+    // Guard test uses an 'opaque' node which is not shared.  Hence I
+    // can edit it's inputs directly.  Hammer in the new limit for the
+    // minimum-trip guard.
+    assert(opaq->outcnt() == 1, "");
+    _igvn.replace_input_of(opaq, 1, new_limit);
+  }
+
+  // Adjust max trip count. The trip count is intentionally rounded
+  // down here (e.g. 15-> 7-> 3-> 1) because if we unwittingly over-unroll,
+  // the main, unrolled, part of the loop will never execute as it is protected
+  // by the min-trip test.  See bug 4834191 for a case where we over-unrolled
+  // and later determined that part of the unrolled loop was dead.
+  loop_head->set_trip_count(old_trip_count / 2);
+
+  // Double the count of original iterations in the unrolled loop body.
+  loop_head->double_unrolled_count();
 
   // ---------
   // Step 4: Clone the loop body.  Move it inside the loop.  This loop body
@@ -1904,7 +1851,6 @@ void PhaseIdealLoop::add_constraint( int stride_con, int scale_con, Node *offset
     //   )
 
     if (low_limit->get_int() == -max_jint) {
-      if (!RangeLimitCheck) return;
       // We need this guard when scale*pre_limit+offset >= limit
       // due to underflow. So we need execute pre-loop until
       // scale*I+offset >= min_int. But (min_int-offset) will
@@ -1956,7 +1902,6 @@ void PhaseIdealLoop::add_constraint( int stride_con, int scale_con, Node *offset
     *pre_limit = adjust_limit((-stride_con), scale, plus_one, upper_limit, *pre_limit, pre_ctrl);
 
     if (low_limit->get_int() == -max_jint) {
-      if (!RangeLimitCheck) return;
       // We need this guard when scale*main_limit+offset >= limit
       // due to underflow. So we need execute main-loop while
       // scale*I+offset+1 > min_int. But (min_int-offset-1) will
@@ -2258,7 +2203,7 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
           add_constraint( stride_con, scale_con, offset, zero, limit, pre_ctrl, &pre_limit, &main_limit );
           if (!conditional_rc) {
             // (0-offset)/scale could be outside of loop iterations range.
-            conditional_rc = !loop->dominates_backedge(iff) || RangeLimitCheck;
+            conditional_rc = !loop->dominates_backedge(iff);
           }
         } else {
           if (PrintOpto) {
@@ -2294,7 +2239,7 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
             // ((MIN_INT+1)-offset)/scale could be outside of loop iterations range.
             // Note: negative offset is replaced with 0 but (MIN_INT+1)/scale could
             // still be outside of loop range.
-            conditional_rc = !loop->dominates_backedge(iff) || RangeLimitCheck;
+            conditional_rc = !loop->dominates_backedge(iff);
           }
           break;
         default:
@@ -2340,26 +2285,6 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
   // Note:: we are making the main loop limit no longer precise;
   // need to round up based on stride.
   cl->set_nonexact_trip_count();
-  if (!LoopLimitCheck && stride_con != 1 && stride_con != -1) { // Cutout for common case
-    // "Standard" round-up logic:  ([main_limit-init+(y-1)]/y)*y+init
-    // Hopefully, compiler will optimize for powers of 2.
-    Node *ctrl = get_ctrl(main_limit);
-    Node *stride = cl->stride();
-    Node *init = cl->init_trip()->uncast();
-    Node *span = new SubINode(main_limit,init);
-    register_new_node(span,ctrl);
-    Node *rndup = _igvn.intcon(stride_con + ((stride_con>0)?-1:1));
-    Node *add = new AddINode(span,rndup);
-    register_new_node(add,ctrl);
-    Node *div = new DivINode(0,add,stride);
-    register_new_node(div,ctrl);
-    Node *mul = new MulINode(div,stride);
-    register_new_node(mul,ctrl);
-    Node *newlim = new AddINode(mul,init);
-    register_new_node(newlim,ctrl);
-    main_limit = newlim;
-  }
-
   Node *main_cle = cl->loopexit();
   Node *main_bol = main_cle->in(1);
   // Hacking loop bounds; need private copies of exit test
