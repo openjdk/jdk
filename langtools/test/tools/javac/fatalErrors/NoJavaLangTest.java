@@ -24,17 +24,19 @@
 /*
  * @test
  * @bug 4263768 4785453
- * @summary Verify that the compiler does not crash when java.lang is not
+ * @summary Verify that the compiler does not crash when java.lang is not available
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main NoJavaLangTest
  */
 
 import java.nio.file.*;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class NoJavaLangTest {
 
@@ -64,7 +66,7 @@ public class NoJavaLangTest {
 
     // sanity check, with java.lang available
     void testStandard() {
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .sources(noJavaLangSrc)
                 .run();
     }
@@ -80,7 +82,7 @@ public class NoJavaLangTest {
     void testModulePath() throws Exception {
         // need to ensure there is an empty java.base to avoid different error message
         Files.createDirectories(Paths.get("modules/java.base"));
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .sources("module java.base { }")
                 .outdir("modules/java.base")
                 .run();
@@ -93,12 +95,12 @@ public class NoJavaLangTest {
     private void test(String[] options, String expect) {
         System.err.println("Testing " + java.util.Arrays.toString(options));
 
-        String out = tb.new JavacTask()
+        String out = new JavacTask(tb)
                 .options(options)
                 .sources(noJavaLangSrc)
-                .run(ToolBox.Expect.FAIL, 3)
+                .run(Task.Expect.FAIL, 3)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!out.trim().equals(expect)) {
             throw new AssertionError("javac generated error output is not correct");

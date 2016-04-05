@@ -330,6 +330,12 @@ public class SunMiscSignalTest {
         Signal.raise(signal);
         boolean handled = handler.semaphore()
                 .tryAcquire(Utils.adjustTimeout(100L), TimeUnit.MILLISECONDS);
+        if (!handled) {
+            // For debug try again
+            printf("Second try to see signal");
+            handled = handler.semaphore()
+                    .tryAcquire(Utils.adjustTimeout(2L), TimeUnit.SECONDS);
+        }
         Assert.assertEquals(handled, !RUNNING_WITH_Xrs,
                 "raising s.m.Signal did not get a callback;");
 

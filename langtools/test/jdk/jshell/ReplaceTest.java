@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8080069
+ * @test 8080069 8152925
  * @summary Test of Snippet redefinition and replacement.
  * @build KullaTesting TestingInputStream
  * @run testng ReplaceTest
@@ -374,18 +374,18 @@ public class ReplaceTest extends KullaTesting {
     }
 
     public void testForwardVarToEnum() {
-        DeclarationSnippet a = classKey(assertEval("enum E { Q, W, E; float ff() { return fff; } }", added(RECOVERABLE_NOT_DEFINED)));
-        assertUnresolvedDependencies1(a, RECOVERABLE_NOT_DEFINED, "variable fff");
+        DeclarationSnippet a = classKey(assertEval("enum E { Q, W, E; float ff() { return fff; } }", added(RECOVERABLE_DEFINED)));
+        assertUnresolvedDependencies1(a, RECOVERABLE_DEFINED, "variable fff");
         Snippet g = varKey(assertEval("float fff = 4.5f;", "4.5",
                 added(VALID),
-                ste(a, RECOVERABLE_NOT_DEFINED, VALID, true, null)));
+                ste(a, RECOVERABLE_DEFINED, VALID, false, null)));
         assertEval("E.Q.ff();", "4.5");
         assertEval("double fff = 3.3;", "3.3", null,
                 DiagCheck.DIAG_OK,
                 DiagCheck.DIAG_ERROR,
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(g, VALID, OVERWRITTEN, false, MAIN_SNIPPET),
-                ste(a, VALID, RECOVERABLE_NOT_DEFINED, true, MAIN_SNIPPET));
+                ste(a, VALID, RECOVERABLE_DEFINED, false, MAIN_SNIPPET));
         assertUnresolvedDependencies(a, 0);
         assertActiveKeys();
     }
