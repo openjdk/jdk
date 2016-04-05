@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,10 @@
  * @summary Checking ACC_SYNTHETIC flag is generated for access method
  *          generated to access to private methods and fields.
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.classfile
- *          jdk.jdeps/com.sun.tools.javap
  * @library /tools/lib /tools/javac/lib ../lib
- * @build TestBase TestResult InMemoryFileManager ToolBox
+ * @build toolbox.ToolBox InMemoryFileManager TestResult
  * @build AccessToPrivateInnerClassMembersTest SyntheticTestDriver ExpectedClass ExpectedClasses
  * @run main SyntheticTestDriver AccessToPrivateInnerClassMembersTest 1
  */

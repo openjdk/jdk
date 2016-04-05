@@ -29,8 +29,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main MOptionTest
  */
 
@@ -38,7 +37,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 
-import com.sun.source.util.JavacTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class MOptionTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -56,9 +57,9 @@ public class MOptionTest extends ModuleTestBase {
                 "module m1 {}",
                 "package test; public class Test {}");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-m", "m1", "-modulesourcepath", src.toString(), "-d", build.toString())
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
 
         Path moduleInfoClass = build.resolve("m1/module-info.class");
@@ -79,9 +80,9 @@ public class MOptionTest extends ModuleTestBase {
 
         Thread.sleep(2000); //timestamps
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-m", "m1", "-modulesourcepath", src.toString(), "-d", build.toString())
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
 
         if (!moduleInfoTimeStamp.equals(Files.getLastModifiedTime(moduleInfoClass))) {
@@ -96,9 +97,9 @@ public class MOptionTest extends ModuleTestBase {
 
         Files.setLastModifiedTime(testTest, FileTime.fromMillis(System.currentTimeMillis()));
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-m", "m1", "-modulesourcepath", src.toString(), "-d", build.toString())
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
 
         if (!moduleInfoTimeStamp.equals(Files.getLastModifiedTime(moduleInfoClass))) {
@@ -121,13 +122,13 @@ public class MOptionTest extends ModuleTestBase {
                 "module m1 {}",
                 "package test; public class Test {}");
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                     "-m", "m1",
                     "-modulesourcepath", src.toString())
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.err.output.dir.must.be.specified.with.dash.m.option"))
             throw new Exception("expected output not found");
@@ -144,13 +145,13 @@ public class MOptionTest extends ModuleTestBase {
                 "module m1 {}",
                 "package test; public class Test {}");
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-m", "m1",
                         "-d", build.toString())
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.err.modulesourcepath.must.be.specified.with.dash.m.option"))
             throw new Exception("expected output not found");
@@ -172,9 +173,9 @@ public class MOptionTest extends ModuleTestBase {
                 "module m2 {}",
                 "package p2; public class C2 {}");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-m", "m1,m2", "-modulesourcepath", src.toString(), "-d", build.toString())
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
 
         Path m1ModuleInfoClass = build.resolve("m1/module-info.class");
@@ -213,9 +214,9 @@ public class MOptionTest extends ModuleTestBase {
 
         Thread.sleep(2000); //timestamps
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-m", "m1,m2", "-modulesourcepath", src.toString(), "-d", build.toString())
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
 
         if (!m1ModuleInfoTimeStamp.equals(Files.getLastModifiedTime(m1ModuleInfoClass))) {
@@ -239,9 +240,9 @@ public class MOptionTest extends ModuleTestBase {
         Files.setLastModifiedTime(C1Source, FileTime.fromMillis(System.currentTimeMillis()));
         Files.setLastModifiedTime(C2Source, FileTime.fromMillis(System.currentTimeMillis()));
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-m", "m1,m2", "-modulesourcepath", src.toString(), "-d", build.toString())
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
 
         if (!m1ModuleInfoTimeStamp.equals(Files.getLastModifiedTime(m1ModuleInfoClass))) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,9 @@
  * @author govereau
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
  * @ignore 8055768 ToolBox does not close opened files
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask toolbox.JarTask
  * @run main AbsolutePathTest
  */
 
@@ -40,12 +38,16 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.ToolBox;
+
 public class AbsolutePathTest {
     public static void main(String... cmdline) throws Exception {
         ToolBox tb = new ToolBox();
 
         // compile test.Test
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(".") // this is needed to get the classfiles in test
                 .sources("package test; public class Test{}")
                 .run();
@@ -54,18 +56,18 @@ public class AbsolutePathTest {
         // we need the jars in a directory different from the working
         // directory to trigger the bug.
         Files.createDirectory(Paths.get("jars"));
-        tb.new JarTask("jars/test.jar")
+        new JarTask(tb, "jars/test.jar")
                 .files("test/Test.class")
                 .run();
 
         // build second jar in jars directory using
         // an absolute path reference to the first jar
-        tb.new JarTask("jars/test2.jar")
+        new JarTask(tb, "jars/test2.jar")
                 .classpath(new File("jars/test.jar").getAbsolutePath())
                 .run();
 
         // this should not fail
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(".")
                 .classpath("jars/test2.jar")
                 .sources("import test.Test; class Test2 {}")

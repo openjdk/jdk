@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main ModuleSourcePathTest
  */
 
@@ -42,6 +41,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ModuleSourcePathTest extends ModuleTestBase {
 
@@ -57,14 +60,14 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         Path sp = base.resolve("src");
         Path msp = base.resolve("srcmodules");
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-sourcepath", sp.toString().replace('/', File.separatorChar),
                         "-modulesourcepath", msp.toString().replace('/', File.separatorChar),
                         "dummyClass")
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("cannot specify both -sourcepath and -modulesourcepath"))
             throw new Exception("expected diagnostic not found");
@@ -78,7 +81,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", src.toString())
                 .outdir(modules)
@@ -95,7 +98,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", "./" + src)
                 .outdir(modules)
@@ -118,7 +121,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", base + "/{src1,src2/inner_dir}")
                 .files(base.resolve("src1/m0/pkg0/A.java"), base.resolve("src2/inner_dir/m1/pkg1/A.java"))
@@ -149,12 +152,12 @@ public class ModuleSourcePathTest extends ModuleTestBase {
                 "{}*}"
         );
         for (String sourcepath : sourcePaths) {
-            String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+            String log = new JavacTask(tb, Task.Mode.CMDLINE)
                     .options("-XDrawDiagnostics",
                             "-modulesourcepath", sourcepath.replace('/', File.separatorChar))
-                    .run(ToolBox.Expect.FAIL)
+                    .run(Task.Expect.FAIL)
                     .writeAll()
-                    .getOutput(ToolBox.OutputKind.DIRECT);
+                    .getOutput(Task.OutputKind.DIRECT);
 
             if (!log.contains("- compiler.err.illegal.argument.for.option: -modulesourcepath, mismatched braces"))
                 throw new Exception("expected output for path [" + sourcepath + "] not found");
@@ -177,7 +180,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath",
                         base + "/{src/{{src1,src2,src3},{srcB,srcC}/{src1,src2/srcX{X,Y}/}},.}"
@@ -202,7 +205,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", base + "/{dummy.txt,src}")
                 .files(src.resolve("kettle$/electric/Heater.java"))
@@ -222,7 +225,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", base + "/{src}")
                 .files(src.resolve("kettle$/electric/Heater.java"))
@@ -241,7 +244,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", base + "/{}")
                 .files(base.resolve("kettle$/electric/Heater.java"))
@@ -262,7 +265,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = src.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", "{" + src + "," + src + "/car}")
                 .files(findJavaFiles(src))
@@ -281,7 +284,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", base + "/src/./../src")
                 .files(src.resolve("kettle/electric/Heater.java"))
@@ -300,7 +303,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", base + "/{src,src,src}")
                 .files(src.resolve("m1/a/A.java"))
@@ -318,14 +321,14 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", base + "/not_exist" + PATH_SEP + base + "/{not_exist,}")
                 .files(base.resolve("m1/a/A.java"))
                 .outdir(modules)
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
         if (!log.contains("compiler.err.module.not.found: m0"))
             throw new Exception("expected output for not existent module source path not found");
     }
@@ -337,7 +340,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", base + "{/not_exist,/}")
                 .files(base.resolve("m1/a/A.java"))
@@ -356,7 +359,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", base + "/{,{,,,,src,,,}}")
                 .files(src.resolve("m1/a/A.java"))
@@ -375,7 +378,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", base + "/*/classes/")
                 .files(base.resolve("kettle/classes/electric/Heater.java"))
@@ -398,7 +401,7 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         final Path modules = base.resolve("modules");
         tb.createDirectories(modules);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", src + "{/*/gensrc/,/*/classes/}" + PATH_SEP
                                 + src + "/*/special/classes")
@@ -427,12 +430,12 @@ public class ModuleSourcePathTest extends ModuleTestBase {
                 "src/module*/"
         );
         for (String sourcepath : sourcePaths) {
-            String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+            String log = new JavacTask(tb, Task.Mode.CMDLINE)
                     .options("-XDrawDiagnostics",
                             "-modulesourcepath", sourcepath.replace('/', File.separatorChar))
-                    .run(ToolBox.Expect.FAIL)
+                    .run(Task.Expect.FAIL)
                     .writeAll()
-                    .getOutput(ToolBox.OutputKind.DIRECT);
+                    .getOutput(Task.OutputKind.DIRECT);
 
             if (!log.contains("- compiler.err.illegal.argument.for.option: -modulesourcepath, illegal use of *"))
                 throw new Exception("expected output for path [" + sourcepath + "] not found");

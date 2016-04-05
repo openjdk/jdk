@@ -50,6 +50,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import com.sun.tools.javac.util.Context;
 import jdk.jshell.ClassTracker.ClassInfo;
 import jdk.jshell.Key.ErroneousKey;
 import jdk.jshell.Key.MethodKey;
@@ -133,7 +134,7 @@ class Eval {
     }
 
     private List<SnippetEvent> processImport(String userSource, String compileSource) {
-        Wrap guts = Wrap.importWrap(compileSource);
+        Wrap guts = Wrap.simpleWrap(compileSource);
         Matcher mat = IMPORT_PATTERN.matcher(compileSource);
         String fullname;
         String name;
@@ -300,13 +301,15 @@ class Eval {
 
         ClassTree klassTree = (ClassTree) unitTree;
         String name = klassTree.getSimpleName().toString();
-        Wrap guts = Wrap.classMemberWrap(compileSource);
+        DiagList modDiag = modifierDiagnostics(klassTree.getModifiers(), dis, false);
         TypeDeclKey key = state.keyMap.keyForClass(name);
-        Wrap corralled = new Corraller(key.index(), compileSource, dis).corralType(klassTree, 1);
-        Snippet snip = new TypeDeclSnippet(state.keyMap.keyForClass(name), userSource, guts,
+        // Corralling mutates.  Must be last use of pt, unitTree, klassTree
+        Wrap corralled = new Corraller(key.index(), pt.getContext()).corralType(klassTree);
+
+        Wrap guts = Wrap.classMemberWrap(compileSource);
+        Snippet snip = new TypeDeclSnippet(key, userSource, guts,
                 name, snippetKind,
                 corralled, tds.declareReferences(), tds.bodyReferences());
-        DiagList modDiag = modifierDiagnostics(klassTree.getModifiers(), dis, false);
         return declare(snip, modDiag);
     }
 
@@ -354,31 +357,30 @@ class Eval {
     private List<SnippetEvent> processMethod(String userSource, Tree unitTree, String compileSource, ParseTask pt) {
         TreeDependencyScanner tds = new TreeDependencyScanner();
         tds.scan(unitTree);
+        TreeDissector dis = TreeDissector.createByFirstClass(pt);
 
         MethodTree mt = (MethodTree) unitTree;
-        TreeDissector dis = TreeDissector.createByFirstClass(pt);
-        DiagList modDiag = modifierDiagnostics(mt.getModifiers(), dis, true);
-        if (modDiag.hasErrors()) {
-            return compileFailResult(modDiag, userSource);
-        }
-        String unitName = mt.getName().toString();
-        Wrap guts = Wrap.classMemberWrap(compileSource);
-
-        Range typeRange = dis.treeToRange(mt.getReturnType());
         String name = mt.getName().toString();
-
         String parameterTypes
                 = mt.getParameters()
                 .stream()
                 .map(param -> dis.treeToRange(param.getType()).part(compileSource))
                 .collect(Collectors.joining(","));
+        Tree returnType = mt.getReturnType();
+        DiagList modDiag = modifierDiagnostics(mt.getModifiers(), dis, true);
+        MethodKey key = state.keyMap.keyForMethod(name, parameterTypes);
+        // Corralling mutates.  Must be last use of pt, unitTree, mt
+        Wrap corralled = new Corraller(key.index(), pt.getContext()).corralMethod(mt);
+
+        if (modDiag.hasErrors()) {
+            return compileFailResult(modDiag, userSource);
+        }
+        Wrap guts = Wrap.classMemberWrap(compileSource);
+        Range typeRange = dis.treeToRange(returnType);
         String signature = "(" + parameterTypes + ")" + typeRange.part(compileSource);
 
-        MethodKey key = state.keyMap.keyForMethod(name, parameterTypes);
-        // rewrap with correct Key index
-        Wrap corralled = new Corraller(key.index(), compileSource, dis).corralMethod(mt);
         Snippet snip = new MethodSnippet(key, userSource, guts,
-                unitName, signature,
+                name, signature,
                 corralled, tds.declareReferences(), tds.bodyReferences());
         return declare(snip, modDiag);
     }

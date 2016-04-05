@@ -28,7 +28,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  * @library /tools/lib
- * @build KullaTesting TestingInputStream ToolBox ExpectedDiagnostic
+ * @build KullaTesting TestingInputStream toolbox.Task.ExpectedDiagnostic
  * @run testng ImportTest
  */
 
