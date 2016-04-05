@@ -95,7 +95,11 @@ $KT -alias tsbad3 -certreq | \
         $KT -alias ca -gencert -ext eku:critical=cs | \
         $KT -alias tsbad3 -importcert
 
-EXTRAOPTS="-XaddExports:java.base/sun.misc=ALL-UNNAMED,java.base/sun.security.pkcs=ALL-UNNAMED,java.base/sun.security.timestamp=ALL-UNNAMED,java.base/sun.security.x509=ALL-UNNAMED,java.base/sun.security.util=ALL-UNNAMED"
+EXTRAOPTS="-XaddExports:java.base/sun.misc=ALL-UNNAMED \
+ -XaddExports:java.base/sun.security.pkcs=ALL-UNNAMED \
+ -XaddExports:java.base/sun.security.timestamp=ALL-UNNAMED \
+ -XaddExports:java.base/sun.security.x509=ALL-UNNAMED \
+ -XaddExports:java.base/sun.security.util=ALL-UNNAMED"
 $JAVAC ${EXTRAOPTS} -d . ${TESTSRC}/TimestampCheck.java
 $JAVA ${TESTVMOPTS} ${EXTRAOPTS} "-Dtest.tool.vm.opts=${TESTTOOLVMOPTS}" TimestampCheck
 
