@@ -246,18 +246,6 @@ class fdStream : public outputStream {
   void flush() {};
 };
 
-class logStream : public outputStream {
-private:
-  stringStream _current_line;
-  void (*_log_func)(const char* fmt, ...) ATTRIBUTE_PRINTF(1, 2);
-public:
-  void write(const char* s, size_t len);
-  logStream(void (*log_func)(const char* fmt, ...)) : _log_func(log_func) {}
-  ~logStream() {
-    guarantee(_current_line.size() == 0, "Buffer not flushed. Missing call to print_cr()?");
-  }
-};
-
 void ostream_init();
 void ostream_init_log();
 void ostream_exit();
