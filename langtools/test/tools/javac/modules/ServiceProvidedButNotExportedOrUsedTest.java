@@ -29,8 +29,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main ServiceProvidedButNotExportedOrUsedTest
  */
 
@@ -38,6 +37,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ServiceProvidedButNotExportedOrUsedTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -55,13 +58,13 @@ public class ServiceProvidedButNotExportedOrUsedTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .outdir(classes)
                 .options("-Werror", "-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
         List<String> expected = Arrays.asList(
                 "module-info.java:1:12: compiler.warn.service.provided.but.not.exported.or.used: p1.C1",
                 "- compiler.err.warnings.and.werror",
@@ -86,13 +89,13 @@ public class ServiceProvidedButNotExportedOrUsedTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
         List<String> expected = Arrays.asList(
                 "module-info.java:1:39: compiler.err.service.implementation.not.in.right.module: m3",
                 "1 error");

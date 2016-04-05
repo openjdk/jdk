@@ -52,7 +52,7 @@ import static sun.management.AgentConfigurationError.*;
 import sun.management.jmxremote.ConnectorBootstrap;
 import sun.management.jdp.JdpController;
 import sun.management.jdp.JdpException;
-import sun.misc.VMSupport;
+import jdk.internal.vm.VMSupport;
 
 /**
  * This Agent is started by the VM when -Dcom.sun.management.snmp or

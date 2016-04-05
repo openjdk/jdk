@@ -27,11 +27,9 @@
  * @summary Checks Signature attribute for enum.
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.classfile
- *          jdk.jdeps/com.sun.tools.javap
- * @build TestBase TestResult InMemoryFileManager ToolBox
+ * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build EnumTest Driver ExpectedSignature ExpectedSignatureContainer
  * @run main Driver EnumTest
  */

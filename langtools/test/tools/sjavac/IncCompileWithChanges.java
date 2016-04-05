@@ -24,22 +24,23 @@
 /*
  * @test
  * @summary Verify incremental changes in gensrc are handled as expected
- * @ignore Requires dependency code to deal with in-method dependencies.
  * @bug 8054689
  * @author Fredrik O
  * @author sogoel (rewrite)
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
  *          jdk.jdeps/com.sun.tools.javap
- * @build Wrapper ToolBox
+ * @ignore Requires dependency code to deal with in-method dependencies.
+ * @build Wrapper toolbox.ToolBox
  * @run main Wrapper IncCompileWithChanges
  */
 
 import java.util.*;
 import java.nio.file.*;
+
+import toolbox.ToolBox;
 
 public class IncCompileWithChanges extends SJavacTester {
     public static void main(String... args) throws Exception {

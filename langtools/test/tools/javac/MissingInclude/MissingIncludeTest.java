@@ -28,12 +28,14 @@
  * doesn't exist.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main MissingIncludeTest
  */
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 // Original test: test/tools/javac/MissingInclude.sh
 public class MissingIncludeTest {
@@ -46,10 +48,10 @@ public class MissingIncludeTest {
 
         tb.writeFile(MissingIncludeFile, MissingIncludeSrc);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("@/nonexistent_file")
                 .files(MissingIncludeFile)
-                .run(ToolBox.Expect.FAIL);
+                .run(Task.Expect.FAIL);
     }
 
 }

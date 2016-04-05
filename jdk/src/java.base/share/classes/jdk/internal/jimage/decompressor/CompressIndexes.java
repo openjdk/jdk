@@ -42,107 +42,95 @@ import java.util.List;
  * to the jimage file provided by the shipped JDK by tools running on JDK 8.
  */
 public class CompressIndexes {
-    private static final int INTEGER_SIZE = 4;
+    private static final int COMPRESSED_FLAG = 1 << (Byte.SIZE - 1);
+    private static final int HEADER_WIDTH = 3;
+    private static final int HEADER_SHIFT = Byte.SIZE - HEADER_WIDTH;
 
     public static List<Integer> decompressFlow(byte[] values) {
         List<Integer> lst = new ArrayList<>();
-        for (int i = 0; i < values.length;) {
-            byte b = values[i];
-            int length = isCompressed(b) ? getLength(b) : INTEGER_SIZE;
+
+        for (int i = 0; i < values.length; i += getHeaderLength(values[i])) {
             int decompressed = decompress(values, i);
             lst.add(decompressed);
-            i += length;
         }
+
         return lst;
     }
 
     public static int readInt(DataInputStream cr) throws IOException {
-        byte[] b = new byte[1];
-        cr.readFully(b);
-        byte firstByte = b[0];
-        boolean compressed = CompressIndexes.isCompressed(firstByte);
-        int toRead = 4;
-        if(compressed) {
-            toRead = CompressIndexes.getLength(firstByte);
+        // Get header byte.
+        byte header = cr.readByte();
+        // Determine size.
+        int size = getHeaderLength(header);
+        // Prepare result.
+        int result = getHeaderValue(header);
+
+        // For each value byte
+        for (int i = 1; i < size; i++) {
+            // Merge byte value.
+            result <<= Byte.SIZE;
+            result |= cr.readByte() & 0xFF;
         }
-        byte[] content = new byte[toRead-1];
-        cr.readFully(content);
-        ByteBuffer bb = ByteBuffer.allocate(content.length+1);
-        bb.put(firstByte);
-        bb.put(content);
-        int index = CompressIndexes.decompress(bb.array(), 0);
-        return index;
+
+        return result;
     }
 
-    public static int getLength(byte b) {
-        return ((byte) (b & 0x60) >> 5);
+    private static boolean isCompressed(byte b) {
+        return (b & COMPRESSED_FLAG) != 0;
     }
 
-    public static boolean isCompressed(byte b) {
-        return b < 0;
+    private static int getHeaderLength(byte b) {
+        return isCompressed(b) ? (b >> HEADER_SHIFT) & 3 : Integer.BYTES;
+    }
+
+    private static int getHeaderValue(byte b) {
+        return isCompressed(b) ? b & (1 << HEADER_SHIFT) - 1 : b;
     }
 
     public static int decompress(byte[] value, int offset) {
-        byte b1 = value[offset];
-        ByteBuffer buffer = ByteBuffer.allocate(INTEGER_SIZE);
-        if (isCompressed(b1)) { // compressed
-            int length = getLength(b1);
-            byte clearedValue = (byte) (b1 & 0x1F);
+        // Get header byte.
+        byte header = value[offset];
+        // Determine size.
+        int size = getHeaderLength(header);
+        // Prepare result.
+        int result = getHeaderValue(header);
 
-            int start = INTEGER_SIZE - length;
-            buffer.put(start, clearedValue);
-            for (int i = offset + 1; i < offset + length; i++) {
-                buffer.put(++start, value[i]);
-            }
-        } else {
-            buffer.put(value, offset, INTEGER_SIZE);
+        // For each value byte
+        for (int i = 1; i < size; i++) {
+            // Merge byte value.
+            result <<= Byte.SIZE;
+            result |= value[offset + i] & 0xFF;
         }
-        return buffer.getInt(0);
+
+        return result;
     }
 
-    public static byte[] compress(int val) {
-        ByteBuffer result = ByteBuffer.allocate(4).putInt(val);
-        byte[] array = result.array();
-
-        if ((val & 0xFF000000) == 0) { // nothing on 4th
-            if ((val & 0x00FF0000) == 0) { // nothing on 3rd
-                if ((val & 0x0000FF00) == 0) { // nothing on 2nd
-                    if ((val & 0x000000E0) == 0) { // only in 1st, encode length in the byte.
-                        //sign bit and size 1 ==> 101X
-                        result = ByteBuffer.allocate(1);
-                        result.put((byte) (0xA0 | array[3]));
-                    } else { // add a byte for size
-                        //sign bit and size 2 ==> 110X
-                        result = ByteBuffer.allocate(2);
-                        result.put((byte) 0xC0);
-                        result.put(array[3]);
-                    }
-                } else { // content in 2nd
-                    if ((val & 0x0000E000) == 0) {// encode length in the byte.
-                        //sign bit and size 2 ==> 110X
-                        result = ByteBuffer.allocate(2);
-                        result.put((byte) (0xC0 | array[2]));
-                        result.put(array[3]);
-                    } else { // add a byte for size
-                        //sign bit and size 3 ==> 111X
-                        result = ByteBuffer.allocate(3);
-                        result.put((byte) 0xE0);
-                        result.put(array[2]);
-                        result.put(array[3]);
-                    }
-                }
-            } else {// content in 3rd
-                if ((val & 0x00E00000) == 0) {// encode length in the byte.
-                    //sign bit and size 3 ==> 111X
-                    result = ByteBuffer.allocate(3);
-                    result.put((byte) (0xE0 | array[1]));
-                    result.put(array[2]);
-                    result.put(array[3]);
-                } else { // add a byte, useless
-                    //
-                }
-            }
+    public static byte[] compress(int value) {
+        // Only positive values are supported.
+        if (value < 0) {
+            throw new  IllegalArgumentException("value < 0");
         }
-        return result.array();
+
+        // Determine number of significant digits.
+        int width = 32 - Integer.numberOfLeadingZeros(value);
+        // Determine number of byte to represent.  Allow for header if
+        // compressed.
+        int size = Math.min(((width + HEADER_WIDTH - 1) >> 3) + 1, Integer.BYTES);
+
+        // Allocate result buffer.
+        byte[] result = new byte[size];
+
+        // Insert significant bytes in result.
+        for (int i = 0; i < size; i++) {
+            result[i] = (byte)(value >> ((size - i - 1) * Byte.SIZE));
+        }
+
+        // If compressed, mark and insert size.
+        if (size < Integer.BYTES) {
+            result[0] |= (byte)(COMPRESSED_FLAG | (size << HEADER_SHIFT));
+        }
+
+        return result;
     }
+
 }
