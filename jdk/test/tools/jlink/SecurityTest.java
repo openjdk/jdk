@@ -25,7 +25,7 @@
  * @test
  * @summary Test JlinkPermission
  * @author Jean-Francois Denise
- * @run main SecurityTest
+ * @run main/othervm SecurityTest
  */
 
 import java.security.AccessControlException;
@@ -36,16 +36,11 @@ public class SecurityTest {
     public static void main(String[] args) throws Exception {
         new Jlink();
         System.setSecurityManager(new SecurityManager());
-        boolean failed = false;
         try {
             new Jlink();
-            failed = true;
-        } catch (AccessControlException ex) {
-            //XXX OK.
-        }
-        if (failed) {
             throw new Exception("Call should have failed");
+        } catch (AccessControlException ex) {
+            // expected exception
         }
-
     }
 }

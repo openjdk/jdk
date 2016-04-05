@@ -64,3 +64,8 @@ expectError('`text`', 'template literal', 'SyntaxError');
 expectError('`${ x }`', 'template literal', 'SyntaxError');
 expectError('`text ${ x } text`', 'template literal', 'SyntaxError');
 expectError('f`text`', 'template literal', 'SyntaxError');
+expectError('for (a of [1, 2, 3]) print(a)', 'for-of', 'SyntaxError');
+expectError('for (var a of [1, 2, 3]) print(a)', 'for-of', 'SyntaxError');
+expectError('for (let a of [1, 2, 3]) print(a)', 'for-of', 'SyntaxError');
+expectError('for (const a of [1, 2, 3]) print(a)', 'for-of', 'SyntaxError');
+

@@ -28,18 +28,16 @@ package jdk.internal.jshell.tool;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Feedback customization support
@@ -57,29 +55,38 @@ class Feedback {
     // Mapping of mode names to mode modes
     private final Map<String, Mode> modeMap = new HashMap<>();
 
+    // Mapping selector enum names to enums
+    private final Map<String, Selector<?>> selectorMap = new HashMap<>();
+
+    private static final long ALWAYS = bits(FormatCase.all, FormatAction.all, FormatWhen.all,
+            FormatResolve.all, FormatUnresolved.all, FormatErrors.all);
+    private static final long ANY = 0L;
+
     public boolean shouldDisplayCommandFluff() {
         return mode.commandFluff;
     }
 
     public String getPre() {
-        return mode.pre;
+        return mode.format("pre", ANY);
     }
 
     public String getPost() {
-        return mode.post;
+        return mode.format("post", ANY);
     }
 
     public String getErrorPre() {
-        return mode.errorPre;
+        return mode.format("errorpre", ANY);
     }
 
     public String getErrorPost() {
-        return mode.errorPost;
+        return mode.format("errorpost", ANY);
     }
 
-    public String getFormat(FormatCase fc, FormatWhen fw, FormatAction fa, FormatResolve fr,
-            boolean hasName, boolean hasType, boolean hasResult) {
-        return mode.getFormat(fc, fw, fa, fr, hasName, hasType, hasResult);
+    public String format(FormatCase fc, FormatAction fa, FormatWhen fw,
+                    FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
+                    String name, String type, String value, String unresolved, List<String> errorLines) {
+        return mode.format(fc, fa, fw, fr, fu, fe,
+                name, type, value, unresolved, errorLines);
     }
 
     public String getPrompt(String nextId) {
@@ -91,184 +98,76 @@ class Feedback {
     }
 
     public boolean setFeedback(JShellTool tool, ArgTokenizer at) {
-        return new FormatSetter(tool, at).setFeedback();
-    }
-
-    public boolean setField(JShellTool tool, ArgTokenizer at) {
-        return new FormatSetter(tool, at).setField();
+        return new Setter(tool, at).setFeedback();
     }
 
     public boolean setFormat(JShellTool tool, ArgTokenizer at) {
-        return new FormatSetter(tool, at).setFormat();
+        return new Setter(tool, at).setFormat();
     }
 
     public boolean setNewMode(JShellTool tool, ArgTokenizer at) {
-        return new FormatSetter(tool, at).setNewMode();
+        return new Setter(tool, at).setNewMode();
     }
 
     public boolean setPrompt(JShellTool tool, ArgTokenizer at) {
-        return new FormatSetter(tool, at).setPrompt();
+        return new Setter(tool, at).setPrompt();
     }
 
     public void printFeedbackHelp(JShellTool tool) {
-        new FormatSetter(tool, null).printFeedbackHelp();
-    }
-
-    public void printFieldHelp(JShellTool tool) {
-        new FormatSetter(tool, null).printFieldHelp();
+        new Setter(tool, null).printFeedbackHelp();
     }
 
     public void printFormatHelp(JShellTool tool) {
-        new FormatSetter(tool, null).printFormatHelp();
+        new Setter(tool, null).printFormatHelp();
     }
 
     public void printNewModeHelp(JShellTool tool) {
-        new FormatSetter(tool, null).printNewModeHelp();
+        new Setter(tool, null).printNewModeHelp();
     }
 
     public void printPromptHelp(JShellTool tool) {
-        new FormatSetter(tool, null).printPromptHelp();
+        new Setter(tool, null).printPromptHelp();
+    }
+
+    {
+        for (FormatCase e : EnumSet.allOf(FormatCase.class))
+            selectorMap.put(e.name().toLowerCase(Locale.US), e);
+        for (FormatAction e : EnumSet.allOf(FormatAction.class))
+            selectorMap.put(e.name().toLowerCase(Locale.US), e);
+        for (FormatResolve e : EnumSet.allOf(FormatResolve.class))
+            selectorMap.put(e.name().toLowerCase(Locale.US), e);
+        for (FormatUnresolved e : EnumSet.allOf(FormatUnresolved.class))
+            selectorMap.put(e.name().toLowerCase(Locale.US), e);
+        for (FormatErrors e : EnumSet.allOf(FormatErrors.class))
+            selectorMap.put(e.name().toLowerCase(Locale.US), e);
+        for (FormatWhen e : EnumSet.allOf(FormatWhen.class))
+            selectorMap.put(e.name().toLowerCase(Locale.US), e);
     }
 
     /**
      * Holds all the context of a mode mode
      */
-    private class Mode {
+    private static class Mode {
 
-        // Use name of mode mode
-
+        // Name of mode
         final String name;
 
         // Display command verification/information
         final boolean commandFluff;
 
-        // event cases: class, method
-        final EnumMap<FormatCase, EnumMap<FormatAction, EnumMap<FormatWhen, String>>> cases;
-
-        // action names: add. modified, replaced, ...
-        final EnumMap<FormatAction, EnumMap<FormatWhen, String>> actions;
-
-        // resolution status description format with %s for unresolved
-        final EnumMap<FormatResolve, EnumMap<FormatWhen, String>> resolves;
-
-        // primary snippet vs update
-        final EnumMap<FormatWhen, String> whens;
-
-        // fixed map of how to get format string for a field, given a specific formatting contet
-        final EnumMap<FormatField, Function<Context, String>> fields;
-
-        // format wrappers for name, type, and result
-        String fname = "%s";
-        String ftype = "%s";
-        String fresult = "%s";
-
-        // start and end, also used by hard-coded output
-        String pre = "|  ";
-        String post = "\n";
-        String errorPre = "|  Error: ";
-        String errorPost = "\n";
+        // Event cases: class, method, expression, ...
+        final Map<String, List<Setting>> cases;
 
         String prompt = "\n-> ";
         String continuationPrompt = ">> ";
 
-        /**
-         * The context of a specific mode to potentially display.
-         */
-        class Context {
-
-            final FormatCase fc;
-            final FormatAction fa;
-            final FormatResolve fr;
-            final FormatWhen fw;
-            final boolean hasName;
-            final boolean hasType;
-            final boolean hasResult;
-
-            Context(FormatCase fc, FormatWhen fw, FormatAction fa, FormatResolve fr,
-                    boolean hasName, boolean hasType, boolean hasResult) {
-                this.fc = fc;
-                this.fa = fa;
-                this.fr = fr;
-                this.fw = fw;
-                this.hasName = hasName;
-                this.hasType = hasType;
-                this.hasResult = hasResult;
+        static class Setting {
+            final long enumBits;
+            final String format;
+            Setting(long enumBits, String format) {
+                this.enumBits = enumBits;
+                this.format = format;
             }
-
-            String when() {
-                return whens.get(fw);
-            }
-
-            String action() {
-                return actions.get(fa).get(fw);
-            }
-
-            String resolve() {
-                return String.format(resolves.get(fr).get(fw), FormatField.RESOLVE.form);
-            }
-
-            String name() {
-                return hasName
-                        ? String.format(fname, FormatField.NAME.form)
-                        : "";
-            }
-
-            String type() {
-                return hasType
-                        ? String.format(ftype, FormatField.TYPE.form)
-                        : "";
-            }
-
-            String result() {
-                return hasResult
-                        ? String.format(fresult, FormatField.RESULT.form)
-                        : "";
-            }
-
-            /**
-             * Lookup format based on case, action, and whether it update.
-             * Replace fields with context specific formats.
-             *
-             * @return format string
-             */
-            String format() {
-                String format = cases.get(fc).get(fa).get(fw);
-                if (format == null) {
-                    return "";
-                }
-                Matcher m = FIELD_PATTERN.matcher(format);
-                StringBuffer sb = new StringBuffer(format.length());
-                while (m.find()) {
-                    String fieldName = m.group(1).toUpperCase(Locale.US);
-                    String sub = null;
-                    for (FormatField f : FormatField.values()) {
-                        if (f.name().startsWith(fieldName)) {
-                            sub = fields.get(f).apply(this);
-                            break;
-                        }
-                    }
-                    if (sub != null) {
-                        m.appendReplacement(sb, Matcher.quoteReplacement(sub));
-                    }
-                }
-                m.appendTail(sb);
-                return sb.toString();
-            }
-        }
-
-        {
-            // set fixed mappings of fields
-            fields = new EnumMap<>(FormatField.class);
-            fields.put(FormatField.WHEN, c -> c.when());
-            fields.put(FormatField.ACTION, c -> c.action());
-            fields.put(FormatField.RESOLVE, c -> c.resolve());
-            fields.put(FormatField.NAME, c -> c.name());
-            fields.put(FormatField.TYPE, c -> c.type());
-            fields.put(FormatField.RESULT, c -> c.result());
-            fields.put(FormatField.PRE, c -> pre);
-            fields.put(FormatField.POST, c -> post);
-            fields.put(FormatField.ERRORPRE, c -> errorPre);
-            fields.put(FormatField.ERRORPOST, c -> errorPost);
         }
 
         /**
@@ -280,41 +179,20 @@ class Feedback {
         Mode(String name, boolean commandFluff) {
             this.name = name;
             this.commandFluff = commandFluff;
-            cases = new EnumMap<>(FormatCase.class);
-            for (FormatCase fc : FormatCase.values()) {
-                EnumMap<FormatAction, EnumMap<FormatWhen, String>> ac = new EnumMap<>(FormatAction.class);
-                cases.put(fc, ac);
-                for (FormatAction fa : FormatAction.values()) {
-                    EnumMap<FormatWhen, String> aw = new EnumMap<>(FormatWhen.class);
-                    ac.put(fa, aw);
-                    for (FormatWhen fw : FormatWhen.values()) {
-                        aw.put(fw, "");
-                    }
-                }
-            }
+            cases = new HashMap<>();
+            add("name",       new Setting(ALWAYS, "%1$s"));
+            add("type",       new Setting(ALWAYS, "%2$s"));
+            add("value",      new Setting(ALWAYS, "%3$s"));
+            add("unresolved", new Setting(ALWAYS, "%4$s"));
+            add("errors",     new Setting(ALWAYS, "%5$s"));
+            add("err",        new Setting(ALWAYS, "%6$s"));
 
-            actions = new EnumMap<>(FormatAction.class);
-            for (FormatAction fa : FormatAction.values()) {
-                EnumMap<FormatWhen, String> afw = new EnumMap<>(FormatWhen.class);
-                actions.put(fa, afw);
-                for (FormatWhen fw : FormatWhen.values()) {
-                    afw.put(fw, fa.name() + "-" + fw.name());
-                }
-            }
+            add("errorline",  new Setting(ALWAYS, "    {err}%n"));
 
-            resolves = new EnumMap<>(FormatResolve.class);
-            for (FormatResolve fr : FormatResolve.values()) {
-                EnumMap<FormatWhen, String> arw = new EnumMap<>(FormatWhen.class);
-                resolves.put(fr, arw);
-                for (FormatWhen fw : FormatWhen.values()) {
-                    arw.put(fw, fr.name() + "-" + fw.name() + ": %s");
-                }
-            }
-
-            whens = new EnumMap<>(FormatWhen.class);
-            for (FormatWhen fw : FormatWhen.values()) {
-                whens.put(fw, fw.name());
-            }
+            add("pre",        new Setting(ALWAYS, "|  "));
+            add("post",       new Setting(ALWAYS, "%n"));
+            add("errorpre",   new Setting(ALWAYS, "|  "));
+            add("errorpost",  new Setting(ALWAYS, "%n"));
         }
 
         /**
@@ -322,132 +200,91 @@ class Feedback {
          *
          * @param name
          * @param commandFluff True if should display command fluff messages
-         * @param m Mode to copy
+         * @param m Mode to copy, or null for no fresh
          */
         Mode(String name, boolean commandFluff, Mode m) {
             this.name = name;
             this.commandFluff = commandFluff;
-            cases = new EnumMap<>(FormatCase.class);
-            for (FormatCase fc : FormatCase.values()) {
-                EnumMap<FormatAction, EnumMap<FormatWhen, String>> ac = new EnumMap<>(FormatAction.class);
-                EnumMap<FormatAction, EnumMap<FormatWhen, String>> mc = m.cases.get(fc);
-                cases.put(fc, ac);
-                for (FormatAction fa : FormatAction.values()) {
-                    EnumMap<FormatWhen, String> aw = new EnumMap<>(mc.get(fa));
-                    ac.put(fa, aw);
-                }
-            }
+            cases = new HashMap<>();
 
-            actions = new EnumMap<>(FormatAction.class);
-            for (FormatAction fa : FormatAction.values()) {
-                EnumMap<FormatWhen, String> afw = new EnumMap<>(m.actions.get(fa));
-                actions.put(fa, afw);
-            }
+            m.cases.entrySet().stream()
+                    .forEach(fes -> fes.getValue()
+                    .forEach(ing -> add(fes.getKey(), ing)));
 
-            resolves = new EnumMap<>(FormatResolve.class);
-            for (FormatResolve fr : FormatResolve.values()) {
-                EnumMap<FormatWhen, String> arw = new EnumMap<>(m.resolves.get(fr));
-                resolves.put(fr, arw);
-            }
-
-            whens = new EnumMap<>(m.whens);
-
-            this.fname = m.fname;
-            this.ftype = m.ftype;
-            this.fresult = m.fresult;
-            this.pre = m.pre;
-            this.post = m.post;
-            this.errorPre = m.errorPre;
-            this.errorPost = m.errorPost;
             this.prompt = m.prompt;
             this.continuationPrompt = m.continuationPrompt;
         }
 
-        String getFormat(FormatCase fc, FormatWhen fw, FormatAction fa, FormatResolve fr,
-                boolean hasName, boolean hasType, boolean hasResult) {
-            Context context = new Context(fc, fw, fa, fr,
-                    hasName, hasType, hasResult);
-            return context.format();
+        private boolean add(String field, Setting ing) {
+            List<Setting> settings =  cases.computeIfAbsent(field, k -> new ArrayList<>());
+            if (settings == null) {
+                return false;
+            }
+            settings.add(ing);
+            return true;
         }
 
-        void setCases(String format, Collection<FormatCase> cc, Collection<FormatAction> ca, Collection<FormatWhen> cw) {
-            for (FormatCase fc : cc) {
-                EnumMap<FormatAction, EnumMap<FormatWhen, String>> ma = cases.get(fc);
-                for (FormatAction fa : ca) {
-                    EnumMap<FormatWhen, String> mw = ma.get(fa);
-                    for (FormatWhen fw : cw) {
-                        mw.put(fw, format);
-                    }
+        void set(String field,
+                Collection<FormatCase> cc, Collection<FormatAction> ca, Collection<FormatWhen> cw,
+                Collection<FormatResolve> cr, Collection<FormatUnresolved> cu, Collection<FormatErrors> ce,
+                String format) {
+            long bits = bits(cc, ca, cw, cr, cu, ce);
+            set(field, bits, format);
+        }
+
+        void set(String field, long bits, String format) {
+            add(field, new Setting(bits, format));
+        }
+
+        /**
+         * Lookup format Replace fields with context specific formats.
+         *
+         * @return format string
+         */
+        String format(String field, long bits) {
+            List<Setting> settings = cases.get(field);
+            if (settings == null) {
+                return ""; //TODO error?
+            }
+            String format = null;
+            for (int i = settings.size() - 1; i >= 0; --i) {
+                Setting ing = settings.get(i);
+                long mask = ing.enumBits;
+                if ((bits & mask) == bits) {
+                    format = ing.format;
+                    break;
                 }
             }
-        }
-
-        void setActions(String format, Collection<FormatAction> ca, Collection<FormatWhen> cw) {
-            for (FormatAction fa : ca) {
-                EnumMap<FormatWhen, String> mw = actions.get(fa);
-                for (FormatWhen fw : cw) {
-                    mw.put(fw, format);
-                }
+            if (format == null || format.isEmpty()) {
+                return "";
             }
-        }
-
-        void setResolves(String format, Collection<FormatResolve> cr, Collection<FormatWhen> cw) {
-            for (FormatResolve fr : cr) {
-                EnumMap<FormatWhen, String> mw = resolves.get(fr);
-                for (FormatWhen fw : cw) {
-                    mw.put(fw, format);
-                }
+            Matcher m = FIELD_PATTERN.matcher(format);
+            StringBuffer sb = new StringBuffer(format.length());
+            while (m.find()) {
+                String fieldName = m.group(1);
+                String sub = format(fieldName, bits);
+                m.appendReplacement(sb, Matcher.quoteReplacement(sub));
             }
+            m.appendTail(sb);
+            return sb.toString();
         }
 
-        void setWhens(String format, Collection<FormatWhen> cw) {
-            for (FormatWhen fw : cw) {
-                whens.put(fw, format);
-            }
-        }
-
-        void setName(String s) {
-            fname = s;
-        }
-
-        void setType(String s) {
-            ftype = s;
-        }
-
-        void setResult(String s) {
-            fresult = s;
-        }
-
-        void setPre(String s) {
-            pre = s;
-        }
-
-        void setPost(String s) {
-            post = s;
-        }
-
-        void setErrorPre(String s) {
-            errorPre = s;
-        }
-
-        void setErrorPost(String s) {
-            errorPost = s;
-        }
-
-        String getPre() {
-            return pre;
-        }
-
-        String getPost() {
-            return post;
-        }
-
-        String getErrorPre() {
-            return errorPre;
-        }
-
-        String getErrorPost() {
-            return errorPost;
+        String format(FormatCase fc, FormatAction fa, FormatWhen fw,
+                    FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
+                    String name, String type, String value, String unresolved, List<String> errorLines) {
+            long bits = bits(fc, fa, fw, fr, fu, fe);
+            String fname = name==null? "" : name;
+            String ftype = type==null? "" : type;
+            String fvalue = value==null? "" : value;
+            String funresolved = unresolved==null? "" : unresolved;
+            String errors = errorLines.stream()
+                    .map(el -> String.format(
+                            format("errorline", bits),
+                            fname, ftype, fvalue, funresolved, "*cannot-use-errors-here*", el))
+                    .collect(joining());
+            return String.format(
+                    format("display", bits),
+                    fname, ftype, fvalue, funresolved, errors, "*cannot-use-err-here*");
         }
 
         void setPrompts(String prompt, String continuationPrompt) {
@@ -464,50 +301,82 @@ class Feedback {
         }
     }
 
-    /**
-     * The brace delimited substitutions
-     */
-    public enum FormatField {
-        WHEN,
-        ACTION,
-        RESOLVE("%1$s"),
-        NAME("%2$s"),
-        TYPE("%3$s"),
-        RESULT("%4$s"),
-        PRE,
-        POST,
-        ERRORPRE,
-        ERRORPOST;
-        String form;
+    // Representation of one instance of all the enum values as bits in a long
+    private static long bits(FormatCase fc, FormatAction fa, FormatWhen fw,
+            FormatResolve fr, FormatUnresolved fu, FormatErrors fe) {
+        long res = 0L;
+        res |= 1 << fc.ordinal();
+        res <<= FormatAction.count;
+        res |= 1 << fa.ordinal();
+        res <<= FormatWhen.count;
+        res |= 1 << fw.ordinal();
+        res <<= FormatResolve.count;
+        res |= 1 << fr.ordinal();
+        res <<= FormatUnresolved.count;
+        res |= 1 << fu.ordinal();
+        res <<= FormatErrors.count;
+        res |= 1 << fe.ordinal();
+        return res;
+    }
 
-        FormatField(String s) {
-            this.form = s;
-        }
+    // Representation of a space of enum values as or'edbits in a long
+    private static long bits(Collection<FormatCase> cc, Collection<FormatAction> ca, Collection<FormatWhen> cw,
+                Collection<FormatResolve> cr, Collection<FormatUnresolved> cu, Collection<FormatErrors> ce) {
+        long res = 0L;
+        for (FormatCase fc : cc)
+            res |= 1 << fc.ordinal();
+        res <<= FormatAction.count;
+        for (FormatAction fa : ca)
+            res |= 1 << fa.ordinal();
+        res <<= FormatWhen.count;
+        for (FormatWhen fw : cw)
+            res |= 1 << fw.ordinal();
+        res <<= FormatResolve.count;
+        for (FormatResolve fr : cr)
+            res |= 1 << fr.ordinal();
+        res <<= FormatUnresolved.count;
+        for (FormatUnresolved fu : cu)
+            res |= 1 << fu.ordinal();
+        res <<= FormatErrors.count;
+        for (FormatErrors fe : ce)
+            res |= 1 << fe.ordinal();
+        return res;
+    }
 
-        FormatField() {
-            this.form = null;
-        }
+    interface Selector<E extends Enum<E> & Selector<E>> {
+        SelectorCollector<E> collector(Setter.SelectorList sl);
+        String doc();
     }
 
     /**
      * The event cases
      */
-    public enum FormatCase {
-        IMPORT("import declaration: {action} {name}"),
-        CLASS("class, interface, enum, or annotation declaration: {action} {name} {resolve}"),
-        INTERFACE("class, interface, enum, or annotation declaration: {action} {name} {resolve}"),
-        ENUM("class, interface, enum, or annotation declaration: {action} {name} {resolve}"),
-        ANNOTATION("annotation interface declaration: {action} {name} {resolve}"),
-        METHOD("method declaration: {action} {name} {type}==parameter-types {resolve}"),
-        VARDECL("variable declaration: {action} {name} {type} {resolve}"),
-        VARDECLRECOVERABLE("recoverably failed variable declaration: {action} {name} {resolve}"),
-        VARINIT("variable declaration with init: {action} {name} {type} {resolve} {result}"),
-        VARRESET("variable reset on update: {action} {name}"),
-        EXPRESSION("expression: {action}=='Saved to scratch variable' {name} {type} {result}"),
-        VARVALUE("variable value expression: {action} {name} {type} {result}"),
-        ASSIGNMENT("assign variable: {action} {name} {type} {result}"),
-        STATEMENT("statement: {action}");
+    public enum FormatCase implements Selector<FormatCase> {
+        IMPORT("import declaration"),
+        CLASS("class declaration"),
+        INTERFACE("interface declaration"),
+        ENUM("enum declaration"),
+        ANNOTATION("annotation interface declaration"),
+        METHOD("method declaration -- note: {type}==parameter-types"),
+        VARDECL("variable declaration without init"),
+        VARINIT("variable declaration with init"),
+        EXPRESSION("expression -- note: {name}==scratch-variable-name"),
+        VARVALUE("variable value expression"),
+        ASSIGNMENT("assign variable"),
+        STATEMENT("statement");
         String doc;
+        static final EnumSet<FormatCase> all = EnumSet.allOf(FormatCase.class);
+        static final int count = all.size();
+
+        @Override
+        public SelectorCollector<FormatCase> collector(Setter.SelectorList sl) {
+            return sl.cases;
+        }
+
+        @Override
+        public String doc() {
+            return doc;
+        }
 
         private FormatCase(String doc) {
             this.doc = doc;
@@ -517,14 +386,26 @@ class Feedback {
     /**
      * The event actions
      */
-    public enum FormatAction {
+    public enum FormatAction implements Selector<FormatAction> {
         ADDED("snippet has been added"),
         MODIFIED("an existing snippet has been modified"),
         REPLACED("an existing snippet has been replaced with a new snippet"),
         OVERWROTE("an existing snippet has been overwritten"),
         DROPPED("snippet has been dropped"),
-        REJECTED("snippet has failed and been rejected");
+        USED("snippet was used when it cannot be");
         String doc;
+        static final EnumSet<FormatAction> all = EnumSet.allOf(FormatAction.class);
+        static final int count = all.size();
+
+        @Override
+        public SelectorCollector<FormatAction> collector(Setter.SelectorList sl) {
+            return sl.actions;
+        }
+
+        @Override
+        public String doc() {
+            return doc;
+        }
 
         private FormatAction(String doc) {
             this.doc = doc;
@@ -534,10 +415,22 @@ class Feedback {
     /**
      * When the event occurs: primary or update
      */
-    public enum FormatWhen {
+    public enum FormatWhen implements Selector<FormatWhen> {
         PRIMARY("the entered snippet"),
         UPDATE("an update to a dependent snippet");
         String doc;
+        static final EnumSet<FormatWhen> all = EnumSet.allOf(FormatWhen.class);
+        static final int count = all.size();
+
+        @Override
+        public SelectorCollector<FormatWhen> collector(Setter.SelectorList sl) {
+            return sl.whens;
+        }
+
+        @Override
+        public String doc() {
+            return doc;
+        }
 
         private FormatWhen(String doc) {
             this.doc = doc;
@@ -545,52 +438,129 @@ class Feedback {
     }
 
     /**
-     * Resolution problems with event
+     * Resolution problems
      */
-    public enum FormatResolve {
+    public enum FormatResolve implements Selector<FormatResolve> {
         OK("resolved correctly"),
         DEFINED("defined despite recoverably unresolved references"),
         NOTDEFINED("not defined because of recoverably unresolved references");
         String doc;
+        static final EnumSet<FormatResolve> all = EnumSet.allOf(FormatResolve.class);
+        static final int count = all.size();
+
+        @Override
+        public SelectorCollector<FormatResolve> collector(Setter.SelectorList sl) {
+            return sl.resolves;
+        }
+
+        @Override
+        public String doc() {
+            return doc;
+        }
 
         private FormatResolve(String doc) {
             this.doc = doc;
         }
     }
 
+    /**
+     * Count of unresolved references
+     */
+    public enum FormatUnresolved implements Selector<FormatUnresolved> {
+        UNRESOLVED0("no names are unresolved"),
+        UNRESOLVED1("one name is unresolved"),
+        UNRESOLVED2("two or more names are unresolved");
+        String doc;
+        static final EnumSet<FormatUnresolved> all = EnumSet.allOf(FormatUnresolved.class);
+        static final int count = all.size();
+
+        @Override
+        public SelectorCollector<FormatUnresolved> collector(Setter.SelectorList sl) {
+            return sl.unresolvedCounts;
+        }
+
+        @Override
+        public String doc() {
+            return doc;
+        }
+
+        private FormatUnresolved(String doc) {
+            this.doc = doc;
+        }
+    }
+
+    /**
+     * Count of unresolved references
+     */
+    public enum FormatErrors implements Selector<FormatErrors> {
+        ERROR0("no errors"),
+        ERROR1("one error"),
+        ERROR2("two or more errors");
+        String doc;
+        static final EnumSet<FormatErrors> all = EnumSet.allOf(FormatErrors.class);
+        static final int count = all.size();
+
+        @Override
+        public SelectorCollector<FormatErrors> collector(Setter.SelectorList sl) {
+            return sl.errorCounts;
+        }
+
+        @Override
+        public String doc() {
+            return doc;
+        }
+
+        private FormatErrors(String doc) {
+            this.doc = doc;
+        }
+    }
+
+    class SelectorCollector<E extends Enum<E> & Selector<E>> {
+        final EnumSet<E> all;
+        EnumSet<E> set = null;
+        SelectorCollector(EnumSet<E> all) {
+            this.all = all;
+        }
+        void add(Object o) {
+            @SuppressWarnings("unchecked")
+            E e = (E) o;
+            if (set == null) {
+                set = EnumSet.of(e);
+            } else {
+                set.add(e);
+            }
+        }
+
+        boolean isEmpty() {
+            return set == null;
+        }
+
+        EnumSet<E> getSet() {
+            return set == null
+                    ? all
+                    : set;
+        }
+    }
+
     // Class used to set custom eval output formats
-    // For both /set format  and /set field -- Parse arguments, setting custom format, or printing error
-    private class FormatSetter {
+    // For both /set format  -- Parse arguments, setting custom format, or printing error
+    private class Setter {
 
         private final ArgTokenizer at;
         private final JShellTool tool;
         boolean valid = true;
 
-        class Case<E1 extends Enum<E1>, E2 extends Enum<E2>, E3 extends Enum<E3>> {
-
-            Set<E1> e1;
-            Set<E2> e2;
-            Set<E3> e3;
-
-            Case(Set<E1> e1, Set<E2> e2, Set<E3> e3) {
-                this.e1 = e1;
-                this.e2 = e2;
-                this.e3 = e3;
-            }
-
-            Case(Set<E1> e1, Set<E2> e2) {
-                this.e1 = e1;
-                this.e2 = e2;
-            }
-        }
-
-        FormatSetter(JShellTool tool, ArgTokenizer at) {
+        Setter(JShellTool tool, ArgTokenizer at) {
             this.tool = tool;
             this.at = at;
         }
 
         void hard(String format, Object... args) {
             tool.hard(format, args);
+        }
+
+        void hardrb(String key) {
+            tool.hardrb(key);
         }
 
         <E extends Enum<E>> void hardEnums(EnumSet<E> es, Function<E, String> e2s) {
@@ -681,137 +651,31 @@ class Feedback {
         // For /set format <mode> "<format>" <selector>...
         boolean setFormat() {
             Mode m = nextMode();
-            String format = nextFormat();
-            if (valid) {
-                List<Case<FormatCase, FormatAction, FormatWhen>> specs = new ArrayList<>();
-                String s;
-                while ((s = at.next()) != null) {
-                    String[] d = s.split("-");
-                    specs.add(new Case<>(
-                            parseFormatCase(d, 0),
-                            parseFormatAction(d, 1),
-                            parseFormatWhen(d, 2)
-                    ));
-                }
-                if (valid && specs.isEmpty()) {
-                    errorat("At least one selector required");
-                    valid = false;
-                }
-                if (valid) {
-                    // set the format in the specified cases
-                    specs.stream()
-                            .forEach(c -> m.setCases(format, c.e1, c.e2, c.e3));
-                }
+            String field = at.next();
+            if (field == null || at.isQuoted()) {
+                errorat("Expected field name missing");
+                valid = false;
             }
-            if (!valid) {
+            String format = valid? nextFormat() : null;
+            String slRaw;
+            List<SelectorList> slList = new ArrayList<>();
+            while (valid && (slRaw = at.next()) != null) {
+                SelectorList sl = new SelectorList();
+                sl.parseSelectorList(slRaw);
+                slList.add(sl);
+            }
+            if (valid) {
+                if (slList.isEmpty()) {
+                    m.set(field, ALWAYS, format);
+                } else {
+                    slList.stream()
+                            .forEach(sl -> m.set(field,
+                                sl.cases.getSet(), sl.actions.getSet(), sl.whens.getSet(),
+                                sl.resolves.getSet(), sl.unresolvedCounts.getSet(), sl.errorCounts.getSet(),
+                                format));
+                }
+            } else {
                 fluff("See '/help /set format' for help");
-            }
-            return valid;
-        }
-
-        // For /set field mode <field> "<format>" <selector>...
-        boolean setField() {
-            Mode m = nextMode();
-            String fieldName = at.next();
-            FormatField field = parseFormatSelector(fieldName, EnumSet.allOf(FormatField.class), "field");
-            String format = nextFormat();
-            if (valid) {
-                switch (field) {
-                    case ACTION: {
-                        List<Case<FormatAction, FormatWhen, FormatWhen>> specs = new ArrayList<>();
-                        String s;
-                        while ((s = at.next()) != null) {
-                            String[] d = s.split("-");
-                            specs.add(new Case<>(
-                                    parseFormatAction(d, 0),
-                                    parseFormatWhen(d, 1)
-                            ));
-                        }
-                        if (valid && specs.isEmpty()) {
-                            errorat("At least one selector required");
-                            valid = false;
-                        }
-                        if (valid) {
-                            // set the format of the specified actions
-                            specs.stream()
-                                    .forEach(c -> m.setActions(format, c.e1, c.e2));
-                        }
-                        break;
-                    }
-                    case RESOLVE: {
-                        List<Case<FormatResolve, FormatWhen, FormatWhen>> specs = new ArrayList<>();
-                        String s;
-                        while ((s = at.next()) != null) {
-                            String[] d = s.split("-");
-                            specs.add(new Case<>(
-                                    parseFormatResolve(d, 0),
-                                    parseFormatWhen(d, 1)
-                            ));
-                        }
-                        if (valid && specs.isEmpty()) {
-                            errorat("At least one selector required");
-                            valid = false;
-                        }
-                        if (valid) {
-                            // set the format of the specified resolves
-                            specs.stream()
-                                    .forEach(c -> m.setResolves(format, c.e1, c.e2));
-                        }
-                        break;
-                    }
-                    case WHEN: {
-                        List<Case<FormatWhen, FormatWhen, FormatWhen>> specs = new ArrayList<>();
-                        String s;
-                        while ((s = at.next()) != null) {
-                            String[] d = s.split("-");
-                            specs.add(new Case<>(
-                                    parseFormatWhen(d, 1),
-                                    null
-                            ));
-                        }
-                        if (valid && specs.isEmpty()) {
-                            errorat("At least one selector required");
-                            valid = false;
-                        }
-                        if (valid) {
-                            // set the format of the specified whens
-                            specs.stream()
-                                    .forEach(c -> m.setWhens(format, c.e1));
-                        }
-                        break;
-                    }
-                    case NAME: {
-                        m.setName(format);
-                        break;
-                    }
-                    case TYPE: {
-                        m.setType(format);
-                        break;
-                    }
-                    case RESULT: {
-                        m.setResult(format);
-                        break;
-                    }
-                    case PRE: {
-                        m.setPre(format);
-                        break;
-                    }
-                    case POST: {
-                        m.setPost(format);
-                        break;
-                    }
-                    case ERRORPRE: {
-                        m.setErrorPre(format);
-                        break;
-                    }
-                    case ERRORPOST: {
-                        m.setErrorPost(format);
-                        break;
-                    }
-                }
-            }
-            if (!valid) {
-                fluff("See '/help /set field' for help");
             }
             return valid;
         }
@@ -843,12 +707,11 @@ class Feedback {
                 if (matches.length == 0) {
                     errorat("Does not match any current feedback mode: %s", umode);
                 } else {
-                    errorat("Matchs more then one current feedback mode: %s", umode);
+                    errorat("Matches more then one current feedback mode: %s", umode);
                 }
                 fluff("The feedback mode should be one of the following:");
                 modeMap.keySet().stream()
                         .forEach(mk -> fluff("   %s", mk));
-                fluff("You may also use just enough letters to make it unique.");
                 return null;
             }
         }
@@ -869,181 +732,75 @@ class Feedback {
             return format;
         }
 
-        final Set<FormatCase> parseFormatCase(String[] s, int i) {
-            return parseFormatSelectorStar(s, i, FormatCase.class, EnumSet.allOf(FormatCase.class), "case");
-        }
+        class SelectorList {
 
-        final Set<FormatAction> parseFormatAction(String[] s, int i) {
-            return parseFormatSelectorStar(s, i, FormatAction.class,
-                    EnumSet.of(FormatAction.ADDED, FormatAction.MODIFIED, FormatAction.REPLACED), "action");
-        }
+            SelectorCollector<FormatCase> cases = new SelectorCollector<>(FormatCase.all);
+            SelectorCollector<FormatAction> actions = new SelectorCollector<>(FormatAction.all);
+            SelectorCollector<FormatWhen> whens = new SelectorCollector<>(FormatWhen.all);
+            SelectorCollector<FormatResolve> resolves = new SelectorCollector<>(FormatResolve.all);
+            SelectorCollector<FormatUnresolved> unresolvedCounts = new SelectorCollector<>(FormatUnresolved.all);
+            SelectorCollector<FormatErrors> errorCounts = new SelectorCollector<>(FormatErrors.all);
 
-        final Set<FormatResolve> parseFormatResolve(String[] s, int i) {
-            return parseFormatSelectorStar(s, i, FormatResolve.class,
-                    EnumSet.of(FormatResolve.DEFINED, FormatResolve.NOTDEFINED), "resolve");
-        }
-
-        final Set<FormatWhen> parseFormatWhen(String[] s, int i) {
-            return parseFormatSelectorStar(s, i, FormatWhen.class, EnumSet.of(FormatWhen.PRIMARY), "when");
-        }
-
-        /**
-         * In a selector x-y-z , parse x, y, or z -- whether they are missing,
-         * or a comma separated list of identifiers and stars.
-         *
-         * @param <E> The enum this selector should belong to
-         * @param sa The array of selector strings
-         * @param i The index of which selector string to use
-         * @param klass The class of the enum that should be used
-         * @param defaults The set of enum values to use if the selector is
-         * missing
-         * @return The set of enum values specified by this selector
-         */
-        final <E extends Enum<E>> Set<E> parseFormatSelectorStar(String[] sa, int i, Class<E> klass, EnumSet<E> defaults, String label) {
-            String s = sa.length > i
-                    ? sa[i]
-                    : null;
-            if (s == null || s.isEmpty()) {
-                return defaults;
-            }
-            Set<E> set = EnumSet.noneOf(klass);
-            EnumSet<E> values = EnumSet.allOf(klass);
-            for (String as : s.split(",")) {
-                if (as.equals("*")) {
-                    set.addAll(values);
-                } else if (!as.isEmpty()) {
-                    set.add(parseFormatSelector(as, values, label));
+            final void parseSelectorList(String sl) {
+                for (String s : sl.split("-")) {
+                    SelectorCollector<?> lastCollector = null;
+                    for (String as : s.split(",")) {
+                        if (!as.isEmpty()) {
+                            Selector<?> sel = selectorMap.get(as);
+                            if (sel == null) {
+                                errorat("Not a valid selector %s in %s", as, s);
+                                valid = false;
+                                return;
+                            }
+                            SelectorCollector<?> collector = sel.collector(this);
+                            if (lastCollector == null) {
+                                if (!collector.isEmpty()) {
+                                    errorat("Selector kind in multiple sections of selector list %s in %s", as, s);
+                                    valid = false;
+                                    return;
+                                }
+                            } else if (collector != lastCollector) {
+                                errorat("Different selector kinds in same sections of selector list %s in %s", as, s);
+                                valid = false;
+                                return;
+                            }
+                            collector.add(sel);
+                            lastCollector = collector;
+                        }
+                    }
                 }
             }
-            return set;
-        }
-
-        /**
-         * In a x-y-a,b selector, parse an x, y, a, or b -- that is an
-         * identifier
-         *
-         * @param <E> The enum this selector should belong to
-         * @param s The string to parse: x, y, or z
-         * @param values The allowed of this enum
-         * @return The enum value
-         */
-        final <E extends Enum<E>> E parseFormatSelector(String s, EnumSet<E> values, String label) {
-            if (s == null) {
-                valid = false;
-                return null;
-            }
-            String u = s.toUpperCase(Locale.US);
-            for (E c : values) {
-                if (c.name().startsWith(u)) {
-                    return c;
-                }
-            }
-
-            errorat("Not a valid %s: %s, must be one of: %s", label, s,
-                    values.stream().map(v -> v.name().toLowerCase(Locale.US)).collect(Collectors.joining(" ")));
-            valid = false;
-            return values.iterator().next();
         }
 
         final void printFormatHelp() {
-            hard("Set the format for reporting a snippet event.");
-            hard("");
-            hard("/set format <mode> \"<format>\" <selector>...");
-            hard("");
-            hard("Where <mode> is the name of a previously defined feedback mode -- see '/help /set newmode'.");
-            hard("Where <format> is a quoted string which will have these field substitutions:");
-            hard("   {action}    == The action, e.g.: Added, Modified, Assigned, ...");
-            hard("   {name}      == The name, e.g.: the variable name, ...");
-            hard("   {type}      == The type name");
-            hard("   {resolve}   == Unresolved info, e.g.: ', however, it cannot be invoked until'");
-            hard("   {result}    == The result value");
-            hard("   {when}      == The entered snippet or a resultant update");
-            hard("   {pre}       == The feedback prefix");
-            hard("   {post}      == The feedback postfix");
-            hard("   {errorpre}  == The error prefix");
-            hard("   {errorpost} == The error postfix");
-            hard("Use '/set field' to set the format of these substitutions.");
-            hard("Where <selector> is the context in which the format is applied.");
-            hard("The structure of selector is: <case>[-<action>[-<when>]]");
-            hard("Where each field component may be missing (indicating defaults),");
-            hard("star (indicating all), or a comma separated list of field values.");
-            hard("For case, the field values are:");
+            hardrb("help.set.format");
+            hardrb("help.set.format.case");
             hardEnums(EnumSet.allOf(FormatCase.class), ev -> ev.doc);
-            hard("For action, the field values are:");
+            hardrb("help.set.format.action");
             hardEnums(EnumSet.allOf(FormatAction.class), ev -> ev.doc);
-            hard("For when, the field values are:");
+            hardrb("help.set.format.when");
             hardEnums(EnumSet.allOf(FormatWhen.class), ev -> ev.doc);
-            hard("");
-            hard("Example:");
-            hard("   /set format example '{pre}{action} variable {name}, reset to null{post}' varreset-*-update");
-        }
-
-        final void printFieldHelp() {
-            hard("Set the format of a field substitution as used in '/set format'.");
-            hard("");
-            hard("/set field <mode> <field> \"<format>\" <selector>...");
-            hard("");
-            hard("Where <mode> is the name of a previously defined feedback mode -- see '/set newmode'.");
-            hard("Where <field> is context-specific format to set, each with its own selector structure:");
-            hard("   action    == The action. The selector: <action>-<when>.");
-            hard("   name      == The name.  '%%s' is the name.  No selectors.");
-            hard("   type      == The type name.  '%%s' is the type. No selectors.");
-            hard("   resolve   == Unresolved info.  '%%s' is the unresolved list. The selector: <resolve>-<when>.");
-            hard("   result    == The result value.  '%%s' is the result value. No selectors.");
-            hard("   when      == The entered snippet or a resultant update. The selector: <when>");
-            hard("   pre       == The feedback prefix. No selectors.");
-            hard("   post      == The feedback postfix. No selectors.");
-            hard("   errorpre  == The error prefix. No selectors.");
-            hard("   errorpost == The error postfix. No selectors.");
-            hard("Where <format> is a quoted string -- see the description specific to the field (above).");
-            hard("Where <selector> is the context in which the format is applied (see above).");
-            hard("For action, the field values are:");
-            hardEnums(EnumSet.allOf(FormatAction.class), ev -> ev.doc);
-            hard("For when, the field values are:");
-            hardEnums(EnumSet.allOf(FormatWhen.class), ev -> ev.doc);
-            hard("For resolve, the field values are:");
+            hardrb("help.set.format.resolve");
             hardEnums(EnumSet.allOf(FormatResolve.class), ev -> ev.doc);
-            hard("");
-            hard("Example:");
-            hard("   /set field example resolve ' which cannot be invoked until%%s is declared' defined-update");
+            hardrb("help.set.format.unresolved");
+            hardEnums(EnumSet.allOf(FormatUnresolved.class), ev -> ev.doc);
+            hardrb("help.set.format.errors");
+            hardEnums(EnumSet.allOf(FormatErrors.class), ev -> ev.doc);
+            hardrb("help.set.format.end");
         }
 
         final void printFeedbackHelp() {
-            hard("Set the feedback mode describing displayed feedback for entered snippets and commands.");
-            hard("");
-            hard("/set feedback <mode>");
-            hard("");
-            hard("Where <mode> is the name of a previously defined feedback mode.");
-            hard("Currently defined feedback modes:");
+            hardrb("help.set.feedback");
             modeMap.keySet().stream()
                     .forEach(m -> hard("   %s", m));
-            hard("User-defined modes can be added, see '/help /set newmode'");
         }
 
         final void printNewModeHelp() {
-            hard("Create a user-defined feedback mode, optionally copying from an existing mode.");
-            hard("");
-            hard("/set newmode <new-mode> [command|quiet [<old-mode>]]");
-            hard("");
-            hard("Where <new-mode> is the name of a mode you wish to create.");
-            hard("Where <old-mode> is the name of a previously defined feedback mode.");
-            hard("If <old-mode> is present, its settings are copied to the new mode.");
-            hard("'command' vs 'quiet' determines if informative/verifying command feedback is displayed.");
-            hard("");
-            hard("Once the new mode is created, use '/set format', '/set field', and '/set prompt' to configure it.");
-            hard("Use '/set feedback' to use the new mode.");
+            hardrb("help.set.newmode");
         }
 
         final void printPromptHelp() {
-            hard("Set the prompts.  Both the normal prompt and the continuation-prompt must be set.");
-            hard("");
-            hard("/set prompt <mode> \"<prompt>\" \"<continuation-propmt>\"");
-            hard("");
-            hard("Where <mode> is the name of a previously defined feedback mode.");
-            hard("Where <prompt> and <continuation-propmt> are quoted strings printed as input promptds;");
-            hard("Both may optionally contain '%%s' which will be substituted with the next snippet id --");
-            hard("note that what is entered may not be assigned that id, for example it may be an error or command.");
-            hard("The continuation-prompt is used on the second and subsequent lines of a multi-line snippet.");
+            hardrb("help.set.prompt");
         }
     }
 }

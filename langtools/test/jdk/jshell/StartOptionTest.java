@@ -29,7 +29,7 @@
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
- * @build Compiler ToolBox
+ * @build Compiler toolbox.ToolBox
  * @run testng StartOptionTest
  */
 
@@ -54,7 +54,8 @@ public class StartOptionTest {
     private ByteArrayOutputStream err;
 
     private JShellTool getShellTool() {
-        return new JShellTool(null, new PrintStream(out), new PrintStream(err), null, null, null, null);
+        return new JShellTool(null, new PrintStream(out), new PrintStream(err), null, null, null,
+                              null, new ReplToolTesting.MemoryPreferences());
     }
 
     private String getOutput() {

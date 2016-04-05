@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main SingleModuleModeTest
  */
 
@@ -42,6 +41,10 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class SingleModuleModeTest extends ModuleTestBase{
 
@@ -61,12 +64,12 @@ public class SingleModuleModeTest extends ModuleTestBase{
         tb.writeJavaFiles(src.resolve("m1"), "module m1 { }");
         tb.writeJavaFiles(src.resolve("m2"), "module m2 { }");
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:1: compiler.err.too.many.modules"))
             throw new Exception("expected output not found");
@@ -79,7 +82,7 @@ public class SingleModuleModeTest extends ModuleTestBase{
                 "module m { }",
                 "class C { }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .classpath(src)
                 .files(src.resolve("C.java"))
                 .run()
@@ -95,13 +98,13 @@ public class SingleModuleModeTest extends ModuleTestBase{
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(classes)
                 .files(src.resolve("module-info.java"))
                 .run()
                 .writeAll();
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .classpath(classes)
                 .files(src.resolve("C.java"))
                 .run()
@@ -117,13 +120,13 @@ public class SingleModuleModeTest extends ModuleTestBase{
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(classes)
                 .files(src.resolve("module-info.java"))
                 .run()
                 .writeAll();
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-processor", VerifyUsesProvides.class.getName(),
                          "-processorpath", System.getProperty("test.classes"))
                 .outdir(classes)
@@ -142,7 +145,7 @@ public class SingleModuleModeTest extends ModuleTestBase{
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-processor", VerifyUsesProvides.class.getName(),
                          "-processorpath", System.getProperty("test.classes"))
                 .outdir(classes)

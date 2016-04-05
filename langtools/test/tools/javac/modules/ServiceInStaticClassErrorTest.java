@@ -29,14 +29,17 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main ServiceInStaticClassErrorTest
  */
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ServiceInStaticClassErrorTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -54,12 +57,12 @@ public class ServiceInStaticClassErrorTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .outdir(classes)
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
     }
 
 }

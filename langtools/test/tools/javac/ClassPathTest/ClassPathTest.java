@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,16 @@
  * @summary Test -classpath option and classpath defaults.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main ClassPathTest
  */
 
 import java.nio.file.Paths;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 // Original test: test/tools/javac/ClassPathTest/ClassPathTest.sh
 public class ClassPathTest {
@@ -100,55 +102,55 @@ public class ClassPathTest {
 //        automatically but this is not happening when called using ProcessBuilder
 
 //        testJavac success ClassPathTest3.java
-        tb.new JavacTask(ToolBox.Mode.EXEC)
+        new JavacTask(tb, Task.Mode.EXEC)
                 .classpath(".")
                 .files("ClassPathTest3.java")
                 .run();
 
 //        testJavac failure ClassPathTest1.java
-        tb.new JavacTask(ToolBox.Mode.EXEC)
+        new JavacTask(tb, Task.Mode.EXEC)
                 .classpath(".")
                 .files("ClassPathTest1.java")
-                .run(ToolBox.Expect.FAIL);
+                .run(Task.Expect.FAIL);
 
 //        testJavac success ClassPathTest2.java
-        tb.new JavacTask(ToolBox.Mode.EXEC)
+        new JavacTask(tb, Task.Mode.EXEC)
                 .envVar("CLASSPATH", "bar")
                 .files("ClassPathTest2.java")
                 .run();
 
 //        testJavac failure ClassPathTest1.java
-        tb.new JavacTask(ToolBox.Mode.EXEC)
+        new JavacTask(tb, Task.Mode.EXEC)
                 .envVar("CLASSPATH", "bar")
                 .files("ClassPathTest1.java")
-                .run(ToolBox.Expect.FAIL);
+                .run(Task.Expect.FAIL);
 
 //        testJavac failure ClassPathTest3.java
-        tb.new JavacTask(ToolBox.Mode.EXEC)
+        new JavacTask(tb, Task.Mode.EXEC)
                 .envVar("CLASSPATH", "bar")
                 .files("ClassPathTest3.java")
-                .run(ToolBox.Expect.FAIL);
+                .run(Task.Expect.FAIL);
 
 //        testJavac success -classpath foo ClassPathTest1.java
-        tb.new JavacTask(ToolBox.Mode.EXEC)
+        new JavacTask(tb, Task.Mode.EXEC)
                 .envVar("CLASSPATH", "bar")
                 .classpath("foo")
                 .files("ClassPathTest1.java")
                 .run();
 
 //        testJavac failure -classpath foo ClassPathTest2.java
-        tb.new JavacTask(ToolBox.Mode.EXEC)
+        new JavacTask(tb, Task.Mode.EXEC)
                 .envVar("CLASSPATH", "bar")
                 .classpath("foo")
                 .files("ClassPathTest2.java")
-                .run(ToolBox.Expect.FAIL);
+                .run(Task.Expect.FAIL);
 
 //        testJavac failure -classpath foo ClassPathTest3.java
-        tb.new JavacTask(ToolBox.Mode.EXEC)
+        new JavacTask(tb, Task.Mode.EXEC)
                 .envVar("CLASSPATH", "bar")
                 .classpath("foo")
                 .files("ClassPathTest3.java")
-                .run(ToolBox.Expect.FAIL);
+                .run(Task.Expect.FAIL);
     }
 
 }

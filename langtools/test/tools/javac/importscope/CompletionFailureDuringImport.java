@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,19 @@
  * @summary Verify that CompletionFailure thrown during listing of import content is handled properly.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
+ * @build toolbox.ToolBox toolbox.JavacTask
+ * @run main CompletionFailureDuringImport
  */
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class CompletionFailureDuringImport {
     public static void main(String... args) throws Exception {
@@ -45,7 +49,7 @@ public class CompletionFailureDuringImport {
     ToolBox tb = new ToolBox();
 
     void run() throws Exception {
-        tb.new JavacTask()
+        new JavacTask(tb)
           .outdir(".")
           .sources("package p; public class Super { public static final int I = 0; }",
                    "package p; public class Sub extends Super { }")
@@ -75,13 +79,13 @@ public class CompletionFailureDuringImport {
     }
 
     void doTest(String importText, String useText, String... expectedOutput) {
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                 .classpath(".")
                 .sources(importText + " public class Test { " + useText + " }")
                 .options("-XDrawDiagnostics")
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         if (!log.equals(Arrays.asList(expectedOutput))) {
             throw new AssertionError("Unexpected output: " + log);

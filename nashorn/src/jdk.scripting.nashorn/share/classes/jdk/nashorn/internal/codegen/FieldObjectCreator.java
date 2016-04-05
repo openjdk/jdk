@@ -120,6 +120,25 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
         }
     }
 
+    /**
+     * Create a scope for a for-in/of loop as defined in ES6 13.7.5.13 step 5.g.iii
+     *
+     * @param method the method emitter
+     */
+    void createForInIterationScope(final MethodEmitter method) {
+        assert fieldObjectClass != null;
+        assert isScope();
+        assert getMap() != null;
+
+        final String className = getClassName();
+        method._new(fieldObjectClass).dup();
+        loadMap(method); //load the map
+        loadScope(method);
+        // We create a scope identical to the currently active one, so use its parent as our parent
+        method.invoke(ScriptObject.GET_PROTO);
+        method.invoke(constructorNoLookup(className, PropertyMap.class, ScriptObject.class));
+    }
+
     @Override
     public void populateRange(final MethodEmitter method, final Type objectType, final int objectSlot, final int start, final int end) {
         method.load(objectType, objectSlot);

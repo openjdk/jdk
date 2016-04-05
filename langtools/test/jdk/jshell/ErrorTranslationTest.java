@@ -29,7 +29,7 @@
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
- * @build KullaTesting TestingInputStream ExpectedDiagnostic ToolBox Compiler
+ * @build KullaTesting TestingInputStream ExpectedDiagnostic toolbox.ToolBox Compiler
  * @run testng ErrorTranslationTest
  */
 

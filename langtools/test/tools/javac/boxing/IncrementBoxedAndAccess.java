@@ -25,16 +25,21 @@
  * @test
  * @bug 8143388
  * @summary Verify that boxed postfix operator works properly when referring to super class' field.
+ * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @library /tools/lib
+ * @build toolbox.ToolBox toolbox.JavacTask
+ * @run main IncrementBoxedAndAccess
  */
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class IncrementBoxedAndAccess {
     public static void main(String... args) throws IOException {
@@ -47,7 +52,7 @@ public class IncrementBoxedAndAccess {
         Path expected = Paths.get("expected");
         Files.createDirectories(expected);
         tb.cleanDirectory(expected);
-        tb.new JavacTask()
+        new JavacTask(tb)
           .sources("package p1;" +
                    "public class B {" +
                    "    protected Integer i;" +
@@ -68,7 +73,7 @@ public class IncrementBoxedAndAccess {
         Path actual = Paths.get("actual");
         Files.createDirectories(actual);
         tb.cleanDirectory(actual);
-        tb.new JavacTask()
+        new JavacTask(tb)
           .sources("package p1;" +
                    "public class B {" +
                    "    protected Integer i;" +

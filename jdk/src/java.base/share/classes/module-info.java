@@ -180,6 +180,8 @@ module java.base {
         jdk.jvmstat;
     exports jdk.internal.ref to
         java.desktop;
+    exports jdk.internal.util.jar to
+        jdk.jartool;
     exports sun.net to
         java.httpclient;
     exports sun.net.dns to
@@ -274,7 +276,6 @@ module java.base {
         jdk.localedata;
     exports sun.util.logging to
         java.desktop,
-        java.httpclient,
         java.logging,
         java.prefs;
 

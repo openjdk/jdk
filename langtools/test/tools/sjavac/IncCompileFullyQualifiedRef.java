@@ -25,20 +25,20 @@
  * @test
  * @summary Verify that "alfa.omega.A a" does create a proper dependency
  * @bug 8054689
- * @ignore Requires dependency code to deal with in-method dependencies.
  * @author Fredrik O
  * @author sogoel (rewrite)
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
- *          jdk.jdeps/com.sun.tools.javap
- * @build Wrapper ToolBox
+ * @ignore Requires dependency code to deal with in-method dependencies.
+ * @build Wrapper toolbox.ToolBox
  * @run main Wrapper IncCompileFullyQualifiedRef
  */
 
 import java.util.Map;
+
+import toolbox.ToolBox;
 
 public class IncCompileFullyQualifiedRef extends SJavacTester {
     public static void main(String... args) throws Exception {

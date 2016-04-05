@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,16 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main RequiresPublicTest
  */
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class RequiresPublicTest extends ModuleTestBase {
 
@@ -55,7 +58,7 @@ public class RequiresPublicTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .files(findJavaFiles(src))
                 .outdir(classes)
                 .run()
@@ -74,13 +77,13 @@ public class RequiresPublicTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
                 .outdir(classes.toString()) // should allow Path here
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("Test.java:1:27: compiler.err.doesnt.exist: com.sun.source.tree"))
             throw new Exception("expected output not found");
@@ -92,7 +95,7 @@ public class RequiresPublicTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-modulesourcepath", src.toString())
                 .files(findJavaFiles(src))
                 .outdir(classes)
@@ -108,14 +111,14 @@ public class RequiresPublicTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", src.toString())
                 .files(findJavaFiles(src))
                 .outdir(classes)
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         String[] expect = {
             "C1.java:5:10: compiler.err.not.def.access.package.cant.access: p5.C5, p5",

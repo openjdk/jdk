@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4973609 8015249 8025633 8026567 6469561
+ * @bug      4973609 8015249 8025633 8026567 6469561 8071982
  * @summary  Make sure that annotation types with 0 members does not have
  *           extra HR tags.
  * @author   jamieh
@@ -42,7 +42,7 @@ public class TestAnnotationTypes extends JavadocTester {
 
     @Test
     void test() {
-        javadoc("-d", "out",
+        javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -90,5 +90,27 @@ public class TestAnnotationTypes extends JavadocTester {
                 + "<P>\n\n"
                 + "<P>"
                 + "<!-- ========= END OF CLASS DATA ========= -->" + "<HR>");
+
+        javadoc("-d", "out-2",
+                "-linksource",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("src-html/pkg/AnnotationType.html", true,
+                "<title>Source code</title>",
+                "@Documented public @interface AnnotationType {");
+
+        checkOutput("src-html/pkg/AnnotationTypeField.html", true,
+                "<title>Source code</title>",
+                "@Documented public @interface AnnotationTypeField {");
+
+        checkOutput("pkg/AnnotationType.html", true,
+                "public @interface <a href=\"../src-html/pkg/AnnotationType.html#line.34"
+                + "\">AnnotationType</a></pre>");
+
+        checkOutput("pkg/AnnotationTypeField.html", true,
+                "public @interface <a href=\"../src-html/pkg/AnnotationTypeField.html#line.31"
+                + "\">AnnotationTypeField</a></pre>");
     }
 }

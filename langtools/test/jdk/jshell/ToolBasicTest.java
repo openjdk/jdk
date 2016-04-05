@@ -24,11 +24,12 @@
 /*
  * @test
  * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317
- * @requires os.family != "solaris"
  * @summary Tests for Basic tests for REPL tool
+ * @requires os.family != "solaris"
  * @library /tools/lib
  * @ignore 8139873
- * @build KullaTesting TestingInputStream ToolBox Compiler
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
+ * @build KullaTesting TestingInputStream Compiler
  * @run testng/timeout=600 ToolBasicTest
  */
 
@@ -755,13 +756,13 @@ public class ToolBasicTest extends ReplToolTesting {
     public void testDrop() {
         test(false, new String[]{"-nostartup"},
                 a -> assertVariable(a, "int", "a"),
-                a -> dropVariable(a, "/drop 1", "int a = 0"),
+                a -> dropVariable(a, "/drop 1", "int a = 0", "|  Dropped variable a\n"),
                 a -> assertMethod(a, "int b() { return 0; }", "()I", "b"),
-                a -> dropMethod(a, "/drop 2", "b ()I"),
+                a -> dropMethod(a, "/drop 2", "b ()I", "|  Dropped method b()\n"),
                 a -> assertClass(a, "class A {}", "class", "A"),
-                a -> dropClass(a, "/drop 3", "class A"),
+                a -> dropClass(a, "/drop 3", "class A", "|  Dropped class A\n"),
                 a -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
-                a -> dropImport(a, "/drop 4", "import java.util.stream.*"),
+                a -> dropImport(a, "/drop 4", "import java.util.stream.*", ""),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
                 a -> assertCommandCheckOutput(a, "/classes", assertClasses()),
@@ -769,11 +770,11 @@ public class ToolBasicTest extends ReplToolTesting {
         );
         test(false, new String[]{"-nostartup"},
                 a -> assertVariable(a, "int", "a"),
-                a -> dropVariable(a, "/drop a", "int a = 0"),
+                a -> dropVariable(a, "/drop a", "int a = 0", "|  Dropped variable a\n"),
                 a -> assertMethod(a, "int b() { return 0; }", "()I", "b"),
-                a -> dropMethod(a, "/drop b", "b ()I"),
+                a -> dropMethod(a, "/drop b", "b ()I", "|  Dropped method b()\n"),
                 a -> assertClass(a, "class A {}", "class", "A"),
-                a -> dropClass(a, "/drop A", "class A"),
+                a -> dropClass(a, "/drop A", "class A", "|  Dropped class A\n"),
                 a -> assertCommandCheckOutput(a, "/vars", assertVariables()),
                 a -> assertCommandCheckOutput(a, "/methods", assertMethods()),
                 a -> assertCommandCheckOutput(a, "/classes", assertClasses()),

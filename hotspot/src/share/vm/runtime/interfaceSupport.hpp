@@ -521,9 +521,9 @@ class RuntimeHistogramElement : public HistogramElement {
     JNI_ENTRY_NO_PRESERVE(result_type, header)                       \
     WeakPreserveExceptionMark __wem(thread);
 
-#define JNI_ENTRY_NO_PRESERVE(result_type, header)             \
+#define JNI_ENTRY_NO_PRESERVE(result_type, header)                   \
 extern "C" {                                                         \
-  result_type JNICALL header {                                \
+  result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
     ThreadInVMfromNative __tiv(thread);                              \
@@ -535,7 +535,7 @@ extern "C" {                                                         \
 // a GC, is called outside the NoHandleMark (set via VM_QUICK_ENTRY_BASE).
 #define JNI_QUICK_ENTRY(result_type, header)                         \
 extern "C" {                                                         \
-  result_type JNICALL header {                                \
+  result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
     ThreadInVMfromNative __tiv(thread);                              \
@@ -545,7 +545,7 @@ extern "C" {                                                         \
 
 #define JNI_LEAF(result_type, header)                                \
 extern "C" {                                                         \
-  result_type JNICALL header {                                \
+  result_type JNICALL header {                                       \
     JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
     assert( !VerifyJNIEnvThread || (thread == Thread::current()), "JNIEnv is only valid in same thread"); \
     VM_LEAF_BASE(result_type, header)

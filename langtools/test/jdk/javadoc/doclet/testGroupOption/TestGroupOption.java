@@ -25,7 +25,7 @@
  * @test
  * @bug      4924383
  * @summary  Test to make sure the -group option does not cause a bad warning
- *           to be printed.
+ *           to be printed. Test for the group defined using patterns.
  * @author   jamieh
  * @library  ../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -42,7 +42,7 @@ public class TestGroupOption extends JavadocTester {
 
     @Test
     void test1() {
-        //Make sure the warning is not printed when -group is used correctly.
+        // Make sure the warning is not printed when -group is used correctly.
         javadoc("-d", "out-1",
                 "-sourcepath", testSrc,
                 "-group", "Package One", "pkg1",
@@ -55,10 +55,28 @@ public class TestGroupOption extends JavadocTester {
                 "-group");
     }
 
-    @Test
+    // @Test
+    // @ignore 8149402
+    // Make sure the "Other packages" section is printed and the header for empty section is not.
+    // Make sure that the headers of group that is defined using patterns are printed.
     void test2() {
-        //Make sure the warning is printed when -group is not used correctly.
         javadoc("-d", "out-2",
+                "-sourcepath", testSrc,
+                "-group", "Group pkg*", "pkg*",
+                "-group", "Group abc*", "abc*",
+                "-group", "Empty group", "qwerty*",
+                "-group", "Group a*", "a*",
+                "pkg1", "pkg2", "pkg3", "abc1",  "abc2", "abc3", "other", testSrc("C.java"));
+        checkExit(Exit.OK);
+
+        checkOutput("overview-summary.html", true, "Group pkg*", "Group abc*", "Other Packages");
+        checkOutput("overview-summary.html", false, "Empty group", "Group a*");
+    }
+
+    @Test
+    void test3() {
+        // Make sure the warning is printed when -group is not used correctly.
+        javadoc("-d", "out-3",
                 "-sourcepath", testSrc,
                 "-group", "Package One", "pkg1",
                 "-group", "Package One", "pkg2",

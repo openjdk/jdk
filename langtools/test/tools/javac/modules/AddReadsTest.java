@@ -28,7 +28,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask toolbox.JavapTask ModuleTestBase
  * @run main AddReadsTest
  */
 
@@ -44,6 +44,12 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.ElementFilter;
+
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.JavapTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class AddReadsTest extends ModuleTestBase {
 
@@ -65,20 +71,20 @@ public class AddReadsTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                          "-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("Test.java:1:44: compiler.err.not.def.access.package.cant.access: api.Api, api"))
             throw new Exception("expected output not found");
 
         //test add dependencies:
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-XaddReads:m2=m1",
                          "-modulesourcepath", src.toString(),
                          "-processor", VerifyRequires.class.getName())
@@ -87,17 +93,17 @@ public class AddReadsTest extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        String decompiled = tb.new JavapTask()
+        String decompiled = new JavapTask(tb)
                 .options("-verbose", classes.resolve("m2").resolve("module-info.class").toString())
                 .run()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (decompiled.contains("m1")) {
             throw new Exception("Incorrectly refers to m1 module.");
         }
 
         //cyclic dependencies OK when created through addReads:
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-XaddReads:m2=m1,m1=m2",
                          "-modulesourcepath", src.toString())
                 .outdir(classes)
@@ -108,7 +114,7 @@ public class AddReadsTest extends ModuleTestBase {
         tb.writeJavaFiles(src_m2,
                           "module m2 { requires m1; }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-XaddReads:m1=m2",
                          "-modulesourcepath", src.toString())
                 .outdir(classes)
@@ -158,7 +164,7 @@ public class AddReadsTest extends ModuleTestBase {
                           "module m1 { }",
                           "package impl; public class Impl { api.Api api; }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .options("-classpath", jar.toString(),
                    "-XaddReads:m1=ALL-UNNAMED",
                    "-XDrawDiagnostics")
@@ -184,7 +190,7 @@ public class AddReadsTest extends ModuleTestBase {
                           "package api; public class Api { public static void test() { } }",
                           "package impl; public class Impl { { api.Api.test(); } }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .options("-classpath", jar.toString(),
                    "-modulesourcepath", moduleSrc.toString(),
                    "-XaddReads:m1=ALL-UNNAMED",
@@ -206,7 +212,7 @@ public class AddReadsTest extends ModuleTestBase {
         tb.writeJavaFiles(src,
                           "package impl; public class Impl { api.Api a; }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .options("-classpath", jar.toString(),
                    "-XaddReads:java.base=ALL-UNNAMED",
                    "-Xmodule:java.base")
@@ -226,7 +232,7 @@ public class AddReadsTest extends ModuleTestBase {
         tb.writeJavaFiles(src,
                           "package impl; public class Impl { javax.swing.JButton b; }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .options("-XaddReads:java.base=java.desktop",
                    "-Xmodule:java.base")
           .outdir(classes)
@@ -242,13 +248,13 @@ public class AddReadsTest extends ModuleTestBase {
         Path legacyClasses = base.resolve("legacy-classes");
         Files.createDirectories(legacyClasses);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options()
                 .outdir(legacyClasses)
                 .files(findJavaFiles(legacySrc))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty()) {
             throw new Exception("unexpected output: " + log);
@@ -260,7 +266,7 @@ public class AddReadsTest extends ModuleTestBase {
 
         Path jar = lib.resolve("test-api-1.0.jar");
 
-        tb.new JarTask(jar)
+        new JarTask(tb, jar)
           .baseDir(legacyClasses)
           .files("api/Api.class")
           .run();
@@ -278,7 +284,7 @@ public class AddReadsTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
@@ -293,7 +299,7 @@ public class AddReadsTest extends ModuleTestBase {
         tb.writeJavaFiles(unnamedSrc,
                           "package impl; public class Impl { }");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .options("-XaddReads:m1=ALL-UNNAMED",
                    "-Xmodule:m1",
                    "-modulepath", classes.toString())

@@ -27,12 +27,10 @@
  * @summary javac, previous solution for JDK-8022186 was incorrect
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.classfile
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main NoDeadCodeGenerationOnTrySmtTest
  */
 
@@ -44,6 +42,9 @@ import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.Code_attribute.Exception_data;
 import com.sun.tools.classfile.Method;
 import com.sun.tools.javac.util.Assert;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class NoDeadCodeGenerationOnTrySmtTest {
 
@@ -93,7 +94,7 @@ public class NoDeadCodeGenerationOnTrySmtTest {
     }
 
     void compileTestClass() throws Exception {
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .sources(testSource)
                 .run();
     }

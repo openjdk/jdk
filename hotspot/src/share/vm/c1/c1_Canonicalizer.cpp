@@ -257,7 +257,38 @@ void Canonicalizer::do_ArrayLength    (ArrayLength*     x) {
   }
 }
 
-void Canonicalizer::do_LoadIndexed    (LoadIndexed*     x) {}
+void Canonicalizer::do_LoadIndexed    (LoadIndexed*     x) {
+  StableArrayConstant* array = x->array()->type()->as_StableArrayConstant();
+  IntConstant* index = x->index()->type()->as_IntConstant();
+
+  assert(array == NULL || FoldStableValues, "not enabled");
+
+  // Constant fold loads from stable arrays.
+  if (array != NULL && index != NULL) {
+    jint idx = index->value();
+    if (idx < 0 || idx >= array->value()->length()) {
+      // Leave the load as is. The range check will handle it.
+      return;
+    }
+
+    ciConstant field_val = array->value()->element_value(idx);
+    if (!field_val.is_null_or_zero()) {
+      jint dimension = array->dimension();
+      assert(dimension <= array->value()->array_type()->dimension(), "inconsistent info");
+      ValueType* value = NULL;
+      if (dimension > 1) {
+        // Preserve information about the dimension for the element.
+        assert(field_val.as_object()->is_array(), "not an array");
+        value = new StableArrayConstant(field_val.as_object()->as_array(), dimension - 1);
+      } else {
+        assert(dimension == 1, "sanity");
+        value = as_ValueType(field_val);
+      }
+      set_canonical(new Constant(value));
+    }
+  }
+}
+
 void Canonicalizer::do_StoreIndexed   (StoreIndexed*    x) {
   // If a value is going to be stored into a field or array some of
   // the conversions emitted by javac are unneeded because the fields
@@ -471,7 +502,7 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
     InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
     if (c != NULL && !c->value()->is_null_object()) {
       // ciInstance::java_mirror_type() returns non-NULL only for Java mirrors
-      ciType* t = c->value()->as_instance()->java_mirror_type();
+      ciType* t = c->value()->java_mirror_type();
       if (t->is_klass()) {
         // substitute cls.isInstance(obj) of a constant Class into
         // an InstantOf instruction
@@ -484,6 +515,17 @@ void Canonicalizer::do_Intrinsic      (Intrinsic*       x) {
         // cls.isInstance(obj) always returns false for primitive classes
         set_constant(0);
       }
+    }
+    break;
+  }
+  case vmIntrinsics::_isPrimitive        : {
+    assert(x->number_of_arguments() == 1, "wrong type");
+
+    // Class.isPrimitive is known on constant classes:
+    InstanceConstant* c = x->argument_at(0)->type()->as_InstanceConstant();
+    if (c != NULL && !c->value()->is_null_object()) {
+      ciType* t = c->value()->java_mirror_type();
+      set_constant(t->is_primitive_type());
     }
     break;
   }

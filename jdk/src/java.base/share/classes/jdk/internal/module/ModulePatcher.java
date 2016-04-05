@@ -51,9 +51,9 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import jdk.internal.loader.Resource;
 import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.misc.SharedSecrets;
-import sun.misc.Resource;
 import sun.net.www.ParseUtil;
 
 
