@@ -57,9 +57,6 @@ class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
   // (if any) to the collection set.
   size_t _bytes_used_before;
 
-  // The sum of live bytes in the collection set, set as described above.
-  size_t _bytes_live_before;
-
   size_t _recorded_rs_lengths;
 
   // The associated information that is maintained while the incremental
@@ -83,9 +80,6 @@ class G1CollectionSet VALUE_OBJ_CLASS_SPEC {
   // Used to set _collection_set_bytes_used_before at the start of
   // an evacuation pause.
   size_t _inc_bytes_used_before;
-
-  // The number of live bytes in the incrementally built collection set.
-  size_t _inc_bytes_live_before;
 
   // The RSet lengths recorded for regions in the CSet. It is updated
   // by the thread that adds a new region to the CSet. We assume that
@@ -177,10 +171,6 @@ public:
 
   void reset_bytes_used_before() {
     _bytes_used_before = 0;
-  }
-
-  void reset_bytes_live_before() {
-    _bytes_live_before = 0;
   }
 
   // Choose a new collection set.  Marks the chosen regions as being
