@@ -656,7 +656,7 @@
                                                                                                                   \
   /* JVMTI/java.lang.instrument support and VM Attach mechanism */                                                \
   template(jdk_internal_module_Modules,                "jdk/internal/module/Modules")                             \
-  template(sun_misc_VMSupport,                         "sun/misc/VMSupport")                                      \
+  template(jdk_internal_vm_VMSupport,                  "jdk/internal/vm/VMSupport")                               \
   template(transformedByAgent_name,                    "transformedByAgent")                                      \
   template(transformedByAgent_signature,               "(Ljava/lang/reflect/Module;)V")                           \
   template(appendToClassPathForInstrumentation_name,   "appendToClassPathForInstrumentation")                     \

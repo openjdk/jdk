@@ -27,14 +27,15 @@
  * @summary javah should accept module/class names
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavahTask
  * @run main ModuleClass
  */
 
 import java.util.List;
+
+import toolbox.JavahTask;
+import toolbox.ToolBox;
 
 public class ModuleClass {
     static public void main(String[] args) throws Exception {
@@ -44,7 +45,7 @@ public class ModuleClass {
     }
 
     static void check(ToolBox tb, String name) throws Exception {
-        tb.new JavahTask()
+        new JavahTask(tb)
                 .classes(name)
                 .run();
 

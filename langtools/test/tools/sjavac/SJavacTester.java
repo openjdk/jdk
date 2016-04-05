@@ -28,6 +28,8 @@ import java.nio.file.attribute.*;
 
 import com.sun.tools.sjavac.Main;
 
+import toolbox.ToolBox;
+
 public class SJavacTester {
 
     final ToolBox tb = new ToolBox();

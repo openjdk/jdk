@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main PackageConflictTest
  */
 
@@ -37,6 +36,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class PackageConflictTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -52,13 +55,13 @@ public class PackageConflictTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("MyList.java:1:1: compiler.err.package.in.other.module: java.base"))
             throw new Exception("expected output not found");
@@ -77,7 +80,7 @@ public class PackageConflictTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
           .options("-Werror", "-modulesourcepath", base.toString())
           .outdir(classes)
           .files(findJavaFiles(base))
@@ -102,13 +105,13 @@ public class PackageConflictTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                        .options("-XDrawDiagnostics", "-modulesourcepath", base.toString())
                        .outdir(classes)
                        .files(findJavaFiles(base))
-                       .run(ToolBox.Expect.FAIL)
+                       .run(Task.Expect.FAIL)
                        .writeAll()
-                       .getOutputLines(ToolBox.OutputKind.DIRECT);
+                       .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected =
                 Arrays.asList("module-info.java:1:1: compiler.err.package.clash.from.requires: m3, test, m1, m2",
@@ -131,13 +134,13 @@ public class PackageConflictTest extends ModuleTestBase {
                 .classes("package pack; public class B { pack.A f; }")
                 .write(modules);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-mp", modules.toString())
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(modules.resolve("M")))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("B.java:1:1: compiler.err.package.in.other.module: N"))
             throw new Exception("expected output not found");
@@ -156,13 +159,13 @@ public class PackageConflictTest extends ModuleTestBase {
                 .classes("package pack; public class C { publ.B b; }")
                 .write(modules);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", modules + "/*/src")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(modules))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains(""))
             throw new Exception("unexpected output not found");
@@ -182,13 +185,13 @@ public class PackageConflictTest extends ModuleTestBase {
                 .classes("package pack; public class C { publ.B b; }")
                 .write(modules);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-mp", modules.toString())
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(modules.resolve("M")))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains(""))
             throw new Exception("expected output not found");
@@ -212,13 +215,13 @@ public class PackageConflictTest extends ModuleTestBase {
                 .classes("package pkg; public class C { pack.A a; pack.B b; }")
                 .write(modules);
 
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-mp", modules.toString())
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(modules.resolve("K")))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected =
                 Arrays.asList("module-info.java:1:1: compiler.err.package.clash.from.requires: K, pack, M, N",
@@ -244,11 +247,11 @@ public class PackageConflictTest extends ModuleTestBase {
                 .requires("N")
                 .classes("package p; public class DependsOnN { boolean f = pkg.A.flagN; } ")
                 .write(modules);
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", modules + "/*/src")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(modules.resolve("K")))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
 
         //negative case
@@ -256,14 +259,14 @@ public class PackageConflictTest extends ModuleTestBase {
                 .classes("package p; public class DependsOnM { boolean f = pkg.A.flagM; } ")
                 .write(modules);
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", modules + "/*/src")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(modules.resolve("K")))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList(
                 "DependsOnM.java:1:55: compiler.err.cant.resolve.location: kindname.variable, flagM, , , (compiler.misc.location: kindname.class, pkg.A, null)");

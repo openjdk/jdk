@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@
  * @summary javah doesn't produce proper signatures for inner class native methods
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavahTask
  * @run main T6257087
  */
 
 import java.util.List;
+
+import toolbox.JavahTask;
+import toolbox.ToolBox;
 
 public class T6257087 {
 
@@ -63,7 +64,7 @@ public class T6257087 {
 
     public static void main(String[] args) throws Exception {
         ToolBox tb = new ToolBox();
-        tb.new JavahTask()
+        new JavahTask(tb)
                 .classpath(ToolBox.testClasses)
                 .classes("foo")
                 .run();

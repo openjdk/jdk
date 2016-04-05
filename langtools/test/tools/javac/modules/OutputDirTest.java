@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main OutputDirTest
  */
 
@@ -37,6 +36,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class OutputDirTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -58,13 +61,13 @@ public class OutputDirTest extends ModuleTestBase {
 
     @Test
     void testError(Path base) throws Exception {
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", src.toString())
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.err.no.output.dir"))
             throw new Exception("expected output not found");
@@ -72,24 +75,24 @@ public class OutputDirTest extends ModuleTestBase {
 
     @Test
     void testProcOnly(Path base) throws IOException {
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-proc:only",
                         "-modulesourcepath", src.toString())
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
     @Test
     void testClassOutDir(Path base) throws IOException {
         Path classes = base.resolve("classes");
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-d", classes.toString(),
                         "-modulesourcepath", src.toString())
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
@@ -102,7 +105,7 @@ public class OutputDirTest extends ModuleTestBase {
         Path modClasses = base.resolve("modClasses");
         Files.createDirectories(modClasses);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(modClasses)
                 .files(findJavaFiles(modSrc))
                 .run()
@@ -114,14 +117,14 @@ public class OutputDirTest extends ModuleTestBase {
                 "module m { requires m1 ; }",
                 "class C { }");
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(modClasses) // an exploded module
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", src.toString())
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.err.multi-module.outdir.cannot.be.exploded.module: " + modClasses.toString()))
             throw new Exception("expected output not found");
@@ -136,7 +139,7 @@ public class OutputDirTest extends ModuleTestBase {
         Path modClasses = base.resolve("modClasses");
         Files.createDirectories(modClasses);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(modClasses)
                 .files(findJavaFiles(modSrc))
                 .run()
@@ -150,15 +153,15 @@ public class OutputDirTest extends ModuleTestBase {
         Path classes = modClasses.resolve("m");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(classes) // within an exploded module
                 .options("-XDrawDiagnostics",
                         "-Xlint", "-Werror",
                         "-modulepath", modClasses.toString())
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.warn.outdir.is.in.exploded.module: " + classes.toString()))
             throw new Exception("expected output not found");

@@ -27,10 +27,8 @@
  * @summary portability : javac.properties
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main NewLineTest
  */
 
@@ -39,16 +37,20 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.List;
 
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
+
 //original test: test/tools/javac/newlines/Newlines.sh
 public class NewLineTest {
 
     public static void main(String args[]) throws Exception {
         ToolBox tb = new ToolBox();
         File javacErrOutput = new File("output.txt");
-        tb.new JavacTask(ToolBox.Mode.EXEC)
-                .redirect(ToolBox.OutputKind.STDERR, javacErrOutput.getPath())
+        new JavacTask(tb, Task.Mode.EXEC)
+                .redirect(Task.OutputKind.STDERR, javacErrOutput.getPath())
                 .options("-J-Dline.separator='@'")
-                .run(ToolBox.Expect.FAIL);
+                .run(Task.Expect.FAIL);
 
         List<String> lines = Files.readAllLines(javacErrOutput.toPath(),
                 Charset.defaultCharset());

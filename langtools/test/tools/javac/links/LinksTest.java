@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,17 @@
  * @summary javac no longer follows symlinks
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main LinksTest
  */
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 // Original test: test/tools/javac/links/links.sh
 public class LinksTest {
@@ -65,7 +66,7 @@ public class LinksTest {
 
         // If symbolic link was successfully created,
         // try a compilation that will use it.
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .sourcepath(".")
                 .outdir(".")
                 .sources(TSrc)

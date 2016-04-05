@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,17 @@
  * @summary Inferring the exception thrown by a lambda: sometimes fails to compile
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main ExceptionInferenceFromClassFileTest
  */
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class ExceptionInferenceFromClassFileTest {
 
@@ -61,12 +63,12 @@ public class ExceptionInferenceFromClassFileTest {
         ToolBox tb = new ToolBox();
         tb.createDirectories("out");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir("out")
                 .sources(ABSrc)
                 .run();
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir("out")
                 .classpath("out")
                 .sources(CSrc)

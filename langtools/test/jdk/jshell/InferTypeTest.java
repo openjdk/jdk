@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build KullaTesting TestingInputStream ToolBox Compiler
+ * @build KullaTesting TestingInputStream toolbox.ToolBox Compiler
  * @run testng InferTypeTest
  */
 

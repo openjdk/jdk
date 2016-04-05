@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main SubpackageTest
  */
 
@@ -40,6 +39,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class SubpackageTest extends ModuleTestBase {
 
@@ -55,7 +58,7 @@ public class SubpackageTest extends ModuleTestBase {
             "package p; public class E extends Error { }");
         Path libclasses = base.resolve("lib/classes");
         Files.createDirectories(libclasses);
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(libclasses)
                 .files(findJavaFiles(libsrc))
                 .run()
@@ -71,7 +74,7 @@ public class SubpackageTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .classpath(libclasses)
                 .outdir(classes)
                 .files(findJavaFiles(src))
@@ -106,7 +109,7 @@ public class SubpackageTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))

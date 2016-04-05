@@ -25,124 +25,125 @@
 
 package jdk.jshell;
 
-import java.util.List;
-import com.sun.source.tree.ArrayTypeTree;
+import java.io.IOException;
+import java.io.StringWriter;
 import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
-import com.sun.source.tree.VariableTree;
-import jdk.jshell.Wrap.Range;
-import static java.util.stream.Collectors.toList;
+import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCBlock;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
+import com.sun.tools.javac.tree.JCTree.JCNewClass;
+import com.sun.tools.javac.tree.JCTree.JCStatement;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import com.sun.tools.javac.tree.Pretty;
+import com.sun.tools.javac.tree.TreeMaker;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
+import com.sun.tools.javac.util.Names;
+import static com.sun.tools.javac.code.Flags.STATIC;
+import static com.sun.tools.javac.code.Flags.INTERFACE;
+import static com.sun.tools.javac.code.Flags.ENUM;
+import static com.sun.tools.javac.code.Flags.PUBLIC;
 
 /**
  * Produce a corralled version of the Wrap for a snippet.
+ * Incoming tree is mutated.
  *
  * @author Robert Field
  */
-class Corraller {
+class Corraller extends Pretty {
 
-    private final int index;
-    private final String compileSource;
-    private final TreeDissector dis;
+    private final StringWriter out;
+    private final int keyIndex;
+    private final TreeMaker make;
+    private final Names names;
+    private JCBlock resolutionExceptionBlock;
 
-    Corraller(int index, String compileSource, TreeDissector dis) {
-        this.index = index;
-        this.compileSource = compileSource;
-        this.dis = dis;
+    public Corraller(int keyIndex, Context context) {
+        this(new StringWriter(), keyIndex, context);
     }
 
-    Wrap corralTree(Tree tree, String enclosingType, int indent) {
-        switch (tree.getKind()) {
-            case VARIABLE:
-                return corralVariable((VariableTree) tree, indent);
-            case CLASS:
-            case ENUM:
-            case ANNOTATION_TYPE:
-            case INTERFACE:
-                return corralType((ClassTree) tree, indent);
-            case METHOD:
-                return corralMethod((MethodTree) tree, enclosingType, indent);
-            default:
-                return null;
-        }
+    private Corraller(StringWriter out, int keyIndex, Context context) {
+        super(out, false);
+        this.out = out;
+        this.keyIndex = keyIndex;
+        this.make = TreeMaker.instance(context);
+        this.names = Names.instance(context);
     }
 
-    Wrap corralMethod(MethodTree mt) {
-        return corralMethod(mt, null, 1);
+    public Wrap corralType(ClassTree ct) {
+        ((JCClassDecl) ct).mods.flags |= Flags.STATIC | Flags.PUBLIC;
+        return corral(ct);
     }
 
-    Wrap corralMethod(MethodTree mt, String enclosingType, int indent) {
-        Range modRange = dis.treeToRange(mt.getModifiers());
-        Range tpRange = dis.treeListToRange(mt.getTypeParameters());
-        Range typeRange = dis.treeToRange(mt.getReturnType());
-        String name = mt.getName().toString();
-        if ("<init>".equals(name)) {
-            name = enclosingType;
-        }
-        Range paramRange = dis.treeListToRange(mt.getParameters());
-        Range throwsRange = dis.treeListToRange(mt.getThrows());
-        return Wrap.corralledMethod(compileSource,
-                modRange, tpRange, typeRange, name, paramRange, throwsRange, index, indent);
+    public Wrap corralMethod(MethodTree mt) {
+        ((JCMethodDecl) mt).mods.flags |= Flags.STATIC | Flags.PUBLIC;
+        return corral(mt);
     }
 
-    Wrap corralVariable(VariableTree vt, int indent) {
-        String name = vt.getName().toString();
-        Range modRange = dis.treeToRange(vt.getModifiers());
-        Tree baseType = vt.getType();
-        StringBuilder sbBrackets = new StringBuilder();
-        while (baseType instanceof ArrayTypeTree) {
-            //TODO handle annotations too
-            baseType = ((ArrayTypeTree) baseType).getType();
-            sbBrackets.append("[]");
+    private Wrap corral(Tree tree) {
+        try {
+            printStat((JCTree) tree);
+        } catch (IOException e) {
+            throw new AssertionError(e);
         }
-        Range rtype = dis.treeToRange(baseType);
-        Range runit = dis.treeToRange(vt);
-        runit = new Range(runit.begin, runit.end - 1);
-        ExpressionTree it = vt.getInitializer();
-        int nameMax;
-        if (it != null) {
-            Range rinit = dis.treeToRange(it);
-            nameMax = rinit.begin - 1;
-        } else {
-            nameMax = runit.end - 1;
-        }
-        int nameStart = compileSource.lastIndexOf(name, nameMax);
-        if (nameStart < 0) {
-            throw new AssertionError("Name '" + name + "' not found");
-        }
-        int nameEnd = nameStart + name.length();
-        Range rname = new Range(nameStart, nameEnd);
-        return Wrap.corralledVar(compileSource, modRange, rtype, sbBrackets.toString(), rname, indent);
+        return Wrap.simpleWrap(out.toString());
     }
 
-    Wrap corralType(ClassTree ct, int indent) {
-        boolean isClass;
-        switch (ct.getKind()) {
-            case CLASS:
-                isClass = true;
-                break;
-            case INTERFACE:
-                isClass = false;
-                break;
-            default:
-                return null;
+    @Override
+    public void visitBlock(JCBlock tree) {
+        // Top-level executable blocks (usually method bodies) are corralled
+        super.visitBlock((tree.flags & STATIC) != 0
+                ? tree
+                : resolutionExceptionBlock());
+    }
+
+    @Override
+    public void visitVarDef(JCVariableDecl tree) {
+        // No field inits in corralled classes
+        tree.init = null;
+        super.visitVarDef(tree);
+    }
+
+    @Override
+    public void visitClassDef(JCClassDecl tree) {
+        if ((tree.mods.flags & (INTERFACE | ENUM)) == 0 &&
+                !tree.getMembers().stream()
+                .anyMatch(t -> t.getKind() == Tree.Kind.METHOD &&
+                ((MethodTree) t).getName() == tree.name.table.names.init)) {
+            // Generate a default constructor, since
+            // this is a regular class and there are no constructors
+            ListBuffer<JCTree> ndefs = new ListBuffer<>();
+            ndefs.addAll(tree.defs);
+            ndefs.add(make.MethodDef(make.Modifiers(PUBLIC),
+                    tree.name.table.names.init,
+                    null, List.nil(), List.nil(), List.nil(),
+                    resolutionExceptionBlock(), null));
+            tree.defs = ndefs.toList();
         }
-        Range modRange = dis.treeToRange(ct.getModifiers());
-        String name = ct.getSimpleName().toString();
-        Range tpRange = dis.treeListToRange(ct.getTypeParameters());
-        Range extendsRange = dis.treeToRange(ct.getExtendsClause());
-        List<Range> implementsRanges = ct.getImplementsClause().stream()
-                .map(ic -> dis.treeToRange(ic))
-                .collect(toList());
-        List<Wrap> members = ct.getMembers().stream()
-                .map(t -> corralTree(t, name, indent + 1))
-                .filter(w -> w != null)
-                .collect(toList());
-        boolean hasConstructor = ct.getMembers().stream()
-                .anyMatch(t -> t.getKind() == Tree.Kind.METHOD && ((MethodTree) t).getName().toString().equals("<init>"));
-        Wrap wrap = Wrap.corralledType(compileSource, modRange, ct.getKind(), name, tpRange,
-                extendsRange, implementsRanges, members, isClass && !hasConstructor, index, indent);
-        return wrap;
+        super.visitClassDef(tree);
+    }
+
+    private JCBlock resolutionExceptionBlock() {
+        if (resolutionExceptionBlock == null) {
+            JCExpression expClass
+                    = make.Select(make.Select(make.Select(make.Select(
+                            make.Ident(names.fromString("jdk")),
+                            names.fromString("internal")),
+                            names.fromString("jshell")),
+                            names.fromString("remote")),
+                            names.fromString("RemoteResolutionException")
+                    );
+            JCNewClass exp = make.NewClass(null,
+                    null, expClass, List.of(make.Literal(keyIndex)), null);
+            resolutionExceptionBlock = make.Block(0L, List.<JCStatement>of(
+                    make.Throw(exp)));
+        }
+        return resolutionExceptionBlock;
     }
 }
