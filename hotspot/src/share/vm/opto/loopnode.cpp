@@ -1832,6 +1832,9 @@ void IdealLoopTree::dump_head( ) const {
     if (cl->is_pre_loop ()) tty->print(" pre" );
     if (cl->is_main_loop()) tty->print(" main");
     if (cl->is_post_loop()) tty->print(" post");
+    if (cl->is_vectorized_loop()) tty->print(" vector");
+    if (cl->range_checks_present()) tty->print(" rc ");
+    if (cl->is_multiversioned()) tty->print(" multi ");
   }
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
@@ -2350,7 +2353,30 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       if (lpt->is_counted()) {
-        sw.transform_loop(lpt, true);
+        CountedLoopNode *cl = lpt->_head->as_CountedLoop();
+
+        if (PostLoopMultiversioning && cl->is_rce_post_loop() && !cl->is_vectorized_loop()) {
+          // Check that the rce'd post loop is encountered first, multiversion after all
+          // major main loop optimization are concluded
+          if (!C->major_progress()) {
+            IdealLoopTree *lpt_next = lpt->_next;
+            if (lpt_next && lpt_next->is_counted()) {
+              CountedLoopNode *cl = lpt_next->_head->as_CountedLoop();
+              has_range_checks(lpt_next);
+              if (cl->is_post_loop() && cl->range_checks_present()) {
+                if (!cl->is_multiversioned()) {
+                  if (multi_version_post_loops(lpt, lpt_next) == false) {
+                    // Cause the rce loop to be optimized away if we fail
+                    cl->mark_is_multiversioned();
+                    poison_rce_post_loop(lpt);
+                  }
+                }
+              }
+            }
+          }
+        } else if (cl->is_main_loop()) {
+          sw.transform_loop(lpt, true);
+        }
       }
     }
   }
@@ -3184,8 +3210,10 @@ Node* PhaseIdealLoop::compute_lca_of_uses(Node* n, Node* early, bool verify) {
 // loop unswitching, and IGVN, or a combination of them) can freely change
 // the graph's shape. As a result, the graph shape outlined below cannot
 // be guaranteed anymore.
-bool PhaseIdealLoop::is_canonical_main_loop_entry(CountedLoopNode* cl) {
-  assert(cl->is_main_loop(), "check should be applied to main loops");
+bool PhaseIdealLoop::is_canonical_loop_entry(CountedLoopNode* cl) {
+  if (!cl->is_main_loop() && !cl->is_post_loop()) {
+    return false;
+  }
   Node* ctrl = cl->in(LoopNode::EntryControl);
   if (ctrl == NULL || (!ctrl->is_IfTrue() && !ctrl->is_IfFalse())) {
     return false;
@@ -3202,8 +3230,16 @@ bool PhaseIdealLoop::is_canonical_main_loop_entry(CountedLoopNode* cl) {
   if (cmpzm == NULL || !cmpzm->is_Cmp()) {
     return false;
   }
-  Node* opqzm = cmpzm->in(2);
-  if (opqzm == NULL || opqzm->Opcode() != Op_Opaque1) {
+  // compares can get conditionally flipped
+  bool found_opaque = false;
+  for (uint i = 1; i < cmpzm->req(); i++) {
+    Node* opnd = cmpzm->in(i);
+    if (opnd && opnd->Opcode() == Op_Opaque1) {
+      found_opaque = true;
+      break;
+    }
+  }
+  if (!found_opaque) {
     return false;
   }
   return true;
