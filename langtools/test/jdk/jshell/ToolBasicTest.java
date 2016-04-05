@@ -24,11 +24,12 @@
 /*
  * @test
  * @bug 8143037 8142447 8144095 8140265 8144906 8146138 8147887 8147886 8148316 8148317
- * @requires os.family != "solaris"
  * @summary Tests for Basic tests for REPL tool
+ * @requires os.family != "solaris"
  * @library /tools/lib
  * @ignore 8139873
- * @build KullaTesting TestingInputStream ToolBox Compiler
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
+ * @build KullaTesting TestingInputStream Compiler
  * @run testng/timeout=600 ToolBasicTest
  */
 

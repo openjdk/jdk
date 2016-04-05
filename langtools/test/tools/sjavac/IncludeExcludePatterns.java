@@ -29,7 +29,7 @@
  * @modules jdk.compiler/com.sun.tools.sjavac
  *          jdk.jdeps/com.sun.tools.javap
  * @library /tools/lib
- * @build Wrapper ToolBox
+ * @build Wrapper toolbox.ToolBox
  * @run main Wrapper IncludeExcludePatterns
  */
 

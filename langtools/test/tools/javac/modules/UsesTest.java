@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main UsesTest
  */
 
@@ -38,6 +37,10 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class UsesTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -54,10 +57,10 @@ public class UsesTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
@@ -70,10 +73,10 @@ public class UsesTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
@@ -86,10 +89,10 @@ public class UsesTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
@@ -100,13 +103,13 @@ public class UsesTest extends ModuleTestBase {
                 "module m { uses p.C.A; uses p.C; }",
                 "package p; public class C { protected class A { } }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("module-info.java:1:20: compiler.err.report.access: p.C.A, protected, p.C",
                 "1 error");
@@ -126,11 +129,11 @@ public class UsesTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
@@ -146,11 +149,11 @@ public class UsesTest extends ModuleTestBase {
                 .uses("p.C")
                 .write(modules);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-mp", modules.toString())
                 .outdir(modules)
                 .files(findJavaFiles(modules.resolve("m2")))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
@@ -166,11 +169,11 @@ public class UsesTest extends ModuleTestBase {
                 .uses("p.C.Inner")
                 .write(modules);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-mp", modules.toString())
                 .outdir(modules)
                 .files(findJavaFiles(modules.resolve("m2")))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 
@@ -181,13 +184,13 @@ public class UsesTest extends ModuleTestBase {
                 "module m { uses p.C; uses p.C; }",
                 "package p; public class C { }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         if (!output.containsAll(Arrays.asList(
                 "module-info.java:1:22: compiler.err.duplicate.uses: p.C"))) {
@@ -202,13 +205,13 @@ public class UsesTest extends ModuleTestBase {
                 "module m { uses p.NotExist; }",
                 "package p; public class C { }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .outdir(Files.createDirectories(base.resolve("classes")))
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
         Collection<?> expected = Arrays.asList("module-info.java:1:18: compiler.err.cant.resolve.location: kindname.class, NotExist, , , (compiler.misc.location: kindname.package, p, null)",
                 "1 error");
         if (!output.containsAll(expected)) {
@@ -225,13 +228,13 @@ public class UsesTest extends ModuleTestBase {
         tb.writeJavaFiles(src.resolve("m2"),
                 "module m2 { requires m1; uses p.C; }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(Files.createDirectories(base.resolve("modules")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("module-info.java:1:32: compiler.err.not.def.access.package.cant.access: p.C, p",
                 "1 error");
@@ -249,13 +252,13 @@ public class UsesTest extends ModuleTestBase {
         tb.writeJavaFiles(src.resolve("m2"),
                 "module m2 { requires m1; uses p.C; }");
 
-        List<String> output = tb.new JavacTask()
+        List<String> output = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(Files.createDirectories(base.resolve("modules")))
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("module-info.java:1:32: compiler.err.not.def.access.package.cant.access: p.C, p",
                 "1 error");

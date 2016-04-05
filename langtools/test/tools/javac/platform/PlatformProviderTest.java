@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,11 @@
  * @summary Ensure all methods of PlatformProvider are called correctly, and their result is used
  *          correctly.
  * @library /tools/lib
- * @build ToolBox PlatformProviderTest
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.platform
  *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.javap
+ * @build toolbox.ToolBox PlatformProviderTest
  * @run main/othervm PlatformProviderTest
  */
 
@@ -62,11 +61,15 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
-import com.sun.source.util.JavacTask;
+// import com.sun.source.util.JavacTask;
 import com.sun.source.util.Plugin;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformProvider;
 import com.sun.tools.javac.util.Log;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class PlatformProviderTest implements PlatformProvider {
 
@@ -91,8 +94,8 @@ public class PlatformProviderTest implements PlatformProvider {
 
     void doTest(String platformSpec, String expectedParameter) {
         ToolBox tb = new ToolBox();
-        ToolBox.Result result =
-                tb.new JavacTask(ToolBox.Mode.EXEC)
+        Task.Result result =
+                new JavacTask(tb, Task.Mode.EXEC)
                   .outdir(".")
                   .options("-J-classpath",
                            "-J" + System.getProperty("test.classes"),
@@ -116,7 +119,7 @@ public class PlatformProviderTest implements PlatformProvider {
                               "PlatformProviderTestSource.java:4:49: compiler.warn.raw.class.use: java.util.ArrayList, java.util.ArrayList<E>",
                               "compiler.misc.count.warn",
                               "close");
-        List<String> actualOutput = result.getOutputLines(ToolBox.OutputKind.STDERR);
+        List<String> actualOutput = result.getOutputLines(Task.OutputKind.STDERR);
         result.writeAll();
         if (!expectedOutput.equals(actualOutput)) {
             throw new AssertionError(  "Expected output: " + expectedOutput +
@@ -127,8 +130,8 @@ public class PlatformProviderTest implements PlatformProvider {
 
     void doTestFailure() {
         ToolBox tb = new ToolBox();
-        ToolBox.Result result =
-                tb.new JavacTask(ToolBox.Mode.EXEC)
+        Task.Result result =
+                new JavacTask(tb, Task.Mode.EXEC)
                   .outdir(".")
                   .options("-J-classpath",
                            "-J" + System.getProperty("test.classes"),
@@ -137,14 +140,14 @@ public class PlatformProviderTest implements PlatformProvider {
                            "-release",
                            "fail",
                            System.getProperty("test.src") + "/PlatformProviderTestSource.java")
-                  .run(ToolBox.Expect.FAIL);
+                  .run(Task.Expect.FAIL);
 
         List<String> expectedOutput =
                 Arrays.asList("getSupportedPlatformNames",
                               "getPlatform(fail, )",
                               "javac: javac.err.unsupported.release.version",
                               "javac.msg.usage");
-        List<String> actualOutput = result.getOutputLines(ToolBox.OutputKind.STDERR);
+        List<String> actualOutput = result.getOutputLines(Task.OutputKind.STDERR);
         result.writeAll();
         if (!expectedOutput.equals(actualOutput)) {
             throw new AssertionError(  "Expected output: " + expectedOutput +
@@ -281,7 +284,7 @@ public class PlatformProviderTest implements PlatformProvider {
         }
 
         @Override
-        public void init(JavacTask task, String... args) {
+        public void init(com.sun.source.util.JavacTask task, String... args) {
             System.err.println("testPlugin: " + Arrays.toString(args));
         }
 
