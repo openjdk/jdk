@@ -391,7 +391,7 @@ public class AddLimitMods extends ModuleTestBase {
                                                  Collections.emptyList(),
                                                  "-modulepath", modulePath.toString() + File.pathSeparator + out.getParent().toString(),
                                                  "-classpath", classpathOut.toString(),
-                                                 "-XaddReads:m2=ALL-UNNAMED,m2=automatic",
+                                                 "-XaddReads:m2=ALL-UNNAMED,automatic",
                                                  "-m", "m2/test.Test"))
                        .run()
                        .writeAll()
