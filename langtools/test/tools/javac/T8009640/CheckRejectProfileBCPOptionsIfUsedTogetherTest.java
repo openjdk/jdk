@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,20 @@
  * @summary -profile <compact> does not work when -bootclasspath specified
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main CheckRejectProfileBCPOptionsIfUsedTogetherTest
  */
 
-import com.sun.tools.javac.util.Assert;
 import java.nio.file.Paths;
+
+import com.sun.tools.javac.util.Assert;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class CheckRejectProfileBCPOptionsIfUsedTogetherTest {
 
@@ -49,14 +53,14 @@ public class CheckRejectProfileBCPOptionsIfUsedTogetherTest {
         ToolBox tb = new ToolBox();
         tb.writeFile("Test.java", TestSrc);
 
-        ToolBox.Result result = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        Task.Result result = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-profile", "compact1",
                         "-bootclasspath", Paths.get(ToolBox.testJDK, "jre/lib/rt.jar").toString())
                 .files("Test.java")
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll();
 
-        String out = result.getOutput(ToolBox.OutputKind.DIRECT);
+        String out = result.getOutput(Task.OutputKind.DIRECT);
         Assert.check(out.startsWith(
                 "javac: profile and bootclasspath options cannot be used together"),
                 "Incorrect javac error output");

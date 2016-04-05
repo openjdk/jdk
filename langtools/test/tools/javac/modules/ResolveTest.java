@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,15 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main ResolveTest
  */
 
 import java.nio.file.*;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ResolveTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -46,12 +49,12 @@ public class ResolveTest extends ModuleTestBase {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "class C { D d; }");
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("C.java:1:11: compiler.err.cant.resolve.location: "
                 + "kindname.class, D, , , (compiler.misc.location: kindname.class, C, null)"))
@@ -65,12 +68,12 @@ public class ResolveTest extends ModuleTestBase {
                 "module m { }",
                 "class C { D d; }");
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("C.java:1:11: compiler.err.cant.resolve.location: "
                 + "kindname.class, D, , , (compiler.misc.location: kindname.class, C, null)"))
@@ -89,13 +92,13 @@ public class ResolveTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("C2.java:1:33: compiler.err.not.def.access.package.cant.access: p1.C1, p1"))
             throw new Exception("expected output not found");
@@ -113,13 +116,13 @@ public class ResolveTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("C2.java:1:33: compiler.err.not.def.access.package.cant.access: p1.C1, p1"))
             throw new Exception("expected output not found");
@@ -139,13 +142,13 @@ public class ResolveTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("C2.java:1:33: compiler.err.not.def.access.package.cant.access: p1.C1, p1"))
             throw new Exception("expected output not found");
@@ -163,13 +166,13 @@ public class ResolveTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("C2.java:1:33: compiler.err.not.def.access.package.cant.access: p1.C1, p1"))
             throw new Exception("expected output not found");
@@ -187,7 +190,7 @@ public class ResolveTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))
@@ -207,7 +210,7 @@ public class ResolveTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(modules)
                 .files(findJavaFiles(src))

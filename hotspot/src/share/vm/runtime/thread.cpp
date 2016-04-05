@@ -3738,15 +3738,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     Chunk::start_chunk_pool_cleaner_task();
   }
 
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    const char* jvmciCompiler = Arguments::PropertyList_get_value(Arguments::system_properties(), "jvmci.compiler");
-    if (jvmciCompiler != NULL) {
-      JVMCIRuntime::save_compiler(jvmciCompiler);
-    }
-  }
-#endif // INCLUDE_JVMCI
-
   // initialize compiler(s)
 #if defined(COMPILER1) || defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
   CompileBroker::compilation_init(CHECK_JNI_ERR);

@@ -27,7 +27,7 @@
  * @summary Test for PLAB resizing
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @requires vm.opt.FlightRecorder != true
- * @library /testlibrary /../../test/lib /
+ * @library /testlibrary /test/lib /
  * @modules java.management
  * @build ClassFileInstaller
  *        sun.hotspot.WhiteBox

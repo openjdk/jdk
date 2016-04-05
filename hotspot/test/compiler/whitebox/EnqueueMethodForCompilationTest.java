@@ -31,14 +31,24 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @build EnqueueMethodForCompilationTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::* EnqueueMethodForCompilationTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI EnqueueMethodForCompilationTest
  * @summary testing of WB::enqueueMethodForCompilation()
  * @author igor.ignatyev@oracle.com
  */
 public class EnqueueMethodForCompilationTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
-        CompilerWhiteBoxTest.main(EnqueueMethodForCompilationTest::new, args);
+        String directive =
+                "[{ match:\"*SimpleTestCase$Helper.*\", BackgroundCompilation: false }, " +
+                " { match:\"*.*\", inline:\"-*SimpleTestCase$Helper.*\"}]";
+        if (WHITE_BOX.addCompilerDirective(directive) != 2) {
+            throw new RuntimeException("Could not add directive");
+        }
+        try {
+            CompilerWhiteBoxTest.main(EnqueueMethodForCompilationTest::new, args);
+        } finally {
+            WHITE_BOX.removeCompilerDirective(2);
+        }
     }
 
     private EnqueueMethodForCompilationTest(TestCase testCase) {

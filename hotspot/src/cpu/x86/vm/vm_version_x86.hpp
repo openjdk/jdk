@@ -221,7 +221,7 @@ class VM_Version : public Abstract_VM_Version {
                avx512pf : 1,
                avx512er : 1,
                avx512cd : 1,
-                        : 1,
+                    sha : 1,
                avx512bw : 1,
                avx512vl : 1;
     } bits;
@@ -282,11 +282,13 @@ protected:
     CPU_AVX512DQ = (1 << 27),
     CPU_AVX512PF = (1 << 28),
     CPU_AVX512ER = (1 << 29),
-    CPU_AVX512CD = (1 << 30),
-    CPU_AVX512BW = (1 << 31)
+    CPU_AVX512CD = (1 << 30)
+    // Keeping sign bit 31 unassigned.
   };
 
-#define CPU_AVX512VL UCONST64(0x100000000) // EVEX instructions with smaller vector length : enums are limited to 32bit
+#define CPU_AVX512BW ((uint64_t)UCONST64(0x100000000)) // enums are limited to 31 bit
+#define CPU_AVX512VL ((uint64_t)UCONST64(0x200000000)) // EVEX instructions with smaller vector length
+#define CPU_SHA ((uint64_t)UCONST64(0x400000000))      // SHA instructions
 
   enum Extended_Family {
     // AMD
@@ -516,6 +518,8 @@ protected:
          result |= CPU_ADX;
       if(_cpuid_info.sef_cpuid7_ebx.bits.bmi2 != 0)
         result |= CPU_BMI2;
+      if (_cpuid_info.sef_cpuid7_ebx.bits.sha != 0)
+        result |= CPU_SHA;
       if(_cpuid_info.ext_cpuid1_ecx.bits.lzcnt_intel != 0)
         result |= CPU_LZCNT;
       // for Intel, ecx.bits.misalignsse bit (bit 8) indicates support for prefetchw
@@ -721,6 +725,7 @@ public:
   static bool supports_avx512nobw() { return (supports_evex() && !supports_avx512bw()); }
   static bool supports_avx256only() { return (supports_avx2() && !supports_evex()); }
   static bool supports_avxonly()    { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
+  static bool supports_sha()        { return (_features & CPU_SHA) != 0; }
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }

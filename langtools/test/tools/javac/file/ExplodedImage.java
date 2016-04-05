@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,21 @@
  * questions.
  */
 
-import com.sun.source.util.JavacTask;
-import com.sun.tools.javac.code.Symbol.ClassSymbol;
+/**
+ * @test
+ * @bug 8067138
+ * @summary Verify that compiling against the exploded JDK image works, and that Locations close
+ *          the directory streams properly when working with exploded JDK image.
+ * @library /tools/lib
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
+ *          jdk.compiler/com.sun.tools.javac.main
+ *          jdk.jdeps/com.sun.tools.javap
+ * @build toolbox.ToolBox ExplodedImage
+ * @run main/othervm ExplodedImage modules/* testDirectoryStreamClosed
+ * @run main/othervm ExplodedImage modules/* testCanCompileAgainstExplodedImage
+ */
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,21 +56,10 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
-/**
- * @test
- * @bug 8067138
- * @summary Verify that compiling against the exploded JDK image works, and that Locations close
- *          the directory streams properly when working with exploded JDK image.
- * @library /tools/lib
- * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.code
- *          jdk.compiler/com.sun.tools.javac.file
- *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ExplodedImage
- * @run main/othervm ExplodedImage modules/* testDirectoryStreamClosed
- * @run main/othervm ExplodedImage modules/* testCanCompileAgainstExplodedImage
- */
+import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+
+import toolbox.ToolBox;
 
 public class ExplodedImage {
     public static void main(String... args) throws IOException {

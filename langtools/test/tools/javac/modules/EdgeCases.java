@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask ModuleTestBase
  * @run main EdgeCases
  */
 
@@ -51,9 +50,14 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.util.JavacTask;
+//import com.sun.source.util.JavacTask; // conflicts with toolbox.JavacTask
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
+
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class EdgeCases extends ModuleTestBase {
 
@@ -68,13 +72,13 @@ public class EdgeCases extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                 .options("-XaddExports:undef/undef=ALL-UNNAMED", "-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> expected = Arrays.asList("- compiler.err.cant.find.module: undef",
                                               "Test.java:1:27: compiler.err.doesnt.exist: undef",
@@ -94,7 +98,8 @@ public class EdgeCases extends ModuleTestBase {
             tb.writeJavaFiles(m1, "module m1 { }");
 
             Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(findJavaFiles(moduleSrc));
-            JavacTask task = (JavacTask) compiler.getTask(null, fm, null, null, null, files);
+            com.sun.source.util.JavacTask task =
+                (com.sun.source.util.JavacTask) compiler.getTask(null, fm, null, null, null, files);
 
             task.analyze();
 
@@ -160,14 +165,14 @@ public class EdgeCases extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                          "-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("Test.java:1:52: compiler.err.not.def.access.class.intf.cant.access: call(), api1.Api1") ||
             !log.contains("Test.java:1:76: compiler.err.not.def.access.class.intf.cant.access: toString(), java.lang.Object"))
@@ -183,12 +188,12 @@ public class EdgeCases extends ModuleTestBase {
         Path automaticClasses = base.resolve("automaticClasses");
         tb.createDirectories(automaticClasses);
 
-        String automaticLog = tb.new JavacTask()
+        String automaticLog = new JavacTask(tb)
                                 .outdir(automaticClasses)
                                 .files(findJavaFiles(automaticSrc))
                                 .run()
                                 .writeAll()
-                                .getOutput(ToolBox.OutputKind.DIRECT);
+                                .getOutput(Task.OutputKind.DIRECT);
 
         if (!automaticLog.isEmpty())
             throw new Exception("expected output not found: " + automaticLog);
@@ -199,7 +204,7 @@ public class EdgeCases extends ModuleTestBase {
 
         Path automaticJar = modulePath.resolve("m1-1.0.jar");
 
-        tb.new JarTask(automaticJar)
+        new JarTask(tb, automaticJar)
           .baseDir(automaticClasses)
           .files("api1/Api1.class")
           .run();
@@ -216,7 +221,7 @@ public class EdgeCases extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulepath", modulePath.toString(),
                          "-modulesourcepath", src.toString())
                 .outdir(classes)
@@ -224,7 +229,7 @@ public class EdgeCases extends ModuleTestBase {
                 .run()
                 .writeAll();
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulepath", modulePath.toString(),
                          "-modulesourcepath", src.toString())
                 .outdir(classes)
@@ -244,18 +249,18 @@ public class EdgeCases extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-sourcepath", src_m1.toString(),
                          "-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src_m1.resolve("test")))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll();
 
         tb.writeJavaFiles(src_m1,
                           "module m1 {}");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-sourcepath", src_m1.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src_m1.resolve("test")))

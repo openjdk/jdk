@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ModuleTestBase {
     protected final ToolBox tb = new ToolBox();
@@ -124,9 +128,9 @@ public class ModuleTestBase {
     }
 
     protected void compile(Path base) throws IOException {
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .files(findJavaFiles(base))
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
 

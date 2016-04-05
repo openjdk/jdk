@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,16 @@
  * @summary Prob w/static inner class with same name as a regular class
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main InnerClassFileTest
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 // Original test: test/tools/javac/innerClassFile/Driver.sh
 public class InnerClassFileTest {
@@ -108,7 +109,7 @@ public class InnerClassFileTest {
     }
 
     void compileFiles() throws Exception {
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(".")
                 .classpath(".")
                 .sourcepath("src")
@@ -118,7 +119,7 @@ public class InnerClassFileTest {
 
         tb.deleteFiles("y/R3.class");
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(".")
                 .classpath(".")
                 .sourcepath("src")

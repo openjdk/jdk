@@ -27,10 +27,9 @@
  * @summary javap does not output inner interfaces of an interface
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JarTask
  * @run main T6729471
  */
 
@@ -38,6 +37,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import javax.tools.*;
+
+import toolbox.JarTask;
+import toolbox.ToolBox;
 
 public class T6729471
 {
@@ -82,7 +84,7 @@ public class T6729471
         try (JavaFileManager fm = comp.getStandardFileManager(null, null, null)) {
             File f = new File(name);
             ToolBox tb = new ToolBox();
-            tb.new JarTask(f.getPath())
+            new JarTask(tb, f.getPath())
                 .files(fm, StandardLocation.PLATFORM_CLASS_PATH, paths)
                 .run();
             return f;

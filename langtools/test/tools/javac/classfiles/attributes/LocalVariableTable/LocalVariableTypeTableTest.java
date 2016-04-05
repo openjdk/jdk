@@ -30,8 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.classfile
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox LocalVariableTestBase TestBase InMemoryFileManager
+ * @build toolbox.ToolBox InMemoryFileManager TestBase LocalVariableTestBase
  * @compile -g LocalVariableTypeTableTest.java
  * @run main LocalVariableTypeTableTest
  */

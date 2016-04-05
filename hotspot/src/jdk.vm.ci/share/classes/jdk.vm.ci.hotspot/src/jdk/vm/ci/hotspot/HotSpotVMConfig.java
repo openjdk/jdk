@@ -945,6 +945,7 @@ public class HotSpotVMConfig {
     @HotSpotVMConstant(name = "VM_Version::CPU_AVX512CD", archs = {"amd64"}) @Stable public long amd64AVX512CD;
     @HotSpotVMConstant(name = "VM_Version::CPU_AVX512BW", archs = {"amd64"}) @Stable public long amd64AVX512BW;
     @HotSpotVMConstant(name = "VM_Version::CPU_AVX512VL", archs = {"amd64"}) @Stable public long amd64AVX512VL;
+    @HotSpotVMConstant(name = "VM_Version::CPU_SHA", archs = {"amd64"}) @Stable public long amd64SHA;
 
     // SPARC specific values
     @HotSpotVMConstant(name = "VM_Version::vis3_instructions_m", archs = {"sparc"}) @Stable public int sparcVis3Instructions;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@
  * @summary Incorrect inheritance of inaccessible static method
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main IncorrectInheritanceTest
  */
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class IncorrectInheritanceTest {
     private static final String ASrc =
@@ -65,7 +67,7 @@ public class IncorrectInheritanceTest {
     public void test() throws Exception {
         ToolBox tb = new ToolBox();
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .sources(ASrc, BSrc, CSrc)
                 .run();
     }
