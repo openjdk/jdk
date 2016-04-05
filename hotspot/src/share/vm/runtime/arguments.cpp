@@ -433,7 +433,7 @@ static AliasedFlag const removed_develop_logging_flags[] = {
   { "TraceStartupTime",           "-Xlog:startuptime" },
   { "TraceVMOperation",           "-Xlog:vmoperation=debug" },
   { "PrintVtables",               "-Xlog:vtables=debug" },
-  { "VerboseVerification",        "-Xlog:verboseverification" },
+  { "VerboseVerification",        "-Xlog:verification" },
   { NULL, NULL }
 };
 #endif //PRODUCT
