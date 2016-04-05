@@ -287,5 +287,17 @@ TEST_F(LogConfigurationTest, parse_log_arguments) {
     const LogDecorators::Decorator decorator = static_cast<LogDecorators::Decorator>(d);
     EXPECT_TRUE(LogConfiguration::parse_log_arguments("#0", "", LogDecorators::name(decorator), "", &ss));
   }
-  EXPECT_STREQ("", ss.as_string()) << "Error reported while parsing: " << ss.as_string();
+}
+
+TEST_F(LogConfigurationTest, parse_invalid_tagset) {
+  static const char* invalid_tagset = "logging+start+exit+safepoint+gc"; // Must not exist for test to function.
+
+  // Make sure warning is produced if one or more configured tagsets are invalid
+  ResourceMark rm;
+  stringStream ss;
+  bool success = LogConfiguration::parse_log_arguments("stdout", invalid_tagset, NULL, NULL, &ss);
+  const char* msg = ss.as_string();
+  EXPECT_TRUE(success) << "Should only cause a warning, not an error";
+  EXPECT_TRUE(string_contains_substring(msg, "No tag set matches selection(s):"));
+  EXPECT_TRUE(string_contains_substring(msg, invalid_tagset));
 }

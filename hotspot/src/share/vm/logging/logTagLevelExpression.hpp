@@ -83,6 +83,11 @@ class LogTagLevelExpression : public StackObj {
 
   bool parse(const char* str, outputStream* errstream = NULL);
   LogLevelType level_for(const LogTagSet& ts) const;
+
+  // Verify the tagsets/selections mentioned in this expression.
+  // Returns false if some invalid tagset was found. If given an outputstream,
+  // this function will list all the invalid selections on the stream.
+  bool verify_tagsets(outputStream* out = NULL) const;
 };
 
 #endif // SHARE_VM_LOGGING_LOGTAGLEVELEXPRESSION_HPP

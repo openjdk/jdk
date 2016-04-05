@@ -289,6 +289,8 @@ void LogConfiguration::configure_stdout(LogLevelType level, bool exact_match, ..
   }
   expr.set_level(level);
   expr.new_combination();
+  assert(expr.verify_tagsets(),
+         "configure_stdout() called with invalid/non-existing tag set");
 
   // Apply configuration to stdout (output #0), with the same decorators as before.
   ConfigurationLock cl;
@@ -334,9 +336,16 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
   char errbuf[512];
   stringStream ss(errbuf, sizeof(errbuf));
   bool success = parse_log_arguments(output, what, decorators, output_options, &ss);
-  if (!success) {
-    errbuf[strlen(errbuf) - 1] = '\0'; // Strip trailing newline.
-    log_error(logging)("%s", errbuf);
+
+  if (ss.size() > 0) {
+    errbuf[strlen(errbuf) - 1] = '\0'; // Strip trailing newline
+    // If it failed, log the error. If it didn't fail, but something was written
+    // to the stream, log it as a warning.
+    if (!success) {
+      log_error(logging)("%s", ss.base());
+    } else {
+      log_warning(logging)("%s", ss.base());
+    }
   }
 
   os::free(copy);
@@ -386,6 +395,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
   }
   configure_output(idx, expr, decorators);
   notify_update_listeners();
+  expr.verify_tagsets(errstream);
   return true;
 }
 
