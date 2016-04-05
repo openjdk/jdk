@@ -25,9 +25,6 @@
 
 package jdk.jshell;
 
-import java.util.ArrayList;
-import java.util.List;
-import com.sun.source.tree.Tree;
 import static jdk.internal.jshell.remote.RemoteCodes.DOIT_METHOD_NAME;
 
 /**
@@ -65,97 +62,6 @@ abstract class Wrap implements GeneralWrap {
 
     private static String nlindent(int n) {
         return "\n" + indent(n);
-    }
-
-    public static Wrap corralledMethod(String source, Range modRange, Range tpRange,
-            Range typeRange, String name, Range paramRange, Range throwsRange, int id, int indent) {
-        List<Object> l = new ArrayList<>();
-        l.add(indent(indent) + ((indent == 1) ? "public static" + nlindent(indent) : ""));
-        if (!modRange.isEmpty()) {
-            l.add(new RangeWrap(source, modRange));
-            l.add(" ");
-        }
-        if (tpRange != null) {
-            l.add("<");
-            l.add(new RangeWrap(source, tpRange));
-            l.add("> ");
-        }
-        if (!typeRange.isEmpty()) {
-            l.add(new RangeWrap(source, typeRange));
-            l.add(" ");
-        }
-        l.add(name + "(");
-        if (paramRange != null && !paramRange.isEmpty()) {
-            l.add(nlindent(indent + 1));
-            l.add(new RangeWrap(source, paramRange));
-        }
-        l.add(")");
-        if (throwsRange != null) {
-            l.add(" throws ");
-            l.add(new RangeWrap(source, throwsRange));
-        }
-        l.add(" {"
-                + nlindent(indent+1)
-                + "throw new jdk.internal.jshell.remote.RemoteResolutionException(" + id + ");"
-                + nlindent(indent)
-                + "}\n");
-        return new CompoundWrap(l.toArray());
-    }
-
-    public static Wrap corralledType(String source, Range modRange, Tree.Kind kind, String name, Range tpRange,
-            Range extendsRange, List<Range> implementsRanges, List<Wrap> members,
-            boolean defaultConstructor, int id, int indent) {
-        boolean isInterface = kind == Tree.Kind.INTERFACE;
-        List<Object> l = new ArrayList<>();
-        l.add(indent(indent) + ((indent == 1) ? "public static" + nlindent(indent) : ""));
-        if (!modRange.isEmpty()) {
-            l.add(new RangeWrap(source, modRange));
-            l.add(" ");
-        }
-        l.add((isInterface ? "interface " : "class ") + name);
-        if (tpRange != null) {
-            l.add("<");
-            l.add(new RangeWrap(source, tpRange));
-            l.add("> ");
-        }
-        if (extendsRange != null && !extendsRange.isEmpty()) {
-            l.add(" extends ");
-            l.add(new RangeWrap(source, extendsRange));
-        }
-        for (int i = 0; i < implementsRanges.size(); ++i) {
-            Range ir = implementsRanges.get(i);
-            l.add(i == 0 ? " implements " : ", ");
-            l.add(new RangeWrap(source, ir));
-        }
-        if (defaultConstructor) {
-            l.add(" {"
-                + nlindent(indent+1)
-                + ((indent == 1)? "public " : "") + name + "()  {"
-                + nlindent(indent+2)
-                + "throw new jdk.internal.jshell.remote.RemoteResolutionException(" + id + ");"
-                + nlindent(indent+1)
-                + "}\n");
-        } else {
-            l.add(" {\n");
-        }
-        l.addAll(members);
-        l.add(indent(indent) + "}\n");
-        return new CompoundWrap(l.toArray());
-    }
-
-    public static Wrap corralledVar(String source, Range modRange, Range typeRange, String brackets, Range nameRange, int indent) {
-        RangeWrap wname = new RangeWrap(source, nameRange);
-        List<Object> l = new ArrayList<>();
-        l.add(indent(indent) + ((indent == 1) ? "public static" + nlindent(indent) : ""));
-        if (!modRange.isEmpty()) {
-            l.add(new RangeWrap(source, modRange));
-            l.add(" ");
-        }
-        l.add(new RangeWrap(source, typeRange));
-        l.add(" ");
-        l.add(wname);
-        l.add(semi(wname));
-        return new CompoundWrap(l.toArray());
     }
 
     /**
@@ -200,7 +106,7 @@ abstract class Wrap implements GeneralWrap {
         return new CompoundWrap(varDecl, wInitMeth);
     }
 
-    public static Wrap importWrap(String source) {
+    public static Wrap simpleWrap(String source) {
         return new NoWrap(source);
     }
 

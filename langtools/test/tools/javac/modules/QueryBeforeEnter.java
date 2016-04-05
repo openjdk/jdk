@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main QueryBeforeEnter
  */
 
@@ -49,11 +48,15 @@ import javax.tools.JavaCompiler;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
-import com.sun.source.util.JavacTask;
+// import com.sun.source.util.JavacTask;
 import com.sun.source.util.Plugin;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.Main;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class QueryBeforeEnter extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -64,7 +67,8 @@ public class QueryBeforeEnter extends ModuleTestBase {
     @Test
     void testEmpty(Path base) throws Exception {
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
-        JavacTask task = (JavacTask) javaCompiler.getTask(null, null, null, null, null, null);
+        com.sun.source.util.JavacTask task =
+            (com.sun.source.util.JavacTask) javaCompiler.getTask(null, null, null, null, null, null);
         TypeElement jlString = task.getElements().getTypeElement("java.lang.String");
 
         assertNotNull(jlString);
@@ -89,7 +93,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
 
         Files.createDirectories(modulePath);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", moduleSrc.toString())
                 .outdir(modulePath)
                 .files(findJavaFiles(moduleSrc))
@@ -105,7 +109,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
 
         Files.createDirectories(cp);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(cp)
                 .files(findJavaFiles(cpSrc))
                 .run()
@@ -123,7 +127,8 @@ public class QueryBeforeEnter extends ModuleTestBase {
 
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = javaCompiler.getStandardFileManager(null, null, null)) {
-            JavacTask task = (JavacTask) javaCompiler.getTask(null,
+            com.sun.source.util.JavacTask task =
+                (com.sun.source.util.JavacTask) javaCompiler.getTask(null,
                                                               null,
                                                               d -> { throw new IllegalStateException(d.toString()); },
                                                               Arrays.asList("-modulepath", modulePath.toString(),
@@ -164,7 +169,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
 
         Files.createDirectories(modulePath);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", moduleSrc.toString())
                 .outdir(modulePath)
                 .files(findJavaFiles(moduleSrc))
@@ -180,7 +185,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
 
         Files.createDirectories(cp);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(cp)
                 .files(findJavaFiles(cpSrc))
                 .run()
@@ -198,7 +203,8 @@ public class QueryBeforeEnter extends ModuleTestBase {
 
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = javaCompiler.getStandardFileManager(null, null, null)) {
-            JavacTask task = (JavacTask) javaCompiler.getTask(null,
+            com.sun.source.util.JavacTask task =
+                (com.sun.source.util.JavacTask) javaCompiler.getTask(null,
                                                               null,
                                                               d -> { throw new IllegalStateException(d.toString()); },
                                                               Arrays.asList("-modulepath", modulePath.toString(),
@@ -238,7 +244,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
 
         Files.createDirectories(modulePath);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", modulePathSrc.toString())
                 .outdir(modulePath)
                 .files(findJavaFiles(modulePathSrc))
@@ -254,7 +260,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
 
         Files.createDirectories(cp);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .outdir(cp)
                 .files(findJavaFiles(cpSrc))
                 .run()
@@ -279,7 +285,8 @@ public class QueryBeforeEnter extends ModuleTestBase {
 
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
         try (StandardJavaFileManager fm = javaCompiler.getStandardFileManager(null, null, null)) {
-            JavacTask task = (JavacTask) javaCompiler.getTask(null,
+            com.sun.source.util.JavacTask task =
+                (com.sun.source.util.JavacTask) javaCompiler.getTask(null,
                                                               null,
                                                               d -> { throw new IllegalStateException(d.toString()); },
                                                               Arrays.asList("-modulepath", modulePath.toString(),
@@ -328,7 +335,8 @@ public class QueryBeforeEnter extends ModuleTestBase {
         JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
         Path testSource = src.resolve("test").resolve("Test.java");
         try (StandardJavaFileManager fm = javaCompiler.getStandardFileManager(null, null, null)) {
-            JavacTask task = (JavacTask) javaCompiler.getTask(null,
+            com.sun.source.util.JavacTask task =
+                (com.sun.source.util.JavacTask) javaCompiler.getTask(null,
                                                               null,
                                                               d -> { throw new IllegalStateException(d.toString()); },
                                                               Arrays.asList("-processorpath", processorPath,
@@ -352,7 +360,7 @@ public class QueryBeforeEnter extends ModuleTestBase {
         }
 
         @Override
-        public void init(JavacTask task, String... args) {
+        public void init(com.sun.source.util.JavacTask task, String... args) {
             task.addTaskListener(new TaskListener() {
                 boolean wasEntered;
                 @Override

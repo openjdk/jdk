@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main PluginsInModulesTest
  */
 
@@ -37,6 +36,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class PluginsInModulesTest extends ModuleTestBase {
 
@@ -103,13 +106,13 @@ public class PluginsInModulesTest extends ModuleTestBase {
                 pluginModule1,
                 plugin1);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-modulesourcepath", moduleSrc.toString())
                 .outdir(processorCompiledModules)
                 .files(findJavaFiles(moduleSrc))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty()) {
             throw new AssertionError("Unexpected output: " + log);
@@ -126,14 +129,14 @@ public class PluginsInModulesTest extends ModuleTestBase {
     @Test
     void testUseOnlyOneProcessor(Path base) throws Exception {
         initialization(base);
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                 .options("-processormodulepath", processorCompiledModules.toString(),
                         "-Xplugin:simpleplugin1")
                 .outdir(classes)
                 .sources(testClass)
                 .run()
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.STDOUT);
+                .getOutputLines(Task.OutputKind.STDOUT);
         if (!log.equals(Arrays.asList("simpleplugin1 started for event COMPILATION",
                                       "simpleplugin1 finished for event COMPILATION"))) {
             throw new AssertionError("Unexpected output: " + log);

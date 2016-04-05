@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,17 @@
  * @summary javac fails with assertion error
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main AssertionFailureTest
  */
 
 import java.io.File;
 import java.nio.file.Paths;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 // Original test: test/tools/javac/T5090006/compiler.sh
 public class AssertionFailureTest {
@@ -62,7 +64,7 @@ public class AssertionFailureTest {
         String classpath = Paths.get(tb.testSrc, "broken.jar")
                 + File.pathSeparator
                 + ".";
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .classpath(classpath)
                 .sources(testSrc)
                 .run();

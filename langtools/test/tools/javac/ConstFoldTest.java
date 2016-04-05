@@ -27,10 +27,9 @@
  * @summary Constant folding deficiency
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavapTask
  * @run main ConstFoldTest
  */
 
@@ -38,6 +37,10 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+
+import toolbox.JavapTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ConstFoldTest {
     public static void main(String... args) throws Exception {
@@ -82,12 +85,12 @@ public class ConstFoldTest {
 
         URL url = ConstFoldTest.class.getResource("ConstFoldTest$CFTest.class");
         Path file = Paths.get(url.toURI());
-        List<String> result = tb.new JavapTask()
+        List<String> result = new JavapTask(tb)
                 .options("-c")
                 .classes(file.toString())
                 .run()
-                .write(ToolBox.OutputKind.DIRECT)
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .write(Task.OutputKind.DIRECT)
+                .getOutputLines(Task.OutputKind.DIRECT);
 
         List<String> bad_codes = tb.grep(regex, result);
         if (!bad_codes.isEmpty()) {

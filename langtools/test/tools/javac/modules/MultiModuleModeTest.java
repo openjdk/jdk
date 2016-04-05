@@ -28,8 +28,7 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main MultiModuleModeTest
  */
 
@@ -38,6 +37,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class MultiModuleModeTest extends ModuleTestBase {
 
@@ -55,14 +58,14 @@ public class MultiModuleModeTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:1: compiler.err.duplicate.module: m1"))
             throw new Exception("expected output not found");
@@ -78,14 +81,14 @@ public class MultiModuleModeTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(join(findJavaFiles(src), findJavaFiles(misc)))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("C.java:1:1: compiler.err.unnamed.pkg.not.allowed.named.modules"))
             throw new Exception("expected output not found");
@@ -99,14 +102,14 @@ public class MultiModuleModeTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics",
                         "-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:8: compiler.err.module.name.mismatch: m2, m1"))
             throw new Exception("expected output not found");
@@ -120,7 +123,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
         Path modules = base.resolve("modules");
         Files.createDirectories(modules);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", src.toString())
                 .outdir(modules)
                 .files(src.resolve("m2/module-info.java"))
@@ -135,7 +138,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
         Path modules1 = base.resolve("modules1");
         Files.createDirectories(modules1);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulesourcepath", src1.toString())
                 .outdir(modules1)
                 .files(src1.resolve("m1/module-info.java"))
@@ -147,7 +150,7 @@ public class MultiModuleModeTest extends ModuleTestBase {
         Path modules2 = base.resolve("modules2");
         Files.createDirectories(modules2);
 
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-modulepath", modules1.toString(),
                         "-modulesourcepath", src2.toString())
                 .outdir(modules2)

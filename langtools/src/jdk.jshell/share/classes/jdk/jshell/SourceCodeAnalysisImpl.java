@@ -258,7 +258,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         OuterWrap codeWrap;
         switch (guessKind(code)) {
             case IMPORT:
-                codeWrap = OuterWrap.wrapImport(null, Wrap.importWrap(code + "any.any"));
+                codeWrap = OuterWrap.wrapImport(null, Wrap.simpleWrap(code + "any.any"));
                 break;
             case METHOD:
                 codeWrap = wrapInClass(Wrap.classMemberWrap(code));
