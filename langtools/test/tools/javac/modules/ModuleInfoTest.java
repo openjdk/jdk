@@ -23,18 +23,22 @@
 
 /*
  * @test
- * @summary tests for modfule declarations
+ * @summary tests for module declarations
  * @library /tools/lib
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main ModuleInfoTest
  */
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ModuleInfoTest extends ModuleTestBase {
 
@@ -50,12 +54,12 @@ public class ModuleInfoTest extends ModuleTestBase {
     void testModuleDeclNotInModuleJava(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeFile(src.resolve("M.java"), "module M { }");
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("M.java:1:1: compiler.err.module.decl.sb.in.module-info.java"))
             throw new Exception("expected output not found");
@@ -68,7 +72,7 @@ public class ModuleInfoTest extends ModuleTestBase {
     void testNotModuleDeclInModuleJava_1(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeFile(src.resolve("module-info.java"), "class C { }");
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
                 .run()
@@ -82,12 +86,12 @@ public class ModuleInfoTest extends ModuleTestBase {
     void testNotModuleDeclInModuleJava_2(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeFile(src.resolve("module-info.java"), "public class C { }");
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:8: compiler.err.class.public.should.be.in.file: C"))
             throw new Exception("expected output not found");
@@ -100,12 +104,12 @@ public class ModuleInfoTest extends ModuleTestBase {
     void testSingleModuleDecl(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module M1 { } /*...*/ module M2 { }");
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:14: compiler.err.expected: token.end-of-input"))
             throw new Exception("expected output not found");
@@ -118,12 +122,12 @@ public class ModuleInfoTest extends ModuleTestBase {
     void testRequiresNotFound(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module M1 { requires M2; }");
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:22: compiler.err.module.not.found: M2"))
             throw new Exception("expected output not found");
@@ -136,12 +140,12 @@ public class ModuleInfoTest extends ModuleTestBase {
     void testExportsNotFound(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module M1 { exports p to M2; }");
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:26: compiler.err.module.not.found: M2"))
             throw new Exception("expected output not found");
@@ -154,12 +158,12 @@ public class ModuleInfoTest extends ModuleTestBase {
     void testRequiresSelf(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module M { requires M; }");
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:21: compiler.err.cyclic.requires: M"))
             throw new Exception("expected output not found");
@@ -181,13 +185,13 @@ public class ModuleInfoTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:22: compiler.err.cyclic.requires: m3"))
             throw new Exception("expected output not found");
@@ -209,13 +213,13 @@ public class ModuleInfoTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:29: compiler.err.cyclic.requires: m3"))
             throw new Exception("expected output not found");
@@ -235,13 +239,13 @@ public class ModuleInfoTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:35: compiler.err.duplicate.requires: m1"))
             throw new Exception("expected output not found");
@@ -258,13 +262,13 @@ public class ModuleInfoTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:32: compiler.err.duplicate.exports: p"))
             throw new Exception("expected output not found");
@@ -282,13 +286,13 @@ public class ModuleInfoTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:32: compiler.err.duplicate.exports: p"))
             throw new Exception("expected output not found");
@@ -308,13 +312,13 @@ public class ModuleInfoTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-modulesourcepath", src.toString())
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("module-info.java:1:30: compiler.err.duplicate.exports: m1"))
             throw new Exception("expected output not found");

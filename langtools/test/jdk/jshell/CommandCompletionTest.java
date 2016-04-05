@@ -30,7 +30,8 @@
  *          jdk.jdeps/com.sun.tools.javap
  *          jdk.jshell/jdk.internal.jshell.tool
  * @library /tools/lib
- * @build ReplToolTesting TestingInputStream Compiler ToolBox
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
+ * @build ReplToolTesting TestingInputStream Compiler
  * @run testng CommandCompletionTest
  */
 

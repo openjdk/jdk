@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,11 @@
 /*
  * @test
  * @bug 8067914
- * @summary Redunant type cast nodes in AST (follow up from JDK-8043741)
+ * @summary Redundant type cast nodes in AST (follow up from JDK-8043741)
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox
  * @run compile -XD-printsource T8067914.java
  * @run main NukeExtraCast
  */
@@ -38,6 +36,8 @@
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+
+import toolbox.ToolBox;
 
 public class NukeExtraCast {
 

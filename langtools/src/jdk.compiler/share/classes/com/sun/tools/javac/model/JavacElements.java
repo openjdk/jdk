@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -629,10 +629,18 @@ public class JavacElements implements Elements {
      */
     private Env<AttrContext> getEnterEnv(Symbol sym) {
         // Get enclosing class of sym, or sym itself if it is a class
-        // or package.
-        TypeSymbol ts = (sym.kind != PCK)
-                        ? sym.enclClass()
-                        : (PackageSymbol) sym;
+        // package, or module.
+        TypeSymbol ts = null;
+        switch (sym.kind) {
+            case PCK:
+                ts = (PackageSymbol)sym;
+                break;
+            case MDL:
+                ts = (ModuleSymbol)sym;
+                break;
+            default:
+                ts = sym.enclClass();
+        }
         return (ts != null)
                 ? enter.getEnv(ts)
                 : null;

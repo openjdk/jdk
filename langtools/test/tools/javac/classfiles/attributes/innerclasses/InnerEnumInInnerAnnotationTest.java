@@ -27,11 +27,10 @@
  * @summary Testing InnerClasses_attribute of inner enums in inner annotation.
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.classfile
- *          jdk.jdeps/com.sun.tools.javap
- * @build InnerClassesInInnerClassTestBase InnerClassesTestBase TestBase TestResult InMemoryFileManager ToolBox
+ * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
+ * @build InnerClassesInInnerClassTestBase InnerClassesTestBase
  * @run main InnerEnumInInnerAnnotationTest
  */
 

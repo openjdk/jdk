@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,19 @@
  * @summary check that source files inside zip files on the class path are ignored
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @run main JavaZipTest
  */
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 // Original test: test/tools/javac/javazip/Test.sh
 public class JavaZipTest {
@@ -84,8 +87,8 @@ public class JavaZipTest {
     public void test() throws Exception {
         createOutputDirAndSourceFiles();
         createZipsAndJars();
-        check(ToolBox.Expect.SUCCESS, successfulCompilationArgs);
-        check(ToolBox.Expect.FAIL, unsuccessfulCompilationArgs);
+        check(Task.Expect.SUCCESS, successfulCompilationArgs);
+        check(Task.Expect.FAIL, unsuccessfulCompilationArgs);
     }
 
     void createOutputDirAndSourceFiles() throws Exception {
@@ -101,15 +104,15 @@ public class JavaZipTest {
     void createZipsAndJars() throws Exception {
         //jar and zip creation
         for (String[] args: jarArgs) {
-            tb.new JarTask().run(args).writeAll();
+            new JarTask(tb).run(args).writeAll();
         }
     }
 
-    void check(ToolBox.Expect expectedStatus, String[][] theArgs) throws Exception {
+    void check(Task.Expect expectedStatus, String[][] theArgs) throws Exception {
 
 
         for (String[] allArgs: theArgs) {
-            tb.new JavacTask()
+            new JavacTask(tb)
                     .options(opts(allArgs))
                     .files(files(allArgs))
                     .run(expectedStatus)

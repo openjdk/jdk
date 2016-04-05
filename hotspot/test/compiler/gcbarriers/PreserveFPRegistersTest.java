@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8148175
+ * @ignore 8153194
  * @run main/othervm/timeout=300 -Xbatch -Xmx128m PreserveFPRegistersTest
  */
 public class PreserveFPRegistersTest {

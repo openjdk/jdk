@@ -241,8 +241,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_os: "linux",
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit"),
-            configure_args: common.configure_args,
-	    configure_args: concat(common.configure_args, "--with-zlib=system"),
+            configure_args: concat(common.configure_args, "--with-zlib=system"),
             make_args: common.make_args
         },
 
@@ -251,8 +250,8 @@ var getJibProfilesProfiles = function (input, common) {
             target_cpu: "x86",
             build_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit"),
-            configure_args: concat(common.configure_args, common.configure_args_32bit),
-	    configure_args: concat(common.configure_args, "--with-zlib=system"),
+            configure_args: concat(common.configure_args, common.configure_args_32bit,
+                "--with-zlib=system"),
             make_args: common.make_args
         },
 
@@ -260,8 +259,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_os: "macosx",
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit"),
-            configure_args: common.configure_args,
-	    configure_args: concat(common.configure_args, "--with-zlib=system"),
+            configure_args: concat(common.configure_args, "--with-zlib=system"),
             make_args: common.make_args
         },
 
@@ -269,8 +267,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_os: "solaris",
             target_cpu: "x64",
             dependencies: concat(common.dependencies, "devkit", "cups"),
-            configure_args: common.configure_args,
-	    configure_args: concat(common.configure_args, "--with-zlib=system"),
+            configure_args: concat(common.configure_args, "--with-zlib=system"),
             make_args: common.make_args
         },
 
@@ -278,8 +275,7 @@ var getJibProfilesProfiles = function (input, common) {
             target_os: "solaris",
             target_cpu: "sparcv9",
             dependencies: concat(common.dependencies, "devkit", "cups"),
-            configure_args: common.configure_args,
-	    configure_args: concat(common.configure_args, "--with-zlib=system"),
+            configure_args: concat(common.configure_args, "--with-zlib=system"),
             make_args: common.make_args
         },
 

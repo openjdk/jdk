@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,8 @@
  *          is not generated into an interface
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox Assertions AssertionsTest
+ * @build toolbox.ToolBox toolbox.JavaTask Assertions AssertionsTest
  * @run main AssertionsTest -da
  * @run main AssertionsTest -ea:test.Assertions Inner
  * @run main AssertionsTest -ea:test.Outer Outer
@@ -41,17 +39,21 @@
 
 import java.util.Arrays;
 
+import toolbox.JavaTask;
+import toolbox.Task;
+import toolbox.ToolBox;
+
 public class AssertionsTest {
 
     public static void main(String... args) throws Exception {
         String testClasses = System.getProperty("test.classes");
         ToolBox tb = new ToolBox();
-        tb.new JavaTask().classpath(testClasses)
+        new JavaTask(tb).classpath(testClasses)
                          .vmOptions(args[0])
                          .className("test.Assertions")
                          .classArgs(Arrays.copyOfRange(args, 1, args.length))
                          .includeStandardOptions(false)
-                         .run(ToolBox.Expect.SUCCESS)
+                         .run(Task.Expect.SUCCESS)
                          .writeAll();
     }
 

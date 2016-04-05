@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,9 @@
  * @summary com/sun/tools/javac/Main.compile don't release file handles on return
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @run main/othervm -Xmx512m -Xms512m  T6558476
  */
 
@@ -41,6 +40,10 @@ import java.io.IOException;
 import java.util.Random;
 
 import com.sun.tools.javac.Main;
+
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class T6558476 {
 
@@ -55,17 +58,17 @@ public class T6558476 {
     public static void main(String[] args) throws IOException {
         ToolBox tb = new ToolBox();
 
-        tb.new JavacTask()
-          .sources(classFoo)
-          .run();
-        tb.new JarTask("foo.jar")
-          .files("Foo.class")
-          .run();
+        new JavacTask(tb)
+            .sources(classFoo)
+            .run();
+        new JarTask(tb, "foo.jar")
+            .files("Foo.class")
+            .run();
 
-        tb.new JavacTask()
-          .classpath("foo.jar")
-          .sources(classMyFoo)
-          .run();
+        new JavacTask(tb)
+            .classpath("foo.jar")
+            .sources(classMyFoo)
+            .run();
         File foo_jar = new File("foo.jar");
         if (foo_jar.delete()) {
             System.out.println("jar file successfully deleted");

@@ -92,6 +92,7 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
         "*sun/text/resources/cldr/ext/[^\\/]+_%%.class," +
         "*sun/util/resources/cldr/ext/[^\\/]+_%%.class,";
     private Predicate<String> predicate;
+    private String userParam;
     private List<Locale.LanguageRange> priorityList;
     private List<Locale> available;
     private List<String> filtered;
@@ -155,13 +156,17 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
 
     @Override
     public void configure(Map<String, String> config) {
-        try {
-            priorityList = Arrays.stream(config.get(NAME).split(","))
-                .map(Locale.LanguageRange::new)
-                .collect(Collectors.toList());
-        } catch (IllegalArgumentException iae) {
-            throw new PluginException(iae.getLocalizedMessage());
-        }
+        userParam = config.get(NAME);
+        priorityList = Arrays.stream(userParam.split(","))
+            .map(s -> {
+                try {
+                    return new Locale.LanguageRange(s);
+                } catch (IllegalArgumentException iae) {
+                    throw new PluginException(String.format(
+                        PluginsResourceBundle.getMessage(NAME + ".invalidtag"), s));
+                }
+            })
+            .collect(Collectors.toList());
     }
 
     @Override
@@ -191,7 +196,8 @@ public final class IncludeLocalesPlugin implements TransformerPlugin, ResourcePr
         filtered = filterLocales(available);
 
         if (filtered.isEmpty()) {
-            throw new PluginException(PluginsResourceBundle.getMessage(NAME + ".nomatchinglocales"));
+            throw new PluginException(
+                String.format(PluginsResourceBundle.getMessage(NAME + ".nomatchinglocales"), userParam));
         }
 
         try {

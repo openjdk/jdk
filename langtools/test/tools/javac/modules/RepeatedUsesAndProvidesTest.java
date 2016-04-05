@@ -28,13 +28,16 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main RepeatedUsesAndProvidesTest
  */
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class RepeatedUsesAndProvidesTest extends ModuleTestBase {
     public static void main(String... args) throws Exception {
@@ -51,13 +54,13 @@ public class RepeatedUsesAndProvidesTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
         if (!log.contains("module-info.java:1:24: compiler.err.duplicate.uses: p1.C1"))
             throw new Exception("expected output not found");
     }
@@ -72,13 +75,13 @@ public class RepeatedUsesAndProvidesTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics")
                 .outdir(classes)
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
         if (!log.contains("module-info.java:1:39: compiler.err.duplicate.provides"))
             throw new Exception("expected output not found");
     }
