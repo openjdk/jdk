@@ -88,7 +88,7 @@ public class StartOptionTest {
     }
 
     private void start(String expectedOutput, String expectedError, String... args) throws Exception {
-        start(s -> assertEquals(s, expectedOutput, "Output: "), s -> assertEquals(s, expectedError, "Error: "), args);
+        start(s -> assertEquals(s.trim(), expectedOutput, "Output: "), s -> assertEquals(s.trim(), expectedError, "Error: "), args);
     }
 
     @BeforeMethod
@@ -110,7 +110,7 @@ public class StartOptionTest {
         start(s -> {
             assertTrue(s.split("\n").length >= 7, s);
             assertTrue(s.startsWith("Usage:   jshell <options>"), s);
-        }, s -> assertEquals(s, "Unknown option: -unknown\n"), "-unknown");
+        }, s -> assertEquals(s.trim(), "Unknown option: -unknown"), "-unknown");
     }
 
     @Test(enabled = false) // TODO 8080883
@@ -118,17 +118,17 @@ public class StartOptionTest {
         Compiler compiler = new Compiler();
         Path p = compiler.getPath("file.txt");
         compiler.writeToFile(p);
-        start("", "'-startup' requires a filename argument.\n", "-startup");
-        start("", "Conflicting -startup or -nostartup option.\n", "-startup", p.toString(), "-startup", p.toString());
-        start("", "Conflicting -startup or -nostartup option.\n", "-nostartup", "-startup", p.toString());
-        start("", "Conflicting -startup or -nostartup option.\n", "-startup", p.toString(), "-nostartup");
+        start("", "'-startup' requires a filename argument.", "-startup");
+        start("", "Conflicting -startup or -nostartup option.", "-startup", p.toString(), "-startup", p.toString());
+        start("", "Conflicting -startup or -nostartup option.", "-nostartup", "-startup", p.toString());
+        start("", "Conflicting -startup or -nostartup option.", "-startup", p.toString(), "-nostartup");
     }
 
     @Test
     public void testClasspath() throws Exception {
         for (String cp : new String[] {"-cp", "-classpath"}) {
-            start("", "Conflicting -classpath option.\n", cp, ".", "-classpath", ".");
-            start("", "Argument to -classpath missing.\n", cp);
+            start("", "Conflicting -classpath option.", cp, ".", "-classpath", ".");
+            start("", "Argument to -classpath missing.", cp);
         }
     }
 
