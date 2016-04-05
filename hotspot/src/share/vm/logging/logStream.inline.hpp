@@ -25,6 +25,7 @@
 #define SHARE_VM_LOGGING_LOGSTREAM_INLINE_HPP
 
 #include "logging/log.hpp"
+#include "logging/logHandle.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/ostream.hpp"
@@ -67,6 +68,15 @@ public:
   LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>* type_carrier) :
       _embedded_resource_mark(),
       _stream(level, &LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
+
+  // Constructor to support creation from a LogTargetHandle.
+  //
+  // LogTarget(Debug, gc) log;
+  // LogTargetHandle(log) handle;
+  // LogStream stream(handle);
+  LogStream(LogTargetHandle handle) :
+      _embedded_resource_mark(),
+      _stream(handle._level, handle._tagset) {}
 
   // Override of outputStream::write.
   void write(const char* s, size_t len) { _stream.write(s, len); }
