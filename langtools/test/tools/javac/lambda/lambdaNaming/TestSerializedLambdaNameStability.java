@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,9 @@
  * @summary Desugar serializable lambda bodies using more robust naming scheme
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox
+ * @build toolbox.ToolBox toolbox.JavacTask
  * @run main TestSerializedLambdaNameStability
  */
 
@@ -39,6 +38,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.*;
+
+import toolbox.JavacTask;
+import toolbox.ToolBox;
 
 public class TestSerializedLambdaNameStability {
 
@@ -159,7 +161,7 @@ public class TestSerializedLambdaNameStability {
             else
                 throw new Exception("Did not expect to load " + name);
             Path srcFile = Paths.get(sourceBaseDir, context, srcName + ".java");
-            tb.new JavacTask()
+            new JavacTask(tb)
                     .outdir(compiledDir)
                     .files(srcFile)
                     .run();

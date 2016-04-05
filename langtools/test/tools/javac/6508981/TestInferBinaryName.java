@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,8 @@
  * (This test is specifically to test the new impl of inferBinaryName)
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.compiler/com.sun.tools.javac.util
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox p.A
+ * @build toolbox.ToolBox toolbox.JarTask p.A
  * @run main TestInferBinaryName
  */
 
@@ -40,13 +37,11 @@ import java.io.*;
 import java.util.*;
 import javax.tools.*;
 
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Options;
-
 import static javax.tools.JavaFileObject.Kind.*;
 import static javax.tools.StandardLocation.*;
 
+import toolbox.JarTask;
+import toolbox.ToolBox;
 
 /**
  * Verify the various implementations of inferBinaryName, but configuring
@@ -70,9 +65,10 @@ public class TestInferBinaryName {
 
     File createJar() throws IOException {
         File f = new File("test.jar");
-        try (JavaFileManager fm = new JavacFileManager(new Context(), false, null)) {
+        try (JavaFileManager fm = ToolProvider.getSystemJavaCompiler()
+                .getStandardFileManager(null, null, null)) {
             ToolBox tb = new ToolBox();
-            tb.new JarTask(f.getPath())
+            new JarTask(tb, f.getPath())
                 .files(fm, StandardLocation.PLATFORM_CLASS_PATH, "java.lang.*")
                 .run();
         }
@@ -124,9 +120,8 @@ public class TestInferBinaryName {
 
     JavaFileManager getFileManager(List<File> path)
             throws IOException {
-        Context ctx = new Context();
-
-        JavacFileManager fm = new JavacFileManager(ctx, false, null);
+        StandardJavaFileManager fm = ToolProvider.getSystemJavaCompiler()
+                .getStandardFileManager(null, null, null);
         fm.setLocation(CLASS_PATH, path);
         return fm;
     }

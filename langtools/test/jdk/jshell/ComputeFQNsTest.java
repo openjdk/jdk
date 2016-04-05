@@ -26,10 +26,10 @@
  * @bug 8131027
  * @summary Test Get FQNs
  * @library /tools/lib
- * @build KullaTesting TestingInputStream ToolBox Compiler
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.javap
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
+ * @build KullaTesting TestingInputStream Compiler
  * @run testng ComputeFQNsTest
  */
 

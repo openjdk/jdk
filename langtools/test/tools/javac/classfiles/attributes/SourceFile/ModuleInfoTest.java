@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,18 @@
  * @bug 8080878
  * @library /tools/lib /tools/javac/lib ../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.classfile
- *          jdk.jdeps/com.sun.tools.javap
- * @build ToolBox SourceFileTestBase TestBase InMemoryFileManager
+ * @build toolbox.ToolBox toolbox.JavacTask InMemoryFileManager TestBase SourceFileTestBase
  * @run main ModuleInfoTest
  */
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ModuleInfoTest extends SourceFileTestBase {
     public static void main(String[] args) throws Exception {
@@ -44,10 +46,10 @@ public class ModuleInfoTest extends SourceFileTestBase {
         ToolBox tb = new ToolBox();
         final Path moduleInfo = Paths.get("module-info.java");
         tb.writeFile(moduleInfo, "module m1{}");
-        tb.new JavacTask()
+        new JavacTask(tb)
                 .files(moduleInfo)
                 .outdir(outdir)
-                .run(ToolBox.Expect.SUCCESS)
+                .run(Task.Expect.SUCCESS)
                 .writeAll();
 
         new ModuleInfoTest().test(outdir.resolve("module-info.class"), "module-info.java");

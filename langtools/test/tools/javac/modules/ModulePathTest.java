@@ -30,7 +30,7 @@
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.jdeps/com.sun.tools.javap
  *      jdk.jlink/jdk.tools.jmod
- * @build ToolBox ModuleTestBase
+ * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask ModuleTestBase
  * @run main ModulePathTest
  */
 
@@ -38,6 +38,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import toolbox.JarTask;
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class ModulePathTest extends ModuleTestBase {
 
@@ -53,13 +58,13 @@ public class ModulePathTest extends ModuleTestBase {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "class C { }");
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", "doesNotExist")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.err.illegal.argument.for.option: -modulepath, doesNotExist"))
             throw new Exception("expected output not found");
@@ -71,13 +76,13 @@ public class ModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "class C { }");
         tb.writeFile("dummy.txt", "");
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", "dummy.txt")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.err.illegal.argument.for.option: -modulepath, dummy.txt"))
             throw new Exception("expected output not found");
@@ -89,13 +94,13 @@ public class ModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "class C { }");
         tb.writeFile("dummy.jimage", "");
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", "dummy.jimage")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.err.illegal.argument.for.option: -modulepath, dummy.jimage"))
             throw new Exception("expected output not found");
@@ -110,7 +115,7 @@ public class ModulePathTest extends ModuleTestBase {
         Path modClasses = base.resolve("modClasses");
         Files.createDirectories(modClasses);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(modClasses)
                 .files(findJavaFiles(modSrc))
                 .run()
@@ -123,7 +128,7 @@ public class ModulePathTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(classes)
                 .options("-modulepath", modClasses.toString())
                 .files(findJavaFiles(src))
@@ -143,14 +148,14 @@ public class ModulePathTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(classes)
                 .options("-XDrawDiagnostics",
                         "-modulepath", modClasses.toString())
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.err.locn.bad.module-info: " + modClasses.toString()))
             throw new Exception("expected output not found");
@@ -164,14 +169,14 @@ public class ModulePathTest extends ModuleTestBase {
         Path jarClasses = base.resolve("jarClasses");
         Files.createDirectories(jarClasses);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(jarClasses)
                 .files(findJavaFiles(jarSrc))
                 .run()
                 .writeAll();
 
         Path moduleJar = base.resolve("m1.jar");
-        tb.new JarTask(moduleJar)
+        new JarTask(tb, moduleJar)
           .baseDir(jarClasses)
           .files("p/CC.class")
           .run();
@@ -181,7 +186,7 @@ public class ModulePathTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(classes)
                 .options("-modulepath", moduleJar.toString(), "-addmods", "m1")
                 .files(findJavaFiles(src))
@@ -198,14 +203,14 @@ public class ModulePathTest extends ModuleTestBase {
         Path jarClasses = base.resolve("jarClasses");
         Files.createDirectories(jarClasses);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(jarClasses)
                 .files(findJavaFiles(jarSrc))
                 .run()
                 .writeAll();
 
         Path moduleJar = base.resolve("myModule.jar"); // deliberately not m1
-        tb.new JarTask(moduleJar)
+        new JarTask(tb, moduleJar)
           .baseDir(jarClasses)
           .files("module-info.class", "p/CC.class")
           .run();
@@ -217,7 +222,7 @@ public class ModulePathTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(classes)
                 .options("-modulepath", moduleJar.toString())
                 .files(findJavaFiles(src))
@@ -231,13 +236,13 @@ public class ModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "class C { }");
         tb.writeFile("dummy.jar", "");
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", "dummy.jar")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.err.locn.cant.read.file: dummy.jar"))
             throw new Exception("expected output not found");
@@ -252,7 +257,7 @@ public class ModulePathTest extends ModuleTestBase {
         Path jmodClasses = base.resolve("jmodClasses");
         Files.createDirectories(jmodClasses);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(jmodClasses)
                 .files(findJavaFiles(jmodSrc))
                 .run()
@@ -268,7 +273,7 @@ public class ModulePathTest extends ModuleTestBase {
         Path classes = base.resolve("classes");
         Files.createDirectories(classes);
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .outdir(classes)
                 .options("-modulepath", jmod.toString())
                 .files(findJavaFiles(src))
@@ -282,13 +287,13 @@ public class ModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "class C { }");
         tb.writeFile("dummy.jmod", "");
 
-        String log = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", "dummy.jmod")
                 .files(findJavaFiles(src))
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.contains("- compiler.err.locn.cant.read.file: dummy.jmod"))
             throw new Exception("expected output not found");
@@ -302,7 +307,7 @@ public class ModulePathTest extends ModuleTestBase {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m2 { requires m1; }", "class A { }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", modules + "/./../modules")
                 .files(findJavaFiles(src))
@@ -318,7 +323,7 @@ public class ModulePathTest extends ModuleTestBase {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m2 { requires m1; }", "class A { }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", modules + "/./../modules" + PATH_SEP + modules)
                 .files(findJavaFiles(src))
@@ -334,7 +339,7 @@ public class ModulePathTest extends ModuleTestBase {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m2 { requires m1; }", "class A { }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", modules.toString(),
                         "-modulepath", modules.toString())
@@ -360,7 +365,7 @@ public class ModulePathTest extends ModuleTestBase {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "module m2 { requires m1; }", " package p; class A { void main() { pkg2.E.class.getName(); } }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", deepModuleDir + PATH_SEP + module)
                 .files(findJavaFiles(src))
@@ -390,7 +395,7 @@ public class ModulePathTest extends ModuleTestBase {
         tb.writeJavaFiles(src, "module m { requires m3; requires m2; requires m1; }",
                 "package p; class A { void main() { one.A.class.getName(); } }");
 
-        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+        new JavacTask(tb, Task.Mode.CMDLINE)
                 .options("-XDrawDiagnostics",
                         "-modulepath", modules.toString())
                 .files(findJavaFiles(src))
@@ -399,7 +404,7 @@ public class ModulePathTest extends ModuleTestBase {
     }
 
     private void jar(Path dir, Path jar) throws IOException {
-        tb.new JarTask(jar)
+        new JarTask(tb, jar)
                 .baseDir(dir)
                 .files(".")
                 .run()

@@ -25,11 +25,9 @@
  * @test
  * @summary Verify that annotation processors inside modules works
  * @library /tools/lib
- * @modules
- *      jdk.compiler/com.sun.tools.javac.api
- *      jdk.compiler/com.sun.tools.javac.main
- *      jdk.jdeps/com.sun.tools.javap
- * @build ToolBox ModuleTestBase
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
+ * @build toolbox.ToolBox toolbox.JavacTask ModuleTestBase
  * @run main AnnotationProcessorsInModulesTest
  */
 
@@ -37,6 +35,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+
+import toolbox.JavacTask;
+import toolbox.Task;
+import toolbox.ToolBox;
 
 public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
 
@@ -133,13 +135,13 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
                 annotationProcessorModule2,
                 annotationProcessor2);
 
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-modulesourcepath", moduleSrc.toString())
                 .outdir(processorCompiledModules)
                 .files(findJavaFiles(moduleSrc))
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.DIRECT);
+                .getOutput(Task.OutputKind.DIRECT);
 
         if (!log.isEmpty()) {
             throw new AssertionError("Unexpected output: " + log);
@@ -156,14 +158,14 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     @Test
     void testUseOnlyOneProcessor(Path base) throws Exception {
         initialization(base);
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-processormodulepath", processorCompiledModules.toString(),
                         "-processor", "mypkg2.MyProcessor2")
                 .outdir(classes)
                 .sources(testClass)
                 .run()
                 .writeAll()
-                .getOutput(ToolBox.OutputKind.STDOUT);
+                .getOutput(Task.OutputKind.STDOUT);
         if (!log.trim().equals("the annotation processor 2 is working!")) {
             throw new AssertionError("Unexpected output: " + log);
         }
@@ -172,27 +174,27 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     @Test
     void testAnnotationProcessorExecutionOrder(Path base) throws Exception {
         initialization(base);
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                 .options("-processormodulepath", processorCompiledModules.toString(),
                         "-processor", "mypkg1.MyProcessor1,mypkg2.MyProcessor2")
                 .outdir(classes)
                 .sources(testClass)
                 .run()
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.STDOUT);
+                .getOutputLines(Task.OutputKind.STDOUT);
         if (!log.equals(Arrays.asList("the annotation processor 1 is working!",
                                       "the annotation processor 2 is working!"))) {
             throw new AssertionError("Unexpected output: " + log);
         }
 
-        log = tb.new JavacTask()
+        log = new JavacTask(tb)
                 .options("-processormodulepath", processorCompiledModules.toString(),
                         "-processor", "mypkg2.MyProcessor2,mypkg1.MyProcessor1")
                 .outdir(classes)
                 .sources(testClass)
                 .run()
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.STDOUT);
+                .getOutputLines(Task.OutputKind.STDOUT);
         if (!log.equals(Arrays.asList("the annotation processor 2 is working!",
                                       "the annotation processor 1 is working!"))) {
             throw new AssertionError("Unexpected output: " + log);
@@ -202,14 +204,14 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     @Test
     void testErrorOutputIfOneProcessorNameIsIncorrect(Path base) throws Exception {
         initialization(base);
-        String log = tb.new JavacTask()
+        String log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-processormodulepath", processorCompiledModules.toString(),
                          "-processor", "mypkg2.MyProcessor2,noPackage.noProcessor,mypkg1.MyProcessor1")
                 .outdir(classes)
                 .sources(testClass)
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.STDOUT, ToolBox.OutputKind.DIRECT).toString();
+                .getOutputLines(Task.OutputKind.STDOUT, Task.OutputKind.DIRECT).toString();
         if (!log.trim().equals("[the annotation processor 2 is working!, - compiler.err.proc.processor.not.found: noPackage.noProcessor, 1 error]")) {
             throw new AssertionError("Unexpected output: " + log);
         }
@@ -218,14 +220,14 @@ public class AnnotationProcessorsInModulesTest extends ModuleTestBase {
     @Test
     void testOptionsExclusion(Path base) throws Exception {
         initialization(base);
-        List<String> log = tb.new JavacTask()
+        List<String> log = new JavacTask(tb)
                 .options("-XDrawDiagnostics", "-processormodulepath", processorCompiledModules.toString(),
                         "-processorpath", processorCompiledModules.toString())
                 .outdir(classes)
                 .sources(testClass)
-                .run(ToolBox.Expect.FAIL)
+                .run(Task.Expect.FAIL)
                 .writeAll()
-                .getOutputLines(ToolBox.OutputKind.DIRECT);
+                .getOutputLines(Task.OutputKind.DIRECT);
         if (!log.equals(Arrays.asList("- compiler.err.processorpath.no.processormodulepath",
                                       "1 error"))) {
             throw new AssertionError("Unexpected output: " + log);
