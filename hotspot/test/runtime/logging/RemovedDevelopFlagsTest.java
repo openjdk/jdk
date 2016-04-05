@@ -57,7 +57,7 @@ public class RemovedDevelopFlagsTest {
             exec("TraceStartupTime", "-Xlog:startuptime");
             exec("TraceVMOperation", "-Xlog:vmoperation=debug");
             exec("PrintVtables", "-Xlog:vtables=debug");
-            exec("VerboseVerification", "-Xlog:verboseverification");
+            exec("VerboseVerification", "-Xlog:verification");
         }
     };
 }

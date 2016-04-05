@@ -24,46 +24,46 @@
 /*
  * @test
  * @bug 8150083
- * @summary verboseverification=info output should have output from the code
+ * @summary verification=info output should have output from the code
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
- * @run driver VerboseVerificationTest
+ * @run driver VerificationTest
  */
 
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
 
-public class VerboseVerificationTest {
+public class VerificationTest {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("[verboseverification]");
-        output.shouldContain("Verifying class VerboseVerificationTest$InternalClass with new format");
-        output.shouldContain("Verifying method VerboseVerificationTest$InternalClass.<init>()V");
-        output.shouldContain("End class verification for: VerboseVerificationTest$InternalClass");
+        output.shouldContain("[verification]");
+        output.shouldContain("Verifying class VerificationTest$InternalClass with new format");
+        output.shouldContain("Verifying method VerificationTest$InternalClass.<init>()V");
+        output.shouldContain("End class verification for: VerificationTest$InternalClass");
         output.shouldHaveExitValue(0);
     }
 
     static void analyzeOutputOff(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("[verboseverification]");
+        output.shouldNotContain("[verification]");
         output.shouldHaveExitValue(0);
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:verboseverification=info",
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:verification=info",
                                                                   InternalClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:verboseverification=off",
+        pb = ProcessTools.createJavaProcessBuilder("-Xlog:verification=off",
                                                    InternalClass.class.getName());
         analyzeOutputOff(pb);
     }
 
     public static class InternalClass {
         public static void main(String[] args) throws Exception {
-            System.out.println("VerboseVerificationTest");
+            System.out.println("VerificationTest");
         }
     }
 }
