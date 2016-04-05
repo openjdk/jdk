@@ -29,6 +29,65 @@
 
 const char* LogTagLevelExpression::DefaultExpressionString = "all";
 
+static bool matches_tagset(const LogTagType tags[],
+                           bool allow_other_tags,
+                           const LogTagSet& ts) {
+  bool contains_all = true;
+  size_t tag_idx;
+  for (tag_idx = 0; tag_idx < LogTag::MaxTags && tags[tag_idx] != LogTag::__NO_TAG; tag_idx++) {
+    if (!ts.contains(tags[tag_idx])) {
+      contains_all = false;
+      break;
+    }
+  }
+  // All tags in the expression must be part of the tagset,
+  // and either the expression allows other tags (has a wildcard),
+  // or the number of tags in the expression and tagset must match.
+  return contains_all && (allow_other_tags || tag_idx == ts.ntags());
+}
+
+bool LogTagLevelExpression::verify_tagsets(outputStream* out) const {
+  bool valid = true;
+
+  for (size_t i = 0; i < _ncombinations; i++) {
+    bool matched = false;
+    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+      if (matches_tagset(_tags[i], _allow_other_tags[i], *ts)) {
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      // If this was the first invalid combination, write the message header
+      if (valid && out != NULL) {
+        out->print("No tag set matches selection(s): ");
+      }
+      valid = false;
+
+      // Break as soon as possible unless listing all invalid combinations
+      if (out == NULL) {
+        break;
+      }
+
+      // List the combination on the outputStream
+      for (size_t t = 0; t < LogTag::MaxTags && _tags[i][t] != LogTag::__NO_TAG; t++) {
+        out->print("%s%s", (t == 0 ? "" : "+"), LogTag::name(_tags[i][t]));
+      }
+      if (_allow_other_tags[i]) {
+        out->print("*");
+      }
+      out->print(" ");
+    }
+  }
+
+  if (!valid && out != NULL) {
+    out->cr();
+  }
+
+  return valid;
+}
+
 bool LogTagLevelExpression::parse(const char* str, outputStream* errstream) {
   bool success = true;
   if (str == NULL || strcmp(str, "") == 0) {
@@ -120,20 +179,10 @@ LogLevelType LogTagLevelExpression::level_for(const LogTagSet& ts) const {
   // Return NotMentioned if the given tagset isn't covered by this expression.
   LogLevelType level = LogLevel::NotMentioned;
   for (size_t combination = 0; combination < _ncombinations; combination++) {
-    bool contains_all = true;
-    size_t tag_idx;
-    for (tag_idx = 0; tag_idx < LogTag::MaxTags && _tags[combination][tag_idx] != LogTag::__NO_TAG; tag_idx++) {
-      if (!ts.contains(_tags[combination][tag_idx])) {
-        contains_all = false;
-        break;
-      }
-    }
-    // All tags in the expression must be part of the tagset,
-    // and either the expression allows other tags (has a wildcard),
-    // or the number of tags in the expression and tagset must match.
-    if (contains_all && (_allow_other_tags[combination] || tag_idx == ts.ntags())) {
+    if (matches_tagset(_tags[combination], _allow_other_tags[combination], ts)) {
       level = _level[combination];
     }
   }
   return level;
 }
+
