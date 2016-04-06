@@ -69,7 +69,7 @@ void BitMap::resize(idx_t size_in_bits, bool in_resource_area) {
 }
 
 void BitMap::pretouch() {
-  os::pretouch_memory((char*)word_addr(0), (char*)word_addr(size()));
+  os::pretouch_memory(word_addr(0), word_addr(size()));
 }
 
 void BitMap::set_range_within_word(idx_t beg, idx_t end) {

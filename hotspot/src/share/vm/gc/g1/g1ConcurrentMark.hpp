@@ -298,15 +298,6 @@ protected:
   G1CMBitMapRO*           _prevMarkBitMap; // Completed mark bitmap
   G1CMBitMap*             _nextMarkBitMap; // Under-construction mark bitmap
 
-  // Liveness count data. After marking G1 iterates over the recently gathered mark
-  // bitmap and records rough information about liveness on card and region basis.
-  // This information can be used for e.g. remembered set scrubbing.
-
-  // A set bit indicates whether the given region contains any live object.
-  BitMap                  _region_live_bm;
-  // A set bit indicates that the given card contains a live object.
-  BitMap                  _card_live_bm;
-
   // Heap bounds
   HeapWord*               _heap_start;
   HeapWord*               _heap_end;
@@ -378,14 +369,6 @@ protected:
   void weakRefsWork(bool clear_all_soft_refs);
 
   void swapMarkBitMaps();
-
-  // Allocates and returns a zero-ed out "large" bitmap of the given size in bits.
-  // It is always allocated using virtual memory.
-  BitMap allocate_large_bitmap(BitMap::idx_t size_in_bits);
-  // Allocates the memory for all bitmaps used by the concurrent marking.
-  void allocate_internal_bitmaps();
-  // Pre-touches the internal bitmaps.
-  void pretouch_internal_bitmaps();
 
   // It resets the global marking data structures, as well as the
   // task local ones; should be called during initial mark.
@@ -592,7 +575,7 @@ public:
   void scan_root_regions();
 
   // Scan a single root region and mark everything reachable from it.
-  void scanRootRegion(HeapRegion* hr, uint worker_id);
+  void scanRootRegion(HeapRegion* hr);
 
   // Do concurrent phase of marking, to a tentative transitive closure.
   void mark_from_roots();
@@ -628,7 +611,7 @@ public:
 
   inline bool isPrevMarked(oop p) const;
 
-  inline bool do_yield_check(uint worker_i = 0);
+  inline bool do_yield_check();
 
   // Abandon current marking iteration due to a Full GC.
   void abort();
@@ -654,16 +637,19 @@ public:
 
 private:
   // Clear (Reset) all liveness count data.
-  void clear_all_live_data(WorkGang* workers);
+  void clear_live_data(WorkGang* workers);
 
+#ifdef ASSERT
   // Verify all of the above data structures that they are in initial state.
-  void verify_all_live_data();
+  void verify_live_data_clear();
+#endif
 
   // Aggregates the per-card liveness data based on the current marking. Also sets
   // the amount of marked bytes for each region.
   void create_live_data();
 
-  // Verification routine
+  void finalize_live_data();
+
   void verify_live_data();
 };
 
@@ -852,7 +838,7 @@ public:
 
   // Grey the object by marking it.  If not already marked, push it on
   // the local queue if below the finger.
-  // Precondition: obj is below region's NTAMS.
+  // obj is below its region's NTAMS.
   inline void make_reference_grey(oop obj);
 
   // Grey the object (by calling make_grey_reference) if required,
