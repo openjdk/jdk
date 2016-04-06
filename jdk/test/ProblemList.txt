@@ -315,8 +315,6 @@ tools/pack200/CommandLineTests.java                             7143279,8059906 
 
 tools/pack200/Pack200Test.java                                  8059906,8151901 generic-all
 
-tools/pack200/Pack200Props.java                                 8152622 macosx-all
-
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
 ############################################################################
