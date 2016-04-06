@@ -32,6 +32,7 @@ import jdk.test.lib.ProcessTools;
  * @summary jstack doesn't close quotation marks properly with threads' name greater than 1996 characters
  * @library /testlibrary
  * @build jdk.test.lib.*
+ * @ignore 8153319
  * @run main JstackThreadTest
  */
 public class JstackThreadTest {
