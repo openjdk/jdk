@@ -341,7 +341,8 @@ ALL_TARGETS += docs-javadoc docs-jvmtidoc
 ifeq ($(CREATE_BUILDJDK), true)
   # This target is only called by the recursive call below.
   create-buildjdk-compile-hotspot-helper: hotspot
-  create-buildjdk-compile-modules-helper: jdk.jlink-launchers java.base-copy
+  create-buildjdk-compile-modules-helper: jdk.jlink-launchers java.base-copy \
+      jdk.jdeps-launchers
 endif
 
 create-buildjdk-copy:
