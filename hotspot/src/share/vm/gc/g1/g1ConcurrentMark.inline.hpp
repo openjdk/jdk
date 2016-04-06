@@ -29,138 +29,8 @@
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 
-// Utility routine to set an exclusive range of cards on the given
-// card liveness bitmap
-inline void G1ConcurrentMark::set_card_bitmap_range(BitMap* card_bm,
-                                                    BitMap::idx_t start_idx,
-                                                    BitMap::idx_t end_idx,
-                                                    bool is_par) {
-
-  // Set the exclusive bit range [start_idx, end_idx).
-  assert((end_idx - start_idx) > 0, "at least one card");
-  assert(end_idx <= card_bm->size(), "sanity");
-
-  // Silently clip the end index
-  end_idx = MIN2(end_idx, card_bm->size());
-
-  // For small ranges use a simple loop; otherwise use set_range or
-  // use par_at_put_range (if parallel). The range is made up of the
-  // cards that are spanned by an object/mem region so 8 cards will
-  // allow up to object sizes up to 4K to be handled using the loop.
-  if ((end_idx - start_idx) <= 8) {
-    for (BitMap::idx_t i = start_idx; i < end_idx; i += 1) {
-      if (is_par) {
-        card_bm->par_set_bit(i);
-      } else {
-        card_bm->set_bit(i);
-      }
-    }
-  } else {
-    // Note BitMap::par_at_put_range() and BitMap::set_range() are exclusive.
-    if (is_par) {
-      card_bm->par_at_put_range(start_idx, end_idx, true);
-    } else {
-      card_bm->set_range(start_idx, end_idx);
-    }
-  }
-}
-
-// Returns the index in the liveness accounting card bitmap
-// for the given address
-inline BitMap::idx_t G1ConcurrentMark::card_bitmap_index_for(HeapWord* addr) {
-  // Below, the term "card num" means the result of shifting an address
-  // by the card shift -- address 0 corresponds to card number 0.  One
-  // must subtract the card num of the bottom of the heap to obtain a
-  // card table index.
-  intptr_t card_num = intptr_t(uintptr_t(addr) >> CardTableModRefBS::card_shift);
-  return card_num - heap_bottom_card_num();
-}
-
-// Counts the given memory region in the given task/worker
-// counting data structures.
-inline void G1ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
-                                           size_t* marked_bytes_array,
-                                           BitMap* task_card_bm) {
-  G1CollectedHeap* g1h = _g1h;
-  CardTableModRefBS* ct_bs = g1h->g1_barrier_set();
-
-  HeapWord* start = mr.start();
-  HeapWord* end = mr.end();
-  size_t region_size_bytes = mr.byte_size();
-  uint index = hr->hrm_index();
-
-  assert(hr == g1h->heap_region_containing(start), "sanity");
-  assert(marked_bytes_array != NULL, "pre-condition");
-  assert(task_card_bm != NULL, "pre-condition");
-
-  // Add to the task local marked bytes for this region.
-  marked_bytes_array[index] += region_size_bytes;
-
-  BitMap::idx_t start_idx = card_bitmap_index_for(start);
-  BitMap::idx_t end_idx = card_bitmap_index_for(end);
-
-  // Note: if we're looking at the last region in heap - end
-  // could be actually just beyond the end of the heap; end_idx
-  // will then correspond to a (non-existent) card that is also
-  // just beyond the heap.
-  if (g1h->is_in_g1_reserved(end) && !ct_bs->is_card_aligned(end)) {
-    // end of region is not card aligned - increment to cover
-    // all the cards spanned by the region.
-    end_idx += 1;
-  }
-  // The card bitmap is task/worker specific => no need to use
-  // the 'par' BitMap routines.
-  // Set bits in the exclusive bit range [start_idx, end_idx).
-  set_card_bitmap_range(task_card_bm, start_idx, end_idx, false /* is_par */);
-}
-
-// Counts the given object in the given task/worker counting data structures.
-inline void G1ConcurrentMark::count_object(oop obj,
-                                           HeapRegion* hr,
-                                           size_t* marked_bytes_array,
-                                           BitMap* task_card_bm,
-                                           size_t word_size) {
-  assert(!hr->is_continues_humongous(), "Cannot enter count_object with continues humongous");
-  if (!hr->is_starts_humongous()) {
-    MemRegion mr((HeapWord*)obj, word_size);
-    count_region(mr, hr, marked_bytes_array, task_card_bm);
-  } else {
-    do {
-      MemRegion mr(hr->bottom(), hr->top());
-      count_region(mr, hr, marked_bytes_array, task_card_bm);
-      hr = _g1h->next_region_in_humongous(hr);
-    } while (hr != NULL);
-  }
-}
-
-// Attempts to mark the given object and, if successful, counts
-// the object in the given task/worker counting structures.
-inline bool G1ConcurrentMark::par_mark_and_count(oop obj,
-                                                 HeapRegion* hr,
-                                                 size_t* marked_bytes_array,
-                                                 BitMap* task_card_bm) {
-  if (_nextMarkBitMap->parMark((HeapWord*)obj)) {
-    // Update the task specific count data for the object.
-    count_object(obj, hr, marked_bytes_array, task_card_bm, obj->size());
-    return true;
-  }
-  return false;
-}
-
-// Attempts to mark the given object and, if successful, counts
-// the object in the task/worker counting structures for the
-// given worker id.
-inline bool G1ConcurrentMark::par_mark_and_count(oop obj,
-                                                 size_t word_size,
-                                                 HeapRegion* hr,
-                                                 uint worker_id) {
-  if (_nextMarkBitMap->parMark((HeapWord*)obj)) {
-    size_t* marked_bytes_array = count_marked_bytes_array_for(worker_id);
-    BitMap* task_card_bm = count_card_bitmap_for(worker_id);
-    count_object(obj, hr, marked_bytes_array, task_card_bm, word_size);
-    return true;
-  }
-  return false;
+inline bool G1ConcurrentMark::par_mark(oop obj) {
+  return _nextMarkBitMap->parMark((HeapWord*)obj);
 }
 
 inline bool G1CMBitMapRO::iterate(BitMapClosure* cl, MemRegion mr) {
@@ -294,10 +164,8 @@ inline void G1CMTask::process_grey_object(oop obj) {
   check_limits();
 }
 
-
-
-inline void G1CMTask::make_reference_grey(oop obj, HeapRegion* hr) {
-  if (_cm->par_mark_and_count(obj, hr, _marked_bytes_array, _card_bm)) {
+inline void G1CMTask::make_reference_grey(oop obj) {
+  if (_cm->par_mark(obj)) {
     // No OrderAccess:store_load() is needed. It is implicit in the
     // CAS done in G1CMBitMap::parMark() call in the routine above.
     HeapWord* global_finger = _cm->finger();
@@ -348,7 +216,7 @@ inline void G1CMTask::deal_with_reference(oop obj) {
       // anything with it).
       HeapRegion* hr = _g1h->heap_region_containing(obj);
       if (!hr->obj_allocated_since_next_marking(obj)) {
-        make_reference_grey(obj, hr);
+        make_reference_grey(obj);
       }
     }
   }
@@ -370,8 +238,7 @@ bool G1ConcurrentMark::isPrevMarked(oop p) const {
   return _prevMarkBitMap->isMarked(addr);
 }
 
-inline void G1ConcurrentMark::grayRoot(oop obj, size_t word_size,
-                                       uint worker_id, HeapRegion* hr) {
+inline void G1ConcurrentMark::grayRoot(oop obj, HeapRegion* hr) {
   assert(obj != NULL, "pre-condition");
   HeapWord* addr = (HeapWord*) obj;
   if (hr == NULL) {
@@ -386,7 +253,7 @@ inline void G1ConcurrentMark::grayRoot(oop obj, size_t word_size,
 
   if (addr < hr->next_top_at_mark_start()) {
     if (!_nextMarkBitMap->isMarked(addr)) {
-      par_mark_and_count(obj, word_size, hr, worker_id);
+      par_mark(obj);
     }
   }
 }
