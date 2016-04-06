@@ -95,7 +95,7 @@ class MethodType implements java.io.Serializable {
 
     // The rtype and ptypes fields define the structural identity of the method type:
     private final Class<?>   rtype;
-    private final Class<?>[] ptypes;
+    private final @Stable Class<?>[] ptypes;
 
     // The remaining fields are caches of various sorts:
     private @Stable MethodTypeForm form; // erased form, plus cached data about primitives

@@ -457,7 +457,7 @@ public abstract class AtomicLongFieldUpdater<T> {
 
         public final void lazySet(T obj, long newValue) {
             accessCheck(obj);
-            U.putOrderedLong(obj, offset, newValue);
+            U.putLongRelease(obj, offset, newValue);
         }
 
         public final long get(T obj) {
