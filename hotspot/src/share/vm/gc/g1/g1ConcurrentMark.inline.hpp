@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
+#include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 
 inline bool G1ConcurrentMark::par_mark(oop obj) {
@@ -255,6 +256,15 @@ inline void G1ConcurrentMark::grayRoot(oop obj, HeapRegion* hr) {
     if (!_nextMarkBitMap->isMarked(addr)) {
       par_mark(obj);
     }
+  }
+}
+
+inline bool G1ConcurrentMark::do_yield_check() {
+  if (SuspendibleThreadSet::should_yield()) {
+    SuspendibleThreadSet::yield();
+    return true;
+  } else {
+    return false;
   }
 }
 

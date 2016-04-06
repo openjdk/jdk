@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,11 +140,12 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
 
   // Accessing
   idx_t size() const                    { return _size; }
+  idx_t size_in_bytes() const           { return size_in_words() * BytesPerWord; }
   idx_t size_in_words() const           {
-    return word_index(size() + BitsPerWord - 1);
+    return calc_size_in_words(size());
   }
 
-  static idx_t size_in_words(size_t size_in_bits) {
+  static idx_t calc_size_in_words(size_t size_in_bits) {
     return word_index(size_in_bits + BitsPerWord - 1);
   }
 
