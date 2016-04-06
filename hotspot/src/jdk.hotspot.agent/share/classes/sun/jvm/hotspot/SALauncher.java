@@ -111,34 +111,31 @@ public class SALauncher {
         return launcherHelp();
     }
 
-    private static void buildAttachArgs(ArrayList<String> newArgs,
-                                        String pid, String exe, String core) {
-        if ((pid == null) && (exe == null)) {
-            throw new IllegalArgumentException(
-                                     "You have to set --pid or --exe.");
+    private static void buildAttachArgs(ArrayList<String> newArgs, String pid,
+                                  String exe, String core, boolean allowEmpty) {
+        if (!allowEmpty && (pid == null) && (exe == null)) {
+            throw new SAGetoptException("You have to set --pid or --exe.");
         }
 
         if (pid != null) { // Attach to live process
             if (exe != null) {
-                throw new IllegalArgumentException(
-                                             "Unnecessary argument: --exe");
+                throw new SAGetoptException("Unnecessary argument: --exe");
             } else if (core != null) {
-                throw new IllegalArgumentException(
-                                             "Unnecessary argument: --core");
+                throw new SAGetoptException("Unnecessary argument: --core");
             } else if (!pid.matches("^\\d+$")) {
-                throw new IllegalArgumentException("Invalid pid: " + pid);
+                throw new SAGetoptException("Invalid pid: " + pid);
             }
 
             newArgs.add(pid);
-        } else {
+        } else if (exe != null) {
             if (exe.length() == 0) {
-                throw new IllegalArgumentException("You have to set --exe.");
+                throw new SAGetoptException("You have to set --exe.");
             }
 
             newArgs.add(exe);
 
             if ((core == null) || (core.length() == 0)) {
-                throw new IllegalArgumentException("You have to set --core.");
+                throw new SAGetoptException("You have to set --core.");
             }
 
             newArgs.add(core);
@@ -170,7 +167,7 @@ public class SALauncher {
             }
         }
 
-        buildAttachArgs(newArgs, pid, exe, core);
+        buildAttachArgs(newArgs, pid, exe, core, true);
         CLHSDB.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -199,7 +196,7 @@ public class SALauncher {
             }
         }
 
-        buildAttachArgs(newArgs, pid, exe, core);
+        buildAttachArgs(newArgs, pid, exe, core, true);
         HSDB.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -237,7 +234,7 @@ public class SALauncher {
             }
         }
 
-        buildAttachArgs(newArgs, pid, exe, core);
+        buildAttachArgs(newArgs, pid, exe, core, false);
         JStack.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -287,7 +284,7 @@ public class SALauncher {
             }
         }
 
-        buildAttachArgs(newArgs, pid, exe, core);
+        buildAttachArgs(newArgs, pid, exe, core, false);
         JMap.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -325,7 +322,7 @@ public class SALauncher {
             }
         }
 
-        buildAttachArgs(newArgs, pid, exe, core);
+        buildAttachArgs(newArgs, pid, exe, core, false);
         JInfo.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -358,7 +355,7 @@ public class SALauncher {
             }
         }
 
-        buildAttachArgs(newArgs, pid, exe, core);
+        buildAttachArgs(newArgs, pid, exe, core, false);
         JSnap.main(newArgs.toArray(new String[newArgs.size()]));
     }
 
@@ -416,8 +413,8 @@ public class SALauncher {
                 return;
             }
 
-            throw new IllegalArgumentException("Unknown tool: " + args[0]);
-        } catch (Exception e) {
+            throw new SAGetoptException("Unknown tool: " + args[0]);
+        } catch (SAGetoptException e) {
             System.err.println(e.getMessage());
             toolHelp(args[0]);
         }
