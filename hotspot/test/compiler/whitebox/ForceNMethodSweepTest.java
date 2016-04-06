@@ -34,7 +34,7 @@ import compiler.whitebox.CompilerWhiteBoxTest;
 
 /*
  * @test
- * @bug 8059624 8064669
+ * @bug 8059624 8064669 8153265
  * @library /testlibrary /test/lib /
  * @modules java.management
  * @build ForceNMethodSweepTest
@@ -60,6 +60,12 @@ public class ForceNMethodSweepTest extends CompilerWhiteBoxTest {
 
     @Override
     protected void test() throws Exception {
+        // prime the asserts: get their bytecodes loaded, any lazy computation
+        // resolved, and executed once
+        Asserts.assertGT(1, 0, "message");
+        Asserts.assertLTE(0, 0, "message");
+        Asserts.assertLT(-1, 0, "message");
+
         checkNotCompiled();
         guaranteedSweep();
         int usage = getTotalUsage();
