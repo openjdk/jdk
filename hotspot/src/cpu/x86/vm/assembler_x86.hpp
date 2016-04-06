@@ -1048,6 +1048,8 @@ private:
   void cvttss2sil(Register dst, XMMRegister src);
   void cvttss2siq(Register dst, XMMRegister src);
 
+  void cvttpd2dq(XMMRegister dst, XMMRegister src);
+
   // Divide Scalar Double-Precision Floating-Point Values
   void divsd(XMMRegister dst, Address src);
   void divsd(XMMRegister dst, XMMRegister src);

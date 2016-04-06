@@ -728,31 +728,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       break;
     }
 
-
-    case lir_tan:
-    case lir_log10: {
-      assert(op->as_Op2() != NULL, "must be");
-      LIR_Op2* op2 = (LIR_Op2*)op;
-
-      // On x86 tan/sin/cos need two temporary fpu stack slots and
-      // log/log10 need one so handle opr2 and tmp as temp inputs.
-      // Register input operand as temp to guarantee that it doesn't
-      // overlap with the input.
-      assert(op2->_info == NULL, "not used");
-      assert(op2->_tmp5->is_illegal(), "not used");
-      assert(op2->_opr1->is_valid(), "used");
-      do_input(op2->_opr1); do_temp(op2->_opr1);
-
-      if (op2->_opr2->is_valid())         do_temp(op2->_opr2);
-      if (op2->_tmp1->is_valid())         do_temp(op2->_tmp1);
-      if (op2->_tmp2->is_valid())         do_temp(op2->_tmp2);
-      if (op2->_tmp3->is_valid())         do_temp(op2->_tmp3);
-      if (op2->_tmp4->is_valid())         do_temp(op2->_tmp4);
-      if (op2->_result->is_valid())       do_output(op2->_result);
-
-      break;
-    }
-
 // LIR_Op3
     case lir_idiv:
     case lir_irem: {
@@ -1740,8 +1715,6 @@ const char * LIR_Op::name() const {
      case lir_rem:                   s = "rem";           break;
      case lir_abs:                   s = "abs";           break;
      case lir_sqrt:                  s = "sqrt";          break;
-     case lir_tan:                   s = "tan";           break;
-     case lir_log10:                 s = "log10";         break;
      case lir_logic_and:             s = "logic_and";     break;
      case lir_logic_or:              s = "logic_or";      break;
      case lir_logic_xor:             s = "logic_xor";     break;

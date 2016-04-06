@@ -2365,13 +2365,8 @@ void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr unused, L
   } else if (value->is_double_fpu()) {
     assert(value->fpu_regnrLo() == 0 && dest->fpu_regnrLo() == 0, "both must be on TOS");
     switch(code) {
-      case lir_log10 : __ flog10() ; break;
       case lir_abs   : __ fabs() ; break;
       case lir_sqrt  : __ fsqrt(); break;
-      case lir_tan :
-        // Should consider not saving rbx, if not necessary
-        __ trigfunc('t', op->as_Op2()->fpu_stack_size());
-        break;
       default      : ShouldNotReachHere();
     }
   } else {

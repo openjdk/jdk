@@ -1679,7 +1679,6 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_dabs:   n = new AbsDNode(                arg);  break;
   case vmIntrinsics::_dsqrt:  n = new SqrtDNode(C, control(),  arg);  break;
-  case vmIntrinsics::_dlog10: n = new Log10DNode(C, control(), arg);  break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -1693,10 +1692,6 @@ bool LibraryCallKit::inline_trig(vmIntrinsics::ID id) {
   Node* arg = round_double_node(argument(0));
   Node* n = NULL;
 
-  switch (id) {
-  case vmIntrinsics::_dtan:  n = new TanDNode(C, control(), arg);  break;
-  default:  fatal_unexpected_iid(id);  break;
-  }
   n = _gvn.transform(n);
 
   // Rounding required?  Check for argument reduction!
@@ -1814,15 +1809,18 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
     return StubRoutines::dcos() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcos(), "dcos") :
       runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dcos),   "COS");
-  case vmIntrinsics::_dtan:   return Matcher::has_match_rule(Op_TanD)   ? inline_trig(id) :
-    runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dtan),   "TAN");
-
+  case vmIntrinsics::_dtan:
+    return StubRoutines::dtan() != NULL ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtan(), "dtan") :
+      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dtan), "TAN");
   case vmIntrinsics::_dlog:
     return StubRoutines::dlog() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog") :
       runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog),   "LOG");
-  case vmIntrinsics::_dlog10: return Matcher::has_match_rule(Op_Log10D) ? inline_math(id) :
-    runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog10), "LOG10");
+  case vmIntrinsics::_dlog10:
+    return StubRoutines::dlog10() != NULL ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog10(), "dlog10") :
+      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog10), "LOG10");
 
     // These intrinsics are supported on all hardware
   case vmIntrinsics::_dsqrt:  return Matcher::match_rule_supported(Op_SqrtD) ? inline_math(id) : false;
