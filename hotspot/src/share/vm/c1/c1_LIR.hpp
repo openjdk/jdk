@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,17 +59,9 @@ class LIR_OprVisitor;
 typedef LIR_OprDesc* LIR_Opr;
 typedef int          RegNr;
 
-define_array(LIR_OprArray, LIR_Opr)
-define_stack(LIR_OprList, LIR_OprArray)
-
-define_array(LIR_OprRefArray, LIR_Opr*)
-define_stack(LIR_OprRefList, LIR_OprRefArray)
-
-define_array(CodeEmitInfoArray, CodeEmitInfo*)
-define_stack(CodeEmitInfoList, CodeEmitInfoArray)
-
-define_array(LIR_OpArray, LIR_Op*)
-define_stack(LIR_OpList, LIR_OpArray)
+typedef GrowableArray<LIR_Opr> LIR_OprList;
+typedef GrowableArray<LIR_Op*> LIR_OpArray;
+typedef GrowableArray<LIR_Op*> LIR_OpList;
 
 // define LIR_OprPtr early so LIR_OprDesc can refer to it
 class LIR_OprPtr: public CompilationResourceObj {

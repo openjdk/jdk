@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -530,7 +530,7 @@ ComputeLinearScanOrder::ComputeLinearScanOrder(Compilation* c, BlockBegin* start
   _visited_blocks(_max_block_id),
   _active_blocks(_max_block_id),
   _dominator_blocks(_max_block_id),
-  _forward_branches(_max_block_id, 0),
+  _forward_branches(_max_block_id, _max_block_id, 0),
   _loop_end_blocks(8),
   _work_list(8),
   _linear_scan_order(NULL), // initialized later with correct size
@@ -848,13 +848,13 @@ bool ComputeLinearScanOrder::ready_for_processing(BlockBegin* cur) {
     return false;
   }
 
-  assert(_linear_scan_order->index_of(cur) == -1, "block already processed (block can be ready only once)");
-  assert(_work_list.index_of(cur) == -1, "block already in work-list (block can be ready only once)");
+  assert(_linear_scan_order->find(cur) == -1, "block already processed (block can be ready only once)");
+  assert(_work_list.find(cur) == -1, "block already in work-list (block can be ready only once)");
   return true;
 }
 
 void ComputeLinearScanOrder::sort_into_work_list(BlockBegin* cur) {
-  assert(_work_list.index_of(cur) == -1, "block already in work list");
+  assert(_work_list.find(cur) == -1, "block already in work list");
 
   int cur_weight = compute_weight(cur);
 
@@ -890,7 +890,7 @@ void ComputeLinearScanOrder::sort_into_work_list(BlockBegin* cur) {
 
 void ComputeLinearScanOrder::append_block(BlockBegin* cur) {
   TRACE_LINEAR_SCAN(3, tty->print_cr("appending block B%d (weight 0x%6x) to linear-scan order", cur->block_id(), cur->linear_scan_number()));
-  assert(_linear_scan_order->index_of(cur) == -1, "cannot add the same block twice");
+  assert(_linear_scan_order->find(cur) == -1, "cannot add the same block twice");
 
   // currently, the linear scan order and code emit order are equal.
   // therefore the linear_scan_number and the weight of a block must also
@@ -1115,13 +1115,13 @@ void ComputeLinearScanOrder::verify() {
     BlockBegin* cur = _linear_scan_order->at(i);
 
     assert(cur->linear_scan_number() == i, "incorrect linear_scan_number");
-    assert(cur->linear_scan_number() >= 0 && cur->linear_scan_number() == _linear_scan_order->index_of(cur), "incorrect linear_scan_number");
+    assert(cur->linear_scan_number() >= 0 && cur->linear_scan_number() == _linear_scan_order->find(cur), "incorrect linear_scan_number");
 
     int j;
     for (j = cur->number_of_sux() - 1; j >= 0; j--) {
       BlockBegin* sux = cur->sux_at(j);
 
-      assert(sux->linear_scan_number() >= 0 && sux->linear_scan_number() == _linear_scan_order->index_of(sux), "incorrect linear_scan_number");
+      assert(sux->linear_scan_number() >= 0 && sux->linear_scan_number() == _linear_scan_order->find(sux), "incorrect linear_scan_number");
       if (!sux->is_set(BlockBegin::backward_branch_target_flag)) {
         assert(cur->linear_scan_number() < sux->linear_scan_number(), "invalid order");
       }
@@ -1133,7 +1133,7 @@ void ComputeLinearScanOrder::verify() {
     for (j = cur->number_of_preds() - 1; j >= 0; j--) {
       BlockBegin* pred = cur->pred_at(j);
 
-      assert(pred->linear_scan_number() >= 0 && pred->linear_scan_number() == _linear_scan_order->index_of(pred), "incorrect linear_scan_number");
+      assert(pred->linear_scan_number() >= 0 && pred->linear_scan_number() == _linear_scan_order->find(pred), "incorrect linear_scan_number");
       if (!cur->is_set(BlockBegin::backward_branch_target_flag)) {
         assert(cur->linear_scan_number() > pred->linear_scan_number(), "invalid order");
       }
@@ -1255,8 +1255,7 @@ void IR::print(bool cfg_only, bool live_only) {
 }
 
 
-define_array(BlockListArray, BlockList*)
-define_stack(BlockListList, BlockListArray)
+typedef GrowableArray<BlockList*> BlockListList;
 
 class PredecessorValidator : public BlockClosure {
  private:
@@ -1270,7 +1269,7 @@ class PredecessorValidator : public BlockClosure {
  public:
   PredecessorValidator(IR* hir) {
     ResourceMark rm;
-    _predecessors = new BlockListList(BlockBegin::number_of_blocks(), NULL);
+    _predecessors = new BlockListList(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL);
     _blocks = new BlockList();
 
     int i;

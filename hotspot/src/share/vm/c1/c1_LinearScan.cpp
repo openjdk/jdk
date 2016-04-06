@@ -495,8 +495,8 @@ void LinearScan::number_instructions() {
   }
 
   // initialize with correct length
-  _lir_ops = LIR_OpArray(num_instructions);
-  _block_of_op = BlockBeginArray(num_instructions);
+  _lir_ops = LIR_OpArray(num_instructions, num_instructions, NULL);
+  _block_of_op = BlockBeginArray(num_instructions, num_instructions, NULL);
 
   int op_id = 0;
   int idx = 0;
@@ -2506,7 +2506,8 @@ LocationValue*         _illegal_value = new (ResourceObj::C_HEAP, mtCompiler) Lo
 void LinearScan::init_compute_debug_info() {
   // cache for frequently used scope values
   // (cpu registers and stack slots)
-  _scope_value_cache = ScopeValueArray((LinearScan::nof_cpu_regs + frame_map()->argcount() + max_spills()) * 2, NULL);
+  int cache_size = (LinearScan::nof_cpu_regs + frame_map()->argcount() + max_spills()) * 2;
+  _scope_value_cache = ScopeValueArray(cache_size, cache_size, NULL);
 }
 
 MonitorValue* LinearScan::location_for_monitor_index(int monitor_index) {
@@ -3041,7 +3042,7 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
         insert_point++;
       }
     }
-    instructions->truncate(insert_point);
+    instructions->trunc_to(insert_point);
   }
 }
 
@@ -3445,7 +3446,7 @@ class RegisterVerifier: public StackObj {
   RegisterVerifier(LinearScan* allocator)
     : _allocator(allocator)
     , _work_list(16)
-    , _saved_states(BlockBegin::number_of_blocks(), NULL)
+    , _saved_states(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL)
   { }
 
   void verify(BlockBegin* start);
@@ -4451,7 +4452,7 @@ Interval* Interval::split(int split_pos) {
     new_use_pos_and_kinds.append(_use_pos_and_kinds.at(i));
   }
 
-  _use_pos_and_kinds.truncate(start_idx + 2);
+  _use_pos_and_kinds.trunc_to(start_idx + 2);
   result->_use_pos_and_kinds = _use_pos_and_kinds;
   _use_pos_and_kinds = new_use_pos_and_kinds;
 
@@ -5539,7 +5540,7 @@ void LinearScanWalker::split_and_spill_intersecting_intervals(int reg, int regHi
     IntervalList* processed = _spill_intervals[reg];
     for (int i = 0; i < _spill_intervals[regHi]->length(); i++) {
       Interval* it = _spill_intervals[regHi]->at(i);
-      if (processed->find_from_end(it) == -1) {
+      if (processed->find(it) == -1) {
         remove_from_list(it);
         split_and_spill_interval(it);
       }
@@ -6210,7 +6211,7 @@ void ControlFlowOptimizer::delete_empty_blocks(BlockList* code) {
       _original_preds.clear();
       for (j = block->number_of_preds() - 1; j >= 0; j--) {
         BlockBegin* pred = block->pred_at(j);
-        if (_original_preds.index_of(pred) == -1) {
+        if (_original_preds.find(pred) == -1) {
           _original_preds.append(pred);
         }
       }
@@ -6230,7 +6231,7 @@ void ControlFlowOptimizer::delete_empty_blocks(BlockList* code) {
     }
     old_pos++;
   }
-  code->truncate(new_pos);
+  code->trunc_to(new_pos);
 
   DEBUG_ONLY(verify(code));
 }
@@ -6255,7 +6256,7 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
           TRACE_LINEAR_SCAN(3, tty->print_cr("Deleting unconditional branch at end of block B%d", block->block_id()));
 
           // delete last branch instruction
-          instructions->truncate(instructions->length() - 1);
+          instructions->trunc_to(instructions->length() - 1);
 
         } else {
           LIR_Op* prev_op = instructions->at(instructions->length() - 2);
@@ -6294,7 +6295,7 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
                 prev_branch->change_block(last_branch->block());
                 prev_branch->negate_cond();
                 prev_cmp->set_condition(prev_branch->cond());
-                instructions->truncate(instructions->length() - 1);
+                instructions->trunc_to(instructions->length() - 1);
                 // if we do change the condition, we have to change the cmove as well
                 if (prev_cmove != NULL) {
                   prev_cmove->set_condition(prev_branch->cond());
@@ -6377,19 +6378,19 @@ void ControlFlowOptimizer::verify(BlockList* code) {
       LIR_OpBranch* op_branch = instructions->at(j)->as_OpBranch();
 
       if (op_branch != NULL) {
-        assert(op_branch->block() == NULL || code->index_of(op_branch->block()) != -1, "branch target not valid");
-        assert(op_branch->ublock() == NULL || code->index_of(op_branch->ublock()) != -1, "branch target not valid");
+        assert(op_branch->block() == NULL || code->find(op_branch->block()) != -1, "branch target not valid");
+        assert(op_branch->ublock() == NULL || code->find(op_branch->ublock()) != -1, "branch target not valid");
       }
     }
 
     for (j = 0; j < block->number_of_sux() - 1; j++) {
       BlockBegin* sux = block->sux_at(j);
-      assert(code->index_of(sux) != -1, "successor not valid");
+      assert(code->find(sux) != -1, "successor not valid");
     }
 
     for (j = 0; j < block->number_of_preds() - 1; j++) {
       BlockBegin* pred = block->pred_at(j);
-      assert(code->index_of(pred) != -1, "successor not valid");
+      assert(code->find(pred) != -1, "successor not valid");
     }
   }
 }

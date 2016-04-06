@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,8 @@ class ValueMapEntry: public CompilationResourceObj {
   void set_next(ValueMapEntry* next) { _next = next; }
 };
 
-define_array(ValueMapEntryArray, ValueMapEntry*)
-define_stack(ValueMapEntryList, ValueMapEntryArray)
+typedef GrowableArray<ValueMapEntry*> ValueMapEntryArray;
+typedef GrowableArray<ValueMapEntry*> ValueMapEntryList;
 
 // ValueMap implements nested hash tables for value numbering.  It
 // maintains a set _killed_values which represents the instructions
@@ -129,8 +129,7 @@ class ValueMap: public CompilationResourceObj {
 #endif
 };
 
-define_array(ValueMapArray, ValueMap*)
-
+typedef GrowableArray<ValueMap*> ValueMapArray;
 
 class ValueNumberingVisitor: public InstructionVisitor {
  protected:

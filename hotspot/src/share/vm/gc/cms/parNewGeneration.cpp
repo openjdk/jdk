@@ -280,7 +280,7 @@ void ParScanThreadState::print_promotion_failure_size() {
   }
 }
 
-class ParScanThreadStateSet: private ResourceArray {
+class ParScanThreadStateSet: StackObj {
 public:
   // Initializes states for the specified number of threads;
   ParScanThreadStateSet(int                     num_threads,
@@ -315,8 +315,10 @@ private:
   ParallelTaskTerminator& _term;
   ParNewGeneration&       _young_gen;
   Generation&             _old_gen;
+  ParScanThreadState*     _per_thread_states;
+  const int               _num_threads;
  public:
-  bool is_valid(int id) const { return id < length(); }
+  bool is_valid(int id) const { return id < _num_threads; }
   ParallelTaskTerminator* terminator() { return &_term; }
 };
 
@@ -329,30 +331,31 @@ ParScanThreadStateSet::ParScanThreadStateSet(int num_threads,
                                              PreservedMarksSet& preserved_marks_set,
                                              size_t desired_plab_sz,
                                              ParallelTaskTerminator& term)
-  : ResourceArray(sizeof(ParScanThreadState), num_threads),
-    _young_gen(young_gen),
+  : _young_gen(young_gen),
     _old_gen(old_gen),
-    _term(term)
+    _term(term),
+    _per_thread_states(NEW_RESOURCE_ARRAY(ParScanThreadState, num_threads)),
+    _num_threads(num_threads)
 {
   assert(num_threads > 0, "sanity check!");
   assert(ParGCUseLocalOverflow == (overflow_stacks != NULL),
          "overflow_stack allocation mismatch");
   // Initialize states.
   for (int i = 0; i < num_threads; ++i) {
-    new ((ParScanThreadState*)_data + i)
-        ParScanThreadState(&to_space, &young_gen, &old_gen, i, &queue_set,
-                           overflow_stacks, preserved_marks_set.get(i),
-                           desired_plab_sz, term);
+    new(_per_thread_states + i)
+      ParScanThreadState(&to_space, &young_gen, &old_gen, i, &queue_set,
+                         overflow_stacks, preserved_marks_set.get(i),
+                         desired_plab_sz, term);
   }
 }
 
 inline ParScanThreadState& ParScanThreadStateSet::thread_state(int i) {
-  assert(i >= 0 && i < length(), "sanity check!");
-  return ((ParScanThreadState*)_data)[i];
+  assert(i >= 0 && i < _num_threads, "sanity check!");
+  return _per_thread_states[i];
 }
 
 void ParScanThreadStateSet::trace_promotion_failed(const YoungGCTracer* gc_tracer) {
-  for (int i = 0; i < length(); ++i) {
+  for (int i = 0; i < _num_threads; ++i) {
     if (thread_state(i).promotion_failed()) {
       gc_tracer->report_promotion_failed(thread_state(i).promotion_failed_info());
       thread_state(i).promotion_failed_info().reset();
@@ -363,7 +366,7 @@ void ParScanThreadStateSet::trace_promotion_failed(const YoungGCTracer* gc_trace
 void ParScanThreadStateSet::reset(uint active_threads, bool promotion_failed) {
   _term.reset_for_reuse(active_threads);
   if (promotion_failed) {
-    for (int i = 0; i < length(); ++i) {
+    for (int i = 0; i < _num_threads; ++i) {
       thread_state(i).print_promotion_failure_size();
     }
   }
@@ -378,7 +381,7 @@ void ParScanThreadState::reset_stats() {
 }
 
 void ParScanThreadStateSet::reset_stats() {
-  for (int i = 0; i < length(); ++i) {
+  for (int i = 0; i < _num_threads; ++i) {
     thread_state(i).reset_stats();
   }
 }
@@ -401,7 +404,7 @@ void ParScanThreadStateSet::print_termination_stats() {
 
   print_termination_stats_hdr(st);
 
-  for (int i = 0; i < length(); ++i) {
+  for (int i = 0; i < _num_threads; ++i) {
     const ParScanThreadState & pss = thread_state(i);
     const double elapsed_ms = pss.elapsed_time() * 1000.0;
     const double s_roots_ms = pss.strong_roots_time() * 1000.0;
@@ -429,7 +432,7 @@ void ParScanThreadStateSet::print_taskqueue_stats() {
   print_taskqueue_stats_hdr(st);
 
   TaskQueueStats totals;
-  for (int i = 0; i < length(); ++i) {
+  for (int i = 0; i < _num_threads; ++i) {
     const ParScanThreadState & pss = thread_state(i);
     const TaskQueueStats & stats = pss.taskqueue_stats();
     st->print("%3d ", i); stats.print(st); st->cr();
@@ -452,7 +455,7 @@ void ParScanThreadStateSet::flush() {
   // possible since this might otherwise become a bottleneck
   // to scaling. Should we add heavy-weight work into this
   // loop, consider parallelizing the loop into the worker threads.
-  for (int i = 0; i < length(); ++i) {
+  for (int i = 0; i < _num_threads; ++i) {
     ParScanThreadState& par_scan_state = thread_state(i);
 
     // Flush stats related to To-space PLAB activity and
