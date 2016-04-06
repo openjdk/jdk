@@ -373,13 +373,10 @@ PackageEntryTable* ClassLoaderData::packages() {
   // Lazily create the package entry table at first request.
   if (_packages == NULL) {
     MutexLockerEx m1(metaspace_lock(), Mutex::_no_safepoint_check_flag);
-    // Check again if _packages has been allocated while we were getting this lock.
-    if (_packages != NULL) {
-      return _packages;
+    // Check if _packages got allocated while we were waiting for this lock.
+    if (_packages == NULL) {
+      _packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
     }
-    // Ensure _packages is stable, since it is examined without a lock
-    OrderAccess::storestore();
-    _packages = new PackageEntryTable(PackageEntryTable::_packagetable_entry_size);
   }
   return _packages;
 }
